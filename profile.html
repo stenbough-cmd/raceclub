@@ -1,0 +1,831 @@
+<!--
+  Race Club — profile.html  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  This is the source file's "PROFILE VIEW" (plus the League Management,
+  admin approval queue, and admin account management sections it built
+  underneath it) pulled out into its own real, authenticated page. All the
+  actual logic — profile rendering, the edit-profile panel, the
+  30-minute inactivity auto-logout, the mustChangePassword forced
+  password-change box, the League Management placeholder buttons, the
+  admin approval queue, and the admin account management panel — is
+  ported over field-for-field and API-call-for-API-call from the source's
+  renderProfile()/editProfilePanel()/approvalQueueSection()/
+  accountManagementSection() functions. Nothing new was added: no
+  finances/reputation/sponsors stats, no avatar picker, no new admin
+  actions beyond what the source already called.
+
+  What's actually different:
+  - redirectIfNoToken() (js/auth.js) replaces the source's "check
+    localStorage, else show login view" logic — this page assumes it's
+    only ever reached with a valid-looking token and bounces to
+    login.html immediately if not (getProfile still re-validates it
+    server-side after that, same as the source's loadProfile()).
+  - The reportHeight()/iframe-resize hack is gone entirely — this is a
+    normal page, the browser handles its own scrolling.
+  - Real left-hand sidebar navigation (Profile / League Management /
+    Admin) replaces the source's single continuously-scrolling embed —
+    the nav items scroll-jump to the matching section further down this
+    same page (all sections still live on this one page, per the
+    "small friend-group site" call — no separate league.html/admin.html
+    files). Nav items for sections the current user can't use
+    (League Management needs manageSchedule/uploadResults, Admin needs
+    manageUsers) are hidden entirely, same gating the source used to
+    decide whether to render those sections at all.
+  - A responsive top bar with a hamburger toggle stands in for the
+    sidebar below ~768px width (see css/style.css .rc-topbar).
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile — Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/reference-data.js"></script>
+</head>
+<body>
+
+<div class="rc-topbar">
+  <img class="rc-topbar-logo" src="assets/race-club-logo.png" alt="Race Club">
+  <button class="rc-hamburger" id="rc-hamburger" aria-label="Menu">&#9776;</button>
+</div>
+
+<div class="rc-shell">
+  <aside class="rc-sidebar" id="rc-sidebar">
+    <img class="rc-sidebar-logo" src="assets/race-club-logo.png" alt="Race Club">
+    <div class="rc-checker"></div>
+    <nav class="rc-sidebar-nav">
+      <a class="rc-nav-item rc-nav-active" href="#rc-section-profile">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>
+        Profile
+      </a>
+      <a class="rc-nav-item" href="#rc-section-league" id="rc-nav-league" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        League Management
+      </a>
+      <a class="rc-nav-item" href="#rc-section-admin" id="rc-nav-admin" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        Admin
+      </a>
+    </nav>
+    <div class="rc-sidebar-spacer"></div>
+    <button class="rc-sidebar-logout" id="rc-logout-btn">Log Out</button>
+  </aside>
+
+  <main class="rc-main">
+    <div id="rc-loading" style="color:var(--rc-steel);">Loading your profile...</div>
+    <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
+    <div id="rc-profile-root" style="display:none;">
+      <section id="rc-section-profile"></section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  // ---------------------------------------------------------------------
+  // SETUP / AUTH GATE
+  // ---------------------------------------------------------------------
+  if (apiBaseUrlIsUnset()) {
+    document.getElementById('rc-loading').style.display = 'none';
+    var err = document.getElementById('rc-error');
+    err.style.display = 'block';
+    err.textContent = 'API_BASE_URL is not set. Edit js/api.js and paste in your Apps Script Web App URL.';
+    return;
+  }
+
+  var token = redirectIfNoToken();
+  if (!token) return; // already redirected to login.html
+
+  startInactivityWatcher();
+
+  document.getElementById('rc-logout-btn').addEventListener('click', function () {
+    fetchApi('logout', { method: 'POST', token: token }).catch(function () {}).finally(function () {
+      clearToken();
+      window.location.href = 'login.html';
+    });
+  });
+
+  document.getElementById('rc-hamburger').addEventListener('click', function () {
+    document.getElementById('rc-sidebar').classList.toggle('rc-sidebar-open');
+  });
+
+  // ---------------------------------------------------------------------
+  // LOAD PROFILE
+  // ---------------------------------------------------------------------
+  fetchApi('getProfile', { token: token })
+    .then(function (data) {
+      if (!data.success) {
+        clearToken();
+        sessionStorage.setItem('raceclub_login_message', 'Your session expired — please log in again.');
+        window.location.href = 'login.html';
+        return;
+      }
+      document.getElementById('rc-loading').style.display = 'none';
+      document.getElementById('rc-profile-root').style.display = 'block';
+      renderProfile(data, token);
+    })
+    .catch(function () {
+      document.getElementById('rc-loading').style.display = 'none';
+      var err = document.getElementById('rc-error');
+      err.style.display = 'block';
+      err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+    });
+
+  // `style` accepts EITHER an inline CSS string ("margin:0;color:red;") OR
+  // a plain class name ("rc-hint") -- disambiguated by whether it contains
+  // a colon. Ported verbatim from the source file's `el()` helper.
+  function el(tag, style, html) {
+    var e = document.createElement(tag);
+    if (style) {
+      if (style.indexOf(':') !== -1) e.style.cssText = style;
+      else e.className = style;
+    }
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // Flat, stroke-based icons (no emoji) -- inline SVG, same set as the
+  // source file.
+  var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+  var ICON_STAR = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
+  var ICON_PEN = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
+
+  // Auto-inserts "/" while typing and blocks anything but digits, so the
+  // field can only ever end up as MM/DD/YYYY -- backed up by the same
+  // format check server-side in handleUpdateOwnProfile.
+  function attachBirthdayFormatter(input) {
+    input.setAttribute('placeholder', 'MM/DD/YYYY');
+    input.setAttribute('maxlength', '10');
+    input.addEventListener('input', function () {
+      var digits = input.value.replace(/[^0-9]/g, '').slice(0, 8);
+      var out = digits;
+      if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+      else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+      input.value = out;
+    });
+  }
+
+  function initials(name) {
+    var parts = (name || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  // ---------------------------------------------------------------------
+  // PROFILE RENDER (ported from the source's renderProfile())
+  // ---------------------------------------------------------------------
+  function renderProfile(profile, token) {
+    var profileSection = document.getElementById('rc-section-profile');
+    profileSection.innerHTML = '';
+
+    var headerWrap = document.createElement('div');
+    headerWrap.className = 'rc-header-wrap';
+    var avatarCol = buildAvatarCol(profile);
+    var headerCard = profileHeaderCard(profile, token);
+    headerWrap.appendChild(avatarCol);
+    headerWrap.appendChild(headerCard);
+    profileSection.appendChild(headerWrap);
+    if (avatarCol.offsetHeight > headerCard.offsetHeight) {
+      headerWrap.style.minHeight = avatarCol.offsetHeight + 'px';
+    }
+
+    if (profile.role === 'Prospect') {
+      var banner = document.createElement('div');
+      banner.className = 'rc-card';
+      banner.style.marginTop = '12px';
+      banner.appendChild(el('div', 'rc-banner',
+        'Your account is a <strong>Prospect</strong> awaiting review by the league admin. You have full access to set up your profile below, and this never affects your race eligibility — it just means League Management tools aren\'t available until you\'re approved.'));
+      profileSection.appendChild(banner);
+    }
+
+    profileSection.appendChild(lockedSectionsBlock(profile));
+
+    if (profile.mustChangePassword) {
+      profileSection.appendChild(passwordChangeSection(token));
+    }
+
+    var perms = profile.permissions || [];
+
+    if (perms.indexOf('manageSchedule') !== -1 || perms.indexOf('uploadResults') !== -1) {
+      document.getElementById('rc-nav-league').style.display = 'flex';
+      var leagueSection = document.createElement('section');
+      leagueSection.id = 'rc-section-league';
+      var mgmt = document.createElement('div');
+      mgmt.className = 'rc-panel';
+      mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
+      mgmt.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
+        'Available to Organizers and Admins. These actions aren\'t wired up yet — the season/round UI is still being designed.'));
+      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+      ['Manage Schedule', 'Upload Race Results', 'Manage Penalties & Bonuses'].forEach(function (label) {
+        var b = el('button', null, label);
+        b.className = 'rc-btn-secondary';
+        b.style.cssText += 'cursor:not-allowed;color:var(--rc-steel);';
+        b.disabled = true;
+        row.appendChild(b);
+      });
+      mgmt.appendChild(row);
+      leagueSection.appendChild(mgmt);
+      document.getElementById('rc-profile-root').appendChild(leagueSection);
+    }
+
+    if (perms.indexOf('manageUsers') !== -1) {
+      document.getElementById('rc-nav-admin').style.display = 'flex';
+      var adminSection = document.createElement('section');
+      adminSection.id = 'rc-section-admin';
+      adminSection.appendChild(approvalQueueSection(token));
+      adminSection.appendChild(accountManagementSection(token, profile.userId));
+      document.getElementById('rc-profile-root').appendChild(adminSection);
+    }
+
+    // Highlight the active nav item on scroll.
+    setupNavHighlight();
+  }
+
+  function setupNavHighlight() {
+    var navItems = Array.prototype.slice.call(document.querySelectorAll('.rc-nav-item'));
+    navItems.forEach(function (item) {
+      item.addEventListener('click', function () {
+        navItems.forEach(function (i) { i.classList.remove('rc-nav-active'); });
+        item.classList.add('rc-nav-active');
+        document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
+      });
+    });
+  }
+
+  // Avatar + role/rookie badges, positioned outside the header card via
+  // absolute positioning (see .rc-avatar-col) so it never eats into the
+  // card's own width.
+  function buildAvatarCol(profile) {
+    var avatarCol = document.createElement('div');
+    avatarCol.className = 'rc-avatar-col';
+
+    var avatar = el('div', null, initials(profile.displayName || profile.username));
+    avatar.className = 'rc-avatar';
+    avatarCol.appendChild(avatar);
+
+    var badgeCol = el('div', null);
+    badgeCol.className = 'rc-badge-col';
+    if (profile.role === 'Prospect') {
+      var prospectPill = el('span', null, 'PROSPECT');
+      prospectPill.className = 'rc-badge-pill rc-badge-pill-red';
+      badgeCol.appendChild(prospectPill);
+    }
+    if (profile.isRookie) {
+      var rookiePill = el('span', null, 'ROOKIE');
+      rookiePill.className = 'rc-badge-pill rc-badge-pill-gray';
+      badgeCol.appendChild(rookiePill);
+    }
+    avatarCol.appendChild(badgeCol);
+
+    return avatarCol;
+  }
+
+  function buildNameLine(profile) {
+    var nameLine = document.createElement('h2');
+    nameLine.className = 'rc-name-line';
+    var nameText = document.createElement('span');
+    nameText.textContent = profile.displayName || profile.username;
+    nameLine.appendChild(nameText);
+    var flag = flagEmoji(profile.country);
+    if (flag) {
+      var flagSpan = document.createElement('span');
+      flagSpan.className = 'rc-flag';
+      flagSpan.setAttribute('aria-hidden', 'true');
+      flagSpan.textContent = flag;
+      nameLine.appendChild(flagSpan);
+    }
+    return nameLine;
+  }
+
+  function profileHeaderCard(profile, token) {
+    var card = document.createElement('div');
+    card.className = 'rc-card';
+
+    var topRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;');
+
+    var nameCol = el('div', 'min-width:0;');
+    var nameLine = buildNameLine(profile);
+    nameCol.appendChild(nameLine);
+    var metaBits = ['@' + profile.username];
+    if (profile.profileId) metaBits.push('Driver Profile: ' + profile.profileId);
+    nameCol.appendChild(el('div', 'rc-meta-row', metaBits.join(' &middot; ')));
+    topRow.appendChild(nameCol);
+
+    var editBtn = document.createElement('button');
+    editBtn.className = 'rc-icon-btn';
+    editBtn.innerHTML = ICON_PEN;
+    editBtn.setAttribute('aria-label', 'Edit profile');
+    editBtn.title = 'Edit profile';
+    topRow.appendChild(editBtn);
+
+    card.appendChild(topRow);
+
+    var viewBlock = el('div', 'margin-top:14px;');
+    renderProfileViewBlock(viewBlock, profile);
+    card.appendChild(viewBlock);
+
+    var editPanel = editProfilePanel(profile, token, function (updated) {
+      Object.assign(profile, updated);
+      viewBlock.innerHTML = '';
+      renderProfileViewBlock(viewBlock, profile);
+      var freshNameLine = buildNameLine(profile);
+      nameLine.replaceWith(freshNameLine);
+      nameLine = freshNameLine;
+      editPanel.style.display = 'none';
+    }, function () {
+      editPanel.style.display = 'none';
+    });
+    editPanel.style.display = 'none';
+    card.appendChild(editPanel);
+
+    editBtn.addEventListener('click', function () {
+      var open = editPanel.style.display !== 'none';
+      editPanel.style.display = open ? 'none' : 'block';
+    });
+
+    return card;
+  }
+
+  function detailItem(label, value, isEmail) {
+    var item = el('div', null);
+    item.appendChild(el('div', 'rc-detail-label', escapeHtml(label)));
+    if (isEmail) {
+      var mailLink = document.createElement('a');
+      mailLink.href = 'mailto:' + value;
+      mailLink.className = 'rc-detail-value';
+      mailLink.style.display = 'block';
+      mailLink.textContent = value;
+      item.appendChild(mailLink);
+    } else {
+      item.appendChild(el('div', 'rc-detail-value', escapeHtml(value)));
+    }
+    return item;
+  }
+
+  function renderProfileViewBlock(container, profile) {
+    if (profile.aboutMe) container.appendChild(el('p', 'rc-about-me', '“' + escapeHtml(profile.aboutMe) + '”'));
+
+    // Fixed display grouping: Time Zone/Birthday/Contact Email always
+    // share one line, Preferred Race Length/Preferred Class always share
+    // the next -- independent of how the edit form's fields are paired.
+    var row1Items = [];
+    if (profile.timeZone) row1Items.push(detailItem('Time Zone', timezoneLabel(profile.timeZone)));
+    if (profile.birthday) row1Items.push(detailItem('Birthday', profile.birthday));
+    if (profile.contactEmail) row1Items.push(detailItem('Contact', profile.contactEmail, true));
+
+    var row2Items = [];
+    if (profile.preferredEventLength) row2Items.push(detailItem('Preferred Race Length', profile.preferredEventLength));
+    if (profile.preferredClass) row2Items.push(detailItem('Preferred Class', profile.preferredClass));
+
+    if (row1Items.length || row2Items.length) {
+      var wrap = el('div', 'rc-details-wrap');
+      if (row1Items.length) {
+        var row1 = el('div', 'rc-details-row');
+        row1Items.forEach(function (item) { row1.appendChild(item); });
+        wrap.appendChild(row1);
+      }
+      if (row2Items.length) {
+        var row2 = el('div', 'rc-details-row-2');
+        row2Items.forEach(function (item) { row2.appendChild(item); });
+        wrap.appendChild(row2);
+      }
+      container.appendChild(wrap);
+    }
+
+    var accomplishments = (profile.accomplishments || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (accomplishments.length) {
+      var block = el('div', 'rc-accomplishments');
+      block.appendChild(el('h4', null, 'Accomplishments'));
+      var list = document.createElement('ul');
+      accomplishments.forEach(function (line) {
+        var li = document.createElement('li');
+        li.textContent = line;
+        list.appendChild(li);
+      });
+      block.appendChild(list);
+      container.appendChild(block);
+    }
+  }
+
+  function buildSelect(options, selectedValue, placeholder) {
+    var select = document.createElement('select');
+    var blankOpt = document.createElement('option');
+    blankOpt.value = ''; blankOpt.textContent = placeholder;
+    select.appendChild(blankOpt);
+    options.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      if (opt === selectedValue) o.selected = true;
+      select.appendChild(o);
+    });
+    return select;
+  }
+
+  function fieldPairRow(labelA, fieldA, labelB, fieldB) {
+    var row = el('div', 'rc-field-pair');
+    var colA = el('div', null);
+    colA.appendChild(el('label', 'margin-top:0;', labelA));
+    colA.appendChild(fieldA);
+    var colB = el('div', null);
+    colB.appendChild(el('label', 'margin-top:0;', labelB));
+    colB.appendChild(fieldB);
+    row.appendChild(colA);
+    row.appendChild(colB);
+    return row;
+  }
+
+  function editProfilePanel(profile, token, onSaved, onCancel) {
+    var panel = el('div', 'margin-top:16px;padding-top:16px;border-top:1px solid var(--rc-silver);');
+
+    var dnInput = el('input'); dnInput.value = profile.displayName || '';
+    var aboutInput = el('input'); aboutInput.value = profile.aboutMe || ''; aboutInput.maxLength = 140;
+
+    var countrySelect = buildSelect(COUNTRIES, profile.country, 'Select a country');
+    var timezoneList = getTimezoneList();
+    var timezoneSelect = buildSelect(timezoneList, profile.timeZone, 'Select a time zone');
+    timezoneList.forEach(function (tz, i) { timezoneSelect.options[i + 1].textContent = timezoneLabel(tz); });
+
+    var birthdayInput = el('input'); birthdayInput.type = 'text'; birthdayInput.value = profile.birthday || '';
+    attachBirthdayFormatter(birthdayInput);
+    var contactEmailInput = el('input'); contactEmailInput.type = 'email'; contactEmailInput.value = profile.contactEmail || ''; contactEmailInput.placeholder = 'you@example.com';
+
+    var eventLengthSelect = buildSelect(EVENT_LENGTHS, profile.preferredEventLength, 'Select a length');
+    var classSelect = buildSelect(PREFERRED_CLASSES, profile.preferredClass, 'Select a class');
+
+    var accomplishmentsInput = document.createElement('textarea');
+    accomplishmentsInput.rows = 3; accomplishmentsInput.value = profile.accomplishments || '';
+
+    function resetFields() {
+      dnInput.value = profile.displayName || '';
+      aboutInput.value = profile.aboutMe || '';
+      countrySelect.value = profile.country || '';
+      timezoneSelect.value = profile.timeZone || '';
+      birthdayInput.value = profile.birthday || '';
+      contactEmailInput.value = profile.contactEmail || '';
+      eventLengthSelect.value = profile.preferredEventLength || '';
+      classSelect.value = profile.preferredClass || '';
+      accomplishmentsInput.value = profile.accomplishments || '';
+      status.textContent = '';
+    }
+
+    var basicsGroup = el('div', 'rc-section');
+    [
+      el('label', 'margin-top:0;', 'Display Name'), dnInput,
+      el('label', null, 'About Me'), aboutInput,
+      el('div', 'rc-hint', 'Describe yourself in one phrase, or insert a fact about yourself.')
+    ].forEach(function (elm) { basicsGroup.appendChild(elm); });
+    panel.appendChild(basicsGroup);
+
+    var detailsGroup = el('div', 'rc-section');
+    detailsGroup.appendChild(fieldPairRow('Country', countrySelect, 'Time Zone', timezoneSelect));
+    detailsGroup.appendChild(fieldPairRow('Birthday', birthdayInput, 'Contact Email', contactEmailInput));
+    detailsGroup.appendChild(fieldPairRow('Preferred Race Length', eventLengthSelect, 'Preferred Class', classSelect));
+    panel.appendChild(detailsGroup);
+
+    var accomplishGroup = el('div', 'rc-section');
+    accomplishGroup.appendChild(el('label', 'margin-top:0;', 'Accomplishments'));
+    accomplishGroup.appendChild(accomplishmentsInput);
+    accomplishGroup.appendChild(el('div', 'rc-hint', 'Competitions you won, accolades, etc. One per line.'));
+    panel.appendChild(accomplishGroup);
+
+    var saveBtn = el('button', null, 'Save Profile');
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.width = 'auto';
+
+    var cancelBtn = el('button', null, 'Cancel');
+    cancelBtn.className = 'rc-btn-secondary';
+    cancelBtn.type = 'button';
+    cancelBtn.style.width = 'auto';
+    cancelBtn.style.marginLeft = '8px';
+    cancelBtn.style.marginTop = '20px';
+    cancelBtn.style.verticalAlign = 'middle';
+    saveBtn.style.verticalAlign = 'middle';
+
+    var status = el('div', 'margin-top:8px;font-size:13px;');
+
+    cancelBtn.addEventListener('click', function () {
+      resetFields();
+      if (onCancel) onCancel();
+    });
+
+    saveBtn.addEventListener('click', function () {
+      if (birthdayInput.value && !/^\d{2}\/\d{2}\/\d{4}$/.test(birthdayInput.value)) {
+        status.style.color = 'var(--rc-red)';
+        status.textContent = 'Birthday must be a complete MM/DD/YYYY date.';
+        return;
+      }
+      saveBtn.disabled = true;
+      var payload = {
+        displayName: dnInput.value.trim(),
+        aboutMe: aboutInput.value.trim(),
+        country: countrySelect.value,
+        timeZone: timezoneSelect.value,
+        birthday: birthdayInput.value.trim(),
+        contactEmail: contactEmailInput.value.trim(),
+        preferredEventLength: eventLengthSelect.value,
+        preferredClass: classSelect.value,
+        accomplishments: accomplishmentsInput.value.trim()
+      };
+      fetchApi('updateOwnProfile', { method: 'POST', token: token, body: payload })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+          status.textContent = data.message || (data.success ? 'Saved.' : 'Could not save.');
+          if (data.success) onSaved(payload);
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          status.style.color = 'var(--rc-red)';
+          status.textContent = 'Could not reach the server. Try again in a moment.';
+        });
+    });
+
+    panel.appendChild(saveBtn);
+    panel.appendChild(cancelBtn);
+    panel.appendChild(status);
+    return panel;
+  }
+
+  // ---------------------------------------------------------------------
+  // "COMING SOON" GAME-MODE SECTIONS — Schedule, Driver Score, Attributes,
+  // Rivalries, Objectives. None of these are computed yet; this just
+  // establishes the visual pattern: greyed out with a lock icon until the
+  // driver's first race is scored (profile.sectionsUnlocked), then a plain
+  // "being built next" note afterward.
+  // ---------------------------------------------------------------------
+  function lockedSectionsBlock(profile) {
+    var wrap = el('div');
+    var sections = [
+      { title: 'Schedule', locked: 'Locks until a season is released and you\'re part of it.', unlocked: 'No upcoming races right now — check back once a round is on the calendar.' },
+      { title: 'Driver Score', locked: 'Locks until your first race is scored.', unlocked: 'Coming soon — being built next.' },
+      { title: 'Attributes', locked: 'Pace, Awareness, Racecraft, Focus, and Experience unlock after your first race.', unlocked: 'Coming soon — being built next.' },
+      { title: 'Rivalries', locked: 'Pick your rivals once you\'ve got a season underway.', unlocked: 'Coming soon — being built next.' },
+      { title: 'Objectives', locked: 'Weekend objectives appear once a season is scheduled.', unlocked: 'Coming soon — being built next.' }
+    ];
+    sections.forEach(function (s) {
+      var box = document.createElement('div');
+      box.className = 'rc-stack-box ' + (profile.sectionsUnlocked ? 'rc-active' : 'rc-locked');
+      var head = el('div', 'rc-box-head');
+      head.innerHTML = '<span class="rc-box-icon">' + (profile.sectionsUnlocked ? ICON_STAR : ICON_LOCK) + '</span><h3>' + s.title + '</h3>';
+      box.appendChild(head);
+      box.appendChild(el('p', 'rc-box-desc', profile.sectionsUnlocked ? s.unlocked : s.locked));
+      wrap.appendChild(box);
+    });
+    return wrap;
+  }
+
+  function passwordChangeSection(token) {
+    var box = document.createElement('div');
+    box.className = 'rc-panel';
+    box.style.borderColor = 'var(--rc-red)';
+    box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Please set a new password'));
+    var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current (temporary) password';
+    var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
+    var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary'; btn.style.width = 'auto'; btn.style.marginTop = '10px';
+    var status = el('div', 'margin-top:8px;font-size:13px;');
+
+    btn.addEventListener('click', function () {
+      fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
+        .then(function (data) {
+          status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+          status.textContent = data.message || (data.success ? 'Updated.' : 'Failed.');
+          if (data.success) { cur.value = ''; next.value = ''; box.remove(); }
+        });
+    });
+
+    box.appendChild(cur); box.appendChild(next); box.appendChild(btn); box.appendChild(status);
+    return box;
+  }
+
+  // ---------------------------------------------------------------------
+  // APPROVAL QUEUE (Admin only) — Prospects grouped by request type
+  // ---------------------------------------------------------------------
+  function approvalQueueSection(token) {
+    var box = document.createElement('div');
+    box.className = 'rc-panel';
+    box.appendChild(el('h3', 'margin-top:0;', 'Pending Approvals'));
+    var body = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
+    box.appendChild(body);
+
+    function actOn(action, userId, extra, onDone) {
+      var payload = Object.assign({ targetUserId: userId }, extra || {});
+      fetchApi(action, { method: 'POST', token: token, body: payload }).then(onDone);
+    }
+
+    function renderEntry(entry, group) {
+      var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
+      row.appendChild(el('div', 'font-weight:600;', entry.realName + ' &middot; @' + entry.username +
+        (group === 'organizer' ? '<span class="rc-badge">ORGANIZER REQUEST</span>' : '')));
+      row.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:2px;',
+        entry.email + (entry.emailVerified ? '' : ' &mdash; email not verified yet')));
+
+      if (entry.emailVerified) {
+        var actions = el('div', 'margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;');
+        var roleSelect = el('select');
+        roleSelect.style.cssText = 'width:auto;display:inline-block;padding:6px;margin:0;height:auto;';
+        ['Driver', 'Organizer'].forEach(function (r) {
+          var opt = el('option', null, r); opt.value = r;
+          if (r === entry.requestedRole) opt.selected = true;
+          roleSelect.appendChild(opt);
+        });
+        var approveBtn = el('button', null, 'Approve'); approveBtn.className = 'rc-btn-primary';
+        approveBtn.style.cssText = 'width:auto;margin-top:0;padding:8px 14px;';
+        var rejectBtn = el('button', null, 'Reject'); rejectBtn.className = 'rc-btn-secondary';
+        var status = el('span', 'font-size:12px;');
+
+        approveBtn.addEventListener('click', function () {
+          actOn('adminApproveAccount', entry.userId, { grantedRole: roleSelect.value }, function (data) {
+            status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+            status.textContent = data.message || '';
+            if (data.success) loadQueue();
+          });
+        });
+        rejectBtn.addEventListener('click', function () {
+          actOn('adminRejectAccount', entry.userId, {}, function (data) {
+            status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+            status.textContent = data.message || '';
+            if (data.success) loadQueue();
+          });
+        });
+
+        actions.appendChild(roleSelect);
+        actions.appendChild(approveBtn);
+        actions.appendChild(rejectBtn);
+        actions.appendChild(status);
+        row.appendChild(actions);
+      }
+      return row;
+    }
+
+    function loadQueue() {
+      fetchApi('adminListPendingAccounts', { token: token })
+        .then(function (data) {
+          body.innerHTML = '';
+          if (!data.success) { body.textContent = data.message || 'Could not load pending accounts.'; return; }
+
+          var total = data.organizerRequests.length + data.driverRequests.length + data.unverifiedSignups.length;
+          if (total === 0) {
+            body.appendChild(el('div', 'color:var(--rc-steel);', 'No pending accounts.'));
+          }
+          if (data.organizerRequests.length) {
+            body.appendChild(el('div', 'font-weight:700;margin-top:10px;color:var(--rc-red);', 'Organizer Requests'));
+            data.organizerRequests.forEach(function (e) { body.appendChild(renderEntry(e, 'organizer')); });
+          }
+          if (data.driverRequests.length) {
+            body.appendChild(el('div', 'font-weight:700;margin-top:10px;', 'Driver Requests'));
+            data.driverRequests.forEach(function (e) { body.appendChild(renderEntry(e, 'driver')); });
+          }
+          if (data.unverifiedSignups.length) {
+            body.appendChild(el('div', 'font-weight:700;margin-top:10px;color:var(--rc-steel);', 'Awaiting Email Verification'));
+            data.unverifiedSignups.forEach(function (e) { body.appendChild(renderEntry(e, 'unverified')); });
+          }
+        });
+    }
+    loadQueue();
+
+    return box;
+  }
+
+  // Accounts are created exclusively through self-service registration
+  // (see the approval queue above) -- there is no "create account" panel
+  // here, matching the source file exactly (its own comment notes this
+  // was deliberately removed there too). Admins can fully edit an
+  // existing account: username, email, role, status, linked ProfileID,
+  // and manually marking email verified.
+  function accountManagementSection(token, currentUserId) {
+    var box = document.createElement('div');
+    box.className = 'rc-panel';
+    box.appendChild(el('h3', 'margin-top:0;', 'Manage Users'));
+
+    var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
+    box.appendChild(listBody);
+
+    function loadUserList() {
+      fetchApi('adminListUsers', { token: token })
+        .then(function (data) {
+          if (!data.success) { listBody.textContent = data.message || 'Could not load users.'; return; }
+          listBody.innerHTML = '';
+          data.users.forEach(function (u) { listBody.appendChild(userRow(u)); });
+        });
+    }
+
+    function userRow(u) {
+      var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
+      var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
+      summary.appendChild(el('div', null,
+        '<strong>' + u.username + '</strong> &middot; ' + u.role + ' &middot; ' + u.status +
+        (u.userId === currentUserId ? ' <span class="rc-badge">YOU</span>' : '')));
+
+      var editBtn = el('button', null, 'Edit');
+      editBtn.className = 'rc-btn-secondary';
+      editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+      summary.appendChild(editBtn);
+      wrap.appendChild(summary);
+
+      var panel = el('div', 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--rc-silver);');
+
+      var unameInput = el('input'); unameInput.value = u.username;
+      var emailInput = el('input'); emailInput.value = u.email || ''; emailInput.placeholder = 'Email';
+      var roleSelect = el('select');
+      ['Driver', 'Organizer', 'Admin', 'Prospect'].forEach(function (r) {
+        var opt = el('option', null, r); opt.value = r; if (r === u.role) opt.selected = true; roleSelect.appendChild(opt);
+      });
+      var statusSelect = el('select');
+      ['Active', 'Disabled'].forEach(function (s) {
+        var opt = el('option', null, s); opt.value = s; if (s === u.status) opt.selected = true; statusSelect.appendChild(opt);
+      });
+      var pidInput = el('input'); pidInput.value = u.profileId || ''; pidInput.placeholder = 'ProfileID (e.g. RC-00001)';
+
+      var verifiedLabel = el('label', 'display:flex;align-items:center;gap:6px;font-weight:400;margin-top:10px;text-transform:none;letter-spacing:normal;');
+      var verifiedCheck = el('input'); verifiedCheck.type = 'checkbox'; verifiedCheck.style.cssText = 'width:auto;height:auto;margin:0;';
+      verifiedCheck.checked = !!u.emailVerified;
+      verifiedLabel.appendChild(verifiedCheck);
+      verifiedLabel.appendChild(document.createTextNode('Email verified'));
+
+      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary';
+      saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveStatus = el('div', 'margin-top:6px;font-size:13px;');
+
+      [el('label', 'margin-top:0;', 'Username'), unameInput,
+        el('label', null, 'Email'), emailInput,
+        el('label', null, 'Role'), roleSelect,
+        el('label', null, 'Status'), statusSelect,
+        el('label', null, 'Driver Profile'), pidInput,
+        verifiedLabel
+      ].forEach(function (elm) { panel.appendChild(elm); });
+
+      if (u.userId === currentUserId) {
+        statusSelect.disabled = true; // self-lockout protection, also enforced server-side
+        panel.appendChild(el('div', 'rc-hint', "You can't disable your own account."));
+      }
+
+      saveBtn.addEventListener('click', function () {
+        fetchApi('adminUpdateUser', {
+          method: 'POST', token: token, body: {
+            targetUserId: u.userId,
+            username: unameInput.value.trim(),
+            email: emailInput.value.trim(),
+            role: roleSelect.value,
+            status: statusSelect.value,
+            profileId: pidInput.value.trim(),
+            emailVerified: verifiedCheck.checked
+          }
+        })
+          .then(function (data) {
+            saveStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+            saveStatus.textContent = data.message || (data.success ? 'Saved.' : 'Could not save.');
+            if (data.success) loadUserList();
+          });
+      });
+      panel.appendChild(saveBtn);
+      panel.appendChild(saveStatus);
+
+      // Password reset stays a separate, deliberate action -- tucked below
+      // the main fields rather than mixed into the Save button above.
+      var resetWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
+      resetWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'RESET PASSWORD'));
+      var newPass = el('input'); newPass.type = 'password'; newPass.placeholder = 'New temporary password (6+ chars)';
+      newPass.style.marginTop = '6px';
+      var resetBtn = el('button', null, 'Reset Password'); resetBtn.className = 'rc-btn-secondary';
+      resetBtn.style.cssText = 'width:auto;margin-top:8px;padding:6px 12px;font-size:12px;';
+      var resetStatus = el('div', 'margin-top:6px;font-size:13px;');
+      resetBtn.addEventListener('click', function () {
+        fetchApi('adminResetPassword', { method: 'POST', token: token, body: { targetUserId: u.userId, newPassword: newPass.value } })
+          .then(function (data) {
+            resetStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
+            resetStatus.textContent = data.message || '';
+            if (data.success) newPass.value = '';
+          });
+      });
+      resetWrap.appendChild(newPass); resetWrap.appendChild(resetBtn); resetWrap.appendChild(resetStatus);
+      panel.appendChild(resetWrap);
+
+      wrap.appendChild(panel);
+
+      editBtn.addEventListener('click', function () {
+        var open = panel.style.display !== 'none';
+        panel.style.display = open ? 'none' : 'block';
+        editBtn.textContent = open ? 'Edit' : 'Close';
+      });
+
+      return wrap;
+    }
+
+    loadUserList();
+    return box;
+  }
+})();
+</script>
+</body>
+</html>

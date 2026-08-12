@@ -1,0 +1,467 @@
+/*
+  Race Club — css/style.css  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  The source file scoped every rule under a single #rc-root selector
+  because it had to coexist inside a Sites page's own styles with no
+  guaranteed isolation. On real, separate pages we don't need that
+  defensive scoping (each page owns its whole <body>), so this is a normal
+  sitewide stylesheet loaded via <link rel="stylesheet" href="css/style.css">
+  on every page. The #rc-root ::-webkit-scrollbar hiding hack and the
+  iframe-resize-driven layout assumptions are gone entirely — see
+  js/auth.js and each page's header comment for the rest of the Sites
+  workarounds that were removed.
+
+  This is also a full reskin: new color system (white / off-white / cool
+  silver / steel blue / carbon black / racing red), Oswald for headings/
+  nav/buttons, Inter for body text, a dark sidebar shell for the
+  authenticated pages, and a small checkered-flag accent used sparingly.
+  All functional behavior (forms, validation, badges, panels) is preserved
+  from the source; only the visual language changed.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --rc-white: #FFFFFF;
+  --rc-offwhite: #F5F5F3;
+  --rc-silver: #D8DDE1;
+  --rc-steel: #536575;
+  --rc-carbon: #171717;
+  --rc-red: #F21B0C;
+  --rc-red-dark: #c81509;
+  --rc-ok: #2e7d32;
+
+  --rc-font-heading: 'Oswald', Impact, sans-serif;
+  --rc-font-body: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--rc-offwhite);
+  color: var(--rc-carbon);
+  font-family: var(--rc-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--rc-font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rc-carbon);
+  margin: 0;
+}
+
+a { color: var(--rc-red); }
+a:hover { color: var(--rc-red-dark); }
+
+p { margin: 0 0 0.75em; }
+
+/* -------------------------------------------------------------------- */
+/* Checkered-flag accent — small, restrained, used under headings/logos */
+/* -------------------------------------------------------------------- */
+.rc-checker {
+  width: 64px;
+  height: 8px;
+  margin: 10px auto 0;
+  background-image:
+    conic-gradient(var(--rc-carbon) 90deg, var(--rc-red) 90deg 180deg, var(--rc-carbon) 180deg 270deg, var(--rc-red) 270deg);
+  background-size: 8px 8px;
+}
+.rc-checker.rc-checker-left { margin: 10px 0 0; }
+
+/* -------------------------------------------------------------------- */
+/* Buttons */
+/* -------------------------------------------------------------------- */
+.rc-btn-primary {
+  display: inline-block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+.rc-btn-primary:hover { background: var(--rc-red-dark); }
+.rc-btn-primary:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
+
+.rc-btn-secondary {
+  padding: 8px 14px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--rc-silver);
+  border-radius: 4px;
+  background: var(--rc-white);
+  color: var(--rc-carbon);
+  cursor: pointer;
+}
+.rc-btn-secondary:hover { background: var(--rc-offwhite); }
+
+.rc-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--rc-red);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: var(--rc-font-body);
+}
+
+.rc-icon-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  border: 1px solid var(--rc-silver);
+  background: var(--rc-white);
+  color: var(--rc-steel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.rc-icon-btn:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
+.rc-icon-btn svg { display: block; }
+
+/* -------------------------------------------------------------------- */
+/* Cards / panels */
+/* -------------------------------------------------------------------- */
+.rc-card {
+  padding: 20px;
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  background: var(--rc-white);
+}
+.rc-panel {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  background: var(--rc-white);
+}
+
+/* -------------------------------------------------------------------- */
+/* Forms */
+/* -------------------------------------------------------------------- */
+input, select, textarea {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-family: var(--rc-font-body);
+  border: 1px solid var(--rc-silver);
+  border-radius: 4px;
+  margin-top: 4px;
+  background: var(--rc-white);
+  color: var(--rc-carbon);
+}
+input, select { height: 44px; }
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--rc-red);
+  box-shadow: 0 0 0 1px var(--rc-red);
+}
+
+label {
+  display: block;
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rc-carbon);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rc-section { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--rc-silver); }
+.rc-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+.rc-hint { color: var(--rc-steel); font-size: 12px; margin-top: 4px; }
+.rc-hint.rc-ok { color: var(--rc-ok); }
+.rc-hint.rc-error { color: var(--rc-red); }
+
+.rc-message { margin-top: 14px; font-size: 14px; }
+.rc-message.rc-error { color: var(--rc-red); }
+.rc-message.rc-ok { color: var(--rc-ok); }
+
+.rc-banner {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff1ef;
+  border: 1px solid var(--rc-red);
+  color: var(--rc-carbon);
+}
+
+.rc-role-info {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  font-size: 12px;
+  color: var(--rc-carbon);
+  line-height: 1.5;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
+
+.rc-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* -------------------------------------------------------------------- */
+/* Verification code boxes */
+/* -------------------------------------------------------------------- */
+.rc-code-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0 0; }
+.rc-code-box {
+  width: 42px;
+  height: 52px;
+  padding: 0;
+  margin-top: 0;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.rc-code-box:focus { outline: none; border-color: var(--rc-red); box-shadow: 0 0 0 1px var(--rc-red); }
+.rc-code-box.rc-code-error { border-color: var(--rc-red); }
+
+/* -------------------------------------------------------------------- */
+/* Auth pages (login/register/verify) — centered card layout */
+/* -------------------------------------------------------------------- */
+.rc-auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+}
+.rc-auth-logo { width: 220px; max-width: 70vw; display: block; margin: 0 auto; }
+.rc-auth-wrap { width: 100%; max-width: 420px; }
+.rc-auth-wrap h1 {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 22px;
+}
+.rc-auth-subhead {
+  text-align: center;
+  margin-top: 24px;
+}
+.rc-auth-footer { text-align: center; font-size: 13px; margin-top: 16px; }
+
+/* -------------------------------------------------------------------- */
+/* Authenticated shell (profile.html) — sidebar + main content */
+/* -------------------------------------------------------------------- */
+.rc-shell { display: flex; min-height: 100vh; }
+
+.rc-sidebar {
+  width: 220px;
+  flex: none;
+  background: var(--rc-carbon);
+  color: var(--rc-white);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+}
+.rc-sidebar-logo { width: 140px; display: block; margin: 0 auto; }
+.rc-sidebar-nav { margin-top: 32px; display: flex; flex-direction: column; gap: 4px; }
+.rc-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  color: #cfd4d8;
+  text-decoration: none;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.rc-nav-item svg { flex: none; }
+.rc-nav-item:hover { background: #262626; color: var(--rc-white); }
+.rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
+.rc-sidebar-spacer { flex: 1; }
+.rc-sidebar-logout {
+  margin-top: 24px;
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  color: #cfd4d8;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.rc-sidebar-logout:hover { background: #262626; color: var(--rc-white); border-color: #555; }
+
+.rc-main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 40px 64px;
+}
+.rc-main h2 { font-size: 20px; }
+
+.rc-topbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--rc-carbon);
+  padding: 12px 16px;
+}
+.rc-topbar-logo { height: 28px; }
+.rc-hamburger {
+  background: none;
+  border: none;
+  color: var(--rc-white);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+@media (max-width: 768px) {
+  .rc-shell { flex-direction: column; }
+  .rc-sidebar { display: none; }
+  .rc-sidebar.rc-sidebar-open { display: flex; width: 100%; }
+  .rc-topbar { display: flex; }
+  .rc-main { padding: 20px 16px 48px; }
+}
+
+/* -------------------------------------------------------------------- */
+/* Profile header card */
+/* -------------------------------------------------------------------- */
+.rc-header-wrap { position: relative; }
+.rc-avatar-col {
+  position: absolute;
+  top: 0;
+  left: -112px;
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.rc-avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 10px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rc-font-heading);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.rc-badge-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rc-badge-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--rc-white);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.rc-badge-pill-red { background: var(--rc-red); }
+.rc-badge-pill-gray { background: var(--rc-steel); }
+
+@media (max-width: 900px) {
+  .rc-avatar-col { position: static; left: auto; width: auto; flex-direction: row; margin-bottom: 12px; }
+}
+
+.rc-bio-text { font-size: 14px; line-height: 1.5; margin-top: 12px; color: var(--rc-carbon); }
+.rc-meta-row { font-size: 12px; color: var(--rc-steel); margin-top: 4px; }
+.rc-social-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.rc-social-chip {
+  display: inline-block;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 14px;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  color: var(--rc-red);
+  text-decoration: none;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-box-head { display: flex; align-items: center; gap: 10px; }
+.rc-box-head h3 { margin: 0; font-size: 14px; }
+.rc-box-icon { display: inline-flex; color: var(--rc-steel); flex: none; }
+.rc-box-icon svg { display: block; }
+.rc-box-desc { font-size: 13px; color: var(--rc-steel); margin: 8px 0 0; }
+.rc-stack-box { margin-top: 12px; padding: 20px 24px; border-radius: 8px; background: var(--rc-offwhite); }
+.rc-stack-box.rc-locked { border: 1px dashed var(--rc-silver); opacity: 0.75; }
+.rc-stack-box.rc-locked .rc-box-icon { color: var(--rc-steel); }
+.rc-stack-box.rc-active { border: 1px solid var(--rc-silver); background: var(--rc-white); }
+.rc-stack-box.rc-active .rc-box-icon { color: var(--rc-red); }
+
+.rc-name-line { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 24px; }
+.rc-flag { font-size: 20px; line-height: 1; }
+.rc-about-me { font-size: 14px; font-style: italic; color: var(--rc-carbon); margin: 6px 0 0; font-family: var(--rc-font-body); text-transform: none; letter-spacing: normal; }
+.rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
+.rc-field-pair:first-child { margin-top: 0; }
+.rc-field-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 16px; margin-top: 18px; }
+.rc-field-trio:first-child { margin-top: 0; }
+.rc-details-wrap { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
+.rc-details-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 20px; }
+.rc-details-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; margin-top: 12px; }
+.rc-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
+.rc-detail-value { font-size: 14px; color: var(--rc-carbon); margin-top: 2px; }
+.rc-accomplishments { margin-top: 14px; }
+.rc-accomplishments h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
+.rc-accomplishments ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--rc-carbon); font-family: var(--rc-font-body); }
+
+@media (max-width: 900px) {
+  .rc-details-row { grid-template-columns: 1fr; }
+  .rc-details-row-2 { grid-template-columns: 1fr; }
+  .rc-field-pair, .rc-field-trio { grid-template-columns: 1fr; }
+}

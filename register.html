@@ -1,0 +1,210 @@
+<!--
+  Race Club — register.html  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  This is the source file's "REGISTER VIEW" pulled out into its own real
+  page. Field names, validation rules (required time zone, live
+  password-match check, 6-char password minimum), and the Driver/Organizer
+  role explainer copy are preserved verbatim from the source. The
+  timezone dropdown is now populated from js/reference-data.js (shared
+  with profile.html) instead of a copy of the same ~50-line list baked
+  into this page.
+
+  On success, this page stashes the registered username in sessionStorage
+  ('raceclub_pending_username') and navigates to verify.html — the source
+  swapped to an in-page "verification code" view instead, using an
+  in-memory JS variable, since registration and verification were the
+  same embed.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create an Account — Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/reference-data.js"></script>
+</head>
+<body>
+<div class="rc-auth-page">
+  <img class="rc-auth-logo" src="assets/race-club-logo.png" alt="Race Club">
+  <div class="rc-checker"></div>
+  <div class="rc-auth-wrap" style="max-width:460px;">
+    <h1>Create an Account</h1>
+
+    <div id="rc-setup-warning" class="rc-message rc-error" style="display:none;text-align:center;"></div>
+
+    <div class="rc-card" style="margin-top:24px;">
+      <form id="rc-register-form">
+        <div class="rc-section">
+          <label style="margin-top:0;">Username</label>
+          <input id="rc-reg-username" type="text" autocomplete="username" required>
+          <div class="rc-hint">This is what you'll log in with — it isn't shown publicly.</div>
+
+          <label>Real Name</label>
+          <input id="rc-reg-realname" type="text" autocomplete="name" required>
+          <div class="rc-hint">Use your real name, exactly as you'd want it recognized — this is how the league admin links your account to your race results.</div>
+
+          <label>Email Address</label>
+          <input id="rc-reg-email" type="email" autocomplete="email" required>
+          <div class="rc-hint">You'll get a 6-digit code by email to verify this address before you can log in — this keeps bots and fake signups out.</div>
+
+          <label>Time Zone</label>
+          <select id="rc-reg-timezone" required></select>
+          <div class="rc-hint">Used to show the race schedule in your local time.</div>
+        </div>
+
+        <div class="rc-section">
+          <label style="margin-top:0;">Password</label>
+          <input id="rc-reg-password" type="password" autocomplete="new-password" required minlength="6">
+          <div class="rc-hint">At least 6 characters.</div>
+
+          <label>Confirm Password</label>
+          <input id="rc-reg-password2" type="password" autocomplete="new-password" required minlength="6">
+          <div id="rc-reg-password-match" class="rc-hint"></div>
+        </div>
+
+        <div class="rc-section">
+          <label style="margin-top:0;">I'm signing up as a...</label>
+          <select id="rc-reg-role">
+            <option value="Driver">Driver</option>
+            <option value="Organizer">Organizer</option>
+          </select>
+          <div class="rc-role-info">
+            <strong>Driver</strong> — Race in Race Club events and build a career profile. Most people want this.<br><br>
+            <strong>Organizer</strong> — Driver access, plus scheduling, results, and penalty/bonus management once approved. Pick this if you're helping run the league.<br><br>
+            Either way, your account starts as a <strong>Prospect</strong> with full profile access right away — approval never affects your race eligibility.
+          </div>
+        </div>
+
+        <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
+      </form>
+      <div id="rc-register-message" class="rc-message"></div>
+    </div>
+    <p class="rc-auth-footer">
+      Already have an account? <button type="button" class="rc-link-btn" onclick="window.location.href='login.html'">Log in</button>
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  if (apiBaseUrlIsUnset()) {
+    var warn = document.getElementById('rc-setup-warning');
+    warn.style.display = 'block';
+    warn.textContent = 'API_BASE_URL is not set. Edit js/api.js and paste in your Apps Script Web App URL.';
+    document.getElementById('rc-register-form').querySelectorAll('input,select,button').forEach(function (i) { i.disabled = true; });
+    return;
+  }
+
+  if (getToken()) {
+    window.location.replace('profile.html');
+    return;
+  }
+
+  function populateRegisterTimezone() {
+    var select = document.getElementById('rc-reg-timezone');
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = 'Select a time zone';
+    select.appendChild(blank);
+    getTimezoneList().forEach(function (tz) {
+      var opt = document.createElement('option');
+      opt.value = tz; opt.textContent = timezoneLabel(tz);
+      select.appendChild(opt);
+    });
+  }
+  populateRegisterTimezone();
+
+  // ---------------------------------------------------------------------
+  // REGISTER — live password-match check, checked on every keystroke in
+  // either password field rather than waiting for the submit click.
+  // ---------------------------------------------------------------------
+  var regPassword = document.getElementById('rc-reg-password');
+  var regPassword2 = document.getElementById('rc-reg-password2');
+  var regPasswordMatch = document.getElementById('rc-reg-password-match');
+  var regBtn = document.getElementById('rc-register-btn');
+
+  function checkPasswordMatch() {
+    var p1 = regPassword.value;
+    var p2 = regPassword2.value;
+    if (!p2) {
+      regPasswordMatch.className = 'rc-hint';
+      regPasswordMatch.textContent = '';
+      regBtn.disabled = false;
+      return true;
+    }
+    var matches = p1 === p2;
+    regPasswordMatch.className = matches ? 'rc-hint rc-ok' : 'rc-hint rc-error';
+    regPasswordMatch.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
+    regBtn.disabled = !matches;
+    return matches;
+  }
+  regPassword.addEventListener('input', checkPasswordMatch);
+  regPassword2.addEventListener('input', checkPasswordMatch);
+
+  document.getElementById('rc-register-form').addEventListener('submit', function (evt) {
+    evt.preventDefault();
+    var btn = document.getElementById('rc-register-btn');
+    var msg = document.getElementById('rc-register-message');
+    msg.className = 'rc-message';
+    msg.textContent = '';
+
+    var username = document.getElementById('rc-reg-username').value.trim();
+    var realName = document.getElementById('rc-reg-realname').value.trim();
+    var email = document.getElementById('rc-reg-email').value.trim();
+    var timeZone = document.getElementById('rc-reg-timezone').value;
+    var password = document.getElementById('rc-reg-password').value;
+    var requestedRole = document.getElementById('rc-reg-role').value;
+
+    if (!timeZone) {
+      msg.className = 'rc-message rc-error';
+      msg.textContent = 'Please select a time zone.';
+      return;
+    }
+    if (!checkPasswordMatch()) {
+      return;
+    }
+    if (password.length < 6) {
+      msg.className = 'rc-message rc-error';
+      msg.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    fetchApi('register', {
+      method: 'POST',
+      body: {
+        username: username, realName: realName, email: email, timeZone: timeZone,
+        password: password, requestedRole: requestedRole
+      }
+    })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+        if (!data.success) {
+          msg.className = 'rc-message rc-error';
+          msg.textContent = data.message || 'Could not create account.';
+          return;
+        }
+        // Use the server's actual message rather than assuming success --
+        // handleRegister() returns a different message when the account
+        // was created but the verification email itself failed to send.
+        sessionStorage.setItem('raceclub_pending_username', username);
+        sessionStorage.setItem('raceclub_verify_message', data.message || 'Account created. Check your email for a verification code before logging in.');
+        window.location.href = 'verify.html';
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+        msg.className = 'rc-message rc-error';
+        msg.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+      });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!--
+  Race Club — index.html  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  The source file was one embed that checked localStorage on load and
+  toggled between an internal login view and an internal profile view.
+  Now that login and profile live on separate real pages, this file's only
+  job is to be the site root: check localStorage for a saved session
+  token and redirect to the right page. It does not itself verify the
+  token is still valid server-side — profile.html does that (and bounces
+  back to login.html if the token has expired) — this is just a fast
+  first hop so a returning driver doesn't have to click through login.html
+  by hand.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/auth.js"></script>
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  <p style="color:var(--rc-steel);font-family:var(--rc-font-body);">Loading...</p>
+  <script>
+    if (getToken()) {
+      window.location.replace('profile.html');
+    } else {
+      window.location.replace('login.html');
+    }
+  </script>
+</body>
+</html>
