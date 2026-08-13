@@ -13,15 +13,25 @@
   workarounds that were removed.
 
   This is also a full reskin: new color system (white / off-white / cool
-  silver / steel blue / carbon black / racing red), Oswald for headings/
-  nav/buttons, Inter for body text, a dark sidebar shell for the
-  authenticated pages, and a small checkered-flag accent used sparingly.
-  All functional behavior (forms, validation, badges, panels) is preserved
-  from the source; only the visual language changed.
+  silver / steel blue / carbon black / racing red) for the authenticated
+  shell (sidebar/dashboard), a dark sidebar for those pages, and a small
+  checkered-flag accent used sparingly. All functional behavior (forms,
+  validation, badges, panels) is preserved from the source; only the
+  visual language changed.
+
+  FONTS (updated): the site originally used Oswald (headings/nav/buttons)
+  + Inter (body) via Google Fonts. Per a later request to match the
+  original Sites-era login page's fonts and keep the whole site coherent,
+  --rc-font-heading/--rc-font-body were both changed to the same plain
+  system font stack the original login page used (no Google Fonts import
+  needed anymore) -- see the auth-page section below for the rest of that
+  match (colors, background, spacing scoped to .rc-auth-page only).
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
+/* Font choice matches the original Sites-era login page exactly (plain
+   system font stack, no Google Fonts) -- applied once here via the shared
+   --rc-font-* variables so every page pulls from the same source instead
+   of each page picking its own fonts. */
 :root {
   --rc-white: #FFFFFF;
   --rc-offwhite: #F5F5F3;
@@ -32,8 +42,8 @@
   --rc-red-dark: #c81509;
   --rc-ok: #2e7d32;
 
-  --rc-font-heading: 'Oswald', Impact, sans-serif;
-  --rc-font-body: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -46,6 +56,17 @@ html, body {
   font-family: var(--rc-font-body);
   font-size: 15px;
   line-height: 1.5;
+  /* Belt-and-suspenders against any element (the hero banner especially)
+     bleeding past the screen edge on mobile/tablet. The hero itself is
+     already pinned to left:0/right:0, which is bounded by the viewport --
+     but if ANYTHING else on the page is even one pixel wider than the
+     viewport, the browser grows the whole scrollable area to fit it,
+     which then makes fixed left:0/right:0 elements span that WIDER area
+     instead of the visible screen. overflow-x:hidden here means even if
+     something does overflow, it gets clipped instead of dragging the
+     hero along with it. */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 h1, h2, h3, h4 {
@@ -257,7 +278,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-code-box.rc-code-error { border-color: var(--rc-red); }
 
 /* -------------------------------------------------------------------- */
-/* Auth pages (login/register/verify) — centered card layout */
+/* Auth pages (login/register/verify) — centered card layout           */
+/*                                                                       */
+/* Colors/background/spacing here are scoped to .rc-auth-page on        */
+/* purpose, matching the original Sites-era login screen exactly        */
+/* (white page, off-white/gray card, the original red/black/gray hex    */
+/* values) without repainting the rest of the site (sidebar, dashboard, */
+/* header) which keeps the newer palette. CSS custom properties         */
+/* redeclared on .rc-auth-page cascade to every var(--rc-red) etc.      */
+/* reference inside it, so .rc-card/.rc-btn-primary/.rc-checker/links   */
+/* all pick up the old colors automatically with no other rule changes. */
 /* -------------------------------------------------------------------- */
 .rc-auth-page {
   min-height: 100vh;
@@ -266,13 +296,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
+  background: #ffffff;
+  --rc-red: #ed230d;
+  --rc-red-dark: #c81c0a;
+  --rc-carbon: #1a1a1a;
+  --rc-steel: #8c8c8c;
+  --rc-silver: #dbdbdb;
 }
-.rc-auth-logo { width: 220px; max-width: 70vw; display: block; margin: 0 auto; }
+.rc-auth-page .rc-card { background: #f4f4f4; border-radius: 10px; }
 .rc-auth-wrap { width: 100%; max-width: 420px; }
 .rc-auth-wrap h1 {
-  margin: 20px 0 0;
+  margin: 0 0 24px;
   text-align: center;
   font-size: 22px;
+  letter-spacing: 0.03em;
 }
 .rc-auth-subhead {
   text-align: center;
@@ -294,8 +331,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   flex-direction: column;
   padding: 24px 16px;
 }
-.rc-sidebar-logo { width: 140px; display: block; margin: 0 auto; }
+.rc-sidebar-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
 .rc-sidebar-nav { margin-top: 32px; display: flex; flex-direction: column; gap: 4px; }
+.rc-nav-divider { border: none; border-top: 1px solid #3a3a3a; margin: 12px 4px; }
 .rc-nav-item {
   display: flex;
   align-items: center;
@@ -318,24 +370,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-nav-item svg { flex: none; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
-.rc-sidebar-spacer { flex: 1; }
-.rc-sidebar-logout {
-  margin-top: 24px;
-  width: 100%;
-  padding: 10px;
-  background: transparent;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  color: #cfd4d8;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.rc-sidebar-logout:hover { background: #262626; color: var(--rc-white); border-color: #555; }
-
 .rc-main {
   flex: 1;
   min-width: 0;
@@ -568,6 +602,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   top: 72px;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100vw;
   height: calc(100vh - 72px);
   z-index: 1;
   background-size: cover;
