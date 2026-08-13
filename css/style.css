@@ -465,3 +465,182 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   .rc-details-row-2 { grid-template-columns: 1fr; }
   .rc-field-pair, .rc-field-trio { grid-template-columns: 1fr; }
 }
+
+/* -------------------------------------------------------------------- */
+/* Shared fixed header (js/header.js) — every page                      */
+/* -------------------------------------------------------------------- */
+.rc-fixed-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 72px;
+  background: var(--rc-white);
+  border-bottom: 1px solid var(--rc-silver);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  z-index: 1000;
+}
+.rc-header-logo-link { display: flex; align-items: center; height: 100%; }
+.rc-header-logo { height: 38px; display: block; }
+.rc-header-nav { display: flex; align-items: center; gap: 12px; }
+.rc-header-link {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-carbon);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.rc-header-link:hover { color: var(--rc-red); }
+.rc-header-sep { color: var(--rc-silver); font-size: 13px; }
+
+.rc-header-account { position: relative; }
+.rc-header-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 150px;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(23, 23, 23, 0.10);
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  z-index: 1001;
+}
+.rc-header-dropdown a, .rc-header-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 16px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rc-carbon);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.rc-header-dropdown a:hover, .rc-header-dropdown button:hover { background: var(--rc-offwhite); color: var(--rc-red); }
+.rc-header-account.rc-header-dropdown-open .rc-header-dropdown { display: flex; }
+@media (hover: hover) {
+  .rc-header-account:hover .rc-header-dropdown { display: flex; }
+}
+
+/* Pages other than index.html sit below the fixed header. */
+.rc-auth-page { padding-top: 72px; }
+.rc-shell { padding-top: 72px; }
+.rc-topbar { margin-top: 72px; }
+
+/* -------------------------------------------------------------------- */
+/* index.html — hero banner + scroll-cover effect                       */
+/*                                                                       */
+/* The hero image is `position: fixed`, pinned just under the header,   */
+/* and a same-height spacer sits in the normal document flow above it   */
+/* so the page has real scroll distance. Because the hero is fixed it   */
+/* never moves; what makes it look "covered" is that the very next      */
+/* element after the spacer (.rc-hero-content) is a normal in-flow,     */
+/* opaque, higher-z-index block, so as the page scrolls that block      */
+/* slides up and passes directly over the fixed hero, hiding it. This   */
+/* is the reliable version of the effect: plain `position: sticky` on   */
+/* the hero with a lower z-index than its sibling does NOT reliably     */
+/* produce a "covered" look in every browser, because a sticky element  */
+/* and its following sibling don't automatically form the stacking      */
+/* relationship needed — you can end up with the sticky banner stuck    */
+/* under the header the whole time with nothing ever drawing over it,   */
+/* depending on how their stacking contexts resolve. Fixed + spacer     */
+/* sidesteps that entirely: it's plain document flow + z-index, no      */
+/* dependence on sticky's positioning quirks.                           */
+/* -------------------------------------------------------------------- */
+.rc-hero-spacer { height: 100vh; }
+.rc-hero {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  height: calc(100vh - 72px);
+  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--rc-carbon);
+}
+.rc-hero-content {
+  position: relative;
+  z-index: 2;
+  background: var(--rc-white);
+}
+.rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
+.rc-landing-inner h2 { font-size: 26px; }
+.rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }
+.rc-tier-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 28px; }
+.rc-tier-card { flex: 1; min-width: 220px; text-align: center; }
+.rc-tier-card h3 { font-size: 17px; }
+.rc-tier-label {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.rc-tier-card p { font-size: 13px; color: var(--rc-steel); margin-top: 10px; }
+.rc-tier-gold .rc-tier-label { color: #b8860b; }
+.rc-tier-silver .rc-tier-label { color: var(--rc-steel); }
+.rc-tier-bronze .rc-tier-label { color: #a05a2c; }
+.rc-landing-footer {
+  text-align: center;
+  padding: 22px 24px;
+  font-size: 12px;
+  color: var(--rc-steel);
+  border-top: 1px solid var(--rc-silver);
+}
+
+/* -------------------------------------------------------------------- */
+/* profile.html dashboard — placeholder widget cards                    */
+/* -------------------------------------------------------------------- */
+.rc-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
+.rc-widget-card { opacity: 0.9; }
+.rc-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rc-widget-title { font-size: 12px; letter-spacing: 0.05em; }
+.rc-coming-soon-badge {
+  flex: none;
+  font-family: var(--rc-font-heading);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--rc-offwhite);
+  color: var(--rc-steel);
+  border: 1px solid var(--rc-silver);
+  padding: 3px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.rc-widget-body { margin-top: 12px; }
+.rc-widget-big { font-family: var(--rc-font-heading); font-size: 28px; color: var(--rc-carbon); }
+.rc-widget-sub { font-size: 12px; color: var(--rc-steel); margin-top: 6px; }
+.rc-meter { height: 8px; border-radius: 4px; background: var(--rc-offwhite); border: 1px solid var(--rc-silver); overflow: hidden; }
+.rc-meter-fill { height: 100%; background: var(--rc-red); }
+.rc-checklist { display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--rc-steel); }
+.rc-checklist label { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 400; text-transform: none; letter-spacing: normal; font-family: var(--rc-font-body); }
+.rc-checklist input { width: auto; height: auto; margin: 0; }
+.rc-widget-body table td { font-size: 12px; }
+
+/* Simple centered "coming soon" panels — Calendar/Results/Career/etc. */
+.rc-placeholder-panel { text-align: center; padding: 90px 20px; }
+.rc-placeholder-panel p { margin-top: 10px; }
+
+/* Forced password-change lock screen (mustChangePassword) */
+.rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
+.rc-forced-password-wrap > p { color: var(--rc-steel); margin-bottom: 14px; }
