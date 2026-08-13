@@ -20,7 +20,7 @@
 // Paste your deployed Apps Script Web App URL here (Deploy > Manage
 // deployments > Web app > URL). Every page on this site reads it from
 // here — you only need to change it in this one place.
-var API_BASE_URL = 'https://script.google.com/macros/s/PASTE_YOUR_DEPLOYMENT_ID/exec';
+var API_BASE_URL = 'https://script.google.com/macros/s/AKfycbz3jhxWDanYIywi8vn2YYQVwq2MO68tZA4RJpj5fXmUa5ckLo0QpT_lrAwqpsHPnQUV/exec';
 // ----------------------------------
 
 // True when API_BASE_URL is still the placeholder above. Pages should
