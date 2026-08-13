@@ -1,39 +1,42 @@
 <!--
-  Race Club — profile.html  (v0.2.5, GitHub Pages edition)
+  Race Club — profile.html  (v0.3.0, career-dashboard edition)
 
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  This is the source file's "PROFILE VIEW" (plus the League Management,
-  admin approval queue, and admin account management sections it built
-  underneath it) pulled out into its own real, authenticated page. All the
-  actual logic — profile rendering, the edit-profile panel, the
-  30-minute inactivity auto-logout, the mustChangePassword forced
-  password-change box, the League Management placeholder buttons, the
-  admin approval queue, and the admin account management panel — is
-  ported over field-for-field and API-call-for-API-call from the source's
-  renderProfile()/editProfilePanel()/approvalQueueSection()/
-  accountManagementSection() functions. Nothing new was added: no
-  finances/reputation/sponsors stats, no avatar picker, no new admin
-  actions beyond what the source already called.
+  WHAT CHANGED VS. v0.2.5:
+  The sidebar used to have 3 anchor links (Profile / League Management /
+  Admin) that scroll-jumped down one long page. It's now a real 9-item
+  primary nav (Dashboard / Calendar / Results / Career / Reputation /
+  Finances / Sponsors / Hall of Fame / Settings) plus the same two
+  permission-gated items as before (League Management, Admin), and
+  clicking an item shows only that section's <section> element and hides
+  the rest (see showSection() below) instead of scrolling.
 
-  What's actually different:
-  - redirectIfNoToken() (js/auth.js) replaces the source's "check
-    localStorage, else show login view" logic — this page assumes it's
-    only ever reached with a valid-looking token and bounces to
-    login.html immediately if not (getProfile still re-validates it
-    server-side after that, same as the source's loadProfile()).
-  - The reportHeight()/iframe-resize hack is gone entirely — this is a
-    normal page, the browser handles its own scrolling.
-  - Real left-hand sidebar navigation (Profile / League Management /
-    Admin) replaces the source's single continuously-scrolling embed —
-    the nav items scroll-jump to the matching section further down this
-    same page (all sections still live on this one page, per the
-    "small friend-group site" call — no separate league.html/admin.html
-    files). Nav items for sections the current user can't use
-    (League Management needs manageSchedule/uploadResults, Admin needs
-    manageUsers) are hidden entirely, same gating the source used to
-    decide whether to render those sections at all.
-  - A responsive top bar with a hamburger toggle stands in for the
-    sidebar below ~768px width (see css/style.css .rc-topbar).
+  IMPORTANT — nothing about the underlying business logic changed:
+  - profileHeaderCardView()/renderProfileViewBlock()/buildAvatarCol()/
+    lockedSectionsBlock() are the same profile-card rendering as before,
+    just now living inside the Dashboard section instead of one big
+    "Profile" section.
+  - editProfilePanel() and passwordChangeSection() are copied verbatim
+    (same fields, same fetchApi() calls, same validation) from v0.2.5 —
+    they just render inside the Settings section now instead of behind
+    the header card's pencil-icon toggle. See the code comment above
+    renderSettingsSection() for the one small, deliberate behavior change
+    this required (the pencil-icon show/hide toggle went away since the
+    form is always visible in its own section now).
+  - approvalQueueSection() and accountManagementSection() are untouched —
+    same admin API calls, same fields — just appended into the Admin
+    section's static container instead of a section built on the fly.
+  - The League Management placeholder-buttons block is untouched.
+  - mustChangePassword still forces a password change before anything
+    else is usable — see renderProfile()/observePasswordBoxRemoval()
+    below for how that's now implemented against the section-based nav
+    (previously it was just another box on the one long page; now it
+    replaces the whole dashboard until resolved, since there's no longer
+    a single page for it to sit within).
+  - The 30-minute inactivity auto-logout, the auth gate, and the Log Out
+    button behavior are all unchanged.
+
+  The shared fixed header (js/header.js) is now included too, same as
+  every other page.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -45,10 +48,14 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/reference-data.js"></script>
+<script src="js/header.js"></script>
 </head>
 <body>
 
-<div class="rc-topbar">
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<div class="rc-topbar" id="rc-topbar">
   <img class="rc-topbar-logo" src="assets/race-club-logo.png" alt="Race Club">
   <button class="rc-hamburger" id="rc-hamburger" aria-label="Menu">&#9776;</button>
 </div>
@@ -57,20 +64,8 @@
   <aside class="rc-sidebar" id="rc-sidebar">
     <img class="rc-sidebar-logo" src="assets/race-club-logo.png" alt="Race Club">
     <div class="rc-checker"></div>
-    <nav class="rc-sidebar-nav">
-      <a class="rc-nav-item rc-nav-active" href="#rc-section-profile">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>
-        Profile
-      </a>
-      <a class="rc-nav-item" href="#rc-section-league" id="rc-nav-league" style="display:none;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        League Management
-      </a>
-      <a class="rc-nav-item" href="#rc-section-admin" id="rc-nav-admin" style="display:none;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
-        Admin
-      </a>
-    </nav>
+    <!-- Filled in by buildSidebarNav() below -->
+    <nav class="rc-sidebar-nav" id="rc-sidebar-nav"></nav>
     <div class="rc-sidebar-spacer"></div>
     <button class="rc-sidebar-logout" id="rc-logout-btn">Log Out</button>
   </aside>
@@ -78,8 +73,23 @@
   <main class="rc-main">
     <div id="rc-loading" style="color:var(--rc-steel);">Loading your profile...</div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
+
+    <!-- Forced password-change lock screen -- shown instead of the
+         normal dashboard whenever profile.mustChangePassword is true. -->
+    <div id="rc-forced-password" style="display:none;"></div>
+
     <div id="rc-profile-root" style="display:none;">
-      <section id="rc-section-profile"></section>
+      <section id="rc-section-dashboard" class="rc-content-section"></section>
+      <section id="rc-section-calendar" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-results" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-reputation" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-finances" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-settings" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
     </div>
   </main>
 </div>
@@ -87,7 +97,7 @@
 <script>
 (function () {
   // ---------------------------------------------------------------------
-  // SETUP / AUTH GATE
+  // SETUP / AUTH GATE (unchanged from v0.2.5)
   // ---------------------------------------------------------------------
   if (apiBaseUrlIsUnset()) {
     document.getElementById('rc-loading').style.display = 'none';
@@ -114,7 +124,7 @@
   });
 
   // ---------------------------------------------------------------------
-  // LOAD PROFILE
+  // LOAD PROFILE (unchanged from v0.2.5)
   // ---------------------------------------------------------------------
   fetchApi('getProfile', { token: token })
     .then(function (data) {
@@ -137,7 +147,7 @@
 
   // `style` accepts EITHER an inline CSS string ("margin:0;color:red;") OR
   // a plain class name ("rc-hint") -- disambiguated by whether it contains
-  // a colon. Ported verbatim from the source file's `el()` helper.
+  // a colon. Unchanged from v0.2.5.
   function el(tag, style, html) {
     var e = document.createElement(tag);
     if (style) {
@@ -154,15 +164,45 @@
     return d.innerHTML;
   }
 
-  // Flat, stroke-based icons (no emoji) -- inline SVG, same set as the
-  // source file.
+  // Flat, stroke-based icons (no emoji) -- inline SVG, same technique as
+  // v0.2.5's ICON_LOCK/ICON_STAR/ICON_PEN, extended with one icon per new
+  // sidebar item.
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
   var ICON_STAR = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
   var ICON_PEN = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
 
+  var ICON_NAV_STAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
+  var ICON_DASHBOARD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>';
+  var ICON_CALENDAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+  var ICON_RESULTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="19" y1="20" x2="19" y2="14"></line></svg>';
+  var ICON_CAREER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  var ICON_FINANCES = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 6H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H7"></path></svg>';
+  var ICON_SPONSORS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12l-8 8-9-9V4h7z"></path><circle cx="7.5" cy="7.5" r="1"></circle></svg>';
+  var ICON_HALLOFFAME = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M7 5H4a3 3 0 0 0 3 4"></path><path d="M17 5h3a3 3 0 0 1-3 4"></path></svg>';
+  var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
+  var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
+  var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
+
+  // Primary 9-item nav, in the exact order requested. League Management
+  // and Admin are appended separately below since they're permission-
+  // gated rather than always shown.
+  var NAV_ITEMS = [
+    { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
+    { id: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
+    { id: 'results', label: 'Results', icon: ICON_RESULTS },
+    { id: 'career', label: 'Career', icon: ICON_CAREER },
+    { id: 'reputation', label: 'Reputation', icon: ICON_NAV_STAR },
+    { id: 'finances', label: 'Finances', icon: ICON_FINANCES },
+    { id: 'sponsors', label: 'Sponsors', icon: ICON_SPONSORS },
+    { id: 'halloffame', label: 'Hall of Fame', icon: ICON_HALLOFFAME },
+    { id: 'settings', label: 'Settings', icon: ICON_SETTINGS }
+  ];
+
+  var PLACEHOLDER_SECTION_IDS = ['calendar', 'results', 'career', 'reputation', 'finances', 'sponsors', 'halloffame'];
+
   // Auto-inserts "/" while typing and blocks anything but digits, so the
   // field can only ever end up as MM/DD/YYYY -- backed up by the same
-  // format check server-side in handleUpdateOwnProfile.
+  // format check server-side in handleUpdateOwnProfile. Unchanged.
   function attachBirthdayFormatter(input) {
     input.setAttribute('placeholder', 'MM/DD/YYYY');
     input.setAttribute('maxlength', '10');
@@ -183,89 +223,54 @@
   }
 
   // ---------------------------------------------------------------------
-  // PROFILE RENDER (ported from the source's renderProfile())
+  // SIDEBAR NAV + SECTION SWITCHING
   // ---------------------------------------------------------------------
-  function renderProfile(profile, token) {
-    var profileSection = document.getElementById('rc-section-profile');
-    profileSection.innerHTML = '';
-
-    var headerWrap = document.createElement('div');
-    headerWrap.className = 'rc-header-wrap';
-    var avatarCol = buildAvatarCol(profile);
-    var headerCard = profileHeaderCard(profile, token);
-    headerWrap.appendChild(avatarCol);
-    headerWrap.appendChild(headerCard);
-    profileSection.appendChild(headerWrap);
-    if (avatarCol.offsetHeight > headerCard.offsetHeight) {
-      headerWrap.style.minHeight = avatarCol.offsetHeight + 'px';
-    }
-
-    if (profile.role === 'Prospect') {
-      var banner = document.createElement('div');
-      banner.className = 'rc-card';
-      banner.style.marginTop = '12px';
-      banner.appendChild(el('div', 'rc-banner',
-        'Your account is a <strong>Prospect</strong> awaiting review by the league admin. You have full access to set up your profile below, and this never affects your race eligibility — it just means League Management tools aren\'t available until you\'re approved.'));
-      profileSection.appendChild(banner);
-    }
-
-    profileSection.appendChild(lockedSectionsBlock(profile));
-
-    if (profile.mustChangePassword) {
-      profileSection.appendChild(passwordChangeSection(token));
-    }
-
-    var perms = profile.permissions || [];
-
-    if (perms.indexOf('manageSchedule') !== -1 || perms.indexOf('uploadResults') !== -1) {
-      document.getElementById('rc-nav-league').style.display = 'flex';
-      var leagueSection = document.createElement('section');
-      leagueSection.id = 'rc-section-league';
-      var mgmt = document.createElement('div');
-      mgmt.className = 'rc-panel';
-      mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
-      mgmt.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
-        'Available to Organizers and Admins. These actions aren\'t wired up yet — the season/round UI is still being designed.'));
-      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
-      ['Manage Schedule', 'Upload Race Results', 'Manage Penalties & Bonuses'].forEach(function (label) {
-        var b = el('button', null, label);
-        b.className = 'rc-btn-secondary';
-        b.style.cssText += 'cursor:not-allowed;color:var(--rc-steel);';
-        b.disabled = true;
-        row.appendChild(b);
-      });
-      mgmt.appendChild(row);
-      leagueSection.appendChild(mgmt);
-      document.getElementById('rc-profile-root').appendChild(leagueSection);
-    }
-
-    if (perms.indexOf('manageUsers') !== -1) {
-      document.getElementById('rc-nav-admin').style.display = 'flex';
-      var adminSection = document.createElement('section');
-      adminSection.id = 'rc-section-admin';
-      adminSection.appendChild(approvalQueueSection(token));
-      adminSection.appendChild(accountManagementSection(token, profile.userId));
-      document.getElementById('rc-profile-root').appendChild(adminSection);
-    }
-
-    // Highlight the active nav item on scroll.
-    setupNavHighlight();
+  function makeNavButton(id, label, icon, elId, hiddenByDefault) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rc-nav-item';
+    btn.dataset.section = id;
+    if (elId) btn.id = elId;
+    if (hiddenByDefault) btn.style.display = 'none';
+    btn.innerHTML = icon + '<span>' + escapeHtml(label) + '</span>';
+    btn.addEventListener('click', function () { showSection(id); });
+    return btn;
   }
 
-  function setupNavHighlight() {
-    var navItems = Array.prototype.slice.call(document.querySelectorAll('.rc-nav-item'));
-    navItems.forEach(function (item) {
-      item.addEventListener('click', function () {
-        navItems.forEach(function (i) { i.classList.remove('rc-nav-active'); });
-        item.classList.add('rc-nav-active');
-        document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
-      });
+  function buildSidebarNav() {
+    var nav = document.getElementById('rc-sidebar-nav');
+    nav.innerHTML = '';
+    NAV_ITEMS.forEach(function (item) {
+      nav.appendChild(makeNavButton(item.id, item.label, item.icon));
     });
+    // These two stay hidden (display:none, set by makeNavButton's
+    // hiddenByDefault flag) until renderProfile() below decides the
+    // current user's permissions unlock them -- same gating the old
+    // #rc-nav-league/#rc-nav-admin elements used.
+    nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
+    nav.appendChild(makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true));
   }
 
-  // Avatar + role/rookie badges, positioned outside the header card via
-  // absolute positioning (see .rc-avatar-col) so it never eats into the
-  // card's own width.
+  // Shows exactly one .rc-content-section and marks the matching sidebar
+  // item active -- this replaces v0.2.5's anchor-scroll + highlight-only
+  // behavior now that each nav item maps to genuinely different content.
+  function showSection(id) {
+    document.querySelectorAll('.rc-content-section').forEach(function (s) { s.style.display = 'none'; });
+    var target = document.getElementById('rc-section-' + id);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('.rc-nav-item').forEach(function (btn) {
+      btn.classList.toggle('rc-nav-active', btn.dataset.section === id);
+    });
+    document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
+  }
+
+  // ---------------------------------------------------------------------
+  // PROFILE HEADER CARD (view-only) — ported from v0.2.5's
+  // profileHeaderCard(), minus the pencil-icon edit toggle, since editing
+  // now lives entirely in the Settings section (see renderSettingsSection
+  // below). Every other bit of markup/behavior here (avatar column,
+  // name/flag line, meta row, view block) is identical.
+  // ---------------------------------------------------------------------
   function buildAvatarCol(profile) {
     var avatarCol = document.createElement('div');
     avatarCol.className = 'rc-avatar-col';
@@ -308,51 +313,24 @@
     return nameLine;
   }
 
-  function profileHeaderCard(profile, token) {
+  function profileHeaderCardView(profile) {
     var card = document.createElement('div');
     card.className = 'rc-card';
 
     var topRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;');
 
     var nameCol = el('div', 'min-width:0;');
-    var nameLine = buildNameLine(profile);
-    nameCol.appendChild(nameLine);
+    nameCol.appendChild(buildNameLine(profile));
     var metaBits = ['@' + profile.username];
     if (profile.profileId) metaBits.push('Driver Profile: ' + profile.profileId);
     nameCol.appendChild(el('div', 'rc-meta-row', metaBits.join(' &middot; ')));
     topRow.appendChild(nameCol);
-
-    var editBtn = document.createElement('button');
-    editBtn.className = 'rc-icon-btn';
-    editBtn.innerHTML = ICON_PEN;
-    editBtn.setAttribute('aria-label', 'Edit profile');
-    editBtn.title = 'Edit profile';
-    topRow.appendChild(editBtn);
 
     card.appendChild(topRow);
 
     var viewBlock = el('div', 'margin-top:14px;');
     renderProfileViewBlock(viewBlock, profile);
     card.appendChild(viewBlock);
-
-    var editPanel = editProfilePanel(profile, token, function (updated) {
-      Object.assign(profile, updated);
-      viewBlock.innerHTML = '';
-      renderProfileViewBlock(viewBlock, profile);
-      var freshNameLine = buildNameLine(profile);
-      nameLine.replaceWith(freshNameLine);
-      nameLine = freshNameLine;
-      editPanel.style.display = 'none';
-    }, function () {
-      editPanel.style.display = 'none';
-    });
-    editPanel.style.display = 'none';
-    card.appendChild(editPanel);
-
-    editBtn.addEventListener('click', function () {
-      var open = editPanel.style.display !== 'none';
-      editPanel.style.display = open ? 'none' : 'block';
-    });
 
     return card;
   }
@@ -445,8 +423,15 @@
     return row;
   }
 
+  // ---------------------------------------------------------------------
+  // EDIT PROFILE FORM — identical fields/validation/fetchApi('updateOwnProfile')
+  // call as v0.2.5's editProfilePanel(). Only the outer show/hide wiring
+  // changed: v0.2.5 toggled this panel open/closed behind a pencil icon on
+  // the header card; now it always renders inline in the Settings section,
+  // so onCancel just resets the fields instead of hiding a panel.
+  // ---------------------------------------------------------------------
   function editProfilePanel(profile, token, onSaved, onCancel) {
-    var panel = el('div', 'margin-top:16px;padding-top:16px;border-top:1px solid var(--rc-silver);');
+    var panel = el('div');
 
     var dnInput = el('input'); dnInput.value = profile.displayName || '';
     var aboutInput = el('input'); aboutInput.value = profile.aboutMe || ''; aboutInput.maxLength = 140;
@@ -559,10 +544,10 @@
 
   // ---------------------------------------------------------------------
   // "COMING SOON" GAME-MODE SECTIONS — Schedule, Driver Score, Attributes,
-  // Rivalries, Objectives. None of these are computed yet; this just
-  // establishes the visual pattern: greyed out with a lock icon until the
-  // driver's first race is scored (profile.sectionsUnlocked), then a plain
-  // "being built next" note afterward.
+  // Rivalries, Objectives. Unchanged from v0.2.5: greyed out with a lock
+  // icon until the driver's first race is scored (profile.sectionsUnlocked),
+  // then a plain "being built next" note afterward. Still lives on the
+  // Dashboard, directly under the profile header card.
   // ---------------------------------------------------------------------
   function lockedSectionsBlock(profile) {
     var wrap = el('div');
@@ -585,12 +570,110 @@
     return wrap;
   }
 
+  // ---------------------------------------------------------------------
+  // DASHBOARD — placeholder widget cards (Bank Balance, Reputation,
+  // Season Progress, Recent Results, Objectives, Sponsor Status). None of
+  // this data exists in the backend yet -- every value below is a dash or
+  // a "coming soon" string, and every card carries the "Coming Soon"
+  // badge so it reads as intentionally unfinished, not broken.
+  // ---------------------------------------------------------------------
+  function widgetCard(title, bodyHtml) {
+    var card = el('div', 'rc-card rc-widget-card');
+    var head = el('div', 'rc-widget-head');
+    head.appendChild(el('h4', 'rc-widget-title', title));
+    head.appendChild(el('span', 'rc-coming-soon-badge', 'Coming Soon'));
+    card.appendChild(head);
+    card.appendChild(el('div', 'rc-widget-body', bodyHtml));
+    return card;
+  }
+
+  function buildDashboardWidgets() {
+    var grid = el('div', 'rc-dash-grid');
+
+    grid.appendChild(widgetCard('Bank Balance',
+      '<div class="rc-widget-big">$--</div><p class="rc-widget-sub">Career earnings tracking is coming soon.</p>'));
+
+    grid.appendChild(widgetCard('Reputation',
+      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No reputation data yet.</p>'));
+
+    grid.appendChild(widgetCard('Season Progress',
+      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No active season.</p>'));
+
+    grid.appendChild(widgetCard('Recent Results',
+      '<table><tr><td style="text-align:center;color:var(--rc-steel);padding:16px 0;">No results yet</td></tr></table>'));
+
+    grid.appendChild(widgetCard('Objectives',
+      '<div class="rc-checklist">' +
+        '<label><input type="checkbox" disabled> --</label>' +
+        '<label><input type="checkbox" disabled> --</label>' +
+        '<label><input type="checkbox" disabled> --</label>' +
+      '</div>'));
+
+    grid.appendChild(widgetCard('Sponsor Status',
+      '<p class="rc-widget-sub">No sponsor relationships yet.</p>'));
+
+    return grid;
+  }
+
+  // Builds the Dashboard section: the real profile header card, the
+  // Prospect banner (if applicable), the locked "coming soon" game-mode
+  // stack, then the new placeholder widgets.
+  function renderDashboardSection(profile, token) {
+    var section = document.getElementById('rc-section-dashboard');
+    section.innerHTML = '';
+
+    var headerWrap = document.createElement('div');
+    headerWrap.className = 'rc-header-wrap';
+    var avatarCol = buildAvatarCol(profile);
+    var headerCard = profileHeaderCardView(profile);
+    headerWrap.appendChild(avatarCol);
+    headerWrap.appendChild(headerCard);
+    section.appendChild(headerWrap);
+    if (avatarCol.offsetHeight > headerCard.offsetHeight) {
+      headerWrap.style.minHeight = avatarCol.offsetHeight + 'px';
+    }
+
+    if (profile.role === 'Prospect') {
+      var banner = document.createElement('div');
+      banner.className = 'rc-card';
+      banner.style.marginTop = '12px';
+      banner.appendChild(el('div', 'rc-banner',
+        'Your account is a <strong>Prospect</strong> awaiting review by the league admin. You have full access to set up your profile below, and this never affects your race eligibility — it just means League Management tools aren\'t available until you\'re approved.'));
+      section.appendChild(banner);
+    }
+
+    section.appendChild(lockedSectionsBlock(profile));
+    section.appendChild(buildDashboardWidgets());
+  }
+
+  // ---------------------------------------------------------------------
+  // SETTINGS — the real edit-profile form + the real change-password
+  // form, relocated here unchanged (see editProfilePanel()/
+  // passwordChangeSection() above/below).
+  // ---------------------------------------------------------------------
+  function renderSettingsSection(profile, token) {
+    var section = document.getElementById('rc-section-settings');
+    section.innerHTML = '';
+
+    var editWrap = el('div', 'rc-panel');
+    editWrap.appendChild(el('h3', 'margin-top:0;', 'Edit Profile'));
+    editWrap.appendChild(editProfilePanel(profile, token, function (updated) {
+      Object.assign(profile, updated);
+      // Refresh the Dashboard's header card too, in case the user flips
+      // back over to it in this same session.
+      renderDashboardSection(profile, token);
+    }, function () { /* Cancel just resets the fields — nothing to hide anymore. */ }));
+    section.appendChild(editWrap);
+
+    section.appendChild(passwordChangeSection(token));
+  }
+
   function passwordChangeSection(token) {
     var box = document.createElement('div');
     box.className = 'rc-panel';
     box.style.borderColor = 'var(--rc-red)';
-    box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Please set a new password'));
-    var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current (temporary) password';
+    box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
+    var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password';
     var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
     var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary'; btn.style.width = 'auto'; btn.style.marginTop = '10px';
     var status = el('div', 'margin-top:8px;font-size:13px;');
@@ -609,7 +692,30 @@
   }
 
   // ---------------------------------------------------------------------
-  // APPROVAL QUEUE (Admin only) — Prospects grouped by request type
+  // SIMPLE "COMING SOON" PLACEHOLDER PANELS — Calendar, Results, Career,
+  // Reputation, Finances, Sponsors, Hall of Fame. No fake data, just a
+  // centered heading + message, per spec.
+  // ---------------------------------------------------------------------
+  var PLACEHOLDER_LABELS = {
+    calendar: 'Calendar', results: 'Results', career: 'Career',
+    reputation: 'Reputation', finances: 'Finances', sponsors: 'Sponsors',
+    halloffame: 'Hall of Fame'
+  };
+
+  function renderPlaceholderSections() {
+    PLACEHOLDER_SECTION_IDS.forEach(function (id) {
+      var section = document.getElementById('rc-section-' + id);
+      section.innerHTML = '';
+      var wrap = el('div', 'rc-placeholder-panel');
+      wrap.appendChild(el('h2', null, PLACEHOLDER_LABELS[id]));
+      wrap.appendChild(el('p', 'color:var(--rc-steel);', 'Coming soon.'));
+      section.appendChild(wrap);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // APPROVAL QUEUE (Admin only) — Prospects grouped by request type.
+  // Unchanged from v0.2.5.
   // ---------------------------------------------------------------------
   function approvalQueueSection(token) {
     var box = document.createElement('div');
@@ -699,10 +805,9 @@
 
   // Accounts are created exclusively through self-service registration
   // (see the approval queue above) -- there is no "create account" panel
-  // here, matching the source file exactly (its own comment notes this
-  // was deliberately removed there too). Admins can fully edit an
-  // existing account: username, email, role, status, linked ProfileID,
-  // and manually marking email verified.
+  // here, matching v0.2.5 exactly. Admins can fully edit an existing
+  // account: username, email, role, status, linked ProfileID, and
+  // manually marking email verified. Unchanged from v0.2.5.
   function accountManagementSection(token, currentUserId) {
     var box = document.createElement('div');
     box.className = 'rc-panel';
@@ -824,6 +929,102 @@
 
     loadUserList();
     return box;
+  }
+
+  // ---------------------------------------------------------------------
+  // LEAGUE MANAGEMENT (unwired placeholder buttons) — unchanged from
+  // v0.2.5, just relocated into the static #rc-section-league container.
+  // ---------------------------------------------------------------------
+  function renderLeagueSection() {
+    document.getElementById('rc-nav-league').style.display = 'flex';
+    var leagueSection = document.getElementById('rc-section-league');
+    leagueSection.innerHTML = '';
+    var mgmt = document.createElement('div');
+    mgmt.className = 'rc-panel';
+    mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
+    mgmt.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
+      'Available to Organizers and Admins. These actions aren\'t wired up yet — the season/round UI is still being designed.'));
+    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+    ['Manage Schedule', 'Upload Race Results', 'Manage Penalties & Bonuses'].forEach(function (label) {
+      var b = el('button', null, label);
+      b.className = 'rc-btn-secondary';
+      b.style.cssText += 'cursor:not-allowed;color:var(--rc-steel);';
+      b.disabled = true;
+      row.appendChild(b);
+    });
+    mgmt.appendChild(row);
+    leagueSection.appendChild(mgmt);
+  }
+
+  function renderAdminSection(profile, token) {
+    document.getElementById('rc-nav-admin').style.display = 'flex';
+    var adminSection = document.getElementById('rc-section-admin');
+    adminSection.innerHTML = '';
+    adminSection.appendChild(approvalQueueSection(token));
+    adminSection.appendChild(accountManagementSection(token, profile.userId));
+  }
+
+  // ---------------------------------------------------------------------
+  // TOP-LEVEL RENDER
+  // ---------------------------------------------------------------------
+  function buildFullProfileUI(profile, token) {
+    buildSidebarNav();
+    renderDashboardSection(profile, token);
+    renderPlaceholderSections();
+    renderSettingsSection(profile, token);
+
+    var perms = profile.permissions || [];
+    if (perms.indexOf('manageSchedule') !== -1 || perms.indexOf('uploadResults') !== -1) {
+      renderLeagueSection();
+    }
+    if (perms.indexOf('manageUsers') !== -1) {
+      renderAdminSection(profile, token);
+    }
+
+    showSection('dashboard');
+  }
+
+  // mustChangePassword forces a password change before the driver can do
+  // anything else -- in v0.2.5 that was just another box on one long
+  // scrolling page; with real section-based nav there's no single page
+  // for it to sit within, so instead the whole sidebar/section UI stays
+  // hidden and #rc-forced-password shows ONLY the (unchanged)
+  // passwordChangeSection() form until it succeeds. passwordChangeSection
+  // removes its own box from the DOM on a successful change (see its
+  // `box.remove()` call) -- rather than modifying that function to add a
+  // callback, a MutationObserver watches for that removal and then builds
+  // the normal dashboard, so the forced-password logic itself is 100%
+  // untouched from v0.2.5.
+  function renderProfile(profile, token) {
+    if (profile.mustChangePassword) {
+      document.getElementById('rc-sidebar').style.display = 'none';
+      document.getElementById('rc-topbar').style.display = 'none';
+
+      var lockWrap = document.getElementById('rc-forced-password');
+      lockWrap.style.display = 'block';
+      lockWrap.innerHTML = '';
+
+      var container = el('div', 'rc-forced-password-wrap');
+      container.appendChild(el('p', null, 'For security, please set a new password before continuing to your profile.'));
+      var box = passwordChangeSection(token);
+      container.appendChild(box);
+      lockWrap.appendChild(container);
+
+      var observer = new MutationObserver(function () {
+        if (!document.body.contains(box)) {
+          observer.disconnect();
+          lockWrap.style.display = 'none';
+          document.getElementById('rc-sidebar').style.display = '';
+          document.getElementById('rc-topbar').style.display = '';
+          profile.mustChangePassword = false;
+          buildFullProfileUI(profile, token);
+        }
+      });
+      observer.observe(container, { childList: true, subtree: true });
+      return;
+    }
+
+    buildFullProfileUI(profile, token);
   }
 })();
 </script>
