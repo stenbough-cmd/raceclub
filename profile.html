@@ -62,12 +62,15 @@
 
 <div class="rc-shell">
   <aside class="rc-sidebar" id="rc-sidebar">
-    <img class="rc-sidebar-logo" src="assets/race-club-logo.png" alt="Race Club">
+    <!-- Filled in once the profile loads (buildFullProfileUI), same
+         initials-avatar treatment as the Dashboard header card. -->
+    <div class="rc-sidebar-avatar" id="rc-sidebar-avatar">?</div>
     <div class="rc-checker"></div>
-    <!-- Filled in by buildSidebarNav() below -->
+    <!-- Filled in by buildSidebarNav() below. Log Out lives inside this
+         list now (right after Settings) instead of pinned to the bottom
+         of the sidebar -- see buildSidebarNav() for the exact order and
+         where the two divider lines go. -->
     <nav class="rc-sidebar-nav" id="rc-sidebar-nav"></nav>
-    <div class="rc-sidebar-spacer"></div>
-    <button class="rc-sidebar-logout" id="rc-logout-btn">Log Out</button>
   </aside>
 
   <main class="rc-main">
@@ -112,12 +115,16 @@
 
   startInactivityWatcher();
 
-  document.getElementById('rc-logout-btn').addEventListener('click', function () {
+  // Called by the Logout nav item built in buildSidebarNav() below --
+  // it used to be a static button wired here directly, but Logout now
+  // lives inside the dynamically-built nav list itself, right after
+  // Settings, so it's a named function the nav builder can attach instead.
+  function doLogout() {
     fetchApi('logout', { method: 'POST', token: token }).catch(function () {}).finally(function () {
       clearToken();
       window.location.href = 'login.html';
     });
-  });
+  }
 
   document.getElementById('rc-hamburger').addEventListener('click', function () {
     document.getElementById('rc-sidebar').classList.toggle('rc-sidebar-open');
@@ -182,6 +189,7 @@
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
+  var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
 
   // Primary 9-item nav, in the exact order requested. League Management
   // and Admin are appended separately below since they're permission-
@@ -225,7 +233,9 @@
   // ---------------------------------------------------------------------
   // SIDEBAR NAV + SECTION SWITCHING
   // ---------------------------------------------------------------------
-  function makeNavButton(id, label, icon, elId, hiddenByDefault) {
+  // onClick defaults to showSection(id); Logout overrides it with doLogout
+  // instead, since it's not a section at all.
+  function makeNavButton(id, label, icon, elId, hiddenByDefault, onClick) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'rc-nav-item';
@@ -233,20 +243,36 @@
     if (elId) btn.id = elId;
     if (hiddenByDefault) btn.style.display = 'none';
     btn.innerHTML = icon + '<span>' + escapeHtml(label) + '</span>';
-    btn.addEventListener('click', function () { showSection(id); });
+    btn.addEventListener('click', onClick || function () { showSection(id); });
     return btn;
   }
 
+  function navDivider(elId) {
+    var hr = document.createElement('hr');
+    hr.className = 'rc-nav-divider';
+    if (elId) hr.id = elId;
+    return hr;
+  }
+
+  // Order, per Matt's call: the 8 section links, a divider, Settings,
+  // Log Out, then -- ONLY if League Management and/or Admin end up
+  // visible for this user's permissions -- a second divider followed by
+  // whichever of those two apply. If neither applies, Log Out is simply
+  // the last item in the list with no trailing line (the second divider
+  // and both permission-gated buttons start hidden and stay that way
+  // unless renderLeagueSection()/renderAdminSection() unhide them below).
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
-    NAV_ITEMS.forEach(function (item) {
+    NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
       nav.appendChild(makeNavButton(item.id, item.label, item.icon));
     });
-    // These two stay hidden (display:none, set by makeNavButton's
-    // hiddenByDefault flag) until renderProfile() below decides the
-    // current user's permissions unlock them -- same gating the old
-    // #rc-nav-league/#rc-nav-admin elements used.
+    nav.appendChild(navDivider());
+    var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
+    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
+    nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
+    nav.appendChild(navDivider('rc-nav-divider-2'));
+    document.getElementById('rc-nav-divider-2').style.display = 'none';
     nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
     nav.appendChild(makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true));
   }
@@ -937,6 +963,7 @@
   // ---------------------------------------------------------------------
   function renderLeagueSection() {
     document.getElementById('rc-nav-league').style.display = 'flex';
+    document.getElementById('rc-nav-divider-2').style.display = 'block';
     var leagueSection = document.getElementById('rc-section-league');
     leagueSection.innerHTML = '';
     var mgmt = document.createElement('div');
@@ -958,6 +985,7 @@
 
   function renderAdminSection(profile, token) {
     document.getElementById('rc-nav-admin').style.display = 'flex';
+    document.getElementById('rc-nav-divider-2').style.display = 'block';
     var adminSection = document.getElementById('rc-section-admin');
     adminSection.innerHTML = '';
     adminSection.appendChild(approvalQueueSection(token));
@@ -968,6 +996,9 @@
   // TOP-LEVEL RENDER
   // ---------------------------------------------------------------------
   function buildFullProfileUI(profile, token) {
+    var sidebarAvatar = document.getElementById('rc-sidebar-avatar');
+    if (sidebarAvatar) sidebarAvatar.textContent = initials(profile.displayName || profile.realName || profile.username);
+
     buildSidebarNav();
     renderDashboardSection(profile, token);
     renderPlaceholderSections();
