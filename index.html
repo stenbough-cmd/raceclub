@@ -1,16 +1,19 @@
 <!--
-  Race Club — index.html  (v0.2.5, GitHub Pages edition)
+  Race Club — index.html  (v0.3.0, hero landing page)
 
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  The source file was one embed that checked localStorage on load and
-  toggled between an internal login view and an internal profile view.
-  Now that login and profile live on separate real pages, this file's only
-  job is to be the site root: check localStorage for a saved session
-  token and redirect to the right page. It does not itself verify the
-  token is still valid server-side — profile.html does that (and bounces
-  back to login.html if the token has expired) — this is just a fast
-  first hop so a returning driver doesn't have to click through login.html
-  by hand.
+  WHAT CHANGED VS. v0.2.5:
+  index.html used to be a pure redirect gate (check localStorage, bounce
+  to profile.html or login.html, never actually render). It's now a real
+  landing page: fixed site header (js/header.js) on top, a full-bleed hero
+  banner below it with a "content slides up and covers the banner as you
+  scroll" effect, a short tagline blurb, and the three class tiers as
+  simple cards. See the .rc-hero / .rc-hero-spacer / .rc-hero-content
+  rules in css/style.css for exactly how the scroll-cover effect is built
+  and why fixed+spacer was chosen over `position: sticky`.
+
+  There is no login/session logic on this page beyond what js/header.js
+  already provides (it reads getToken() itself to decide whether to show
+  "HOME · LOGIN/REGISTER" or "ACCOUNT").
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -19,16 +22,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/header.js"></script>
 </head>
-<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
-  <p style="color:var(--rc-steel);font-family:var(--rc-font-body);">Loading...</p>
-  <script>
-    if (getToken()) {
-      window.location.replace('profile.html');
-    } else {
-      window.location.replace('login.html');
-    }
-  </script>
+<body>
+
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<!-- Empty spacer, same total height as header+hero, so the page has real
+     scroll distance even though the hero itself is position:fixed. -->
+<div class="rc-hero-spacer"></div>
+
+<!-- Fixed hero banner, pinned just under the header. Stays put while the
+     content below scrolls up and over it (see css/style.css). -->
+<div class="rc-hero" style="background-image:url('assets/banner.png');" role="img" aria-label="Race Club — league cars on track"></div>
+
+<!-- Everything from here down is normal document flow, opaque white
+     background, higher z-index than the hero -- this is what visually
+     "covers" the banner as the user scrolls. -->
+<div class="rc-hero-content">
+
+  <section class="rc-landing-section">
+    <div class="rc-landing-inner">
+      <h2>What Is Race Club</h2>
+      <p class="rc-landing-tagline">
+        Race Club is a persistent, solo-driver career built on real Le Mans
+        Ultimate league races. You register a driver, race real league
+        rounds against real friends, and build a career record that
+        actually means something over time — no NPC grid, no reset button,
+        just your results, race after race.
+      </p>
+    </div>
+  </section>
+
+  <section class="rc-landing-section">
+    <div class="rc-landing-inner">
+      <h2>Class Tiers</h2>
+      <div class="rc-tier-row">
+        <div class="rc-card rc-tier-card rc-tier-gold">
+          <h3>Hypercar</h3>
+          <div class="rc-tier-label">Gold</div>
+          <p>The top class — the pinnacle of a Race Club career.</p>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-silver">
+          <h3>LMP2</h3>
+          <div class="rc-tier-label">Silver</div>
+          <p>The mid-tier proving ground between GT3 and Hypercar.</p>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-bronze">
+          <h3>GT3</h3>
+          <div class="rc-tier-label">Bronze</div>
+          <p>Where most Race Club careers begin.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rc-landing-footer">
+    Race Club &mdash; a friend-group Le Mans Ultimate league.
+  </footer>
+
+</div>
+
 </body>
 </html>
