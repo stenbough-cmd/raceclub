@@ -332,8 +332,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 24px 16px;
 }
 .rc-sidebar-avatar {
-  width: 56px;
-  height: 56px;
+  width: 92px;
+  height: 92px;
   border-radius: 10px;
   background: var(--rc-red);
   color: var(--rc-white);
@@ -342,7 +342,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
   margin: 0 auto;
   font-family: var(--rc-font-heading);
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -444,6 +444,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-badge-pill-red { background: var(--rc-red); }
 .rc-badge-pill-gray { background: var(--rc-steel); }
+.rc-badge-pill-green { background: var(--rc-ok); }
+.rc-badge-pill-yellow { background: #b8860b; color: var(--rc-white); }
 
 @media (max-width: 900px) {
   .rc-avatar-col { position: static; left: auto; width: auto; flex-direction: row; margin-bottom: 12px; }
@@ -535,19 +537,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-sep { color: var(--rc-silver); font-size: 13px; }
 
 .rc-header-account { position: relative; }
+/* The visible gap between the toggle and the menu is padding-top on THIS
+   element, not a margin or a `top: calc(100% + Npx)` offset -- padding is
+   still inside the element's own hoverable box, a margin/offset isn't.
+   With the old margin-based gap, moving the cursor straight down from
+   "ACCOUNT" into the menu passed through a dead zone with nothing under
+   it, which broke :hover continuity and closed the menu before the
+   cursor arrived (hence needing a click to "hold" it open). The actual
+   visible card (background/border/shadow) is the nested
+   .rc-header-dropdown-inner so the padding area stays invisible. */
 .rc-header-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: 100%;
   right: 0;
+  padding-top: 10px;
+  display: none;
+  z-index: 1001;
+}
+.rc-header-dropdown-inner {
   min-width: 150px;
   background: var(--rc-white);
   border: 1px solid var(--rc-silver);
   border-radius: 6px;
   box-shadow: 0 8px 20px rgba(23, 23, 23, 0.10);
   overflow: hidden;
-  display: none;
+  display: flex;
   flex-direction: column;
-  z-index: 1001;
 }
 .rc-header-dropdown a, .rc-header-dropdown button {
   display: block;
@@ -566,9 +581,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   cursor: pointer;
 }
 .rc-header-dropdown a:hover, .rc-header-dropdown button:hover { background: var(--rc-offwhite); color: var(--rc-red); }
-.rc-header-account.rc-header-dropdown-open .rc-header-dropdown { display: flex; }
+.rc-header-account.rc-header-dropdown-open .rc-header-dropdown { display: block; }
 @media (hover: hover) {
-  .rc-header-account:hover .rc-header-dropdown { display: flex; }
+  .rc-header-account:hover .rc-header-dropdown { display: block; }
 }
 
 /* Pages other than index.html sit below the fixed header. */
@@ -641,6 +656,56 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-steel);
   border-top: 1px solid var(--rc-silver);
 }
+
+/* -------------------------------------------------------------------- */
+/* Generic modal (Manage Users' Edit action) — centered card over a      */
+/* dimmed backdrop, in place of the old click-to-expand-in-place panel.  */
+/* -------------------------------------------------------------------- */
+.rc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 23, 23, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2000;
+}
+.rc-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--rc-white);
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(23, 23, 23, 0.25);
+}
+.rc-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--rc-silver);
+  position: sticky;
+  top: 0;
+  background: var(--rc-white);
+  border-radius: 10px 10px 0 0;
+}
+.rc-modal-close {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: none;
+  background: none;
+  color: var(--rc-steel);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rc-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
+.rc-modal-body { padding: 20px; }
 
 /* -------------------------------------------------------------------- */
 /* profile.html dashboard — placeholder widget cards                    */
