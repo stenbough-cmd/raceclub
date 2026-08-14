@@ -61,7 +61,12 @@
 <body>
 
 <div id="rc-header"></div>
-<script>renderHeader();</script>
+<!-- skipNotifCheck: true because this page's own Admin section already
+     fetches the pending-approvals count for the sidebar's nav dot, and
+     reports it to the header itself (see approvalQueueSection's
+     loadQueue()) -- without this, an admin loading this page would fire
+     two separate, identical adminListPendingAccounts calls. -->
+<script>renderHeader({ skipNotifCheck: true });</script>
 
 <div class="rc-topbar" id="rc-topbar">
   <img class="rc-topbar-logo" src="assets/race-club-logo.png" alt="Race Club">
@@ -127,11 +132,22 @@
   // it used to be a static button wired here directly, but Logout now
   // lives inside the dynamically-built nav list itself, right after
   // Settings, so it's a named function the nav builder can attach instead.
+  //
+  // PERFORMANCE NOTE: this used to await the logout API call (fetchApi(...)
+  // .catch().finally(() => { clearToken(); redirect })) before navigating
+  // away -- so if Apps Script was slow to respond (cold start), the whole
+  // page just sat there looking hung on click, even though nothing about
+  // logging out actually depends on the server confirming first. Clearing
+  // the local token and redirecting is what actually logs the browser
+  // out; the server-side AuthTokens row getting deleted is just cleanup
+  // that can happen in the background -- if it never completes (page
+  // navigates away mid-request), the token simply sits unused until its
+  // normal 7-day expiry, harmless. So now: clear + redirect immediately,
+  // fire the API call without waiting on it.
   function doLogout() {
-    fetchApi('logout', { method: 'POST', token: token }).catch(function () {}).finally(function () {
-      clearToken();
-      window.location.href = 'login.html';
-    });
+    fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
+    clearToken();
+    window.location.href = 'login.html';
   }
 
   document.getElementById('rc-hamburger').addEventListener('click', function () {
@@ -139,26 +155,54 @@
   });
 
   // ---------------------------------------------------------------------
-  // LOAD PROFILE (unchanged from v0.2.5)
+  // LOAD PROFILE
+  //
+  // PERFORMANCE FIX: arriving here right after a successful login used to
+  // ALWAYS fire a fresh getProfile call, even though login.html's own
+  // response already IS a full profile payload (see buildProfilePayload
+  // server-side). That meant every login paid for two full Apps Script
+  // round-trips back to back -- the login call, then this getProfile call
+  // immediately after redirecting -- and Apps Script's cold-start cost
+  // (often several seconds) made that feel like the page had hung. Now:
+  // login.html stashes its response in sessionStorage under
+  // 'raceclub_fresh_profile' right before redirecting here; if that's
+  // present, render straight from it and skip the network call entirely.
+  // It's read-once (removed immediately), so a manual refresh or any
+  // OTHER way of arriving at this page (bookmark, typing the URL, coming
+  // back from another page) still fetches properly fresh data as before.
   // ---------------------------------------------------------------------
-  fetchApi('getProfile', { token: token })
-    .then(function (data) {
-      if (!data.success) {
-        clearToken();
-        sessionStorage.setItem('raceclub_login_message', 'Your session expired — please log in again.');
-        window.location.href = 'login.html';
-        return;
-      }
-      document.getElementById('rc-loading').style.display = 'none';
-      document.getElementById('rc-profile-root').style.display = 'block';
-      renderProfile(data, token);
-    })
-    .catch(function () {
-      document.getElementById('rc-loading').style.display = 'none';
-      var err = document.getElementById('rc-error');
-      err.style.display = 'block';
-      err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
-    });
+  var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
+  if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
+  var freshProfile = null;
+  if (freshProfileRaw) {
+    try { freshProfile = JSON.parse(freshProfileRaw); } catch (err) { freshProfile = null; }
+  }
+
+  if (freshProfile && freshProfile.success) {
+    document.getElementById('rc-loading').style.display = 'none';
+    document.getElementById('rc-profile-root').style.display = 'block';
+    renderProfile(freshProfile, token);
+  } else {
+    fetchApi('getProfile', { token: token })
+      .then(function (data) {
+        if (!data.success) {
+          clearToken();
+          sessionStorage.setItem('raceclub_login_message', 'Your session expired — please log in again.');
+          window.location.href = 'login.html';
+          return;
+        }
+        setProfileCache(data); // keeps the header avatar current on every other page too
+        document.getElementById('rc-loading').style.display = 'none';
+        document.getElementById('rc-profile-root').style.display = 'block';
+        renderProfile(data, token);
+      })
+      .catch(function () {
+        document.getElementById('rc-loading').style.display = 'none';
+        var err = document.getElementById('rc-error');
+        err.style.display = 'block';
+        err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+      });
+  }
 
   // `style` accepts EITHER an inline CSS string ("margin:0;color:red;") OR
   // a plain class name ("rc-hint") -- disambiguated by whether it contains
@@ -302,10 +346,10 @@
     return hr;
   }
 
-  // Order, per Matt's call: the 8 general section links, a single divider
-  // (always shown -- separates the general member section from everything
-  // below it), then League Management and/or Admin (only if this user's
-  // permissions unlock them), then Settings, then Log Out.
+  // Order, per Matt's call: the 8 general section links, a divider,
+  // League Management and/or Admin (only if this user's permissions
+  // unlock them), a second divider directly above Settings, then
+  // Settings, then Log Out.
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
@@ -314,7 +358,17 @@
     });
     nav.appendChild(navDivider());
     nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
-    nav.appendChild(makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true));
+    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true);
+    // Notification dot -- see renderAdminSection()/approvalQueueSection()
+    // below, which toggle this on once the pending-approvals count is
+    // known. Same signal as the header avatar's dot, just in-page.
+    var adminDot = document.createElement('span');
+    adminDot.className = 'rc-nav-dot';
+    adminDot.id = 'rc-nav-admin-dot';
+    adminDot.style.display = 'none';
+    adminBtn.appendChild(adminDot);
+    nav.appendChild(adminBtn);
+    nav.appendChild(navDivider());
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
     nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
@@ -680,6 +734,9 @@
     editWrap.appendChild(el('h3', 'margin-top:0;', 'Edit Profile'));
     editWrap.appendChild(editProfilePanel(profile, token, function (updated) {
       Object.assign(profile, updated);
+      setProfileCache(profile); // displayName may have changed -- keep the header avatar's initials in sync
+      var sidebarAvatar = document.getElementById('rc-sidebar-avatar');
+      if (sidebarAvatar) sidebarAvatar.textContent = initials(profile.displayName || profile.username);
       // Refresh the Dashboard's header card too, in case the user flips
       // back over to it in this same session.
       renderDashboardSection(profile, token);
@@ -808,6 +865,9 @@
           if (!data.success) { body.textContent = data.message || 'Could not load pending accounts.'; return; }
 
           var total = data.organizerRequests.length + data.driverRequests.length + data.unverifiedSignups.length;
+          var navDot = document.getElementById('rc-nav-admin-dot');
+          if (navDot) navDot.style.display = total > 0 ? 'block' : 'none';
+          if (typeof updateHeaderNotifDot === 'function') updateHeaderNotifDot(total > 0);
           if (total === 0) {
             body.appendChild(el('div', 'color:var(--rc-steel);', 'No pending accounts.'));
           }
@@ -832,9 +892,10 @@
 
   // Accounts are created exclusively through self-service registration
   // (see the approval queue above) -- there is no "create account" panel
-  // here, matching v0.2.5 exactly. Admins can fully edit an existing
-  // account: username, email, role, status, linked ProfileID, and
-  // manually marking email verified. Unchanged from v0.2.5.
+  // here, matching v0.2.5 exactly. An admin can edit Username and Email
+  // on someone else's account (see openEditUserModal below for what
+  // changed and why) and reset their password -- they can't edit their
+  // own row at all here (no Edit button shown on it).
   function accountManagementSection(token, currentUserId) {
     var box = document.createElement('div');
     box.className = 'rc-panel';
@@ -873,75 +934,73 @@
       var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
       var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
       var summaryLeft = el('div', 'display:flex;align-items:center;flex-wrap:wrap;');
-      summaryLeft.innerHTML = '<strong>' + u.username + '</strong> &middot; ' + u.role +
-        (u.userId === currentUserId ? ' <span class="rc-badge">YOU</span>' : '');
+      summaryLeft.innerHTML = '<strong>' + u.username + '</strong> &middot; ' + u.role;
       summaryLeft.appendChild(statusPill(u));
       summary.appendChild(summaryLeft);
 
-      var editBtn = el('button', null, 'Edit');
-      editBtn.className = 'rc-btn-secondary';
-      editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
-      summary.appendChild(editBtn);
+      // No "YOU" pill anymore -- instead, an admin simply can't Edit their
+      // own row from this list at all (no button shown). Self-status
+      // changes were already blocked server-side anyway; this just makes
+      // that visible instead of showing a button that would partly fail.
+      if (u.userId !== currentUserId) {
+        var editBtn = el('button', null, 'Edit');
+        editBtn.className = 'rc-btn-secondary';
+        editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+        // Edit opens a centered modal instead of expanding a panel in
+        // place -- built fresh each time (not cached) so it always
+        // reflects the latest data from loadUserList() rather than stale
+        // values from a previous open.
+        editBtn.addEventListener('click', function () { openEditUserModal(u); });
+        summary.appendChild(editBtn);
+      }
       wrap.appendChild(summary);
-
-      // Edit opens a centered modal instead of expanding a panel in place
-      // -- built fresh each time (not cached) so it always reflects the
-      // latest data from loadUserList() rather than stale values from a
-      // previous open.
-      editBtn.addEventListener('click', function () { openEditUserModal(u); });
 
       return wrap;
     }
 
+    // Per Matt's call, admins can only edit Username, Real Name, and
+    // Email on someone else's account, plus reset their password
+    // (below). Role, Status, Driver Profile linking, and the Email
+    // Verified checkbox are no longer editable here -- role changes still
+    // happen through the approval queue above (which only ever promotes
+    // Prospect -> Driver/Organizer, never arbitrarily reassigns roles),
+    // and there's currently no UI path at all for disabling an account or
+    // hand-fixing an email-verified flag; ask if those need to come back
+    // somewhere once you've decided where they belong.
+    //
+    // ROLE/STATUS/PROFILE-ID FIELDS REMOVED FROM THE UI, NOT THE BACKEND:
+    // adminUpdateUser still accepts and handles all of those server-side
+    // (6_Auth.gs) -- only this form stopped sending them.
+    //
+    // REAL NAME IS NOT WIRED UP YET: it lives on the ProfileID sheet
+    // (PrimaryName), not the Users sheet, and the current
+    // handleAdminUpdateUser handler in 6_Auth.gs has no code path to
+    // change it -- handleUpdateOwnProfile (self-edit) explicitly refuses
+    // to touch PrimaryName too. Adding admin-editable Real Name needs a
+    // small Apps Script change I can't make from this session (the
+    // backend .gs files aren't in this folder) -- the field isn't shown
+    // below until that exists, so this form never silently no-ops on it.
     function openEditUserModal(u) {
       var modal = showModal('Edit ' + u.username);
       var body = modal.body;
 
       var unameInput = el('input'); unameInput.value = u.username;
       var emailInput = el('input'); emailInput.value = u.email || ''; emailInput.placeholder = 'Email';
-      var roleSelect = el('select');
-      ['Prospect', 'Driver', 'Organizer', 'Admin'].forEach(function (r) {
-        var opt = el('option', null, r); opt.value = r; if (r === u.role) opt.selected = true; roleSelect.appendChild(opt);
-      });
-      var statusSelect = el('select');
-      ['Active', 'Disabled'].forEach(function (s) {
-        var opt = el('option', null, s); opt.value = s; if (s === u.status) opt.selected = true; statusSelect.appendChild(opt);
-      });
-      var pidInput = el('input'); pidInput.value = u.profileId || ''; pidInput.placeholder = 'ProfileID (e.g. RC-00001)';
-
-      var verifiedLabel = el('label', 'display:flex;align-items:center;gap:6px;font-weight:400;margin-top:10px;text-transform:none;letter-spacing:normal;');
-      var verifiedCheck = el('input'); verifiedCheck.type = 'checkbox'; verifiedCheck.style.cssText = 'width:auto;height:auto;margin:0;';
-      verifiedCheck.checked = !!u.emailVerified;
-      verifiedLabel.appendChild(verifiedCheck);
-      verifiedLabel.appendChild(document.createTextNode('Email verified'));
 
       var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary';
       saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
       var saveStatus = el('div', 'margin-top:6px;font-size:13px;');
 
       [el('label', 'margin-top:0;', 'Username'), unameInput,
-        el('label', null, 'Email'), emailInput,
-        el('label', null, 'Role'), roleSelect,
-        el('label', null, 'Status'), statusSelect,
-        el('label', null, 'Driver Profile'), pidInput,
-        verifiedLabel
+        el('label', null, 'Email'), emailInput
       ].forEach(function (elm) { body.appendChild(elm); });
-
-      if (u.userId === currentUserId) {
-        statusSelect.disabled = true; // self-lockout protection, also enforced server-side
-        body.appendChild(el('div', 'rc-hint', "You can't disable your own account."));
-      }
 
       saveBtn.addEventListener('click', function () {
         fetchApi('adminUpdateUser', {
           method: 'POST', token: token, body: {
             targetUserId: u.userId,
             username: unameInput.value.trim(),
-            email: emailInput.value.trim(),
-            role: roleSelect.value,
-            status: statusSelect.value,
-            profileId: pidInput.value.trim(),
-            emailVerified: verifiedCheck.checked
+            email: emailInput.value.trim()
           }
         })
           .then(function (data) {

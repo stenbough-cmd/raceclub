@@ -41,7 +41,6 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 <div class="rc-auth-page">
-  <div class="rc-checker"></div>
   <div class="rc-auth-wrap">
     <h1>Login / Register</h1>
 
@@ -142,6 +141,16 @@
         // data back up itself via getProfile on load, same as any other
         // direct visit to that page.
         setToken(data.token);
+        setProfileCache(data); // so the header avatar has something to show immediately, site-wide
+        // The login response IS the full profile payload already (see the
+        // comment above) -- stash it so profile.html can render straight
+        // from it instead of firing its own getProfile call right after
+        // redirecting here, which was a second full Apps Script round-trip
+        // back to back with the login call itself (each one can take
+        // several seconds on a cold start) and was the main reason login
+        // felt like it hung. sessionStorage, not localStorage, since this
+        // is meant to be read exactly once by the very next page load.
+        sessionStorage.setItem('raceclub_fresh_profile', JSON.stringify(data));
         window.location.href = 'profile.html';
       })
       .catch(function () {
