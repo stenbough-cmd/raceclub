@@ -11,21 +11,29 @@
   the rest (see showSection() below) instead of scrolling.
 
   IMPORTANT — nothing about the underlying business logic changed:
-  - profileHeaderCardView()/renderProfileViewBlock()/buildAvatarCol()/
-    lockedSectionsBlock() are the same profile-card rendering as before,
-    just now living inside the Dashboard section instead of one big
-    "Profile" section.
+  - profileHeaderCardView()/renderProfileViewBlock()/lockedSectionsBlock()
+    are the same profile-card rendering as before, just now living inside
+    the Dashboard section instead of one big "Profile" section. The
+    floating avatar that used to sit to the left of this card is gone --
+    the avatar (and the Prospect/Rookie badges underneath it) now live
+    once, in the sidebar, via buildSidebarBadges()/buildFullProfileUI().
   - editProfilePanel() and passwordChangeSection() are copied verbatim
     (same fields, same fetchApi() calls, same validation) from v0.2.5 —
     they just render inside the Settings section now instead of behind
     the header card's pencil-icon toggle. See the code comment above
     renderSettingsSection() for the one small, deliberate behavior change
     this required (the pencil-icon show/hide toggle went away since the
-    form is always visible in its own section now).
-  - approvalQueueSection() and accountManagementSection() are untouched —
-    same admin API calls, same fields — just appended into the Admin
-    section's static container instead of a section built on the fly.
-  - The League Management placeholder-buttons block is untouched.
+    form is always visible in its own section now). Preferred Race
+    Length, Preferred Class, and Accomplishments were later removed from
+    both this form and the read-only view per a follow-up request.
+  - approvalQueueSection() is untouched -- same admin API calls, same
+    fields. accountManagementSection()'s data/API calls are also
+    untouched, but its Edit action now opens a centered modal (see
+    showModal()/openEditUserModal()) instead of expanding a panel in
+    place.
+  - The League Management placeholder-buttons block is untouched, though
+    it and Admin now sit above Settings/Log Out in the sidebar order
+    (see buildSidebarNav()) instead of below.
   - mustChangePassword still forces a password change before anything
     else is usable — see renderProfile()/observePasswordBoxRemoval()
     below for how that's now implemented against the section-based nav
@@ -62,14 +70,14 @@
 
 <div class="rc-shell">
   <aside class="rc-sidebar" id="rc-sidebar">
-    <!-- Filled in once the profile loads (buildFullProfileUI), same
-         initials-avatar treatment as the Dashboard header card. -->
+    <!-- Filled in once the profile loads (buildFullProfileUI) -- avatar
+         initials plus the Prospect/Rookie badge stack right underneath,
+         same badges that used to sit next to the old floating avatar. -->
     <div class="rc-sidebar-avatar" id="rc-sidebar-avatar">?</div>
-    <div class="rc-checker"></div>
-    <!-- Filled in by buildSidebarNav() below. Log Out lives inside this
-         list now (right after Settings) instead of pinned to the bottom
-         of the sidebar -- see buildSidebarNav() for the exact order and
-         where the two divider lines go. -->
+    <div class="rc-badge-col" id="rc-sidebar-badges" style="margin-top:8px;"></div>
+    <!-- Filled in by buildSidebarNav() below. League Management/Admin
+         (when applicable) sit above Settings/Log Out at the bottom of
+         this list -- see buildSidebarNav() for the exact order. -->
     <nav class="rc-sidebar-nav" id="rc-sidebar-nav"></nav>
   </aside>
 
@@ -171,6 +179,46 @@
     return d.innerHTML;
   }
 
+  // ---------------------------------------------------------------------
+  // GENERIC MODAL — centered dialog over a dimmed backdrop. Used by
+  // Manage Users' "Edit" action (see openEditUserModal below) in place of
+  // the old click-to-expand-in-place panel, per Matt's call that the
+  // in-place pattern felt dated. Closes on: the X button, clicking the
+  // dimmed backdrop outside the card, or Escape. Returns { body, close }
+  // -- the caller appends whatever fields/buttons it needs into `body`.
+  // ---------------------------------------------------------------------
+  function showModal(title) {
+    var backdrop = el('div', 'rc-modal-backdrop');
+    var modal = el('div', 'rc-modal');
+
+    var head = el('div', 'rc-modal-head');
+    head.appendChild(el('h3', 'margin:0;', escapeHtml(title)));
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'rc-modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+    head.appendChild(closeBtn);
+    modal.appendChild(head);
+
+    var body = el('div', 'rc-modal-body');
+    modal.appendChild(body);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    function close() {
+      document.removeEventListener('keydown', onKeydown);
+      backdrop.remove();
+    }
+    function onKeydown(evt) { if (evt.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKeydown);
+    backdrop.addEventListener('click', function (evt) { if (evt.target === backdrop) close(); });
+    closeBtn.addEventListener('click', close);
+
+    return { body: body, close: close };
+  }
+
   // Flat, stroke-based icons (no emoji) -- inline SVG, same technique as
   // v0.2.5's ICON_LOCK/ICON_STAR/ICON_PEN, extended with one icon per new
   // sidebar item.
@@ -254,13 +302,10 @@
     return hr;
   }
 
-  // Order, per Matt's call: the 8 section links, a divider, Settings,
-  // Log Out, then -- ONLY if League Management and/or Admin end up
-  // visible for this user's permissions -- a second divider followed by
-  // whichever of those two apply. If neither applies, Log Out is simply
-  // the last item in the list with no trailing line (the second divider
-  // and both permission-gated buttons start hidden and stay that way
-  // unless renderLeagueSection()/renderAdminSection() unhide them below).
+  // Order, per Matt's call: the 8 general section links, a single divider
+  // (always shown -- separates the general member section from everything
+  // below it), then League Management and/or Admin (only if this user's
+  // permissions unlock them), then Settings, then Log Out.
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
@@ -268,13 +313,11 @@
       nav.appendChild(makeNavButton(item.id, item.label, item.icon));
     });
     nav.appendChild(navDivider());
+    nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
+    nav.appendChild(makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true));
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
     nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
-    nav.appendChild(navDivider('rc-nav-divider-2'));
-    document.getElementById('rc-nav-divider-2').style.display = 'none';
-    nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
-    nav.appendChild(makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true));
   }
 
   // Shows exactly one .rc-content-section and marks the matching sidebar
@@ -297,14 +340,10 @@
   // below). Every other bit of markup/behavior here (avatar column,
   // name/flag line, meta row, view block) is identical.
   // ---------------------------------------------------------------------
-  function buildAvatarCol(profile) {
-    var avatarCol = document.createElement('div');
-    avatarCol.className = 'rc-avatar-col';
-
-    var avatar = el('div', null, initials(profile.displayName || profile.username));
-    avatar.className = 'rc-avatar';
-    avatarCol.appendChild(avatar);
-
+  // Builds just the Prospect/Rookie badge stack -- used underneath the
+  // sidebar avatar now (see buildFullProfileUI) instead of next to a
+  // floating avatar beside the profile card.
+  function buildSidebarBadges(profile) {
     var badgeCol = el('div', null);
     badgeCol.className = 'rc-badge-col';
     if (profile.role === 'Prospect') {
@@ -317,9 +356,7 @@
       rookiePill.className = 'rc-badge-pill rc-badge-pill-gray';
       badgeCol.appendChild(rookiePill);
     }
-    avatarCol.appendChild(badgeCol);
-
-    return avatarCol;
+    return badgeCol;
   }
 
   function buildNameLine(profile) {
@@ -380,45 +417,22 @@
   function renderProfileViewBlock(container, profile) {
     if (profile.aboutMe) container.appendChild(el('p', 'rc-about-me', '“' + escapeHtml(profile.aboutMe) + '”'));
 
-    // Fixed display grouping: Time Zone/Birthday/Contact Email always
-    // share one line, Preferred Race Length/Preferred Class always share
-    // the next -- independent of how the edit form's fields are paired.
+    // Time Zone/Birthday/Contact Email on one line. Preferred Race
+    // Length, Preferred Class, and Accomplishments were removed from both
+    // this view and the Settings edit form per Matt's call -- the backend
+    // fields/columns still exist (untouched), they're just not shown or
+    // editable here anymore.
     var row1Items = [];
     if (profile.timeZone) row1Items.push(detailItem('Time Zone', timezoneLabel(profile.timeZone)));
     if (profile.birthday) row1Items.push(detailItem('Birthday', profile.birthday));
     if (profile.contactEmail) row1Items.push(detailItem('Contact', profile.contactEmail, true));
 
-    var row2Items = [];
-    if (profile.preferredEventLength) row2Items.push(detailItem('Preferred Race Length', profile.preferredEventLength));
-    if (profile.preferredClass) row2Items.push(detailItem('Preferred Class', profile.preferredClass));
-
-    if (row1Items.length || row2Items.length) {
+    if (row1Items.length) {
       var wrap = el('div', 'rc-details-wrap');
-      if (row1Items.length) {
-        var row1 = el('div', 'rc-details-row');
-        row1Items.forEach(function (item) { row1.appendChild(item); });
-        wrap.appendChild(row1);
-      }
-      if (row2Items.length) {
-        var row2 = el('div', 'rc-details-row-2');
-        row2Items.forEach(function (item) { row2.appendChild(item); });
-        wrap.appendChild(row2);
-      }
+      var row1 = el('div', 'rc-details-row');
+      row1Items.forEach(function (item) { row1.appendChild(item); });
+      wrap.appendChild(row1);
       container.appendChild(wrap);
-    }
-
-    var accomplishments = (profile.accomplishments || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-    if (accomplishments.length) {
-      var block = el('div', 'rc-accomplishments');
-      block.appendChild(el('h4', null, 'Accomplishments'));
-      var list = document.createElement('ul');
-      accomplishments.forEach(function (line) {
-        var li = document.createElement('li');
-        li.textContent = line;
-        list.appendChild(li);
-      });
-      block.appendChild(list);
-      container.appendChild(block);
     }
   }
 
@@ -471,12 +485,11 @@
     attachBirthdayFormatter(birthdayInput);
     var contactEmailInput = el('input'); contactEmailInput.type = 'email'; contactEmailInput.value = profile.contactEmail || ''; contactEmailInput.placeholder = 'you@example.com';
 
-    var eventLengthSelect = buildSelect(EVENT_LENGTHS, profile.preferredEventLength, 'Select a length');
-    var classSelect = buildSelect(PREFERRED_CLASSES, profile.preferredClass, 'Select a class');
-
-    var accomplishmentsInput = document.createElement('textarea');
-    accomplishmentsInput.rows = 3; accomplishmentsInput.value = profile.accomplishments || '';
-
+    // Preferred Race Length, Preferred Class, and Accomplishments were
+    // removed from this form (and from the read-only view above) per
+    // Matt's call. The backend fields/columns and updateOwnProfile's
+    // handling of them are untouched -- just not sent from here anymore,
+    // so any existing saved values are left alone, not cleared.
     function resetFields() {
       dnInput.value = profile.displayName || '';
       aboutInput.value = profile.aboutMe || '';
@@ -484,9 +497,6 @@
       timezoneSelect.value = profile.timeZone || '';
       birthdayInput.value = profile.birthday || '';
       contactEmailInput.value = profile.contactEmail || '';
-      eventLengthSelect.value = profile.preferredEventLength || '';
-      classSelect.value = profile.preferredClass || '';
-      accomplishmentsInput.value = profile.accomplishments || '';
       status.textContent = '';
     }
 
@@ -501,14 +511,7 @@
     var detailsGroup = el('div', 'rc-section');
     detailsGroup.appendChild(fieldPairRow('Country', countrySelect, 'Time Zone', timezoneSelect));
     detailsGroup.appendChild(fieldPairRow('Birthday', birthdayInput, 'Contact Email', contactEmailInput));
-    detailsGroup.appendChild(fieldPairRow('Preferred Race Length', eventLengthSelect, 'Preferred Class', classSelect));
     panel.appendChild(detailsGroup);
-
-    var accomplishGroup = el('div', 'rc-section');
-    accomplishGroup.appendChild(el('label', 'margin-top:0;', 'Accomplishments'));
-    accomplishGroup.appendChild(accomplishmentsInput);
-    accomplishGroup.appendChild(el('div', 'rc-hint', 'Competitions you won, accolades, etc. One per line.'));
-    panel.appendChild(accomplishGroup);
 
     var saveBtn = el('button', null, 'Save Profile');
     saveBtn.className = 'rc-btn-primary';
@@ -543,10 +546,7 @@
         country: countrySelect.value,
         timeZone: timezoneSelect.value,
         birthday: birthdayInput.value.trim(),
-        contactEmail: contactEmailInput.value.trim(),
-        preferredEventLength: eventLengthSelect.value,
-        preferredClass: classSelect.value,
-        accomplishments: accomplishmentsInput.value.trim()
+        contactEmail: contactEmailInput.value.trim()
       };
       fetchApi('updateOwnProfile', { method: 'POST', token: token, body: payload })
         .then(function (data) {
@@ -641,23 +641,19 @@
     return grid;
   }
 
-  // Builds the Dashboard section: the real profile header card, the
-  // Prospect banner (if applicable), the locked "coming soon" game-mode
-  // stack, then the new placeholder widgets.
+  // Builds the Dashboard section: the real profile header card (the
+  // "demographics" container), the quick-glance widgets right below it,
+  // then the Prospect banner (if applicable), then the locked "coming
+  // soon" game-mode stack. The floating avatar-to-the-left-of-the-card
+  // treatment is gone -- the driver's avatar now lives once, in the
+  // sidebar (see buildFullProfileUI), with the Prospect/Rookie badges
+  // underneath it there instead of stacked next to this card.
   function renderDashboardSection(profile, token) {
     var section = document.getElementById('rc-section-dashboard');
     section.innerHTML = '';
 
-    var headerWrap = document.createElement('div');
-    headerWrap.className = 'rc-header-wrap';
-    var avatarCol = buildAvatarCol(profile);
-    var headerCard = profileHeaderCardView(profile);
-    headerWrap.appendChild(avatarCol);
-    headerWrap.appendChild(headerCard);
-    section.appendChild(headerWrap);
-    if (avatarCol.offsetHeight > headerCard.offsetHeight) {
-      headerWrap.style.minHeight = avatarCol.offsetHeight + 'px';
-    }
+    section.appendChild(profileHeaderCardView(profile));
+    section.appendChild(buildDashboardWidgets());
 
     if (profile.role === 'Prospect') {
       var banner = document.createElement('div');
@@ -669,7 +665,6 @@
     }
 
     section.appendChild(lockedSectionsBlock(profile));
-    section.appendChild(buildDashboardWidgets());
   }
 
   // ---------------------------------------------------------------------
@@ -701,19 +696,25 @@
     box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
     var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password';
     var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
+    var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password';
     var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary'; btn.style.width = 'auto'; btn.style.marginTop = '10px';
     var status = el('div', 'margin-top:8px;font-size:13px;');
 
     btn.addEventListener('click', function () {
+      if (next.value !== confirm.value) {
+        status.style.color = 'var(--rc-red)';
+        status.textContent = 'New password and confirmation don\'t match.';
+        return;
+      }
       fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
         .then(function (data) {
           status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
           status.textContent = data.message || (data.success ? 'Updated.' : 'Failed.');
-          if (data.success) { cur.value = ''; next.value = ''; box.remove(); }
+          if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; box.remove(); }
         });
     });
 
-    box.appendChild(cur); box.appendChild(next); box.appendChild(btn); box.appendChild(status);
+    box.appendChild(cur); box.appendChild(next); box.appendChild(confirm); box.appendChild(btn); box.appendChild(status);
     return box;
   }
 
@@ -851,12 +852,31 @@
         });
     }
 
+    // Green = Active and email-verified. Yellow = not verified yet
+    // (regardless of Status). Red = Disabled -- covers both an admin
+    // manually disabling someone and the "rejected but has race history"
+    // soft-reject path in handleAdminRejectAccount (that path sets
+    // Status: Disabled rather than deleting the row, so there's no
+    // separate "Rejected" status value to key off of).
+    function statusPill(u) {
+      var label, cls;
+      if (u.status === 'Disabled') { label = 'DISABLED'; cls = 'rc-badge-pill-red'; }
+      else if (!u.emailVerified) { label = 'UNVERIFIED'; cls = 'rc-badge-pill-yellow'; }
+      else { label = 'ACTIVE'; cls = 'rc-badge-pill-green'; }
+      var pill = el('span', null, label);
+      pill.className = 'rc-badge-pill ' + cls;
+      pill.style.marginLeft = '6px';
+      return pill;
+    }
+
     function userRow(u) {
       var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
       var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
-      summary.appendChild(el('div', null,
-        '<strong>' + u.username + '</strong> &middot; ' + u.role + ' &middot; ' + u.status +
-        (u.userId === currentUserId ? ' <span class="rc-badge">YOU</span>' : '')));
+      var summaryLeft = el('div', 'display:flex;align-items:center;flex-wrap:wrap;');
+      summaryLeft.innerHTML = '<strong>' + u.username + '</strong> &middot; ' + u.role +
+        (u.userId === currentUserId ? ' <span class="rc-badge">YOU</span>' : '');
+      summaryLeft.appendChild(statusPill(u));
+      summary.appendChild(summaryLeft);
 
       var editBtn = el('button', null, 'Edit');
       editBtn.className = 'rc-btn-secondary';
@@ -864,12 +884,23 @@
       summary.appendChild(editBtn);
       wrap.appendChild(summary);
 
-      var panel = el('div', 'display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--rc-silver);');
+      // Edit opens a centered modal instead of expanding a panel in place
+      // -- built fresh each time (not cached) so it always reflects the
+      // latest data from loadUserList() rather than stale values from a
+      // previous open.
+      editBtn.addEventListener('click', function () { openEditUserModal(u); });
+
+      return wrap;
+    }
+
+    function openEditUserModal(u) {
+      var modal = showModal('Edit ' + u.username);
+      var body = modal.body;
 
       var unameInput = el('input'); unameInput.value = u.username;
       var emailInput = el('input'); emailInput.value = u.email || ''; emailInput.placeholder = 'Email';
       var roleSelect = el('select');
-      ['Driver', 'Organizer', 'Admin', 'Prospect'].forEach(function (r) {
+      ['Prospect', 'Driver', 'Organizer', 'Admin'].forEach(function (r) {
         var opt = el('option', null, r); opt.value = r; if (r === u.role) opt.selected = true; roleSelect.appendChild(opt);
       });
       var statusSelect = el('select');
@@ -894,11 +925,11 @@
         el('label', null, 'Status'), statusSelect,
         el('label', null, 'Driver Profile'), pidInput,
         verifiedLabel
-      ].forEach(function (elm) { panel.appendChild(elm); });
+      ].forEach(function (elm) { body.appendChild(elm); });
 
       if (u.userId === currentUserId) {
         statusSelect.disabled = true; // self-lockout protection, also enforced server-side
-        panel.appendChild(el('div', 'rc-hint', "You can't disable your own account."));
+        body.appendChild(el('div', 'rc-hint', "You can't disable your own account."));
       }
 
       saveBtn.addEventListener('click', function () {
@@ -919,8 +950,8 @@
             if (data.success) loadUserList();
           });
       });
-      panel.appendChild(saveBtn);
-      panel.appendChild(saveStatus);
+      body.appendChild(saveBtn);
+      body.appendChild(saveStatus);
 
       // Password reset stays a separate, deliberate action -- tucked below
       // the main fields rather than mixed into the Save button above.
@@ -940,17 +971,7 @@
           });
       });
       resetWrap.appendChild(newPass); resetWrap.appendChild(resetBtn); resetWrap.appendChild(resetStatus);
-      panel.appendChild(resetWrap);
-
-      wrap.appendChild(panel);
-
-      editBtn.addEventListener('click', function () {
-        var open = panel.style.display !== 'none';
-        panel.style.display = open ? 'none' : 'block';
-        editBtn.textContent = open ? 'Edit' : 'Close';
-      });
-
-      return wrap;
+      body.appendChild(resetWrap);
     }
 
     loadUserList();
@@ -963,7 +984,6 @@
   // ---------------------------------------------------------------------
   function renderLeagueSection() {
     document.getElementById('rc-nav-league').style.display = 'flex';
-    document.getElementById('rc-nav-divider-2').style.display = 'block';
     var leagueSection = document.getElementById('rc-section-league');
     leagueSection.innerHTML = '';
     var mgmt = document.createElement('div');
@@ -985,7 +1005,6 @@
 
   function renderAdminSection(profile, token) {
     document.getElementById('rc-nav-admin').style.display = 'flex';
-    document.getElementById('rc-nav-divider-2').style.display = 'block';
     var adminSection = document.getElementById('rc-section-admin');
     adminSection.innerHTML = '';
     adminSection.appendChild(approvalQueueSection(token));
@@ -998,6 +1017,12 @@
   function buildFullProfileUI(profile, token) {
     var sidebarAvatar = document.getElementById('rc-sidebar-avatar');
     if (sidebarAvatar) sidebarAvatar.textContent = initials(profile.displayName || profile.realName || profile.username);
+    var sidebarBadges = document.getElementById('rc-sidebar-badges');
+    if (sidebarBadges) {
+      sidebarBadges.innerHTML = '';
+      var badges = buildSidebarBadges(profile);
+      while (badges.firstChild) sidebarBadges.appendChild(badges.firstChild);
+    }
 
     buildSidebarNav();
     renderDashboardSection(profile, token);
