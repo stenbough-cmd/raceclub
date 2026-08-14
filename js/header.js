@@ -34,6 +34,22 @@
   load (Apps Script's cold-start cost is real, see the login-latency
   history elsewhere in this project). If there's no cache yet (e.g. the
   token was set some other way), the avatar falls back to "?".
+
+  HONESTY ABOUT WHAT "LOGGED IN" MEANS: showing the avatar off a cached
+  token is an optimistic guess, not proof the session is actually still
+  valid. That was fine for pages that never call the API at all (index,
+  login, register, verify -- there's nothing for them to falsely confirm).
+  But profile.html DOES call the API to confirm the session, and if that
+  call fails to even reach the server, the avatar rendering instantly
+  from cache made the navbar look successfully logged in while the actual
+  page content below it was failing -- a confusing, actively misleading
+  combination Matt flagged directly. So profile.html no longer calls this
+  function immediately: it calls renderHeaderPending() first (logo only,
+  no claim either way about login state), then calls THIS function for
+  real only once its own API call has actually resolved -- with
+  opts.forceLoggedOut set if that call failed to reach the server at all,
+  so the header falls back to the logged-out look rather than asserting a
+  session it was never able to verify.
   The Apple-style red notification dot in the avatar's corner is
   admin-only, and means "there are pending account approvals/verifications
   waiting on you" -- the one notification type that exists right now. It's
@@ -66,6 +82,21 @@ function updateHeaderNotifDot(hasPending) {
   if (dot) dot.style.display = hasPending ? 'block' : 'none';
 }
 
+// Shows just the logo -- no HOME/LOGIN/ACCOUNT at all -- while a page is
+// still waiting to find out whether its own session is actually valid.
+// Used by profile.html in place of an immediate renderHeader() call, so
+// the navbar never asserts a login state (or a logged-out state) it
+// hasn't confirmed yet. See the long comment above renderHeader() for why
+// this exists.
+function renderHeaderPending() {
+  var mount = document.getElementById('rc-header');
+  if (!mount) return;
+  mount.className = 'rc-fixed-header';
+  mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
+      '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
+    '</a><nav class="rc-header-nav"></nav>';
+}
+
 // opts.skipNotifCheck: profile.html passes this since its own Admin
 // section (approvalQueueSection) already fetches the pending-approvals
 // list for the sidebar's nav dot -- without this flag, an admin loading
@@ -73,12 +104,21 @@ function updateHeaderNotifDot(hasPending) {
 // for the exact same data (one from here, one from there), which was
 // part of what made things feel slow. profile.html calls
 // updateHeaderNotifDot() itself once its own fetch resolves instead.
+//
+// opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER)
+// even if a token is present in localStorage. Used when a page tried to
+// verify that token against the API and couldn't even reach the server --
+// the token might still be perfectly valid, but this page has no way to
+// know that right now, so the header shouldn't claim it does either. This
+// never clears the token itself (that would force a real re-login over
+// what might just be a momentary connection problem) -- it only affects
+// what the header LOOKS like on this page load.
 function renderHeader(opts) {
   opts = opts || {};
   var mount = document.getElementById('rc-header');
   if (!mount) return;
 
-  var token = (typeof getToken === 'function') ? getToken() : null;
+  var token = opts.forceLoggedOut ? null : ((typeof getToken === 'function') ? getToken() : null);
   var cached = (token && typeof getProfileCache === 'function') ? getProfileCache() : null;
   mount.className = 'rc-fixed-header';
 
