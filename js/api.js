@@ -27,7 +27,7 @@ var API_BASE_URL = 'https://script.google.com/macros/s/AKfycbz3jhxWDanYIywi8vn2Y
 // check this and show a clear setup message instead of silently failing
 // (same degrade-gracefully behavior as the source file).
 function apiBaseUrlIsUnset() {
-  return !API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') !== -1;
+  return !API_BASE_URL || API_BASE_URL.indexOf('https://script.google.com/macros/s/AKfycbz3jhxWDanYIywi8vn2YYQVwq2MO68tZA4RJpj5fXmUa5ckLo0QpT_lrAwqpsHPnQUV/exec') !== -1;
 }
 
 /**
