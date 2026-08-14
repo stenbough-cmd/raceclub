@@ -370,6 +370,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-nav-item svg { flex: none; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
+/* Small notification dot, pushed to the right edge of the nav item --
+   same "something's waiting on you" signal as the header avatar's dot
+   (see js/header.js), just shown in-page on the Admin link itself. */
+.rc-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rc-red);
+  margin-left: auto;
+  flex: none;
+}
 .rc-main {
   flex: 1;
   min-width: 0;
@@ -535,6 +546,44 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-header-link:hover { color: var(--rc-red); }
 .rc-header-sep { color: var(--rc-silver); font-size: 13px; }
+
+.rc-header-account-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.rc-header-avatar {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--rc-carbon);
+  color: var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.rc-header-account-toggle:hover .rc-header-avatar { background: var(--rc-red); }
+/* Apple-style notification dot -- a small red circle with a white ring
+   sitting in the avatar's top-right corner, hidden by default and only
+   shown (see js/header.js) when there's something pending for an admin. */
+.rc-notif-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--rc-red);
+  border: 2px solid var(--rc-white);
+}
 
 .rc-header-account { position: relative; }
 /* The visible gap between the toggle and the menu is padding-top on THIS
