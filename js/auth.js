@@ -19,6 +19,7 @@
 */
 
 var TOKEN_KEY = 'raceclub_token';
+var PROFILE_CACHE_KEY = 'raceclub_profile_cache';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -30,6 +31,38 @@ function setToken(token) {
 
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(PROFILE_CACHE_KEY);
+}
+
+// ---------------------------------------------------------------------
+// LIGHTWEIGHT PROFILE CACHE — lets the shared header (js/header.js) show
+// the driver's avatar/initials on every page without an extra Apps
+// Script round-trip on every single page load (which would add real
+// latency given Apps Script's cold-start cost). Whenever a page already
+// has a fresh profile payload anyway -- login.html's login response,
+// profile.html's getProfile call -- it calls setProfileCache() so any
+// OTHER page's header can read it back instantly. Only a few small
+// fields are kept (not the whole payload) since this is just for
+// rendering the header, not a source of truth for anything else.
+// ---------------------------------------------------------------------
+function setProfileCache(profile) {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+      displayName: profile.displayName || '',
+      username: profile.username || '',
+      role: profile.role || '',
+      permissions: profile.permissions || []
+    }));
+  } catch (err) { /* storage full/unavailable -- header just falls back to '?' */ }
+}
+
+function getProfileCache() {
+  try {
+    var raw = localStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
 }
 
 // Call at the top of any page that requires a logged-in user (profile.html).
