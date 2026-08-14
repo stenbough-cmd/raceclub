@@ -61,12 +61,13 @@
 <body>
 
 <div id="rc-header"></div>
-<!-- skipNotifCheck: true because this page's own Admin section already
-     fetches the pending-approvals count for the sidebar's nav dot, and
-     reports it to the header itself (see approvalQueueSection's
-     loadQueue()) -- without this, an admin loading this page would fire
-     two separate, identical adminListPendingAccounts calls. -->
-<script>renderHeader({ skipNotifCheck: true });</script>
+<!-- Logo-only placeholder until we actually know whether this session is
+     valid -- see the LOAD PROFILE section below, which calls the real
+     renderHeader() once its own API call resolves (or forceLoggedOut if
+     it couldn't even reach the server). Showing the full logged-in avatar
+     here immediately, before that's confirmed, was exactly the misleading
+     "navbar looks logged in even though the API is unreachable" bug. -->
+<script>renderHeaderPending();</script>
 
 <div class="rc-topbar" id="rc-topbar">
   <img class="rc-topbar-logo" src="assets/race-club-logo.png" alt="Race Club">
@@ -178,7 +179,14 @@
     try { freshProfile = JSON.parse(freshProfileRaw); } catch (err) { freshProfile = null; }
   }
 
+  // The header stayed logo-only (renderHeaderPending(), set at the top of
+  // <body>) until now -- it only gets the real, full render below once we
+  // actually know whether this session checks out, so it can never show
+  // the logged-in avatar for a session that was never confirmed.
   if (freshProfile && freshProfile.success) {
+    // Came straight from a successful login (which DID just verify the
+    // password against the API) -- safe to render the confirmed header.
+    renderHeader({ skipNotifCheck: true });
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile, token);
@@ -192,11 +200,19 @@
           return;
         }
         setProfileCache(data); // keeps the header avatar current on every other page too
+        renderHeader({ skipNotifCheck: true }); // confirmed by the API -- safe to show as logged in
         document.getElementById('rc-loading').style.display = 'none';
         document.getElementById('rc-profile-root').style.display = 'block';
         renderProfile(data, token);
       })
       .catch(function () {
+        // Couldn't even reach the API -- we have no way to confirm this
+        // session is valid, so the header falls back to the logged-out
+        // look instead of optimistically showing an avatar for a login
+        // that was never actually verified. The token itself is left
+        // alone (not cleared) since this might just be a momentary
+        // connection problem, not an actually-invalid session.
+        renderHeader({ forceLoggedOut: true });
         document.getElementById('rc-loading').style.display = 'none';
         var err = document.getElementById('rc-error');
         err.style.display = 'block';
