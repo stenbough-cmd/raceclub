@@ -191,13 +191,24 @@
   // (which already has its own toggle handler -- without this check,
   // clicking the hamburger to close would immediately re-open it via the
   // same click bubbling to this listener).
+  // Remembers where the page was scrolled to when the menu opened, so it
+  // can be restored on close. Needed because the lock itself works by
+  // pinning body to position: fixed (see .rc-scroll-locked in
+  // style.css -- plain overflow: hidden alone doesn't reliably stop
+  // touch scrolling on iOS Safari), which on its own would silently
+  // snap the page back to the very top while locked.
+  var scrollYBeforeLock = 0;
   function openMobileMenu() {
     document.getElementById('rc-sidebar').classList.add('rc-sidebar-open');
+    scrollYBeforeLock = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = '-' + scrollYBeforeLock + 'px';
     document.body.classList.add('rc-scroll-locked');
   }
   function closeMobileMenu() {
     document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
     document.body.classList.remove('rc-scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, scrollYBeforeLock);
   }
   document.getElementById('rc-hamburger').addEventListener('click', function (evt) {
     evt.stopPropagation();
