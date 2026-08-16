@@ -11,7 +11,7 @@
   ACCOUNT_DISABLED mailto link) is preserved exactly, just reorganized:
 
   - On success, the token is stored via setToken() (js/auth.js) and the
-    browser navigates to profile.html — the source rendered the profile
+    browser navigates to Account.html — the source rendered the profile
     view in place instead, since it was still the same embed/page.
   - On a "Resend verification email" click (either from a failed
     EMAIL_NOT_VERIFIED login, or a fresh registration), the username is
@@ -75,7 +75,7 @@
 
   // If we already have a session token, don't make the user log in again.
   if (getToken()) {
-    window.location.replace('profile.html');
+    window.location.replace('Account.html');
     return;
   }
 
@@ -137,13 +137,13 @@
         }
         // The login response IS a full profile payload plus a token (see
         // the source file's buildProfilePayload comment) -- we don't need
-        // a second getProfile round-trip here. profile.html will pick the
+        // a second getProfile round-trip here. Account.html will pick the
         // data back up itself via getProfile on load, same as any other
         // direct visit to that page.
         setToken(data.token);
         setProfileCache(data); // so the header avatar has something to show immediately, site-wide
         // The login response IS the full profile payload already (see the
-        // comment above) -- stash it so profile.html can render straight
+        // comment above) -- stash it so Account.html can render straight
         // from it instead of firing its own getProfile call right after
         // redirecting here, which was a second full Apps Script round-trip
         // back to back with the login call itself (each one can take
@@ -151,7 +151,7 @@
         // felt like it hung. sessionStorage, not localStorage, since this
         // is meant to be read exactly once by the very next page load.
         sessionStorage.setItem('raceclub_fresh_profile', JSON.stringify(data));
-        window.location.href = 'profile.html';
+        window.location.href = 'Account.html';
       })
       .catch(function () {
         btn.disabled = false;

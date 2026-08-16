@@ -7,7 +7,7 @@
   password-match check, 6-char password minimum), and the Driver/Organizer
   role explainer copy are preserved verbatim from the source. The
   timezone dropdown is now populated from js/reference-data.js (shared
-  with profile.html) instead of a copy of the same ~50-line list baked
+  with Account.html) instead of a copy of the same ~50-line list baked
   into this page.
 
   On success, this page stashes the registered username in sessionStorage
@@ -101,7 +101,7 @@
   }
 
   if (getToken()) {
-    window.location.replace('profile.html');
+    window.location.replace('Account.html');
     return;
   }
 
