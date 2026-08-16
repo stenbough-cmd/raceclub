@@ -391,11 +391,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-topbar {
   display: none;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; /* hamburger-only now -- logo removed, was redundant with the fixed site header above it */
   background: var(--rc-carbon);
-  padding: 12px 16px;
+  padding: 10px 16px;
 }
-.rc-topbar-logo { height: 28px; }
 .rc-hamburger {
   background: none;
   border: none;
@@ -407,10 +406,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 @media (max-width: 768px) {
   .rc-shell { flex-direction: column; }
-  .rc-sidebar { display: none; }
-  .rc-sidebar.rc-sidebar-open { display: flex; width: 100%; }
+  .rc-sidebar {
+    display: none;
+    /* Half the page width, not the full width, when opened -- see
+       .rc-sidebar.rc-sidebar-open below. Also drops its own top/bottom
+       padding here so there's no dead space between the topbar above it
+       and the dashboard content below once it's closed/open. */
+    padding: 12px 16px;
+  }
+  .rc-sidebar.rc-sidebar-open { display: flex; width: 50%; }
   .rc-topbar { display: flex; }
-  .rc-main { padding: 20px 16px 48px; }
+  /* Was 20px -- the topbar (or the opened mobile nav) and the dashboard
+     card below it looked like they had an extra gap between them beyond
+     what the topbar's own padding already provides. Tightening this is
+     what actually closes that gap; the mobile nav sits in the same flex
+     column immediately above .rc-main, so less top padding here reads as
+     "closer to the menu" either way. */
+  .rc-main { padding: 8px 16px 48px; }
 }
 
 /* -------------------------------------------------------------------- */
@@ -674,6 +686,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background-position: center;
   background-repeat: no-repeat;
   background-color: var(--rc-carbon);
+}
+@media (max-width: 768px) {
+  /* "cover" fills the box by cropping whichever dimension overflows --
+     on a narrow phone viewport against a wide banner image, that crops
+     the left/right edges off. "contain" shrinks the image down to fit
+     entirely within the box instead, so the full width (both edges) is
+     always visible, at the cost of some letterboxing above/below. */
+  .rc-hero { background-size: contain; }
 }
 .rc-hero-content {
   position: relative;
