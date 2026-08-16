@@ -346,7 +346,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.rc-sidebar-nav { margin-top: 32px; display: flex; flex-direction: column; gap: 4px; }
+.rc-sidebar-nav { margin-top: 4px; display: flex; flex-direction: column; gap: 4px; }
 .rc-nav-divider { border: none; border-top: 1px solid #3a3a3a; margin: 12px 4px; }
 .rc-nav-item {
   display: flex;
@@ -755,6 +755,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
 .rc-modal-body { padding: 20px; }
+
+/* -------------------------------------------------------------------- */
+/* profile.html dashboard — hero card (avatar + details + quick view)   */
+/* -------------------------------------------------------------------- */
+.rc-dashboard-hero { padding: 24px; }
+.rc-dash-hero-top { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.rc-dash-avatar {
+  width: 200px;
+  height: 112.5px; /* 16:9 */
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+}
+@media (max-width: 480px) {
+  .rc-dash-avatar { width: 100%; height: auto; aspect-ratio: 16 / 9; }
+}
 
 /* -------------------------------------------------------------------- */
 /* profile.html dashboard — placeholder widget cards                    */

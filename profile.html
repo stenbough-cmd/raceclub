@@ -11,12 +11,14 @@
   the rest (see showSection() below) instead of scrolling.
 
   IMPORTANT — nothing about the underlying business logic changed:
-  - profileHeaderCardView()/renderProfileViewBlock()/lockedSectionsBlock()
+  - dashboardHeroCard()/renderProfileViewBlock()/lockedSectionsBlock()
     are the same profile-card rendering as before, just now living inside
-    the Dashboard section instead of one big "Profile" section. The
-    floating avatar that used to sit to the left of this card is gone --
-    the avatar (and the Prospect/Rookie badges underneath it) now live
-    once, in the sidebar, via buildSidebarBadges()/buildFullProfileUI().
+    the Dashboard section instead of one big "Profile" section, and merged
+    into one hero card together with the quick-glance widgets. The
+    initials-placeholder avatar and Prospect/Rookie badge stack that used
+    to sit in the sidebar are gone -- the driver's real avatar image now
+    lives inside this hero card instead (see avatarImageSrc()), and the
+    sidebar nav starts right at the top.
   - editProfilePanel() and passwordChangeSection() are copied verbatim
     (same fields, same fetchApi() calls, same validation) from v0.2.5 —
     they just render inside the Settings section now instead of behind
@@ -76,12 +78,11 @@
 
 <div class="rc-shell">
   <aside class="rc-sidebar" id="rc-sidebar">
-    <!-- Filled in once the profile loads (buildFullProfileUI) -- avatar
-         initials plus the Prospect/Rookie badge stack right underneath,
-         same badges that used to sit next to the old floating avatar. -->
-    <div class="rc-sidebar-avatar" id="rc-sidebar-avatar">?</div>
-    <div class="rc-badge-col" id="rc-sidebar-badges" style="margin-top:8px;"></div>
-    <!-- Filled in by buildSidebarNav() below. League Management/Admin
+    <!-- The initials-placeholder avatar and Prospect/Rookie badge stack
+         that used to sit here are gone -- the driver's avatar now lives
+         inside the Dashboard's hero card instead (see dashboardHeroCard()
+         below), so the nav list starts right at the top of the sidebar.
+         Filled in by buildSidebarNav() below. League Management/Admin
          (when applicable) sit above Settings/Log Out at the bottom of
          this list -- see buildSidebarNav() for the exact order. -->
     <nav class="rc-sidebar-nav" id="rc-sidebar-nav"></nav>
@@ -362,26 +363,20 @@
   // PROFILE HEADER CARD (view-only) — ported from v0.2.5's
   // profileHeaderCard(), minus the pencil-icon edit toggle, since editing
   // now lives entirely in the Settings section (see renderSettingsSection
-  // below). Every other bit of markup/behavior here (avatar column,
-  // name/flag line, meta row, view block) is identical.
+  // below). Every other bit of markup/behavior here (name/flag line, meta
+  // row, view block) is identical. The Prospect/Rookie badge stack that
+  // used to render alongside the sidebar avatar is gone entirely (per
+  // Matt's call) -- Prospect status is still communicated via the banner
+  // in renderDashboardSection() below; there's currently no other spot
+  // Rookie status is shown.
   // ---------------------------------------------------------------------
-  // Builds just the Prospect/Rookie badge stack -- used underneath the
-  // sidebar avatar now (see buildFullProfileUI) instead of next to a
-  // floating avatar beside the profile card.
-  function buildSidebarBadges(profile) {
-    var badgeCol = el('div', null);
-    badgeCol.className = 'rc-badge-col';
-    if (profile.role === 'Prospect') {
-      var prospectPill = el('span', null, 'PROSPECT');
-      prospectPill.className = 'rc-badge-pill rc-badge-pill-red';
-      badgeCol.appendChild(prospectPill);
-    }
-    if (profile.isRookie) {
-      var rookiePill = el('span', null, 'ROOKIE');
-      rookiePill.className = 'rc-badge-pill rc-badge-pill-gray';
-      badgeCol.appendChild(rookiePill);
-    }
-    return badgeCol;
+  // Resolves which avatar image a driver shows: manufacturer-level image
+  // once they've claimed a season entry (profile.avatarFile, set by the
+  // not-yet-built claim system), generic.jpg otherwise. Every driver
+  // currently falls back to generic.jpg since claiming isn't wired up
+  // yet -- this is intentional, matches the stated default behavior.
+  function avatarImageSrc(profile) {
+    return 'assets/avatars/' + (profile.avatarFile || 'generic.jpg');
   }
 
   function buildNameLine(profile) {
@@ -401,24 +396,34 @@
     return nameLine;
   }
 
-  function profileHeaderCardView(profile) {
-    var card = document.createElement('div');
-    card.className = 'rc-card';
+  // Single "hero" container for the Dashboard: the driver's avatar image
+  // top-left, name/meta/details alongside it, and the quick-glance
+  // category widgets (Bank Balance, Reputation, etc.) inside the same
+  // card underneath -- replaces the old two-piece layout (a separate
+  // profile header card, then a separate widgets grid below it).
+  function dashboardHeroCard(profile) {
+    var card = el('div', 'rc-card rc-dashboard-hero');
 
-    var topRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;');
+    var topRow = el('div', 'rc-dash-hero-top');
 
-    var nameCol = el('div', 'min-width:0;');
-    nameCol.appendChild(buildNameLine(profile));
+    var avatarImg = document.createElement('img');
+    avatarImg.className = 'rc-dash-avatar';
+    avatarImg.src = avatarImageSrc(profile);
+    avatarImg.alt = (profile.displayName || profile.username) + ' avatar';
+    topRow.appendChild(avatarImg);
+
+    var infoCol = el('div', 'min-width:0;flex:1;');
+    infoCol.appendChild(buildNameLine(profile));
     var metaBits = ['@' + profile.username];
     if (profile.profileId) metaBits.push('Driver Profile: ' + profile.profileId);
-    nameCol.appendChild(el('div', 'rc-meta-row', metaBits.join(' &middot; ')));
-    topRow.appendChild(nameCol);
-
-    card.appendChild(topRow);
-
+    infoCol.appendChild(el('div', 'rc-meta-row', metaBits.join(' &middot; ')));
     var viewBlock = el('div', 'margin-top:14px;');
     renderProfileViewBlock(viewBlock, profile);
-    card.appendChild(viewBlock);
+    infoCol.appendChild(viewBlock);
+    topRow.appendChild(infoCol);
+
+    card.appendChild(topRow);
+    card.appendChild(buildDashboardWidgets());
 
     return card;
   }
@@ -666,19 +671,15 @@
     return grid;
   }
 
-  // Builds the Dashboard section: the real profile header card (the
-  // "demographics" container), the quick-glance widgets right below it,
-  // then the Prospect banner (if applicable), then the locked "coming
-  // soon" game-mode stack. The floating avatar-to-the-left-of-the-card
-  // treatment is gone -- the driver's avatar now lives once, in the
-  // sidebar (see buildFullProfileUI), with the Prospect/Rookie badges
-  // underneath it there instead of stacked next to this card.
+  // Builds the Dashboard section: one large hero card containing the
+  // driver's avatar image (top-left), their name/meta/details, and the
+  // quick-glance category widgets, then the Prospect banner (if
+  // applicable), then the locked "coming soon" game-mode stack.
   function renderDashboardSection(profile, token) {
     var section = document.getElementById('rc-section-dashboard');
     section.innerHTML = '';
 
-    section.appendChild(profileHeaderCardView(profile));
-    section.appendChild(buildDashboardWidgets());
+    section.appendChild(dashboardHeroCard(profile));
 
     if (profile.role === 'Prospect') {
       var banner = document.createElement('div');
@@ -706,10 +707,8 @@
     editWrap.appendChild(editProfilePanel(profile, token, function (updated) {
       Object.assign(profile, updated);
       setProfileCache(profile); // displayName may have changed -- keep the header avatar's initials in sync
-      var sidebarAvatar = document.getElementById('rc-sidebar-avatar');
-      if (sidebarAvatar) sidebarAvatar.textContent = initials(profile.displayName || profile.username);
-      // Refresh the Dashboard's header card too, in case the user flips
-      // back over to it in this same session.
+      // Refresh the Dashboard's hero card too, in case the user flips
+      // back over to it in this same session (name/details may differ now).
       renderDashboardSection(profile, token);
     }, function () { /* Cancel just resets the fields — nothing to hide anymore. */ }));
     section.appendChild(editWrap);
@@ -1045,15 +1044,6 @@
   // TOP-LEVEL RENDER
   // ---------------------------------------------------------------------
   function buildFullProfileUI(profile, token) {
-    var sidebarAvatar = document.getElementById('rc-sidebar-avatar');
-    if (sidebarAvatar) sidebarAvatar.textContent = initials(profile.displayName || profile.realName || profile.username);
-    var sidebarBadges = document.getElementById('rc-sidebar-badges');
-    if (sidebarBadges) {
-      sidebarBadges.innerHTML = '';
-      var badges = buildSidebarBadges(profile);
-      while (badges.firstChild) sidebarBadges.appendChild(badges.firstChild);
-    }
-
     buildSidebarNav();
     renderDashboardSection(profile, token);
     renderPlaceholderSections();
