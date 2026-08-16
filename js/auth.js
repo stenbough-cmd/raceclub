@@ -6,7 +6,7 @@
   the only way to persist state across views WITHIN one sandboxed embed
   iframe. Now that every page is served from the same GitHub Pages origin,
   localStorage works exactly the way it normally would across separate
-  pages — a token saved by login.html is visible to profile.html on the
+  pages — a token saved by login.html is visible to Account.html on the
   next navigation, no special-casing required. This file centralizes the
   token helpers and the 30-minute inactivity auto-logout timer so every
   page uses the exact same logic instead of copy-pasting it.
@@ -40,7 +40,7 @@ function clearToken() {
 // Script round-trip on every single page load (which would add real
 // latency given Apps Script's cold-start cost). Whenever a page already
 // has a fresh profile payload anyway -- login.html's login response,
-// profile.html's getProfile call -- it calls setProfileCache() so any
+// Account.html's getProfile call -- it calls setProfileCache() so any
 // OTHER page's header can read it back instantly. Only a few small
 // fields are kept (not the whole payload) since this is just for
 // rendering the header, not a source of truth for anything else.
@@ -65,7 +65,7 @@ function getProfileCache() {
   }
 }
 
-// Call at the top of any page that requires a logged-in user (profile.html).
+// Call at the top of any page that requires a logged-in user (Account.html).
 // Redirects to login.html immediately if no token is saved. Returns the
 // token if present, so the caller can go straight on to load the profile.
 function redirectIfNoToken() {
@@ -84,7 +84,7 @@ function redirectIfNoToken() {
 // server-side expiry (7 days) -- the token stays valid that whole time,
 // this just stops trusting an inactive browser tab with it. Ported
 // verbatim from the source file's behavior, just relocated here so
-// profile.html can call one function instead of repeating this block.
+// Account.html can call one function instead of repeating this block.
 // ---------------------------------------------------------------------
 var INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 var _inactivityTimer = null;
@@ -103,7 +103,7 @@ function resetInactivityTimer() {
   _inactivityTimer = setTimeout(_handleInactivityTimeout, INACTIVITY_LIMIT_MS);
 }
 
-// Call once on any authenticated page (profile.html) to start the idle
+// Call once on any authenticated page (Account.html) to start the idle
 // timer and wire up the activity listeners that reset it.
 function startInactivityWatcher() {
   ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(function (evt) {

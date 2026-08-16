@@ -28,7 +28,7 @@
 
   AVATAR + NOTIFICATION DOT: the avatar's initials come from
   getProfileCache() (js/auth.js) -- a small cached copy of the last-known
-  profile, written by login.html/profile.html whenever they have a fresh
+  profile, written by login.html/Account.html whenever they have a fresh
   payload anyway, specifically so THIS file never has to make its own
   Apps Script round-trip just to render an avatar on every single page
   load (Apps Script's cold-start cost is real, see the login-latency
@@ -39,11 +39,11 @@
   token is an optimistic guess, not proof the session is actually still
   valid. That was fine for pages that never call the API at all (index,
   login, register, verify -- there's nothing for them to falsely confirm).
-  But profile.html DOES call the API to confirm the session, and if that
+  But Account.html DOES call the API to confirm the session, and if that
   call fails to even reach the server, the avatar rendering instantly
   from cache made the navbar look successfully logged in while the actual
   page content below it was failing -- a confusing, actively misleading
-  combination Matt flagged directly. So profile.html no longer calls this
+  combination Matt flagged directly. So Account.html no longer calls this
   function immediately: it calls renderHeaderPending() first (logo only,
   no claim either way about login state), then calls THIS function for
   real only once its own API call has actually resolved -- with
@@ -58,9 +58,9 @@
   background adminListPendingAccounts call and adds the dot only if the
   total is > 0. This never blocks the header from rendering; it's a
   background enhancement. See the matching dot on the Admin sidebar nav
-  item in profile.html (renderAdminSection) for the same signal in-page.
+  item in Account.html (renderAdminSection) for the same signal in-page.
 
-  Logout uses the exact same fire-and-forget pattern as profile.html's
+  Logout uses the exact same fire-and-forget pattern as Account.html's
   sidebar Log Out button: call the logout API action, ignore whether it
   succeeds, always clear the local token and redirect.
 */
@@ -74,7 +74,7 @@ function _rcHeaderInitials(name) {
 }
 
 // Lets a page that already has the pending-approvals count (right now
-// that's just profile.html's Admin section) push it straight to the
+// that's just Account.html's Admin section) push it straight to the
 // header dot instead of the header firing its own redundant fetch for
 // the exact same data -- see the skipNotifCheck option below.
 function updateHeaderNotifDot(hasPending) {
@@ -84,7 +84,7 @@ function updateHeaderNotifDot(hasPending) {
 
 // Shows just the logo -- no HOME/LOGIN/ACCOUNT at all -- while a page is
 // still waiting to find out whether its own session is actually valid.
-// Used by profile.html in place of an immediate renderHeader() call, so
+// Used by Account.html in place of an immediate renderHeader() call, so
 // the navbar never asserts a login state (or a logged-out state) it
 // hasn't confirmed yet. See the long comment above renderHeader() for why
 // this exists.
@@ -97,12 +97,12 @@ function renderHeaderPending() {
     '</a><nav class="rc-header-nav"></nav>';
 }
 
-// opts.skipNotifCheck: profile.html passes this since its own Admin
+// opts.skipNotifCheck: Account.html passes this since its own Admin
 // section (approvalQueueSection) already fetches the pending-approvals
 // list for the sidebar's nav dot -- without this flag, an admin loading
-// profile.html would trigger TWO separate adminListPendingAccounts calls
+// Account.html would trigger TWO separate adminListPendingAccounts calls
 // for the exact same data (one from here, one from there), which was
-// part of what made things feel slow. profile.html calls
+// part of what made things feel slow. Account.html calls
 // updateHeaderNotifDot() itself once its own fetch resolves instead.
 //
 // opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER)
@@ -141,7 +141,7 @@ function renderHeader(opts) {
               '</button>' +
               '<div class="rc-header-dropdown" id="rc-header-dropdown">' +
                 '<div class="rc-header-dropdown-inner">' +
-                  '<a href="profile.html">PROFILE</a>' +
+                  '<a href="Account.html">PROFILE</a>' +
                   '<button type="button" id="rc-header-logout">LOGOUT</button>' +
                 '</div>' +
               '</div>' +
@@ -169,7 +169,7 @@ function renderHeader(opts) {
       }
     });
 
-    // Same fix as profile.html's doLogout: redirect immediately instead
+    // Same fix as Account.html's doLogout: redirect immediately instead
     // of waiting for the logout API call to resolve first. Waiting made
     // logout feel hung whenever Apps Script was slow to respond (cold
     // start) -- nothing about actually logging the browser out depends on

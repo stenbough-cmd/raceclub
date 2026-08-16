@@ -6,7 +6,7 @@
   and the curated/offset-sorted timezone list were declared once and used
   by both the registration form and the profile edit form because
   everything shared one <script> scope. Split into real pages, both
-  register.html and profile.html need this same data — rather than
+  register.html and Account.html need this same data — rather than
   duplicating ~150 lines of country/timezone tables in two files, it lives
   here once and both pages load it via <script src="js/reference-data.js">.
 
