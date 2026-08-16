@@ -181,8 +181,35 @@
     window.location.href = 'login.html';
   }
 
-  document.getElementById('rc-hamburger').addEventListener('click', function () {
-    document.getElementById('rc-sidebar').classList.toggle('rc-sidebar-open');
+  // Mobile menu open/close. While open: the page itself can't scroll (see
+  // .rc-scroll-locked in style.css) -- the only ways out are picking a
+  // link (showSection() below already closes the menu, see
+  // closeMobileMenu() there), clicking anywhere outside the menu panel,
+  // or clicking the hamburger again. A capturing document-level click
+  // listener handles the "click off the menu" case: it only acts when
+  // the menu is actually open, and ignores clicks on the hamburger itself
+  // (which already has its own toggle handler -- without this check,
+  // clicking the hamburger to close would immediately re-open it via the
+  // same click bubbling to this listener).
+  function openMobileMenu() {
+    document.getElementById('rc-sidebar').classList.add('rc-sidebar-open');
+    document.body.classList.add('rc-scroll-locked');
+  }
+  function closeMobileMenu() {
+    document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
+    document.body.classList.remove('rc-scroll-locked');
+  }
+  document.getElementById('rc-hamburger').addEventListener('click', function (evt) {
+    evt.stopPropagation();
+    var sidebar = document.getElementById('rc-sidebar');
+    if (sidebar.classList.contains('rc-sidebar-open')) closeMobileMenu();
+    else openMobileMenu();
+  });
+  document.addEventListener('click', function (evt) {
+    var sidebar = document.getElementById('rc-sidebar');
+    if (!sidebar.classList.contains('rc-sidebar-open')) return;
+    if (sidebar.contains(evt.target)) return; // click was on a nav link/inside the menu -- let it do its own thing
+    closeMobileMenu();
   });
 
   // NOTE: the actual profile-loading code (fetch/render) is NOT here --
@@ -405,7 +432,7 @@
     document.querySelectorAll('.rc-nav-item').forEach(function (btn) {
       btn.classList.toggle('rc-nav-active', btn.dataset.section === id);
     });
-    document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
+    closeMobileMenu(); // also lifts the scroll lock, not just the class the old direct removal handled
   }
 
   // ---------------------------------------------------------------------
