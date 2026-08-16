@@ -762,8 +762,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-dashboard-hero { padding: 24px; }
 .rc-dash-hero-top { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
 .rc-dash-avatar {
-  width: 200px;
-  height: 112.5px; /* 16:9 */
+  width: 300px;
+  aspect-ratio: 16 / 9;
   border-radius: 8px;
   object-fit: cover;
   flex: none;
@@ -771,7 +771,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border: 1px solid var(--rc-silver);
 }
 @media (max-width: 480px) {
-  .rc-dash-avatar { width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  .rc-dash-avatar { width: 100%; }
 }
 
 /* -------------------------------------------------------------------- */
@@ -779,6 +779,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* -------------------------------------------------------------------- */
 .rc-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
 .rc-widget-card { opacity: 0.9; }
+/* Two-column-wide placeholder card (Upcoming Race) -- pinned to the
+   rightmost two column tracks so it lands bottom-right of the grid on
+   wider screens; falls back to full width once the grid is too narrow
+   for that pin to make sense. */
+.rc-widget-wide { grid-column: -3 / -1; }
+@media (max-width: 700px) {
+  .rc-widget-wide { grid-column: 1 / -1; }
+}
 .rc-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .rc-widget-title { font-size: 12px; letter-spacing: 0.05em; }
 .rc-coming-soon-badge {
