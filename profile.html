@@ -668,6 +668,14 @@
     grid.appendChild(widgetCard('Sponsor Status',
       '<p class="rc-widget-sub">No sponsor relationships yet.</p>'));
 
+    // Placeholder only -- two columns wide, pinned bottom-right of the
+    // grid (see .rc-widget-wide in style.css). No real schedule data
+    // wired up yet.
+    var upcomingRace = widgetCard('Upcoming Race',
+      '<p class="rc-widget-sub">No upcoming race scheduled yet.</p>');
+    upcomingRace.classList.add('rc-widget-wide');
+    grid.appendChild(upcomingRace);
+
     return grid;
   }
 
