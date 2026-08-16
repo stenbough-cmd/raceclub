@@ -438,7 +438,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
     box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
   }
   .rc-topbar { display: flex; }
-  .rc-main { padding: 12px 16px 48px; }
+  /* Flush with the topbar, same as the opened menu -- .rc-main is the
+     only visible flex child of .rc-shell when the menu is closed (the
+     sidebar is display:none, so it takes up no space), so zero top
+     padding here puts the dashboard card right against the topbar's
+     bottom edge, matching how the menu now sits directly against it too. */
+  .rc-main { padding: 0 16px 48px; }
 }
 
 /* -------------------------------------------------------------------- */
