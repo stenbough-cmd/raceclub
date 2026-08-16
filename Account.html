@@ -88,8 +88,11 @@
      "navbar looks logged in even though the API is unreachable" bug. -->
 <script>renderHeaderPending();</script>
 
+<!-- Mobile-only topbar. Logo removed -- the shared fixed site header
+     (js/header.js, above) already shows it, so a second logo here was
+     redundant. Hamburger sits alone on the left (see .rc-topbar's
+     justify-content in style.css). -->
 <div class="rc-topbar" id="rc-topbar">
-  <img class="rc-topbar-logo" src="assets/race-club-logo.png" alt="Race Club">
   <button class="rc-hamburger" id="rc-hamburger" aria-label="Menu">&#9776;</button>
 </div>
 
