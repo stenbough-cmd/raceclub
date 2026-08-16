@@ -439,16 +439,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   }
   .rc-topbar { display: flex; }
   /* Applied to <body> via JS (openMobileMenu()/closeMobileMenu() in
-     Account.html) while the mobile menu is open -- freezes background
-     scroll so the page underneath can't move until the menu is
-     dismissed (a link, clicking outside it, or the hamburger again). */
-  body.rc-scroll-locked { overflow: hidden; }
-  /* Flush with the topbar, same as the opened menu -- .rc-main is the
-     only visible flex child of .rc-shell when the menu is closed (the
-     sidebar is display:none, so it takes up no space), so zero top
-     padding here puts the dashboard card right against the topbar's
-     bottom edge, matching how the menu now sits directly against it too. */
-  .rc-main { padding: 0 16px 48px; }
+     Account.html) while the mobile menu is open. Plain `overflow: hidden`
+     on body does NOT reliably block touch-driven scrolling on iOS
+     Safari -- the well-known working fix is to also pin the body in
+     place with position: fixed (the dynamic top offset that undoes this
+     without a visible jump is set/cleared by the JS, not here). */
+  body.rc-scroll-locked {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+  /* Top padding now matches the left/right side padding (16px) so the
+     gap above the dashboard card reads as even on all sides, same as the
+     gap on its left/right edges. */
+  .rc-main { padding: 16px 16px 48px; }
 }
 
 /* -------------------------------------------------------------------- */
