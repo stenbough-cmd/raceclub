@@ -688,7 +688,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* sidesteps that entirely: it's plain document flow + z-index, no      */
 /* dependence on sticky's positioning quirks.                           */
 /* -------------------------------------------------------------------- */
-.rc-hero-spacer { height: 100vh; }
+/* height is given twice on purpose: the plain `vh` value first as a
+   fallback for browsers that don't understand `dvh`, then `dvh` (dynamic
+   viewport height) right after so browsers that DO support it use that
+   instead -- CSS keeps whichever declaration is last and valid. This
+   matters specifically on mobile: `100vh` there is measured as if the
+   browser's address bar is always hidden, which it usually isn't, so the
+   spacer/hero end up taller than what's actually on screen and the
+   "anchored right under the header, page catches up to it on scroll"
+   effect drifts out of sync as the address bar shows/hides during
+   scrolling. `dvh` tracks the REAL visible viewport continuously, which
+   keeps the hero properly pinned directly under the header with no drift. */
+.rc-hero-spacer {
+  height: 100vh;
+  height: 100dvh;
+}
 .rc-hero {
   position: fixed;
   top: 72px;
@@ -697,6 +711,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   width: 100%;
   max-width: 100vw;
   height: calc(100vh - 72px);
+  height: calc(100dvh - 72px);
   z-index: 1;
   background-size: cover;
   background-position: center;
