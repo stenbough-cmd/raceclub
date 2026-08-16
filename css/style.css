@@ -318,7 +318,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-auth-footer { text-align: center; font-size: 13px; margin-top: 16px; }
 
 /* -------------------------------------------------------------------- */
-/* Authenticated shell (profile.html) — sidebar + main content */
+/* Authenticated shell (Account.html) — sidebar + main content */
 /* -------------------------------------------------------------------- */
 .rc-shell { display: flex; min-height: 100vh; }
 
@@ -757,7 +757,53 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-modal-body { padding: 20px; }
 
 /* -------------------------------------------------------------------- */
-/* profile.html dashboard — hero card (avatar + details + quick view)   */
+/* Account.html — branded loading spinner. Two uses of the same visual   */
+/* language: ".rc-loading-overlay" is the full-page, fixed-position wash */
+/* shown on initial load (see the static markup in <body>); ".rc-inline- */
+/* spinner-wrap" is the same spinner+message pair used in-page (e.g. the */
+/* Admin section's first load, via buildSpinner() in Account.html) --    */
+/* not fixed, so it just sits wherever it's appended instead of covering */
+/* the whole screen.                                                     */
+/* -------------------------------------------------------------------- */
+.rc-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(245, 245, 243, 0.94); /* var(--rc-offwhite) at reduced opacity -- washes out the page beneath */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 9999;
+}
+.rc-inline-spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 56px 20px;
+}
+.rc-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--rc-silver);
+  border-top-color: var(--rc-red);
+  border-radius: 50%;
+  animation: rc-spin 0.75s linear infinite;
+}
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+.rc-loading-text {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-steel);
+}
+
+/* -------------------------------------------------------------------- */
+/* Account.html dashboard — hero card (avatar + details + quick view)   */
 /* -------------------------------------------------------------------- */
 .rc-dashboard-hero { padding: 24px; }
 .rc-dash-hero-top { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
@@ -775,7 +821,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* -------------------------------------------------------------------- */
-/* profile.html dashboard — placeholder widget cards                    */
+/* Account.html dashboard — placeholder widget cards                    */
 /* -------------------------------------------------------------------- */
 .rc-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
 .rc-widget-card { opacity: 0.9; }
