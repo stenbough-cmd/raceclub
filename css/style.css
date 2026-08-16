@@ -438,6 +438,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
     box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
   }
   .rc-topbar { display: flex; }
+  /* Applied to <body> via JS (openMobileMenu()/closeMobileMenu() in
+     Account.html) while the mobile menu is open -- freezes background
+     scroll so the page underneath can't move until the menu is
+     dismissed (a link, clicking outside it, or the hamburger again). */
+  body.rc-scroll-locked { overflow: hidden; }
   /* Flush with the topbar, same as the opened menu -- .rc-main is the
      only visible flex child of .rc-shell when the menu is closed (the
      sidebar is display:none, so it takes up no space), so zero top
@@ -672,6 +677,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-auth-page { padding-top: 72px; }
 .rc-shell { padding-top: 72px; }
 .rc-topbar { margin-top: 72px; }
+/* THE ACTUAL BUG BEHIND THE PERSISTENT MOBILE GAP: the earlier mobile
+   override (".rc-shell { padding-top: 0; }" in the @media block above)
+   has the exact same specificity as the unconditional rule directly
+   above this comment -- and since THIS one comes later in the file, it
+   was winning on mobile too, silently cancelling that override back to
+   72px the whole time. Repeating the override here, after the rule it
+   needs to beat, guarantees it's actually the last matching declaration
+   so it wins for real. */
+@media (max-width: 768px) {
+  .rc-shell { padding-top: 0; }
+}
 
 /* -------------------------------------------------------------------- */
 /* index.html — hero banner + scroll-cover effect                       */
