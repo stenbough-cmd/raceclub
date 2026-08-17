@@ -546,15 +546,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 64px;
+  gap: 14px;
+  font-size: 38px;
   letter-spacing: 0.01em;
 }
 /* Emoji flag glyphs carry extra internal vertical padding baked into the
    font/emoji asset itself, so align-items: center alone still lands them
    a few px lower than the actual visual center of the name text next to
    them -- this nudges it back up to true midline alignment. */
-.rc-flag { font-size: 46px; line-height: 1; position: relative; top: -0.05em; }
+.rc-flag { font-size: 28px; line-height: 1; position: relative; top: -0.05em; }
 .rc-about-me { font-size: 14px; font-style: italic; color: var(--rc-carbon); margin: 6px 0 0; font-family: var(--rc-font-body); text-transform: none; letter-spacing: normal; }
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
@@ -870,12 +870,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 @media (max-width: 480px) {
   .rc-dash-avatar { width: 100%; }
-  /* 64px is a lot on a narrow phone, especially for a long display name --
-     scale it back down a bit here rather than letting it wrap awkwardly.
-     Same ".rc-main" specificity bump as the base rule above -- needed
-     here too or ".rc-main h2"'s 20px wins on mobile as well. */
-  .rc-main .rc-name-line { font-size: 40px; gap: 12px; }
-  .rc-flag { font-size: 30px; }
+  /* Scale down from the 38px desktop base for narrow phones -- long
+     display names still need room to breathe here. Same ".rc-main"
+     specificity bump as the base rule above -- needed here too or
+     ".rc-main h2"'s 20px wins on mobile as well. */
+  .rc-main .rc-name-line { font-size: 26px; gap: 10px; }
+  .rc-flag { font-size: 20px; }
 }
 
 /* -------------------------------------------------------------------- */
