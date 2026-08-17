@@ -688,7 +688,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: calc(100vh - 72px);
   height: calc(100dvh - 72px);
   z-index: 1;
-  background-image: url('assets/banner.jpg');
+  background-image: url('../assets/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/ is a sibling of css/, not a child of it */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -705,7 +705,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    image to switch to -- "cover" looks right on it without needing to
    shrink/letterbox anything. */
 @media (orientation: portrait) {
-  .rc-hero { background-image: url('assets/banner-portrait.jpg'); }
+  .rc-hero { background-image: url('../assets/banner-portrait.jpg'); }
 }
 .rc-hero-content {
   position: relative;
