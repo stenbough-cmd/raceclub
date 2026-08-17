@@ -36,8 +36,13 @@
 <div class="rc-hero-spacer"></div>
 
 <!-- Fixed hero banner, pinned just under the header. Stays put while the
-     content below scrolls up and over it (see css/style.css). -->
-<div class="rc-hero" style="background-image:url('assets/banner.png');" role="img" aria-label="Race Club — league cars on track"></div>
+     content below scrolls up and over it (see css/style.css). The image
+     itself is set entirely in CSS now (not inline here) specifically so
+     an @media (orientation: portrait) rule can swap it for a dedicated
+     portrait-shaped image on phones held upright, falling back to this
+     standard landscape one otherwise -- an inline style here would beat
+     that media query on specificity and the swap would never show. -->
+<div class="rc-hero" role="img" aria-label="Race Club — league cars on track"></div>
 
 <!-- Everything from here down is normal document flow, opaque white
      background, higher z-index than the hero -- this is what visually
