@@ -505,7 +505,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 .rc-bio-text { font-size: 14px; line-height: 1.5; margin-top: 12px; color: var(--rc-carbon); }
-.rc-meta-row { font-size: 12px; color: var(--rc-steel); margin-top: 4px; }
+.rc-meta-row { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
 .rc-social-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .rc-social-chip {
   display: inline-block;
@@ -548,13 +548,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   align-items: center;
   gap: 12px;
   font-size: 30px;
+  line-height: 1;
   letter-spacing: 0.01em;
 }
-/* Emoji flag glyphs carry extra internal vertical padding baked into the
-   font/emoji asset itself, so align-items: center alone still lands them
-   a few px lower than the actual visual center of the name text next to
-   them -- this nudges it back up to true midline alignment. */
-.rc-flag { font-size: 22px; line-height: 1; position: relative; top: -0.05em; }
+/* Country code badge (e.g. "US") -- replaces the old emoji flag glyph.
+   Sits inline with the name at rc-name-line's align-items: center, no
+   special vertical alignment needed since it's just text on a chip. */
+.rc-country-badge {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--rc-steel);
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  border-radius: 4px;
+  padding: 3px 7px;
+}
 .rc-about-me { font-size: 14px; font-style: italic; color: var(--rc-carbon); margin: 6px 0 0; font-family: var(--rc-font-body); text-transform: none; letter-spacing: normal; }
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
@@ -875,7 +885,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      specificity bump as the base rule above -- needed here too or
      ".rc-main h2"'s 20px wins on mobile as well. */
   .rc-main .rc-name-line { font-size: 22px; gap: 8px; }
-  .rc-flag { font-size: 17px; }
+  .rc-country-badge { font-size: 10px; padding: 2px 6px; }
 }
 
 /* -------------------------------------------------------------------- */
