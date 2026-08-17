@@ -627,56 +627,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border: 2px solid var(--rc-white);
 }
 
-.rc-header-account { position: relative; }
-/* The visible gap between the toggle and the menu is padding-top on THIS
-   element, not a margin or a `top: calc(100% + Npx)` offset -- padding is
-   still inside the element's own hoverable box, a margin/offset isn't.
-   With the old margin-based gap, moving the cursor straight down from
-   "ACCOUNT" into the menu passed through a dead zone with nothing under
-   it, which broke :hover continuity and closed the menu before the
-   cursor arrived (hence needing a click to "hold" it open). The actual
-   visible card (background/border/shadow) is the nested
-   .rc-header-dropdown-inner so the padding area stays invisible. */
-.rc-header-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  padding-top: 10px;
-  display: none;
-  z-index: 1001;
-}
-.rc-header-dropdown-inner {
-  min-width: 150px;
-  background: var(--rc-white);
-  border: 1px solid var(--rc-silver);
-  border-radius: 6px;
-  box-shadow: 0 8px 20px rgba(23, 23, 23, 0.10);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.rc-header-dropdown a, .rc-header-dropdown button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 11px 16px;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--rc-carbon);
-  text-decoration: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.rc-header-dropdown a:hover, .rc-header-dropdown button:hover { background: var(--rc-offwhite); color: var(--rc-red); }
-.rc-header-account.rc-header-dropdown-open .rc-header-dropdown { display: block; }
-@media (hover: hover) {
-  .rc-header-account:hover .rc-header-dropdown { display: block; }
-}
-
 /* Pages other than index.html sit below the fixed header. */
 .rc-auth-page { padding-top: 72px; }
 .rc-shell { padding-top: 72px; }
@@ -738,18 +688,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: calc(100vh - 72px);
   height: calc(100dvh - 72px);
   z-index: 1;
+  background-image: url('assets/banner.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-color: var(--rc-carbon);
 }
-@media (max-width: 768px) {
-  /* "cover" fills the box by cropping whichever dimension overflows --
-     on a narrow phone viewport against a wide banner image, that crops
-     the left/right edges off. "contain" shrinks the image down to fit
-     entirely within the box instead, so the full width (both edges) is
-     always visible, at the cost of some letterboxing above/below. */
-  .rc-hero { background-size: contain; }
+/* Portrait phones get a dedicated portrait-shaped image instead of the
+   standard landscape one cropped/shrunk to fit -- the CSS `orientation`
+   media feature is exactly this: it re-evaluates live as a phone is
+   rotated, no JS needed. Flip the phone sideways and this stops matching,
+   so it falls straight back to the plain .rc-hero rule above (the
+   standard banner, "cover"), which is also what desktop always uses. The
+   old approach here (same image at a smaller `background-size: contain`
+   on any narrow viewport) is gone now that there's a proper portrait
+   image to switch to -- "cover" looks right on it without needing to
+   shrink/letterbox anything. */
+@media (orientation: portrait) {
+  .rc-hero { background-image: url('assets/banner-portrait.jpg'); }
 }
 .rc-hero-content {
   position: relative;
