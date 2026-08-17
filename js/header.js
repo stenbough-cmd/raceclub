@@ -15,16 +15,14 @@
   disappear entirely once a token existed, which left no way back to the
   landing page from the header -- fixed). After that:
     - Logged out (no getToken()):  "HOME · LOGIN/REGISTER"
-    - Logged in (getToken()):      "HOME ·" + a small initials avatar
-      (replaces the old plain "ACCOUNT" text) with a dropdown revealing
-      "PROFILE" and "LOGOUT". The dropdown opens on hover (desktop) AND on
-      click (so it also works on touch/mobile, which can't hover) -- see
-      the click handler below plus the `:hover` CSS fallback in
-      css/style.css. The dropdown sits flush against the toggle button (no
-      gap) specifically so hovering straight down from the button into the
-      dropdown never crosses a dead zone with nothing under the cursor --
-      a gap there was breaking :hover continuity and making the menu
-      require a click to stay open.
+    - Logged in (getToken()):      "HOME ·" + a small initials avatar,
+      itself a plain link straight to Account.html. No dropdown -- there
+      used to be one (PROFILE/LOGOUT), removed per Matt's call to keep the
+      avatar's click behavior identical on every device instead of
+      hover-on-desktop/tap-on-mobile needing to stay in sync. The site
+      keeps a driver logged in via a long-lived token until it actually
+      expires, so there's no real need for a quick Logout from every page
+      -- it still lives in Account.html's own sidebar.
 
   AVATAR + NOTIFICATION DOT: the avatar's initials come from
   getProfileCache() (js/auth.js) -- a small cached copy of the last-known
@@ -135,17 +133,18 @@ function renderHeader(opts) {
           '<span class="rc-header-sep">&middot;</span>';
   if (token) {
     var initials = _rcHeaderInitials(cached ? (cached.displayName || cached.username) : '');
-    html += '<div class="rc-header-account" id="rc-header-account">' +
-              '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-label="Account menu">' +
-                '<span class="rc-header-avatar">' + initials + '<span class="rc-notif-dot" id="rc-header-notif-dot" style="display:none;"></span></span>' +
-              '</button>' +
-              '<div class="rc-header-dropdown" id="rc-header-dropdown">' +
-                '<div class="rc-header-dropdown-inner">' +
-                  '<a href="Account.html">PROFILE</a>' +
-                  '<button type="button" id="rc-header-logout">LOGOUT</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>';
+    // No dropdown at all now, per Matt's call -- the avatar is just a
+    // plain link straight to Account.html, same click behavior on every
+    // device (no hover/touch distinction to worry about, no dead zones,
+    // nothing to keep consistent between desktop and mobile). Logout no
+    // longer has a header-level entry point on pages other than
+    // Account.html -- Matt's reasoning: the site keeps you logged in via
+    // a long-lived token until it actually expires, so quick access to
+    // Logout from every page isn't really needed; it's still right there
+    // in Account.html's own sidebar for the times it is.
+    html += '<a class="rc-header-account-toggle" id="rc-header-account-toggle" href="Account.html" aria-label="Go to Account">' +
+              '<span class="rc-header-avatar">' + initials + '<span class="rc-notif-dot" id="rc-header-notif-dot" style="display:none;"></span></span>' +
+            '</a>';
   } else {
     html += '<a class="rc-header-link" href="login.html">LOGIN/REGISTER</a>';
   }
@@ -154,31 +153,9 @@ function renderHeader(opts) {
   mount.innerHTML = html;
 
   if (token) {
-    var accountWrap = document.getElementById('rc-header-account');
-    var toggle = document.getElementById('rc-header-account-toggle');
-
-    // Click-to-toggle (works on touch/mobile, where :hover doesn't fire).
-    toggle.addEventListener('click', function (evt) {
-      evt.stopPropagation();
-      accountWrap.classList.toggle('rc-header-dropdown-open');
-    });
-    // Click anywhere else closes it.
-    document.addEventListener('click', function (evt) {
-      if (!accountWrap.contains(evt.target)) {
-        accountWrap.classList.remove('rc-header-dropdown-open');
-      }
-    });
-
-    // Same fix as Account.html's doLogout: redirect immediately instead
-    // of waiting for the logout API call to resolve first. Waiting made
-    // logout feel hung whenever Apps Script was slow to respond (cold
-    // start) -- nothing about actually logging the browser out depends on
-    // that call succeeding first.
-    document.getElementById('rc-header-logout').addEventListener('click', function () {
-      fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
-      clearToken();
-      window.location.href = 'index.html';
-    });
+    // No dropdown/logout wiring here anymore -- the avatar is a plain
+    // <a href="Account.html">, so clicking it just navigates like any
+    // other link, nothing to attach a click handler to.
 
     // Background-only: never blocks the header from rendering, and only
     // fires for admins (everyone else has nothing to be notified about
