@@ -533,8 +533,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-stack-box.rc-active { border: 1px solid var(--rc-silver); background: var(--rc-white); }
 .rc-stack-box.rc-active .rc-box-icon { color: var(--rc-red); }
 
-.rc-name-line { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 24px; }
-.rc-flag { font-size: 20px; line-height: 1; }
+/* Bumped up from 24px and given a bit less letter-spacing than the base
+   h1-h4 rule (0.04em reads as loose at this size) so it reads as a real
+   focal point on the page instead of just a bigger label. The red bar to
+   its left (::before) is a livery-plate/stat-callout accent -- ties back
+   to the brand red without reusing the checkered graphic that was
+   deliberately removed elsewhere on the site. */
+.rc-name-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 36px;
+  letter-spacing: 0.01em;
+}
+.rc-name-line::before {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 32px;
+  background: var(--rc-red);
+  border-radius: 2px;
+  flex: none;
+}
+.rc-flag { font-size: 26px; line-height: 1; }
 .rc-about-me { font-size: 14px; font-style: italic; color: var(--rc-carbon); margin: 6px 0 0; font-family: var(--rc-font-body); text-transform: none; letter-spacing: normal; }
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
@@ -850,6 +872,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 @media (max-width: 480px) {
   .rc-dash-avatar { width: 100%; }
+  /* 36px is a lot on a narrow phone, especially for a long display name --
+     scale it back down a bit here rather than letting it wrap awkwardly
+     next to the accent bar. */
+  .rc-name-line { font-size: 26px; gap: 10px; }
+  .rc-name-line::before { height: 24px; width: 4px; }
+  .rc-flag { font-size: 20px; }
 }
 
 /* -------------------------------------------------------------------- */
