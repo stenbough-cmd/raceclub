@@ -402,14 +402,22 @@
   // Order, per Matt's call: the 8 general section links, a divider,
   // League Management and/or Admin (only if this user's permissions
   // unlock them), a second divider directly above Settings, then
-  // Settings, then Log Out.
+  // Settings, then Log Out. The UPPER divider is hidden by default and
+  // only revealed by renderLeagueSection()/renderAdminSection() (see
+  // below) if at least one of League Management/Admin actually ends up
+  // visible -- for a plain Driver, neither does, so without this it was
+  // rendering as two dividers back to back with nothing shown between
+  // them (both hidden buttons still sat there, just invisible), which is
+  // exactly what looked like "two lines" instead of one.
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
     NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
       nav.appendChild(makeNavButton(item.id, item.label, item.icon));
     });
-    nav.appendChild(navDivider());
+    var upperDivider = navDivider('rc-nav-divider-upper');
+    upperDivider.style.display = 'none';
+    nav.appendChild(upperDivider);
     nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
     // Admin's onClick does the normal section-switch AND triggers the lazy
     // load (see loadAdminSectionIfNeeded) -- the panel itself only builds
@@ -1157,12 +1165,21 @@
     return box;
   }
 
+  // Shared by renderLeagueSection() and the Admin-enabling branch in
+  // buildFullProfileUI() below -- either one showing up means the upper
+  // divider (between the general links and League/Admin) should show too.
+  function showUpperNavDivider() {
+    var divider = document.getElementById('rc-nav-divider-upper');
+    if (divider) divider.style.display = '';
+  }
+
   // ---------------------------------------------------------------------
   // LEAGUE MANAGEMENT (unwired placeholder buttons) — unchanged from
   // v0.2.5, just relocated into the static #rc-section-league container.
   // ---------------------------------------------------------------------
   function renderLeagueSection() {
     document.getElementById('rc-nav-league').style.display = 'flex';
+    showUpperNavDivider();
     var leagueSection = document.getElementById('rc-section-league');
     leagueSection.innerHTML = '';
     var mgmt = document.createElement('div');
@@ -1233,6 +1250,7 @@
     }
     if (perms.indexOf('manageUsers') !== -1) {
       document.getElementById('rc-nav-admin').style.display = 'flex';
+      showUpperNavDivider();
       // Lightweight only -- just enough to know whether to light up the
       // dot. Does NOT build the Admin panel itself (see
       // loadAdminSectionIfNeeded, wired to the nav click in
