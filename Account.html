@@ -480,13 +480,18 @@
     var nameText = document.createElement('span');
     nameText.textContent = profile.displayName || profile.username;
     nameLine.appendChild(nameText);
-    var flag = flagEmoji(profile.country);
-    if (flag) {
-      var flagSpan = document.createElement('span');
-      flagSpan.className = 'rc-flag';
-      flagSpan.setAttribute('aria-hidden', 'true');
-      flagSpan.textContent = flag;
-      nameLine.appendChild(flagSpan);
+    // Country shows as a styled code badge (e.g. "US") instead of an
+    // emoji flag glyph -- emoji flags render inconsistently across OSes
+    // (Windows shows the 2-letter code as plain text, not an image) and
+    // looked out of place next to the rest of the site's flat, branded
+    // UI. COUNTRY_CODES (js/reference-data.js) already has the 2-letter
+    // code for every country in the picker, so no new data is needed.
+    var code = COUNTRY_CODES[profile.country];
+    if (code) {
+      var codeBadge = document.createElement('span');
+      codeBadge.className = 'rc-country-badge';
+      codeBadge.textContent = code;
+      nameLine.appendChild(codeBadge);
     }
     return nameLine;
   }
