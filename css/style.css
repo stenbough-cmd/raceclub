@@ -116,7 +116,16 @@ p { margin: 0 0 0.75em; }
   cursor: pointer;
   text-align: center;
 }
-.rc-btn-primary:hover { background: var(--rc-red-dark); }
+/* color explicitly repeated here (not just on the base .rc-btn-primary
+   rule) because the sitewide "a:hover { color: var(--rc-red-dark); })"
+   rule further up this file is MORE specific than plain ".rc-btn-primary"
+   (element+pseudo-class beats a single class) -- so on any <a> styled as
+   a primary button (e.g. the "Create Your Driver" CTA on index.html),
+   that global link-hover rule was winning and turning the button's text
+   dark red on hover, which read as invisible against the also-darkened
+   red-dark hover background. Restating white color here, at matching
+   .rc-btn-primary:hover specificity, wins back for real. */
+.rc-btn-primary:hover { background: var(--rc-red-dark); color: var(--rc-white); }
 .rc-btn-primary:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
 
 .rc-btn-secondary {
@@ -745,9 +754,140 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
 .rc-landing-inner h2 { font-size: 26px; }
 .rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }
-.rc-tier-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 28px; }
-.rc-tier-card { flex: 1; min-width: 220px; text-align: center; }
-.rc-tier-card h3 { font-size: 17px; }
+
+/* Small uppercase red kicker label used above a couple of section
+   headings on this page (e.g. "The Experience", "The Ladder") -- a cheap
+   way to add a bit of editorial structure/depth without another whole
+   heading level, and it's the ONE place red gets used as a label color
+   outside buttons/links, which keeps it feeling like an accent rather
+   than overuse. */
+.rc-eyebrow {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 8px;
+}
+
+/* -------------------------------------------------------------------- */
+/* "Why Race Club" highlight cards                                      */
+/*                                                                       */
+/* Six short claims, icon + headline + one line each, instead of a wall */
+/* of paragraph copy. Depth comes from a soft resting shadow that grows */
+/* on hover plus a small lift (translateY), not from color -- keeps the */
+/* section feeling calm/professional rather than busy, per Matt's "no   */
+/* tacky checkered flags" note; the checker accent is intentionally not */
+/* used anywhere in this section or the two below it.                   */
+/* -------------------------------------------------------------------- */
+.rc-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 32px;
+}
+.rc-highlight-card {
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.rc-highlight-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
+  border-color: var(--rc-carbon);
+}
+.rc-highlight-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--rc-carbon), #2c2c2c);
+  color: var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.rc-highlight-icon svg { width: 22px; height: 22px; }
+.rc-highlight-card h3 { font-size: 15px; letter-spacing: 0.03em; }
+.rc-highlight-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
+
+/* -------------------------------------------------------------------- */
+/* Mid-page banner (assets/banner-highlights.jpg)                       */
+/*                                                                       */
+/* Plain full-bleed image in normal document flow -- NOT the top hero's */
+/* fixed/spacer scroll-cover trick. It's meant to be scrolled past like */
+/* any other section, sitting between "Why Race Club" and "Class Tiers" */
+/* since that's the natural pivot from "here's the career feeling" to   */
+/* "here's the literal ladder you climb." A dark gradient overlay keeps */
+/* the centered headline readable regardless of what's in the photo.    */
+/* -------------------------------------------------------------------- */
+.rc-mid-banner {
+  position: relative;
+  width: 100%;
+  min-height: 340px;
+  height: 46vh;
+  background-image: url('../assets/banner-highlights.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--rc-carbon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rc-mid-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(23, 23, 23, 0.25), rgba(23, 23, 23, 0.6));
+}
+.rc-mid-banner-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  padding: 0 24px;
+  text-align: center;
+}
+.rc-mid-banner-inner h2 { color: var(--rc-white); font-size: 32px; }
+.rc-mid-banner-inner p { color: #e6e6e6; font-size: 15px; line-height: 1.6; margin-top: 12px; margin-bottom: 0; }
+
+/* -------------------------------------------------------------------- */
+/* Class Tiers — dark gradient cards, same visual language as the class */
+/* ladder in the v0.3 system map, re-colored to this site's own palette */
+/* (bronze/steel/gold already existed as accent colors here; "platinum" */
+/* is new, added for LMP3, sitting tonally between silver and steel so  */
+/* it reads as a distinct rung without introducing an off-palette hue). */
+/* Ordered GT3 -> LMP3 -> LMP2 -> Hypercar on purpose now (was Hypercar- */
+/* first) so it reads as an actual climb, not a ranked list.            */
+/* -------------------------------------------------------------------- */
+/* Grid, not flex-wrap -- with 4 cards, flex-wrap left a leftover 4th
+   card stretched full-width alone on its own row at desktop widths
+   instead of sitting evenly alongside the other three. Explicit 4/2/1
+   column breakpoints (same pattern as .rc-details-row elsewhere in this
+   file) keep all 4 cards evenly sized at every width, rather than
+   auto-fit/minmax's fractional-fit math leaving an odd one out. */
+.rc-tier-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
+@media (max-width: 900px) {
+  .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .rc-tier-row { grid-template-columns: 1fr; }
+}
+.rc-tier-card {
+  min-width: 0;
+  text-align: center;
+  color: var(--rc-white);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(23, 23, 23, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.rc-tier-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(23, 23, 23, 0.24); }
+.rc-tier-card h3 { font-size: 17px; color: var(--rc-white); }
 .rc-tier-label {
   font-family: var(--rc-font-heading);
   font-size: 11px;
@@ -756,10 +896,49 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
   margin-top: 6px;
 }
-.rc-tier-card p { font-size: 13px; color: var(--rc-steel); margin-top: 10px; }
-.rc-tier-gold .rc-tier-label { color: #b8860b; }
-.rc-tier-silver .rc-tier-label { color: var(--rc-steel); }
-.rc-tier-bronze .rc-tier-label { color: #a05a2c; }
+.rc-tier-card p { font-size: 13px; color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
+.rc-tier-gate {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+}
+.rc-tier-bronze { background: linear-gradient(160deg, #a05a2c, #7c4420); }
+.rc-tier-bronze .rc-tier-label { color: #f0c9a3; }
+.rc-tier-platinum { background: linear-gradient(160deg, #7d92a3, #4f6373); }
+.rc-tier-platinum .rc-tier-label { color: #e3ebf0; }
+.rc-tier-silver { background: linear-gradient(160deg, #536575, #313d47); }
+.rc-tier-silver .rc-tier-label { color: #d8dde1; }
+.rc-tier-gold { background: linear-gradient(160deg, #1f1f1f, #000000); }
+.rc-tier-gold .rc-tier-label { color: #e6c15c; }
+
+/* -------------------------------------------------------------------- */
+/* Closing CTA band — dark bookend to the mid-banner/tier cards above   */
+/* it, last stop before the footer.                                     */
+/* -------------------------------------------------------------------- */
+.rc-cta-section {
+  background: var(--rc-carbon);
+  text-align: center;
+}
+.rc-cta-inner { padding: 64px 24px; }
+.rc-cta-inner h2 { color: var(--rc-white); font-size: 26px; }
+.rc-cta-inner p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 560px;
+  margin: 14px auto 0;
+}
+.rc-cta-btn {
+  display: inline-block;
+  width: auto;
+  margin-top: 24px;
+  padding: 14px 36px;
+}
+
 .rc-landing-footer {
   text-align: center;
   padding: 22px 24px;

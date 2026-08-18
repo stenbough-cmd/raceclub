@@ -643,7 +643,7 @@
     detailsGroup.appendChild(fieldPairRow('Birthday', birthdayInput, 'Contact Email', contactEmailInput));
     panel.appendChild(detailsGroup);
 
-    var saveBtn = el('button', null, 'Save Profile');
+    var saveBtn = el('button', null, 'Save');
     saveBtn.className = 'rc-btn-primary';
     saveBtn.style.width = 'auto';
 
@@ -681,9 +681,15 @@
       fetchApi('updateOwnProfile', { method: 'POST', token: token, body: payload })
         .then(function (data) {
           saveBtn.disabled = false;
-          status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-          status.textContent = data.message || (data.success ? 'Saved.' : 'Could not save.');
-          if (data.success) onSaved(payload);
+          if (data.success) {
+            // No "Saved." notification -- landing back on the Dashboard
+            // with the updated info visible is confirmation enough.
+            status.textContent = '';
+            onSaved(payload);
+          } else {
+            status.style.color = 'var(--rc-red)';
+            status.textContent = data.message || 'Could not save.';
+          }
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -815,9 +821,11 @@
     editWrap.appendChild(editProfilePanel(profile, token, function (updated) {
       Object.assign(profile, updated);
       setProfileCache(profile); // displayName may have changed -- keep the header avatar's initials in sync
-      // Refresh the Dashboard's hero card too, in case the user flips
-      // back over to it in this same session (name/details may differ now).
+      // Refresh the Dashboard's hero card so it reflects the just-saved
+      // info, then jump straight there -- landing back on the Dashboard
+      // is the save confirmation, no separate "Saved." message needed.
       renderDashboardSection(profile, token);
+      showSection('dashboard');
     }, function () { /* Cancel just resets the fields — nothing to hide anymore. */ }));
     section.appendChild(editWrap);
 
