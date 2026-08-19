@@ -143,6 +143,26 @@ p { margin: 0 0 0.75em; }
 }
 .rc-btn-secondary:hover { background: var(--rc-offwhite); }
 
+/* .rc-btn-primary is sized for its ORIGINAL context -- a full-width form
+   submit button, hence the generous 12px padding and 20px top margin --
+   and .rc-btn-secondary is sized for a small inline action. Mixing the
+   two side by side (a button ROW: League Management's action row, the
+   wizard's footer, its Create Season / Create a Future Season pair) made
+   them render at visibly different heights and widths ("the red button
+   is different from all the other buttons," "Next and Back are
+   different sizes" -- Matt's bug reports). Add this alongside either
+   base class to force the exact same compact box regardless of which
+   variant or how long the label is. */
+.rc-btn-sm {
+  display: inline-block;
+  width: auto;
+  min-width: 150px;
+  margin-top: 0;
+  padding: 10px 16px;
+  font-size: 12px;
+  text-align: center;
+}
+
 .rc-link-btn {
   background: none;
   border: none;
@@ -204,6 +224,20 @@ input, select, textarea {
   color: var(--rc-carbon);
 }
 input, select { height: 44px; }
+/* The block above sizes checkboxes the same as a full-width text box
+   (100% width, 44px tall, 10px padding) since it targets every <input>
+   with no type exclusion -- harmless for text/number/date inputs but a
+   checkbox inherits it too, rendering as a giant clickable bar instead of
+   a normal checkbox. Reset every checkbox on the site back to a real
+   checkbox size here, once, instead of patching each usage site. */
+input[type="checkbox"] {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
 textarea { resize: vertical; }
 input:focus, select:focus, textarea:focus {
   outline: none;
@@ -315,7 +349,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-auth-page .rc-card { background: #f4f4f4; border-radius: 10px; }
 .rc-auth-wrap { width: 100%; max-width: 420px; }
 .rc-auth-wrap h1 {
-  margin: 0 0 24px;
+  /* Top margin added so the heading gets real breathing room below the
+     fixed navbar (.rc-auth-page's 72px padding-top clears the header
+     itself, but left zero gap after that before the heading started) --
+     applies sitewide to login/register/verify since they all share this
+     one rule. */
+  margin: 20px 0 24px;
   text-align: center;
   font-size: 22px;
   letter-spacing: 0.03em;
@@ -531,16 +570,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   white-space: nowrap;
 }
 
-.rc-box-head { display: flex; align-items: center; gap: 10px; }
-.rc-box-head h3 { margin: 0; font-size: 14px; }
-.rc-box-icon { display: inline-flex; color: var(--rc-steel); flex: none; }
-.rc-box-icon svg { display: block; }
-.rc-box-desc { font-size: 13px; color: var(--rc-steel); margin: 8px 0 0; }
-.rc-stack-box { margin-top: 12px; padding: 20px 24px; border-radius: 8px; background: var(--rc-offwhite); }
-.rc-stack-box.rc-locked { border: 1px dashed var(--rc-silver); opacity: 0.75; }
-.rc-stack-box.rc-locked .rc-box-icon { color: var(--rc-steel); }
-.rc-stack-box.rc-active { border: 1px solid var(--rc-silver); background: var(--rc-white); }
-.rc-stack-box.rc-active .rc-box-icon { color: var(--rc-red); }
+/* .rc-stack-box/.rc-box-head/.rc-box-icon/.rc-box-desc used to style the
+   5-box "coming soon" stack (Schedule/Driver Score/Attributes/
+   Rivalries/Objectives) removed from Account.html's dashboard in the
+   Aug 2026 pass -- rules removed along with it, nothing else uses them. */
 
 /* THE REAL REASON THIS WASN'T VISIBLY GETTING BIGGER: ".rc-main h2" further
    up this file (element + class = higher specificity than a single class
@@ -996,6 +1029,126 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
 .rc-modal-body { padding: 20px; }
+/* Wider variant for content-heavy popups (currently just the Season
+   Creation Wizard) -- the default 460px is right for a short form like
+   Edit User, but far too narrow for a multi-page wizard with paired
+   fields and per-race cards. */
+.rc-modal-wide { max-width: 820px; }
+
+/* -------------------------------------------------------------------- */
+/* Season Creation Wizard (Account.html, openSeasonWizard()) — step      */
+/* breadcrumb, page content, and a pinned Back/Next/Save & Close footer. */
+/* -------------------------------------------------------------------- */
+.rc-wizard-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--rc-silver); }
+.rc-wizard-step {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--rc-offwhite);
+  color: var(--rc-steel);
+}
+.rc-wizard-step-active { background: var(--rc-red); color: var(--rc-white); }
+.rc-wizard-step-done { background: var(--rc-carbon); color: var(--rc-white); }
+.rc-wizard-content { max-height: 55vh; overflow-y: auto; padding-right: 4px; }
+/* Blanket "shrink every text/number/select box" rule (Matt's call) --
+   scoped to the wizard only so nothing outside it (Settings, Edit User,
+   etc.) is affected. Individual fields override this inline with a
+   smaller/larger max-width where a specific size was called out (Season
+   Name/Password/Starting Balance at 1/4, the P1–P10 point cells staying
+   full width) -- inline styles win over this class regardless of order. */
+.rc-wizard-content input[type="text"],
+.rc-wizard-content input[type="number"],
+.rc-wizard-content input[type="password"],
+.rc-wizard-content input[type="date"],
+.rc-wizard-content input[type="time"],
+.rc-wizard-content input[type="datetime-local"],
+.rc-wizard-content select {
+  max-width: 50%;
+}
+/* Every wizField()-built field gets the SAME breathing room before it as
+   .rc-field-pair gets (18px, collapsing with the field above's own
+   margin-bottom rather than stacking) so the gap before a field is
+   identical whether it's a solo field or a paired row -- this is what
+   fixes the wizard's uneven spacing (notes sometimes tight against their
+   box, sometimes floating a full row away). Hints themselves stay snug
+   against their own field (see the sitewide .rc-hint margin-top:4px) and
+   get a bit of bottom margin so there's still room before whatever's
+   next, scoped to the wizard only (site-wide .rc-hint elsewhere, e.g.
+   Settings, is untouched). */
+.rc-wiz-field { margin-top: 18px; margin-bottom: 16px; }
+.rc-wiz-field:first-child { margin-top: 0; }
+.rc-wizard-content .rc-hint { margin-bottom: 16px; }
+/* Paired row where EACH column carries its own label + field + hint
+   (built by wizFieldPairRow()) instead of one hint floating below the
+   whole row, unowned by either field -- this is the "why can't each have
+   a note that lives directly underneath the box" fix. Reuses the same
+   grid as .rc-field-pair; the columns are .rc-wiz-field so their hint
+   spacing matches solo fields exactly. */
+.rc-wiz-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
+.rc-wiz-field-pair:first-child { margin-top: 0; }
+.rc-wiz-field-pair .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
+@media (max-width: 640px) {
+  .rc-wiz-field-pair { grid-template-columns: 1fr; }
+}
+.rc-wizard-subhead {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-wizard-subhead:first-child { margin-top: 0; }
+.rc-wizard-race-card { margin-top: 12px; }
+.rc-wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rc-silver);
+}
+
+/* Hard-stop validation ("every box has to be filled out" before Next
+   advances -- Matt's call). A single invalid input gets the same red
+   border/glow as the site's existing :focus state; a checkbox GROUP
+   (e.g. "at least one class picked") has no single box to redden, so it
+   gets a red left border on its wrapper instead. */
+.rc-field-invalid, .rc-field-invalid:focus {
+  border-color: var(--rc-red);
+  box-shadow: 0 0 0 1px var(--rc-red);
+}
+/* No negative margin here -- .rc-wizard-content sets overflow-y:auto,
+   which per spec forces its overflow-x to compute as "auto" too (not
+   "visible"), so anything pulled left of the box via negative margin
+   gets silently clipped instead of overhanging into the gutter. Padding
+   only, so the red accent stays inside the scroll container's own box. */
+.rc-field-invalid-group {
+  border-left: 3px solid var(--rc-red);
+  padding-left: 10px;
+}
+.rc-wizard-validation-msg {
+  color: var(--rc-red);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  text-align: right;
+}
+@keyframes rc-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.rc-shake { animation: rc-shake 0.4s; }
 
 /* -------------------------------------------------------------------- */
 /* Account.html — branded loading spinner. Two uses of the same visual   */
@@ -1069,16 +1222,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* -------------------------------------------------------------------- */
 /* Account.html dashboard — placeholder widget cards                    */
+/*                                                                       */
+/* Three explicit rows (see buildDashboardWidgets() in Account.html)    */
+/* instead of one auto-flowing grid -- Row 1 is 1:1:2 units, Row 2 is    */
+/* 1:1:1 (three equal wide cards), Row 3 is 1:2:2, and those don't       */
+/* divide evenly against each other under one shared grid track. Each   */
+/* .rc-dash-row is its own flex container instead; a plain widget card  */
+/* is flex-basis 1 unit, .rc-widget-wide is 2 units, and they share      */
+/* whatever width the row actually has -- same visual effect as the old */
+/* grid-column pin, just per-row instead of page-wide.                  */
 /* -------------------------------------------------------------------- */
-.rc-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
-.rc-widget-card { opacity: 0.9; }
-/* Two-column-wide placeholder card (Upcoming Race) -- pinned to the
-   rightmost two column tracks so it lands bottom-right of the grid on
-   wider screens; falls back to full width once the grid is too narrow
-   for that pin to make sense. */
-.rc-widget-wide { grid-column: -3 / -1; }
+.rc-dash-row { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.rc-dash-row:first-child { margin-top: 20px; }
+.rc-widget-card { opacity: 0.9; flex: 1 1 220px; min-width: 0; }
+.rc-widget-wide { flex: 2 1 320px; }
 @media (max-width: 700px) {
-  .rc-widget-wide { grid-column: 1 / -1; }
+  .rc-dash-row { flex-direction: column; }
+  .rc-widget-card, .rc-widget-wide { flex: 1 1 auto; }
 }
 .rc-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .rc-widget-title { font-size: 12px; letter-spacing: 0.05em; }
@@ -1101,9 +1261,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-widget-sub { font-size: 12px; color: var(--rc-steel); margin-top: 6px; }
 .rc-meter { height: 8px; border-radius: 4px; background: var(--rc-offwhite); border: 1px solid var(--rc-silver); overflow: hidden; }
 .rc-meter-fill { height: 100%; background: var(--rc-red); }
-.rc-checklist { display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--rc-steel); }
+/* font-size bumped +2px (Matt: "really small for all checkbox options") --
+   covers the Objectives widget on the dashboard and every checklist-style
+   checkbox row in the wizard that doesn't set its own size. */
+.rc-checklist { display: flex; flex-direction: column; gap: 7px; font-size: 15px; color: var(--rc-steel); }
 .rc-checklist label { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 400; text-transform: none; letter-spacing: normal; font-family: var(--rc-font-body); }
-.rc-checklist input { width: auto; height: auto; margin: 0; }
+/* Checkbox sizing now comes from the sitewide input[type="checkbox"] rule
+   above -- nothing left to override here. */
+
+/* Wizard's Bonus Point Categories row -- same checklist behavior, but
+   laid out horizontally (Matt's call: "put the +1 options in the same
+   row") with larger checkboxes/text than the default checklist size so
+   they read as the more prominent, higher-level toggle they are. */
+.rc-bonus-checklist { flex-direction: row; flex-wrap: wrap; gap: 10px 28px; font-size: 16px; }
+.rc-bonus-checklist input[type="checkbox"] { width: 18px; height: 18px; }
 .rc-widget-body table td { font-size: 12px; }
 
 /* Simple centered "coming soon" panels — Calendar/Results/Career/etc. */

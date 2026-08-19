@@ -18,6 +18,30 @@
   actually clicked. See the ADMIN LAZY LOAD section further down for
   details.
 
+  WHAT CHANGED IN THIS PASS (Aug 2026 "HUGE build session"):
+  - Removed the 5-box "coming soon" stack (Schedule/Driver Score/
+    Attributes/Rivalries/Objectives) that used to sit under the dashboard
+    hero card -- see the removed lockedSectionsBlock(). Rivalries is gone
+    for good (Matt's call: it "morphed into the wager system" and isn't a
+    separate feature); Objectives graduated into a real nav section
+    instead (see NAV_ITEMS/renderObjectivesSection()); Schedule/Driver
+    Score/Attributes were just removed outright per direct instruction.
+  - Sidebar reordered: Finances now sits right after Calendar, and
+    Objectives is a new item directly before Sponsors. No Rivalries item.
+  - Dashboard widgets rebuilt into three explicit rows instead of one
+    auto-flowing grid, plus two new placeholder widgets (Wagers, Team
+    Details) -- see buildDashboardWidgets()/.rc-dash-row in style.css.
+  - Notification-bubble infra generalized from "Admin only" to any
+    sidebar category -- see setNavNotif()/addNavDot(). Still only Admin
+    actually feeds it; the mechanism is ready for future features.
+  - League Management's "Create Season" now opens a real multi-page
+    Season Creation Wizard (Season Details -> Race Events -> Season
+    Preview) inside the existing showModal(), with a client-side
+    (localStorage) draft save/resume -- see openSeasonWizard() and the
+    SEASON CREATION WIZARD section below for the full design-doc mapping
+    and its one honest limitation (no backend endpoint to actually save
+    a season yet).
+
   WHAT CHANGED VS. v0.2.5:
   The sidebar used to have 3 anchor links (Profile / League Management /
   Admin) that scroll-jumped down one long page. It's now a real 9-item
@@ -128,10 +152,11 @@
     <div id="rc-profile-root" style="display:none;">
       <section id="rc-section-dashboard" class="rc-content-section"></section>
       <section id="rc-section-calendar" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-finances" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-results" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-reputation" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-finances" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-objectives" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-settings" class="rc-content-section" style="display:none;"></section>
@@ -283,10 +308,20 @@
   // in-place pattern felt dated. Closes on: the X button, clicking the
   // dimmed backdrop outside the card, or Escape. Returns { body, close }
   // -- the caller appends whatever fields/buttons it needs into `body`.
+  //
+  // opts.wide: adds .rc-modal-wide (see style.css) for content that needs
+  // more than the default 460px -- currently just the Season Creation
+  // Wizard (see openSeasonWizard below).
+  // opts.onClose: fired on EVERY close path (X, Escape, backdrop click,
+  // or a caller-triggered modal.close()) -- the wizard uses this to
+  // refresh League Management's button label ("Create Season" vs.
+  // "Resume Season Draft") the moment the popup goes away, regardless of
+  // how it was closed.
   // ---------------------------------------------------------------------
-  function showModal(title) {
+  function showModal(title, opts) {
+    opts = opts || {};
     var backdrop = el('div', 'rc-modal-backdrop');
-    var modal = el('div', 'rc-modal');
+    var modal = el('div', 'rc-modal' + (opts.wide ? ' rc-modal-wide' : ''));
 
     var head = el('div', 'rc-modal-head');
     head.appendChild(el('h3', 'margin:0;', escapeHtml(title)));
@@ -307,13 +342,14 @@
     function close() {
       document.removeEventListener('keydown', onKeydown);
       backdrop.remove();
+      if (opts.onClose) opts.onClose();
     }
     function onKeydown(evt) { if (evt.key === 'Escape') close(); }
     document.addEventListener('keydown', onKeydown);
     backdrop.addEventListener('click', function (evt) { if (evt.target === backdrop) close(); });
     closeBtn.addEventListener('click', close);
 
-    return { body: body, close: close };
+    return { body: body, close: close, el: modal };
   }
 
   // Flat, stroke-based icons (no emoji) -- inline SVG, same technique as
@@ -333,24 +369,34 @@
   var ICON_HALLOFFAME = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M7 5H4a3 3 0 0 0 3 4"></path><path d="M17 5h3a3 3 0 0 1-3 4"></path></svg>';
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
+  var ICON_OBJECTIVES = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 11l2 2 4-4"></path><line x1="8" y1="16" x2="16" y2="16"></line></svg>';
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
 
-  // Primary 9-item nav, in the exact order requested. League Management
-  // and Admin are appended separately below since they're permission-
-  // gated rather than always shown.
+  // Primary 10-item nav. Reordered per Matt's call: Finances moved up to
+  // sit right after Calendar, and a new Objectives item was inserted
+  // directly before Sponsors -- Objectives graduated from one of the old
+  // "coming soon" locked boxes (see the removed lockedSectionsBlock()) to
+  // a real section of its own (see renderObjectivesSection() below). No
+  // Rivalries item -- per Matt's explicit follow-up, that idea "morphed
+  // into the wager system" and is not a separate feature. League
+  // Management and Admin are appended separately below since they're
+  // permission-gated rather than always shown.
   var NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
     { id: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
+    { id: 'finances', label: 'Finances', icon: ICON_FINANCES },
     { id: 'results', label: 'Results', icon: ICON_RESULTS },
     { id: 'career', label: 'Career', icon: ICON_CAREER },
     { id: 'reputation', label: 'Reputation', icon: ICON_NAV_STAR },
-    { id: 'finances', label: 'Finances', icon: ICON_FINANCES },
+    { id: 'objectives', label: 'Objectives', icon: ICON_OBJECTIVES },
     { id: 'sponsors', label: 'Sponsors', icon: ICON_SPONSORS },
     { id: 'halloffame', label: 'Hall of Fame', icon: ICON_HALLOFFAME },
     { id: 'settings', label: 'Settings', icon: ICON_SETTINGS }
   ];
 
+  // Objectives gets its own real renderer now (renderObjectivesSection()
+  // below) instead of the generic "Coming soon." placeholder panel.
   var PLACEHOLDER_SECTION_IDS = ['calendar', 'results', 'career', 'reputation', 'finances', 'sponsors', 'halloffame'];
 
   // Auto-inserts "/" while typing and blocks anything but digits, so the
@@ -399,7 +445,23 @@
     return hr;
   }
 
-  // Order, per Matt's call: the 8 general section links, a divider,
+  // Appends a hidden-by-default notification dot to a nav button, wired
+  // to the button's own section id (rc-nav-dot-<id>) -- see setNavNotif()
+  // below for what actually turns these on. Every primary nav item gets
+  // one now (not just Admin), per the general design rule that ANY
+  // sidebar link can have something waiting behind it (a sponsor offer,
+  // a wager challenge, a finalized incident ruling, etc.), not just the
+  // Admin approval queue.
+  function addNavDot(btn, categoryId) {
+    var dot = document.createElement('span');
+    dot.className = 'rc-nav-dot';
+    dot.id = 'rc-nav-dot-' + categoryId;
+    dot.style.display = 'none';
+    btn.appendChild(dot);
+    return dot;
+  }
+
+  // Order, per Matt's call: the 9 general section links, a divider,
   // League Management and/or Admin (only if this user's permissions
   // unlock them), a second divider directly above Settings, then
   // Settings, then Log Out. The UPPER divider is hidden by default and
@@ -413,12 +475,16 @@
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
     NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
-      nav.appendChild(makeNavButton(item.id, item.label, item.icon));
+      var btn = makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id);
+      addNavDot(btn, item.id);
+      nav.appendChild(btn);
     });
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);
-    nav.appendChild(makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true));
+    var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true);
+    addNavDot(leagueBtn, 'league');
+    nav.appendChild(leagueBtn);
     // Admin's onClick does the normal section-switch AND triggers the lazy
     // load (see loadAdminSectionIfNeeded) -- the panel itself only builds
     // the first time this is actually clicked, not on every page load.
@@ -427,13 +493,10 @@
       loadAdminSectionIfNeeded(currentProfile, token);
     });
     // Notification dot -- see updatePendingDots()/approvalQueueSection()
-    // below, which toggle this on once the pending-approvals count is
-    // known. Same signal as the header avatar's dot, just in-page.
-    var adminDot = document.createElement('span');
-    adminDot.className = 'rc-nav-dot';
-    adminDot.id = 'rc-nav-admin-dot';
-    adminDot.style.display = 'none';
-    adminBtn.appendChild(adminDot);
+    // below, which toggle this on (through setNavNotif()) once the
+    // pending-approvals count is known. Same signal as the header
+    // avatar's dot, just in-page.
+    addNavDot(adminBtn, 'admin');
     nav.appendChild(adminBtn);
     nav.appendChild(navDivider());
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
@@ -705,34 +768,6 @@
   }
 
   // ---------------------------------------------------------------------
-  // "COMING SOON" GAME-MODE SECTIONS — Schedule, Driver Score, Attributes,
-  // Rivalries, Objectives. Unchanged from v0.2.5: greyed out with a lock
-  // icon until the driver's first race is scored (profile.sectionsUnlocked),
-  // then a plain "being built next" note afterward. Still lives on the
-  // Dashboard, directly under the profile header card.
-  // ---------------------------------------------------------------------
-  function lockedSectionsBlock(profile) {
-    var wrap = el('div');
-    var sections = [
-      { title: 'Schedule', locked: 'Locks until a season is released and you\'re part of it.', unlocked: 'No upcoming races right now — check back once a round is on the calendar.' },
-      { title: 'Driver Score', locked: 'Locks until your first race is scored.', unlocked: 'Coming soon — being built next.' },
-      { title: 'Attributes', locked: 'Pace, Awareness, Racecraft, Focus, and Experience unlock after your first race.', unlocked: 'Coming soon — being built next.' },
-      { title: 'Rivalries', locked: 'Pick your rivals once you\'ve got a season underway.', unlocked: 'Coming soon — being built next.' },
-      { title: 'Objectives', locked: 'Weekend objectives appear once a season is scheduled.', unlocked: 'Coming soon — being built next.' }
-    ];
-    sections.forEach(function (s) {
-      var box = document.createElement('div');
-      box.className = 'rc-stack-box ' + (profile.sectionsUnlocked ? 'rc-active' : 'rc-locked');
-      var head = el('div', 'rc-box-head');
-      head.innerHTML = '<span class="rc-box-icon">' + (profile.sectionsUnlocked ? ICON_STAR : ICON_LOCK) + '</span><h3>' + s.title + '</h3>';
-      box.appendChild(head);
-      box.appendChild(el('p', 'rc-box-desc', profile.sectionsUnlocked ? s.unlocked : s.locked));
-      wrap.appendChild(box);
-    });
-    return wrap;
-  }
-
-  // ---------------------------------------------------------------------
   // DASHBOARD — placeholder widget cards (Bank Balance, Reputation,
   // Season Progress, Recent Results, Objectives, Sponsor Status). None of
   // this data exists in the backend yet -- every value below is a dash or
@@ -749,40 +784,73 @@
     return card;
   }
 
+  // Three explicit rows, per Matt's exact layout call, instead of one
+  // auto-flowing grid -- each row is its own flex container with
+  // proportional widths (see .rc-dash-row/.rc-widget-wide in style.css),
+  // deliberately kept to the same 4-unit split (two 1-unit cards + one
+  // 2-unit wide card) on Row 1 and Row 3 so equivalent-role cards
+  // (Bank Balance/Reputation vs. Season Progress/Recent Results, Team
+  // Details vs. Upcoming Race) render at identical widths across rows --
+  // Matt's call: "make Season Progress and Recent Results the same size
+  // as Bank Balance and Reputation" / "upcoming race the same size as
+  // team details." Row 2 groups Wagers in with Objectives and Sponsor
+  // Status, all three wide -- Matt asked for a wide Wagers card but
+  // didn't say which row it belongs in, and it reads as the same kind of
+  // "what's waiting on you" widget as those two, so that's where it
+  // landed; easy to move if that's not the fit.
+  function dashRow() {
+    return el('div', 'rc-dash-row');
+  }
+
   function buildDashboardWidgets() {
-    var grid = el('div', 'rc-dash-grid');
+    var wrap = el('div');
 
-    grid.appendChild(widgetCard('Bank Balance',
+    // Row 1: Bank Balance - Reputation - Team Details (wide)
+    var row1 = dashRow();
+    row1.appendChild(widgetCard('Bank Balance',
       '<div class="rc-widget-big">$--</div><p class="rc-widget-sub">Career earnings tracking is coming soon.</p>'));
-
-    grid.appendChild(widgetCard('Reputation',
+    row1.appendChild(widgetCard('Reputation',
       '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No reputation data yet.</p>'));
+    var teamDetails = widgetCard('Team Details',
+      '<p class="rc-widget-sub">No team seat claimed yet — your team, car, and seat details will show here once you join a season.</p>');
+    teamDetails.classList.add('rc-widget-wide');
+    row1.appendChild(teamDetails);
+    wrap.appendChild(row1);
 
-    grid.appendChild(widgetCard('Season Progress',
-      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No active season.</p>'));
-
-    grid.appendChild(widgetCard('Recent Results',
-      '<table><tr><td style="text-align:center;color:var(--rc-steel);padding:16px 0;">No results yet</td></tr></table>'));
-
-    grid.appendChild(widgetCard('Objectives',
+    // Row 2: Objectives - Sponsor Status - Wagers, all wide
+    var row2 = dashRow();
+    var objectivesWidget = widgetCard('Objectives',
       '<div class="rc-checklist">' +
         '<label><input type="checkbox" disabled> --</label>' +
         '<label><input type="checkbox" disabled> --</label>' +
         '<label><input type="checkbox" disabled> --</label>' +
-      '</div>'));
+      '</div>');
+    objectivesWidget.classList.add('rc-widget-wide');
+    row2.appendChild(objectivesWidget);
+    var sponsorStatus = widgetCard('Sponsor Status',
+      '<p class="rc-widget-sub">No sponsor relationships yet.</p>');
+    sponsorStatus.classList.add('rc-widget-wide');
+    row2.appendChild(sponsorStatus);
+    var wagers = widgetCard('Wagers',
+      '<p class="rc-widget-sub">No active wagers. Wagering unlocks once Season Registration is complete.</p>');
+    wagers.classList.add('rc-widget-wide');
+    row2.appendChild(wagers);
+    wrap.appendChild(row2);
 
-    grid.appendChild(widgetCard('Sponsor Status',
-      '<p class="rc-widget-sub">No sponsor relationships yet.</p>'));
-
-    // Placeholder only -- two columns wide, pinned bottom-right of the
-    // grid (see .rc-widget-wide in style.css). No real schedule data
-    // wired up yet.
+    // Row 3: Season Progress - Recent Results (wide) - Upcoming Race (wide)
+    var row3 = dashRow();
+    row3.appendChild(widgetCard('Season Progress',
+      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No active season.</p>'));
+    var recentResults = widgetCard('Recent Results',
+      '<table><tr><td style="text-align:center;color:var(--rc-steel);padding:16px 0;">No results yet</td></tr></table>');
+    row3.appendChild(recentResults);
     var upcomingRace = widgetCard('Upcoming Race',
       '<p class="rc-widget-sub">No upcoming race scheduled yet.</p>');
     upcomingRace.classList.add('rc-widget-wide');
-    grid.appendChild(upcomingRace);
+    row3.appendChild(upcomingRace);
+    wrap.appendChild(row3);
 
-    return grid;
+    return wrap;
   }
 
   // Builds the Dashboard section: one large hero card containing the
@@ -803,8 +871,6 @@
         'Your account is a <strong>Prospect</strong> awaiting review by the league admin. You have full access to set up your profile below, and this never affects your race eligibility — it just means League Management tools aren\'t available until you\'re approved.'));
       section.appendChild(banner);
     }
-
-    section.appendChild(lockedSectionsBlock(profile));
   }
 
   // ---------------------------------------------------------------------
@@ -884,6 +950,85 @@
   }
 
   // ---------------------------------------------------------------------
+  // OBJECTIVES — real content instead of a generic "Coming soon." panel,
+  // per Matt's call ("build out this profile as best as we can from what
+  // we've designed together so far"). Per the site's general design rule,
+  // a section a sidebar link opens shows GENERAL category information --
+  // not a driver's live data, since the Season Registration flow that
+  // would actually assign a driver's 3 objectives isn't built yet. So
+  // this explains the mechanic (season-long, chosen once at Season
+  // Registration from that season's list, gain-only, never touches
+  // championship points, evaluated automatically every race -- see the
+  // design doc's Sponsorship/Objectives section) and shows the honest
+  // current status underneath, which doubles as a flag for what still
+  // needs to be built: the objectives catalog + the pick-3 UI at
+  // registration, and the box below that will eventually show a driver's
+  // live per-race progress against their 3 picks.
+  // ---------------------------------------------------------------------
+  function renderObjectivesSection(profile) {
+    var section = document.getElementById('rc-section-objectives');
+    section.innerHTML = '';
+
+    section.appendChild(el('h2', null, 'Objectives'));
+    section.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;max-width:640px;line-height:1.6;',
+      'Objectives are extra, driver-chosen goals that run alongside the actual championship — a way to earn more without changing how the race itself is scored.'));
+
+    var howPanel = el('div', 'rc-panel');
+    howPanel.appendChild(el('h3', 'margin-top:0;', 'How Objectives Work'));
+    var list = document.createElement('ul');
+    list.style.cssText = 'margin:0;padding-left:18px;font-size:13px;color:var(--rc-steel);line-height:1.8;font-weight:400;';
+    [
+      'Chosen once, at Season Registration — every driver picks 3 from that season\'s objectives list.',
+      'Season-long and locked the moment you choose — same as your team seat, no swapping mid-season.',
+      'Gain-only — objectives can add extra income and reputation, but they can never cost you either one.',
+      'Never affects championship points — pure upside on top of however you actually finish.',
+      'Evaluated automatically every race, straight off the same race data everything else here uses — nothing to submit, nothing to review.'
+    ].forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t;
+      list.appendChild(li);
+    });
+    howPanel.appendChild(list);
+    section.appendChild(howPanel);
+
+    var statusPanel = el('div', 'rc-panel');
+    statusPanel.style.marginTop = '16px';
+    statusPanel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Your Objectives This Season'));
+    var statusMsg = (profile.role === 'Prospect')
+      ? 'Objectives open up once you\'re approved and registered for an active season.'
+      : 'No active season to choose objectives for yet — once one opens registration, your 3 picks and live progress against them will show here.';
+    statusPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', statusMsg));
+    section.appendChild(statusPanel);
+  }
+
+  // ---------------------------------------------------------------------
+  // NOTIFICATION BUBBLES — generic infra, per the site's design rule: if
+  // new content is awaiting a driver (a sponsor offer, a wager challenge,
+  // a finalized incident ruling, an Admin approval queue item, whatever
+  // the case may be), a dot shows on BOTH the relevant sidebar link
+  // (rc-nav-dot-<categoryId>, added to every nav button by addNavDot()
+  // above) AND the header avatar (js/header.js's updateHeaderNotifDot()).
+  // Today only Admin actually feeds this (see updatePendingDots() below)
+  // -- none of sponsors/wagers/reputation rulings are wired up on the
+  // backend yet -- but the mechanism itself is fully general so wiring a
+  // future feature in is just a setNavNotif('sponsors', true) call away,
+  // not a new pattern to invent.
+  //
+  // RC_NOTIF_STATE tracks each category independently so one category
+  // clearing its own dot never wipes out a different category's --
+  // the header dot only goes fully dark once EVERY tracked category is
+  // clear (see the .some(...) check below).
+  // ---------------------------------------------------------------------
+  var RC_NOTIF_STATE = {};
+  function setNavNotif(categoryId, hasPending) {
+    RC_NOTIF_STATE[categoryId] = !!hasPending;
+    var dot = document.getElementById('rc-nav-dot-' + categoryId);
+    if (dot) dot.style.display = hasPending ? 'block' : 'none';
+    var anyPending = Object.keys(RC_NOTIF_STATE).some(function (k) { return RC_NOTIF_STATE[k]; });
+    if (typeof updateHeaderNotifDot === 'function') updateHeaderNotifDot(anyPending);
+  }
+
+  // ---------------------------------------------------------------------
   // ADMIN NOTIFICATION CACHE — one shared pending-accounts fetch, reused
   // by both the notification dot (fired immediately on page load, see
   // buildFullProfileUI) and the approval queue panel itself (fired lazily
@@ -913,9 +1058,7 @@
   function updatePendingDots(data) {
     if (!data || !data.success) return;
     var total = data.organizerRequests.length + data.driverRequests.length + data.unverifiedSignups.length;
-    var navDot = document.getElementById('rc-nav-admin-dot');
-    if (navDot) navDot.style.display = total > 0 ? 'block' : 'none';
-    if (typeof updateHeaderNotifDot === 'function') updateHeaderNotifDot(total > 0);
+    setNavNotif('admin', total > 0);
   }
 
   // ---------------------------------------------------------------------
@@ -1186,9 +1329,991 @@
     if (divider) divider.style.display = '';
   }
 
+  // =======================================================================
+  // SEASON CREATION WIZARD — opened from League Management's "Create
+  // Season" button. Per Matt's design rule, any detailed management
+  // screen (more than simple toggles) opens as a popup -- this reuses
+  // showModal() (see above) with Next/Back page navigation across three
+  // pages: Season Details, Race Events, Season Preview, matching the
+  // design doc's two-step wizard (Season Setup / Per-Race Details) plus
+  // the Preview page Matt asked for on top of it. Field set mirrors the
+  // "Season Creation Wizard" section of v0.3-Economy-Reputation-Design.md
+  // as closely as a front-end-only build reasonably can.
+  //
+  // HONEST LIMITATION: there is no backend endpoint yet to actually save
+  // a season -- clicking "Create Season" on the Preview page shows the
+  // same branded spinner used everywhere else on the site for a moment,
+  // then plainly says so instead of pretending to succeed. The draft
+  // itself is real, though: every field is written to localStorage
+  // (device/browser-only, per Matt's call -- not real server-side
+  // persistence) as the admin moves between pages, so a half-finished
+  // wizard survives closing the tab and can be resumed later.
+  // =======================================================================
+  var WIZARD_DRAFT_KEY = 'raceclub_season_wizard_draft';
+  var WIZARD_STEPS = ['Season Details', 'Race Events', 'Season Preview'];
+
+  // Illustrative real LMU track/weather lists -- stand in for the
+  // eventual Google Sheet reference-data source (the same role
+  // COUNTRIES/TIMEZONE_LIST already play for the profile form, see
+  // js/reference-data.js) until that sheet + the matching Apps Script
+  // read is actually wired up.
+  var WIZARD_TRACK_LIST = ['Le Mans', 'Sebring', 'Spa-Francorchamps', 'Monza', 'Interlagos', 'Bahrain', 'Fuji Speedway', 'Watkins Glen', 'Imola', 'Barcelona-Catalunya', 'Circuit of the Americas', 'Portimao'];
+  var WIZARD_WEATHER_LIST = ['Clear', 'Light Cloud', 'Overcast', 'Light Rain', 'Heavy Rain', 'Dynamic'];
+  // Layout/configuration options per track -- same "illustrative, stand-in
+  // for the eventual reference-data sheet" status as the two lists above.
+  // Matt's call: Layout should be a dropdown populated from the chosen
+  // Track, not a free-text box ("it won't be a free text box"). Every
+  // track lists its real-world layout(s); tracks with only one real
+  // configuration still get an array of one so the lookup is uniform.
+  var WIZARD_TRACK_LAYOUTS = {
+    'Le Mans': ['Circuit des 24 Heures'],
+    'Sebring': ['International Raceway'],
+    'Spa-Francorchamps': ['Grand Prix Circuit'],
+    'Monza': ['Grand Prix Circuit'],
+    'Interlagos': ['Grand Prix Circuit'],
+    'Bahrain': ['Grand Prix Circuit', 'Endurance Circuit', 'Outer Circuit'],
+    'Fuji Speedway': ['Grand Prix Circuit'],
+    'Watkins Glen': ['Grand Prix Circuit', 'The Boot'],
+    'Imola': ['Grand Prix Circuit'],
+    'Barcelona-Catalunya': ['Grand Prix Circuit', 'Grand Prix Circuit (No Chicane)'],
+    'Circuit of the Americas': ['Grand Prix Circuit'],
+    'Portimao': ['Grand Prix Circuit']
+  };
+  function trackLayoutOptions(track) { return WIZARD_TRACK_LAYOUTS[track] || ['Standard']; }
+
+  // Special events are strictly money -- no championship points -- split
+  // two ways: a top-10 finishing pool (default $15,000 total, the working
+  // value Matt gave) and a handful of fun one-off categories each with
+  // their own payout. Matt asked for a few more categories beyond his
+  // three examples (Fastest Lap / Most Laps Led / Most Positions Gained),
+  // so Pole Position and Clean Race Award are added here too.
+  var SPECIAL_EVENT_MONEY_PLACES_DEFAULT = [4000, 2800, 2200, 1700, 1300, 1000, 800, 600, 400, 200]; // sums to $15,000
+  var SPECIAL_EVENT_BONUS_CATEGORIES = [
+    { key: 'fastestLap', label: 'Fastest Lap' },
+    { key: 'mostLapsLed', label: 'Most Laps Led' },
+    { key: 'mostPositionsGained', label: 'Most Positions Gained' },
+    { key: 'polePosition', label: 'Pole Position' },
+    { key: 'cleanRaceAward', label: 'Clean Race Award' },
+    { key: 'hardLuckAward', label: 'Hard Luck Award (best recovery drive)' }
+  ];
+  function defaultSpecialEventBonusPayouts() {
+    var obj = {};
+    SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (c) { obj[c.key] = 250; });
+    return obj;
+  }
+  function defaultSpecialEvent() {
+    return {
+      date: '',
+      moneyPlaces: SPECIAL_EVENT_MONEY_PLACES_DEFAULT.slice(),
+      bonusPayouts: defaultSpecialEventBonusPayouts()
+    };
+  }
+
+  // Every economy default below is the exact working value already
+  // locked in the design doc (Bank Balance / Class Economy / Wager /
+  // League Income Streams sections) -- pre-filled here, not invented.
+  function defaultWizardState() {
+    return {
+      seasonName: '', // editable suffix only (max 24 chars) -- the "Race Club - Season # -" prefix is generated, never stored
+      defaultPassword: '',
+      privateQualifying: 'No',
+      trackLimitsPreset: 'Default',
+      releaseMode: 'now', // decided at the very end now (Create Season vs. Create a Future Season), not mid-form
+      releaseDateTime: '',
+      classes: { GT3: true, LMP3: false, LMP2: false, Hypercar: false },
+      // Which classes use the "2026" reference season for their real-world
+      // team/car roster -- a checkbox instead of free text (Matt's call:
+      // "this will not work" for a typed-in season). Disabled/greyed out
+      // until that class itself is checked; only one season year exists
+      // to pick from today, more will appear here as they're added.
+      classSeasons: { GT3: false, LMP3: false, LMP2: false, Hypercar: false },
+      frequency: 'Weekly',
+      byeWeeks: 0, // capped at 2 -- see wizNumberInput's max on the Format section
+      byeWeekDates: [], // one date per bye week, resized by syncByeWeekDates() -- picked on the Race Events page, top of the list, since that's where the admin is looking at the actual week-by-week schedule
+      numRaces: 6,
+      dropWeeks: 1,
+      specialEventsCount: 0, // 0-2 -- was a Yes/No toggle, now how MANY special events this season (Matt's call)
+      specialEvents: [], // resized by syncSpecialEvents() -- money-only mini-events, no championship points
+      bonusPole: true,
+      bonusFastestLap: true,
+      bonusMostLapsLed: true,
+      pointsTables: {
+        Sprint: { duration: 40, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+        Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
+        Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
+      },
+      seasonStartDate: '',
+      seasonStartTime: '', // NEW -- every session this season starts at this one time, sits next to the date
+      // NEW "Race Settings" -- season-wide now (used to be per-race on the
+      // Race Events page; Matt's call: setup rules/pit stops/fuel/tires/
+      // track limits/tire count don't need to vary race to race). Practice
+      // and Qualifying length now live here too, each with its own real
+      // default instead of a shared dropdown preset.
+      raceSettings: {
+        setupRules: 'Fixed',
+        pitStopReq: 'None',
+        fuelMultiplier: 100,
+        tireWearMultiplier: 100,
+        tireCount: 4,
+        trackLimitPoints: 100,
+        practiceLengthMin: 30,
+        qualifyLengthMin: 7
+      },
+      economy: {
+        startingBalance: 25000,
+        retainerGT3: 1500, retainerLMP3: 2600, retainerLMP2: 5250, retainerHypercar: 10500,
+        wagerStakeCapPct: 25, wagerHouseCutPct: 10, wagerForfeiturePct: 15,
+        noShowFreeCount: 2, noShowFee: 200,
+        vanitySpendCutPct: 20,
+        seatCostPoolPct: 10, leagueEarningsCutPct: 5
+      },
+      races: [] // resized to numRaces by syncRaceCount() when Race Events opens
+    };
+  }
+
+  function loadWizardDraft() {
+    try {
+      var raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) { return null; } // storage unavailable/blocked -- just no draft to resume
+  }
+  function saveWizardDraft(state) {
+    try { localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify(state)); } catch (err) { /* storage full/unavailable -- draft just won't persist this time */ }
+  }
+  function clearWizardDraft() {
+    try { localStorage.removeItem(WIZARD_DRAFT_KEY); } catch (err) { /* nothing to do */ }
+  }
+
+  // ---- small field-building helpers, reusing the exact same el()/
+  // fieldPairRow() primitives the rest of this file uses (see EDIT
+  // PROFILE FORM above) so the wizard looks and behaves like the rest of
+  // the site rather than inventing new form patterns. ----
+  //
+  // wizField wraps every field in .rc-wiz-field (margin-bottom, see
+  // style.css) so there's always breathing room before the next field or
+  // subhead, even for fields that don't carry a hint underneath them.
+  function wizLabel(text) { return el('label', 'margin-top:0;', escapeHtml(text)); }
+  function wizField(labelText, inputEl, hintText) {
+    var wrap = el('div', 'rc-wiz-field');
+    wrap.appendChild(wizLabel(labelText));
+    wrap.appendChild(inputEl);
+    if (hintText) wrap.appendChild(el('div', 'rc-hint', hintText));
+    return wrap;
+  }
+  // Two-column version of wizField/fieldPairRow -- each column is its own
+  // .rc-wiz-field (label + input + optional hint), so a hint lives
+  // directly under the box it explains instead of one combined hint
+  // floating below the whole row (Matt's call: economy notes joined with
+  // a semicolon were "sloppy" -- "why can't each have a note that lives
+  // directly underneath the box?"). Pass null/omit either hint to leave
+  // that column without one.
+  function wizFieldPairRow(labelA, fieldA, hintA, labelB, fieldB, hintB) {
+    var row = el('div', 'rc-wiz-field-pair');
+    var colA = el('div', 'rc-wiz-field');
+    colA.appendChild(wizLabel(labelA));
+    colA.appendChild(fieldA);
+    if (hintA) colA.appendChild(el('div', 'rc-hint', hintA));
+    var colB = el('div', 'rc-wiz-field');
+    colB.appendChild(wizLabel(labelB));
+    colB.appendChild(fieldB);
+    if (hintB) colB.appendChild(el('div', 'rc-hint', hintB));
+    row.appendChild(colA);
+    row.appendChild(colB);
+    return row;
+  }
+  function wizTextInput(value, onInput) {
+    var input = el('input'); input.type = 'text'; input.value = value || '';
+    input.addEventListener('input', function () { onInput(input.value); });
+    return input;
+  }
+  function wizNumberInput(value, onInput, opts) {
+    opts = opts || {};
+    var input = el('input'); input.type = 'number';
+    input.value = (value === undefined || value === null || value === '') ? '' : value;
+    if (opts.min !== undefined) input.min = opts.min;
+    if (opts.max !== undefined) input.max = opts.max;
+    input.addEventListener('input', function () { onInput(input.value === '' ? '' : Number(input.value)); });
+    return input;
+  }
+  // No blank "— Select —" option -- every dropdown in this wizard already
+  // defaults to a real value, so Matt's call is there's nothing to force a
+  // choice on. `value` should always be one of `options`.
+  function wizSelect(options, value, onChange) {
+    var select = document.createElement('select');
+    options.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      if (opt === value) o.selected = true;
+      select.appendChild(o);
+    });
+    select.addEventListener('change', function () { onChange(select.value); });
+    return select;
+  }
+  function wizCheckboxRow(labelText, checked, onChange) {
+    var label = document.createElement('label');
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = !!checked;
+    input.addEventListener('change', function () { onChange(input.checked); });
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(' ' + labelText));
+    return label;
+  }
+  // ---- hard-stop validation ("every box has to be filled out" before
+  // Next is allowed to advance -- Matt's call). Each page-render function
+  // is handed a shared `requiredEls` array and pushes one entry per
+  // mandatory field/group; openSeasonWizard's Next handler walks the
+  // array on click. Entries are duck-typed {isValid, markInvalid,
+  // clearInvalid} rather than raw elements so a single-input field and a
+  // multi-checkbox group can both be validated the same way. ----
+  //
+  // Wraps a text/number/date/time input as required: registers it into
+  // requiredEls and clears ITS OWN red state the moment it becomes valid
+  // again, so the admin gets instant per-field feedback while fixing
+  // things rather than waiting for another Next click.
+  function requireField(inputEl, requiredEls) {
+    var entry = {
+      isValid: function () { return String(inputEl.value).trim() !== ''; },
+      markInvalid: function () { inputEl.classList.add('rc-field-invalid'); },
+      clearInvalid: function () { inputEl.classList.remove('rc-field-invalid'); }
+    };
+    inputEl.addEventListener('input', function () { if (entry.isValid()) entry.clearInvalid(); });
+    requiredEls.push(entry);
+    return inputEl;
+  }
+  // Wraps a checkbox/checkbox-group container as required via a custom
+  // isValid check (e.g. "at least one class picked") instead of a single
+  // field's own value -- red state renders as a left border on the
+  // wrapping element since there's no single box to redden.
+  function requireGroup(wrapEl, isValidFn, requiredEls) {
+    var entry = {
+      isValid: isValidFn,
+      markInvalid: function () { wrapEl.classList.add('rc-field-invalid-group'); },
+      clearInvalid: function () { wrapEl.classList.remove('rc-field-invalid-group'); }
+    };
+    requiredEls.push(entry);
+    return entry;
+  }
+  function wizSubhead(text) { return el('div', 'rc-wizard-subhead', escapeHtml(text)); }
+  function previewLine(label, value) {
+    var row = el('div', 'display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--rc-offwhite);font-size:12.5px;');
+    row.appendChild(el('span', 'color:var(--rc-steel);', escapeHtml(label)));
+    row.appendChild(el('span', 'font-weight:600;text-align:right;', escapeHtml(String(value))));
+    return row;
+  }
+
+  // Compact editable P1–P10 table for one race-length tier, plus its
+  // season-wide duration -- see the design doc's Points table (Sprint
+  // 40min/25-18-...-1, Medium 60min, Long 80min working values). Both the
+  // duration box and the P1–P10 cells get an explicit max-width so the
+  // wizard's global "shrink every text/number/select box" rule (see
+  // .rc-wizard-content input/select in style.css) doesn't squash these --
+  // they're already as small as they should get.
+  function renderWizardPointsTable(state, tier, requiredEls) {
+    var wrap = el('div', 'rc-panel');
+    wrap.style.marginTop = '10px';
+    var head = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
+    head.appendChild(el('h4', 'margin:0;font-size:13px;', tier + ' Tier'));
+    var durationInput = wizNumberInput(state.pointsTables[tier].duration, function (v) { state.pointsTables[tier].duration = v; }, { min: 5 });
+    durationInput.style.cssText = 'width:70px;max-width:70px;display:inline-block;margin:0;';
+    requireField(durationInput, requiredEls);
+    var durWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
+    durWrap.appendChild(document.createTextNode('Duration (min)'));
+    durWrap.appendChild(durationInput);
+    head.appendChild(durWrap);
+    wrap.appendChild(head);
+
+    var table = document.createElement('table');
+    table.style.cssText = 'width:100%;margin-top:8px;border-collapse:collapse;';
+    var headRow = document.createElement('tr');
+    for (var p = 1; p <= 10; p++) {
+      var th = document.createElement('td');
+      th.style.cssText = 'font-size:10px;color:var(--rc-steel);text-align:center;padding:2px;';
+      th.textContent = 'P' + p;
+      headRow.appendChild(th);
+    }
+    table.appendChild(headRow);
+    var inputRow = document.createElement('tr');
+    state.pointsTables[tier].points.forEach(function (val, idx) {
+      var td = document.createElement('td');
+      td.style.padding = '2px';
+      var input = wizNumberInput(val, function (v) { state.pointsTables[tier].points[idx] = v; }, { min: 0 });
+      input.style.cssText = 'width:100%;max-width:100%;text-align:center;padding:4px;margin:0;box-sizing:border-box;';
+      requireField(input, requiredEls);
+      td.appendChild(input);
+      inputRow.appendChild(td);
+    });
+    table.appendChild(inputRow);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  // Page 1 — mirrors Step 1 (Season Setup) of the design doc: Identity,
+  // Access & server behavior, Format, Points, Schedule, Race Settings,
+  // Economy.
+  function renderWizardSeasonDetailsPage(state, container, requiredEls) {
+    container.appendChild(wizSubhead('Identity'));
+    // Grayed-out, non-editable "Race Club - Season # -" prefix, then the
+    // actual editable box -- the admin only ever types the part after it,
+    // capped at 24 characters (see the hint below and maxLength on the
+    // input itself).
+    var namePrefix = el('span',
+      'display:inline-flex;align-items:center;box-sizing:border-box;padding:0 10px;height:44px;background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-right:none;border-radius:4px 0 0 4px;color:var(--rc-steel);font-size:13px;font-weight:600;white-space:nowrap;flex:none;',
+      'Race Club - Season # -');
+    var nameInput = wizTextInput(state.seasonName, function (v) { state.seasonName = v; });
+    nameInput.maxLength = 24;
+    // 2/3 of the wizard's default 50% width (Matt's call) = 1/3 overall.
+    nameInput.style.cssText = 'border-radius:0 4px 4px 0;margin:0;max-width:33%;flex:0 1 33%;';
+    requireField(nameInput, requiredEls);
+    var nameRow = el('div', 'display:flex;align-items:stretch;');
+    nameRow.appendChild(namePrefix);
+    nameRow.appendChild(nameInput);
+    container.appendChild(wizField('Season Name', nameRow, 'Max 24 characters.'));
+
+    container.appendChild(wizSubhead('Access & Server Behavior'));
+    var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
+    pwInput.style.maxWidth = '25%';
+    requireField(pwInput, requiredEls);
+    container.appendChild(wizField('Default Password', pwInput));
+
+    container.appendChild(fieldPairRow(
+      'Private Qualifying', wizSelect(['Yes', 'No'], state.privateQualifying, function (v) { state.privateQualifying = v; }),
+      'Track Limits Preset', wizSelect(['Strict', 'Relaxed', 'Default'], state.trackLimitsPreset, function (v) { state.trackLimitsPreset = v; })
+    ));
+
+    container.appendChild(wizSubhead('Format'));
+    // Each class gets its own checkbox, plus a "2026" season checkbox
+    // right behind it -- greyed out/disabled until that class is checked,
+    // then active so the admin can confirm which season's real-world
+    // team/car roster this class uses. Only one season exists to pick
+    // from today; more will show up here as they're added.
+    var classesWrap = el('div');
+    // "Every box has to be filled out" (Matt's call) extends to this
+    // group too: at least one class must be picked, AND every picked
+    // class needs its season box checked -- both conditions live in one
+    // group check below, re-evaluated (and cleared) live as the admin
+    // toggles either checkbox, same instant-feedback behavior as a plain
+    // required text field.
+    var classesGroupEntry;
+    function recheckClassesGroup() { if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid(); }
+    ['GT3', 'LMP3', 'LMP2', 'Hypercar'].forEach(function (cls) {
+      var row = el('div', 'display:flex;align-items:center;gap:18px;padding:4px 0;');
+
+      // Season checkbox is built FIRST so the class checkbox's onChange
+      // below can flip its disabled/enabled state directly in place --
+      // no full-page re-render needed just to toggle one checkbox, which
+      // is what was causing the wizard to snap back to the top of the
+      // page (and stay snapped, since scrolling back down and toggling
+      // again re-triggered the same full re-render) every time a class
+      // was checked or unchecked. Matt's bug report.
+      var seasonLabel = document.createElement('label');
+      seasonLabel.style.cssText = 'display:flex;align-items:center;gap:5px;margin:0;font-size:14px;font-weight:400;' +
+        (state.classes[cls] ? 'color:var(--rc-carbon);' : 'color:var(--rc-steel);opacity:0.6;');
+      var seasonCb = document.createElement('input');
+      seasonCb.type = 'checkbox';
+      seasonCb.checked = !!state.classSeasons[cls];
+      seasonCb.disabled = !state.classes[cls];
+      seasonCb.addEventListener('change', function () { state.classSeasons[cls] = seasonCb.checked; recheckClassesGroup(); });
+      seasonLabel.appendChild(seasonCb);
+      seasonLabel.appendChild(document.createTextNode(' 2026'));
+
+      var classLabel = wizCheckboxRow(cls, state.classes[cls], function (c) {
+        state.classes[cls] = c;
+        seasonCb.disabled = !c;
+        seasonLabel.style.color = c ? 'var(--rc-carbon)' : 'var(--rc-steel)';
+        seasonLabel.style.opacity = c ? '1' : '0.6';
+        if (!c) { state.classSeasons[cls] = false; seasonCb.checked = false; }
+        recheckClassesGroup();
+      });
+      // margin:0 (matches seasonLabel, above) is what keeps the two
+      // checkboxes sitting on the exact same row instead of the season
+      // checkbox riding slightly lower -- without it, the sitewide
+      // `label { margin-top: 14px }` rule was still landing on this
+      // label even though every OTHER property here overrides it.
+      classLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
+      row.appendChild(classLabel);
+      row.appendChild(seasonLabel);
+      classesWrap.appendChild(row);
+    });
+    classesGroupEntry = requireGroup(classesWrap, function () {
+      var anySelected = Object.keys(state.classes).some(function (c) { return state.classes[c]; });
+      return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || state.classSeasons[c]; });
+    }, requiredEls);
+    container.appendChild(wizField('Car Class(es) For The Season', classesWrap,
+      'Selecting 2+ automatically makes this a multiclass season. Pick at least one class, and check its season box.'));
+
+    var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: 2 });
+    requireField(byeWeeksInput, requiredEls);
+    container.appendChild(fieldPairRow(
+      'Frequency', wizSelect(['Weekly', 'Biweekly', 'Monthly'], state.frequency, function (v) { state.frequency = v; }),
+      'Bye Weeks (max 2)', byeWeeksInput
+    ));
+    var numRacesInput = wizNumberInput(state.numRaces, function (v) { state.numRaces = v; }, { min: 1 });
+    requireField(numRacesInput, requiredEls);
+    var dropWeeksInput = wizNumberInput(state.dropWeeks, function (v) { state.dropWeeks = v; }, { min: 0 });
+    requireField(dropWeeksInput, requiredEls);
+    container.appendChild(fieldPairRow(
+      'Number Of Races', numRacesInput,
+      'Drop Weeks Allowed', dropWeeksInput
+    ));
+    // 0-2 special events this season (was a Yes/No toggle) -- each one
+    // populates its own money-only card at the bottom of the Race Events
+    // page once selected here (Matt's call).
+    var specialEventsSelect = wizSelect(['0', '1', '2'], String(state.specialEventsCount || 0), function (v) { state.specialEventsCount = parseInt(v, 10); });
+    specialEventsSelect.style.maxWidth = '25%';
+    container.appendChild(wizField('Special Events This Season', specialEventsSelect,
+      'Money-only mini-events (no championship points) -- each one gets its own card on the Race Events page.'));
+
+    container.appendChild(wizSubhead('Points'));
+    // Row layout instead of stacked, and slightly larger checkboxes/text
+    // than a normal checklist -- Matt's call, since these three read as
+    // one higher-level toggle group rather than a vertical list.
+    var bonusWrap = el('div', 'rc-checklist rc-bonus-checklist');
+    bonusWrap.appendChild(wizCheckboxRow('Pole Position (+1)', state.bonusPole, function (c) { state.bonusPole = c; }));
+    bonusWrap.appendChild(wizCheckboxRow('Fastest Lap (+1)', state.bonusFastestLap, function (c) { state.bonusFastestLap = c; }));
+    bonusWrap.appendChild(wizCheckboxRow('Most Laps Led (+1)', state.bonusMostLapsLed, function (c) { state.bonusMostLapsLed = c; }));
+    container.appendChild(wizField('Bonus Point Categories', bonusWrap));
+    ['Sprint', 'Medium', 'Long'].forEach(function (tier) { container.appendChild(renderWizardPointsTable(state, tier, requiredEls)); });
+
+    container.appendChild(wizSubhead('Schedule'));
+    var startDate = el('input'); startDate.type = 'date'; startDate.value = state.seasonStartDate || '';
+    startDate.addEventListener('input', function () { state.seasonStartDate = startDate.value; });
+    requireField(startDate, requiredEls);
+    var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
+    startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
+    requireField(startTime, requiredEls);
+    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
+
+    // NEW — Race Settings, moved here from the Race Events page since
+    // these apply the same way to every race this season rather than
+    // varying race to race (Matt's call).
+    container.appendChild(wizSubhead('Race Settings'));
+    container.appendChild(fieldPairRow(
+      'Setup Rules', wizSelect(['Fixed', 'Open'], state.raceSettings.setupRules, function (v) { state.raceSettings.setupRules = v; }),
+      'Pit Stop Requirements', wizSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], state.raceSettings.pitStopReq, function (v) { state.raceSettings.pitStopReq = v; })
+    ));
+    var fuelInput = wizNumberInput(state.raceSettings.fuelMultiplier, function (v) { state.raceSettings.fuelMultiplier = v; }, { min: 0 }); requireField(fuelInput, requiredEls);
+    var tireWearInput = wizNumberInput(state.raceSettings.tireWearMultiplier, function (v) { state.raceSettings.tireWearMultiplier = v; }, { min: 0 }); requireField(tireWearInput, requiredEls);
+    container.appendChild(fieldPairRow('Fuel Consumption (%)', fuelInput, 'Tire Wear (%)', tireWearInput));
+    var tireCountInput = wizNumberInput(state.raceSettings.tireCount, function (v) { state.raceSettings.tireCount = v; }, { min: 0 }); requireField(tireCountInput, requiredEls);
+    var trackLimitInput = wizNumberInput(state.raceSettings.trackLimitPoints, function (v) { state.raceSettings.trackLimitPoints = v; }, { min: 0 }); requireField(trackLimitInput, requiredEls);
+    container.appendChild(fieldPairRow('Tire Count Allowed', tireCountInput, 'Track Limit Points Before DT', trackLimitInput));
+    var practiceLenInput = wizNumberInput(state.raceSettings.practiceLengthMin, function (v) { state.raceSettings.practiceLengthMin = v; }, { min: 0 }); requireField(practiceLenInput, requiredEls);
+    var qualifyLenInput = wizNumberInput(state.raceSettings.qualifyLengthMin, function (v) { state.raceSettings.qualifyLengthMin = v; }, { min: 0 }); requireField(qualifyLenInput, requiredEls);
+    container.appendChild(fieldPairRow('Practice Length (min)', practiceLenInput, 'Qualifying Length (min)', qualifyLenInput));
+
+    // Economy — every pair below uses wizFieldPairRow so each box gets
+    // its OWN note directly underneath it, instead of one combined note
+    // (previously joined with a ";") floating below the whole row with
+    // no clear owner. Matt's call.
+    container.appendChild(wizSubhead('Economy'));
+    var balInput = wizNumberInput(state.economy.startingBalance, function (v) { state.economy.startingBalance = v; }, { min: 0 });
+    balInput.style.maxWidth = '25%';
+    requireField(balInput, requiredEls);
+    container.appendChild(wizField('Starting Bank Balance ($)', balInput,
+      'For brand-new drivers only. Returning drivers carry their balance over from last season — if that\'s somehow below this value, they\'re automatically brought up to it at season start.'));
+    var retGT3 = wizNumberInput(state.economy.retainerGT3, function (v) { state.economy.retainerGT3 = v; }, { min: 0 }); requireField(retGT3, requiredEls);
+    var retLMP3 = wizNumberInput(state.economy.retainerLMP3, function (v) { state.economy.retainerLMP3 = v; }, { min: 0 }); requireField(retLMP3, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'GT3 Retainer ($/race)', retGT3,
+      'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.',
+      'LMP3 Retainer ($/race)', retLMP3,
+      'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.'
+    ));
+    var retLMP2 = wizNumberInput(state.economy.retainerLMP2, function (v) { state.economy.retainerLMP2 = v; }, { min: 0 }); requireField(retLMP2, requiredEls);
+    var retHyper = wizNumberInput(state.economy.retainerHypercar, function (v) { state.economy.retainerHypercar = v; }, { min: 0 }); requireField(retHyper, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'LMP2 Retainer ($/race)', retLMP2,
+      'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.',
+      'Hypercar Retainer ($/race)', retHyper,
+      'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.'
+    ));
+    var stakeCapInput = wizNumberInput(state.economy.wagerStakeCapPct, function (v) { state.economy.wagerStakeCapPct = v; }, { min: 0, max: 100 }); requireField(stakeCapInput, requiredEls);
+    var houseCutInput = wizNumberInput(state.economy.wagerHouseCutPct, function (v) { state.economy.wagerHouseCutPct = v; }, { min: 0, max: 100 }); requireField(houseCutInput, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'Wager Stake Cap (% of available)', stakeCapInput,
+      'Limits a single wager to this % of a driver\'s available balance.',
+      'Wager House Cut (%)', houseCutInput,
+      'The league\'s cut on every settled wager.'
+    ));
+    var forfeitureInput = wizNumberInput(state.economy.wagerForfeiturePct, function (v) { state.economy.wagerForfeiturePct = v; }, { min: 0, max: 100 }); requireField(forfeitureInput, requiredEls);
+    var vanityInput = wizNumberInput(state.economy.vanitySpendCutPct, function (v) { state.economy.vanitySpendCutPct = v; }, { min: 0, max: 100 }); requireField(vanityInput, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'Wager Forfeiture Fee (%)', forfeitureInput,
+      'Charged if a driver backs out of an already-accepted wager.',
+      'Vanity Spend Cut (%)', vanityInput,
+      'The league\'s share of cosmetic/vanity purchases.'
+    ));
+    var noShowFreeInput = wizNumberInput(state.economy.noShowFreeCount, function (v) { state.economy.noShowFreeCount = v; }, { min: 0 }); requireField(noShowFreeInput, requiredEls);
+    var noShowFeeInput = wizNumberInput(state.economy.noShowFee, function (v) { state.economy.noShowFee = v; }, { min: 0 }); requireField(noShowFeeInput, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'Free No-Shows / Season', noShowFreeInput,
+      'Missed races allowed before the fee (right) kicks in.',
+      'No-Show Fee After That ($)', noShowFeeInput,
+      'Charged automatically once the free no-shows are used up, paid into the season prize pool.'
+    ));
+    var seatCostPoolInput = wizNumberInput(state.economy.seatCostPoolPct, function (v) { state.economy.seatCostPoolPct = v; }, { min: 0, max: 100 }); requireField(seatCostPoolInput, requiredEls);
+    var leagueCutInput = wizNumberInput(state.economy.leagueEarningsCutPct, function (v) { state.economy.leagueEarningsCutPct = v; }, { min: 0, max: 100 }); requireField(leagueCutInput, requiredEls);
+    container.appendChild(wizFieldPairRow(
+      'Per-Race Seat Cost → Pool (%)', seatCostPoolInput,
+      'Cut of every retainer payment that feeds the season prize pool.',
+      'League Cut Of Race Earnings (%)', leagueCutInput,
+      'Cut of every race\'s salary/bonus payout that feeds the same prize pool.'
+    ));
+    container.appendChild(el('div', 'rc-hint',
+      'The penalty fine schedule and sponsor tier payouts reuse the design doc\'s working values automatically and aren\'t editable from this pass of the wizard yet.'));
+  }
+
+  // Keeps state.races the right length whenever Race Events opens --
+  // Number Of Races is set on the previous page and can change any time
+  // the admin goes Back, so this reconciles rather than assuming.
+  function syncRaceCount(state) {
+    var n = Math.max(0, parseInt(state.numRaces, 10) || 0);
+    while (state.races.length < n) {
+      state.races.push({
+        track: WIZARD_TRACK_LIST[0], layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0], weather: 'Clear', tier: 'Sprint',
+        passwordOverride: '', registrationLink: '',
+        igPracticeStart: '', igQualifyStart: '', igRaceStart: ''
+      });
+    }
+    if (state.races.length > n) state.races.length = n;
+  }
+
+  // Keeps state.byeWeekDates the right length whenever Race Events opens
+  // -- capped at 2 (Matt's call: "only 2 bye weeks max allowed"), same
+  // reconcile-not-assume pattern as syncRaceCount.
+  function syncByeWeekDates(state) {
+    var n = Math.max(0, Math.min(2, parseInt(state.byeWeeks, 10) || 0));
+    if (!state.byeWeekDates) state.byeWeekDates = [];
+    while (state.byeWeekDates.length < n) state.byeWeekDates.push('');
+    if (state.byeWeekDates.length > n) state.byeWeekDates.length = n;
+  }
+
+  // Keeps state.specialEvents the right length whenever Race Events opens
+  // -- capped at 2, same pattern again.
+  function syncSpecialEvents(state) {
+    var n = Math.max(0, Math.min(2, parseInt(state.specialEventsCount, 10) || 0));
+    if (!state.specialEvents) state.specialEvents = [];
+    while (state.specialEvents.length < n) state.specialEvents.push(defaultSpecialEvent());
+    if (state.specialEvents.length > n) state.specialEvents.length = n;
+  }
+
+  // Page 2 — mirrors Step 2 (Per-Race Details) of the design doc,
+  // repeated once per race slot generated from Number Of Races. Setup
+  // rules/pit stops/fuel/tires/track limits/practice+qualifying length
+  // all moved to Season Details' new Race Settings subsection (season-
+  // wide, not per-race); this page now also carries the three in-game
+  // session start times, which DO vary race to race (a night race needs
+  // a different in-game clock time than an afternoon one).
+  function renderWizardRaceEventsPage(state, container, requiredEls) {
+    // Bye week date blocks -- one per bye week (max 2), at the very top
+    // of this page since that's where the admin is looking at the actual
+    // week-by-week schedule. Each is a real calendar date the admin picks
+    // to skip "when the need arises" (Matt's call), not auto-generated.
+    if (state.byeWeeks > 0) {
+      container.appendChild(wizSubhead('Bye Weeks'));
+      container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
+        'Pick the date of each bye week -- the week the season simply skips instead of racing.'));
+      var byeRow = el('div', 'rc-wiz-field-pair');
+      state.byeWeekDates.forEach(function (val, idx) {
+        var dateInput = el('input'); dateInput.type = 'date'; dateInput.value = val || '';
+        dateInput.addEventListener('input', function () { state.byeWeekDates[idx] = dateInput.value; });
+        requireField(dateInput, requiredEls);
+        var col = el('div', 'rc-wiz-field');
+        col.appendChild(wizLabel('Bye Week ' + (idx + 1) + ' Date'));
+        col.appendChild(dateInput);
+        byeRow.appendChild(col);
+      });
+      container.appendChild(byeRow);
+    }
+
+    if (!state.races.length) {
+      container.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
+        'No races yet — go back to Season Details and set "Number Of Races" above 0.'));
+      return;
+    }
+    container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
+      'One card per race slot. Selecting a Race Length Tier pulls that race\'s duration and point table straight from the season-wide tables set on the previous page.'));
+    state.races.forEach(function (race, idx) {
+      var card = el('div', 'rc-panel rc-wizard-race-card');
+      card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race ' + (idx + 1)));
+
+      // Layout is a dropdown populated from whichever Track is currently
+      // selected, not free text (Matt's call: "it won't be a free text
+      // box"). Changing Track swaps the Layout select's own options in
+      // place instead of re-rendering the whole page, so the admin's
+      // scroll position doesn't jump while editing a later race card.
+      if (!race.layout || trackLayoutOptions(race.track).indexOf(race.layout) === -1) {
+        race.layout = trackLayoutOptions(race.track)[0];
+      }
+      var layoutSelect = wizSelect(trackLayoutOptions(race.track), race.layout, function (v) { race.layout = v; });
+      var trackSelect = wizSelect(WIZARD_TRACK_LIST, race.track, function (v) {
+        race.track = v;
+        var opts = trackLayoutOptions(v);
+        race.layout = opts[0];
+        layoutSelect.innerHTML = '';
+        opts.forEach(function (o) {
+          var oe = document.createElement('option');
+          oe.value = o; oe.textContent = o;
+          layoutSelect.appendChild(oe);
+        });
+        layoutSelect.value = race.layout;
+      });
+      card.appendChild(fieldPairRow('Track', trackSelect, 'Layout / Configuration', layoutSelect));
+
+      card.appendChild(fieldPairRow(
+        'Weather', wizSelect(WIZARD_WEATHER_LIST, race.weather, function (v) { race.weather = v; }),
+        'Race Length Tier', wizSelect(['Sprint', 'Medium', 'Long'], race.tier, function (v) { race.tier = v; })
+      ));
+      card.appendChild(fieldPairRow(
+        'Password Override (optional)', wizTextInput(race.passwordOverride, function (v) { race.passwordOverride = v; }),
+        'Registration Link', wizTextInput(race.registrationLink, function (v) { race.registrationLink = v; })
+      ));
+      var igPractice = el('input'); igPractice.type = 'time'; igPractice.value = race.igPracticeStart || '';
+      igPractice.addEventListener('input', function () { race.igPracticeStart = igPractice.value; });
+      requireField(igPractice, requiredEls);
+      var igQualify = el('input'); igQualify.type = 'time'; igQualify.value = race.igQualifyStart || '';
+      igQualify.addEventListener('input', function () { race.igQualifyStart = igQualify.value; });
+      requireField(igQualify, requiredEls);
+      var igRace = el('input'); igRace.type = 'time'; igRace.value = race.igRaceStart || '';
+      igRace.addEventListener('input', function () { race.igRaceStart = igRace.value; });
+      igRace.style.maxWidth = '25%';
+      requireField(igRace, requiredEls);
+      card.appendChild(fieldPairRow('In-Game Practice Start Time', igPractice, 'In-Game Qualify Start Time', igQualify));
+      card.appendChild(wizField('In-Game Race Start Time', igRace));
+      container.appendChild(card);
+    });
+
+    // Special events -- strictly money, no championship points (Matt's
+    // call). One card per event, after every regular race card.
+    if (state.specialEvents.length) {
+      container.appendChild(wizSubhead('Special Events'));
+      container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
+        'Money-only mini-events -- no championship points. Pick a date for each (they usually won\'t land on a regularly scheduled race), then set the payouts below.'));
+      state.specialEvents.forEach(function (evt, idx) {
+        var card = el('div', 'rc-panel rc-wizard-race-card');
+        card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
+
+        var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
+        evtDate.addEventListener('input', function () { evt.date = evtDate.value; });
+        requireField(evtDate, requiredEls);
+        card.appendChild(wizField('Event Date', evtDate));
+
+        // Top-10 money table -- same P1-P10 layout as the championship
+        // points tables on the previous page, but every cell is a
+        // dollar amount instead of a points value.
+        var moneyWrap = el('div', 'rc-panel'); moneyWrap.style.marginTop = '10px';
+        var moneyHead = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
+        moneyHead.appendChild(el('h4', 'margin:0;font-size:13px;', 'Top 10 Money Payout'));
+        moneyWrap.appendChild(moneyHead);
+        var moneyTable = document.createElement('table');
+        moneyTable.style.cssText = 'width:100%;margin-top:8px;border-collapse:collapse;';
+        var moneyHeadRow = document.createElement('tr');
+        for (var p = 1; p <= 10; p++) {
+          var th = document.createElement('td');
+          th.style.cssText = 'font-size:10px;color:var(--rc-steel);text-align:center;padding:2px;';
+          th.textContent = 'P' + p;
+          moneyHeadRow.appendChild(th);
+        }
+        moneyTable.appendChild(moneyHeadRow);
+        var moneyInputRow = document.createElement('tr');
+        evt.moneyPlaces.forEach(function (val, pIdx) {
+          var td = document.createElement('td');
+          td.style.padding = '2px';
+          var input = wizNumberInput(val, function (v) { evt.moneyPlaces[pIdx] = v; }, { min: 0 });
+          input.style.cssText = 'width:100%;max-width:100%;text-align:center;padding:4px;margin:0;box-sizing:border-box;';
+          requireField(input, requiredEls);
+          td.appendChild(input);
+          moneyInputRow.appendChild(td);
+        });
+        moneyTable.appendChild(moneyInputRow);
+        moneyWrap.appendChild(moneyTable);
+        moneyWrap.appendChild(el('div', 'rc-hint', 'Typical pool is $15,000 spread across the top 10 -- adjust any place as needed.'));
+        card.appendChild(moneyWrap);
+
+        // Fun one-off bonus categories, each with its own payout box.
+        var bonusWrap = el('div', 'rc-panel'); bonusWrap.style.marginTop = '10px';
+        bonusWrap.appendChild(el('h4', 'margin:0 0 8px;font-size:13px;', 'Bonus Categories'));
+        SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (cat, catIdx) {
+          var catInput = wizNumberInput(evt.bonusPayouts[cat.key], function (v) { evt.bonusPayouts[cat.key] = v; }, { min: 0 });
+          catInput.style.maxWidth = '25%';
+          requireField(catInput, requiredEls);
+          var row = wizField(cat.label + ' ($)', catInput);
+          if (catIdx === SPECIAL_EVENT_BONUS_CATEGORIES.length - 1) row.style.marginBottom = '0';
+          bonusWrap.appendChild(row);
+        });
+        card.appendChild(bonusWrap);
+
+        container.appendChild(card);
+      });
+    }
+  }
+
+  // Page 3 — read-only rollup of everything above. The actual Create
+  // Season / Create a Future Season actions live in openSeasonWizard()'s
+  // footer now (lower-left corner of the popup, Matt's call), not here.
+  function renderWizardPreviewPage(state, container) {
+    container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
+      'Review everything below before creating the season — Back is always available to make changes.'));
+
+    var idPanel = el('div', 'rc-panel');
+    idPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Identity & Access'));
+    idPanel.appendChild(previewLine('Season Name', state.seasonName || '(untitled)'));
+    idPanel.appendChild(previewLine('Server Name (auto)', 'Race Club - Season 1 - ' + (state.seasonName || '(untitled)')));
+    idPanel.appendChild(previewLine('Default Password', state.defaultPassword || '(none set)'));
+    idPanel.appendChild(previewLine('Private Qualifying', state.privateQualifying));
+    idPanel.appendChild(previewLine('Track Limits Preset', state.trackLimitsPreset));
+    container.appendChild(idPanel);
+
+    var fmtPanel = el('div', 'rc-panel'); fmtPanel.style.marginTop = '12px';
+    fmtPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Format & Schedule'));
+    var selectedClasses = Object.keys(state.classes).filter(function (c) { return state.classes[c]; });
+    fmtPanel.appendChild(previewLine('Classes', selectedClasses.length ? selectedClasses.join(', ') : 'None selected'));
+    selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c + ' — 2026 Season', state.classSeasons[c] ? 'Selected' : 'Not selected')); });
+    fmtPanel.appendChild(previewLine('Frequency', state.frequency));
+    fmtPanel.appendChild(previewLine('Bye Weeks', String(state.byeWeeks || 0)));
+    (state.byeWeekDates || []).forEach(function (d, i) { fmtPanel.appendChild(previewLine('Bye Week ' + (i + 1) + ' Date', d || '(not set)')); });
+    fmtPanel.appendChild(previewLine('Number Of Races', String(state.numRaces || 0)));
+    fmtPanel.appendChild(previewLine('Drop Weeks Allowed', String(state.dropWeeks || 0)));
+    fmtPanel.appendChild(previewLine('Special Events This Season', String(state.specialEventsCount || 0)));
+    fmtPanel.appendChild(previewLine('Season Start', (state.seasonStartDate || '(date not set)') + ' at ' + (state.seasonStartTime || '(time not set)')));
+    fmtPanel.appendChild(previewLine('Bonus Points', [state.bonusPole && 'Pole', state.bonusFastestLap && 'Fastest Lap', state.bonusMostLapsLed && 'Most Laps Led'].filter(Boolean).join(', ') || 'None enabled'));
+    container.appendChild(fmtPanel);
+
+    var settingsPanel = el('div', 'rc-panel'); settingsPanel.style.marginTop = '12px';
+    settingsPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Settings'));
+    settingsPanel.appendChild(previewLine('Setup / Pit Stops', state.raceSettings.setupRules + ' / ' + state.raceSettings.pitStopReq));
+    settingsPanel.appendChild(previewLine('Fuel / Tire Wear', state.raceSettings.fuelMultiplier + '% / ' + state.raceSettings.tireWearMultiplier + '%'));
+    settingsPanel.appendChild(previewLine('Tire Count / Track Limit Points', state.raceSettings.tireCount + ' / ' + state.raceSettings.trackLimitPoints));
+    settingsPanel.appendChild(previewLine('Practice / Qualifying Length', state.raceSettings.practiceLengthMin + ' min / ' + state.raceSettings.qualifyLengthMin + ' min'));
+    container.appendChild(settingsPanel);
+
+    var econPanel = el('div', 'rc-panel'); econPanel.style.marginTop = '12px';
+    econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Economy'));
+    econPanel.appendChild(previewLine('Starting Balance', '$' + Number(state.economy.startingBalance || 0).toLocaleString()));
+    econPanel.appendChild(previewLine('Retainers', 'GT3 $' + state.economy.retainerGT3 + ' · LMP3 $' + state.economy.retainerLMP3 + ' · LMP2 $' + state.economy.retainerLMP2 + ' · Hypercar $' + state.economy.retainerHypercar));
+    econPanel.appendChild(previewLine('Wager Cap / House Cut / Forfeiture', state.economy.wagerStakeCapPct + '% / ' + state.economy.wagerHouseCutPct + '% / ' + state.economy.wagerForfeiturePct + '%'));
+    econPanel.appendChild(previewLine('No-Shows', state.economy.noShowFreeCount + ' free, then $' + state.economy.noShowFee));
+    econPanel.appendChild(previewLine('Vanity Spend Cut', state.economy.vanitySpendCutPct + '%'));
+    container.appendChild(econPanel);
+
+    var racesPanel = el('div', 'rc-panel'); racesPanel.style.marginTop = '12px';
+    racesPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Events (' + state.races.length + ')'));
+    if (!state.races.length) {
+      racesPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No races configured.'));
+    } else {
+      state.races.forEach(function (race, idx) {
+        var detail = (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '') +
+          ' · ' + race.tier + ' · ' + (race.weather || 'Clear') +
+          ' · Race Start ' + (race.igRaceStart || '(not set)');
+        racesPanel.appendChild(previewLine('Race ' + (idx + 1), detail));
+      });
+    }
+    container.appendChild(racesPanel);
+
+    if (state.specialEvents.length) {
+      var specialPanel = el('div', 'rc-panel'); specialPanel.style.marginTop = '12px';
+      specialPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Events (' + state.specialEvents.length + ')'));
+      state.specialEvents.forEach(function (evt, idx) {
+        var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
+        var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
+        specialPanel.appendChild(previewLine('Special Event ' + (idx + 1),
+          (evt.date || '(date not set)') + ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString()));
+      });
+      container.appendChild(specialPanel);
+    }
+  }
+
+  function openSeasonWizard() {
+    var state = loadWizardDraft() || defaultWizardState();
+    var stepIndex = 0;
+    var modal = showModal('Create a Season', { wide: true, onClose: function () { if (typeof renderLeagueSection === 'function') renderLeagueSection(); } });
+    var body = modal.body;
+    var stepsBar = el('div', 'rc-wizard-steps');
+    var contentWrap = el('div', 'rc-wizard-content');
+    var footerBar = el('div', 'rc-wizard-actions');
+    body.appendChild(stepsBar);
+    body.appendChild(contentWrap);
+    body.appendChild(footerBar);
+
+    var lastStep = WIZARD_STEPS.length - 1;
+    var currentRequiredEls = [];
+
+    function goToStep(i) {
+      saveWizardDraft(state);
+      stepIndex = i;
+      renderStep();
+    }
+
+    // Hard stop before Next is allowed to advance -- "every box has to be
+    // filled out" (Matt's call). Marks every currently-invalid field red
+    // and returns false; a field that's now valid gets cleared even if it
+    // was previously marked, so fixing things and clicking Next again
+    // only shows what's STILL wrong.
+    function validateCurrentStep() {
+      var allValid = true;
+      currentRequiredEls.forEach(function (entry) {
+        if (entry.isValid()) { entry.clearInvalid(); }
+        else { entry.markInvalid(); allValid = false; }
+      });
+      return allValid;
+    }
+    function shakeModal() {
+      modal.el.classList.remove('rc-shake');
+      void modal.el.offsetWidth; // force reflow so back-to-back failed attempts still shake
+      modal.el.classList.add('rc-shake');
+    }
+
+    function renderStep() {
+      stepsBar.innerHTML = '';
+      WIZARD_STEPS.forEach(function (label, i) {
+        var cls = 'rc-wizard-step' + (i === stepIndex ? ' rc-wizard-step-active' : '') + (i < stepIndex ? ' rc-wizard-step-done' : '');
+        var bubble = el('div', cls, (i + 1) + '. ' + escapeHtml(label));
+        // Bubbles are clickable so the admin can jump straight to any
+        // page instead of only stepping through Next/Back (Matt's call)
+        // -- nothing in this draft is validated/locked step to step, so
+        // free navigation is safe.
+        bubble.style.cursor = 'pointer';
+        bubble.addEventListener('click', function () { if (i !== stepIndex) goToStep(i); });
+        stepsBar.appendChild(bubble);
+      });
+
+      contentWrap.innerHTML = '';
+      currentRequiredEls = [];
+      if (stepIndex === 0) renderWizardSeasonDetailsPage(state, contentWrap, currentRequiredEls);
+      else if (stepIndex === 1) {
+        syncRaceCount(state); syncByeWeekDates(state); syncSpecialEvents(state);
+        renderWizardRaceEventsPage(state, contentWrap, currentRequiredEls);
+      }
+      else renderWizardPreviewPage(state, contentWrap);
+      contentWrap.scrollTop = 0;
+
+      footerBar.innerHTML = '';
+
+      if (stepIndex === lastStep) {
+        // Last page (Season Preview): the actual "save the season"
+        // actions sit in the lower-LEFT corner of the popup instead of
+        // being buried at the bottom of the scrollable content; Back and
+        // Save & Close sit lower-right, Back first so Save & Close reads
+        // to its right (Matt's call on both).
+        footerBar.style.alignItems = 'flex-end';
+
+        var leftGroup = el('div');
+        var btnRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+        var createNowBtn = el('button', null, 'Create Season');
+        createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
+        createNowBtn.addEventListener('click', function () { state.releaseMode = 'now'; finishWizard(); });
+        btnRow.appendChild(createNowBtn);
+
+        var futureBtn = el('button', null, 'Create a Future Season');
+        futureBtn.className = 'rc-btn-secondary rc-btn-sm'; futureBtn.type = 'button';
+        btnRow.appendChild(futureBtn);
+        leftGroup.appendChild(btnRow);
+
+        var futurePanel = el('div', 'rc-panel');
+        futurePanel.style.cssText = 'margin-top:10px;display:none;max-width:320px;';
+        var dt = el('input'); dt.type = 'datetime-local'; dt.value = state.releaseDateTime || '';
+        dt.addEventListener('input', function () { state.releaseDateTime = dt.value; });
+        futurePanel.appendChild(wizField('Release Date/Time', dt,
+          'Real team seats are first-come-first-served, so a scheduled release gives every driver an equal shot at one.'));
+        var confirmFutureBtn = el('button', null, 'Confirm & Create');
+        confirmFutureBtn.className = 'rc-btn-primary rc-btn-sm'; confirmFutureBtn.type = 'button';
+        confirmFutureBtn.addEventListener('click', function () { state.releaseMode = 'scheduled'; finishWizard(); });
+        futurePanel.appendChild(confirmFutureBtn);
+        leftGroup.appendChild(futurePanel);
+
+        futureBtn.addEventListener('click', function () {
+          futurePanel.style.display = futurePanel.style.display === 'none' ? 'block' : 'none';
+        });
+        footerBar.appendChild(leftGroup);
+
+        var rightGroup = el('div', 'display:flex;gap:8px;');
+        var backBtn = el('button', null, 'Back');
+        backBtn.className = 'rc-btn-secondary rc-btn-sm'; backBtn.type = 'button';
+        backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
+        rightGroup.appendChild(backBtn);
+
+        var saveBtn = el('button', null, 'Save & Close');
+        saveBtn.className = 'rc-btn-secondary rc-btn-sm'; saveBtn.type = 'button';
+        saveBtn.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
+        rightGroup.appendChild(saveBtn);
+        footerBar.appendChild(rightGroup);
+      } else {
+        // Pages 1-2: unchanged layout -- Save & Close on the left,
+        // Back (if any)/Next on the right.
+        footerBar.style.alignItems = 'center';
+
+        var saveBtnNorm = el('button', null, 'Save & Close');
+        saveBtnNorm.className = 'rc-btn-secondary rc-btn-sm'; saveBtnNorm.type = 'button';
+        saveBtnNorm.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
+        footerBar.appendChild(saveBtnNorm);
+
+        // Validation message sits ABOVE the Back/Next row (right by the
+        // button, per Matt's call), hidden until a failed Next click.
+        var navOuter = el('div');
+        var validationMsg = el('div', 'rc-wizard-validation-msg', 'All mandatory fields must be filled out.');
+        validationMsg.style.display = 'none';
+        navOuter.appendChild(validationMsg);
+
+        var navGroup = el('div', 'display:flex;gap:8px;');
+        if (stepIndex > 0) {
+          var backBtnNorm = el('button', null, 'Back');
+          backBtnNorm.className = 'rc-btn-secondary rc-btn-sm'; backBtnNorm.type = 'button';
+          backBtnNorm.addEventListener('click', function () { goToStep(stepIndex - 1); });
+          navGroup.appendChild(backBtnNorm);
+        }
+        var nextBtn = el('button', null, 'Next');
+        nextBtn.className = 'rc-btn-primary rc-btn-sm'; nextBtn.type = 'button';
+        nextBtn.addEventListener('click', function () {
+          if (validateCurrentStep()) {
+            validationMsg.style.display = 'none';
+            goToStep(stepIndex + 1);
+          } else {
+            validationMsg.style.display = 'block';
+            shakeModal();
+            var firstInvalid = contentWrap.querySelector('.rc-field-invalid, .rc-field-invalid-group');
+            if (firstInvalid) firstInvalid.scrollIntoView({ block: 'center' });
+          }
+        });
+        navGroup.appendChild(nextBtn);
+        navOuter.appendChild(navGroup);
+        footerBar.appendChild(navOuter);
+      }
+    }
+
+    // Reuses buildSpinner()/.rc-loading-overlay's visual language (see
+    // above) for the brief pause before the honest "not wired up yet"
+    // message -- same red spinning circle + message pattern as
+    // everywhere else on the site, per Matt's explicit instruction to
+    // reuse it for any loading state the wizard needs.
+    function finishWizard() {
+      saveWizardDraft(state);
+      contentWrap.innerHTML = '';
+      contentWrap.appendChild(buildSpinner('Creating season...'));
+      footerBar.innerHTML = '';
+      setTimeout(function () {
+        contentWrap.innerHTML = '';
+        var note = el('div', 'rc-panel');
+        note.style.borderColor = 'var(--rc-red)';
+        note.appendChild(el('h3', 'margin-top:0;', 'Not Wired Up Yet'));
+        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
+          'Season creation isn’t connected to the backend yet — there’s no Apps Script endpoint to actually save this season. Everything you just previewed is exactly what will be sent once that exists. Your draft is untouched, so you can keep coming back to this wizard.'));
+        var closeBtn = el('button', null, 'Close');
+        closeBtn.className = 'rc-btn-primary rc-btn-sm'; closeBtn.type = 'button';
+        closeBtn.addEventListener('click', modal.close);
+        note.appendChild(closeBtn);
+        contentWrap.appendChild(note);
+      }, 900);
+    }
+
+    renderStep();
+  }
+
   // ---------------------------------------------------------------------
-  // LEAGUE MANAGEMENT (unwired placeholder buttons) — unchanged from
-  // v0.2.5, just relocated into the static #rc-section-league container.
+  // LEAGUE MANAGEMENT — "Create Season" now opens the real wizard above
+  // (see openSeasonWizard()); the other three actions are still unwired
+  // placeholders from v0.2.5, just relocated into the static
+  // #rc-section-league container.
   // ---------------------------------------------------------------------
   function renderLeagueSection() {
     document.getElementById('rc-nav-league').style.display = 'flex';
@@ -1199,12 +2324,32 @@
     mgmt.className = 'rc-panel';
     mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
     mgmt.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
-      'Available to Organizers and Admins. These actions aren\'t wired up yet — the season/round UI is still being designed.'));
-    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+      'Available to Organizers and Admins. Season creation opens as a popup wizard below — the other actions aren\'t wired up yet.'));
+
+    var hasDraft = !!loadWizardDraft();
+    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+    // rc-btn-sm on every button in this row -- .rc-btn-primary on its own
+    // is sized for a full-width form submit (bigger padding, a top
+    // margin), so next to the plain .rc-btn-secondary buttons it rendered
+    // taller and offset from the rest of the row ("the red button is
+    // different from all the other buttons," Matt's bug report).
+    var createBtn = el('button', null, hasDraft ? 'Resume Season Draft' : 'Create Season');
+    createBtn.className = 'rc-btn-primary rc-btn-sm';
+    createBtn.addEventListener('click', openSeasonWizard);
+    row.appendChild(createBtn);
+
+    if (hasDraft) {
+      var discardBtn = el('button', null, 'Discard Draft');
+      discardBtn.className = 'rc-btn-secondary rc-btn-sm';
+      discardBtn.type = 'button';
+      discardBtn.addEventListener('click', function () { clearWizardDraft(); renderLeagueSection(); });
+      row.appendChild(discardBtn);
+    }
+
     ['Manage Schedule', 'Upload Race Results', 'Manage Penalties & Bonuses'].forEach(function (label) {
       var b = el('button', null, label);
-      b.className = 'rc-btn-secondary';
-      b.style.cssText += 'cursor:not-allowed;color:var(--rc-steel);';
+      b.className = 'rc-btn-secondary rc-btn-sm';
+      b.style.cssText = 'cursor:not-allowed;color:var(--rc-steel);';
       b.disabled = true;
       row.appendChild(b);
     });
@@ -1255,6 +2400,7 @@
     buildSidebarNav();
     renderDashboardSection(profile, token);
     renderPlaceholderSections();
+    renderObjectivesSection(profile);
     renderSettingsSection(profile, token);
 
     var perms = profile.permissions || [];
