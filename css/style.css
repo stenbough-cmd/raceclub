@@ -1053,6 +1053,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-wizard-step-active { background: var(--rc-red); color: var(--rc-white); }
 .rc-wizard-step-done { background: var(--rc-carbon); color: var(--rc-white); }
+/* Not-yet-reachable step -- dimmed and inert until Next successfully
+   clears the current page's validation (Matt's call: pills "unlock" one
+   at a time instead of being freely clickable ahead of where the admin
+   actually is). */
+.rc-wizard-step-locked { opacity: 0.35; cursor: default; }
 .rc-wizard-content { max-height: 55vh; overflow-y: auto; padding-right: 4px; }
 /* Blanket "shrink every text/number/select box" rule (Matt's call) --
    scoped to the wizard only so nothing outside it (Settings, Edit User,
@@ -1094,6 +1099,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 640px) {
   .rc-wiz-field-pair { grid-template-columns: 1fr; }
 }
+/* Special event bonus category payouts -- two columns of label+box pairs
+   instead of one long stacked column (Matt's call). */
+.rc-bonus-payout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+@media (max-width: 640px) {
+  .rc-bonus-payout-grid { grid-template-columns: 1fr; }
+}
 .rc-wizard-subhead {
   font-family: var(--rc-font-heading);
   font-size: 12px;
@@ -1134,13 +1145,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-field-invalid-group {
   border-left: 3px solid var(--rc-red);
   padding-left: 10px;
-}
-.rc-wizard-validation-msg {
-  color: var(--rc-red);
-  font-size: 12px;
-  font-weight: 600;
-  margin-top: 8px;
-  text-align: right;
 }
 @keyframes rc-shake {
   10%, 90% { transform: translateX(-1px); }

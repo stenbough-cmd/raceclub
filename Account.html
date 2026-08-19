@@ -1381,6 +1381,16 @@
   };
   function trackLayoutOptions(track) { return WIZARD_TRACK_LAYOUTS[track] || ['Standard']; }
 
+  // Local-timezone YYYY-MM-DD for today -- used to default date pickers
+  // to today instead of leaving them blank (Matt's call: real default
+  // values, not placeholder text).
+  function todayDateStr() {
+    var d = new Date();
+    var mm = String(d.getMonth() + 1); if (mm.length < 2) mm = '0' + mm;
+    var dd = String(d.getDate()); if (dd.length < 2) dd = '0' + dd;
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+
   // Special events are strictly money -- no championship points -- split
   // two ways: a top-10 finishing pool (default $15,000 total, the working
   // value Matt gave) and a handful of fun one-off categories each with
@@ -1403,7 +1413,8 @@
   }
   function defaultSpecialEvent() {
     return {
-      date: '',
+      date: todayDateStr(),
+      startTime: '20:00',
       moneyPlaces: SPECIAL_EVENT_MONEY_PLACES_DEFAULT.slice(),
       bonusPayouts: defaultSpecialEventBonusPayouts()
     };
@@ -1442,8 +1453,8 @@
         Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
         Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
       },
-      seasonStartDate: '',
-      seasonStartTime: '', // NEW -- every session this season starts at this one time, sits next to the date
+      seasonStartDate: todayDateStr(), // defaults to today instead of blank (Matt's call)
+      seasonStartTime: '20:00', // NEW -- every session this season starts at this one time, sits next to the date
       // NEW "Race Settings" -- season-wide now (used to be per-race on the
       // Race Events page; Matt's call: setup rules/pit stops/fuel/tires/
       // track limits/tire count don't need to vary race to race). Practice
@@ -1756,12 +1767,14 @@
       'Number Of Races', numRacesInput,
       'Drop Weeks Allowed', dropWeeksInput
     ));
-    // 0-2 special events this season (was a Yes/No toggle) -- each one
-    // populates its own money-only card at the bottom of the Race Events
-    // page once selected here (Matt's call).
-    var specialEventsSelect = wizSelect(['0', '1', '2'], String(state.specialEventsCount || 0), function (v) { state.specialEventsCount = parseInt(v, 10); });
-    specialEventsSelect.style.maxWidth = '25%';
-    container.appendChild(wizField('Special Events This Season', specialEventsSelect,
+    // 0-2 special events this season (was a Yes/No toggle, then a
+    // dropdown) -- now a number box like Bye Weeks/Number Of Races/Drop
+    // Weeks (Matt's call). Each one populates its own money-only card at
+    // the bottom of the Race Events page once set here.
+    var specialEventsInput = wizNumberInput(state.specialEventsCount, function (v) { state.specialEventsCount = v; }, { min: 0, max: 2 });
+    specialEventsInput.style.maxWidth = '25%';
+    requireField(specialEventsInput, requiredEls);
+    container.appendChild(wizField('Special Events This Season (max 2)', specialEventsInput,
       'Money-only mini-events (no championship points) -- each one gets its own card on the Race Events page.'));
 
     container.appendChild(wizSubhead('Points'));
@@ -1873,7 +1886,7 @@
       state.races.push({
         track: WIZARD_TRACK_LIST[0], layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0], weather: 'Clear', tier: 'Sprint',
         passwordOverride: '', registrationLink: '',
-        igPracticeStart: '', igQualifyStart: '', igRaceStart: ''
+        igPracticeStart: '12:00', igQualifyStart: '13:00', igRaceStart: '14:00'
       });
     }
     if (state.races.length > n) state.races.length = n;
@@ -1932,8 +1945,6 @@
         'No races yet — go back to Season Details and set "Number Of Races" above 0.'));
       return;
     }
-    container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-      'One card per race slot. Selecting a Race Length Tier pulls that race\'s duration and point table straight from the season-wide tables set on the previous page.'));
     state.races.forEach(function (race, idx) {
       var card = el('div', 'rc-panel rc-wizard-race-card');
       card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race ' + (idx + 1)));
@@ -1995,9 +2006,13 @@
         card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
 
         var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
+        evtDate.style.maxWidth = '50%';
         evtDate.addEventListener('input', function () { evt.date = evtDate.value; });
         requireField(evtDate, requiredEls);
-        card.appendChild(wizField('Event Date', evtDate));
+        var evtStartTime = el('input'); evtStartTime.type = 'time'; evtStartTime.value = evt.startTime || '';
+        evtStartTime.addEventListener('input', function () { evt.startTime = evtStartTime.value; });
+        requireField(evtStartTime, requiredEls);
+        card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time', evtStartTime));
 
         // Top-10 money table -- same P1-P10 layout as the championship
         // points tables on the previous page, but every cell is a
@@ -2031,17 +2046,21 @@
         moneyWrap.appendChild(el('div', 'rc-hint', 'Typical pool is $15,000 spread across the top 10 -- adjust any place as needed.'));
         card.appendChild(moneyWrap);
 
-        // Fun one-off bonus categories, each with its own payout box.
+        // Fun one-off bonus categories, each with its own payout box --
+        // laid out two columns wide instead of one long stacked column
+        // (Matt's call).
         var bonusWrap = el('div', 'rc-panel'); bonusWrap.style.marginTop = '10px';
         bonusWrap.appendChild(el('h4', 'margin:0 0 8px;font-size:13px;', 'Bonus Categories'));
-        SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (cat, catIdx) {
+        var bonusGrid = el('div', 'rc-bonus-payout-grid');
+        SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (cat) {
           var catInput = wizNumberInput(evt.bonusPayouts[cat.key], function (v) { evt.bonusPayouts[cat.key] = v; }, { min: 0 });
-          catInput.style.maxWidth = '25%';
           requireField(catInput, requiredEls);
-          var row = wizField(cat.label + ' ($)', catInput);
-          if (catIdx === SPECIAL_EVENT_BONUS_CATEGORIES.length - 1) row.style.marginBottom = '0';
-          bonusWrap.appendChild(row);
+          var field = el('div');
+          field.appendChild(wizLabel(cat.label + ' ($)'));
+          field.appendChild(catInput);
+          bonusGrid.appendChild(field);
         });
+        bonusWrap.appendChild(bonusGrid);
         card.appendChild(bonusWrap);
 
         container.appendChild(card);
@@ -2118,7 +2137,7 @@
         var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
         var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
         specialPanel.appendChild(previewLine('Special Event ' + (idx + 1),
-          (evt.date || '(date not set)') + ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString()));
+          (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') + ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString()));
       });
       container.appendChild(specialPanel);
     }
@@ -2138,6 +2157,11 @@
 
     var lastStep = WIZARD_STEPS.length - 1;
     var currentRequiredEls = [];
+    // Highest step the admin has actually earned by clearing validation --
+    // step pills beyond this are dimmed and inert until Next successfully
+    // clears the current page (Matt's call: pills "unlock" one at a time
+    // instead of being freely clickable ahead of where the admin is).
+    var maxUnlockedStep = 0;
 
     function goToStep(i) {
       saveWizardDraft(state);
@@ -2167,14 +2191,18 @@
     function renderStep() {
       stepsBar.innerHTML = '';
       WIZARD_STEPS.forEach(function (label, i) {
-        var cls = 'rc-wizard-step' + (i === stepIndex ? ' rc-wizard-step-active' : '') + (i < stepIndex ? ' rc-wizard-step-done' : '');
+        var locked = i > maxUnlockedStep;
+        var cls = 'rc-wizard-step' + (i === stepIndex ? ' rc-wizard-step-active' : '') + (i < stepIndex ? ' rc-wizard-step-done' : '') + (locked ? ' rc-wizard-step-locked' : '');
         var bubble = el('div', cls, (i + 1) + '. ' + escapeHtml(label));
         // Bubbles are clickable so the admin can jump straight to any
-        // page instead of only stepping through Next/Back (Matt's call)
-        // -- nothing in this draft is validated/locked step to step, so
-        // free navigation is safe.
-        bubble.style.cursor = 'pointer';
-        bubble.addEventListener('click', function () { if (i !== stepIndex) goToStep(i); });
+        // page they've already earned access to instead of only stepping
+        // through Next/Back (Matt's call) -- but a step ahead of where
+        // Next has actually validated stays dimmed and inert until it
+        // unlocks.
+        if (!locked) {
+          bubble.style.cursor = 'pointer';
+          bubble.addEventListener('click', function () { if (i !== stepIndex) goToStep(i); });
+        }
         stepsBar.appendChild(bubble);
       });
 
@@ -2248,13 +2276,7 @@
         saveBtnNorm.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
         footerBar.appendChild(saveBtnNorm);
 
-        // Validation message sits ABOVE the Back/Next row (right by the
-        // button, per Matt's call), hidden until a failed Next click.
         var navOuter = el('div');
-        var validationMsg = el('div', 'rc-wizard-validation-msg', 'All mandatory fields must be filled out.');
-        validationMsg.style.display = 'none';
-        navOuter.appendChild(validationMsg);
-
         var navGroup = el('div', 'display:flex;gap:8px;');
         if (stepIndex > 0) {
           var backBtnNorm = el('button', null, 'Back');
@@ -2266,10 +2288,11 @@
         nextBtn.className = 'rc-btn-primary rc-btn-sm'; nextBtn.type = 'button';
         nextBtn.addEventListener('click', function () {
           if (validateCurrentStep()) {
-            validationMsg.style.display = 'none';
+            maxUnlockedStep = Math.max(maxUnlockedStep, stepIndex + 1);
             goToStep(stepIndex + 1);
           } else {
-            validationMsg.style.display = 'block';
+            // No banner text -- the shake plus every still-empty box
+            // turning red is enough on its own (Matt's call).
             shakeModal();
             var firstInvalid = contentWrap.querySelector('.rc-field-invalid, .rc-field-invalid-group');
             if (firstInvalid) firstInvalid.scrollIntoView({ block: 'center' });
