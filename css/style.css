@@ -142,6 +142,8 @@ p { margin: 0 0 0.75em; }
   cursor: pointer;
 }
 .rc-btn-secondary:hover { background: var(--rc-offwhite); }
+.rc-btn-secondary:disabled { opacity: 0.45; cursor: default; background: var(--rc-white); }
+.rc-btn-secondary:disabled:hover { background: var(--rc-white); }
 
 /* .rc-btn-primary is sized for its ORIGINAL context -- a full-width form
    submit button, hence the generous 12px padding and 20px top margin --
@@ -1136,6 +1138,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-field-invalid, .rc-field-invalid:focus {
   border-color: var(--rc-red);
   box-shadow: 0 0 0 1px var(--rc-red);
+}
+/* Computed/inapplicable fields the admin can't type into -- a race's
+   auto-calculated date (locked, Matt's call) and a class retainer that
+   doesn't apply this season (class or season box unchecked). Grayed out
+   rather than merely disabled so it reads as "not editable" at a glance
+   instead of just looking broken. */
+.rc-field-locked, .rc-field-locked:disabled {
+  background: var(--rc-offwhite);
+  color: var(--rc-steel);
+  cursor: not-allowed;
+  opacity: 1;
 }
 /* No negative margin here -- .rc-wizard-content sets overflow-y:auto,
    which per spec forces its overflow-x to compute as "auto" too (not

@@ -1390,6 +1390,68 @@
     var dd = String(d.getDate()); if (dd.length < 2) dd = '0' + dd;
     return d.getFullYear() + '-' + mm + '-' + dd;
   }
+  function isoFromDate(d) {
+    var mm = String(d.getMonth() + 1); if (mm.length < 2) mm = '0' + mm;
+    var dd = String(d.getDate()); if (dd.length < 2) dd = '0' + dd;
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+  // Human-readable label for a schedule dropdown option -- e.g.
+  // "Sat, Sep 5, 2026" -- so the bye week picker reads like a real
+  // calendar choice instead of a raw ISO string.
+  function formatDateLabel(iso) {
+    if (!iso) return '';
+    var d = new Date(iso + 'T00:00:00');
+    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  // Adds `steps` cadence periods (Weekly/Biweekly/Monthly) to a YYYY-MM-DD
+  // date -- Monthly advances by calendar month (not a fixed day count) so
+  // "the 5th of every month" stays the 5th regardless of month length.
+  function addCadence(dateStr, frequency, steps) {
+    var d = new Date(dateStr + 'T00:00:00');
+    if (frequency === 'Monthly') {
+      d.setMonth(d.getMonth() + steps);
+    } else {
+      d.setDate(d.getDate() + (frequency === 'Biweekly' ? 14 : 7) * steps);
+    }
+    return isoFromDate(d);
+  }
+  // Bye weeks and drop weeks are both capped at (races this season - 1),
+  // 4 max either way (Matt's call) -- a season can't be ALL byes, and 4 is
+  // the hard ceiling regardless of how many races are scheduled.
+  function maxByeDropForRaces(numRaces) {
+    return Math.max(0, Math.min(4, (parseInt(numRaces, 10) || 0) - 1));
+  }
+  // The full set of calendar slots this season could possibly use --
+  // races AND bye weeks each consume one slot, spaced by Frequency,
+  // starting at Season Start Date. Bye week dropdowns are restricted to
+  // exactly this list ("only the dates it could possibly be"); race dates
+  // are whichever slots aren't claimed by a bye week (see
+  // computeRaceDates() below) -- so picking a bye week on what would have
+  // been a race's slot automatically pushes that race (and everything
+  // after it) to the next available slot, with no separate "collision"
+  // logic needed.
+  function computeSeasonSlots(state) {
+    var byeCount = Math.max(0, Math.min(4, parseInt(state.byeWeeks, 10) || 0));
+    var raceCount = Math.max(0, parseInt(state.numRaces, 10) || 0);
+    var total = raceCount + byeCount;
+    var start = state.seasonStartDate || todayDateStr();
+    var slots = [];
+    for (var i = 0; i < total; i++) slots.push(addCadence(start, state.frequency, i));
+    return slots;
+  }
+  // Race dates = the season's slots minus whichever ones are claimed as
+  // bye weeks, taken in calendar order and capped to Number Of Races. A
+  // duplicate bye week pick (two byes landing on the same date) just
+  // leaves one slot unused at the end rather than causing a collision.
+  function computeRaceDates(state) {
+    var slots = computeSeasonSlots(state);
+    var byeSet = {};
+    (state.byeWeekDates || []).forEach(function (d) { if (d) byeSet[d] = true; });
+    var raceDates = slots.filter(function (d) { return !byeSet[d]; });
+    return raceDates.slice(0, Math.max(0, parseInt(state.numRaces, 10) || 0));
+  }
 
   // Special events are strictly money -- no championship points -- split
   // two ways: a top-10 finishing pool (default $15,000 total, the working
@@ -1411,10 +1473,22 @@
     SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (c) { obj[c.key] = 250; });
     return obj;
   }
+  // Special events don't tie to a championship points tier, so Race
+  // Length is a plain minutes box here instead of the Sprint/Medium/Long
+  // dropdown regular races use (Matt's call).
   function defaultSpecialEvent() {
     return {
       date: todayDateStr(),
       startTime: '20:00',
+      track: WIZARD_TRACK_LIST[0],
+      layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0],
+      raceLengthMinutes: 60,
+      weather: 'Clear',
+      passwordOverride: '',
+      registrationLink: '',
+      igPracticeStart: '12:00',
+      igQualifyStart: '13:00',
+      igRaceStart: '14:00',
       moneyPlaces: SPECIAL_EVENT_MONEY_PLACES_DEFAULT.slice(),
       bonusPayouts: defaultSpecialEventBonusPayouts()
     };
@@ -1465,7 +1539,7 @@
         pitStopReq: 'None',
         fuelMultiplier: 100,
         tireWearMultiplier: 100,
-        tireCount: 4,
+        tireCount: 8,
         trackLimitPoints: 100,
         practiceLengthMin: 30,
         qualifyLengthMin: 7
@@ -1543,6 +1617,7 @@
     input.value = (value === undefined || value === null || value === '') ? '' : value;
     if (opts.min !== undefined) input.min = opts.min;
     if (opts.max !== undefined) input.max = opts.max;
+    if (opts.step !== undefined) input.step = opts.step;
     input.addEventListener('input', function () { onInput(input.value === '' ? '' : Number(input.value)); });
     return input;
   }
@@ -1707,6 +1782,20 @@
     // required text field.
     var classesGroupEntry;
     function recheckClassesGroup() { if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid(); }
+    // Populated once the Economy section's retainer boxes exist further
+    // down this same render pass -- referenced here by the class/season
+    // checkbox handlers via closure, so it's safe that they're assigned
+    // AFTER this forEach runs (the handlers only fire later, on click).
+    // A retainer only applies if BOTH its class AND that class's season
+    // box are checked (Matt's call); otherwise it's grayed out and locked.
+    var retainerInputs = {};
+    function updateRetainerLock(cls) {
+      var input = retainerInputs[cls];
+      if (!input) return;
+      var applies = !!(state.classes[cls] && state.classSeasons[cls]);
+      input.disabled = !applies;
+      input.classList.toggle('rc-field-locked', !applies);
+    }
     ['GT3', 'LMP3', 'LMP2', 'Hypercar'].forEach(function (cls) {
       var row = el('div', 'display:flex;align-items:center;gap:18px;padding:4px 0;');
 
@@ -1724,7 +1813,7 @@
       seasonCb.type = 'checkbox';
       seasonCb.checked = !!state.classSeasons[cls];
       seasonCb.disabled = !state.classes[cls];
-      seasonCb.addEventListener('change', function () { state.classSeasons[cls] = seasonCb.checked; recheckClassesGroup(); });
+      seasonCb.addEventListener('change', function () { state.classSeasons[cls] = seasonCb.checked; recheckClassesGroup(); updateRetainerLock(cls); });
       seasonLabel.appendChild(seasonCb);
       seasonLabel.appendChild(document.createTextNode(' 2026'));
 
@@ -1735,6 +1824,7 @@
         seasonLabel.style.opacity = c ? '1' : '0.6';
         if (!c) { state.classSeasons[cls] = false; seasonCb.checked = false; }
         recheckClassesGroup();
+        updateRetainerLock(cls);
       });
       // margin:0 (matches seasonLabel, above) is what keeps the two
       // checkboxes sitting on the exact same row instead of the season
@@ -1753,19 +1843,30 @@
     container.appendChild(wizField('Car Class(es) For The Season', classesWrap,
       'Selecting 2+ automatically makes this a multiclass season. Pick at least one class, and check its season box.'));
 
-    var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: 2 });
+    var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
     requireField(byeWeeksInput, requiredEls);
-    container.appendChild(fieldPairRow(
-      'Frequency', wizSelect(['Weekly', 'Biweekly', 'Monthly'], state.frequency, function (v) { state.frequency = v; }),
-      'Bye Weeks (max 2)', byeWeeksInput
+    container.appendChild(wizFieldPairRow(
+      'Frequency', wizSelect(['Weekly', 'Biweekly', 'Monthly'], state.frequency, function (v) { state.frequency = v; }), null,
+      'Bye Weeks', byeWeeksInput, 'Capped at races this season minus 1, 4 max.'
     ));
     var numRacesInput = wizNumberInput(state.numRaces, function (v) { state.numRaces = v; }, { min: 1 });
     requireField(numRacesInput, requiredEls);
-    var dropWeeksInput = wizNumberInput(state.dropWeeks, function (v) { state.dropWeeks = v; }, { min: 0 });
+    var dropWeeksInput = wizNumberInput(state.dropWeeks, function (v) { state.dropWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
     requireField(dropWeeksInput, requiredEls);
-    container.appendChild(fieldPairRow(
-      'Number Of Races', numRacesInput,
-      'Drop Weeks Allowed', dropWeeksInput
+    // Bye Weeks and Drop Weeks are both capped at (races - 1), 4 max
+    // (Matt's call) -- a season can't be mostly byes/drops. The cap
+    // re-tightens live as Number Of Races changes, clamping either field
+    // down in place (no full-page re-render, so no scroll jump).
+    numRacesInput.addEventListener('input', function () {
+      var cap = maxByeDropForRaces(numRacesInput.value);
+      byeWeeksInput.max = cap;
+      dropWeeksInput.max = cap;
+      if (Number(byeWeeksInput.value) > cap) { byeWeeksInput.value = cap; state.byeWeeks = cap; }
+      if (Number(dropWeeksInput.value) > cap) { dropWeeksInput.value = cap; state.dropWeeks = cap; }
+    });
+    container.appendChild(wizFieldPairRow(
+      'Number Of Races', numRacesInput, null,
+      'Drop Weeks Allowed', dropWeeksInput, 'Capped at races this season minus 1, 4 max.'
     ));
     // 0-2 special events this season (was a Yes/No toggle, then a
     // dropdown) -- now a number box like Bye Weeks/Number Of Races/Drop
@@ -1841,6 +1942,13 @@
       'Hypercar Retainer ($/race)', retHyper,
       'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.'
     ));
+    // Wire up the class/season checkbox handlers (built earlier in this
+    // same render pass, above) now that the retainer boxes actually
+    // exist, then set every retainer's initial locked/unlocked state to
+    // match today's checkbox state (Matt's call: a retainer only applies
+    // if BOTH its class AND that class's season box are checked).
+    retainerInputs.GT3 = retGT3; retainerInputs.LMP3 = retLMP3; retainerInputs.LMP2 = retLMP2; retainerInputs.Hypercar = retHyper;
+    ['GT3', 'LMP3', 'LMP2', 'Hypercar'].forEach(updateRetainerLock);
     var stakeCapInput = wizNumberInput(state.economy.wagerStakeCapPct, function (v) { state.economy.wagerStakeCapPct = v; }, { min: 0, max: 100 }); requireField(stakeCapInput, requiredEls);
     var houseCutInput = wizNumberInput(state.economy.wagerHouseCutPct, function (v) { state.economy.wagerHouseCutPct = v; }, { min: 0, max: 100 }); requireField(houseCutInput, requiredEls);
     container.appendChild(wizFieldPairRow(
@@ -1893,13 +2001,24 @@
   }
 
   // Keeps state.byeWeekDates the right length whenever Race Events opens
-  // -- capped at 2 (Matt's call: "only 2 bye weeks max allowed"), same
-  // reconcile-not-assume pattern as syncRaceCount.
+  // -- capped at (races - 1), 4 max (Matt's call), same reconcile-not-
+  // assume pattern as syncRaceCount. Each date also gets revalidated
+  // against the season's actual slot list (computeSeasonSlots) and reset
+  // to a sane default (a trailing slot) if it's missing or no longer one
+  // of the valid choices -- e.g. after Number Of Races, Frequency, or
+  // Season Start Date changed on the previous page.
   function syncByeWeekDates(state) {
-    var n = Math.max(0, Math.min(2, parseInt(state.byeWeeks, 10) || 0));
+    var n = Math.max(0, Math.min(maxByeDropForRaces(state.numRaces), parseInt(state.byeWeeks, 10) || 0));
     if (!state.byeWeekDates) state.byeWeekDates = [];
     while (state.byeWeekDates.length < n) state.byeWeekDates.push('');
     if (state.byeWeekDates.length > n) state.byeWeekDates.length = n;
+    var raceCount = Math.max(0, parseInt(state.numRaces, 10) || 0);
+    var slots = computeSeasonSlots(state);
+    for (var i = 0; i < n; i++) {
+      if (!state.byeWeekDates[i] || slots.indexOf(state.byeWeekDates[i]) === -1) {
+        state.byeWeekDates[i] = slots[raceCount + i] || slots[slots.length - 1] || '';
+      }
+    }
   }
 
   // Keeps state.specialEvents the right length whenever Race Events opens
@@ -1919,22 +2038,49 @@
   // session start times, which DO vary race to race (a night race needs
   // a different in-game clock time than an afternoon one).
   function renderWizardRaceEventsPage(state, container, requiredEls) {
-    // Bye week date blocks -- one per bye week (max 2), at the very top
-    // of this page since that's where the admin is looking at the actual
-    // week-by-week schedule. Each is a real calendar date the admin picks
-    // to skip "when the need arises" (Matt's call), not auto-generated.
+    // Every race card's date box (below) is locked/auto-calculated, so it
+    // needs to stay in sync whenever a Bye Week dropdown changes -- this
+    // array holds a reference to each race's date input in order, filled
+    // in as the cards are built below, so a bye week change can update
+    // them directly in place instead of re-rendering the whole page (that
+    // full-page re-render is exactly what caused the old scroll-jump bug
+    // on the class checkboxes, so it's avoided here on purpose).
+    var raceDateInputs = [];
+    function refreshRaceDates() {
+      var dates = computeRaceDates(state);
+      raceDateInputs.forEach(function (input, i) { input.value = dates[i] || ''; });
+    }
+
+    // Bye week dropdowns -- one per bye week (max 4, capped at races - 1
+    // on the previous page), at the very top of this page since that's
+    // where the admin is looking at the actual week-by-week schedule.
+    // Each is restricted to exactly the dates the season's cadence could
+    // land on (Matt's call: "only the dates it could possibly be") --
+    // picking one there automatically bumps whichever race would have
+    // landed on that date (and everything after it) to the next slot,
+    // since race dates are just "the slots byes didn't claim."
     if (state.byeWeeks > 0) {
       container.appendChild(wizSubhead('Bye Weeks'));
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Pick the date of each bye week -- the week the season simply skips instead of racing.'));
+        'Pick which scheduled week each bye lands on -- any race that would have landed there automatically moves to the next available week.'));
       var byeRow = el('div', 'rc-wiz-field-pair');
+      var slots = computeSeasonSlots(state);
       state.byeWeekDates.forEach(function (val, idx) {
-        var dateInput = el('input'); dateInput.type = 'date'; dateInput.value = val || '';
-        dateInput.addEventListener('input', function () { state.byeWeekDates[idx] = dateInput.value; });
-        requireField(dateInput, requiredEls);
+        var select = document.createElement('select');
+        slots.forEach(function (s) {
+          var o = document.createElement('option');
+          o.value = s; o.textContent = formatDateLabel(s);
+          if (s === val) o.selected = true;
+          select.appendChild(o);
+        });
+        select.addEventListener('change', function () {
+          state.byeWeekDates[idx] = select.value;
+          refreshRaceDates();
+        });
+        requireField(select, requiredEls);
         var col = el('div', 'rc-wiz-field');
         col.appendChild(wizLabel('Bye Week ' + (idx + 1) + ' Date'));
-        col.appendChild(dateInput);
+        col.appendChild(select);
         byeRow.appendChild(col);
       });
       container.appendChild(byeRow);
@@ -1945,9 +2091,19 @@
         'No races yet — go back to Season Details and set "Number Of Races" above 0.'));
       return;
     }
+    var computedRaceDates = computeRaceDates(state);
     state.races.forEach(function (race, idx) {
       var card = el('div', 'rc-panel rc-wizard-race-card');
       card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race ' + (idx + 1)));
+
+      // Auto-calculated from Season Start Date + Frequency + Bye Weeks on
+      // the previous page -- not editable here, greyed out (Matt's call).
+      var raceDateInput = el('input'); raceDateInput.type = 'date';
+      raceDateInput.value = computedRaceDates[idx] || '';
+      raceDateInput.disabled = true;
+      raceDateInput.className = 'rc-field-locked';
+      raceDateInputs.push(raceDateInput);
+      card.appendChild(wizField('Race Date (auto-calculated)', raceDateInput));
 
       // Layout is a dropdown populated from whichever Track is currently
       // selected, not free text (Matt's call: "it won't be a free text
@@ -2014,13 +2170,77 @@
         requireField(evtStartTime, requiredEls);
         card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time', evtStartTime));
 
+        // Track/Layout -- same in-place-swap pattern as the regular race
+        // cards above (changing Track repopulates Layout's own options
+        // instead of a full page re-render).
+        if (!evt.layout || trackLayoutOptions(evt.track).indexOf(evt.layout) === -1) {
+          evt.layout = trackLayoutOptions(evt.track)[0];
+        }
+        var evtLayoutSelect = wizSelect(trackLayoutOptions(evt.track), evt.layout, function (v) { evt.layout = v; });
+        var evtTrackSelect = wizSelect(WIZARD_TRACK_LIST, evt.track, function (v) {
+          evt.track = v;
+          var opts = trackLayoutOptions(v);
+          evt.layout = opts[0];
+          evtLayoutSelect.innerHTML = '';
+          opts.forEach(function (o) {
+            var oe = document.createElement('option');
+            oe.value = o; oe.textContent = o;
+            evtLayoutSelect.appendChild(oe);
+          });
+          evtLayoutSelect.value = evt.layout;
+        });
+        card.appendChild(fieldPairRow('Track', evtTrackSelect, 'Layout / Configuration', evtLayoutSelect));
+
+        // Race Length is a plain minutes box here, not the Sprint/Medium/
+        // Long tier dropdown regular races use -- a special event doesn't
+        // tie into the championship points tables, so there's no tier for
+        // it to correlate with (Matt's call). Steps by 10, defaults 60.
+        var evtLengthInput = wizNumberInput(evt.raceLengthMinutes, function (v) { evt.raceLengthMinutes = v; }, { min: 10, step: 10 });
+        requireField(evtLengthInput, requiredEls);
+        card.appendChild(fieldPairRow(
+          'Race Length (min)', evtLengthInput,
+          'Weather', wizSelect(WIZARD_WEATHER_LIST, evt.weather, function (v) { evt.weather = v; })
+        ));
+
+        card.appendChild(fieldPairRow(
+          'Password Override (optional)', wizTextInput(evt.passwordOverride, function (v) { evt.passwordOverride = v; }),
+          'Registration Link', wizTextInput(evt.registrationLink, function (v) { evt.registrationLink = v; })
+        ));
+        var evtIgPractice = el('input'); evtIgPractice.type = 'time'; evtIgPractice.value = evt.igPracticeStart || '';
+        evtIgPractice.addEventListener('input', function () { evt.igPracticeStart = evtIgPractice.value; });
+        requireField(evtIgPractice, requiredEls);
+        var evtIgQualify = el('input'); evtIgQualify.type = 'time'; evtIgQualify.value = evt.igQualifyStart || '';
+        evtIgQualify.addEventListener('input', function () { evt.igQualifyStart = evtIgQualify.value; });
+        requireField(evtIgQualify, requiredEls);
+        var evtIgRace = el('input'); evtIgRace.type = 'time'; evtIgRace.value = evt.igRaceStart || '';
+        evtIgRace.addEventListener('input', function () { evt.igRaceStart = evtIgRace.value; });
+        evtIgRace.style.maxWidth = '25%';
+        requireField(evtIgRace, requiredEls);
+        card.appendChild(fieldPairRow('In-Game Practice Start Time', evtIgPractice, 'In-Game Qualify Start Time', evtIgQualify));
+        card.appendChild(wizField('In-Game Race Start Time', evtIgRace));
+
         // Top-10 money table -- same P1-P10 layout as the championship
-        // points tables on the previous page, but every cell is a
-        // dollar amount instead of a points value.
+        // points tables on the previous page, but every cell is a dollar
+        // amount (stepping by $100 instead of 1, Matt's call) instead of a
+        // points value. A "Prize Pool ($)" box sits top-right, mirroring
+        // the points table's "Duration (min)" box -- it's the live total
+        // of the 10 places below, re-summed the moment any one of them
+        // changes, so it's read-only rather than a second source of truth.
         var moneyWrap = el('div', 'rc-panel'); moneyWrap.style.marginTop = '10px';
         var moneyHead = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
         moneyHead.appendChild(el('h4', 'margin:0;font-size:13px;', 'Top 10 Money Payout'));
+        var poolTotalInput = el('input'); poolTotalInput.type = 'number'; poolTotalInput.readOnly = true;
+        poolTotalInput.className = 'rc-field-locked';
+        poolTotalInput.style.cssText = 'width:90px;max-width:90px;display:inline-block;margin:0;';
+        var poolWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
+        poolWrap.appendChild(document.createTextNode('Prize Pool ($)'));
+        poolWrap.appendChild(poolTotalInput);
+        moneyHead.appendChild(poolWrap);
         moneyWrap.appendChild(moneyHead);
+        function refreshPoolTotal() {
+          var sum = evt.moneyPlaces.reduce(function (s, v) { return s + (Number(v) || 0); }, 0);
+          poolTotalInput.value = sum;
+        }
         var moneyTable = document.createElement('table');
         moneyTable.style.cssText = 'width:100%;margin-top:8px;border-collapse:collapse;';
         var moneyHeadRow = document.createElement('tr');
@@ -2035,7 +2255,7 @@
         evt.moneyPlaces.forEach(function (val, pIdx) {
           var td = document.createElement('td');
           td.style.padding = '2px';
-          var input = wizNumberInput(val, function (v) { evt.moneyPlaces[pIdx] = v; }, { min: 0 });
+          var input = wizNumberInput(val, function (v) { evt.moneyPlaces[pIdx] = v; refreshPoolTotal(); }, { min: 0, step: 100 });
           input.style.cssText = 'width:100%;max-width:100%;text-align:center;padding:4px;margin:0;box-sizing:border-box;';
           requireField(input, requiredEls);
           td.appendChild(input);
@@ -2043,8 +2263,8 @@
         });
         moneyTable.appendChild(moneyInputRow);
         moneyWrap.appendChild(moneyTable);
-        moneyWrap.appendChild(el('div', 'rc-hint', 'Typical pool is $15,000 spread across the top 10 -- adjust any place as needed.'));
         card.appendChild(moneyWrap);
+        refreshPoolTotal();
 
         // Fun one-off bonus categories, each with its own payout box --
         // laid out two columns wide instead of one long stacked column
@@ -2091,7 +2311,7 @@
     selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c + ' — 2026 Season', state.classSeasons[c] ? 'Selected' : 'Not selected')); });
     fmtPanel.appendChild(previewLine('Frequency', state.frequency));
     fmtPanel.appendChild(previewLine('Bye Weeks', String(state.byeWeeks || 0)));
-    (state.byeWeekDates || []).forEach(function (d, i) { fmtPanel.appendChild(previewLine('Bye Week ' + (i + 1) + ' Date', d || '(not set)')); });
+    (state.byeWeekDates || []).forEach(function (d, i) { fmtPanel.appendChild(previewLine('Bye Week ' + (i + 1) + ' Date', d ? formatDateLabel(d) : '(not set)')); });
     fmtPanel.appendChild(previewLine('Number Of Races', String(state.numRaces || 0)));
     fmtPanel.appendChild(previewLine('Drop Weeks Allowed', String(state.dropWeeks || 0)));
     fmtPanel.appendChild(previewLine('Special Events This Season', String(state.specialEventsCount || 0)));
@@ -2121,8 +2341,10 @@
     if (!state.races.length) {
       racesPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No races configured.'));
     } else {
+      var previewRaceDates = computeRaceDates(state);
       state.races.forEach(function (race, idx) {
-        var detail = (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '') +
+        var detail = (previewRaceDates[idx] || '(date not set)') + ' — ' +
+          (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '') +
           ' · ' + race.tier + ' · ' + (race.weather || 'Clear') +
           ' · Race Start ' + (race.igRaceStart || '(not set)');
         racesPanel.appendChild(previewLine('Race ' + (idx + 1), detail));
@@ -2136,8 +2358,12 @@
       state.specialEvents.forEach(function (evt, idx) {
         var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
         var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
-        specialPanel.appendChild(previewLine('Special Event ' + (idx + 1),
-          (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') + ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString()));
+        var detail = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
+          ' · ' + (evt.track || '(no track)') + (evt.layout ? ' — ' + evt.layout : '') +
+          ' · ' + (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
+          ' · Race Start ' + (evt.igRaceStart || '(not set)') +
+          ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString();
+        specialPanel.appendChild(previewLine('Special Event ' + (idx + 1), detail));
       });
       container.appendChild(specialPanel);
     }
@@ -2226,7 +2452,13 @@
         // to its right (Matt's call on both).
         footerBar.style.alignItems = 'flex-end';
 
-        var leftGroup = el('div');
+        // position:relative so the Release Date/Time panel below can be
+        // absolutely positioned OUT of normal flow -- it floats above
+        // this button row instead of pushing it (and Back/Save & Close,
+        // its footerBar siblings) downward when it opens (Matt's call:
+        // "don't let the release date and time move the BACK and SAVE &
+        // CLOSE buttons down with it").
+        var leftGroup = el('div', 'position:relative;');
         var btnRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
         var createNowBtn = el('button', null, 'Create Season');
         createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
@@ -2238,11 +2470,23 @@
         btnRow.appendChild(futureBtn);
         leftGroup.appendChild(btnRow);
 
+        // Floats above the button row (bottom:100%) rather than sitting
+        // inline below it, so opening it never changes leftGroup's own
+        // height/flow.
         var futurePanel = el('div', 'rc-panel');
-        futurePanel.style.cssText = 'margin-top:10px;display:none;max-width:320px;';
+        futurePanel.style.cssText = 'position:absolute;bottom:calc(100% + 8px);left:0;display:none;width:320px;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+        var futureHead = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;');
+        futureHead.appendChild(el('span', 'font-family:var(--rc-font-heading);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--rc-carbon);', 'Release Date/Time'));
+        var closeFutureBtn = el('button', null, '×');
+        closeFutureBtn.type = 'button';
+        closeFutureBtn.style.cssText = 'background:none;border:none;font-size:18px;line-height:1;color:var(--rc-steel);cursor:pointer;padding:0 2px;';
+        futureHead.appendChild(closeFutureBtn);
+        futurePanel.appendChild(futureHead);
         var dt = el('input'); dt.type = 'datetime-local'; dt.value = state.releaseDateTime || '';
+        dt.style.margin = '0';
         dt.addEventListener('input', function () { state.releaseDateTime = dt.value; });
-        futurePanel.appendChild(wizField('Release Date/Time', dt,
+        futurePanel.appendChild(dt);
+        futurePanel.appendChild(el('div', 'rc-hint',
           'Real team seats are first-come-first-served, so a scheduled release gives every driver an equal shot at one.'));
         var confirmFutureBtn = el('button', null, 'Confirm & Create');
         confirmFutureBtn.className = 'rc-btn-primary rc-btn-sm'; confirmFutureBtn.type = 'button';
@@ -2250,9 +2494,22 @@
         futurePanel.appendChild(confirmFutureBtn);
         leftGroup.appendChild(futurePanel);
 
-        futureBtn.addEventListener('click', function () {
-          futurePanel.style.display = futurePanel.style.display === 'none' ? 'block' : 'none';
-        });
+        // While the Release Date/Time panel is open, Create Season/Create
+        // a Future Season are inert (disabled, not just visually dimmed)
+        // -- the admin either Confirms & Creates or X's out first (Matt's
+        // call). Closing via X re-enables both.
+        function openFuturePanel() {
+          futurePanel.style.display = 'block';
+          createNowBtn.disabled = true;
+          futureBtn.disabled = true;
+        }
+        function closeFuturePanel() {
+          futurePanel.style.display = 'none';
+          createNowBtn.disabled = false;
+          futureBtn.disabled = false;
+        }
+        futureBtn.addEventListener('click', openFuturePanel);
+        closeFutureBtn.addEventListener('click', closeFuturePanel);
         footerBar.appendChild(leftGroup);
 
         var rightGroup = el('div', 'display:flex;gap:8px;');
