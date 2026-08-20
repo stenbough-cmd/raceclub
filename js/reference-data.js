@@ -127,3 +127,18 @@ function timezoneLabel(tz) {
 
 var PREFERRED_CLASSES = ['GTE', 'GT3', 'LMP3', 'LMP2', 'LMP2 *Unrestricted', 'Hypercar'];
 var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
+
+// v0.17 -- the canonical race-class list, used as the SINGLE SOURCE for
+// both the Data Management > Cars panel's Class dropdown (Account.html)
+// and the Create Season wizard's class checkboxes. Sharing one list
+// between the two is what guarantees a car entered as "LMGT3" is always
+// the same "LMGT3" the wizard checks for availability against -- no risk
+// of the two places drifting to different names for the same class (this
+// replaces the wizard's old standalone ['GT3','LMP3','LMP2','Hypercar']
+// array, updated to match real LMU class naming / the Cars data itself).
+var CAR_CLASS_LIST = ['LMGT3', 'LMP2', 'LMP3', 'Hypercar'];
+
+// Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
+// side dropdown source; the server independently re-validates against its
+// own copy, so this list is never trusted as the actual validation.
+var DRIVER_NAME_SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];

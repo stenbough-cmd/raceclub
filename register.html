@@ -44,8 +44,14 @@
           <input id="rc-reg-username" type="text" autocomplete="username" required>
           <div class="rc-hint">This is what you'll log in with — it isn't shown publicly.</div>
 
-          <label>Real Name</label>
-          <input id="rc-reg-realname" type="text" autocomplete="name" required>
+          <label>First Name</label>
+          <input id="rc-reg-firstname" type="text" autocomplete="given-name" required>
+
+          <label>Last Name</label>
+          <input id="rc-reg-lastname" type="text" autocomplete="family-name" required>
+
+          <label>Suffix (optional)</label>
+          <select id="rc-reg-suffix"></select>
           <div class="rc-hint">Use your real name, exactly as you'd want it recognized — this is how the league admin links your account to your race results.</div>
 
           <label>Email Address</label>
@@ -118,6 +124,19 @@
   }
   populateRegisterTimezone();
 
+  function populateRegisterSuffix() {
+    var select = document.getElementById('rc-reg-suffix');
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = 'None';
+    select.appendChild(blank);
+    (typeof DRIVER_NAME_SUFFIXES !== 'undefined' ? DRIVER_NAME_SUFFIXES : []).forEach(function (s) {
+      var opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      select.appendChild(opt);
+    });
+  }
+  populateRegisterSuffix();
+
   // ---------------------------------------------------------------------
   // REGISTER — live password-match check, checked on every keystroke in
   // either password field rather than waiting for the submit click.
@@ -153,7 +172,9 @@
     msg.textContent = '';
 
     var username = document.getElementById('rc-reg-username').value.trim();
-    var realName = document.getElementById('rc-reg-realname').value.trim();
+    var firstName = document.getElementById('rc-reg-firstname').value.trim();
+    var lastName = document.getElementById('rc-reg-lastname').value.trim();
+    var suffix = document.getElementById('rc-reg-suffix').value;
     var email = document.getElementById('rc-reg-email').value.trim();
     var timeZone = document.getElementById('rc-reg-timezone').value;
     var password = document.getElementById('rc-reg-password').value;
@@ -179,8 +200,8 @@
     fetchApi('register', {
       method: 'POST',
       body: {
-        username: username, realName: realName, email: email, timeZone: timeZone,
-        password: password, requestedRole: requestedRole
+        username: username, firstName: firstName, lastName: lastName, suffix: suffix,
+        email: email, timeZone: timeZone, password: password, requestedRole: requestedRole
       }
     })
       .then(function (data) {
