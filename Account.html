@@ -1381,6 +1381,29 @@
     'WeatherTech Raceway Laguna Seca'
   ];
   var WIZARD_WEATHER_LIST = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
+  // Only weather that actually involves rain gets a Chance of Rain box --
+  // Clear/Light Clouds/Partially Cloudy/Overcast are all dry (Matt's
+  // call: "only cloudy and drizzle and all rain options below that can
+  // have a percentage of rain -- otherwise the rain percentage is grayed
+  // out and unclickable"). Listed explicitly rather than derived from
+  // WIZARD_WEATHER_LIST's index so the split stays correct even if the
+  // list above is ever reordered.
+  var WIZARD_RAIN_WEATHER = ['Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
+  function weatherAllowsRainChance(weather) { return WIZARD_RAIN_WEATHER.indexOf(weather) !== -1; }
+  // Keeps a Chance of Rain box's disabled/greyed state (and value) in
+  // sync with its Weather select -- call once up front to set the
+  // initial state, then again every time Weather changes. onForceZero
+  // fires only when the box gets locked back to 0 so the caller can
+  // update its own state object to match what's now shown on screen.
+  function syncRainInputToWeather(weatherSelect, rainInput, onForceZero) {
+    var allowed = weatherAllowsRainChance(weatherSelect.value);
+    rainInput.disabled = !allowed;
+    rainInput.classList.toggle('rc-field-locked', !allowed);
+    if (!allowed && Number(rainInput.value) !== 0) {
+      rainInput.value = 0;
+      onForceZero();
+    }
+  }
   // Layout/configuration options per track. Matt's call: Layout should be
   // a dropdown populated from the chosen Track, not a free-text box ("it
   // won't be a free text box"). These aren't generic "Standard" base
@@ -1470,62 +1493,14 @@
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
-  // Wraps a plain <input type="date"> with a small day-of-week badge next
-  // to it -- every date box in the wizard gets one (Matt's call: "like the
-  // bye week box", which shows the weekday because it's a <select> of
-  // formatDateLabel() options; a plain date input has no such text, so
-  // this adds it alongside instead). The wrap is width:100% so the
-  // existing `.rc-wizard-content input[type="date"] { max-width: 50%; }`
-  // rule still sizes the input exactly as before -- only a badge is
-  // added, nothing about the input's own width changes here. Call
-  // .refreshDow() after setting inputEl.value programmatically (the
-  // auto-calculated Race Date box doesn't fire input/change on its own).
-  function wizDateWithDow(inputEl) {
-    var wrap = el('div', 'display:flex;align-items:center;gap:8px;width:100%;');
-    var badge = el('span', 'rc-wiz-badge');
-    function refresh() {
-      if (!inputEl.value) { badge.textContent = ''; return; }
-      var d = new Date(inputEl.value + 'T00:00:00');
-      var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      badge.textContent = days[d.getDay()];
-    }
-    inputEl.addEventListener('input', refresh);
-    inputEl.addEventListener('change', refresh);
-    refresh();
-    wrap.appendChild(inputEl);
-    wrap.appendChild(badge);
-    wrap.refreshDow = refresh;
-    return wrap;
-  }
-  // The logged-in admin's own timezone abbreviation (e.g. "EDT") from
-  // their profile, via the same Intl machinery reference-data.js already
-  // uses for timezoneLabel()'s "(GMT-04:00)" offsets -- 'short' instead
-  // of 'shortOffset' gets the abbreviation instead of a raw offset. Every
-  // real-world wall-clock time in the wizard is shown against THIS admin's
-  // screen, same as the rest of the site (Matt's call: "since my profile
-  // has EDT for my timezone currently that is what will be displayed on
-  // my screen"). currentProfile is set in buildFullProfileUI before the
-  // wizard can be opened (it's reached via the League Management page,
-  // which only renders after the admin's own profile has loaded).
-  function tzAbbrevForAdmin() {
-    var tz = currentProfile && currentProfile.timeZone;
-    if (!tz) return '';
-    try {
-      var part = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
-        .formatToParts(new Date()).find(function (p) { return p.type === 'timeZoneName'; });
-      return part ? part.value : '';
-    } catch (err) { return ''; }
-  }
   // Wraps a plain <input type="time"> with a small static badge next to
-  // it -- the admin's timezone abbreviation for real-world wall-clock
-  // times (Event/Season/Special Event Start Time), or "Sim Time" for the
-  // In-Game Practice/Qualify/Race start times, which are the simulated
-  // LMU clock and not a real-world join time (Matt's call: "make sure
-  // all times listed have a timezone behind it" -- the in-game times
-  // aren't in a real timezone at all, so they get their own distinct
-  // label rather than a fabricated one). Unlike wizDateWithDow, this
-  // badge is static text set once -- it doesn't depend on the input's
-  // value.
+  // it -- currently just "Sim Time" for the In-Game Practice/Qualify/Race
+  // start times, which are the simulated LMU clock and not a real-world
+  // join time. Real-world wall-clock time fields (Event/Season/Special
+  // Event Start Time) no longer get a visible badge here (Matt's call:
+  // "remove the time zone behind the time boxes") -- see
+  // wizardAdminTimeZone()/state.enteredTimeZone below for how the admin's
+  // timezone is still captured, just not displayed inline anymore.
   function wizTimeWithBadge(inputEl, badgeText) {
     var wrap = el('div', 'display:flex;align-items:center;gap:8px;width:100%;');
     wrap.appendChild(inputEl);
@@ -1624,12 +1599,36 @@
     };
   }
 
+  // The admin's own IANA timezone id (e.g. "America/New_York") from their
+  // profile -- see currentProfile.timeZone, populated by buildFullProfileUI
+  // before the wizard can be opened. Falls back to the browser's own zone
+  // if the profile hasn't loaded one for some reason, so a season is never
+  // saved with no zone at all.
+  function wizardAdminTimeZone() {
+    if (currentProfile && currentProfile.timeZone) return currentProfile.timeZone;
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { return ''; }
+  }
+
   // Every economy default below is the exact working value already
   // locked in the design doc (Bank Balance / Class Economy / Wager /
   // League Income Streams sections) -- pre-filled here, not invented.
   function defaultWizardState() {
     return {
       seasonName: '', // editable suffix only (max 24 chars) -- the "Race Club - Season # -" prefix is generated, never stored
+      // Every real-world wall-clock time typed into this wizard (Event
+      // Start Time, Special Event Start Times) is typed in THIS admin's
+      // own local time -- captured once, here, when the draft is first
+      // created, so it travels with the season data instead of being lost
+      // (Matt's call: "if I'm choosing 8pm, make sure it's saved as 8pm
+      // in my timezone so other timezones will display it correctly").
+      // Paired with a raw "20:00"-style value, this is what lets a future
+      // viewer-facing page compute the correct UTC instant and re-render
+      // it in THEIR own timezone instead of just echoing "8:00 PM" as a
+      // bare, zone-less string. In-Game Practice/Qualify/Race times are
+      // deliberately NOT covered by this -- they're simulated LMU clock
+      // time, not a real-world moment, so there's no real timezone to
+      // convert them from/to.
+      enteredTimeZone: wizardAdminTimeZone(),
       defaultPassword: '',
       privateQualifying: 'No',
       trackLimitsPreset: 'Default',
@@ -1873,8 +1872,14 @@
     // actual editable box -- the admin only ever types the part after it,
     // capped at 24 characters (see the hint below and maxLength on the
     // input itself).
+    // height:36px matches the wizard-scoped input height set globally in
+    // style.css (.rc-wizard-content input { height: 36px; ... }) -- this
+    // prefix used to be sized for the site-wide 44px input height from
+    // before that wizard-specific shorter box height existed, so the two
+    // no longer lined up (Matt's call: "needs to have the height reduced
+    // to the same as the text box height so it matches up").
     var namePrefix = el('span',
-      'display:inline-flex;align-items:center;box-sizing:border-box;padding:0 10px;height:44px;background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-right:none;border-radius:4px 0 0 4px;color:var(--rc-steel);font-size:13px;font-weight:600;white-space:nowrap;flex:none;',
+      'display:inline-flex;align-items:center;box-sizing:border-box;padding:0 10px;height:36px;background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-right:none;border-radius:4px 0 0 4px;color:var(--rc-steel);font-size:13px;font-weight:600;white-space:nowrap;flex:none;',
       'Race Club - Season # -');
     var nameInput = wizTextInput(state.seasonName, function (v) { state.seasonName = v; });
     nameInput.maxLength = 24;
@@ -2024,7 +2029,7 @@
     var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
     startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
     requireField(startTime, requiredEls);
-    container.appendChild(fieldPairRow('Season Start Date', wizDateWithDow(startDate), 'Event Start Time', wizTimeWithBadge(startTime, tzAbbrevForAdmin())));
+    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
 
     // NEW — Race Settings, moved here from the Race Events page since
     // these apply the same way to every race this season rather than
@@ -2177,10 +2182,7 @@
     var raceDateInputs = [];
     function refreshRaceDates() {
       var dates = computeRaceDates(state);
-      raceDateInputs.forEach(function (entry, i) {
-        entry.input.value = dates[i] || '';
-        entry.wrap.refreshDow();
-      });
+      raceDateInputs.forEach(function (input, i) { input.value = dates[i] || ''; });
     }
 
     // Bye week dropdowns -- one per bye week (max 4, capped at races - 1
@@ -2238,9 +2240,8 @@
       // wizard rule already caps date inputs at 50% of the field column,
       // so 25% here is half of that standard width.
       raceDateInput.style.maxWidth = '25%';
-      var raceDateWrap = wizDateWithDow(raceDateInput);
-      raceDateInputs.push({ input: raceDateInput, wrap: raceDateWrap });
-      card.appendChild(wizField('Race Date (auto-calculated)', raceDateWrap));
+      raceDateInputs.push(raceDateInput);
+      card.appendChild(wizField('Race Date (auto-calculated)', raceDateInput));
 
       // Layout is a dropdown populated from whichever Track is currently
       // selected, not free text (Matt's call: "it won't be a free text
@@ -2263,20 +2264,31 @@
         });
         layoutSelect.value = race.layout;
       });
+      // Fills its whole column (50% of the card) instead of the wizard's
+      // usual 50%-of-column cap -- track names run long, and this is the
+      // one dropdown Matt specifically called out as too narrow.
+      trackSelect.style.maxWidth = '100%';
       card.appendChild(fieldPairRow('Track', trackSelect, 'Layout / Configuration', layoutSelect));
 
+      var weatherSelect = wizSelect(WIZARD_WEATHER_LIST, race.weather, function (v) {
+        race.weather = v;
+        syncRainInputToWeather(weatherSelect, rainInput, function () { race.chanceOfRain = 0; });
+      });
       card.appendChild(fieldPairRow(
-        'Weather', wizSelect(WIZARD_WEATHER_LIST, race.weather, function (v) { race.weather = v; }),
+        'Weather', weatherSelect,
         'Race Length Tier', wizSelect(['Sprint', 'Medium', 'Long'], race.tier, function (v) { race.tier = v; })
       ));
       // Chance of Rain steps by 5% (Matt's call); Temperature is Celsius,
       // bounded to a realistic normal-low-to-normal-high range for a race
       // weekend (-10C to 45C) rather than a physically unbounded box.
+      // Only enabled for actual rain-capable Weather values -- see
+      // syncRainInputToWeather() above (Matt's call).
       var rainInput = wizNumberInput(race.chanceOfRain, function (v) { race.chanceOfRain = v; }, { min: 0, max: 100, step: 5 });
       requireField(rainInput, requiredEls);
       var tempInput = wizNumberInput(race.temperatureC, function (v) { race.temperatureC = v; }, { min: -10, max: 45, step: 1 });
       requireField(tempInput, requiredEls);
       card.appendChild(fieldPairRow('Chance Of Rain (%)', rainInput, 'Temperature (°C)', tempInput));
+      syncRainInputToWeather(weatherSelect, rainInput, function () { race.chanceOfRain = 0; });
       var regLinkInput = wizTextInput(race.registrationLink, function (v) { race.registrationLink = v; });
       regLinkInput.style.maxWidth = '100%';
       card.appendChild(wizField('Registration Link', regLinkInput));
@@ -2316,7 +2328,7 @@
         var evtStartTime = el('input'); evtStartTime.type = 'time'; evtStartTime.value = evt.startTime || '';
         evtStartTime.addEventListener('input', function () { evt.startTime = evtStartTime.value; });
         requireField(evtStartTime, requiredEls);
-        card.appendChild(fieldPairRow('Event Date', wizDateWithDow(evtDate), 'Start Time', wizTimeWithBadge(evtStartTime, tzAbbrevForAdmin())));
+        card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time', evtStartTime));
 
         // Track/Layout -- same in-place-swap pattern as the regular race
         // cards above (changing Track repopulates Layout's own options
@@ -2337,6 +2349,7 @@
           });
           evtLayoutSelect.value = evt.layout;
         });
+        evtTrackSelect.style.maxWidth = '100%';
         card.appendChild(fieldPairRow('Track', evtTrackSelect, 'Layout / Configuration', evtLayoutSelect));
 
         // Race Length is a plain minutes box here, not the Sprint/Medium/
@@ -2345,15 +2358,22 @@
         // it to correlate with (Matt's call). Steps by 10, defaults 60.
         var evtLengthInput = wizNumberInput(evt.raceLengthMinutes, function (v) { evt.raceLengthMinutes = v; }, { min: 5, step: 5 });
         requireField(evtLengthInput, requiredEls);
+        var evtWeatherSelect = wizSelect(WIZARD_WEATHER_LIST, evt.weather, function (v) {
+          evt.weather = v;
+          syncRainInputToWeather(evtWeatherSelect, evtRainInput, function () { evt.chanceOfRain = 0; });
+        });
         card.appendChild(fieldPairRow(
           'Race Length (min)', evtLengthInput,
-          'Weather', wizSelect(WIZARD_WEATHER_LIST, evt.weather, function (v) { evt.weather = v; })
+          'Weather', evtWeatherSelect
         ));
+        // Only enabled for actual rain-capable Weather values -- see
+        // syncRainInputToWeather() (Matt's call).
         var evtRainInput = wizNumberInput(evt.chanceOfRain, function (v) { evt.chanceOfRain = v; }, { min: 0, max: 100, step: 5 });
         requireField(evtRainInput, requiredEls);
         var evtTempInput = wizNumberInput(evt.temperatureC, function (v) { evt.temperatureC = v; }, { min: -10, max: 45, step: 1 });
         requireField(evtTempInput, requiredEls);
         card.appendChild(fieldPairRow('Chance Of Rain (%)', evtRainInput, 'Temperature (°C)', evtTempInput));
+        syncRainInputToWeather(evtWeatherSelect, evtRainInput, function () { evt.chanceOfRain = 0; });
 
         var evtRegLinkInput = wizTextInput(evt.registrationLink, function (v) { evt.registrationLink = v; });
         evtRegLinkInput.style.maxWidth = '100%';
@@ -2511,6 +2531,11 @@
     fmtPanel.appendChild(previewLine('Drop Weeks Allowed', String(state.dropWeeks || 0)));
     fmtPanel.appendChild(previewLine('Special Events This Season', String(state.specialEventsCount || 0)));
     fmtPanel.appendChild(previewLine('Season Start', (state.seasonStartDate || '(date not set)') + ' at ' + (state.seasonStartTime || '(time not set)')));
+    // Every real-world wall-clock time in this wizard (Season/Event Start
+    // Time, Special Event Start Times) was typed in this timezone -- shown
+    // here once instead of a badge next to every individual time box
+    // (Matt's call to remove those). See state.enteredTimeZone.
+    fmtPanel.appendChild(previewLine('Times Entered In', (typeof timezoneLabel === 'function' && state.enteredTimeZone) ? timezoneLabel(state.enteredTimeZone) : (state.enteredTimeZone || '(unknown)')));
     fmtPanel.appendChild(previewLine('Bonus Points', [state.bonusPole && 'Pole', state.bonusFastestLap && 'Fastest Lap', state.bonusMostLapsLed && 'Most Laps Led'].filter(Boolean).join(', ') || 'None enabled'));
     container.appendChild(fmtPanel);
 
@@ -2538,12 +2563,16 @@
     } else {
       var previewRaceDates = computeRaceDates(state);
       state.races.forEach(function (race, idx) {
-        var detail = (previewRaceDates[idx] || '(date not set)') + ' — ' +
-          (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '') +
-          ' · ' + race.tier + ' · ' + (race.weather || 'Clear') +
+        // Two rows per race (Matt's call): row 1 is the track (date +
+        // track + layout), row 2 is everything else about how the race
+        // itself runs (tier, weather, rain/temp, in-game race start).
+        var trackLine = (previewRaceDates[idx] || '(date not set)') + ' — ' +
+          (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '');
+        var detailsLine = race.tier + ' · ' + (race.weather || 'Clear') +
           ' · ' + (race.chanceOfRain || 0) + '% Rain / ' + (race.temperatureC === undefined ? 20 : race.temperatureC) + '°C' +
           ' · Race Start ' + (race.igRaceStart || '(not set)');
-        racesPanel.appendChild(previewLine('Race ' + (idx + 1), detail));
+        racesPanel.appendChild(previewLine('Race ' + (idx + 1), trackLine));
+        racesPanel.appendChild(previewLine('', detailsLine));
       });
     }
     container.appendChild(racesPanel);
@@ -2554,13 +2583,17 @@
       state.specialEvents.forEach(function (evt, idx) {
         var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
         var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
-        var detail = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
-          ' · ' + (evt.track || '(no track)') + (evt.layout ? ' — ' + evt.layout : '') +
-          ' · ' + (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
+        // Two rows per special event (Matt's call), same split as Race
+        // Events above: row 1 is date/time + track, row 2 is everything
+        // else (length, weather, rain/temp, race start, money totals).
+        var trackLine = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
+          ' · ' + (evt.track || '(no track)') + (evt.layout ? ' — ' + evt.layout : '');
+        var detailsLine = (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
           ' · ' + (evt.chanceOfRain || 0) + '% Rain / ' + (evt.temperatureC === undefined ? 20 : evt.temperatureC) + '°C' +
           ' · Race Start ' + (evt.igRaceStart || '(not set)') +
           ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString();
-        specialPanel.appendChild(previewLine((evt.eventName || 'Special Event ' + (idx + 1)), detail));
+        specialPanel.appendChild(previewLine((evt.eventName || 'Special Event ' + (idx + 1)), trackLine));
+        specialPanel.appendChild(previewLine('', detailsLine));
       });
       container.appendChild(specialPanel);
     }
@@ -2665,12 +2698,26 @@
       footerBar.innerHTML = '';
 
       if (stepIndex === lastStep) {
-        // Last page (Season Preview): the actual "save the season"
-        // actions sit in the lower-LEFT corner of the popup instead of
-        // being buried at the bottom of the scrollable content; Back and
-        // Save & Close sit lower-right, Back first so Save & Close reads
-        // to its right (Matt's call on both).
+        // Last page (Season Preview): Save & Close stays lower-LEFT, same
+        // spot as every other page (Matt's call: "keep Save and Close
+        // button on lower left side for every page") -- it used to move
+        // over to the right just on this page, which was the odd one out.
+        // Back, then Create Season/Create a Future Season to ITS right,
+        // both sit lower-right (Matt's call: "move the create season and
+        // create future season button to the right of the back button").
         footerBar.style.alignItems = 'flex-end';
+
+        var saveBtn = el('button', null, 'Save & Close');
+        saveBtn.className = 'rc-btn-secondary rc-btn-sm'; saveBtn.type = 'button';
+        saveBtn.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
+        footerBar.appendChild(saveBtn);
+
+        var rightGroup = el('div', 'display:flex;gap:8px;align-items:flex-end;');
+
+        var backBtn = el('button', null, 'Back');
+        backBtn.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; backBtn.type = 'button';
+        backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
+        rightGroup.appendChild(backBtn);
 
         // position:relative so the Release Date/Time panel below can be
         // absolutely positioned OUT of normal flow -- it floats above
@@ -2678,7 +2725,7 @@
         // its footerBar siblings) downward when it opens (Matt's call:
         // "don't let the release date and time move the BACK and SAVE &
         // CLOSE buttons down with it").
-        var leftGroup = el('div', 'position:relative;');
+        var createWrap = el('div', 'position:relative;');
         var btnRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
         var createNowBtn = el('button', null, 'Create Season');
         createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
@@ -2688,13 +2735,13 @@
         var futureBtn = el('button', null, 'Create a Future Season');
         futureBtn.className = 'rc-btn-secondary rc-btn-sm'; futureBtn.type = 'button';
         btnRow.appendChild(futureBtn);
-        leftGroup.appendChild(btnRow);
+        createWrap.appendChild(btnRow);
 
         // Floats above the button row (bottom:100%) rather than sitting
-        // inline below it, so opening it never changes leftGroup's own
+        // inline below it, so opening it never changes createWrap's own
         // height/flow.
         var futurePanel = el('div', 'rc-panel');
-        futurePanel.style.cssText = 'position:absolute;bottom:calc(100% + 8px);left:0;display:none;width:320px;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+        futurePanel.style.cssText = 'position:absolute;bottom:calc(100% + 8px);right:0;display:none;width:320px;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
         var futureHead = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;');
         futureHead.appendChild(el('span', 'font-family:var(--rc-font-heading);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--rc-carbon);', 'Release Date/Time'));
         var closeFutureBtn = el('button', null, '×');
@@ -2712,7 +2759,7 @@
         confirmFutureBtn.className = 'rc-btn-primary rc-btn-sm'; confirmFutureBtn.type = 'button';
         confirmFutureBtn.addEventListener('click', function () { state.releaseMode = 'scheduled'; finishWizard(); });
         futurePanel.appendChild(confirmFutureBtn);
-        leftGroup.appendChild(futurePanel);
+        createWrap.appendChild(futurePanel);
 
         // While the Release Date/Time panel is open, Create Season/Create
         // a Future Season are inert (disabled, not just visually dimmed)
@@ -2730,18 +2777,8 @@
         }
         futureBtn.addEventListener('click', openFuturePanel);
         closeFutureBtn.addEventListener('click', closeFuturePanel);
-        footerBar.appendChild(leftGroup);
+        rightGroup.appendChild(createWrap);
 
-        var rightGroup = el('div', 'display:flex;gap:8px;');
-        var backBtn = el('button', null, 'Back');
-        backBtn.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; backBtn.type = 'button';
-        backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
-        rightGroup.appendChild(backBtn);
-
-        var saveBtn = el('button', null, 'Save & Close');
-        saveBtn.className = 'rc-btn-secondary rc-btn-sm'; saveBtn.type = 'button';
-        saveBtn.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
-        rightGroup.appendChild(saveBtn);
         footerBar.appendChild(rightGroup);
       } else {
         // Pages 1-2: unchanged layout -- Save & Close on the left,
