@@ -165,6 +165,13 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
+/* Wizard Next/Back only ("Make the Next and Back buttons slightly less
+   wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
+   so Save & Close / Create Season / League Management's row stay put. */
+.rc-btn-nav {
+  min-width: 110px;
+}
+
 .rc-link-btn {
   background: none;
   border: none;
@@ -1075,6 +1082,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-wizard-content input[type="datetime-local"],
 .rc-wizard-content select {
   max-width: 50%;
+  height: 36px;
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 /* Every wizField()-built field gets the SAME breathing room before it as
    .rc-field-pair gets (18px, collapsing with the field above's own
@@ -1149,6 +1159,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-steel);
   cursor: not-allowed;
   opacity: 1;
+}
+/* Small inline label sitting next to a wizard field -- the day-of-week
+   next to every date box, a timezone abbreviation next to real-world
+   time fields, or "Sim Time" next to In-Game time fields (Matt's calls:
+   "add the day of the week... for every date box", "make sure all times
+   listed have a timezone behind it"). */
+.rc-wiz-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rc-steel);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 /* No negative margin here -- .rc-wizard-content sets overflow-y:auto,
    which per spec forces its overflow-x to compute as "auto" too (not

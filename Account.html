@@ -1352,34 +1352,99 @@
   var WIZARD_DRAFT_KEY = 'raceclub_season_wizard_draft';
   var WIZARD_STEPS = ['Season Details', 'Race Events', 'Season Preview'];
 
-  // Illustrative real LMU track/weather lists -- stand in for the
-  // eventual Google Sheet reference-data source (the same role
-  // COUNTRIES/TIMEZONE_LIST already play for the profile form, see
-  // js/reference-data.js) until that sheet + the matching Apps Script
-  // read is actually wired up.
-  var WIZARD_TRACK_LIST = ['Le Mans', 'Sebring', 'Spa-Francorchamps', 'Monza', 'Interlagos', 'Bahrain', 'Fuji Speedway', 'Watkins Glen', 'Imola', 'Barcelona-Catalunya', 'Circuit of the Americas', 'Portimao'];
-  var WIZARD_WEATHER_LIST = ['Clear', 'Light Cloud', 'Overcast', 'Light Rain', 'Heavy Rain', 'Dynamic'];
-  // Layout/configuration options per track -- same "illustrative, stand-in
-  // for the eventual reference-data sheet" status as the two lists above.
-  // Matt's call: Layout should be a dropdown populated from the chosen
-  // Track, not a free-text box ("it won't be a free text box"). Every
-  // track lists its real-world layout(s); tracks with only one real
-  // configuration still get an array of one so the lookup is uniform.
+  // Real LMU track/layout list (Matt's exact list). This is the hardcoded
+  // FALLBACK -- loadWizardTrackList() below overwrites both of these
+  // module-level vars in place (so every closure already holding a
+  // reference keeps working) with whatever the Tracks tab returns from
+  // action=getTracks, the moment the wizard's page loads and that fetch
+  // resolves. If the fetch fails (offline, endpoint not deployed yet),
+  // this list is what the wizard uses instead -- never a blank dropdown.
+  // A season drafted against a track name that later disappears from a
+  // refreshed list still displays fine: trackLayoutOptions() below falls
+  // back to ['Standard'] for any track it doesn't recognize.
+  var WIZARD_TRACK_LIST = [
+    'Autódromo Internacional do Algarve (Portimão)',
+    'Autódromo José Carlos Pace (Interlagos)',
+    'Autodromo Internazionale Enzo e Dino Ferrari (Imola)',
+    'Autodromo Nazionale Monza',
+    'Bahrain International Circuit',
+    'Circuit de Barcelona-Catalunya',
+    'Circuit de la Sarthe',
+    'Circuit of the Americas (COTA)',
+    'Circuit Paul Ricard',
+    'Circuit de Spa-Francorchamps',
+    'Daytona International Speedway',
+    'Fuji International Speedway',
+    'Lusail International Circuit',
+    'Sebring International Raceway',
+    'Silverstone Circuit',
+    'WeatherTech Raceway Laguna Seca'
+  ];
+  var WIZARD_WEATHER_LIST = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
+  // Layout/configuration options per track. Matt's call: Layout should be
+  // a dropdown populated from the chosen Track, not a free-text box ("it
+  // won't be a free text box"). These aren't generic "Standard" base
+  // configs -- most of these tracks host both WEC and/or ELMS rounds on
+  // slightly different base layouts, so WEC/ELMS are their own separate
+  // base options (Matt's call: "instead of just the track names, these
+  // are the base tracks for each series -- WEC and ELMS base variants
+  // should be separate options"). A track that races in only one series
+  // gets just that one base option; Daytona and Laguna Seca are IMSA-only
+  // (no WEC/ELMS round), so they keep the generic 'Standard' base. Any
+  // OTHER named variant that already existed (short circuits, no-chicane
+  // configs, club layouts) stays alongside the WEC/ELMS base(s) -- those
+  // are genuinely different physical configurations, not a series split.
   var WIZARD_TRACK_LAYOUTS = {
-    'Le Mans': ['Circuit des 24 Heures'],
-    'Sebring': ['International Raceway'],
-    'Spa-Francorchamps': ['Grand Prix Circuit'],
-    'Monza': ['Grand Prix Circuit'],
-    'Interlagos': ['Grand Prix Circuit'],
-    'Bahrain': ['Grand Prix Circuit', 'Endurance Circuit', 'Outer Circuit'],
-    'Fuji Speedway': ['Grand Prix Circuit'],
-    'Watkins Glen': ['Grand Prix Circuit', 'The Boot'],
-    'Imola': ['Grand Prix Circuit'],
-    'Barcelona-Catalunya': ['Grand Prix Circuit', 'Grand Prix Circuit (No Chicane)'],
-    'Circuit of the Americas': ['Grand Prix Circuit'],
-    'Portimao': ['Grand Prix Circuit']
+    'Autódromo Internacional do Algarve (Portimão)': ['WEC', 'ELMS'],
+    'Autódromo José Carlos Pace (Interlagos)': ['WEC'],
+    'Autodromo Internazionale Enzo e Dino Ferrari (Imola)': ['WEC', 'ELMS'],
+    'Autodromo Nazionale Monza': ['WEC', 'Curva Grande Layout'],
+    'Bahrain International Circuit': ['WEC', 'Bahrain International Endurance Circuit', 'Bahrain International Outer Circuit', 'Bahrain International Paddock Circuit'],
+    'Circuit de Barcelona-Catalunya': ['ELMS'],
+    'Circuit de la Sarthe': ['WEC', 'Mulsanne No Chicanes'],
+    'Circuit of the Americas (COTA)': ['WEC', 'COTA National'],
+    'Circuit Paul Ricard': ['ELMS', '1A', '1A v2', '1A v2 Short', '3A'],
+    'Circuit de Spa-Francorchamps': ['WEC', 'ELMS'],
+    'Daytona International Speedway': ['Standard'],
+    'Fuji International Speedway': ['WEC', 'Fuji Classic (No Chicane)'],
+    'Lusail International Circuit': ['WEC', 'Lusail Short Circuit'],
+    'Sebring International Raceway': ['WEC', 'Sebring School Circuit'],
+    'Silverstone Circuit': ['WEC', 'ELMS', 'Silverstone International', 'Silverstone National'],
+    'WeatherTech Raceway Laguna Seca': ['Standard']
   };
   function trackLayoutOptions(track) { return WIZARD_TRACK_LAYOUTS[track] || ['Standard']; }
+  // Pulls the live track/layout list from the Tracks tab (action=getTracks,
+  // see 5_Website.gs) and overwrites WIZARD_TRACK_LIST/WIZARD_TRACK_LAYOUTS
+  // IN PLACE (length reset + push, not reassignment) so every wizard
+  // closure/dropdown built against the original array reference stays in
+  // sync automatically. Called once as soon as the page's own scripts run
+  // (below) -- by the time an admin actually opens the Create Season
+  // wizard, this has almost always already resolved. Silently keeps the
+  // hardcoded fallback above on any failure (offline, endpoint not
+  // deployed yet, malformed response) -- a broken track fetch should never
+  // block season creation.
+  function loadWizardTrackList() {
+    if (typeof fetchApi !== 'function') return;
+    fetchApi('getTracks').then(function (res) {
+      if (!res || !res.success || !res.tracks || !res.tracks.length) return;
+      var names = [];
+      var layouts = {};
+      res.tracks.forEach(function (t) {
+        if (!t || !t.trackName) return;
+        if (names.indexOf(t.trackName) === -1) { names.push(t.trackName); layouts[t.trackName] = []; }
+        var layoutName = t.layout || 'Standard';
+        if (layouts[t.trackName].indexOf(layoutName) === -1) layouts[t.trackName].push(layoutName);
+      });
+      if (!names.length) return;
+      WIZARD_TRACK_LIST.length = 0;
+      names.forEach(function (n) { WIZARD_TRACK_LIST.push(n); });
+      Object.keys(WIZARD_TRACK_LAYOUTS).forEach(function (k) { delete WIZARD_TRACK_LAYOUTS[k]; });
+      Object.keys(layouts).forEach(function (k) { WIZARD_TRACK_LAYOUTS[k] = layouts[k]; });
+    }).catch(function (err) {
+      // Offline/endpoint not deployed yet -- keep the hardcoded fallback.
+    });
+  }
+  loadWizardTrackList();
 
   // Local-timezone YYYY-MM-DD for today -- used to default date pickers
   // to today instead of leaving them blank (Matt's call: real default
@@ -1404,6 +1469,68 @@
     var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  // Wraps a plain <input type="date"> with a small day-of-week badge next
+  // to it -- every date box in the wizard gets one (Matt's call: "like the
+  // bye week box", which shows the weekday because it's a <select> of
+  // formatDateLabel() options; a plain date input has no such text, so
+  // this adds it alongside instead). The wrap is width:100% so the
+  // existing `.rc-wizard-content input[type="date"] { max-width: 50%; }`
+  // rule still sizes the input exactly as before -- only a badge is
+  // added, nothing about the input's own width changes here. Call
+  // .refreshDow() after setting inputEl.value programmatically (the
+  // auto-calculated Race Date box doesn't fire input/change on its own).
+  function wizDateWithDow(inputEl) {
+    var wrap = el('div', 'display:flex;align-items:center;gap:8px;width:100%;');
+    var badge = el('span', 'rc-wiz-badge');
+    function refresh() {
+      if (!inputEl.value) { badge.textContent = ''; return; }
+      var d = new Date(inputEl.value + 'T00:00:00');
+      var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      badge.textContent = days[d.getDay()];
+    }
+    inputEl.addEventListener('input', refresh);
+    inputEl.addEventListener('change', refresh);
+    refresh();
+    wrap.appendChild(inputEl);
+    wrap.appendChild(badge);
+    wrap.refreshDow = refresh;
+    return wrap;
+  }
+  // The logged-in admin's own timezone abbreviation (e.g. "EDT") from
+  // their profile, via the same Intl machinery reference-data.js already
+  // uses for timezoneLabel()'s "(GMT-04:00)" offsets -- 'short' instead
+  // of 'shortOffset' gets the abbreviation instead of a raw offset. Every
+  // real-world wall-clock time in the wizard is shown against THIS admin's
+  // screen, same as the rest of the site (Matt's call: "since my profile
+  // has EDT for my timezone currently that is what will be displayed on
+  // my screen"). currentProfile is set in buildFullProfileUI before the
+  // wizard can be opened (it's reached via the League Management page,
+  // which only renders after the admin's own profile has loaded).
+  function tzAbbrevForAdmin() {
+    var tz = currentProfile && currentProfile.timeZone;
+    if (!tz) return '';
+    try {
+      var part = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' })
+        .formatToParts(new Date()).find(function (p) { return p.type === 'timeZoneName'; });
+      return part ? part.value : '';
+    } catch (err) { return ''; }
+  }
+  // Wraps a plain <input type="time"> with a small static badge next to
+  // it -- the admin's timezone abbreviation for real-world wall-clock
+  // times (Event/Season/Special Event Start Time), or "Sim Time" for the
+  // In-Game Practice/Qualify/Race start times, which are the simulated
+  // LMU clock and not a real-world join time (Matt's call: "make sure
+  // all times listed have a timezone behind it" -- the in-game times
+  // aren't in a real timezone at all, so they get their own distinct
+  // label rather than a fabricated one). Unlike wizDateWithDow, this
+  // badge is static text set once -- it doesn't depend on the input's
+  // value.
+  function wizTimeWithBadge(inputEl, badgeText) {
+    var wrap = el('div', 'display:flex;align-items:center;gap:8px;width:100%;');
+    wrap.appendChild(inputEl);
+    if (badgeText) wrap.appendChild(el('span', 'rc-wiz-badge', badgeText));
+    return wrap;
   }
   // Adds `steps` cadence periods (Weekly/Biweekly/Monthly) to a YYYY-MM-DD
   // date -- Monthly advances by calendar month (not a fixed day count) so
@@ -1478,12 +1605,15 @@
   // dropdown regular races use (Matt's call).
   function defaultSpecialEvent() {
     return {
+      eventName: '',
       date: todayDateStr(),
       startTime: '20:00',
       track: WIZARD_TRACK_LIST[0],
       layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0],
       raceLengthMinutes: 60,
       weather: 'Clear',
+      chanceOfRain: 0,
+      temperatureC: 20,
       passwordOverride: '',
       registrationLink: '',
       igPracticeStart: '12:00',
@@ -1754,11 +1884,11 @@
     var nameRow = el('div', 'display:flex;align-items:stretch;');
     nameRow.appendChild(namePrefix);
     nameRow.appendChild(nameInput);
-    container.appendChild(wizField('Season Name', nameRow, 'Max 24 characters.'));
+    container.appendChild(wizField('Season Name', nameRow));
 
     container.appendChild(wizSubhead('Access & Server Behavior'));
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
-    pwInput.style.maxWidth = '25%';
+    pwInput.style.maxWidth = '50%';
     requireField(pwInput, requiredEls);
     container.appendChild(wizField('Default Password', pwInput));
 
@@ -1840,14 +1970,13 @@
       var anySelected = Object.keys(state.classes).some(function (c) { return state.classes[c]; });
       return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || state.classSeasons[c]; });
     }, requiredEls);
-    container.appendChild(wizField('Car Class(es) For The Season', classesWrap,
-      'Selecting 2+ automatically makes this a multiclass season. Pick at least one class, and check its season box.'));
+    container.appendChild(wizField('Car Class(es) For The Season', classesWrap));
 
     var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
     requireField(byeWeeksInput, requiredEls);
     container.appendChild(wizFieldPairRow(
       'Frequency', wizSelect(['Weekly', 'Biweekly', 'Monthly'], state.frequency, function (v) { state.frequency = v; }), null,
-      'Bye Weeks', byeWeeksInput, 'Capped at races this season minus 1, 4 max.'
+      'Bye Weeks', byeWeeksInput, null
     ));
     var numRacesInput = wizNumberInput(state.numRaces, function (v) { state.numRaces = v; }, { min: 1 });
     requireField(numRacesInput, requiredEls);
@@ -1866,7 +1995,7 @@
     });
     container.appendChild(wizFieldPairRow(
       'Number Of Races', numRacesInput, null,
-      'Drop Weeks Allowed', dropWeeksInput, 'Capped at races this season minus 1, 4 max.'
+      'Drop Weeks Allowed', dropWeeksInput, null
     ));
     // 0-2 special events this season (was a Yes/No toggle, then a
     // dropdown) -- now a number box like Bye Weeks/Number Of Races/Drop
@@ -1875,8 +2004,7 @@
     var specialEventsInput = wizNumberInput(state.specialEventsCount, function (v) { state.specialEventsCount = v; }, { min: 0, max: 2 });
     specialEventsInput.style.maxWidth = '25%';
     requireField(specialEventsInput, requiredEls);
-    container.appendChild(wizField('Special Events This Season (max 2)', specialEventsInput,
-      'Money-only mini-events (no championship points) -- each one gets its own card on the Race Events page.'));
+    container.appendChild(wizField('Special Events This Season (max 2)', specialEventsInput));
 
     container.appendChild(wizSubhead('Points'));
     // Row layout instead of stacked, and slightly larger checkboxes/text
@@ -1896,7 +2024,7 @@
     var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
     startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
     requireField(startTime, requiredEls);
-    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
+    container.appendChild(fieldPairRow('Season Start Date', wizDateWithDow(startDate), 'Event Start Time', wizTimeWithBadge(startTime, tzAbbrevForAdmin())));
 
     // NEW — Race Settings, moved here from the Race Events page since
     // these apply the same way to every race this season rather than
@@ -1993,6 +2121,7 @@
     while (state.races.length < n) {
       state.races.push({
         track: WIZARD_TRACK_LIST[0], layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0], weather: 'Clear', tier: 'Sprint',
+        chanceOfRain: 0, temperatureC: 20,
         passwordOverride: '', registrationLink: '',
         igPracticeStart: '12:00', igQualifyStart: '13:00', igRaceStart: '14:00'
       });
@@ -2048,7 +2177,10 @@
     var raceDateInputs = [];
     function refreshRaceDates() {
       var dates = computeRaceDates(state);
-      raceDateInputs.forEach(function (input, i) { input.value = dates[i] || ''; });
+      raceDateInputs.forEach(function (entry, i) {
+        entry.input.value = dates[i] || '';
+        entry.wrap.refreshDow();
+      });
     }
 
     // Bye week dropdowns -- one per bye week (max 4, capped at races - 1
@@ -2102,8 +2234,13 @@
       raceDateInput.value = computedRaceDates[idx] || '';
       raceDateInput.disabled = true;
       raceDateInput.className = 'rc-field-locked';
-      raceDateInputs.push(raceDateInput);
-      card.appendChild(wizField('Race Date (auto-calculated)', raceDateInput));
+      // Half as wide as a normal date box (Matt's call) -- the shared
+      // wizard rule already caps date inputs at 50% of the field column,
+      // so 25% here is half of that standard width.
+      raceDateInput.style.maxWidth = '25%';
+      var raceDateWrap = wizDateWithDow(raceDateInput);
+      raceDateInputs.push({ input: raceDateInput, wrap: raceDateWrap });
+      card.appendChild(wizField('Race Date (auto-calculated)', raceDateWrap));
 
       // Layout is a dropdown populated from whichever Track is currently
       // selected, not free text (Matt's call: "it won't be a free text
@@ -2132,10 +2269,17 @@
         'Weather', wizSelect(WIZARD_WEATHER_LIST, race.weather, function (v) { race.weather = v; }),
         'Race Length Tier', wizSelect(['Sprint', 'Medium', 'Long'], race.tier, function (v) { race.tier = v; })
       ));
-      card.appendChild(fieldPairRow(
-        'Password Override (optional)', wizTextInput(race.passwordOverride, function (v) { race.passwordOverride = v; }),
-        'Registration Link', wizTextInput(race.registrationLink, function (v) { race.registrationLink = v; })
-      ));
+      // Chance of Rain steps by 5% (Matt's call); Temperature is Celsius,
+      // bounded to a realistic normal-low-to-normal-high range for a race
+      // weekend (-10C to 45C) rather than a physically unbounded box.
+      var rainInput = wizNumberInput(race.chanceOfRain, function (v) { race.chanceOfRain = v; }, { min: 0, max: 100, step: 5 });
+      requireField(rainInput, requiredEls);
+      var tempInput = wizNumberInput(race.temperatureC, function (v) { race.temperatureC = v; }, { min: -10, max: 45, step: 1 });
+      requireField(tempInput, requiredEls);
+      card.appendChild(fieldPairRow('Chance Of Rain (%)', rainInput, 'Temperature (°C)', tempInput));
+      var regLinkInput = wizTextInput(race.registrationLink, function (v) { race.registrationLink = v; });
+      regLinkInput.style.maxWidth = '100%';
+      card.appendChild(wizField('Registration Link', regLinkInput));
       var igPractice = el('input'); igPractice.type = 'time'; igPractice.value = race.igPracticeStart || '';
       igPractice.addEventListener('input', function () { race.igPracticeStart = igPractice.value; });
       requireField(igPractice, requiredEls);
@@ -2146,8 +2290,8 @@
       igRace.addEventListener('input', function () { race.igRaceStart = igRace.value; });
       igRace.style.maxWidth = '25%';
       requireField(igRace, requiredEls);
-      card.appendChild(fieldPairRow('In-Game Practice Start Time', igPractice, 'In-Game Qualify Start Time', igQualify));
-      card.appendChild(wizField('In-Game Race Start Time', igRace));
+      card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(igPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(igQualify, 'Sim Time')));
+      card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(igRace, 'Sim Time')));
       container.appendChild(card);
     });
 
@@ -2156,10 +2300,14 @@
     if (state.specialEvents.length) {
       container.appendChild(wizSubhead('Special Events'));
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Money-only mini-events -- no championship points. Pick a date for each (they usually won\'t land on a regularly scheduled race), then set the payouts below.'));
+        'Money-only mini-events -- no championship points.'));
       state.specialEvents.forEach(function (evt, idx) {
         var card = el('div', 'rc-panel rc-wizard-race-card');
         card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
+
+        var evtNameInput = wizTextInput(evt.eventName, function (v) { evt.eventName = v; });
+        requireField(evtNameInput, requiredEls);
+        card.appendChild(wizField('Event Name', evtNameInput));
 
         var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
         evtDate.style.maxWidth = '50%';
@@ -2168,7 +2316,7 @@
         var evtStartTime = el('input'); evtStartTime.type = 'time'; evtStartTime.value = evt.startTime || '';
         evtStartTime.addEventListener('input', function () { evt.startTime = evtStartTime.value; });
         requireField(evtStartTime, requiredEls);
-        card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time', evtStartTime));
+        card.appendChild(fieldPairRow('Event Date', wizDateWithDow(evtDate), 'Start Time', wizTimeWithBadge(evtStartTime, tzAbbrevForAdmin())));
 
         // Track/Layout -- same in-place-swap pattern as the regular race
         // cards above (changing Track repopulates Layout's own options
@@ -2195,17 +2343,21 @@
         // Long tier dropdown regular races use -- a special event doesn't
         // tie into the championship points tables, so there's no tier for
         // it to correlate with (Matt's call). Steps by 10, defaults 60.
-        var evtLengthInput = wizNumberInput(evt.raceLengthMinutes, function (v) { evt.raceLengthMinutes = v; }, { min: 10, step: 10 });
+        var evtLengthInput = wizNumberInput(evt.raceLengthMinutes, function (v) { evt.raceLengthMinutes = v; }, { min: 5, step: 5 });
         requireField(evtLengthInput, requiredEls);
         card.appendChild(fieldPairRow(
           'Race Length (min)', evtLengthInput,
           'Weather', wizSelect(WIZARD_WEATHER_LIST, evt.weather, function (v) { evt.weather = v; })
         ));
+        var evtRainInput = wizNumberInput(evt.chanceOfRain, function (v) { evt.chanceOfRain = v; }, { min: 0, max: 100, step: 5 });
+        requireField(evtRainInput, requiredEls);
+        var evtTempInput = wizNumberInput(evt.temperatureC, function (v) { evt.temperatureC = v; }, { min: -10, max: 45, step: 1 });
+        requireField(evtTempInput, requiredEls);
+        card.appendChild(fieldPairRow('Chance Of Rain (%)', evtRainInput, 'Temperature (°C)', evtTempInput));
 
-        card.appendChild(fieldPairRow(
-          'Password Override (optional)', wizTextInput(evt.passwordOverride, function (v) { evt.passwordOverride = v; }),
-          'Registration Link', wizTextInput(evt.registrationLink, function (v) { evt.registrationLink = v; })
-        ));
+        var evtRegLinkInput = wizTextInput(evt.registrationLink, function (v) { evt.registrationLink = v; });
+        evtRegLinkInput.style.maxWidth = '100%';
+        card.appendChild(wizField('Registration Link', evtRegLinkInput));
         var evtIgPractice = el('input'); evtIgPractice.type = 'time'; evtIgPractice.value = evt.igPracticeStart || '';
         evtIgPractice.addEventListener('input', function () { evt.igPracticeStart = evtIgPractice.value; });
         requireField(evtIgPractice, requiredEls);
@@ -2216,31 +2368,71 @@
         evtIgRace.addEventListener('input', function () { evt.igRaceStart = evtIgRace.value; });
         evtIgRace.style.maxWidth = '25%';
         requireField(evtIgRace, requiredEls);
-        card.appendChild(fieldPairRow('In-Game Practice Start Time', evtIgPractice, 'In-Game Qualify Start Time', evtIgQualify));
-        card.appendChild(wizField('In-Game Race Start Time', evtIgRace));
+        card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(evtIgPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(evtIgQualify, 'Sim Time')));
+        card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(evtIgRace, 'Sim Time')));
 
         // Top-10 money table -- same P1-P10 layout as the championship
         // points tables on the previous page, but every cell is a dollar
         // amount (stepping by $100 instead of 1, Matt's call) instead of a
-        // points value. A "Prize Pool ($)" box sits top-right, mirroring
-        // the points table's "Duration (min)" box -- it's the live total
-        // of the 10 places below, re-summed the moment any one of them
-        // changes, so it's read-only rather than a second source of truth.
+        // points value. The "Prize Pool ($)" box top-right is the WHOLE
+        // pool -- the 10 places below AND the 6 bonus categories both come
+        // out of it, not on top of it (Matt's call: "prize pool means the
+        // whole prize pool"). It's editable: typing a new total rescales
+        // all 16 payouts proportionally to their prior share of the old
+        // total, rounded to whole dollars with any rounding remainder
+        // absorbed into P1 so the 16 boxes always sum to exactly what was
+        // typed. Still re-sums live (read-only direction) whenever any of
+        // the 16 boxes changes by hand, same as before.
         var moneyWrap = el('div', 'rc-panel'); moneyWrap.style.marginTop = '10px';
         var moneyHead = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
         moneyHead.appendChild(el('h4', 'margin:0;font-size:13px;', 'Top 10 Money Payout'));
-        var poolTotalInput = el('input'); poolTotalInput.type = 'number'; poolTotalInput.readOnly = true;
-        poolTotalInput.className = 'rc-field-locked';
+        var poolTotalInput = el('input'); poolTotalInput.type = 'number'; poolTotalInput.min = 0; poolTotalInput.step = 100;
         poolTotalInput.style.cssText = 'width:90px;max-width:90px;display:inline-block;margin:0;';
         var poolWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
         poolWrap.appendChild(document.createTextNode('Prize Pool ($)'));
         poolWrap.appendChild(poolTotalInput);
         moneyHead.appendChild(poolWrap);
         moneyWrap.appendChild(moneyHead);
-        function refreshPoolTotal() {
-          var sum = evt.moneyPlaces.reduce(function (s, v) { return s + (Number(v) || 0); }, 0);
-          poolTotalInput.value = sum;
+        var moneyInputs = [];
+        var bonusInputs = [];
+        function poolTotalNow() {
+          var placesSum = evt.moneyPlaces.reduce(function (s, v) { return s + (Number(v) || 0); }, 0);
+          var bonusSum = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (s, c) { return s + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
+          return placesSum + bonusSum;
         }
+        function refreshPoolTotal() {
+          poolTotalInput.value = poolTotalNow();
+        }
+        // Typing a new total and tabbing/clicking away rescales all 16
+        // payouts to match it, keeping each one's prior share of the pool.
+        poolTotalInput.addEventListener('change', function () {
+          var newTotal = Math.max(0, Number(poolTotalInput.value) || 0);
+          var oldTotal = poolTotalNow();
+          var allVals = evt.moneyPlaces.concat(SPECIAL_EVENT_BONUS_CATEGORIES.map(function (c) { return Number(evt.bonusPayouts[c.key]) || 0; }));
+          var scaled;
+          if (oldTotal > 0) {
+            scaled = allVals.map(function (v) { return Math.round((Number(v) || 0) / oldTotal * newTotal); });
+          } else {
+            // Nothing to scale a share FROM (every box was $0) -- split
+            // the new total evenly across all 16 as a reasonable fallback.
+            var share = Math.floor(newTotal / allVals.length);
+            scaled = allVals.map(function () { return share; });
+          }
+          // Rounding to whole dollars can leave the 16 boxes a few dollars
+          // short of/over what was typed -- the remainder goes to P1 so
+          // the total always matches exactly (Matt's call elsewhere on
+          // this same remainder pattern for points tables).
+          var scaledSum = scaled.reduce(function (s, v) { return s + v; }, 0);
+          scaled[0] += (newTotal - scaledSum);
+
+          evt.moneyPlaces.forEach(function (v, i) { evt.moneyPlaces[i] = scaled[i]; moneyInputs[i].value = scaled[i]; });
+          SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (c, i) {
+            var v = scaled[evt.moneyPlaces.length + i];
+            evt.bonusPayouts[c.key] = v;
+            bonusInputs[i].value = v;
+          });
+          refreshPoolTotal();
+        });
         var moneyTable = document.createElement('table');
         moneyTable.style.cssText = 'width:100%;margin-top:8px;border-collapse:collapse;';
         var moneyHeadRow = document.createElement('tr');
@@ -2258,6 +2450,7 @@
           var input = wizNumberInput(val, function (v) { evt.moneyPlaces[pIdx] = v; refreshPoolTotal(); }, { min: 0, step: 100 });
           input.style.cssText = 'width:100%;max-width:100%;text-align:center;padding:4px;margin:0;box-sizing:border-box;';
           requireField(input, requiredEls);
+          moneyInputs.push(input);
           td.appendChild(input);
           moneyInputRow.appendChild(td);
         });
@@ -2268,13 +2461,15 @@
 
         // Fun one-off bonus categories, each with its own payout box --
         // laid out two columns wide instead of one long stacked column
-        // (Matt's call).
+        // (Matt's call). These come OUT OF the Prize Pool total above,
+        // not on top of it, so changing one re-sums the pool too.
         var bonusWrap = el('div', 'rc-panel'); bonusWrap.style.marginTop = '10px';
         bonusWrap.appendChild(el('h4', 'margin:0 0 8px;font-size:13px;', 'Bonus Categories'));
         var bonusGrid = el('div', 'rc-bonus-payout-grid');
         SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (cat) {
-          var catInput = wizNumberInput(evt.bonusPayouts[cat.key], function (v) { evt.bonusPayouts[cat.key] = v; }, { min: 0 });
+          var catInput = wizNumberInput(evt.bonusPayouts[cat.key], function (v) { evt.bonusPayouts[cat.key] = v; refreshPoolTotal(); }, { min: 0 });
           requireField(catInput, requiredEls);
+          bonusInputs.push(catInput);
           var field = el('div');
           field.appendChild(wizLabel(cat.label + ' ($)'));
           field.appendChild(catInput);
@@ -2346,6 +2541,7 @@
         var detail = (previewRaceDates[idx] || '(date not set)') + ' — ' +
           (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '') +
           ' · ' + race.tier + ' · ' + (race.weather || 'Clear') +
+          ' · ' + (race.chanceOfRain || 0) + '% Rain / ' + (race.temperatureC === undefined ? 20 : race.temperatureC) + '°C' +
           ' · Race Start ' + (race.igRaceStart || '(not set)');
         racesPanel.appendChild(previewLine('Race ' + (idx + 1), detail));
       });
@@ -2361,16 +2557,18 @@
         var detail = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
           ' · ' + (evt.track || '(no track)') + (evt.layout ? ' — ' + evt.layout : '') +
           ' · ' + (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
+          ' · ' + (evt.chanceOfRain || 0) + '% Rain / ' + (evt.temperatureC === undefined ? 20 : evt.temperatureC) + '°C' +
           ' · Race Start ' + (evt.igRaceStart || '(not set)') +
           ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString();
-        specialPanel.appendChild(previewLine('Special Event ' + (idx + 1), detail));
+        specialPanel.appendChild(previewLine((evt.eventName || 'Special Event ' + (idx + 1)), detail));
       });
       container.appendChild(specialPanel);
     }
   }
 
   function openSeasonWizard() {
-    var state = loadWizardDraft() || defaultWizardState();
+    var existingDraft = loadWizardDraft();
+    var state = existingDraft || defaultWizardState();
     var stepIndex = 0;
     var modal = showModal('Create a Season', { wide: true, onClose: function () { if (typeof renderLeagueSection === 'function') renderLeagueSection(); } });
     var body = modal.body;
@@ -2388,6 +2586,28 @@
     // clears the current page (Matt's call: pills "unlock" one at a time
     // instead of being freely clickable ahead of where the admin is).
     var maxUnlockedStep = 0;
+
+    // Resuming an already-started draft: unlock pills up through any page
+    // that's already fully filled out, so the admin can jump straight to
+    // where they left off by clicking a pill instead of re-clicking Next
+    // through pages they already finished (Matt's call). Each page is
+    // rendered once into a detached, never-shown container purely to run
+    // its real requireField/requireGroup validity checks against the
+    // saved state -- same validation the live page uses, just off-screen
+    // and thrown away afterward.
+    if (existingDraft) {
+      var probeEls0 = [];
+      renderWizardSeasonDetailsPage(state, el('div'), probeEls0);
+      if (probeEls0.every(function (entry) { return entry.isValid(); })) {
+        maxUnlockedStep = 1;
+        syncRaceCount(state); syncByeWeekDates(state); syncSpecialEvents(state);
+        var probeEls1 = [];
+        renderWizardRaceEventsPage(state, el('div'), probeEls1);
+        if (probeEls1.every(function (entry) { return entry.isValid(); })) {
+          maxUnlockedStep = 2;
+        }
+      }
+    }
 
     function goToStep(i) {
       saveWizardDraft(state);
@@ -2514,7 +2734,7 @@
 
         var rightGroup = el('div', 'display:flex;gap:8px;');
         var backBtn = el('button', null, 'Back');
-        backBtn.className = 'rc-btn-secondary rc-btn-sm'; backBtn.type = 'button';
+        backBtn.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; backBtn.type = 'button';
         backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
         rightGroup.appendChild(backBtn);
 
@@ -2537,12 +2757,12 @@
         var navGroup = el('div', 'display:flex;gap:8px;');
         if (stepIndex > 0) {
           var backBtnNorm = el('button', null, 'Back');
-          backBtnNorm.className = 'rc-btn-secondary rc-btn-sm'; backBtnNorm.type = 'button';
+          backBtnNorm.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; backBtnNorm.type = 'button';
           backBtnNorm.addEventListener('click', function () { goToStep(stepIndex - 1); });
           navGroup.appendChild(backBtnNorm);
         }
         var nextBtn = el('button', null, 'Next');
-        nextBtn.className = 'rc-btn-primary rc-btn-sm'; nextBtn.type = 'button';
+        nextBtn.className = 'rc-btn-primary rc-btn-sm rc-btn-nav'; nextBtn.type = 'button';
         nextBtn.addEventListener('click', function () {
           if (validateCurrentStep()) {
             maxUnlockedStep = Math.max(maxUnlockedStep, stepIndex + 1);
