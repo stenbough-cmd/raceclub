@@ -40,6 +40,13 @@ function apiBaseUrlIsUnset() {
  *                   (never sent in the POST body — required by the API
  *                   contract).
  *   options.body:   plain object, JSON-stringified into the POST body.
+ *   options.params: plain object of extra GET query-string params (e.g.
+ *                   { seasonId: '...', carClass: 'LMGT3' } for
+ *                   getAvailableTeams, v0.20). Only ever appended to the
+ *                   URL, never sent for POST -- Apps Script GET handlers
+ *                   read these off e.parameter, same as action/token.
+ *                   Blank/null/undefined values are skipped rather than
+ *                   sent as the literal string "undefined".
  *
  * IMPORTANT: POST requests use Content-Type: text/plain;charset=utf-8, NOT
  * application/json. Apps Script Web Apps can't handle a CORS preflight
@@ -52,6 +59,13 @@ function fetchApi(action, options) {
   var method = options.method || 'GET';
   var url = API_BASE_URL + '?action=' + encodeURIComponent(action);
   if (options.token) url += '&token=' + encodeURIComponent(options.token);
+  if (options.params) {
+    Object.keys(options.params).forEach(function (key) {
+      var val = options.params[key];
+      if (val === undefined || val === null || val === '') return;
+      url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(val);
+    });
+  }
 
   var fetchOpts = { method: method };
   if (method === 'POST') {

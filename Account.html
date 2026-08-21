@@ -613,7 +613,7 @@
   // category widgets (Bank Balance, Reputation, etc.) inside the same
   // card underneath -- replaces the old two-piece layout (a separate
   // profile header card, then a separate widgets grid below it).
-  function dashboardHeroCard(profile) {
+  function dashboardHeroCard(profile, token) {
     var card = el('div', 'rc-card rc-dashboard-hero');
 
     var topRow = el('div', 'rc-dash-hero-top');
@@ -630,7 +630,7 @@
     if (profile.profileId) metaBits.push('Driver Profile: ' + profile.profileId);
     infoCol.appendChild(el('div', 'rc-meta-row', metaBits.join(' &middot; ')));
     var viewBlock = el('div', 'margin-top:14px;');
-    renderProfileViewBlock(viewBlock, profile);
+    renderProfileViewBlock(viewBlock, profile, token);
     infoCol.appendChild(viewBlock);
     topRow.appendChild(infoCol);
 
@@ -674,6 +674,13 @@
   // currentManufacturer are always blank today -- this renders "Unsigned"
   // for every driver until that backend piece exists. Wiring it up is a
   // separate future task, not part of this UI pass.
+  // v0.20 -- carClass now reads profile.currentClass (the season-cache
+  // field buildProfilePayload actually returns, see Auth.gs) instead of
+  // the never-populated profile.currentCarClass this originally read --
+  // CurrentClass IS the class of whatever team a driver has locked in,
+  // there's no separate "team's class" field, so this was a latent typo
+  // that just never surfaced because currentTeamName/currentCarNumber
+  // were always blank until Season Registration (this phase) existed.
   function currentSeatBlock(profile) {
     var wrap = el('div', 'rc-details-wrap');
     wrap.appendChild(el('div', 'rc-detail-label', 'Current Seat'));
@@ -683,7 +690,7 @@
       wrap.appendChild(el('div', 'rc-detail-value', 'Unsigned'));
       return wrap;
     }
-    var carClass = profile.currentCarClass || '';
+    var carClass = profile.currentClass || '';
     var manufacturer = profile.currentManufacturer || '';
     var row = el('div', 'rc-seat-row');
     if (manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -704,7 +711,7 @@
     return wrap;
   }
 
-  function renderProfileViewBlock(container, profile) {
+  function renderProfileViewBlock(container, profile, token) {
     if (profile.aboutMe) container.appendChild(el('p', 'rc-about-me', '“' + escapeHtml(profile.aboutMe) + '”'));
 
     // Time Zone/Birthday/Contact Email used to render here as a details
@@ -716,6 +723,344 @@
     // editable here. TimeZone/Birthday/ContactEmail are the same: still
     // collected/editable in Settings, just no longer displayed here.
     container.appendChild(currentSeatBlock(profile));
+
+    // v0.20 -- Season Registration Phase 2: the Register button lives
+    // directly under the Current Seat block per Matt's spec. Only makes
+    // sense for a driver who can actually register (Prospects have no
+    // season visibility at all, per the v0.3 design doc's Access Levels
+    // section) -- registerButtonBlock() itself also hides when there's no
+    // active season or this driver already locked a seat for it.
+    if (profile.role !== 'Prospect') {
+      container.appendChild(registerButtonBlock(profile, token));
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // SEASON REGISTRATION (v0.20, Phase 2) -- the Register button under
+  // Current Seat, the Choose Class popup (Step 1), and the Choose Team
+  // popup (Step 2), wired to the getActiveSeason/chooseClass/
+  // getAvailableTeams/joinTeam actions (see 4_DataCache.gs). Sponsors/
+  // Objectives (Steps 3-4) are a later phase -- a driver who locks a team
+  // here lands back on a Dashboard that still shows those as "Coming
+  // soon" until that phase exists.
+  //
+  // COST MODEL (Matt's v0.19 correction, load-bearing for this whole
+  // section): every driver in a class pays the SAME per-race retainer --
+  // set once per season, identical across every team. What varies per
+  // team is a ONE-TIME entrance fee, charged once at lock, on top of
+  // that season-standard retainer. Never show a per-team "per race" cost
+  // anywhere in this UI.
+  // ---------------------------------------------------------------------
+  function formatMoney(n) {
+    n = Number(n) || 0;
+    return '$' + n.toLocaleString();
+  }
+
+  // Renders the Register button (or hides itself entirely) based on a
+  // fresh getActiveSeason read -- always re-fetched on render rather than
+  // trusted off the cached profile object, since profile.registrationStatus
+  // isn't part of buildProfilePayload's response today and this is the
+  // one place that actually needs to know it live.
+  function registerButtonBlock(profile, token) {
+    var wrap = el('div', 'margin-top:12px;');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rc-btn-secondary rc-btn-sm';
+    btn.disabled = true;
+    btn.textContent = 'Checking season status...';
+    wrap.appendChild(btn);
+
+    function refresh() {
+      fetchApi('getActiveSeason', { token: token }).then(function (data) {
+        if (!data || !data.success || !data.hasActiveSeason) { wrap.style.display = 'none'; return; }
+
+        // Already locked in for THIS season -- the Current Seat block
+        // right above already shows the seat, no button needed. (A
+        // driver's profile object may be stale immediately after their
+        // own lock -- see openTeamSelectModal's onLocked callback, which
+        // patches profile in place before this ever re-renders.)
+        if (data.registrationStatus === 'TeamLocked' || data.registrationStatus === 'Complete') {
+          wrap.style.display = 'none';
+          return;
+        }
+
+        wrap.style.display = '';
+        btn.disabled = false;
+
+        if (!data.registrationOpen) {
+          btn.className = 'rc-btn-secondary rc-btn-sm';
+          btn.disabled = true;
+          btn.textContent = 'Registration Not Open Yet';
+          return;
+        }
+
+        btn.className = 'rc-btn-primary rc-btn-sm';
+        btn.textContent = (data.registrationStatus === 'ClassChosen' && data.currentClass)
+          ? 'Continue Registration — Choose a Team'
+          : 'Register for ' + (data.seasonName || 'This Season');
+
+        btn.onclick = function () {
+          if (data.registrationStatus === 'ClassChosen' && data.currentClass) {
+            openTeamSelectModal(profile, token, data.seasonId, data.currentClass, refresh);
+          } else {
+            openChooseClassModal(profile, token, data, refresh);
+          }
+        };
+      }).catch(function () {
+        wrap.style.display = 'none';
+      });
+    }
+
+    refresh();
+    return wrap;
+  }
+
+  // Step 1 -- Choose a Class. Shows every class this season tracks
+  // (data.classesTracked), each greyed out with its Reputation
+  // requirement if this driver doesn't clear CAR_CLASS_REPUTATION_FLOOR
+  // for it yet (client-side hint only -- handleChooseClass re-checks
+  // server-side regardless, same as every other gated action on this
+  // site). Classes with no floor (LMGT3/LMP3) are always clickable.
+  function openChooseClassModal(profile, token, activeSeasonData, onDone) {
+    // Closing without picking a class (X/Escape/backdrop) still refreshes
+    // the Register button so it reflects reality -- harmless no-op if
+    // nothing changed, but needed if the driver picked a class, THEN
+    // closed the team-select modal that opened on top of this one without
+    // locking a team (registerButtonBlock's own refresh call handles
+    // that "Continue Registration" state on the next render).
+    var closedByPick = false;
+    var modal = showModal('Choose Your Class — ' + (activeSeasonData.seasonName || ''), {
+      onClose: function () { if (onDone && !closedByPick) onDone(); }
+    });
+    var body = modal.body;
+    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;',
+      'Pick the class you’ll compete in this season. You’ll choose a specific team next -- the per-race retainer is the same for every team in a class, only the one-time entrance fee to join varies.'));
+
+    var status = el('div', 'margin-top:10px;font-size:13px;color:var(--rc-red);');
+    var reputation = (profile.reputationScore === null || profile.reputationScore === undefined) ? 300 : Number(profile.reputationScore);
+
+    var classes = (activeSeasonData.classesTracked && activeSeasonData.classesTracked.length)
+      ? activeSeasonData.classesTracked : CAR_CLASS_LIST;
+
+    classes.forEach(function (cls) {
+      var floor = (typeof CAR_CLASS_REPUTATION_FLOOR !== 'undefined' && CAR_CLASS_REPUTATION_FLOOR[cls] !== undefined) ? CAR_CLASS_REPUTATION_FLOOR[cls] : 0;
+      var eligible = reputation >= floor;
+
+      var row = el('div', 'padding:12px 0;border-bottom:1px solid var(--rc-silver);display:flex;align-items:center;justify-content:space-between;gap:12px;');
+      var label = el('div', null);
+      var badge = el('span', null, escapeHtml(cls));
+      badge.style.cssText = 'display:inline-block;padding:2px 8px;border-radius:4px;color:#fff;font-weight:700;font-size:12px;background:var(' + carClassBadgeColorVar(cls) + ');';
+      label.appendChild(badge);
+      label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;',
+        floor > 0 ? ('Requires ' + floor + '+ Reputation (you have ' + reputation + ')') : 'Open to every driver'));
+      row.appendChild(label);
+
+      var pickBtn = el('button', null, eligible ? 'Choose' : 'Not Yet Eligible');
+      pickBtn.type = 'button';
+      pickBtn.className = 'rc-btn-secondary rc-btn-sm';
+      pickBtn.disabled = !eligible;
+      row.appendChild(pickBtn);
+
+      pickBtn.addEventListener('click', function () {
+        pickBtn.disabled = true;
+        status.style.color = 'var(--rc-red)';
+        status.textContent = '';
+        fetchApi('chooseClass', { method: 'POST', token: token, body: { seasonId: activeSeasonData.seasonId, carClass: cls } })
+          .then(function (data) {
+            if (!data.success) {
+              pickBtn.disabled = false;
+              status.textContent = data.message || 'Could not choose that class.';
+              return;
+            }
+            closedByPick = true;
+            modal.close();
+            openTeamSelectModal(profile, token, activeSeasonData.seasonId, cls, onDone);
+          })
+          .catch(function () {
+            pickBtn.disabled = false;
+            status.textContent = 'Could not reach the server. Try again in a moment.';
+          });
+      });
+
+      body.appendChild(row);
+    });
+
+    body.appendChild(status);
+  }
+
+  // Step 2 -- Choose a Team. seasonId/carClass are already locked in
+  // (chooseClass already succeeded, or this is a "Continue Registration"
+  // re-open). Renders every team getAvailableTeams returns, each with its
+  // one-time entrance fee + the season-standard per-race retainer shown
+  // separately so the cost model reads honestly, not as one lump number
+  // that looks per-team. `taken` teams render disabled, not hidden, per
+  // the design doc. onLocked is called after a successful joinTeam so the
+  // caller (registerButtonBlock's refresh, or the button's own onclick)
+  // can re-render the dashboard.
+  function openTeamSelectModal(profile, token, seasonId, carClass, onLocked) {
+    var modal = showModal('Choose Your Team — ' + carClass, { wide: true, onClose: function () { if (onLocked) onLocked(); } });
+    var body = modal.body;
+    body.appendChild(buildSpinner('Loading available teams...'));
+
+    function load() {
+      body.innerHTML = '';
+      body.appendChild(buildSpinner('Loading available teams...'));
+      fetchApi('getAvailableTeams', { token: token, params: { seasonId: seasonId, carClass: carClass } })
+        .then(function (data) {
+          body.innerHTML = '';
+          if (!data.success) {
+            body.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load teams.'));
+            return;
+          }
+          renderTeams(data);
+        })
+        .catch(function () {
+          body.innerHTML = '';
+          body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
+        });
+    }
+
+    function renderTeams(data) {
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:6px;',
+        'Every team’s per-race retainer is the same for ' + carClass + ' this season: ' + formatMoney(data.perRaceRetainerRate) +
+        ' × ' + data.raceCount + ' race' + (data.raceCount === 1 ? '' : 's') + ' = ' + formatMoney(data.seasonRetainerTotal) +
+        ' (escrowed, not spent). What varies below is each team’s one-time entrance fee, charged once when you lock in.'));
+
+      var noticeSlot = el('div');
+      body.appendChild(noticeSlot);
+
+      if (!data.teams || !data.teams.length) {
+        body.appendChild(el('p', 'color:var(--rc-steel);', 'No teams are available for ' + carClass + ' yet.'));
+        return;
+      }
+
+      data.teams.forEach(function (team) {
+        var totalCost = data.seasonRetainerTotal + team.oneTimeEntryFee;
+        var card = el('div', 'rc-panel');
+        card.style.marginTop = '12px';
+        if (team.taken) card.style.opacity = '0.5';
+
+        var head = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;');
+        var nameCol = el('div');
+        var titleRow = el('div', null);
+        if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
+          var logo = document.createElement('img');
+          logo.src = manufacturerLogoSrc(team.manufacturer);
+          logo.alt = team.manufacturer;
+          logo.style.cssText = 'height:20px;vertical-align:middle;margin-right:8px;';
+          logo.onerror = function () { logo.style.display = 'none'; };
+          titleRow.appendChild(logo);
+        }
+        var teamNameSpan = document.createElement('span');
+        teamNameSpan.style.fontWeight = '700';
+        teamNameSpan.textContent = (team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : '');
+        titleRow.appendChild(teamNameSpan);
+        nameCol.appendChild(titleRow);
+        if (team.manufacturer || team.carModel) {
+          nameCol.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:2px;',
+            escapeHtml([team.manufacturer, team.carModel].filter(Boolean).join(' · '))));
+        }
+        head.appendChild(nameCol);
+
+        var costCol = el('div', 'text-align:right;');
+        costCol.appendChild(el('div', 'font-weight:700;', formatMoney(totalCost) + ' up front'));
+        costCol.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;',
+          'Entrance fee ' + formatMoney(team.oneTimeEntryFee) + ' + retainer ' + formatMoney(data.seasonRetainerTotal)));
+        head.appendChild(costCol);
+        card.appendChild(head);
+
+        if (team.pro || team.con) {
+          var proCon = el('div', 'margin-top:8px;font-size:12px;');
+          if (team.pro) proCon.appendChild(el('div', 'color:var(--rc-ok);', '+ ' + escapeHtml(team.pro)));
+          if (team.con) proCon.appendChild(el('div', 'color:var(--rc-red);', '− ' + escapeHtml(team.con)));
+          card.appendChild(proCon);
+        }
+        if (team.bonusTrigger || team.penaltyTrigger) {
+          var perks = el('div', 'margin-top:6px;font-size:12px;color:var(--rc-steel);');
+          if (team.bonusTrigger) perks.appendChild(el('div', null, 'Bonus: ' + escapeHtml(team.bonusTrigger) + ' → +' + formatMoney(team.bonusAmount)));
+          if (team.penaltyTrigger) perks.appendChild(el('div', null, 'Penalty: ' + escapeHtml(team.penaltyTrigger) + ' → −' + formatMoney(team.penaltyAmount)));
+          card.appendChild(perks);
+        }
+
+        var joinBtn = el('button', null, team.taken ? 'Seat Taken' : 'Join This Team');
+        joinBtn.type = 'button';
+        joinBtn.className = 'rc-btn-primary rc-btn-sm';
+        joinBtn.style.marginTop = '12px';
+        joinBtn.disabled = !!team.taken;
+        card.appendChild(joinBtn);
+
+        var rowStatus = el('div', 'margin-top:6px;font-size:12px;');
+        card.appendChild(rowStatus);
+
+        joinBtn.addEventListener('click', function () {
+          joinBtn.disabled = true;
+          rowStatus.style.color = 'var(--rc-red)';
+          rowStatus.textContent = '';
+          fetchApi('joinTeam', { method: 'POST', token: token, body: { seasonId: seasonId, entryId: team.entryId } })
+            .then(function (res) {
+              if (res.success) {
+                Object.assign(profile, {
+                  currentTeamName: res.teamName, currentCarNumber: res.carNumber,
+                  currentManufacturer: res.manufacturer, currentClass: carClass,
+                  bankBalanceAvailable: res.bankBalanceAvailable, bankBalanceFrozen: res.bankBalanceFrozen
+                });
+                setProfileCache(profile);
+                showTeamLockedConfirmation(modal, res, carClass, function () {
+                  renderDashboardSection(profile, token);
+                  showSection('dashboard');
+                });
+                return;
+              }
+              if (res.error === 'TEAM_TAKEN') {
+                noticeSlot.innerHTML = '';
+                noticeSlot.appendChild(el('div', 'rc-banner',
+                  'That team was just claimed by another driver — pick a different one below.'));
+                load(); // refetch so the taken seat now shows disabled and any other changes are current
+                return;
+              }
+              joinBtn.disabled = team.taken;
+              rowStatus.textContent = res.message || 'Could not lock that seat.';
+            })
+            .catch(function () {
+              joinBtn.disabled = false;
+              rowStatus.textContent = 'Could not reach the server. Try again in a moment.';
+            });
+        });
+
+        body.appendChild(card);
+      });
+    }
+
+    load();
+  }
+
+  // Replaces the team-select modal's body with a short confirmation once
+  // joinTeam succeeds -- same "land back on an updated view is the
+  // confirmation" pattern as editProfilePanel's save, but this one
+  // involves real money moving so it gets an explicit summary first
+  // rather than just silently closing.
+  function showTeamLockedConfirmation(modal, res, carClass, onDone) {
+    var body = modal.body;
+    body.innerHTML = '';
+    body.appendChild(el('h3', 'margin-top:0;color:var(--rc-ok);', 'Seat Locked'));
+    body.appendChild(el('p', null, escapeHtml(res.teamName || '') + ' #' + escapeHtml(String(res.carNumber || '')) + ' — ' + escapeHtml(carClass)));
+    var summary = el('div', 'rc-panel');
+    summary.appendChild(el('div', null, 'One-time entrance fee: ' + formatMoney(res.oneTimeEntryFeePaid)));
+    summary.appendChild(el('div', null, 'Season retainer escrowed: ' + formatMoney(res.seasonRetainerEscrowed)));
+    summary.appendChild(el('div', 'font-weight:700;margin-top:6px;', 'Total charged: ' + formatMoney(res.totalCost)));
+    summary.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:10px;',
+      'Available balance: ' + formatMoney(res.bankBalanceAvailable) + ' · Frozen (escrowed): ' + formatMoney(res.bankBalanceFrozen)));
+    body.appendChild(summary);
+    var doneBtn = el('button', null, 'Done'); doneBtn.className = 'rc-btn-primary rc-btn-sm'; doneBtn.style.marginTop = '14px';
+    doneBtn.addEventListener('click', function () {
+      // modal.close() also fires openTeamSelectModal's own onClose (which
+      // refreshes the Register button -- it'll now hide itself since this
+      // driver just locked a seat), but that's a different callback from
+      // onDone here (the actual dashboard re-render) -- both need to run.
+      modal.close();
+      if (onDone) onDone();
+    });
+    body.appendChild(doneBtn);
   }
 
   function buildSelect(options, selectedValue, placeholder) {
@@ -960,7 +1305,7 @@
     var section = document.getElementById('rc-section-dashboard');
     section.innerHTML = '';
 
-    section.appendChild(dashboardHeroCard(profile));
+    section.appendChild(dashboardHeroCard(profile, token));
 
     if (profile.role === 'Prospect') {
       var banner = document.createElement('div');
@@ -3318,6 +3663,7 @@
         releaseMode: state.releaseMode,
         releaseDateTime: state.releaseDateTime,
         classes: state.classes,
+        classSeasons: state.classSeasons,
         dropWeeks: state.dropWeeks,
         bonusPole: state.bonusPole,
         bonusFastestLap: state.bonusFastestLap,
