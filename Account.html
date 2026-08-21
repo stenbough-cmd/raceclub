@@ -394,6 +394,16 @@
   var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
   var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
   var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
+  // Partly cloudy (sun + cloud) -- the 0%-rain-but-cloudy tier between
+  // ICON_SUN (clear) and ICON_CLOUD (any rain up to 25%). See
+  // weatherIcon() below.
+  var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
+  // Heavy rain -- denser, two-row rainfall vs. ICON_RAIN's single row, for
+  // the >75% tier. Same cloud shape as ICON_RAIN so the family reads as
+  // one icon getting "heavier," not a different icon entirely.
+  var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
+  // Copy-to-clipboard icon -- Calendar's session password field.
+  var ICON_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path></svg>';
 
   // Primary 10-item nav. Reordered per Matt's call: Finances moved up to
   // sit right after Calendar, and a new Objectives item was inserted
@@ -1114,69 +1124,91 @@
     seasonName: 'Race Club — Season 1 — Proving Grounds',
     races: [
       {
-        round: 1, name: null, special: false, finished: true,
-        track: 'Watkins Glen International — Long Course',
+        name: null, special: false, finished: true,
+        track: 'Watkins Glen International', layout: 'Long Course',
         startUtc: '2026-07-12T18:00:00Z', igTime: '14:00',
         raceLengthMin: 45, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 5, tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
-        regUrl: '#'
+        rainChance: 0, sky: 'clear', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
+        serverPassword: 'RCW1-GLEN', registered: false, regUrl: '#'
       },
       {
-        round: 2, name: null, special: false, finished: true,
-        track: 'Mount Panorama — Bathurst',
+        name: null, special: false, finished: true,
+        track: 'Mount Panorama', layout: 'Grand Prix Circuit',
         startUtc: '2026-07-26T18:00:00Z', igTime: '11:00',
         raceLengthMin: 60, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 40, tireSets: 5, tireWearX: 1.2, fuelX: 1.0, fixedSetup: true,
-        regUrl: '#'
+        rainChance: 0, sky: 'cloudy', tireSets: 5, tireWearX: 1.2, fuelX: 1.0, fixedSetup: true,
+        serverPassword: 'RCW2-BATH', registered: false, regUrl: '#'
       },
       {
-        round: 3, name: 'The Sebring 3 Hour', special: true, finished: false,
-        track: 'Sebring International Raceway',
+        name: 'The Sebring 3 Hour', special: true, finished: false,
+        track: 'Sebring International Raceway', layout: 'International Circuit',
         startUtc: '2026-08-23T18:00:00Z', igTime: '13:00',
-        raceLengthMin: 180, pointsTier: 'Double Points',
+        raceLengthMin: 180, prizePool: 750, bonusPoints: 50,
         practiceMin: 30, qualifyingMin: 20,
-        rainChance: 15, tireSets: 9, tireWearX: 1.4, fuelX: 1.6, fixedSetup: false,
-        regUrl: '#'
+        rainChance: 15, sky: 'cloudy', tireSets: 9, tireWearX: 1.4, fuelX: 1.6, fixedSetup: false,
+        serverPassword: 'RCW-SEB3H', registered: false, regUrl: '#'
       },
       {
-        round: 4, name: null, special: false, finished: false,
-        track: 'Circuit de Spa-Francorchamps',
+        name: null, special: false, finished: false,
+        track: 'Circuit de Spa-Francorchamps', layout: 'Grand Prix Circuit',
         startUtc: '2026-09-06T18:00:00Z', igTime: '15:30',
         raceLengthMin: 50, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 65, tireSets: 4, tireWearX: 1.1, fuelX: 1.0, fixedSetup: true,
-        regUrl: '#'
+        rainChance: 45, sky: 'cloudy', tireSets: 4, tireWearX: 1.1, fuelX: 1.0, fixedSetup: true,
+        serverPassword: 'RCW4-SPA', registered: true, regUrl: '#'
       },
       {
-        round: 5, name: null, special: false, finished: false,
-        track: 'Suzuka Circuit',
+        name: null, special: false, finished: false,
+        track: 'Suzuka Circuit', layout: 'Full Course',
         startUtc: '2026-09-20T18:00:00Z', igTime: '10:00',
         raceLengthMin: 45, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 10, tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
-        regUrl: '#'
+        rainChance: 85, sky: 'cloudy', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
+        serverPassword: 'RCW5-SUZ', registered: false, regUrl: '#'
       }
     ]
   };
 
-  // Rain-chance-driven weather icon -- under 15% reads as clear, under 50%
-  // as cloudy/mixed, 50%+ as wet. One derived icon rather than a separate
-  // "condition" field to keep the mock data (and any future real data)
-  // simpler -- rain % is the one number that actually matters here.
-  function weatherIcon(rainChance) {
-    if (rainChance >= 50) return ICON_RAIN;
-    if (rainChance >= 15) return ICON_CLOUD;
-    return ICON_SUN;
+  // Five-tier weather icon, per Matt's exact spec:
+  //   clear skies (0% rain, sky:'clear')            -> sun
+  //   any cloud variation at 0% rain (sky:'cloudy')  -> partly cloudy
+  //   25% or less chance of rain                     -> cloud
+  //   25-75% chance of rain                           -> medium rain
+  //   more than 75% chance of rain                    -> heavy rain
+  function weatherIcon(race) {
+    var rc = race.rainChance;
+    if (rc <= 0) return race.sky === 'cloudy' ? ICON_CLOUD_PARTLY : ICON_SUN;
+    if (rc <= 25) return ICON_CLOUD;
+    if (rc <= 75) return ICON_RAIN;
+    return ICON_RAIN_HEAVY;
   }
 
-  // One small icon + value chip -- tires, fuel, setup, weather, points
-  // tier all reuse this so the row stays visually consistent. `title`
-  // becomes a native tooltip since the chip itself has no visible label.
-  function calStat(iconSvg, text, title) {
+  // ---------------------------------------------------------------------
+  // THEMED TOOLTIP -- replaces the native `title` attribute (the browser's
+  // generic gray tooltip) everywhere a calendar stat or icon needs an
+  // on-hover explanation, per Matt's call: "make the tooltip themed
+  // similar to our website, not generic, and keep tooltip style the same
+  // across any tooltip on the website." Just a class + a data attribute
+  // (see .rc-tooltip in style.css for the actual bubble) -- add
+  // `rc-tooltip` to any element and set data-tooltip, and it gets the
+  // site-styled hover bubble for free. tooltipText() escapes for safe use
+  // in the data-tooltip attribute; content is CSS attr()-driven, so
+  // updating the attribute later (see the copy-password button) updates
+  // the bubble live with no extra re-render.
+  // ---------------------------------------------------------------------
+  function withTooltip(el_, text) {
+    el_.classList.add('rc-tooltip');
+    el_.setAttribute('data-tooltip', text);
+    return el_;
+  }
+
+  // One small icon + value chip -- tires, fuel, setup, weather, points/
+  // prize all reuse this so the row stays visually consistent.
+  function calStat(iconSvg, text, tooltip) {
     var chip = el('span', 'rc-cal-stat', iconSvg + '<span>' + escapeHtml(text) + '</span>');
-    if (title) chip.title = title;
+    if (tooltip) withTooltip(chip, tooltip);
     return chip;
   }
 
@@ -1194,18 +1226,53 @@
     }
   }
 
-  function raceCard(race, driverTz) {
+  // Clipboard write with a manual-select fallback for browsers/contexts
+  // where navigator.clipboard isn't available (e.g. non-HTTPS local
+  // testing) -- either way `done` fires once the text is on the
+  // clipboard (or the fallback has at least selected it for a manual
+  // Cmd/Ctrl-C) so the caller can flip its tooltip to "Copied!".
+  function copyToClipboard(text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text); done(); });
+    } else {
+      legacyCopy(text);
+      done();
+    }
+    function legacyCopy(t) {
+      var ta = document.createElement('textarea');
+      ta.value = t;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (err) { /* nothing more we can do */ }
+      document.body.removeChild(ta);
+    }
+  }
+
+  // roundNum is null for special events -- per Matt's call, special
+  // events don't get counted as a numbered "Race 0N" round, they just
+  // carry their own name. Assigned by renderCalendarSection() based on
+  // chronological position among the non-special races only.
+  function raceCard(race, driverTz, roundNum) {
     var card = el('div', 'rc-cal-race' + (race.finished ? ' rc-cal-finished' : ''));
 
     var head = el('div', 'rc-cal-race-head');
-    var roundLabel = 'Race ' + (race.round < 10 ? '0' + race.round : race.round);
+    var roundLabel = roundNum ? ('Race ' + (roundNum < 10 ? '0' + roundNum : roundNum)) : '';
     var nameHtml = escapeHtml(race.name || roundLabel);
-    if (race.special) nameHtml = '<span class="rc-cal-race-star" title="Special event">' + ICON_NAV_STAR + '</span>' + nameHtml;
-    head.appendChild(el('div', 'rc-cal-race-name', nameHtml));
+    var nameEl = el('div', 'rc-cal-race-name', nameHtml);
+    if (race.special) {
+      var star = el('span', 'rc-cal-race-star', ICON_NAV_STAR);
+      withTooltip(star, 'Special event — does not count toward the championship');
+      nameEl.insertBefore(star, nameEl.firstChild);
+    }
+    head.appendChild(nameEl);
     if (race.finished) head.appendChild(el('span', 'rc-cal-finished-pill', 'Completed'));
     card.appendChild(head);
 
-    card.appendChild(el('div', 'rc-cal-track', ICON_TRACK + ' <strong>' + escapeHtml(race.track) + '</strong>'));
+    card.appendChild(el('div', 'rc-cal-track',
+      ICON_TRACK + ' <strong>' + escapeHtml(race.track) + '</strong>' +
+      (race.layout ? ' <span class="rc-cal-layout">(' + escapeHtml(race.layout) + ')</span>' : '')));
 
     var dt = el('div', 'rc-cal-datetime');
     dt.innerHTML =
@@ -1217,24 +1284,55 @@
       'Practice ' + race.practiceMin + ' min &middot; Qualifying ' + race.qualifyingMin + ' min &middot; Race ' + race.raceLengthMin + ' min'));
 
     var stats = el('div', 'rc-cal-stats');
-    stats.appendChild(calStat(weatherIcon(race.rainChance), race.rainChance + '% rain', 'Weather'));
+    stats.appendChild(calStat(weatherIcon(race), race.rainChance + '% rain', 'Weather'));
     stats.appendChild(calStat(ICON_TIRE, race.tireSets + ' sets · ' + race.tireWearX + 'x wear', 'Tires'));
     stats.appendChild(calStat(ICON_FUEL, race.fuelX + 'x fuel', 'Fuel multiplier'));
     stats.appendChild(calStat(race.fixedSetup ? ICON_LOCK : ICON_UNLOCK, race.fixedSetup ? 'Fixed Setup' : 'Open Setup', 'Setup'));
-    stats.appendChild(calStat(ICON_FLAG, race.pointsTier, 'Points'));
+    // Special events run for a prize pool instead of championship points
+    // (Matt's call) -- the chip just says "Prize Pool"; hovering reveals
+    // the actual prize pool and event-points values, since those never
+    // show up in the championship standings otherwise.
+    if (race.special) {
+      stats.appendChild(calStat(ICON_FINANCES, 'Prize Pool',
+        '$' + race.prizePool + ' prize pool · ' + race.bonusPoints + ' event points (does not count toward the championship)'));
+    } else {
+      stats.appendChild(calStat(ICON_FLAG, race.pointsTier, 'Awards full championship points for this round'));
+    }
     card.appendChild(stats);
 
     if (!race.finished) {
-      var regRow = el('div', 'rc-cal-reg-row');
-      var regBtn = document.createElement('a');
-      regBtn.href = race.regUrl;
-      regBtn.target = '_blank';
-      regBtn.rel = 'noopener';
-      regBtn.className = 'rc-btn-secondary rc-btn-sm';
-      regBtn.textContent = 'Register';
-      regRow.appendChild(regBtn);
-      regRow.appendChild(el('span', 'rc-cal-reg-hint', 'Register at least 15 minutes before this race starts.'));
-      card.appendChild(regRow);
+      var footer = el('div', 'rc-cal-footer');
+
+      var pwWrap = el('div', 'rc-cal-pw');
+      pwWrap.appendChild(el('span', 'rc-cal-pw-value', escapeHtml(race.serverPassword)));
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'rc-cal-pw-copy';
+      copyBtn.innerHTML = ICON_COPY;
+      copyBtn.setAttribute('aria-label', 'Copy session password');
+      withTooltip(copyBtn, 'Copy password');
+      copyBtn.addEventListener('click', function () {
+        copyToClipboard(race.serverPassword, function () {
+          copyBtn.setAttribute('data-tooltip', 'Copied!');
+          setTimeout(function () { copyBtn.setAttribute('data-tooltip', 'Copy password'); }, 1500);
+        });
+      });
+      pwWrap.appendChild(copyBtn);
+      footer.appendChild(pwWrap);
+
+      // Registering and withdrawing both happen on the same 3rd-party
+      // server-signup link (Matt's call) -- this is just a label/style
+      // swap based on whether the driver is already registered, not two
+      // different destinations.
+      var actionBtn = document.createElement('a');
+      actionBtn.href = race.regUrl;
+      actionBtn.target = '_blank';
+      actionBtn.rel = 'noopener';
+      actionBtn.className = 'rc-btn-secondary rc-btn-sm' + (race.registered ? ' rc-btn-withdraw' : '');
+      actionBtn.textContent = race.registered ? 'Withdraw' : 'Register';
+      footer.appendChild(actionBtn);
+
+      card.appendChild(footer);
     }
 
     return card;
@@ -1257,8 +1355,22 @@
       (driverTz ? ' (' + escapeHtml(driverTz) + ').' : '.')));
     season.appendChild(seasonHead);
 
+    // Chronological by date, full stop -- special events sort right in
+    // alongside normal rounds (Matt's call), they just never get a "Race
+    // 0N" number of their own (see roundNum below). Once Season Creation
+    // actually bakes round numbers + dates into the sheet, this sort
+    // becomes redundant with the data itself, but costs nothing to keep.
+    var sorted = CALENDAR_MOCK_SEASON.races.slice().sort(function (a, b) {
+      return new Date(a.startUtc) - new Date(b.startUtc);
+    });
+
     var list = el('div', 'rc-cal-race-list');
-    CALENDAR_MOCK_SEASON.races.forEach(function (race) { list.appendChild(raceCard(race, driverTz)); });
+    var roundCounter = 0;
+    sorted.forEach(function (race) {
+      var roundNum = null;
+      if (!race.special) { roundCounter++; roundNum = roundCounter; }
+      list.appendChild(raceCard(race, driverTz, roundNum));
+    });
     season.appendChild(list);
 
     section.appendChild(season);
@@ -1274,17 +1386,16 @@
     var section = document.getElementById('rc-section-help');
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
-    section.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;max-width:640px;line-height:1.6;',
+    section.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;max-width:640px;line-height:1.6;margin-bottom:24px;',
       'Rules, formats, and everything else you need to know about racing in Race Club.'));
 
     var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;', 'Rulebook'));
-    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
+    panel.appendChild(el('h3', 'margin-top:0;margin-bottom:10px;', 'Rulebook'));
+    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;max-width:560px;line-height:1.6;margin-bottom:16px;',
       'The full Race Club Rulebook — driving standards, penalties, reputation, class progression, and more. Still growing as we finish designing each section.'));
     var openBtn = el('button', null, 'Open Rulebook');
     openBtn.type = 'button';
     openBtn.className = 'rc-btn-primary rc-btn-sm';
-    openBtn.style.marginTop = '10px';
     openBtn.addEventListener('click', openRulebookModal);
     panel.appendChild(openBtn);
     section.appendChild(panel);
