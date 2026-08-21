@@ -136,21 +136,27 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // of the two places drifting to different names for the same class (this
 // replaces the wizard's old standalone ['GT3','LMP3','LMP2','Hypercar']
 // array, updated to match real LMU class naming / the Cars data itself).
-var CAR_CLASS_LIST = ['LMGT3', 'LMP2', 'LMP3', 'Hypercar'];
+// Order (2026-08-21, Matt's call): GT3 -> LMP3 -> LMP2 -> Hypercar, the
+// order the ladder is meant to read in everywhere on the site (class
+// picker, wizard checkboxes/inputs, admin Cars class dropdown, etc.) --
+// LMP3 is the very next step up from GT3, not LMP2.
+var CAR_CLASS_LIST = ['LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
-// Reputation floor required to join each class -- LOCKED per Matt's call.
-// LMGT3/LMP3 (Bronze) have no floor (money only, same as the ladder in
-// the Rulebook/system map). LMP2 (Silver) requires 400, Hypercar (Gold)
-// requires 500. A driver who clears a class's floor is always free to
-// pick that class themselves -- no admin approval needed. Not yet
-// enforced anywhere at runtime -- there's no live "join a class" flow yet
-// (Season Registration itself isn't built), this is the single source of
-// truth for that logic once it exists, and for any copy (registration
-// page, index.html) that needs to state the number. See Race Club
+// Reputation floor required to join each class -- LOCKED per Matt's call
+// (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
+// as the ladder in the Rulebook/system map. LMP3 requires 300, LMP2
+// requires 400, Hypercar requires 600. (Was LMGT3:0/LMP3:0/LMP2:400/
+// Hypercar:500 before this pass -- Matt's direct correction moved LMP3
+// from open to a real floor and raised Hypercar's floor from 500 to 600.)
+// A driver who clears a class's floor is always free to pick that class
+// themselves -- no admin approval needed. Enforced both server-side
+// (handleChooseClass, 4_DataCache.gs -- TODO once that check is added)
+// and client-side (the class-choice screen in Account.html, which also
+// shows this exact number next to each class). See Race Club
 // Rulebook.md Section 9/10 and the v0.3 design doc for the full mechanic,
 // including Class Placement Requests -- the driver-initiated, admin-
 // approved exception for a class a driver doesn't yet qualify for.
-var CAR_CLASS_REPUTATION_FLOOR = { LMGT3: 0, LMP3: 0, LMP2: 400, Hypercar: 500 };
+var CAR_CLASS_REPUTATION_FLOOR = { LMGT3: 0, LMP3: 300, LMP2: 400, Hypercar: 600 };
 
 // Class Placement Request denial reasons -- admin-curated, fixed list
 // (same pattern as the Sponsor/Vanity catalogs: preconfigured options,
@@ -187,6 +193,21 @@ var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-l
 function manufacturerLogoSrc(manufacturerName) {
   var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
   return 'assets/manufacturers/' + slug + '.png';
+}
+
+// Same slugging convention as manufacturerLogoSrc() above, pointed at
+// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
+// Not currently called from anywhere client-side (the server auto-writes
+// this exact filename to ProfileID.AvatarFile at team lock -- see
+// manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
+// actual server-side mirror of this slug rule -- and avatarImageSrc() in
+// Account.html just reads whatever's stored there), but kept here as the
+// documented client-side reference for the same convention, and in case
+// a future screen wants to preview a manufacturer's avatar before a team
+// is actually locked.
+function manufacturerAvatarSrc(manufacturerName) {
+  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/avatars/' + slug + '.jpg';
 }
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
