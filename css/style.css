@@ -1257,25 +1257,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-shake { animation: rc-shake 0.4s; }
 
 /* -------------------------------------------------------------------- */
-/* Account.html — branded loading spinner. Two uses of the same visual   */
-/* language: ".rc-loading-overlay" is the full-page, fixed-position wash */
-/* shown on initial load (see the static markup in <body>); ".rc-inline- */
-/* spinner-wrap" is the same spinner+message pair used in-page (e.g. the */
-/* Admin section's first load, via buildSpinner() in Account.html) --    */
-/* not fixed, so it just sits wherever it's appended instead of covering */
-/* the whole screen.                                                     */
+/* Account.html — branded loading spinner. ".rc-inline-spinner-wrap" is  */
+/* the one spinner+message style used everywhere: the initial account    */
+/* load (static markup in <body>, right of the sidebar in the normal     */
+/* main content flow) and in-page first loads like Admin/Data            */
+/* Management (via buildSpinner() in Account.html). Previously the       */
+/* initial load used a separate fixed, full-screen ".rc-loading-overlay" */
+/* that dimmed the whole page including the sidebar -- removed in favor  */
+/* of this same in-page spinner (Matt's call), so the sidebar and header */
+/* stay visible while the account loads instead of being washed out.     */
 /* -------------------------------------------------------------------- */
-.rc-loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(245, 245, 243, 0.94); /* var(--rc-offwhite) at reduced opacity -- washes out the page beneath */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  z-index: 9999;
-}
 .rc-inline-spinner-wrap {
   display: flex;
   flex-direction: column;
@@ -1463,7 +1454,50 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; color: var(--rc-carbon); margin: 0; }
 .rc-cal-season-sub { font-size: 12px; color: var(--rc-steel); margin-top: 4px; }
 
+/* Season-wide settings block (server password, classes, points tables,
+   drop weeks, race day/frequency, track limits, private qualifying) --
+   sits below the season name, above the race list, per Matt's call.
+   Reuses .rc-cal-stats/.rc-cal-stat (the exact same chip component each
+   race card uses) so this reads as one visual system with the cards
+   below it, not a separate design. */
+.rc-cal-season-details { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rc-silver); }
+.rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
+
+.rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.rc-cal-classes-label { font-size: 12px; color: var(--rc-steel); margin-right: 2px; }
+.rc-cal-class-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rc-white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+
+/* Bye week -- deliberately close to empty (Matt's call: "keep bye weeks
+   off the details screen and just use blank containers within the
+   schedule to convey a bye week") -- a dashed border and centered,
+   muted text reads as "nothing scheduled here on purpose" rather than a
+   missing race. */
+.rc-cal-bye {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 20px;
+  border-style: dashed;
+  color: var(--rc-steel);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  background: var(--rc-offwhite);
+}
+.rc-cal-bye-date { font-size: 11px; font-weight: 400; }
 
 .rc-cal-race {
   border: 1px solid var(--rc-silver);
@@ -1526,44 +1560,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
 .rc-cal-race.rc-cal-finished .rc-cal-stat { background: var(--rc-white); }
-
-/* Footer row -- session password (copy-to-clipboard) + Register/Withdraw,
-   right-aligned as a pair per Matt's call ("move the password and
-   Register button to the right side of the footer"). */
-.rc-cal-footer { display: flex; align-items: stretch; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
-
-.rc-cal-pw { display: flex; align-items: stretch; height: 36px; border: 1px solid var(--rc-silver); border-radius: 4px; overflow: hidden; }
-.rc-cal-pw-value {
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-family: 'SFMono-Regular', Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: 0.03em;
-  color: var(--rc-carbon);
-  background: var(--rc-offwhite);
-}
-.rc-cal-pw-copy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  border: none;
-  border-left: 1px solid var(--rc-silver);
-  background: var(--rc-white);
-  color: var(--rc-steel);
-  cursor: pointer;
-  padding: 0;
-}
-.rc-cal-pw-copy:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
-
-/* Withdraw is the same size/shape as any other rc-btn-sm secondary button
-   -- just tinted red (reusing the site's existing error-banner red/pink,
-   see .rc-banner) so it reads as a step-back action without escalating
-   to a full alarming red button. Register on the same race links to the
-   exact same URL, since it's the 3rd-party server signup either way. */
-.rc-btn-withdraw { border-color: var(--rc-red); color: var(--rc-red); }
-.rc-btn-withdraw:hover { background: #fff1ef; }
 
 /* -------------------------------------------------------------------- */
 /* Rulebook popup (Help section) */

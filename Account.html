@@ -10,8 +10,9 @@
   header.js's Account dropdown item) now points here instead.
 
   v0.4.0 also: replaced the plain "Loading your profile..." text with a
-  full-page branded spinner overlay (see the CSS ".rc-loading-overlay"/
-  ".rc-spinner" rules and buildSpinner() below), and made the Admin
+  branded spinner (see the CSS ".rc-inline-spinner-wrap"/".rc-spinner"
+  rules and buildSpinner() below) shown in the main content area next to
+  the sidebar rather than a full-screen overlay, and made the Admin
   section load lazily -- only a lightweight pending-accounts count fetches
   on page load now (just to light up the notification dot), with the full
   approval queue + Manage Users list deferred until the Admin nav item is
@@ -134,13 +135,13 @@
   </aside>
 
   <main class="rc-main">
-    <!-- Full-page branded loading overlay -- washes out the rest of the
-         page (nothing behind it is meaningfully visible yet anyway) until
-         the account is confirmed and rendered. Same spinner markup/CSS as
-         buildSpinner() below produces for in-page loads (e.g. opening
-         Admin for the first time), just wrapped in the fixed, full-screen
-         ".rc-loading-overlay" here instead of an inline block. -->
-    <div id="rc-loading" class="rc-loading-overlay">
+    <!-- Initial-load spinner -- sits in-page in the main content area,
+         same "rc-inline-spinner-wrap" markup buildSpinner() below produces
+         for Admin/Data Management's own first loads, so the sidebar and
+         header stay visible (not dimmed out) while the account loads
+         (Matt's call: show the spinner to the right of the sidebar, like
+         Data Management does, instead of washing out the whole screen). -->
+    <div id="rc-loading" class="rc-inline-spinner-wrap">
       <div class="rc-spinner"></div>
       <div class="rc-loading-text">Loading account information&hellip;</div>
     </div>
@@ -290,13 +291,12 @@
     return d.innerHTML;
   }
 
-  // Same branded spinner used for the full-page initial load (see the
-  // ".rc-loading-overlay" markup in <body> above, which is hand-written
-  // HTML rather than built through here since it needs to exist before
-  // this script even runs) -- this is the reusable, in-page version, e.g.
-  // for the Admin section's first load (see ADMIN LAZY LOAD below). Not
-  // fixed-position, so it just sits inline wherever it's appended instead
-  // of covering the whole screen.
+  // Same branded spinner used for the initial account load (see the
+  // "#rc-loading" markup in <body> above, which is hand-written HTML
+  // rather than built through here since it needs to exist before this
+  // script even runs) -- this is the reusable, in-page version, e.g. for
+  // the Admin section's first load (see ADMIN LAZY LOAD below). Just sits
+  // inline wherever it's appended, not fixed-position.
   function buildSpinner(message) {
     var wrap = el('div', 'rc-inline-spinner-wrap');
     wrap.appendChild(el('div', 'rc-spinner'));
@@ -402,8 +402,6 @@
   // the >75% tier. Same cloud shape as ICON_RAIN so the family reads as
   // one icon getting "heavier," not a different icon entirely.
   var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
-  // Copy-to-clipboard icon -- Calendar's session password field.
-  var ICON_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"></path></svg>';
 
   // Primary 10-item nav. Reordered per Matt's call: Finances moved up to
   // sit right after Calendar, and a new Objectives item was inserted
@@ -1122,6 +1120,33 @@
   // ---------------------------------------------------------------------
   var CALENDAR_MOCK_SEASON = {
     seasonName: 'Race Club — Season 1 — Proving Grounds',
+    // Everything an admin actually chose in the Create a Season wizard
+    // (openSeasonWizard/defaultWizardState above) that applies to the
+    // WHOLE season, not one race -- shown once, below the season name,
+    // instead of repeated on every card (Matt's call). Field names
+    // deliberately mirror the wizard's own state object (serverPassword
+    // -> defaultPassword, etc. -- see defaultWizardState()) so swapping
+    // this mock for a real created-season record later is a rename, not
+    // a redesign. Fuel multiplier and tire wear stay OUT of this panel on
+    // purpose -- Matt's call to keep those on each race card instead,
+    // even though the wizard itself now treats them as season-wide.
+    details: {
+      serverPassword: 'RCS1-PROVE',
+      raceDayOfWeek: 'Sunday',
+      frequency: 'Weekly',
+      dropWeeks: 1,
+      trackLimitsPreset: 'Default',
+      trackLimitPoints: 100,
+      privateQualifying: false,
+      classes: [
+        { key: 'LMGT3', season: '2026' }
+      ],
+      pointsTables: {
+        Sprint: { duration: 40, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+        Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
+        Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
+      }
+    },
     races: [
       {
         name: null, special: false, finished: true,
@@ -1129,8 +1154,7 @@
         startUtc: '2026-07-12T18:00:00Z', igTime: '14:00',
         raceLengthMin: 45, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 0, sky: 'clear', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
-        serverPassword: 'RCW1-GLEN', registered: false, regUrl: '#'
+        rainChance: 0, sky: 'clear', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false
       },
       {
         name: null, special: false, finished: true,
@@ -1138,17 +1162,20 @@
         startUtc: '2026-07-26T18:00:00Z', igTime: '11:00',
         raceLengthMin: 60, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 0, sky: 'cloudy', tireSets: 5, tireWearX: 1.2, fuelX: 1.0, fixedSetup: true,
-        serverPassword: 'RCW2-BATH', registered: false, regUrl: '#'
+        rainChance: 0, sky: 'cloudy', tireSets: 5, tireWearX: 1.2, fuelX: 1.0, fixedSetup: true
       },
+      // Bye week -- per Matt's call, this does NOT show up in the season
+      // details panel above; it's only conveyed here, in the schedule
+      // itself, as a blank/placeholder container (see raceCard's `bye`
+      // branch below). Doesn't take a round number either.
+      { bye: true, startUtc: '2026-08-09T18:00:00Z' },
       {
         name: 'The Sebring 3 Hour', special: true, finished: false,
         track: 'Sebring International Raceway', layout: 'International Circuit',
         startUtc: '2026-08-23T18:00:00Z', igTime: '13:00',
         raceLengthMin: 180, prizePool: 750, bonusPoints: 50,
         practiceMin: 30, qualifyingMin: 20,
-        rainChance: 15, sky: 'cloudy', tireSets: 9, tireWearX: 1.4, fuelX: 1.6, fixedSetup: false,
-        serverPassword: 'RCW-SEB3H', registered: false, regUrl: '#'
+        rainChance: 15, sky: 'cloudy', tireSets: 9, tireWearX: 1.4, fuelX: 1.6, fixedSetup: false
       },
       {
         name: null, special: false, finished: false,
@@ -1156,8 +1183,7 @@
         startUtc: '2026-09-06T18:00:00Z', igTime: '15:30',
         raceLengthMin: 50, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 45, sky: 'cloudy', tireSets: 4, tireWearX: 1.1, fuelX: 1.0, fixedSetup: true,
-        serverPassword: 'RCW4-SPA', registered: true, regUrl: '#'
+        rainChance: 45, sky: 'cloudy', tireSets: 4, tireWearX: 1.1, fuelX: 1.0, fixedSetup: true
       },
       {
         name: null, special: false, finished: false,
@@ -1165,11 +1191,15 @@
         startUtc: '2026-09-20T18:00:00Z', igTime: '10:00',
         raceLengthMin: 45, pointsTier: 'Full Points',
         practiceMin: 20, qualifyingMin: 15,
-        rainChance: 85, sky: 'cloudy', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
-        serverPassword: 'RCW5-SUZ', registered: false, regUrl: '#'
+        rainChance: 85, sky: 'cloudy', tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false
       }
     ]
   };
+
+  // Car-class badge colors -- reuses the site's existing --rc-class-*
+  // theme variables (same ones the class economy/reputation displays use
+  // elsewhere) rather than inventing new colors just for this pill.
+  var CLASS_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP2: '--rc-class-lmp2', LMP3: '--rc-class-lmp3', Hypercar: '--rc-class-hypercar' };
 
   // Five-tier weather icon, per Matt's exact spec:
   //   clear skies (0% rain, sky:'clear')            -> sun
@@ -1226,28 +1256,65 @@
     }
   }
 
-  // Clipboard write with a manual-select fallback for browsers/contexts
-  // where navigator.clipboard isn't available (e.g. non-HTTPS local
-  // testing) -- either way `done` fires once the text is on the
-  // clipboard (or the fallback has at least selected it for a manual
-  // Cmd/Ctrl-C) so the caller can flip its tooltip to "Copied!".
-  function copyToClipboard(text, done) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text); done(); });
-    } else {
-      legacyCopy(text);
-      done();
+  // Date-only version for bye weeks -- no race time to show.
+  function formatByeDate(iso, tz) {
+    try {
+      var d = new Date(iso);
+      var opts = { weekday: 'short', month: 'short', day: 'numeric' };
+      if (tz) opts.timeZone = tz;
+      return d.toLocaleString('en-US', opts);
+    } catch (err) {
+      return iso;
     }
-    function legacyCopy(t) {
-      var ta = document.createElement('textarea');
-      ta.value = t;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); } catch (err) { /* nothing more we can do */ }
-      document.body.removeChild(ta);
-    }
+  }
+
+  // "P1 25 · P2 18 · ..." -- full points spread for a tier's tooltip, so
+  // the visible chip can stay short ("Sprint · 40 min") while hover still
+  // gives the whole breakdown.
+  function formatPointsList(points) {
+    return points.map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
+  }
+
+  // Season-wide settings from the Create a Season wizard -- server
+  // password, classes, points tables, drop weeks, race day/frequency,
+  // track limits, private qualifying -- shown once below the season name
+  // (Matt's call), same icon-chip styling as each race card's own stat
+  // row so the whole Calendar page reads as one visual language.
+  function seasonDetailsPanel(details) {
+    var wrap = el('div', 'rc-cal-season-details');
+    wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Settings'));
+
+    var chips = el('div', 'rc-cal-stats');
+    chips.appendChild(calStat(ICON_LOCK, details.serverPassword, 'Season server password'));
+    chips.appendChild(calStat(ICON_CALENDAR, details.raceDayOfWeek + 's · ' + details.frequency,
+      'Races run every ' + details.raceDayOfWeek + ', ' + details.frequency.toLowerCase()));
+    chips.appendChild(calStat(ICON_CALENDAR, details.dropWeeks + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'),
+      'Your worst ' + details.dropWeeks + ' result' + (details.dropWeeks === 1 ? '' : 's') + ' this season won\'t count against your standing'));
+    chips.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits',
+      'Track Limits Preset: ' + details.trackLimitsPreset + ' · Drive-through penalty after ' + details.trackLimitPoints + ' points'));
+    chips.appendChild(calStat(details.privateQualifying ? ICON_LOCK : ICON_UNLOCK,
+      details.privateQualifying ? 'Private Qualifying' : 'Public Qualifying',
+      details.privateQualifying ? 'Qualifying results are hidden until the race' : 'Qualifying results are visible to everyone as soon as the session ends'));
+    wrap.appendChild(chips);
+
+    var classesRow = el('div', 'rc-cal-classes');
+    classesRow.appendChild(el('span', 'rc-cal-classes-label', 'Classes:'));
+    details.classes.forEach(function (c) {
+      var pill = el('span', 'rc-cal-class-pill', escapeHtml(c.key) + ' ' + escapeHtml(c.season));
+      pill.style.background = 'var(' + CLASS_COLOR_VAR[c.key] + ')';
+      classesRow.appendChild(pill);
+    });
+    wrap.appendChild(classesRow);
+
+    var pointsRow = el('div', 'rc-cal-stats');
+    pointsRow.style.marginTop = '10px';
+    ['Sprint', 'Medium', 'Long'].forEach(function (tier) {
+      var t = details.pointsTables[tier];
+      pointsRow.appendChild(calStat(ICON_FLAG, tier + ' · ' + t.duration + ' min', 'Points: ' + formatPointsList(t.points)));
+    });
+    wrap.appendChild(pointsRow);
+
+    return wrap;
   }
 
   // roundNum is null for special events -- per Matt's call, special
@@ -1255,6 +1322,16 @@
   // carry their own name. Assigned by renderCalendarSection() based on
   // chronological position among the non-special races only.
   function raceCard(race, driverTz, roundNum) {
+    // Bye week -- a blank placeholder container, per Matt's call, instead
+    // of any detail screen. Just enough to show a gap in the schedule was
+    // intentional, not a missing race.
+    if (race.bye) {
+      var byeCard = el('div', 'rc-cal-race rc-cal-bye');
+      byeCard.appendChild(el('div', null, 'Bye Week'));
+      byeCard.appendChild(el('div', 'rc-cal-bye-date', escapeHtml(formatByeDate(race.startUtc, driverTz))));
+      return byeCard;
+    }
+
     var card = el('div', 'rc-cal-race' + (race.finished ? ' rc-cal-finished' : ''));
 
     var head = el('div', 'rc-cal-race-head');
@@ -1300,41 +1377,6 @@
     }
     card.appendChild(stats);
 
-    if (!race.finished) {
-      var footer = el('div', 'rc-cal-footer');
-
-      var pwWrap = el('div', 'rc-cal-pw');
-      pwWrap.appendChild(el('span', 'rc-cal-pw-value', escapeHtml(race.serverPassword)));
-      var copyBtn = document.createElement('button');
-      copyBtn.type = 'button';
-      copyBtn.className = 'rc-cal-pw-copy';
-      copyBtn.innerHTML = ICON_COPY;
-      copyBtn.setAttribute('aria-label', 'Copy session password');
-      withTooltip(copyBtn, 'Copy password');
-      copyBtn.addEventListener('click', function () {
-        copyToClipboard(race.serverPassword, function () {
-          copyBtn.setAttribute('data-tooltip', 'Copied!');
-          setTimeout(function () { copyBtn.setAttribute('data-tooltip', 'Copy password'); }, 1500);
-        });
-      });
-      pwWrap.appendChild(copyBtn);
-      footer.appendChild(pwWrap);
-
-      // Registering and withdrawing both happen on the same 3rd-party
-      // server-signup link (Matt's call) -- this is just a label/style
-      // swap based on whether the driver is already registered, not two
-      // different destinations.
-      var actionBtn = document.createElement('a');
-      actionBtn.href = race.regUrl;
-      actionBtn.target = '_blank';
-      actionBtn.rel = 'noopener';
-      actionBtn.className = 'rc-btn-secondary rc-btn-sm' + (race.registered ? ' rc-btn-withdraw' : '');
-      actionBtn.textContent = race.registered ? 'Withdraw' : 'Register';
-      footer.appendChild(actionBtn);
-
-      card.appendChild(footer);
-    }
-
     return card;
   }
 
@@ -1354,12 +1396,14 @@
       'Mock schedule shown below — the live season calendar isn\'t wired up to real data yet. Times are shown in your saved time zone' +
       (driverTz ? ' (' + escapeHtml(driverTz) + ').' : '.')));
     season.appendChild(seasonHead);
+    season.appendChild(seasonDetailsPanel(CALENDAR_MOCK_SEASON.details));
 
-    // Chronological by date, full stop -- special events sort right in
-    // alongside normal rounds (Matt's call), they just never get a "Race
-    // 0N" number of their own (see roundNum below). Once Season Creation
-    // actually bakes round numbers + dates into the sheet, this sort
-    // becomes redundant with the data itself, but costs nothing to keep.
+    // Chronological by date, full stop -- special events (and bye weeks)
+    // sort right in alongside normal rounds (Matt's call), they just
+    // never get a "Race 0N" number of their own (see roundNum below).
+    // Once Season Creation actually bakes round numbers + dates into the
+    // sheet, this sort becomes redundant with the data itself, but costs
+    // nothing to keep.
     var sorted = CALENDAR_MOCK_SEASON.races.slice().sort(function (a, b) {
       return new Date(a.startUtc) - new Date(b.startUtc);
     });
@@ -1368,7 +1412,7 @@
     var roundCounter = 0;
     sorted.forEach(function (race) {
       var roundNum = null;
-      if (!race.special) { roundCounter++; roundNum = roundCounter; }
+      if (!race.special && !race.bye) { roundCounter++; roundNum = roundCounter; }
       list.appendChild(raceCard(race, driverTz, roundNum));
     });
     season.appendChild(list);
@@ -3236,8 +3280,8 @@
       }
     }
 
-    // Reuses buildSpinner()/.rc-loading-overlay's visual language (see
-    // above) for the brief pause before the honest "not wired up yet"
+    // Reuses buildSpinner()'s visual language (see above) for the brief
+    // pause before the honest "not wired up yet"
     // message -- same red spinning circle + message pattern as
     // everywhere else on the site, per Matt's explicit instruction to
     // reuse it for any loading state the wizard needs.
