@@ -138,6 +138,57 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // array, updated to match real LMU class naming / the Cars data itself).
 var CAR_CLASS_LIST = ['LMGT3', 'LMP2', 'LMP3', 'Hypercar'];
 
+// Reputation floor required to join each class -- LOCKED per Matt's call.
+// LMGT3/LMP3 (Bronze) have no floor (money only, same as the ladder in
+// the Rulebook/system map). LMP2 (Silver) requires 400, Hypercar (Gold)
+// requires 500. A driver who clears a class's floor is always free to
+// pick that class themselves -- no admin approval needed. Not yet
+// enforced anywhere at runtime -- there's no live "join a class" flow yet
+// (Season Registration itself isn't built), this is the single source of
+// truth for that logic once it exists, and for any copy (registration
+// page, index.html) that needs to state the number. See Race Club
+// Rulebook.md Section 9/10 and the v0.3 design doc for the full mechanic,
+// including Class Placement Requests -- the driver-initiated, admin-
+// approved exception for a class a driver doesn't yet qualify for.
+var CAR_CLASS_REPUTATION_FLOOR = { LMGT3: 0, LMP3: 0, LMP2: 400, Hypercar: 500 };
+
+// Class Placement Request denial reasons -- admin-curated, fixed list
+// (same pattern as the Sponsor/Vanity catalogs: preconfigured options,
+// not free text), so a denied driver always gets a clear, specific
+// answer. "Other" is the one deliberate escape hatch, paired with a
+// short admin-written note -- same "last resort, not the default"
+// treatment as the Steward Board's free-text incident fallback. See
+// Race Club Rulebook.md Section 10 for the full Class Placement Request
+// flow this feeds into.
+var CLASS_PLACEMENT_DENIAL_REASONS = [
+  'Not Enough Proven Reputation',
+  'Unknown / Unverified Skill Level',
+  'Not Enough Race History in Race Club Yet',
+  'Recent Conduct or Discipline Concerns',
+  'No Seat Available in That Class Right Now',
+  'Other'
+];
+
+// CSS variable (defined in css/style.css) holding each class's badge
+// color -- shared by the driver profile's Current Seat number badge and
+// anywhere else a class needs the same consistent color.
+var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
+
+// Manufacturer logo file convention -- assets/manufacturers/{slug}.png,
+// same folder structure as the site's existing assets/avatars/ (see
+// avatarImageSrc() in Account.html/profile.html), keyed by manufacturer
+// name instead of by driver, since the same manufacturer (e.g. "Ford")
+// logo is reused across every car/team that drives one. Admin uploads the
+// actual image files by hand (not built/seeded here) using this exact
+// naming -- lowercase, spaces/punctuation collapsed to a single hyphen,
+// e.g. "Aston Martin" -> "aston-martin.png". Callers should always set an
+// onerror handler to hide the <img> gracefully if that file hasn't been
+// uploaded yet (see currentSeatBlock() in Account.html).
+function manufacturerLogoSrc(manufacturerName) {
+  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/manufacturers/' + slug + '.png';
+}
+
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
 // side dropdown source; the server independently re-validates against its
 // own copy, so this list is never trusted as the actual validation.

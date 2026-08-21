@@ -622,26 +622,66 @@
     return item;
   }
 
+  // Maps a car class to the CSS variable holding its badge color -- see
+  // CAR_CLASS_BADGE_COLOR_VAR in js/reference-data.js (single source,
+  // shared with anywhere else a class needs the same color, e.g. the
+  // Cars data-management list).
+  function carClassBadgeColorVar(carClass) {
+    return (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[carClass]) || '--rc-steel';
+  }
+
+  // Current Seat block -- replaces the old Time Zone/Birthday/Contact
+  // Email row per Matt's call. Shows the driver's real-world team seat:
+  // manufacturer logo + team name + car number in a class-colored badge.
+  // HONEST LIMITATION (same pattern as the Season Wizard elsewhere in
+  // this file): there is no backend Roster/Season Registration endpoint
+  // yet that actually assigns a driver to a team/car for a season, so
+  // profile.currentTeamName/currentCarNumber/currentCarClass/
+  // currentManufacturer are always blank today -- this renders "Unsigned"
+  // for every driver until that backend piece exists. Wiring it up is a
+  // separate future task, not part of this UI pass.
+  function currentSeatBlock(profile) {
+    var wrap = el('div', 'rc-details-wrap');
+    wrap.appendChild(el('div', 'rc-detail-label', 'Current Seat'));
+    var teamName = profile.currentTeamName || '';
+    var carNumber = profile.currentCarNumber || '';
+    if (!teamName && !carNumber) {
+      wrap.appendChild(el('div', 'rc-detail-value', 'Unsigned'));
+      return wrap;
+    }
+    var carClass = profile.currentCarClass || '';
+    var manufacturer = profile.currentManufacturer || '';
+    var row = el('div', 'rc-seat-row');
+    if (manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.className = 'rc-seat-logo';
+      logo.src = manufacturerLogoSrc(manufacturer);
+      logo.alt = manufacturer;
+      logo.onerror = function () { logo.style.display = 'none'; };
+      row.appendChild(logo);
+    }
+    if (teamName) row.appendChild(el('span', 'rc-seat-team', escapeHtml(teamName)));
+    if (carNumber) {
+      var numBadge = el('span', 'rc-seat-number', escapeHtml(String(carNumber)));
+      numBadge.style.background = 'var(' + carClassBadgeColorVar(carClass) + ')';
+      row.appendChild(numBadge);
+    }
+    wrap.appendChild(row);
+    return wrap;
+  }
+
   function renderProfileViewBlock(container, profile) {
     if (profile.aboutMe) container.appendChild(el('p', 'rc-about-me', '“' + escapeHtml(profile.aboutMe) + '”'));
 
-    // Time Zone/Birthday/Contact Email on one line. Preferred Race
-    // Length, Preferred Class, and Accomplishments were removed from both
-    // this view and the Settings edit form per Matt's call -- the backend
+    // Time Zone/Birthday/Contact Email used to render here as a details
+    // row -- replaced with the Current Seat block below per Matt's call
+    // (see currentSeatBlock() above). Preferred Race Length, Preferred
+    // Class, and Accomplishments were removed from both this view and the
+    // Settings edit form per an earlier follow-up request -- the backend
     // fields/columns still exist (untouched), they're just not shown or
-    // editable here anymore.
-    var row1Items = [];
-    if (profile.timeZone) row1Items.push(detailItem('Time Zone', timezoneLabel(profile.timeZone)));
-    if (profile.birthday) row1Items.push(detailItem('Birthday', profile.birthday));
-    if (profile.contactEmail) row1Items.push(detailItem('Contact', profile.contactEmail, true));
-
-    if (row1Items.length) {
-      var wrap = el('div', 'rc-details-wrap');
-      var row1 = el('div', 'rc-details-row');
-      row1Items.forEach(function (item) { row1.appendChild(item); });
-      wrap.appendChild(row1);
-      container.appendChild(wrap);
-    }
+    // editable here. TimeZone/Birthday/ContactEmail are the same: still
+    // collected/editable in Settings, just no longer displayed here.
+    container.appendChild(currentSeatBlock(profile));
   }
 
   function buildSelect(options, selectedValue, placeholder) {
@@ -721,18 +761,20 @@
     detailsGroup.appendChild(fieldPairRow('Birthday', birthdayInput, 'Contact Email', contactEmailInput));
     panel.appendChild(detailsGroup);
 
+    // .rc-btn-sm on both -- same fix as the League Management action row
+    // and the wizard footer (see the .rc-btn-sm comment in style.css):
+    // .rc-btn-primary alone is sized for a full-width form submit (12px
+    // padding), .rc-btn-secondary alone is sized smaller (8px padding),
+    // so side by side without .rc-btn-sm they render at different
+    // heights ("make the save button the same height as the cancel
+    // button" -- Matt's bug report).
     var saveBtn = el('button', null, 'Save');
-    saveBtn.className = 'rc-btn-primary';
-    saveBtn.style.width = 'auto';
+    saveBtn.className = 'rc-btn-primary rc-btn-sm';
 
     var cancelBtn = el('button', null, 'Cancel');
-    cancelBtn.className = 'rc-btn-secondary';
+    cancelBtn.className = 'rc-btn-secondary rc-btn-sm';
     cancelBtn.type = 'button';
-    cancelBtn.style.width = 'auto';
     cancelBtn.style.marginLeft = '8px';
-    cancelBtn.style.marginTop = '20px';
-    cancelBtn.style.verticalAlign = 'middle';
-    saveBtn.style.verticalAlign = 'middle';
 
     var status = el('div', 'margin-top:8px;font-size:13px;');
 
@@ -1890,14 +1932,18 @@
       input.disabled = !applies;
       input.classList.toggle('rc-field-locked', !applies);
     }
-    // Every distinct Season value WIZARD_CARS has for this class, oldest
-    // first -- same ascending order as the Cars panel's season groups.
+    // Every distinct Season value WIZARD_CARS has for this class, NEWEST
+    // first (Matt's call -- opposite of the Cars admin panel's season
+    // groups, which stay oldest-first for that OCD-organization request).
+    // Here, the season an admin is about to pick from is almost always
+    // the current/most recent one, so it should be the first radio, not
+    // the last.
     function availableSeasonsForClass(cls) {
       var seasons = {};
       (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []).forEach(function (c) {
         if (c && c.carClass === cls && c.season) seasons[String(c.season)] = true;
       });
-      return Object.keys(seasons).sort(function (a, b) { return (Number(a) || 0) - (Number(b) || 0); });
+      return Object.keys(seasons).sort(function (a, b) { return (Number(b) || 0) - (Number(a) || 0); });
     }
     var classRows = {};
     CAR_CLASS_LIST.forEach(function (cls) {
@@ -2045,21 +2091,21 @@
     // (previously joined with a ";") floating below the whole row with
     // no clear owner. Matt's call.
     container.appendChild(wizSubhead('Economy'));
-    var balInput = wizNumberInput(state.economy.startingBalance, function (v) { state.economy.startingBalance = v; }, { min: 0 });
+    var balInput = wizNumberInput(state.economy.startingBalance, function (v) { state.economy.startingBalance = v; }, { min: 0, step: 100 });
     balInput.style.maxWidth = '25%';
     requireField(balInput, requiredEls);
     container.appendChild(wizField('Starting Bank Balance ($)', balInput,
       'For brand-new drivers only. Returning drivers carry their balance over from last season — if that\'s somehow below this value, they\'re automatically brought up to it at season start.'));
-    var retLMGT3 = wizNumberInput(state.economy.retainerLMGT3, function (v) { state.economy.retainerLMGT3 = v; }, { min: 0 }); requireField(retLMGT3, requiredEls);
-    var retLMP2 = wizNumberInput(state.economy.retainerLMP2, function (v) { state.economy.retainerLMP2 = v; }, { min: 0 }); requireField(retLMP2, requiredEls);
+    var retLMGT3 = wizNumberInput(state.economy.retainerLMGT3, function (v) { state.economy.retainerLMGT3 = v; }, { min: 0, step: 50 }); requireField(retLMGT3, requiredEls);
+    var retLMP2 = wizNumberInput(state.economy.retainerLMP2, function (v) { state.economy.retainerLMP2 = v; }, { min: 0, step: 50 }); requireField(retLMP2, requiredEls);
     container.appendChild(wizFieldPairRow(
       'LMGT3 Retainer ($/race)', retLMGT3,
       'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.',
       'LMP2 Retainer ($/race)', retLMP2,
       'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.'
     ));
-    var retLMP3 = wizNumberInput(state.economy.retainerLMP3, function (v) { state.economy.retainerLMP3 = v; }, { min: 0 }); requireField(retLMP3, requiredEls);
-    var retHyper = wizNumberInput(state.economy.retainerHypercar, function (v) { state.economy.retainerHypercar = v; }, { min: 0 }); requireField(retHyper, requiredEls);
+    var retLMP3 = wizNumberInput(state.economy.retainerLMP3, function (v) { state.economy.retainerLMP3 = v; }, { min: 0, step: 50 }); requireField(retLMP3, requiredEls);
+    var retHyper = wizNumberInput(state.economy.retainerHypercar, function (v) { state.economy.retainerHypercar = v; }, { min: 0, step: 50 }); requireField(retHyper, requiredEls);
     container.appendChild(wizFieldPairRow(
       'LMP3 Retainer ($/race)', retLMP3,
       'Season default — a driver\'s actual cost is whatever their claimed seat costs, escrowed in full when they lock it in.',
@@ -2848,9 +2894,10 @@
     showUpperNavDivider();
     var leagueSection = document.getElementById('rc-section-league');
     leagueSection.innerHTML = '';
+    leagueSection.appendChild(el('h2', 'margin-top:0;', 'League Management'));
     var mgmt = document.createElement('div');
     mgmt.className = 'rc-panel';
-    mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
+    mgmt.appendChild(el('h3', 'margin-top:0;', 'Season Tools'));
     // Organizers can see this whole section, but season creation itself
     // is Admin-only (Matt's call) -- the button below is locked, not
     // hidden, so an Organizer understands the feature exists and who to
@@ -2921,6 +2968,7 @@
 
     fetchPendingAccountsOnce(token).then(function (pendingData) {
       adminSection.innerHTML = '';
+      adminSection.appendChild(el('h2', 'margin-top:0;', 'Admin'));
       adminSection.appendChild(approvalQueueSection(token, pendingData));
     });
   }

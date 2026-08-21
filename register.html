@@ -64,6 +64,19 @@
         </div>
 
         <div class="rc-section">
+          <label style="margin-top:0;">Preferred Class (optional)</label>
+          <select id="rc-reg-preferredclass"></select>
+          <div class="rc-hint">
+            Every driver starts in Bronze (GT3/LMP3), no exceptions — this just tells the league
+            what you're aiming for. Drivers with proven prior experience in a higher class may be
+            fast-tracked there, but only by an admin. Silver (LMP2) requires a 400 Reputation floor
+            to hold that seat; Gold (Hypercar) requires 500. If a fast-tracked driver's Reputation
+            drops below their class's floor by season's end, they move down to a class they still
+            qualify for next season.
+          </div>
+        </div>
+
+        <div class="rc-section">
           <label style="margin-top:0;">Password</label>
           <input id="rc-reg-password" type="password" autocomplete="new-password" required minlength="6">
           <div class="rc-hint">At least 6 characters.</div>
@@ -137,6 +150,19 @@
   }
   populateRegisterSuffix();
 
+  function populateRegisterPreferredClass() {
+    var select = document.getElementById('rc-reg-preferredclass');
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = 'No preference';
+    select.appendChild(blank);
+    (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).forEach(function (cls) {
+      var opt = document.createElement('option');
+      opt.value = cls; opt.textContent = cls;
+      select.appendChild(opt);
+    });
+  }
+  populateRegisterPreferredClass();
+
   // ---------------------------------------------------------------------
   // REGISTER — live password-match check, checked on every keystroke in
   // either password field rather than waiting for the submit click.
@@ -177,6 +203,7 @@
     var suffix = document.getElementById('rc-reg-suffix').value;
     var email = document.getElementById('rc-reg-email').value.trim();
     var timeZone = document.getElementById('rc-reg-timezone').value;
+    var preferredClass = document.getElementById('rc-reg-preferredclass').value;
     var password = document.getElementById('rc-reg-password').value;
     var requestedRole = document.getElementById('rc-reg-role').value;
 
@@ -201,7 +228,8 @@
       method: 'POST',
       body: {
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
-        email: email, timeZone: timeZone, password: password, requestedRole: requestedRole
+        email: email, timeZone: timeZone, preferredClass: preferredClass,
+        password: password, requestedRole: requestedRole
       }
     })
       .then(function (data) {

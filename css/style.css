@@ -42,6 +42,17 @@
   --rc-red-dark: #c81509;
   --rc-ok: #2e7d32;
 
+  /* Car class badge colors -- driver profile Current Seat number badge
+     (see .rc-seat-number below) and reused anywhere else a class needs
+     a consistent color. LMGT3 reuses --rc-ok (already green); Hypercar
+     reuses --rc-red (already red); LMP3/LMP2 are new, matching the
+     purple/blue already used for "working value" badges in the v0.3
+     system map doc, so the palette stays consistent across the project. */
+  --rc-class-lmgt3: var(--rc-ok);
+  --rc-class-lmp3: #6b3fa0;
+  --rc-class-lmp2: #2b6cb0;
+  --rc-class-hypercar: var(--rc-red);
+
   --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
@@ -238,8 +249,10 @@ input, select { height: 44px; }
    with no type exclusion -- harmless for text/number/date inputs but a
    checkbox inherits it too, rendering as a giant clickable bar instead of
    a normal checkbox. Reset every checkbox on the site back to a real
-   checkbox size here, once, instead of patching each usage site. */
-input[type="checkbox"] {
+   checkbox size here, once, instead of patching each usage site. Radio
+   buttons (the Season Wizard's per-class season picker, v0.18) hit the
+   exact same bug for the exact same reason -- same reset, same fix. */
+input[type="checkbox"], input[type="radio"] {
   display: inline-block;
   width: 15px;
   height: 15px;
@@ -247,6 +260,7 @@ input[type="checkbox"] {
   margin: 0;
   cursor: pointer;
 }
+input[type="radio"] { border-radius: 50%; }
 textarea { resize: vertical; }
 input:focus, select:focus, textarea:focus {
   outline: none;
@@ -626,6 +640,25 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-details-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; margin-top: 12px; }
 .rc-detail-label { font-size: 11px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
 .rc-detail-value { font-size: 14px; color: var(--rc-carbon); margin-top: 2px; }
+/* Current Seat -- driver profile hero card, replaces the old Time Zone/
+   Birthday/Contact row. Logo + team name + a rounded-square car-number
+   badge colored by class (see --rc-class-* vars above). */
+.rc-seat-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.rc-seat-logo { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+.rc-seat-team { font-size: 14px; color: var(--rc-carbon); font-family: var(--rc-font-body); }
+.rc-seat-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 7px;
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-weight: 700;
+  font-size: 13px;
+}
 .rc-accomplishments { margin-top: 14px; }
 .rc-accomplishments h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
 .rc-accomplishments ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--rc-carbon); font-family: var(--rc-font-body); }
