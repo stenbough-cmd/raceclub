@@ -635,7 +635,7 @@
     topRow.appendChild(infoCol);
 
     card.appendChild(topRow);
-    card.appendChild(buildDashboardWidgets());
+    card.appendChild(buildDashboardWidgets(profile));
 
     return card;
   }
@@ -667,27 +667,26 @@
   // Current Seat block -- replaces the old Time Zone/Birthday/Contact
   // Email row per Matt's call. Shows the driver's real-world team seat:
   // manufacturer logo + team name + car number in a class-colored badge.
-  // HONEST LIMITATION (same pattern as the Season Wizard elsewhere in
-  // this file): there is no backend Roster/Season Registration endpoint
-  // yet that actually assigns a driver to a team/car for a season, so
-  // profile.currentTeamName/currentCarNumber/currentCarClass/
-  // currentManufacturer are always blank today -- this renders "Unsigned"
-  // for every driver until that backend piece exists. Wiring it up is a
-  // separate future task, not part of this UI pass.
-  // v0.20 -- carClass now reads profile.currentClass (the season-cache
-  // field buildProfilePayload actually returns, see Auth.gs) instead of
-  // the never-populated profile.currentCarClass this originally read --
-  // CurrentClass IS the class of whatever team a driver has locked in,
-  // there's no separate "team's class" field, so this was a latent typo
-  // that just never surfaced because currentTeamName/currentCarNumber
-  // were always blank until Season Registration (this phase) existed.
-  function currentSeatBlock(profile) {
+  // v0.20, Matt's follow-up correction: there is no "Unsigned" text state
+  // any more -- a driver with no locked team sees the Register button
+  // here instead (see registerButtonBlock() below), never a bare label.
+  // carClass reads profile.currentClass (the season-cache field
+  // buildProfilePayload actually returns, see Auth.gs) -- not the
+  // never-populated profile.currentCarClass this originally (and
+  // incorrectly) read.
+  function currentSeatBlock(profile, token) {
     var wrap = el('div', 'rc-details-wrap');
     wrap.appendChild(el('div', 'rc-detail-label', 'Current Seat'));
     var teamName = profile.currentTeamName || '';
     var carNumber = profile.currentCarNumber || '';
     if (!teamName && !carNumber) {
-      wrap.appendChild(el('div', 'rc-detail-value', 'Unsigned'));
+      // No locked team -- the Register button IS the Current Seat content
+      // in this state, per Matt's call. registerButtonBlock() itself
+      // decides red-and-clickable vs. grey-and-disabled based on a live
+      // getActiveSeason read; it is never hidden. Only Prospects (who
+      // have no season visibility server-side -- getActiveSeason's
+      // requireRole excludes that role) skip it entirely.
+      if (profile.role !== 'Prospect') wrap.appendChild(registerButtonBlock(profile, token));
       return wrap;
     }
     var carClass = profile.currentClass || '';
@@ -722,17 +721,7 @@
     // fields/columns still exist (untouched), they're just not shown or
     // editable here. TimeZone/Birthday/ContactEmail are the same: still
     // collected/editable in Settings, just no longer displayed here.
-    container.appendChild(currentSeatBlock(profile));
-
-    // v0.20 -- Season Registration Phase 2: the Register button lives
-    // directly under the Current Seat block per Matt's spec. Only makes
-    // sense for a driver who can actually register (Prospects have no
-    // season visibility at all, per the v0.3 design doc's Access Levels
-    // section) -- registerButtonBlock() itself also hides when there's no
-    // active season or this driver already locked a seat for it.
-    if (profile.role !== 'Prospect') {
-      container.appendChild(registerButtonBlock(profile, token));
-    }
+    container.appendChild(currentSeatBlock(profile, token));
   }
 
   // ---------------------------------------------------------------------
@@ -770,31 +759,36 @@
     btn.textContent = 'Checking season status...';
     wrap.appendChild(btn);
 
+    // Grey + disabled -- the default/fallback look, used for every state
+    // where there's nothing to click right now: no active season, a
+    // season that hasn't opened registration, or a failed/loading fetch.
+    // Per Matt's call, this button is NEVER hidden -- only a locked team
+    // (handled one level up, in currentSeatBlock) replaces it entirely.
+    function setGreyed(label) {
+      btn.className = 'rc-btn-secondary rc-btn-sm';
+      btn.disabled = true;
+      btn.onclick = null;
+      btn.textContent = label;
+    }
+
     function refresh() {
       fetchApi('getActiveSeason', { token: token }).then(function (data) {
-        if (!data || !data.success || !data.hasActiveSeason) { wrap.style.display = 'none'; return; }
+        if (!data || !data.success || !data.hasActiveSeason) { setGreyed('No Season Open For Registration'); return; }
 
-        // Already locked in for THIS season -- the Current Seat block
-        // right above already shows the seat, no button needed. (A
-        // driver's profile object may be stale immediately after their
-        // own lock -- see openTeamSelectModal's onLocked callback, which
-        // patches profile in place before this ever re-renders.)
+        // Already locked in for THIS season -- shouldn't normally reach
+        // here at all (currentSeatBlock only calls registerButtonBlock
+        // when profile has no locked team), but a driver's cached profile
+        // object can be stale for a moment if a lock happened in another
+        // tab -- grey-disabled rather than pretending nothing changed.
         if (data.registrationStatus === 'TeamLocked' || data.registrationStatus === 'Complete') {
-          wrap.style.display = 'none';
+          setGreyed('Already Registered — Refresh the Page');
           return;
         }
 
-        wrap.style.display = '';
-        btn.disabled = false;
-
-        if (!data.registrationOpen) {
-          btn.className = 'rc-btn-secondary rc-btn-sm';
-          btn.disabled = true;
-          btn.textContent = 'Registration Not Open Yet';
-          return;
-        }
+        if (!data.registrationOpen) { setGreyed('Registration Not Open Yet'); return; }
 
         btn.className = 'rc-btn-primary rc-btn-sm';
+        btn.disabled = false;
         btn.textContent = (data.registrationStatus === 'ClassChosen' && data.currentClass)
           ? 'Continue Registration — Choose a Team'
           : 'Register for ' + (data.seasonName || 'This Season');
@@ -807,7 +801,7 @@
           }
         };
       }).catch(function () {
-        wrap.style.display = 'none';
+        setGreyed('Could Not Load Season Status');
       });
     }
 
@@ -1212,11 +1206,20 @@
   }
 
   // ---------------------------------------------------------------------
-  // DASHBOARD — placeholder widget cards (Bank Balance, Reputation,
-  // Season Progress, Recent Results, Objectives, Sponsor Status). None of
-  // this data exists in the backend yet -- every value below is a dash or
-  // a "coming soon" string, and every card carries the "Coming Soon"
-  // badge so it reads as intentionally unfinished, not broken.
+  // DASHBOARD — widget cards (Bank Balance, Reputation, Season Progress,
+  // Recent Results, Objectives, Sponsor Status). v0.20, Phase 3: Bank
+  // Balance/Reputation/Team Details/Season Progress now read the real
+  // per-driver cache fields buildProfilePayload already returns
+  // (bankBalanceAvailable/Frozen, reputationScore, currentTeamName/etc.,
+  // registrationStatus) and drop the "Coming Soon" badge once real data
+  // exists -- same "goes real, badge disappears" pattern Calendar/Help/
+  // Objectives already established. Recent Results and Upcoming Race stay
+  // placeholders -- there's still no backend action that returns a
+  // driver's own race history or the season's real schedule yet (see the
+  // "Known gap" note in site-status.md). Objectives/Sponsor Status stay
+  // placeholders too -- Steps 3-4 of Season Registration (the actual
+  // sponsor/objective catalogs and pick UI) aren't built yet, so showing
+  // anything there would be fabricated, not real.
   // ---------------------------------------------------------------------
   function widgetCard(title, bodyHtml) {
     var card = el('div', 'rc-card rc-widget-card');
@@ -1225,6 +1228,20 @@
     head.appendChild(el('span', 'rc-coming-soon-badge', 'Coming Soon'));
     card.appendChild(head);
     card.appendChild(el('div', 'rc-widget-body', bodyHtml));
+    return card;
+  }
+
+  // Same shell as widgetCard(), minus the "Coming Soon" badge -- for a
+  // widget that's showing genuinely real data, not a placeholder.
+  function liveWidgetCard(title, bodyEl) {
+    var card = el('div', 'rc-card rc-widget-card');
+    var head = el('div', 'rc-widget-head');
+    head.appendChild(el('h4', 'rc-widget-title', title));
+    card.appendChild(head);
+    var body = el('div', 'rc-widget-body');
+    if (typeof bodyEl === 'string') body.innerHTML = bodyEl;
+    else body.appendChild(bodyEl);
+    card.appendChild(body);
     return card;
   }
 
@@ -1246,22 +1263,65 @@
     return el('div', 'rc-dash-row');
   }
 
-  function buildDashboardWidgets() {
+  function buildDashboardWidgets(profile) {
     var wrap = el('div');
+    var hasTeam = !!(profile.currentTeamName || profile.currentCarNumber);
 
     // Row 1: Bank Balance - Reputation - Team Details (wide)
     var row1 = dashRow();
-    row1.appendChild(widgetCard('Bank Balance',
-      '<div class="rc-widget-big">$--</div><p class="rc-widget-sub">Career earnings tracking is coming soon.</p>'));
-    row1.appendChild(widgetCard('Reputation',
-      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No reputation data yet.</p>'));
-    var teamDetails = widgetCard('Team Details',
-      '<p class="rc-widget-sub">No team seat claimed yet — your team, car, and seat details will show here once you join a season.</p>');
+
+    if (profile.bankBalanceAvailable !== null && profile.bankBalanceAvailable !== undefined) {
+      row1.appendChild(liveWidgetCard('Bank Balance',
+        '<div class="rc-widget-big">' + formatMoney(profile.bankBalanceAvailable) + '</div>' +
+        '<p class="rc-widget-sub">' + formatMoney(profile.bankBalanceFrozen || 0) + ' frozen (escrowed)</p>'));
+    } else {
+      row1.appendChild(widgetCard('Bank Balance',
+        '<div class="rc-widget-big">$--</div><p class="rc-widget-sub">Career earnings tracking is coming soon.</p>'));
+    }
+
+    if (profile.reputationScore !== null && profile.reputationScore !== undefined) {
+      var repPct = Math.max(0, Math.min(100, profile.reputationScore / 10));
+      row1.appendChild(liveWidgetCard('Reputation',
+        '<div class="rc-meter"><div class="rc-meter-fill" style="width:' + repPct + '%;"></div></div>' +
+        '<p class="rc-widget-sub">' + profile.reputationScore + ' / 1000</p>'));
+    } else {
+      row1.appendChild(widgetCard('Reputation',
+        '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No reputation data yet.</p>'));
+    }
+
+    var teamDetails;
+    if (hasTeam) {
+      var tdBody = el('div');
+      var tdRow = el('div', 'rc-seat-row');
+      if (profile.currentManufacturer && typeof manufacturerLogoSrc === 'function') {
+        var tdLogo = document.createElement('img');
+        tdLogo.className = 'rc-seat-logo';
+        tdLogo.src = manufacturerLogoSrc(profile.currentManufacturer);
+        tdLogo.alt = profile.currentManufacturer;
+        tdLogo.onerror = function () { tdLogo.style.display = 'none'; };
+        tdRow.appendChild(tdLogo);
+      }
+      if (profile.currentTeamName) tdRow.appendChild(el('span', 'rc-seat-team', escapeHtml(profile.currentTeamName)));
+      if (profile.currentCarNumber) {
+        var tdBadge = el('span', 'rc-seat-number', escapeHtml(String(profile.currentCarNumber)));
+        tdBadge.style.background = 'var(' + carClassBadgeColorVar(profile.currentClass || '') + ')';
+        tdRow.appendChild(tdBadge);
+      }
+      tdBody.appendChild(tdRow);
+      if (profile.currentClass) tdBody.appendChild(el('p', 'rc-widget-sub', escapeHtml(profile.currentClass) + ' Class'));
+      teamDetails = liveWidgetCard('Team Details', tdBody);
+    } else {
+      teamDetails = widgetCard('Team Details',
+        '<p class="rc-widget-sub">No team seat claimed yet — your team, car, and seat details will show here once you join a season.</p>');
+    }
     teamDetails.classList.add('rc-widget-wide');
     row1.appendChild(teamDetails);
     wrap.appendChild(row1);
 
-    // Row 2: Objectives - Sponsor Status - Wagers, all wide
+    // Row 2: Objectives - Sponsor Status - Wagers, all wide. Still
+    // placeholders -- Season Registration Steps 3-4 (the sponsor/
+    // objective catalogs and the pick-3 UI) aren't built yet, so there's
+    // no real data to show here even for a driver who's locked a team.
     var row2 = dashRow();
     var objectivesWidget = widgetCard('Objectives',
       '<div class="rc-checklist">' +
@@ -1283,8 +1343,21 @@
 
     // Row 3: Season Progress - Recent Results (wide) - Upcoming Race (wide)
     var row3 = dashRow();
-    row3.appendChild(widgetCard('Season Progress',
-      '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">No active season.</p>'));
+    var seasonProgress;
+    var status = profile.registrationStatus || '';
+    if (status === 'TeamLocked' || status === 'Complete') {
+      seasonProgress = liveWidgetCard('Season Progress',
+        '<div class="rc-meter"><div class="rc-meter-fill" style="width:100%;"></div></div>' +
+        '<p class="rc-widget-sub">Registered' + (profile.currentClass ? ' — ' + escapeHtml(profile.currentClass) : '') + '. Seat locked in.</p>');
+    } else if (status === 'ClassChosen') {
+      seasonProgress = liveWidgetCard('Season Progress',
+        '<div class="rc-meter"><div class="rc-meter-fill" style="width:50%;"></div></div>' +
+        '<p class="rc-widget-sub">Class chosen' + (profile.currentClass ? ' — ' + escapeHtml(profile.currentClass) : '') + '. Choose a team to finish registering.</p>');
+    } else {
+      seasonProgress = widgetCard('Season Progress',
+        '<div class="rc-meter"><div class="rc-meter-fill" style="width:0%;"></div></div><p class="rc-widget-sub">Not registered for a season yet.</p>');
+    }
+    row3.appendChild(seasonProgress);
     var recentResults = widgetCard('Recent Results',
       '<table><tr><td style="text-align:center;color:var(--rc-steel);padding:16px 0;">No results yet</td></tr></table>');
     row3.appendChild(recentResults);
