@@ -605,6 +605,15 @@
       codeBadge.textContent = code;
       nameLine.appendChild(codeBadge);
     }
+    // Role pill (Driver/Organizer/Admin/Prospect) -- same chip styling as
+    // the country badge (.rc-role-badge mirrors .rc-country-badge, see
+    // style.css), sits right next to it per Matt's call.
+    if (profile.role) {
+      var roleBadge = document.createElement('span');
+      roleBadge.className = 'rc-role-badge';
+      roleBadge.textContent = profile.role;
+      nameLine.appendChild(roleBadge);
+    }
     return nameLine;
   }
 
@@ -670,13 +679,15 @@
   // v0.20, Matt's follow-up correction: there is no "Unsigned" text state
   // any more -- a driver with no locked team sees the Register button
   // here instead (see registerButtonBlock() below), never a bare label.
+  // v0.20.2, Matt's further follow-up: the "Current Seat" label itself is
+  // gone too -- this block now renders just its content (the seat row, or
+  // the Register button) with no heading above it at all.
   // carClass reads profile.currentClass (the season-cache field
   // buildProfilePayload actually returns, see Auth.gs) -- not the
   // never-populated profile.currentCarClass this originally (and
   // incorrectly) read.
   function currentSeatBlock(profile, token) {
     var wrap = el('div', 'rc-details-wrap');
-    wrap.appendChild(el('div', 'rc-detail-label', 'Current Seat'));
     var teamName = profile.currentTeamName || '';
     var carNumber = profile.currentCarNumber || '';
     if (!teamName && !carNumber) {
@@ -2482,10 +2493,10 @@
       raceSettings: {
         setupRules: 'Fixed',
         pitStopReq: 'None',
-        fuelMultiplier: 100,
-        tireWearMultiplier: 100,
+        fuelMultiplier: 'Realistic',
+        tireWearMultiplier: 'Realistic',
         tireCount: 8,
-        trackLimitPoints: 100,
+        trackLimitPoints: 5,
         practiceLengthMin: 30,
         qualifyLengthMin: 7
       },
@@ -2566,6 +2577,12 @@
     input.addEventListener('input', function () { onInput(input.value === '' ? '' : Number(input.value)); });
     return input;
   }
+  // Fuel Consumption Multiplier / Tire Wear Multiplier options (Race
+  // Settings) -- Matt's correction: these are multipliers on the sim's
+  // own base consumption rate, not raw percentages. "Realistic" is LMU's
+  // own normal/1x rate; "Off" disables consumption entirely.
+  var RACE_SETTINGS_MULTIPLIER_OPTIONS = ['Off', 'Realistic', '2x', '3x'];
+
   // No blank "— Select —" option -- every dropdown in this wizard already
   // defaults to a real value, so Matt's call is there's nothing to force a
   // choice on. `value` should always be one of `options`.
@@ -2919,9 +2936,14 @@
       'Setup Rules', wizSelect(['Fixed', 'Open'], state.raceSettings.setupRules, function (v) { state.raceSettings.setupRules = v; }),
       'Pit Stop Requirements', wizSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], state.raceSettings.pitStopReq, function (v) { state.raceSettings.pitStopReq = v; })
     ));
-    var fuelInput = wizNumberInput(state.raceSettings.fuelMultiplier, function (v) { state.raceSettings.fuelMultiplier = v; }, { min: 0 }); requireField(fuelInput, requiredEls);
-    var tireWearInput = wizNumberInput(state.raceSettings.tireWearMultiplier, function (v) { state.raceSettings.tireWearMultiplier = v; }, { min: 0 }); requireField(tireWearInput, requiredEls);
-    container.appendChild(fieldPairRow('Fuel Consumption (%)', fuelInput, 'Tire Wear (%)', tireWearInput));
+    // Fuel/tire wear are multipliers on the sim's own consumption rate,
+    // not raw percentages -- Matt's correction. Same fixed option set as
+    // LMU itself offers, so there's never an out-of-range value to
+    // validate here (no requireField needed, same as Setup Rules/Pit
+    // Stop Requirements right above -- a select always has a real value).
+    var fuelInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.fuelMultiplier, function (v) { state.raceSettings.fuelMultiplier = v; });
+    var tireWearInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.tireWearMultiplier, function (v) { state.raceSettings.tireWearMultiplier = v; });
+    container.appendChild(fieldPairRow('Fuel Consumption Multiplier', fuelInput, 'Tire Wear Multiplier', tireWearInput));
     var tireCountInput = wizNumberInput(state.raceSettings.tireCount, function (v) { state.raceSettings.tireCount = v; }, { min: 0 }); requireField(tireCountInput, requiredEls);
     var trackLimitInput = wizNumberInput(state.raceSettings.trackLimitPoints, function (v) { state.raceSettings.trackLimitPoints = v; }, { min: 0 }); requireField(trackLimitInput, requiredEls);
     container.appendChild(fieldPairRow('Tire Count Allowed', tireCountInput, 'Track Limit Points Before DT', trackLimitInput));
@@ -3422,7 +3444,7 @@
     var settingsPanel = el('div', 'rc-panel'); settingsPanel.style.marginTop = '12px';
     settingsPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Settings'));
     settingsPanel.appendChild(previewLine('Setup / Pit Stops', state.raceSettings.setupRules + ' / ' + state.raceSettings.pitStopReq));
-    settingsPanel.appendChild(previewLine('Fuel / Tire Wear', state.raceSettings.fuelMultiplier + '% / ' + state.raceSettings.tireWearMultiplier + '%'));
+    settingsPanel.appendChild(previewLine('Fuel / Tire Wear', state.raceSettings.fuelMultiplier + ' / ' + state.raceSettings.tireWearMultiplier));
     settingsPanel.appendChild(previewLine('Tire Count / Track Limit Points', state.raceSettings.tireCount + ' / ' + state.raceSettings.trackLimitPoints));
     settingsPanel.appendChild(previewLine('Practice / Qualifying Length', state.raceSettings.practiceLengthMin + ' min / ' + state.raceSettings.qualifyLengthMin + ' min'));
     container.appendChild(settingsPanel);

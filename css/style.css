@@ -664,6 +664,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-radius: 4px;
   padding: 3px 7px;
 }
+/* Role badge (Driver/Organizer/Admin/Prospect) -- sits right next to the
+   country code badge in the name line, same chip shape/size/spacing on
+   purpose (Matt's call: "similarly styled pill"), just its own class so
+   it can be recolored per role independently later without touching the
+   country badge. text-transform here (not baked into the JS string) so
+   the label always renders uppercase the same way nav labels do. */
+.rc-role-badge {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rc-steel);
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  border-radius: 4px;
+  padding: 3px 7px;
+}
 .rc-about-me { font-size: 14px; font-style: italic; color: var(--rc-carbon); margin: 6px 0 0; font-family: var(--rc-font-body); text-transform: none; letter-spacing: normal; }
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
@@ -1315,6 +1333,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      ".rc-main h2"'s 20px wins on mobile as well. */
   .rc-main .rc-name-line { font-size: 22px; gap: 8px; }
   .rc-country-badge { font-size: 10px; padding: 2px 6px; }
+  .rc-role-badge { font-size: 10px; padding: 2px 6px; }
 }
 
 /* -------------------------------------------------------------------- */
