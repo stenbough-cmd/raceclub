@@ -484,9 +484,7 @@
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);
-    var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true);
-    addNavDot(leagueBtn, 'league');
-    nav.appendChild(leagueBtn);
+    // Order below Admin/Data Management/League Management (Matt's call) --
     // Admin's onClick does the normal section-switch AND triggers the lazy
     // load (see loadAdminSectionIfNeeded) -- the panel itself only builds
     // the first time this is actually clicked, not on every page load.
@@ -509,6 +507,12 @@
       loadDataManagementSectionIfNeeded(currentProfile, token);
     });
     nav.appendChild(dataMgmtBtn);
+    // League Management -- visible to Organizers and Admins, but the
+    // "Create Season" button inside it is locked to Admins only (see
+    // renderLeagueSection below).
+    var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true);
+    addNavDot(leagueBtn, 'league');
+    nav.appendChild(leagueBtn);
     nav.appendChild(navDivider());
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
     nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
@@ -1176,161 +1180,14 @@
     return box;
   }
 
-  // Accounts are created exclusively through self-service registration
-  // (see the approval queue above) -- there is no "create account" panel
-  // here, matching v0.2.5 exactly. An admin can edit Username and Email
-  // on someone else's account (see openEditUserModal below for what
-  // changed and why) and reset their password -- they can't edit their
-  // own row at all here (no Edit button shown on it).
-  // preloadedUsers, when passed, skips the initial fetch and renders
-  // straight from a response the caller already has (see ADMIN LAZY LOAD
-  // below). loadUserList() is still used for genuine refreshes -- called
-  // after a successful Edit-user save (see openEditUserModal below).
-  function accountManagementSection(token, currentUserId, preloadedUsers) {
-    var box = document.createElement('div');
-    box.className = 'rc-panel';
-    box.appendChild(el('h3', 'margin-top:0;', 'Manage Users'));
-
-    var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
-    box.appendChild(listBody);
-
-    function renderUsers(data) {
-      if (!data.success) { listBody.textContent = data.message || 'Could not load users.'; return; }
-      listBody.innerHTML = '';
-      data.users.forEach(function (u) { listBody.appendChild(userRow(u)); });
-    }
-
-    function loadUserList() {
-      fetchApi('adminListUsers', { token: token }).then(renderUsers);
-    }
-
-    // Green = Active and email-verified. Yellow = not verified yet
-    // (regardless of Status). Red = Disabled -- covers both an admin
-    // manually disabling someone and the "rejected but has race history"
-    // soft-reject path in handleAdminRejectAccount (that path sets
-    // Status: Disabled rather than deleting the row, so there's no
-    // separate "Rejected" status value to key off of).
-    function statusPill(u) {
-      var label, cls;
-      if (u.status === 'Disabled') { label = 'DISABLED'; cls = 'rc-badge-pill-red'; }
-      else if (!u.emailVerified) { label = 'UNVERIFIED'; cls = 'rc-badge-pill-yellow'; }
-      else { label = 'ACTIVE'; cls = 'rc-badge-pill-green'; }
-      var pill = el('span', null, label);
-      pill.className = 'rc-badge-pill ' + cls;
-      pill.style.marginLeft = '6px';
-      return pill;
-    }
-
-    function userRow(u) {
-      var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
-      var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
-      var summaryLeft = el('div', 'display:flex;align-items:center;flex-wrap:wrap;');
-      summaryLeft.innerHTML = '<strong>' + u.username + '</strong> &middot; ' + u.role;
-      summaryLeft.appendChild(statusPill(u));
-      summary.appendChild(summaryLeft);
-
-      // No "YOU" pill anymore -- instead, an admin simply can't Edit their
-      // own row from this list at all (no button shown). Self-status
-      // changes were already blocked server-side anyway; this just makes
-      // that visible instead of showing a button that would partly fail.
-      if (u.userId !== currentUserId) {
-        var editBtn = el('button', null, 'Edit');
-        editBtn.className = 'rc-btn-secondary';
-        editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
-        // Edit opens a centered modal instead of expanding a panel in
-        // place -- built fresh each time (not cached) so it always
-        // reflects the latest data from loadUserList() rather than stale
-        // values from a previous open.
-        editBtn.addEventListener('click', function () { openEditUserModal(u); });
-        summary.appendChild(editBtn);
-      }
-      wrap.appendChild(summary);
-
-      return wrap;
-    }
-
-    // Per Matt's call, admins can only edit Username, Real Name, and
-    // Email on someone else's account, plus reset their password
-    // (below). Role, Status, Driver Profile linking, and the Email
-    // Verified checkbox are no longer editable here -- role changes still
-    // happen through the approval queue above (which only ever promotes
-    // Prospect -> Driver/Organizer, never arbitrarily reassigns roles),
-    // and there's currently no UI path at all for disabling an account or
-    // hand-fixing an email-verified flag; ask if those need to come back
-    // somewhere once you've decided where they belong.
-    //
-    // ROLE/STATUS/PROFILE-ID FIELDS REMOVED FROM THE UI, NOT THE BACKEND:
-    // adminUpdateUser still accepts and handles all of those server-side
-    // (6_Auth.gs) -- only this form stopped sending them.
-    //
-    // REAL NAME IS NOT WIRED UP YET: it lives on the ProfileID sheet
-    // (PrimaryName), not the Users sheet, and the current
-    // handleAdminUpdateUser handler in 6_Auth.gs has no code path to
-    // change it -- handleUpdateOwnProfile (self-edit) explicitly refuses
-    // to touch PrimaryName too. Adding admin-editable Real Name needs a
-    // small Apps Script change I can't make from this session (the
-    // backend .gs files aren't in this folder) -- the field isn't shown
-    // below until that exists, so this form never silently no-ops on it.
-    function openEditUserModal(u) {
-      var modal = showModal('Edit ' + u.username);
-      var body = modal.body;
-
-      var unameInput = el('input'); unameInput.value = u.username;
-      var emailInput = el('input'); emailInput.value = u.email || ''; emailInput.placeholder = 'Email';
-
-      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary';
-      saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
-      var saveStatus = el('div', 'margin-top:6px;font-size:13px;');
-
-      [el('label', 'margin-top:0;', 'Username'), unameInput,
-        el('label', null, 'Email'), emailInput
-      ].forEach(function (elm) { body.appendChild(elm); });
-
-      saveBtn.addEventListener('click', function () {
-        fetchApi('adminUpdateUser', {
-          method: 'POST', token: token, body: {
-            targetUserId: u.userId,
-            username: unameInput.value.trim(),
-            email: emailInput.value.trim()
-          }
-        })
-          .then(function (data) {
-            saveStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-            saveStatus.textContent = data.message || (data.success ? 'Saved.' : 'Could not save.');
-            if (data.success) loadUserList();
-          });
-      });
-      body.appendChild(saveBtn);
-      body.appendChild(saveStatus);
-
-      // Password reset stays a separate, deliberate action -- tucked below
-      // the main fields rather than mixed into the Save button above.
-      var resetWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
-      resetWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'RESET PASSWORD'));
-      var newPass = el('input'); newPass.type = 'password'; newPass.placeholder = 'New temporary password (6+ chars)';
-      newPass.style.marginTop = '6px';
-      var resetBtn = el('button', null, 'Reset Password'); resetBtn.className = 'rc-btn-secondary';
-      resetBtn.style.cssText = 'width:auto;margin-top:8px;padding:6px 12px;font-size:12px;';
-      var resetStatus = el('div', 'margin-top:6px;font-size:13px;');
-      resetBtn.addEventListener('click', function () {
-        fetchApi('adminResetPassword', { method: 'POST', token: token, body: { targetUserId: u.userId, newPassword: newPass.value } })
-          .then(function (data) {
-            resetStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-            resetStatus.textContent = data.message || '';
-            if (data.success) newPass.value = '';
-          });
-      });
-      resetWrap.appendChild(newPass); resetWrap.appendChild(resetBtn); resetWrap.appendChild(resetStatus);
-      body.appendChild(resetWrap);
-    }
-
-    if (preloadedUsers) {
-      renderUsers(preloadedUsers);
-    } else {
-      loadUserList();
-    }
-    return box;
-  }
+  // v0.18 -- the old "Manage Users" panel (accountManagementSection) that
+  // used to live here has been removed: editing a driver's username,
+  // creating a login, and resetting a password all now live in Data
+  // Management > Drivers' Edit modal instead (see driversManagementSection
+  // below), which is the one place to manage a driver's account end to
+  // end (profile fields + login together). adminUpdateUser/
+  // adminResetPassword/adminCreateUser are unchanged server-side --
+  // only this duplicate front-end panel is gone.
 
   // Shared by renderLeagueSection() and the Admin-enabling branch in
   // buildFullProfileUI() below -- either one showing up means the upper
@@ -1486,6 +1343,13 @@
         if (layouts[t.trackName].indexOf(layoutName) === -1) layouts[t.trackName].push(layoutName);
       });
       if (!names.length) return;
+      // Alphabetical, not whatever order the Sheet's SortOrder column
+      // happens to have -- Data Management > Tracks no longer offers
+      // manual reordering (Matt's call), so this dropdown shouldn't stay
+      // pinned to old/insertion order either. Same rule as everywhere
+      // else in this project now: tracks are always A-Z.
+      names.sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0; });
+      Object.keys(layouts).forEach(function (k) { layouts[k].sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0; }); });
       WIZARD_TRACK_LIST.length = 0;
       names.forEach(function (n) { WIZARD_TRACK_LIST.push(n); });
       Object.keys(WIZARD_TRACK_LAYOUTS).forEach(function (k) { delete WIZARD_TRACK_LAYOUTS[k]; });
@@ -1497,12 +1361,12 @@
 
   // Sibling of loadWizardTrackList() -- pulls every active car (Data
   // Management > Cars, action=getCars, see 5_Website.gs) into WIZARD_CARS
-  // IN PLACE, same reasoning as above. No season filter is sent here (the
-  // admin hasn't picked a Season Year yet at fetch time -- that happens on
-  // the wizard's very first page) -- classHasCars() in
-  // renderWizardSeasonDetailsPage filters the already-fetched full list by
-  // state.seasonYear client-side instead, so changing the year never needs
-  // a second network round-trip.
+  // IN PLACE, same reasoning as above. No season filter is sent -- each
+  // class picks its own season independently (Matt's call: a 2026 LMGT3
+  // roster and a 2025 LMP2 roster can coexist in the same Race Club
+  // season, just not two different seasons of the SAME class at once).
+  // availableSeasonsForClass() in renderWizardSeasonDetailsPage reads the
+  // full fetched list client-side, per class.
   function loadWizardCarList() {
     if (typeof fetchApi !== 'function') return Promise.resolve();
     return fetchApi('getCars').then(function (res) {
@@ -1697,20 +1561,17 @@
       trackLimitsPreset: 'Default',
       releaseMode: 'now', // decided at the very end now (Create Season vs. Create a Future Season), not mid-form
       releaseDateTime: '',
-      // NEW -- the real-world car/season year this season draws its class
-      // rosters from (Data Management > Cars' Season column). Defaults to
-      // the current calendar year. Drives which classes below are
-      // available -- see classHasCars()/refreshClassAvailability() in
-      // renderWizardSeasonDetailsPage.
-      seasonYear: new Date().getFullYear(),
       classes: { LMGT3: true, LMP2: false, LMP3: false, Hypercar: false },
-      // Which classes use the Season Year field's reference season for
-      // their real-world team/car roster -- a checkbox instead of free
-      // text (Matt's call: "this will not work" for a typed-in season).
-      // Disabled/greyed out until that class itself is checked, AND
-      // (as of v0.17) until Data Management > Cars actually has at least
-      // one active car in that class for the chosen year.
-      classSeasons: { LMGT3: false, LMP2: false, LMP3: false, Hypercar: false },
+      // v0.18 -- which real-world car-data SEASON each checked class draws
+      // its roster from (Data Management > Cars' Season column), e.g.
+      // "2026". Empty string means not yet chosen. Only one season per
+      // class at a time (radio buttons, not checkboxes) -- you can't run
+      // 2025 AND 2026 LMGT3 cars in the same Race Club season -- but
+      // different classes are independent, so 2026 LMGT3 + 2025 LMP2 in
+      // the same season is fine (Matt's call). Populated from whatever
+      // seasons actually exist for that class in WIZARD_CARS -- see
+      // availableSeasonsForClass() in renderWizardSeasonDetailsPage.
+      classSeasons: { LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
       frequency: 'Weekly',
       byeWeeks: 0, // capped at 2 -- see wizNumberInput's max on the Format section
       byeWeekDates: [], // one date per bye week, resized by syncByeWeekDates() -- picked on the Race Events page, top of the list, since that's where the admin is looking at the actual week-by-week schedule
@@ -1976,21 +1837,6 @@
     nameRow.appendChild(nameInput);
     container.appendChild(wizField('Season Name', nameRow));
 
-    // NEW -- the real-world car/season year this season's roster is drawn
-    // from (Data Management > Cars' Season column). Drives which classes
-    // below show as available: a class with zero active cars for this
-    // year still shows, just greyed out and unpickable (Matt's call).
-    // Changing this re-checks availability for every class in place
-    // (refreshClassAvailability, defined below) rather than re-rendering
-    // the whole page, same reasoning as the class/season checkboxes.
-    var yearInput = wizNumberInput(state.seasonYear, function (v) {
-      state.seasonYear = v;
-      if (typeof refreshClassAvailability === 'function') refreshClassAvailability();
-    }, { min: 2000, max: 2100 });
-    yearInput.style.maxWidth = '25%';
-    requireField(yearInput, requiredEls);
-    container.appendChild(wizField('Season Year', yearInput));
-
     container.appendChild(wizSubhead('Access & Server Behavior'));
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
     pwInput.style.maxWidth = '50%';
@@ -2005,31 +1851,37 @@
     container.appendChild(wizSubhead('Format'));
     // Each class gets its own checkbox, plus a season checkbox right
     // behind it -- greyed out/disabled until that class is checked, then
-    // active so the admin can confirm this class uses the Season Year
-    // field's real-world team/car roster (Data Management > Cars).
+    // active so the admin can pick which real-world car-data SEASON that
+    // class draws its roster from (Data Management > Cars).
     //
-    // NEW -- class availability is now data-driven instead of always-on:
-    // a class with zero ACTIVE cars for the chosen Season Year still
-    // shows as an option (never hidden entirely), but both its checkboxes
-    // are greyed out/disabled and a small hint explains why (Matt's call:
-    // "the option can be visible but will be grayed out"). classHasCars()
-    // reads WIZARD_CARS, populated by loadWizardCarList() the moment the
-    // wizard was opened -- see openSeasonWizardWithLoad().
+    // v0.18 -- season selection is now per-class radio buttons, not one
+    // shared Season Year field: each class independently offers a radio
+    // per season that actually has active cars in Data Management > Cars
+    // for that class, e.g. LMGT3 might offer 2025/2026 while LMP2 only
+    // offers 2025. Radios (not checkboxes) enforce Matt's rule directly --
+    // "you can't have a 2026 and 2025 season of GT3 in the same season"
+    // -- while different classes stay fully independent of each other
+    // ("2026 GT3 cars and 2025 LMP2 cars in the same race club season" is
+    // fine). A class with zero cars in ANY season still shows as an
+    // option (never hidden entirely), just greyed out/disabled with a
+    // hint explaining why (Matt's original call, unchanged). WIZARD_CARS
+    // is populated by loadWizardCarList() the moment the wizard was
+    // opened -- see openSeasonWizardWithLoad().
     var classesWrap = el('div');
     // "Every box has to be filled out" (Matt's call) extends to this
     // group too: at least one class must be picked, AND every picked
-    // class needs its season box checked -- both conditions live in one
+    // class needs a season radio picked -- both conditions live in one
     // group check below, re-evaluated (and cleared) live as the admin
-    // toggles either checkbox, same instant-feedback behavior as a plain
+    // toggles either control, same instant-feedback behavior as a plain
     // required text field.
     var classesGroupEntry;
     function recheckClassesGroup() { if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid(); }
     // Populated once the Economy section's retainer boxes exist further
     // down this same render pass -- referenced here by the class/season
-    // checkbox handlers via closure, so it's safe that they're assigned
-    // AFTER this forEach runs (the handlers only fire later, on click).
-    // A retainer only applies if BOTH its class AND that class's season
-    // box are checked (Matt's call); otherwise it's grayed out and locked.
+    // handlers via closure, so it's safe that they're assigned AFTER this
+    // forEach runs (the handlers only fire later, on click). A retainer
+    // only applies if BOTH its class is checked AND a season is picked
+    // for it (Matt's call); otherwise it's grayed out and locked.
     var retainerInputs = {};
     function updateRetainerLock(cls) {
       var input = retainerInputs[cls];
@@ -2038,98 +1890,81 @@
       input.disabled = !applies;
       input.classList.toggle('rc-field-locked', !applies);
     }
-    function classHasCars(cls) {
-      var year = String(state.seasonYear || '');
-      return (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []).some(function (c) {
-        return c.carClass === cls && String(c.season) === year;
+    // Every distinct Season value WIZARD_CARS has for this class, oldest
+    // first -- same ascending order as the Cars panel's season groups.
+    function availableSeasonsForClass(cls) {
+      var seasons = {};
+      (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []).forEach(function (c) {
+        if (c && c.carClass === cls && c.season) seasons[String(c.season)] = true;
       });
+      return Object.keys(seasons).sort(function (a, b) { return (Number(a) || 0) - (Number(b) || 0); });
     }
-    // Per-class DOM refs, so changing Season Year can re-check
-    // availability for every class in place (no full-page re-render --
-    // same reasoning as the class/season checkboxes themselves, see the
-    // comment above the season checkbox below).
     var classRows = {};
     CAR_CLASS_LIST.forEach(function (cls) {
-      var row = el('div', 'display:flex;align-items:center;gap:18px;padding:4px 0;');
+      var seasons = availableSeasonsForClass(cls);
+      var available = seasons.length > 0;
+      // Keep state in sync with what's actually rendered -- a class that
+      // defaults to checked (LMGT3) but turns out to have zero cars in
+      // any season shouldn't silently stay "selected" in state while
+      // showing unchecked on screen.
+      if (!available && state.classes[cls]) { state.classes[cls] = false; state.classSeasons[cls] = ''; }
+      var row = el('div', 'padding:6px 0;' + (available ? '' : 'opacity:0.55;'));
+      var topRow = el('div', 'display:flex;align-items:center;gap:12px;');
 
-      // Season checkbox is built FIRST so the class checkbox's onChange
-      // below can flip its disabled/enabled state directly in place --
-      // no full-page re-render needed just to toggle one checkbox, which
-      // is what was causing the wizard to snap back to the top of the
-      // page (and stay snapped, since scrolling back down and toggling
-      // again re-triggered the same full re-render) every time a class
-      // was checked or unchecked. Matt's bug report.
-      var seasonLabel = document.createElement('label');
-      seasonLabel.style.cssText = 'display:flex;align-items:center;gap:5px;margin:0;font-size:14px;font-weight:400;' +
-        (state.classes[cls] ? 'color:var(--rc-carbon);' : 'color:var(--rc-steel);opacity:0.6;');
-      var seasonCb = document.createElement('input');
-      seasonCb.type = 'checkbox';
-      seasonCb.checked = !!state.classSeasons[cls];
-      seasonCb.disabled = !state.classes[cls];
-      seasonCb.addEventListener('change', function () { state.classSeasons[cls] = seasonCb.checked; recheckClassesGroup(); updateRetainerLock(cls); });
-      seasonLabel.appendChild(seasonCb);
-      var seasonYearText = document.createTextNode(' ' + (state.seasonYear || ''));
-      seasonLabel.appendChild(seasonYearText);
-
-      var classLabel = wizCheckboxRow(cls, state.classes[cls], function (c) {
+      var classLabel = wizCheckboxRow(cls, state.classes[cls] && available, function (c) {
         state.classes[cls] = c;
-        seasonCb.disabled = !c;
-        seasonLabel.style.color = c ? 'var(--rc-carbon)' : 'var(--rc-steel)';
-        seasonLabel.style.opacity = c ? '1' : '0.6';
-        if (!c) { state.classSeasons[cls] = false; seasonCb.checked = false; }
+        var refs = classRows[cls];
+        seasons.forEach(function (season) {
+          refs.radios[season].disabled = !c;
+        });
+        if (!c) {
+          state.classSeasons[cls] = '';
+          seasons.forEach(function (season) { refs.radios[season].checked = false; });
+        }
         recheckClassesGroup();
         updateRetainerLock(cls);
       });
       var classCb = classLabel.querySelector('input');
-      // margin:0 (matches seasonLabel, above) is what keeps the two
-      // checkboxes sitting on the exact same row instead of the season
-      // checkbox riding slightly lower -- without it, the sitewide
+      classCb.disabled = !available;
+      // margin:0 keeps the class checkbox and the season radios sitting
+      // on the exact same visual rhythm -- without it, the sitewide
       // `label { margin-top: 14px }` rule was still landing on this
       // label even though every OTHER property here overrides it.
       classLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
-      row.appendChild(classLabel);
-      row.appendChild(seasonLabel);
-      var noCarsHint = el('span', 'font-size:12px;color:var(--rc-steel);font-style:italic;display:none;', 'no cars entered for this season');
-      row.appendChild(noCarsHint);
+      topRow.appendChild(classLabel);
+      var noCarsHint = el('span', 'font-size:12px;color:var(--rc-steel);font-style:italic;display:' + (available ? 'none' : ''), 'no cars entered for this class yet');
+      topRow.appendChild(noCarsHint);
+      row.appendChild(topRow);
+
+      var radios = {};
+      if (available) {
+        var seasonsRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-left:26px;margin-top:4px;');
+        seasons.forEach(function (season) {
+          var radioLabel = document.createElement('label');
+          radioLabel.style.cssText = 'display:flex;align-items:center;gap:5px;margin:0;font-size:13px;font-weight:400;color:var(--rc-steel);';
+          var radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'wizard-class-season-' + cls;
+          radio.checked = state.classSeasons[cls] === season;
+          radio.disabled = !state.classes[cls];
+          radio.addEventListener('change', function () {
+            if (radio.checked) { state.classSeasons[cls] = season; recheckClassesGroup(); updateRetainerLock(cls); }
+          });
+          radioLabel.appendChild(radio);
+          radioLabel.appendChild(document.createTextNode(' ' + season));
+          seasonsRow.appendChild(radioLabel);
+          radios[season] = radio;
+        });
+        row.appendChild(seasonsRow);
+      }
       classesWrap.appendChild(row);
 
-      classRows[cls] = { row: row, classCb: classCb, seasonCb: seasonCb, seasonLabel: seasonLabel, seasonYearText: seasonYearText, noCarsHint: noCarsHint };
+      classRows[cls] = { row: row, classCb: classCb, radios: radios, noCarsHint: noCarsHint };
     });
-
-    // Applies/re-applies the greyed-out-if-no-cars state for every class,
-    // and refreshes the season checkboxes' " <year>" text -- called once
-    // up front (below) and again every time Season Year changes.
-    function refreshClassAvailability() {
-      CAR_CLASS_LIST.forEach(function (cls) {
-        var refs = classRows[cls];
-        if (!refs) return;
-        refs.seasonYearText.textContent = ' ' + (state.seasonYear || '');
-        var available = classHasCars(cls);
-        refs.classCb.disabled = !available;
-        refs.row.style.opacity = available ? '1' : '0.55';
-        refs.noCarsHint.style.display = available ? 'none' : '';
-        if (!available && state.classes[cls]) {
-          // Was checked, but this class (or the newly chosen year) no
-          // longer has any cars -- uncheck it rather than leaving a
-          // championship class selected with nobody entered to race it.
-          state.classes[cls] = false;
-          state.classSeasons[cls] = false;
-          classCbSetChecked(refs, false);
-          refs.seasonCb.checked = false;
-          refs.seasonCb.disabled = true;
-          refs.seasonLabel.style.color = 'var(--rc-steel)';
-          refs.seasonLabel.style.opacity = '0.6';
-          updateRetainerLock(cls);
-        }
-        recheckClassesGroup();
-      });
-    }
-    function classCbSetChecked(refs, val) { refs.classCb.checked = val; }
-    refreshClassAvailability();
 
     classesGroupEntry = requireGroup(classesWrap, function () {
       var anySelected = Object.keys(state.classes).some(function (c) { return state.classes[c]; });
-      return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || state.classSeasons[c]; });
+      return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || !!state.classSeasons[c]; });
     }, requiredEls);
     container.appendChild(wizField('Car Class(es) For The Season', classesWrap));
 
@@ -2677,10 +2512,9 @@
 
     var fmtPanel = el('div', 'rc-panel'); fmtPanel.style.marginTop = '12px';
     fmtPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Format & Schedule'));
-    fmtPanel.appendChild(previewLine('Season Year', String(state.seasonYear || '(not set)')));
     var selectedClasses = Object.keys(state.classes).filter(function (c) { return state.classes[c]; });
     fmtPanel.appendChild(previewLine('Classes', selectedClasses.length ? selectedClasses.join(', ') : 'None selected'));
-    selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c + ' — ' + (state.seasonYear || '') + ' Season', state.classSeasons[c] ? 'Selected' : 'Not selected')); });
+    selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c, (state.classSeasons[c] || '(season not set)') + ' Season')); });
     fmtPanel.appendChild(previewLine('Frequency', state.frequency));
     fmtPanel.appendChild(previewLine('Bye Weeks', String(state.byeWeeks || 0)));
     (state.byeWeekDates || []).forEach(function (d, i) { fmtPanel.appendChild(previewLine('Bye Week ' + (i + 1) + ' Date', d ? formatDateLabel(d) : '(not set)')); });
@@ -3017,8 +2851,13 @@
     var mgmt = document.createElement('div');
     mgmt.className = 'rc-panel';
     mgmt.appendChild(el('h3', 'margin-top:0;', 'League Management'));
+    // Organizers can see this whole section, but season creation itself
+    // is Admin-only (Matt's call) -- the button below is locked, not
+    // hidden, so an Organizer understands the feature exists and who to
+    // ask, rather than wondering why League Management looks incomplete.
+    var isAdmin = !!(currentProfile && currentProfile.role === 'Admin');
     mgmt.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
-      'Available to Organizers and Admins. Season creation opens as a popup wizard below — the other actions aren\'t wired up yet.'));
+      'Available to Organizers and Admins. Season creation is Admin-only — Organizers can view this section but the button below stays locked. The other actions aren\'t wired up yet.'));
 
     var hasDraft = !!loadWizardDraft();
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
@@ -3029,7 +2868,13 @@
     // different from all the other buttons," Matt's bug report).
     var createBtn = el('button', null, hasDraft ? 'Resume Season Draft' : 'Create Season');
     createBtn.className = 'rc-btn-primary rc-btn-sm';
-    createBtn.addEventListener('click', openSeasonWizardWithLoad);
+    if (isAdmin) {
+      createBtn.addEventListener('click', openSeasonWizardWithLoad);
+    } else {
+      createBtn.disabled = true;
+      createBtn.title = 'Only Admins can create a season.';
+      createBtn.style.cssText = 'opacity:0.55;cursor:not-allowed;';
+    }
     row.appendChild(createBtn);
 
     if (hasDraft) {
@@ -3053,18 +2898,17 @@
 
   // ---------------------------------------------------------------------
   // ADMIN LAZY LOAD — per Matt's call, only Dashboard-level stuff should
-  // load up front; the Admin panel (approval queue + Manage Users list)
-  // is real, multi-second Apps Script work that shouldn't happen on every
-  // page load just in case the admin clicks in. So: on page load, only a
-  // single lightweight adminListPendingAccounts fetch runs (see
-  // buildFullProfileUI below), purely to light up the notification dot.
-  // The full panel builds itself the FIRST time the Admin nav item is
-  // clicked (adminSectionBuilt guards against rebuilding on every
-  // subsequent click), showing the same branded spinner used everywhere
-  // else while it loads. Because the pending-accounts data is usually
-  // already sitting in the shared cache by the time you click (the dot
-  // fetch had time to finish), opening Admin typically only pays for ONE
-  // fresh call (adminListUsers) instead of two.
+  // load up front; the Admin panel (Pending Approvals) is real Apps
+  // Script work that shouldn't happen on every page load just in case the
+  // admin clicks in. So: on page load, only a single lightweight
+  // adminListPendingAccounts fetch runs (see buildFullProfileUI below),
+  // purely to light up the notification dot. The full panel builds itself
+  // the FIRST time the Admin nav item is clicked (adminSectionBuilt
+  // guards against rebuilding on every subsequent click), showing the
+  // same branded spinner used everywhere else while it loads. v0.18 --
+  // Admin is Pending Approvals only now; the old Manage Users list moved
+  // to Data Management > Drivers (see the note above approvalQueueSection
+  // for why), so this no longer needs a second fetch at all.
   // ---------------------------------------------------------------------
   var adminSectionBuilt = false;
   function loadAdminSectionIfNeeded(profile, token) {
@@ -3075,13 +2919,9 @@
     adminSection.innerHTML = '';
     adminSection.appendChild(buildSpinner('Loading admin tools...'));
 
-    Promise.all([
-      fetchPendingAccountsOnce(token),
-      fetchApi('adminListUsers', { token: token })
-    ]).then(function (results) {
+    fetchPendingAccountsOnce(token).then(function (pendingData) {
       adminSection.innerHTML = '';
-      adminSection.appendChild(approvalQueueSection(token, results[0]));
-      adminSection.appendChild(accountManagementSection(token, profile.userId, results[1]));
+      adminSection.appendChild(approvalQueueSection(token, pendingData));
     });
   }
 
@@ -3141,29 +2981,24 @@
     var box = el('div', 'rc-panel');
     box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Drivers'));
 
-    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Driver');
     addBtn.className = 'rc-btn-primary rc-btn-sm';
     toolbar.appendChild(addBtn);
-    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
-    var sortFirstBtn = el('button', null, 'First Name');
-    var sortLastBtn = el('button', null, 'Last Name');
-    [sortFirstBtn, sortLastBtn].forEach(function (b) { b.type = 'button'; b.className = 'rc-btn-secondary'; b.style.cssText = 'padding:4px 10px;font-size:12px;'; });
-    sortGroup.appendChild(sortFirstBtn);
-    sortGroup.appendChild(sortLastBtn);
-    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
     box.appendChild(listBody);
 
     var driversData = [];
-    var sortKey = 'firstName';
 
+    // Always alphabetical by first name, then last name as a tiebreaker --
+    // no sort-choice buttons (Matt's call: he'll never want anything but
+    // alphabetical, so a toolbar full of sort options is just clutter).
     function renderList() {
       var sorted = driversData.slice().sort(function (a, b) {
-        var av = (a[sortKey] || a.primaryName || '').toLowerCase();
-        var bv = (b[sortKey] || b.primaryName || '').toLowerCase();
+        var av = ((a.firstName || '') + ' ' + (a.lastName || '') || a.primaryName || '').toLowerCase();
+        var bv = ((b.firstName || '') + ' ' + (b.lastName || '') || b.primaryName || '').toLowerCase();
         return av < bv ? -1 : av > bv ? 1 : 0;
       });
       listBody.innerHTML = '';
@@ -3178,9 +3013,6 @@
         renderList();
       });
     }
-
-    sortFirstBtn.addEventListener('click', function () { sortKey = 'firstName'; renderList(); });
-    sortLastBtn.addEventListener('click', function () { sortKey = 'lastName'; renderList(); });
 
     function driverRow(d) {
       var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
@@ -3259,16 +3091,21 @@
 
       // One combined Save Changes button at the bottom handles the profile
       // fields plus whichever login action applies -- updating the
-      // username if a login already exists, or creating one if it doesn't
-      // and the admin filled in the optional fields below. No more
-      // separate save buttons per sub-form (Matt's call).
-      var unameInput = null, newUserInput = null, newPassInput = null;
+      // username (and, if filled in, resetting the password) if a login
+      // already exists, or creating one if it doesn't and the admin
+      // filled in the optional fields below. No more separate save
+      // buttons per sub-form (Matt's call). Password reset lives here now
+      // instead of the old Admin > Manage Users panel, which is gone --
+      // this Drivers panel is the one place to manage a driver's account.
+      var unameInput = null, resetPassInput = null, newUserInput = null, newPassInput = null;
 
       if (d.userId) {
         var loginWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
         loginWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'LOGIN ACCOUNT'));
         unameInput = wizTextInput(d.username || '', function () {});
         loginWrap.appendChild(wizLabel('Username')); loginWrap.appendChild(unameInput);
+        resetPassInput = wizTextInput('', function () {}); resetPassInput.type = 'password';
+        loginWrap.appendChild(wizLabel('Reset Password (optional, 6+ chars)')); loginWrap.appendChild(resetPassInput);
         body.appendChild(loginWrap);
       } else {
         var createLoginWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
@@ -3293,6 +3130,9 @@
         ];
         if (d.userId && unameInput) {
           calls.push(fetchApi('adminUpdateUser', { method: 'POST', token: token, body: { targetUserId: d.userId, username: unameInput.value.trim() } }));
+          if (resetPassInput && resetPassInput.value) {
+            calls.push(fetchApi('adminResetPassword', { method: 'POST', token: token, body: { targetUserId: d.userId, newPassword: resetPassInput.value } }));
+          }
         } else if (!d.userId && newUserInput && newUserInput.value.trim()) {
           calls.push(fetchApi('adminCreateUser', { method: 'POST', token: token, body: { username: newUserInput.value.trim(), password: newPassInput.value, role: 'Driver', profileId: d.profileId } }));
         }
@@ -3314,35 +3154,34 @@
   }
 
   // -----------------------------------------------------------------------
-  // TRACKS — flat list of every (TrackName, Layout) row, ordered by
-  // SortOrder (the same order the Season Wizard's Track dropdown uses).
-  // Up/down arrows persist a new SortOrder via adminReorderTracks; "Sort
-  // A→Z" is a one-click way to reset the whole list alphabetically,
-  // satisfying either preference Matt mentioned without needing two
-  // separate UIs. Deactivate/Reactivate never deletes a row.
+  // TRACKS — one collapsible group per TrackName, always alphabetical.
+  // v0.19 -- manual reordering (up/down arrows, persisted SortOrder) is
+  // gone (Matt's call: no controls needed when it's always A-Z anyway).
+  // The Season Wizard's track dropdown reads the same alphabetical order
+  // now too -- see loadWizardTrackList() sorting WIZARD_TRACK_LIST/
+  // WIZARD_TRACK_LAYOUTS client-side, so nothing downstream is still
+  // silently keyed off the old SortOrder column. That column and
+  // adminReorderTracks still exist server-side (6_Auth.gs/5_Website.gs,
+  // untouched) -- just nothing in the UI calls them anymore. Deactivate/
+  // Reactivate never deletes a row.
   // -----------------------------------------------------------------------
   function tracksManagementSection(token, preloaded) {
     var box = el('div', 'rc-panel');
     box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Tracks'));
 
-    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Track'); addBtn.className = 'rc-btn-primary rc-btn-sm';
     toolbar.appendChild(addBtn);
-    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
-    var azBtn = el('button', null, 'Sort A→Z'); azBtn.type = 'button'; azBtn.className = 'rc-btn-secondary'; azBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
-    sortGroup.appendChild(azBtn);
-    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
     box.appendChild(listBody);
 
     var tracksData = [];
-    var groupExpanded = {}; // trackName -> bool, defaults expanded, same pattern as the Cars panel below
-    function trackKey(t) { return t.trackName + '||' + t.layout; }
+    var groupExpanded = {}; // trackName -> bool, defaults COLLAPSED on load (Matt's call), same pattern as the Cars panel below
 
-    function renderGroup(g, sorted) {
-      var expanded = groupExpanded.hasOwnProperty(g.name) ? groupExpanded[g.name] : true;
+    function renderGroup(g) {
+      var expanded = groupExpanded.hasOwnProperty(g.name) ? groupExpanded[g.name] : false;
       var groupWrap = el('div', 'padding:8px 0;border-bottom:1px solid var(--rc-silver);');
       var header = el('div', null, (expanded ? '▼ ' : '▶ ') + g.name + ' (' + g.rows.length + ' layout' + (g.rows.length === 1 ? '' : 's') + ')');
       header.style.cssText = 'font-weight:700;font-family:var(--rc-font-head);font-size:14px;cursor:pointer;user-select:none;';
@@ -3350,30 +3189,24 @@
       groupWrap.appendChild(header);
       if (expanded) {
         var rowsWrap = el('div', 'margin-top:4px;');
-        g.rows.forEach(function (r) { rowsWrap.appendChild(trackRow(r.t, r.i, sorted)); });
+        g.rows.forEach(function (t) { rowsWrap.appendChild(trackRow(t)); });
         groupWrap.appendChild(rowsWrap);
       }
       listBody.appendChild(groupWrap);
     }
 
     function renderList() {
-      var sorted = tracksData.slice().sort(function (a, b) { return (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0); });
       listBody.innerHTML = '';
-      if (!sorted.length) { listBody.textContent = 'No tracks yet.'; return; }
-      // Same organization as the Cars panel below: one collapsible group
-      // per TrackName, with a ▼/▶ toggle and a layout count in the
-      // header, and each layout nested underneath when expanded. Purely a
-      // display grouping on top of the existing flat SortOrder -- the
-      // up/down arrows on a layout row still move that single
-      // (TrackName, Layout) row within the same global order the Season
-      // Wizard's dropdown reads.
-      var groups = [];
+      if (!tracksData.length) { listBody.textContent = 'No tracks yet.'; return; }
+      var alpha = function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0; };
       var byName = {};
-      sorted.forEach(function (t, i) {
-        if (!byName[t.trackName]) { byName[t.trackName] = { name: t.trackName, rows: [] }; groups.push(byName[t.trackName]); }
-        byName[t.trackName].rows.push({ t: t, i: i });
+      tracksData.forEach(function (t) {
+        if (!byName[t.trackName]) byName[t.trackName] = { name: t.trackName, rows: [] };
+        byName[t.trackName].rows.push(t);
       });
-      groups.forEach(function (g) { renderGroup(g, sorted); });
+      var groups = Object.keys(byName).sort(alpha).map(function (name) { return byName[name]; });
+      groups.forEach(function (g) { g.rows.sort(function (a, b) { return alpha(a.layout, b.layout); }); });
+      groups.forEach(function (g) { renderGroup(g); });
     }
 
     function loadTracks() {
@@ -3384,28 +3217,7 @@
       });
     }
 
-    function reorder(sorted) {
-      // Optimistic: renumber SortOrder locally and repaint immediately so
-      // the arrows feel instant, then persist in the background. `sorted`
-      // holds the same object references as tracksData (slice() is
-      // shallow), so mutating .sortOrder here updates tracksData too. Only
-      // a failed save falls back to a real reload.
-      sorted.forEach(function (t, idx) { t.sortOrder = idx + 1; });
-      renderList();
-      fetchApi('adminReorderTracks', { method: 'POST', token: token, body: { orderedKeys: sorted.map(trackKey) } })
-        .then(function (data) { if (!data.success) loadTracks(); });
-    }
-
-    azBtn.addEventListener('click', function () {
-      var sorted = tracksData.slice().sort(function (a, b) {
-        var av = (a.trackName + ' ' + a.layout).toLowerCase();
-        var bv = (b.trackName + ' ' + b.layout).toLowerCase();
-        return av < bv ? -1 : av > bv ? 1 : 0;
-      });
-      reorder(sorted);
-    });
-
-    function trackRow(t, i, sorted) {
+    function trackRow(t) {
       var wrap = el('div', 'padding:4px 0 4px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
       var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--rc-steel);');
       left.innerHTML = escapeHtml(t.layout);
@@ -3413,22 +3225,6 @@
       wrap.appendChild(left);
 
       var actions = el('div', 'display:flex;gap:6px;align-items:center;');
-      var upBtn = el('button', null, '↑'); var downBtn = el('button', null, '↓');
-      [upBtn, downBtn].forEach(function (b) { b.type = 'button'; b.className = 'rc-btn-secondary'; b.style.cssText = 'padding:2px 8px;font-size:12px;'; });
-      upBtn.disabled = (i === 0);
-      downBtn.disabled = (i === sorted.length - 1);
-      upBtn.addEventListener('click', function () {
-        var reordered = sorted.slice();
-        var tmp = reordered[i - 1]; reordered[i - 1] = reordered[i]; reordered[i] = tmp;
-        reorder(reordered);
-      });
-      downBtn.addEventListener('click', function () {
-        var reordered = sorted.slice();
-        var tmp = reordered[i + 1]; reordered[i + 1] = reordered[i]; reordered[i] = tmp;
-        reorder(reordered);
-      });
-      actions.appendChild(upBtn); actions.appendChild(downBtn);
-
       var toggleBtn = el('button', null, t.active ? 'Deactivate' : 'Reactivate');
       toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary'; toggleBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
       toggleBtn.addEventListener('click', function () {
@@ -3476,64 +3272,74 @@
   // -----------------------------------------------------------------------
   // CARS — grouped into one collapsible section per class (LMGT3, LMP2,
   // LMP3, Hypercar -- Matt's call, replacing the old flat wall-of-text
-  // list). Class is no longer a sort key since the grouping already does
-  // that job; Manufacturer/Car Number/Team still sort the cars *within*
-  // each group. A class with zero cars still shows its header (greyed,
-  // collapsed) so it's obvious nothing's missing, just empty. EntryID is
-  // always auto-assigned server-side (nextCarEntryId, 5_Website.gs) --
-  // never typed here, and (per Matt's call) it's tucked into the Edit
-  // modal only, not shown in the at-a-glance list.
+  // list), and inside each class, one collapsible sub-group per season
+  // (oldest first) instead of a "· 2026" tag hanging off every car name.
+  // Everything loads collapsed -- no sort-choice buttons anywhere in this
+  // panel, since it's always alphabetical by Manufacturer within a
+  // season (Matt's call: he'll never want it sorted any other way, so a
+  // row of sort buttons was just clutter). A class with zero cars still
+  // shows its header (greyed) so it's obvious nothing's missing, just
+  // empty. EntryID is always auto-assigned server-side (nextCarEntryId,
+  // 5_Website.gs) -- never typed here, and (per Matt's call) it's tucked
+  // into the Edit modal only, not shown in the at-a-glance list.
   // -----------------------------------------------------------------------
   function carsManagementSection(token, preloaded) {
     var box = el('div', 'rc-panel');
     box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Cars'));
 
-    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Car'); addBtn.className = 'rc-btn-primary rc-btn-sm';
     toolbar.appendChild(addBtn);
-    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
-    var sortOptions = [
-      { key: 'manufacturer', label: 'Manufacturer' },
-      { key: 'carNumber', label: 'Car Number' },
-      { key: 'teamName', label: 'Team' }
-    ];
-    var sortBtns = {};
-    sortOptions.forEach(function (opt) {
-      var b = el('button', null, opt.label);
-      b.type = 'button'; b.className = 'rc-btn-secondary'; b.style.cssText = 'padding:4px 10px;font-size:12px;';
-      sortGroup.appendChild(b);
-      sortBtns[opt.key] = b;
-    });
-    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
     box.appendChild(listBody);
 
     var carsData = [];
-    var sortKey = 'manufacturer';
-    var groupExpanded = {}; // class -> bool, set on first render (expanded iff it has cars) and toggled by click after that
+    var classExpanded = {};  // class -> bool, defaults COLLAPSED on load
+    var seasonExpanded = {}; // "class||season" -> bool, defaults COLLAPSED on load
 
-    function sortWithinGroup(list) {
+    function alphabetical(list) {
       return list.slice().sort(function (a, b) {
-        if (sortKey === 'carNumber') { return (Number(a.carNumber) || 0) - (Number(b.carNumber) || 0); }
-        var av = String(a[sortKey] || '').toLowerCase();
-        var bv = String(b[sortKey] || '').toLowerCase();
+        var av = String(a.manufacturer || '').toLowerCase();
+        var bv = String(b.manufacturer || '').toLowerCase();
         return av < bv ? -1 : av > bv ? 1 : 0;
       });
     }
 
-    function renderGroup(label, inClass) {
-      var expanded = groupExpanded.hasOwnProperty(label) ? groupExpanded[label] : inClass.length > 0;
+    function renderSeasonGroup(cls, season, carsInSeason) {
+      var key = cls + '||' + season;
+      var expanded = seasonExpanded.hasOwnProperty(key) ? seasonExpanded[key] : false;
+      var wrap = el('div', 'padding:6px 0;');
+      var header = el('div', null, (expanded ? '▼ ' : '▶ ') + season + ' (' + carsInSeason.length + ' car' + (carsInSeason.length === 1 ? '' : 's') + ')');
+      header.style.cssText = 'font-weight:600;font-family:var(--rc-font-head);font-size:13px;color:var(--rc-steel);cursor:pointer;user-select:none;';
+      header.addEventListener('click', function () { seasonExpanded[key] = !expanded; renderList(); });
+      wrap.appendChild(header);
+      if (expanded) {
+        var rowsWrap = el('div', 'margin-top:4px;');
+        alphabetical(carsInSeason).forEach(function (c) { rowsWrap.appendChild(carRow(c)); });
+        wrap.appendChild(rowsWrap);
+      }
+      return wrap;
+    }
+
+    function renderClassGroup(label, inClass) {
+      var expanded = classExpanded.hasOwnProperty(label) ? classExpanded[label] : false;
       var groupWrap = el('div', 'padding:8px 0;border-bottom:1px solid var(--rc-silver);');
       var header = el('div', null, (expanded ? '▼ ' : '▶ ') + label + ' (' + inClass.length + ' car' + (inClass.length === 1 ? '' : 's') + ')');
       header.style.cssText = 'font-weight:700;font-family:var(--rc-font-head);font-size:14px;cursor:pointer;user-select:none;' + (inClass.length ? '' : 'opacity:0.55;');
-      header.addEventListener('click', function () { groupExpanded[label] = !expanded; renderList(); });
+      header.addEventListener('click', function () { classExpanded[label] = !expanded; renderList(); });
       groupWrap.appendChild(header);
       if (expanded && inClass.length) {
-        var rowsWrap = el('div', 'margin-top:4px;');
-        sortWithinGroup(inClass).forEach(function (c) { rowsWrap.appendChild(carRow(c)); });
-        groupWrap.appendChild(rowsWrap);
+        // Wrapped one collapsible group per season, oldest first (Matt's
+        // OCD-organization request) -- replaces the old inline "· 2026"
+        // tag on every car row.
+        var bySeason = {};
+        inClass.forEach(function (c) { var s = String(c.season || '(no season)'); (bySeason[s] = bySeason[s] || []).push(c); });
+        var seasons = Object.keys(bySeason).sort(function (a, b) { return (Number(a) || 0) - (Number(b) || 0); });
+        var seasonsWrap = el('div', 'margin-top:4px;margin-left:14px;');
+        seasons.forEach(function (season) { seasonsWrap.appendChild(renderSeasonGroup(label, season, bySeason[season])); });
+        groupWrap.appendChild(seasonsWrap);
       }
       listBody.appendChild(groupWrap);
     }
@@ -3542,7 +3348,7 @@
       listBody.innerHTML = '';
       if (!carsData.length) { listBody.textContent = 'No cars yet.'; return; }
       CAR_CLASS_LIST.forEach(function (cls) {
-        renderGroup(cls, carsData.filter(function (c) { return c.carClass === cls; }));
+        renderClassGroup(cls, carsData.filter(function (c) { return c.carClass === cls; }));
       });
       // Legacy/unexpected class values never vanish silently -- they get
       // their own group at the bottom instead.
@@ -3552,7 +3358,7 @@
       carsData.forEach(function (c) {
         if (!known[c.carClass]) { var key = c.carClass || '(no class)'; (leftovers[key] = leftovers[key] || []).push(c); }
       });
-      Object.keys(leftovers).forEach(function (key) { renderGroup(key, leftovers[key]); });
+      Object.keys(leftovers).forEach(function (key) { renderClassGroup(key, leftovers[key]); });
     }
 
     function loadCars() {
@@ -3563,22 +3369,18 @@
       });
     }
 
-    Object.keys(sortBtns).forEach(function (key) {
-      sortBtns[key].addEventListener('click', function () { sortKey = key; renderList(); });
-    });
-
     function carRow(c) {
-      // Class is dropped from this line (redundant -- it's the group
-      // header), and EntryID/Pro/Con live in the Edit modal only. Season
-      // stays here (Matt's call) since a single Cars tab can hold more
-      // than one season at once. A car-number badge leads the line so the
-      // most-scanned field (number) doesn't get lost in the text.
+      // Class and Season are both dropped from this line -- they're
+      // implied by the two group headers this row now sits under. Only
+      // EntryID/Pro/Con still live in the Edit modal only. A car-number
+      // badge leads the line so the most-scanned field (number) doesn't
+      // get lost in the text.
       var wrap = el('div', 'padding:6px 0 6px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
       var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;font-size:13px;');
       var numBadge = el('span', 'display:inline-block;min-width:24px;text-align:center;padding:2px 7px;border-radius:4px;background:var(--rc-asphalt,#1e2328);color:#fff;font-weight:700;font-size:12px;margin-right:8px;', '#' + escapeHtml(String(c.carNumber || '?')));
       left.appendChild(numBadge);
       var titleSpan = el('span', null, '');
-      titleSpan.innerHTML = '<strong>' + escapeHtml(c.manufacturer + ' ' + c.carModel) + '</strong> &middot; ' + escapeHtml(c.teamName || '') + ' &middot; ' + escapeHtml(String(c.season || ''));
+      titleSpan.innerHTML = '<strong>' + escapeHtml(c.manufacturer + ' ' + c.carModel) + '</strong> &middot; ' + escapeHtml(c.teamName || '');
       left.appendChild(titleSpan);
       left.appendChild(activePill(c.active));
       wrap.appendChild(left);
