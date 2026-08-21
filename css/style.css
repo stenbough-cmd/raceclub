@@ -126,6 +126,12 @@ p { margin: 0 0 0.75em; }
   border-radius: 4px;
   cursor: pointer;
   text-align: center;
+  /* Both button classes are sometimes used on an <a> (index.html's
+     "Create Your Driver" CTA, Calendar's Register link) instead of a
+     <button> -- without this, the sitewide `a { color: red }` link
+     style leaves a default underline on those, which reads as a link,
+     not a button. */
+  text-decoration: none;
 }
 /* color explicitly repeated here (not just on the base .rc-btn-primary
    rule) because the sitewide "a:hover { color: var(--rc-red-dark); })"
@@ -151,6 +157,7 @@ p { margin: 0 0 0.75em; }
   background: var(--rc-white);
   color: var(--rc-carbon);
   cursor: pointer;
+  text-decoration: none;
 }
 .rc-btn-secondary:hover { background: var(--rc-offwhite); }
 .rc-btn-secondary:disabled { opacity: 0.45; cursor: default; background: var(--rc-white); }
@@ -165,13 +172,24 @@ p { margin: 0 0 0.75em; }
    is different from all the other buttons," "Next and Back are
    different sizes" -- Matt's bug reports). Add this alongside either
    base class to force the exact same compact box regardless of which
-   variant or how long the label is. */
+   variant or how long the label is.
+   THIS is the site's one standard "row button" size -- every button that
+   sits next to another button (not a lone full-width form submit) should
+   carry .rc-btn-sm, full stop. min-width was originally 150px, which
+   read fine for long labels ("Create Season," "Save & Close") but made a
+   short one-word button like Save/Cancel/Approve/Reject look like a tiny
+   word floating in an oversized box ("reduce the width of the Save
+   button so it doesn't look like a small word in a wide button" --
+   Matt's bug report). Dropped to 92px, which still comfortably covers
+   every long label (those size to their own text anyway, min-width only
+   ever affects the short ones) while letting short labels size to
+   themselves. */
 .rc-btn-sm {
   display: inline-block;
   width: auto;
-  min-width: 150px;
+  min-width: 92px;
   margin-top: 0;
-  padding: 10px 16px;
+  padding: 10px 20px;
   font-size: 12px;
   text-align: center;
 }
@@ -180,7 +198,23 @@ p { margin: 0 0 0.75em; }
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
    so Save & Close / Create Season / League Management's row stay put. */
 .rc-btn-nav {
-  min-width: 110px;
+  min-width: 78px;
+}
+
+/* Compact inline "row action" button -- Edit/Deactivate/Reactivate next
+   to a list row (Data Management's Drivers/Tracks/Cars panels). Smaller
+   than .rc-btn-sm on purpose: it sits inline with a line of list text,
+   not in a page-level button row, so the standard 10px/20px box would
+   look oversized there. Always paired with .rc-btn-secondary (never
+   .rc-btn-primary -- a row action is never the primary/destructive
+   action on the page). Replaces the identical inline
+   `style.cssText = 'padding:4px 10px;font-size:12px;'` that used to be
+   repeated at every call site -- one class here instead, so a future
+   size tweak is a one-line change, not a find-and-replace. */
+.rc-btn-row {
+  padding: 4px 10px;
+  font-size: 12px;
+  min-width: 0;
 }
 
 .rc-link-btn {
@@ -1356,3 +1390,122 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Forced password-change lock screen (mustChangePassword) */
 .rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
 .rc-forced-password-wrap > p { color: var(--rc-steel); margin-bottom: 14px; }
+
+/* -------------------------------------------------------------------- */
+/* Calendar -- one outer season container, N full-width race containers */
+/* stacked inside it (Matt's spec: "all the race containers (100% width) */
+/* will live within one larger container which will have the title of   */
+/* the Season"). Reuses .rc-panel look-and-feel (white card, silver      */
+/* border, radius) rather than inventing a new card style.               */
+/* -------------------------------------------------------------------- */
+.rc-cal-season { }
+.rc-cal-season-head { margin-bottom: 4px; }
+.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; color: var(--rc-carbon); margin: 0; }
+.rc-cal-season-sub { font-size: 12px; color: var(--rc-steel); margin-top: 4px; }
+
+.rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+
+.rc-cal-race {
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  background: var(--rc-white);
+  padding: 16px 18px;
+  width: 100%;
+}
+/* Finished races: lightly grayed out, per spec, but still fully readable
+   -- opacity dim + offwhite background reads as "done" without hiding
+   the details entirely. */
+.rc-cal-race.rc-cal-finished { opacity: 0.6; background: var(--rc-offwhite); }
+
+.rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 16px; color: var(--rc-carbon); }
+/* Star marks a special/named event (Matt: "any special events have a
+   star next to the race name") -- normal rounds have no star, no name,
+   just "Race 0N". */
+.rc-cal-race-star { color: #b8860b; font-size: 15px; line-height: 1; }
+.rc-cal-finished-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--rc-steel);
+  color: var(--rc-white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rc-cal-track { font-size: 13px; color: var(--rc-steel); margin-top: 4px; }
+.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
+
+.rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
+.rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
+.rc-cal-datetime svg { color: var(--rc-steel); flex-shrink: 0; }
+
+.rc-cal-sessions { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--rc-steel); margin-top: 8px; }
+
+/* Stat chips -- tires / wear / fuel multiplier / setup / weather / points
+   tier. Small icon + value, same flat-stroke icon language as the rest
+   of the site, laid out as a wrapping row so it degrades gracefully on
+   narrow widths. */
+.rc-cal-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.rc-cal-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  font-size: 12px;
+  color: var(--rc-carbon);
+}
+.rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
+.rc-cal-race.rc-cal-finished .rc-cal-stat { background: var(--rc-white); }
+
+.rc-cal-reg-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
+.rc-cal-reg-hint { font-size: 11px; color: var(--rc-steel); }
+
+/* -------------------------------------------------------------------- */
+/* Rulebook popup (Help section) */
+/* -------------------------------------------------------------------- */
+.rc-rulebook-index {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  background: var(--rc-offwhite);
+  margin-bottom: 20px;
+}
+.rc-rulebook-index a {
+  font-size: 13px;
+  color: var(--rc-carbon);
+  text-decoration: none;
+  padding: 3px 0;
+}
+.rc-rulebook-index a:hover { color: var(--rc-red); }
+.rc-rulebook-index a.rc-rulebook-draft { color: var(--rc-steel); }
+
+/* scroll-margin-top clears the modal's sticky header (see .rc-modal-head)
+   -- without it, jumping here from the index puts the section heading
+   directly UNDER the sticky bar instead of just below it. */
+.rc-rulebook-section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--rc-silver); scroll-margin-top: 76px; }
+.rc-rulebook-section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+.rc-rulebook-section h3 { font-family: var(--rc-font-heading); font-size: 17px; color: var(--rc-carbon); margin: 0 0 10px; }
+.rc-rulebook-section h4 { font-family: var(--rc-font-heading); font-size: 14px; color: var(--rc-carbon); margin: 16px 0 6px; }
+.rc-rulebook-section p, .rc-rulebook-section li { font-size: 13px; color: var(--rc-carbon); line-height: 1.6; }
+.rc-rulebook-section table { margin-top: 8px; }
+
+.rc-rulebook-callout {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--rc-offwhite);
+  border-left: 3px solid var(--rc-red);
+  font-size: 12px;
+  color: var(--rc-steel);
+}
+
+.rc-rulebook-draft-note { font-size: 13px; color: var(--rc-steel); font-style: italic; }

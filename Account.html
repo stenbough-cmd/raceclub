@@ -99,6 +99,7 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/reference-data.js"></script>
+<script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
 </head>
 <body>
@@ -159,6 +160,7 @@
       <section id="rc-section-objectives" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-help" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-settings" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
@@ -374,6 +376,24 @@
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
   var ICON_DATAMGMT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>';
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
+  var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
+
+  // ---------------------------------------------------------------------
+  // CALENDAR ICONS — same flat, stroke-based technique as ICON_LOCK/
+  // ICON_STAR above, one per race-detail stat the Calendar page shows
+  // (see renderCalendarSection() and calStat() below). Kept a bit smaller
+  // (16px, matching the sidebar icons) so a row of 5-6 of them next to
+  // their values doesn't overwhelm a race card.
+  // ---------------------------------------------------------------------
+  var ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 16 14"></polyline></svg>';
+  var ICON_SUN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line></svg>';
+  var ICON_CLOUD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7-1.6A4.5 4.5 0 0 0 7 18z"></path></svg>';
+  var ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
+  var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line></svg>';
+  var ICON_FUEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12z"></path></svg>';
+  var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
+  var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
+  var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
 
   // Primary 10-item nav. Reordered per Matt's call: Finances moved up to
   // sit right after Calendar, and a new Objectives item was inserted
@@ -397,9 +417,10 @@
     { id: 'settings', label: 'Settings', icon: ICON_SETTINGS }
   ];
 
-  // Objectives gets its own real renderer now (renderObjectivesSection()
-  // below) instead of the generic "Coming soon." placeholder panel.
-  var PLACEHOLDER_SECTION_IDS = ['calendar', 'results', 'career', 'reputation', 'finances', 'sponsors', 'halloffame'];
+  // Objectives and Calendar each get their own real renderer now
+  // (renderObjectivesSection()/renderCalendarSection() below) instead of
+  // the generic "Coming soon." placeholder panel.
+  var PLACEHOLDER_SECTION_IDS = ['results', 'career', 'reputation', 'finances', 'sponsors', 'halloffame'];
 
   // Auto-inserts "/" while typing and blocks anything but digits, so the
   // field can only ever end up as MM/DD/YYYY -- backed up by the same
@@ -514,6 +535,11 @@
     addNavDot(leagueBtn, 'league');
     nav.appendChild(leagueBtn);
     nav.appendChild(navDivider());
+    // Help -- same section as Settings/Log Out (below the divider), sits
+    // directly above Settings per Matt's call. Just a section-switch like
+    // any other nav item (see renderHelpSection() below) -- no lazy load,
+    // no permission gate, no notification dot.
+    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help'));
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
     nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
@@ -767,14 +793,22 @@
     // padding), .rc-btn-secondary alone is sized smaller (8px padding),
     // so side by side without .rc-btn-sm they render at different
     // heights ("make the save button the same height as the cancel
-    // button" -- Matt's bug report).
+    // button" -- Matt's bug report). .rc-btn-sm's own min-width was later
+    // reduced (see style.css) so "Save" doesn't look like a small word in
+    // a wide button.
     var saveBtn = el('button', null, 'Save');
     saveBtn.className = 'rc-btn-primary rc-btn-sm';
+    // Gap above the button row so it doesn't sit crammed right under the
+    // Birthday/Contact Email fields (Matt's bug report) -- .rc-btn-sm
+    // resets margin-top to 0 (needed for the side-by-side row itself to
+    // line up), so the spacing has to be added back here explicitly.
+    saveBtn.style.marginTop = '24px';
 
     var cancelBtn = el('button', null, 'Cancel');
     cancelBtn.className = 'rc-btn-secondary rc-btn-sm';
     cancelBtn.type = 'button';
     cancelBtn.style.marginLeft = '8px';
+    cancelBtn.style.marginTop = '24px';
 
     var status = el('div', 'margin-top:8px;font-size:13px;');
 
@@ -963,7 +997,13 @@
     var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password';
     var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
     var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password';
-    var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary'; btn.style.width = 'auto'; btn.style.marginTop = '10px';
+    // rc-btn-sm -- same standard row-button size as Save/Cancel above it
+    // (Matt's call: "make the Update Password button the same height and
+    // font size as the Save/Cancel buttons"). Bare .rc-btn-primary alone
+    // is sized for a full-width form submit (14px font, 12px padding),
+    // which read visibly bigger/taller than the Settings panel's other
+    // buttons right above it.
+    var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
     var status = el('div', 'margin-top:8px;font-size:13px;');
 
     btn.addEventListener('click', function () {
@@ -990,7 +1030,7 @@
   // centered heading + message, per spec.
   // ---------------------------------------------------------------------
   var PLACEHOLDER_LABELS = {
-    calendar: 'Calendar', results: 'Results', career: 'Career',
+    results: 'Results', career: 'Career',
     reputation: 'Reputation', finances: 'Finances', sponsors: 'Sponsors',
     halloffame: 'Hall of Fame'
   };
@@ -1056,6 +1096,233 @@
       : 'No active season to choose objectives for yet — once one opens registration, your 3 picks and live progress against them will show here.';
     statusPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', statusMsg));
     section.appendChild(statusPanel);
+  }
+
+  // ---------------------------------------------------------------------
+  // CALENDAR — chronological list of race containers inside one season
+  // container, per Matt's spec (NOT a monthly-grid calendar). There is no
+  // live "get this driver's season schedule" endpoint yet (Ingestion.gs
+  // populates Rounds/Sessions tabs from race XML, but Website.gs doesn't
+  // expose them as a driver-facing calendar action) -- so, same pattern
+  // as the Season Wizard/Current Seat block, this is built fully against
+  // realistic mock data (CALENDAR_MOCK_SEASON below) with that gap noted
+  // honestly in the season sub-line rather than hidden. Swapping in real
+  // data later just means replacing CALENDAR_MOCK_SEASON with a fetched
+  // season object of the same shape.
+  // ---------------------------------------------------------------------
+  var CALENDAR_MOCK_SEASON = {
+    seasonName: 'Race Club — Season 1 — Proving Grounds',
+    races: [
+      {
+        round: 1, name: null, special: false, finished: true,
+        track: 'Watkins Glen International — Long Course',
+        startUtc: '2026-07-12T18:00:00Z', igTime: '14:00',
+        raceLengthMin: 45, pointsTier: 'Full Points',
+        practiceMin: 20, qualifyingMin: 15,
+        rainChance: 5, tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
+        regUrl: '#'
+      },
+      {
+        round: 2, name: null, special: false, finished: true,
+        track: 'Mount Panorama — Bathurst',
+        startUtc: '2026-07-26T18:00:00Z', igTime: '11:00',
+        raceLengthMin: 60, pointsTier: 'Full Points',
+        practiceMin: 20, qualifyingMin: 15,
+        rainChance: 40, tireSets: 5, tireWearX: 1.2, fuelX: 1.0, fixedSetup: true,
+        regUrl: '#'
+      },
+      {
+        round: 3, name: 'The Sebring 3 Hour', special: true, finished: false,
+        track: 'Sebring International Raceway',
+        startUtc: '2026-08-23T18:00:00Z', igTime: '13:00',
+        raceLengthMin: 180, pointsTier: 'Double Points',
+        practiceMin: 30, qualifyingMin: 20,
+        rainChance: 15, tireSets: 9, tireWearX: 1.4, fuelX: 1.6, fixedSetup: false,
+        regUrl: '#'
+      },
+      {
+        round: 4, name: null, special: false, finished: false,
+        track: 'Circuit de Spa-Francorchamps',
+        startUtc: '2026-09-06T18:00:00Z', igTime: '15:30',
+        raceLengthMin: 50, pointsTier: 'Full Points',
+        practiceMin: 20, qualifyingMin: 15,
+        rainChance: 65, tireSets: 4, tireWearX: 1.1, fuelX: 1.0, fixedSetup: true,
+        regUrl: '#'
+      },
+      {
+        round: 5, name: null, special: false, finished: false,
+        track: 'Suzuka Circuit',
+        startUtc: '2026-09-20T18:00:00Z', igTime: '10:00',
+        raceLengthMin: 45, pointsTier: 'Full Points',
+        practiceMin: 20, qualifyingMin: 15,
+        rainChance: 10, tireSets: 4, tireWearX: 1.0, fuelX: 1.0, fixedSetup: false,
+        regUrl: '#'
+      }
+    ]
+  };
+
+  // Rain-chance-driven weather icon -- under 15% reads as clear, under 50%
+  // as cloudy/mixed, 50%+ as wet. One derived icon rather than a separate
+  // "condition" field to keep the mock data (and any future real data)
+  // simpler -- rain % is the one number that actually matters here.
+  function weatherIcon(rainChance) {
+    if (rainChance >= 50) return ICON_RAIN;
+    if (rainChance >= 15) return ICON_CLOUD;
+    return ICON_SUN;
+  }
+
+  // One small icon + value chip -- tires, fuel, setup, weather, points
+  // tier all reuse this so the row stays visually consistent. `title`
+  // becomes a native tooltip since the chip itself has no visible label.
+  function calStat(iconSvg, text, title) {
+    var chip = el('span', 'rc-cal-stat', iconSvg + '<span>' + escapeHtml(text) + '</span>');
+    if (title) chip.title = title;
+    return chip;
+  }
+
+  // Formats an ISO UTC race start in the driver's own timezone (falling
+  // back to the browser's zone if the profile hasn't got one saved) --
+  // same fallback approach as wizardAdminTimeZone() above.
+  function formatRaceDateTime(iso, tz) {
+    try {
+      var d = new Date(iso);
+      var opts = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+      if (tz) opts.timeZone = tz;
+      return d.toLocaleString('en-US', opts);
+    } catch (err) {
+      return iso;
+    }
+  }
+
+  function raceCard(race, driverTz) {
+    var card = el('div', 'rc-cal-race' + (race.finished ? ' rc-cal-finished' : ''));
+
+    var head = el('div', 'rc-cal-race-head');
+    var roundLabel = 'Race ' + (race.round < 10 ? '0' + race.round : race.round);
+    var nameHtml = escapeHtml(race.name || roundLabel);
+    if (race.special) nameHtml = '<span class="rc-cal-race-star" title="Special event">' + ICON_NAV_STAR + '</span>' + nameHtml;
+    head.appendChild(el('div', 'rc-cal-race-name', nameHtml));
+    if (race.finished) head.appendChild(el('span', 'rc-cal-finished-pill', 'Completed'));
+    card.appendChild(head);
+
+    card.appendChild(el('div', 'rc-cal-track', ICON_TRACK + ' <strong>' + escapeHtml(race.track) + '</strong>'));
+
+    var dt = el('div', 'rc-cal-datetime');
+    dt.innerHTML =
+      '<span>' + ICON_CALENDAR + escapeHtml(formatRaceDateTime(race.startUtc, driverTz)) + '</span>' +
+      '<span>' + ICON_CLOCK + 'In-game: ' + escapeHtml(race.igTime) + '</span>';
+    card.appendChild(dt);
+
+    card.appendChild(el('div', 'rc-cal-sessions',
+      'Practice ' + race.practiceMin + ' min &middot; Qualifying ' + race.qualifyingMin + ' min &middot; Race ' + race.raceLengthMin + ' min'));
+
+    var stats = el('div', 'rc-cal-stats');
+    stats.appendChild(calStat(weatherIcon(race.rainChance), race.rainChance + '% rain', 'Weather'));
+    stats.appendChild(calStat(ICON_TIRE, race.tireSets + ' sets · ' + race.tireWearX + 'x wear', 'Tires'));
+    stats.appendChild(calStat(ICON_FUEL, race.fuelX + 'x fuel', 'Fuel multiplier'));
+    stats.appendChild(calStat(race.fixedSetup ? ICON_LOCK : ICON_UNLOCK, race.fixedSetup ? 'Fixed Setup' : 'Open Setup', 'Setup'));
+    stats.appendChild(calStat(ICON_FLAG, race.pointsTier, 'Points'));
+    card.appendChild(stats);
+
+    if (!race.finished) {
+      var regRow = el('div', 'rc-cal-reg-row');
+      var regBtn = document.createElement('a');
+      regBtn.href = race.regUrl;
+      regBtn.target = '_blank';
+      regBtn.rel = 'noopener';
+      regBtn.className = 'rc-btn-secondary rc-btn-sm';
+      regBtn.textContent = 'Register';
+      regRow.appendChild(regBtn);
+      regRow.appendChild(el('span', 'rc-cal-reg-hint', 'Register at least 15 minutes before this race starts.'));
+      card.appendChild(regRow);
+    }
+
+    return card;
+  }
+
+  function renderCalendarSection(profile) {
+    var section = document.getElementById('rc-section-calendar');
+    section.innerHTML = '';
+    section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
+
+    var driverTz = (profile && profile.timeZone) || (function () {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { return ''; }
+    })();
+
+    var season = el('div', 'rc-panel rc-cal-season');
+    var seasonHead = el('div', 'rc-cal-season-head');
+    seasonHead.appendChild(el('h3', 'rc-cal-season-title', escapeHtml(CALENDAR_MOCK_SEASON.seasonName)));
+    seasonHead.appendChild(el('p', 'rc-cal-season-sub',
+      'Mock schedule shown below — the live season calendar isn\'t wired up to real data yet. Times are shown in your saved time zone' +
+      (driverTz ? ' (' + escapeHtml(driverTz) + ').' : '.')));
+    season.appendChild(seasonHead);
+
+    var list = el('div', 'rc-cal-race-list');
+    CALENDAR_MOCK_SEASON.races.forEach(function (race) { list.appendChild(raceCard(race, driverTz)); });
+    season.appendChild(list);
+
+    section.appendChild(season);
+  }
+
+  // ---------------------------------------------------------------------
+  // HELP — a real page (same h2-title convention as every other section),
+  // currently just a Rulebook launcher. RULEBOOK_SECTIONS comes from
+  // js/rulebook-content.js (included in <head>) so growing the rulebook
+  // is a content-file edit, not an Account.html edit.
+  // ---------------------------------------------------------------------
+  function renderHelpSection(profile) {
+    var section = document.getElementById('rc-section-help');
+    section.innerHTML = '';
+    section.appendChild(el('h2', 'margin-top:0;', 'Help'));
+    section.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;max-width:640px;line-height:1.6;',
+      'Rules, formats, and everything else you need to know about racing in Race Club.'));
+
+    var panel = el('div', 'rc-panel');
+    panel.appendChild(el('h3', 'margin-top:0;', 'Rulebook'));
+    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
+      'The full Race Club Rulebook — driving standards, penalties, reputation, class progression, and more. Still growing as we finish designing each section.'));
+    var openBtn = el('button', null, 'Open Rulebook');
+    openBtn.type = 'button';
+    openBtn.className = 'rc-btn-primary rc-btn-sm';
+    openBtn.style.marginTop = '10px';
+    openBtn.addEventListener('click', openRulebookModal);
+    panel.appendChild(openBtn);
+    section.appendChild(panel);
+  }
+
+  // Builds one <a> in the popup's index and one section in its body from
+  // the same RULEBOOK_SECTIONS entry, so the two can never drift out of
+  // sync with each other.
+  function openRulebookModal() {
+    var modal = showModal('Race Club Rulebook', { wide: true });
+    var body = modal.body;
+
+    var index = el('div', 'rc-rulebook-index');
+    RULEBOOK_SECTIONS.forEach(function (sec) {
+      var a = document.createElement('a');
+      a.href = '#rc-rulebook-sec-' + sec.id;
+      a.className = sec.draft ? 'rc-rulebook-draft' : '';
+      a.textContent = sec.num + '. ' + sec.title + (sec.draft ? ' (not yet drafted)' : '');
+      a.addEventListener('click', function (evt) {
+        evt.preventDefault();
+        var target = document.getElementById('rc-rulebook-sec-' + sec.id);
+        if (target) target.scrollIntoView({ block: 'start' });
+      });
+      index.appendChild(a);
+    });
+    body.appendChild(index);
+
+    RULEBOOK_SECTIONS.forEach(function (sec) {
+      var secEl = el('div', 'rc-rulebook-section');
+      secEl.id = 'rc-rulebook-sec-' + sec.id;
+      secEl.appendChild(el('h3', null, sec.num + '. ' + escapeHtml(sec.title)));
+      if (sec.draft) {
+        secEl.appendChild(el('p', 'rc-rulebook-draft-note', sec.draftNote || 'Not yet drafted.'));
+      } else {
+        secEl.appendChild(el('div', null, sec.html));
+      }
+      body.appendChild(secEl);
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -1155,9 +1422,12 @@
           if (r === entry.requestedRole) opt.selected = true;
           roleSelect.appendChild(opt);
         });
-        var approveBtn = el('button', null, 'Approve'); approveBtn.className = 'rc-btn-primary';
-        approveBtn.style.cssText = 'width:auto;margin-top:0;padding:8px 14px;';
-        var rejectBtn = el('button', null, 'Reject'); rejectBtn.className = 'rc-btn-secondary';
+        // rc-btn-sm on both -- same site-wide standard as every other
+        // button row (was a bare .rc-btn-primary with a hand-rolled
+        // padding override next to a bare .rc-btn-secondary, which put
+        // Approve at a different font size than Reject right beside it).
+        var approveBtn = el('button', null, 'Approve'); approveBtn.className = 'rc-btn-primary rc-btn-sm';
+        var rejectBtn = el('button', null, 'Reject'); rejectBtn.className = 'rc-btn-secondary rc-btn-sm';
         var status = el('span', 'font-size:12px;');
 
         approveBtn.addEventListener('click', function () {
@@ -3076,8 +3346,7 @@
       }
       summary.appendChild(left);
       var editBtn = el('button', null, 'Edit');
-      editBtn.className = 'rc-btn-secondary';
-      editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+      editBtn.className = 'rc-btn-secondary rc-btn-row';
       editBtn.addEventListener('click', function () { openEditDriverModal(d); });
       summary.appendChild(editBtn);
       wrap.appendChild(summary);
@@ -3105,7 +3374,7 @@
       body.appendChild(wizLabel('Role')); body.appendChild(roleSelect);
       body.appendChild(wizLabel('Email')); body.appendChild(emailInput);
 
-      var saveBtn = el('button', null, 'Add Driver'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveBtn = el('button', null, 'Add Driver'); saveBtn.className = 'rc-btn-primary rc-btn-sm'; saveBtn.style.marginTop = '14px';
       var status = el('div', 'margin-top:6px;font-size:13px;');
       saveBtn.addEventListener('click', function () {
         if (!firstInput.value.trim() || !lastInput.value.trim()) {
@@ -3165,7 +3434,7 @@
         body.appendChild(createLoginWrap);
       }
 
-      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary rc-btn-sm'; saveBtn.style.marginTop = '14px';
       var status = el('div', 'margin-top:6px;font-size:13px;');
       saveBtn.addEventListener('click', function () {
         saveBtn.disabled = true;
@@ -3274,7 +3543,7 @@
 
       var actions = el('div', 'display:flex;gap:6px;align-items:center;');
       var toggleBtn = el('button', null, t.active ? 'Deactivate' : 'Reactivate');
-      toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary'; toggleBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+      toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary rc-btn-row';
       toggleBtn.addEventListener('click', function () {
         // Optimistic: flip the pill/label right away, save in the
         // background, only revert + repaint if the save actually fails.
@@ -3297,7 +3566,7 @@
       var layoutInput = wizTextInput('', function () {});
       body.appendChild(wizLabel('Track Name')); body.appendChild(nameInput);
       body.appendChild(wizLabel('Layout')); body.appendChild(layoutInput);
-      var saveBtn = el('button', null, 'Add Track'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveBtn = el('button', null, 'Add Track'); saveBtn.className = 'rc-btn-primary rc-btn-sm'; saveBtn.style.marginTop = '14px';
       var status = el('div', 'margin-top:6px;font-size:13px;');
       saveBtn.addEventListener('click', function () {
         fetchApi('adminAddTrack', { method: 'POST', token: token, body: { trackName: nameInput.value.trim(), layout: layoutInput.value.trim() } })
@@ -3434,10 +3703,10 @@
       wrap.appendChild(left);
 
       var actions = el('div', 'display:flex;gap:6px;align-items:center;');
-      var editBtn = el('button', null, 'Edit'); editBtn.type = 'button'; editBtn.className = 'rc-btn-secondary'; editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+      var editBtn = el('button', null, 'Edit'); editBtn.type = 'button'; editBtn.className = 'rc-btn-secondary rc-btn-row';
       editBtn.addEventListener('click', function () { openEditCarModal(c); });
       var toggleBtn = el('button', null, c.active ? 'Deactivate' : 'Reactivate');
-      toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary'; toggleBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
+      toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary rc-btn-row';
       toggleBtn.addEventListener('click', function () {
         // Same optimistic pattern as Tracks -- flip state + repaint now,
         // save in the background, revert only on a real failure.
@@ -3480,7 +3749,7 @@
     function openAddCarModal() {
       var modal = showModal('Add Car');
       var fields = carFormFields(modal.body, {});
-      var saveBtn = el('button', null, 'Add Car'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveBtn = el('button', null, 'Add Car'); saveBtn.className = 'rc-btn-primary rc-btn-sm'; saveBtn.style.marginTop = '14px';
       var status = el('div', 'margin-top:6px;font-size:13px;');
       saveBtn.addEventListener('click', function () {
         fetchApi('adminAddCar', {
@@ -3503,7 +3772,7 @@
     function openEditCarModal(c) {
       var modal = showModal('Edit ' + c.entryId);
       var fields = carFormFields(modal.body, c);
-      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary rc-btn-sm'; saveBtn.style.marginTop = '14px';
       var status = el('div', 'margin-top:6px;font-size:13px;');
       saveBtn.addEventListener('click', function () {
         fetchApi('adminUpdateCar', {
@@ -3538,6 +3807,8 @@
     renderDashboardSection(profile, token);
     renderPlaceholderSections();
     renderObjectivesSection(profile);
+    renderCalendarSection(profile);
+    renderHelpSection(profile);
     renderSettingsSection(profile, token);
 
     var perms = profile.permissions || [];
