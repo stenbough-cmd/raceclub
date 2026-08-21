@@ -1,5 +1,5 @@
 <!--
-  Race Club — register.html  (v0.2.5, GitHub Pages edition)
+  Race Club — register.html  (v0.3, GitHub Pages edition)
 
   WHAT CHANGED VS. THE GOOGLE SITES VERSION:
   This is the source file's "REGISTER VIEW" pulled out into its own real
@@ -15,6 +15,23 @@
   swapped to an in-page "verification code" view instead, using an
   in-memory JS variable, since registration and verification were the
   same embed.
+
+  v0.3 -- TWO FIXES, both Matt's direct call:
+  1. Already-logged-in visitors used to get silently window.location.replace()'d
+     to Account.html with zero feedback -- if the redirect was ever slow
+     (Apps Script cold start on the token check isn't even involved here,
+     but a slow network/paint easily could be), the page just sat there
+     blank for a beat with no explanation. Now the whole page is replaced
+     with a small "Redirecting to account page..." notice (same spinner
+     markup style as Account.html's buildSpinner(), so it looks like part
+     of the same site) the instant getToken() comes back truthy, and the
+     redirect fires right after.
+  2. A duplicate email is a genuine hard stop, not a dead-end error: when
+     the server returns error === 'EMAIL_TAKEN', the message area now
+     renders "An account already exists for that email (started with
+     j***n)." plus a "Log in with that account" button that goes straight
+     to login.html — instead of just an error string with nowhere to go.
+     Every other error case is unchanged (still a plain message).
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -31,7 +48,22 @@
 <body>
 <div id="rc-header"></div>
 <script>renderHeader();</script>
-<div class="rc-auth-page">
+
+<!-- Shown INSTEAD of the register form the moment we know a valid session
+     token already exists (see the auth check at the top of the script
+     below) -- never both at once. Uses the same .rc-inline-spinner-wrap/
+     .rc-spinner markup Account.html's buildSpinner() produces, so it
+     reads as the same site rather than a plain "Redirecting..." string. -->
+<div id="rc-already-logged-in" class="rc-auth-page" style="display:none;">
+  <div class="rc-auth-wrap" style="max-width:460px;text-align:center;">
+    <div class="rc-inline-spinner-wrap" style="justify-content:center;">
+      <div class="rc-spinner"></div>
+      <div class="rc-loading-text">Redirecting to account page&hellip;</div>
+    </div>
+  </div>
+</div>
+
+<div class="rc-auth-page" id="rc-register-page">
   <div class="rc-auth-wrap" style="max-width:460px;">
     <h1>Create an Account</h1>
 
@@ -64,20 +96,6 @@
         </div>
 
         <div class="rc-section">
-          <label style="margin-top:0;">Preferred Class (optional)</label>
-          <select id="rc-reg-preferredclass"></select>
-          <div class="rc-hint">
-            Every driver starts in Bronze (GT3/LMP3), no exceptions — this just tells the league
-            what you're aiming for. Moving up later is your own choice, not an admin's: once your
-            Reputation clears a class's floor (400 for Silver/LMP2, 500 for Gold/Hypercar) you're
-            free to race there. Drivers with proven experience elsewhere can also submit a Class
-            Placement Request to move up before their Reputation would otherwise qualify them. If
-            your Reputation ever drops below your class's floor, you simply pick again from
-            whichever classes you still qualify for next season.
-          </div>
-        </div>
-
-        <div class="rc-section">
           <label style="margin-top:0;">Password</label>
           <input id="rc-reg-password" type="password" autocomplete="new-password" required minlength="6">
           <div class="rc-hint">At least 6 characters.</div>
@@ -103,6 +121,16 @@
         <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
       </form>
       <div id="rc-register-message" class="rc-message"></div>
+
+      <!-- v0.3 NEW -- the EMAIL_TAKEN hard-stop panel. Hidden by default;
+           shown in place of (not alongside) rc-register-message when the
+           server specifically returns error === 'EMAIL_TAKEN'. The whole
+           form stays visible underneath so the driver can still correct
+           the email and try a different one instead of being dead-ended. -->
+      <div id="rc-register-email-taken" class="rc-message rc-error" style="display:none;">
+        <div id="rc-register-email-taken-text"></div>
+        <button type="button" id="rc-register-goto-login" class="rc-btn-secondary rc-btn-sm" style="margin-top:10px;">Log in with that account</button>
+      </div>
     </div>
     <p class="rc-auth-footer">
       Already have an account? <button type="button" class="rc-link-btn" onclick="window.location.href='login.html'">Log in</button>
@@ -120,7 +148,15 @@
     return;
   }
 
+  // v0.3 -- was window.location.replace('Account.html') with zero
+  // feedback. Now swaps the whole page for a small branded "Redirecting
+  // to account page..." notice first, THEN redirects, so an already-
+  // logged-in visitor who lands here (e.g. an old bookmark, a link
+  // shared before they signed up) never sees a blank beat with no
+  // explanation.
   if (getToken()) {
+    document.getElementById('rc-register-page').style.display = 'none';
+    document.getElementById('rc-already-logged-in').style.display = 'block';
     window.location.replace('Account.html');
     return;
   }
@@ -151,19 +187,6 @@
   }
   populateRegisterSuffix();
 
-  function populateRegisterPreferredClass() {
-    var select = document.getElementById('rc-reg-preferredclass');
-    var blank = document.createElement('option');
-    blank.value = ''; blank.textContent = 'No preference';
-    select.appendChild(blank);
-    (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).forEach(function (cls) {
-      var opt = document.createElement('option');
-      opt.value = cls; opt.textContent = cls;
-      select.appendChild(opt);
-    });
-  }
-  populateRegisterPreferredClass();
-
   // ---------------------------------------------------------------------
   // REGISTER — live password-match check, checked on every keystroke in
   // either password field rather than waiting for the submit click.
@@ -191,12 +214,26 @@
   regPassword.addEventListener('input', checkPasswordMatch);
   regPassword2.addEventListener('input', checkPasswordMatch);
 
+  // v0.3 NEW -- clears the EMAIL_TAKEN hard-stop panel back to hidden.
+  // Called at the top of every submit attempt so a driver who fixes the
+  // email and resubmits doesn't still see the stale hard-stop panel
+  // sitting there alongside a new (possibly unrelated) error.
+  function clearEmailTakenPanel() {
+    document.getElementById('rc-register-email-taken').style.display = 'none';
+    document.getElementById('rc-register-email-taken-text').textContent = '';
+  }
+
+  document.getElementById('rc-register-goto-login').addEventListener('click', function () {
+    window.location.href = 'login.html';
+  });
+
   document.getElementById('rc-register-form').addEventListener('submit', function (evt) {
     evt.preventDefault();
     var btn = document.getElementById('rc-register-btn');
     var msg = document.getElementById('rc-register-message');
     msg.className = 'rc-message';
     msg.textContent = '';
+    clearEmailTakenPanel();
 
     var username = document.getElementById('rc-reg-username').value.trim();
     var firstName = document.getElementById('rc-reg-firstname').value.trim();
@@ -204,7 +241,6 @@
     var suffix = document.getElementById('rc-reg-suffix').value;
     var email = document.getElementById('rc-reg-email').value.trim();
     var timeZone = document.getElementById('rc-reg-timezone').value;
-    var preferredClass = document.getElementById('rc-reg-preferredclass').value;
     var password = document.getElementById('rc-reg-password').value;
     var requestedRole = document.getElementById('rc-reg-role').value;
 
@@ -229,7 +265,7 @@
       method: 'POST',
       body: {
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
-        email: email, timeZone: timeZone, preferredClass: preferredClass,
+        email: email, timeZone: timeZone,
         password: password, requestedRole: requestedRole
       }
     })
@@ -237,6 +273,20 @@
         btn.disabled = false;
         btn.textContent = 'Create Account';
         if (!data.success) {
+          // v0.3 NEW -- EMAIL_TAKEN is a hard stop with a way out, not
+          // just an error string: render the masked existing username
+          // (see maskUsernameForRecovery() server-side) plus a direct
+          // "Log in with that account" button, instead of the generic
+          // message path every other error still uses.
+          if (data.error === 'EMAIL_TAKEN') {
+            var takenPanel = document.getElementById('rc-register-email-taken');
+            var takenText = document.getElementById('rc-register-email-taken-text');
+            takenText.textContent = data.existingUsername
+              ? 'An account already exists for that email (username starts with ' + data.existingUsername + ').'
+              : (data.message || 'An account already exists for that email.');
+            takenPanel.style.display = 'block';
+            return;
+          }
           msg.className = 'rc-message rc-error';
           msg.textContent = data.message || 'Could not create account.';
           return;
