@@ -3280,29 +3280,87 @@
       }
     }
 
-    // Reuses buildSpinner()'s visual language (see above) for the brief
-    // pause before the honest "not wired up yet"
-    // message -- same red spinning circle + message pattern as
-    // everywhere else on the site, per Matt's explicit instruction to
-    // reuse it for any loading state the wizard needs.
+    // v0.19 -- wired to the real backend. Reuses buildSpinner()'s visual
+    // language (see above) for the round-trip to action=createSeason
+    // (handleCreateSeason, 4_DataCache.gs). Payload field names mirror
+    // that handler's own contract exactly (see 1_Core.gs's router-doc
+    // comment above doGet/doPost) -- races gets its `date` field filled
+    // in here from computeRaceDates(state), same client-side scheduling
+    // math the Race Events page and Preview page already use, since the
+    // wizard's own state.races entries never carry a date themselves
+    // (it's always derived, not stored, so Bye Week changes stay in
+    // sync automatically). On success the draft is cleared (this season
+    // is now real, there's nothing left to resume) and League
+    // Management's button flips back to "Create Season" the moment the
+    // modal closes (see openSeasonWizard's onClose above). On failure or
+    // a network error, the draft is left untouched so the admin can
+    // just try again -- nothing about this call is destructive to their
+    // work if it doesn't go through.
     function finishWizard() {
       saveWizardDraft(state);
       contentWrap.innerHTML = '';
       contentWrap.appendChild(buildSpinner('Creating season...'));
       footerBar.innerHTML = '';
-      setTimeout(function () {
+
+      var raceDates = computeRaceDates(state);
+      var racesPayload = state.races.map(function (race, idx) {
+        return {
+          date: raceDates[idx] || '',
+          track: race.track, layout: race.layout, weather: race.weather, tier: race.tier,
+          chanceOfRain: race.chanceOfRain, temperatureC: race.temperatureC,
+          passwordOverride: race.passwordOverride, registrationLink: race.registrationLink,
+          igPracticeStart: race.igPracticeStart, igQualifyStart: race.igQualifyStart, igRaceStart: race.igRaceStart
+        };
+      });
+
+      var payload = {
+        seasonName: state.seasonName,
+        releaseMode: state.releaseMode,
+        releaseDateTime: state.releaseDateTime,
+        classes: state.classes,
+        dropWeeks: state.dropWeeks,
+        bonusPole: state.bonusPole,
+        bonusFastestLap: state.bonusFastestLap,
+        bonusMostLapsLed: state.bonusMostLapsLed,
+        pointsTables: state.pointsTables,
+        seasonStartDate: state.seasonStartDate,
+        seasonStartTime: state.seasonStartTime,
+        defaultPassword: state.defaultPassword,
+        raceSettings: state.raceSettings,
+        economy: state.economy,
+        byeWeekDates: state.byeWeekDates,
+        specialEvents: state.specialEvents,
+        races: racesPayload
+      };
+
+      function showResultPanel(ok, title, message) {
         contentWrap.innerHTML = '';
         var note = el('div', 'rc-panel');
-        note.style.borderColor = 'var(--rc-red)';
-        note.appendChild(el('h3', 'margin-top:0;', 'Not Wired Up Yet'));
-        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
-          'Season creation isn’t connected to the backend yet — there’s no Apps Script endpoint to actually save this season. Everything you just previewed is exactly what will be sent once that exists. Your draft is untouched, so you can keep coming back to this wizard.'));
+        note.style.borderColor = ok ? 'var(--rc-ok)' : 'var(--rc-red)';
+        note.appendChild(el('h3', 'margin-top:0;', title));
+        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
         var closeBtn = el('button', null, 'Close');
         closeBtn.className = 'rc-btn-primary rc-btn-sm'; closeBtn.type = 'button';
         closeBtn.addEventListener('click', modal.close);
         note.appendChild(closeBtn);
         contentWrap.appendChild(note);
-      }, 900);
+      }
+
+      fetchApi('createSeason', { method: 'POST', token: token, body: payload })
+        .then(function (data) {
+          if (data && data.success) {
+            clearWizardDraft();
+            showResultPanel(true, 'Season Created',
+              data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'));
+          } else {
+            showResultPanel(false, 'Could Not Create Season',
+              (data && data.message) || 'Something went wrong talking to the server. Your draft is untouched, so it\'s safe to try again.');
+          }
+        })
+        .catch(function () {
+          showResultPanel(false, 'Could Not Reach The Server',
+            'Check your connection and try again — your draft is untouched.');
+        });
     }
 
     renderStep();
