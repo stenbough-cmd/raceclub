@@ -3139,21 +3139,19 @@
   // -----------------------------------------------------------------------
   function driversManagementSection(token, preloaded) {
     var box = el('div', 'rc-panel');
-    box.appendChild(el('h3', 'margin-top:0;', 'Drivers'));
-    var note = el('p', 'color:var(--rc-steel);font-size:13px;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);',
-      'Every driver identity, with or without a website login. Pending signups are approved or rejected from Admin → Pending Approvals.');
-    box.appendChild(note);
+    box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Drivers'));
 
-    var toolbar = el('div', 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Driver');
     addBtn.className = 'rc-btn-primary rc-btn-sm';
     toolbar.appendChild(addBtn);
-    toolbar.appendChild(el('span', 'font-size:12px;color:var(--rc-steel);margin-left:8px;', 'Sort by:'));
+    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
     var sortFirstBtn = el('button', null, 'First Name');
     var sortLastBtn = el('button', null, 'Last Name');
     [sortFirstBtn, sortLastBtn].forEach(function (b) { b.type = 'button'; b.className = 'rc-btn-secondary'; b.style.cssText = 'padding:4px 10px;font-size:12px;'; });
-    toolbar.appendChild(sortFirstBtn);
-    toolbar.appendChild(sortLastBtn);
+    sortGroup.appendChild(sortFirstBtn);
+    sortGroup.appendChild(sortLastBtn);
+    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
@@ -3259,61 +3257,55 @@
       body.appendChild(wizLabel('Last Name')); body.appendChild(lastInput);
       body.appendChild(wizLabel('Suffix')); body.appendChild(suffixSelect);
 
-      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
-      var status = el('div', 'margin-top:6px;font-size:13px;');
-      saveBtn.addEventListener('click', function () {
-        fetchApi('adminUpdateProfile', {
-          method: 'POST', token: token, body: {
-            targetProfileId: d.profileId, firstName: firstInput.value.trim(), lastName: lastInput.value.trim(), suffix: suffixSelect.value
-          }
-        }).then(function (data) {
-          status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-          status.textContent = data.message || '';
-          if (data.success) loadDrivers();
-        });
-      });
-      body.appendChild(saveBtn);
-      body.appendChild(status);
+      // One combined Save Changes button at the bottom handles the profile
+      // fields plus whichever login action applies -- updating the
+      // username if a login already exists, or creating one if it doesn't
+      // and the admin filled in the optional fields below. No more
+      // separate save buttons per sub-form (Matt's call).
+      var unameInput = null, newUserInput = null, newPassInput = null;
 
       if (d.userId) {
         var loginWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
         loginWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'LOGIN ACCOUNT'));
-        var unameInput = wizTextInput(d.username || '', function () {});
+        unameInput = wizTextInput(d.username || '', function () {});
         loginWrap.appendChild(wizLabel('Username')); loginWrap.appendChild(unameInput);
-        var loginSaveBtn = el('button', null, 'Save Username'); loginSaveBtn.className = 'rc-btn-secondary'; loginSaveBtn.style.cssText = 'width:auto;margin-top:8px;padding:6px 12px;font-size:12px;';
-        var loginStatus = el('div', 'margin-top:6px;font-size:13px;');
-        loginSaveBtn.addEventListener('click', function () {
-          fetchApi('adminUpdateUser', { method: 'POST', token: token, body: { targetUserId: d.userId, username: unameInput.value.trim() } })
-            .then(function (data) {
-              loginStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-              loginStatus.textContent = data.message || '';
-              if (data.success) loadDrivers();
-            });
-        });
-        loginWrap.appendChild(loginSaveBtn);
-        loginWrap.appendChild(loginStatus);
         body.appendChild(loginWrap);
       } else {
         var createLoginWrap = el('div', 'margin-top:16px;padding-top:12px;border-top:1px solid var(--rc-silver);');
-        createLoginWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'NO LOGIN YET'));
-        var newUserInput = wizTextInput('', function () {});
-        var newPassInput = wizTextInput('', function () {}); newPassInput.type = 'password';
+        createLoginWrap.appendChild(el('div', 'font-size:12px;font-weight:600;color:var(--rc-steel);', 'NO LOGIN YET (optional -- fill in to create one)'));
+        newUserInput = wizTextInput('', function () {});
+        newPassInput = wizTextInput('', function () {}); newPassInput.type = 'password';
         createLoginWrap.appendChild(wizLabel('Username')); createLoginWrap.appendChild(newUserInput);
         createLoginWrap.appendChild(wizLabel('Temporary Password')); createLoginWrap.appendChild(newPassInput);
-        var createLoginBtn = el('button', null, 'Create Login'); createLoginBtn.className = 'rc-btn-secondary'; createLoginBtn.style.cssText = 'width:auto;margin-top:8px;padding:6px 12px;font-size:12px;';
-        var createLoginStatus = el('div', 'margin-top:6px;font-size:13px;');
-        createLoginBtn.addEventListener('click', function () {
-          fetchApi('adminCreateUser', { method: 'POST', token: token, body: { username: newUserInput.value.trim(), password: newPassInput.value, role: 'Driver', profileId: d.profileId } })
-            .then(function (data) {
-              createLoginStatus.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-              createLoginStatus.textContent = data.message || (data.success ? 'Login created.' : '');
-              if (data.success) { loadDrivers(); setTimeout(modal.close, 900); }
-            });
-        });
-        createLoginWrap.appendChild(createLoginBtn);
-        createLoginWrap.appendChild(createLoginStatus);
         body.appendChild(createLoginWrap);
       }
+
+      var saveBtn = el('button', null, 'Save Changes'); saveBtn.className = 'rc-btn-primary'; saveBtn.style.cssText = 'width:auto;margin-top:14px;padding:8px 14px;';
+      var status = el('div', 'margin-top:6px;font-size:13px;');
+      saveBtn.addEventListener('click', function () {
+        saveBtn.disabled = true;
+        var calls = [
+          fetchApi('adminUpdateProfile', {
+            method: 'POST', token: token, body: {
+              targetProfileId: d.profileId, firstName: firstInput.value.trim(), lastName: lastInput.value.trim(), suffix: suffixSelect.value
+            }
+          })
+        ];
+        if (d.userId && unameInput) {
+          calls.push(fetchApi('adminUpdateUser', { method: 'POST', token: token, body: { targetUserId: d.userId, username: unameInput.value.trim() } }));
+        } else if (!d.userId && newUserInput && newUserInput.value.trim()) {
+          calls.push(fetchApi('adminCreateUser', { method: 'POST', token: token, body: { username: newUserInput.value.trim(), password: newPassInput.value, role: 'Driver', profileId: d.profileId } }));
+        }
+        Promise.all(calls).then(function (results) {
+          saveBtn.disabled = false;
+          var allOk = results.every(function (r) { return r && r.success; });
+          status.style.color = allOk ? 'var(--rc-ok)' : 'var(--rc-red)';
+          status.textContent = allOk ? 'Saved.' : results.map(function (r) { return r && r.message; }).filter(Boolean).join(' ');
+          if (allOk) { loadDrivers(); setTimeout(modal.close, 900); }
+        });
+      });
+      body.appendChild(saveBtn);
+      body.appendChild(status);
     }
 
     if (preloaded && preloaded.success) { driversData = preloaded.drivers || []; renderList(); }
@@ -3331,25 +3323,57 @@
   // -----------------------------------------------------------------------
   function tracksManagementSection(token, preloaded) {
     var box = el('div', 'rc-panel');
-    box.appendChild(el('h3', 'margin-top:0;', 'Tracks'));
+    box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Tracks'));
 
-    var toolbar = el('div', 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Track'); addBtn.className = 'rc-btn-primary rc-btn-sm';
+    toolbar.appendChild(addBtn);
+    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
     var azBtn = el('button', null, 'Sort A→Z'); azBtn.type = 'button'; azBtn.className = 'rc-btn-secondary'; azBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
-    toolbar.appendChild(addBtn); toolbar.appendChild(azBtn);
+    sortGroup.appendChild(azBtn);
+    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
     box.appendChild(listBody);
 
     var tracksData = [];
+    var groupExpanded = {}; // trackName -> bool, defaults expanded, same pattern as the Cars panel below
     function trackKey(t) { return t.trackName + '||' + t.layout; }
+
+    function renderGroup(g, sorted) {
+      var expanded = groupExpanded.hasOwnProperty(g.name) ? groupExpanded[g.name] : true;
+      var groupWrap = el('div', 'padding:8px 0;border-bottom:1px solid var(--rc-silver);');
+      var header = el('div', null, (expanded ? '▼ ' : '▶ ') + g.name + ' (' + g.rows.length + ' layout' + (g.rows.length === 1 ? '' : 's') + ')');
+      header.style.cssText = 'font-weight:700;font-family:var(--rc-font-head);font-size:14px;cursor:pointer;user-select:none;';
+      header.addEventListener('click', function () { groupExpanded[g.name] = !expanded; renderList(); });
+      groupWrap.appendChild(header);
+      if (expanded) {
+        var rowsWrap = el('div', 'margin-top:4px;');
+        g.rows.forEach(function (r) { rowsWrap.appendChild(trackRow(r.t, r.i, sorted)); });
+        groupWrap.appendChild(rowsWrap);
+      }
+      listBody.appendChild(groupWrap);
+    }
 
     function renderList() {
       var sorted = tracksData.slice().sort(function (a, b) { return (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0); });
       listBody.innerHTML = '';
       if (!sorted.length) { listBody.textContent = 'No tracks yet.'; return; }
-      sorted.forEach(function (t, i) { listBody.appendChild(trackRow(t, i, sorted)); });
+      // Same organization as the Cars panel below: one collapsible group
+      // per TrackName, with a ▼/▶ toggle and a layout count in the
+      // header, and each layout nested underneath when expanded. Purely a
+      // display grouping on top of the existing flat SortOrder -- the
+      // up/down arrows on a layout row still move that single
+      // (TrackName, Layout) row within the same global order the Season
+      // Wizard's dropdown reads.
+      var groups = [];
+      var byName = {};
+      sorted.forEach(function (t, i) {
+        if (!byName[t.trackName]) { byName[t.trackName] = { name: t.trackName, rows: [] }; groups.push(byName[t.trackName]); }
+        byName[t.trackName].rows.push({ t: t, i: i });
+      });
+      groups.forEach(function (g) { renderGroup(g, sorted); });
     }
 
     function loadTracks() {
@@ -3361,7 +3385,15 @@
     }
 
     function reorder(sorted) {
-      fetchApi('adminReorderTracks', { method: 'POST', token: token, body: { orderedKeys: sorted.map(trackKey) } }).then(loadTracks);
+      // Optimistic: renumber SortOrder locally and repaint immediately so
+      // the arrows feel instant, then persist in the background. `sorted`
+      // holds the same object references as tracksData (slice() is
+      // shallow), so mutating .sortOrder here updates tracksData too. Only
+      // a failed save falls back to a real reload.
+      sorted.forEach(function (t, idx) { t.sortOrder = idx + 1; });
+      renderList();
+      fetchApi('adminReorderTracks', { method: 'POST', token: token, body: { orderedKeys: sorted.map(trackKey) } })
+        .then(function (data) { if (!data.success) loadTracks(); });
     }
 
     azBtn.addEventListener('click', function () {
@@ -3374,12 +3406,11 @@
     });
 
     function trackRow(t, i, sorted) {
-      var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
-      var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
-      var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;');
-      left.innerHTML = '<strong>' + escapeHtml(t.trackName) + '</strong> &middot; ' + escapeHtml(t.layout);
+      var wrap = el('div', 'padding:4px 0 4px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
+      var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--rc-steel);');
+      left.innerHTML = escapeHtml(t.layout);
       left.appendChild(activePill(t.active));
-      summary.appendChild(left);
+      wrap.appendChild(left);
 
       var actions = el('div', 'display:flex;gap:6px;align-items:center;');
       var upBtn = el('button', null, '↑'); var downBtn = el('button', null, '↓');
@@ -3401,11 +3432,17 @@
       var toggleBtn = el('button', null, t.active ? 'Deactivate' : 'Reactivate');
       toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary'; toggleBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
       toggleBtn.addEventListener('click', function () {
-        fetchApi('adminSetTrackActive', { method: 'POST', token: token, body: { trackName: t.trackName, layout: t.layout, active: !t.active } }).then(loadTracks);
+        // Optimistic: flip the pill/label right away, save in the
+        // background, only revert + repaint if the save actually fails.
+        // We never need to re-read the sheet to know what we just wrote.
+        var prevActive = t.active;
+        t.active = !t.active;
+        renderList();
+        fetchApi('adminSetTrackActive', { method: 'POST', token: token, body: { trackName: t.trackName, layout: t.layout, active: t.active } })
+          .then(function (data) { if (!data.success) { t.active = prevActive; renderList(); } });
       });
       actions.appendChild(toggleBtn);
-      summary.appendChild(actions);
-      wrap.appendChild(summary);
+      wrap.appendChild(actions);
       return wrap;
     }
 
@@ -3437,34 +3474,37 @@
   }
 
   // -----------------------------------------------------------------------
-  // CARS — one row per real-world entry (team/car/number). Sortable by
-  // Manufacturer, Car Number, Team, or Class (Matt's call: "this is more
-  // for the admin more than anything" -- purely a browsing convenience,
-  // not a stored order the way Tracks' SortOrder is). EntryID is always
-  // auto-assigned server-side (nextCarEntryId, 5_Website.gs) -- never
-  // typed here.
+  // CARS — grouped into one collapsible section per class (LMGT3, LMP2,
+  // LMP3, Hypercar -- Matt's call, replacing the old flat wall-of-text
+  // list). Class is no longer a sort key since the grouping already does
+  // that job; Manufacturer/Car Number/Team still sort the cars *within*
+  // each group. A class with zero cars still shows its header (greyed,
+  // collapsed) so it's obvious nothing's missing, just empty. EntryID is
+  // always auto-assigned server-side (nextCarEntryId, 5_Website.gs) --
+  // never typed here, and (per Matt's call) it's tucked into the Edit
+  // modal only, not shown in the at-a-glance list.
   // -----------------------------------------------------------------------
   function carsManagementSection(token, preloaded) {
     var box = el('div', 'rc-panel');
-    box.appendChild(el('h3', 'margin-top:0;', 'Cars'));
+    box.appendChild(el('h3', 'margin-top:0;margin-bottom:14px;', 'Cars'));
 
-    var toolbar = el('div', 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;');
+    var toolbar = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;');
     var addBtn = el('button', null, 'Add Car'); addBtn.className = 'rc-btn-primary rc-btn-sm';
     toolbar.appendChild(addBtn);
-    toolbar.appendChild(el('span', 'font-size:12px;color:var(--rc-steel);margin-left:8px;', 'Sort by:'));
+    var sortGroup = el('div', 'display:flex;gap:8px;align-items:center;');
     var sortOptions = [
       { key: 'manufacturer', label: 'Manufacturer' },
       { key: 'carNumber', label: 'Car Number' },
-      { key: 'teamName', label: 'Team' },
-      { key: 'carClass', label: 'Class' }
+      { key: 'teamName', label: 'Team' }
     ];
     var sortBtns = {};
     sortOptions.forEach(function (opt) {
       var b = el('button', null, opt.label);
       b.type = 'button'; b.className = 'rc-btn-secondary'; b.style.cssText = 'padding:4px 10px;font-size:12px;';
-      toolbar.appendChild(b);
+      sortGroup.appendChild(b);
       sortBtns[opt.key] = b;
     });
+    toolbar.appendChild(sortGroup);
     box.appendChild(toolbar);
 
     var listBody = el('div', 'font-size:13px;color:var(--rc-steel);', 'Loading...');
@@ -3472,17 +3512,47 @@
 
     var carsData = [];
     var sortKey = 'manufacturer';
+    var groupExpanded = {}; // class -> bool, set on first render (expanded iff it has cars) and toggled by click after that
 
-    function renderList() {
-      var sorted = carsData.slice().sort(function (a, b) {
+    function sortWithinGroup(list) {
+      return list.slice().sort(function (a, b) {
+        if (sortKey === 'carNumber') { return (Number(a.carNumber) || 0) - (Number(b.carNumber) || 0); }
         var av = String(a[sortKey] || '').toLowerCase();
         var bv = String(b[sortKey] || '').toLowerCase();
-        if (sortKey === 'carNumber') { return (Number(a.carNumber) || 0) - (Number(b.carNumber) || 0); }
         return av < bv ? -1 : av > bv ? 1 : 0;
       });
+    }
+
+    function renderGroup(label, inClass) {
+      var expanded = groupExpanded.hasOwnProperty(label) ? groupExpanded[label] : inClass.length > 0;
+      var groupWrap = el('div', 'padding:8px 0;border-bottom:1px solid var(--rc-silver);');
+      var header = el('div', null, (expanded ? '▼ ' : '▶ ') + label + ' (' + inClass.length + ' car' + (inClass.length === 1 ? '' : 's') + ')');
+      header.style.cssText = 'font-weight:700;font-family:var(--rc-font-head);font-size:14px;cursor:pointer;user-select:none;' + (inClass.length ? '' : 'opacity:0.55;');
+      header.addEventListener('click', function () { groupExpanded[label] = !expanded; renderList(); });
+      groupWrap.appendChild(header);
+      if (expanded && inClass.length) {
+        var rowsWrap = el('div', 'margin-top:4px;');
+        sortWithinGroup(inClass).forEach(function (c) { rowsWrap.appendChild(carRow(c)); });
+        groupWrap.appendChild(rowsWrap);
+      }
+      listBody.appendChild(groupWrap);
+    }
+
+    function renderList() {
       listBody.innerHTML = '';
-      if (!sorted.length) { listBody.textContent = 'No cars yet.'; return; }
-      sorted.forEach(function (c) { listBody.appendChild(carRow(c)); });
+      if (!carsData.length) { listBody.textContent = 'No cars yet.'; return; }
+      CAR_CLASS_LIST.forEach(function (cls) {
+        renderGroup(cls, carsData.filter(function (c) { return c.carClass === cls; }));
+      });
+      // Legacy/unexpected class values never vanish silently -- they get
+      // their own group at the bottom instead.
+      var known = {};
+      CAR_CLASS_LIST.forEach(function (cls) { known[cls] = true; });
+      var leftovers = {};
+      carsData.forEach(function (c) {
+        if (!known[c.carClass]) { var key = c.carClass || '(no class)'; (leftovers[key] = leftovers[key] || []).push(c); }
+      });
+      Object.keys(leftovers).forEach(function (key) { renderGroup(key, leftovers[key]); });
     }
 
     function loadCars() {
@@ -3498,14 +3568,20 @@
     });
 
     function carRow(c) {
-      var wrap = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-silver);');
-      var summary = el('div', 'display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
-      var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;');
-      left.innerHTML = '<strong>' + escapeHtml(c.manufacturer + ' ' + c.carModel) + '</strong> &middot; #' + escapeHtml(String(c.carNumber || '')) +
-        ' &middot; ' + escapeHtml(c.teamName || '') + ' &middot; ' + escapeHtml(c.carClass || '') + ' &middot; ' + escapeHtml(String(c.season || '')) +
-        ' &middot; ' + escapeHtml(c.entryId);
+      // Class is dropped from this line (redundant -- it's the group
+      // header), and EntryID/Pro/Con live in the Edit modal only. Season
+      // stays here (Matt's call) since a single Cars tab can hold more
+      // than one season at once. A car-number badge leads the line so the
+      // most-scanned field (number) doesn't get lost in the text.
+      var wrap = el('div', 'padding:6px 0 6px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;');
+      var left = el('div', 'display:flex;align-items:center;flex-wrap:wrap;font-size:13px;');
+      var numBadge = el('span', 'display:inline-block;min-width:24px;text-align:center;padding:2px 7px;border-radius:4px;background:var(--rc-asphalt,#1e2328);color:#fff;font-weight:700;font-size:12px;margin-right:8px;', '#' + escapeHtml(String(c.carNumber || '?')));
+      left.appendChild(numBadge);
+      var titleSpan = el('span', null, '');
+      titleSpan.innerHTML = '<strong>' + escapeHtml(c.manufacturer + ' ' + c.carModel) + '</strong> &middot; ' + escapeHtml(c.teamName || '') + ' &middot; ' + escapeHtml(String(c.season || ''));
+      left.appendChild(titleSpan);
       left.appendChild(activePill(c.active));
-      summary.appendChild(left);
+      wrap.appendChild(left);
 
       var actions = el('div', 'display:flex;gap:6px;align-items:center;');
       var editBtn = el('button', null, 'Edit'); editBtn.type = 'button'; editBtn.className = 'rc-btn-secondary'; editBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
@@ -3513,11 +3589,16 @@
       var toggleBtn = el('button', null, c.active ? 'Deactivate' : 'Reactivate');
       toggleBtn.type = 'button'; toggleBtn.className = 'rc-btn-secondary'; toggleBtn.style.cssText = 'padding:4px 10px;font-size:12px;';
       toggleBtn.addEventListener('click', function () {
-        fetchApi('adminSetCarActive', { method: 'POST', token: token, body: { entryId: c.entryId, active: !c.active } }).then(loadCars);
+        // Same optimistic pattern as Tracks -- flip state + repaint now,
+        // save in the background, revert only on a real failure.
+        var prevActive = c.active;
+        c.active = !c.active;
+        renderList();
+        fetchApi('adminSetCarActive', { method: 'POST', token: token, body: { entryId: c.entryId, active: c.active } })
+          .then(function (data) { if (!data.success) { c.active = prevActive; renderList(); } });
       });
       actions.appendChild(editBtn); actions.appendChild(toggleBtn);
-      summary.appendChild(actions);
-      wrap.appendChild(summary);
+      wrap.appendChild(actions);
       return wrap;
     }
 
