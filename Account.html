@@ -425,9 +425,21 @@
     backdrop.appendChild(modal);
     document.body.appendChild(backdrop);
 
+    // Lock the page behind the popup -- same iOS-Safari-safe pattern the
+    // mobile menu already uses (see .rc-modal-scroll-locked in
+    // style.css): pin body with position:fixed (not just overflow:hidden,
+    // which doesn't reliably stop touch scrolling), remembering the
+    // scroll position so it can be restored on close without a jump.
+    var scrollYBeforeModal = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = '-' + scrollYBeforeModal + 'px';
+    document.body.classList.add('rc-modal-scroll-locked');
+
     function close() {
       backdrop.remove();
       document.removeEventListener('keydown', onKeydown);
+      document.body.classList.remove('rc-modal-scroll-locked');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollYBeforeModal);
     }
     function onKeydown(evt) {
       if (evt.key === 'Escape') close();
@@ -496,7 +508,7 @@
     form.appendChild(el('label', null, 'Email Address'));
     var email = el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
     form.appendChild(email);
-    form.appendChild(el('div', 'rc-hint', 'Only used for verification and password resets — you still log in with your username.'));
+    form.appendChild(el('div', 'rc-hint', 'Only used for verification and password resets.'));
 
     form.appendChild(el('label', null, 'Location'));
     var location = document.createElement('select');
@@ -562,7 +574,7 @@
           }
           currentProfile = data.profile;
           setProfileCache(data.profile); // keeps the header avatar current here and on every other page
-          renderHeader({ skipNotifCheck: true });
+          renderHeader(); // header fetches its own notifications now -- see js/header.js
           showToast('Profile updated.', 'success');
           modalHandle.close();
         })
@@ -658,7 +670,7 @@
   }
 
   if (freshProfile && freshProfile.success) {
-    renderHeader({ skipNotifCheck: true });
+    renderHeader(); // header fetches its own notifications now -- see js/header.js
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile.profile, token);
@@ -672,7 +684,7 @@
           return;
         }
         setProfileCache(data.profile); // keeps the header avatar current on every other page too
-        renderHeader({ skipNotifCheck: true }); // confirmed by the API -- safe to show as logged in
+        renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
         document.getElementById('rc-loading').style.display = 'none';
         document.getElementById('rc-profile-root').style.display = 'block';
         renderProfile(data.profile, token);
