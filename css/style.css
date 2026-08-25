@@ -913,7 +913,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 1000;
 }
 .rc-header-logo-link { display: flex; align-items: center; height: 100%; }
-.rc-header-logo { height: 46px; display: block; }
+.rc-header-logo { height: 58px; display: block; }
 .rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; }
 .rc-header-link {
   font-family: var(--rc-font-heading);

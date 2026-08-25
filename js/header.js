@@ -95,6 +95,8 @@
   mouseenter/mouseleave across a set of elements and only fires its close
   callback once none of them are hovered, with a short delay so a normal
   mouse movement across the gap between button and menu doesn't trip it.
+  The bell dropdown behaves the same way (opens on click, auto-closes on
+  hover-off) -- both toggles are wired through the same helper.
 
   TOAST NOTIFICATIONS (new this pass): showToast(message, type, durationMs)
   is the one sitewide way any page shows a transient result/status message
@@ -387,12 +389,13 @@ function renderHeader(opts) {
       if (notifMenu.style.display === 'block') closeNotifMenu();
     });
 
-    // The account dropdown also closes the instant the pointer leaves
-    // BOTH the toggle button and the menu itself, not just on an outside
-    // click -- see the header comment above and _rcWireHoverAwayClose's
-    // own comment for why. Opening is still click-only; this only ever
-    // closes it early.
+    // Both dropdowns also close the instant the pointer leaves BOTH their
+    // toggle button and their own menu, not just on an outside click --
+    // see the header comment above and _rcWireHoverAwayClose's own
+    // comment for why. Opening is still click-only for both; this only
+    // ever closes them early.
     _rcWireHoverAwayClose([toggle, menu], closeAccountMenu);
+    _rcWireHoverAwayClose([bellToggle, notifMenu], closeNotifMenu);
 
     // Same fire-and-forget logout pattern as Account.html's sidebar Log
     // Out button: clear the local token and redirect immediately, fire
