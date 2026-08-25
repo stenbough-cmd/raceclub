@@ -1,0 +1,346 @@
+<!--
+<<<<<<< HEAD
+  Race Club -- index.html  (v0.3.0, hero landing page)
+=======
+  Race Club — index.html  (v0.3.0, hero landing page)
+>>>>>>> parent of 03334c7 (big change)
+
+  WHAT CHANGED VS. v0.2.5:
+  index.html used to be a pure redirect gate (check localStorage, bounce
+  to Account.html or login.html, never actually render). It's now a real
+  landing page: fixed site header (js/header.js) on top, a full-bleed hero
+  banner below it with a "content slides up and covers the banner as you
+<<<<<<< HEAD
+  scroll" effect, a short tagline blurb, and the class tiers as simple
+  cards. See the .rc-hero / .rc-hero-spacer / .rc-hero-content rules in
+  css/style.css for exactly how the scroll-cover effect is built and why
+  fixed+spacer was chosen over `position: sticky`.
+=======
+  scroll" effect, a short tagline blurb, and the three class tiers as
+  simple cards. See the .rc-hero / .rc-hero-spacer / .rc-hero-content
+  rules in css/style.css for exactly how the scroll-cover effect is built
+  and why fixed+spacer was chosen over `position: sticky`.
+>>>>>>> parent of 03334c7 (big change)
+
+  There is no login/session logic on this page beyond what js/header.js
+  already provides (it reads getToken() itself to decide whether to show
+  "HOME · LOGIN/REGISTER" or "ACCOUNT").
+
+<<<<<<< HEAD
+  WHAT CHANGED IN THIS PASS (ECO wording pass):
+  This is a wording-only pass to bring the page in line with the Race
+  Club ECO Season 1 design (race-club-eco-season-1.md) -- no styling,
+  layout, or markup structure changed, only copy. Specifically:
+  - The intro tagline dropped "no reset button" -- under ECO, seats,
+    sponsors, and wagers DO reset every season; only bank balance
+    carries forward. Reworded to say that honestly instead.
+  - "Sponsors Watch How You Drive" card reworded -- ECO sponsors come
+    bundled with the TEAM you buy into (three per team, harder/bigger
+    payouts on pricier teams, easier/conservative on cheaper ones), not
+    earned individually by driving style.
+  - "Real Teams, Real Seats" and "A Fresh Grid, Every Season" cards
+    reworded to reflect the one-time buy-in economy and the
+    bank-balance-only carryover.
+  - "Real Money On The Line" card reworded to reflect sponsor bonuses
+    landing every race and wager stakes freezing on acceptance.
+  - Class Tiers section: renamed GT3 -> LMGT3 (the actual Season 1 class
+    name per the design doc) and marked it as the only class actually
+    running this season. The three-gate mix ("Money only" vs. "Money +
+    Reputation") replaced with the real ECO gate -- affordability AND the
+    experience/consistency/safety checklist -- since ECO applies that same
+    two-bar test to every class above the first, not just the top two.
+    The other three tiers are kept as an aspirational future-seasons
+    ladder, not something buildable yet.
+
+  WHAT CHANGED IN THIS PASS (copy polish, Matt's direct edits):
+  - "This Isn't A Lobby. It's A Career." -> "This Isn't Just A Lobby.
+    It's A Career."
+  - Dropped the repeated "not bought outright" clause from both the
+    Class Tiers intro and the Hypercar card -- said once already by the
+    "earned, not bought" framing elsewhere on the ladder, so saying it
+    twice was redundant.
+  - Em dashes removed throughout the page copy (replaced with periods,
+    commas, or colons depending on the sentence) per Matt's house style:
+    use them sparingly, not as the default punctuation.
+=======
+  WHAT CHANGED IN THIS PASS (recruiting sections):
+  Added three new sections between the existing intro blurb and the
+  footer: "Why Race Club" (six highlight cards selling the career-mode
+  feeling — real teams, earned reputation, conduct-linked sponsors, a
+  real Steward Board, real money on the line, a fresh grid every season),
+  a full-bleed mid-page banner (assets/banner-highlights.jpg, plain
+  in-flow this time — NOT the fixed/spacer trick the top hero uses, since
+  this one is meant to just scroll past normally), and a closing
+  "Ready to Race?" CTA band linking straight to register.html. The Class
+  Tiers section was also reordered GT3→LMP3→LMP2→Hypercar (was
+  Hypercar-first) to read as an actual ladder you climb, given a fourth
+  card for LMP3 (previously missing entirely), and restyled with the same
+  dark gradient tier-card treatment used for the class ladder in the v0.3
+  system map, so it carries the same visual weight as everything else
+  added here. All-new copy avoids specific dollar figures on purpose —
+  those are still working values in the design doc, not something to
+  print as fact on a public page.
+>>>>>>> parent of 03334c7 (big change)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+</head>
+<body>
+
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<!-- Empty spacer, same total height as header+hero, so the page has real
+     scroll distance even though the hero itself is position:fixed. -->
+<div class="rc-hero-spacer"></div>
+
+<!-- Fixed hero banner, pinned just under the header. Stays put while the
+     content below scrolls up and over it (see css/style.css). The image
+     itself is set entirely in CSS now (not inline here) specifically so
+     an @media (orientation: portrait) rule can swap it for a dedicated
+     portrait-shaped image on phones held upright, falling back to this
+     standard landscape one otherwise -- an inline style here would beat
+     that media query on specificity and the swap would never show. -->
+<<<<<<< HEAD
+<div class="rc-hero" role="img" aria-label="Race Club: league cars on track"></div>
+=======
+<div class="rc-hero" role="img" aria-label="Race Club — league cars on track"></div>
+>>>>>>> parent of 03334c7 (big change)
+
+<!-- Everything from here down is normal document flow, opaque white
+     background, higher z-index than the hero -- this is what visually
+     "covers" the banner as the user scrolls. -->
+<div class="rc-hero-content">
+
+  <section class="rc-landing-section">
+    <div class="rc-landing-inner">
+      <h2>What Is Race Club</h2>
+      <p class="rc-landing-tagline">
+        Race Club is a persistent, solo-driver career built on real Le Mans
+<<<<<<< HEAD
+        Ultimate league races. You buy into a team, race real league rounds
+        against real friends, and build a bank balance and a driving record
+        that carry your career forward: no NPC grid, no shortcuts, just
+        your results, race after race.
+=======
+        Ultimate league races. You register a driver, race real league
+        rounds against real friends, and build a career record that
+        actually means something over time — no NPC grid, no reset button,
+        just your results, race after race.
+>>>>>>> parent of 03334c7 (big change)
+      </p>
+    </div>
+  </section>
+
+<<<<<<< HEAD
+  <!-- "Why Race Club" -- the recruiting section. Six short highlight
+=======
+  <!-- "Why Race Club" — the recruiting section. Six short highlight
+>>>>>>> parent of 03334c7 (big change)
+       cards, each icon + headline + one line, built specifically so this
+       reads as scannable claims instead of another paragraph of copy. -->
+  <section class="rc-landing-section rc-why-section">
+    <div class="rc-landing-inner">
+      <div class="rc-eyebrow">The Experience</div>
+<<<<<<< HEAD
+      <h2>This Isn't Just A Lobby. It's A Career.</h2>
+=======
+      <h2>This Isn't A Lobby. It's A Career.</h2>
+>>>>>>> parent of 03334c7 (big change)
+      <p class="rc-landing-tagline">
+        Every system underneath Race Club exists to make one thing feel
+        real: that the seat you're in, the reputation you're building, and
+        the money in your account are actually yours.
+      </p>
+
+      <div class="rc-highlight-grid">
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="15" height="11" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path></svg>
+          </div>
+          <h3>Real Teams, Real Seats</h3>
+<<<<<<< HEAD
+          <p>Every car on the grid is modeled on an actual real-world team, not a made-up livery. Buy into the team that fits how you want to race, and the seat is yours.</p>
+=======
+          <p>Every car on the grid is an actual real-world team — not a made-up livery. One driver per seat, claimed first come, first served.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 10l-5 4.4L17.4 21 12 17.3 6.6 21 8 14.4 3 10l6.6-1.4z"></path></svg>
+          </div>
+          <h3>Reputation You Earn</h3>
+<<<<<<< HEAD
+          <p>No shortcuts to the top. Moving up a class takes real seat time, real attendance, and a clean record on track. Money alone won't get you there.</p>
+=======
+          <p>No shortcuts to the top. The Hypercar seat is earned through real seat time and a clean record — money alone won't get you there.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H8.5L4 10v4a2 2 0 0 0 2 2h1"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle><path d="M9 17h6"></path></svg>
+          </div>
+<<<<<<< HEAD
+          <h3>Every Team Comes With Sponsors</h3>
+          <p>Every team is bundled with its own sponsors before you ever commit. Chase a demanding, high-payout lineup or a steady, conservative one. Either way, hit the conditions and it lands in your bank account.</p>
+=======
+          <h3>Sponsors Watch How You Drive</h3>
+          <p>Land sponsors that pay for the way you race — clean and consistent, or fast and fearless. Either way, it shows up in your bank account.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.4 7.7-8 9-4.6-1.3-8-4.5-8-9V7z"></path><path d="M9 12l2 2 4-4"></path></svg>
+          </div>
+          <h3>A Real Governing Body</h3>
+<<<<<<< HEAD
+          <p>A per-season Steward Board rules on filed protests using rules adapted from real FIA/WEC driving standards. Final, fair, transparent.</p>
+=======
+          <p>A per-season Steward Board rules on disputed incidents using rules adapted from real FIA/WEC driving standards. Final, fair, transparent.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"></rect><path d="M2 10h20"></path><circle cx="7" cy="14.5" r="1"></circle></svg>
+          </div>
+          <h3>Real Money On The Line</h3>
+<<<<<<< HEAD
+          <p>Sponsor bonuses land every race, a season-end prize pool pays out by standing, and you can wager rivals for the fun of it. Once a wager's accepted, both stakes are locked in until the results are in.</p>
+=======
+          <p>Wager against rivals, chase bonuses, manage a real bank balance. Every commitment you make is guaranteed — nobody backs out of a debt.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
+          </div>
+          <h3>A Fresh Grid, Every Season</h3>
+<<<<<<< HEAD
+          <p>Seats, sponsors, and wagers all reset when a season ends, but your bank balance carries forward. Buy into a new team, chase new sponsors, and write the next chapter of your career.</p>
+=======
+          <p>Seats reset when a season ends. Re-sign with a new team, set new goals, and write the next chapter of your career.</p>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top
+       hero uses -- that effect is specifically for covering a banner
+       pinned at the very top of the page as content scrolls up over it.
+       This one just sits in normal document flow between two sections
+       and scrolls past like anything else, per Matt's own description. -->
+<<<<<<< HEAD
+  <div class="rc-mid-banner" role="img" aria-label="Race Club: the career, on and off track">
+    <div class="rc-mid-banner-inner">
+      <h2>This Is Your Legacy.</h2>
+      <p>Every race, every choice, every season: it all becomes part of the record you're building.</p>
+=======
+  <div class="rc-mid-banner" role="img" aria-label="Race Club — the career, on and off track">
+    <div class="rc-mid-banner-inner">
+      <h2>This Is Your Legacy.</h2>
+      <p>Every race, every choice, every season — it all becomes part of the record you're building.</p>
+>>>>>>> parent of 03334c7 (big change)
+    </div>
+  </div>
+
+  <section class="rc-landing-section">
+    <div class="rc-landing-inner">
+      <div class="rc-eyebrow">The Ladder</div>
+      <h2>Class Tiers</h2>
+<<<<<<< HEAD
+      <p class="rc-landing-tagline">Season 1 starts every driver in LMGT3. The rest of the ladder is where a Race Club career is headed, earned one season at a time.</p>
+      <div class="rc-tier-row">
+        <div class="rc-card rc-tier-card rc-tier-bronze">
+          <h3>LMGT3</h3>
+          <div class="rc-tier-label">Season 1</div>
+          <p>Where every career begins. Accessible, competitive, and the proving ground for everything above it.</p>
+          <div class="rc-tier-gate">Gate: Buy in and race</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-platinum">
+          <h3>LMP3</h3>
+          <div class="rc-tier-label">Future Season</div>
+          <p>Rookie friendly but a step up. Faster cars and higher stakes means bigger swings in reputation and reward.</p>
+          <div class="rc-tier-gate">Gate: Afford it + earn it</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-silver">
+          <h3>LMP2</h3>
+          <div class="rc-tier-label">Future Season</div>
+          <p>The mid-tier proving ground on the way to Hypercar. Where a serious career really starts to show.</p>
+          <div class="rc-tier-gate">Gate: Afford it + earn it</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-gold">
+          <h3>Hypercar</h3>
+          <div class="rc-tier-label">Future Season</div>
+          <p>The pinnacle of a Race Club career. Earned through proven experience, consistency, and clean racecraft.</p>
+          <div class="rc-tier-gate">Gate: Afford it + earn it</div>
+=======
+      <p class="rc-landing-tagline">Four classes, one climb. Every driver starts somewhere real — where you end up is up to you.</p>
+      <div class="rc-tier-row">
+        <div class="rc-card rc-tier-card rc-tier-bronze">
+          <h3>GT3</h3>
+          <div class="rc-tier-label">Bronze</div>
+          <p>Where most careers begin. Accessible, competitive, and the proving ground for everything above it.</p>
+          <div class="rc-tier-gate">Gate: Money only</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-platinum">
+          <h3>LMP3</h3>
+          <div class="rc-tier-label">Step Up</div>
+          <p>Rookie friendly but a step up. Faster cars and higher stakes means bigger swings in reputation and reward.</p>
+          <div class="rc-tier-gate">Gate: Money only</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-silver">
+          <h3>LMP2</h3>
+          <div class="rc-tier-label">Silver</div>
+          <p>The mid-tier proving ground between GT3 and Hypercar. Where a serious career really starts to show.</p>
+          <div class="rc-tier-gate">Gate: Money + Reputation</div>
+        </div>
+        <div class="rc-card rc-tier-card rc-tier-gold">
+          <h3>Hypercar</h3>
+          <div class="rc-tier-label">Gold</div>
+          <p>The pinnacle of a Race Club career. Earned through proven, clean conduct, not bought outright.</p>
+          <div class="rc-tier-gate">Gate: Money + Reputation</div>
+>>>>>>> parent of 03334c7 (big change)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing call to action. Dark band on purpose -- visual bookend to
+       the mid-banner and the dark tier cards above it, and a clear last
+       stop before the footer. -->
+  <section class="rc-cta-section">
+    <div class="rc-landing-inner rc-cta-inner">
+      <h2>Ready To Race?</h2>
+<<<<<<< HEAD
+      <p>Pick a team, pay the buy-in, and you're on the grid. No waitlist, no draft, just the seat you chose. Sign up, get approved, and stake your claim before the season starts.</p>
+=======
+      <p>Seats are claimed first come, first served — real teams, real cars, one driver each. Sign up, get approved, and stake your claim before the grid fills.</p>
+>>>>>>> parent of 03334c7 (big change)
+      <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Driver</a>
+    </div>
+  </section>
+
+  <footer class="rc-site-footer">
+    Copyright Race Club 2026. All rights reserved. Created and developed with the help of Claude AI.
+  </footer>
+
+</div>
+
+</body>
+</html>

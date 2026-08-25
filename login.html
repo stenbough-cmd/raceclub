@@ -1,0 +1,203 @@
+<!--
+  Race Club — login.html  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  This is the source file's "LOGIN VIEW" pulled out into its own real
+  page. All the Sites-only workarounds (reportHeight()/postMessage resize
+  hack, scrollbar-hiding CSS, single #rc-root view-toggle div) are gone —
+  see the top-level migration notes for the full list. The actual login
+  logic (fetch to ?action=login with a text/plain POST body, the
+  EMAIL_NOT_VERIFIED inline "Resend verification email" flow, the
+  ACCOUNT_DISABLED mailto link) is preserved exactly, just reorganized:
+
+  - On success, the token is stored via setToken() (js/auth.js) and the
+    browser navigates to Account.html — the source rendered the profile
+    view in place instead, since it was still the same embed/page.
+  - On a "Resend verification email" click (either from a failed
+    EMAIL_NOT_VERIFIED login, or a fresh registration), the username is
+    stashed in sessionStorage under 'raceclub_pending_username' and the
+    browser navigates to verify.html, which reads it from there. The
+    source kept this in a plain in-memory JS variable
+    (lastRegisteredUsername) since the code-entry view lived in the same
+    page; sessionStorage is the equivalent for a real page navigation and
+    is cleared automatically when the tab closes.
+  - A message can be queued for this page by another page via
+    sessionStorage's 'raceclub_login_message' key (used by the 30-minute
+    inactivity auto-logout in js/auth.js, and by verify.html after a
+    successful code verification) — read once on load, then cleared.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+</head>
+<body>
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+<div class="rc-auth-page">
+  <div class="rc-auth-wrap">
+    <h1>Login / Register</h1>
+
+    <div id="rc-setup-warning" class="rc-message rc-error" style="display:none;text-align:center;"></div>
+
+    <div class="rc-card" style="margin-top:24px;">
+      <form id="rc-login-form">
+        <label style="margin-top:0;">Username</label>
+        <input id="rc-username" type="text" autocomplete="username" required>
+        <label>Password</label>
+        <input id="rc-password" type="password" autocomplete="current-password" required>
+        <button id="rc-login-btn" type="submit" class="rc-btn-primary">Log In</button>
+      </form>
+      <div id="rc-login-message" class="rc-message"></div>
+      <button type="button" class="rc-link-btn" id="rc-login-resend" style="display:none;margin-top:8px;">Resend verification email</button>
+    </div>
+    <p class="rc-auth-footer">
+      New here? <button type="button" class="rc-link-btn" id="rc-show-register" onclick="window.location.href='register.html'">Create an account</button>
+    </p>
+  </div>
+</div>
+
+<!-- Site footer -- on every page now (Matt's call), not just index.html. -->
+<footer class="rc-site-footer">
+  Copyright Race Club 2026. All rights reserved. Created and developed with the help of Claude AI.
+</footer>
+
+<script>
+(function () {
+  if (apiBaseUrlIsUnset()) {
+    var warn = document.getElementById('rc-setup-warning');
+    warn.style.display = 'block';
+    warn.textContent = 'API_BASE_URL is not set. Edit js/api.js and paste in your Apps Script Web App URL.';
+    document.getElementById('rc-login-form').querySelectorAll('input,button').forEach(function (i) { i.disabled = true; });
+    return;
+  }
+
+  // If we already have a session token, don't make the user log in again.
+  if (getToken()) {
+    window.location.replace('Account.html');
+    return;
+  }
+
+  // Message queued by another page (inactivity timeout, verify.html
+  // success, etc.) -- shown once, then cleared.
+  var queuedMessage = sessionStorage.getItem('raceclub_login_message');
+  if (queuedMessage) {
+    var msgEl = document.getElementById('rc-login-message');
+    msgEl.className = 'rc-message rc-ok';
+    msgEl.textContent = queuedMessage;
+    sessionStorage.removeItem('raceclub_login_message');
+  }
+
+  // After a successful email verification, verify.html stashes the
+  // username here so it can be pre-filled here and the password field
+  // focused, matching the source file's post-verify behavior of jumping
+  // straight back to a ready-to-type login form.
+  var prefillUsername = sessionStorage.getItem('raceclub_prefill_username');
+  if (prefillUsername) {
+    document.getElementById('rc-username').value = prefillUsername;
+    sessionStorage.removeItem('raceclub_prefill_username');
+    document.getElementById('rc-password').focus();
+  }
+
+  document.getElementById('rc-login-form').addEventListener('submit', function (evt) {
+    evt.preventDefault();
+    var btn = document.getElementById('rc-login-btn');
+    var msg = document.getElementById('rc-login-message');
+    msg.className = 'rc-message';
+    msg.innerHTML = '';
+    btn.disabled = true;
+    btn.textContent = 'Logging in...';
+
+    var username = document.getElementById('rc-username').value.trim();
+    var password = document.getElementById('rc-password').value;
+
+    // IMPORTANT: Content-Type is deliberately 'text/plain' (see
+    // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
+    // Apps can't handle a CORS preflight (OPTIONS) request, which
+    // application/json would trigger. Do not change this.
+    fetchApi('login', { method: 'POST', body: { username: username, password: password } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+        if (!data.success) {
+          msg.className = 'rc-message rc-error';
+          var resendBtn = document.getElementById('rc-login-resend');
+          resendBtn.style.display = 'none';
+          if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
+            msg.innerHTML = (data.message || 'This account has been disabled.') +
+              ' <a href="mailto:' + data.contactEmail + '?subject=Race%20Club%20account">Contact administrator</a>';
+          } else if (data.error === 'EMAIL_NOT_VERIFIED') {
+            msg.textContent = data.message || 'Please verify your email before logging in.';
+            resendBtn.style.display = 'inline-block';
+          } else {
+            msg.textContent = data.message || 'Login failed.';
+          }
+          return;
+        }
+        // The login response IS a full profile payload plus a token (see
+        // the source file's buildProfilePayload comment) -- we don't need
+        // a second getProfile round-trip here. Account.html will pick the
+        // data back up itself via getProfile on load, same as any other
+        // direct visit to that page.
+        setToken(data.token);
+        setProfileCache(data); // so the header avatar has something to show immediately, site-wide
+        // The login response IS the full profile payload already (see the
+        // comment above) -- stash it so Account.html can render straight
+        // from it instead of firing its own getProfile call right after
+        // redirecting here, which was a second full Apps Script round-trip
+        // back to back with the login call itself (each one can take
+        // several seconds on a cold start) and was the main reason login
+        // felt like it hung. sessionStorage, not localStorage, since this
+        // is meant to be read exactly once by the very next page load.
+        sessionStorage.setItem('raceclub_fresh_profile', JSON.stringify(data));
+        window.location.href = 'Account.html';
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+        msg.className = 'rc-message rc-error';
+        msg.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+      });
+  });
+
+  // From the login screen, "Resend" sends a fresh code and jumps straight
+  // to verify.html's code-entry view, rather than just firing off an
+  // email and leaving the user on the login form.
+  document.getElementById('rc-login-resend').addEventListener('click', function () {
+    var username = document.getElementById('rc-username').value.trim();
+    var btn = this;
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    fetchApi('resendVerification', { method: 'POST', body: { username: username } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        if (data.success) {
+          sessionStorage.setItem('raceclub_pending_username', username);
+          sessionStorage.setItem('raceclub_verify_message', data.message || 'We emailed you a new 6-digit code. Enter it below.');
+          window.location.href = 'verify.html';
+        } else {
+          var msg = document.getElementById('rc-login-message');
+          msg.className = 'rc-message rc-error';
+          msg.textContent = data.message || 'Could not send a new code.';
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        var msg = document.getElementById('rc-login-message');
+        msg.className = 'rc-message rc-error';
+        msg.textContent = 'Could not reach the server. Try again in a moment.';
+      });
+  });
+})();
+</script>
+</body>
+</html>
