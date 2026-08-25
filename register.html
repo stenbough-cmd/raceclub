@@ -10,11 +10,17 @@
   with Account.html) instead of a copy of the same ~50-line list baked
   into this page.
 
-  On success, this page stashes the registered username in sessionStorage
-  ('raceclub_pending_username') and navigates to verify.html — the source
+  On success, this page stashes the returned ProfileID in sessionStorage
+  ('raceclub_pending_profile_id') and navigates to verify.html — the source
   swapped to an in-page "verification code" view instead, using an
   in-memory JS variable, since registration and verification were the
   same embed.
+
+  FIX (login-by-email, this pass): the Username field is gone. The Users
+  tab has no Username column -- Email is the one login identifier, so a
+  standalone username never had anywhere to be stored, and login.html now
+  asks for Email instead of Username to match. DisplayName is computed
+  server-side from First/Last/Suffix instead.
 
   v0.3 -- TWO FIXES, both Matt's direct call:
   1. Already-logged-in visitors used to get silently window.location.replace()'d
@@ -28,10 +34,10 @@
      redirect fires right after.
   2. A duplicate email is a genuine hard stop, not a dead-end error: when
      the server returns error === 'EMAIL_TAKEN', the message area now
-     renders "An account already exists for that email (started with
-     j***n)." plus a "Log in with that account" button that goes straight
-     to login.html — instead of just an error string with nowhere to go.
-     Every other error case is unchanged (still a plain message).
+     renders "An account already exists for that email." plus a "Log in
+     with that account" button that goes straight to login.html — instead
+     of just an error string with nowhere to go. Every other error case is
+     unchanged (still a plain message).
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -72,11 +78,7 @@
     <div class="rc-card" style="margin-top:24px;">
       <form id="rc-register-form">
         <div class="rc-section">
-          <label style="margin-top:0;">Username</label>
-          <input id="rc-reg-username" type="text" autocomplete="username" required>
-          <div class="rc-hint">This is what you'll log in with — it isn't shown publicly.</div>
-
-          <label>First Name</label>
+          <label style="margin-top:0;">First Name</label>
           <input id="rc-reg-firstname" type="text" autocomplete="given-name" required>
 
           <label>Last Name</label>
@@ -240,7 +242,6 @@
     msg.textContent = '';
     clearEmailTakenPanel();
 
-    var username = document.getElementById('rc-reg-username').value.trim();
     var firstName = document.getElementById('rc-reg-firstname').value.trim();
     var lastName = document.getElementById('rc-reg-lastname').value.trim();
     var suffix = document.getElementById('rc-reg-suffix').value;
@@ -269,7 +270,7 @@
     fetchApi('register', {
       method: 'POST',
       body: {
-        username: username, firstName: firstName, lastName: lastName, suffix: suffix,
+        firstName: firstName, lastName: lastName, suffix: suffix,
         email: email, timeZone: timeZone,
         password: password, requestedRole: requestedRole
       }
@@ -279,16 +280,13 @@
         btn.textContent = 'Create Account';
         if (!data.success) {
           // v0.3 NEW -- EMAIL_TAKEN is a hard stop with a way out, not
-          // just an error string: render the masked existing username
-          // (see maskUsernameForRecovery() server-side) plus a direct
-          // "Log in with that account" button, instead of the generic
-          // message path every other error still uses.
+          // just an error string: a direct "Log in with that account"
+          // button instead of the generic message path every other
+          // error still uses.
           if (data.error === 'EMAIL_TAKEN') {
             var takenPanel = document.getElementById('rc-register-email-taken');
             var takenText = document.getElementById('rc-register-email-taken-text');
-            takenText.textContent = data.existingUsername
-              ? 'An account already exists for that email (username starts with ' + data.existingUsername + ').'
-              : (data.message || 'An account already exists for that email.');
+            takenText.textContent = data.message || 'An account already exists for that email.';
             takenPanel.style.display = 'block';
             return;
           }
@@ -299,7 +297,7 @@
         // Use the server's actual message rather than assuming success --
         // handleRegister() returns a different message when the account
         // was created but the verification email itself failed to send.
-        sessionStorage.setItem('raceclub_pending_username', username);
+        sessionStorage.setItem('raceclub_pending_profile_id', data.profileId);
         sessionStorage.setItem('raceclub_verify_message', data.message || 'Account created. Check your email for a verification code before logging in.');
         window.location.href = 'verify.html';
       })

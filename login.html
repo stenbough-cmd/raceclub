@@ -14,8 +14,8 @@
     browser navigates to Account.html — the source rendered the profile
     view in place instead, since it was still the same embed/page.
   - On a "Resend verification email" click (either from a failed
-    EMAIL_NOT_VERIFIED login, or a fresh registration), the username is
-    stashed in sessionStorage under 'raceclub_pending_username' and the
+    EMAIL_NOT_VERIFIED login, or a fresh registration), the ProfileID is
+    stashed in sessionStorage under 'raceclub_pending_profile_id' and the
     browser navigates to verify.html, which reads it from there. The
     source kept this in a plain in-memory JS variable
     (lastRegisteredUsername) since the code-entry view lived in the same
@@ -25,6 +25,17 @@
     sessionStorage's 'raceclub_login_message' key (used by the 30-minute
     inactivity auto-logout in js/auth.js, and by verify.html after a
     successful code verification) — read once on load, then cleared.
+
+  FIX (login-by-email, this pass): the backend's Users tab has no
+  Username column -- Email is the one login identifier (see the schema
+  doc). This page used to collect a "Username" and send it as the login
+  field, which the server never read even after its own bugs were fixed,
+  so login could never succeed. The field is now Email, sent as the
+  `email` key, matching handleLogin. The "Resend verification email"
+  button now sends `email` too (handleResendVerification accepts email as
+  well as ProfileID, specifically for this screen, since a driver who
+  hasn't verified yet has no ProfileID typed in anywhere on this page)
+  and stashes the ProfileID the server hands back for verify.html to use.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -48,8 +59,8 @@
 
     <div class="rc-card" style="margin-top:24px;">
       <form id="rc-login-form">
-        <label style="margin-top:0;">Username</label>
-        <input id="rc-username" type="text" autocomplete="username" required>
+        <label style="margin-top:0;">Email Address</label>
+        <input id="rc-email" type="email" autocomplete="email" required>
         <label>Password</label>
         <input id="rc-password" type="password" autocomplete="current-password" required>
         <button id="rc-login-btn" type="submit" class="rc-btn-primary">Log In</button>
@@ -95,13 +106,13 @@
   }
 
   // After a successful email verification, verify.html stashes the
-  // username here so it can be pre-filled here and the password field
+  // email here so it can be pre-filled here and the password field
   // focused, matching the source file's post-verify behavior of jumping
   // straight back to a ready-to-type login form.
-  var prefillUsername = sessionStorage.getItem('raceclub_prefill_username');
-  if (prefillUsername) {
-    document.getElementById('rc-username').value = prefillUsername;
-    sessionStorage.removeItem('raceclub_prefill_username');
+  var prefillEmail = sessionStorage.getItem('raceclub_prefill_email');
+  if (prefillEmail) {
+    document.getElementById('rc-email').value = prefillEmail;
+    sessionStorage.removeItem('raceclub_prefill_email');
     document.getElementById('rc-password').focus();
   }
 
@@ -114,14 +125,14 @@
     btn.disabled = true;
     btn.textContent = 'Logging in...';
 
-    var username = document.getElementById('rc-username').value.trim();
+    var email = document.getElementById('rc-email').value.trim();
     var password = document.getElementById('rc-password').value;
 
     // IMPORTANT: Content-Type is deliberately 'text/plain' (see
     // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
     // Apps can't handle a CORS preflight (OPTIONS) request, which
     // application/json would trigger. Do not change this.
-    fetchApi('login', { method: 'POST', body: { username: username, password: password } })
+    fetchApi('login', { method: 'POST', body: { email: email, password: password } })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = 'Log In';
@@ -170,17 +181,17 @@
   // to verify.html's code-entry view, rather than just firing off an
   // email and leaving the user on the login form.
   document.getElementById('rc-login-resend').addEventListener('click', function () {
-    var username = document.getElementById('rc-username').value.trim();
+    var email = document.getElementById('rc-email').value.trim();
     var btn = this;
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = 'Sending...';
-    fetchApi('resendVerification', { method: 'POST', body: { username: username } })
+    fetchApi('resendVerification', { method: 'POST', body: { email: email } })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = originalText;
         if (data.success) {
-          sessionStorage.setItem('raceclub_pending_username', username);
+          sessionStorage.setItem('raceclub_pending_profile_id', data.profileId);
           sessionStorage.setItem('raceclub_verify_message', data.message || 'We emailed you a new 6-digit code. Enter it below.');
           window.location.href = 'verify.html';
         } else {

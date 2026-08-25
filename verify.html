@@ -8,19 +8,25 @@
   the instant all 6 digits are filled) and the resend-code button are
   ported verbatim from the source's codeBoxes/verifyCode logic.
 
-  The one real change is how the username gets here: the source kept it
+  The one real change is how the identity gets here: the source kept it
   in an in-memory variable (lastRegisteredUsername) because register.html
   and this view were the same embed. Since navigation now leaves that
   variable behind, register.html and login.html's resend button instead
-  write it to sessionStorage under 'raceclub_pending_username' before
+  write it to sessionStorage under 'raceclub_pending_profile_id' before
   navigating here, and this page reads it on load. If that key is missing
   (e.g. someone bookmarks this page directly), we send them back to
   login.html rather than guessing.
 
-  On a successful verification, this page stashes the username under
-  'raceclub_prefill_username' and 'raceclub_login_message', then (after
-  the same short readable pause the source used) navigates to login.html,
-  which pre-fills the username field and focuses the password field.
+  FIX (login-by-email, this pass): the backend has no Username column, so
+  there's nothing to key off except ProfileID here -- verifyEmailCode and
+  resendVerification now both take `profileId` instead of `username`. On a
+  successful verification, handleVerifyEmailCode now returns the driver's
+  email (verify.html never had it otherwise -- only register.html/
+  login.html's resend flow ever saw it), which this page stashes under
+  'raceclub_prefill_email' along with 'raceclub_login_message', then
+  (after the same short readable pause the source used) navigates to
+  login.html, which pre-fills the email field and focuses the password
+  field.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -80,13 +86,13 @@
   // login.html). But someone might open the verification EMAIL's "back to
   // this page" link in a brand new tab, on a different device, or after
   // closing the original one -- sessionStorage wouldn't have anything in
-  // that case, so the emailed link includes ?u=username as a fallback the
+  // that case, so the emailed link includes ?u=profileId as a fallback the
   // way in. This is the failsafe: even with no session state at all, a
   // click from the email always lands on a working code-entry screen.
-  var urlUsername = new URLSearchParams(window.location.search).get('u');
-  var pendingUsername = sessionStorage.getItem('raceclub_pending_username') || urlUsername;
-  if (!pendingUsername) {
-    // No username to verify -- nothing useful to do on this page.
+  var urlProfileId = new URLSearchParams(window.location.search).get('u');
+  var pendingProfileId = sessionStorage.getItem('raceclub_pending_profile_id') || urlProfileId;
+  if (!pendingProfileId) {
+    // No profile to verify -- nothing useful to do on this page.
     window.location.replace('login.html');
     return;
   }
@@ -151,7 +157,7 @@
     verifyMessage.className = 'rc-message';
     verifyMessage.textContent = 'Verifying...';
 
-    fetchApi('verifyEmailCode', { method: 'POST', body: { username: pendingUsername, code: code } })
+    fetchApi('verifyEmailCode', { method: 'POST', body: { profileId: pendingProfileId, code: code } })
       .then(function (data) {
         if (!data.success) {
           codeBoxes.forEach(function (box) {
@@ -167,10 +173,10 @@
         verifyMessage.className = 'rc-message rc-ok';
         verifyMessage.textContent = data.message || 'Your email has been verified!';
         // Brief pause so the confirmation is actually readable, then send
-        // them to the login page with the username pre-filled.
+        // them to the login page with the email pre-filled.
         setTimeout(function () {
-          sessionStorage.removeItem('raceclub_pending_username');
-          sessionStorage.setItem('raceclub_prefill_username', pendingUsername);
+          sessionStorage.removeItem('raceclub_pending_profile_id');
+          sessionStorage.setItem('raceclub_prefill_email', data.email || '');
           sessionStorage.setItem('raceclub_login_message', "You're verified! Log in below.");
           window.location.href = 'login.html';
         }, 1600);
@@ -191,7 +197,7 @@
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = 'Sending...';
-    fetchApi('resendVerification', { method: 'POST', body: { username: pendingUsername } })
+    fetchApi('resendVerification', { method: 'POST', body: { profileId: pendingProfileId } })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = originalText;
