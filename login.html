@@ -26,16 +26,36 @@
     inactivity auto-logout in js/auth.js, and by verify.html after a
     successful code verification) — read once on load, then cleared.
 
-  FIX (login-by-email, this pass): the backend's Users tab has no
-  Username column -- Email is the one login identifier (see the schema
-  doc). This page used to collect a "Username" and send it as the login
-  field, which the server never read even after its own bugs were fixed,
-  so login could never succeed. The field is now Email, sent as the
-  `email` key, matching handleLogin. The "Resend verification email"
-  button now sends `email` too (handleResendVerification accepts email as
-  well as ProfileID, specifically for this screen, since a driver who
-  hasn't verified yet has no ProfileID typed in anywhere on this page)
-  and stashes the ProfileID the server hands back for verify.html to use.
+  FLIP-BACK (this pass, Matt's direct call): login is by USERNAME again,
+  not email -- email's only job now is where a password-reset code gets
+  sent (reset-password.html). The field is Username, sent as the
+  `username` key, matching handleLogin. The "Resend verification email"
+  button now sends `username` too (handleResendVerification accepts
+  username as well as ProfileID, specifically for this screen, since a
+  driver who hasn't verified yet has no ProfileID typed in anywhere on
+  this page) and stashes the ProfileID the server hands back for
+  verify.html to use.
+
+  ADDED (this pass): a "Forgot password?" link under the "New here?" line,
+  pointing to the new reset-password.html.
+
+  TOASTS (this pass): every plain result message on this page (queued
+  cross-page messages, login failure, "could not reach the server", the
+  resend-code result) now goes through js/header.js's showToast() instead
+  of the old inline #rc-login-message box -- see that file's header
+  comment for why. The two exceptions are ACCOUNT_DISABLED (its mailto
+  link needs to stay clickable, which an auto-dismissing toast can't
+  guarantee) and EMAIL_NOT_VERIFIED (its message explains the Resend
+  button that appears right under it, and that button needs to still be
+  legible after the toast that announced it has faded) -- both keep their
+  explanatory text inline, right next to the control they belong to,
+  since a toast is the wrong home for text a driver still needs to be
+  reading when they act on it.
+
+  FIX (this pass): setProfileCache() was being handed the raw login
+  response ({success, token, profile}) instead of its nested .profile --
+  meant every field it cached (name, role) read back out blank on every
+  other page's header. Now passes data.profile through.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -59,8 +79,8 @@
 
     <div class="rc-card" style="margin-top:24px;">
       <form id="rc-login-form">
-        <label style="margin-top:0;">Email Address</label>
-        <input id="rc-email" type="email" autocomplete="email" required>
+        <label style="margin-top:0;">Username</label>
+        <input id="rc-username" type="text" autocomplete="username" required>
         <label>Password</label>
         <input id="rc-password" type="password" autocomplete="current-password" required>
         <button id="rc-login-btn" type="submit" class="rc-btn-primary">Log In</button>
@@ -70,6 +90,9 @@
     </div>
     <p class="rc-auth-footer">
       New here? <button type="button" class="rc-link-btn" id="rc-show-register" onclick="window.location.href='register.html'">Create an account</button>
+    </p>
+    <p class="rc-auth-footer" style="margin-top:6px;">
+      <a href="reset-password.html" class="rc-link-btn">Forgot password?</a>
     </p>
   </div>
 </div>
@@ -96,23 +119,25 @@
   }
 
   // Message queued by another page (inactivity timeout, verify.html
-  // success, etc.) -- shown once, then cleared.
+  // success, reset-password.html success, etc.) -- shown once, then
+  // cleared.
   var queuedMessage = sessionStorage.getItem('raceclub_login_message');
   if (queuedMessage) {
-    var msgEl = document.getElementById('rc-login-message');
-    msgEl.className = 'rc-message rc-ok';
-    msgEl.textContent = queuedMessage;
+    showToast(queuedMessage, 'success');
     sessionStorage.removeItem('raceclub_login_message');
   }
 
-  // After a successful email verification, verify.html stashes the
-  // email here so it can be pre-filled here and the password field
-  // focused, matching the source file's post-verify behavior of jumping
-  // straight back to a ready-to-type login form.
-  var prefillEmail = sessionStorage.getItem('raceclub_prefill_email');
-  if (prefillEmail) {
-    document.getElementById('rc-email').value = prefillEmail;
-    sessionStorage.removeItem('raceclub_prefill_email');
+  // After a successful registration+verification, register.html stashes
+  // the username here (verify.html leaves it untouched, just carries it
+  // forward) so it can be pre-filled here and the password field focused,
+  // matching the source file's post-verify behavior of jumping straight
+  // back to a ready-to-type login form. reset-password.html only ever
+  // knows the driver's EMAIL, not their username, so it doesn't set this
+  // -- a password reset just queues the login-message toast instead.
+  var prefillUsername = sessionStorage.getItem('raceclub_prefill_username');
+  if (prefillUsername) {
+    document.getElementById('rc-username').value = prefillUsername;
+    sessionStorage.removeItem('raceclub_prefill_username');
     document.getElementById('rc-password').focus();
   }
 
@@ -125,29 +150,35 @@
     btn.disabled = true;
     btn.textContent = 'Logging in...';
 
-    var email = document.getElementById('rc-email').value.trim();
+    var username = document.getElementById('rc-username').value.trim();
     var password = document.getElementById('rc-password').value;
 
     // IMPORTANT: Content-Type is deliberately 'text/plain' (see
     // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
     // Apps can't handle a CORS preflight (OPTIONS) request, which
     // application/json would trigger. Do not change this.
-    fetchApi('login', { method: 'POST', body: { email: email, password: password } })
+    fetchApi('login', { method: 'POST', body: { username: username, password: password } })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = 'Log In';
         if (!data.success) {
-          msg.className = 'rc-message rc-error';
           var resendBtn = document.getElementById('rc-login-resend');
           resendBtn.style.display = 'none';
           if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
+            // Keeps its mailto link inline rather than a toast -- a
+            // driver needs to still be able to click it after reading it.
+            msg.className = 'rc-message rc-error';
             msg.innerHTML = (data.message || 'This account has been disabled.') +
               ' <a href="mailto:' + data.contactEmail + '?subject=Race%20Club%20account">Contact administrator</a>';
           } else if (data.error === 'EMAIL_NOT_VERIFIED') {
+            // Stays inline too -- it explains the Resend button that
+            // appears right under it, which needs to still be legible
+            // after a toast would have already faded.
+            msg.className = 'rc-message rc-error';
             msg.textContent = data.message || 'Please verify your email before logging in.';
             resendBtn.style.display = 'inline-block';
           } else {
-            msg.textContent = data.message || 'Login failed.';
+            showToast(data.message || 'Login failed.', 'error');
           }
           return;
         }
@@ -157,7 +188,7 @@
         // data back up itself via getProfile on load, same as any other
         // direct visit to that page.
         setToken(data.token);
-        setProfileCache(data); // so the header avatar has something to show immediately, site-wide
+        setProfileCache(data.profile); // so the header avatar has something to show immediately, site-wide
         // The login response IS the full profile payload already (see the
         // comment above) -- stash it so Account.html can render straight
         // from it instead of firing its own getProfile call right after
@@ -172,8 +203,7 @@
       .catch(function () {
         btn.disabled = false;
         btn.textContent = 'Log In';
-        msg.className = 'rc-message rc-error';
-        msg.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+        showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
       });
   });
 
@@ -181,12 +211,12 @@
   // to verify.html's code-entry view, rather than just firing off an
   // email and leaving the user on the login form.
   document.getElementById('rc-login-resend').addEventListener('click', function () {
-    var email = document.getElementById('rc-email').value.trim();
+    var username = document.getElementById('rc-username').value.trim();
     var btn = this;
     btn.disabled = true;
     var originalText = btn.textContent;
     btn.textContent = 'Sending...';
-    fetchApi('resendVerification', { method: 'POST', body: { email: email } })
+    fetchApi('resendVerification', { method: 'POST', body: { username: username } })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = originalText;
@@ -195,17 +225,13 @@
           sessionStorage.setItem('raceclub_verify_message', data.message || 'We emailed you a new 6-digit code. Enter it below.');
           window.location.href = 'verify.html';
         } else {
-          var msg = document.getElementById('rc-login-message');
-          msg.className = 'rc-message rc-error';
-          msg.textContent = data.message || 'Could not send a new code.';
+          showToast(data.message || 'Could not send a new code.', 'error');
         }
       })
       .catch(function () {
         btn.disabled = false;
         btn.textContent = originalText;
-        var msg = document.getElementById('rc-login-message');
-        msg.className = 'rc-message rc-error';
-        msg.textContent = 'Could not reach the server. Try again in a moment.';
+        showToast('Could not reach the server. Try again in a moment.', 'error');
       });
   });
 })();

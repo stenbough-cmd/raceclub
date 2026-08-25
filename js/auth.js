@@ -45,13 +45,18 @@ function clearToken() {
 // fields are kept (not the whole payload) since this is just for
 // rendering the header, not a source of truth for anything else.
 // ---------------------------------------------------------------------
+// Takes the flattened profile object itself (buildProfilePayload's shape
+// server-side -- {displayName, role, ...}), NOT a raw fetchApi() response
+// wrapper. Callers with a wrapper (login's {success, token, profile},
+// getProfile's {success, profile}) must pass the nested .profile through,
+// not the wrapper itself -- a bug fixed this pass (both call sites were
+// passing the wrapper, which meant every field read back out as blank).
 function setProfileCache(profile) {
+  profile = profile || {};
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
       displayName: profile.displayName || '',
-      username: profile.username || '',
-      role: profile.role || '',
-      permissions: profile.permissions || []
+      role: profile.role || ''
     }));
   } catch (err) { /* storage full/unavailable -- header just falls back to '?' */ }
 }

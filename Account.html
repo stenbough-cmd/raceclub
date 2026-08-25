@@ -34,10 +34,50 @@
   WHAT'S GONE (for now): every section's actual content. Each of the 14
   content sections now renders a single centered "Coming soon" placeholder
   panel (see renderPlaceholderSections()) instead of real data, widgets,
-  or admin tooling. That includes Settings' edit-profile form -- normal
-  profile editing goes through Settings same as any other link, so it's
-  empty too for now; only the change-password FORM ITSELF survives,
-  because the forced-password lock screen depends on it directly.
+  or admin tooling. That includes the profile-edit form -- normal profile
+  editing goes through that link same as any other, so it's empty too for
+  now; only the change-password FORM ITSELF survives, because the
+  forced-password lock screen depends on it directly.
+
+  PREVIOUS PASS (header/notification redesign): passwordChangeSection()'s
+  result ("Password updated"/"New password and confirmation don't
+  match"/etc.) now goes through js/header.js's showToast() instead of its
+  own inline status line, per Matt's sitewide toast-notifications call.
+  Also fixed: buildFullProfileUI was gating League Management/Admin/Data
+  Management visibility on a `profile.permissions` array that
+  buildProfilePayload (Auth.gs) never actually sends -- those links could
+  never have shown for anyone. Until a real roles/permissions system is
+  designed, this now just checks `profile.role === 'Admin'` for all three
+  (Admin is the only role with anything to manage right now anyway). Also
+  fixed: both the fresh-login fast path and the getProfile fallback were
+  handing the whole API response wrapper ({success, profile}) to
+  renderProfile() instead of its nested .profile, so every field this page
+  reads off `profile` (including .role, just fixed above) was silently
+  reading undefined.
+
+  THIS PASS (Help + Edit Profile become popups, not sections): the
+  'settings' and 'help' entries are gone from PLACEHOLDER_LABELS and their
+  <section> elements are gone from the HTML -- both are now popups
+  (showModal(), reintroduced this pass, backed by the .rc-modal* CSS
+  classes that survived the v0.5.0 rebuild even though the JS function
+  that used them didn't). The sidebar's Edit Profile and Help buttons now
+  call openEditProfileModal()/openHelpModal() directly instead of falling
+  through to showSection(id) -- both need live profile/token data that
+  doesn't exist yet at buildSidebarNav() time (same problem the Admin nav
+  item already had), so this pass adds module-level currentProfile/
+  currentToken vars, set once in buildFullProfileUI(), for those handlers
+  to read at click-time. The now-pointless ?section= deep-link handling is
+  gone too -- Edit Profile is a popup now, not a URL a header link can
+  point at.
+
+  openEditProfileModal() lets a driver edit Username / First Name / Last
+  Name / Suffix / Email / Location / Time Zone, posts to the
+  `updateOwnProfile` action (Auth.gs's handleUpdateOwnProfile, expanded
+  this pass to accept exactly these fields), refreshes the cached profile
+  and header on success, and embeds the existing passwordChangeSection()
+  form underneath so Change Password lives in the same popup. DisplayName
+  is still never directly editable -- it's computed server-side from
+  First/Last/Suffix, same rule as registration.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -93,8 +133,6 @@
       <section id="rc-section-objectives" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-help" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-settings" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-datamgmt" class="rc-content-section" style="display:none;"></section>
@@ -223,19 +261,25 @@
     { id: 'objectives', label: 'Objectives', icon: ICON_OBJECTIVES },
     { id: 'sponsors', label: 'Sponsors', icon: ICON_SPONSORS },
     { id: 'halloffame', label: 'Hall of Fame', icon: ICON_HALLOFFAME },
-    { id: 'settings', label: 'Settings', icon: ICON_SETTINGS }
+    { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
   ];
 
   // Every section is a placeholder for now (see renderPlaceholderSections
   // below) -- this list is what drives both the placeholder panels and
-  // their headings. Order doesn't matter here, only sectio IDs and labels.
+  // their headings. Order doesn't matter here, only section IDs and labels.
   var PLACEHOLDER_LABELS = {
     dashboard: 'Dashboard', calendar: 'Calendar', finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
     objectives: 'Objectives', sponsors: 'Sponsors', halloffame: 'Hall of Fame',
-    settings: 'Settings', help: 'Help', league: 'League Management',
-    admin: 'Admin', datamgmt: 'Data Management'
+    league: 'League Management', admin: 'Admin', datamgmt: 'Data Management'
   };
+
+  // Set once, in buildFullProfileUI() -- lets the Edit Profile/Help nav
+  // button handlers (built earlier, in buildSidebarNav(), before profile/
+  // token exist yet) reach live data at click-time. Same pattern the
+  // Admin nav item's visibility check already needed.
+  var currentProfile = null;
+  var currentToken = null;
 
   // ---------------------------------------------------------------------
   // SIDEBAR NAV + SECTION SWITCHING
@@ -283,9 +327,13 @@
     var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true);
     nav.appendChild(leagueBtn);
     nav.appendChild(navDivider());
-    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help'));
+    // Help and Edit Profile are popups now, not sections -- their click
+    // handlers open a modal instead of falling through to showSection(id).
+    // Both read currentProfile/currentToken, set once buildFullProfileUI()
+    // actually has that data (see the vars declared above).
+    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { openHelpModal(); }));
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
-    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon));
+    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
   }
 
@@ -319,10 +367,11 @@
   }
 
   // ---------------------------------------------------------------------
-  // CHANGE PASSWORD -- kept fully functional (unchanged from v0.4.0)
-  // because the forced-password lock screen below depends on it directly.
-  // Not currently reachable any other way, since Settings itself is just
-  // a placeholder for now.
+  // CHANGE PASSWORD -- kept fully functional because the forced-password
+  // lock screen below depends on it directly. Not currently reachable any
+  // other way, since Edit Profile itself is just a placeholder for now.
+  // Result messaging goes through showToast() (js/header.js) rather than
+  // its own inline status line, per Matt's sitewide toast call.
   // ---------------------------------------------------------------------
   function passwordChangeSection(token) {
     var box = document.createElement('div');
@@ -333,44 +382,215 @@
     var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
     var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password';
     var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
-    var status = el('div', 'margin-top:8px;font-size:13px;');
 
     btn.addEventListener('click', function () {
       if (next.value !== confirm.value) {
-        status.style.color = 'var(--rc-red)';
-        status.textContent = 'New password and confirmation don\'t match.';
+        showToast('New password and confirmation don\'t match.', 'error');
         return;
       }
       fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
         .then(function (data) {
-          status.style.color = data.success ? 'var(--rc-ok)' : 'var(--rc-red)';
-          status.textContent = data.message || (data.success ? 'Updated.' : 'Failed.');
+          showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
           if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; box.remove(); }
         });
     });
 
-    box.appendChild(cur); box.appendChild(next); box.appendChild(confirm); box.appendChild(btn); box.appendChild(status);
+    box.appendChild(cur); box.appendChild(next); box.appendChild(confirm); box.appendChild(btn);
     return box;
+  }
+
+  // ---------------------------------------------------------------------
+  // GENERIC MODAL -- backdrop + centered card, Escape/backdrop-click/X all
+  // close it. Reintroduced this pass (the CSS classes it needs,
+  // .rc-modal-backdrop/.rc-modal/.rc-modal-head/.rc-modal-close/
+  // .rc-modal-body/.rc-modal-wide, survived the v0.5.0 rebuild even though
+  // this function didn't). opts.wide adds the .rc-modal-wide class for
+  // content-heavier popups; opts.bodyEl is the element to place inside
+  // .rc-modal-body.
+  // ---------------------------------------------------------------------
+  function showModal(title, opts) {
+    opts = opts || {};
+    var backdrop = el('div', 'rc-modal-backdrop');
+    var modal = el('div', 'rc-modal' + (opts.wide ? ' rc-modal-wide' : ''));
+    var head = el('div', 'rc-modal-head');
+    head.appendChild(el('h3', 'margin:0;font-size:16px;', escapeHtml(title)));
+    var closeBtn = el('button', 'rc-modal-close', '&times;');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    head.appendChild(closeBtn);
+    var body = el('div', 'rc-modal-body');
+    if (opts.bodyEl) body.appendChild(opts.bodyEl);
+    modal.appendChild(head);
+    modal.appendChild(body);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    function close() {
+      backdrop.remove();
+      document.removeEventListener('keydown', onKeydown);
+    }
+    function onKeydown(evt) {
+      if (evt.key === 'Escape') close();
+    }
+    closeBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', function (evt) {
+      if (evt.target === backdrop) close();
+    });
+    document.addEventListener('keydown', onKeydown);
+
+    return { close: close, body: body };
+  }
+
+  // ---------------------------------------------------------------------
+  // HELP POPUP -- simple contact/help content. Nothing dynamic yet; just
+  // gives a driver somewhere to go instead of a dead sidebar link.
+  // ---------------------------------------------------------------------
+  function openHelpModal() {
+    var body = el('div');
+    body.appendChild(el('p', 'margin-top:0;', 'Need a hand with something in Race Club?'));
+    var list = el('ul', 'margin:0 0 0 18px;padding:0;line-height:1.8;');
+    list.appendChild(el('li', null, 'Questions about your account, results, or standings — email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
+    list.appendChild(el('li', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    list.appendChild(el('li', null, 'Rules and procedures live in the Race Club Rulebook.'));
+    body.appendChild(list);
+    showModal('Help', { bodyEl: body });
+  }
+
+  // ---------------------------------------------------------------------
+  // EDIT PROFILE POPUP -- Username / First / Last / Suffix / Email /
+  // Location / Time Zone, posting to the `updateOwnProfile` action, plus
+  // the existing passwordChangeSection() embedded underneath so Change
+  // Password lives in the same popup. DisplayName is never directly
+  // editable here -- it's computed server-side from First/Last/Suffix,
+  // same rule as registration.
+  // ---------------------------------------------------------------------
+  function openEditProfileModal(profile, token) {
+    if (!profile || !token) return;
+
+    var body = el('div');
+
+    var form = el('form');
+    form.appendChild(el('label', 'margin-top:0;', 'Username'));
+    var username = el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
+    form.appendChild(username);
+
+    form.appendChild(el('label', null, 'First Name'));
+    var firstName = el('input'); firstName.type = 'text'; firstName.value = profile.firstName || ''; firstName.required = true;
+    form.appendChild(firstName);
+
+    form.appendChild(el('label', null, 'Last Name'));
+    var lastName = el('input'); lastName.type = 'text'; lastName.value = profile.lastName || ''; lastName.required = true;
+    form.appendChild(lastName);
+
+    form.appendChild(el('label', null, 'Suffix (optional)'));
+    var suffix = document.createElement('select');
+    var suffixBlank = document.createElement('option'); suffixBlank.value = ''; suffixBlank.textContent = 'None';
+    suffix.appendChild(suffixBlank);
+    (typeof DRIVER_NAME_SUFFIXES !== 'undefined' ? DRIVER_NAME_SUFFIXES : []).forEach(function (s) {
+      var opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+      if (profile.suffix === s) opt.selected = true;
+      suffix.appendChild(opt);
+    });
+    form.appendChild(suffix);
+
+    form.appendChild(el('label', null, 'Email Address'));
+    var email = el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
+    form.appendChild(email);
+    form.appendChild(el('div', 'rc-hint', 'Only used for verification and password resets — you still log in with your username.'));
+
+    form.appendChild(el('label', null, 'Location'));
+    var location = document.createElement('select');
+    var locBlank = document.createElement('option'); locBlank.value = ''; locBlank.textContent = 'Select a country';
+    location.appendChild(locBlank);
+    (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).forEach(function (country) {
+      var opt = document.createElement('option'); opt.value = country; opt.textContent = country;
+      if (profile.location === country) opt.selected = true;
+      location.appendChild(opt);
+    });
+    form.appendChild(location);
+
+    form.appendChild(el('label', null, 'Time Zone'));
+    var timeZone = document.createElement('select');
+    var tzBlank = document.createElement('option'); tzBlank.value = ''; tzBlank.textContent = 'Select a time zone';
+    timeZone.appendChild(tzBlank);
+    (typeof getTimezoneList === 'function' ? getTimezoneList() : []).forEach(function (tz) {
+      var opt = document.createElement('option'); opt.value = tz; opt.textContent = typeof timezoneLabel === 'function' ? timezoneLabel(tz) : tz;
+      if (profile.timeZone === tz) opt.selected = true;
+      timeZone.appendChild(opt);
+    });
+    form.appendChild(timeZone);
+
+    var saveBtn = el('button', null, 'Save Changes');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+
+    body.appendChild(form);
+    body.appendChild(el('hr', 'rc-nav-divider', null));
+    body.appendChild(passwordChangeSection(token));
+
+    var modalHandle = showModal('Edit Profile', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
+        showToast('Username, first name, last name, and email are required.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      fetchApi('updateOwnProfile', {
+        method: 'POST',
+        token: token,
+        body: {
+          username: username.value.trim(),
+          firstName: firstName.value.trim(),
+          lastName: lastName.value.trim(),
+          suffix: suffix.value,
+          email: email.value.trim(),
+          location: location.value,
+          timeZone: timeZone.value
+        }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          if (!data.success) {
+            showToast(data.message || 'Could not save your changes.', 'error');
+            return;
+          }
+          currentProfile = data.profile;
+          setProfileCache(data.profile); // keeps the header avatar current here and on every other page
+          renderHeader({ skipNotifCheck: true });
+          showToast('Profile updated.', 'success');
+          modalHandle.close();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
   }
 
   // ---------------------------------------------------------------------
   // TOP-LEVEL RENDER
   // ---------------------------------------------------------------------
   function buildFullProfileUI(profile, token) {
+    currentProfile = profile;
+    currentToken = token;
     buildSidebarNav();
     document.getElementById('rc-sidebar-nav').classList.remove('rc-nav-loading');
     renderPlaceholderSections();
 
-    var perms = profile.permissions || [];
-    if (perms.indexOf('manageSchedule') !== -1 || perms.indexOf('uploadResults') !== -1) {
+    // Admin is the only role with anything to manage right now -- a real
+    // roles/permissions system (Steward reviewing protests, an Organizer
+    // role, etc.) isn't designed yet, so this is a simple role check
+    // rather than a permissions array. Revisit once that design exists.
+    if (profile.role === 'Admin') {
       document.getElementById('rc-nav-league').style.display = 'flex';
-      showUpperNavDivider();
-    }
-    if (perms.indexOf('manageUsers') !== -1) {
       document.getElementById('rc-nav-admin').style.display = 'flex';
-      showUpperNavDivider();
-    }
-    if (perms.indexOf('manageReferenceData') !== -1) {
       document.getElementById('rc-nav-datamgmt').style.display = 'flex';
       showUpperNavDivider();
     }
@@ -441,7 +661,7 @@
     renderHeader({ skipNotifCheck: true });
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
-    renderProfile(freshProfile, token);
+    renderProfile(freshProfile.profile, token);
   } else {
     fetchApi('getProfile', { token: token })
       .then(function (data) {
@@ -451,11 +671,11 @@
           window.location.href = 'login.html';
           return;
         }
-        setProfileCache(data); // keeps the header avatar current on every other page too
+        setProfileCache(data.profile); // keeps the header avatar current on every other page too
         renderHeader({ skipNotifCheck: true }); // confirmed by the API -- safe to show as logged in
         document.getElementById('rc-loading').style.display = 'none';
         document.getElementById('rc-profile-root').style.display = 'block';
-        renderProfile(data, token);
+        renderProfile(data.profile, token);
       })
       .catch(function () {
         renderHeader({ forceLoggedOut: true });

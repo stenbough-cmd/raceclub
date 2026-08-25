@@ -16,11 +16,23 @@
   in-memory JS variable, since registration and verification were the
   same embed.
 
-  FIX (login-by-email, this pass): the Username field is gone. The Users
-  tab has no Username column -- Email is the one login identifier, so a
-  standalone username never had anywhere to be stored, and login.html now
-  asks for Email instead of Username to match. DisplayName is computed
-  server-side from First/Last/Suffix instead.
+  FLIP-BACK (this pass, Matt's direct call): Username is back as a
+  required field -- it's the login identifier again (see login.html).
+  Email is still required and still unique, but its only job now is
+  receiving password-reset codes. DisplayName is still computed
+  server-side from First/Last/Suffix, never from Username.
+
+  ADDED (this pass): Location is now a required dropdown (populated from
+  COUNTRIES in js/reference-data.js, same pattern as the Time Zone
+  dropdown) so a driver's country is captured at signup. On success, the
+  chosen username is stashed under sessionStorage's
+  'raceclub_prefill_username' (login.html reads this key to prefill the
+  Username field after a fresh verify) -- the old 'raceclub_prefill_email'
+  key is gone since login.html no longer has an email field. The
+  EMAIL_TAKEN hard-stop panel now also triggers on USERNAME_TAKEN (same
+  panel, message text swapped per which one came back). A short line
+  above the Create Account button spells out the Prospect-until-approved
+  status explicitly, in addition to the existing role-explainer copy.
 
   v0.3 -- TWO FIXES, both Matt's direct call:
   1. Already-logged-in visitors used to get silently window.location.replace()'d
@@ -36,8 +48,11 @@
      the server returns error === 'EMAIL_TAKEN', the message area now
      renders "An account already exists for that email." plus a "Log in
      with that account" button that goes straight to login.html — instead
-     of just an error string with nowhere to go. Every other error case is
-     unchanged (still a plain message).
+     of just an error string with nowhere to go. That panel stays inline
+     (not a toast) since it comes with a follow-up action the driver needs
+     to still be able to click. Every other error, and the success case,
+     now goes through js/header.js's showToast() instead of an inline
+     message box -- see that file's header comment for why.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -78,7 +93,11 @@
     <div class="rc-card" style="margin-top:24px;">
       <form id="rc-register-form">
         <div class="rc-section">
-          <label style="margin-top:0;">First Name</label>
+          <label style="margin-top:0;">Username</label>
+          <input id="rc-reg-username" type="text" autocomplete="username" required>
+          <div class="rc-hint">This is what you'll log in with.</div>
+
+          <label>First Name</label>
           <input id="rc-reg-firstname" type="text" autocomplete="given-name" required>
 
           <label>Last Name</label>
@@ -90,7 +109,11 @@
 
           <label>Email Address</label>
           <input id="rc-reg-email" type="email" autocomplete="email" required>
-          <div class="rc-hint">You'll get a 6-digit code by email to verify this address before you can log in — this keeps bots and fake signups out.</div>
+          <div class="rc-hint">You'll get a 6-digit code by email to verify this address before you can log in. Email is only ever used for verification and password resets — you'll always log in with your username.</div>
+
+          <label>Location</label>
+          <select id="rc-reg-location" required></select>
+          <div class="rc-hint">Your country.</div>
 
           <label>Time Zone</label>
           <select id="rc-reg-timezone" required></select>
@@ -120,15 +143,17 @@
           </div>
         </div>
 
+        <p class="rc-hint" style="margin-top:18px;text-align:center;">You'll be created as a <strong>Prospect</strong> and can start setting up your profile immediately — full access unlocks once an admin or league organizer approves your account.</p>
+
         <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
       </form>
-      <div id="rc-register-message" class="rc-message"></div>
 
-      <!-- v0.3 NEW -- the EMAIL_TAKEN hard-stop panel. Hidden by default;
-           shown in place of (not alongside) rc-register-message when the
-           server specifically returns error === 'EMAIL_TAKEN'. The whole
+      <!-- v0.3 NEW -- the EMAIL_TAKEN / USERNAME_TAKEN hard-stop panel.
+           Hidden by default; shown in place of (not alongside)
+           rc-register-message when the server returns either
+           error === 'EMAIL_TAKEN' or error === 'USERNAME_TAKEN'. The whole
            form stays visible underneath so the driver can still correct
-           the email and try a different one instead of being dead-ended. -->
+           the field and try a different value instead of being dead-ended. -->
       <div id="rc-register-email-taken" class="rc-message rc-error" style="display:none;">
         <div id="rc-register-email-taken-text"></div>
         <button type="button" id="rc-register-goto-login" class="rc-btn-secondary rc-btn-sm" style="margin-top:10px;">Log in with that account</button>
@@ -180,6 +205,19 @@
     });
   }
   populateRegisterTimezone();
+
+  function populateRegisterLocation() {
+    var select = document.getElementById('rc-reg-location');
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = 'Select a country';
+    select.appendChild(blank);
+    (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).forEach(function (country) {
+      var opt = document.createElement('option');
+      opt.value = country; opt.textContent = country;
+      select.appendChild(opt);
+    });
+  }
+  populateRegisterLocation();
 
   function populateRegisterSuffix() {
     var select = document.getElementById('rc-reg-suffix');
@@ -237,30 +275,35 @@
   document.getElementById('rc-register-form').addEventListener('submit', function (evt) {
     evt.preventDefault();
     var btn = document.getElementById('rc-register-btn');
-    var msg = document.getElementById('rc-register-message');
-    msg.className = 'rc-message';
-    msg.textContent = '';
     clearEmailTakenPanel();
 
+    var username = document.getElementById('rc-reg-username').value.trim();
     var firstName = document.getElementById('rc-reg-firstname').value.trim();
     var lastName = document.getElementById('rc-reg-lastname').value.trim();
     var suffix = document.getElementById('rc-reg-suffix').value;
     var email = document.getElementById('rc-reg-email').value.trim();
+    var location = document.getElementById('rc-reg-location').value;
     var timeZone = document.getElementById('rc-reg-timezone').value;
     var password = document.getElementById('rc-reg-password').value;
     var requestedRole = document.getElementById('rc-reg-role').value;
 
+    if (!username) {
+      showToast('Please choose a username.', 'error');
+      return;
+    }
+    if (!location) {
+      showToast('Please select a location.', 'error');
+      return;
+    }
     if (!timeZone) {
-      msg.className = 'rc-message rc-error';
-      msg.textContent = 'Please select a time zone.';
+      showToast('Please select a time zone.', 'error');
       return;
     }
     if (!checkPasswordMatch()) {
       return;
     }
     if (password.length < 6) {
-      msg.className = 'rc-message rc-error';
-      msg.textContent = 'Password must be at least 6 characters.';
+      showToast('Password must be at least 6 characters.', 'error');
       return;
     }
 
@@ -270,8 +313,8 @@
     fetchApi('register', {
       method: 'POST',
       body: {
-        firstName: firstName, lastName: lastName, suffix: suffix,
-        email: email, timeZone: timeZone,
+        username: username, firstName: firstName, lastName: lastName, suffix: suffix,
+        email: email, location: location, timeZone: timeZone,
         password: password, requestedRole: requestedRole
       }
     })
@@ -279,33 +322,32 @@
         btn.disabled = false;
         btn.textContent = 'Create Account';
         if (!data.success) {
-          // v0.3 NEW -- EMAIL_TAKEN is a hard stop with a way out, not
-          // just an error string: a direct "Log in with that account"
-          // button instead of the generic message path every other
-          // error still uses.
-          if (data.error === 'EMAIL_TAKEN') {
+          // v0.3 NEW -- EMAIL_TAKEN / USERNAME_TAKEN are hard stops with a
+          // way out, not just an error string: a direct "Log in with that
+          // account" button instead of the generic message path every
+          // other error still uses.
+          if (data.error === 'EMAIL_TAKEN' || data.error === 'USERNAME_TAKEN') {
             var takenPanel = document.getElementById('rc-register-email-taken');
             var takenText = document.getElementById('rc-register-email-taken-text');
-            takenText.textContent = data.message || 'An account already exists for that email.';
+            takenText.textContent = data.message || (data.error === 'USERNAME_TAKEN' ? 'An account already exists with that username.' : 'An account already exists for that email.');
             takenPanel.style.display = 'block';
             return;
           }
-          msg.className = 'rc-message rc-error';
-          msg.textContent = data.message || 'Could not create account.';
+          showToast(data.message || 'Could not create account.', 'error');
           return;
         }
         // Use the server's actual message rather than assuming success --
         // handleRegister() returns a different message when the account
         // was created but the verification email itself failed to send.
         sessionStorage.setItem('raceclub_pending_profile_id', data.profileId);
+        sessionStorage.setItem('raceclub_prefill_username', username);
         sessionStorage.setItem('raceclub_verify_message', data.message || 'Account created. Check your email for a verification code before logging in.');
         window.location.href = 'verify.html';
       })
       .catch(function () {
         btn.disabled = false;
         btn.textContent = 'Create Account';
-        msg.className = 'rc-message rc-error';
-        msg.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+        showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
       });
   });
 })();

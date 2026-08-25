@@ -1,5 +1,5 @@
 /*
-  Race Club — js/header.js  (v0.3.0)
+  Race Club — js/header.js  (v0.4.0)
 
   Shared fixed site header used on every page. Each page includes this
   file (after js/api.js and js/auth.js, both of which it depends on),
@@ -9,29 +9,39 @@
   up its behavior -- it does not need to run on DOMContentLoaded since the
   div already exists by the time the inline script tag runs.
 
-  Left side: the header wordmark (assets/race-club-header-logo.png),
-  linking to index.html.
-  Right side: HOME always shows first, logged in or not (it used to
-  disappear entirely once a token existed, which left no way back to the
-  landing page from the header -- fixed). After that:
-    - Logged out (no getToken()):  "HOME · LOGIN/REGISTER"
-    - Logged in (getToken()):      "HOME ·" + a small initials avatar,
-      itself a plain link straight to Account.html. No dropdown -- there
-      used to be one (PROFILE/LOGOUT), removed per Matt's call to keep the
-      avatar's click behavior identical on every device instead of
-      hover-on-desktop/tap-on-mobile needing to stay in sync. The site
-      keeps a driver logged in via a long-lived token until it actually
-      expires, so there's no real need for a quick Logout from every page
-      -- it still lives in Account.html's own sidebar.
+  WHAT CHANGED THIS PASS (Matt's direct call, "a design decision moving
+  forward"):
+  - HOME is gone from the header entirely -- the logo itself already links
+    to index.html, so it was a redundant second way to do the same thing.
+  - The logo and avatar are both slightly larger (38px -> 46px logo,
+    32px -> 40px avatar) to give the header a bit more presence.
+  - Logged out: just "REGISTER/LOGIN", same single link to login.html as
+    before, HOME's separator gone with it.
+  - Logged in: the avatar + name/role stack (First Last in caps, bold;
+    role -- Prospect/Driver/Steward/Organizer/Admin -- underneath in a
+    lighter weight and color) and the chevron are now ONE single clickable
+    element (rc-header-account-toggle, a <button>) instead of a separate
+    link + caret button. Clicking anywhere in that box (avatar, name, role,
+    or chevron) opens/closes the dropdown -- it no longer navigates
+    straight to Account.html on click. The dropdown itself now only has
+    Logout in it (Edit Profile was removed from the dropdown -- Edit
+    Profile is reached via the popup on Account.html's sidebar instead).
 
-  AVATAR + NOTIFICATION DOT: the avatar's initials come from
-  getProfileCache() (js/auth.js) -- a small cached copy of the last-known
-  profile, written by login.html/Account.html whenever they have a fresh
-  payload anyway, specifically so THIS file never has to make its own
-  Apps Script round-trip just to render an avatar on every single page
-  load (Apps Script's cold-start cost is real, see the login-latency
-  history elsewhere in this project). If there's no cache yet (e.g. the
-  token was set some other way), the avatar falls back to "?".
+  FLIP-BACK (this pass): the name shown here has always come from
+  cached.displayName (server-computed FirstName + LastName + Suffix), NOT
+  username -- that was already correct before this pass and still is.
+  Username exists now purely as the login identifier; it's never shown in
+  the header.
+
+  AVATAR + NAME/ROLE: all three come from getProfileCache() (js/auth.js)
+  -- a small cached copy of the last-known profile, written by
+  login.html/Account.html whenever they have a fresh payload anyway,
+  specifically so THIS file never has to make its own Apps Script
+  round-trip just to render the header on every single page load (Apps
+  Script's cold-start cost is real, see the login-latency history
+  elsewhere in this project). If there's no cache yet (e.g. the token was
+  set some other way), the avatar falls back to "?" and the name/role
+  stack falls back to blank/"Driver".
 
   HONESTY ABOUT WHAT "LOGGED IN" MEANS: showing the avatar off a cached
   token is an optimistic guess, not proof the session is actually still
@@ -49,20 +59,87 @@
   so the header falls back to the logged-out look rather than asserting a
   session it was never able to verify.
   The Apple-style red notification dot in the avatar's corner is
-  admin-only, and means "there are pending account approvals/verifications
-  waiting on you" -- the one notification type that exists right now. It's
-  NOT read from the cache (that would go stale) -- once the avatar renders,
-  if the cached role has the manageUsers permission, this file fires a
-  background adminListPendingAccounts call and adds the dot only if the
-  total is > 0. This never blocks the header from rendering; it's a
-  background enhancement. See the matching dot on the Admin sidebar nav
-  item in Account.html (renderAdminSection) for the same signal in-page.
+  admin-only, and means "there are pending account approvals waiting on
+  you" -- the one notification type that exists right now. It's NOT read
+  from the cache (that would go stale) -- once the avatar renders, if the
+  cached role is Admin, this file fires a background
+  adminListPendingAccounts call and adds the dot only if the total is > 0.
+  This never blocks the header from rendering; it's a background
+  enhancement.
 
-  Logout uses the exact same fire-and-forget pattern as Account.html's
-  sidebar Log Out button: call the logout API action, ignore whether it
-  succeeds, always clear the local token and redirect.
+  TOAST NOTIFICATIONS (new this pass): showToast(message, type, durationMs)
+  is the one sitewide way any page shows a transient result/status message
+  going forward -- Matt's call: notifications live as a temporary toast in
+  the bottom-right corner, not as text sitting inside a form's own message
+  box. Lives here (not its own file) since every page already loads this
+  script. `type` is 'success' | 'error' | 'info' (default 'info'), just
+  changes the toast's left-edge accent color. Multiple toasts stack,
+  newest at the bottom, each auto-dismisses after `durationMs` (default
+  4200ms) or on its own close (x) click. See the .rc-toast* rules in
+  style.css. NOTE: a message that comes bundled with its own follow-up
+  action -- login.html's "Resend verification email" button,
+  register.html's EMAIL_TAKEN "Log in with that account" panel -- keeps
+  its explanatory text inline next to that button rather than moving to a
+  toast, since a toast that auto-dismisses in a few seconds is the wrong
+  home for text a driver needs to still be reading when they click the
+  button below it. Everything else (plain success/failure results with no
+  attached action) now goes through showToast.
 */
 var RC_HEADER_HEIGHT = 72;
+var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
+
+function _rcEnsureToastContainer() {
+  var c = document.getElementById(RC_TOAST_CONTAINER_ID);
+  if (!c) {
+    c = document.createElement('div');
+    c.id = RC_TOAST_CONTAINER_ID;
+    c.className = 'rc-toast-container';
+    document.body.appendChild(c);
+  }
+  return c;
+}
+
+function showToast(message, type, durationMs) {
+  if (!message) return;
+  type = (type === 'success' || type === 'error') ? type : 'info';
+  durationMs = durationMs || 4200;
+
+  var container = _rcEnsureToastContainer();
+  var toast = document.createElement('div');
+  toast.className = 'rc-toast rc-toast-' + type;
+
+  var text = document.createElement('span');
+  text.className = 'rc-toast-text';
+  text.textContent = message;
+
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'rc-toast-close';
+  closeBtn.setAttribute('aria-label', 'Dismiss');
+  closeBtn.innerHTML = '&times;';
+
+  toast.appendChild(text);
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+
+  // Double rAF so the browser paints the pre-transition state first --
+  // adding rc-toast-in in the same tick the element is inserted can get
+  // coalesced by the browser and skip the slide/fade-in entirely.
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { toast.classList.add('rc-toast-in'); });
+  });
+
+  var timeoutId;
+  function dismiss() {
+    clearTimeout(timeoutId);
+    toast.classList.remove('rc-toast-in');
+    toast.classList.add('rc-toast-out');
+    setTimeout(function () { toast.remove(); }, 220);
+  }
+  closeBtn.addEventListener('click', dismiss);
+  timeoutId = setTimeout(dismiss, durationMs);
+  return { dismiss: dismiss };
+}
 
 function _rcHeaderInitials(name) {
   var parts = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -124,53 +201,88 @@ function renderHeader(opts) {
   html += '<a class="rc-header-logo-link" href="index.html">' +
             '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
-  // HOME now always shows, logged in or not -- only the item after the
-  // separator changes (LOGIN/REGISTER vs. the ACCOUNT avatar). It used
-  // to disappear entirely once a token existed, which meant there was no
-  // way back to the landing page from the header while logged in.
   html += '<nav class="rc-header-nav">';
-  html += '<a class="rc-header-link" href="index.html">HOME</a>' +
-          '<span class="rc-header-sep">&middot;</span>';
   if (token) {
-    var initials = _rcHeaderInitials(cached ? (cached.displayName || cached.username) : '');
-    // No dropdown at all now, per Matt's call -- the avatar is just a
-    // plain link straight to Account.html, same click behavior on every
-    // device (no hover/touch distinction to worry about, no dead zones,
-    // nothing to keep consistent between desktop and mobile). Logout no
-    // longer has a header-level entry point on pages other than
-    // Account.html -- Matt's reasoning: the site keeps you logged in via
-    // a long-lived token until it actually expires, so quick access to
-    // Logout from every page isn't really needed; it's still right there
-    // in Account.html's own sidebar for the times it is.
-    html += '<a class="rc-header-account-toggle" id="rc-header-account-toggle" href="Account.html" aria-label="Go to Account">' +
+    var displayName = cached ? (cached.displayName || '') : '';
+    var initials = _rcHeaderInitials(displayName);
+    var role = cached ? (cached.role || 'Driver') : 'Driver';
+    // The whole avatar/name/role/chevron cluster is now ONE clickable
+    // toggle button -- clicking anywhere in it opens/closes the dropdown,
+    // which no longer navigates to Account.html directly (see header
+    // comment above for why). MY ACCOUNT restores a one-click path back to
+    // the account/dashboard page from anywhere on the site, sitting above
+    // Logout in the dropdown itself.
+    html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
               '<span class="rc-header-avatar">' + initials + '<span class="rc-notif-dot" id="rc-header-notif-dot" style="display:none;"></span></span>' +
-            '</a>';
+              '<span class="rc-header-account-text">' +
+                '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
+                '<span class="rc-header-account-role">' + escapeHtmlHeader_(role) + '</span>' +
+              '</span>' +
+              '<svg class="rc-header-account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+            '</button>' +
+            '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
+              '<a class="rc-header-menu-item" href="Account.html">My Account</a>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
+            '</div>';
   } else {
-    html += '<a class="rc-header-link" href="login.html">LOGIN/REGISTER</a>';
+    html += '<a class="rc-header-link" href="login.html">REGISTER/LOGIN</a>';
   }
   html += '</nav>';
 
   mount.innerHTML = html;
 
   if (token) {
-    // No dropdown/logout wiring here anymore -- the avatar is a plain
-    // <a href="Account.html">, so clicking it just navigates like any
-    // other link, nothing to attach a click handler to.
+    var toggle = document.getElementById('rc-header-account-toggle');
+    var menu = document.getElementById('rc-header-account-menu');
+
+    function closeMenu() {
+      menu.style.display = 'none';
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    function openMenu() {
+      menu.style.display = 'block';
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+    toggle.addEventListener('click', function (evt) {
+      evt.stopPropagation();
+      if (menu.style.display === 'block') closeMenu(); else openMenu();
+    });
+    document.addEventListener('click', function (evt) {
+      if (menu.style.display !== 'block') return;
+      if (menu.contains(evt.target) || toggle.contains(evt.target)) return;
+      closeMenu();
+    });
+    document.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Escape' && menu.style.display === 'block') closeMenu();
+    });
+
+    // Same fire-and-forget logout pattern as Account.html's sidebar Log
+    // Out button: clear the local token and redirect immediately, fire
+    // the API call without waiting on it.
+    document.getElementById('rc-header-menu-logout').addEventListener('click', function () {
+      fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
+      clearToken();
+      window.location.href = 'login.html';
+    });
 
     // Background-only: never blocks the header from rendering, and only
     // fires for admins (everyone else has nothing to be notified about
     // yet -- pending account approval is the only notification type that
     // exists right now). Skipped when the page says it'll report the
     // count itself (see updateHeaderNotifDot above).
-    var perms = cached ? (cached.permissions || []) : [];
-    if (!opts.skipNotifCheck && perms.indexOf('manageUsers') !== -1) {
+    if (!opts.skipNotifCheck && cached && cached.role === 'Admin') {
       fetchApi('adminListPendingAccounts', { token: token })
         .then(function (data) {
           if (!data.success) return;
-          var total = data.organizerRequests.length + data.driverRequests.length + data.unverifiedSignups.length;
-          updateHeaderNotifDot(total > 0);
+          updateHeaderNotifDot((data.pending || []).length > 0);
         })
         .catch(function () { /* silent -- this is a background enhancement, not critical */ });
     }
   }
+}
+
+function escapeHtmlHeader_(str) {
+  var d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
 }

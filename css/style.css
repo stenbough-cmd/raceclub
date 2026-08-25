@@ -913,8 +913,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 1000;
 }
 .rc-header-logo-link { display: flex; align-items: center; height: 100%; }
-.rc-header-logo { height: 38px; display: block; }
-.rc-header-nav { display: flex; align-items: center; gap: 12px; }
+.rc-header-logo { height: 46px; display: block; }
+.rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; }
 .rc-header-link {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -931,18 +931,35 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-link:hover { color: var(--rc-red); }
 .rc-header-sep { color: var(--rc-silver); font-size: 13px; }
 
+/* Avatar + name/role stack + chevron -- ONE clickable toggle button that
+   opens/closes the account dropdown. The whole box gets the hover
+   treatment together (not an isolated circle just behind the chevron) --
+   Matt's call. */
 .rc-header-account-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font: inherit;
 }
+.rc-header-account-toggle:hover,
+.rc-header-account-toggle[aria-expanded="true"] { background: var(--rc-offwhite); }
+.rc-header-account-toggle:hover .rc-header-avatar { background: var(--rc-red); }
+.rc-header-account-chevron {
+  flex: none;
+  color: var(--rc-steel);
+  transition: transform 0.15s ease;
+}
+.rc-header-account-toggle[aria-expanded="true"] .rc-header-account-chevron { transform: rotate(180deg); color: var(--rc-carbon); }
 .rc-header-avatar {
   position: relative;
-  width: 32px;
-  height: 32px;
+  flex: none;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--rc-carbon);
   color: var(--rc-white);
@@ -950,11 +967,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   align-items: center;
   justify-content: center;
   font-family: var(--rc-font-heading);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.rc-header-account-toggle:hover .rc-header-avatar { background: var(--rc-red); }
 /* Apple-style notification dot -- a small red circle with a white ring
    sitting in the avatar's top-right corner, hidden by default and only
    shown (see js/header.js) when there's something pending for an admin. */
@@ -967,6 +983,58 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-radius: 50%;
   background: var(--rc-red);
   border: 2px solid var(--rc-white);
+}
+.rc-header-account-text {
+  display: none; /* shown from ~480px up, see the media query below -- too cramped on a phone-width header otherwise */
+  flex-direction: column;
+  line-height: 1.25;
+}
+.rc-header-account-name {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--rc-carbon);
+}
+.rc-header-account-role {
+  font-family: var(--rc-font-body);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--rc-steel);
+}
+.rc-header-account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  padding: 6px;
+  z-index: 1001;
+}
+.rc-header-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--rc-font-heading);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rc-carbon);
+  text-decoration: none;
+}
+.rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
+
+@media (min-width: 480px) {
+  .rc-header-account-text { display: flex; }
 }
 
 /* Pages other than index.html sit below the fixed header. */
@@ -983,6 +1051,66 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    so it wins for real. */
 @media (max-width: 768px) {
   .rc-shell { padding-top: 0; }
+}
+
+/* -------------------------------------------------------------------- */
+/* Toast notifications (js/header.js's showToast()) — the one sitewide  */
+/* way any page reports a transient result now, per Matt's call: never  */
+/* inside a form's own message box or a popup, always a temporary card  */
+/* stacked bottom-right. Dark/carbon rather than the light theme most   */
+/* of the site uses, deliberately, so a toast reads as chrome sitting   */
+/* ON TOP of the page rather than another card that's part of it --     */
+/* the same dark register the sidebar already uses elsewhere.           */
+/* -------------------------------------------------------------------- */
+.rc-toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  max-width: 360px;
+  pointer-events: none;
+}
+.rc-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--rc-carbon);
+  color: var(--rc-white);
+  border-left: 4px solid var(--rc-steel);
+  border-radius: 6px;
+  padding: 12px 12px 12px 14px;
+  font-family: var(--rc-font-body);
+  font-size: 13.5px;
+  line-height: 1.4;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: auto;
+}
+.rc-toast-in { opacity: 1; transform: translateY(0); }
+.rc-toast-out { opacity: 0; transform: translateY(8px); }
+.rc-toast-success { border-left-color: var(--rc-ok); }
+.rc-toast-error { border-left-color: var(--rc-red); }
+.rc-toast-info { border-left-color: var(--rc-steel); }
+.rc-toast-text { flex: 1; }
+.rc-toast-close {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--rc-white);
+  opacity: 0.55;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+}
+.rc-toast-close:hover { opacity: 1; }
+@media (max-width: 600px) {
+  .rc-toast-container { left: 12px; right: 12px; max-width: none; bottom: 14px; }
 }
 
 /* -------------------------------------------------------------------- */
@@ -1048,6 +1176,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    shrink/letterbox anything. */
 @media (orientation: portrait) {
   .rc-hero { background-image: url('../assets/banner-portrait.jpg'); }
+}
+/* Small watermark badge, bottom-right corner of the hero. .rc-hero is
+   `position: fixed`, which is itself a positioning context, so this can
+   sit absolute against it directly with no extra wrapper needed. */
+.rc-hero-badge {
+  position: absolute;
+  bottom: 22px;
+  right: 22px;
+  height: 52px;
+  width: auto;
+  z-index: 2;
+}
+@media (max-width: 600px) {
+  .rc-hero-badge { height: 38px; bottom: 14px; right: 14px; }
 }
 .rc-hero-content {
   position: relative;
