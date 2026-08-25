@@ -11,12 +11,16 @@
 // the content is controlled by us, not user input, and a full Markdown
 // parser would be a lot of weight for content that changes rarely.
 //
-// Rendered by renderHelpSection()/openRulebookModal() in Account.html:
-// the index up top links to each section's id (#rc-rulebook-sec-N), and
-// unwritten sections still appear in both the index and the body (marked
-// "Not yet drafted") so the popup honestly reflects the rulebook's full
-// planned scope, not just what's done so far -- same "coming soon, not
-// hidden" philosophy as the rest of the site.
+// Rendered by renderHelpSection() in Account.html, under that section's
+// "Rules and Regulations" container: the index up top links to each
+// section's id (#rc-rulebook-sec-N), and unwritten sections still appear
+// in both the index and the body (marked "Not yet drafted") so the page
+// honestly reflects the rulebook's full planned scope, not just what's
+// done so far -- same "coming soon, not hidden" philosophy as the rest
+// of the site. (Help briefly lived on its own page, help.html, so the
+// Rulebook would have room to grow -- but that dropped the sidebar/nav
+// chrome, which read as leaving the site, so Matt had it folded back
+// into Account.html as an ordinary section.)
 //
 // title: shown in the index and as the section heading.
 // draft: true for sections not yet written -- renders a "Not yet
@@ -38,15 +42,13 @@ var RULEBOOK_SECTIONS = [
       '<li>Races range from 40 to 80 minutes</li>' +
       '<li>Points scale with race length and round prestige</li>' +
       '<li>Clean race and fastest lap bonuses are tracked automatically each session</li>' +
-      '<li>Multiclass grids: all three tiers race together on track</li>' +
+      '<li>Season 1 races a single class (LMGT3); multiclass grids return once more classes are active (see below)</li>' +
       '</ul></div>' +
-      '<p>Drivers progress through three tiers over the course of their career. Bronze is where every rookie starts, racing GT3 or LMP3 machinery — money is the only gate. Silver (LMP2) is a step up in every sense: a larger financial commitment and a 400 Reputation floor stand between a driver and a seat, but the risk comes with greater reward. Gold is Hypercar, the pinnacle of the league, gated behind a 500 Reputation floor and reserved for drivers who’ve proven they belong there. Meeting a class’s money and Reputation gate is all it takes to race there — it’s always the driver’s own choice, never an admin decision. The one exception is a driver who wants into a class before their Reputation has caught up to it; see Section 10, Class Progression, for how that request works.</p>' +
+      '<p>Season 1 races LMGT3 only, so there’s nowhere to move up to yet. The rest of the ladder, LMP3, LMP2, and Hypercar, is where a Race Club career is headed in future seasons, and each step up is earned rather than simply bought. Moving into a higher class will take clearing two bars at once: enough bank balance to cover that class’s buy-in, and enough proven experience, consistency, and safety on track. There’s no Reputation score behind that second bar — it’s a plain, checkable bar built from real race count, attendance, and a clean-enough record (see Section 9, and Section 10, Class Progression, for exactly how it works). Clearing both bars is always the driver’s own choice to act on, never an admin decision.</p>' +
       '<div class="rc-rulebook-callout"><strong>The ladder:</strong><ul>' +
-      '<li><strong>Bronze</strong>: GT3 / LMP3 (rookie seats, money only)</li>' +
-      '<li><strong>Silver</strong>: LMP2 (money + 400 Reputation floor; higher risk, higher reward)</li>' +
-      '<li><strong>Gold</strong>: Hypercar (money + 500 Reputation floor; the pinnacle, only proven drivers qualify)</li>' +
-      '<li>Any driver who clears a class’s money + Reputation gate can freely choose to race there — no approval needed</li>' +
-      '<li>A driver who wants a class before their Reputation qualifies them can submit a Class Placement Request instead (see Section 10)</li>' +
+      '<li><strong>LMGT3</strong> (Season 1): where every career starts — buy in and race, no other gate</li>' +
+      '<li><strong>LMP3, LMP2, Hypercar</strong> (future seasons): each gated by affording the seat <em>and</em> clearing the experience/consistency/safety bar in Section 9 — never by money alone</li>' +
+      '<li>Clearing a class’s gate is always the driver’s own choice — no approval needed</li>' +
       '</ul></div>'
   },
   { id: 'getting-started', num: '2', title: 'Getting Started', draft: true },
@@ -63,10 +65,9 @@ var RULEBOOK_SECTIONS = [
       '<h4>3.3 Formation Lap &amp; Start</h4>' +
       '<p>The formation lap is always a short formation lap and, like the start procedure itself, is handled automatically by LMU. Drivers must follow the game’s visual cues to avoid an automatic in-game penalty (see Section 4.3, these calls are final and not reviewable).</p>' +
       '<h4>3.4 No-Shows (Dropped Races)</h4>' +
-      '<p>A driver who doesn’t attend a round has that round recorded as a dropped race. Attending a round costs money regardless of attendance, as part of the season’s overall cost, so a dropped race is not a way to avoid that cost (see Section 8, Career Economy, once finalized).</p>' +
-      '<p>The number of dropped races allowed per season without further consequence is set at the start of the season:</p>' +
-      '<ul><li>Only championship points are excluded for a dropped race within that allowance. Any money earned, wagers, or other economy-related changes tied to that round still stand as normal.</li>' +
-      '<li>Dropped races beyond that allowance result in an additional deduction from the driver’s bank account, on top of the standard season cost.</li></ul>'
+      '<p>A driver who doesn’t attend a round has that round recorded as a dropped race. Dropping a race carries no monetary consequence on its own — Race Club’s economy has no recurring per-race cost or attendance fee to avoid in the first place (see Section 8, Career Economy, once finalized). A dropped race is simply excluded from that round’s championship points; nothing else about it is different from a race the driver could have attended.</p>' +
+      '<p>Attendance still matters, just not financially: a driver’s overall attendance rate is one of the three bars that decides eligibility to move into a higher class once more than one class exists (see Section 9). Missing a race, on its own, never costs a driver money — it can only affect that longer-term eligibility bar.</p>' +
+      '<p class="rc-hint"><em>Not yet decided: the exact number of drops allowed per season, and whether that number is fixed league-wide or set by the admin each season.</em></p>'
   },
   {
     id: 'driving-standards', num: '4', title: 'Driving Standards',
@@ -91,7 +92,8 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
+    html: '<div class="rc-rulebook-callout"><strong>Not yet active for Season 1.</strong> This formal, graduated penalty system depends on a Career Economy and Steward Board Race Club hasn’t built yet. For now, contentious incidents are handled manually — an admin judgment call, worked out directly with the drivers involved — rather than through this tiered process. This section stays fully drafted so it’s ready to switch on once those systems exist.</div>' +
+      '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
       '<table><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
@@ -127,38 +129,26 @@ var RULEBOOK_SECTIONS = [
   { id: 'career-economy', num: '8', title: 'Career Economy', draft: true, draftNote: 'Design pending, separate conversation.' },
   {
     id: 'reputation', num: '9', title: 'Reputation',
-    html: '<p>Reputation is a single blended score, on a 0–1000 scale, that follows a driver across their entire Race Club career — it is never reset between seasons. Every new driver starts at 300 (“unproven,” not zero), and it only moves from specific events: wins, podiums, points finishes, clean races, and fastest laps raise it; penalty-tier incidents and other misconduct lower it. It never decays just from the passage of time.</p>' +
-      '<p>Reputation is what stands between a driver and the higher classes. Bronze (GT3/LMP3) has no reputation requirement — money is the only gate. Silver (LMP2) requires a Reputation of at least 400 to hold that seat, and Gold (Hypercar) requires at least 500. These are floors a driver has to keep clearing, not a one-time check passed at signup — see Section 10, Class Progression, for what happens if it slips below the floor.</p>' +
-      '<div class="rc-rulebook-callout"><strong>Reputation basics:</strong><ul>' +
-      '<li>Single blended score, 0–1000 scale, career-long (never reset each season)</li>' +
-      '<li>New drivers start at 300</li>' +
-      '<li>Moves only from specific on-track results and conduct — never decays from time alone</li>' +
-      '<li>Reputation floor to hold a seat: Bronze none, Silver (LMP2) 400+, Gold (Hypercar) 500+</li>' +
-      '</ul></div>'
+    html: '<p>Race Club doesn’t track Reputation as a single blended score right now — that’s a planned future system, not what’s running for Season 1 (see the note at the bottom of this section). What actually stands between a driver and a higher class today is a plain, three-part checklist: real seat time, showing up consistently, and staying clean enough on track. All three are things Race Club already has real data for once enough races have been run, and a driver needs to clear all three bars, not just the strongest one.</p>' +
+      '<table><tr><td><strong>Bar</strong></td><td><strong>Working value</strong></td><td><strong>What it proves</strong></td></tr>' +
+      '<tr><td>Experience</td><td>Completed at least 8 races (any class)</td><td>Real seat time, not a lucky streak</td></tr>' +
+      '<tr><td>Consistency</td><td>Attended at least 75% of scheduled races (dropped races don’t count against this)</td><td>Actually shows up, is a reliable teammate/opponent</td></tr>' +
+      '<tr><td>Safety</td><td>No more than 1 Steward-upheld protest against them in their last 5 races</td><td>Not currently a liability on track — doesn’t permanently blacklist one bad race</td></tr></table>' +
+      '<p class="rc-hint"><em>These are starting numbers, not locked ones — worth tuning once a season’s worth of real data exists.</em></p>' +
+      '<div class="rc-rulebook-callout"><strong>A note on the future:</strong> a fuller Reputation system — a single blended score with its own floor per class — is a planned addition for a later season, once this lightweight checklist has actually been run and tuned against real season data. Until then, the three-bar checklist above is the real, current rule.</div>'
   },
   {
     id: 'class-progression', num: '10', title: 'Class Progression',
-    html: '<p>Every driver chooses their own class, every season. The admin has no part in a normal class choice — the only requirement is clearing that class’s gate: enough money for the seat, and enough Reputation to clear that class’s floor (see Section 9). Bronze (GT3/LMP3) has no Reputation floor at all, so it’s always available. Whatever class a driver’s current Reputation qualifies them for, they’re free to pick it, with no approval and no waiting.</p>' +
-      '<p>This works the same way going into every season, including one right after a driver’s Reputation has changed:</p>' +
-      '<ul><li><strong>Reputation dropped below a class’s floor?</strong> The driver simply picks again next season from whichever classes they still qualify for. Nobody assigns them a class — it’s their choice from whatever they still clear.</li>' +
-      '<li><strong>Reputation rose enough to newly clear a higher floor?</strong> The driver is free to move up the same way — again, their own choice, not an admin decision.</li></ul>' +
-      '<h4>Class Placement Request — the one situation where an admin gets involved</h4>' +
-      '<p>There’s exactly one case where an admin is part of a driver’s class choice: a <strong>Class Placement Request</strong>, submitted by a driver who wants to race in a class they don’t currently qualify for by Reputation. This exists for drivers who are genuinely safe, competent racers — often with real experience from another league — whose Race Club Reputation score just hasn’t caught up yet.</p>' +
-      '<ul><li><strong>An existing driver</strong> submits a Class Placement Request from their Career section, between seasons. It shows up in the admin’s Pending Approvals list, the same place Prospect account approvals already appear, and the admin approves or denies it.</li>' +
-      '<li><strong>A brand-new driver</strong> does this at signup, simply by picking a Preferred Class above Bronze on the registration form. There’s no separate approval step for this — it’s decided as part of the same Prospect → Driver approval every new signup already goes through. The admin can approve the driver straight into their requested class, or start them in a lower class instead, until they’ve proven themselves.</li>' +
-      '<li><strong>If approved,</strong> the driver’s Reputation is set to exactly that class’s floor (400 for Silver, 500 for Gold) — the same starting point as anyone else holding that seat, no head start and no shortfall.</li>' +
-      '<li><strong>If denied,</strong> the admin picks a reason from a fixed list, so a denied driver always gets a clear, specific answer instead of a vague no:' +
-      '<ul><li>Not Enough Proven Reputation</li><li>Unknown / Unverified Skill Level</li><li>Not Enough Race History in Race Club Yet</li>' +
-      '<li>Recent Conduct or Discipline Concerns</li><li>No Seat Available in That Class Right Now</li><li>Other (a short written note from the admin)</li></ul></li></ul>' +
-      '<p>A Class Placement Request only decides what a driver starts the season in — it doesn’t skip the season-end Reputation check in Section 9. If a driver’s Reputation is still below the floor when that season ends, they go back to choosing from whatever classes they actually qualify for, the same as anyone else.</p>' +
-      '<div class="rc-rulebook-callout"><strong>Class progression:</strong><ul>' +
-      '<li>Every driver picks their own class each season, as long as they clear that class’s money + Reputation gate — no admin approval needed</li>' +
-      '<li>Reputation drops below the floor by season’s end → driver picks again from whatever they still qualify for, next season</li>' +
-      '<li>Reputation rises to clear a higher floor → driver is free to move up, next season</li>' +
-      '<li><strong>Class Placement Request:</strong> the one exception, for a class a driver doesn’t yet qualify for by Reputation — always needs admin approval</li>' +
-      '<li>Existing drivers submit it from their Career section between seasons (appears in Admin Pending Approvals); new drivers submit it as their Preferred Class at signup, decided during Prospect → Driver approval</li>' +
-      '<li>Approved → Reputation is set to exactly that class’s floor (400 Silver / 500 Gold)</li>' +
-      '<li>Denied → admin states a specific reason from a fixed list</li></ul></div>'
+    html: '<p>Season 1 runs LMGT3 only, so there’s nowhere to move up to yet — every driver races the same class. This section describes the rule for once a second class becomes available in a future season.</p>' +
+      '<p>Moving into a higher class will take clearing two independent bars at once — money alone is never enough:</p>' +
+      '<ol><li><strong>Can they afford it?</strong> Enough bank balance to cover that class’s buy-in.</li>' +
+      '<li><strong>Have they earned it?</strong> Not by finishing position or wins, but by the experience/consistency/safety checklist in Section 9 (real seat time, consistent attendance, a clean enough record).</li></ol>' +
+      '<p>There’s no admin approval step in this process. Clearing both bars is the driver’s own choice to act on, the same as choosing LMGT3 is today. A driver who hasn’t cleared a class’s bars yet simply stays where they are and tries again the following season — nobody is bumped up or held back by an admin decision.</p>' +
+      '<div class="rc-rulebook-callout"><strong>Class progression (once more than one class exists):</strong><ul>' +
+      '<li>Money alone is never enough — a driver needs to clear the money bar <em>and</em> the Section 9 checklist</li>' +
+      '<li>No admin approval needed for a normal move — it’s the driver’s own choice once both bars are cleared</li>' +
+      '<li>Falling short of either bar just means trying again next season, from wherever the driver currently qualifies</li>' +
+      '</ul></div>'
   },
   { id: 'wagering', num: '11', title: 'Wagering, "Battles to Watch"', draft: true },
   { id: 'car-class-selection', num: '12', title: 'Car & Class Selection', draft: true, draftNote: 'Naming pending confirmation.' },

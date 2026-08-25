@@ -3,12 +3,26 @@
 
   WHAT CHANGED VS. THE GOOGLE SITES VERSION:
   This is the source file's "REGISTER VIEW" pulled out into its own real
-  page. Field names, validation rules (required time zone, live
-  password-match check, 6-char password minimum), and the Driver/Organizer
-  role explainer copy are preserved verbatim from the source. The
-  timezone dropdown is now populated from js/reference-data.js (shared
-  with Account.html) instead of a copy of the same ~50-line list baked
-  into this page.
+  page. Field names and validation rules (required time zone, live
+  password-match check, 6-char password minimum) are preserved verbatim
+  from the source. The timezone dropdown is now populated from
+  js/reference-data.js (shared with Account.html) instead of a copy of
+  the same ~50-line list baked into this page.
+
+  MOVED (this pass): the "use your name exactly how it appears in Le Mans
+  Ultimate" hint now sits under BOTH First Name and Last Name (one copy
+  each), not once under Suffix -- Matt's call, since it's really about the
+  two required name fields, not the optional suffix.
+
+  REMOVED (this pass, Matt's direct call): the "I'm signing up as a..."
+  Driver/Organizer role picker and its explainer copy are gone. The
+  backend (handleRegister in Auth.gs) never actually acted on
+  requestedRole anyway -- every registration lands as Role: 'Driver'
+  regardless, so this was a choice with no effect. The single Prospect-
+  approval hint line above the Create Account button now carries that
+  explanation on its own, reworded to be explicit about what a Prospect
+  can and can't do yet (full profile access immediately, no event
+  participation until approved as a driver).
 
   On success, this page stashes the returned ProfileID in sessionStorage
   ('raceclub_pending_profile_id') and navigates to verify.html — the source
@@ -30,9 +44,7 @@
   Username field after a fresh verify) -- the old 'raceclub_prefill_email'
   key is gone since login.html no longer has an email field. The
   EMAIL_TAKEN hard-stop panel now also triggers on USERNAME_TAKEN (same
-  panel, message text swapped per which one came back). A short line
-  above the Create Account button spells out the Prospect-until-approved
-  status explicitly, in addition to the existing role-explainer copy.
+  panel, message text swapped per which one came back).
 
   v0.3 -- TWO FIXES, both Matt's direct call:
   1. Already-logged-in visitors used to get silently window.location.replace()'d
@@ -40,10 +52,10 @@
      (Apps Script cold start on the token check isn't even involved here,
      but a slow network/paint easily could be), the page just sat there
      blank for a beat with no explanation. Now the whole page is replaced
-     with a small "Redirecting to account page..." notice (same spinner
-     markup style as Account.html's buildSpinner(), so it looks like part
-     of the same site) the instant getToken() comes back truthy, and the
-     redirect fires right after.
+     with a small "Redirecting to account page..." notice (same starting
+     grid lights markup as Account.html's initial page load, so it looks
+     like part of the same site) the instant getToken() comes back truthy,
+     and the redirect fires right after.
   2. A duplicate email is a genuine hard stop, not a dead-end error: when
      the server returns error === 'EMAIL_TAKEN', the message area now
      renders "An account already exists for that email." plus a "Log in
@@ -73,12 +85,18 @@
 <!-- Shown INSTEAD of the register form the moment we know a valid session
      token already exists (see the auth check at the top of the script
      below) -- never both at once. Uses the same .rc-inline-spinner-wrap/
-     .rc-spinner markup Account.html's buildSpinner() produces, so it
+     .rc-startlights markup as Account.html's initial page load, so it
      reads as the same site rather than a plain "Redirecting..." string. -->
 <div id="rc-already-logged-in" class="rc-auth-page" style="display:none;">
   <div class="rc-auth-wrap" style="max-width:460px;text-align:center;">
     <div class="rc-inline-spinner-wrap" style="justify-content:center;">
-      <div class="rc-spinner"></div>
+      <div class="rc-startlights" aria-hidden="true">
+        <span class="rc-startlight"></span>
+        <span class="rc-startlight"></span>
+        <span class="rc-startlight"></span>
+        <span class="rc-startlight"></span>
+        <span class="rc-startlight"></span>
+      </div>
       <div class="rc-loading-text">Redirecting to account page&hellip;</div>
     </div>
   </div>
@@ -95,25 +113,24 @@
         <div class="rc-section">
           <label style="margin-top:0;">Username</label>
           <input id="rc-reg-username" type="text" autocomplete="username" required>
-          <div class="rc-hint">This is what you'll log in with.</div>
 
           <label>First Name</label>
           <input id="rc-reg-firstname" type="text" autocomplete="given-name" required>
+          <div class="rc-hint">Use your name exactly how it appears in Le Mans Ultimate.</div>
 
           <label>Last Name</label>
           <input id="rc-reg-lastname" type="text" autocomplete="family-name" required>
+          <div class="rc-hint">Use your name exactly how it appears in Le Mans Ultimate.</div>
 
           <label>Suffix (optional)</label>
           <select id="rc-reg-suffix"></select>
-          <div class="rc-hint">Use your real name, exactly as you'd want it recognized — this is how the league admin links your account to your race results.</div>
 
           <label>Email Address</label>
           <input id="rc-reg-email" type="email" autocomplete="email" required>
-          <div class="rc-hint">You'll get a 6-digit code by email to verify this address before you can log in. Email is only ever used for verification and password resets — you'll always log in with your username.</div>
+          <div class="rc-hint">You'll get a 6-digit code by email to verify this address before you can log in. Email is only ever used for verification and password resets.</div>
 
           <label>Location</label>
           <select id="rc-reg-location" required></select>
-          <div class="rc-hint">Your country.</div>
 
           <label>Time Zone</label>
           <select id="rc-reg-timezone" required></select>
@@ -130,20 +147,7 @@
           <div id="rc-reg-password-match" class="rc-hint"></div>
         </div>
 
-        <div class="rc-section">
-          <label style="margin-top:0;">I'm signing up as a...</label>
-          <select id="rc-reg-role">
-            <option value="Driver">Driver</option>
-            <option value="Organizer">Organizer</option>
-          </select>
-          <div class="rc-role-info">
-            <strong>Driver</strong> — Race in Race Club events and build a career profile. Most people want this.<br><br>
-            <strong>Organizer</strong> — Driver access, plus scheduling, results, and penalty/bonus management once approved. Pick this if you're helping run the league.<br><br>
-            Either way, your account starts as a <strong>Prospect</strong> with full profile access right away — approval never affects your race eligibility.
-          </div>
-        </div>
-
-        <p class="rc-hint" style="margin-top:18px;text-align:center;">You'll be created as a <strong>Prospect</strong> and can start setting up your profile immediately — full access unlocks once an admin or league organizer approves your account.</p>
+        <p class="rc-hint" style="margin-top:18px;text-align:center;">You will be designated as a <strong>Prospect</strong> until an admin or organizer approves your account. You will have instant access to your profile but won't be able to participate in events until you've been approved as a driver.</p>
 
         <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
       </form>
@@ -285,7 +289,6 @@
     var location = document.getElementById('rc-reg-location').value;
     var timeZone = document.getElementById('rc-reg-timezone').value;
     var password = document.getElementById('rc-reg-password').value;
-    var requestedRole = document.getElementById('rc-reg-role').value;
 
     if (!username) {
       showToast('Please choose a username.', 'error');
@@ -315,7 +318,7 @@
       body: {
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
         email: email, location: location, timeZone: timeZone,
-        password: password, requestedRole: requestedRole
+        password: password
       }
     })
       .then(function (data) {

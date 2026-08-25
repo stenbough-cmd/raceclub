@@ -263,6 +263,123 @@ p { margin: 0 0 0.75em; }
 }
 
 /* -------------------------------------------------------------------- */
+/* Data Management (Account.html) -- Drivers/Tracks/Cars panels          */
+/* -------------------------------------------------------------------- */
+/* Rounded-rectangle, white-on-color badge -- the same visual treatment
+   real broadcast graphics use for car-class tags. Colors come from CSS
+   vars so these stay in sync with CAR_CLASS_BADGE_COLOR_VAR
+   (js/reference-data.js) wherever else a class badge shows up later.
+   (WEC/ELMS badges were removed -- those turned out to be Layout entries,
+   not a separate venue property -- see Core.gs's Tracks schema comment.) */
+.rc-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rc-white);
+  line-height: 1.6;
+}
+.rc-badge-lmgt3 { background: var(--rc-class-lmgt3); }
+.rc-badge-lmp3 { background: var(--rc-class-lmp3); }
+.rc-badge-lmp2 { background: var(--rc-class-lmp2); }
+.rc-badge-hypercar { background: var(--rc-class-hypercar); }
+/* Season badge -- black rounded rectangle, year inside (Matt's call) --
+   same chip shape as the class badges above but always carbon/white
+   regardless of class, since it's a neutral grouping label, not a
+   colored category. */
+.rc-badge-season { background: var(--rc-carbon); }
+/* Manufacturer logo shown in front of each car row -- see
+   manufacturerLogoSrc() in js/reference-data.js for the filename
+   convention. Hidden automatically (onerror, wired in Account.html) if
+   that manufacturer's logo file hasn't been uploaded yet, so a missing
+   image never shows as a broken-image icon. */
+.rc-dm-car-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex: none;
+}
+
+.rc-dm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-dm-row:last-child { border-bottom: none; }
+.rc-dm-row-label { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 600; color: var(--rc-carbon); }
+/* Sub-rows (a track's layouts, a class's seasons, a season's cars) --
+   indented and prefixed with a tree glyph rather than a bullet, so the
+   parent/child relationship reads at a glance without a full tree-line
+   graphic. */
+.rc-dm-subrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 6px 20px;
+  font-size: 13px;
+  color: var(--rc-steel);
+}
+.rc-dm-subrow-edit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 8px 40px;
+  border-top: 1px solid var(--rc-offwhite);
+  font-size: 13px;
+  color: var(--rc-carbon);
+}
+.rc-dm-tree { color: var(--rc-silver); font-weight: 700; flex: none; }
+/* Groups the manufacturer logo + car label together as one flex item, so
+   a 3-child row (logo, label, Edit button) still splits into a "left
+   cluster / right button" layout under justify-content: space-between,
+   instead of space-between spacing all three apart evenly. */
+.rc-dm-car-info { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+/* Holds the tree glyph + the season badge -- typography lives on the
+   badge itself (.rc-badge-season) now rather than on this wrapper. */
+.rc-dm-season-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px 20px; }
+.rc-dm-group { margin-bottom: 4px; }
+.rc-dm-empty { padding: 14px 0; font-size: 13px; color: var(--rc-steel); }
+
+/* Layout list inside the Track edit popup (openEditTrackModal) -- each
+   row shows the layout name, an Active/Inactive status pill, and a
+   toggle button that flips it (never deletes the row). */
+.rc-dm-layout-list { border: 1px solid var(--rc-silver); border-radius: 6px; margin-top: 8px; }
+.rc-dm-layout-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-dm-layout-row:last-child { border-bottom: none; }
+.rc-dm-layout-name { flex: 1; font-size: 13px; color: var(--rc-carbon); }
+.rc-dm-layout-row.rc-dm-layout-inactive .rc-dm-layout-name { color: var(--rc-steel); text-decoration: line-through; }
+.rc-dm-status-pill {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--rc-font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.rc-dm-status-pill-active { background: #eaf6ec; color: #1f5c25; }
+.rc-dm-status-pill-inactive { background: var(--rc-offwhite); color: var(--rc-steel); }
+/* Add-a-layout row -- text input + Add button, sits under the list. */
+.rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
+.rc-dm-add-row input { margin-top: 0; flex: 1; }
+
+/* -------------------------------------------------------------------- */
 /* Forms */
 /* -------------------------------------------------------------------- */
 input, select, textarea {
@@ -1697,33 +1814,92 @@ body.rc-modal-scroll-locked {
 .rc-shake { animation: rc-shake 0.4s; }
 
 /* -------------------------------------------------------------------- */
-/* Account.html — branded loading spinner. ".rc-inline-spinner-wrap" is  */
-/* the one spinner+message style used everywhere: the initial account    */
-/* load (static markup in <body>, right of the sidebar in the normal     */
-/* main content flow) and in-page first loads like Admin/Data            */
-/* Management (via buildSpinner() in Account.html). Previously the       */
-/* initial load used a separate fixed, full-screen ".rc-loading-overlay" */
-/* that dimmed the whole page including the sidebar -- removed in favor  */
-/* of this same in-page spinner (Matt's call), so the sidebar and header */
-/* stay visible while the account loads instead of being washed out.     */
+/* Account.html — branded "starting grid lights" loading indicator.      */
+/* ".rc-inline-spinner-wrap" is the one loading+message style used       */
+/* everywhere: the initial account load (static markup in <body>, right  */
+/* of the sidebar in the normal main content flow), in-page first loads  */
+/* like Admin/Data Management, and register.html's "already logged in,   */
+/* redirecting" state. Previously the initial load used a separate       */
+/* fixed, full-screen ".rc-loading-overlay" that dimmed the whole page   */
+/* including the sidebar -- removed in favor of this same in-page        */
+/* indicator (Matt's call), so the sidebar and header stay visible while */
+/* the account loads instead of being washed out.                       */
+/*                                                                       */
+/* #rc-loading (the initial Account.html page load only -- not the       */
+/* Data Management in-page state, which already sits under its own      */
+/* heading, and not register.html's redirect state, which already lives */
+/* inside .rc-auth-page's full-viewport centering) gets extra min-height */
+/* so the lights sit closer to the middle of the page instead of        */
+/* directly under the topbar (Matt's call).                             */
+/*                                                                       */
+/* Five lights, modeled on a real F1 start gantry: they light up red     */
+/* one at a time left-to-right, all five hold lit for 1s once the last  */
+/* one comes on, then every light cuts out together (the "lights out"    */
+/* moment), stays dark for 1s, and the sequence repeats. Each light is   */
+/* its own @keyframes rule sharing one 3.2s timeline so the on-times     */
+/* stagger but the blackout instant lines up exactly across all five --  */
+/* animation-delay can't do this alone since a delay would also push     */
+/* back when THAT light cuts out, breaking the simultaneous "lights      */
+/* out". The duplicated keyframe stops just before each color change     */
+/* (e.g. "0%, 68.74%" then "68.75%, 100%") force an instant on/off cut   */
+/* instead of the smooth color fade CSS would otherwise interpolate.     */
 /* -------------------------------------------------------------------- */
 .rc-inline-spinner-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 18px;
   padding: 56px 20px;
 }
-.rc-spinner {
-  width: 44px;
-  height: 44px;
-  border: 4px solid var(--rc-silver);
-  border-top-color: var(--rc-red);
-  border-radius: 50%;
-  animation: rc-spin 0.75s linear infinite;
+#rc-loading.rc-inline-spinner-wrap {
+  min-height: 55vh;
 }
-@keyframes rc-spin { to { transform: rotate(360deg); } }
+.rc-startlights {
+  display: flex;
+  gap: 10px;
+}
+.rc-startlight {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--rc-carbon);
+  border: 2px solid var(--rc-steel);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+  animation-duration: 3.2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+.rc-startlight:nth-child(1) { animation-name: rc-startlight-1; }
+.rc-startlight:nth-child(2) { animation-name: rc-startlight-2; }
+.rc-startlight:nth-child(3) { animation-name: rc-startlight-3; }
+.rc-startlight:nth-child(4) { animation-name: rc-startlight-4; }
+.rc-startlight:nth-child(5) { animation-name: rc-startlight-5; }
+/* Off-state stops shared by every light below. */
+@keyframes rc-startlight-1 {
+  0%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 10px 2px var(--rc-red); }
+  68.75%, 100% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+}
+@keyframes rc-startlight-2 {
+  0%, 9.374% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+  9.375%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 10px 2px var(--rc-red); }
+  68.75%, 100% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+}
+@keyframes rc-startlight-3 {
+  0%, 18.749% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+  18.75%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 10px 2px var(--rc-red); }
+  68.75%, 100% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+}
+@keyframes rc-startlight-4 {
+  0%, 28.124% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+  28.125%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 10px 2px var(--rc-red); }
+  68.75%, 100% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+}
+@keyframes rc-startlight-5 {
+  0%, 37.499% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+  37.5%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 10px 2px var(--rc-red); }
+  68.75%, 100% { background: var(--rc-carbon); border-color: var(--rc-steel); box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
+}
 .rc-loading-text {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -2035,8 +2211,20 @@ body.rc-modal-scroll-locked {
 .rc-cal-race.rc-cal-finished .rc-cal-stat { background: var(--rc-white); }
 
 /* -------------------------------------------------------------------- */
-/* Rulebook popup (Help section) */
+/* Account.html's Help section (renderHelpSection()) -- two stacked      */
+/* .rc-panel containers, Website Help then Rules and Regulations (the    */
+/* Rulebook). This briefly lived as its own page (help.html) so the      */
+/* Rulebook would have room to grow, but that page dropped the sidebar/  */
+/* nav chrome entirely -- Matt's call to fold it back into Account.html  */
+/* as an ordinary section instead, same shell as every other link.       */
+/* ".rc-rulebook-*" below was originally written for a Rulebook POPUP    */
+/* that never actually got wired up -- .rc-rulebook-section's            */
+/* scroll-margin-top (76px) happens to already clear the site's 72px     */
+/* fixed header almost exactly, which is why it's untouched here even    */
+/* though the popup it was tuned for never shipped.                      */
 /* -------------------------------------------------------------------- */
+.rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
+.rc-help-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--rc-carbon); }
 .rc-rulebook-index {
   display: flex;
   flex-direction: column;
