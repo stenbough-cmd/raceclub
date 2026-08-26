@@ -127,7 +127,7 @@
   </aside>
 
   <main class="rc-main">
-    <div id="rc-loading" class="rc-inline-spinner-wrap">
+    <div id="rc-loading" class="rc-inline-spinner-wrap rc-inline-spinner-page">
       <div class="rc-startlights" aria-hidden="true">
         <span class="rc-startlight"></span>
         <span class="rc-startlight"></span>
@@ -2160,8 +2160,13 @@
     var section = document.getElementById('rc-section-datamgmt');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
-    var loading = el('div', 'rc-inline-spinner-wrap');
+    // No "Data Management" heading above the spinner here (unlike the
+    // loaded state below) -- the initial account-load spinner doesn't sit
+    // under a heading either, and rc-inline-spinner-page gives every
+    // page-level loading card the same fixed top offset, so adding a
+    // heading here would push this one further down than that one and
+    // break the "every page has the same loading height" match.
+    var loading = el('div', 'rc-inline-spinner-wrap rc-inline-spinner-page');
     var lightsRow = el('div', 'rc-startlights');
     for (var li = 0; li < 5; li++) lightsRow.appendChild(el('span', 'rc-startlight'));
     loading.appendChild(lightsRow);

@@ -1849,15 +1849,30 @@ body.rc-modal-scroll-locked {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: 56px 20px;
+  gap: 16px;
+  padding: 36px 46px;
   background: var(--rc-white);
   border: 1px solid var(--rc-silver);
   border-radius: 8px;
+  width: fit-content;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
 }
-#rc-loading.rc-inline-spinner-wrap {
-  min-height: 55vh;
-  margin-top: 32px;
+/* No more min-height:55vh -- that was stretching the card itself to fill
+   most of the page. The card now sizes to its own content (the fit-
+   content/max-width above) and is just pushed down from the top of the
+   page with margin instead -- a generous top margin here specifically so
+   it clearly sits BELOW the header/topbar rather than butted up against
+   it.
+   ".rc-inline-spinner-page" (not ID-scoped anymore) is the one shared
+   top-of-page loading position: the initial Account.html load AND every
+   later in-page loading state (Data Management, etc.) use this same
+   class so every page's loading card sits at the exact same height,
+   rather than each one drifting depending on whether a heading happened
+   to render above it first. */
+.rc-inline-spinner-page {
+  margin-top: 180px;
 }
 .rc-startlights {
   display: flex;
