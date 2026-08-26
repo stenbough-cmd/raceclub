@@ -1851,9 +1851,13 @@ body.rc-modal-scroll-locked {
   justify-content: center;
   gap: 18px;
   padding: 56px 20px;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
 }
 #rc-loading.rc-inline-spinner-wrap {
   min-height: 55vh;
+  margin-top: 32px;
 }
 .rc-startlights {
   display: flex;

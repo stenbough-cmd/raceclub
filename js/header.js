@@ -221,7 +221,7 @@ function _rcAckNotif(id) {
 // type that exists is "an account is waiting on your approval" (admin
 // only), unchanged in source from the old avatar-corner dot.
 function _rcFetchNotifications(token, cached) {
-  if (!cached || cached.role !== 'Admin') return Promise.resolve([]);
+  if (!cached || (cached.role !== 'Admin' && cached.role !== 'Organizer')) return Promise.resolve([]);
   return fetchApi('adminListPendingAccounts', { token: token })
     .then(function (data) {
       if (!data.success) return [];

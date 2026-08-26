@@ -2103,9 +2103,11 @@
       fetchApi('createSeason', {
         method: 'POST',
         token: token,
-        name: state.seasonName,
-        seasonDetails: JSON.stringify(seasonDetails),
-        races: JSON.stringify(racesPayload)
+        body: {
+          name: state.seasonName,
+          seasonDetails: JSON.stringify(seasonDetails),
+          races: JSON.stringify(racesPayload)
+        }
       }).then(function (data) {
         if (data && data.success) {
           clearWizardDraft();
@@ -2169,12 +2171,17 @@
     Promise.all([
       fetchApi('adminListDrivers', { token: token }),
       fetchApi('getTracks', { token: token }),
-      fetchApi('getCars', { token: token })
+      fetchApi('getCars', { token: token }),
+      fetchApi('adminListPendingAccounts', { token: token })
     ]).then(function (results) {
-      var driversData = results[0], tracksData = results[1], carsData = results[2];
+      var driversData = results[0], tracksData = results[1], carsData = results[2], pendingData = results[3];
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
-      section.appendChild(buildDriversPanel(driversData && driversData.success ? driversData.drivers : [], token));
+      section.appendChild(buildDriversPanel(
+        driversData && driversData.success ? driversData.drivers : [],
+        pendingData && pendingData.success ? pendingData.pending : [],
+        token
+      ));
       section.appendChild(buildTracksPanel(tracksData && tracksData.success ? tracksData.tracks : [], token));
       section.appendChild(buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token));
     }).catch(function () {
@@ -2185,15 +2192,84 @@
   }
 
   // Alphabetical by DisplayName, one row per driver, Edit button on each
-  // opening openEditDriverModal().
-  function buildDriversPanel(drivers, token) {
+  // opening openEditDriverModal(). A separate "Pending Approval" group
+  // sits on top when there's anyone waiting -- these are Prospects
+  // (Status PendingApproval, not yet a Role at all), so they're not part
+  // of the main list below; Approve promotes Status straight to Active
+  // (adminApproveAccount), Deny sets it to Rejected (adminRejectAccount).
+  // Both re-fetch this whole section (and the sidebar dot/header bell)
+  // afterward so nothing here goes stale.
+  function buildDriversPanel(drivers, pending, token) {
     var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Drivers'));
+    panel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Members'));
+
+    var pendingList = pending || [];
+    if (pendingList.length > 0) {
+      var pendingWrap = el('div', 'margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rc-silver);');
+      pendingWrap.appendChild(el('h4', 'margin:0 0 4px;font-size:13px;color:var(--rc-red);', 'Pending Approval (' + pendingList.length + ')'));
+      pendingList.slice().sort(function (a, b) {
+        return (a.DisplayName || '').localeCompare(b.DisplayName || '');
+      }).forEach(function (p) {
+        var row = el('div', 'rc-dm-row');
+        row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(p.DisplayName || p.Username || '(no name)')));
+        var btnGroup = el('div', 'display:flex;gap:8px;');
+        // Row actions are always .rc-btn-secondary (site convention -- see
+        // .rc-btn-row in style.css), so Approve/Deny read as equal-weight
+        // choices, colored via the same green/red already used for
+        // Active/Inactive status pills elsewhere in Data Management.
+        var approveBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Approve');
+        approveBtn.style.cssText = 'color:#1f5c25;border-color:#1f5c25;';
+        approveBtn.type = 'button';
+        approveBtn.addEventListener('click', function () {
+          approveBtn.disabled = true; denyBtn.disabled = true;
+          fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
+            if (data && data.success) {
+              showToast((p.DisplayName || 'Driver') + ' approved.', 'success');
+              renderDataManagementSection(token);
+              if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
+              if (typeof renderHeader === 'function') renderHeader();
+            } else {
+              showToast((data && data.message) || 'Could not approve this account.', 'error');
+              approveBtn.disabled = false; denyBtn.disabled = false;
+            }
+          }).catch(function () {
+            showToast('Could not reach the server. Try again in a moment.', 'error');
+            approveBtn.disabled = false; denyBtn.disabled = false;
+          });
+        });
+        var denyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Deny');
+        denyBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+        denyBtn.type = 'button';
+        denyBtn.addEventListener('click', function () {
+          approveBtn.disabled = true; denyBtn.disabled = true;
+          fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
+            if (data && data.success) {
+              showToast((p.DisplayName || 'Driver') + ' denied.', 'success');
+              renderDataManagementSection(token);
+              if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
+              if (typeof renderHeader === 'function') renderHeader();
+            } else {
+              showToast((data && data.message) || 'Could not deny this account.', 'error');
+              approveBtn.disabled = false; denyBtn.disabled = false;
+            }
+          }).catch(function () {
+            showToast('Could not reach the server. Try again in a moment.', 'error');
+            approveBtn.disabled = false; denyBtn.disabled = false;
+          });
+        });
+        btnGroup.appendChild(approveBtn);
+        btnGroup.appendChild(denyBtn);
+        row.appendChild(btnGroup);
+        pendingWrap.appendChild(row);
+      });
+      panel.appendChild(pendingWrap);
+    }
+
     var sorted = (drivers || []).slice().sort(function (a, b) {
       return (a.DisplayName || '').localeCompare(b.DisplayName || '');
     });
     if (sorted.length === 0) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No drivers yet.'));
+      panel.appendChild(el('div', 'rc-dm-empty', 'No members yet.'));
       return panel;
     }
     sorted.forEach(function (d) {
@@ -2794,9 +2870,29 @@
       document.getElementById('rc-nav-admin').style.display = 'flex';
       document.getElementById('rc-nav-datamgmt').style.display = 'flex';
       showUpperNavDivider();
+      updateDataMgmtNavDot(token);
     }
 
     showSection('dashboard');
+  }
+
+  // Red dot on the Data Management sidebar link itself, same "something's
+  // waiting on you" signal as the header bell -- lets an Admin see there's
+  // a pending sign-up without having to open Data Management first. Re-run
+  // after Approve/Deny (see buildDriversPanel) so it clears the instant
+  // the queue is empty, not just on next page load.
+  function updateDataMgmtNavDot(token) {
+    fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
+      var btn = document.getElementById('rc-nav-datamgmt');
+      if (!btn) return;
+      var hasPending = !!(data && data.success && data.pending && data.pending.length);
+      var dot = btn.querySelector('.rc-nav-dot');
+      if (hasPending && !dot) {
+        btn.appendChild(el('span', 'rc-nav-dot'));
+      } else if (!hasPending && dot) {
+        dot.remove();
+      }
+    }).catch(function () { /* leave whatever dot state was already showing */ });
   }
 
   // mustChangePassword forces a password change before the driver can do
