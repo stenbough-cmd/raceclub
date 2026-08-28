@@ -344,12 +344,18 @@
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);
+    // Admin is still just a placeholder for now -- Matt's not sure yet
+    // what lives here, so it stays a plain link (default showSection(id)
+    // handler, same as any other placeholder nav item) rather than having
+    // its own render function.
     var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true);
     nav.appendChild(adminBtn);
     // Data Management is real content now, not a placeholder -- it fetches
     // fresh every time the link is clicked (see renderDataManagementSection),
     // same currentToken-closure pattern the Edit Profile/Help popups use,
     // since this button is built before profile/token exist on first load.
+    // Members/Tracks/Cars/Sponsors each open their own popup from here
+    // (openMembersModal etc.) rather than rendering inline.
     var dataMgmtBtn = makeNavButton('datamgmt', 'Data Management', ICON_DATAMGMT, 'rc-nav-datamgmt', true, function () {
       showSection('datamgmt');
       renderDataManagementSection(currentToken);
@@ -2156,43 +2162,116 @@
     return (row.Active || 'Active') !== 'Inactive';
   }
 
+  // ---------------------------------------------------------------------
+  // DATA MANAGEMENT PAGE -- a League-Management-style container (h2 + one
+  // rc-panel labeled "Data Tools") with a row of buttons: Members / Tracks
+  // / Cars / Sponsors. Each button opens its own popup (openAdminListModal
+  // below) that fetches and renders just that data set -- nothing loads
+  // until its button is clicked (Matt's call: "Each section loads up
+  // separately AFTER the button is clicked, with the loading lights
+  // showing up in the popup", same pattern the Season Wizard's own
+  // modal-internal loading already uses via buildSpinner). Separate from
+  // the plain "Admin" placeholder link (Matt's call: "I'm unsure what I
+  // will use it for" -- kept as its own link, not merged in here).
+  // ---------------------------------------------------------------------
   function renderDataManagementSection(token) {
     var section = document.getElementById('rc-section-datamgmt');
     if (!section) return;
     section.innerHTML = '';
-    // No "Data Management" heading above the spinner here (unlike the
-    // loaded state below) -- the initial account-load spinner doesn't sit
-    // under a heading either, and rc-inline-spinner-page gives every
-    // page-level loading card the same fixed top offset, so adding a
-    // heading here would push this one further down than that one and
-    // break the "every page has the same loading height" match.
-    var loading = el('div', 'rc-inline-spinner-wrap rc-inline-spinner-page');
-    var lightsRow = el('div', 'rc-startlights');
-    for (var li = 0; li < 5; li++) lightsRow.appendChild(el('span', 'rc-startlight'));
-    loading.appendChild(lightsRow);
-    loading.appendChild(el('div', 'rc-loading-text', 'Loading data management&hellip;'));
-    section.appendChild(loading);
+    section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
 
-    Promise.all([
-      fetchApi('adminListDrivers', { token: token }),
-      fetchApi('getTracks', { token: token }),
-      fetchApi('getCars', { token: token }),
-      fetchApi('adminListPendingAccounts', { token: token })
-    ]).then(function (results) {
-      var driversData = results[0], tracksData = results[1], carsData = results[2], pendingData = results[3];
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
-      section.appendChild(buildDriversPanel(
+    var panel = el('div', 'rc-panel');
+    panel.appendChild(el('h3', 'margin-top:0;', 'Data Tools'));
+    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Admin-only. Manage members, tracks, cars, and sponsors.'));
+
+    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+
+    var membersBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Members');
+    membersBtn.type = 'button';
+    membersBtn.addEventListener('click', function () { openMembersModal(token); });
+    row.appendChild(membersBtn);
+
+    var tracksBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Tracks');
+    tracksBtn.type = 'button';
+    tracksBtn.addEventListener('click', function () { openTracksModal(token); });
+    row.appendChild(tracksBtn);
+
+    var carsBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Cars');
+    carsBtn.type = 'button';
+    carsBtn.addEventListener('click', function () { openCarsModal(token); });
+    row.appendChild(carsBtn);
+
+    var sponsorsBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Sponsors');
+    sponsorsBtn.type = 'button';
+    sponsorsBtn.addEventListener('click', function () { openSponsorsModal(token); });
+    row.appendChild(sponsorsBtn);
+
+    panel.appendChild(row);
+    section.appendChild(panel);
+  }
+
+  // Generic "open a popup, show the loading lights, then fetch and render
+  // its content" helper -- shared by all four Admin buttons above so every
+  // popup loads the same way. `fetchFn` returns a promise (a single
+  // fetchApi call, or a Promise.all of a few); `renderFn(result, reload)`
+  // gets the resolved value back plus a `reload` callback it can hand to
+  // its rows (e.g. after an Approve/Deny/Save) to refresh the popup in
+  // place without closing it.
+  function openAdminListModal(title, loadingText, fetchFn, renderFn) {
+    var modal = showModal(title, { wide: true });
+    function load() {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(buildSpinner(loadingText));
+      fetchFn().then(function (result) {
+        modal.body.innerHTML = '';
+        modal.body.appendChild(renderFn(result, load));
+      }).catch(function () {
+        modal.body.innerHTML = '';
+        modal.body.appendChild(el('div', 'rc-message rc-error', 'Could not load. Try again in a moment.'));
+      });
+    }
+    load();
+    return modal;
+  }
+
+  function openMembersModal(token) {
+    openAdminListModal('Members', 'Loading members…', function () {
+      return Promise.all([
+        fetchApi('adminListDrivers', { token: token }),
+        fetchApi('adminListPendingAccounts', { token: token })
+      ]);
+    }, function (results, reload) {
+      var driversData = results[0], pendingData = results[1];
+      return buildDriversPanel(
         driversData && driversData.success ? driversData.drivers : [],
         pendingData && pendingData.success ? pendingData.pending : [],
-        token
-      ));
-      section.appendChild(buildTracksPanel(tracksData && tracksData.success ? tracksData.tracks : [], token));
-      section.appendChild(buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token));
-    }).catch(function () {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
-      section.appendChild(el('div', 'rc-message rc-error', 'Could not load data management. Try again in a moment.'));
+        token,
+        reload
+      );
+    });
+  }
+
+  function openTracksModal(token) {
+    openAdminListModal('Tracks', 'Loading tracks…', function () {
+      return fetchApi('getTracks', { token: token });
+    }, function (tracksData, reload) {
+      return buildTracksPanel(tracksData && tracksData.success ? tracksData.tracks : [], token, reload);
+    });
+  }
+
+  function openCarsModal(token) {
+    openAdminListModal('Cars', 'Loading cars…', function () {
+      return fetchApi('getCars', { token: token });
+    }, function (carsData, reload) {
+      return buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token, reload);
+    });
+  }
+
+  function openSponsorsModal(token) {
+    openAdminListModal('Sponsors', 'Loading sponsors…', function () {
+      return fetchApi('getSponsors', { token: token });
+    }, function (sponsorsData) {
+      return buildSponsorsPanel(sponsorsData && sponsorsData.success ? sponsorsData.sponsors : []);
     });
   }
 
@@ -2202,11 +2281,12 @@
   // (Status PendingApproval, not yet a Role at all), so they're not part
   // of the main list below; Approve promotes Status straight to Active
   // (adminApproveAccount), Deny sets it to Rejected (adminRejectAccount).
-  // Both re-fetch this whole section (and the sidebar dot/header bell)
-  // afterward so nothing here goes stale.
-  function buildDriversPanel(drivers, pending, token) {
+  // Both call `reload` (the Members popup's own refresh, from
+  // openAdminListModal) afterward, plus the sidebar dot/header bell, so
+  // nothing here goes stale. No panel heading here -- this renders inside
+  // the Members popup, whose modal title already says "Members".
+  function buildDriversPanel(drivers, pending, token, reload) {
     var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Members'));
 
     var pendingList = pending || [];
     if (pendingList.length > 0) {
@@ -2230,7 +2310,7 @@
           fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
             if (data && data.success) {
               showToast((p.DisplayName || 'Driver') + ' approved.', 'success');
-              renderDataManagementSection(token);
+              reload();
               if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
               if (typeof renderHeader === 'function') renderHeader();
             } else {
@@ -2250,7 +2330,7 @@
           fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
             if (data && data.success) {
               showToast((p.DisplayName || 'Driver') + ' denied.', 'success');
-              renderDataManagementSection(token);
+              reload();
               if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
               if (typeof renderHeader === 'function') renderHeader();
             } else {
@@ -2282,7 +2362,7 @@
       row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(d.DisplayName || '(no name)')));
       var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
       editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditDriverModal(d, token); });
+      editBtn.addEventListener('click', function () { openEditDriverModal(d, token, reload); });
       row.appendChild(editBtn);
       panel.appendChild(row);
     });
@@ -2296,7 +2376,7 @@
   // endpoint Status changes already went through) rather than a field on
   // this form, matching the Track/Car popups' edit-fields vs. deactivate
   // split below.
-  function openEditDriverModal(driver, token) {
+  function openEditDriverModal(driver, token, reload) {
     var body = el('div');
     var form = el('form');
 
@@ -2410,7 +2490,7 @@
           }
           showToast('Driver updated.', 'success');
           modalHandle.close();
-          renderDataManagementSection(token);
+          reload();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -2434,7 +2514,7 @@
           }
           showToast(isActive ? 'Account disabled.' : 'Account reactivated.', 'success');
           modalHandle.close();
-          renderDataManagementSection(token);
+          reload();
         })
         .catch(function () {
           toggleBtn.disabled = false;
@@ -2447,9 +2527,8 @@
   // row only, opening openEditTrackModal(). Only ACTIVE layouts show in
   // this main list -- the edit popup is where inactive ones are visible
   // (and can be reactivated).
-  function buildTracksPanel(tracks, token) {
+  function buildTracksPanel(tracks, token, reload) {
     var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Tracks'));
     var venues = {};
     var names = [];
     (tracks || []).forEach(function (t) {
@@ -2469,7 +2548,7 @@
       row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(name)));
       var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
       editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditTrackModal(name, rows, token); });
+      editBtn.addEventListener('click', function () { openEditTrackModal(name, rows, token, reload); });
       row.appendChild(editBtn);
       group.appendChild(row);
 
@@ -2503,7 +2582,7 @@
   // close/reopen it to keep managing layouts); only the rename triggers a
   // full section refresh, since that's the one change that affects the
   // main panel's grouping/heading.
-  function openEditTrackModal(venueName, rows, token) {
+  function openEditTrackModal(venueName, rows, token, reload) {
     var body = el('div');
 
     var form = el('form');
@@ -2625,7 +2704,7 @@
           }
           showToast('Track renamed.', 'success');
           modalHandle.close();
-          renderDataManagementSection(token);
+          reload();
         })
         .catch(function () {
           saveNameBtn.disabled = false;
@@ -2655,9 +2734,8 @@
   // still exist -- see openEditCarModal's Reactivate button, reachable
   // once you know the car's still-active season/class to find it, or
   // directly in the Sheet).
-  function buildCarsPanel(cars, token) {
+  function buildCarsPanel(cars, token, reload) {
     var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Cars'));
 
     var activeCars = (cars || []).filter(_rcRowActive);
 
@@ -2726,7 +2804,7 @@
           row.appendChild(info);
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
-          editBtn.addEventListener('click', function () { openEditCarModal(c, token); });
+          editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
           row.appendChild(editBtn);
           group.appendChild(row);
         });
@@ -2740,7 +2818,7 @@
   // Name, posting to adminUpdateCar, plus a separate Deactivate/Reactivate
   // button (adminSetCarActive -- never deletes the row), same edit-fields-
   // vs-deactivate split as the Track popup above.
-  function openEditCarModal(car, token) {
+  function openEditCarModal(car, token, reload) {
     var body = el('div');
     var form = el('form');
 
@@ -2815,7 +2893,7 @@
           }
           showToast('Car updated.', 'success');
           modalHandle.close();
-          renderDataManagementSection(token);
+          reload();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -2838,7 +2916,210 @@
           }
           showToast(isActive ? 'Car deactivated.' : 'Car reactivated.', 'success');
           modalHandle.close();
-          renderDataManagementSection(token);
+          reload();
+        })
+        .catch(function () {
+          toggleBtn.disabled = false;
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+  }
+
+  // Tier badge -- Safe/Balanced/Aggressive, same colored-chip pattern as
+  // _rcClassBadge above, just a different color mapping (risk level, not
+  // car class).
+  function _rcTierBadge(tier) {
+    var key = String(tier || '').trim();
+    var map = { Safe: 'rc-badge-tier-safe', Balanced: 'rc-badge-tier-balanced', Aggressive: 'rc-badge-tier-aggressive' };
+    var colorClass = map[key] || '';
+    return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(key || 'Unclassified'));
+  }
+
+  // Grouped by Tier (Safe -> Balanced -> Aggressive, the same order the
+  // catalog was designed in -- see v0.3-Economy-Reputation-Design.md's
+  // Sponsorship System), then one row per sponsor -- logo, name, bonus/
+  // penalty summary, Edit button. Unlike Cars, deactivated sponsors stay
+  // visible right here (dimmed, with an Inactive pill) instead of being
+  // hidden -- Matt's call ("stays in the sheet for reference"), and this
+  // catalog is small enough that hiding them would just make them hard to
+  // find again to reactivate.
+  function buildSponsorsPanel(sponsors, token, reload) {
+    var panel = el('div', 'rc-panel');
+    var all = sponsors || [];
+    if (all.length === 0) {
+      panel.appendChild(el('div', 'rc-dm-empty', 'No sponsors yet.'));
+      return panel;
+    }
+
+    var TIER_ORDER = ['Safe', 'Balanced', 'Aggressive'];
+    var byTier = {};
+    all.forEach(function (s) {
+      var tier = s.Tier || 'Unclassified';
+      if (!byTier[tier]) byTier[tier] = [];
+      byTier[tier].push(s);
+    });
+    var tierOrder = TIER_ORDER.slice();
+    Object.keys(byTier).forEach(function (t) { if (tierOrder.indexOf(t) === -1) tierOrder.push(t); });
+
+    tierOrder.forEach(function (tier) {
+      var list = byTier[tier];
+      if (!list) return;
+      var group = el('div', 'rc-dm-group');
+      var tierHead = el('div', 'rc-dm-row');
+      tierHead.appendChild(_rcTierBadge(tier));
+      group.appendChild(tierHead);
+
+      list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
+        var active = _rcRowActive(s);
+        var row = el('div', 'rc-dm-subrow-edit');
+        var info = el('div', 'rc-dm-car-info');
+        var logo = document.createElement('img');
+        logo.className = 'rc-dm-car-logo';
+        logo.alt = '';
+        logo.src = sponsorLogoSrc(s.Name || '');
+        // Hides gracefully rather than showing a broken-image icon when
+        // that sponsor's logo file hasn't been uploaded yet -- same
+        // pattern buildCarsPanel uses for manufacturer logos.
+        logo.onerror = function () { this.style.display = 'none'; };
+        info.appendChild(logo);
+
+        var textCol = el('div', null);
+        var nameLine = el('div', null, escapeHtml(s.Name || '(unnamed sponsor)'));
+        if (!active) nameLine.style.cssText = 'color:var(--rc-steel);text-decoration:line-through;';
+        textCol.appendChild(nameLine);
+        var bonusAmt = Number(s.BonusAmount) || 0;
+        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+        textCol.appendChild(el('div', 'rc-hint', 'Bonus: ' + (s.BonusType || '—') + ' (+$' + bonusAmt + ')  ·  Penalty: ' + (s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+        info.appendChild(textCol);
+        row.appendChild(info);
+
+        if (!active) row.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'Inactive'));
+
+        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editBtn.type = 'button';
+        editBtn.addEventListener('click', function () { openEditSponsorModal(s, token, reload); });
+        row.appendChild(editBtn);
+        group.appendChild(row);
+      });
+      panel.appendChild(group);
+    });
+    return panel;
+  }
+
+  // Sponsor edit popup -- Name/Tier/Bonus Trigger/Bonus Amount/Penalty
+  // Trigger/Penalty Amount, posting to adminUpdateSponsor, plus a separate
+  // Deactivate/Reactivate button (adminSetSponsorActive -- never deletes
+  // the row), same edit-fields-vs-deactivate split as Track/Car above.
+  // Amounts are GT3-base dollar figures (see Core.gs's TAB_SCHEMAS
+  // comment) -- the Penalty Amount field always shows/accepts a positive
+  // number (the size of the deduction); the sign gets applied on save so
+  // the sheet stores it as a negative, ready for whenever penalties
+  // actually apply to payouts.
+  function openEditSponsorModal(sponsor, token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Sponsor Name'));
+    var name = el('input'); name.type = 'text'; name.value = sponsor.Name || ''; name.required = true;
+    form.appendChild(name);
+
+    form.appendChild(el('label', null, 'Tier'));
+    var tier = document.createElement('select');
+    ['Safe', 'Balanced', 'Aggressive'].forEach(function (t) {
+      var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+      if (sponsor.Tier === t) opt.selected = true;
+      tier.appendChild(opt);
+    });
+    form.appendChild(tier);
+
+    form.appendChild(el('label', null, 'Bonus Trigger'));
+    var bonusType = el('input'); bonusType.type = 'text'; bonusType.value = sponsor.BonusType || ''; bonusType.required = true;
+    form.appendChild(bonusType);
+
+    form.appendChild(el('label', null, 'Bonus Amount ($, GT3 base)'));
+    var bonusAmount = el('input'); bonusAmount.type = 'number'; bonusAmount.min = '0'; bonusAmount.step = '1';
+    bonusAmount.value = Number(sponsor.BonusAmount) || 0;
+    form.appendChild(bonusAmount);
+
+    form.appendChild(el('label', null, 'Penalty Trigger'));
+    var penaltyType = el('input'); penaltyType.type = 'text'; penaltyType.value = sponsor.PenaltyType || '';
+    form.appendChild(penaltyType);
+    form.appendChild(el('div', 'rc-hint', 'Stored for later -- sponsor penalties aren’t applied to payouts yet this season.'));
+
+    form.appendChild(el('label', null, 'Penalty Amount ($, GT3 base)'));
+    var penaltyAmount = el('input'); penaltyAmount.type = 'number'; penaltyAmount.min = '0'; penaltyAmount.step = '1';
+    penaltyAmount.value = Math.abs(Number(sponsor.PenaltyAmount) || 0);
+    form.appendChild(penaltyAmount);
+
+    var saveBtn = el('button', null, 'Save Changes');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var isActive = _rcRowActive(sponsor);
+    var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
+    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Deactivate This Sponsor' : 'Reactivate This Sponsor');
+    toggleBtn.type = 'button';
+    statusWrap.appendChild(toggleBtn);
+    body.appendChild(statusWrap);
+
+    var modalHandle = showModal('Edit Sponsor', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!name.value.trim() || !bonusType.value.trim()) {
+        showToast('Sponsor name and bonus trigger are required.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      fetchApi('adminUpdateSponsor', {
+        method: 'POST', token: token,
+        body: {
+          sponsorId: sponsor.SponsorID,
+          Name: name.value.trim(),
+          Tier: tier.value,
+          BonusType: bonusType.value.trim(),
+          BonusAmount: Number(bonusAmount.value) || 0,
+          PenaltyType: penaltyType.value.trim(),
+          PenaltyAmount: -Math.abs(Number(penaltyAmount.value) || 0)
+        }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          if (!data.success) {
+            showToast(data.message || 'Could not save changes.', 'error');
+            return;
+          }
+          showToast('Sponsor updated.', 'success');
+          modalHandle.close();
+          reload();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+
+    toggleBtn.addEventListener('click', function () {
+      toggleBtn.disabled = true;
+      fetchApi('adminSetSponsorActive', {
+        method: 'POST', token: token,
+        body: { sponsorId: sponsor.SponsorID, active: isActive ? 'Inactive' : 'Active' }
+      })
+        .then(function (data) {
+          toggleBtn.disabled = false;
+          if (!data.success) {
+            showToast(data.message || 'Could not update this sponsor.', 'error');
+            return;
+          }
+          showToast(isActive ? 'Sponsor deactivated.' : 'Sponsor reactivated.', 'success');
+          modalHandle.close();
+          reload();
         })
         .catch(function () {
           toggleBtn.disabled = false;
@@ -2862,11 +3143,12 @@
     // 0): Organizer's own capability is "edit season info & schedule",
     // which is exactly League Management -- so Organizer unlocks that nav
     // item too, same as Admin (who has every Organizer capability plus
-    // more). Admin nav (user approvals/role changes) and Data Management
-    // (editing Tracks/Cars/Drivers reference data) stay Admin-only for
-    // now -- those map to Level 4 capabilities ("change anyone's access
-    // level", manage reference data), not anything Organizer has per the
-    // system map. Revisit if that design changes.
+    // more). Admin nav (still just a placeholder -- Matt's not sure yet
+    // what lives there) and Data Management (Members/Tracks/Cars/Sponsors
+    // popups) both stay Admin-only for now -- that maps to Level 4
+    // capabilities ("change anyone's access level", manage reference
+    // data), not anything Organizer has per the system map. Revisit if
+    // that design changes.
     if (profile.role === 'Admin' || profile.role === 'Organizer') {
       document.getElementById('rc-nav-league').style.display = 'flex';
       showUpperNavDivider();
@@ -2883,9 +3165,9 @@
 
   // Red dot on the Data Management sidebar link itself, same "something's
   // waiting on you" signal as the header bell -- lets an Admin see there's
-  // a pending sign-up without having to open Data Management first. Re-run
-  // after Approve/Deny (see buildDriversPanel) so it clears the instant
-  // the queue is empty, not just on next page load.
+  // a pending sign-up without having to open Data Management/Members
+  // first. Re-run after Approve/Deny (see buildDriversPanel) so it clears
+  // the instant the queue is empty, not just on next page load.
   function updateDataMgmtNavDot(token) {
     fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
       var btn = document.getElementById('rc-nav-datamgmt');

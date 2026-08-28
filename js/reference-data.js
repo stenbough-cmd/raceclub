@@ -196,6 +196,17 @@ function manufacturerLogoSrc(manufacturerName) {
 }
 
 // Same slugging convention as manufacturerLogoSrc() above, pointed at
+// assets/sponsors/{slug}.png instead -- e.g. "Blackline Motor Oil" ->
+// "blackline-motor-oil.png" (Matt's own example). Admin uploads the
+// actual image files by hand, same as manufacturer logos; callers should
+// always set an onerror handler to hide the <img> gracefully if that
+// sponsor's file hasn't been uploaded yet.
+function sponsorLogoSrc(sponsorName) {
+  var slug = String(sponsorName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/sponsors/' + slug + '.png';
+}
+
+// Same slugging convention as manufacturerLogoSrc() above, pointed at
 // assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
 // Not currently called from anywhere client-side (the server auto-writes
 // this exact filename to ProfileID.AvatarFile at team lock -- see

@@ -293,6 +293,12 @@ p { margin: 0 0 0.75em; }
    regardless of class, since it's a neutral grouping label, not a
    colored category. */
 .rc-badge-season { background: var(--rc-carbon); }
+/* Sponsor risk-tier badges (Data Management's Sponsors popup) -- Safe/
+   Balanced/Aggressive, same chip shape as the class badges, colored by
+   risk level (green -> steel blue -> red) rather than by class. */
+.rc-badge-tier-safe { background: #1f5c25; }
+.rc-badge-tier-balanced { background: #1a5276; }
+.rc-badge-tier-aggressive { background: var(--rc-red); }
 /* Manufacturer logo shown in front of each car row -- see
    manufacturerLogoSrc() in js/reference-data.js for the filename
    convention. Hidden automatically (onerror, wired in Account.html) if
@@ -1858,6 +1864,15 @@ body.rc-modal-scroll-locked {
   max-width: 360px;
   margin-left: auto;
   margin-right: auto;
+}
+/* Inside a popup (the Season Wizard's loading states, the Data Management
+   list popups) the modal card itself already reads as the container, so
+   the spinner's own border is redundant double-framing -- drop it there
+   (Matt's call). Page-level spinners (#rc-loading, Data Management's own
+   in-page first-load state before this pass, etc.) keep the border above
+   since they sit directly on the page background. */
+.rc-modal-body .rc-inline-spinner-wrap {
+  border: none;
 }
 /* No more min-height:55vh -- that was stretching the card itself to fill
    most of the page. The card now sizes to its own content (the fit-
