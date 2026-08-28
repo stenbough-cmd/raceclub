@@ -1400,7 +1400,7 @@
     // label styling/weight as every other field, not a checklist. 0 means
     // that category pays no bonus this season.
     var bonusRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
-    [['Pole Position Bonus', 'pole'], ['Fastest Lap Bonus', 'fastestLap'], ['Most Laps Led Bonus', 'mostLapsLed']].forEach(function (pair) {
+    [['Pole Position Bonus (PTS)', 'pole'], ['Fastest Lap Bonus (PTS)', 'fastestLap'], ['Most Laps Led Bonus (PTS)', 'mostLapsLed']].forEach(function (pair) {
       var label = pair[0], key = pair[1];
       var select = wizSelect(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], String(state.bonusPoints[key]), function (v) { state.bonusPoints[key] = Number(v); });
       var col = el('div', 'flex:1;min-width:140px;');
@@ -2216,14 +2216,25 @@
   // fetchApi call, or a Promise.all of a few); `renderFn(result, reload)`
   // gets the resolved value back plus a `reload` callback it can hand to
   // its rows (e.g. after an Approve/Deny/Save) to refresh the popup in
-  // place without closing it.
-  function openAdminListModal(title, loadingText, fetchFn, renderFn) {
+  // place without closing it. `addButtonConfig` ({label, onClick}) is
+  // optional -- Tracks/Cars/Sponsors pass one so an "Add <name>" button
+  // sits at the top of the popup, above the list; Members doesn't (new
+  // members only ever arrive by signing up themselves).
+  function openAdminListModal(title, loadingText, fetchFn, renderFn, addButtonConfig) {
     var modal = showModal(title, { wide: true });
     function load() {
       modal.body.innerHTML = '';
       modal.body.appendChild(buildSpinner(loadingText));
       fetchFn().then(function (result) {
         modal.body.innerHTML = '';
+        if (addButtonConfig) {
+          var addRow = el('div', 'display:flex;justify-content:flex-end;margin-bottom:14px;');
+          var addBtn = el('button', 'rc-btn-primary rc-btn-sm', addButtonConfig.label);
+          addBtn.type = 'button';
+          addBtn.addEventListener('click', function () { addButtonConfig.onClick(load); });
+          addRow.appendChild(addBtn);
+          modal.body.appendChild(addRow);
+        }
         modal.body.appendChild(renderFn(result, load));
       }).catch(function () {
         modal.body.innerHTML = '';
@@ -2256,7 +2267,7 @@
       return fetchApi('getTracks', { token: token });
     }, function (tracksData, reload) {
       return buildTracksPanel(tracksData && tracksData.success ? tracksData.tracks : [], token, reload);
-    });
+    }, { label: 'Add Track', onClick: function (reload) { openAddTrackModal(token, reload); } });
   }
 
   function openCarsModal(token) {
@@ -2264,14 +2275,157 @@
       return fetchApi('getCars', { token: token });
     }, function (carsData, reload) {
       return buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token, reload);
-    });
+    }, { label: 'Add Car', onClick: function (reload) { openAddCarModal(token, reload); } });
   }
 
   function openSponsorsModal(token) {
     openAdminListModal('Sponsors', 'Loading sponsors…', function () {
       return fetchApi('getSponsors', { token: token });
-    }, function (sponsorsData) {
-      return buildSponsorsPanel(sponsorsData && sponsorsData.success ? sponsorsData.sponsors : []);
+    }, function (sponsorsData, reload) {
+      return buildSponsorsPanel(sponsorsData && sponsorsData.success ? sponsorsData.sponsors : [], token, reload);
+    }, { label: 'Add Sponsor', onClick: function (reload) { openAddSponsorModal(token, reload); } });
+  }
+
+  // Add Track -- Track Name + first Layout, posting to the same
+  // adminAddTrackLayout endpoint the Edit Track popup's "Add Layout" row
+  // already uses (that endpoint creates the venue if the name doesn't
+  // exist yet, so a brand-new track and a new layout on an existing one
+  // are literally the same server action).
+  function openAddTrackModal(token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Track Name'));
+    var name = el('input'); name.type = 'text'; name.required = true;
+    form.appendChild(name);
+
+    form.appendChild(el('label', null, 'Layout'));
+    var layout = el('input'); layout.type = 'text'; layout.required = true;
+    form.appendChild(layout);
+    form.appendChild(el('div', 'rc-hint', 'Every track needs at least one layout -- add more from its Edit popup afterward.'));
+
+    var saveBtn = el('button', null, 'Add Track');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var modalHandle = showModal('Add Track', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!name.value.trim() || !layout.value.trim()) {
+        showToast('Track name and layout are required.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Adding...';
+      fetchApi('adminAddTrackLayout', {
+        method: 'POST', token: token,
+        body: { trackName: name.value.trim(), layout: layout.value.trim() }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Track';
+          if (!data.success) {
+            showToast(data.message || 'Could not add this track.', 'error');
+            return;
+          }
+          showToast('Track added.', 'success');
+          modalHandle.close();
+          reload();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Track';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+  }
+
+  // Add Car -- same field set as the Edit Car popup, minus Active (new
+  // cars always start Active). Class is a dropdown (CAR_CLASS_LIST is a
+  // fixed, standardized set); Manufacturer/CarModel/CarNumber/TeamName/
+  // Season stay text boxes -- none of those have a governed option list
+  // anywhere in this codebase yet.
+  function openAddCarModal(token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Season'));
+    var season = el('input'); season.type = 'text'; season.required = true;
+    form.appendChild(season);
+
+    form.appendChild(el('label', null, 'Class'));
+    var carClass = document.createElement('select');
+    (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).forEach(function (cls) {
+      var opt = document.createElement('option'); opt.value = cls; opt.textContent = cls;
+      carClass.appendChild(opt);
+    });
+    form.appendChild(carClass);
+
+    form.appendChild(el('label', null, 'Manufacturer'));
+    var manufacturer = el('input'); manufacturer.type = 'text';
+    form.appendChild(manufacturer);
+    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
+
+    form.appendChild(el('label', null, 'Car Model'));
+    var carModel = el('input'); carModel.type = 'text';
+    form.appendChild(carModel);
+
+    form.appendChild(el('label', null, 'Car Number'));
+    var carNumber = el('input'); carNumber.type = 'text';
+    form.appendChild(carNumber);
+
+    form.appendChild(el('label', null, 'Team Name'));
+    var teamName = el('input'); teamName.type = 'text';
+    form.appendChild(teamName);
+
+    var saveBtn = el('button', null, 'Add Car');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var modalHandle = showModal('Add Car', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!season.value.trim()) {
+        showToast('Season is required.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Adding...';
+      fetchApi('adminAddCar', {
+        method: 'POST', token: token,
+        body: {
+          Season: season.value.trim(),
+          Class: carClass.value,
+          Manufacturer: manufacturer.value.trim(),
+          CarModel: carModel.value.trim(),
+          CarNumber: carNumber.value.trim(),
+          TeamName: teamName.value.trim()
+        }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Car';
+          if (!data.success) {
+            showToast(data.message || 'Could not add this car.', 'error');
+            return;
+          }
+          showToast('Car added.', 'success');
+          modalHandle.close();
+          reload();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Car';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
     });
   }
 
@@ -2925,6 +3079,25 @@
     });
   }
 
+  // Dropdown for a standardized option list (Matt's call: "use dropdown
+  // boxes anytime there are options which are standardized and use text
+  // boxes for only custom things that do not have set options"). If the
+  // record's current value isn't already in that list (an older/one-off
+  // entry), it's prepended as an extra option so editing never silently
+  // discards it -- the dropdown always has to contain whatever's already
+  // selected.
+  function _rcBuildSelectWithFallback(options, currentValue) {
+    var select = document.createElement('select');
+    var list = options.slice();
+    if (currentValue && list.indexOf(currentValue) === -1) list = [currentValue].concat(list);
+    list.forEach(function (opt) {
+      var o = document.createElement('option'); o.value = opt; o.textContent = opt;
+      if (opt === currentValue) o.selected = true;
+      select.appendChild(o);
+    });
+    return select;
+  }
+
   // Tier badge -- Safe/Balanced/Aggressive, same colored-chip pattern as
   // _rcClassBadge above, just a different color mapping (risk level, not
   // car class).
@@ -3024,16 +3197,11 @@
     form.appendChild(name);
 
     form.appendChild(el('label', null, 'Tier'));
-    var tier = document.createElement('select');
-    ['Safe', 'Balanced', 'Aggressive'].forEach(function (t) {
-      var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
-      if (sponsor.Tier === t) opt.selected = true;
-      tier.appendChild(opt);
-    });
+    var tier = _rcBuildSelectWithFallback(SPONSOR_TIER_LIST, sponsor.Tier);
     form.appendChild(tier);
 
     form.appendChild(el('label', null, 'Bonus Trigger'));
-    var bonusType = el('input'); bonusType.type = 'text'; bonusType.value = sponsor.BonusType || ''; bonusType.required = true;
+    var bonusType = _rcBuildSelectWithFallback(SPONSOR_BONUS_TRIGGERS, sponsor.BonusType);
     form.appendChild(bonusType);
 
     form.appendChild(el('label', null, 'Bonus Amount ($, GT3 base)'));
@@ -3042,7 +3210,7 @@
     form.appendChild(bonusAmount);
 
     form.appendChild(el('label', null, 'Penalty Trigger'));
-    var penaltyType = el('input'); penaltyType.type = 'text'; penaltyType.value = sponsor.PenaltyType || '';
+    var penaltyType = _rcBuildSelectWithFallback(SPONSOR_PENALTY_TRIGGERS, sponsor.PenaltyType);
     form.appendChild(penaltyType);
     form.appendChild(el('div', 'rc-hint', 'Stored for later -- sponsor penalties aren’t applied to payouts yet this season.'));
 
@@ -3123,6 +3291,88 @@
         })
         .catch(function () {
           toggleBtn.disabled = false;
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+  }
+
+  // Add Sponsor -- same field set as Edit Sponsor minus the Deactivate
+  // toggle (a brand-new sponsor always starts Active). Tier/Bonus Trigger/
+  // Penalty Trigger are all dropdowns (SPONSOR_TIER_LIST/
+  // SPONSOR_BONUS_TRIGGERS/SPONSOR_PENALTY_TRIGGERS, reference-data.js) --
+  // only Name and the two dollar amounts stay free-entry, since those are
+  // the only genuinely custom values here.
+  function openAddSponsorModal(token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Sponsor Name'));
+    var name = el('input'); name.type = 'text'; name.required = true;
+    form.appendChild(name);
+
+    form.appendChild(el('label', null, 'Tier'));
+    var tier = _rcBuildSelectWithFallback(SPONSOR_TIER_LIST, '');
+    form.appendChild(tier);
+
+    form.appendChild(el('label', null, 'Bonus Trigger'));
+    var bonusType = _rcBuildSelectWithFallback(SPONSOR_BONUS_TRIGGERS, '');
+    form.appendChild(bonusType);
+
+    form.appendChild(el('label', null, 'Bonus Amount ($, GT3 base)'));
+    var bonusAmount = el('input'); bonusAmount.type = 'number'; bonusAmount.min = '0'; bonusAmount.step = '1'; bonusAmount.value = 0;
+    form.appendChild(bonusAmount);
+
+    form.appendChild(el('label', null, 'Penalty Trigger'));
+    var penaltyType = _rcBuildSelectWithFallback(SPONSOR_PENALTY_TRIGGERS, '');
+    form.appendChild(penaltyType);
+    form.appendChild(el('div', 'rc-hint', 'Stored for later -- sponsor penalties aren’t applied to payouts yet this season.'));
+
+    form.appendChild(el('label', null, 'Penalty Amount ($, GT3 base)'));
+    var penaltyAmount = el('input'); penaltyAmount.type = 'number'; penaltyAmount.min = '0'; penaltyAmount.step = '1'; penaltyAmount.value = 0;
+    form.appendChild(penaltyAmount);
+
+    var saveBtn = el('button', null, 'Add Sponsor');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var modalHandle = showModal('Add Sponsor', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!name.value.trim()) {
+        showToast('Sponsor name is required.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Adding...';
+      fetchApi('adminAddSponsor', {
+        method: 'POST', token: token,
+        body: {
+          Name: name.value.trim(),
+          Tier: tier.value,
+          BonusType: bonusType.value,
+          BonusAmount: Number(bonusAmount.value) || 0,
+          PenaltyType: penaltyType.value,
+          PenaltyAmount: -Math.abs(Number(penaltyAmount.value) || 0)
+        }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Sponsor';
+          if (!data.success) {
+            showToast(data.message || 'Could not add this sponsor.', 'error');
+            return;
+          }
+          showToast('Sponsor added.', 'success');
+          modalHandle.close();
+          reload();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Sponsor';
           showToast('Could not reach the server. Try again in a moment.', 'error');
         });
     });

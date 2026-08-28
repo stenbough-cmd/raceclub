@@ -175,6 +175,38 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
   'Other'
 ];
 
+// Sponsor risk tiers -- fixed 3-tier ladder, see
+// v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
+// Tier dropdown in both the Sponsors popup's Add and Edit forms.
+var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Aggressive'];
+
+// Bonus/penalty trigger vocabulary -- every trigger currently used across
+// the Season 1 Starting Sponsor Catalog (see Website.gs's old
+// seedSponsorCatalog, now retired since the catalog's seeded), kept here
+// as the admin-curated, fixed list Matt asked for ("ALL the options we
+// can make for bonus triggers show up in a dropdown box instead of
+// free-text") rather than free text -- same "preconfigured options, not
+// free text" pattern as CLASS_PLACEMENT_DENIAL_REASONS above. Add a new
+// trigger here first if a future sponsor needs one that isn't already
+// covered.
+var SPONSOR_BONUS_TRIGGERS = [
+  'Clean race',
+  'Finish, no DNF',
+  'Points finish (P4-P10)',
+  'Hard charger',
+  'Pole position',
+  'Fastest lap',
+  'Podium / Win',
+  'Win (P1 only)'
+];
+var SPONSOR_PENALTY_TRIGGERS = [
+  'Any penalty-tier event',
+  'DNF (driver-caused)',
+  'Low placement',
+  'Reckless-tier contact+',
+  'DNF or DSQ'
+];
+
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.
