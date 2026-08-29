@@ -223,6 +223,56 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
   'Other'
 ];
 
+// Sponsor risk tiers -- fixed 3-tier ladder, see
+// v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
+// Tier dropdown in both the Sponsors popup's Add and Edit forms.
+var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Aggressive'];
+
+// Bonus/penalty trigger vocabulary -- every trigger currently used across
+// the Season 1 Starting Sponsor Catalog (see Website.gs's old
+// seedSponsorCatalog, now retired since the catalog's seeded), kept here
+// as the admin-curated, fixed list Matt asked for ("ALL the options we
+// can make for bonus triggers show up in a dropdown box instead of
+// free-text") rather than free text -- same "preconfigured options, not
+// free text" pattern as CLASS_PLACEMENT_DENIAL_REASONS above. Add a new
+// trigger here first if a future sponsor needs one that isn't already
+// covered.
+// v0.25 (2026-08-29) -- added 5 bonus + 2 penalty triggers so every
+// sponsor's payout is actually backed by evaluation logic (see
+// DataCache.gs's SPONSOR_BONUS_EVALUATORS_/SPONSOR_PENALTY_EVALUATORS_,
+// the payout engine that reads this exact vocabulary).
+//
+// v0.26 (2026-08-29) -- "Beat your rival" replaces the short-lived "Beat
+// your teammate" (Matt's call): a driver's "rival" is whoever they've
+// wagered against, not whoever shares their car -- it fires when a driver
+// wins a Settled Wagers row for this round. This reuses data that already
+// exists (Wagers.Status/WinnerProfileID) instead of needing a new
+// admin-picked-rival field/UI.
+var SPONSOR_BONUS_TRIGGERS = [
+  'Clean race',
+  'Finish, no DNF',
+  'Points finish (P4-P10)',
+  'Hard charger',
+  'Pole position',
+  'Fastest lap',
+  'Podium / Win',
+  'Win (P1 only)',
+  'Led at least one lap',
+  'Consistency bonus',
+  'Front-row start',
+  'Zero-incident bonus',
+  'Beat your rival'
+];
+var SPONSOR_PENALTY_TRIGGERS = [
+  'Any penalty-tier event',
+  'DNF (driver-caused)',
+  'Low placement',
+  'Reckless-tier contact+',
+  'DNF or DSQ',
+  'DSQ (steward ruling)',
+  'Grid slipper'
+];
+
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.
@@ -243,20 +293,31 @@ function manufacturerLogoSrc(manufacturerName) {
   return 'assets/manufacturers/' + slug + '.png';
 }
 
-// REMOVED 2026-08-24 (Matt's correction): manufacturerAvatarSrc() used to
-// live here, deriving an avatar filename from the manufacturer name the
-// same way manufacturerLogoSrc() above derives a logo path. That model
-// was wrong for the avatar/profile image specifically -- several
-// manufacturers can share one spec chassis in LMP2/LMP3 (e.g. every Oreca
-// 07 entry), so the avatar/profile image is actually keyed off the CAR
-// (Cars.AvatarFile, admin-set per entry in Data Management, e.g.
-// "HY-toyota.jpg" or "oreca7.jpg"), not the manufacturer. See
-// deriveDriverImageFilenames() in 4_DataCache.gs (server-side, the actual
-// source of ProfileID.AvatarFile/ProfileImageFile written at team lock)
-// and avatarImageSrc()/profileImageSrc() in Account.html (client-side,
-// just reads whatever's stored). manufacturerLogoSrc() above is unrelated
-// and unaffected -- the manufacturer LOGO shown on the Current Seat card
-// is still correctly keyed by manufacturer.
+// Same slugging convention as manufacturerLogoSrc() above, pointed at
+// assets/sponsors/{slug}.png instead -- e.g. "Blackline Motor Oil" ->
+// "blackline-motor-oil.png" (Matt's own example). Admin uploads the
+// actual image files by hand, same as manufacturer logos; callers should
+// always set an onerror handler to hide the <img> gracefully if that
+// sponsor's file hasn't been uploaded yet.
+function sponsorLogoSrc(sponsorName) {
+  var slug = String(sponsorName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/sponsors/' + slug + '.png';
+}
+
+// Same slugging convention as manufacturerLogoSrc() above, pointed at
+// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
+// Not currently called from anywhere client-side (the server auto-writes
+// this exact filename to ProfileID.AvatarFile at team lock -- see
+// manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
+// actual server-side mirror of this slug rule -- and avatarImageSrc() in
+// Account.html just reads whatever's stored there), but kept here as the
+// documented client-side reference for the same convention, and in case
+// a future screen wants to preview a manufacturer's avatar before a team
+// is actually locked.
+function manufacturerAvatarSrc(manufacturerName) {
+  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/avatars/' + slug + '.jpg';
+}
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
 // side dropdown source; the server independently re-validates against its
