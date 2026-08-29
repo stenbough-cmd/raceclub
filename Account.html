@@ -1072,6 +1072,21 @@
   // (pre-ECO) design doc -- this whole block is one of the things Matt's
   // "remove parts we don't need" pass will revisit once the wizard's LOOK
   // is confirmed to match.
+  // Builds { Low: { 'Season Finisher': true, ... }, Mid: {...}, High: {...} }
+  // straight off CAR_OBJECTIVE_CATALOG (js/reference-data.js) -- every
+  // objective starts enabled. Kept as its own function (rather than a
+  // literal in defaultWizardState) so normalizeWizardState can re-derive
+  // it fresh from whatever the catalog looks like right now.
+  function defaultCarObjectivesEnabled() {
+    var out = {};
+    var catalog = (typeof CAR_OBJECTIVE_CATALOG !== 'undefined') ? CAR_OBJECTIVE_CATALOG : {};
+    Object.keys(catalog).forEach(function (tier) {
+      out[tier] = {};
+      catalog[tier].forEach(function (name) { out[tier][name] = true; });
+    });
+    return out;
+  }
+
   function defaultWizardState() {
     return {
       seasonName: '', // editable suffix only (max 24 chars) -- the "Race Club - Season # -" prefix is generated, never stored
@@ -1121,8 +1136,28 @@
       // (Matt's call).
       economy: {
         startingBalance: 25000,
-        wagerStakeCapPct: 25
+        wagerStakeCapPct: 25,
+        // Car Objectives system (added 2026-08-29) -- one average seat
+        // cost per Tier (Low/Mid/High, CAR_TIER_LIST), each car's actual
+        // BuyInCost randomized ±20% around its tier's average and rounded
+        // to the nearest $100 at Create Season. objectiveBonusMultiplier
+        // is applied to that SAME randomized BuyInCost (not the flat tier
+        // average) to get the car's objective bonus. Defaults below are
+        // 1/5, 2/5, 3/5 of the default Starting Balance (Matt's call) --
+        // this is a ONE-TIME default computed off the initial 25000, not a
+        // live formula, so changing Starting Balance afterward doesn't
+        // silently drag these along with it.
+        carTierSeatCost: { Low: 5000, Mid: 10000, High: 15000 },
+        objectiveBonusMultiplier: 1.5
       },
+      // Which of the 15 Car Objectives (CAR_OBJECTIVE_CATALOG, 5 per tier)
+      // are eligible to be handed out this season -- lets Matt turn off
+      // ones that don't fit a particular season (e.g. "Championship Win"
+      // on a shortened season) without editing the catalog itself. Built
+      // fresh from the current catalog every time the wizard opens (see
+      // normalizeWizardState) so a newly-added catalog objective always
+      // starts enabled rather than silently missing from state.
+      carObjectivesEnabled: defaultCarObjectivesEnabled(),
       races: [] // resized to numRaces by syncRaceCount() when Race Events opens
     };
   }
@@ -1208,6 +1243,18 @@
       select.appendChild(o);
     });
     select.addEventListener('change', function () { onChange(select.value); });
+    return select;
+  }
+  // Dropdown of dollar amounts stepping by $100 (Matt's call: "make them
+  // drop down boxes that move by $100" -- a real <select>, not a number
+  // spinner). `value` is coerced into range/step first so an out-of-range
+  // saved draft never lands on a value the dropdown doesn't actually have.
+  function wizDollarSelect(min, max, step, value, onChange) {
+    var options = [];
+    for (var n = min; n <= max; n += step) options.push(n);
+    var snapped = Math.round((Number(value) || min) / step) * step;
+    if (options.indexOf(snapped) === -1) snapped = options[0];
+    var select = wizSelect(options.map(String), String(snapped), function (v) { onChange(Number(v)); });
     return select;
   }
   function wizCheckboxRow(labelText, checked, onChange) {
@@ -1466,6 +1513,62 @@
       'Wager Stake Cap (% of available)', stakeCapInput,
       'Limits a single wager to this % of a driver\'s available balance.'
     ));
+
+    // Car Objectives system -- three average seat costs (one per Tier) plus
+    // the objective bonus multiplier. Each car's actual seat cost is its
+    // Tier's average here, randomized ±20% and rounded to the nearest $100
+    // at Create Season -- these three numbers are averages across a tier,
+    // not a fixed per-car amount. All dropdowns, per Matt's call.
+    container.appendChild(wizSubhead('Car Objectives'));
+    var lowSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.Low, function (v) { state.economy.carTierSeatCost.Low = v; });
+    var midSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.Mid, function (v) { state.economy.carTierSeatCost.Mid = v; });
+    var highSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.High, function (v) { state.economy.carTierSeatCost.High = v; });
+    var seatCostRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
+    [['Low Tier Avg. Seat Cost ($)', lowSeatInput], ['Mid Tier Avg. Seat Cost ($)', midSeatInput], ['High Tier Avg. Seat Cost ($)', highSeatInput]].forEach(function (pair) {
+      var col = el('div', 'flex:1;min-width:160px;');
+      col.appendChild(wizField(pair[0], pair[1]));
+      seatCostRow.appendChild(col);
+    });
+    container.appendChild(seatCostRow);
+    container.appendChild(el('div', 'rc-hint', 'Each car\'s actual seat cost is randomized ±20% around its own tier\'s average, then rounded to the nearest $100 -- so cars sharing a tier aren\'t all identical.'));
+
+    var multiplierOptions = [];
+    for (var m = 0.5; m <= 5.0; m += 0.25) multiplierOptions.push(Math.round(m * 100) / 100);
+    var snappedMultiplier = multiplierOptions.reduce(function (closest, opt) {
+      return Math.abs(opt - state.economy.objectiveBonusMultiplier) < Math.abs(closest - state.economy.objectiveBonusMultiplier) ? opt : closest;
+    }, multiplierOptions[0]);
+    var multiplierInput = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedMultiplier.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier = parseFloat(v); });
+    multiplierInput.style.maxWidth = '25%'; // half the wizard's usual 50% select width (Matt's call)
+    container.appendChild(wizField('Objective Bonus Multiplier', multiplierInput,
+      'A car\'s objective bonus is its own (randomized) seat cost times this multiplier -- e.g. a $3,000 seat cost at 1.5x pays a $4,500 objective bonus.'));
+
+    // Which of the 15 catalog objectives (5 per tier) are actually up for
+    // grabs this season -- unchecking one just removes it from that
+    // tier's round-robin pool at Create Season, it never edits the
+    // catalog itself. Grouped by tier, same Low->Mid->High order as
+    // everywhere else a tier list shows.
+    var objectivesWrap = el('div');
+    var catalogForWizard = (typeof CAR_OBJECTIVE_CATALOG !== 'undefined') ? CAR_OBJECTIVE_CATALOG : {};
+    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
+      var tierNames = catalogForWizard[tier] || [];
+      if (!tierNames.length) return;
+      if (!state.carObjectivesEnabled[tier]) state.carObjectivesEnabled[tier] = {};
+      var tierWrap = el('div', 'padding:6px 0;');
+      tierWrap.appendChild(el('div', 'font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--rc-steel);margin-bottom:4px;', escapeHtml(tier) + ' Tier'));
+      var checksRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-left:4px;');
+      tierNames.forEach(function (objName) {
+        if (state.carObjectivesEnabled[tier][objName] === undefined) state.carObjectivesEnabled[tier][objName] = true;
+        var checkLabel = wizCheckboxRow(objName, state.carObjectivesEnabled[tier][objName], function (checked) {
+          state.carObjectivesEnabled[tier][objName] = checked;
+        });
+        checkLabel.style.cssText = 'display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
+        checksRow.appendChild(checkLabel);
+      });
+      tierWrap.appendChild(checksRow);
+      objectivesWrap.appendChild(tierWrap);
+    });
+    container.appendChild(wizField('Season Objectives In Use This Season', objectivesWrap,
+      'Unchecked objectives are skipped for this season\'s round-robin assignment -- if every objective in a tier ends up unchecked, that tier falls back to using all 5 rather than assigning nothing.'));
   }
 
   // Keeps state.races the right length whenever Race Events opens.
@@ -1815,6 +1918,17 @@
     econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Economy'));
     econPanel.appendChild(previewLine('Starting Balance', '$' + Number(state.economy.startingBalance || 0).toLocaleString()));
     econPanel.appendChild(previewLine('Wager Stake Cap', state.economy.wagerStakeCapPct + '% of available'));
+    econPanel.appendChild(previewLine('Car Objectives — Seat Cost Avgs.',
+      'Low $' + Number(state.economy.carTierSeatCost.Low || 0).toLocaleString() +
+      ' · Mid $' + Number(state.economy.carTierSeatCost.Mid || 0).toLocaleString() +
+      ' · High $' + Number(state.economy.carTierSeatCost.High || 0).toLocaleString() + ' (±20% per car)'));
+    econPanel.appendChild(previewLine('Objective Bonus Multiplier', Number(state.economy.objectiveBonusMultiplier).toFixed(2) + 'x seat cost'));
+    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
+      var tierMap = (state.carObjectivesEnabled && state.carObjectivesEnabled[tier]) || {};
+      var total = Object.keys(tierMap).length;
+      var enabledCount = Object.keys(tierMap).filter(function (k) { return tierMap[k]; }).length;
+      if (total) econPanel.appendChild(previewLine(tier + ' Tier Objectives In Use', enabledCount + ' of ' + total));
+    });
     container.appendChild(econPanel);
 
     var racesPanel = el('div', 'rc-panel'); racesPanel.style.marginTop = '12px';
@@ -1873,7 +1987,17 @@
     merged.bonusPoints = Object.assign({}, base.bonusPoints, saved.bonusPoints || {});
     merged.raceSettings = Object.assign({}, base.raceSettings, saved.raceSettings || {});
     merged.economy = Object.assign({}, base.economy, saved.economy || {});
+    merged.economy.carTierSeatCost = Object.assign({}, base.economy.carTierSeatCost, (saved.economy && saved.economy.carTierSeatCost) || {});
     merged.pointsTables = saved.pointsTables || base.pointsTables;
+    // Re-derive per-tier from the CURRENT catalog first, then overlay
+    // whatever the saved draft had -- a catalog objective added since the
+    // draft was saved starts enabled rather than silently missing/false.
+    var freshEnabled = defaultCarObjectivesEnabled();
+    var savedEnabled = saved.carObjectivesEnabled || {};
+    merged.carObjectivesEnabled = {};
+    Object.keys(freshEnabled).forEach(function (tier) {
+      merged.carObjectivesEnabled[tier] = Object.assign({}, freshEnabled[tier], savedEnabled[tier] || {});
+    });
     return merged;
   }
 
@@ -2141,7 +2265,8 @@
         seasonStartDate: state.seasonStartDate,
         seasonStartTime: state.seasonStartTime,
         raceSettings: state.raceSettings,
-        economy: state.economy
+        economy: state.economy,
+        carObjectivesEnabled: state.carObjectivesEnabled
       };
 
       function showResultPanel(ok, title, message) {
@@ -2433,6 +2558,21 @@
     var teamName = el('input'); teamName.type = 'text';
     form.appendChild(teamName);
 
+    // Tier (Car Objectives system) -- Low/Mid/High, ONE ladder across every
+    // class (not per-class), set by hand rather than computed. Drives the
+    // seat cost/objective bonus this car gets whenever it's next included
+    // in a Create Season -- see CAR_TIER_LIST's comment in js/reference-
+    // data.js for the full mechanic. Defaults to Mid.
+    form.appendChild(el('label', null, 'Tier'));
+    var carTier = document.createElement('select');
+    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (t) {
+      var opt = document.createElement('option'); opt.value = t; opt.textContent = t + ' Tier';
+      if (t === 'Mid') opt.selected = true;
+      carTier.appendChild(opt);
+    });
+    form.appendChild(carTier);
+    form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- same ladder across every class, not per-class.'));
+
     var saveBtn = el('button', null, 'Add Car');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -2458,7 +2598,8 @@
           Manufacturer: manufacturer.value.trim(),
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
-          TeamName: teamName.value.trim()
+          TeamName: teamName.value.trim(),
+          Tier: carTier.value
         }
       })
         .then(function (data) {
@@ -2989,6 +3130,13 @@
         seasons[season].forEach(function (c) {
           var row = el('div', 'rc-dm-subrow-edit');
           var info = el('div', 'rc-dm-car-info');
+
+          // Fixed-width, centered logo column -- same centered-column
+          // treatment as the Sponsors popup's logo column (capped 80px
+          // wide / 40px tall here, narrower than the sponsor logos' 100px),
+          // so the text column's left edge lands in the same place row to
+          // row regardless of a given manufacturer logo's own aspect ratio.
+          var logoCol = el('div', 'rc-dm-car-logo-col');
           var logo = document.createElement('img');
           logo.className = 'rc-dm-car-logo';
           logo.alt = '';
@@ -2998,14 +3146,23 @@
           // pattern currentSeatBlock() uses elsewhere for this exact file
           // naming convention (see manufacturerLogoSrc()'s own comment).
           logo.onerror = function () { this.style.display = 'none'; };
-          info.appendChild(logo);
-          // Manufacturer isn't repeated in text here -- the logo to the
-          // left of this label already identifies it (Matt's call).
-          var labelParts = [];
-          if (c.CarNumber) labelParts.push('#' + c.CarNumber);
-          if (c.CarModel) labelParts.push(c.CarModel);
-          if (c.TeamName) labelParts.push('(' + c.TeamName + ')');
-          info.appendChild(el('span', null, escapeHtml(labelParts.join(' — ') || '(unnamed car)')));
+          logoCol.appendChild(logo);
+          info.appendChild(logoCol);
+
+          // Two-line text column, left-justified: Team Name (black, primary)
+          // with the tier pill on the same line, Manufacturer + Car Model
+          // below it in a lighter color (Matt's call).
+          var textCol = el('div', null);
+          var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+          nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
+          nameLine.appendChild(_rcCarTierBadge(c.Tier));
+          textCol.appendChild(nameLine);
+          var subParts = [];
+          if (c.CarNumber) subParts.push('#' + c.CarNumber);
+          var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
+          if (makeModel) subParts.push(makeModel);
+          textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' — ') || '(unspecified car)')));
+          info.appendChild(textCol);
           row.appendChild(info);
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
@@ -3057,6 +3214,23 @@
     var teamName = el('input'); teamName.type = 'text'; teamName.value = car.TeamName || '';
     form.appendChild(teamName);
 
+    // Tier (Car Objectives system) -- editable anytime, but it's only ever
+    // READ at Create Season, so changing it here never disturbs a season
+    // that's already running (see Cars.Tier's schema comment in
+    // 1_Core.gs). PreviousTier is shown read-only just below -- whatever
+    // Tier was set to right before the last change, so Matt can see where
+    // a car came from without a full history log.
+    form.appendChild(el('label', null, 'Tier'));
+    var carTier = document.createElement('select');
+    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (t) {
+      var opt = document.createElement('option'); opt.value = t; opt.textContent = t + ' Tier';
+      if ((car.Tier || 'Mid') === t) opt.selected = true;
+      carTier.appendChild(opt);
+    });
+    form.appendChild(carTier);
+    form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- takes effect starting with the next season created, never the one already running.' +
+      (car.PreviousTier ? ' Previously: ' + escapeHtml(car.PreviousTier) + ' Tier.' : '')));
+
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -3086,7 +3260,8 @@
           Manufacturer: manufacturer.value.trim(),
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
-          TeamName: teamName.value.trim()
+          TeamName: teamName.value.trim(),
+          Tier: carTier.value
         }
       })
         .then(function (data) {
@@ -3147,6 +3322,16 @@
       select.appendChild(o);
     });
     return select;
+  }
+
+  // Car Objectives tier pill -- Low/Mid/High. Deliberately the SAME
+  // neutral gray-bordered/gray-text treatment for all three (Matt's call)
+  // rather than a colored chip like the class/sponsor-risk badges -- this
+  // is a grouping label, not a status to draw the eye to. Smaller than the
+  // standard .rc-badge-chip too (see .rc-badge-tier-car in style.css).
+  function _rcCarTierBadge(tier) {
+    var key = String(tier || 'Mid').trim();
+    return el('span', 'rc-badge-chip rc-badge-tier-car', escapeHtml(key) + ' Tier');
   }
 
   // Tier badge -- Safe/Balanced/Aggressive, same colored-chip pattern as

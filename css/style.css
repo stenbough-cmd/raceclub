@@ -299,14 +299,40 @@ p { margin: 0 0 0.75em; }
 .rc-badge-tier-safe { background: #1f5c25; }
 .rc-badge-tier-balanced { background: #1a5276; }
 .rc-badge-tier-aggressive { background: var(--rc-red); }
-/* Manufacturer logo shown in front of each car row -- see
-   manufacturerLogoSrc() in js/reference-data.js for the filename
-   convention. Hidden automatically (onerror, wired in Account.html) if
-   that manufacturer's logo file hasn't been uploaded yet, so a missing
-   image never shows as a broken-image icon. */
+/* Car Objectives tier pill (Data Management's Cars popup) -- Low/Mid/High
+   ALL share this one neutral gray-bordered/gray-text treatment (Matt's
+   call) rather than a colored chip like the class/sponsor-risk badges,
+   since it's a grouping label rather than a status. Smaller than the
+   standard .rc-badge-chip too -- tighter padding, smaller text. */
+.rc-badge-tier-car {
+  background: transparent;
+  border: 1px solid var(--rc-silver);
+  color: var(--rc-steel);
+  padding: 1px 7px;
+  font-size: 10px;
+}
+/* Manufacturer logo column in the Cars popup -- same fixed-width, centered
+   treatment as .rc-dm-sponsor-logo-col below, so the text column's left
+   edge lands in the same place row to row regardless of a given
+   manufacturer logo's own aspect ratio. */
+.rc-dm-car-logo-col {
+  width: 120px;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* The logo image itself -- capped at 80px wide / 40px tall (whichever the
+   image's own aspect ratio hits first) -- narrower than
+   .rc-dm-sponsor-logo below (100px), since manufacturer marks are smaller/
+   more square than sponsor wordmarks. Hidden automatically (onerror,
+   wired in Account.html) if that manufacturer's logo file hasn't been
+   uploaded yet, so a missing image never shows as a broken-image icon. */
 .rc-dm-car-logo {
-  width: 22px;
-  height: 22px;
+  width: auto;
+  height: auto;
+  max-width: 80px;
+  max-height: 40px;
   object-fit: contain;
   flex: none;
 }

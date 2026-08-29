@@ -142,6 +142,54 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // LMP3 is the very next step up from GT3, not LMP2.
 var CAR_CLASS_LIST = ['LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
+// CAR OBJECTIVES SYSTEM (added 2026-08-29) -- a second, independent bonus
+// layer alongside Sponsors, bound to a car for one season. Unlike class,
+// this is ONE global grouping across every class combined (a GT3 and a
+// Hypercar can both be "High" side by side) -- set by hand per car/team in
+// Car Management (Cars.Tier), never a computed numeric rank. It only
+// drives two things at Create Season: which of the tier's 5 objectives a
+// car draws (CAR_OBJECTIVE_CATALOG below), and the ±20%-randomized seat
+// cost/objective bonus computed from the wizard's per-tier averages (see
+// handleCreateSeason in 4_DataCache.gs). This is separate from the older,
+// still-unmodified driver-wide Season Objectives mechanic (one fixed list
+// every driver shares regardless of car -- see
+// v0.3-Economy-Reputation-Design.md).
+var CAR_TIER_LIST = ['Low', 'Mid', 'High'];
+
+// 5 objectives per tier, matched to that tier's difficulty (Low = things a
+// backmarker car can realistically pull off in a season; High = things
+// only a factory-caliber effort should manage). No two cars in the same
+// tier get the same objective in the same season while the pool lasts --
+// handleCreateSeason hands them out round-robin per tier, repeating from
+// the top only once all 5 in that tier are already assigned this season.
+// Season-end evaluation of these (did the car's driver(s) actually meet
+// it?) and a progress-tracking display are NOT built yet -- this catalog
+// exists so objective NAMES can be assigned at Create Season now, with the
+// scoring logic to follow as its own pass (Matt's call).
+var CAR_OBJECTIVE_CATALOG = {
+  Low: [
+    'Season Finisher',       // completes every scheduled round this season
+    'Podium Once',           // finishes on the podium (class P1-P3) at least once
+    'Points Every Round',    // scores championship points in every round finished
+    'Half-Season Clean',     // at least half of this season's rounds graded Clean Race
+    'Top-10 Regular'         // finishes P10 or better in class at least 3 times
+  ],
+  Mid: [
+    'Multiple Podiums',      // finishes on the podium at least 3 times this season
+    'Above The Median',      // finishes the season above the class's median points total
+    'Consistent Top Five',   // finishes P5 or better in class at least 4 times
+    'Clean Season',          // every round this season graded Clean Race
+    'Pole Twice'             // qualifies P1 in class at least twice this season
+  ],
+  High: [
+    'Championship Podium',   // finishes the season in the top 3 of class standings
+    'Multiple Wins',         // wins at least 2 rounds this season
+    'Fastest Lap Leader',    // sets the class's fastest lap more often than anyone else this season
+    'Podium Streak',         // finishes on the podium in every round this season
+    'Championship Win'       // wins the class championship
+  ]
+};
+
 // Reputation floor required to join each class -- LOCKED per Matt's call
 // (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
 // as the ladder in the Rulebook/system map. LMP3 requires 300, LMP2
@@ -175,56 +223,6 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
   'Other'
 ];
 
-// Sponsor risk tiers -- fixed 3-tier ladder, see
-// v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
-// Tier dropdown in both the Sponsors popup's Add and Edit forms.
-var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Aggressive'];
-
-// Bonus/penalty trigger vocabulary -- every trigger currently used across
-// the Season 1 Starting Sponsor Catalog (see Website.gs's old
-// seedSponsorCatalog, now retired since the catalog's seeded), kept here
-// as the admin-curated, fixed list Matt asked for ("ALL the options we
-// can make for bonus triggers show up in a dropdown box instead of
-// free-text") rather than free text -- same "preconfigured options, not
-// free text" pattern as CLASS_PLACEMENT_DENIAL_REASONS above. Add a new
-// trigger here first if a future sponsor needs one that isn't already
-// covered.
-// v0.25 (2026-08-29) -- added 5 bonus + 2 penalty triggers so every
-// sponsor's payout is actually backed by evaluation logic (see
-// DataCache.gs's SPONSOR_BONUS_EVALUATORS_/SPONSOR_PENALTY_EVALUATORS_,
-// the payout engine that reads this exact vocabulary).
-//
-// v0.26 (2026-08-29) -- "Beat your rival" replaces the short-lived "Beat
-// your teammate" (Matt's call): a driver's "rival" is whoever they've
-// wagered against, not whoever shares their car -- it fires when a driver
-// wins a Settled Wagers row for this round. This reuses data that already
-// exists (Wagers.Status/WinnerProfileID) instead of needing a new
-// admin-picked-rival field/UI.
-var SPONSOR_BONUS_TRIGGERS = [
-  'Clean race',
-  'Finish, no DNF',
-  'Points finish (P4-P10)',
-  'Hard charger',
-  'Pole position',
-  'Fastest lap',
-  'Podium / Win',
-  'Win (P1 only)',
-  'Led at least one lap',
-  'Consistency bonus',
-  'Front-row start',
-  'Zero-incident bonus',
-  'Beat your rival'
-];
-var SPONSOR_PENALTY_TRIGGERS = [
-  'Any penalty-tier event',
-  'DNF (driver-caused)',
-  'Low placement',
-  'Reckless-tier contact+',
-  'DNF or DSQ',
-  'DSQ (steward ruling)',
-  'Grid slipper'
-];
-
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.
@@ -245,31 +243,20 @@ function manufacturerLogoSrc(manufacturerName) {
   return 'assets/manufacturers/' + slug + '.png';
 }
 
-// Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/sponsors/{slug}.png instead -- e.g. "Blackline Motor Oil" ->
-// "blackline-motor-oil.png" (Matt's own example). Admin uploads the
-// actual image files by hand, same as manufacturer logos; callers should
-// always set an onerror handler to hide the <img> gracefully if that
-// sponsor's file hasn't been uploaded yet.
-function sponsorLogoSrc(sponsorName) {
-  var slug = String(sponsorName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/sponsors/' + slug + '.png';
-}
-
-// Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
-// Not currently called from anywhere client-side (the server auto-writes
-// this exact filename to ProfileID.AvatarFile at team lock -- see
-// manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
-// actual server-side mirror of this slug rule -- and avatarImageSrc() in
-// Account.html just reads whatever's stored there), but kept here as the
-// documented client-side reference for the same convention, and in case
-// a future screen wants to preview a manufacturer's avatar before a team
-// is actually locked.
-function manufacturerAvatarSrc(manufacturerName) {
-  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/avatars/' + slug + '.jpg';
-}
+// REMOVED 2026-08-24 (Matt's correction): manufacturerAvatarSrc() used to
+// live here, deriving an avatar filename from the manufacturer name the
+// same way manufacturerLogoSrc() above derives a logo path. That model
+// was wrong for the avatar/profile image specifically -- several
+// manufacturers can share one spec chassis in LMP2/LMP3 (e.g. every Oreca
+// 07 entry), so the avatar/profile image is actually keyed off the CAR
+// (Cars.AvatarFile, admin-set per entry in Data Management, e.g.
+// "HY-toyota.jpg" or "oreca7.jpg"), not the manufacturer. See
+// deriveDriverImageFilenames() in 4_DataCache.gs (server-side, the actual
+// source of ProfileID.AvatarFile/ProfileImageFile written at team lock)
+// and avatarImageSrc()/profileImageSrc() in Account.html (client-side,
+// just reads whatever's stored). manufacturerLogoSrc() above is unrelated
+// and unaffected -- the manufacturer LOGO shown on the Current Seat card
+// is still correctly keyed by manufacturer.
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
 // side dropdown source; the server independently re-validates against its
