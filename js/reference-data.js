@@ -190,6 +190,27 @@ var CAR_OBJECTIVE_CATALOG = {
   ]
 };
 
+// One short, driver-facing description per objective above -- shown as a
+// hover tooltip on the objective's checkbox in the Create Season wizard.
+// Keep these in sync with the inline comments in CAR_OBJECTIVE_CATALOG.
+var CAR_OBJECTIVE_DESCRIPTIONS = {
+  'Season Finisher': 'Completes every scheduled round this season.',
+  'Podium Once': 'Finishes on the podium (class P1-P3) at least once.',
+  'Points Every Round': 'Scores championship points in every round finished.',
+  'Half-Season Clean': 'At least half of this season\'s rounds graded Clean Race.',
+  'Top-10 Regular': 'Finishes P10 or better in class at least 3 times.',
+  'Multiple Podiums': 'Finishes on the podium at least 3 times this season.',
+  'Above The Median': 'Finishes the season above the class\'s median points total.',
+  'Consistent Top Five': 'Finishes P5 or better in class at least 4 times.',
+  'Clean Season': 'Every round this season graded Clean Race.',
+  'Pole Twice': 'Qualifies P1 in class at least twice this season.',
+  'Championship Podium': 'Finishes the season in the top 3 of class standings.',
+  'Multiple Wins': 'Wins at least 2 rounds this season.',
+  'Fastest Lap Leader': 'Sets the class\'s fastest lap more often than anyone else this season.',
+  'Podium Streak': 'Finishes on the podium in every round this season.',
+  'Championship Win': 'Wins the class championship.'
+};
+
 // Reputation floor required to join each class -- LOCKED per Matt's call
 // (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
 // as the ladder in the Rulebook/system map. LMP3 requires 300, LMP2
@@ -302,6 +323,17 @@ function manufacturerLogoSrc(manufacturerName) {
 function sponsorLogoSrc(sponsorName) {
   var slug = String(sponsorName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
   return 'assets/sponsors/' + slug + '.png';
+}
+
+// Track image file convention -- assets/tracks/{TrackID}.png, keyed by the
+// raw TrackID (e.g. "TRK-0001") verbatim, NOT slugified like the
+// manufacturer/sponsor logos above -- Matt's call, since TrackID is
+// already a clean, stable identifier. Admin uploads the actual image
+// files by hand; callers should always set an onerror handler to hide the
+// <img> gracefully (silently, no broken-image icon) if that track's file
+// hasn't been uploaded yet -- see raceCard() in Account.html.
+function trackImageSrc(trackId) {
+  return 'assets/tracks/' + String(trackId || '') + '.png';
 }
 
 // Same slugging convention as manufacturerLogoSrc() above, pointed at

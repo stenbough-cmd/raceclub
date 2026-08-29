@@ -269,6 +269,21 @@
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
   var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
 
+  // Restored from the pre-v0.5 archive (commit ab231e0) for the Calendar
+  // page -- weather/session/setup chip icons, none of which the current
+  // icon set had a use for until now.
+  var ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 16 14"></polyline></svg>';
+  var ICON_SUN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line></svg>';
+  var ICON_CLOUD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7-1.6A4.5 4.5 0 0 0 7 18z"></path></svg>';
+  var ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
+  var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line></svg>';
+  var ICON_FUEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12z"></path></svg>';
+  var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
+  var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
+  var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
+  var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
+  var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
+
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
   // below since they're permission-gated rather than always shown.
@@ -291,8 +306,12 @@
   // League Management is real content now (see renderLeagueManagementSection),
   // not a placeholder -- removed from this list the same way Data
   // Management was.
+  // Dashboard removed from this list (2026-08-29) -- it now gets real
+  // content (renderDashboardSection, currently just the Registration
+  // Status card) instead of the generic "Coming soon" wipe. Calendar
+  // removed the same day/way (renderCalendarSection).
   var PLACEHOLDER_LABELS = {
-    dashboard: 'Dashboard', calendar: 'Calendar', finances: 'Finances',
+    finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
     objectives: 'Objectives', sponsors: 'Sponsors', halloffame: 'Hall of Fame',
     admin: 'Admin'
@@ -339,6 +358,17 @@
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
     NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
+      // Calendar fetches fresh every time the link is clicked (same
+      // lazy-fetch-on-click pattern as Data/League Management) rather than
+      // being prefetched at login like the Dashboard cards -- it's not
+      // shown until the driver actually opens it.
+      if (item.id === 'calendar') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showSection('calendar');
+          renderCalendarSection(currentToken);
+        }));
+        return;
+      }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
     var upperDivider = navDivider('rc-nav-divider-upper');
@@ -411,6 +441,507 @@
       wrap.appendChild(el('p', 'color:var(--rc-steel);', 'Coming soon.'));
       section.appendChild(wrap);
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // DASHBOARD (2026-08-29) -- starting fresh. The old widget-heavy
+  // dashboard from before the ECO rebuild is gone; nothing from it is
+  // being restored. This is the first card back -- Registration Status,
+  // in its own top row by itself (Matt's call: build/verify cards one at
+  // a time, more join this row later).
+  // ---------------------------------------------------------------------
+  function renderDashboardSection(profile, token, dashboardData) {
+    var section = document.getElementById('rc-section-dashboard');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(el('h2', null, 'Dashboard'));
+
+    var topRow = el('div', 'rc-quick-row');
+    // Current Seat is built first, purely so Registration Status can wire
+    // its own onRegistered callback to also refresh Current Seat -- both
+    // still append to topRow in the same visual order as before.
+    var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
+    var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
+      if (seatCard.rcRefresh) seatCard.rcRefresh();
+    });
+    topRow.appendChild(regCard);
+    topRow.appendChild(seatCard);
+    section.appendChild(topRow);
+  }
+
+  function formatMoney(n) {
+    n = Number(n) || 0;
+    return '$' + n.toLocaleString();
+  }
+
+  // "1st"/"2nd"/"3rd"/"4th"... -- only ever fed a positive integer
+  // (season standings position), so no negative/zero handling needed.
+  function ordinal(n) {
+    n = Number(n) || 0;
+    var rem100 = n % 100;
+    if (rem100 >= 11 && rem100 <= 13) return n + 'th';
+    switch (n % 10) {
+      case 1: return n + 'st';
+      case 2: return n + 'nd';
+      case 3: return n + 'rd';
+      default: return n + 'th';
+    }
+  }
+
+  // Three states, rendered directly from data the page already prefetched
+  // in parallel with the profile itself (see the bottom of this script) --
+  // this card NEVER fetches or spinners on its own, first paint or
+  // otherwise (Matt's call: "no loaders in any of the cards, ever").
+  //   1. No season currently open to registration -- gray X, "Unregistered."
+  //   2. A season IS open and this driver hasn't joined it yet -- yellow
+  //      +, clickable, opens the team-pick modal.
+  //   3. This driver already has a Registrations row for the open season
+  //      -- green check, "Registered," with Registered On / Class / Team.
+  // Prospects (pending account approval) skip this card entirely, same
+  // convention the pre-rebuild Register button used -- there's nothing
+  // for them to register for yet.
+  //
+  // After a driver actually registers (buildRegistrationModal's onDone),
+  // the card DOES need to reflect the new state -- refreshStatus() below
+  // re-fetches quietly and swaps the content in once it lands, but never
+  // shows a spinner in between; the old content just stays put for that
+  // brief moment instead of being replaced by a loading state.
+  function registrationStatusCard(profile, token, initialData, onRegistered) {
+    var card = el('div', 'rc-panel rc-regstatus-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Registration Status'));
+    var body = el('div', 'rc-regstatus-body');
+    card.appendChild(body);
+
+    if (profile.role === 'Prospect') {
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Registration opens once your account is approved.'));
+      return card;
+    }
+
+    function renderUnregistered() {
+      body.innerHTML = '';
+      var row = el('div', 'rc-regstatus-row');
+      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#10005;'));
+      var text = el('div');
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', 'UNREGISTERED'));
+      text.appendChild(el('div', 'rc-regstatus-sub', 'No season is currently open for registration.'));
+      row.appendChild(text);
+      body.appendChild(row);
+    }
+
+    function renderOpenToRegister(data) {
+      body.innerHTML = '';
+      var row = el('div', 'rc-regstatus-row rc-regstatus-row-clickable');
+      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-open', '+'));
+      var text = el('div');
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml((data.seasonName || 'NEW SEASON').toUpperCase())));
+      text.appendChild(el('div', 'rc-regstatus-sub', 'Click to choose your car and lock in your seat.'));
+      row.appendChild(text);
+      body.appendChild(row);
+      row.addEventListener('click', function () {
+        buildRegistrationModal(profile, token, data, function () {
+          refreshStatus();
+          if (onRegistered) onRegistered();
+        });
+      });
+    }
+
+    function renderRegistered(data) {
+      body.innerHTML = '';
+      var row = el('div', 'rc-regstatus-row');
+      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-done', '&#10003;'));
+      var text = el('div');
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml((data.seasonName || 'SEASON').toUpperCase())));
+      text.appendChild(el('div', 'rc-regstatus-sub', 'Your registration is complete.'));
+      row.appendChild(text);
+      body.appendChild(row);
+
+      var reg = data.registration || {};
+      var footer = el('div', 'rc-regstatus-footer');
+      var joinedDate = reg.joinedAt ? formatDateLabel(String(reg.joinedAt).slice(0, 10)) : '—';
+      [
+        ['Registered On', joinedDate],
+        ['Class', reg.carClass || '—']
+      ].forEach(function (pair) {
+        var stat = el('div', 'rc-regstatus-stat');
+        stat.appendChild(el('div', 'rc-regstatus-stat-label', pair[0]));
+        stat.appendChild(el('div', 'rc-regstatus-stat-value', escapeHtml(pair[1])));
+        footer.appendChild(stat);
+      });
+      body.appendChild(footer);
+    }
+
+    function renderFromData(data) {
+      if (!data || !data.success || !data.hasActiveSeason) { renderUnregistered(); return; }
+      if (data.registered) { renderRegistered(data); return; }
+      renderOpenToRegister(data);
+    }
+
+    // Quiet re-check after a registration completes -- no spinner, the
+    // card's current content stays exactly as-is until the new data
+    // actually arrives, then swaps in one shot.
+    function refreshStatus() {
+      fetchApi('getActiveSeason', { token: token }).then(renderFromData).catch(function () { renderUnregistered(); });
+    }
+
+    renderFromData(initialData);
+    return card;
+  }
+
+  // Manufacturer logo left, team/car identity + class pill next to it,
+  // Position/Points/Podiums stat row underneath. Sourced from data the
+  // page already prefetched in parallel with the profile (see the bottom
+  // of this script) -- like Registration Status, this card never fetches
+  // or spinners on its own (Matt's call: "no loaders in any of the cards,
+  // ever"). handleGetMyCurrentSeat (DataCache.gs) prefers the richest
+  // source available: the most recent SeasonHistory.CurrentSeat JSON
+  // blob (real season stats, written after each round's results are
+  // ingested) and falls back to the live Registrations/Teams/Cars rows
+  // -- with blank stats -- for a driver who just locked in a seat before
+  // any round has run yet. No car photo -- unlike the reference mockup,
+  // there's no car-render asset in this project, logo + text only.
+  function currentSeatCard(profile, token, initialData) {
+    var card = el('div', 'rc-panel rc-currentseat-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Current Seat'));
+    var body = el('div', 'rc-cs-body');
+    card.appendChild(body);
+
+    if (profile.role === 'Prospect') {
+      body.appendChild(el('p', 'rc-cs-empty', 'Available once your account is approved.'));
+      return card;
+    }
+
+    function renderEmpty(message) {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'rc-cs-empty', message));
+    }
+
+    function renderSeat(data) {
+      body.innerHTML = '';
+      var row = el('div', 'rc-cs-row');
+
+      if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
+        var logo = document.createElement('img');
+        logo.className = 'rc-cs-logo';
+        logo.src = manufacturerLogoSrc(data.manufacturer);
+        logo.alt = data.manufacturer;
+        logo.onerror = function () { logo.style.display = 'none'; };
+        row.appendChild(logo);
+      }
+
+      var textCol = el('div');
+      textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
+      var carLine = ['#' + (data.carNumber || '?'), data.manufacturer, data.carModel].filter(Boolean).join(' ');
+      textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
+      if (data.carClass) {
+        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
+        var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
+        pill.style.background = 'var(' + colorVar + ')';
+        textCol.appendChild(pill);
+      }
+      row.appendChild(textCol);
+      body.appendChild(row);
+
+      var stats = el('div', 'rc-cs-stats');
+      var posValue = (data.statsKnown && data.position) ? (ordinal(data.position) + (data.positionOutOf ? ' / ' + data.positionOutOf : '')) : '—';
+      var pointsValue = data.statsKnown ? String(data.points || 0) : '—';
+      var podiumsValue = data.statsKnown ? String(data.podiums || 0) : '—';
+      [['Position', posValue], ['Points', pointsValue], ['Podiums', podiumsValue]].forEach(function (pair) {
+        var stat = el('div', 'rc-cs-stat');
+        stat.appendChild(el('div', 'rc-cs-stat-label', pair[0]));
+        stat.appendChild(el('div', 'rc-cs-stat-value', escapeHtml(pair[1])));
+        stats.appendChild(stat);
+      });
+      body.appendChild(stats);
+    }
+
+    // Quiet re-check after a registration completes (wired from
+    // renderDashboardSection into Registration Status's onRegistered
+    // callback) -- no spinner, current content stays put until the new
+    // data actually arrives, then swaps in one shot. Stashed directly on
+    // the card element since this function's only return value is the
+    // element itself.
+    card.rcRefresh = function () {
+      fetchApi('getMyCurrentSeat', { token: token }).then(function (data) {
+        if (!data || !data.success || !data.hasSeat) { renderEmpty('Not on a team yet -- register for a season to lock in a seat.'); return; }
+        renderSeat(data);
+      }).catch(function () { /* leave whatever was already shown */ });
+    };
+
+    if (!initialData || !initialData.success || !initialData.hasSeat) {
+      renderEmpty('Not on a team yet -- register for a season to lock in a seat.');
+    } else {
+      renderSeat(initialData);
+    }
+
+    return card;
+  }
+
+  // ---------------------------------------------------------------------
+  // SEASON REGISTRATION MODAL -- restored from the pre-rebuild dashboard's
+  // design (Matt's call: keep the modal's look/flow, drop the pre-ECO
+  // cost model it was built around). What changed vs. the old version:
+  //   - No more "Season Registration Fee" (a flat per-race fee, same for
+  //     every team in a class) -- the current wizard's Economy section
+  //     doesn't have one anymore. A team's BuyInCost (already randomized
+  //     ±20% around its Tier average -- see the Car Objectives system) is
+  //     the WHOLE cost now, not a per-team add-on to a season-long fee.
+  //   - No reputation-floor class gating and no beginRegistration call --
+  //     Reputation isn't a real computed number yet this season (see
+  //     DataCache.gs's financesReputation.reputationScore comment), so
+  //     there's nothing real to gate against; every class is open to
+  //     every driver.
+  //   - No separate chooseClass server action/state -- picking a class is
+  //     purely a client-side filter now. The one server write is
+  //     joinTeam itself, which requires the driver's 3 sponsor picks up
+  //     front (Registrations.SponsorID1-3) -- team and sponsors lock
+  //     together in one step, there's no later "pick your sponsors" phase.
+  //   - Team cards show this car's assigned Tier + Car Objective (name +
+  //     bonus payout) instead of the old bonus/penalty perk chips -- the
+  //     actual ECO-era incentive attached to a seat.
+  // ---------------------------------------------------------------------
+  function buildRegistrationModal(profile, token, activeSeasonData, onDone) {
+    var modal = showModal('Choose Your Class', { wide: true, onClose: function () { if (onDone) onDone(); } });
+    var titleEl = modal.el.querySelector('.rc-modal-head h3');
+    function setTitle(t) { if (titleEl) titleEl.textContent = t; }
+
+    function fetchAllTeams() {
+      return fetchApi('getAvailableTeams', { token: token, params: { seasonId: activeSeasonData.seasonId } });
+    }
+
+    function showClassScreen() {
+      setTitle('Choose Your Class');
+      var body = modal.body;
+      body.innerHTML = '';
+      body.appendChild(buildSpinner('Loading classes...'));
+      fetchAllTeams().then(function (data) {
+        body.innerHTML = '';
+        if (!data.success) { body.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load classes.')); return; }
+        renderClassScreenBody(data.teams || []);
+      }).catch(function () {
+        body.innerHTML = '';
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
+      });
+    }
+
+    function renderClassScreenBody(allTeams) {
+      var body = modal.body;
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:10px;',
+        'Pick the class you’ll compete in this season. You’ll choose a specific car/team next -- each car’s Buy-In cost and Season Objective are set individually.'));
+
+      var classesPresent = [];
+      allTeams.forEach(function (t) { if (t.carClass && classesPresent.indexOf(t.carClass) === -1) classesPresent.push(t.carClass); });
+      var classOrder = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : classesPresent;
+      var classes = classOrder.filter(function (c) { return classesPresent.indexOf(c) !== -1; });
+
+      if (!classes.length) {
+        body.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for this season yet.'));
+        return;
+      }
+
+      classes.forEach(function (cls) {
+        var teamsInClass = allTeams.filter(function (t) { return t.carClass === cls; });
+        var openTeams = teamsInClass.filter(function (t) { return !t.taken; });
+        var row = el('div', 'rc-class-pick-row');
+        var label = el('div', null);
+        var badge = el('span', null, escapeHtml(cls));
+        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
+        badge.style.cssText = 'display:inline-block;padding:2px 8px;border-radius:4px;color:#fff;font-weight:700;font-size:12px;background:var(' + colorVar + ');';
+        label.appendChild(badge);
+        label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;',
+          openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open'));
+        row.appendChild(label);
+
+        var costs = teamsInClass.map(function (t) { return t.buyInCost; });
+        var costLine = el('div', 'rc-class-cost-range');
+        costLine.appendChild(el('div', 'rc-class-cost-season',
+          costs.length ? ('Buy-In Range: ' + formatMoney(Math.min.apply(null, costs)) + ' – ' + formatMoney(Math.max.apply(null, costs))) : 'No cars yet'));
+        row.appendChild(costLine);
+
+        var pickBtn = el('button', null, openTeams.length ? 'Choose' : 'Full');
+        pickBtn.type = 'button';
+        pickBtn.className = 'rc-btn-secondary rc-btn-sm';
+        pickBtn.disabled = !openTeams.length;
+        row.appendChild(pickBtn);
+        if (!openTeams.length) row.classList.add('rc-class-pick-row-dim');
+
+        pickBtn.addEventListener('click', function () { showTeamScreen(cls); });
+        body.appendChild(row);
+      });
+    }
+
+    function showTeamScreen(carClass) {
+      setTitle('Choose Your Team — ' + carClass);
+      var body = modal.body;
+      body.innerHTML = '';
+
+      var backBtn = el('button', 'rc-link-btn', '← Choose a different class');
+      backBtn.type = 'button';
+      backBtn.style.cssText = 'display:block;margin-bottom:10px;';
+      backBtn.addEventListener('click', showClassScreen);
+      body.appendChild(backBtn);
+
+      var contentSlot = el('div');
+      body.appendChild(contentSlot);
+      loadTeamsInto(contentSlot, carClass);
+    }
+
+    function loadTeamsInto(contentSlot, carClass) {
+      contentSlot.innerHTML = '';
+      contentSlot.appendChild(buildSpinner('Loading ' + carClass + ' teams...'));
+      fetchApi('getAvailableTeams', { token: token, params: { seasonId: activeSeasonData.seasonId, carClass: carClass } }).then(function (data) {
+        contentSlot.innerHTML = '';
+        if (!data.success) { contentSlot.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load teams.')); return; }
+        if (!data.teams || !data.teams.length) { contentSlot.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for ' + escapeHtml(carClass) + ' yet.')); return; }
+        var sorted = data.teams.slice().sort(function (a, b) { return b.buyInCost - a.buyInCost; });
+        sorted.forEach(function (team) { contentSlot.appendChild(buildTeamCard(team, carClass)); });
+      }).catch(function () {
+        contentSlot.innerHTML = '';
+        contentSlot.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
+      });
+    }
+
+    // Reuses the pre-rebuild team card's exact CSS classes (.rc-team-card,
+    // .rc-team-logo-box, .rc-team-perks/-perk-chip, .rc-team-card-footer
+    // -- all still in style.css, never removed) so this looks like the
+    // card Matt originally signed off on. What's shown inside it is new:
+    // Tier + Car Objective (this car's actual ECO-era incentive) instead
+    // of the old bonus/penalty perks, and one flat Buy-In cost instead of
+    // a Season Registration Fee + Team Buy-In breakdown.
+    function buildTeamCard(team, carClass) {
+      var card = el('div', 'rc-team-card' + (team.taken ? ' rc-team-card-taken' : ''));
+
+      var head = el('div', 'rc-team-card-head');
+      var identity = el('div', 'rc-team-card-identity');
+      var logoBox = el('div', 'rc-team-logo-box');
+      if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
+        var logo = document.createElement('img');
+        logo.src = manufacturerLogoSrc(team.manufacturer);
+        logo.alt = team.manufacturer;
+        logo.onerror = function () { logoBox.style.display = 'none'; };
+        logoBox.appendChild(logo);
+      }
+      identity.appendChild(logoBox);
+      var nameCol = el('div');
+      nameCol.appendChild(el('div', 'rc-team-name', escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
+      if (team.manufacturer || team.carModel) {
+        nameCol.appendChild(el('div', 'rc-team-subtitle', escapeHtml([team.manufacturer, team.carModel].filter(Boolean).join(' '))));
+      }
+      identity.appendChild(nameCol);
+      head.appendChild(identity);
+      head.appendChild(el('div', 'rc-team-cost-total', formatMoney(team.buyInCost)));
+      card.appendChild(head);
+
+      var perks = el('div', 'rc-team-perks');
+      var tierChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus');
+      tierChip.appendChild(el('span', 'rc-team-perk-icon', '▲'));
+      tierChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.tier || 'Mid') + ' Tier</strong>'));
+      perks.appendChild(tierChip);
+      if (team.objectiveName) {
+        var objChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus');
+        objChip.appendChild(el('span', 'rc-team-perk-icon', '★'));
+        objChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.objectiveName) + '</strong> — ' + formatMoney(team.objectiveBonus) + ' bonus'));
+        perks.appendChild(objChip);
+      }
+      card.appendChild(perks);
+
+      var footer = el('div', 'rc-team-card-footer');
+      if (team.taken) {
+        footer.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'This seat is already taken.'));
+      } else {
+        var joinBtn = el('button', null, 'Join This Team');
+        joinBtn.type = 'button';
+        joinBtn.className = 'rc-btn-primary';
+        joinBtn.addEventListener('click', function () { openSponsorPickScreen(team, carClass); });
+        footer.appendChild(joinBtn);
+      }
+      card.appendChild(footer);
+      return card;
+    }
+
+    // Sponsors and team lock together in one action now (handleJoinTeam
+    // requires all 3 sponsor picks up front) -- there's no later "pick
+    // your sponsors" phase like the pre-rebuild design deferred to.
+    function openSponsorPickScreen(team, carClass) {
+      setTitle('Pick Your Sponsors');
+      var body = modal.body;
+      body.innerHTML = '';
+      var backBtn = el('button', 'rc-link-btn', '← Back to teams');
+      backBtn.type = 'button';
+      backBtn.style.cssText = 'display:block;margin-bottom:10px;';
+      backBtn.addEventListener('click', function () { showTeamScreen(carClass); });
+      body.appendChild(backBtn);
+      body.appendChild(buildSpinner('Loading sponsors...'));
+
+      fetchApi('getSponsors', { token: token }).then(function (data) {
+        body.innerHTML = '';
+        body.appendChild(backBtn);
+        if (!data.success || !data.sponsors || data.sponsors.length < 3) {
+          body.appendChild(el('p', 'color:var(--rc-red);', 'Not enough sponsors are set up yet to complete registration.'));
+          return;
+        }
+        renderSponsorPickBody(body, data.sponsors, team, carClass);
+      }).catch(function () {
+        body.innerHTML = '';
+        body.appendChild(backBtn);
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
+      });
+    }
+
+    function renderSponsorPickBody(body, sponsors, team, carClass) {
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:10px 0;',
+        'Choose 3 different sponsors for the season. Joining ' + escapeHtml(team.teamName || team.teamId) + ' for ' + formatMoney(team.buyInCost) + ' -- once locked in, this cannot be undone.'));
+
+      var selects = [0, 1, 2].map(function (i) {
+        var defaultName = sponsors[i % sponsors.length].Name;
+        return wizSelect(sponsors.map(function (s) { return s.Name; }), defaultName, function () {});
+      });
+      var row = el('div', 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;');
+      selects.forEach(function (sel, i) {
+        var col = el('div', 'flex:1;min-width:160px;');
+        col.appendChild(wizField('Sponsor ' + (i + 1), sel));
+        row.appendChild(col);
+      });
+      body.appendChild(row);
+
+      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin-bottom:10px;');
+      body.appendChild(errorLine);
+
+      var confirmBtn = el('button', null, 'Confirm & Lock In');
+      confirmBtn.type = 'button';
+      confirmBtn.className = 'rc-btn-primary';
+      confirmBtn.addEventListener('click', function () {
+        var byName = {};
+        sponsors.forEach(function (s) { byName[s.Name] = s.SponsorID; });
+        var picked = selects.map(function (sel) { return byName[sel.value]; });
+        var unique = picked.filter(function (id, i) { return picked.indexOf(id) === i; });
+        if (unique.length !== 3) { errorLine.textContent = 'Pick 3 different sponsors.'; return; }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Locking In...';
+        fetchApi('joinTeam', {
+          method: 'POST', token: token,
+          body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId, sponsorId1: picked[0], sponsorId2: picked[1], sponsorId3: picked[2] }
+        }).then(function (data) {
+          if (!data.success) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm & Lock In';
+            errorLine.textContent = data.message || (data.error === 'TEAM_TAKEN' ? 'That seat was just taken. Pick a different team.' : 'Could not complete registration.');
+            if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
+            return;
+          }
+          showToast('You’re registered! Welcome to the season.', 'success');
+          modal.close();
+          if (onDone) onDone();
+        }).catch(function () {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm & Lock In';
+          errorLine.textContent = 'Could not reach the server. Try again in a moment.';
+        });
+      });
+      body.appendChild(confirmBtn);
+    }
+
+    showClassScreen();
   }
 
   // ---------------------------------------------------------------------
@@ -514,6 +1045,21 @@
     for (var li = 0; li < 5; li++) lightsRow.appendChild(el('span', 'rc-startlight'));
     wrap.appendChild(lightsRow);
     wrap.appendChild(el('div', 'rc-loading-text', escapeHtml(message)));
+    return wrap;
+  }
+
+  // Standardized top-of-page loading position (Matt's call, 2026-08-29):
+  // every full-section loading state -- the initial #rc-loading markup
+  // AND any in-page section that fetches on click (Calendar, and any
+  // future one built the same way) -- sits at the exact same vertical
+  // height via .rc-inline-spinner-page's margin-top, instead of drifting
+  // depending on whether a heading happened to render above it first.
+  // NOT for spinners inside a modal (buildSpinner() alone is still right
+  // there -- the modal card itself is already the container, and modal
+  // body centering handles its own vertical position).
+  function buildPageSpinner(message) {
+    var wrap = buildSpinner(message);
+    wrap.classList.add('rc-inline-spinner-page');
     return wrap;
   }
 
@@ -776,6 +1322,264 @@
 
     panel.appendChild(row);
     section.appendChild(panel);
+  }
+
+  // ---------------------------------------------------------------------
+  // CALENDAR (2026-08-29) -- visual design restored verbatim from the
+  // pre-v0.5 archive (commit ab231e0: withTooltip/calStat/weatherIcon/
+  // formatRaceDateTime/formatByeDate/formatPointsList/raceCard/
+  // seasonDetailsPanel), but every data source is real now instead of the
+  // old CALENDAR_MOCK_SEASON -- see handleGetSeasonCalendar (DataCache.gs)
+  // for how Rounds + seasonDetails.specialEvents + seasonDetails.
+  // byeWeekDates get merged into one chronological list server-side.
+  // Fetches fresh every time the link is clicked (same pattern as Data/
+  // League Management) -- Matt's "no loaders, ever" rule was specifically
+  // about the Dashboard's own cards, not every section site-wide.
+  // ---------------------------------------------------------------------
+
+  // Same tooltip pattern as the wizard's Car Objectives checkboxes (.rc-
+  // tooltip class + data-tooltip attribute, pure CSS bubble) -- there was
+  // no shared helper for it before Calendar needed one in several places.
+  function withTooltip(el_, text) {
+    el_.classList.add('rc-tooltip');
+    el_.setAttribute('data-tooltip', text);
+    return el_;
+  }
+
+  function calStat(iconSvg, text, tooltip) {
+    var chip = el('span', 'rc-cal-stat', iconSvg + '<span>' + escapeHtml(text) + '</span>');
+    if (tooltip) withTooltip(chip, tooltip);
+    return chip;
+  }
+
+  // 5-tier icon by rain chance -- clear/no-rain shows sun (or a partly-
+  // cloudy variant if the round's Weather is set to "Cloudy" with 0% rain),
+  // then cloud/rain/heavy-rain as the percentage climbs.
+  function weatherIcon(race) {
+    var rc = race.chanceOfRain || 0;
+    if (rc <= 0) return (race.weather === 'Cloudy') ? ICON_CLOUD_PARTLY : ICON_SUN;
+    if (rc <= 25) return ICON_CLOUD;
+    if (rc <= 75) return ICON_RAIN;
+    return ICON_RAIN_HEAVY;
+  }
+
+  function formatRaceDateTime(iso, tz) {
+    if (!iso) return 'Date/time not set';
+    try {
+      var d = new Date(iso);
+      var opts = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+      if (tz) opts.timeZone = tz;
+      return d.toLocaleString('en-US', opts);
+    } catch (err) { return iso; }
+  }
+
+  function formatByeDate(iso, tz) {
+    if (!iso) return 'Date not set';
+    try {
+      var d = new Date(iso);
+      var opts = { weekday: 'short', month: 'short', day: 'numeric' };
+      if (tz) opts.timeZone = tz;
+      return d.toLocaleString('en-US', opts);
+    } catch (err) { return iso; }
+  }
+
+  function formatPointsList(points) {
+    return (points || []).map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
+  }
+
+  // Season-wide settings panel -- server password, race day/frequency,
+  // drop weeks, track limits, qualifying privacy, class pills, and the
+  // per-tier (Sprint/Medium/Long) duration + points-list chips. Every
+  // field here comes straight off handleGetSeasonCalendar's seasonDetails
+  // subset (a trimmed copy of Seasons.SeasonDetails).
+  function seasonDetailsPanel(details) {
+    var wrap = el('div', 'rc-cal-season-details');
+    wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Settings'));
+
+    var stats = el('div', 'rc-cal-stats');
+    if (details.defaultPassword) {
+      stats.appendChild(calStat(ICON_UNLOCK, 'Password Set', 'Server password: ' + details.defaultPassword));
+    } else {
+      stats.appendChild(calStat(ICON_UNLOCK, 'No Password', 'Server has no default password.'));
+    }
+    if (details.frequency) stats.appendChild(calStat(ICON_CLOCK, details.frequency, 'Race frequency'));
+    stats.appendChild(calStat(ICON_FLAG, (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'), 'Worst results dropped from the standings'));
+    if (details.trackLimitsPreset) stats.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits', 'Track limits enforcement preset'));
+    stats.appendChild(calStat(ICON_FLAG, details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying', 'Qualifying session visibility'));
+    wrap.appendChild(stats);
+
+    var classKeys = Object.keys(details.classes || {}).filter(function (k) { return details.classes[k]; });
+    if (classKeys.length) {
+      var classesRow = el('div', 'rc-cal-classes');
+      classesRow.appendChild(el('span', 'rc-cal-classes-label', 'Classes:'));
+      classKeys.forEach(function (k) {
+        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
+        var pill = el('span', 'rc-cal-class-pill', escapeHtml(k));
+        pill.style.background = 'var(' + colorVar + ')';
+        classesRow.appendChild(pill);
+      });
+      wrap.appendChild(classesRow);
+    }
+
+    var tiers = ['Sprint', 'Medium', 'Long'];
+    var tierStats = el('div', 'rc-cal-stats');
+    tiers.forEach(function (tier) {
+      var table = (details.pointsTables || {})[tier];
+      if (!table) return;
+      tierStats.appendChild(calStat(ICON_CLOCK, tier + ' · ' + (table.duration || 0) + ' min', formatPointsList(table.points)));
+    });
+    if (tierStats.children.length) wrap.appendChild(tierStats);
+
+    return wrap;
+  }
+
+  // One race/special-event/bye card. `entry` is one item from
+  // handleGetSeasonCalendar's merged `races` array (kind: 'round' |
+  // 'special' | 'bye'). driverTz is read once via Intl in the browser --
+  // no need to round-trip it through the backend. raceSettings is the
+  // season-wide block (fuel/tire multipliers etc.) -- Matt's call: those
+  // don't vary race to race, but show on every card anyway for quick
+  // reference rather than making the driver flip back to Season Settings.
+  function raceCard(entry, driverTz, raceSettings) {
+    if (entry.kind === 'bye') {
+      var byeCard = el('div', 'rc-cal-bye', 'Bye Week');
+      byeCard.appendChild(el('span', 'rc-cal-bye-date', formatByeDate(entry.startUtc, driverTz)));
+      return byeCard;
+    }
+
+    var isSpecial = entry.kind === 'special';
+    var card = el('div', 'rc-cal-race' + (entry.finished ? ' rc-cal-finished' : ''));
+
+    // Everything except the track image lives in this column -- .rc-cal-race
+    // is a flex row (card body + track image aside) so the image can sit to
+    // the right at a fixed max size regardless of how tall the text side gets.
+    var body = el('div', 'rc-cal-race-body');
+
+    var head = el('div', 'rc-cal-race-head');
+    var nameWrap = el('div', 'rc-cal-race-name');
+    nameWrap.appendChild(document.createTextNode(entry.eventName || (isSpecial ? 'Special Event' : ('Round ' + entry.roundNum))));
+    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- money only, no championship points.'));
+    head.appendChild(nameWrap);
+    body.appendChild(head);
+
+    var trackLine = el('div', 'rc-cal-track');
+    trackLine.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
+      (entry.layout ? ' <span class="rc-cal-layout">— ' + escapeHtml(entry.layout) + '</span>' : '');
+    body.appendChild(trackLine);
+
+    var datetime = el('div', 'rc-cal-datetime');
+    var dtSpan = el('span', null, ICON_CLOCK + '<span>' + escapeHtml(formatRaceDateTime(entry.startUtc, driverTz)) + '</span>');
+    datetime.appendChild(dtSpan);
+    if (entry.igRaceStart) {
+      var igSpan = el('span', null, ICON_FLAG + '<span>In-Game Race Start ' + escapeHtml(entry.igRaceStart) + '</span>');
+      datetime.appendChild(igSpan);
+    }
+    body.appendChild(datetime);
+
+    if (entry.igPracticeStart || entry.igQualifyStart) {
+      var sessions = el('div', 'rc-cal-sessions');
+      if (entry.igPracticeStart) sessions.appendChild(el('span', null, 'Practice ' + escapeHtml(entry.igPracticeStart)));
+      if (entry.igQualifyStart) sessions.appendChild(el('span', null, 'Qualifying ' + escapeHtml(entry.igQualifyStart)));
+      body.appendChild(sessions);
+    }
+
+    var stats = el('div', 'rc-cal-stats');
+    stats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
+    if (entry.passwordOverride) stats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
+    if (isSpecial) {
+      var poolTotal = (entry.moneyPlaces || []).reduce(function (s, v) { return s + (Number(v) || 0); }, 0) +
+        Object.keys(entry.bonusPayouts || {}).reduce(function (s, k) { return s + (Number(entry.bonusPayouts[k]) || 0); }, 0);
+      stats.appendChild(calStat(ICON_FLAG, 'Prize Pool $' + poolTotal.toLocaleString(), 'Top 10 money payout + bonus categories'));
+    } else if (entry.raceLengthTier) {
+      stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthTier, 'Race length tier'));
+    }
+    // Fuel/tire wear are season-wide settings (Seasons.SeasonDetails.
+    // raceSettings), not per-round -- shown on every card next to length
+    // (Matt's call) rather than only in the Season Settings panel above.
+    if (raceSettings && raceSettings.fuelMultiplier) {
+      stats.appendChild(calStat(ICON_FUEL, raceSettings.fuelMultiplier + ' Fuel', 'Fuel consumption multiplier (season-wide)'));
+    }
+    if (raceSettings && raceSettings.tireWearMultiplier) {
+      stats.appendChild(calStat(ICON_TIRE, raceSettings.tireWearMultiplier + ' Tire Wear', 'Tire wear rate multiplier (season-wide)'));
+    }
+    body.appendChild(stats);
+
+    card.appendChild(body);
+
+    // Track image, right side of the card -- assets/tracks/{TrackID}.png,
+    // capped at 250px either dimension via CSS (object-fit:contain keeps
+    // the image's own aspect ratio inside that box). Special Events have
+    // no TrackID (they pick a track by name only, not a Tracks row), so
+    // there's nothing to build a URL from -- same "silently no image"
+    // outcome as a round whose track image just hasn't been uploaded yet.
+    if (entry.trackId) {
+      var trackImg = document.createElement('img');
+      trackImg.className = 'rc-cal-track-img';
+      trackImg.src = trackImageSrc(entry.trackId);
+      trackImg.alt = entry.track || '';
+      trackImg.onerror = function () { trackImg.style.display = 'none'; };
+      card.appendChild(trackImg);
+    }
+
+    // Gray semi-transparent overlay + large bold "EVENT COMPLETED" label
+    // once a round/special event's start time has passed (Matt's call) --
+    // covers the whole card rather than the old faded-background + small
+    // pill treatment.
+    if (entry.finished) {
+      card.appendChild(el('div', 'rc-cal-completed-overlay', 'Event Completed'));
+    }
+
+    return card;
+  }
+
+  function renderCalendarSection(token) {
+    var section = document.getElementById('rc-section-calendar');
+    if (!section) return;
+    section.innerHTML = '';
+    // No "Calendar" heading while loading -- Matt's call: every full-
+    // section loading state should sit at the exact same vertical height
+    // as the initial #rc-loading screen, which has no heading above it
+    // either. The heading only appears once real content replaces this.
+    section.appendChild(buildPageSpinner('Loading season calendar...'));
+
+    fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
+
+      if (!res || !res.success) {
+        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
+        return;
+      }
+      if (!res.hasSeason) {
+        var empty = el('div', 'rc-panel');
+        empty.appendChild(el('h3', 'margin-top:0;', 'No Season Right Now'));
+        empty.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s no season open for registration at the moment -- the calendar fills in once one is.'));
+        section.appendChild(empty);
+        return;
+      }
+
+      var driverTz = '';
+      try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
+
+      var panel = el('div', 'rc-panel rc-cal-season');
+      var head = el('div', 'rc-cal-season-head');
+      head.appendChild(el('h3', 'rc-cal-season-title', res.seasonName));
+      head.appendChild(el('div', 'rc-cal-season-sub', 'Times shown in your local timezone' + (driverTz ? ' (' + driverTz + ')' : '') + '.'));
+      panel.appendChild(head);
+
+      panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}));
+
+      var list = el('div', 'rc-cal-race-list');
+      var raceSettings = (res.seasonDetails || {}).raceSettings || {};
+      (res.races || []).forEach(function (entry) { list.appendChild(raceCard(entry, driverTz, raceSettings)); });
+      panel.appendChild(list);
+
+      section.appendChild(panel);
+    }).catch(function () {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
+      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
+    });
   }
 
   // =======================================================================
@@ -1054,12 +1858,42 @@
   }
   // Race dates = the season's slots minus whichever ones are claimed as bye
   // weeks, taken in calendar order and capped to Number Of Races.
+  //
+  // Matt's call (2026-08-29): two events can never share a calendar day.
+  // Special Events pick their own date independently of the season's
+  // cadence-spaced slots, so a round can land on the same day as one --
+  // when that happens, that round (and everything scheduled after it)
+  // shifts forward by one cadence step (Weekly/Biweekly/Monthly, whichever
+  // the season uses), same as addCadence() everywhere else computes a
+  // slot. The shift accumulates and carries forward permanently once
+  // triggered -- every later round keeps the same offset rather than
+  // drifting back into a conflict-free date and re-bunching against the
+  // round that got pushed, and the while loop below keeps nudging a
+  // single round forward another cadence step in the rare case the first
+  // nudge lands on yet another Special Event or bye week date.
   function computeRaceDates(state) {
     var slots = computeSeasonSlots(state);
     var byeSet = {};
     (state.byeWeekDates || []).forEach(function (d) { if (d) byeSet[d] = true; });
     var raceDates = slots.filter(function (d) { return !byeSet[d]; });
-    return raceDates.slice(0, Math.max(0, parseInt(state.numRaces, 10) || 0));
+    raceDates = raceDates.slice(0, Math.max(0, parseInt(state.numRaces, 10) || 0));
+
+    var specialDateSet = {};
+    (state.specialEvents || []).forEach(function (evt) { if (evt.date) specialDateSet[evt.date] = true; });
+    if (!Object.keys(specialDateSet).length || !raceDates.length) return raceDates;
+
+    var usedDates = {};
+    Object.keys(byeSet).forEach(function (d) { usedDates[d] = true; });
+    var shift = 0;
+    return raceDates.map(function (originalDate) {
+      var candidate = shift > 0 ? addCadence(originalDate, state.frequency, shift) : originalDate;
+      while (specialDateSet[candidate] || usedDates[candidate]) {
+        shift++;
+        candidate = addCadence(originalDate, state.frequency, shift);
+      }
+      usedDates[candidate] = true;
+      return candidate;
+    });
   }
   // The admin's own IANA timezone id from their profile -- falls back to
   // the browser's own zone if the profile hasn't loaded one.
@@ -1243,18 +2077,6 @@
       select.appendChild(o);
     });
     select.addEventListener('change', function () { onChange(select.value); });
-    return select;
-  }
-  // Dropdown of dollar amounts stepping by $100 (Matt's call: "make them
-  // drop down boxes that move by $100" -- a real <select>, not a number
-  // spinner). `value` is coerced into range/step first so an out-of-range
-  // saved draft never lands on a value the dropdown doesn't actually have.
-  function wizDollarSelect(min, max, step, value, onChange) {
-    var options = [];
-    for (var n = min; n <= max; n += step) options.push(n);
-    var snapped = Math.round((Number(value) || min) / step) * step;
-    if (options.indexOf(snapped) === -1) snapped = options[0];
-    var select = wizSelect(options.map(String), String(snapped), function (v) { onChange(Number(v)); });
     return select;
   }
   function wizCheckboxRow(labelText, checked, onChange) {
@@ -1514,15 +2336,15 @@
       'Limits a single wager to this % of a driver\'s available balance.'
     ));
 
-    // Car Objectives system -- three average seat costs (one per Tier) plus
-    // the objective bonus multiplier. Each car's actual seat cost is its
-    // Tier's average here, randomized ±20% and rounded to the nearest $100
-    // at Create Season -- these three numbers are averages across a tier,
-    // not a fixed per-car amount. All dropdowns, per Matt's call.
-    container.appendChild(wizSubhead('Car Objectives'));
-    var lowSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.Low, function (v) { state.economy.carTierSeatCost.Low = v; });
-    var midSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.Mid, function (v) { state.economy.carTierSeatCost.Mid = v; });
-    var highSeatInput = wizDollarSelect(100, 10000, 100, state.economy.carTierSeatCost.High, function (v) { state.economy.carTierSeatCost.High = v; });
+    // Car Objectives system -- three average seat costs (one per Tier),
+    // kept here in Economy alongside the other dollar-figure inputs. Each
+    // car's actual seat cost is its Tier's average here, randomized ±20%
+    // and rounded to the nearest $100 at Create Season -- these three
+    // numbers are averages across a tier, not a fixed per-car amount.
+    // Number inputs that step by $100 (Matt's call) rather than dropdowns.
+    var lowSeatInput = wizNumberInput(state.economy.carTierSeatCost.Low, function (v) { state.economy.carTierSeatCost.Low = v; }, { min: 100, step: 100 });
+    var midSeatInput = wizNumberInput(state.economy.carTierSeatCost.Mid, function (v) { state.economy.carTierSeatCost.Mid = v; }, { min: 100, step: 100 });
+    var highSeatInput = wizNumberInput(state.economy.carTierSeatCost.High, function (v) { state.economy.carTierSeatCost.High = v; }, { min: 100, step: 100 });
     var seatCostRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
     [['Low Tier Avg. Seat Cost ($)', lowSeatInput], ['Mid Tier Avg. Seat Cost ($)', midSeatInput], ['High Tier Avg. Seat Cost ($)', highSeatInput]].forEach(function (pair) {
       var col = el('div', 'flex:1;min-width:160px;');
@@ -1532,23 +2354,17 @@
     container.appendChild(seatCostRow);
     container.appendChild(el('div', 'rc-hint', 'Each car\'s actual seat cost is randomized ±20% around its own tier\'s average, then rounded to the nearest $100 -- so cars sharing a tier aren\'t all identical.'));
 
-    var multiplierOptions = [];
-    for (var m = 0.5; m <= 5.0; m += 0.25) multiplierOptions.push(Math.round(m * 100) / 100);
-    var snappedMultiplier = multiplierOptions.reduce(function (closest, opt) {
-      return Math.abs(opt - state.economy.objectiveBonusMultiplier) < Math.abs(closest - state.economy.objectiveBonusMultiplier) ? opt : closest;
-    }, multiplierOptions[0]);
-    var multiplierInput = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedMultiplier.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier = parseFloat(v); });
-    multiplierInput.style.maxWidth = '25%'; // half the wizard's usual 50% select width (Matt's call)
-    container.appendChild(wizField('Objective Bonus Multiplier', multiplierInput,
-      'A car\'s objective bonus is its own (randomized) seat cost times this multiplier -- e.g. a $3,000 seat cost at 1.5x pays a $4,500 objective bonus.'));
-
     // Which of the 15 catalog objectives (5 per tier) are actually up for
     // grabs this season -- unchecking one just removes it from that
     // tier's round-robin pool at Create Season, it never edits the
     // catalog itself. Grouped by tier, same Low->Mid->High order as
-    // everywhere else a tier list shows.
+    // everywhere else a tier list shows. Each checkbox carries a themed
+    // hover tooltip (.rc-tooltip / data-tooltip, pure CSS) explaining what
+    // the objective requires.
+    container.appendChild(wizSubhead('Car Objectives'));
     var objectivesWrap = el('div');
     var catalogForWizard = (typeof CAR_OBJECTIVE_CATALOG !== 'undefined') ? CAR_OBJECTIVE_CATALOG : {};
+    var descriptionsForWizard = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
     (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
       var tierNames = catalogForWizard[tier] || [];
       if (!tierNames.length) return;
@@ -1561,6 +2377,8 @@
         var checkLabel = wizCheckboxRow(objName, state.carObjectivesEnabled[tier][objName], function (checked) {
           state.carObjectivesEnabled[tier][objName] = checked;
         });
+        checkLabel.className = (checkLabel.className ? checkLabel.className + ' ' : '') + 'rc-tooltip';
+        if (descriptionsForWizard[objName]) checkLabel.setAttribute('data-tooltip', descriptionsForWizard[objName]);
         checkLabel.style.cssText = 'display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
         checksRow.appendChild(checkLabel);
       });
@@ -1568,7 +2386,17 @@
       objectivesWrap.appendChild(tierWrap);
     });
     container.appendChild(wizField('Season Objectives In Use This Season', objectivesWrap,
-      'Unchecked objectives are skipped for this season\'s round-robin assignment -- if every objective in a tier ends up unchecked, that tier falls back to using all 5 rather than assigning nothing.'));
+      'Unchecked objectives are skipped for this season\'s round-robin assignment -- if every objective in a tier ends up unchecked, that tier falls back to using all 5 rather than assigning nothing. Hover an objective for a short explanation.'));
+
+    var multiplierOptions = [];
+    for (var m = 0.5; m <= 5.0; m += 0.25) multiplierOptions.push(Math.round(m * 100) / 100);
+    var snappedMultiplier = multiplierOptions.reduce(function (closest, opt) {
+      return Math.abs(opt - state.economy.objectiveBonusMultiplier) < Math.abs(closest - state.economy.objectiveBonusMultiplier) ? opt : closest;
+    }, multiplierOptions[0]);
+    var multiplierInput = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedMultiplier.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier = parseFloat(v); });
+    multiplierInput.style.maxWidth = '25%'; // half the wizard's usual 50% select width (Matt's call)
+    container.appendChild(wizField('Objective Bonus Multiplier', multiplierInput,
+      'A car\'s objective bonus is its own (randomized) seat cost times this multiplier -- e.g. a $3,000 seat cost at 1.5x pays a $4,500 objective bonus.'));
   }
 
   // Keeps state.races the right length whenever Race Events opens.
@@ -1576,6 +2404,7 @@
     var n = Math.max(0, parseInt(state.numRaces, 10) || 0);
     while (state.races.length < n) {
       state.races.push({
+        eventName: '',
         track: WIZARD_TRACK_LIST[0], layout: trackLayoutOptions(WIZARD_TRACK_LIST[0])[0], weather: 'Clear', tier: 'Sprint',
         chanceOfRain: 0, temperatureC: 20,
         passwordOverride: '',
@@ -1652,6 +2481,11 @@
       var card = el('div', 'rc-panel rc-wizard-race-card');
       card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race ' + (idx + 1)));
 
+      var eventNameInput = wizTextInput(race.eventName || '', function (v) { race.eventName = v; });
+      eventNameInput.placeholder = 'Round ' + (idx + 1);
+      card.appendChild(wizField('Event Name (optional)', eventNameInput,
+        'Leave blank to default to "Round ' + (idx + 1) + '".'));
+
       var raceDateInput = el('input'); raceDateInput.type = 'date';
       raceDateInput.value = computedRaceDates[idx] || '';
       raceDateInput.disabled = true;
@@ -1724,8 +2558,9 @@
         card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
 
         var evtNameInput = wizTextInput(evt.eventName, function (v) { evt.eventName = v; });
-        requireField(evtNameInput, requiredEls);
-        card.appendChild(wizField('Event Name', evtNameInput));
+        evtNameInput.placeholder = 'Special Event ' + (idx + 1);
+        card.appendChild(wizField('Event Name (optional)', evtNameInput,
+          'Leave blank to default to "Special Event ' + (idx + 1) + '".'));
 
         var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
         evtDate.style.maxWidth = '50%';
@@ -1943,7 +2778,7 @@
         var detailsLine = race.tier + ' · ' + (race.weather || 'Clear') +
           ' · ' + (race.chanceOfRain || 0) + '% Rain / ' + (race.temperatureC === undefined ? 20 : race.temperatureC) + '°C' +
           ' · Race Start ' + (race.igRaceStart || '(not set)');
-        racesPanel.appendChild(previewLine('Race ' + (idx + 1), trackLine));
+        racesPanel.appendChild(previewLine((race.eventName || 'Round ' + (idx + 1)), trackLine));
         racesPanel.appendChild(previewLine('', detailsLine));
       });
     }
@@ -2205,6 +3040,17 @@
     // Track+Layout is resolved to a real TrackID here via resolveTrackId()
     // -- the wizard's own dropdowns work in names, but the backend's Rounds
     // schema keys races to Tracks by TrackID.
+    // Same trick as releaseAtUtc below: dateStr/timeStr are interpreted in
+    // THIS browser (the admin's), i.e. the zone they were actually entered
+    // in, then converted to an absolute UTC instant right here so nothing
+    // downstream (the Calendar page, in particular) has to guess at what
+    // timezone a bare date+time string was meant in.
+    function localDateTimeToUtcIso(dateStr, timeStr) {
+      if (!dateStr) return '';
+      var d = new Date(dateStr + 'T' + (timeStr || '00:00'));
+      return isNaN(d.getTime()) ? '' : d.toISOString();
+    }
+
     function finishWizard() {
       saveWizardDraft(state);
       contentWrap.innerHTML = '';
@@ -2214,9 +3060,11 @@
       var raceDates = computeRaceDates(state);
       var racesPayload = state.races.map(function (race, idx) {
         return {
+          eventName: (race.eventName && race.eventName.trim()) ? race.eventName.trim() : ('Round ' + (idx + 1)),
           trackId: resolveTrackId(race.track, race.layout),
           roundNumber: idx + 1,
           date: raceDates[idx] || '',
+          startUtc: localDateTimeToUtcIso(raceDates[idx], state.seasonStartTime),
           weather: race.weather,
           chanceOfRain: race.chanceOfRain,
           temperatureC: race.temperatureC,
@@ -2227,6 +3075,12 @@
           igRaceStart: race.igRaceStart,
           passwordOverride: race.passwordOverride
         };
+      });
+      // Bye weeks get the same startUtc treatment so the Calendar can slot
+      // them chronologically alongside rounds/special events without
+      // re-deriving a timezone-correct instant from a bare date string.
+      var byeWeekStartUtc = (state.byeWeekDates || []).map(function (d) {
+        return localDateTimeToUtcIso(d, state.seasonStartTime);
       });
 
       // releaseAtUtc is computed HERE, in the admin's own browser, rather
@@ -2257,9 +3111,15 @@
         frequency: state.frequency,
         byeWeeks: state.byeWeeks,
         byeWeekDates: state.byeWeekDates,
+        byeWeekStartUtc: byeWeekStartUtc,
         dropWeeks: state.dropWeeks,
         specialEventsCount: state.specialEventsCount,
-        specialEvents: state.specialEvents,
+        specialEvents: state.specialEvents.map(function (evt, idx) {
+          return Object.assign({}, evt, {
+            eventName: (evt.eventName && evt.eventName.trim()) ? evt.eventName.trim() : ('Special Event ' + (idx + 1)),
+            startUtc: localDateTimeToUtcIso(evt.date, evt.startTime)
+          });
+        }),
         bonusPoints: state.bonusPoints,
         pointsTables: state.pointsTables,
         seasonStartDate: state.seasonStartDate,
@@ -3624,7 +4484,7 @@
   // ---------------------------------------------------------------------
   // TOP-LEVEL RENDER
   // ---------------------------------------------------------------------
-  function buildFullProfileUI(profile, token) {
+  function buildFullProfileUI(profile, token, dashboardData) {
     currentProfile = profile;
     currentToken = token;
     buildSidebarNav();
@@ -3653,6 +4513,7 @@
       updateDataMgmtNavDot(token);
     }
 
+    renderDashboardSection(profile, token, dashboardData);
     showSection('dashboard');
   }
 
@@ -3682,7 +4543,7 @@
   // successful change (see its `box.remove()` call); a MutationObserver
   // watches for that removal and then builds the normal shell, so the
   // forced-password logic is otherwise untouched from v0.4.0.
-  function renderProfile(profile, token) {
+  function renderProfile(profile, token, dashboardData) {
     if (profile.mustChangePassword) {
       document.getElementById('rc-sidebar').style.display = 'none';
       document.getElementById('rc-topbar').style.display = 'none';
@@ -3704,14 +4565,14 @@
           document.getElementById('rc-sidebar').style.display = '';
           document.getElementById('rc-topbar').style.display = '';
           profile.mustChangePassword = false;
-          buildFullProfileUI(profile, token);
+          buildFullProfileUI(profile, token, dashboardData);
         }
       });
       observer.observe(container, { childList: true, subtree: true });
       return;
     }
 
-    buildFullProfileUI(profile, token);
+    buildFullProfileUI(profile, token, dashboardData);
   }
 
   // ---------------------------------------------------------------------
@@ -3727,6 +4588,25 @@
   document.getElementById('rc-sidebar-nav').classList.add('rc-nav-loading');
   buildSidebarNav();
 
+  // Dashboard cards never show their own loading state (Matt's call: "no
+  // loaders in any of the cards, ever, I don't even want the
+  // functionality to exist") -- both card fetches are fired here,
+  // immediately, in parallel with the profile load itself, and the site's
+  // ONE loading screen ("Loading account information...") stays up until
+  // everything (profile + both cards' data) is actually ready. By the
+  // time buildFullProfileUI()/renderDashboardSection() run, every card
+  // renders its final content on the first paint, already fully loaded --
+  // there's nothing left to fetch, so there's nothing for a card to show
+  // a spinner for. A failed card fetch still resolves (to a
+  // {success:false} stand-in via .catch) rather than rejecting, so one
+  // card's server error never blocks the whole page from loading.
+  var dashboardDataPromise = Promise.all([
+    fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
+    fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; })
+  ]).then(function (results) {
+    return { activeSeason: results[0], currentSeat: results[1] };
+  });
+
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
   var freshProfile = null;
@@ -3736,9 +4616,11 @@
 
   if (freshProfile && freshProfile.success) {
     renderHeader(); // header fetches its own notifications now -- see js/header.js
-    document.getElementById('rc-loading').style.display = 'none';
-    document.getElementById('rc-profile-root').style.display = 'block';
-    renderProfile(freshProfile.profile, token);
+    dashboardDataPromise.then(function (dashboardData) {
+      document.getElementById('rc-loading').style.display = 'none';
+      document.getElementById('rc-profile-root').style.display = 'block';
+      renderProfile(freshProfile.profile, token, dashboardData);
+    });
   } else {
     fetchApi('getProfile', { token: token })
       .then(function (data) {
@@ -3750,9 +4632,11 @@
         }
         setProfileCache(data.profile); // keeps the header avatar current on every other page too
         renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
-        document.getElementById('rc-loading').style.display = 'none';
-        document.getElementById('rc-profile-root').style.display = 'block';
-        renderProfile(data.profile, token);
+        return dashboardDataPromise.then(function (dashboardData) {
+          document.getElementById('rc-loading').style.display = 'none';
+          document.getElementById('rc-profile-root').style.display = 'block';
+          renderProfile(data.profile, token, dashboardData);
+        });
       })
       .catch(function () {
         renderHeader({ forceLoggedOut: true });

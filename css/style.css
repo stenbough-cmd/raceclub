@@ -1069,6 +1069,105 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    left-aligned wherever it happened to fall in document flow. */
 .rc-team-card-footer .rc-btn-primary { margin-left: auto; margin-top: 0; }
 
+/* -------------------------------------------------------------------- */
+/* Dashboard -- card grid (2026-08-29, first cards back after the pre-   */
+/* ECO dashboard was dropped). .rc-quick-row holds Registration Status + */
+/* Current Seat for now; more cards join it later, one at a time.        */
+/* -------------------------------------------------------------------- */
+.rc-quick-row { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+/* Shared by every Dashboard card header (Matt's call: bigger, still all  */
+/* caps) -- one class so every card's title reads at the same weight.    */
+.rc-dash-card-title { position: relative; z-index: 1; margin: 0 0 16px; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-carbon); font-family: var(--rc-font-heading); padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
+
+/* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
+   checkered-flag corner that fades toward the card's center, a red
+   "finish flag" accent along the top-left edge, and a slightly heavier
+   drop shadow than a plain .rc-panel. Applied alongside .rc-panel and a
+   card's own modifier class (e.g. "rc-panel rc-regstatus-card
+   rc-dash-card") -- every new Dashboard card should carry rc-dash-card
+   too so the set stays visually consistent. */
+.rc-dash-card { position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(15, 17, 21, 0.10); }
+.rc-dash-card > * { position: relative; z-index: 1; }
+.rc-dash-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 20px;
+  width: 190px;
+  height: 120px;
+  background:
+    conic-gradient(
+      from 90deg,
+      rgba(30, 30, 30, 0.055) 25%,
+      transparent 0 50%,
+      rgba(30, 30, 30, 0.055) 0 75%,
+      transparent 0
+    );
+  background-size: 42px 42px;
+  transform: skewX(-20deg);
+  opacity: 0.45;
+  -webkit-mask-image: radial-gradient(circle at top right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 72%);
+  mask-image: radial-gradient(circle at top right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+.rc-dash-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 76%;
+  height: 4px;
+  background: var(--rc-red);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    calc(100% - 10px) 100%,
+    0 100%
+  );
+  z-index: 2;
+}
+
+.rc-regstatus-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
+.rc-regstatus-row { display: flex; align-items: center; gap: 16px; }
+.rc-regstatus-row-clickable { cursor: pointer; }
+.rc-regstatus-icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; border: 2px solid; }
+.rc-regstatus-icon-none { color: var(--rc-steel); border-color: var(--rc-silver); }
+.rc-regstatus-icon-open { color: #a3790a; border-color: #e8b93a; background: #fdf6e3; }
+.rc-regstatus-icon-done { color: #1f5c25; border-color: #bfe2c4; background: #eaf6ec; }
+.rc-regstatus-headline { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+.rc-regstatus-headline-none { color: var(--rc-steel); }
+.rc-regstatus-headline-open { color: #a3790a; }
+.rc-regstatus-headline-done { color: #1f5c25; }
+.rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
+.rc-regstatus-footer { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
+.rc-regstatus-stat { flex: 1 1 100px; }
+.rc-regstatus-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
+.rc-regstatus-stat-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); margin-top: 2px; }
+
+/* Current Seat card -- manufacturer logo left, team/car identity + class
+   pill next to it, Position/Points/Podiums stat row underneath (sourced
+   from SeasonHistory.CurrentSeat's JSON once a round's results exist --
+   see handleGetMyCurrentSeat, DataCache.gs). No car photo -- the
+   reference mockup's car render doesn't exist as an asset in this
+   project, logo + text only. */
+.rc-currentseat-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
+.rc-cs-row { display: flex; align-items: center; gap: 20px; }
+/* No circle/avatar container (Matt's call) -- the logo stands on its own,
+   sized directly rather than cropped to fit a fixed box. */
+.rc-cs-logo { flex: none; max-width: 140px; max-height: 60px; object-fit: contain; }
+/* Matches .rc-regstatus-headline exactly (Matt's call: same size/weight
+   as "REGISTERED FOR <season name>") rather than its own bigger/bolder
+   treatment. */
+.rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
+.rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
+.rc-cs-class-pill { display: inline-block; margin-top: 9px; padding: 3px 10px; border-radius: 4px; color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 0.03em; }
+.rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
+.rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
+.rc-cs-stat { flex: 1 1 80px; text-align: center; }
+.rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
+.rc-cs-stat-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
 @media (max-width: 900px) {
   .rc-details-row { grid-template-columns: 1fr; }
   .rc-details-row-2 { grid-template-columns: 1fr; }
@@ -2237,35 +2336,62 @@ body.rc-modal-scroll-locked {
 }
 .rc-cal-bye-date { font-size: 11px; font-weight: 400; }
 
+/* Flex row -- .rc-cal-race-body (everything but the image) grows to fill
+   the space, .rc-cal-track-img sits fixed-size on the right. position:
+   relative so .rc-cal-completed-overlay below can cover the whole card. */
 .rc-cal-race {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  overflow: hidden;
   border: 1px solid var(--rc-silver);
   border-radius: 8px;
   background: var(--rc-white);
   padding: 16px 18px;
   width: 100%;
 }
-/* Finished races: lightly grayed out, per spec, but still fully readable
-   -- opacity dim + offwhite background reads as "done" without hiding
-   the details entirely. */
-.rc-cal-race.rc-cal-finished { opacity: 0.6; background: var(--rc-offwhite); }
+.rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
+/* Track image, right side of every race/special-event card -- Matt's
+   call: assets/tracks/{TrackID}.png, capped at 250px either dimension,
+   object-fit:contain to keep the image's own aspect ratio inside that
+   box. A round with no image uploaded yet (404) hides itself silently via
+   the onerror handler in raceCard() -- no broken-image icon. */
+.rc-cal-track-img { flex: none; max-width: 250px; max-height: 250px; object-fit: contain; border-radius: 6px; }
+
+/* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
+   covering the whole card once its start time has passed (Matt's call --
+   replaces the old faded-background + small "Completed" pill treatment).
+   text-transform:uppercase does the all-caps so the markup itself can
+   stay normal-case ("Event Completed") for accessibility/copy-paste. */
+.rc-cal-completed-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 32, 36, 0.62);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 20px;
+}
 
 .rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 16px; color: var(--rc-carbon); }
+/* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
+   the Current Seat team name (Matt's call: every event name on the site
+   reads at the same weight) instead of its own bigger/lighter/lowercase
+   style. */
+.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rc-carbon); }
 /* Star marks a special/named event (Matt: "any special events have a
    star next to the race name") -- normal rounds have no star, no name,
    just "Race 0N". */
 .rc-cal-race-star { display: inline-flex; align-items: center; color: #b8860b; }
-.rc-cal-finished-pill {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--rc-steel);
-  color: var(--rc-white);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
 
 .rc-cal-track { font-size: 13px; color: var(--rc-steel); margin-top: 4px; }
 .rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
@@ -2297,7 +2423,6 @@ body.rc-modal-scroll-locked {
   color: var(--rc-carbon);
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
-.rc-cal-race.rc-cal-finished .rc-cal-stat { background: var(--rc-white); }
 
 /* -------------------------------------------------------------------- */
 /* Account.html's Help section (renderHelpSection()) -- two stacked      */
