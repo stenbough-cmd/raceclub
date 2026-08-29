@@ -310,6 +310,35 @@ p { margin: 0 0 0.75em; }
   object-fit: contain;
   flex: none;
 }
+/* Sponsor logo column in the Sponsors popup -- a fixed-width slot, logo
+   right-justified inside it, so the sponsor name/bonus text next to it
+   always starts at the same x position regardless of whether that row's
+   actual logo file is a narrow square mark or a wide wordmark. Without
+   this fixed column, a plain inline <img> would push the text column
+   left/right by however wide that one logo happened to be. */
+.rc-dm-sponsor-logo-col {
+  width: 120px;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* The logo image itself -- same idea as .rc-dm-car-logo above (hidden via
+   onerror when the file's missing) but capped at 100px wide / 40px tall
+   (whichever the image's own aspect ratio hits first), since sponsor
+   logos are wordmarks/banners rather than small square manufacturer
+   badges. object-fit: contain keeps it from ever stretching or cropping
+   inside those bounds; .rc-dm-car-info's align-items: center is what
+   centers the whole column against the two-line name/bonus text next to
+   it. */
+.rc-dm-sponsor-logo {
+  width: auto;
+  height: auto;
+  max-width: 100px;
+  max-height: 40px;
+  object-fit: contain;
+  flex: none;
+}
 
 .rc-dm-row {
   display: flex;

@@ -189,6 +189,17 @@ var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Aggressive'];
 // free text" pattern as CLASS_PLACEMENT_DENIAL_REASONS above. Add a new
 // trigger here first if a future sponsor needs one that isn't already
 // covered.
+// v0.25 (2026-08-29) -- added 5 bonus + 2 penalty triggers so every
+// sponsor's payout is actually backed by evaluation logic (see
+// DataCache.gs's SPONSOR_BONUS_EVALUATORS_/SPONSOR_PENALTY_EVALUATORS_,
+// the payout engine that reads this exact vocabulary).
+//
+// v0.26 (2026-08-29) -- "Beat your rival" replaces the short-lived "Beat
+// your teammate" (Matt's call): a driver's "rival" is whoever they've
+// wagered against, not whoever shares their car -- it fires when a driver
+// wins a Settled Wagers row for this round. This reuses data that already
+// exists (Wagers.Status/WinnerProfileID) instead of needing a new
+// admin-picked-rival field/UI.
 var SPONSOR_BONUS_TRIGGERS = [
   'Clean race',
   'Finish, no DNF',
@@ -197,14 +208,21 @@ var SPONSOR_BONUS_TRIGGERS = [
   'Pole position',
   'Fastest lap',
   'Podium / Win',
-  'Win (P1 only)'
+  'Win (P1 only)',
+  'Led at least one lap',
+  'Consistency bonus',
+  'Front-row start',
+  'Zero-incident bonus',
+  'Beat your rival'
 ];
 var SPONSOR_PENALTY_TRIGGERS = [
   'Any penalty-tier event',
   'DNF (driver-caused)',
   'Low placement',
   'Reckless-tier contact+',
-  'DNF or DSQ'
+  'DNF or DSQ',
+  'DSQ (steward ruling)',
+  'Grid slipper'
 ];
 
 // CSS variable (defined in css/style.css) holding each class's badge

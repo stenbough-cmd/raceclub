@@ -994,6 +994,24 @@
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
+  // Same idea as formatDateLabel but for a <input type="datetime-local">
+  // value ("2026-09-05T20:00") -- used only for the wizard's scheduled
+  // season-release preview line. Reads in the BROWSER's local time, same
+  // as the datetime-local input itself, so the label always matches what
+  // the admin actually picked.
+  function formatDateTimeLabel(dtLocal) {
+    if (!dtLocal) return '';
+    var d = new Date(dtLocal);
+    if (isNaN(d.getTime())) return '';
+    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var hours = d.getHours();
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    var hour12 = hours % 12 || 12;
+    var mins = String(d.getMinutes()).padStart(2, '0');
+    return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() +
+      ' at ' + hour12 + ':' + mins + ' ' + ampm;
+  }
   // Wraps a plain <input type="time"> with a small static badge next to it
   // -- "Sim Time" for the In-Game Practice/Qualify/Race start times, which
   // are the simulated LMU clock and not a real-world join time.
@@ -1764,6 +1782,10 @@
     idPanel.appendChild(previewLine('Default Password', state.defaultPassword || '(none set)'));
     idPanel.appendChild(previewLine('Private Qualifying', state.privateQualifying));
     idPanel.appendChild(previewLine('Track Limits Preset', state.trackLimitsPreset));
+    idPanel.appendChild(previewLine('Registration Opens',
+      state.releaseMode === 'scheduled'
+        ? (state.releaseDateTime ? formatDateTimeLabel(state.releaseDateTime) : '(pick a release date/time below)')
+        : 'Immediately, when this season is created'));
     container.appendChild(idPanel);
 
     var fmtPanel = el('div', 'rc-panel'); fmtPanel.style.marginTop = '12px';
@@ -1984,7 +2006,20 @@
           'Real team seats are first-come-first-served, so a scheduled release gives every driver an equal shot at one.'));
         var confirmFutureBtn = el('button', null, 'Confirm & Create');
         confirmFutureBtn.className = 'rc-btn-primary rc-btn-sm'; confirmFutureBtn.type = 'button';
-        confirmFutureBtn.addEventListener('click', function () { state.releaseMode = 'scheduled'; finishWizard(); });
+        confirmFutureBtn.addEventListener('click', function () {
+          // The backend flips a Scheduled season to Registration by comparing
+          // against this same clock (see seasonDetails.releaseAtUtc in
+          // finishWizard) -- a blank or already-past pick would either never
+          // fire or fire immediately, neither of which is what "Create a
+          // Future Season" promises, so it's caught here before the call.
+          var releaseAt = state.releaseDateTime ? new Date(state.releaseDateTime) : null;
+          if (!releaseAt || isNaN(releaseAt.getTime()) || releaseAt.getTime() <= Date.now()) {
+            showToast('Pick a release date/time in the future first.', 'error');
+            return;
+          }
+          state.releaseMode = 'scheduled';
+          finishWizard();
+        });
         futurePanel.appendChild(confirmFutureBtn);
         createWrap.appendChild(futurePanel);
 
@@ -2070,12 +2105,28 @@
         };
       });
 
+      // releaseAtUtc is computed HERE, in the admin's own browser, rather
+      // than left for the backend to work out from releaseDateTime (a bare
+      // "2026-09-05T20:00" with no zone info) + enteredTimeZone (a label,
+      // not something Apps Script can reliably parse an arbitrary IANA name
+      // against). new Date(a plain datetime-local string) is interpreted in
+      // THIS browser's local zone, which is the zone the admin actually
+      // picked the date/time in -- so converting to a UTC instant right here
+      // is exact, and the backend's scheduled-release checker only ever has
+      // to compare two absolute timestamps.
+      var releaseAtUtc = '';
+      if (state.releaseMode === 'scheduled' && state.releaseDateTime) {
+        var releaseAtDate = new Date(state.releaseDateTime);
+        if (!isNaN(releaseAtDate.getTime())) releaseAtUtc = releaseAtDate.toISOString();
+      }
+
       var seasonDetails = {
         defaultPassword: state.defaultPassword,
         privateQualifying: state.privateQualifying,
         trackLimitsPreset: state.trackLimitsPreset,
         releaseMode: state.releaseMode,
         releaseDateTime: state.releaseDateTime,
+        releaseAtUtc: releaseAtUtc,
         enteredTimeZone: state.enteredTimeZone,
         classes: state.classes,
         classSeasons: state.classSeasons,
@@ -3146,15 +3197,22 @@
         var active = _rcRowActive(s);
         var row = el('div', 'rc-dm-subrow-edit');
         var info = el('div', 'rc-dm-car-info');
+        // Fixed-width column, logo right-justified inside it -- so the
+        // text column's left edge lands in the same place row to row no
+        // matter how wide any one sponsor's actual logo file is (a narrow
+        // square mark vs. a wide wordmark would otherwise push textCol
+        // around unpredictably).
+        var logoCol = el('div', 'rc-dm-sponsor-logo-col');
         var logo = document.createElement('img');
-        logo.className = 'rc-dm-car-logo';
+        logo.className = 'rc-dm-sponsor-logo';
         logo.alt = '';
         logo.src = sponsorLogoSrc(s.Name || '');
         // Hides gracefully rather than showing a broken-image icon when
         // that sponsor's logo file hasn't been uploaded yet -- same
         // pattern buildCarsPanel uses for manufacturer logos.
         logo.onerror = function () { this.style.display = 'none'; };
-        info.appendChild(logo);
+        logoCol.appendChild(logo);
+        info.appendChild(logoCol);
 
         var textCol = el('div', null);
         var nameLine = el('div', null, escapeHtml(s.Name || '(unnamed sponsor)'));
