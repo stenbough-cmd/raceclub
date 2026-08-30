@@ -366,6 +366,53 @@ p { margin: 0 0 0.75em; }
   flex: none;
 }
 
+/* Driver-facing sponsor picker -- shared by the registration flow's
+   sponsor-pick step and the Sponsors page's "Choose Sponsors" modal
+   (Matt's call, 2026-08-30: both list every sponsor, grouped by Tier
+   (Safe/Balanced/Aggressive, same _rcTierBadge chip the admin Sponsors
+   popup uses) with its bonus/penalty numbers and a logo capped at 140px
+   wide / 80px tall, and both use this exact same component -- see
+   buildSponsorPickerList() in Account.html). Scrolls internally past a
+   handful of sponsors rather than growing the modal indefinitely. */
+.rc-sponsor-pick-list { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; margin: 10px 0; }
+/* Tier badges (_rcTierBadge output) sit inline in this same list, above
+   each tier's group of cards -- a bit of top margin separates one tier's
+   badge from the previous tier's last card. */
+.rc-sponsor-pick-list .rc-badge-chip { margin-top: 6px; }
+.rc-sponsor-pick-list .rc-badge-chip:first-child { margin-top: 0; }
+.rc-sponsor-pick-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.rc-sponsor-pick-card:hover { border-color: var(--rc-ok); }
+/* Selected state, registration/Choose Sponsors modal only -- a light
+   green fill plus a green border (Matt's call, 2026-08-30 -- NOT red,
+   since red reads as an error/warning color everywhere else on the site). */
+.rc-sponsor-pick-card-selected { border-color: var(--rc-ok); background: #eaf6ec; }
+/* Read-only variant -- the Sponsors page's "your 3 sponsors" display, not
+   a picker, so no hover/selection affordance. */
+.rc-sponsor-pick-card-readonly { cursor: default; }
+.rc-sponsor-pick-card-readonly:hover { border-color: var(--rc-silver); }
+/* Fixed-width column (min 150px), logo centered inside it -- so the text
+   column's left edge lands in the same place row to row no matter how
+   wide any one sponsor's actual logo file is, same reasoning as the admin
+   Sponsors popup's own logo column. */
+.rc-sponsor-pick-logo-col { min-width: 150px; flex: none; display: flex; align-items: center; justify-content: center; }
+.rc-sponsor-pick-logo { max-width: 140px; max-height: 80px; object-fit: contain; }
+.rc-sponsor-pick-text { flex: 1 1 auto; min-width: 0; }
+.rc-sponsor-pick-name { font-weight: 700; font-size: 14px; color: var(--rc-carbon); }
+.rc-sponsor-pick-terms { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
+/* Bonus in green / Penalty in red -- Matt's call, 2026-08-30 -- so the
+   upside and downside of a sponsor read apart from each other at a glance. */
+.rc-sponsor-pick-bonus { color: var(--rc-ok); }
+.rc-sponsor-pick-penalty { color: #a3341f; }
+
 .rc-dm-row {
   display: flex;
   align-items: center;
@@ -1167,6 +1214,36 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
 .rc-cs-stat-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* Next Race -- full-width banner card (its own .rc-quick-row below the
+   Registration Status/Current Seat row, one card filling it). Loosely
+   patterned on Matt's WEC reference mockup (event name + track + date/
+   time + round pill + track image), rebuilt in the site's own light/red
+   palette rather than copying the mockup's dark theme (Matt's established
+   rule elsewhere -- see the Current Seat class-pill comment). No flag/
+   location line -- Tracks has no country/location field yet to source
+   one from. */
+.rc-nextrace-card { flex: 1 1 100%; margin-top: 0; }
+.rc-nextrace-body { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.rc-nextrace-info { flex: 1 1 260px; min-width: 0; }
+.rc-nextrace-name { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; color: var(--rc-carbon); text-transform: uppercase; }
+.rc-nextrace-track { font-size: 14px; color: var(--rc-steel); margin-top: 6px; }
+.rc-nextrace-info .rc-cal-stats { margin-top: 14px; }
+.rc-nextrace-pill {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.rc-nextrace-pill-gold { background: #b8860b; }
+.rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; }
 
 @media (max-width: 900px) {
   .rc-details-row { grid-template-columns: 1fr; }
@@ -2287,25 +2364,32 @@ body.rc-modal-scroll-locked {
 /* border, radius) rather than inventing a new card style.               */
 /* -------------------------------------------------------------------- */
 .rc-cal-season { }
-.rc-cal-season-head { margin-bottom: 4px; }
-.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; color: var(--rc-carbon); margin: 0; }
-.rc-cal-season-sub { font-size: 12px; color: var(--rc-steel); margin-top: 4px; }
+.rc-cal-season-head { margin-bottom: 16px; }
+/* Same red underline as .rc-dash-card-title (Matt's call: every section
+   header on the site reads the same way) instead of a bare heading. */
+.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 
 /* Season-wide settings block (server password, classes, points tables,
    drop weeks, race day/frequency, track limits, private qualifying) --
    sits below the season name, above the race list, per Matt's call.
    Reuses .rc-cal-stats/.rc-cal-stat (the exact same chip component each
    race card uses) so this reads as one visual system with the cards
-   below it, not a separate design. */
-.rc-cal-season-details { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rc-silver); }
+   below it, not a separate design. No border-top (Matt's call, 2026-08-29
+   -- removed along with the "Times shown in your local timezone" sub-line
+   that used to sit right above it) -- the title's own red underline above
+   already separates the header from this block. */
+.rc-cal-season-details { margin-top: 16px; }
 .rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .rc-cal-classes-label { font-size: 12px; color: var(--rc-steel); margin-right: 2px; }
+/* Same shape as .rc-cs-class-pill (Current Seat card) -- rounded
+   rectangle, not an oval pill (Matt's call: every class badge on the
+   site uses this one shape). */
 .rc-cal-class-pill {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
   color: var(--rc-white);
@@ -2352,13 +2436,51 @@ body.rc-modal-scroll-locked {
   padding: 16px 18px;
   width: 100%;
 }
+/* Big round number, left edge of the card (Matt's call) -- plain 1/2/3,
+   own column with a small 5px padding, vertically centered against the
+   race-info column next to it (align-self:center, rather than pinned to
+   the row's top). Muted via reduced opacity, on top of the already-gray
+   steel color, so it blends into the card instead of competing with the
+   race details for attention. Special Events/byes never render this
+   element at all (see raceCard()), so it never eats into their layout. */
+.rc-cal-round-number {
+  flex: none;
+  min-width: 150px;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  font-family: var(--rc-font-heading);
+  font-size: 120px;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--rc-steel);
+  opacity: 0.35;
+  user-select: none;
+}
+/* Special Events get a bit more of the same gold the star icon already
+   uses (Matt's call: "stick out a little better") -- a gold-tinted
+   border plus the same diagonal "finish flag" accent shape the Dashboard
+   cards use, just gold instead of red. */
+.rc-cal-race-special { border-color: #b8860b; }
+.rc-cal-race-special::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 4px;
+  background: #b8860b;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
 /* Track image, right side of every race/special-event card -- Matt's
    call: assets/tracks/{TrackID}.png, capped at 250px either dimension,
    object-fit:contain to keep the image's own aspect ratio inside that
    box. A round with no image uploaded yet (404) hides itself silently via
    the onerror handler in raceCard() -- no broken-image icon. */
-.rc-cal-track-img { flex: none; max-width: 250px; max-height: 250px; object-fit: contain; border-radius: 6px; }
+.rc-cal-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; }
 
 /* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
    covering the whole card once its start time has passed (Matt's call --
@@ -2404,7 +2526,11 @@ body.rc-modal-scroll-locked {
 .rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
 .rc-cal-datetime svg { color: var(--rc-steel); flex-shrink: 0; }
 
-.rc-cal-sessions { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--rc-steel); margin-top: 8px; }
+/* Practice/Qualifying in-game times, trailing the In-Game Race Start time
+   on the same line (Matt's call, 2026-08-30 -- previously their own row
+   below). Muted gray/normal-weight so Race Start still reads as the
+   primary figure on that line. */
+.rc-cal-igtimes-extra { color: var(--rc-steel); font-weight: 400; }
 
 /* Stat chips -- tires / wear / fuel multiplier / setup / weather / points
    tier. Small icon + value, same flat-stroke icon language as the rest
@@ -2423,6 +2549,11 @@ body.rc-modal-scroll-locked {
   color: var(--rc-carbon);
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
+/* Special Event's Prize Pool chip -- same gold as the star icon, more of
+   it (Matt's call), so the money chip itself reads as special too instead
+   of blending into the same gray chip as every other stat. */
+.rc-cal-stat-gold { background: rgba(184, 134, 11, 0.1); border-color: #b8860b; color: #8a6508; }
+.rc-cal-stat-gold svg { color: #b8860b; }
 
 /* -------------------------------------------------------------------- */
 /* Account.html's Help section (renderHelpSection()) -- two stacked      */

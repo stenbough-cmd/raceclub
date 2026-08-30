@@ -313,7 +313,7 @@
   var PLACEHOLDER_LABELS = {
     finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
-    objectives: 'Objectives', sponsors: 'Sponsors', halloffame: 'Hall of Fame',
+    objectives: 'Objectives', halloffame: 'Hall of Fame',
     admin: 'Admin'
   };
 
@@ -366,6 +366,16 @@
         nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
           showSection('calendar');
           renderCalendarSection(currentToken);
+        }));
+        return;
+      }
+      // Sponsors is real content now (renderSponsorsSection), same
+      // lazy-fetch-on-click pattern as Calendar -- it's not shown until
+      // the driver actually opens it.
+      if (item.id === 'sponsors') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showSection('sponsors');
+          renderSponsorsSection(currentToken);
         }));
         return;
       }
@@ -456,6 +466,16 @@
     section.innerHTML = '';
     section.appendChild(el('h2', null, 'Dashboard'));
 
+    // Next Race -- full-width banner card below the two half-width cards
+    // (its own .rc-quick-row so it picks up the same row spacing, just
+    // with one card filling it). Gated behind registration (Matt's call)
+    // -- built here, before topRow, purely so Registration Status's
+    // onRegistered callback below can also swap it from the "not
+    // registered" notice to the real schedule the moment a driver joins,
+    // same trick already used for refreshing Current Seat.
+    var nextRaceRow = el('div', 'rc-quick-row');
+    nextRaceRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
+
     var topRow = el('div', 'rc-quick-row');
     // Current Seat is built first, purely so Registration Status can wire
     // its own onRegistered callback to also refresh Current Seat -- both
@@ -463,10 +483,21 @@
     var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
     var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
       if (seatCard.rcRefresh) seatCard.rcRefresh();
+      // Next Race has no rcRefresh of its own (it's a plain render, not a
+      // stateful card) -- re-fetch both pieces it's gated/built on and
+      // just rebuild it in place.
+      Promise.all([
+        fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
+        fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; })
+      ]).then(function (results) {
+        nextRaceRow.innerHTML = '';
+        nextRaceRow.appendChild(nextRaceCard(results[1], results[0]));
+      });
     });
     topRow.appendChild(regCard);
     topRow.appendChild(seatCard);
     section.appendChild(topRow);
+    section.appendChild(nextRaceRow);
   }
 
   function formatMoney(n) {
@@ -676,6 +707,85 @@
     return card;
   }
 
+  // Full-width "quick glance" banner, backed by action=getNextRace
+  // (handleGetNextRace, DataCache.gs) -- reuses the exact same merged
+  // round/special/bye entries the Calendar page computes, so this can
+  // never show a different "next race" than Calendar would (Matt's call).
+  // Like every other Dashboard card, this never fetches or spinners on
+  // its own, first paint or otherwise -- rendered straight from data the
+  // page already prefetched in parallel with the profile. Reuses the same
+  // JSON shape/fields the Calendar's raceCard() already works with
+  // (eventName/track/layout/startUtc/trackId/roundNum) rather than
+  // inventing a second one, and the same trackImageSrc() convention for
+  // the track image (assets/tracks/{TrackID}.png, silently hidden if
+  // missing) -- no live location/country data exists on Tracks yet, so
+  // (unlike the WEC reference mockup) there's no flag/location line here.
+  //
+  // Matt's call (2026-08-30): this card stays gated behind registration,
+  // same as Current Seat -- a driver who hasn't joined the open season
+  // gets the same "Not on a team yet" nudge rather than seeing the
+  // schedule for a season they're not part of. Gated client-side off
+  // activeSeasonData (the same getActiveSeason payload Registration
+  // Status already renders from) rather than a second server-side check,
+  // since getNextRace's schedule data isn't otherwise driver-specific.
+  function nextRaceCard(data, activeSeasonData) {
+    var card = el('div', 'rc-panel rc-nextrace-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Next Race'));
+
+    var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
+    if (!registered) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to view the next race.'));
+      return card;
+    }
+
+    if (!data || !data.success) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Could not load the next race right now.'));
+      return card;
+    }
+    if (!data.hasNextRace) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No season currently open, or the schedule has already finished.'));
+      return card;
+    }
+
+    var driverTz = '';
+    try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
+
+    var isSpecial = data.kind === 'special';
+    var body = el('div', 'rc-nextrace-body');
+
+    var info = el('div', 'rc-nextrace-info');
+    var nameWrap = el('div', 'rc-nextrace-name');
+    nameWrap.appendChild(document.createTextNode(data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum))));
+    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- money only, no championship points.'));
+    info.appendChild(nameWrap);
+
+    info.appendChild(el('div', 'rc-nextrace-track',
+      escapeHtml(data.track || '(no track)') + (data.layout ? ' &middot; ' + escapeHtml(data.layout) : '')));
+
+    var stats = el('div', 'rc-cal-stats');
+    stats.appendChild(calStat(ICON_CLOCK, formatRaceDateTime(data.startUtc, driverTz), 'Start time, converted to your local timezone'));
+    info.appendChild(stats);
+
+    if (isSpecial) {
+      info.appendChild(el('span', 'rc-nextrace-pill rc-nextrace-pill-gold', 'SPECIAL EVENT'));
+    } else if (data.roundNum && data.totalRounds) {
+      info.appendChild(el('span', 'rc-nextrace-pill', 'ROUND ' + data.roundNum + ' OF ' + data.totalRounds));
+    }
+    body.appendChild(info);
+
+    if (data.trackId) {
+      var trackImg = document.createElement('img');
+      trackImg.className = 'rc-nextrace-track-img';
+      trackImg.src = trackImageSrc(data.trackId);
+      trackImg.alt = data.track || '';
+      trackImg.onerror = function () { trackImg.style.display = 'none'; };
+      body.appendChild(trackImg);
+    }
+
+    card.appendChild(body);
+    return card;
+  }
+
   // ---------------------------------------------------------------------
   // SEASON REGISTRATION MODAL -- restored from the pre-rebuild dashboard's
   // design (Matt's call: keep the modal's look/flow, drop the pre-ECO
@@ -691,14 +801,102 @@
   //     there's nothing real to gate against; every class is open to
   //     every driver.
   //   - No separate chooseClass server action/state -- picking a class is
-  //     purely a client-side filter now. The one server write is
-  //     joinTeam itself, which requires the driver's 3 sponsor picks up
-  //     front (Registrations.SponsorID1-3) -- team and sponsors lock
-  //     together in one step, there's no later "pick your sponsors" phase.
+  //     purely a client-side filter now. The one server write is joinTeam
+  //     itself, which locks the team immediately (Registrations.TeamID).
+  //     Sponsor picks (SponsorID1-3) are OPTIONAL as of Matt's call
+  //     (2026-08-30) -- a driver can skip them here and pick them later
+  //     from the Sponsors page (openChooseSponsorsModal below), any time
+  //     before the season itself starts.
   //   - Team cards show this car's assigned Tier + Car Objective (name +
   //     bonus payout) instead of the old bonus/penalty perk chips -- the
   //     actual ECO-era incentive attached to a seat.
   // ---------------------------------------------------------------------
+
+  // Shared sponsor-picking list -- every sponsor as a selectable card
+  // (logo capped 140px wide / 80px tall, name, bonus + penalty numbers),
+  // used identically by the registration flow's sponsor-pick step above
+  // and the Sponsors page's "Choose Sponsors" modal below (Matt's call,
+  // 2026-08-30: one shared listing, not two separately-built pickers).
+  // Clicking a sponsor toggles it; picking a 4th bumps the oldest of the
+  // current 3 rather than refusing the click, so this stays a plain
+  // click-to-toggle interaction with no separate "deselect first" step.
+  function buildSponsorPickerList(sponsors, preselected) {
+    var wrap = el('div', 'rc-sponsor-pick-list');
+    var selected = (preselected || []).slice(0, 3);
+    var cardBySponsorId = {};
+
+    function refreshSelectedLook() {
+      Object.keys(cardBySponsorId).forEach(function (id) {
+        cardBySponsorId[id].classList.toggle('rc-sponsor-pick-card-selected', selected.indexOf(id) !== -1);
+      });
+    }
+
+    function addCard(s) {
+      var card = el('div', 'rc-sponsor-pick-card');
+      // Fixed-width column (min 150px), logo centered inside it -- same
+      // "text column's left edge lands in the same place row to row"
+      // reasoning as the admin Sponsors popup's logo column, just wider
+      // to fit the 140px logo cap plus breathing room either side.
+      var logoCol = el('div', 'rc-sponsor-pick-logo-col');
+      var logo = document.createElement('img');
+      logo.className = 'rc-sponsor-pick-logo';
+      logo.alt = '';
+      logo.src = sponsorLogoSrc(s.Name || '');
+      // Hides gracefully rather than a broken-image icon -- same pattern
+      // every other sponsor/track/manufacturer logo in the site uses.
+      logo.onerror = function () { this.style.display = 'none'; };
+      logoCol.appendChild(logo);
+      card.appendChild(logoCol);
+
+      var textCol = el('div', 'rc-sponsor-pick-text');
+      textCol.appendChild(el('div', 'rc-sponsor-pick-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+      var bonusAmt = Number(s.BonusAmount) || 0;
+      var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+      // Bonus in green / Penalty in red -- Matt's call, 2026-08-30 -- so
+      // the upside and downside of a sponsor read apart at a glance.
+      textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
+      textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+      card.appendChild(textCol);
+
+      card.addEventListener('click', function () {
+        var idx = selected.indexOf(s.SponsorID);
+        if (idx !== -1) {
+          selected.splice(idx, 1);
+        } else {
+          if (selected.length >= 3) selected.shift();
+          selected.push(s.SponsorID);
+        }
+        refreshSelectedLook();
+      });
+
+      wrap.appendChild(card);
+      cardBySponsorId[s.SponsorID] = card;
+    }
+
+    // Grouped by Tier (Safe -> Balanced -> Aggressive), same order and
+    // same _rcTierBadge() chip the admin Sponsors popup already uses
+    // (Matt's call, 2026-08-30: "make it obvious" which risk tier each
+    // sponsor is) -- a driver picking sponsors sees the same risk-level
+    // grouping an admin managing the catalog does.
+    var TIER_ORDER = ['Safe', 'Balanced', 'Aggressive'];
+    var byTier = {};
+    sponsors.forEach(function (s) {
+      var tier = s.Tier || 'Unclassified';
+      if (!byTier[tier]) byTier[tier] = [];
+      byTier[tier].push(s);
+    });
+    var tierOrder = TIER_ORDER.slice();
+    Object.keys(byTier).forEach(function (t) { if (tierOrder.indexOf(t) === -1) tierOrder.push(t); });
+    tierOrder.forEach(function (tier) {
+      var list = byTier[tier];
+      if (!list) return;
+      wrap.appendChild(_rcTierBadge(tier));
+      list.forEach(addCard);
+    });
+
+    refreshSelectedLook();
+    return { el: wrap, getSelected: function () { return selected.slice(); } };
+  }
   function buildRegistrationModal(profile, token, activeSeasonData, onDone) {
     var modal = showModal('Choose Your Class', { wide: true, onClose: function () { if (onDone) onDone(); } });
     var titleEl = modal.el.querySelector('.rc-modal-head h3');
@@ -858,9 +1056,11 @@
       return card;
     }
 
-    // Sponsors and team lock together in one action now (handleJoinTeam
-    // requires all 3 sponsor picks up front) -- there's no later "pick
-    // your sponsors" phase like the pre-rebuild design deferred to.
+    // Sponsors are OPTIONAL here now (Matt's call, 2026-08-30) -- a driver
+    // can skip picking them at registration and choose them later from the
+    // Sponsors page (openChooseSponsorsModal), any time before the season
+    // itself starts. The team pick is still the one thing that locks
+    // immediately and can't be undone.
     function openSponsorPickScreen(team, carClass) {
       setTitle('Pick Your Sponsors');
       var body = modal.body;
@@ -875,11 +1075,7 @@
       fetchApi('getSponsors', { token: token }).then(function (data) {
         body.innerHTML = '';
         body.appendChild(backBtn);
-        if (!data.success || !data.sponsors || data.sponsors.length < 3) {
-          body.appendChild(el('p', 'color:var(--rc-red);', 'Not enough sponsors are set up yet to complete registration.'));
-          return;
-        }
-        renderSponsorPickBody(body, data.sponsors, team, carClass);
+        renderSponsorPickBody(body, (data.success && data.sponsors) ? data.sponsors : [], team, carClass);
       }).catch(function () {
         body.innerHTML = '';
         body.appendChild(backBtn);
@@ -889,59 +1085,222 @@
 
     function renderSponsorPickBody(body, sponsors, team, carClass) {
       body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:10px 0;',
-        'Choose 3 different sponsors for the season. Joining ' + escapeHtml(team.teamName || team.teamId) + ' for ' + formatMoney(team.buyInCost) + ' -- once locked in, this cannot be undone.'));
+        'Choose 3 sponsors for the season, or skip and pick them later from the Sponsors page -- either way, joining ' +
+        escapeHtml(team.teamName || team.teamId) + ' for ' + formatMoney(team.buyInCost) + ' locks in now and can\'t be undone.'));
 
-      var selects = [0, 1, 2].map(function (i) {
-        var defaultName = sponsors[i % sponsors.length].Name;
-        return wizSelect(sponsors.map(function (s) { return s.Name; }), defaultName, function () {});
-      });
-      var row = el('div', 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;');
-      selects.forEach(function (sel, i) {
-        var col = el('div', 'flex:1;min-width:160px;');
-        col.appendChild(wizField('Sponsor ' + (i + 1), sel));
-        row.appendChild(col);
-      });
-      body.appendChild(row);
+      var enoughSponsors = sponsors.length >= 3;
+      var picker = enoughSponsors ? buildSponsorPickerList(sponsors, []) : null;
+      if (picker) {
+        body.appendChild(picker.el);
+      } else {
+        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:10px;',
+          'Not enough sponsors are set up yet to choose 3 -- skip for now and pick them later once more are added.'));
+      }
 
-      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin-bottom:10px;');
+      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin:4px 0 10px;');
       body.appendChild(errorLine);
 
-      var confirmBtn = el('button', null, 'Confirm & Lock In');
-      confirmBtn.type = 'button';
-      confirmBtn.className = 'rc-btn-primary';
-      confirmBtn.addEventListener('click', function () {
-        var byName = {};
-        sponsors.forEach(function (s) { byName[s.Name] = s.SponsorID; });
-        var picked = selects.map(function (sel) { return byName[sel.value]; });
-        var unique = picked.filter(function (id, i) { return picked.indexOf(id) === i; });
-        if (unique.length !== 3) { errorLine.textContent = 'Pick 3 different sponsors.'; return; }
+      var btnRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;');
 
+      function doJoin(sponsorIds) {
         confirmBtn.disabled = true;
+        skipBtn.disabled = true;
         confirmBtn.textContent = 'Locking In...';
-        fetchApi('joinTeam', {
-          method: 'POST', token: token,
-          body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId, sponsorId1: picked[0], sponsorId2: picked[1], sponsorId3: picked[2] }
-        }).then(function (data) {
+        var joinBody = { seasonId: activeSeasonData.seasonId, teamId: team.teamId };
+        if (sponsorIds.length === 3) {
+          joinBody.sponsorId1 = sponsorIds[0]; joinBody.sponsorId2 = sponsorIds[1]; joinBody.sponsorId3 = sponsorIds[2];
+        }
+        fetchApi('joinTeam', { method: 'POST', token: token, body: joinBody }).then(function (data) {
           if (!data.success) {
             confirmBtn.disabled = false;
+            skipBtn.disabled = false;
             confirmBtn.textContent = 'Confirm & Lock In';
             errorLine.textContent = data.message || (data.error === 'TEAM_TAKEN' ? 'That seat was just taken. Pick a different team.' : 'Could not complete registration.');
             if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
             return;
           }
-          showToast('You’re registered! Welcome to the season.', 'success');
+          showToast(sponsorIds.length === 3 ? 'You’re registered! Welcome to the season.' : 'You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
           modal.close();
           if (onDone) onDone();
         }).catch(function () {
           confirmBtn.disabled = false;
+          skipBtn.disabled = false;
           confirmBtn.textContent = 'Confirm & Lock In';
+          errorLine.textContent = 'Could not reach the server. Try again in a moment.';
+        });
+      }
+
+      var confirmBtn = el('button', null, 'Confirm & Lock In');
+      confirmBtn.type = 'button';
+      confirmBtn.className = 'rc-btn-primary';
+      confirmBtn.disabled = !enoughSponsors;
+      confirmBtn.addEventListener('click', function () {
+        var picked = picker ? picker.getSelected() : [];
+        if (picked.length !== 3) { errorLine.textContent = 'Pick 3 sponsors, or skip for now.'; return; }
+        doJoin(picked);
+      });
+      btnRow.appendChild(confirmBtn);
+
+      var skipBtn = el('button', null, 'Skip For Now');
+      skipBtn.type = 'button';
+      skipBtn.className = 'rc-btn-secondary';
+      skipBtn.addEventListener('click', function () { doJoin([]); });
+      btnRow.appendChild(skipBtn);
+
+      body.appendChild(btnRow);
+    }
+
+    showClassScreen();
+  }
+
+  // ---------------------------------------------------------------------
+  // SPONSORS PAGE (2026-08-30) -- fetches fresh every time the link is
+  // clicked, same lazy-fetch-on-click pattern as Calendar/League
+  // Management, backed by action=getMySponsors (handleGetMySponsors,
+  // DataCache.gs). Four states:
+  //   1. Not on a team -- nothing to show, no button (matches Next Race's
+  //      own "not registered" gate).
+  //   2. On a team, sponsors not chosen yet, season not started -- a
+  //      notice + "Choose Sponsors" button.
+  //   3. On a team, sponsors chosen, season not started -- the 3 sponsors
+  //      + a "Change Sponsors" button (still swappable pre-season).
+  //   4. Season started (Active/Completed) -- the 3 sponsors (or a "you
+  //      never picked" notice if still blank) with no button at all --
+  //      locked for the rest of the season, same rule that always applied,
+  //      just enforced at season-start now instead of at registration.
+  // ---------------------------------------------------------------------
+  function renderSponsorsSection(token) {
+    var section = document.getElementById('rc-section-sponsors');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(el('h2', 'margin-top:0;', 'Sponsors'));
+
+    var panel = el('div', 'rc-panel');
+    panel.appendChild(buildSpinner('Loading your sponsors...'));
+    section.appendChild(panel);
+
+    function render(data) {
+      panel.innerHTML = '';
+
+      if (!data || !data.success) {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Could not load your sponsors right now.'));
+        return;
+      }
+      if (!data.hasSeat) {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Not on a team yet -- register for a season to choose sponsors.'));
+        return;
+      }
+
+      if (data.hasSponsors) {
+        var grid = el('div', 'rc-sponsor-pick-list');
+        data.sponsors.forEach(function (s) {
+          var card = el('div', 'rc-sponsor-pick-card rc-sponsor-pick-card-readonly');
+          var logoCol = el('div', 'rc-sponsor-pick-logo-col');
+          var logo = document.createElement('img');
+          logo.className = 'rc-sponsor-pick-logo';
+          logo.alt = '';
+          logo.src = sponsorLogoSrc(s.Name || '');
+          logo.onerror = function () { this.style.display = 'none'; };
+          logoCol.appendChild(logo);
+          card.appendChild(logoCol);
+
+          var textCol = el('div', 'rc-sponsor-pick-text');
+          textCol.appendChild(el('div', 'rc-sponsor-pick-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+          var bonusAmt = Number(s.BonusAmount) || 0;
+          var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+          textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
+          textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+          card.appendChild(textCol);
+
+          grid.appendChild(card);
+        });
+        panel.appendChild(grid);
+      } else if (data.locked) {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'The season started before you chose your sponsors -- sponsors can no longer be picked this season.'));
+      } else {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;', 'You haven\'t chosen your sponsors yet.'));
+      }
+
+      if (!data.locked) {
+        var chooseBtn = el('button', 'rc-btn-primary rc-btn-sm', data.hasSponsors ? 'Change Sponsors' : 'Choose Sponsors');
+        chooseBtn.type = 'button';
+        chooseBtn.style.marginTop = '16px';
+        chooseBtn.addEventListener('click', function () {
+          openChooseSponsorsModal(token, data.seasonId, data.sponsors || [], function () {
+            renderSponsorsSection(token);
+          });
+        });
+        panel.appendChild(chooseBtn);
+      } else if (data.hasSponsors) {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season has started -- sponsors are locked in for the rest of it.'));
+      }
+    }
+
+    fetchApi('getMySponsors', { token: token }).then(render).catch(function () {
+      render({ success: false });
+    });
+  }
+
+  // "Choose Sponsors" / "Change Sponsors" popup -- reuses the exact same
+  // buildSponsorPickerList() the registration flow's sponsor-pick step
+  // uses (Matt's call: one shared listing, not two). No skip option here
+  // (unlike registration) -- a driver who opens this already has a team
+  // and is deliberately here to pick, so Cancel (closing the modal) is
+  // the "not now" path instead.
+  function openChooseSponsorsModal(token, seasonId, currentSponsors, onDone) {
+    var modal = showModal('Choose Your Sponsors', { wide: true });
+    var body = modal.body;
+    body.appendChild(buildSpinner('Loading sponsors...'));
+
+    fetchApi('getSponsors', { token: token }).then(function (data) {
+      body.innerHTML = '';
+      var sponsors = (data.success && data.sponsors) ? data.sponsors : [];
+      if (sponsors.length < 3) {
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Not enough sponsors are set up yet to choose 3.'));
+        return;
+      }
+
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 12px;', 'Pick 3 sponsors for the season. This can be changed again any time before the season starts.'));
+
+      var preselected = (currentSponsors || []).map(function (s) { return s.SponsorID; });
+      var picker = buildSponsorPickerList(sponsors, preselected);
+      body.appendChild(picker.el);
+
+      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin:10px 0;');
+      body.appendChild(errorLine);
+
+      var confirmBtn = el('button', 'rc-btn-primary', 'Confirm Sponsors');
+      confirmBtn.type = 'button';
+      confirmBtn.addEventListener('click', function () {
+        var picked = picker.getSelected();
+        if (picked.length !== 3) { errorLine.textContent = 'Pick 3 sponsors.'; return; }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Saving...';
+        fetchApi('chooseSponsors', {
+          method: 'POST', token: token,
+          body: { seasonId: seasonId, sponsorId1: picked[0], sponsorId2: picked[1], sponsorId3: picked[2] }
+        }).then(function (result) {
+          if (!result.success) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Confirm Sponsors';
+            errorLine.textContent = result.message || 'Could not save your sponsors.';
+            return;
+          }
+          showToast('Sponsors saved.', 'success');
+          modal.close();
+          if (onDone) onDone();
+        }).catch(function () {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirm Sponsors';
           errorLine.textContent = 'Could not reach the server. Try again in a moment.';
         });
       });
       body.appendChild(confirmBtn);
-    }
-
-    showClassScreen();
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -1300,10 +1659,7 @@
 
     var editBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Edit Season');
     editBtn.type = 'button';
-    editBtn.disabled = true;
-    editBtn.style.cssText = 'opacity:0.55;cursor:not-allowed;';
-    editBtn.title = 'No season list/edit endpoint yet.';
-    editBtn.addEventListener('click', function () { showToast('Editing an existing season isn\'t wired up yet.', 'info'); });
+    editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token); });
     row.appendChild(editBtn);
 
     // Only shows up once a draft actually exists -- there's nothing to
@@ -1346,8 +1702,8 @@
     return el_;
   }
 
-  function calStat(iconSvg, text, tooltip) {
-    var chip = el('span', 'rc-cal-stat', iconSvg + '<span>' + escapeHtml(text) + '</span>');
+  function calStat(iconSvg, text, tooltip, extraClass) {
+    var chip = el('span', 'rc-cal-stat' + (extraClass ? ' ' + extraClass : ''), iconSvg + '<span>' + escapeHtml(text) + '</span>');
     if (tooltip) withTooltip(chip, tooltip);
     return chip;
   }
@@ -1421,8 +1777,21 @@
       wrap.appendChild(classesRow);
     }
 
-    var tiers = ['Sprint', 'Medium', 'Long'];
     var tierStats = el('div', 'rc-cal-stats');
+    // Practice/Qualifying session LENGTH -- season-wide (seasonDetails.
+    // raceSettings.practiceLengthMin/qualifyLengthMin, set once in the
+    // wizard's Race Settings step). Sits BEFORE the Sprint/Medium/Long
+    // race-length chips below, same row (Matt's call, 2026-08-30) -- NOT
+    // the per-round in-game start times, which stay on each race card in
+    // the list below.
+    var raceSettingsForLengths = details.raceSettings || {};
+    if (raceSettingsForLengths.practiceLengthMin) {
+      tierStats.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettingsForLengths.practiceLengthMin + ' min', 'Practice session length (season-wide)'));
+    }
+    if (raceSettingsForLengths.qualifyLengthMin) {
+      tierStats.appendChild(calStat(ICON_CLOCK, 'Qualifying · ' + raceSettingsForLengths.qualifyLengthMin + ' min', 'Qualifying session length (season-wide)'));
+    }
+    var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
@@ -1448,11 +1817,24 @@
     }
 
     var isSpecial = entry.kind === 'special';
-    var card = el('div', 'rc-cal-race' + (entry.finished ? ' rc-cal-finished' : ''));
+    var card = el('div', 'rc-cal-race' +
+      (entry.finished ? ' rc-cal-finished' : '') +
+      (isSpecial ? ' rc-cal-race-special' : ''));
+
+    // Big round number, left edge of the card -- Matt's call: plain 1/2/3
+    // (no zero-padding), muted so it blends into the card instead of
+    // competing with the race details, vertically centered against the
+    // info column next to it rather than pinned to the top. Special
+    // Events and bye weeks don't consume a round number, so they don't
+    // get this column at all -- their body/image start flush left.
+    if (!isSpecial && entry.roundNum) {
+      card.appendChild(el('div', 'rc-cal-round-number', String(entry.roundNum)));
+    }
 
     // Everything except the track image lives in this column -- .rc-cal-race
-    // is a flex row (card body + track image aside) so the image can sit to
-    // the right at a fixed max size regardless of how tall the text side gets.
+    // is a flex row (round number + card body + track image aside) so the
+    // image can sit to the right at a fixed max size regardless of how
+    // tall the text side gets.
     var body = el('div', 'rc-cal-race-body');
 
     var head = el('div', 'rc-cal-race-head');
@@ -1470,18 +1852,21 @@
     var datetime = el('div', 'rc-cal-datetime');
     var dtSpan = el('span', null, ICON_CLOCK + '<span>' + escapeHtml(formatRaceDateTime(entry.startUtc, driverTz)) + '</span>');
     datetime.appendChild(dtSpan);
+    // In-Game Race Start, Practice, and Qualifying all live on this one
+    // line now (Matt's call, 2026-08-30 -- Practice/Qualifying used to get
+    // their own row below) -- Practice/Qualifying trail the Race Start
+    // time in muted gray text so Race Start still reads as the primary
+    // figure at a glance.
     if (entry.igRaceStart) {
-      var igSpan = el('span', null, ICON_FLAG + '<span>In-Game Race Start ' + escapeHtml(entry.igRaceStart) + '</span>');
+      var igExtras = [];
+      if (entry.igPracticeStart) igExtras.push('Practice ' + escapeHtml(entry.igPracticeStart));
+      if (entry.igQualifyStart) igExtras.push('Qualifying ' + escapeHtml(entry.igQualifyStart));
+      var igText = 'In-Game Race Start ' + escapeHtml(entry.igRaceStart);
+      if (igExtras.length) igText += ' <span class="rc-cal-igtimes-extra">(' + igExtras.join(' &middot; ') + ')</span>';
+      var igSpan = el('span', null, ICON_FLAG + '<span>' + igText + '</span>');
       datetime.appendChild(igSpan);
     }
     body.appendChild(datetime);
-
-    if (entry.igPracticeStart || entry.igQualifyStart) {
-      var sessions = el('div', 'rc-cal-sessions');
-      if (entry.igPracticeStart) sessions.appendChild(el('span', null, 'Practice ' + escapeHtml(entry.igPracticeStart)));
-      if (entry.igQualifyStart) sessions.appendChild(el('span', null, 'Qualifying ' + escapeHtml(entry.igQualifyStart)));
-      body.appendChild(sessions);
-    }
 
     var stats = el('div', 'rc-cal-stats');
     stats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
@@ -1489,7 +1874,7 @@
     if (isSpecial) {
       var poolTotal = (entry.moneyPlaces || []).reduce(function (s, v) { return s + (Number(v) || 0); }, 0) +
         Object.keys(entry.bonusPayouts || {}).reduce(function (s, k) { return s + (Number(entry.bonusPayouts[k]) || 0); }, 0);
-      stats.appendChild(calStat(ICON_FLAG, 'Prize Pool $' + poolTotal.toLocaleString(), 'Top 10 money payout + bonus categories'));
+      stats.appendChild(calStat(ICON_FLAG, 'Prize Pool $' + poolTotal.toLocaleString(), 'Top 10 money payout + bonus categories', 'rc-cal-stat-gold'));
     } else if (entry.raceLengthTier) {
       stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthTier, 'Race length tier'));
     }
@@ -1561,10 +1946,17 @@
       var driverTz = '';
       try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
 
-      var panel = el('div', 'rc-panel rc-cal-season');
+      // rc-dash-card gives the whole calendar container the same chrome as
+      // the Dashboard cards (Matt's call): the checkered corner, the red
+      // "finish flag" top accent, and a slightly heavier drop shadow.
+      var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
       var head = el('div', 'rc-cal-season-head');
-      head.appendChild(el('h3', 'rc-cal-season-title', res.seasonName));
-      head.appendChild(el('div', 'rc-cal-season-sub', 'Times shown in your local timezone' + (driverTz ? ' (' + driverTz + ')' : '') + '.'));
+      // "Season N: <name>" -- N is the numeric suffix off SeasonID (e.g.
+      // "SZN-0003" -> 3), same sequential number the ID itself already
+      // encodes, so there's no separate "season number" to maintain.
+      var seasonNumMatch = /(\d+)\s*$/.exec(String(res.seasonId || ''));
+      var seasonNumLabel = seasonNumMatch ? String(parseInt(seasonNumMatch[1], 10)) : '';
+      head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + res.seasonName));
       panel.appendChild(head);
 
       panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}));
@@ -1665,6 +2057,17 @@
     var row = WIZARD_TRACK_ROWS.filter(function (r) { return r.TrackName === trackName && r.Layout === layout; })[0]
       || WIZARD_TRACK_ROWS.filter(function (r) { return r.TrackName === trackName; })[0];
     return row ? row.TrackID : '';
+  }
+  // Reverse of resolveTrackId() -- needed only for Edit Season, which loads
+  // existing rounds keyed by TrackID and has to put the wizard's Track/
+  // Layout dropdowns back on the right names. Falls back to the first
+  // track in the list if the round's TrackID isn't in the currently
+  // loaded Tracks tab (e.g. a track since deactivated).
+  function trackNameFromId(trackId) {
+    var row = WIZARD_TRACK_ROWS.filter(function (r) { return r.TrackID === trackId; })[0];
+    if (row) return { track: row.TrackName, layout: row.Layout };
+    var fallbackTrack = WIZARD_TRACK_LIST[0];
+    return { track: fallbackTrack, layout: trackLayoutOptions(fallbackTrack)[0] };
   }
   // Pulls the live track/layout list from the Tracks tab (action=getTracks,
   // Website.gs) and overwrites WIZARD_TRACK_LIST/WIZARD_TRACK_LAYOUTS/
@@ -2003,6 +2406,12 @@
     } catch (err) { return null; }
   }
   function saveWizardDraft(state) {
+    // Editing an existing season never touches the "Create a Season" draft
+    // -- they're unrelated flows sharing one localStorage key would let an
+    // in-progress edit silently clobber (or resume into) a half-finished
+    // new-season draft. An edit's only save point is finishEditWizard()'s
+    // real updateSeason call.
+    if (state && state.__editSeasonId) return;
     try { localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify(state)); } catch (err) { /* storage full/unavailable -- draft just won't persist this time */ }
   }
   function clearWizardDraft() {
@@ -2019,6 +2428,35 @@
     Promise.all([loadWizardTrackList(), loadWizardCarList()]).then(function () {
       loadingModal.close();
       openSeasonWizard();
+    });
+  }
+
+  // League Management's "Edit Season" button -- loads the same track/car
+  // reference data the wizard always needs, plus the season itself
+  // (action=getSeasonForEdit, handleGetSeasonForEdit in DataCache.gs:
+  // whichever season is most recent, any status, with a `locked` flag and
+  // a `raced` flag per round). buildEditWizardState() turns that into the
+  // same shape defaultWizardState() produces so the existing wizard pages
+  // render it without any per-field special-casing beyond the lock checks
+  // already built into renderWizardSeasonDetailsPage/renderWizardRaceEventsPage.
+  function openSeasonEditWizardWithLoad(token) {
+    var loadingModal = showModal('Edit Season', { wide: true });
+    loadingModal.body.appendChild(buildSpinner('Loading season...'));
+    Promise.all([loadWizardTrackList(), loadWizardCarList(), fetchApi('getSeasonForEdit', { token: token })]).then(function (results) {
+      var seasonRes = results[2];
+      loadingModal.close();
+      if (!seasonRes || !seasonRes.success) {
+        showToast('Could not load the season to edit.', 'error');
+        return;
+      }
+      if (!seasonRes.hasSeason) {
+        showToast('No season exists yet -- create one first.', 'info');
+        return;
+      }
+      openSeasonWizard(buildEditWizardState(seasonRes));
+    }).catch(function () {
+      loadingModal.close();
+      showToast('Could not reach the server to load the season.', 'error');
     });
   }
 
@@ -2177,6 +2615,7 @@
     container.appendChild(wizSubhead('Access & Server Behavior'));
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
     pwInput.style.maxWidth = '50%';
+    pwInput.classList.add('rc-wiz-password-field'); // exempted from the locked-season blanket-disable below
     requireField(pwInput, requiredEls);
     container.appendChild(wizField('Default Password', pwInput));
 
@@ -2397,6 +2836,23 @@
     multiplierInput.style.maxWidth = '25%'; // half the wizard's usual 50% select width (Matt's call)
     container.appendChild(wizField('Objective Bonus Multiplier', multiplierInput,
       'A car\'s objective bonus is its own (randomized) seat cost times this multiplier -- e.g. a $3,000 seat cost at 1.5x pays a $4,500 objective bonus.'));
+
+    // Locked season (Matt's call, 2026-08-29): once any round has been
+    // raced, this whole page freezes except the password -- blanket
+    // disable every input/select/textarea just built above rather than
+    // threading a locked check through each individual field. Inserted at
+    // the very top so it reads first, before the fields it explains.
+    if (state.__locked) {
+      var lockNote = el('div', 'rc-panel', '');
+      lockNote.style.cssText = 'border-color:var(--rc-red);background:#fdf2f2;margin-bottom:16px;';
+      lockNote.appendChild(el('div', 'font-weight:700;color:var(--rc-carbon);font-size:13px;', 'This season has raced rounds'));
+      lockNote.appendChild(el('div', 'color:var(--rc-steel);font-size:12.5px;margin-top:4px;',
+        'Season Details are locked -- only the Default Password can still change. On the next page, only rounds that haven\'t been raced yet stay editable.'));
+      container.insertBefore(lockNote, container.firstChild);
+      container.querySelectorAll('input, select, textarea').forEach(function (fieldEl) {
+        if (!fieldEl.classList.contains('rc-wiz-password-field')) fieldEl.disabled = true;
+      });
+    }
   }
 
   // Keeps state.races the right length whenever Race Events opens.
@@ -2413,7 +2869,26 @@
     }
     if (state.races.length > n) state.races.length = n;
   }
+  // Shared by syncByeWeekDates and the bye-week <select> handlers below --
+  // finds the first slot (starting at preferredIndex, wrapping around)
+  // that isn't already claimed by another bye week and isn't the same day
+  // as a Special Event. Falls back to the season's very last slot if
+  // everything else is taken, same "never leave it blank" fallback
+  // computeRaceDates() already uses.
+  function pickAvailableSlot(slots, usedDates, specialDateSet, preferredIndex) {
+    var ordered = slots.slice(preferredIndex).concat(slots.slice(0, preferredIndex));
+    for (var i = 0; i < ordered.length; i++) {
+      if (!specialDateSet[ordered[i]] && !usedDates[ordered[i]]) return ordered[i];
+    }
+    return slots[slots.length - 1] || '';
+  }
   // Keeps state.byeWeekDates the right length whenever Race Events opens.
+  //
+  // Matt's call (2026-08-30): a bye week can never land on the same day as
+  // a Special Event either -- same "no two events share a calendar day"
+  // rule computeRaceDates() already enforces for rounds, applied here so a
+  // bye week auto-reassigns off any slot a Special Event's date now
+  // occupies (and off any slot another bye week already claimed).
   function syncByeWeekDates(state) {
     var n = Math.max(0, Math.min(maxByeDropForRaces(state.numRaces), parseInt(state.byeWeeks, 10) || 0));
     if (!state.byeWeekDates) state.byeWeekDates = [];
@@ -2421,10 +2896,16 @@
     if (state.byeWeekDates.length > n) state.byeWeekDates.length = n;
     var raceCount = Math.max(0, parseInt(state.numRaces, 10) || 0);
     var slots = computeSeasonSlots(state);
+    var specialDateSet = {};
+    (state.specialEvents || []).forEach(function (evt) { if (evt.date) specialDateSet[evt.date] = true; });
+    var usedDates = {};
     for (var i = 0; i < n; i++) {
-      if (!state.byeWeekDates[i] || slots.indexOf(state.byeWeekDates[i]) === -1) {
-        state.byeWeekDates[i] = slots[raceCount + i] || slots[slots.length - 1] || '';
+      var current = state.byeWeekDates[i];
+      if (!current || slots.indexOf(current) === -1 || specialDateSet[current] || usedDates[current]) {
+        current = pickAvailableSlot(slots, usedDates, specialDateSet, Math.min(raceCount + i, slots.length - 1));
       }
+      state.byeWeekDates[i] = current;
+      usedDates[current] = true;
     }
   }
   // Keeps state.specialEvents the right length whenever Race Events opens.
@@ -2437,17 +2918,28 @@
 
   // Page 2 -- one card per race slot generated from Number Of Races, plus
   // one money-only card per Special Event.
-  function renderWizardRaceEventsPage(state, container, requiredEls) {
+  function renderWizardRaceEventsPage(state, container, requiredEls, shakeModal) {
     var raceDateInputs = [];
     function refreshRaceDates() {
       var dates = computeRaceDates(state);
       raceDateInputs.forEach(function (input, i) { input.value = dates[i] || ''; });
     }
 
+    // Bye-week <select> elements, in state.byeWeekDates order -- kept
+    // around so refreshByeWeekDates() (called whenever a Special Event's
+    // date changes, below) can push a reassigned date straight into the
+    // already-rendered dropdown without a full page re-render.
+    var byeSelectInputs = [];
+    function refreshByeWeekDates() {
+      syncByeWeekDates(state);
+      byeSelectInputs.forEach(function (select, i) { select.value = state.byeWeekDates[i] || ''; });
+      refreshRaceDates();
+    }
+
     if (state.byeWeeks > 0) {
       container.appendChild(wizSubhead('Bye Weeks'));
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Pick which scheduled week each bye lands on -- any race that would have landed there automatically moves to the next available week.'));
+        'Pick which scheduled week each bye lands on -- any race that would have landed there automatically moves to the next available week. A bye week can\'t share a day with a Special Event either -- picking one bumps the bye to the next open week.'));
       var byeRow = el('div', 'rc-wiz-field-pair');
       var slots = computeSeasonSlots(state);
       state.byeWeekDates.forEach(function (val, idx) {
@@ -2459,10 +2951,31 @@
           select.appendChild(o);
         });
         select.addEventListener('change', function () {
-          state.byeWeekDates[idx] = select.value;
+          var chosen = select.value;
+          var specialDateSet = {};
+          (state.specialEvents || []).forEach(function (evt) { if (evt.date) specialDateSet[evt.date] = true; });
+          if (specialDateSet[chosen]) {
+            // Picked a date a Special Event already owns -- shake the
+            // modal (same feedback as an unfilled required field) and
+            // default to the NEXT option in this same dropdown instead of
+            // silently accepting the pick (Matt's call, 2026-08-30),
+            // wrapping around and skipping any date another bye week
+            // already claimed.
+            if (shakeModal) shakeModal();
+            var usedDates = {};
+            state.byeWeekDates.forEach(function (d, i) { if (i !== idx && d) usedDates[d] = true; });
+            var startIdx = slots.indexOf(chosen);
+            for (var step = 1; step <= slots.length; step++) {
+              var candidate = slots[(startIdx + step) % slots.length];
+              if (!specialDateSet[candidate] && !usedDates[candidate]) { chosen = candidate; break; }
+            }
+            select.value = chosen;
+          }
+          state.byeWeekDates[idx] = chosen;
           refreshRaceDates();
         });
         requireField(select, requiredEls);
+        byeSelectInputs.push(select);
         var col = el('div', 'rc-wiz-field');
         col.appendChild(wizLabel('Bye Week ' + (idx + 1) + ' Date'));
         col.appendChild(select);
@@ -2539,6 +3052,19 @@
       requireField(igRace, requiredEls);
       card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(igPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(igQualify, 'Sim Time')));
       card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(igRace, 'Sim Time')));
+
+      // Editing an already-raced round is never allowed (Matt's call) --
+      // freeze every field this specific card just built, and label it,
+      // rather than touching the season-wide lock check above (a season
+      // can be locked overall while still having later, unraced rounds
+      // stay fully editable).
+      if (race.raced) {
+        var racedBadge = el('span', null, 'Raced — Locked');
+        racedBadge.style.cssText = 'display:inline-block;margin-left:10px;padding:2px 8px;border-radius:4px;background:var(--rc-steel);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;vertical-align:middle;';
+        card.querySelector('h4').appendChild(racedBadge);
+        card.querySelectorAll('input, select, textarea').forEach(function (fieldEl) { fieldEl.disabled = true; });
+      }
+
       container.appendChild(card);
     });
 
@@ -2564,7 +3090,14 @@
 
         var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
         evtDate.style.maxWidth = '50%';
-        evtDate.addEventListener('input', function () { evt.date = evtDate.value; });
+        evtDate.addEventListener('input', function () {
+          evt.date = evtDate.value;
+          // A Special Event's date can now collide with an already-picked
+          // bye week -- resolve that the same way a colliding round does
+          // (bump to the next open slot) rather than leaving two events
+          // silently stacked on one day.
+          refreshByeWeekDates();
+        });
         requireField(evtDate, requiredEls);
         var evtStartTime = el('input'); evtStartTime.type = 'time'; evtStartTime.value = evt.startTime || '';
         evtStartTime.addEventListener('input', function () { evt.startTime = evtStartTime.value; });
@@ -2836,11 +3369,69 @@
     return merged;
   }
 
-  function openSeasonWizard() {
-    var existingDraft = loadWizardDraft();
-    var state = normalizeWizardState(existingDraft);
+  // Builds wizard state from an existing season (handleGetSeasonForEdit)
+  // instead of a localStorage draft -- same deep-merge-onto-defaults
+  // pattern as normalizeWizardState() above, for the same reason (a field
+  // the wizard expects today might not exist in an older season's stored
+  // seasonDetails). state.__editSeasonId and state.__locked drive every
+  // edit-specific branch elsewhere (saveWizardDraft becoming a no-op, the
+  // Season Details page's blanket-disable, the Race Events page's
+  // per-round "Raced -- Locked" treatment, and finishEditWizard() below
+  // calling updateSeason instead of createSeason).
+  function buildEditWizardState(ctx) {
+    var base = defaultWizardState();
+    var details = ctx.seasonDetails || {};
+    var merged = Object.assign({}, base, details);
+    merged.seasonName = ctx.seasonName || '';
+    merged.classes = Object.assign({}, base.classes, details.classes || {});
+    merged.classSeasons = Object.assign({}, base.classSeasons, details.classSeasons || {});
+    merged.bonusPoints = Object.assign({}, base.bonusPoints, details.bonusPoints || {});
+    merged.raceSettings = Object.assign({}, base.raceSettings, details.raceSettings || {});
+    merged.economy = Object.assign({}, base.economy, details.economy || {});
+    merged.economy.carTierSeatCost = Object.assign({}, base.economy.carTierSeatCost, (details.economy && details.economy.carTierSeatCost) || {});
+    merged.pointsTables = details.pointsTables || base.pointsTables;
+    var freshEnabled = defaultCarObjectivesEnabled();
+    var savedEnabled = details.carObjectivesEnabled || {};
+    merged.carObjectivesEnabled = {};
+    Object.keys(freshEnabled).forEach(function (tier) {
+      merged.carObjectivesEnabled[tier] = Object.assign({}, freshEnabled[tier], savedEnabled[tier] || {});
+    });
+    merged.byeWeeks = details.byeWeeks || 0;
+    merged.byeWeekDates = details.byeWeekDates || [];
+    merged.specialEventsCount = details.specialEventsCount || 0;
+    merged.specialEvents = details.specialEvents || [];
+
+    merged.numRaces = (ctx.rounds || []).length;
+    merged.races = (ctx.rounds || []).map(function (r) {
+      var rd = r.roundDetails || {};
+      var trackInfo = trackNameFromId(r.trackId);
+      return {
+        roundId: r.roundId,
+        raced: !!r.raced,
+        eventName: rd.eventName || '',
+        track: trackInfo.track,
+        layout: rd.layout || trackInfo.layout,
+        tier: rd.raceLengthTier || 'Sprint',
+        weather: rd.weather || 'Clear',
+        chanceOfRain: rd.chanceOfRain || 0,
+        temperatureC: (rd.temperatureC === '' || rd.temperatureC === undefined || rd.temperatureC === null) ? 20 : rd.temperatureC,
+        igPracticeStart: rd.igPracticeStart || '',
+        igQualifyStart: rd.igQualifyStart || '',
+        igRaceStart: rd.igRaceStart || '',
+        passwordOverride: rd.passwordOverride || ''
+      };
+    });
+
+    merged.__editSeasonId = ctx.seasonId;
+    merged.__locked = !!ctx.locked;
+    return merged;
+  }
+
+  function openSeasonWizard(editState) {
+    var existingDraft = editState ? null : loadWizardDraft();
+    var state = editState || normalizeWizardState(existingDraft);
     var stepIndex = 0;
-    var modal = showModal('Create a Season', { wide: true, onClose: function () { if (typeof renderLeagueManagementSection === 'function') renderLeagueManagementSection(token); } });
+    var modal = showModal(editState ? 'Edit Season' : 'Create a Season', { wide: true, onClose: function () { if (typeof renderLeagueManagementSection === 'function') renderLeagueManagementSection(token); } });
     var body = modal.body;
     var stepsBar = el('div', 'rc-wizard-steps');
     var contentWrap = el('div', 'rc-wizard-content');
@@ -2851,7 +3442,10 @@
 
     var lastStep = WIZARD_STEPS.length - 1;
     var currentRequiredEls = [];
-    var maxUnlockedStep = 0;
+    // Editing loads a complete, already-valid season -- every step starts
+    // unlocked rather than running the draft-resume probe below (which is
+    // only meaningful for a possibly-half-finished localStorage draft).
+    var maxUnlockedStep = editState ? lastStep : 0;
 
     if (existingDraft) {
       // Belt-and-suspenders: normalizeWizardState() above should already
@@ -2914,14 +3508,35 @@
       if (stepIndex === 0) renderWizardSeasonDetailsPage(state, contentWrap, currentRequiredEls);
       else if (stepIndex === 1) {
         syncRaceCount(state); syncByeWeekDates(state); syncSpecialEvents(state);
-        renderWizardRaceEventsPage(state, contentWrap, currentRequiredEls);
+        renderWizardRaceEventsPage(state, contentWrap, currentRequiredEls, shakeModal);
       }
       else renderWizardPreviewPage(state, contentWrap);
       contentWrap.scrollTop = 0;
 
       footerBar.innerHTML = '';
 
-      if (stepIndex === lastStep) {
+      if (stepIndex === lastStep && state.__editSeasonId) {
+        // Editing: no draft, no scheduled-release option -- one real save
+        // point, straight to updateSeason.
+        footerBar.style.alignItems = 'flex-end';
+
+        var cancelEditBtn = el('button', null, 'Cancel');
+        cancelEditBtn.className = 'rc-btn-secondary rc-btn-sm'; cancelEditBtn.type = 'button';
+        cancelEditBtn.addEventListener('click', function () { modal.close(); });
+        footerBar.appendChild(cancelEditBtn);
+
+        var editRightGroup = el('div', 'display:flex;gap:8px;align-items:flex-end;');
+        var backBtnEdit = el('button', null, 'Back');
+        backBtnEdit.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; backBtnEdit.type = 'button';
+        backBtnEdit.addEventListener('click', function () { goToStep(stepIndex - 1); });
+        editRightGroup.appendChild(backBtnEdit);
+
+        var saveChangesBtn = el('button', null, 'Save Changes');
+        saveChangesBtn.className = 'rc-btn-primary rc-btn-sm'; saveChangesBtn.type = 'button';
+        saveChangesBtn.addEventListener('click', function () { finishEditWizard(); });
+        editRightGroup.appendChild(saveChangesBtn);
+        footerBar.appendChild(editRightGroup);
+      } else if (stepIndex === lastStep) {
         footerBar.style.alignItems = 'flex-end';
 
         var saveBtn = el('button', null, 'Save & Close');
@@ -3000,7 +3615,7 @@
       } else {
         footerBar.style.alignItems = 'center';
 
-        var saveBtnNorm = el('button', null, 'Save & Close');
+        var saveBtnNorm = el('button', null, state.__editSeasonId ? 'Cancel' : 'Save & Close');
         saveBtnNorm.className = 'rc-btn-secondary rc-btn-sm'; saveBtnNorm.type = 'button';
         saveBtnNorm.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
         footerBar.appendChild(saveBtnNorm);
@@ -3051,15 +3666,16 @@
       return isNaN(d.getTime()) ? '' : d.toISOString();
     }
 
-    function finishWizard() {
-      saveWizardDraft(state);
-      contentWrap.innerHTML = '';
-      contentWrap.appendChild(buildSpinner('Creating season...'));
-      footerBar.innerHTML = '';
-
+    // Shared by finishWizard (createSeason) and finishEditWizard
+    // (updateSeason) -- both send the exact same racesPayload/seasonDetails
+    // shape, they just differ in which action they call and what happens
+    // after. includeRoundIds is true only for the edit path: updateSeason
+    // needs to know which existing Rounds row each entry corresponds to
+    // (see handleUpdateSeason's locked-mode matching, DataCache.gs).
+    function buildSeasonWizardPayload(includeRoundIds) {
       var raceDates = computeRaceDates(state);
       var racesPayload = state.races.map(function (race, idx) {
-        return {
+        var entry = {
           eventName: (race.eventName && race.eventName.trim()) ? race.eventName.trim() : ('Round ' + (idx + 1)),
           trackId: resolveTrackId(race.track, race.layout),
           roundNumber: idx + 1,
@@ -3075,6 +3691,8 @@
           igRaceStart: race.igRaceStart,
           passwordOverride: race.passwordOverride
         };
+        if (includeRoundIds && race.roundId) entry.roundId = race.roundId;
+        return entry;
       });
       // Bye weeks get the same startUtc treatment so the Calendar can slot
       // them chronologically alongside rounds/special events without
@@ -3129,6 +3747,19 @@
         carObjectivesEnabled: state.carObjectivesEnabled
       };
 
+      return { racesPayload: racesPayload, seasonDetails: seasonDetails };
+    }
+
+    function finishWizard() {
+      saveWizardDraft(state);
+      contentWrap.innerHTML = '';
+      contentWrap.appendChild(buildSpinner('Creating season...'));
+      footerBar.innerHTML = '';
+
+      var payload = buildSeasonWizardPayload(false);
+      var racesPayload = payload.racesPayload;
+      var seasonDetails = payload.seasonDetails;
+
       function showResultPanel(ok, title, message) {
         contentWrap.innerHTML = '';
         var note = el('div', 'rc-panel');
@@ -3162,6 +3793,51 @@
       }).catch(function () {
         showResultPanel(false, 'Could Not Reach The Server',
           'Check your connection and try again -- your draft is untouched.');
+      });
+    }
+
+    // Edit Season's real save point -- action=updateSeason (handleUpdateSeason,
+    // DataCache.gs) enforces the lock rule server-side regardless of what
+    // this wizard instance has disabled, so nothing here needs to re-derive
+    // "is this allowed" -- it just sends everything currently in state,
+    // roundId included, and trusts the backend to apply or skip each piece.
+    function finishEditWizard() {
+      contentWrap.innerHTML = '';
+      contentWrap.appendChild(buildSpinner('Saving season...'));
+      footerBar.innerHTML = '';
+
+      var payload = buildSeasonWizardPayload(true);
+
+      function showResultPanel(ok, title, message) {
+        contentWrap.innerHTML = '';
+        var note = el('div', 'rc-panel');
+        note.style.borderColor = ok ? 'var(--rc-ok)' : 'var(--rc-red)';
+        note.appendChild(el('h3', 'margin-top:0;', title));
+        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
+        var closeBtn = el('button', null, 'Close');
+        closeBtn.className = 'rc-btn-primary rc-btn-sm'; closeBtn.type = 'button';
+        closeBtn.addEventListener('click', modal.close);
+        note.appendChild(closeBtn);
+        contentWrap.appendChild(note);
+      }
+
+      fetchApi('updateSeason', {
+        method: 'POST',
+        token: token,
+        body: {
+          seasonId: state.__editSeasonId,
+          seasonDetails: JSON.stringify(payload.seasonDetails),
+          races: JSON.stringify(payload.racesPayload)
+        }
+      }).then(function (data) {
+        if (data && data.success) {
+          showResultPanel(true, 'Season Updated', data.message || 'Season updated.');
+        } else {
+          showResultPanel(false, 'Could Not Update Season',
+            (data && data.message) || 'Something went wrong talking to the server.');
+        }
+      }).catch(function () {
+        showResultPanel(false, 'Could Not Reach The Server', 'Check your connection and try again.');
       });
     }
 
@@ -4602,9 +5278,10 @@
   // card's server error never blocks the whole page from loading.
   var dashboardDataPromise = Promise.all([
     fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; })
+    fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
+    fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; })
   ]).then(function (results) {
-    return { activeSeason: results[0], currentSeat: results[1] };
+    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2] };
   });
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
