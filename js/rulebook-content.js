@@ -28,6 +28,12 @@
 //   index (see .rc-rulebook-index a.rc-rulebook-draft in style.css).
 // html: the section body. Safe to use innerHTML here since every string
 //   below is authored by us, not sourced from user input.
+//
+// STYLE NOTE (2026-08-30): new copy written into this file from here on
+// avoids em dashes entirely (Matt's call, so the site reads like a person
+// wrote it rather than an AI). Older sections written before this pass
+// still use them here and there -- only rewritten if that section gets
+// touched again for another reason.
 var RULEBOOK_SECTIONS = [
   {
     id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
@@ -151,7 +157,25 @@ var RULEBOOK_SECTIONS = [
       '</ul></div>'
   },
   { id: 'wagering', num: '11', title: 'Wagering, "Battles to Watch"', draft: true },
-  { id: 'car-class-selection', num: '12', title: 'Car & Class Selection', draft: true, draftNote: 'Naming pending confirmation.' },
+  {
+    id: 'car-class-selection', num: '12', title: 'Car & Class Selection',
+    html: '<p>Signing up for a season starts with one screen: <strong>Choose Your Team</strong>. Every team on offer belongs to the class you picked, and each one shows you everything you need to know before you commit: the car and manufacturer, a short description of what racing for that team is like, its buy-in cost, its Tier, and the Car Objective that comes with it.</p>' +
+      '<h4>12.1 Buy-In and Tiers</h4>' +
+      '<p>Every car sits in one of four Tiers, shown as a colored pill right on its card so you can tell them apart at a glance:</p>' +
+      '<table><tr><td><strong>Tier</strong></td><td><strong>Color</strong></td><td><strong>What it means</strong></td></tr>' +
+      '<tr><td>Low</td><td>Gray</td><td>The most affordable seats. A backmarker car with an easy, achievable goal attached.</td></tr>' +
+      '<tr><td>Mid</td><td>Blue</td><td>A step up in both cost and difficulty.</td></tr>' +
+      '<tr><td>High</td><td>Purple</td><td>Expensive, and paired with a genuinely hard objective to match.</td></tr>' +
+      '<tr><td>Elite</td><td>Gold</td><td>The single most expensive seat in the class, one per class, hand-picked by the league each season.</td></tr></table>' +
+      '<p>A car’s buy-in cost is randomized a little around its Tier’s average, so no two cars in the same Tier cost exactly the same, but they’ll all land in roughly the same range. The class-selection screen shows you that range up front, right next to the class itself, before you even look at individual teams.</p>' +
+      '<h4>12.2 Car Objectives</h4>' +
+      '<p>Every car also carries one Car Objective for the season, a specific goal tied to that car rather than to you personally. Hover the objective on any team’s card for a plain description of what it actually takes to earn it.</p>' +
+      '<p>Objectives get harder as the Tier goes up, and the bonus for actually hitting one scales right along with it, so a Low Tier car’s easy goal pays a modest bonus, and a High Tier car’s genuinely difficult goal pays a much bigger one. Elite is its own thing entirely: there’s exactly one Elite car per class, and its objective is always the same, win the class championship. It’s the hardest goal on the site and it’s built for drivers who are confident enough in their own pace to bet a whole season on winning it, in exchange for the biggest payout available.</p>' +
+      '<p>Whatever team you join, the buy-in locks in immediately and can’t be undone once you confirm, so read the description, the Tier, and the objective before you commit.</p>' +
+      '<h4>12.3 Sponsors</h4>' +
+      '<p>Right after you lock in your team, you’ll be asked to pick three sponsors for the season, or skip that step and come back to it later from the Sponsors page. Every sponsor listing shows its bonus and penalty conditions, and hovering one gives you the full detail on exactly what triggers each side of it. Sponsors are grouped by risk level (Safe, Balanced, Aggressive) so you can see at a glance how conservative or how risky each one is before you pick.</p>' +
+      '<p>You can freely swap your three sponsors any time before the season actually starts. Once it starts, whatever three you’ve picked are locked in for the rest of the season.</p>'
+  },
   { id: 'conduct-discipline', num: '13', title: 'Conduct & Discipline (Off-Track)', draft: true },
   { id: 'appeals', num: '14', title: 'Appeals', draft: true },
   { id: 'glossary', num: '15', title: 'Glossary', draft: true }

@@ -669,6 +669,11 @@
         pill.style.background = 'var(' + colorVar + ')';
         textCol.appendChild(pill);
       }
+      if (data.carTier) {
+        var tierPill = _rcCarTierBadge(data.carTier);
+        tierPill.style.marginLeft = '6px';
+        textCol.appendChild(tierPill);
+      }
       row.appendChild(textCol);
       body.appendChild(row);
 
@@ -832,7 +837,7 @@
     }
 
     function addCard(s) {
-      var card = el('div', 'rc-sponsor-pick-card');
+      var card = el('div', 'rc-sponsor-pick-card rc-tooltip');
       // Fixed-width column (min 150px), logo centered inside it -- same
       // "text column's left edge lands in the same place row to row"
       // reasoning as the admin Sponsors popup's logo column, just wider
@@ -857,6 +862,12 @@
       textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
       textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
       card.appendChild(textCol);
+      // Hover tooltip spells out the bonus/penalty conditions in full
+      // sentences, since the two lines above are kept short for the card
+      // layout (Matt's call, 2026-08-30).
+      card.setAttribute('data-tooltip',
+        'Pays $' + bonusAmt + ' when this sponsor\'s condition is met: ' + (s.BonusType || 'no condition set') + '. ' +
+        'Costs $' + penaltyAmt + ' when its penalty condition is met: ' + (s.PenaltyType || 'no condition set') + '.');
 
       card.addEventListener('click', function () {
         var idx = selected.indexOf(s.SponsorID);
@@ -900,7 +911,20 @@
   function buildRegistrationModal(profile, token, activeSeasonData, onDone) {
     var modal = showModal('Choose Your Class', { wide: true, onClose: function () { if (onDone) onDone(); } });
     var titleEl = modal.el.querySelector('.rc-modal-head h3');
-    function setTitle(t) { if (titleEl) titleEl.textContent = t; }
+    // pillNode is optional -- pass a real badge element (see buildClassBadge
+    // below) to render "TITLE Class Pill" in the modal header, e.g.
+    // "Choose Your Team LMGT3" with LMGT3 shown as its actual colored chip.
+    function setTitle(t, pillNode) {
+      if (!titleEl) return;
+      titleEl.textContent = t + ' ';
+      if (pillNode) titleEl.appendChild(pillNode);
+    }
+    function buildClassBadge(cls) {
+      var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
+      var badge = el('span', 'rc-badge-chip', escapeHtml(cls));
+      badge.style.background = 'var(' + colorVar + ')';
+      return badge;
+    }
 
     function fetchAllTeams() {
       return fetchApi('getAvailableTeams', { token: token, params: { seasonId: activeSeasonData.seasonId } });
@@ -941,19 +965,19 @@
         var openTeams = teamsInClass.filter(function (t) { return !t.taken; });
         var row = el('div', 'rc-class-pick-row');
         var label = el('div', null);
-        var badge = el('span', null, escapeHtml(cls));
-        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
-        badge.style.cssText = 'display:inline-block;padding:2px 8px;border-radius:4px;color:#fff;font-weight:700;font-size:12px;background:var(' + colorVar + ');';
+        var badge = buildClassBadge(cls);
         label.appendChild(badge);
+        // Gray buy-in range pill sits right next to the class badge instead
+        // of living in its own centered column (Matt's call, 2026-08-30).
+        var costs = teamsInClass.map(function (t) { return t.buyInCost; });
+        if (costs.length) {
+          var costPill = el('span', 'rc-badge-chip rc-badge-cost-range',
+            formatMoney(Math.min.apply(null, costs)) + ' – ' + formatMoney(Math.max.apply(null, costs)));
+          label.appendChild(costPill);
+        }
         label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;',
           openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open'));
         row.appendChild(label);
-
-        var costs = teamsInClass.map(function (t) { return t.buyInCost; });
-        var costLine = el('div', 'rc-class-cost-range');
-        costLine.appendChild(el('div', 'rc-class-cost-season',
-          costs.length ? ('Buy-In Range: ' + formatMoney(Math.min.apply(null, costs)) + ' – ' + formatMoney(Math.max.apply(null, costs))) : 'No cars yet'));
-        row.appendChild(costLine);
 
         var pickBtn = el('button', null, openTeams.length ? 'Choose' : 'Full');
         pickBtn.type = 'button';
@@ -968,7 +992,7 @@
     }
 
     function showTeamScreen(carClass) {
-      setTitle('Choose Your Team — ' + carClass);
+      setTitle('Choose Your Team', buildClassBadge(carClass));
       var body = modal.body;
       body.innerHTML = '';
 
@@ -990,7 +1014,14 @@
         contentSlot.innerHTML = '';
         if (!data.success) { contentSlot.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load teams.')); return; }
         if (!data.teams || !data.teams.length) { contentSlot.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for ' + escapeHtml(carClass) + ' yet.')); return; }
-        var sorted = data.teams.slice().sort(function (a, b) { return b.buyInCost - a.buyInCost; });
+        // Elite always sorts to the top regardless of its actual randomized
+        // buy-in cost, then everything else by cost descending (Matt's
+        // call: "Elite tier put the car at the top").
+        var sorted = data.teams.slice().sort(function (a, b) {
+          if (a.tier === 'Elite' && b.tier !== 'Elite') return -1;
+          if (b.tier === 'Elite' && a.tier !== 'Elite') return 1;
+          return b.buyInCost - a.buyInCost;
+        });
         sorted.forEach(function (team) { contentSlot.appendChild(buildTeamCard(team, carClass)); });
       }).catch(function () {
         contentSlot.innerHTML = '';
@@ -1006,7 +1037,7 @@
     // of the old bonus/penalty perks, and one flat Buy-In cost instead of
     // a Season Registration Fee + Team Buy-In breakdown.
     function buildTeamCard(team, carClass) {
-      var card = el('div', 'rc-team-card' + (team.taken ? ' rc-team-card-taken' : ''));
+      var card = el('div', 'rc-team-card' + (team.taken ? ' rc-team-card-taken' : '') + (team.tier === 'Elite' ? ' rc-team-card-elite' : ''));
 
       var head = el('div', 'rc-team-card-head');
       var identity = el('div', 'rc-team-card-identity');
@@ -1029,13 +1060,22 @@
       head.appendChild(el('div', 'rc-team-cost-total', formatMoney(team.buyInCost)));
       card.appendChild(head);
 
+      // Team description (Cars.TeamDesc) -- lives between the header and
+      // the Tier/Objective perks below, in gray body text (Matt's call,
+      // 2026-08-30). Skipped entirely if the car has no description set.
+      if (team.teamDesc) {
+        card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:8px 0;', escapeHtml(team.teamDesc)));
+      }
+
       var perks = el('div', 'rc-team-perks');
       var tierChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus');
       tierChip.appendChild(el('span', 'rc-team-perk-icon', '▲'));
       tierChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.tier || 'Mid') + ' Tier</strong>'));
       perks.appendChild(tierChip);
       if (team.objectiveName) {
-        var objChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus');
+        var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
+        var objChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus rc-tooltip');
+        if (objDescMap[team.objectiveName]) objChip.setAttribute('data-tooltip', objDescMap[team.objectiveName]);
         objChip.appendChild(el('span', 'rc-team-perk-icon', '★'));
         objChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.objectiveName) + '</strong> — ' + formatMoney(team.objectiveBonus) + ' bonus'));
         perks.appendChild(objChip);
@@ -1062,7 +1102,7 @@
     // itself starts. The team pick is still the one thing that locks
     // immediately and can't be undone.
     function openSponsorPickScreen(team, carClass) {
-      setTitle('Pick Your Sponsors');
+      setTitle('Choose Your Sponsors', buildClassBadge(carClass));
       var body = modal.body;
       body.innerHTML = '';
       var backBtn = el('button', 'rc-link-btn', '← Back to teams');
@@ -1194,7 +1234,7 @@
       if (data.hasSponsors) {
         var grid = el('div', 'rc-sponsor-pick-list');
         data.sponsors.forEach(function (s) {
-          var card = el('div', 'rc-sponsor-pick-card rc-sponsor-pick-card-readonly');
+          var card = el('div', 'rc-sponsor-pick-card rc-sponsor-pick-card-readonly rc-tooltip');
           var logoCol = el('div', 'rc-sponsor-pick-logo-col');
           var logo = document.createElement('img');
           logo.className = 'rc-sponsor-pick-logo';
@@ -1211,6 +1251,9 @@
           textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
           textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
           card.appendChild(textCol);
+          card.setAttribute('data-tooltip',
+            'Pays $' + bonusAmt + ' when this sponsor\'s condition is met: ' + (s.BonusType || 'no condition set') + '. ' +
+            'Costs $' + penaltyAmt + ' when its penalty condition is met: ' + (s.PenaltyType || 'no condition set') + '.');
 
           grid.appendChild(card);
         });
@@ -2385,16 +2428,34 @@
         // live formula, so changing Starting Balance afterward doesn't
         // silently drag these along with it.
         carTierSeatCost: { Low: 5000, Mid: 10000, High: 15000 },
-        objectiveBonusMultiplier: 1.5
+        // One multiplier per Tier now (was a single flat number for all
+        // three) -- a car's objective bonus is its own randomized seat
+        // cost times ITS tier's multiplier, so a harder-to-earn High Tier
+        // objective can be worth disproportionately more than a Low Tier
+        // one, not just proportionally more. Defaults 1.5x/2.5x/5x
+        // (Matt's call, 2026-08-30).
+        objectiveBonusMultiplier: { Low: 1.5, Mid: 2.5, High: 5 },
+        // Elite (added 2026-08-30) -- its own multiplier, separate from
+        // the three above, since it applies to a single hand-picked car
+        // per class rather than a whole tier. 0-10x range, default 7.5x
+        // (Matt's call).
+        eliteObjectiveMultiplier: 7.5
       },
-      // Which of the 15 Car Objectives (CAR_OBJECTIVE_CATALOG, 5 per tier)
-      // are eligible to be handed out this season -- lets Matt turn off
-      // ones that don't fit a particular season (e.g. "Championship Win"
-      // on a shortened season) without editing the catalog itself. Built
-      // fresh from the current catalog every time the wizard opens (see
-      // normalizeWizardState) so a newly-added catalog objective always
-      // starts enabled rather than silently missing from state.
+      // Which of the 18 tiered Car Objectives (CAR_OBJECTIVE_CATALOG, 6
+      // per Low/Mid/High tier) are eligible to be handed out this season --
+      // lets Matt turn off ones that don't fit a particular season without
+      // editing the catalog itself. Built fresh from the current catalog
+      // every time the wizard opens (see normalizeWizardState) so a newly-
+      // added catalog objective always starts enabled rather than silently
+      // missing from state. Elite's single objective is never toggled here
+      // -- see eliteByClass below.
       carObjectivesEnabled: defaultCarObjectivesEnabled(),
+      // Elite (added 2026-08-30) -- one hand-picked CarID per selected
+      // class, chosen in the Economy step's Elite section. Keyed by class
+      // name; a class with no entry (or '') simply has no Elite seat this
+      // season. Never touches Car Management's Tier field -- see Cars.Tier
+      // and Teams.Tier's schema comments in 1_Core.gs.
+      eliteByClass: {},
       races: [] // resized to numRaces by syncRaceCount() when Race Events opens
     };
   }
@@ -2829,13 +2890,70 @@
 
     var multiplierOptions = [];
     for (var m = 0.5; m <= 5.0; m += 0.25) multiplierOptions.push(Math.round(m * 100) / 100);
-    var snappedMultiplier = multiplierOptions.reduce(function (closest, opt) {
-      return Math.abs(opt - state.economy.objectiveBonusMultiplier) < Math.abs(closest - state.economy.objectiveBonusMultiplier) ? opt : closest;
-    }, multiplierOptions[0]);
-    var multiplierInput = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedMultiplier.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier = parseFloat(v); });
-    multiplierInput.style.maxWidth = '25%'; // half the wizard's usual 50% select width (Matt's call)
-    container.appendChild(wizField('Objective Bonus Multiplier', multiplierInput,
-      'A car\'s objective bonus is its own (randomized) seat cost times this multiplier -- e.g. a $3,000 seat cost at 1.5x pays a $4,500 objective bonus.'));
+    function snapMultiplier(val) {
+      return multiplierOptions.reduce(function (closest, opt) {
+        return Math.abs(opt - val) < Math.abs(closest - val) ? opt : closest;
+      }, multiplierOptions[0]);
+    }
+    // One multiplier select per Tier -- same three-column layout as the
+    // seat cost row above. Each tier's bonus is computed independently at
+    // Create Season (see handleCreateSeason), so a harder tier's
+    // multiplier can be set well above an easier tier's instead of every
+    // car paying out at the same rate regardless of how hard its
+    // objective actually is.
+    var multiplierRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
+    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
+      var snapped = snapMultiplier(Number(state.economy.objectiveBonusMultiplier[tier]));
+      var input = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snapped.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier[tier] = parseFloat(v); });
+      var col = el('div', 'flex:1;min-width:160px;');
+      col.appendChild(wizField(tier + ' Tier Objective Multiplier', input));
+      multiplierRow.appendChild(col);
+    });
+    container.appendChild(wizField('Objective Bonus Multiplier', multiplierRow,
+      'A car\'s objective bonus is its own (randomized) seat cost times its tier\'s multiplier here -- e.g. a High Tier car with a $15,000 seat cost at 5.00x pays a $75,000 objective bonus if it earns its objective.'));
+
+    // Elite Tier (added 2026-08-30) -- one hand-picked car per selected
+    // class, never a Car Management Tier value. Built from WIZARD_CARS
+    // (already fetched fresh every time the wizard opens), filtered to
+    // each class's own Season pick from the Format step -- the same
+    // Class+Season match handleCreateSeason itself uses to decide which
+    // cars are eligible this season.
+    container.appendChild(wizSubhead('Elite Tier'));
+    container.appendChild(el('div', 'rc-hint', 'Pick one car per class to be this season\'s Elite entry -- the most expensive seat in its class, carrying the single hardest objective on the site (winning the championship) for a matching payout. Leave a class set to "No Elite Seat" to skip it entirely.'));
+    var eliteWrap = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;');
+    var selectedClassesForElite = Object.keys(state.classes || {}).filter(function (c) { return state.classes[c]; });
+    selectedClassesForElite.forEach(function (cls) {
+      var seasonForClass = state.classSeasons[cls];
+      var carsInClass = WIZARD_CARS.filter(function (c) { return c.Class === cls && String(c.Season) === String(seasonForClass); });
+      var options = ['No Elite Seat'].concat(carsInClass.map(function (c) { return (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : ''); }));
+      var carIdByLabel = {};
+      carsInClass.forEach(function (c) { carIdByLabel[(c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '')] = c.CarID; });
+      var currentCarId = state.eliteByClass[cls] || '';
+      var currentLabel = 'No Elite Seat';
+      carsInClass.forEach(function (c) {
+        if (c.CarID === currentCarId) currentLabel = (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '');
+      });
+      var select = wizSelect(options, currentLabel, function (v) {
+        state.eliteByClass[cls] = (v === 'No Elite Seat') ? '' : (carIdByLabel[v] || '');
+      });
+      var col = el('div', 'flex:1;min-width:220px;');
+      col.appendChild(wizField(cls + ' Elite Team', select));
+      eliteWrap.appendChild(col);
+    });
+    if (!selectedClassesForElite.length) {
+      eliteWrap.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'Pick at least one class in the Format step first.'));
+    }
+    container.appendChild(eliteWrap);
+
+    var eliteMultiplierOptions = [];
+    for (var em = 0; em <= 10.0; em += 0.25) eliteMultiplierOptions.push(Math.round(em * 100) / 100);
+    var snappedEliteMultiplier = eliteMultiplierOptions.reduce(function (closest, opt) {
+      return Math.abs(opt - state.economy.eliteObjectiveMultiplier) < Math.abs(closest - state.economy.eliteObjectiveMultiplier) ? opt : closest;
+    }, eliteMultiplierOptions[0]);
+    var eliteMultiplierInput = wizSelect(eliteMultiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedEliteMultiplier.toFixed(2) + 'x', function (v) { state.economy.eliteObjectiveMultiplier = parseFloat(v); });
+    eliteMultiplierInput.style.maxWidth = '25%';
+    container.appendChild(wizField('Elite Tier Objective Multiplier', eliteMultiplierInput,
+      'Applies to every Elite car\'s objective bonus this season -- e.g. an Elite seat costing $22,500 at 7.50x pays a $168,750 bonus for winning the championship.'));
 
     // Locked season (Matt's call, 2026-08-29): once any round has been
     // raced, this whole page freezes except the password -- blanket
@@ -3290,13 +3408,24 @@
       'Low $' + Number(state.economy.carTierSeatCost.Low || 0).toLocaleString() +
       ' · Mid $' + Number(state.economy.carTierSeatCost.Mid || 0).toLocaleString() +
       ' · High $' + Number(state.economy.carTierSeatCost.High || 0).toLocaleString() + ' (±20% per car)'));
-    econPanel.appendChild(previewLine('Objective Bonus Multiplier', Number(state.economy.objectiveBonusMultiplier).toFixed(2) + 'x seat cost'));
+    econPanel.appendChild(previewLine('Objective Bonus Multiplier',
+      'Low ' + Number(state.economy.objectiveBonusMultiplier.Low).toFixed(2) + 'x' +
+      ' · Mid ' + Number(state.economy.objectiveBonusMultiplier.Mid).toFixed(2) + 'x' +
+      ' · High ' + Number(state.economy.objectiveBonusMultiplier.High).toFixed(2) + 'x' + ' seat cost'));
     (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
       var tierMap = (state.carObjectivesEnabled && state.carObjectivesEnabled[tier]) || {};
       var total = Object.keys(tierMap).length;
       var enabledCount = Object.keys(tierMap).filter(function (k) { return tierMap[k]; }).length;
       if (total) econPanel.appendChild(previewLine(tier + ' Tier Objectives In Use', enabledCount + ' of ' + total));
     });
+    var eliteClassEntries = Object.keys(state.eliteByClass || {}).filter(function (c) { return state.eliteByClass[c]; });
+    if (eliteClassEntries.length) {
+      econPanel.appendChild(previewLine('Elite Seats',
+        eliteClassEntries.map(function (c) {
+          var car = WIZARD_CARS.filter(function (w) { return w.CarID === state.eliteByClass[c]; })[0];
+          return c + ': ' + (car ? (car.TeamName || car.CarID) : state.eliteByClass[c]);
+        }).join(' · ') + ' — ' + Number(state.economy.eliteObjectiveMultiplier).toFixed(2) + 'x'));
+    }
     container.appendChild(econPanel);
 
     var racesPanel = el('div', 'rc-panel'); racesPanel.style.marginTop = '12px';
@@ -3356,6 +3485,8 @@
     merged.raceSettings = Object.assign({}, base.raceSettings, saved.raceSettings || {});
     merged.economy = Object.assign({}, base.economy, saved.economy || {});
     merged.economy.carTierSeatCost = Object.assign({}, base.economy.carTierSeatCost, (saved.economy && saved.economy.carTierSeatCost) || {});
+    merged.economy.objectiveBonusMultiplier = Object.assign({}, base.economy.objectiveBonusMultiplier, (saved.economy && saved.economy.objectiveBonusMultiplier) || {});
+    merged.eliteByClass = Object.assign({}, base.eliteByClass, saved.eliteByClass || {});
     merged.pointsTables = saved.pointsTables || base.pointsTables;
     // Re-derive per-tier from the CURRENT catalog first, then overlay
     // whatever the saved draft had -- a catalog objective added since the
@@ -3389,6 +3520,8 @@
     merged.raceSettings = Object.assign({}, base.raceSettings, details.raceSettings || {});
     merged.economy = Object.assign({}, base.economy, details.economy || {});
     merged.economy.carTierSeatCost = Object.assign({}, base.economy.carTierSeatCost, (details.economy && details.economy.carTierSeatCost) || {});
+    merged.economy.objectiveBonusMultiplier = Object.assign({}, base.economy.objectiveBonusMultiplier, (details.economy && details.economy.objectiveBonusMultiplier) || {});
+    merged.eliteByClass = Object.assign({}, base.eliteByClass, details.eliteByClass || {});
     merged.pointsTables = details.pointsTables || base.pointsTables;
     var freshEnabled = defaultCarObjectivesEnabled();
     var savedEnabled = details.carObjectivesEnabled || {};
@@ -3744,7 +3877,8 @@
         seasonStartTime: state.seasonStartTime,
         raceSettings: state.raceSettings,
         economy: state.economy,
-        carObjectivesEnabled: state.carObjectivesEnabled
+        carObjectivesEnabled: state.carObjectivesEnabled,
+        eliteByClass: state.eliteByClass
       };
 
       return { racesPayload: racesPayload, seasonDetails: seasonDetails };
@@ -4109,6 +4243,12 @@
     form.appendChild(carTier);
     form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- same ladder across every class, not per-class.'));
 
+    form.appendChild(el('label', null, 'Team Description'));
+    var teamDesc = document.createElement('textarea');
+    teamDesc.rows = 3;
+    form.appendChild(teamDesc);
+    form.appendChild(el('div', 'rc-hint', 'A short paragraph shown to drivers on the Choose Your Team screen, between the team header and its Car Objective.'));
+
     var saveBtn = el('button', null, 'Add Car');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -4135,7 +4275,8 @@
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
           TeamName: teamName.value.trim(),
-          Tier: carTier.value
+          Tier: carTier.value,
+          TeamDesc: teamDesc.value.trim()
         }
       })
         .then(function (data) {
@@ -4767,6 +4908,13 @@
     form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- takes effect starting with the next season created, never the one already running.' +
       (car.PreviousTier ? ' Previously: ' + escapeHtml(car.PreviousTier) + ' Tier.' : '')));
 
+    form.appendChild(el('label', null, 'Team Description'));
+    var teamDesc = document.createElement('textarea');
+    teamDesc.rows = 3;
+    teamDesc.value = car.TeamDesc || '';
+    form.appendChild(teamDesc);
+    form.appendChild(el('div', 'rc-hint', 'A short paragraph shown to drivers on the Choose Your Team screen, between the team header and its Car Objective.'));
+
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -4797,7 +4945,8 @@
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
           TeamName: teamName.value.trim(),
-          Tier: carTier.value
+          Tier: carTier.value,
+          TeamDesc: teamDesc.value.trim()
         }
       })
         .then(function (data) {
@@ -4864,10 +5013,16 @@
   // neutral gray-bordered/gray-text treatment for all three (Matt's call)
   // rather than a colored chip like the class/sponsor-risk badges -- this
   // is a grouping label, not a status to draw the eye to. Smaller than the
-  // standard .rc-badge-chip too (see .rc-badge-tier-car in style.css).
+  // standard .rc-badge-chip too (see .rc-badge-cartier in style.css).
+  // Colored per tier (gray/blue/purple/gold) using CAR_TIER_BADGE_COLOR_VAR
+  // (js/reference-data.js) -- shared by Car Management's list, the Current
+  // Seat dashboard card, and the Choose Your Team screen, so all three
+  // read the same tier the same way.
   function _rcCarTierBadge(tier) {
     var key = String(tier || 'Mid').trim();
-    return el('span', 'rc-badge-chip rc-badge-tier-car', escapeHtml(key) + ' Tier');
+    var classMap = { Low: 'rc-badge-cartier-low', Mid: 'rc-badge-cartier-mid', High: 'rc-badge-cartier-high', Elite: 'rc-badge-cartier-elite' };
+    var colorClass = classMap[key] || 'rc-badge-cartier-mid';
+    return el('span', 'rc-badge-chip rc-badge-cartier ' + colorClass, escapeHtml(key) + ' Tier');
   }
 
   // Tier badge -- Safe/Balanced/Aggressive, same colored-chip pattern as

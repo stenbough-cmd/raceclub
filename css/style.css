@@ -53,6 +53,16 @@
   --rc-class-lmp2: #2b6cb0;
   --rc-class-hypercar: var(--rc-red);
 
+  /* Car Objective Tier badge colors (added 2026-08-30) -- standard gaming
+     rarity convention: Low = gray, Mid = blue, High = purple. Gold is
+     reserved for Elite, a one-per-class/one-per-season pick rather than a
+     standing Cars.Tier value -- see CAR_TIER_BADGE_COLOR_VAR in
+     js/reference-data.js. */
+  --rc-tier-low: #8a94a3;
+  --rc-tier-mid: #3b82f6;
+  --rc-tier-high: #9333ea;
+  --rc-tier-elite: #c9a227;
+
   --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
@@ -299,17 +309,30 @@ p { margin: 0 0 0.75em; }
 .rc-badge-tier-safe { background: #1f5c25; }
 .rc-badge-tier-balanced { background: #1a5276; }
 .rc-badge-tier-aggressive { background: var(--rc-red); }
-/* Car Objectives tier pill (Data Management's Cars popup) -- Low/Mid/High
-   ALL share this one neutral gray-bordered/gray-text treatment (Matt's
-   call) rather than a colored chip like the class/sponsor-risk badges,
-   since it's a grouping label rather than a status. Smaller than the
-   standard .rc-badge-chip too -- tighter padding, smaller text. */
-.rc-badge-tier-car {
-  background: transparent;
-  border: 1px solid var(--rc-silver);
-  color: var(--rc-steel);
+/* Car Objective Tier pill (Data Management's Cars popup, the Choose Your
+   Team screen, and the dashboard's Current Seat card) -- colored per tier
+   (gray/blue/purple/gold) as of 2026-08-30, reversing the earlier all-
+   neutral treatment now that Low/Mid/High/Elite are meant to read as
+   meaningfully different at a glance. Smaller than the standard
+   .rc-badge-chip too -- tighter padding, smaller text. */
+.rc-badge-cartier {
   padding: 1px 7px;
   font-size: 10px;
+  color: var(--rc-white);
+}
+.rc-badge-cartier-low { background: var(--rc-tier-low); }
+.rc-badge-cartier-mid { background: var(--rc-tier-mid); }
+.rc-badge-cartier-high { background: var(--rc-tier-high); }
+.rc-badge-cartier-elite { background: var(--rc-tier-elite); }
+/* Gray "buy-in range" pill on the Choose Your Team class-selection screen
+   -- sits directly next to the class badge instead of the exact cost
+   living in its own centered column. */
+.rc-badge-cost-range { background: var(--rc-steel); margin-left: 6px; }
+/* Elite team card on the Choose Your Team screen -- a muted gold border to
+   set it apart from the Low/Mid/High cards around it. */
+.rc-team-card-elite {
+  border-color: var(--rc-tier-elite);
+  box-shadow: 0 0 0 1px var(--rc-tier-elite);
 }
 /* Manufacturer logo column in the Cars popup -- same fixed-width, centered
    treatment as .rc-dm-sponsor-logo-col below, so the text column's left

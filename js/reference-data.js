@@ -142,74 +142,107 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // LMP3 is the very next step up from GT3, not LMP2.
 var CAR_CLASS_LIST = ['LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
-// CAR OBJECTIVES SYSTEM (added 2026-08-29) -- a second, independent bonus
-// layer alongside Sponsors, bound to a car for one season. Unlike class,
-// this is ONE global grouping across every class combined (a GT3 and a
-// Hypercar can both be "High" side by side) -- set by hand per car/team in
-// Car Management (Cars.Tier), never a computed numeric rank. It only
-// drives two things at Create Season: which of the tier's 5 objectives a
-// car draws (CAR_OBJECTIVE_CATALOG below), and the ±20%-randomized seat
-// cost/objective bonus computed from the wizard's per-tier averages (see
+// CAR OBJECTIVES SYSTEM (added 2026-08-29, reworked 2026-08-30) -- a
+// second, independent bonus layer alongside Sponsors, bound to a car for
+// one season. Unlike class, this is ONE global grouping across every class
+// combined (a GT3 and a Hypercar can both be "High" side by side) -- set
+// by hand per car/team in Car Management (Cars.Tier), never a computed
+// numeric rank. It drives which of the tier's objectives a car draws
+// (CAR_OBJECTIVE_CATALOG below) and the ±20%-randomized seat cost/
+// objective bonus computed from the wizard's per-tier averages (see
 // handleCreateSeason in 4_DataCache.gs). This is separate from the older,
 // still-unmodified driver-wide Season Objectives mechanic (one fixed list
 // every driver shares regardless of car -- see
 // v0.3-Economy-Reputation-Design.md).
+//
+// Elite (added 2026-08-30) is deliberately NOT in this list -- it's not a
+// standing property a car is assigned in Car Management. It's a one-per-
+// class, one-per-season pick made in the Season Creation Wizard (one
+// specific team out of that class's whole roster), so it lives in
+// CAR_OBJECTIVE_CATALOG.Elite below but never in CAR_TIER_LIST itself.
 var CAR_TIER_LIST = ['Low', 'Mid', 'High'];
 
-// 5 objectives per tier, matched to that tier's difficulty (Low = things a
-// backmarker car can realistically pull off in a season; High = things
-// only a factory-caliber effort should manage). No two cars in the same
-// tier get the same objective in the same season while the pool lasts --
-// handleCreateSeason hands them out round-robin per tier, repeating from
-// the top only once all 5 in that tier are already assigned this season.
-// Season-end evaluation of these (did the car's driver(s) actually meet
-// it?) and a progress-tracking display are NOT built yet -- this catalog
-// exists so objective NAMES can be assigned at Create Season now, with the
-// scoring logic to follow as its own pass (Matt's call).
+// 6 objectives per tier (Low/Mid/High), matched to that tier's difficulty
+// (Low = things a backmarker car can realistically pull off in a season;
+// High = things only a factory-caliber effort should manage, but every one
+// of the six should feel about equally hard to each other). Elite carries
+// just the one objective, deliberately -- see the note above.
+//
+// No two cars in the same tier get the same objective in the same season
+// while the pool lasts -- handleCreateSeason hands them out round-robin
+// per tier, repeating from the top only once every objective in that tier
+// is already assigned this season (six per tier keeps that ceiling well
+// out of reach for a normal-size grid). Season-end evaluation of these
+// (did the car's driver(s) actually meet it?) and a progress-tracking
+// display are NOT built yet -- this catalog exists so objective NAMES can
+// be assigned at Create Season now, with the scoring logic to follow as
+// its own pass (Matt's call).
 var CAR_OBJECTIVE_CATALOG = {
   Low: [
     'Season Finisher',       // completes every scheduled round this season
     'Podium Once',           // finishes on the podium (class P1-P3) at least once
     'Points Every Round',    // scores championship points in every round finished
     'Half-Season Clean',     // at least half of this season's rounds graded Clean Race
-    'Top-10 Regular'         // finishes P10 or better in class at least 3 times
+    'Top-10 Regular',        // finishes P10 or better in class at least 3 times
+    'Regular Attendee'       // attends at least 75% of this season's scheduled rounds
   ],
   Mid: [
     'Multiple Podiums',      // finishes on the podium at least 3 times this season
     'Above The Median',      // finishes the season above the class's median points total
     'Consistent Top Five',   // finishes P5 or better in class at least 4 times
     'Clean Season',          // every round this season graded Clean Race
-    'Pole Twice'             // qualifies P1 in class at least twice this season
+    'Front-Row Twice',       // qualifies P1 or P2 in class at least twice this season
+    'Charger'                // qualifies P10 or better and gains at least 5 positions from grid to finish, at least once this season
   ],
   High: [
     'Championship Podium',   // finishes the season in the top 3 of class standings
     'Multiple Wins',         // wins at least 2 rounds this season
-    'Fastest Lap Leader',    // sets the class's fastest lap more often than anyone else this season
-    'Podium Streak',         // finishes on the podium in every round this season
-    'Championship Win'       // wins the class championship
+    'Podium Regular',        // finishes on the podium in at least 75% of this season's rounds
+    'Fastest Lap x3',        // sets the class's fastest lap in at least 3 rounds this season
+    'Grand Slam Round',      // pole, win, and fastest lap all in the same round, at least once this season
+    'Pole-to-Win Twice'      // qualifies P1 in class and wins from it, at least twice this season
+  ],
+  // Elite -- one car per class, hand-picked per season in the Season
+  // Creation Wizard (never assigned via Car Management's Tier field, and
+  // never round-robin'd like the tiers above since there's exactly one
+  // Elite car per class to begin with). The single hardest objective on
+  // the site, matching the huge multiplier that comes with it.
+  Elite: [
+    'Win Season Championship' // wins the class championship
   ]
 };
 
 // One short, driver-facing description per objective above -- shown as a
-// hover tooltip on the objective's checkbox in the Create Season wizard.
-// Keep these in sync with the inline comments in CAR_OBJECTIVE_CATALOG.
+// hover tooltip on the objective's checkbox in the Create Season wizard,
+// and on the Season Objective chip on the Choose Your Team screen. Keep
+// these in sync with the inline comments in CAR_OBJECTIVE_CATALOG.
 var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Season Finisher': 'Completes every scheduled round this season.',
   'Podium Once': 'Finishes on the podium (class P1-P3) at least once.',
   'Points Every Round': 'Scores championship points in every round finished.',
   'Half-Season Clean': 'At least half of this season\'s rounds graded Clean Race.',
   'Top-10 Regular': 'Finishes P10 or better in class at least 3 times.',
+  'Regular Attendee': 'Attends at least 75% of this season\'s scheduled rounds.',
   'Multiple Podiums': 'Finishes on the podium at least 3 times this season.',
   'Above The Median': 'Finishes the season above the class\'s median points total.',
   'Consistent Top Five': 'Finishes P5 or better in class at least 4 times.',
   'Clean Season': 'Every round this season graded Clean Race.',
-  'Pole Twice': 'Qualifies P1 in class at least twice this season.',
+  'Front-Row Twice': 'Qualifies P1 or P2 in class at least twice this season.',
+  'Charger': 'Qualifies P10 or better and gains at least 5 positions from grid to finish, at least once this season.',
   'Championship Podium': 'Finishes the season in the top 3 of class standings.',
   'Multiple Wins': 'Wins at least 2 rounds this season.',
-  'Fastest Lap Leader': 'Sets the class\'s fastest lap more often than anyone else this season.',
-  'Podium Streak': 'Finishes on the podium in every round this season.',
-  'Championship Win': 'Wins the class championship.'
+  'Podium Regular': 'Finishes on the podium in at least 75% of this season\'s rounds.',
+  'Fastest Lap x3': 'Sets the class\'s fastest lap in at least 3 rounds this season.',
+  'Grand Slam Round': 'Pole, win, and fastest lap all in the same round, at least once this season.',
+  'Pole-to-Win Twice': 'Qualifies P1 in class and wins from it, at least twice this season.',
+  'Win Season Championship': 'Wins the class championship.'
 };
+
+// Car Objective Tier badge colors -- CSS variable names (defined in
+// css/style.css), same pattern as CAR_CLASS_BADGE_COLOR_VAR below. Follows
+// the usual gaming rarity convention: gray (common) -> blue (rare) ->
+// purple (epic), with gold reserved for Elite specifically.
+var CAR_TIER_BADGE_COLOR_VAR = { Low: '--rc-tier-low', Mid: '--rc-tier-mid', High: '--rc-tier-high', Elite: '--rc-tier-elite' };
 
 // Reputation floor required to join each class -- LOCKED per Matt's call
 // (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
