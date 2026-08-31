@@ -327,6 +327,74 @@ var SPONSOR_PENALTY_TRIGGERS = [
   'Grid slipper'
 ];
 
+// One plain-language, driver-facing description per trigger above --
+// shown in the detailed hover tooltip on a sponsor card wherever one
+// appears (the Choose Your Sponsors picker, the registration flow's
+// sponsor step, the post-signing contract recap, the Sponsors page), so
+// the wording is uniform every time a trigger is referenced instead of
+// being rewritten ad hoc at each call site (Matt's call, 2026-08-30:
+// "I want a detailed tooltip of what the bonus entails and what the
+// penalty entails... so it stays uniform every time it's referenced").
+// Grounded in claude/sponsor-bonus-penalty-catalog.md's mapping of each
+// trigger to the actual LMU XML/DriverResults field that backs it. Add a
+// new description here first if SPONSOR_BONUS_TRIGGERS/
+// SPONSOR_PENALTY_TRIGGERS above ever gains an entry -- a trigger with
+// no matching key here just shows its own name in the tooltip instead of
+// a description (see sponsorTriggerDescription() below), so this isn't a
+// hard dependency, just a "should always be kept in sync" one, same as
+// CAR_OBJECTIVE_DESCRIPTIONS above.
+var SPONSOR_BONUS_TRIGGER_DESCRIPTIONS = {
+  'Clean race': 'No penalty-tier incidents, no track-limits violations, and no upheld protest against you this round.',
+  'Finish, no DNF': 'Crosses the finish line under power this round -- no DNF.',
+  'Points finish (P4-P10)': 'Finishes P4 through P10 in class -- inside the scoring positions, just outside the podium.',
+  'Hard charger': 'Gains positions in class between the start of the race and the finish.',
+  'Pole position': 'Qualifies fastest in class.',
+  'Fastest lap': 'Sets the fastest single lap in class this round.',
+  'Podium / Win': 'Finishes P1, P2, or P3 in class.',
+  'Win (P1 only)': 'Wins the round outright in class -- P1 only, not P2 or P3.',
+  'Led at least one lap': 'Leads at least one lap in class at any point during the round.',
+  'Consistency bonus': 'Keeps lap times tightly grouped across the run, rewarding smooth and repeatable pace over outright speed.',
+  'Front-row start': 'Qualifies P1 or P2 in class.',
+  'Zero-incident bonus': 'Zero flagged incidents of any kind this round -- a stricter bar than Clean Race, which still tolerates a few minor ones.',
+  'Beat your rival': 'Wins a settled wager against another driver for this round.'
+};
+var SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS = {
+  'Any penalty-tier event': 'Any sim-issued or served penalty this round -- a cut-track warning escalated to a penalty, contact penalty, and so on.',
+  'DNF (driver-caused)': 'Fails to finish due to a driver-caused incident, as opposed to a mechanical failure.',
+  'Low placement': 'Finishes near the back of the class field this round.',
+  'Reckless-tier contact+': 'An incident flagged at or above the reckless-contact severity threshold -- more severe than an ordinary racing incident.',
+  'DNF or DSQ': 'Fails to finish or is disqualified this round.',
+  'DSQ (steward ruling)': 'Disqualified from the round by steward ruling.',
+  'Grid slipper': 'Loses positions in class between the start of the race and the finish -- the mirror of Hard Charger.'
+};
+
+// Looks up a trigger's plain-language description from whichever of the
+// two maps above actually has it, falling back to the raw trigger name
+// itself so a not-yet-described trigger never renders a blank tooltip.
+function sponsorTriggerDescription(triggerName) {
+  if (!triggerName) return '';
+  return SPONSOR_BONUS_TRIGGER_DESCRIPTIONS[triggerName] || SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS[triggerName] || triggerName;
+}
+
+// Builds the full multi-line tooltip text for a sponsor card -- shared by
+// every place a sponsor's bonus/penalty terms are shown with a hover
+// tooltip, so the exact wording/format is defined in exactly one place.
+// Real newlines (rendered via .rc-tooltip-bubble's white-space:pre-line,
+// see style.css) separate the bonus half from the penalty half.
+function sponsorTermsTooltip(sponsor) {
+  var bonusAmt = Number(sponsor.BonusAmount) || 0;
+  var penaltyAmt = Math.abs(Number(sponsor.PenaltyAmount) || 0);
+  var bonusType = sponsor.BonusType || '';
+  var penaltyType = sponsor.PenaltyType || '';
+  var lines = [];
+  lines.push('BONUS +$' + bonusAmt + (bonusType ? ' -- ' + bonusType : ''));
+  if (bonusType) lines.push(sponsorTriggerDescription(bonusType));
+  lines.push('');
+  lines.push('PENALTY -$' + penaltyAmt + (penaltyType ? ' -- ' + penaltyType : ''));
+  if (penaltyType) lines.push(sponsorTriggerDescription(penaltyType));
+  return lines.join('\n');
+}
+
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.

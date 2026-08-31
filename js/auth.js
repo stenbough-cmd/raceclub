@@ -56,7 +56,14 @@ function setProfileCache(profile) {
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
       displayName: profile.displayName || '',
-      role: profile.role || ''
+      role: profile.role || '',
+      // Added 2026-08-30 (Matt's call: "make sure the avatar in the top
+      // right of the website changes to be the profile's chosen avatar")
+      // -- lets the header render the same picked image Account.html's
+      // Edit Profile popup shows, instead of always falling back to
+      // initials. Blank/absent means "no avatar chosen," same as
+      // Account.html's own buildAvatarCircle() convention.
+      avatarFilename: profile.avatarFilename || ''
     }));
   } catch (err) { /* storage full/unavailable -- header just falls back to '?' */ }
 }

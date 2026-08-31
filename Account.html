@@ -980,10 +980,12 @@
     // driver (see handleGetMyFinancesReputation's live-sum fallback), not
     // gated on a round having been ingested. Balance is the headline, the
     // delta sits on its own line right under it (up = muted green, down =
-    // house red), then Reserved Balance (frozenBalance -- always "--"
-    // until a freeze mechanic ships, never guessed) and the rank stat
-    // pair, matching the reference layout's structure adapted to this
-    // site's light/red/black palette instead of its dark mockup colors.
+    // house red), then Frozen Balance (frozenBalance -- the portion of a
+    // driver's balance locked up in active wagers; always "--" until the
+    // wager-placement mechanic that would actually freeze a stake ships,
+    // never guessed) and Class Rank. Bank Rank was removed entirely
+    // (2026-08-31, Matt's call) -- see handleGetMyFinancesReputation
+    // (DataCache.gs) for the matching backend removal.
     var finSection = el('div', 'rc-finrep-section');
     finSection.appendChild(el('div', 'rc-finrep-section-label', 'Finances'));
     if (data && data.success && data.statsKnown) {
@@ -994,26 +996,18 @@
           (delta > 0 ? '+' : '') + formatMoney(delta) + ' since last update'));
       }
 
-      var reservedRow = el('div', 'rc-finrep-reserved');
-      reservedRow.appendChild(el('span', 'rc-finrep-reserved-label', 'Reserved Balance'));
-      reservedRow.appendChild(el('span', 'rc-finrep-reserved-value',
+      var frozenRow = el('div', 'rc-finrep-frozen');
+      frozenRow.appendChild(el('span', 'rc-finrep-frozen-label', 'Frozen Balance'));
+      frozenRow.appendChild(el('span', 'rc-finrep-frozen-value',
         (data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—'));
-      finSection.appendChild(reservedRow);
+      finSection.appendChild(frozenRow);
 
-      if (data.globalBalanceRank || data.classBalanceRank) {
+      if (data.classBalanceRank) {
         var ranks = el('div', 'rc-finrep-ranks');
-        if (data.globalBalanceRank) {
-          var g = el('div', 'rc-finrep-rank');
-          g.appendChild(el('div', 'rc-finrep-rank-label', 'Bank Rank'));
-          g.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')));
-          ranks.appendChild(g);
-        }
-        if (data.classBalanceRank) {
-          var c = el('div', 'rc-finrep-rank');
-          c.appendChild(el('div', 'rc-finrep-rank-label', 'Class Rank'));
-          c.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')));
-          ranks.appendChild(c);
-        }
+        var c = el('div', 'rc-finrep-rank');
+        c.appendChild(el('div', 'rc-finrep-rank-label', 'Class Rank'));
+        c.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')));
+        ranks.appendChild(c);
         finSection.appendChild(ranks);
       }
     } else {
