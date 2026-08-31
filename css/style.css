@@ -1632,13 +1632,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-regstatus-headline-done { color: #1f5c25; }
 .rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
 .rc-regstatus-footer { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
-/* Same size/weight/look as Current Seat's stats and Finances &
-   Reputation's rank stats (.rc-cs-stat/.rc-finrep-rank families,
-   2026-08-31 Matt's call: "make REGISTERED ON and CLASS look similar to
-   the LEAGUE RANK and PERCENTILE categories of FINANCES & REPUTATION"). */
-.rc-regstatus-stat { flex: 1 1 80px; text-align: center; }
+.rc-regstatus-stat { flex: 1 1 100px; }
 .rc-regstatus-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
-.rc-regstatus-stat-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.rc-regstatus-stat-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); margin-top: 2px; }
 
 /* Current Seat card -- manufacturer logo left, team/car identity + class
    pill next to it, Position/Points/Podiums stat row underneath (sourced
@@ -1700,28 +1696,26 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-nextrace-pill-gold { background: #b8860b; }
 .rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; }
 
-/* Finances & Reputation card (added 2026-08-30) -- shares the Next Race
-   row, same half-width sizing as every other Dashboard card. Two stacked
-   subsections: Finances (real numbers once a round has been ingested --
-   see handleGetMyFinancesReputation, DataCache.gs) and Reputation (the
-   section shell only -- ECO defers the whole Reputation system to a later
-   season, so this never shows a fabricated score, just a "not live yet"
-   note). */
+/* Finances card + Reputation card (2026-08-31: split apart from the
+   original combined "Finances & Reputation" card -- Finances shares the
+   Next Race row, Reputation now sits alone on its own row). Both share
+   this class for the same half-width sizing as every other Dashboard
+   card. Finances shows real numbers off handleGetMyFinancesReputation
+   (DataCache.gs) whenever this driver has any Transaction at all; Reputation
+   is a shell only -- ECO defers the whole Reputation system to a later
+   season, so it never shows a fabricated score, just a "not live yet" pill. */
 .rc-finrep-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
-.rc-finrep-section + .rc-finrep-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rc-silver); }
-.rc-finrep-section-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
 .rc-finrep-balance { font-family: var(--rc-font-heading); font-size: 28px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; margin-top: 8px; }
 .rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .rc-finrep-delta-up { color: #1f5c25; }
 .rc-finrep-delta-down { color: var(--rc-red); }
-.rc-finrep-frozen { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--rc-silver); }
-.rc-finrep-frozen-label { font-size: 12px; color: var(--rc-steel); }
-.rc-finrep-frozen-value { font-size: 13px; font-weight: 700; color: var(--rc-carbon); font-variant-numeric: tabular-nums; }
-/* Same size/weight as Current Seat's Position/Points/Podiums stats
-   (.rc-cs-stats/.rc-cs-stat/-label/-value, 2026-08-30 Matt's call: "make
-   league rank and percentile categories in the FINANCES card the same
-   size and weight/look the same as the ones in CURRENT SEAT"). */
-.rc-finrep-ranks { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+/* Bottom category row -- Finances: Frozen Balance/Bank Rank/Largest Win;
+   Reputation: League Rank/Percentile. Same size/weight/border-top-divider
+   look as Current Seat's Position/Points/Podiums stats (.rc-cs-stats
+   family) and Registration Status's Registered On/Class stats
+   (.rc-regstatus-stat family) -- every dashboard card's bottom category
+   row now matches (2026-08-31, Matt's call). */
+.rc-finrep-ranks { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-finrep-rank { flex: 1 1 80px; text-align: center; }
 .rc-finrep-rank-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
 .rc-finrep-rank-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
@@ -1729,6 +1723,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-finrep-rep-headline-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .rc-finrep-rep-headline { font-family: var(--rc-font-heading); font-size: 28px; font-weight: 800; color: var(--rc-silver); font-variant-numeric: tabular-nums; }
 .rc-finrep-soon { display: inline-block; padding: 3px 10px; border-radius: 4px; background: var(--rc-offwhite); color: var(--rc-steel); font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+/* Restored (2026-08-31) into the now-standalone Reputation card, unchanged
+   from how it looked in the old combined Finances & Reputation card. */
 .rc-finrep-meter { margin-top: 14px; }
 .rc-finrep-meter-track {
   height: 6px; border-radius: 3px;

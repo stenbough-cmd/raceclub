@@ -604,7 +604,17 @@
     // same trick already used for refreshing Current Seat.
     var nextRaceRow = el('div', 'rc-quick-row');
     nextRaceRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
-    nextRaceRow.appendChild(financesReputationCard(dashboardData.financesReputation));
+    nextRaceRow.appendChild(financesCard(dashboardData.financesReputation));
+
+    // Reputation + Recent Results -- third row (2026-08-31, Matt's call).
+    // Reputation split out of the old combined "Finances & Reputation"
+    // card; Recent Results is a brand-new placeholder card sitting next
+    // to it, no data wired up yet. Both are static (no live data), so
+    // neither needs rebuilding on the refresh callback below the way Next
+    // Race/Finances do.
+    var reputationRow = el('div', 'rc-quick-row');
+    reputationRow.appendChild(reputationCard());
+    reputationRow.appendChild(recentResultsCard());
 
     var topRow = el('div', 'rc-quick-row');
     // Current Seat is built first, purely so Registration Status can wire
@@ -613,8 +623,8 @@
     var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
     var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
       if (seatCard.rcRefresh) seatCard.rcRefresh();
-      // Next Race + Finances & Reputation have no rcRefresh of their own
-      // (plain renders, not stateful cards) -- re-fetch everything they're
+      // Next Race + Finances have no rcRefresh of their own (plain
+      // renders, not stateful cards) -- re-fetch everything they're
       // gated/built on and just rebuild the whole row in place.
       Promise.all([
         fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
@@ -623,13 +633,14 @@
       ]).then(function (results) {
         nextRaceRow.innerHTML = '';
         nextRaceRow.appendChild(nextRaceCard(results[1], results[0]));
-        nextRaceRow.appendChild(financesReputationCard(results[2]));
+        nextRaceRow.appendChild(financesCard(results[2]));
       });
     });
     topRow.appendChild(regCard);
     topRow.appendChild(seatCard);
     section.appendChild(topRow);
     section.appendChild(nextRaceRow);
+    section.appendChild(reputationRow);
   }
 
   // Full-page reload after ANY popup save (added 2026-08-30, Matt's call:
@@ -962,92 +973,107 @@
     return card;
   }
 
-  // Finances & Reputation -- shares the Next Race row (added 2026-08-30).
-  // Finances shows real numbers off handleGetMyFinancesReputation
-  // (DataCache.gs) once a round has been ingested for this driver's
-  // current season -- same "no SeasonHistory row yet" gate/empty-state as
-  // Current Seat, never a guessed $0. Reputation is deliberately built as
-  // a shell only: ECO defers the whole Reputation system to a later
-  // season (see v0.3-Economy-Reputation-Design.md), so this never shows a
-  // fabricated score -- just the section, present and labeled, with a
-  // "Not Live This Season" pill instead of a number.
-  function financesReputationCard(data) {
+  // Finances -- shares the Next Race row. Real numbers as soon as a Driver
+  // account exists (see handleGetMyFinancesReputation, DataCache.gs) --
+  // the starting balance lands the moment a Prospect is approved into a
+  // Driver, well before they've joined a team, specifically so a driver
+  // can see what they have to spend while deciding on a seat (2026-08-31,
+  // Matt's call). Not gated on a round having been ingested either.
+  // Balance is the headline, the delta sits on its own line right under it
+  // (up = muted green, down = house red), then a bottom category row --
+  // Frozen Balance / Bank Rank / Largest Win -- same "categories at the
+  // bottom" shape as Current Seat's Position/Points/Podiums stats
+  // (2026-08-31, Matt's call). Split out from what used to be one combined
+  // "Finances & Reputation" card -- Reputation now lives on its own, see
+  // reputationCard below. The only driver who still sees the empty state
+  // below is a Prospect -- statsKnown is false for them on purpose, since
+  // they haven't been approved into a Driver yet and have no balance.
+  function financesCard(data) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Finances'));
 
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Finances & Reputation'));
-
-    // FINANCES -- real numbers whenever any Transaction exists for this
-    // driver (see handleGetMyFinancesReputation's live-sum fallback), not
-    // gated on a round having been ingested. Balance is the headline, the
-    // delta sits on its own line right under it (up = muted green, down =
-    // house red), then Frozen Balance (frozenBalance -- the portion of a
-    // driver's balance locked up in active wagers; always "--" until the
-    // wager-placement mechanic that would actually freeze a stake ships,
-    // never guessed) and Class Rank. Bank Rank was removed entirely
-    // (2026-08-31, Matt's call) -- see handleGetMyFinancesReputation
-    // (DataCache.gs) for the matching backend removal.
-    var finSection = el('div', 'rc-finrep-section');
-    finSection.appendChild(el('div', 'rc-finrep-section-label', 'Finances'));
     if (data && data.success && data.statsKnown) {
-      finSection.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
+      card.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
       var delta = Number(data.deltaSinceLastRound) || 0;
       if (delta !== 0) {
-        finSection.appendChild(el('div', 'rc-finrep-delta ' + (delta > 0 ? 'rc-finrep-delta-up' : 'rc-finrep-delta-down'),
+        card.appendChild(el('div', 'rc-finrep-delta ' + (delta > 0 ? 'rc-finrep-delta-up' : 'rc-finrep-delta-down'),
           (delta > 0 ? '+' : '') + formatMoney(delta) + ' since last update'));
       }
 
-      var frozenRow = el('div', 'rc-finrep-frozen');
-      frozenRow.appendChild(el('span', 'rc-finrep-frozen-label', 'Frozen Balance'));
-      frozenRow.appendChild(el('span', 'rc-finrep-frozen-value',
-        (data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—'));
-      finSection.appendChild(frozenRow);
-
-      if (data.classBalanceRank) {
-        var ranks = el('div', 'rc-finrep-ranks');
-        var c = el('div', 'rc-finrep-rank');
-        c.appendChild(el('div', 'rc-finrep-rank-label', 'Class Rank'));
-        c.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')));
-        ranks.appendChild(c);
-        finSection.appendChild(ranks);
-      }
+      var stats = el('div', 'rc-finrep-ranks');
+      [
+        // Frozen Balance -- the portion locked in active wagers; always a
+        // dash until the wager-placement mechanic that would actually
+        // freeze a stake ships (Wagers sheet exists, nothing writes to it
+        // yet), never guessed.
+        ['Frozen Balance', (data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—'],
+        ['Bank Rank', data.globalBalanceRank ? (ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')) : '—'],
+        // Largest Win -- biggest single positive Transaction ever, not
+        // counting the StartingBalance grant. Dash until this driver has
+        // actually earned one (a sponsor bonus, etc.).
+        ['Largest Win', (data.largestWin != null) ? formatMoney(data.largestWin) : '—']
+      ].forEach(function (pair) {
+        var stat = el('div', 'rc-finrep-rank');
+        stat.appendChild(el('div', 'rc-finrep-rank-label', pair[0]));
+        stat.appendChild(el('div', 'rc-finrep-rank-value' + (pair[1] === '—' ? ' rc-finrep-rank-value-empty' : ''), pair[1]));
+        stats.appendChild(stat);
+      });
+      card.appendChild(stats);
     } else {
-      finSection.appendChild(el('p', 'rc-cs-empty', 'No money has moved yet this season -- your balance will appear here as soon as you join a team.'));
+      card.appendChild(el('p', 'rc-cs-empty', 'Your balance will appear here once your driver account is approved.'));
     }
-    card.appendChild(finSection);
 
-    // REPUTATION -- built shell only, per v0.3-Economy-Reputation-Design.md
-    // (ECO defers the real system to a later season). Structurally mirrors
-    // Finances (headline + rank pair + meter) so the section reads as
-    // "coming soon", not "broken" -- but every number stays a dash and the
-    // meter's fill stays at 0%, never a fabricated score.
-    var repSection = el('div', 'rc-finrep-section');
-    repSection.appendChild(el('div', 'rc-finrep-section-label', 'Reputation'));
+    return card;
+  }
 
-    var repHeadlineRow = el('div', 'rc-finrep-rep-headline-row');
-    repHeadlineRow.appendChild(el('span', 'rc-finrep-rep-headline', '—'));
-    repHeadlineRow.appendChild(el('span', 'rc-finrep-soon', 'Not Live This Season'));
-    repSection.appendChild(repHeadlineRow);
+  // Reputation -- now its OWN card, on its own row (2026-08-31, Matt's
+  // call), split out of the old combined "Finances & Reputation" card.
+  // Still a shell only: ECO defers the whole Reputation system to a later
+  // season (see v0.3-Economy-Reputation-Design.md), so this never shows a
+  // fabricated score -- just the card, present and labeled, with a
+  // "Not Live This Season" pill and dash-valued bottom categories, same
+  // "categories at the bottom" shape as every other dashboard card.
+  function reputationCard() {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Reputation'));
 
+    var headlineRow = el('div', 'rc-finrep-rep-headline-row');
+    headlineRow.appendChild(el('span', 'rc-finrep-rep-headline', '—'));
+    headlineRow.appendChild(el('span', 'rc-finrep-soon', 'Not Live This Season'));
+    card.appendChild(headlineRow);
+
+    // Meter -- restored (2026-08-31, Matt's call: "add the reputation bar
+    // back into the REPUTATION card exactly how it appeared in the
+    // FINANCE card") exactly as it was before the Finances/Reputation
+    // split: a disabled red-to-gray gradient track with Low/Mid/High
+    // ticks underneath, purely decorative -- no real fill, since there's
+    // no reputation number to plot yet.
     var meter = el('div', 'rc-finrep-meter rc-finrep-meter-disabled');
     meter.appendChild(el('div', 'rc-finrep-meter-track'));
     var meterTicks = el('div', 'rc-finrep-meter-ticks');
     ['Low', 'Mid', 'High'].forEach(function (label) { meterTicks.appendChild(el('span', '', label)); });
     meter.appendChild(meterTicks);
-    repSection.appendChild(meter);
+    card.appendChild(meter);
 
-    var repRanks = el('div', 'rc-finrep-ranks');
-    var rg = el('div', 'rc-finrep-rank');
-    rg.appendChild(el('div', 'rc-finrep-rank-label', 'League Rank'));
-    rg.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-empty', '—'));
-    repRanks.appendChild(rg);
-    var rc = el('div', 'rc-finrep-rank');
-    rc.appendChild(el('div', 'rc-finrep-rank-label', 'Percentile'));
-    rc.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-empty', '—'));
-    repRanks.appendChild(rc);
-    repSection.appendChild(repRanks);
+    var stats = el('div', 'rc-finrep-ranks');
+    [['League Rank', '—'], ['Percentile', '—']].forEach(function (pair) {
+      var stat = el('div', 'rc-finrep-rank');
+      stat.appendChild(el('div', 'rc-finrep-rank-label', pair[0]));
+      stat.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-empty', pair[1]));
+      stats.appendChild(stat);
+    });
+    card.appendChild(stats);
 
-    card.appendChild(repSection);
+    return card;
+  }
 
+  // Recent Results -- placeholder card, next to Reputation on the third
+  // row (2026-08-31, Matt's call). No backend/data wired up yet -- just
+  // holding the spot in the dashboard layout for whenever this gets built.
+  function recentResultsCard() {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Recent Results'));
+    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
     return card;
   }
 
@@ -5345,7 +5371,7 @@
   // "list of many rows" shape so more Economy settings can be added here
   // later without restructuring this modal.
   function openEconomyModal(token) {
-    var modal = showModal('Economy');
+    var modal = showModal('Economy', { wide: true });
     modal.body.appendChild(buildSpinner('Loading Economy settings…'));
 
     fetchApi('getEconomySettings', { token: token }).then(function (data) {
@@ -5356,10 +5382,12 @@
       }
 
       var balInput = wizNumberInput(data.newDriverStartingBalance, function () {}, { min: 0, step: 100 });
-      modal.body.appendChild(wizField(
+      var balField = wizField(
         'New Driver Starting Balance ($)', balInput,
         'Deposited automatically, once, the moment a Prospect is approved into a Driver. Veteran drivers already carry a balance forward season to season and are never re-seeded.'
-      ));
+      );
+      balField.style.width = '50%'; // half the popup's width, not full (Matt's call) -- this modal is wide now to match the other Admin popups
+      modal.body.appendChild(balField);
 
       var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:16px;');
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
