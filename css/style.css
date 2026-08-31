@@ -334,12 +334,14 @@ p { margin: 0 0 0.75em; }
    and the Tracks list's Region grouping -- one shared "grouping" badge
    instead of near-identical copies per list. */
 .rc-badge-group { background: var(--rc-carbon); }
-/* Sponsor risk-tier badges (Data Management's Sponsors popup) -- Safe/
-   Balanced/Aggressive, same chip shape as the class badges, colored by
-   risk level (green -> steel blue -> red) rather than by class. */
-.rc-badge-tier-safe { background: #1f5c25; }
+/* Sponsor risk-tier badges (Data Management's Sponsors popup, and the
+   Sponsors page's own full-catalog list) -- Easy/Balanced/Risky (renamed
+   2026-08-31 from Safe/Balanced/Aggressive, Matt's call), same chip shape
+   as the class badges, colored by risk level (green -> steel blue -> red)
+   rather than by class. */
+.rc-badge-tier-easy { background: #1f5c25; }
 .rc-badge-tier-balanced { background: #1a5276; }
-.rc-badge-tier-aggressive { background: var(--rc-red); }
+.rc-badge-tier-risky { background: var(--rc-red); }
 /* Season status pill (League Management's Season Tools list, added
    2026-08-30) -- same chip shape, colored so Draft/Scheduled/Registration/
    Active/Completed read apart from each other at a glance in a flat list
@@ -450,7 +452,7 @@ p { margin: 0 0 0.75em; }
 /* Driver-facing sponsor picker -- shared by the registration flow's
    sponsor-pick step and the Sponsors page's "Choose Sponsors" modal
    (Matt's call, 2026-08-30: both list every sponsor, grouped by Tier
-   (Safe/Balanced/Aggressive, same _rcTierBadge chip the admin Sponsors
+   (Easy/Balanced/Risky, same _rcTierBadge chip the admin Sponsors
    popup uses) with its bonus/penalty numbers and a logo capped at 140px
    wide / 80px tall, and both use this exact same component -- see
    buildSponsorPickerList() in Account.html). Scrolls internally past a
@@ -1694,7 +1696,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
 }
 .rc-nextrace-pill-gold { background: #b8860b; }
-.rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; }
+/* Nudged up a few px from true vertical-center (2026-08-31, Matt's call)
+   so it sits closer to the event title at the top of .rc-nextrace-info,
+   instead of centering against the taller stat-row/pill content below the
+   title. */
+.rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; margin-top: -10px; }
 
 /* Finances card + Reputation card (2026-08-31: split apart from the
    original combined "Finances & Reputation" card -- Finances shares the
@@ -1705,7 +1711,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    is a shell only -- ECO defers the whole Reputation system to a later
    season, so it never shows a fabricated score, just a "not live yet" pill. */
 .rc-finrep-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
-.rc-finrep-balance { font-family: var(--rc-font-heading); font-size: 28px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; margin-top: 8px; }
+/* Balance + inline Frozen Balance sit on one row now (2026-08-31, Matt's
+   call) -- baseline-aligned so the small gray Frozen figure sits right
+   against the bottom of the big balance number instead of floating at a
+   mismatched height. */
+.rc-finrep-balance-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.rc-finrep-balance { font-family: var(--rc-font-heading); font-size: 28px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; }
+/* Gray and smaller than the main balance on purpose -- it's supplementary
+   context (how much of the balance to the left is locked in wagers), not
+   a competing headline figure. */
+.rc-finrep-frozen-inline { font-size: 13px; font-weight: 600; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .rc-finrep-delta-up { color: #1f5c25; }
 .rc-finrep-delta-down { color: var(--rc-red); }
@@ -3184,10 +3199,28 @@ body.rc-modal-scroll-locked {
   opacity: 0.35;
   user-select: none;
 }
+/* Every race card gets the same diagonal "finish flag" top accent the
+   Dashboard cards and Special Events use, just gray (2026-08-31, Matt's
+   call) -- ties the whole calendar list into the same visual system
+   instead of only Special Events getting the accent treatment. Defined on
+   the base .rc-cal-race so it also covers plain rounds; the more specific
+   .rc-cal-race-special::before rule right below wins for Special Events
+   and repaints it gold. */
+.rc-cal-race::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 4px;
+  background: var(--rc-steel);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
 /* Special Events get a bit more of the same gold the star icon already
    uses (Matt's call: "stick out a little better") -- a gold-tinted
    border plus the same diagonal "finish flag" accent shape the Dashboard
-   cards use, just gold instead of red. */
+   cards use, just gold instead of red (and gold instead of the gray every
+   other race card now gets). */
 .rc-cal-race-special { border-color: #b8860b; }
 .rc-cal-race-special::before {
   content: "";
@@ -3256,12 +3289,11 @@ body.rc-modal-scroll-locked {
 /* Light divider under the track name/layout line (2026-08-30, Matt's
    call), separating it from the date/time row below it -- same offwhite
    weight used elsewhere on the site for a subtle row divider (e.g.
-   .rc-dm-subrow-edit's border-top). */
-/* Shrunk to fit its own text (2026-08-30, Matt's call) rather than a
-   block-level full-row width -- the border-bottom now only runs as far
-   as the track/layout text itself, not the whole card, closer in width
-   to the time/date info line sitting underneath it. */
-.rc-cal-track { display: inline-block; width: fit-content; max-width: 100%; font-size: 13px; color: var(--rc-steel); margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+   .rc-dm-subrow-edit's border-top). Back to running the full card width
+   (2026-08-31, Matt's call: "back to the original length") -- the
+   2026-08-30 "shrink to fit the text" treatment is reverted; plain
+   block-level width again instead of inline-block/fit-content. */
+.rc-cal-track { display: block; font-size: 13px; color: var(--rc-steel); margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
 .rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
 /* Layout name -- sits right next to the track name (Matt's call), same
    line, visually secondary (regular weight, steel color) so the track

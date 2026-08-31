@@ -280,7 +280,14 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
 // Sponsor risk tiers -- fixed 3-tier ladder, see
 // v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
 // Tier dropdown in both the Sponsors popup's Add and Edit forms.
-var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Aggressive'];
+// Renamed 2026-08-31 (Matt's call: "EASY, BALANCED, RISKY -- not
+// aggressive") from Safe/Balanced/Aggressive -- purely a label change,
+// same 3-tier ladder underneath. Any existing Sponsors row still holding
+// the old text ("Safe"/"Aggressive") in its Tier column falls into an
+// "Unclassified" group everywhere sponsors are listed until an admin
+// reopens that sponsor in Edit Sponsor and reselects its tier from this
+// new list -- nothing renames those cells automatically.
+var SPONSOR_TIER_LIST = ['Easy', 'Balanced', 'Risky'];
 
 // Bonus/penalty trigger vocabulary -- every trigger currently used across
 // the Season 1 Starting Sponsor Catalog (see Website.gs's old

@@ -993,7 +993,20 @@
     card.appendChild(el('h3', 'rc-dash-card-title', 'Finances'));
 
     if (data && data.success && data.statsKnown) {
-      card.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
+      // Frozen Balance sits inline next to the main balance now, not down
+      // in the bottom category row with Bank Rank/Largest Win (2026-08-31,
+      // Matt's call: "make the FROZEN balance feel like it's a part of
+      // the regular balance data" instead of reading as one more
+      // quick-glance stat) -- gray and smaller so it never competes with
+      // the headline balance for attention, but it's still the portion
+      // locked in active wagers, so it belongs right beside the number
+      // it's carved out of rather than off in its own category.
+      var balanceRow = el('div', 'rc-finrep-balance-row');
+      balanceRow.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
+      balanceRow.appendChild(el('div', 'rc-finrep-frozen-inline',
+        'Frozen ' + ((data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—')));
+      card.appendChild(balanceRow);
+
       var delta = Number(data.deltaSinceLastRound) || 0;
       if (delta !== 0) {
         card.appendChild(el('div', 'rc-finrep-delta ' + (delta > 0 ? 'rc-finrep-delta-up' : 'rc-finrep-delta-down'),
@@ -1002,11 +1015,6 @@
 
       var stats = el('div', 'rc-finrep-ranks');
       [
-        // Frozen Balance -- the portion locked in active wagers; always a
-        // dash until the wager-placement mechanic that would actually
-        // freeze a stake ships (Wagers sheet exists, nothing writes to it
-        // yet), never guessed.
-        ['Frozen Balance', (data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—'],
         ['Bank Rank', data.globalBalanceRank ? (ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')) : '—'],
         // Largest Win -- biggest single positive Transaction ever, not
         // counting the StartingBalance grant. Dash until this driver has
@@ -1171,12 +1179,13 @@
       cardBySponsorId[s.SponsorID] = card;
     }
 
-    // Grouped by Tier (Safe -> Balanced -> Aggressive), same order and
-    // same _rcTierBadge() chip the admin Sponsors popup already uses
-    // (Matt's call, 2026-08-30: "make it obvious" which risk tier each
-    // sponsor is) -- a driver picking sponsors sees the same risk-level
-    // grouping an admin managing the catalog does.
-    var TIER_ORDER = ['Safe', 'Balanced', 'Aggressive'];
+    // Grouped by Tier (Easy -> Balanced -> Risky, renamed 2026-08-31 from
+    // Safe/Balanced/Aggressive -- Matt's call), same order and same
+    // _rcTierBadge() chip the admin Sponsors popup already uses (Matt's
+    // call, 2026-08-30: "make it obvious" which risk tier each sponsor
+    // is) -- a driver picking sponsors sees the same risk-level grouping
+    // an admin managing the catalog does.
+    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
     var byTier = {};
     sponsors.forEach(function (s) {
       var tier = s.Tier || 'Unclassified';
@@ -1984,18 +1993,97 @@
   //      locked for the rest of the season, same rule that always applied,
   //      just enforced at season-start now instead of at registration.
   // ---------------------------------------------------------------------
+  // Full sponsor catalog, read-only -- grouped Easy/Balanced/Risky same as
+  // the admin Sponsors popup's own list (buildSponsorsPanel), sponsors
+  // inset under each tier heading exactly like Cars/Members' rows-inside-
+  // a-folder look (.rc-dm-group/.rc-dm-row/.rc-dm-subrow-edit -- the same
+  // three classes those lists use), with the same faint offwhite line
+  // between every entry that pattern already gives for free. Added
+  // 2026-08-31 (Matt's call: the Sponsors page "looks like a stripped
+  // down pick a sponsor" -- it should feel like it's showing all the
+  // data, not just this driver's 3 picks) beneath the existing "your
+  // sponsors" panel above. Inactive sponsors are left out here on
+  // purpose -- unlike the admin catalog view, a driver can't pick one
+  // anyway, so there's nothing useful about showing it retired.
+  function buildSponsorCatalogBrowsePanel(sponsors) {
+    var panel = el('div', 'rc-panel');
+    panel.appendChild(el('h3', 'margin-top:0;', 'All Sponsors'));
+
+    var active = (sponsors || []).filter(function (s) { return _rcRowActive(s); });
+    if (!active.length) {
+      panel.appendChild(el('div', 'rc-dm-empty', 'No sponsors in the catalog yet.'));
+      return panel;
+    }
+
+    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
+    var byTier = {};
+    active.forEach(function (s) {
+      var tier = s.Tier || 'Unclassified';
+      if (!byTier[tier]) byTier[tier] = [];
+      byTier[tier].push(s);
+    });
+    var tierOrder = TIER_ORDER.slice();
+    Object.keys(byTier).forEach(function (t) { if (tierOrder.indexOf(t) === -1) tierOrder.push(t); });
+
+    tierOrder.forEach(function (tier) {
+      var list = byTier[tier];
+      if (!list) return;
+      var group = el('div', 'rc-dm-group');
+      var tierHead = el('div', 'rc-dm-row');
+      tierHead.appendChild(_rcTierBadge(tier));
+      group.appendChild(tierHead);
+
+      list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
+        var row = el('div', 'rc-dm-subrow-edit rc-tooltip');
+        row.setAttribute('data-tooltip', sponsorTermsTooltip(s));
+
+        var info = el('div', 'rc-dm-car-info');
+        var logoCol = el('div', 'rc-dm-sponsor-logo-col');
+        var logo = document.createElement('img');
+        logo.className = 'rc-dm-sponsor-logo';
+        logo.alt = '';
+        logo.src = sponsorLogoSrc(s.Name || '');
+        logo.onerror = function () { this.style.display = 'none'; };
+        logoCol.appendChild(logo);
+        info.appendChild(logoCol);
+
+        var textCol = el('div', null);
+        textCol.appendChild(el('div', null, escapeHtml(s.Name || '(unnamed sponsor)')));
+        var bonusAmt = Number(s.BonusAmount) || 0;
+        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+        var terms = el('div', 'rc-hint');
+        terms.appendChild(el('span', 'rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
+        terms.appendChild(document.createTextNode('  ·  '));
+        terms.appendChild(el('span', 'rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+        textCol.appendChild(terms);
+        info.appendChild(textCol);
+        row.appendChild(info);
+
+        group.appendChild(row);
+      });
+      panel.appendChild(group);
+    });
+    return panel;
+  }
+
   function renderSponsorsSection(token) {
     var section = document.getElementById('rc-section-sponsors');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Sponsors'));
+    // Page-level spinner sits directly in the section, same as Calendar's
+    // own loading state -- no extra .rc-panel wrapped around it (2026-08-31
+    // fix; Matt's call: it was reading as "a popup style that sits in a
+    // large container" -- that was this spinner nested inside a second
+    // bordered card on top of its own boxed styling, not how any other
+    // section's loading state looks).
+    section.appendChild(buildPageSpinner('Loading your sponsors...'));
 
-    var panel = el('div', 'rc-panel');
-    panel.appendChild(buildSpinner('Loading your sponsors...'));
-    section.appendChild(panel);
+    function render(data, catalog) {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Sponsors'));
 
-    function render(data) {
-      panel.innerHTML = '';
+      var panel = el('div', 'rc-panel');
+      section.appendChild(panel);
 
       if (!data || !data.success) {
         panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Could not load your sponsors right now.'));
@@ -2003,6 +2091,7 @@
       }
       if (!data.hasSeat) {
         panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Not on a team yet -- register for a season to choose sponsors.'));
+        if (catalog.length) section.appendChild(buildSponsorCatalogBrowsePanel(catalog));
         return;
       }
 
@@ -2050,10 +2139,18 @@
       } else if (data.hasSponsors) {
         panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season has started -- sponsors are locked in for the rest of it.'));
       }
+
+      // Full catalog, every sponsor grouped by tier, sits below the
+      // driver's own pick -- see buildSponsorCatalogBrowsePanel above.
+      if (catalog.length) section.appendChild(buildSponsorCatalogBrowsePanel(catalog));
     }
 
-    fetchApi('getMySponsors', { token: token }).then(render).catch(function () {
-      render({ success: false });
+    Promise.all([
+      fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getSponsors', { token: token }).catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      var catalog = (results[1] && results[1].success && results[1].sponsors) ? results[1].sponsors : [];
+      render(results[0], catalog);
     });
   }
 
@@ -6452,17 +6549,18 @@
     return el('span', 'rc-badge-chip rc-badge-cartier ' + colorClass, escapeHtml(key) + ' Tier');
   }
 
-  // Tier badge -- Safe/Balanced/Aggressive, same colored-chip pattern as
-  // _rcClassBadge above, just a different color mapping (risk level, not
-  // car class).
+  // Tier badge -- Easy/Balanced/Risky (renamed from Safe/Balanced/
+  // Aggressive, 2026-08-31, Matt's call: "not aggressive"), same
+  // colored-chip pattern as _rcClassBadge above, just a different color
+  // mapping (risk level, not car class).
   function _rcTierBadge(tier) {
     var key = String(tier || '').trim();
-    var map = { Safe: 'rc-badge-tier-safe', Balanced: 'rc-badge-tier-balanced', Aggressive: 'rc-badge-tier-aggressive' };
+    var map = { Easy: 'rc-badge-tier-easy', Balanced: 'rc-badge-tier-balanced', Risky: 'rc-badge-tier-risky' };
     var colorClass = map[key] || '';
     return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(key || 'Unclassified'));
   }
 
-  // Grouped by Tier (Safe -> Balanced -> Aggressive, the same order the
+  // Grouped by Tier (Easy -> Balanced -> Risky, the same order the
   // catalog was designed in -- see v0.3-Economy-Reputation-Design.md's
   // Sponsorship System), then one row per sponsor -- logo, name, bonus/
   // penalty summary, Edit button. Unlike Cars, deactivated sponsors stay
@@ -6478,7 +6576,7 @@
       return panel;
     }
 
-    var TIER_ORDER = ['Safe', 'Balanced', 'Aggressive'];
+    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
     var byTier = {};
     all.forEach(function (s) {
       var tier = s.Tier || 'Unclassified';
