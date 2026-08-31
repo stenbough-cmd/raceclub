@@ -153,9 +153,9 @@
       <section id="rc-section-objectives" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-protests" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-datamgmt" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-help" class="rc-content-section" style="display:none;"></section>
     </div>
   </main>
@@ -250,6 +250,121 @@
     return d.innerHTML;
   }
 
+  // ---------------------------------------------------------------------
+  // THEMED TOOLTIP (rebuilt 2026-08-30, Matt's call: "stop all tooltips
+  // from being cut off when hovering over something in a popup") -- see
+  // .rc-tooltip-bubble in style.css for the full story on why. Any
+  // element with class "rc-tooltip" plus a data-tooltip="..." attribute
+  // gets this bubble on hover/focus; nothing else needs to change at any
+  // existing call site, since this reads the same attribute the old
+  // pure-CSS version did. One bubble is created lazily and reused for
+  // every tooltip on the page rather than one per trigger -- delegated
+  // document-level listeners mean a tooltip added to the DOM later (a
+  // freshly rendered popup row, say) works automatically with no wiring.
+  //
+  // position:fixed + JS-measured coordinates is the actual fix: fixed
+  // positioning is computed against the viewport, not any scrolling
+  // ancestor, so a modal's own overflow:auto can never clip this bubble
+  // the way it clipped the old ::after-based one. showTooltipBubble()
+  // also flips the bubble below its target (instead of above) and clamps
+  // it horizontally when it would otherwise run off the top or a side of
+  // the screen, so this also covers a tooltip near the edge of the
+  // browser window itself, not just inside a popup.
+  // ---------------------------------------------------------------------
+  var rcTooltipBubbleEl = null;
+  var rcTooltipArrowEl = null;
+  var rcTooltipTextEl = null;
+  var rcTooltipCurrentTarget = null;
+
+  function rcEnsureTooltipBubble() {
+    if (rcTooltipBubbleEl) return;
+    rcTooltipBubbleEl = el('div', 'rc-tooltip-bubble');
+    rcTooltipTextEl = el('div');
+    rcTooltipArrowEl = el('div', 'rc-tooltip-bubble-arrow');
+    rcTooltipBubbleEl.appendChild(rcTooltipTextEl);
+    rcTooltipBubbleEl.appendChild(rcTooltipArrowEl);
+    document.body.appendChild(rcTooltipBubbleEl);
+  }
+
+  function rcShowTooltipBubble(target) {
+    var text = target.getAttribute('data-tooltip');
+    if (!text) return;
+    rcEnsureTooltipBubble();
+    rcTooltipCurrentTarget = target;
+    rcTooltipTextEl.textContent = text; // textContent, not innerHTML --
+    // this is arbitrary catalog/sponsor text, not markup, so this also
+    // keeps it XSS-safe by construction regardless of what's in it.
+    rcTooltipBubbleEl.classList.add('rc-tooltip-bubble-visible');
+    rcPositionTooltipBubble(target);
+  }
+
+  function rcHideTooltipBubble() {
+    if (!rcTooltipBubbleEl) return;
+    rcTooltipBubbleEl.classList.remove('rc-tooltip-bubble-visible');
+    rcTooltipCurrentTarget = null;
+  }
+
+  function rcPositionTooltipBubble(target) {
+    var rect = target.getBoundingClientRect();
+    var gap = 9;
+    var margin = 8;
+    var bubbleRect = rcTooltipBubbleEl.getBoundingClientRect();
+    var above = true;
+    var top = rect.top - bubbleRect.height - gap;
+    if (top < margin) { above = false; top = rect.bottom + gap; }
+    var left = rect.left + rect.width / 2 - bubbleRect.width / 2;
+    var maxLeft = window.innerWidth - bubbleRect.width - margin;
+    left = Math.max(margin, Math.min(maxLeft, left));
+    rcTooltipBubbleEl.style.top = top + 'px';
+    rcTooltipBubbleEl.style.left = left + 'px';
+    rcTooltipBubbleEl.classList.toggle('rc-tooltip-bubble-above', above);
+    rcTooltipBubbleEl.classList.toggle('rc-tooltip-bubble-below', !above);
+    // The arrow points at the target's own horizontal center regardless
+    // of how far the bubble itself got clamped sideways to stay
+    // on-screen -- clamped to the bubble's own width so it never pokes
+    // out past the bubble's rounded corners.
+    var arrowLeft = rect.left + rect.width / 2 - left;
+    arrowLeft = Math.max(10, Math.min(bubbleRect.width - 10, arrowLeft));
+    rcTooltipArrowEl.style.left = arrowLeft + 'px';
+  }
+
+  (function rcInitTooltips() {
+    function findTooltipTarget(node) {
+      return (node && node.closest) ? node.closest('.rc-tooltip[data-tooltip]') : null;
+    }
+    document.addEventListener('mouseover', function (e) {
+      var t = findTooltipTarget(e.target);
+      if (t) rcShowTooltipBubble(t);
+    });
+    document.addEventListener('mouseout', function (e) {
+      var t = findTooltipTarget(e.target);
+      // relatedTarget is where the pointer is headed -- skip hiding when
+      // it's just moving to a child of the same tooltip trigger, same as
+      // the old CSS :hover would have kept it open in that case.
+      if (t && (!e.relatedTarget || !t.contains(e.relatedTarget))) rcHideTooltipBubble();
+    });
+    document.addEventListener('focusin', function (e) {
+      var t = findTooltipTarget(e.target);
+      if (t) rcShowTooltipBubble(t);
+    });
+    document.addEventListener('focusout', function (e) {
+      var t = findTooltipTarget(e.target);
+      if (t) rcHideTooltipBubble();
+    });
+    // A visible tooltip is positioned against its target's coordinates at
+    // the moment it opened -- if the page scrolls or resizes underneath
+    // it without a matching mouseout (scrolling a popup's list with the
+    // mouse held still over a row, say), those coordinates go stale.
+    // capture:true is required for scroll specifically -- it doesn't
+    // bubble, so a listener on document only ever sees it this way.
+    document.addEventListener('scroll', function () {
+      if (rcTooltipCurrentTarget) rcPositionTooltipBubble(rcTooltipCurrentTarget);
+    }, true);
+    window.addEventListener('resize', function () {
+      if (rcTooltipCurrentTarget) rcPositionTooltipBubble(rcTooltipCurrentTarget);
+    });
+  })();
+
   // Flat, stroke-based icons (no emoji) -- one per sidebar item, unchanged
   // from v0.4.0.
   var ICON_DASHBOARD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>';
@@ -283,6 +398,10 @@
   var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
   var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
   var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
+  // Added 2026-08-30 for the new Protests sidebar item (Steward and above)
+  // -- a caution triangle, matching how the rest of this icon set favors
+  // one clear symbol per concept over anything decorative.
+  var ICON_PROTESTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line><line x1="12" y1="17.2" x2="12" y2="17.4"></line></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -310,11 +429,18 @@
   // content (renderDashboardSection, currently just the Registration
   // Status card) instead of the generic "Coming soon" wipe. Calendar
   // removed the same day/way (renderCalendarSection).
+  // Admin removed from this list (2026-08-30) -- it now hosts what Data
+  // Management used to show (see renderAdminSection), same "not a
+  // placeholder anymore" move League Management made earlier. Protests
+  // takes its place as a placeholder -- a real Protests sheet/schema
+  // already exists (Core.gs) but no admin tooling has been built against
+  // it yet, so it gets the same generic "Coming soon" panel every other
+  // not-yet-built section gets, same convention as Admin used to follow.
   var PLACEHOLDER_LABELS = {
     finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
     objectives: 'Objectives', halloffame: 'Hall of Fame',
-    admin: 'Admin'
+    protests: 'Protests'
   };
 
   // Set once, in buildFullProfileUI() -- lets the Edit Profile/Help nav
@@ -384,25 +510,28 @@
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);
-    // Admin is still just a placeholder for now -- Matt's not sure yet
-    // what lives here, so it stays a plain link (default showSection(id)
-    // handler, same as any other placeholder nav item) rather than having
-    // its own render function.
-    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true);
-    nav.appendChild(adminBtn);
-    // Data Management is real content now, not a placeholder -- it fetches
-    // fresh every time the link is clicked (see renderDataManagementSection),
-    // same currentToken-closure pattern the Edit Profile/Help popups use,
-    // since this button is built before profile/token exist on first load.
-    // Members/Tracks/Cars/Sponsors each open their own popup from here
-    // (openMembersModal etc.) rather than rendering inline.
-    var dataMgmtBtn = makeNavButton('datamgmt', 'Data Management', ICON_DATAMGMT, 'rc-nav-datamgmt', true, function () {
-      showSection('datamgmt');
-      renderDataManagementSection(currentToken);
+    // Admin (2026-08-30: no longer just a placeholder) now hosts what
+    // Data Management used to show -- Members/Tracks/Cars/Sponsors, each
+    // opening its own popup from here (openMembersModal etc.) rather than
+    // rendering inline -- see renderAdminSection. The standalone Data
+    // Management button is gone; Admin-only accounts reach the exact same
+    // tools from here instead (Matt's call: "DATA MANAGEMENT page can be
+    // moved to ADMIN...admins can only access this ADMIN section").
+    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true, function () {
+      showSection('admin');
+      renderAdminSection(currentToken);
     });
-    nav.appendChild(dataMgmtBtn);
+    nav.appendChild(adminBtn);
+    // Protests (added 2026-08-30) -- Steward and above (Matt's call:
+    // "PROTESTS button above LEAGUE MANAGEMENT that stewards and above
+    // can access"). Still a placeholder (see PLACEHOLDER_LABELS) -- the
+    // Protests sheet/schema already exists (Core.gs) but no admin tooling
+    // has been built against it yet, same "button exists, content lands
+    // later" treatment Admin itself used to get.
+    var protestsBtn = makeNavButton('protests', 'Protests', ICON_PROTESTS, 'rc-nav-protests', true);
+    nav.appendChild(protestsBtn);
     // League Management is real content now (renderLeagueManagementSection),
-    // same lazy-fetch-on-click pattern as Data Management.
+    // same lazy-fetch-on-click pattern as Admin.
     var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true, function () {
       showSection('league');
       renderLeagueManagementSection(currentToken);
@@ -475,6 +604,7 @@
     // same trick already used for refreshing Current Seat.
     var nextRaceRow = el('div', 'rc-quick-row');
     nextRaceRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
+    nextRaceRow.appendChild(financesReputationCard(dashboardData.financesReputation));
 
     var topRow = el('div', 'rc-quick-row');
     // Current Seat is built first, purely so Registration Status can wire
@@ -483,21 +613,39 @@
     var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
     var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
       if (seatCard.rcRefresh) seatCard.rcRefresh();
-      // Next Race has no rcRefresh of its own (it's a plain render, not a
-      // stateful card) -- re-fetch both pieces it's gated/built on and
-      // just rebuild it in place.
+      // Next Race + Finances & Reputation have no rcRefresh of their own
+      // (plain renders, not stateful cards) -- re-fetch everything they're
+      // gated/built on and just rebuild the whole row in place.
       Promise.all([
         fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; })
+        fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
+        fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; })
       ]).then(function (results) {
         nextRaceRow.innerHTML = '';
         nextRaceRow.appendChild(nextRaceCard(results[1], results[0]));
+        nextRaceRow.appendChild(financesReputationCard(results[2]));
       });
     });
     topRow.appendChild(regCard);
     topRow.appendChild(seatCard);
     section.appendChild(topRow);
     section.appendChild(nextRaceRow);
+  }
+
+  // Full-page reload after ANY popup save (added 2026-08-30, Matt's call:
+  // "Whenever I'm in a popup and saves some kind of information, it
+  // should reload the entire page after it saves and return to the
+  // dashboard so that notifications popup and items on the screen
+  // refresh"). Deliberately a real navigation, not showSection('dashboard')
+  // + a local re-render -- a hard reload is the one thing guaranteed to
+  // pick up EVERYTHING a save could have touched at once (this driver's
+  // own profile/avatar, the header's notification bell, another section's
+  // now-stale list) without maintaining a bespoke refresh path per save.
+  // Account.html has no section-restore-from-URL logic, so a plain
+  // navigation here already lands back on Dashboard by default -- same
+  // as any fresh visit to this page.
+  function rcReloadAfterSave() {
+    window.location.href = 'Account.html';
   }
 
   function formatMoney(n) {
@@ -758,6 +906,11 @@
     var isSpecial = data.kind === 'special';
     var body = el('div', 'rc-nextrace-body');
 
+    // Left-justified info column (Event title, then Track/Layout, then the
+    // rest), track image to the right, vertically centered against the
+    // whole text block (2026-08-30, Matt's call) -- .rc-nextrace-body
+    // centers this row's cross-axis so the image lines up regardless of
+    // how tall the text column ends up.
     var info = el('div', 'rc-nextrace-info');
     var nameWrap = el('div', 'rc-nextrace-name');
     nameWrap.appendChild(document.createTextNode(data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum))));
@@ -769,6 +922,7 @@
 
     var stats = el('div', 'rc-cal-stats');
     stats.appendChild(calStat(ICON_CLOCK, formatRaceDateTime(data.startUtc, driverTz), 'Start time, converted to your local timezone'));
+    if (data.raceLengthTier) stats.appendChild(calStat(ICON_CLOCK, data.raceLengthTier, 'Race length tier'));
     info.appendChild(stats);
 
     if (isSpecial) {
@@ -778,6 +932,9 @@
     }
     body.appendChild(info);
 
+    // Silently omitted if the track has no image on disk -- same onerror
+    // pattern used everywhere else on the site (Matt: "if one doesn't
+    // exist let it silently not show anything").
     if (data.trackId) {
       var trackImg = document.createElement('img');
       trackImg.className = 'rc-nextrace-track-img';
@@ -788,6 +945,115 @@
     }
 
     card.appendChild(body);
+
+    // Link to the full Calendar page (2026-08-30, Matt's call) -- same
+    // "show the section, then fetch it" pair the Calendar nav button
+    // itself uses (see buildSidebarNav above), just reachable from this
+    // card too instead of only the sidebar.
+    var viewSeasonBtn = el('button', 'rc-link-btn', '← View full season');
+    viewSeasonBtn.type = 'button';
+    viewSeasonBtn.style.cssText = 'display:block;margin-top:14px;';
+    viewSeasonBtn.addEventListener('click', function () {
+      showSection('calendar');
+      renderCalendarSection(currentToken);
+    });
+    card.appendChild(viewSeasonBtn);
+
+    return card;
+  }
+
+  // Finances & Reputation -- shares the Next Race row (added 2026-08-30).
+  // Finances shows real numbers off handleGetMyFinancesReputation
+  // (DataCache.gs) once a round has been ingested for this driver's
+  // current season -- same "no SeasonHistory row yet" gate/empty-state as
+  // Current Seat, never a guessed $0. Reputation is deliberately built as
+  // a shell only: ECO defers the whole Reputation system to a later
+  // season (see v0.3-Economy-Reputation-Design.md), so this never shows a
+  // fabricated score -- just the section, present and labeled, with a
+  // "Not Live This Season" pill instead of a number.
+  function financesReputationCard(data) {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Finances & Reputation'));
+
+    // FINANCES -- real numbers whenever any Transaction exists for this
+    // driver (see handleGetMyFinancesReputation's live-sum fallback), not
+    // gated on a round having been ingested. Balance is the headline, the
+    // delta sits on its own line right under it (up = muted green, down =
+    // house red), then Reserved Balance (frozenBalance -- always "--"
+    // until a freeze mechanic ships, never guessed) and the rank stat
+    // pair, matching the reference layout's structure adapted to this
+    // site's light/red/black palette instead of its dark mockup colors.
+    var finSection = el('div', 'rc-finrep-section');
+    finSection.appendChild(el('div', 'rc-finrep-section-label', 'Finances'));
+    if (data && data.success && data.statsKnown) {
+      finSection.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
+      var delta = Number(data.deltaSinceLastRound) || 0;
+      if (delta !== 0) {
+        finSection.appendChild(el('div', 'rc-finrep-delta ' + (delta > 0 ? 'rc-finrep-delta-up' : 'rc-finrep-delta-down'),
+          (delta > 0 ? '+' : '') + formatMoney(delta) + ' since last update'));
+      }
+
+      var reservedRow = el('div', 'rc-finrep-reserved');
+      reservedRow.appendChild(el('span', 'rc-finrep-reserved-label', 'Reserved Balance'));
+      reservedRow.appendChild(el('span', 'rc-finrep-reserved-value',
+        (data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—'));
+      finSection.appendChild(reservedRow);
+
+      if (data.globalBalanceRank || data.classBalanceRank) {
+        var ranks = el('div', 'rc-finrep-ranks');
+        if (data.globalBalanceRank) {
+          var g = el('div', 'rc-finrep-rank');
+          g.appendChild(el('div', 'rc-finrep-rank-label', 'Bank Rank'));
+          g.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')));
+          ranks.appendChild(g);
+        }
+        if (data.classBalanceRank) {
+          var c = el('div', 'rc-finrep-rank');
+          c.appendChild(el('div', 'rc-finrep-rank-label', 'Class Rank'));
+          c.appendChild(el('div', 'rc-finrep-rank-value', ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')));
+          ranks.appendChild(c);
+        }
+        finSection.appendChild(ranks);
+      }
+    } else {
+      finSection.appendChild(el('p', 'rc-cs-empty', 'No money has moved yet this season -- your balance will appear here as soon as you join a team.'));
+    }
+    card.appendChild(finSection);
+
+    // REPUTATION -- built shell only, per v0.3-Economy-Reputation-Design.md
+    // (ECO defers the real system to a later season). Structurally mirrors
+    // Finances (headline + rank pair + meter) so the section reads as
+    // "coming soon", not "broken" -- but every number stays a dash and the
+    // meter's fill stays at 0%, never a fabricated score.
+    var repSection = el('div', 'rc-finrep-section');
+    repSection.appendChild(el('div', 'rc-finrep-section-label', 'Reputation'));
+
+    var repHeadlineRow = el('div', 'rc-finrep-rep-headline-row');
+    repHeadlineRow.appendChild(el('span', 'rc-finrep-rep-headline', '—'));
+    repHeadlineRow.appendChild(el('span', 'rc-finrep-soon', 'Not Live This Season'));
+    repSection.appendChild(repHeadlineRow);
+
+    var meter = el('div', 'rc-finrep-meter rc-finrep-meter-disabled');
+    meter.appendChild(el('div', 'rc-finrep-meter-track'));
+    var meterTicks = el('div', 'rc-finrep-meter-ticks');
+    ['Low', 'Mid', 'High'].forEach(function (label) { meterTicks.appendChild(el('span', '', label)); });
+    meter.appendChild(meterTicks);
+    repSection.appendChild(meter);
+
+    var repRanks = el('div', 'rc-finrep-ranks');
+    var rg = el('div', 'rc-finrep-rank');
+    rg.appendChild(el('div', 'rc-finrep-rank-label', 'League Rank'));
+    rg.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-empty', '—'));
+    repRanks.appendChild(rg);
+    var rc = el('div', 'rc-finrep-rank');
+    rc.appendChild(el('div', 'rc-finrep-rank-label', 'Percentile'));
+    rc.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-empty', '—'));
+    repRanks.appendChild(rc);
+    repSection.appendChild(repRanks);
+
+    card.appendChild(repSection);
+
     return card;
   }
 
@@ -862,12 +1128,13 @@
       textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
       textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
       card.appendChild(textCol);
-      // Hover tooltip spells out the bonus/penalty conditions in full
-      // sentences, since the two lines above are kept short for the card
-      // layout (Matt's call, 2026-08-30).
-      card.setAttribute('data-tooltip',
-        'Pays $' + bonusAmt + ' when this sponsor\'s condition is met: ' + (s.BonusType || 'no condition set') + '. ' +
-        'Costs $' + penaltyAmt + ' when its penalty condition is met: ' + (s.PenaltyType || 'no condition set') + '.');
+      // Detailed hover tooltip -- what the bonus/penalty trigger actually
+      // means in plain language, not just its catalog name (Matt's call,
+      // 2026-08-30: "a detailed tooltip of what the bonus entails and
+      // what the penalty entails"). sponsorTermsTooltip() (reference-
+      // data.js) is the one shared place this wording is defined, so it
+      // reads identically everywhere a sponsor card appears.
+      card.setAttribute('data-tooltip', sponsorTermsTooltip(s));
 
       card.addEventListener('click', function () {
         var idx = selected.indexOf(s.SponsorID);
@@ -975,7 +1242,9 @@
             formatMoney(Math.min.apply(null, costs)) + ' – ' + formatMoney(Math.max.apply(null, costs)));
           label.appendChild(costPill);
         }
-        label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;',
+        // Inset 10px from the badge/pill above it (2026-08-30, Matt's
+        // call) rather than flush with their left edge.
+        label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;padding-left:10px;',
           openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open'));
         row.appendChild(label);
 
@@ -992,7 +1261,7 @@
     }
 
     function showTeamScreen(carClass) {
-      setTitle('Choose Your Team', buildClassBadge(carClass));
+      setTitle('Choose Your Team');
       var body = modal.body;
       body.innerHTML = '';
 
@@ -1058,6 +1327,12 @@
       identity.appendChild(nameCol);
       head.appendChild(identity);
       head.appendChild(el('div', 'rc-team-cost-total', formatMoney(team.buyInCost)));
+      // Light gray line under the car header, separating it from the team
+      // description below (2026-08-30, Matt's call) -- only added when
+      // there's actually a description underneath to separate it from.
+      if (team.teamDesc) {
+        head.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--rc-offwhite);';
+      }
       card.appendChild(head);
 
       // Team description (Cars.TeamDesc) -- lives between the header and
@@ -1067,17 +1342,30 @@
         card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:8px 0;', escapeHtml(team.teamDesc)));
       }
 
+      // Tier chip colored per-Tier (2026-08-30, Matt's call: "the colors
+      // we discussed") -- same Low/Mid/High/Elite palette as the Data
+      // Management Cars popup's tier pill (.rc-badge-cartier-*) and the
+      // Current Seat dashboard card, just tinted light here instead of a
+      // solid fill, matching this page's existing green/red perk-chip
+      // style. 25% width against the objective chip's 75% (Matt's call) --
+      // the objective is the more decision-relevant of the two, so it gets
+      // the bulk of the row.
       var perks = el('div', 'rc-team-perks');
-      var tierChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus');
+      var tierKey = team.tier || 'Mid';
+      var tierColorClass = {
+        Low: 'rc-team-perk-tier-low', Mid: 'rc-team-perk-tier-mid',
+        High: 'rc-team-perk-tier-high', Elite: 'rc-team-perk-tier-elite'
+      }[tierKey] || 'rc-team-perk-tier-mid';
+      var tierChip = el('div', 'rc-team-perk-chip rc-team-perk-tier ' + tierColorClass);
       tierChip.appendChild(el('span', 'rc-team-perk-icon', '▲'));
-      tierChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.tier || 'Mid') + ' Tier</strong>'));
+      tierChip.appendChild(el('span', null, '<strong>' + escapeHtml(tierKey) + ' Tier</strong> Team'));
       perks.appendChild(tierChip);
       if (team.objectiveName) {
         var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
-        var objChip = el('div', 'rc-team-perk-chip rc-team-perk-bonus rc-tooltip');
+        var objChip = el('div', 'rc-team-perk-chip rc-team-perk-objective rc-team-perk-bonus rc-tooltip');
         if (objDescMap[team.objectiveName]) objChip.setAttribute('data-tooltip', objDescMap[team.objectiveName]);
         objChip.appendChild(el('span', 'rc-team-perk-icon', '★'));
-        objChip.appendChild(el('span', null, '<strong>' + escapeHtml(team.objectiveName) + '</strong> — ' + formatMoney(team.objectiveBonus) + ' bonus'));
+        objChip.appendChild(el('span', null, 'Season Objective — <strong>' + escapeHtml(team.objectiveName) + '</strong> — ' + formatMoney(team.objectiveBonus) + ' bonus'));
         perks.appendChild(objChip);
       }
       card.appendChild(perks);
@@ -1102,7 +1390,7 @@
     // itself starts. The team pick is still the one thing that locks
     // immediately and can't be undone.
     function openSponsorPickScreen(team, carClass) {
-      setTitle('Choose Your Sponsors', buildClassBadge(carClass));
+      setTitle('Choose Your Sponsors');
       var body = modal.body;
       body.innerHTML = '';
       var backBtn = el('button', 'rc-link-btn', '← Back to teams');
@@ -1140,7 +1428,11 @@
       var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin:4px 0 10px;');
       body.appendChild(errorLine);
 
-      var btnRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;');
+      // Bottom-right, Skip on the left of Confirm (2026-08-30, Matt's call)
+      // -- justify-content:flex-end pins both to the right edge of the
+      // popup; btnRow itself is still the last thing appended to `body`
+      // below, so it naturally sits at the bottom of the modal's content.
+      var btnRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px;');
 
       function doJoin(sponsorIds) {
         confirmBtn.disabled = true;
@@ -1159,9 +1451,25 @@
             if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
             return;
           }
-          showToast(sponsorIds.length === 3 ? 'You’re registered! Welcome to the season.' : 'You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
-          modal.close();
-          if (onDone) onDone();
+          // Registration itself is done the instant the API call above
+          // succeeds -- everything from here down is presentation. The old
+          // immediate toast+close (now moved into finishRegistration below)
+          // is deferred until the driver has actually watched the signing
+          // sequence and dismissed the contract recap (Matt's call,
+          // 2026-08-30: "I want this to feel EPIC").
+          var sponsorObjs = sponsorIds.length === 3
+            ? sponsorIds.map(function (id) { return sponsors.filter(function (s) { return s.SponsorID === id; })[0]; }).filter(Boolean)
+            : [];
+          function finishRegistration() {
+            showToast(sponsorObjs.length === 3 ? 'You’re registered! Welcome to the season.' : 'You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
+            // Registering for a season dismisses its bell notification the
+            // same way closing the bell after seeing it would (Matt's call,
+            // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
+            if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+            modal.close();
+            rcReloadAfterSave();
+          }
+          openSigningSequence(team, sponsorObjs, carClass, finishRegistration);
         }).catch(function () {
           confirmBtn.disabled = false;
           skipBtn.disabled = false;
@@ -1170,9 +1478,26 @@
         });
       }
 
+      var skipBtn = el('button', null, 'Skip For Now');
+      skipBtn.type = 'button';
+      skipBtn.className = 'rc-btn-secondary';
+      // Real border swapped for an inset box-shadow (2026-08-30) -- a
+      // border adds to an intrinsically-sized button's total rendered
+      // height even under box-sizing:border-box (see the signing sequence's
+      // Replay/Continue height fix, same underlying issue), so this and
+      // confirmBtn below both use box-shadow-only chrome to guarantee
+      // pixel-identical height at matching padding/font-size.
+      skipBtn.style.cssText = 'border:none;box-shadow:inset 0 0 0 1px var(--rc-silver);';
+      skipBtn.addEventListener('click', function () { doJoin([]); });
+      btnRow.appendChild(skipBtn);
+
       var confirmBtn = el('button', null, 'Confirm & Lock In');
       confirmBtn.type = 'button';
       confirmBtn.className = 'rc-btn-primary';
+      // Matches Skip For Now's own padding/font-size/width (2026-08-30,
+      // Matt's call) instead of the site's default full-width/larger
+      // primary-button treatment, so the two sit as an equal-height pair.
+      confirmBtn.style.cssText = 'width:auto;margin-top:0;padding:8px 14px;font-size:12px;letter-spacing:0.04em;';
       confirmBtn.disabled = !enoughSponsors;
       confirmBtn.addEventListener('click', function () {
         var picked = picker ? picker.getSelected() : [];
@@ -1181,16 +1506,446 @@
       });
       btnRow.appendChild(confirmBtn);
 
-      var skipBtn = el('button', null, 'Skip For Now');
-      skipBtn.type = 'button';
-      skipBtn.className = 'rc-btn-secondary';
-      skipBtn.addEventListener('click', function () { doJoin([]); });
-      btnRow.appendChild(skipBtn);
-
       body.appendChild(btnRow);
     }
 
     showClassScreen();
+  }
+
+  // ---------------------------------------------------------------------
+  // SIGNING SEQUENCE (2026-08-30, Matt's call: "I want this to feel
+  // EPIC") -- plays after a driver locks in a team (with or without
+  // sponsors), before the old immediate "you're registered" toast. Its
+  // own full-viewport overlay, stacked above the registration modal's own
+  // backdrop (z-index 5000 vs. the modal's 2000) rather than replacing
+  // it -- the registration modal is left open but hidden behind this
+  // overlay the whole time, so closing it (and everything that used to
+  // fire immediately on join: the toast, the notification dismiss,
+  // onDone()) is deferred to whenever this sequence actually finishes.
+  //
+  // Three beats:
+  //   1. SUSPENSE -- a small dark card cycles contract-flavor status
+  //      lines ("Drafting team documents...") while assets/videos/
+  //      signing-a-team.mp4 preloads in the background, reusing the same
+  //      .rc-startlights gantry as every other loading state sitewide.
+  //      Held for at least SIGNING_SUSPENSE_MIN_MS even if the video is
+  //      already cached, so it never flashes past unnoticed; extended for
+  //      as long as the video actually needs past that floor.
+  //   2. FILM -- the card grows into a 16:9 box (capped at 1280x720,
+  //      matching the video's own native size) and it autoplays muted --
+  //      browser autoplay policies are the reason it can't safely
+  //      autoplay WITH sound -- with a small icon-only mute/unmute control
+  //      (bottom-left, standard volume glyph) fading in after a beat for
+  //      anyone who wants sound. No skip button at all, by design (Matt's
+  //      call) -- every driver watches the full 14 seconds.
+  //      SIGNING_FAILSAFE_MS guards against a video that never fires
+  //      'canplay' (a bad connection, a renamed file) by moving on anyway
+  //      instead of trapping the driver on a blank screen forever. Once
+  //      the video ends, it does NOT auto-advance -- a dark gradient +
+  //      "Continue" button fades in over the last frame, and only that
+  //      click moves on to REVEAL (Matt's call: don't move on until the
+  //      driver clicks continue).
+  //   3. REVEAL -- the whole dark stage collapses to a true full-viewport
+  //      beat: the Race Club wordmark, "CONGRATULATIONS", and the new
+  //      team's manufacturer logo/name scale up together, with "Continue"
+  //      and "Replay Video" fading in. This beat HOLDS here indefinitely --
+  //      no auto-advance timer -- only Continue moves on to the contract
+  //      screen (Matt's call, 2026-08-30).
+  //
+  // From there the whole dark overlay is torn down and
+  // showSigningContractModal() takes over -- a normal white modal card,
+  // same popup language as the rest of the site, itemizing exactly what
+  // was just signed: team identity, seat cost, tier, this season's Car
+  // Objective bonus, and (if chosen) all 3 sponsor bonus/penalty terms.
+  // Dismissing that card -- either its "Let's Go Racing" button or its X
+  // button, both wired to the same showModal onClose -- is what finally
+  // calls onFinish (finishRegistration above): the toast, notification
+  // dismiss, and registration-modal close all happen there, right as the
+  // driver dismisses the recap, not back when the API call first
+  // succeeded.
+  // ---------------------------------------------------------------------
+  var SIGNING_MESSAGES_ = [
+    'Drafting team documents...',
+    'Securing season entry fees...',
+    'Notifying the team principal...',
+    'Verifying sponsorship terms...',
+    'Fitting your race suit...',
+    'Calibrating the seat...',
+    'Finalizing your contract...',
+    'Bringing the car to pit lane...'
+  ];
+
+  // Ten team-principal-to-new-driver lines for the REVEAL beat (2026-08-30,
+  // Matt's ask: "feels like something a team principal would say to their
+  // new driver... make it feel personal"), replacing the single generic
+  // "You just earned a seat at ___. Time to make it count." One is picked
+  // at random per signing (rcPickWelcomeLine_ below) -- {team} is the only
+  // placeholder since a driver's own name is already all over the header
+  // chrome; these are written as if spoken TO the driver, not about them.
+  // Second pass, same day (Matt: "make the hype messages... only positive!
+  // ... 3 sentences long and cmon give it some energy!!!") -- every line
+  // rewritten as an upbeat, energetic, exactly-3-sentence quote (no mixed
+  // "don't make us regret it"/challenge-toned lines from the first draft),
+  // rendered inside big quotation marks with a "— Team Principal"
+  // attribution underneath (see advanceToReveal below).
+  var SIGNING_WELCOME_LINES_ = [
+    'Welcome to {team}! We’ve been waiting for a driver like you, and we finally found one. This seat is yours — now let’s go show everyone what we can do!',
+    'You earned this, plain and simple! {team} doesn’t hand out seats, we award them. Buckle up — this is going to be a season to remember!',
+    'From everyone at {team}: congratulations! You’re not just joining a team, you’re joining a family that believes in you. Let’s get out there and win!',
+    'This is the moment every driver dreams about, and it’s yours! {team} is fully behind you, every lap, every race. Now go make us proud!',
+    'Welcome aboard, driver! We built this car for someone special, and that someone is you. Let’s make {team} history together!',
+    'The whole {team} garage is buzzing about you! You’ve got the talent, we’ve got the car — together we’re unstoppable. Let’s go racing!',
+    'You should be incredibly proud of yourself right now! {team} chose you because we believe you can do great things. Now it’s time to prove it!',
+    'Congratulations, and welcome to the team! Every great champion started exactly where you are right now. Let’s write your story together!',
+    'This seat has your name on it for a reason! {team} sees the potential in you, and we can’t wait to watch it grow. Let’s hit the track!',
+    'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in — the season starts now!'
+  ];
+  function rcPickWelcomeLine_(team) {
+    var template = SIGNING_WELCOME_LINES_[Math.floor(Math.random() * SIGNING_WELCOME_LINES_.length)];
+    return template.split('{team}').join(escapeHtml(team.teamName || 'the team'));
+  }
+  var SIGNING_SUSPENSE_MIN_MS = 3800;
+  var SIGNING_FAILSAFE_MS = 20000;
+
+  // Standard flat mute/unmute glyphs (Feather-style "volume-2"/"volume-x")
+  // for the FILM stage's sound control -- plain line icons, not the emoji
+  // speakers used before (Matt: "make it a standard speaker icon, not the
+  // 3d one you chose").
+  function rcVolumeIconSvg_(muted) {
+    var speaker = '<path d="M11 5 6 9H2v6h4l5 4V5z"></path>';
+    var rest = muted
+      ? '<line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>'
+      : '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>';
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + speaker + rest + '</svg>';
+  }
+
+  function openSigningSequence(team, sponsorObjs, carClass, onFinish) {
+    var overlay = el('div', 'rc-signing-overlay');
+    var stage = el('div', 'rc-signing-stage rc-signing-stage-suspense');
+    overlay.appendChild(stage);
+    document.body.appendChild(overlay);
+
+    // ---- Stage 1: SUSPENSE ------------------------------------------
+    stage.appendChild(el('div', 'rc-signing-wordmark', 'RACE CLUB'));
+    var lights = el('div', 'rc-startlights');
+    for (var i = 0; i < 5; i++) lights.appendChild(el('div', 'rc-startlight'));
+    stage.appendChild(lights);
+    var msgLine = el('div', 'rc-signing-message', SIGNING_MESSAGES_[0]);
+    stage.appendChild(msgLine);
+
+    var msgIndex = 0;
+    var msgTimer = setInterval(function () {
+      msgIndex = (msgIndex + 1) % SIGNING_MESSAGES_.length;
+      msgLine.style.opacity = '0';
+      setTimeout(function () {
+        msgLine.textContent = SIGNING_MESSAGES_[msgIndex];
+        msgLine.style.opacity = '1';
+      }, 180);
+    }, 1400);
+
+    var video = document.createElement('video');
+    video.className = 'rc-signing-video-preload';
+    video.src = 'assets/videos/signing-a-team.mp4';
+    video.muted = true;
+    video.setAttribute('muted', ''); // belt-and-suspenders -- some browsers
+    // weigh the HTML attribute more heavily than the JS property when
+    // deciding whether muted autoplay is allowed.
+    video.playsInline = true;
+    video.setAttribute('playsinline', ''); // required as an attribute (not
+    // just the property) on older iOS Safari to avoid forcing fullscreen.
+    video.preload = 'auto';
+    // Attached to the overlay (hidden, 1x1) from the very start rather than
+    // held detached in memory -- some browsers (mobile Safari especially)
+    // only actually fetch a <video>'s data once it's a real part of the
+    // document, so a detached element's 'canplay'/'canplaythrough' can
+    // simply never fire, silently falling through to the failsafe timer
+    // every time (2026-08-30 bug: "the video didn't play at all... held
+    // onto what seemed like the entire length of the video"). Moving this
+    // same node into the visible video-wrap in advanceToFilm() below
+    // preserves whatever it already buffered -- reparenting a media
+    // element doesn't reset its network state, only changing .src does.
+    overlay.appendChild(video);
+
+    var startedAt = Date.now();
+    var videoReady = false;
+    var advancedToFilm = false;
+    var failsafeTimer = setTimeout(function () { videoReady = true; tryAdvanceToFilm(); }, SIGNING_FAILSAFE_MS);
+    // 'canplay' (enough data for the current frame) rather than
+    // 'canplaythrough' (confident it can play to the end without
+    // buffering) -- canplaythrough can take a very long time to fire for a
+    // multi-megabyte file depending on how the browser estimates download
+    // speed, and playback can start smoothly well before that point since
+    // the browser keeps buffering during playback anyway.
+    video.addEventListener('canplay', function onReady() {
+      video.removeEventListener('canplay', onReady);
+      videoReady = true;
+      tryAdvanceToFilm();
+    });
+    video.addEventListener('error', function () { videoReady = true; tryAdvanceToFilm(); });
+    video.load();
+
+    function tryAdvanceToFilm() {
+      if (advancedToFilm) return;
+      var wait = Math.max(0, SIGNING_SUSPENSE_MIN_MS - (Date.now() - startedAt));
+      setTimeout(function () {
+        if (advancedToFilm || !videoReady) return;
+        advancedToFilm = true;
+        clearInterval(msgTimer);
+        clearTimeout(failsafeTimer);
+        advanceToFilm();
+      }, wait);
+    }
+
+    // ---- Stage 2: FILM ------------------------------------------------
+    // Its own function (not inlined into advanceToFilm) so "Replay Video"
+    // on the REVEAL beat below can re-enter this exact same stage a
+    // second time. { once: true } on the ended/error listeners means each
+    // call wires up its own independent, self-cleaning pair -- a replay's
+    // fresh listeners don't stack on top of whichever ones the first
+    // playthrough already used and already fired.
+    function playFilmStage() {
+      stage.className = 'rc-signing-stage rc-signing-stage-film';
+      stage.innerHTML = '';
+      var videoWrap = el('div', 'rc-signing-video-wrap');
+      video.className = 'rc-signing-video';
+      videoWrap.appendChild(video);
+
+      // Bottom-left icon-only control, standard flat volume/mute SVG glyphs
+      // (2026-08-30, Matt: "make it a standard speaker icon, not the 3d one
+      // you chose" -- the emoji speakers read as too illustrative/"3D" next
+      // to the rest of the site's plain-line iconography; also moved from
+      // top-right to bottom-left per Matt's call, matching where a mute
+      // control normally sits on a video player).
+      var unmuteBtn = el('button', 'rc-signing-unmute');
+      unmuteBtn.type = 'button';
+      var unmuteIcon = el('span', 'rc-signing-unmute-icon');
+      unmuteIcon.innerHTML = rcVolumeIconSvg_(video.muted);
+      unmuteBtn.appendChild(unmuteIcon);
+      unmuteBtn.setAttribute('aria-label', video.muted ? 'Unmute video' : 'Mute video');
+      unmuteBtn.addEventListener('click', function () {
+        video.muted = !video.muted;
+        unmuteIcon.innerHTML = rcVolumeIconSvg_(video.muted);
+        unmuteBtn.setAttribute('aria-label', video.muted ? 'Unmute video' : 'Mute video');
+      });
+      videoWrap.appendChild(unmuteBtn);
+
+      stage.appendChild(videoWrap);
+      setTimeout(function () { unmuteBtn.classList.add('rc-signing-unmute-visible'); }, 900);
+
+      // Goes straight to REVEAL the instant the video ends -- no "Continue"
+      // gate (Matt's call, 2026-08-30: "I want it to go right to the
+      // congratulations screen without stopping to hit continue"). 'error'
+      // (a genuine playback failure, or play() rejecting below) advances
+      // the same way -- there's no last frame worth pausing on either way.
+      // advanceToReveal's own revealStarted guard means only the first of
+      // these to fire on a given playthrough matters.
+      video.addEventListener('ended', advanceToReveal, { once: true });
+      video.addEventListener('error', advanceToReveal, { once: true });
+      video.currentTime = 0;
+      var playAttempt = video.play();
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch(function () { advanceToReveal(); });
+      }
+    }
+    function advanceToFilm() { playFilmStage(); }
+
+    // ---- Stage 3: REVEAL ------------------------------------------------
+    // Holds here indefinitely -- no auto-advance timer (Matt's call,
+    // 2026-08-30: "What the video SHOULD do is go [to] the congratulations
+    // screen at the end with the CONTINUE/REPLAY options and hold"). Only
+    // the Continue button below moves on to the contract screen.
+    var revealStarted = false;
+    var advancedPastReveal = false;
+    function advanceToReveal() {
+      if (revealStarted) return;
+      revealStarted = true;
+      stage.className = 'rc-signing-stage rc-signing-stage-reveal';
+      stage.innerHTML = '';
+      stage.appendChild(el('div', 'rc-signing-wordmark rc-signing-wordmark-lg', 'RACE CLUB'));
+      stage.appendChild(el('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
+      // Big open/close quote marks + a "— Team Principal" attribution
+      // underneath, right-aligned (2026-08-30, Matt: "add larger
+      // quotations in front and after it to show that someone from the
+      // team said it... Add emdash Team Principal underneath to the
+      // right") -- reads as an actual quote from someone at the team, not
+      // just hype copy.
+      // Wrapped together in one block with an explicit width (rather than
+      // each just being its own flex child) so the attribution's
+      // text-align: right below actually has real room to align against
+      // -- .rc-signing-stage's flex column otherwise shrink-wraps every
+      // child to its own content width, which would leave "— Team
+      // Principal" with nothing to the right of it to align away from.
+      var hypeWrap = el('div', 'rc-signing-hype-wrap');
+      var hypeQuote = el('div', 'rc-signing-hype');
+      hypeQuote.appendChild(el('span', 'rc-signing-hype-mark rc-signing-hype-mark-open', '“'));
+      hypeQuote.appendChild(el('span', 'rc-signing-hype-text', rcPickWelcomeLine_(team)));
+      hypeQuote.appendChild(el('span', 'rc-signing-hype-mark rc-signing-hype-mark-close', '”'));
+      hypeWrap.appendChild(hypeQuote);
+      hypeWrap.appendChild(el('div', 'rc-signing-hype-attribution', '— Team Principal'));
+      stage.appendChild(hypeWrap);
+
+      var identity = el('div', 'rc-signing-reveal-identity');
+      if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
+        var logo = document.createElement('img');
+        logo.className = 'rc-signing-reveal-logo';
+        logo.alt = team.manufacturer;
+        logo.src = manufacturerLogoSrc(team.manufacturer);
+        logo.onerror = function () { this.style.display = 'none'; };
+        identity.appendChild(logo);
+      }
+      identity.appendChild(el('div', 'rc-signing-reveal-team',
+        escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
+      stage.appendChild(identity);
+
+      var btnRow = el('div', 'rc-signing-reveal-btn-row');
+      btnRow.style.opacity = '0';
+
+      var replayBtn = el('button', 'rc-btn-secondary rc-signing-replay', '↻ Replay Video');
+      replayBtn.type = 'button';
+      replayBtn.addEventListener('click', function () {
+        revealStarted = false;
+        playFilmStage();
+      });
+      btnRow.appendChild(replayBtn);
+
+      var continueBtn = el('button', 'rc-btn-primary rc-signing-continue', 'Continue');
+      continueBtn.type = 'button';
+      continueBtn.addEventListener('click', advanceToContract);
+      btnRow.appendChild(continueBtn);
+
+      stage.appendChild(btnRow);
+      setTimeout(function () { btnRow.style.opacity = '1'; }, 1400);
+    }
+
+    function advanceToContract() {
+      if (advancedPastReveal) return;
+      advancedPastReveal = true;
+      overlay.remove();
+      showSigningContractModal(team, sponsorObjs, carClass, onFinish);
+    }
+  }
+
+  // Final beat -- a normal white modal card (same popup language as the
+  // rest of the site) itemizing exactly what the driver just signed:
+  // team identity, class/tier, seat cost, this season's Car Objective
+  // bonus, and (if chosen) all 3 sponsors' bonus/penalty terms.
+  function showSigningContractModal(team, sponsorObjs, carClass, onFinish) {
+    // Registration already succeeded server-side before this screen ever
+    // shows -- this is a receipt, not a decision point. onClose covers
+    // both the "Let's Go Racing" button below AND the X button, so either
+    // way of dismissing this card finishes the same: toast, notification
+    // dismiss, and closing the registration modal underneath it.
+    //
+    // A white modal like every other popup on the site (Matt, 2026-08-30:
+    // "the contract signed popup should be white like the rest of the
+    // popups") -- the layout below is still its own rc-contract-* class
+    // set (not a reuse of .rc-team-*/.rc-sponsor-pick-*, since it
+    // shouldn't look the same as the picker screens Matt already saw --
+    // logo/name/cost enlarged and rearranged, sponsors as plain rows with
+    // their terms spelled out instead of a hover tooltip), just no longer
+    // dark -- and the class/tier pills below are the site's own canonical
+    // badges (_rcClassBadge/_rcCarTierBadge), not one-off colors.
+    var modal = showModal('Contract Signed', { wide: true, onClose: onFinish });
+    var body = modal.body;
+    // rc-dash-card is the exact same shared Dashboard card chrome (faint
+    // checkered-flag corner fade + red "finish flag" top-left accent) used
+    // on the dashboard's own cards -- reused as-is here rather than a new
+    // one-off treatment (Matt's call, 2026-08-30: "add the checkered flag
+    // in the upper right corner and add the top red border just like the
+    // dashboard cards have it").
+    var card = el('div', 'rc-contract-card rc-dash-card');
+    body.appendChild(card);
+
+    // ---- Header: logo + team name (left), seat cost (right) -------------
+    var header = el('div', 'rc-contract-header');
+    var headerIdentity = el('div', 'rc-contract-identity');
+    if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.className = 'rc-contract-logo';
+      logo.src = manufacturerLogoSrc(team.manufacturer);
+      logo.alt = team.manufacturer;
+      logo.onerror = function () { this.style.display = 'none'; };
+      headerIdentity.appendChild(logo);
+    }
+    var nameCol = el('div', 'rc-contract-name-col');
+    nameCol.appendChild(el('div', 'rc-contract-name', escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
+    var subtitleBits = [team.manufacturer, team.carModel].filter(Boolean).join(' ');
+    var subtitleLine = el('div', 'rc-contract-subtitle');
+    if (subtitleBits) subtitleLine.appendChild(el('span', null, escapeHtml(subtitleBits)));
+    var pillRow = el('span', 'rc-contract-pill-row');
+    // Class pill sits to the left of the Tier pill (Matt's call,
+    // 2026-08-30) -- both are the site's shared badge helpers, so these
+    // read exactly like the class/tier pills everywhere else (Choose Your
+    // Team, Car Management, the Current Seat card).
+    if (carClass) pillRow.appendChild(_rcClassBadge(carClass));
+    pillRow.appendChild(_rcCarTierBadge(team.tier));
+    subtitleLine.appendChild(pillRow);
+    nameCol.appendChild(subtitleLine);
+    headerIdentity.appendChild(nameCol);
+    header.appendChild(headerIdentity);
+    var costCol = el('div', 'rc-contract-cost-col');
+    costCol.appendChild(el('div', 'rc-contract-cost-label', 'Seat Cost'));
+    costCol.appendChild(el('div', 'rc-contract-cost', formatMoney(team.buyInCost)));
+    header.appendChild(costCol);
+    card.appendChild(header);
+
+    // ---- Season Objective: spelled out, not a hover tooltip -------------
+    if (team.objectiveName) {
+      var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
+      var objSection = el('div', 'rc-contract-objective');
+      var objHead = el('div', 'rc-contract-objective-head');
+      objHead.appendChild(el('span', 'rc-contract-objective-icon', '★'));
+      objHead.appendChild(el('span', 'rc-contract-objective-name', 'Season Objective — ' + escapeHtml(team.objectiveName)));
+      objHead.appendChild(el('span', 'rc-contract-objective-bonus', '+' + formatMoney(team.objectiveBonus)));
+      objSection.appendChild(objHead);
+      if (objDescMap[team.objectiveName]) {
+        objSection.appendChild(el('div', 'rc-contract-objective-desc', escapeHtml(objDescMap[team.objectiveName])));
+      }
+      card.appendChild(objSection);
+    }
+
+    // ---- Sponsors: plain rows (no card containers), details spelled out --
+    if (sponsorObjs.length === 3) {
+      card.appendChild(el('div', 'rc-contract-section-title', 'Your Sponsors'));
+      var list = el('div', 'rc-contract-sponsor-list');
+      sponsorObjs.forEach(function (s) {
+        var row = el('div', 'rc-contract-sponsor-row');
+        var sLogo = document.createElement('img');
+        sLogo.className = 'rc-contract-sponsor-logo';
+        sLogo.alt = '';
+        sLogo.src = sponsorLogoSrc(s.Name || '');
+        sLogo.onerror = function () { this.style.display = 'none'; };
+        row.appendChild(sLogo);
+
+        var textCol = el('div', 'rc-contract-sponsor-text');
+        textCol.appendChild(el('div', 'rc-contract-sponsor-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+
+        var bonusAmt = Number(s.BonusAmount) || 0;
+        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+        if (s.BonusType) {
+          var bonusLine = el('div', 'rc-contract-sponsor-term rc-contract-sponsor-term-bonus');
+          bonusLine.appendChild(el('span', 'rc-contract-sponsor-term-label', 'Bonus +' + formatMoney(bonusAmt) + ':'));
+          bonusLine.appendChild(el('span', 'rc-contract-sponsor-term-desc', escapeHtml(sponsorTriggerDescription(s.BonusType))));
+          textCol.appendChild(bonusLine);
+        }
+        if (s.PenaltyType) {
+          var penaltyLine = el('div', 'rc-contract-sponsor-term rc-contract-sponsor-term-penalty');
+          penaltyLine.appendChild(el('span', 'rc-contract-sponsor-term-label', 'Penalty −' + formatMoney(penaltyAmt) + ':'));
+          penaltyLine.appendChild(el('span', 'rc-contract-sponsor-term-desc', escapeHtml(sponsorTriggerDescription(s.PenaltyType))));
+          textCol.appendChild(penaltyLine);
+        }
+        row.appendChild(textCol);
+        list.appendChild(row);
+      });
+      card.appendChild(list);
+    } else {
+      card.appendChild(el('p', 'rc-contract-no-sponsors', 'No sponsors chosen yet — pick your 3 any time before the season starts from the Sponsors page.'));
+    }
+
+    var goBtn = el('button', 'rc-btn-primary rc-contract-go-btn', 'Let’s Go Racing');
+    goBtn.type = 'button';
+    goBtn.addEventListener('click', function () { modal.close(); });
+    card.appendChild(goBtn);
   }
 
   // ---------------------------------------------------------------------
@@ -1251,9 +2006,7 @@
           textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
           textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
           card.appendChild(textCol);
-          card.setAttribute('data-tooltip',
-            'Pays $' + bonusAmt + ' when this sponsor\'s condition is met: ' + (s.BonusType || 'no condition set') + '. ' +
-            'Costs $' + penaltyAmt + ' when its penalty condition is met: ' + (s.PenaltyType || 'no condition set') + '.');
+          card.setAttribute('data-tooltip', sponsorTermsTooltip(s));
 
           grid.appendChild(card);
         });
@@ -1332,7 +2085,7 @@
           }
           showToast('Sponsors saved.', 'success');
           modal.close();
-          if (onDone) onDone();
+          rcReloadAfterSave();
         }).catch(function () {
           confirmBtn.disabled = false;
           confirmBtn.textContent = 'Confirm Sponsors';
@@ -1371,7 +2124,11 @@
       fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
         .then(function (data) {
           showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
-          if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; box.remove(); }
+          // A full reload (rather than box.remove()) covers both callers
+          // at once: the forced-password lock screen (mustChangePassword
+          // re-checks fresh on reload and drops the lock on its own) and
+          // the Edit Profile modal's embedded copy of this form.
+          if (data.success) rcReloadAfterSave();
         });
     });
 
@@ -1414,27 +2171,92 @@
     document.body.style.top = '-' + scrollYBeforeModal + 'px';
     document.body.classList.add('rc-modal-scroll-locked');
 
+    // Closable ONLY via the X button here, or a Cancel button the caller
+    // wires up itself against the returned { close } (Matt's call,
+    // 2026-08-30: "you either have to hit a cancel button or hit the X...
+    // this avoids accidental clicks and nothing saves"). Backdrop-click
+    // and Escape-key close are deliberately gone -- neither the dimmed
+    // backdrop nor document keydown gets a listener anymore.
     function close() {
       backdrop.remove();
-      document.removeEventListener('keydown', onKeydown);
       document.body.classList.remove('rc-modal-scroll-locked');
       document.body.style.top = '';
       window.scrollTo(0, scrollYBeforeModal);
       if (opts.onClose) opts.onClose();
     }
-    function onKeydown(evt) {
-      if (evt.key === 'Escape') close();
-    }
     closeBtn.addEventListener('click', close);
-    backdrop.addEventListener('click', function (evt) {
-      if (evt.target === backdrop) close();
-    });
-    document.addEventListener('keydown', onKeydown);
 
     // el: the modal card itself (not the dimmed backdrop) -- exposed so a
     // caller can add a one-off class to it, e.g. the Season Wizard's
     // shake-on-invalid-Next animation (.rc-shake).
     return { close: close, body: body, el: modal };
+  }
+
+  // Small reusable confirm popup for destructive actions (added 2026-08-30
+  // for Season Tools' Delete button) -- built on showModal so it inherits
+  // the same X-button-or-Cancel-only close rule. onConfirm runs when the
+  // confirm button is clicked; the modal closes itself either way (Cancel,
+  // X, or after onConfirm fires) rather than making every caller remember
+  // to call .close().
+  function openConfirmModal(title, message, confirmLabel, onConfirm) {
+    var body = el('div');
+    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
+    var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
+    var confirmBtn = el('button', 'rc-btn-primary rc-btn-sm', confirmLabel || 'Confirm');
+    confirmBtn.type = 'button';
+    confirmBtn.style.cssText = 'background:var(--rc-red);';
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal(title, { bodyEl: body });
+    cancelBtn.addEventListener('click', modal.close);
+    confirmBtn.addEventListener('click', function () {
+      modal.close();
+      onConfirm();
+    });
+  }
+
+  // Heavier version of openConfirmModal for an action Matt wants real
+  // deliberation behind (added 2026-08-30 for Season Tools' End Season
+  // button) -- the confirm button stays disabled until the exact phrase
+  // is typed into the box, same "type ERASE to confirm" weight as the
+  // spreadsheet's own eraseAllSeasonDataPrompt, just as a proper popup
+  // instead of a browser prompt() since this is reachable from the
+  // website, not just the Apps Script menu.
+  function openTypeToConfirmModal(title, message, requiredPhrase, confirmLabel, onConfirm) {
+    var body = el('div');
+    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
+    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Type ' + requiredPhrase + ' below to continue.'));
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    input.placeholder = requiredPhrase;
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--rc-silver);border-radius:6px;font-size:14px;font-family:var(--rc-font-body);';
+    body.appendChild(input);
+
+    var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
+    var confirmBtn = el('button', 'rc-btn-primary rc-btn-sm', confirmLabel || 'Confirm');
+    confirmBtn.type = 'button';
+    confirmBtn.style.cssText = 'background:var(--rc-red);';
+    confirmBtn.disabled = true;
+    input.addEventListener('input', function () { confirmBtn.disabled = input.value !== requiredPhrase; });
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal(title, { bodyEl: body });
+    cancelBtn.addEventListener('click', modal.close);
+    confirmBtn.addEventListener('click', function () {
+      if (input.value !== requiredPhrase) return; // belt-and-suspenders -- button is already disabled until this matches
+      modal.close();
+      onConfirm();
+    });
+    input.focus();
   }
 
   // Inline branded loading indicator (the "Starting Grid Lights" sequence
@@ -1483,6 +2305,137 @@
     return row;
   }
 
+  // Fixed set of 15 preset avatar images a driver can pick from (2026-08-30,
+  // Matt's ask) -- assets/avatars/avatar-01.png through avatar-15.png,
+  // zero-padded to 2 digits to match the files on disk. No admin/catalog
+  // sheet involved -- this is just a fixed image set, same spirit as the
+  // fixed CAR_OBJECTIVE_CATALOG_/SPONSOR_*_TRIGGERS vocabularies elsewhere.
+  var RC_AVATAR_FILENAMES_ = (function () {
+    var list = [];
+    for (var i = 1; i <= 15; i++) list.push('avatar-' + (i < 10 ? '0' + i : i) + '.png');
+    return list;
+  })();
+
+  // Shared avatar circle -- an uploaded/picked image (profile.avatarFilename,
+  // from assets/avatars/) when one is set, otherwise the same initials
+  // fallback the header uses (_rcHeaderInitials(), global from header.js --
+  // loaded before this script, so it's safe to call directly here without
+  // duplicating that logic). onerror falls back to initials too, in case a
+  // stored filename doesn't actually exist under assets/avatars/.
+  function buildAvatarCircle(profile, extraClass) {
+    var circle = el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
+    var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
+    if (profile && profile.avatarFilename) {
+      var img = document.createElement('img');
+      img.className = 'rc-avatar-circle-img';
+      img.alt = '';
+      img.src = 'assets/avatars/' + profile.avatarFilename;
+      img.onerror = function () {
+        img.remove();
+        circle.textContent = initials;
+      };
+      circle.appendChild(img);
+    } else {
+      circle.textContent = initials;
+    }
+    return circle;
+  }
+
+  // ---------------------------------------------------------------------
+  // CHANGE AVATAR POPUP -- a fixed grid of the 15 preset images (5 rows of
+  // 3), opened from a link inside Edit Profile. Selecting one and hitting
+  // Save posts straight to updateOwnProfile with the driver's OWN current
+  // field values (this action requires username/firstName/lastName/email
+  // every call -- there's no avatar-only endpoint) plus the new
+  // avatarFilename, so this is a genuinely standalone action: it doesn't
+  // touch or depend on whatever the driver may be mid-editing in the Edit
+  // Profile form behind it. onSaved(newProfile) lets the caller (Edit
+  // Profile's own avatar circle) refresh immediately without a page reload.
+  // ---------------------------------------------------------------------
+  function openAvatarPickerModal(profile, token, onSaved) {
+    var body = el('div');
+    body.appendChild(el('p', 'rc-hint', 'margin-top:0;', 'Choose a profile picture. You can change this again any time.'));
+
+    var grid = el('div', 'rc-avatar-picker-grid');
+    var selected = profile.avatarFilename || null;
+    var itemButtons = [];
+
+    function refreshSelection() {
+      itemButtons.forEach(function (btn) {
+        btn.classList.toggle('rc-avatar-picker-item-selected', btn.getAttribute('data-filename') === selected);
+      });
+    }
+
+    RC_AVATAR_FILENAMES_.forEach(function (filename) {
+      var btn = el('button', 'rc-avatar-picker-item');
+      btn.type = 'button';
+      btn.setAttribute('data-filename', filename);
+      var img = document.createElement('img');
+      img.src = 'assets/avatars/' + filename;
+      img.alt = 'Avatar option';
+      img.loading = 'lazy';
+      // Hides the button entirely instead of showing a broken-image icon if
+      // a filename in RC_AVATAR_FILENAMES_ doesn't actually exist under
+      // assets/avatars/ (e.g. a mismatched name on disk).
+      img.onerror = function () { btn.style.display = 'none'; };
+      btn.appendChild(img);
+      btn.addEventListener('click', function () {
+        selected = filename;
+        refreshSelection();
+      });
+      grid.appendChild(btn);
+      itemButtons.push(btn);
+    });
+    refreshSelection();
+    body.appendChild(grid);
+
+    var saveBtn = el('button', 'rc-btn-primary', 'Save Avatar');
+    saveBtn.type = 'button';
+    saveBtn.style.marginTop = '18px';
+    saveBtn.addEventListener('click', function () {
+      if (!selected) {
+        showToast('Pick an avatar first.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      fetchApi('updateOwnProfile', {
+        method: 'POST',
+        token: token,
+        body: {
+          username: profile.username,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          suffix: profile.suffix || '',
+          email: profile.email,
+          location: profile.location || '',
+          timeZone: profile.timeZone || '',
+          avatarFilename: selected
+        }
+      })
+        .then(function (data) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Avatar';
+          if (!data.success) {
+            showToast(data.message || 'Could not save your avatar.', 'error');
+            return;
+          }
+          setProfileCache(data.profile);
+          showToast('Avatar updated.', 'success');
+          pickerModal.close();
+          rcReloadAfterSave();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Avatar';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+    body.appendChild(saveBtn);
+
+    var pickerModal = showModal('Change Avatar', { bodyEl: body });
+  }
+
   // ---------------------------------------------------------------------
   // EDIT PROFILE POPUP -- Username / First / Last / Suffix / Email /
   // Location / Time Zone, posting to the `updateOwnProfile` action, plus
@@ -1495,6 +2448,67 @@
     if (!profile || !token) return;
 
     var body = el('div');
+
+    // Avatar circle (2x size, centered -- 2026-08-30, Matt's call) with
+    // "Change Avatar" then "Delete Avatar" stacked underneath it. Rebuilt
+    // in place (avatarRow.replaceChild) when the picker popup saves a new
+    // avatarFilename, so the driver sees their new picture the instant
+    // they close the picker, without this whole popup re-opening.
+    var avatarRow = el('div', 'rc-avatar-edit-row');
+    var avatarCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
+    avatarRow.appendChild(avatarCircle);
+    var changeAvatarLink = el('a', 'rc-avatar-change-link', 'Change Avatar');
+    changeAvatarLink.href = '#';
+    changeAvatarLink.addEventListener('click', function (evt) {
+      evt.preventDefault();
+      openAvatarPickerModal(profile, token, function (newProfile) {
+        profile = newProfile;
+        var freshCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
+        avatarRow.replaceChild(freshCircle, avatarCircle);
+        avatarCircle = freshCircle;
+      });
+    });
+    avatarRow.appendChild(changeAvatarLink);
+
+    // Delete Avatar (added 2026-08-30) -- sends avatarFilename: '' rather
+    // than omitting the field, which is what actually clears the stored
+    // filename instead of leaving it untouched (see handleUpdateOwnProfile,
+    // Auth.gs). A full rcReloadAfterSave() follows success, same as every
+    // other popup save, so the header avatar and this popup (on reopen)
+    // both reflect "back to initials" immediately.
+    var deleteAvatarLink = el('a', 'rc-avatar-delete-link', 'Delete Avatar');
+    deleteAvatarLink.href = '#';
+    deleteAvatarLink.addEventListener('click', function (evt) {
+      evt.preventDefault();
+      if (!profile.avatarFilename) return; // nothing to delete
+      deleteAvatarLink.textContent = 'Removing...';
+      fetchApi('updateOwnProfile', {
+        method: 'POST',
+        token: token,
+        body: {
+          username: profile.username, firstName: profile.firstName, lastName: profile.lastName,
+          suffix: profile.suffix || '', email: profile.email,
+          location: profile.location || '', timeZone: profile.timeZone || '',
+          avatarFilename: ''
+        }
+      })
+        .then(function (data) {
+          deleteAvatarLink.textContent = 'Delete Avatar';
+          if (!data.success) {
+            showToast(data.message || 'Could not remove your avatar.', 'error');
+            return;
+          }
+          setProfileCache(data.profile);
+          showToast('Avatar removed.', 'success');
+          rcReloadAfterSave();
+        })
+        .catch(function () {
+          deleteAvatarLink.textContent = 'Delete Avatar';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
+    avatarRow.appendChild(deleteAvatarLink);
+    body.appendChild(avatarRow);
 
     var form = el('form');
     form.appendChild(el('label', 'margin-top:0;', 'Username'));
@@ -1587,11 +2601,10 @@
             showToast(data.message || 'Could not save your changes.', 'error');
             return;
           }
-          currentProfile = data.profile;
-          setProfileCache(data.profile); // keeps the header avatar current here and on every other page
-          renderHeader(); // header fetches its own notifications now -- see js/header.js
+          setProfileCache(data.profile); // keeps the header avatar current here and on every other page, once the reload below actually re-renders it
           showToast('Profile updated.', 'success');
           modalHandle.close();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -1683,15 +2696,168 @@
   // it just says so; wiring it up is future work, same shape as Create
   // once there's something to point it at.
   // ---------------------------------------------------------------------
-  function renderLeagueManagementSection(token) {
-    var section = document.getElementById('rc-section-league');
-    if (!section) return;
-    section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+  // Status pill for the Season Tools list (added 2026-08-30) -- same chip
+  // shape/pattern as _rcClassBadge/_rcCarTierBadge, colored per status so
+  // Draft/Scheduled/Registration/Active/Completed read apart from each
+  // other in a flat list. Falls back to Draft's color for a blank/unknown
+  // status, same "old rows never break" convention as everywhere else a
+  // status column can be empty.
+  function _rcSeasonStatusBadge(status) {
+    var key = status || 'Draft';
+    var classMap = {
+      Draft: 'rc-badge-status-draft', Scheduled: 'rc-badge-status-scheduled',
+      Registration: 'rc-badge-status-registration', Active: 'rc-badge-status-active',
+      Completed: 'rc-badge-status-completed'
+    };
+    return el('span', 'rc-badge-chip ' + (classMap[key] || 'rc-badge-status-draft'), escapeHtml(key));
+  }
 
-    var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;', 'Season Tools'));
-    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Admin-only. More League Management tools land here as they\'re built.'));
+  // One row for a single season -- own row builder (2026-08-30) so it can
+  // be dropped straight into Season Tools' own panel underneath a year
+  // pill (see buildSeasonsListFragment below), same "row with an Edit
+  // button on the right" shape the Data Management Cars/Tracks lists
+  // already use, just under its own .rc-group-row class since it's
+  // indented one level deeper (year -> season) than those lists ever go.
+  function buildSeasonRow(s, token, reload) {
+    var row = el('div', 'rc-group-row');
+    var info = el('div', 'rc-dm-row-info');
+    var textCol = el('div', null);
+
+    var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+    nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(s.name || s.seasonId)));
+    nameLine.appendChild(_rcSeasonStatusBadge(s.status));
+    textCol.appendChild(nameLine);
+
+    var metaParts = [];
+    metaParts.push(s.classes && s.classes.length ? s.classes.join(', ') : 'No classes selected');
+    metaParts.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
+    metaParts.push(s.registrationCount + ' driver' + (s.registrationCount === 1 ? '' : 's') + ' registered');
+    if (s.createdAt) metaParts.push('Created ' + formatDateLabel(String(s.createdAt).slice(0, 10)));
+    textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · '))));
+
+    info.appendChild(textCol);
+    row.appendChild(info);
+
+    var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+    editBtn.type = 'button';
+    editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
+    btnGroup.appendChild(editBtn);
+
+    if (s.locked) {
+      // Already raced -- Delete is refused server-side anyway, so the
+      // button isn't even offered. End Season (renamed from Archive,
+      // 2026-08-30 -- Matt's call, same handleAdminArchiveSeason call
+      // underneath, just a heavier typed-confirmation popup so hitting it
+      // takes real deliberation) only makes sense once -- a season
+      // already Completed has already been ended.
+      if (s.status !== 'Completed') {
+        var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-row', 'End Season');
+        endSeasonBtn.type = 'button';
+        endSeasonBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+        endSeasonBtn.addEventListener('click', function () {
+          openTypeToConfirmModal(
+            'End Season',
+            'End "' + (s.name || s.seasonId) + '"? Ending a season is irreversible.',
+            'END SEASON',
+            'End Season',
+            function () {
+              endSeasonBtn.disabled = true;
+              fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
+                if (!data.success) {
+                  showToast(data.message || 'Could not end this season.', 'error');
+                  endSeasonBtn.disabled = false;
+                  return;
+                }
+                showToast(escapeHtml(s.name) + ' ended.', 'success');
+                rcReloadAfterSave();
+              }).catch(function () {
+                showToast('Could not reach the server. Try again in a moment.', 'error');
+                endSeasonBtn.disabled = false;
+              });
+            }
+          );
+        });
+        btnGroup.appendChild(endSeasonBtn);
+      }
+    } else {
+      var deleteBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
+      deleteBtn.type = 'button';
+      deleteBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+      deleteBtn.addEventListener('click', function () {
+        openConfirmModal('Delete Season', 'Permanently delete "' + (s.name || s.seasonId) + '"? This removes its rounds and registrations too. This can\'t be undone.', 'Delete', function () {
+          fetchApi('adminDeleteSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
+            if (!data.success) {
+              showToast(data.message || 'Could not delete this season.', 'error');
+              return;
+            }
+            showToast(escapeHtml(s.name) + ' deleted.', 'success');
+            rcReloadAfterSave();
+          }).catch(function () {
+            showToast('Could not reach the server. Try again in a moment.', 'error');
+          });
+        });
+      });
+      btnGroup.appendChild(deleteBtn);
+    }
+
+    row.appendChild(btnGroup);
+    return row;
+  }
+
+  // Every season, grouped by the year it was CREATED (not the season's own
+  // in-game year/number) -- same black-pill-plus-indented-children shape
+  // the Cars list uses for Class -> Season (2026-08-30, Matt's ask: "arrange
+  // season list like cars"). A season with no CreatedAt (created before
+  // that column existed) groups under "Unknown Year" rather than guessing.
+  // Returns a plain fragment-like container -- buildSeasonsPanel wraps the
+  // result in its own bordered .rc-panel box (2026-08-30), same as every
+  // other Data Management list, rather than this function owning that
+  // border itself.
+  function buildSeasonsListFragment(seasons, token, reload) {
+    var wrap = el('div');
+    if (!seasons.length) {
+      wrap.appendChild(el('div', 'rc-dm-empty', 'No seasons yet.'));
+      return wrap;
+    }
+
+    var byYear = {};
+    var years = [];
+    seasons.forEach(function (s) {
+      var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
+      if (!byYear[year]) { byYear[year] = []; years.push(year); }
+      byYear[year].push(s);
+    });
+    // Seasons already arrive most-recently-created first (handleAdminListSeasons)
+    // -- sorting years the same way keeps this year first without a second
+    // pass over createdAt strings.
+    years.sort(function (a, b) { return b.localeCompare(a); });
+
+    years.forEach(function (year) {
+      var yearHead = el('div', 'rc-group-head');
+      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(year)));
+      wrap.appendChild(yearHead);
+      byYear[year].forEach(function (s) {
+        wrap.appendChild(buildSeasonRow(s, token, reload));
+      });
+    });
+
+    return wrap;
+  }
+
+  // The whole Seasons panel -- button row (Create/Resume, Clear Draft) plus
+  // the season list underneath it, both built together in one shot once
+  // `seasons` has actually loaded. Named "Seasons" now (renamed from
+  // "Season Tools", 2026-08-30), using the same card chrome as the
+  // Dashboard's own cards (rc-dash-card/rc-dash-card-title) for visual
+  // consistency across the site. `reload` is a full re-render of the
+  // whole League Management section (see renderLeagueManagementSection)
+  // rather than patching just this panel in place -- keeps "nothing shows
+  // until it's loaded" true after a mutation too, not just on first load.
+  function buildSeasonsPanel(seasons, token, reload) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
     var hasDraft = !!loadWizardDraft();
@@ -1700,27 +2866,67 @@
     createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
     row.appendChild(createBtn);
 
-    var editBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Edit Season');
-    editBtn.type = 'button';
-    editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token); });
-    row.appendChild(editBtn);
-
+    // The standalone Edit Season button is gone (2026-08-30) -- editing
+    // now happens per-row in the season list below, which can point at
+    // ANY season instead of always whichever one is most recent.
+    //
     // Only shows up once a draft actually exists -- there's nothing to
-    // clear otherwise, so this never adds a third button to the steady-
-    // state Create a Season / Edit Season row.
+    // clear otherwise, so this never adds a second button to the steady-
+    // state row.
     if (hasDraft) {
       var clearDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
       clearDraftBtn.type = 'button';
       clearDraftBtn.addEventListener('click', function () {
         clearWizardDraft();
         showToast('Season draft cleared.', 'success');
-        renderLeagueManagementSection(token);
+        reload();
       });
       row.appendChild(clearDraftBtn);
     }
 
     panel.appendChild(row);
-    section.appendChild(panel);
+
+    // The season list gets its own bordered box, separate from the button
+    // row above it (2026-08-30, Matt's call: "add a border around the
+    // season list like every other data management list popup -- the add
+    // [season] button sits outside of the box on top") -- same shape as
+    // Members/Tracks/Cars/Sponsors, where each one's own Add button sits
+    // in the modal above a bordered .rc-panel holding just the list.
+    var listBox = el('div', 'rc-panel');
+    listBox.appendChild(buildSeasonsListFragment(seasons, token, reload));
+    panel.appendChild(listBox);
+
+    return panel;
+  }
+
+  function renderLeagueManagementSection(token) {
+    var section = document.getElementById('rc-section-league');
+    if (!section) return;
+    section.innerHTML = '';
+
+    // No "League Management" heading while loading, and buildPageSpinner
+    // (not the bare buildSpinner) for the wait itself -- Matt's standing
+    // call: every full-section loading state across the Account pages sits
+    // at the exact same vertical height as the initial #rc-loading screen,
+    // which has no heading above it either (see renderCalendarSection for
+    // the same pattern). Nothing else renders until the season list has
+    // actually loaded (Matt's 2026-08-30 call) -- no flash of buttons
+    // appearing before the list underneath them is ready.
+    section.appendChild(buildPageSpinner('Loading seasons...'));
+
+    fetchApi('adminListSeasons', { token: token }).then(function (data) {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+      if (!data.success) {
+        section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
+        return;
+      }
+      section.appendChild(buildSeasonsPanel(data.seasons || [], token, function () { renderLeagueManagementSection(token); }));
+    }).catch(function () {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+      section.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -1737,8 +2943,9 @@
   // ---------------------------------------------------------------------
 
   // Same tooltip pattern as the wizard's Car Objectives checkboxes (.rc-
-  // tooltip class + data-tooltip attribute, pure CSS bubble) -- there was
-  // no shared helper for it before Calendar needed one in several places.
+  // tooltip class + data-tooltip attribute, shown via the shared
+  // rcShowTooltipBubble() system) -- there was no shared helper for it
+  // before Calendar needed one in several places.
   function withTooltip(el_, text) {
     el_.classList.add('rc-tooltip');
     el_.setAttribute('data-tooltip', text);
@@ -1832,7 +3039,13 @@
       tierStats.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettingsForLengths.practiceLengthMin + ' min', 'Practice session length (season-wide)'));
     }
     if (raceSettingsForLengths.qualifyLengthMin) {
-      tierStats.appendChild(calStat(ICON_CLOCK, 'Qualifying · ' + raceSettingsForLengths.qualifyLengthMin + ' min', 'Qualifying session length (season-wide)'));
+      // rc-cal-stat-gap-after -- extra breathing room between this chip and
+      // the Sprint/Medium/Long race-length chips that follow (2026-08-30,
+      // Matt's call: "add a larger space between QUALIFY and SPRINT
+      // length"), marking the boundary between the season-wide
+      // Practice/Qualifying lengths and the per-tier race lengths without
+      // widening every gap in the row via .rc-cal-stats' own gap.
+      tierStats.appendChild(calStat(ICON_CLOCK, 'Qualifying · ' + raceSettingsForLengths.qualifyLengthMin + ' min', 'Qualifying session length (season-wide)', 'rc-cal-stat-gap-after'));
     }
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
@@ -2048,6 +3261,17 @@
   var WIZARD_DRAFT_KEY = 'raceclub_season_wizard_draft';
   var WIZARD_STEPS = ['Season Details', 'Race Events', 'Season Preview'];
 
+  // New Driver Starting Balance is a persistent, Admin-panel-managed
+  // Economy setting now (2026-08-30), not a per-season wizard field -- see
+  // handleGetEconomySettings, Website.gs. loadWizardEconomySettings()
+  // below overwrites this the moment the wizard opens, same "hardcoded
+  // fallback, live value once fetched" convention as WIZARD_TRACK_LIST.
+  // Shown READ-ONLY in the Economy step purely as context (Matt's call:
+  // "so you can see what the current starting pay is so you can balance
+  // the rest from that info") -- the wizard never sends this value
+  // anywhere; it's display-only.
+  var WIZARD_NEW_DRIVER_STARTING_BALANCE = 25000;
+
   // Real LMU track/layout list -- hardcoded FALLBACK only. loadWizardTrackList()
   // below overwrites WIZARD_TRACK_LIST/WIZARD_TRACK_LAYOUTS/WIZARD_TRACK_ROWS
   // in place (so every closure already holding a reference keeps working)
@@ -2158,6 +3382,18 @@
       if (!res || !res.success || !res.cars) return;
       res.cars.filter(_rcRowActive).forEach(function (c) { if (c && c.Class) WIZARD_CARS.push(c); });
     }).catch(function (err) { /* offline/endpoint not deployed yet -- every class just shows greyed out */ });
+  }
+  // Same "always awaited by openSeasonWizardWithLoad/openSeasonEditWizardWithLoad
+  // before the wizard opens, silently keeps the fallback on failure" shape
+  // as loadWizardTrackList/loadWizardCarList above. getEconomySettings is
+  // Admin-only, same as handleCreateSeason itself, so this is safe to call
+  // with whatever token got the user into the wizard in the first place.
+  function loadWizardEconomySettings() {
+    if (typeof fetchApi !== 'function') return Promise.resolve();
+    return fetchApi('getEconomySettings', { token: token }).then(function (res) {
+      if (!res || !res.success || !(res.newDriverStartingBalance >= 0)) return;
+      WIZARD_NEW_DRIVER_STARTING_BALANCE = res.newDriverStartingBalance;
+    }).catch(function () { /* keep the fallback -- this is display-only context, never blocks wizard use */ });
   }
   var WIZARD_WEATHER_LIST = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
   // Only weather that actually involves rain gets a Chance of Rain box --
@@ -2352,20 +3588,6 @@
   // (pre-ECO) design doc -- this whole block is one of the things Matt's
   // "remove parts we don't need" pass will revisit once the wizard's LOOK
   // is confirmed to match.
-  // Builds { Low: { 'Season Finisher': true, ... }, Mid: {...}, High: {...} }
-  // straight off CAR_OBJECTIVE_CATALOG (js/reference-data.js) -- every
-  // objective starts enabled. Kept as its own function (rather than a
-  // literal in defaultWizardState) so normalizeWizardState can re-derive
-  // it fresh from whatever the catalog looks like right now.
-  function defaultCarObjectivesEnabled() {
-    var out = {};
-    var catalog = (typeof CAR_OBJECTIVE_CATALOG !== 'undefined') ? CAR_OBJECTIVE_CATALOG : {};
-    Object.keys(catalog).forEach(function (tier) {
-      out[tier] = {};
-      catalog[tier].forEach(function (name) { out[tier][name] = true; });
-    });
-    return out;
-  }
 
   function defaultWizardState() {
     return {
@@ -2411,11 +3633,11 @@
         qualifyLengthMin: 7
       },
       // ECO doesn't do per-race/per-class registration fees or the old
-      // wager/no-show/vanity income streams -- Starting Balance and Wager
-      // Stake Cap are the only two economy settings that still apply
-      // (Matt's call).
+      // wager/no-show/vanity income streams -- Wager Stake Cap is the only
+      // per-season economy setting left here (Matt's call). Starting
+      // Balance moved to the Admin panel's league-wide Economy settings
+      // (2026-08-30) -- see the wizSubhead('Economy') comment below.
       economy: {
-        startingBalance: 25000,
         wagerStakeCapPct: 25,
         // Car Objectives system (added 2026-08-29) -- one average seat
         // cost per Tier (Low/Mid/High, CAR_TIER_LIST), each car's actual
@@ -2423,10 +3645,9 @@
         // to the nearest $100 at Create Season. objectiveBonusMultiplier
         // is applied to that SAME randomized BuyInCost (not the flat tier
         // average) to get the car's objective bonus. Defaults below are
-        // 1/5, 2/5, 3/5 of the default Starting Balance (Matt's call) --
-        // this is a ONE-TIME default computed off the initial 25000, not a
-        // live formula, so changing Starting Balance afterward doesn't
-        // silently drag these along with it.
+        // 1/5, 2/5, 3/5 of the league's default $25,000 starting balance
+        // (Matt's call) -- fixed reference numbers, not a live formula off
+        // the Admin panel's Economy setting.
         carTierSeatCost: { Low: 5000, Mid: 10000, High: 15000 },
         // One multiplier per Tier now (was a single flat number for all
         // three) -- a car's objective bonus is its own randomized seat
@@ -2441,15 +3662,6 @@
         // (Matt's call).
         eliteObjectiveMultiplier: 7.5
       },
-      // Which of the 18 tiered Car Objectives (CAR_OBJECTIVE_CATALOG, 6
-      // per Low/Mid/High tier) are eligible to be handed out this season --
-      // lets Matt turn off ones that don't fit a particular season without
-      // editing the catalog itself. Built fresh from the current catalog
-      // every time the wizard opens (see normalizeWizardState) so a newly-
-      // added catalog objective always starts enabled rather than silently
-      // missing from state. Elite's single objective is never toggled here
-      // -- see eliteByClass below.
-      carObjectivesEnabled: defaultCarObjectivesEnabled(),
       // Elite (added 2026-08-30) -- one hand-picked CarID per selected
       // class, chosen in the Economy step's Elite section. Keyed by class
       // name; a class with no entry (or '') simply has no Elite seat this
@@ -2486,7 +3698,7 @@
   function openSeasonWizardWithLoad() {
     var loadingModal = showModal('Create a Season', { wide: true });
     loadingModal.body.appendChild(buildSpinner('Loading season variables...'));
-    Promise.all([loadWizardTrackList(), loadWizardCarList()]).then(function () {
+    Promise.all([loadWizardTrackList(), loadWizardCarList(), loadWizardEconomySettings()]).then(function () {
       loadingModal.close();
       openSeasonWizard();
     });
@@ -2500,11 +3712,18 @@
   // same shape defaultWizardState() produces so the existing wizard pages
   // render it without any per-field special-casing beyond the lock checks
   // already built into renderWizardSeasonDetailsPage/renderWizardRaceEventsPage.
-  function openSeasonEditWizardWithLoad(token) {
+  // seasonId (added 2026-08-30, optional): lets the Season Tools list's
+  // per-row Edit button open a SPECIFIC season instead of always the most
+  // recently created one -- handleGetSeasonForEdit already accepted this
+  // param, the frontend just never had anywhere to send it from before
+  // the season list existed.
+  function openSeasonEditWizardWithLoad(token, seasonId) {
     var loadingModal = showModal('Edit Season', { wide: true });
     loadingModal.body.appendChild(buildSpinner('Loading season...'));
-    Promise.all([loadWizardTrackList(), loadWizardCarList(), fetchApi('getSeasonForEdit', { token: token })]).then(function (results) {
-      var seasonRes = results[2];
+    var getSeasonParams = { token: token };
+    if (seasonId) getSeasonParams.seasonId = seasonId;
+    Promise.all([loadWizardTrackList(), loadWizardCarList(), loadWizardEconomySettings(), fetchApi('getSeasonForEdit', getSeasonParams)]).then(function (results) {
+      var seasonRes = results[3];
       loadingModal.close();
       if (!seasonRes || !seasonRes.success) {
         showToast('Could not load the season to edit.', 'error');
@@ -2666,29 +3885,50 @@
   // Page 1 -- Identity, Access & server behavior, Format, Points, Schedule,
   // Race Settings, Economy.
   function renderWizardSeasonDetailsPage(state, container, requiredEls) {
+    // Identity and Access & Server Behavior stay fully editable on a
+    // locked (already-raced) season -- Matt's call, 2026-08-30, widening
+    // the old "only the password" exemption. Every field in these two
+    // categories gets .rc-wiz-editable-when-locked so the blanket-disable
+    // pass below (see state.__locked) can skip them without hardcoding
+    // field references there.
     container.appendChild(wizSubhead('Identity'));
     var nameInput = wizTextInput(state.seasonName, function (v) { state.seasonName = v; });
     nameInput.maxLength = 24;
     nameInput.style.maxWidth = '50%';
+    nameInput.classList.add('rc-wiz-editable-when-locked');
     requireField(nameInput, requiredEls);
     container.appendChild(wizField('Season Name', nameInput));
 
     container.appendChild(wizSubhead('Access & Server Behavior'));
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
     pwInput.style.maxWidth = '50%';
-    pwInput.classList.add('rc-wiz-password-field'); // exempted from the locked-season blanket-disable below
+    pwInput.classList.add('rc-wiz-editable-when-locked');
     requireField(pwInput, requiredEls);
     container.appendChild(wizField('Default Password', pwInput));
 
+    var privateQualifyingSelect = wizSelect(['Yes', 'No'], state.privateQualifying, function (v) { state.privateQualifying = v; });
+    var trackLimitsSelect = wizSelect(['Strict', 'Relaxed', 'Default'], state.trackLimitsPreset, function (v) { state.trackLimitsPreset = v; });
+    privateQualifyingSelect.classList.add('rc-wiz-editable-when-locked');
+    trackLimitsSelect.classList.add('rc-wiz-editable-when-locked');
     container.appendChild(fieldPairRow(
-      'Private Qualifying', wizSelect(['Yes', 'No'], state.privateQualifying, function (v) { state.privateQualifying = v; }),
-      'Track Limits Preset', wizSelect(['Strict', 'Relaxed', 'Default'], state.trackLimitsPreset, function (v) { state.trackLimitsPreset = v; })
+      'Private Qualifying', privateQualifyingSelect,
+      'Track Limits Preset', trackLimitsSelect
     ));
 
     container.appendChild(wizSubhead('Format'));
     var classesWrap = el('div');
     var classesGroupEntry;
-    function recheckClassesGroup() { if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid(); }
+    // Also refreshes the Economy step's Elite Tier dropdowns (see
+    // renderEliteWrap below, in the Economy-building code further down
+    // this same function) -- both live in one long function that only
+    // gets rebuilt from scratch on step navigation, so a class checkbox
+    // or season radio change needs to explicitly poke anything elsewhere
+    // on the page that depends on state.classes/classSeasons, rather than
+    // relying on a DOM rebuild that isn't coming.
+    function recheckClassesGroup() {
+      if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid();
+      if (typeof renderEliteWrap === 'function') renderEliteWrap();
+    }
     function availableSeasonsForClass(cls) {
       var seasons = {};
       (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []).forEach(function (c) {
@@ -2821,17 +4061,27 @@
     var qualifyLenInput = wizNumberInput(state.raceSettings.qualifyLengthMin, function (v) { state.raceSettings.qualifyLengthMin = v; }, { min: 0 }); requireField(qualifyLenInput, requiredEls);
     container.appendChild(fieldPairRow('Practice Length (min)', practiceLenInput, 'Qualifying Length (min)', qualifyLenInput));
 
-    // Economy -- trimmed to the two settings ECO actually uses (Matt's
-    // call): no per-class/per-race registration fees, no wager house cut/
-    // forfeiture, no no-show fees, no vanity spend cut, no pool-feed cuts.
+    // Economy -- Wager Stake Cap is the only setting this wizard actually
+    // WRITES (Matt's call: no per-class/per-race registration fees, no
+    // wager house cut/forfeiture, no no-show fees, no vanity spend cut, no
+    // pool-feed cuts). Starting Balance is shown alongside it again
+    // (2026-08-30) but READ-ONLY -- it's a league-wide, persistent Economy
+    // setting now (Admin panel -> Economy), seeded once per driver at
+    // Prospect->Driver approval rather than chosen fresh in every season's
+    // wizard (see handleGetEconomySettings/handleAdminUpdateEconomySettings,
+    // Website.gs, and handleAdminApproveAccount, Auth.gs) -- it's back in
+    // this exact spot purely as CONTEXT while building a season, so an
+    // admin can see what new drivers start with and balance seat costs/
+    // objective bonuses against it, per Matt's ask.
     container.appendChild(wizSubhead('Economy'));
-    var balInput = wizNumberInput(state.economy.startingBalance, function (v) { state.economy.startingBalance = v; }, { min: 0, step: 100 });
-    requireField(balInput, requiredEls);
+    var balDisplayInput = wizNumberInput(WIZARD_NEW_DRIVER_STARTING_BALANCE, function () {}, {});
+    balDisplayInput.disabled = true;
+    balDisplayInput.classList.add('rc-field-locked');
     var stakeCapInput = wizNumberInput(state.economy.wagerStakeCapPct, function (v) { state.economy.wagerStakeCapPct = v; }, { min: 0, max: 100 });
     requireField(stakeCapInput, requiredEls);
     container.appendChild(wizFieldPairRow(
-      'Starting Bank Balance ($)', balInput,
-      'For brand-new drivers only. Returning drivers carry their balance over from last season -- if that\'s somehow below this value, they\'re automatically brought up to it at season start.',
+      'Starting Bank Balance ($)', balDisplayInput,
+      'Read-only -- only an Admin can change this, from the Admin panel\'s Economy settings.',
       'Wager Stake Cap (% of available)', stakeCapInput,
       'Limits a single wager to this % of a driver\'s available balance.'
     ));
@@ -2854,40 +4104,19 @@
     container.appendChild(seatCostRow);
     container.appendChild(el('div', 'rc-hint', 'Each car\'s actual seat cost is randomized ±20% around its own tier\'s average, then rounded to the nearest $100 -- so cars sharing a tier aren\'t all identical.'));
 
-    // Which of the 15 catalog objectives (5 per tier) are actually up for
-    // grabs this season -- unchecking one just removes it from that
-    // tier's round-robin pool at Create Season, it never edits the
-    // catalog itself. Grouped by tier, same Low->Mid->High order as
-    // everywhere else a tier list shows. Each checkbox carries a themed
-    // hover tooltip (.rc-tooltip / data-tooltip, pure CSS) explaining what
-    // the objective requires.
-    container.appendChild(wizSubhead('Car Objectives'));
-    var objectivesWrap = el('div');
-    var catalogForWizard = (typeof CAR_OBJECTIVE_CATALOG !== 'undefined') ? CAR_OBJECTIVE_CATALOG : {};
-    var descriptionsForWizard = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
-    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
-      var tierNames = catalogForWizard[tier] || [];
-      if (!tierNames.length) return;
-      if (!state.carObjectivesEnabled[tier]) state.carObjectivesEnabled[tier] = {};
-      var tierWrap = el('div', 'padding:6px 0;');
-      tierWrap.appendChild(el('div', 'font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--rc-steel);margin-bottom:4px;', escapeHtml(tier) + ' Tier'));
-      var checksRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-left:4px;');
-      tierNames.forEach(function (objName) {
-        if (state.carObjectivesEnabled[tier][objName] === undefined) state.carObjectivesEnabled[tier][objName] = true;
-        var checkLabel = wizCheckboxRow(objName, state.carObjectivesEnabled[tier][objName], function (checked) {
-          state.carObjectivesEnabled[tier][objName] = checked;
-        });
-        checkLabel.className = (checkLabel.className ? checkLabel.className + ' ' : '') + 'rc-tooltip';
-        if (descriptionsForWizard[objName]) checkLabel.setAttribute('data-tooltip', descriptionsForWizard[objName]);
-        checkLabel.style.cssText = 'display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
-        checksRow.appendChild(checkLabel);
-      });
-      tierWrap.appendChild(checksRow);
-      objectivesWrap.appendChild(tierWrap);
-    });
-    container.appendChild(wizField('Season Objectives In Use This Season', objectivesWrap,
-      'Unchecked objectives are skipped for this season\'s round-robin assignment -- if every objective in a tier ends up unchecked, that tier falls back to using all 5 rather than assigning nothing. Hover an objective for a short explanation.'));
-
+    // Objectives (2026-08-30, Matt's call) -- given its own red category
+    // header and moved above Elite Tier, since it's a distinct concern
+    // (the Low/Mid/High multiplier that scales every non-Elite car's
+    // objective bonus) from Elite Tier's per-class car picks below. The
+    // old "Objective Bonus Multiplier" header/wrapper this replaced had
+    // been removed entirely in an earlier pass (each select already
+    // carries its own per-tier label) -- this subhead is a category
+    // label for the whole row, not a rename of that old per-field one.
+    // The old per-objective enable/disable checkbox pool ("Car
+    // Objectives" subhead + "Season Objectives In Use This Season") that
+    // used to sit here is removed entirely -- every catalog objective is
+    // always in the round-robin pool now, no per-season toggle.
+    container.appendChild(wizSubhead('Objectives'));
     var multiplierOptions = [];
     for (var m = 0.5; m <= 5.0; m += 0.25) multiplierOptions.push(Math.round(m * 100) / 100);
     function snapMultiplier(val) {
@@ -2906,11 +4135,15 @@
       var snapped = snapMultiplier(Number(state.economy.objectiveBonusMultiplier[tier]));
       var input = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snapped.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier[tier] = parseFloat(v); });
       var col = el('div', 'flex:1;min-width:160px;');
-      col.appendChild(wizField(tier + ' Tier Objective Multiplier', input));
+      col.appendChild(wizField(tier + ' Tier Objective Multiplier', input, null));
       multiplierRow.appendChild(col);
     });
-    container.appendChild(wizField('Objective Bonus Multiplier', multiplierRow,
-      'A car\'s objective bonus is its own (randomized) seat cost times its tier\'s multiplier here -- e.g. a High Tier car with a $15,000 seat cost at 5.00x pays a $75,000 objective bonus if it earns its objective.'));
+    container.appendChild(multiplierRow);
+    // Explanatory line stretched below ALL three multiplier columns
+    // (2026-08-30, Matt's call) -- previously lived as a per-field hint
+    // under just the Low Tier select, which read like it only applied to
+    // that one tier instead of the shared mechanic behind all three.
+    container.appendChild(el('div', 'rc-hint', 'A car\'s objective bonus is its own (randomized) seat cost times its tier\'s multiplier here -- e.g. a High Tier car with a $15,000 seat cost at 5.00x pays a $75,000 objective bonus if it earns its objective.'));
 
     // Elite Tier (added 2026-08-30) -- one hand-picked car per selected
     // class, never a Car Management Tier value. Built from WIZARD_CARS
@@ -2918,32 +4151,54 @@
     // each class's own Season pick from the Format step -- the same
     // Class+Season match handleCreateSeason itself uses to decide which
     // cars are eligible this season.
+    //
+    // renderEliteWrap() (2026-08-30 fix) is its own named function, not a
+    // one-shot build, because this whole page only gets rebuilt from
+    // scratch when the wizard navigates AWAY from and back to this step
+    // (see renderStep()) -- ticking a class checkbox or picking a season
+    // radio up in Format never re-runs renderWizardSeasonDetailsPage, so
+    // without this the dropdowns below stayed frozen at whatever
+    // state.classes/classSeasons were the moment the step first rendered
+    // (usually nothing checked yet, hence "no cars showing up"). Both the
+    // class checkbox's onChange and the season radio's change handler up
+    // in the Format section above call recheckClassesGroup(), which now
+    // also calls this -- so the dropdowns refresh live as soon as either
+    // control changes, no full step re-navigation required.
     container.appendChild(wizSubhead('Elite Tier'));
-    container.appendChild(el('div', 'rc-hint', 'Pick one car per class to be this season\'s Elite entry -- the most expensive seat in its class, carrying the single hardest objective on the site (winning the championship) for a matching payout. Leave a class set to "No Elite Seat" to skip it entirely.'));
+    container.appendChild(el('div', 'rc-hint', 'Pick one car per class to be this season\'s Elite entry -- carrying the single hardest objective on the site (winning the championship) for a matching payout. Leave a class set to "No Elite Seat" to skip it entirely. Its seat cost isn\'t randomized like the other tiers -- it\'s always exactly 25% above this class\'s High Tier average seat cost above, e.g. a $16,000 High Tier average makes every Elite seat $20,000.'));
     var eliteWrap = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;');
-    var selectedClassesForElite = Object.keys(state.classes || {}).filter(function (c) { return state.classes[c]; });
-    selectedClassesForElite.forEach(function (cls) {
-      var seasonForClass = state.classSeasons[cls];
-      var carsInClass = WIZARD_CARS.filter(function (c) { return c.Class === cls && String(c.Season) === String(seasonForClass); });
-      var options = ['No Elite Seat'].concat(carsInClass.map(function (c) { return (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : ''); }));
-      var carIdByLabel = {};
-      carsInClass.forEach(function (c) { carIdByLabel[(c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '')] = c.CarID; });
-      var currentCarId = state.eliteByClass[cls] || '';
-      var currentLabel = 'No Elite Seat';
-      carsInClass.forEach(function (c) {
-        if (c.CarID === currentCarId) currentLabel = (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '');
-      });
-      var select = wizSelect(options, currentLabel, function (v) {
-        state.eliteByClass[cls] = (v === 'No Elite Seat') ? '' : (carIdByLabel[v] || '');
-      });
-      var col = el('div', 'flex:1;min-width:220px;');
-      col.appendChild(wizField(cls + ' Elite Team', select));
-      eliteWrap.appendChild(col);
-    });
-    if (!selectedClassesForElite.length) {
-      eliteWrap.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'Pick at least one class in the Format step first.'));
-    }
     container.appendChild(eliteWrap);
+    function renderEliteWrap() {
+      eliteWrap.innerHTML = '';
+      var selectedClassesForElite = Object.keys(state.classes || {}).filter(function (c) { return state.classes[c]; });
+      selectedClassesForElite.forEach(function (cls) {
+        var seasonForClass = state.classSeasons[cls];
+        var carsInClass = WIZARD_CARS.filter(function (c) { return c.Class === cls && String(c.Season) === String(seasonForClass); });
+        var options = ['No Elite Seat'].concat(carsInClass.map(function (c) { return (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : ''); }));
+        var carIdByLabel = {};
+        carsInClass.forEach(function (c) { carIdByLabel[(c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '')] = c.CarID; });
+        var currentCarId = state.eliteByClass[cls] || '';
+        var currentLabel = 'No Elite Seat';
+        carsInClass.forEach(function (c) {
+          if (c.CarID === currentCarId) currentLabel = (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '');
+        });
+        // A previously-picked car that's no longer eligible for this
+        // class (e.g. the season radio just changed out from under it)
+        // silently reverts to "No Elite Seat" rather than leaving state
+        // pointed at a CarID nothing on screen still shows as selected.
+        if (currentCarId && currentLabel === 'No Elite Seat') state.eliteByClass[cls] = '';
+        var select = wizSelect(options, currentLabel, function (v) {
+          state.eliteByClass[cls] = (v === 'No Elite Seat') ? '' : (carIdByLabel[v] || '');
+        });
+        var col = el('div', 'flex:1;min-width:220px;');
+        col.appendChild(wizField(cls + ' Elite Team', select));
+        eliteWrap.appendChild(col);
+      });
+      if (!selectedClassesForElite.length) {
+        eliteWrap.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'Pick at least one class in the Format step first.'));
+      }
+    }
+    renderEliteWrap();
 
     var eliteMultiplierOptions = [];
     for (var em = 0; em <= 10.0; em += 0.25) eliteMultiplierOptions.push(Math.round(em * 100) / 100);
@@ -2955,20 +4210,22 @@
     container.appendChild(wizField('Elite Tier Objective Multiplier', eliteMultiplierInput,
       'Applies to every Elite car\'s objective bonus this season -- e.g. an Elite seat costing $22,500 at 7.50x pays a $168,750 bonus for winning the championship.'));
 
-    // Locked season (Matt's call, 2026-08-29): once any round has been
-    // raced, this whole page freezes except the password -- blanket
-    // disable every input/select/textarea just built above rather than
-    // threading a locked check through each individual field. Inserted at
-    // the very top so it reads first, before the fields it explains.
+    // Locked season (Matt's call, 2026-08-29; widened 2026-08-30): once
+    // any round has been raced, this page freezes down to just Identity
+    // and Access & Server Behavior -- blanket disable every input/select/
+    // textarea just built above EXCEPT those two categories'
+    // .rc-wiz-editable-when-locked fields, rather than threading a locked
+    // check through each individual field. Inserted at the very top so it
+    // reads first, before the fields it explains.
     if (state.__locked) {
       var lockNote = el('div', 'rc-panel', '');
       lockNote.style.cssText = 'border-color:var(--rc-red);background:#fdf2f2;margin-bottom:16px;';
       lockNote.appendChild(el('div', 'font-weight:700;color:var(--rc-carbon);font-size:13px;', 'This season has raced rounds'));
       lockNote.appendChild(el('div', 'color:var(--rc-steel);font-size:12.5px;margin-top:4px;',
-        'Season Details are locked -- only the Default Password can still change. On the next page, only rounds that haven\'t been raced yet stay editable.'));
+        'Season Details are locked -- only Identity and Access & Server Behavior can still change. On the next page, only races that haven\'t been completed yet stay editable.'));
       container.insertBefore(lockNote, container.firstChild);
       container.querySelectorAll('input, select, textarea').forEach(function (fieldEl) {
-        if (!fieldEl.classList.contains('rc-wiz-password-field')) fieldEl.disabled = true;
+        if (!fieldEl.classList.contains('rc-wiz-editable-when-locked')) fieldEl.disabled = true;
       });
     }
   }
@@ -3171,16 +4428,19 @@
       card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(igPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(igQualify, 'Sim Time')));
       card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(igRace, 'Sim Time')));
 
-      // Editing an already-raced round is never allowed (Matt's call) --
-      // freeze every field this specific card just built, and label it,
-      // rather than touching the season-wide lock check above (a season
-      // can be locked overall while still having later, unraced rounds
-      // stay fully editable).
+      // Editing an already-raced round is never allowed (Matt's call;
+      // widened 2026-08-30 to gray out the WHOLE card, not just disable
+      // its fields) -- freeze every field this specific card just built
+      // and dim the whole container, rather than touching the
+      // season-wide lock check above (a season can be locked overall
+      // while still having later, unraced rounds stay fully editable).
       if (race.raced) {
         var racedBadge = el('span', null, 'Raced — Locked');
         racedBadge.style.cssText = 'display:inline-block;margin-left:10px;padding:2px 8px;border-radius:4px;background:var(--rc-steel);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;vertical-align:middle;';
         card.querySelector('h4').appendChild(racedBadge);
         card.querySelectorAll('input, select, textarea').forEach(function (fieldEl) { fieldEl.disabled = true; });
+        card.style.opacity = '0.55';
+        card.style.pointerEvents = 'none';
       }
 
       container.appendChild(card);
@@ -3402,7 +4662,6 @@
 
     var econPanel = el('div', 'rc-panel'); econPanel.style.marginTop = '12px';
     econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Economy'));
-    econPanel.appendChild(previewLine('Starting Balance', '$' + Number(state.economy.startingBalance || 0).toLocaleString()));
     econPanel.appendChild(previewLine('Wager Stake Cap', state.economy.wagerStakeCapPct + '% of available'));
     econPanel.appendChild(previewLine('Car Objectives — Seat Cost Avgs.',
       'Low $' + Number(state.economy.carTierSeatCost.Low || 0).toLocaleString() +
@@ -3412,12 +4671,6 @@
       'Low ' + Number(state.economy.objectiveBonusMultiplier.Low).toFixed(2) + 'x' +
       ' · Mid ' + Number(state.economy.objectiveBonusMultiplier.Mid).toFixed(2) + 'x' +
       ' · High ' + Number(state.economy.objectiveBonusMultiplier.High).toFixed(2) + 'x' + ' seat cost'));
-    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
-      var tierMap = (state.carObjectivesEnabled && state.carObjectivesEnabled[tier]) || {};
-      var total = Object.keys(tierMap).length;
-      var enabledCount = Object.keys(tierMap).filter(function (k) { return tierMap[k]; }).length;
-      if (total) econPanel.appendChild(previewLine(tier + ' Tier Objectives In Use', enabledCount + ' of ' + total));
-    });
     var eliteClassEntries = Object.keys(state.eliteByClass || {}).filter(function (c) { return state.eliteByClass[c]; });
     if (eliteClassEntries.length) {
       econPanel.appendChild(previewLine('Elite Seats',
@@ -3488,15 +4741,6 @@
     merged.economy.objectiveBonusMultiplier = Object.assign({}, base.economy.objectiveBonusMultiplier, (saved.economy && saved.economy.objectiveBonusMultiplier) || {});
     merged.eliteByClass = Object.assign({}, base.eliteByClass, saved.eliteByClass || {});
     merged.pointsTables = saved.pointsTables || base.pointsTables;
-    // Re-derive per-tier from the CURRENT catalog first, then overlay
-    // whatever the saved draft had -- a catalog objective added since the
-    // draft was saved starts enabled rather than silently missing/false.
-    var freshEnabled = defaultCarObjectivesEnabled();
-    var savedEnabled = saved.carObjectivesEnabled || {};
-    merged.carObjectivesEnabled = {};
-    Object.keys(freshEnabled).forEach(function (tier) {
-      merged.carObjectivesEnabled[tier] = Object.assign({}, freshEnabled[tier], savedEnabled[tier] || {});
-    });
     return merged;
   }
 
@@ -3523,12 +4767,6 @@
     merged.economy.objectiveBonusMultiplier = Object.assign({}, base.economy.objectiveBonusMultiplier, (details.economy && details.economy.objectiveBonusMultiplier) || {});
     merged.eliteByClass = Object.assign({}, base.eliteByClass, details.eliteByClass || {});
     merged.pointsTables = details.pointsTables || base.pointsTables;
-    var freshEnabled = defaultCarObjectivesEnabled();
-    var savedEnabled = details.carObjectivesEnabled || {};
-    merged.carObjectivesEnabled = {};
-    Object.keys(freshEnabled).forEach(function (tier) {
-      merged.carObjectivesEnabled[tier] = Object.assign({}, freshEnabled[tier], savedEnabled[tier] || {});
-    });
     merged.byeWeeks = details.byeWeeks || 0;
     merged.byeWeekDates = details.byeWeekDates || [];
     merged.specialEventsCount = details.specialEventsCount || 0;
@@ -3877,7 +5115,6 @@
         seasonStartTime: state.seasonStartTime,
         raceSettings: state.raceSettings,
         economy: state.economy,
-        carObjectivesEnabled: state.carObjectivesEnabled,
         eliteByClass: state.eliteByClass
       };
 
@@ -3918,8 +5155,8 @@
       }).then(function (data) {
         if (data && data.success) {
           clearWizardDraft();
-          showResultPanel(true, 'Season Created',
-            data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'));
+          showToast(data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'), 'success');
+          rcReloadAfterSave();
         } else {
           showResultPanel(false, 'Could Not Create Season',
             (data && data.message) || 'Something went wrong talking to the server. Your draft is untouched, so it\'s safe to try again.');
@@ -3965,7 +5202,8 @@
         }
       }).then(function (data) {
         if (data && data.success) {
-          showResultPanel(true, 'Season Updated', data.message || 'Season updated.');
+          showToast(data.message || 'Season updated.', 'success');
+          rcReloadAfterSave();
         } else {
           showResultPanel(false, 'Could Not Update Season',
             (data && data.message) || 'Something went wrong talking to the server.');
@@ -4010,7 +5248,7 @@
 
   // ---------------------------------------------------------------------
   // DATA MANAGEMENT PAGE -- a League-Management-style container (h2 + one
-  // rc-panel labeled "Data Tools") with a row of buttons: Members / Tracks
+  // rc-panel labeled "Data Management") with a row of buttons: Members / Tracks
   // / Cars / Sponsors. Each button opens its own popup (openAdminListModal
   // below) that fetches and renders just that data set -- nothing loads
   // until its button is clicked (Matt's call: "Each section loads up
@@ -4020,15 +5258,18 @@
   // the plain "Admin" placeholder link (Matt's call: "I'm unsure what I
   // will use it for" -- kept as its own link, not merged in here).
   // ---------------------------------------------------------------------
-  function renderDataManagementSection(token) {
-    var section = document.getElementById('rc-section-datamgmt');
+  // Renamed from renderDataManagementSection (2026-08-30) -- Data
+  // Management's standalone sidebar button is gone; this exact content
+  // (Members/Tracks/Cars/Sponsors) now lives under Admin instead, still
+  // Admin-only (Matt's call: "admins can only access this ADMIN section").
+  function renderAdminSection(token) {
+    var section = document.getElementById('rc-section-admin');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Data Management'));
+    section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
 
-    var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;', 'Data Tools'));
-    panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Admin-only. Manage members, tracks, cars, and sponsors.'));
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
 
@@ -4051,6 +5292,15 @@
     sponsorsBtn.type = 'button';
     sponsorsBtn.addEventListener('click', function () { openSponsorsModal(token); });
     row.appendChild(sponsorsBtn);
+
+    // Economy (2026-08-30, Matt's call) -- league-wide settings, separate
+    // from Members/Tracks/Cars/Sponsors' "list of many rows" shape, so it
+    // gets its own small form popup (openEconomyModal) instead of
+    // openAdminListModal.
+    var economyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Economy');
+    economyBtn.type = 'button';
+    economyBtn.addEventListener('click', function () { openEconomyModal(token); });
+    row.appendChild(economyBtn);
 
     panel.appendChild(row);
     section.appendChild(panel);
@@ -4088,6 +5338,52 @@
       });
     }
     load();
+    return modal;
+  }
+
+  // ECONOMY -- league-wide settings, admin-editable, independent of any one
+  // season (2026-08-30, Matt's call: moved Starting Balance out of the
+  // Season Creation Wizard since it's a persistent, account-level value,
+  // not something re-chosen every season). Just one field today (New
+  // Driver Starting Balance -- deposited automatically the moment a
+  // Prospect is approved into a Driver, see handleAdminApproveAccount,
+  // Auth.gs); built as a small form popup rather than openAdminListModal's
+  // "list of many rows" shape so more Economy settings can be added here
+  // later without restructuring this modal.
+  function openEconomyModal(token) {
+    var modal = showModal('Economy');
+    modal.body.appendChild(buildSpinner('Loading Economy settings…'));
+
+    fetchApi('getEconomySettings', { token: token }).then(function (data) {
+      modal.body.innerHTML = '';
+      if (!data || !data.success) {
+        modal.body.appendChild(el('div', 'rc-message rc-error', 'Could not load Economy settings. Try again in a moment.'));
+        return;
+      }
+
+      var balInput = wizNumberInput(data.newDriverStartingBalance, function () {}, { min: 0, step: 100 });
+      modal.body.appendChild(wizField(
+        'New Driver Starting Balance ($)', balInput,
+        'Deposited automatically, once, the moment a Prospect is approved into a Driver. Veteran drivers already carry a balance forward season to season and are never re-seeded.'
+      ));
+
+      var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:16px;');
+      var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
+      saveBtn.type = 'button';
+      saveBtn.addEventListener('click', function () {
+        fetchApi('adminUpdateEconomySettings', { method: 'POST', token: token, body: { newDriverStartingBalance: balInput.value } })
+          .then(function (result) {
+            if (result && result.success) { rcReloadAfterSave(); }
+            else { showToast((result && result.message) || 'Could not save. Check the value and try again.', 'error'); }
+          });
+      });
+      btnRow.appendChild(saveBtn);
+      modal.body.appendChild(btnRow);
+    }).catch(function () {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('div', 'rc-message rc-error', 'Could not load Economy settings. Try again in a moment.'));
+    });
+
     return modal;
   }
 
@@ -4150,6 +5446,14 @@
     form.appendChild(layout);
     form.appendChild(el('div', 'rc-hint', 'Every track needs at least one layout -- add more from its Edit popup afterward.'));
 
+    // Region (added 2026-08-30) -- venue-level, groups the Tracks list; a
+    // free-text field since there's no fixed region list yet (unlike
+    // Class/Tier, which draw from a governed set in reference-data.js).
+    // Optional -- left blank groups the venue under "Unassigned".
+    form.appendChild(el('label', null, 'Region (optional)'));
+    var region = el('input'); region.type = 'text'; region.placeholder = 'e.g. Europe, North America';
+    form.appendChild(region);
+
     var saveBtn = el('button', null, 'Add Track');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -4169,7 +5473,7 @@
       saveBtn.textContent = 'Adding...';
       fetchApi('adminAddTrackLayout', {
         method: 'POST', token: token,
-        body: { trackName: name.value.trim(), layout: layout.value.trim() }
+        body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim() }
       })
         .then(function (data) {
           saveBtn.disabled = false;
@@ -4180,7 +5484,7 @@
           }
           showToast('Track added.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -4288,7 +5592,7 @@
           }
           showToast('Car added.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -4308,86 +5612,115 @@
   // openAdminListModal) afterward, plus the sidebar dot/header bell, so
   // nothing here goes stale. No panel heading here -- this renders inside
   // the Members popup, whose modal title already says "Members".
+  // Members list -- reorganized 2026-08-30 (Matt's call) into one list
+  // grouped by Role, same black-pill-plus-indented-rows pattern as the
+  // Seasons list's year grouping and the Tracks list's Region grouping
+  // (.rc-group-head/.rc-group-row). Prospect (pending accounts -- not a
+  // real Role, see Auth.gs) is its own top group so it reads alongside
+  // the real roles instead of living in a separate box above them.
+  // Groups always render in the documented access-hierarchy order --
+  // Prospect, Driver, Steward, Organizer, Admin -- low to high, regardless
+  // of which ones happen to have members right now; alphabetical by
+  // display name within each group. Prospect rows get Approve/Deny
+  // alongside Edit (added 2026-08-30 -- previously Edit wasn't offered
+  // for a pending account at all); every other row just gets Edit.
   function buildDriversPanel(drivers, pending, token, reload) {
     var panel = el('div', 'rc-panel');
 
-    var pendingList = pending || [];
-    if (pendingList.length > 0) {
-      var pendingWrap = el('div', 'margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rc-silver);');
-      pendingWrap.appendChild(el('h4', 'margin:0 0 4px;font-size:13px;color:var(--rc-red);', 'Pending Approval (' + pendingList.length + ')'));
-      pendingList.slice().sort(function (a, b) {
-        return (a.DisplayName || '').localeCompare(b.DisplayName || '');
-      }).forEach(function (p) {
-        var row = el('div', 'rc-dm-row');
-        row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(p.DisplayName || p.Username || '(no name)')));
-        var btnGroup = el('div', 'display:flex;gap:8px;');
-        // Row actions are always .rc-btn-secondary (site convention -- see
-        // .rc-btn-row in style.css), so Approve/Deny read as equal-weight
-        // choices, colored via the same green/red already used for
-        // Active/Inactive status pills elsewhere in Data Management.
-        var approveBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Approve');
-        approveBtn.style.cssText = 'color:#1f5c25;border-color:#1f5c25;';
-        approveBtn.type = 'button';
-        approveBtn.addEventListener('click', function () {
-          approveBtn.disabled = true; denyBtn.disabled = true;
-          fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
-            if (data && data.success) {
-              showToast((p.DisplayName || 'Driver') + ' approved.', 'success');
-              reload();
-              if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
-              if (typeof renderHeader === 'function') renderHeader();
-            } else {
-              showToast((data && data.message) || 'Could not approve this account.', 'error');
-              approveBtn.disabled = false; denyBtn.disabled = false;
-            }
-          }).catch(function () {
-            showToast('Could not reach the server. Try again in a moment.', 'error');
-            approveBtn.disabled = false; denyBtn.disabled = false;
-          });
-        });
-        var denyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Deny');
-        denyBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
-        denyBtn.type = 'button';
-        denyBtn.addEventListener('click', function () {
-          approveBtn.disabled = true; denyBtn.disabled = true;
-          fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: p.ProfileID } }).then(function (data) {
-            if (data && data.success) {
-              showToast((p.DisplayName || 'Driver') + ' denied.', 'success');
-              reload();
-              if (typeof updateDataMgmtNavDot === 'function') updateDataMgmtNavDot(token);
-              if (typeof renderHeader === 'function') renderHeader();
-            } else {
-              showToast((data && data.message) || 'Could not deny this account.', 'error');
-              approveBtn.disabled = false; denyBtn.disabled = false;
-            }
-          }).catch(function () {
-            showToast('Could not reach the server. Try again in a moment.', 'error');
-            approveBtn.disabled = false; denyBtn.disabled = false;
-          });
-        });
-        btnGroup.appendChild(approveBtn);
-        btnGroup.appendChild(denyBtn);
-        row.appendChild(btnGroup);
-        pendingWrap.appendChild(row);
-      });
-      panel.appendChild(pendingWrap);
+    function byName(a, b) {
+      return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
     }
 
-    var sorted = (drivers || []).slice().sort(function (a, b) {
-      return (a.DisplayName || '').localeCompare(b.DisplayName || '');
+    var groups = [
+      { key: 'Prospect', rows: (pending || []).slice().sort(byName), isPending: true },
+      { key: 'Driver', rows: [], isPending: false },
+      { key: 'Steward', rows: [], isPending: false },
+      { key: 'Organizer', rows: [], isPending: false },
+      { key: 'Admin', rows: [], isPending: false }
+    ];
+    var byRole = {};
+    groups.forEach(function (g) { byRole[g.key] = g; });
+    // A Role not in the canonical list (shouldn't happen, but data can
+    // drift) still shows -- bucketed under Driver rather than silently
+    // dropped, same "don't lose the row" instinct as _rcClassBadge above.
+    (drivers || []).forEach(function (d) {
+      (byRole[d.Role] || byRole.Driver).rows.push(d);
     });
-    if (sorted.length === 0) {
+    groups.forEach(function (g) { if (!g.isPending) g.rows.sort(byName); });
+
+    if (groups.every(function (g) { return g.rows.length === 0; })) {
       panel.appendChild(el('div', 'rc-dm-empty', 'No members yet.'));
       return panel;
     }
-    sorted.forEach(function (d) {
-      var row = el('div', 'rc-dm-row');
-      row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(d.DisplayName || '(no name)')));
-      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-      editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditDriverModal(d, token, reload); });
-      row.appendChild(editBtn);
-      panel.appendChild(row);
+
+    groups.forEach(function (g) {
+      if (g.rows.length === 0) return;
+      var head = el('div', 'rc-group-head');
+      head.appendChild(el('span', 'rc-badge-chip rc-badge-group', g.key.toUpperCase()));
+      panel.appendChild(head);
+
+      g.rows.forEach(function (person) {
+        var row = el('div', 'rc-group-row');
+        var info = el('div', 'rc-dm-row-info');
+        info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+        row.appendChild(info);
+
+        var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+
+        if (g.isPending) {
+          // Row actions are always .rc-btn-secondary (site convention --
+          // see .rc-btn-row in style.css), so Approve/Deny read as
+          // equal-weight choices, colored via the same green/red already
+          // used for Active/Inactive status pills elsewhere in Data
+          // Management.
+          var approveBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Approve');
+          approveBtn.style.cssText = 'color:#1f5c25;border-color:#1f5c25;';
+          approveBtn.type = 'button';
+          approveBtn.addEventListener('click', function () {
+            approveBtn.disabled = true; denyBtn.disabled = true;
+            fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+              if (data && data.success) {
+                showToast((person.DisplayName || 'Driver') + ' approved.', 'success');
+                rcReloadAfterSave();
+              } else {
+                showToast((data && data.message) || 'Could not approve this account.', 'error');
+                approveBtn.disabled = false; denyBtn.disabled = false;
+              }
+            }).catch(function () {
+              showToast('Could not reach the server. Try again in a moment.', 'error');
+              approveBtn.disabled = false; denyBtn.disabled = false;
+            });
+          });
+          var denyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Deny');
+          denyBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+          denyBtn.type = 'button';
+          denyBtn.addEventListener('click', function () {
+            approveBtn.disabled = true; denyBtn.disabled = true;
+            fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+              if (data && data.success) {
+                showToast((person.DisplayName || 'Driver') + ' denied.', 'success');
+                rcReloadAfterSave();
+              } else {
+                showToast((data && data.message) || 'Could not deny this account.', 'error');
+                approveBtn.disabled = false; denyBtn.disabled = false;
+              }
+            }).catch(function () {
+              showToast('Could not reach the server. Try again in a moment.', 'error');
+              approveBtn.disabled = false; denyBtn.disabled = false;
+            });
+          });
+          btnGroup.appendChild(approveBtn);
+          btnGroup.appendChild(denyBtn);
+        }
+
+        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editBtn.type = 'button';
+        editBtn.addEventListener('click', function () { openEditDriverModal(person, token, reload); });
+        btnGroup.appendChild(editBtn);
+
+        row.appendChild(btnGroup);
+        panel.appendChild(row);
+      });
     });
     return panel;
   }
@@ -4513,7 +5846,7 @@
           }
           showToast('Driver updated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -4537,7 +5870,7 @@
           }
           showToast(isActive ? 'Account disabled.' : 'Account reactivated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           toggleBtn.disabled = false;
@@ -4546,10 +5879,18 @@
     });
   }
 
-  // Venues (grouped by TrackName) alphabetically, Edit button on the venue
-  // row only, opening openEditTrackModal(). Only ACTIVE layouts show in
-  // this main list -- the edit popup is where inactive ones are visible
-  // (and can be reactivated).
+  // Grouped by Region (added 2026-08-30, Matt's call), same black-pill-
+  // plus-indented-rows pattern as the Seasons list's year grouping and the
+  // Members list's role grouping (.rc-group-head/.rc-group-row); venues
+  // alphabetically within each region. Region lives on every Layout row
+  // for a venue but is venue-level in practice -- set/renamed together via
+  // adminUpdateTrackRegion, same as TrackName -- so the first row's Region
+  // is authoritative for the whole venue. Blank Region groups under
+  // "Unassigned", always sorted last so it doesn't jump around
+  // alphabetically as regions get filled in. Edit button on the venue row
+  // only, opening openEditTrackModal(). Only ACTIVE layouts show in this
+  // main list -- the edit popup is where inactive ones are visible (and
+  // can be reactivated).
   function buildTracksPanel(tracks, token, reload) {
     var panel = el('div', 'rc-panel');
     var venues = {};
@@ -4559,38 +5900,58 @@
       if (!venues[name]) { venues[name] = []; names.push(name); }
       venues[name].push(t);
     });
-    names.sort(function (a, b) { return a.localeCompare(b); });
     if (names.length === 0) {
       panel.appendChild(el('div', 'rc-dm-empty', 'No tracks yet.'));
       return panel;
     }
-    names.forEach(function (name) {
-      var rows = venues[name];
-      var group = el('div', 'rc-dm-group');
-      var row = el('div', 'rc-dm-row');
-      row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(name)));
-      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-      editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditTrackModal(name, rows, token, reload); });
-      row.appendChild(editBtn);
-      group.appendChild(row);
 
-      var activeLayouts = rows.filter(_rcRowActive).map(function (r) { return r.Layout; })
-        .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
-      if (activeLayouts.length === 0) {
-        var noneRow = el('div', 'rc-dm-subrow');
-        noneRow.appendChild(el('span', 'rc-dm-tree', '└'));
-        noneRow.appendChild(el('span', null, 'No active layouts.'));
-        group.appendChild(noneRow);
-      } else {
-        activeLayouts.forEach(function (layout) {
-          var layoutRow = el('div', 'rc-dm-subrow');
-          layoutRow.appendChild(el('span', 'rc-dm-tree', '└'));
-          layoutRow.appendChild(el('span', null, escapeHtml(layout)));
-          group.appendChild(layoutRow);
-        });
-      }
-      panel.appendChild(group);
+    var byRegion = {};
+    var regions = [];
+    names.forEach(function (name) {
+      var region = (venues[name][0] && venues[name][0].Region) || '';
+      var key = region || 'Unassigned';
+      if (!byRegion[key]) { byRegion[key] = []; regions.push(key); }
+      byRegion[key].push(name);
+    });
+    regions.sort(function (a, b) {
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
+      return a.localeCompare(b);
+    });
+
+    regions.forEach(function (region) {
+      var head = el('div', 'rc-group-head');
+      head.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(region.toUpperCase())));
+      panel.appendChild(head);
+
+      byRegion[region].slice().sort(function (a, b) { return a.localeCompare(b); }).forEach(function (name) {
+        var rows = venues[name];
+        var group = el('div', 'rc-dm-group');
+        var row = el('div', 'rc-dm-row rc-dm-row-light');
+        row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(name)));
+        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editBtn.type = 'button';
+        editBtn.addEventListener('click', function () { openEditTrackModal(name, rows, token, reload); });
+        row.appendChild(editBtn);
+        group.appendChild(row);
+
+        var activeLayouts = rows.filter(_rcRowActive).map(function (r) { return r.Layout; })
+          .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
+        if (activeLayouts.length === 0) {
+          var noneRow = el('div', 'rc-dm-subrow');
+          noneRow.appendChild(el('span', 'rc-dm-tree', '└'));
+          noneRow.appendChild(el('span', null, 'No active layouts.'));
+          group.appendChild(noneRow);
+        } else {
+          activeLayouts.forEach(function (layout) {
+            var layoutRow = el('div', 'rc-dm-subrow');
+            layoutRow.appendChild(el('span', 'rc-dm-tree', '└'));
+            layoutRow.appendChild(el('span', null, escapeHtml(layout)));
+            group.appendChild(layoutRow);
+          });
+        }
+        panel.appendChild(group);
+      });
     });
     return panel;
   }
@@ -4602,9 +5963,12 @@
   // Deactivate/Reactivate toggle (adminSetTrackLayoutActive -- never
   // deletes the row), plus an add-a-layout input (adminAddTrackLayout).
   // Layout changes update the popup's own list in place (no need to
-  // close/reopen it to keep managing layouts); only the rename triggers a
-  // full section refresh, since that's the one change that affects the
-  // main panel's grouping/heading.
+  // close/reopen it to keep managing layouts) AND call reload() in the
+  // background so the Tracks list sitting underneath this modal is never
+  // stale by the time it's closed (added 2026-08-30, Matt's call: "any
+  // page/panel that's open should refresh when something's saved or
+  // changed"). The rename additionally closes this modal outright, since
+  // that's the one change that affects the main panel's grouping/heading.
   function openEditTrackModal(venueName, rows, token, reload) {
     var body = el('div');
 
@@ -4618,6 +5982,50 @@
     saveNameBtn.style.marginTop = '14px';
     form.appendChild(saveNameBtn);
     body.appendChild(form);
+
+    // Region (added 2026-08-30) -- its own field + Save button, separate
+    // from the Track Name form above (same "one save button per concern"
+    // split the deactivate-vs-edit-fields pattern already uses elsewhere
+    // in Data Management), venue-level so it applies to every row sharing
+    // this TrackName at once via adminUpdateTrackRegion.
+    var regionWrap = el('div', 'margin-top:16px;');
+    regionWrap.appendChild(el('label', 'margin-top:0;', 'Region'));
+    var regionInput = el('input'); regionInput.type = 'text';
+    regionInput.value = (rows[0] && rows[0].Region) || '';
+    regionInput.placeholder = 'e.g. Europe, North America';
+    regionWrap.appendChild(regionInput);
+    var saveRegionBtn = el('button', 'rc-btn-primary', 'Save Region');
+    saveRegionBtn.type = 'button';
+    saveRegionBtn.style.marginTop = '10px';
+    regionWrap.appendChild(saveRegionBtn);
+    body.appendChild(regionWrap);
+
+    saveRegionBtn.addEventListener('click', function () {
+      var newRegion = regionInput.value.trim();
+      saveRegionBtn.disabled = true;
+      saveRegionBtn.textContent = 'Saving...';
+      fetchApi('adminUpdateTrackRegion', {
+        method: 'POST', token: token,
+        body: { trackName: venueName, region: newRegion }
+      })
+        .then(function (data) {
+          saveRegionBtn.disabled = false;
+          saveRegionBtn.textContent = 'Save Region';
+          if (!data.success) {
+            showToast(data.message || 'Could not update this track\'s region.', 'error');
+            return;
+          }
+          rows.forEach(function (r) { r.Region = newRegion; });
+          showToast('Region updated.', 'success');
+          modalHandle.close();
+          rcReloadAfterSave();
+        })
+        .catch(function () {
+          saveRegionBtn.disabled = false;
+          saveRegionBtn.textContent = 'Save Region';
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+    });
 
     body.appendChild(el('h3', 'margin:22px 0 0;font-size:14px;', 'Layouts'));
     var listWrap = el('div', 'rc-dm-layout-list');
@@ -4648,9 +6056,8 @@
                 showToast(data.message || 'Could not update that layout.', 'error');
                 return;
               }
-              r.Active = active ? 'Inactive' : 'Active';
-              renderLayoutList();
               showToast(active ? 'Layout deactivated.' : 'Layout reactivated.', 'success');
+              rcReloadAfterSave();
             })
             .catch(function () {
               toggleBtn.disabled = false;
@@ -4688,10 +6095,8 @@
             showToast(data.message || 'Could not add that layout.', 'error');
             return;
           }
-          rows.push({ TrackID: data.trackId, TrackName: venueName, Layout: layoutName, Active: 'Active' });
-          addInput.value = '';
-          renderLayoutList();
           showToast('Layout added.', 'success');
+          rcReloadAfterSave();
         })
         .catch(function () {
           addBtn.disabled = false;
@@ -4727,7 +6132,7 @@
           }
           showToast('Track renamed.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveNameBtn.disabled = false;
@@ -4801,7 +6206,7 @@
       seasonKeys.forEach(function (season) {
         var seasonHead = el('div', 'rc-dm-season-head');
         seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
-        seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-season', escapeHtml(season)));
+        seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(season)));
         group.appendChild(seasonHead);
 
         seasons[season].forEach(function (c) {
@@ -4958,7 +6363,7 @@
           }
           showToast('Car updated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -4981,7 +6386,7 @@
           }
           showToast(isActive ? 'Car deactivated.' : 'Car reactivated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           toggleBtn.disabled = false;
@@ -5198,7 +6603,7 @@
           }
           showToast('Sponsor updated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -5221,7 +6626,7 @@
           }
           showToast(isActive ? 'Sponsor deactivated.' : 'Sponsor reactivated.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           toggleBtn.disabled = false;
@@ -5302,7 +6707,7 @@
           }
           showToast('Sponsor added.', 'success');
           modalHandle.close();
-          reload();
+          rcReloadAfterSave();
         })
         .catch(function () {
           saveBtn.disabled = false;
@@ -5324,38 +6729,46 @@
     renderHelpSection();
 
     // Cumulative access hierarchy (race-club-v03-system-map.html, Section
-    // 0): Organizer's own capability is "edit season info & schedule",
-    // which is exactly League Management -- so Organizer unlocks that nav
-    // item too, same as Admin (who has every Organizer capability plus
-    // more). Admin nav (still just a placeholder -- Matt's not sure yet
-    // what lives there) and Data Management (Members/Tracks/Cars/Sponsors
-    // popups) both stay Admin-only for now -- that maps to Level 4
-    // capabilities ("change anyone's access level", manage reference
-    // data), not anything Organizer has per the system map. Revisit if
-    // that design changes.
+    // 0): Driver < Steward < Organizer < Admin. Organizer's own
+    // capability is "edit season info & schedule", which is exactly
+    // League Management -- so Organizer unlocks that nav item too, same
+    // as Admin (who has every Organizer capability plus more). Protests
+    // is Steward-and-above (2026-08-30, Matt's call) -- everyone who can
+    // reach League Management or Admin can also reach it, since both of
+    // those sit above Steward in the hierarchy. Admin (which now hosts
+    // what Data Management used to show -- Members/Tracks/Cars/Sponsors
+    // popups) stays Admin-only -- that maps to Level 4 capabilities
+    // ("change anyone's access level", manage reference data), not
+    // anything Organizer has per the system map. Revisit if that design
+    // changes.
+    if (profile.role === 'Steward' || profile.role === 'Organizer' || profile.role === 'Admin') {
+      document.getElementById('rc-nav-protests').style.display = 'flex';
+      showUpperNavDivider();
+    }
     if (profile.role === 'Admin' || profile.role === 'Organizer') {
       document.getElementById('rc-nav-league').style.display = 'flex';
       showUpperNavDivider();
     }
     if (profile.role === 'Admin') {
       document.getElementById('rc-nav-admin').style.display = 'flex';
-      document.getElementById('rc-nav-datamgmt').style.display = 'flex';
       showUpperNavDivider();
-      updateDataMgmtNavDot(token);
+      updateAdminNavDot(token);
     }
 
     renderDashboardSection(profile, token, dashboardData);
     showSection('dashboard');
   }
 
-  // Red dot on the Data Management sidebar link itself, same "something's
-  // waiting on you" signal as the header bell -- lets an Admin see there's
-  // a pending sign-up without having to open Data Management/Members
-  // first. Re-run after Approve/Deny (see buildDriversPanel) so it clears
-  // the instant the queue is empty, not just on next page load.
-  function updateDataMgmtNavDot(token) {
+  // Red dot on the Admin sidebar link itself, same "something's waiting
+  // on you" signal as the header bell -- lets an Admin see there's a
+  // pending sign-up without having to open Admin/Members first. Re-run
+  // after Approve/Deny (see buildDriversPanel) so it clears the instant
+  // the queue is empty, not just on next page load. Renamed from
+  // updateDataMgmtNavDot (2026-08-30) now that this dot lives on the
+  // Admin nav item instead of the removed Data Management one.
+  function updateAdminNavDot(token) {
     fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
-      var btn = document.getElementById('rc-nav-datamgmt');
+      var btn = document.getElementById('rc-nav-admin');
       if (!btn) return;
       var hasPending = !!(data && data.success && data.pending && data.pending.length);
       var dot = btn.querySelector('.rc-nav-dot');
@@ -5370,10 +6783,14 @@
   // mustChangePassword forces a password change before the driver can do
   // anything else -- the sidebar/topbar stay hidden and #rc-forced-password
   // shows ONLY the passwordChangeSection() form until it succeeds.
-  // passwordChangeSection removes its own box from the DOM on a
-  // successful change (see its `box.remove()` call); a MutationObserver
-  // watches for that removal and then builds the normal shell, so the
-  // forced-password logic is otherwise untouched from v0.4.0.
+  // passwordChangeSection now does a full rcReloadAfterSave() on success
+  // (2026-08-30, Matt's call: every popup save reloads) rather than
+  // removing its own box -- the reload re-fetches the profile fresh, sees
+  // mustChangePassword is no longer set, and lands on the normal
+  // dashboard on its own. The MutationObserver below is dead code left in
+  // place as a harmless fallback (it would only ever fire if something
+  // removed `box` from the DOM without a reload following) rather than
+  // ripped out for a change this narrow.
   function renderProfile(profile, token, dashboardData) {
     if (profile.mustChangePassword) {
       document.getElementById('rc-sidebar').style.display = 'none';
@@ -5434,9 +6851,10 @@
   var dashboardDataPromise = Promise.all([
     fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
     fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; })
+    fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
+    fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; })
   ]).then(function (results) {
-    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2] };
+    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2], financesReputation: results[3] };
   });
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
