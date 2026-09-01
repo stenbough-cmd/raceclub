@@ -23,9 +23,19 @@
     element (rc-header-account-toggle, a <button>) instead of a separate
     link + caret button. Clicking anywhere in that box (avatar, name, role,
     or chevron) opens/closes the dropdown -- it no longer navigates
-    straight to Account.html on click. The dropdown itself now only has
-    Logout in it (Edit Profile was removed from the dropdown -- Edit
-    Profile is reached via the popup on Account.html's sidebar instead).
+    straight to Account.html on click. The dropdown has Dashboard (was
+    "My Account", renamed 2026-09-01, Matt's call), Edit Profile, and
+    Logout. Edit Profile (added back to the dropdown 2026-09-01, Matt's
+    call: "let the popup display no matter which page it's on") opens
+    Account.html's openEditProfileModal() directly via
+    window.rcOpenEditProfileModal, a small bridge Account.html sets once
+    its own profile/token are loaded (see buildFullProfileUI there) --
+    when that bridge isn't there (this page IS Account.html but hasn't
+    finished loading yet, or this is a different page entirely, e.g.
+    login.html/index.html), it instead sets a sessionStorage flag and
+    navigates to Account.html, which opens the modal itself once it's
+    ready (see the raceclub_open_edit_profile check in Account.html's
+    buildFullProfileUI).
 
   FLIP-BACK (this pass): the name shown here has always come from
   cached.displayName (server-computed FirstName + LastName + Suffix), NOT
@@ -481,7 +491,8 @@ function renderHeader(opts) {
               '<svg class="rc-header-account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
-              '<a class="rc-header-menu-item" href="Account.html">My Account</a>' +
+              '<a class="rc-header-menu-item" href="Account.html">Dashboard</a>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
@@ -547,6 +558,25 @@ function renderHeader(opts) {
     // ever closes them early.
     _rcWireHoverAwayClose([toggle, menu], closeAccountMenu);
     _rcWireHoverAwayClose([bellToggle, notifMenu], closeNotifMenu);
+
+    // Edit Profile -- works from any page (2026-09-01, Matt's call), not
+    // just Account.html's own sidebar. window.rcOpenEditProfileModal is a
+    // bridge Account.html sets once its profile/token are actually loaded
+    // (see buildFullProfileUI there); when it's there, call it directly
+    // -- no navigation, the modal just opens in place. When it's not
+    // (any other page, or Account.html mid-load), stash a flag and
+    // navigate there instead; Account.html checks that flag once its own
+    // load finishes and opens the modal itself, same handoff pattern
+    // already used for a fresh-login profile payload.
+    document.getElementById('rc-header-menu-editprofile').addEventListener('click', function () {
+      closeAccountMenu();
+      if (typeof window.rcOpenEditProfileModal === 'function') {
+        window.rcOpenEditProfileModal();
+      } else {
+        sessionStorage.setItem('raceclub_open_edit_profile', '1');
+        window.location.href = 'Account.html';
+      }
+    });
 
     // Same fire-and-forget logout pattern as Account.html's sidebar Log
     // Out button: clear the local token and redirect immediately, fire

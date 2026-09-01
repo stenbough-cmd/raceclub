@@ -98,7 +98,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Account — Race Club</title>
+<title>My Account · Race Club</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -150,7 +150,6 @@
       <section id="rc-section-results" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-reputation" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-objectives" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-sponsors" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-halloffame" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-protests" class="rc-content-section" style="display:none;"></section>
@@ -377,7 +376,6 @@
   var ICON_HALLOFFAME = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M7 5H4a3 3 0 0 0 3 4"></path><path d="M17 5h3a3 3 0 0 1-3 4"></path></svg>';
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
-  var ICON_OBJECTIVES = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 11l2 2 4-4"></path><line x1="8" y1="16" x2="16" y2="16"></line></svg>';
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
   var ICON_DATAMGMT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>';
@@ -413,7 +411,6 @@
     { id: 'results', label: 'Results', icon: ICON_RESULTS },
     { id: 'career', label: 'Career', icon: ICON_CAREER },
     { id: 'reputation', label: 'Reputation', icon: ICON_NAV_STAR },
-    { id: 'objectives', label: 'Objectives', icon: ICON_OBJECTIVES },
     { id: 'sponsors', label: 'Sponsors', icon: ICON_SPONSORS },
     { id: 'halloffame', label: 'Hall of Fame', icon: ICON_HALLOFFAME },
     { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
@@ -439,7 +436,7 @@
   var PLACEHOLDER_LABELS = {
     finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
-    objectives: 'Objectives', halloffame: 'Hall of Fame',
+    halloffame: 'Hall of Fame',
     protests: 'Protests'
   };
 
@@ -449,6 +446,38 @@
   // Admin nav item's visibility check already needed.
   var currentProfile = null;
   var currentToken = null;
+
+  // Tracks whichever section is on screen right now -- set by showSection()
+  // below, read by rcReloadAfterSave() so a popup save's reload can return
+  // to this same page instead of always landing back on Dashboard (see
+  // rcReloadAfterSave for the full story). Starts 'dashboard' since that's
+  // where a fresh page load always lands first, same as before this existed.
+  var rcActiveSectionId = 'dashboard';
+
+  // Tracks the currently-open popup's own close() function (2026-09-01,
+  // Matt's call: make popup saves "seamless" -- go straight back to an
+  // updated page instead of a full browser reload). Only one popup is ever
+  // open at a time sitewide (every popup goes through showModal() below,
+  // which sets this on open and clears it on its own close()), so
+  // rcReloadAfterSave() can use this to close whichever popup just saved
+  // once it has refreshed the page's data in place, without every one of
+  // its ~20 call sites needing to pass its own modal reference in.
+  var rcActiveModalCloseFn = null;
+
+  // Section IDs that don't just sit there once shown -- they fetch their
+  // own data on click rather than being pre-rendered by buildFullProfileUI
+  // (Dashboard/Help/every placeholder are rendered unconditionally up
+  // front, so they don't need an entry here). Used both by the sidebar nav
+  // click handlers already wired up below AND by rcReloadAfterSave's
+  // same-page restore, so a reload back into e.g. Sponsors re-fetches this
+  // driver's now-current picks instead of showing whatever was cached in
+  // the DOM before the save.
+  var RC_LAZY_SECTION_RENDERERS = {
+    calendar: function (token) { renderCalendarSection(token); },
+    sponsors: function (token) { renderSponsorsSection(token); },
+    admin: function (token) { renderAdminSection(token); },
+    league: function (token) { renderLeagueManagementSection(token); }
+  };
 
   // ---------------------------------------------------------------------
   // SIDEBAR NAV + SECTION SWITCHING
@@ -563,6 +592,10 @@
       btn.classList.toggle('rc-nav-active', btn.dataset.section === id);
     });
     closeMobileMenu();
+    // Only track real sections (a matching .rc-content-section actually
+    // exists) -- rcReloadAfterSave() reads this to return a popup save to
+    // the same page it was opened from instead of always Dashboard.
+    if (target) rcActiveSectionId = id;
   }
 
   // ---------------------------------------------------------------------
@@ -595,26 +628,31 @@
     section.innerHTML = '';
     section.appendChild(el('h2', null, 'Dashboard'));
 
-    // Next Race -- full-width banner card below the two half-width cards
-    // (its own .rc-quick-row so it picks up the same row spacing, just
-    // with one card filling it). Gated behind registration (Matt's call)
-    // -- built here, before topRow, purely so Registration Status's
-    // onRegistered callback below can also swap it from the "not
-    // registered" notice to the real schedule the moment a driver joins,
-    // same trick already used for refreshing Current Seat.
-    var nextRaceRow = el('div', 'rc-quick-row');
-    nextRaceRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
-    nextRaceRow.appendChild(financesCard(dashboardData.financesReputation));
+    // Four rows of cards (2026-09-01 layout, Matt's call):
+    //   Row 1: Registration Status, Current Seat, Season Objective
+    //   Row 2: Finances, Reputation, Sponsors
+    //   Row 3: Next Race, Recent Results
+    //   Row 4: Wager, Protest (placeholders, no data yet)
+    // Season Objective/Finances/Next Race/Sponsors all depend on
+    // registration state, so topRow, financeRow and resultsRow are all
+    // rebuilt wholesale (innerHTML cleared, cards re-appended) on
+    // Registration Status' onRegistered callback below, the same
+    // "re-fetch everything gated on it and swap the row in place" trick
+    // used before this layout change. Wager/Protest are static
+    // placeholders with nothing to refresh, so wagerRow is just appended
+    // once below, same as recentResultsCard.
+    var financeRow = el('div', 'rc-quick-row');
+    financeRow.appendChild(financesCard(dashboardData.financesReputation));
+    financeRow.appendChild(reputationCard());
+    financeRow.appendChild(sponsorsCard(dashboardData.sponsors, dashboardData.activeSeason));
 
-    // Reputation + Recent Results -- third row (2026-08-31, Matt's call).
-    // Reputation split out of the old combined "Finances & Reputation"
-    // card; Recent Results is a brand-new placeholder card sitting next
-    // to it, no data wired up yet. Both are static (no live data), so
-    // neither needs rebuilding on the refresh callback below the way Next
-    // Race/Finances do.
-    var reputationRow = el('div', 'rc-quick-row');
-    reputationRow.appendChild(reputationCard());
-    reputationRow.appendChild(recentResultsCard());
+    var resultsRow = el('div', 'rc-quick-row');
+    resultsRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
+    resultsRow.appendChild(recentResultsCard());
+
+    var wagerRow = el('div', 'rc-quick-row');
+    wagerRow.appendChild(wagerCard());
+    wagerRow.appendChild(protestCard());
 
     var topRow = el('div', 'rc-quick-row');
     // Current Seat is built first, purely so Registration Status can wire
@@ -623,45 +661,107 @@
     var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
     var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
       if (seatCard.rcRefresh) seatCard.rcRefresh();
-      // Next Race + Finances have no rcRefresh of their own (plain
-      // renders, not stateful cards) -- re-fetch everything they're
-      // gated/built on and just rebuild the whole row in place.
+      // Season Objective/Next Race/Finances/Sponsors have no rcRefresh of
+      // their own (plain renders, not stateful cards) -- re-fetch
+      // everything they're gated/built on and just rebuild their rows in
+      // place.
       Promise.all([
         fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
         fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; })
+        fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
+        fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
+        fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; })
       ]).then(function (results) {
-        nextRaceRow.innerHTML = '';
-        nextRaceRow.appendChild(nextRaceCard(results[1], results[0]));
-        nextRaceRow.appendChild(financesCard(results[2]));
+        var freshActiveSeason = results[0];
+        topRow.innerHTML = '';
+        topRow.appendChild(regCard);
+        topRow.appendChild(seatCard);
+        topRow.appendChild(seasonObjectiveCard(results[4], freshActiveSeason));
+        financeRow.innerHTML = '';
+        financeRow.appendChild(financesCard(results[2]));
+        financeRow.appendChild(reputationCard());
+        financeRow.appendChild(sponsorsCard(results[3], freshActiveSeason));
+        resultsRow.innerHTML = '';
+        resultsRow.appendChild(nextRaceCard(results[1], freshActiveSeason));
+        resultsRow.appendChild(recentResultsCard());
       });
     });
     topRow.appendChild(regCard);
     topRow.appendChild(seatCard);
+    topRow.appendChild(seasonObjectiveCard(dashboardData.seasonObjective, dashboardData.activeSeason));
     section.appendChild(topRow);
-    section.appendChild(nextRaceRow);
-    section.appendChild(reputationRow);
+    section.appendChild(financeRow);
+    section.appendChild(resultsRow);
+    section.appendChild(wagerRow);
   }
 
-  // Full-page reload after ANY popup save (added 2026-08-30, Matt's call:
-  // "Whenever I'm in a popup and saves some kind of information, it
-  // should reload the entire page after it saves and return to the
-  // dashboard so that notifications popup and items on the screen
-  // refresh"). Deliberately a real navigation, not showSection('dashboard')
-  // + a local re-render -- a hard reload is the one thing guaranteed to
-  // pick up EVERYTHING a save could have touched at once (this driver's
-  // own profile/avatar, the header's notification bell, another section's
-  // now-stale list) without maintaining a bespoke refresh path per save.
-  // Account.html has no section-restore-from-URL logic, so a plain
-  // navigation here already lands back on Dashboard by default -- same
-  // as any fresh visit to this page.
+  // Runs after ANY popup save (added 2026-08-30, Matt's call: "Whenever
+  // I'm in a popup and saves some kind of information, it should reload
+  // ... so that notifications popup and items on the screen refresh").
+  //
+  // 2026-09-01 rewrite ("make it seamless -- go from saving the sponsors
+  // straight back to the sponsors page with an updated list, without
+  // reloading"): a hard window.location.reload() -- even a working one --
+  // re-runs the ENTIRE page bootstrap, which shows its own full-screen
+  // "loading account" spinner before Account.html has even decided which
+  // section to show, and THEN that section's own lazy renderer (e.g.
+  // renderSponsorsSection) shows a second, page-level spinner while it
+  // re-fetches. Two stacked loading states for what should just be "the
+  // list you were looking at, now current."
+  //
+  // Seamless path: if the section the popup was opened from is one of the
+  // lazy, fetch-on-click sections (RC_LAZY_SECTION_RENDERERS above --
+  // Sponsors/Calendar/Admin/League), just call that section's own
+  // renderer again in place. It already does exactly what a reload would
+  // have accomplished for that section -- re-fetch fresh data and rebuild
+  // the section's DOM -- without leaving the page at all. The popup no
+  // longer disappears via navigation wiping the DOM, so this path closes
+  // it explicitly via rcActiveModalCloseFn (set by showModal() above)
+  // once the fresh render is in.
+  //
+  // Fallback path: sections with no lazy renderer -- Dashboard chief among
+  // them -- were only ever built once by buildFullProfileUI() and have no
+  // stand-alone "re-fetch and rebuild just this section" entry point (a
+  // save's ripple effects there can touch several cards, the header
+  // avatar, the notification bell, etc. all at once). For those, fall
+  // back to the original hard-reload behavior so nothing goes stale;
+  // rcActiveSectionId travels through the URL hash across the reload and
+  // buildFullProfileUI() reads it back on the other side (see below) to
+  // land back on the same section instead of always Dashboard. Setting
+  // location.hash to a DIFFERENT value is a same-document navigation (no
+  // real reload by itself) -- only window.location.reload() actually
+  // re-fetches the page, which is why it's called unconditionally here
+  // rather than relying on the href assignment alone (2026-09-01 bug:
+  // Save just sat on "Saving..." forever because that assumption was
+  // wrong -- see git history for the full story).
   function rcReloadAfterSave() {
-    window.location.href = 'Account.html';
+    var sectionId = rcActiveSectionId || 'dashboard';
+    var lazyRenderer = RC_LAZY_SECTION_RENDERERS[sectionId];
+    if (lazyRenderer && currentToken) {
+      lazyRenderer(currentToken);
+      if (rcActiveModalCloseFn) rcActiveModalCloseFn();
+      return;
+    }
+    var targetHash = '#' + encodeURIComponent(sectionId);
+    if (window.location.hash !== targetHash) window.location.hash = targetHash;
+    window.location.reload();
   }
 
   function formatMoney(n) {
     n = Number(n) || 0;
     return '$' + n.toLocaleString();
+  }
+
+  // "Season N" -- N is the numeric suffix off a SeasonID (e.g. "SZN-0003"
+  // -> "Season 3"), the same sequential number the ID itself already
+  // encodes, so there's no separate "season number" field to maintain.
+  // Shared by the Calendar page's season header and Registration Status'
+  // "REGISTERED FOR" headline (2026-08-31, Matt's call: show the season
+  // number there too, not just the name) so both read the number the
+  // same way.
+  function seasonNumberLabel(seasonId) {
+    var m = /(\d+)\s*$/.exec(String(seasonId || ''));
+    return m ? String(parseInt(m[1], 10)) : '';
   }
 
   // "1st"/"2nd"/"3rd"/"4th"... -- only ever fed a positive integer
@@ -723,7 +823,9 @@
       var row = el('div', 'rc-regstatus-row rc-regstatus-row-clickable');
       row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-open', '+'));
       var text = el('div');
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml((data.seasonName || 'NEW SEASON').toUpperCase())));
+      var openSeasonNum = seasonNumberLabel(data.seasonId);
+      var openSeasonLabel = openSeasonNum ? ('SEASON ' + openSeasonNum) : 'SEASON';
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml(openSeasonLabel)));
       text.appendChild(el('div', 'rc-regstatus-sub', 'Click to choose your car and lock in your seat.'));
       row.appendChild(text);
       body.appendChild(row);
@@ -740,7 +842,12 @@
       var row = el('div', 'rc-regstatus-row');
       row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-done', '&#10003;'));
       var text = el('div');
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml((data.seasonName || 'SEASON').toUpperCase())));
+      // Just "REGISTERED FOR SEASON n" now (2026-09-01, Matt's call) --
+      // dropped the season name, which was redundant with the season
+      // number right next to it.
+      var regSeasonNum = seasonNumberLabel(data.seasonId);
+      var regSeasonLabel = regSeasonNum ? ('SEASON ' + regSeasonNum) : 'SEASON';
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml(regSeasonLabel)));
       text.appendChild(el('div', 'rc-regstatus-sub', 'Your registration is complete.'));
       row.appendChild(text);
       body.appendChild(row);
@@ -791,9 +898,27 @@
   // there's no car-render asset in this project, logo + text only.
   function currentSeatCard(profile, token, initialData) {
     var card = el('div', 'rc-panel rc-currentseat-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Current Seat'));
+    // Title + car number share one flex row now (2026-09-01, Matt's call:
+    // the car number needs to be ON the same row as the header, not
+    // absolutely positioned over the card -- that approach kept
+    // conflicting with .rc-dash-card > *'s own position rule and/or
+    // ending up nested too deep to line up right). A genuine flex row is
+    // more robust than fighting the cascade with specificity tricks.
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current Seat'));
+    card.appendChild(headerRow);
     var body = el('div', 'rc-cs-body');
     card.appendChild(body);
+
+    // Adds/replaces/removes the car-number figure in the header row --
+    // called from every render path below so it's never stale (e.g. still
+    // showing a car number after switching to the "not on a team" empty
+    // state).
+    function setCornerNumber(text) {
+      var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
+      if (existing) existing.remove();
+      if (text) headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', text));
+    }
 
     if (profile.role === 'Prospect') {
       body.appendChild(el('p', 'rc-cs-empty', 'Available once your account is approved.'));
@@ -803,10 +928,19 @@
     function renderEmpty(message) {
       body.innerHTML = '';
       body.appendChild(el('p', 'rc-cs-empty', message));
+      setCornerNumber('');
     }
 
     function renderSeat(data) {
       body.innerHTML = '';
+
+      // Car number, top-right corner of the card header (2026-09-01,
+      // Matt's call) -- replaces the old "#n Manufacturer Model" text
+      // line below, which also drops the manufacturer name entirely
+      // (Matt's call, same request) -- the manufacturer logo image
+      // still shows, just not its name spelled out in text too.
+      setCornerNumber('#' + (data.carNumber || '?'));
+
       var row = el('div', 'rc-cs-row');
 
       if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -820,8 +954,8 @@
 
       var textCol = el('div');
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
-      var carLine = ['#' + (data.carNumber || '?'), data.manufacturer, data.carModel].filter(Boolean).join(' ');
-      textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
+      var carLine = data.carModel || '';
+      if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
       if (data.carClass) {
         var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
         var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
@@ -894,7 +1028,12 @@
   // since getNextRace's schedule data isn't otherwise driver-specific.
   function nextRaceCard(data, activeSeasonData) {
     var card = el('div', 'rc-panel rc-nextrace-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Next Race'));
+    // Title + "Round n" share one flex row now (2026-09-01, Matt's call) --
+    // same .rc-dash-card-header-row treatment as Current Seat's car
+    // number, more robust than the earlier absolute-positioning attempt.
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next Race'));
+    card.appendChild(headerRow);
 
     var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
     if (!registered) {
@@ -915,6 +1054,15 @@
     try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
 
     var isSpecial = data.kind === 'special';
+
+    // "Round n", right side of the header row, same treatment as Current
+    // Seat's car number (2026-09-01, Matt's call). Special Events don't
+    // consume a round number, so they don't get this either -- same rule
+    // the Calendar page's own round-number column follows.
+    if (!isSpecial && data.roundNum) {
+      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', 'ROUND ' + data.roundNum));
+    }
+
     var body = el('div', 'rc-nextrace-body');
 
     // Left-justified info column (Event title, then Track/Layout, then the
@@ -923,23 +1071,49 @@
     // centers this row's cross-axis so the image lines up regardless of
     // how tall the text column ends up.
     var info = el('div', 'rc-nextrace-info');
+    // Date/time as a plain line above the event title, not a pill
+    // (2026-08-31, Matt's call: "move the date out of a pill and put it
+    // above the event title") -- was one of the .rc-cal-stats chips below
+    // the title; that row now only carries Weather and Race Length Tier.
+    info.appendChild(el('div', 'rc-nextrace-date', escapeHtml(formatRaceDateTime(data.startUtc, driverTz))));
     var nameWrap = el('div', 'rc-nextrace-name');
-    nameWrap.appendChild(document.createTextNode(data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum))));
+    // Just the event name now -- "Round n" moved to the card's top-right
+    // corner instead (2026-09-01, Matt's call: "do the same to Round n
+    // for Next Race card -- move it to the top right of the card and
+    // give it the same styling as the car number"), see the corner
+    // figure appended to the card header below.
+    var nameText = data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum));
+    nameWrap.appendChild(document.createTextNode(nameText));
     if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- money only, no championship points.'));
     info.appendChild(nameWrap);
 
-    info.appendChild(el('div', 'rc-nextrace-track',
-      escapeHtml(data.track || '(no track)') + (data.layout ? ' &middot; ' + escapeHtml(data.layout) : '')));
+    // Same track-name/layout text treatment as the Calendar page's own
+    // .rc-cal-track (bold track name, layout trailing in lighter steel
+    // text with an em dash) -- 2026-08-31, Matt's call: read the same way
+    // in both places instead of this card's own plain, unbolded line.
+    var trackLine = el('div', 'rc-nextrace-track');
+    trackLine.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
+      (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
+    info.appendChild(trackLine);
 
     var stats = el('div', 'rc-cal-stats');
-    stats.appendChild(calStat(ICON_CLOCK, formatRaceDateTime(data.startUtc, driverTz), 'Start time, converted to your local timezone'));
+    // Weather pill (2026-08-31, Matt's call) -- same chip the Calendar
+    // page's own race cards use (weatherIcon() + "N% Rain · N°C").
+    stats.appendChild(calStat(weatherIcon(data), (data.chanceOfRain || 0) + '% Rain' + (data.temperatureC !== null && data.temperatureC !== undefined ? ' · ' + data.temperatureC + '°C' : ''), 'Weather'));
     if (data.raceLengthTier) stats.appendChild(calStat(ICON_CLOCK, data.raceLengthTier, 'Race length tier'));
+    // In-Game Race Start, as its own gray pill next to Race Length Tier
+    // (2026-09-01, Matt's call) -- replaces the earlier flag-icon line
+    // version, and drops Practice/Qualifying entirely (Calendar's own
+    // race cards still show all three -- just this card that trims down
+    // to Race Start only).
+    if (data.igRaceStart) stats.appendChild(calStat(ICON_FLAG, 'In-Game ' + data.igRaceStart, 'In-game race start time'));
     info.appendChild(stats);
 
+    // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
+    // Event's gold pill stays, since that one's flagging something the
+    // round count alone doesn't say (no championship points).
     if (isSpecial) {
       info.appendChild(el('span', 'rc-nextrace-pill rc-nextrace-pill-gold', 'SPECIAL EVENT'));
-    } else if (data.roundNum && data.totalRounds) {
-      info.appendChild(el('span', 'rc-nextrace-pill', 'ROUND ' + data.roundNum + ' OF ' + data.totalRounds));
     }
     body.appendChild(info);
 
@@ -961,9 +1135,8 @@
     // "show the section, then fetch it" pair the Calendar nav button
     // itself uses (see buildSidebarNav above), just reachable from this
     // card too instead of only the sidebar.
-    var viewSeasonBtn = el('button', 'rc-link-btn', '← View full season');
+    var viewSeasonBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View full season');
     viewSeasonBtn.type = 'button';
-    viewSeasonBtn.style.cssText = 'display:block;margin-top:14px;';
     viewSeasonBtn.addEventListener('click', function () {
       showSection('calendar');
       renderCalendarSection(currentToken);
@@ -1075,13 +1248,173 @@
     return card;
   }
 
-  // Recent Results -- placeholder card, next to Reputation on the third
-  // row (2026-08-31, Matt's call). No backend/data wired up yet -- just
-  // holding the spot in the dashboard layout for whenever this gets built.
+  // Season Objective -- Dashboard card (2026-09-01, Matt's call), backed
+  // by action=getMySeasonObjective (handleGetMySeasonObjective, DataCache.gs).
+  // Real progress tracking, not a placeholder: every objective's target is
+  // computed off this driver's own SeasonHistory rows for the active
+  // season (see that handler's own comment for exactly how each objective
+  // is scored). Same gating pattern as Next Race/Current Seat -- "not
+  // registered" first, then whatever the fetch actually returned.
+  function seasonObjectiveCard(data, activeSeasonData) {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Season Objective'));
+
+    var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
+    if (!registered) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to take on a Season Objective.'));
+      return card;
+    }
+    if (!data || !data.success || !data.hasSeat) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Could not load your Season Objective right now.'));
+      return card;
+    }
+    if (!data.hasObjective) {
+      card.appendChild(el('p', 'rc-cs-empty', 'This seat has no Season Objective assigned.'));
+      return card;
+    }
+
+    var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
+    card.appendChild(el('div', 'rc-objective-name', escapeHtml(data.objectiveName)));
+    if (objDescMap[data.objectiveName]) {
+      card.appendChild(el('p', 'rc-objective-desc', escapeHtml(objDescMap[data.objectiveName])));
+    }
+
+    var percent = Math.max(0, Math.min(100, Number(data.percent) || 0));
+    var progressWrap = el('div', 'rc-objective-progress');
+    var track = el('div', 'rc-objective-progress-track');
+    var fill = el('div', 'rc-objective-progress-fill' + (data.met ? ' rc-objective-progress-fill-met' : ''));
+    fill.style.width = percent + '%';
+    track.appendChild(fill);
+    progressWrap.appendChild(track);
+
+    // Count label -- most objectives are a plain tally ("4 of 6"); the
+    // three standings-relative objectives (see the handler's own comment)
+    // read better in their own words than a bare "current of target".
+    var countLabel;
+    if (data.objectiveName === 'Above The Median') {
+      countLabel = data.current + ' pts, class median ' + data.target + ' pts';
+    } else if (data.objectiveName === 'Championship Podium' || data.objectiveName === 'Win Season Championship') {
+      countLabel = data.current > 0 ? ('Currently P' + data.current + ', need top ' + data.target) : 'Standings not available yet';
+    } else {
+      countLabel = data.current + ' of ' + data.target;
+    }
+    progressWrap.appendChild(el('div', 'rc-objective-progress-count', countLabel + (data.met ? ' -- complete' : '')));
+    card.appendChild(progressWrap);
+
+    // Progress percent and payout, same large-number "categories at the
+    // bottom" treatment every other dashboard card uses -- payout gets its
+    // own bigger, green variant (Matt's call: "large numbers so the driver
+    // knows what the payout is for completing the objective").
+    var stats = el('div', 'rc-finrep-ranks');
+    var pctStat = el('div', 'rc-finrep-rank');
+    pctStat.appendChild(el('div', 'rc-finrep-rank-label', 'Progress'));
+    pctStat.appendChild(el('div', 'rc-finrep-rank-value', percent + '%'));
+    stats.appendChild(pctStat);
+    var payoutStat = el('div', 'rc-finrep-rank');
+    payoutStat.appendChild(el('div', 'rc-finrep-rank-label', 'Payout'));
+    payoutStat.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-payout', formatMoney(data.objectiveBonus)));
+    stats.appendChild(payoutStat);
+    card.appendChild(stats);
+
+    return card;
+  }
+
+  // Recent Results -- placeholder card, second on the third row, next to
+  // Next Race (2026-09-01, Matt's call: Next Race in front of Recent
+  // Results). No backend/data wired up yet -- just holding the spot in
+  // the dashboard layout for whenever this gets built.
   function recentResultsCard() {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Recent Results'));
     card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+    return card;
+  }
+
+  // Wager + Protest -- placeholder cards, new fourth row (2026-09-01,
+  // Matt's call). Same "Coming soon" treatment as Recent Results above --
+  // no wager/protest system exists yet, this is just holding the layout
+  // spot until each one gets its own design pass.
+  function wagerCard() {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Wager'));
+    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+    return card;
+  }
+
+  function protestCard() {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Protest'));
+    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+    return card;
+  }
+
+  // Sponsors -- Dashboard preview card (2026-09-01, Matt's call: sponsors
+  // are no longer picked during the team-joining flow at all, so this card
+  // is now the first place a freshly-registered driver is prompted to go
+  // pick some). Three states, same gating pattern as Next Race:
+  //   1. Not registered -- plain gray note, no link (nothing to pick yet).
+  //   2. Registered, no sponsors picked -- a centered, bold gray notice
+  //      (Matt's call) with a bottom-left link into the Sponsors page,
+  //      same placement/treatment as Next Race's "View full season" link.
+  //   3. Registered, at least one sponsor picked -- a compact preview of
+  //      the picks (reusing the Sponsors page's own pick-chip look) plus
+  //      a "Manage Sponsors" link in that same bottom-left spot.
+  function sponsorsCard(data, activeSeasonData) {
+    var card = el('div', 'rc-panel rc-sponsors-dash-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Sponsors'));
+
+    var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
+    if (!registered) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to pick sponsors.'));
+      return card;
+    }
+
+    if (!data || !data.success) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Could not load your sponsors right now.'));
+      return card;
+    }
+
+    var hasSponsors = !!(data.sponsors && data.sponsors.length);
+
+    if (!hasSponsors) {
+      var emptyWrap = el('div', 'rc-sponsors-dash-empty');
+      emptyWrap.appendChild(el('div', 'rc-sponsors-dash-notice', 'Choose a sponsor to start earning bonus and penalty goals.'));
+      card.appendChild(emptyWrap);
+    } else {
+      // Plain rows, no chip containers, separated by the same light gray
+      // line the Calendar page's own track name uses (.rc-cal-track's
+      // border-bottom) -- and no Tier badge (2026-09-01, Matt's call:
+      // "take each sponsor out of their own containers, separate them by
+      // light gray lines... and list the bonus and penalty rules for each
+      // underneath. Remove the tier it belongs in"). Bonus/penalty line
+      // reuses buildSponsorTermsLine, the exact same amount+trigger-name
+      // treatment the Choose Sponsors picker list already uses.
+      var list = el('div', 'rc-sponsors-dash-list');
+      data.sponsors.forEach(function (s) {
+        var row = el('div', 'rc-sponsors-dash-row');
+        var head = el('div', 'rc-sponsors-dash-row-head');
+        var logo = document.createElement('img');
+        logo.className = 'rc-sponsors-dash-row-logo';
+        logo.alt = '';
+        logo.src = sponsorLogoSrc(s.Name || '');
+        logo.onerror = function () { this.style.display = 'none'; };
+        head.appendChild(logo);
+        head.appendChild(el('div', 'rc-sponsors-dash-row-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+        row.appendChild(head);
+        row.appendChild(buildSponsorTermsLine(s));
+        list.appendChild(row);
+      });
+      card.appendChild(list);
+    }
+
+    var sponsorsLink = el('button', 'rc-link-btn rc-dash-card-link', hasSponsors ? '← Manage Sponsors' : '← Choose Sponsors');
+    sponsorsLink.type = 'button';
+    sponsorsLink.addEventListener('click', function () {
+      showSection('sponsors');
+      renderSponsorsSection(currentToken);
+    });
+    card.appendChild(sponsorsLink);
+
     return card;
   }
 
@@ -1101,15 +1434,32 @@
   //     every driver.
   //   - No separate chooseClass server action/state -- picking a class is
   //     purely a client-side filter now. The one server write is joinTeam
-  //     itself, which locks the team immediately (Registrations.TeamID).
-  //     Sponsor picks (SponsorID1-3) are OPTIONAL as of Matt's call
-  //     (2026-08-30) -- a driver can skip them here and pick them later
-  //     from the Sponsors page (openChooseSponsorsModal below), any time
-  //     before the season itself starts.
+  //     itself, which locks the team immediately (Registrations.TeamID),
+  //     with no sponsor IDs attached. Sponsors aren't picked at
+  //     registration at all any more (Matt's call, 2026-09-01) -- a driver
+  //     picks them later, any time before the season starts, from the
+  //     Sponsors page (openChooseSponsorsModal below), which the Dashboard
+  //     Sponsors card links straight to until they've picked at least one.
   //   - Team cards show this car's assigned Tier + Car Objective (name +
   //     bonus payout) instead of the old bonus/penalty perk chips -- the
   //     actual ECO-era incentive attached to a seat.
   // ---------------------------------------------------------------------
+
+  // Bonus + Penalty on one line, amount and trigger name only, no
+  // description text (2026-09-01, Matt's call: "remove the full
+  // descriptions from the Choose Sponsors popup to simplify the list" --
+  // full trigger descriptions now live in their own glossary panel on the
+  // Sponsors page instead, see buildSponsorTriggerGlossary below). Bonus in
+  // green, penalty in the same red as the Risk/Reward bar's penalty
+  // segments. Used by the Choose/Change Sponsors picker list below.
+  function buildSponsorTermsLine(s) {
+    var bonusAmt = Number(s.BonusAmount) || 0;
+    var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+    var line = el('div', 'rc-sponsor-pick-terms');
+    line.appendChild(el('span', 'rc-sponsor-pick-bonus', '+$' + bonusAmt + (s.BonusType ? ' ' + escapeHtml(s.BonusType) : '')));
+    line.appendChild(el('span', 'rc-sponsor-pick-penalty', '−$' + penaltyAmt + (s.PenaltyType ? ' ' + escapeHtml(s.PenaltyType) : '')));
+    return line;
+  }
 
   // Shared sponsor-picking list -- every sponsor as a selectable card
   // (logo capped 140px wide / 80px tall, name, bonus + penalty numbers),
@@ -1131,7 +1481,7 @@
     }
 
     function addCard(s) {
-      var card = el('div', 'rc-sponsor-pick-card rc-tooltip');
+      var card = el('div', 'rc-sponsor-pick-card');
       // Fixed-width column (min 150px), logo centered inside it -- same
       // "text column's left edge lands in the same place row to row"
       // reasoning as the admin Sponsors popup's logo column, just wider
@@ -1149,20 +1499,11 @@
 
       var textCol = el('div', 'rc-sponsor-pick-text');
       textCol.appendChild(el('div', 'rc-sponsor-pick-name', escapeHtml(s.Name || '(unnamed sponsor)')));
-      var bonusAmt = Number(s.BonusAmount) || 0;
-      var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
-      // Bonus in green / Penalty in red -- Matt's call, 2026-08-30 -- so
-      // the upside and downside of a sponsor read apart at a glance.
-      textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
-      textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+      // Amount + trigger name only, one line, no description (2026-09-01,
+      // Matt's call) -- full trigger descriptions live in the Sponsors
+      // page's own trigger glossary now, not repeated in this popup.
+      textCol.appendChild(buildSponsorTermsLine(s));
       card.appendChild(textCol);
-      // Detailed hover tooltip -- what the bonus/penalty trigger actually
-      // means in plain language, not just its catalog name (Matt's call,
-      // 2026-08-30: "a detailed tooltip of what the bonus entails and
-      // what the penalty entails"). sponsorTermsTooltip() (reference-
-      // data.js) is the one shared place this wording is defined, so it
-      // reads identically everywhere a sponsor card appears.
-      card.setAttribute('data-tooltip', sponsorTermsTooltip(s));
 
       card.addEventListener('click', function () {
         var idx = selected.indexOf(s.SponsorID);
@@ -1179,13 +1520,13 @@
       cardBySponsorId[s.SponsorID] = card;
     }
 
-    // Grouped by Tier (Easy -> Balanced -> Risky, renamed 2026-08-31 from
+    // Grouped by Tier (Safe -> Balanced -> Risky, renamed 2026-08-31 from
     // Safe/Balanced/Aggressive -- Matt's call), same order and same
     // _rcTierBadge() chip the admin Sponsors popup already uses (Matt's
     // call, 2026-08-30: "make it obvious" which risk tier each sponsor
     // is) -- a driver picking sponsors sees the same risk-level grouping
     // an admin managing the catalog does.
-    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
+    var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
     var byTier = {};
     sponsors.forEach(function (s) {
       var tier = s.Tier || 'Unclassified';
@@ -1394,7 +1735,7 @@
         var objChip = el('div', 'rc-team-perk-chip rc-team-perk-objective rc-team-perk-bonus rc-tooltip');
         if (objDescMap[team.objectiveName]) objChip.setAttribute('data-tooltip', objDescMap[team.objectiveName]);
         objChip.appendChild(el('span', 'rc-team-perk-icon', '★'));
-        objChip.appendChild(el('span', null, 'Season Objective — <strong>' + escapeHtml(team.objectiveName) + '</strong> — ' + formatMoney(team.objectiveBonus) + ' bonus'));
+        objChip.appendChild(el('span', null, 'Season Objective: <strong>' + escapeHtml(team.objectiveName) + '</strong> · ' + formatMoney(team.objectiveBonus) + ' bonus'));
         perks.appendChild(objChip);
       }
       card.appendChild(perks);
@@ -1406,136 +1747,56 @@
         var joinBtn = el('button', null, 'Join This Team');
         joinBtn.type = 'button';
         joinBtn.className = 'rc-btn-primary';
-        joinBtn.addEventListener('click', function () { openSponsorPickScreen(team, carClass); });
+        joinBtn.addEventListener('click', function () { doJoinTeamDirect(team, carClass, joinBtn); });
         footer.appendChild(joinBtn);
+        var joinErrorLine = el('div', 'color:var(--rc-red);font-size:12px;margin-top:6px;');
+        footer.appendChild(joinErrorLine);
+        joinBtn.rcErrorLine = joinErrorLine;
       }
       card.appendChild(footer);
       return card;
     }
 
-    // Sponsors are OPTIONAL here now (Matt's call, 2026-08-30) -- a driver
-    // can skip picking them at registration and choose them later from the
-    // Sponsors page (openChooseSponsorsModal), any time before the season
-    // itself starts. The team pick is still the one thing that locks
-    // immediately and can't be undone.
-    function openSponsorPickScreen(team, carClass) {
-      setTitle('Choose Your Sponsors');
-      var body = modal.body;
-      body.innerHTML = '';
-      var backBtn = el('button', 'rc-link-btn', '← Back to teams');
-      backBtn.type = 'button';
-      backBtn.style.cssText = 'display:block;margin-bottom:10px;';
-      backBtn.addEventListener('click', function () { showTeamScreen(carClass); });
-      body.appendChild(backBtn);
-      body.appendChild(buildSpinner('Loading sponsors...'));
-
-      fetchApi('getSponsors', { token: token }).then(function (data) {
-        body.innerHTML = '';
-        body.appendChild(backBtn);
-        renderSponsorPickBody(body, (data.success && data.sponsors) ? data.sponsors : [], team, carClass);
-      }).catch(function () {
-        body.innerHTML = '';
-        body.appendChild(backBtn);
-        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
-      });
-    }
-
-    function renderSponsorPickBody(body, sponsors, team, carClass) {
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:10px 0;',
-        'Choose 3 sponsors for the season, or skip and pick them later from the Sponsors page -- either way, joining ' +
-        escapeHtml(team.teamName || team.teamId) + ' for ' + formatMoney(team.buyInCost) + ' locks in now and can\'t be undone.'));
-
-      var enoughSponsors = sponsors.length >= 3;
-      var picker = enoughSponsors ? buildSponsorPickerList(sponsors, []) : null;
-      if (picker) {
-        body.appendChild(picker.el);
-      } else {
-        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:10px;',
-          'Not enough sponsors are set up yet to choose 3 -- skip for now and pick them later once more are added.'));
-      }
-
-      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin:4px 0 10px;');
-      body.appendChild(errorLine);
-
-      // Bottom-right, Skip on the left of Confirm (2026-08-30, Matt's call)
-      // -- justify-content:flex-end pins both to the right edge of the
-      // popup; btnRow itself is still the last thing appended to `body`
-      // below, so it naturally sits at the bottom of the modal's content.
-      var btnRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px;');
-
-      function doJoin(sponsorIds) {
-        confirmBtn.disabled = true;
-        skipBtn.disabled = true;
-        confirmBtn.textContent = 'Locking In...';
-        var joinBody = { seasonId: activeSeasonData.seasonId, teamId: team.teamId };
-        if (sponsorIds.length === 3) {
-          joinBody.sponsorId1 = sponsorIds[0]; joinBody.sponsorId2 = sponsorIds[1]; joinBody.sponsorId3 = sponsorIds[2];
+    // Sponsors are picked later, from the Sponsors page, never at
+    // registration (Matt's call, 2026-09-01: "instead of giving the full
+    // breakdown and making the driver pick sponsors from the joining a
+    // team popup"). Joining a team now locks in immediately on click, with
+    // no separate sponsor-pick screen in between -- straight from "Join
+    // This Team" into the signing sequence.
+    function doJoinTeamDirect(team, carClass, joinBtn) {
+      joinBtn.disabled = true;
+      joinBtn.textContent = 'Locking In...';
+      if (joinBtn.rcErrorLine) joinBtn.rcErrorLine.textContent = '';
+      fetchApi('joinTeam', { method: 'POST', token: token, body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId } }).then(function (data) {
+        if (!data.success) {
+          joinBtn.disabled = false;
+          joinBtn.textContent = 'Join This Team';
+          if (joinBtn.rcErrorLine) {
+            joinBtn.rcErrorLine.textContent = data.message || (data.error === 'TEAM_TAKEN' ? 'That seat was just taken. Pick a different team.' : 'Could not complete registration.');
+          }
+          if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
+          return;
         }
-        fetchApi('joinTeam', { method: 'POST', token: token, body: joinBody }).then(function (data) {
-          if (!data.success) {
-            confirmBtn.disabled = false;
-            skipBtn.disabled = false;
-            confirmBtn.textContent = 'Confirm & Lock In';
-            errorLine.textContent = data.message || (data.error === 'TEAM_TAKEN' ? 'That seat was just taken. Pick a different team.' : 'Could not complete registration.');
-            if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
-            return;
-          }
-          // Registration itself is done the instant the API call above
-          // succeeds -- everything from here down is presentation. The old
-          // immediate toast+close (now moved into finishRegistration below)
-          // is deferred until the driver has actually watched the signing
-          // sequence and dismissed the contract recap (Matt's call,
-          // 2026-08-30: "I want this to feel EPIC").
-          var sponsorObjs = sponsorIds.length === 3
-            ? sponsorIds.map(function (id) { return sponsors.filter(function (s) { return s.SponsorID === id; })[0]; }).filter(Boolean)
-            : [];
-          function finishRegistration() {
-            showToast(sponsorObjs.length === 3 ? 'You’re registered! Welcome to the season.' : 'You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
-            // Registering for a season dismisses its bell notification the
-            // same way closing the bell after seeing it would (Matt's call,
-            // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
-            if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
-            modal.close();
-            rcReloadAfterSave();
-          }
-          openSigningSequence(team, sponsorObjs, carClass, finishRegistration);
-        }).catch(function () {
-          confirmBtn.disabled = false;
-          skipBtn.disabled = false;
-          confirmBtn.textContent = 'Confirm & Lock In';
-          errorLine.textContent = 'Could not reach the server. Try again in a moment.';
-        });
-      }
-
-      var skipBtn = el('button', null, 'Skip For Now');
-      skipBtn.type = 'button';
-      skipBtn.className = 'rc-btn-secondary';
-      // Real border swapped for an inset box-shadow (2026-08-30) -- a
-      // border adds to an intrinsically-sized button's total rendered
-      // height even under box-sizing:border-box (see the signing sequence's
-      // Replay/Continue height fix, same underlying issue), so this and
-      // confirmBtn below both use box-shadow-only chrome to guarantee
-      // pixel-identical height at matching padding/font-size.
-      skipBtn.style.cssText = 'border:none;box-shadow:inset 0 0 0 1px var(--rc-silver);';
-      skipBtn.addEventListener('click', function () { doJoin([]); });
-      btnRow.appendChild(skipBtn);
-
-      var confirmBtn = el('button', null, 'Confirm & Lock In');
-      confirmBtn.type = 'button';
-      confirmBtn.className = 'rc-btn-primary';
-      // Matches Skip For Now's own padding/font-size/width (2026-08-30,
-      // Matt's call) instead of the site's default full-width/larger
-      // primary-button treatment, so the two sit as an equal-height pair.
-      confirmBtn.style.cssText = 'width:auto;margin-top:0;padding:8px 14px;font-size:12px;letter-spacing:0.04em;';
-      confirmBtn.disabled = !enoughSponsors;
-      confirmBtn.addEventListener('click', function () {
-        var picked = picker ? picker.getSelected() : [];
-        if (picked.length !== 3) { errorLine.textContent = 'Pick 3 sponsors, or skip for now.'; return; }
-        doJoin(picked);
+        // Registration itself is done the instant the API call above
+        // succeeds -- everything from here down is presentation. The old
+        // immediate toast+close (now moved into finishRegistration below)
+        // is deferred until the driver has actually watched the signing
+        // sequence and hit Continue on the congratulations screen (Matt's
+        // call, 2026-08-30: "I want this to feel EPIC").
+        function finishRegistration() {
+          showToast('You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
+          // Registering for a season dismisses its bell notification the
+          // same way closing the bell after seeing it would (Matt's call,
+          // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
+          if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+          rcReloadAfterSave();
+        }
+        openSigningSequence(team, carClass, finishRegistration);
+      }).catch(function () {
+        joinBtn.disabled = false;
+        joinBtn.textContent = 'Join This Team';
+        if (joinBtn.rcErrorLine) joinBtn.rcErrorLine.textContent = 'Could not reach the server. Try again in a moment.';
       });
-      btnRow.appendChild(confirmBtn);
-
-      body.appendChild(btnRow);
     }
 
     showClassScreen();
@@ -1581,17 +1842,12 @@
   //      no auto-advance timer -- only Continue moves on to the contract
   //      screen (Matt's call, 2026-08-30).
   //
-  // From there the whole dark overlay is torn down and
-  // showSigningContractModal() takes over -- a normal white modal card,
-  // same popup language as the rest of the site, itemizing exactly what
-  // was just signed: team identity, seat cost, tier, this season's Car
-  // Objective bonus, and (if chosen) all 3 sponsor bonus/penalty terms.
-  // Dismissing that card -- either its "Let's Go Racing" button or its X
-  // button, both wired to the same showModal onClose -- is what finally
-  // calls onFinish (finishRegistration above): the toast, notification
-  // dismiss, and registration-modal close all happen there, right as the
-  // driver dismisses the recap, not back when the API call first
-  // succeeded.
+  // From there the whole dark overlay is torn down and onFinish() (the
+  // caller's finishRegistration) fires immediately -- Continue on the
+  // congratulations screen now goes straight to the toast + reload (Matt's
+  // call, 2026-09-01), no contract-recap modal step in between. Sponsors
+  // aren't picked at signing time any more either, so there was nothing
+  // left for that recap to add beyond what's already on the dashboard.
   // ---------------------------------------------------------------------
   var SIGNING_MESSAGES_ = [
     'Drafting team documents...',
@@ -1618,16 +1874,16 @@
   // rendered inside big quotation marks with a "— Team Principal"
   // attribution underneath (see advanceToReveal below).
   var SIGNING_WELCOME_LINES_ = [
-    'Welcome to {team}! We’ve been waiting for a driver like you, and we finally found one. This seat is yours — now let’s go show everyone what we can do!',
-    'You earned this, plain and simple! {team} doesn’t hand out seats, we award them. Buckle up — this is going to be a season to remember!',
+    'Welcome to {team}! We’ve been waiting for a driver like you, and we finally found one. This seat is yours, now let’s go show everyone what we can do!',
+    'You earned this, plain and simple! {team} doesn’t hand out seats, we award them. Buckle up, this is going to be a season to remember!',
     'From everyone at {team}: congratulations! You’re not just joining a team, you’re joining a family that believes in you. Let’s get out there and win!',
     'This is the moment every driver dreams about, and it’s yours! {team} is fully behind you, every lap, every race. Now go make us proud!',
     'Welcome aboard, driver! We built this car for someone special, and that someone is you. Let’s make {team} history together!',
-    'The whole {team} garage is buzzing about you! You’ve got the talent, we’ve got the car — together we’re unstoppable. Let’s go racing!',
+    'The whole {team} garage is buzzing about you! You’ve got the talent, we’ve got the car, together we’re unstoppable. Let’s go racing!',
     'You should be incredibly proud of yourself right now! {team} chose you because we believe you can do great things. Now it’s time to prove it!',
     'Congratulations, and welcome to the team! Every great champion started exactly where you are right now. Let’s write your story together!',
     'This seat has your name on it for a reason! {team} sees the potential in you, and we can’t wait to watch it grow. Let’s hit the track!',
-    'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in — the season starts now!'
+    'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in, the season starts now!'
   ];
   function rcPickWelcomeLine_(team) {
     var template = SIGNING_WELCOME_LINES_[Math.floor(Math.random() * SIGNING_WELCOME_LINES_.length)];
@@ -1648,7 +1904,7 @@
     return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + speaker + rest + '</svg>';
   }
 
-  function openSigningSequence(team, sponsorObjs, carClass, onFinish) {
+  function openSigningSequence(team, carClass, onFinish) {
     var overlay = el('div', 'rc-signing-overlay');
     var stage = el('div', 'rc-signing-stage rc-signing-stage-suspense');
     overlay.appendChild(stage);
@@ -1810,7 +2066,7 @@
       hypeQuote.appendChild(el('span', 'rc-signing-hype-text', rcPickWelcomeLine_(team)));
       hypeQuote.appendChild(el('span', 'rc-signing-hype-mark rc-signing-hype-mark-close', '”'));
       hypeWrap.appendChild(hypeQuote);
-      hypeWrap.appendChild(el('div', 'rc-signing-hype-attribution', '— Team Principal'));
+      hypeWrap.appendChild(el('div', 'rc-signing-hype-attribution', '· Team Principal'));
       stage.appendChild(hypeWrap);
 
       var identity = el('div', 'rc-signing-reveal-identity');
@@ -1846,135 +2102,32 @@
       setTimeout(function () { btnRow.style.opacity = '1'; }, 1400);
     }
 
+    // Continue on the congratulations screen goes straight to the reload
+    // now (Matt's call, 2026-09-01) -- no contract-recap modal in between.
+    // Team identity, seat cost, tier, and Car Objective bonus are all
+    // already visible on the dashboard the reload lands back on (Current
+    // Seat, Registration Status), and sponsors are no longer picked at
+    // signing time, so that recap card had nothing left to add.
+    //
+    // The registration modal (Choose Your Class/Team) itself was never
+    // actually closed -- see the "SIGNING SEQUENCE" comment above: it's
+    // deliberately left open the whole time, just visually hidden behind
+    // this overlay (which stacks on top of it). That's exactly what Matt
+    // saw as "something loaded for a split second" (2026-09-01 bug
+    // report): overlay.remove() revealed that still-open modal -- whatever
+    // screen it was last showing -- for a frame before onFinish() below
+    // could navigate/refresh it away. Fix: close it here FIRST, silently
+    // (skipOnClose -- its own onClose would re-fetch Registration
+    // Status/Current Seat/etc. in place, which is redundant work right
+    // before onFinish()'s reload and was contributing to the same flash),
+    // so there's nothing left behind for overlay.remove() to expose.
     function advanceToContract() {
       if (advancedPastReveal) return;
       advancedPastReveal = true;
+      if (rcActiveModalCloseFn) rcActiveModalCloseFn(true);
       overlay.remove();
-      showSigningContractModal(team, sponsorObjs, carClass, onFinish);
+      onFinish();
     }
-  }
-
-  // Final beat -- a normal white modal card (same popup language as the
-  // rest of the site) itemizing exactly what the driver just signed:
-  // team identity, class/tier, seat cost, this season's Car Objective
-  // bonus, and (if chosen) all 3 sponsors' bonus/penalty terms.
-  function showSigningContractModal(team, sponsorObjs, carClass, onFinish) {
-    // Registration already succeeded server-side before this screen ever
-    // shows -- this is a receipt, not a decision point. onClose covers
-    // both the "Let's Go Racing" button below AND the X button, so either
-    // way of dismissing this card finishes the same: toast, notification
-    // dismiss, and closing the registration modal underneath it.
-    //
-    // A white modal like every other popup on the site (Matt, 2026-08-30:
-    // "the contract signed popup should be white like the rest of the
-    // popups") -- the layout below is still its own rc-contract-* class
-    // set (not a reuse of .rc-team-*/.rc-sponsor-pick-*, since it
-    // shouldn't look the same as the picker screens Matt already saw --
-    // logo/name/cost enlarged and rearranged, sponsors as plain rows with
-    // their terms spelled out instead of a hover tooltip), just no longer
-    // dark -- and the class/tier pills below are the site's own canonical
-    // badges (_rcClassBadge/_rcCarTierBadge), not one-off colors.
-    var modal = showModal('Contract Signed', { wide: true, onClose: onFinish });
-    var body = modal.body;
-    // rc-dash-card is the exact same shared Dashboard card chrome (faint
-    // checkered-flag corner fade + red "finish flag" top-left accent) used
-    // on the dashboard's own cards -- reused as-is here rather than a new
-    // one-off treatment (Matt's call, 2026-08-30: "add the checkered flag
-    // in the upper right corner and add the top red border just like the
-    // dashboard cards have it").
-    var card = el('div', 'rc-contract-card rc-dash-card');
-    body.appendChild(card);
-
-    // ---- Header: logo + team name (left), seat cost (right) -------------
-    var header = el('div', 'rc-contract-header');
-    var headerIdentity = el('div', 'rc-contract-identity');
-    if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
-      var logo = document.createElement('img');
-      logo.className = 'rc-contract-logo';
-      logo.src = manufacturerLogoSrc(team.manufacturer);
-      logo.alt = team.manufacturer;
-      logo.onerror = function () { this.style.display = 'none'; };
-      headerIdentity.appendChild(logo);
-    }
-    var nameCol = el('div', 'rc-contract-name-col');
-    nameCol.appendChild(el('div', 'rc-contract-name', escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
-    var subtitleBits = [team.manufacturer, team.carModel].filter(Boolean).join(' ');
-    var subtitleLine = el('div', 'rc-contract-subtitle');
-    if (subtitleBits) subtitleLine.appendChild(el('span', null, escapeHtml(subtitleBits)));
-    var pillRow = el('span', 'rc-contract-pill-row');
-    // Class pill sits to the left of the Tier pill (Matt's call,
-    // 2026-08-30) -- both are the site's shared badge helpers, so these
-    // read exactly like the class/tier pills everywhere else (Choose Your
-    // Team, Car Management, the Current Seat card).
-    if (carClass) pillRow.appendChild(_rcClassBadge(carClass));
-    pillRow.appendChild(_rcCarTierBadge(team.tier));
-    subtitleLine.appendChild(pillRow);
-    nameCol.appendChild(subtitleLine);
-    headerIdentity.appendChild(nameCol);
-    header.appendChild(headerIdentity);
-    var costCol = el('div', 'rc-contract-cost-col');
-    costCol.appendChild(el('div', 'rc-contract-cost-label', 'Seat Cost'));
-    costCol.appendChild(el('div', 'rc-contract-cost', formatMoney(team.buyInCost)));
-    header.appendChild(costCol);
-    card.appendChild(header);
-
-    // ---- Season Objective: spelled out, not a hover tooltip -------------
-    if (team.objectiveName) {
-      var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
-      var objSection = el('div', 'rc-contract-objective');
-      var objHead = el('div', 'rc-contract-objective-head');
-      objHead.appendChild(el('span', 'rc-contract-objective-icon', '★'));
-      objHead.appendChild(el('span', 'rc-contract-objective-name', 'Season Objective — ' + escapeHtml(team.objectiveName)));
-      objHead.appendChild(el('span', 'rc-contract-objective-bonus', '+' + formatMoney(team.objectiveBonus)));
-      objSection.appendChild(objHead);
-      if (objDescMap[team.objectiveName]) {
-        objSection.appendChild(el('div', 'rc-contract-objective-desc', escapeHtml(objDescMap[team.objectiveName])));
-      }
-      card.appendChild(objSection);
-    }
-
-    // ---- Sponsors: plain rows (no card containers), details spelled out --
-    if (sponsorObjs.length === 3) {
-      card.appendChild(el('div', 'rc-contract-section-title', 'Your Sponsors'));
-      var list = el('div', 'rc-contract-sponsor-list');
-      sponsorObjs.forEach(function (s) {
-        var row = el('div', 'rc-contract-sponsor-row');
-        var sLogo = document.createElement('img');
-        sLogo.className = 'rc-contract-sponsor-logo';
-        sLogo.alt = '';
-        sLogo.src = sponsorLogoSrc(s.Name || '');
-        sLogo.onerror = function () { this.style.display = 'none'; };
-        row.appendChild(sLogo);
-
-        var textCol = el('div', 'rc-contract-sponsor-text');
-        textCol.appendChild(el('div', 'rc-contract-sponsor-name', escapeHtml(s.Name || '(unnamed sponsor)')));
-
-        var bonusAmt = Number(s.BonusAmount) || 0;
-        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
-        if (s.BonusType) {
-          var bonusLine = el('div', 'rc-contract-sponsor-term rc-contract-sponsor-term-bonus');
-          bonusLine.appendChild(el('span', 'rc-contract-sponsor-term-label', 'Bonus +' + formatMoney(bonusAmt) + ':'));
-          bonusLine.appendChild(el('span', 'rc-contract-sponsor-term-desc', escapeHtml(sponsorTriggerDescription(s.BonusType))));
-          textCol.appendChild(bonusLine);
-        }
-        if (s.PenaltyType) {
-          var penaltyLine = el('div', 'rc-contract-sponsor-term rc-contract-sponsor-term-penalty');
-          penaltyLine.appendChild(el('span', 'rc-contract-sponsor-term-label', 'Penalty −' + formatMoney(penaltyAmt) + ':'));
-          penaltyLine.appendChild(el('span', 'rc-contract-sponsor-term-desc', escapeHtml(sponsorTriggerDescription(s.PenaltyType))));
-          textCol.appendChild(penaltyLine);
-        }
-        row.appendChild(textCol);
-        list.appendChild(row);
-      });
-      card.appendChild(list);
-    } else {
-      card.appendChild(el('p', 'rc-contract-no-sponsors', 'No sponsors chosen yet — pick your 3 any time before the season starts from the Sponsors page.'));
-    }
-
-    var goBtn = el('button', 'rc-btn-primary rc-contract-go-btn', 'Let’s Go Racing');
-    goBtn.type = 'button';
-    goBtn.addEventListener('click', function () { modal.close(); });
-    card.appendChild(goBtn);
   }
 
   // ---------------------------------------------------------------------
@@ -1993,21 +2146,183 @@
   //      locked for the rest of the season, same rule that always applied,
   //      just enforced at season-start now instead of at registration.
   // ---------------------------------------------------------------------
-  // Full sponsor catalog, read-only -- grouped Easy/Balanced/Risky same as
-  // the admin Sponsors popup's own list (buildSponsorsPanel), sponsors
-  // inset under each tier heading exactly like Cars/Members' rows-inside-
-  // a-folder look (.rc-dm-group/.rc-dm-row/.rc-dm-subrow-edit -- the same
-  // three classes those lists use), with the same faint offwhite line
-  // between every entry that pattern already gives for free. Added
-  // 2026-08-31 (Matt's call: the Sponsors page "looks like a stripped
-  // down pick a sponsor" -- it should feel like it's showing all the
-  // data, not just this driver's 3 picks) beneath the existing "your
-  // sponsors" panel above. Inactive sponsors are left out here on
-  // purpose -- unlike the admin catalog view, a driver can't pick one
-  // anyway, so there's nothing useful about showing it retired.
-  function buildSponsorCatalogBrowsePanel(sponsors) {
-    var panel = el('div', 'rc-panel');
-    panel.appendChild(el('h3', 'margin-top:0;', 'All Sponsors'));
+  // Comparison Table redesign (2026-09-01, Matt's call -- picked this
+  // direction after reviewing 3 mockups: "I like the DIRECTION 1 page...
+  // I especially like the explanation at the top under the SPONSORS
+  // header"). Four pieces top to bottom: an explainer paragraph, the
+  // driver's own up-to-3 picks as a compact chip strip, a race-by-race
+  // "Sponsor Goals" quick-glance panel built only from those picks, then
+  // every active sponsor as one tier-grouped table with a Bonus/Penalty
+  // swing bar per row so options are a straight down-the-column scan
+  // instead of separate cards. No tooltips anywhere on this page (Matt's
+  // standing call) -- everything is spelled out in the row/column itself.
+  var _RC_TIER_TEXT_CLASS = { Safe: 'rc-tier-text-safe', Balanced: 'rc-tier-text-balanced', Risky: 'rc-tier-text-risky' };
+
+  // "Current Picks" -- a compact chip strip (logo, name, tier label),
+  // always 3 slots wide; any slot this driver hasn't filled renders as an
+  // "Open Slot" placeholder -- dashed border, muted, same treatment as
+  // the Calendar page's Bye Week card. Chips are always sorted easiest to
+  // riskiest (Safe -> Balanced -> Risky) regardless of pick order. "Sponsor
+  // Goals" (2026-09-01: folded into this same container, one panel instead
+  // of two, plus this driver's own "Current Picks"/"All Sponsors" panels
+  // now carry the same rc-dash-card chrome the Dashboard's own cards use --
+  // both Matt's calls) lives right underneath, inside the same card: only
+  // this driver's picked sponsors' Bonus/Penalty triggers, as two
+  // side-by-side columns, so what's actually "in play" for the next race
+  // reads as one quick-glance checklist without leaving the picks panel.
+  function buildCurrentPicksPanel(data, token, onDone) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Current Picks'));
+    panel.appendChild(el('p', 'rc-hint', 'You can choose up to 3 sponsors for the season.'));
+
+    var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
+    var sponsors = (data.sponsors || []).slice().sort(function (a, b) {
+      var ai = TIER_ORDER.indexOf(a.Tier); if (ai === -1) ai = TIER_ORDER.length;
+      var bi = TIER_ORDER.indexOf(b.Tier); if (bi === -1) bi = TIER_ORDER.length;
+      return ai - bi;
+    });
+
+    var strip = el('div', 'rc-picks-strip');
+    sponsors.forEach(function (s) {
+      var chip = el('div', 'rc-pick-chip');
+      var logo = document.createElement('img');
+      logo.className = 'rc-pick-chip-logo';
+      logo.alt = '';
+      logo.src = sponsorLogoSrc(s.Name || '');
+      logo.onerror = function () { this.style.display = 'none'; };
+      chip.appendChild(logo);
+
+      var textCol = el('div', 'rc-pick-chip-text');
+      textCol.appendChild(el('div', 'rc-pick-chip-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+      var tierClass = _RC_TIER_TEXT_CLASS[s.Tier] || '';
+      textCol.appendChild(el('div', 'rc-pick-chip-tier' + (tierClass ? ' ' + tierClass : ''), escapeHtml(s.Tier || 'Unclassified')));
+      chip.appendChild(textCol);
+
+      strip.appendChild(chip);
+    });
+    for (var i = sponsors.length; i < 3; i++) {
+      var open = el('div', 'rc-pick-chip rc-pick-chip-open');
+      open.appendChild(el('div', 'rc-pick-chip-open-label', 'Open Slot'));
+      strip.appendChild(open);
+    }
+    panel.appendChild(strip);
+
+    // Sponsor Goals -- folded into this same card (2026-09-01, Matt's
+    // call), separated from the picks strip above by its own light rule +
+    // sub-heading rather than a second rc-dash-card-title (only the outer
+    // card gets that treatment). Explicitly calls out that these are
+    // race-by-race, unlike the car's own season-long Season Objective,
+    // since that distinction isn't obvious just from looking at a
+    // sponsor's terms.
+    panel.appendChild(el('div', 'rc-panel-subhead', 'Sponsor Goals'));
+
+    if (!sponsors.length) {
+      // Short empty-state note only (2026-09-01, Matt's call) -- not the
+      // longer two-line explainer this used to have, just enough to say
+      // why the section below is blank.
+      panel.appendChild(el('p', 'rc-hint', 'Goals will appear once sponsors are chosen.'));
+    } else {
+      var goalsGrid = el('div', 'rc-sponsor-goals-grid');
+      var bonusCol = el('div', 'rc-sponsor-goals-col');
+      bonusCol.appendChild(el('div', 'rc-sponsor-goals-col-head rc-sponsor-goals-col-head-bonus', 'Bonuses'));
+      var penaltyCol = el('div', 'rc-sponsor-goals-col');
+      penaltyCol.appendChild(el('div', 'rc-sponsor-goals-col-head rc-sponsor-goals-col-head-penalty', 'Penalties'));
+
+      sponsors.forEach(function (s) {
+        var bonusAmt = Number(s.BonusAmount) || 0;
+        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+
+        var bRow = el('div', 'rc-sponsor-goal-row');
+        bRow.appendChild(el('div', 'rc-sponsor-goal-amt rc-sponsor-goal-amt-bonus', '+$' + bonusAmt));
+        var bText = el('div', 'rc-sponsor-goal-text');
+        bText.appendChild(el('div', 'rc-sponsor-goal-trigger', escapeHtml(s.BonusType || 'Bonus')));
+        bText.appendChild(el('div', 'rc-sponsor-goal-sponsor', escapeHtml(s.Name || '')));
+        bRow.appendChild(bText);
+        bonusCol.appendChild(bRow);
+
+        var pRow = el('div', 'rc-sponsor-goal-row');
+        pRow.appendChild(el('div', 'rc-sponsor-goal-amt rc-sponsor-goal-amt-penalty', '−$' + penaltyAmt));
+        var pText = el('div', 'rc-sponsor-goal-text');
+        pText.appendChild(el('div', 'rc-sponsor-goal-trigger', escapeHtml(s.PenaltyType || 'Penalty')));
+        pText.appendChild(el('div', 'rc-sponsor-goal-sponsor', escapeHtml(s.Name || '')));
+        pRow.appendChild(pText);
+        penaltyCol.appendChild(pRow);
+      });
+
+      goalsGrid.appendChild(bonusCol);
+      goalsGrid.appendChild(penaltyCol);
+      panel.appendChild(goalsGrid);
+    }
+
+    if (!data.locked) {
+      var chooseBtn = el('button', 'rc-btn-primary rc-btn-sm', data.hasSponsors ? 'Change Sponsors' : 'Choose Sponsors');
+      chooseBtn.type = 'button';
+      chooseBtn.style.marginTop = '16px';
+      chooseBtn.addEventListener('click', function () {
+        openChooseSponsorsModal(token, data.seasonId, data.sponsors || [], onDone);
+      });
+      panel.appendChild(chooseBtn);
+    } else if (data.hasSponsors) {
+      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season has started -- sponsors are locked in for the rest of it.'));
+    } else {
+      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season started before you chose your sponsors -- sponsors can no longer be picked this season.'));
+    }
+
+    return panel;
+  }
+
+  // Trigger glossary -- the Sponsors page's third container (2026-09-01,
+  // Matt's call): every possible bonus trigger and every possible penalty
+  // trigger, name in a left column and its full plain-language description
+  // in a column to the right, same rc-dash-card chrome as the other two
+  // Sponsors-page panels. This is where the full trigger descriptions live
+  // now that the Choose/Change Sponsors popup only shows amount + trigger
+  // name (see buildSponsorTermsLine above) -- one place to read exactly
+  // what each trigger means instead of repeating it in every popup.
+  function buildSponsorTriggerGlossary() {
+    var panel = el('div', 'rc-panel rc-dash-card rc-trigger-glossary-panel');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Bonus & Penalty Triggers'));
+    panel.appendChild(el('p', 'rc-hint', 'Every trigger a sponsor can be built around, and exactly what it takes to earn or avoid it. All of these are read straight off the race XML, no steward judgment involved.'));
+
+    function buildGroup(title, triggers, descMap, kindClass) {
+      var group = el('div', 'rc-trigger-glossary-group');
+      group.appendChild(el('div', 'rc-trigger-glossary-group-head rc-trigger-glossary-group-head-' + kindClass, title));
+      triggers.forEach(function (t) {
+        var row = el('div', 'rc-trigger-glossary-row');
+        row.appendChild(el('div', 'rc-trigger-glossary-name rc-trigger-glossary-name-' + kindClass, escapeHtml(t)));
+        row.appendChild(el('div', 'rc-trigger-glossary-desc', escapeHtml(descMap[t] || t)));
+        group.appendChild(row);
+      });
+      return group;
+    }
+
+    panel.appendChild(buildGroup('Bonuses', (typeof SPONSOR_BONUS_TRIGGERS !== 'undefined') ? SPONSOR_BONUS_TRIGGERS : [], (typeof SPONSOR_BONUS_TRIGGER_DESCRIPTIONS !== 'undefined') ? SPONSOR_BONUS_TRIGGER_DESCRIPTIONS : {}, 'bonus'));
+    panel.appendChild(buildGroup('Penalties', (typeof SPONSOR_PENALTY_TRIGGERS !== 'undefined') ? SPONSOR_PENALTY_TRIGGERS : [], (typeof SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS !== 'undefined') ? SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS : {}, 'penalty'));
+
+    return panel;
+  }
+
+  // Full sponsor catalog as one tier-grouped comparison table (2026-09-01
+  // redesign, replacing the old rows-inside-a-folder list) -- Sponsor /
+  // Tier / Bonus / Penalty / Risk-Reward swing bar, one row per active
+  // sponsor, grouped Safe -> Balanced -> Risky with a group-header row
+  // per tier. This driver's own current picks are checkmarked and
+  // highlighted (green, same selected-card treatment the car-picking
+  // popup uses -- 2026-09-01 correction from an earlier red highlight,
+  // Matt's call: red already means something else on this site) wherever
+  // they land in the full list, so comparing "what I have" against "what
+  // else is out there" is one scan down the page instead of cross-
+  // referencing two separate panels. Inactive sponsors are left out --
+  // unlike the admin catalog view, a driver can't pick one anyway, so
+  // there's nothing useful about showing it retired. No separate Tier
+  // column (2026-09-01, Matt's call) -- the tier badge already sits on
+  // the group-header row above each tier's sponsors, so repeating it per
+  // row was redundant; sponsor rows are inset further under their group
+  // header instead, the same "rows nested under their group" look Cars/
+  // Members use.
+  function buildSponsorComparisonTable(sponsors, pickedIds) {
+    var panel = el('div', 'rc-panel rc-dash-card rc-sponsor-table-panel');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'All Sponsors'));
 
     var active = (sponsors || []).filter(function (s) { return _rcRowActive(s); });
     if (!active.length) {
@@ -2015,7 +2330,7 @@
       return panel;
     }
 
-    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
+    var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
     var byTier = {};
     active.forEach(function (s) {
       var tier = s.Tier || 'Unclassified';
@@ -2025,44 +2340,100 @@
     var tierOrder = TIER_ORDER.slice();
     Object.keys(byTier).forEach(function (t) { if (tierOrder.indexOf(t) === -1) tierOrder.push(t); });
 
+    var table = el('div', 'rc-sponsor-table');
+    var headRow = el('div', 'rc-sponsor-table-head-row');
+    headRow.appendChild(el('div'));
+    headRow.appendChild(el('div', 'rc-sponsor-table-head-cell', 'Sponsor'));
+    headRow.appendChild(el('div', 'rc-sponsor-table-head-cell', 'Bonus'));
+    headRow.appendChild(el('div', 'rc-sponsor-table-head-cell', 'Penalty'));
+    headRow.appendChild(el('div', 'rc-sponsor-table-head-cell', 'Risk / Reward'));
+    table.appendChild(headRow);
+
     tierOrder.forEach(function (tier) {
       var list = byTier[tier];
       if (!list) return;
-      var group = el('div', 'rc-dm-group');
-      var tierHead = el('div', 'rc-dm-row');
-      tierHead.appendChild(_rcTierBadge(tier));
-      group.appendChild(tierHead);
+      var groupHead = el('div', 'rc-sponsor-tier-group-head');
+      groupHead.appendChild(_rcTierBadge(tier));
+      groupHead.appendChild(el('span', 'rc-sponsor-tier-group-count', list.length + (list.length === 1 ? ' sponsor' : ' sponsors')));
+      table.appendChild(groupHead);
 
       list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
-        var row = el('div', 'rc-dm-subrow-edit rc-tooltip');
-        row.setAttribute('data-tooltip', sponsorTermsTooltip(s));
+        var picked = pickedIds.indexOf(s.SponsorID) !== -1;
+        var row = el('div', 'rc-sponsor-table-row');
 
-        var info = el('div', 'rc-dm-car-info');
-        var logoCol = el('div', 'rc-dm-sponsor-logo-col');
+        var mark = el('div', 'rc-sponsor-pickmark' + (picked ? ' rc-sponsor-pickmark-on' : ' rc-sponsor-pickmark-off'));
+        if (picked) mark.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>';
+        row.appendChild(mark);
+
+        var sponsorCol = el('div', 'rc-sponsor-table-sponsor');
         var logo = document.createElement('img');
-        logo.className = 'rc-dm-sponsor-logo';
+        logo.className = 'rc-sponsor-table-logo';
         logo.alt = '';
         logo.src = sponsorLogoSrc(s.Name || '');
         logo.onerror = function () { this.style.display = 'none'; };
-        logoCol.appendChild(logo);
-        info.appendChild(logoCol);
+        sponsorCol.appendChild(logo);
+        sponsorCol.appendChild(el('div', 'rc-sponsor-table-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+        row.appendChild(sponsorCol);
 
-        var textCol = el('div', null);
-        textCol.appendChild(el('div', null, escapeHtml(s.Name || '(unnamed sponsor)')));
         var bonusAmt = Number(s.BonusAmount) || 0;
         var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
-        var terms = el('div', 'rc-hint');
-        terms.appendChild(el('span', 'rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
-        terms.appendChild(document.createTextNode('  ·  '));
-        terms.appendChild(el('span', 'rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
-        textCol.appendChild(terms);
-        info.appendChild(textCol);
-        row.appendChild(info);
 
-        group.appendChild(row);
+        var bonusCol = el('div', 'rc-sponsor-table-bonus-col');
+        bonusCol.appendChild(el('div', 'rc-sponsor-table-amt rc-sponsor-table-amt-bonus', '+$' + bonusAmt));
+        bonusCol.appendChild(el('div', 'rc-sponsor-table-trigger', escapeHtml(s.BonusType || '')));
+        row.appendChild(bonusCol);
+
+        var penaltyCol = el('div', 'rc-sponsor-table-penalty-col');
+        penaltyCol.appendChild(el('div', 'rc-sponsor-table-amt rc-sponsor-table-amt-penalty', '−$' + penaltyAmt));
+        penaltyCol.appendChild(el('div', 'rc-sponsor-table-trigger', escapeHtml(s.PenaltyType || '')));
+        row.appendChild(penaltyCol);
+
+        // Two stacked 24-block meters on a shared $0-$1,200 scale
+        // (2026-09-01, Matt's call) -- bonus on top, penalty on bottom,
+        // each block worth $50, so every sponsor amount (which always
+        // lands on a $50 step) fills a whole number of blocks with no
+        // rounding. A fixed shared scale (rather than each row's own
+        // bonus+penalty total) is what makes Risky sponsors visibly carry
+        // both a bigger reward AND a bigger downside than Safe/Balanced,
+        // instead of every row just showing its own internal split.
+        var SWING_SCALE_MAX = 1200;
+        var SWING_SEG_COUNT = 24;
+        var SWING_SEG_VALUE = SWING_SCALE_MAX / SWING_SEG_COUNT; // $50
+        function buildSwingRow(amount, kind) {
+          var swingRow = el('div', 'rc-sponsor-swing-row');
+          var filledSegs = Math.min(SWING_SEG_COUNT, Math.round(amount / SWING_SEG_VALUE));
+          for (var seg = 0; seg < SWING_SEG_COUNT; seg++) {
+            swingRow.appendChild(el('div', 'rc-sponsor-swing-seg ' + (seg < filledSegs ? 'rc-sponsor-swing-seg-' + kind : 'rc-sponsor-swing-seg-empty')));
+          }
+          return swingRow;
+        }
+        var swing = el('div', 'rc-sponsor-swing');
+        swing.appendChild(buildSwingRow(bonusAmt, 'bonus'));
+        swing.appendChild(buildSwingRow(penaltyAmt, 'penalty'));
+
+        // Scale labels under the bar: 0 on the left, the shared scale's
+        // ceiling on the right, and a small centered tick mark -- lets a
+        // driver read the bars as an actual dollar scale, not just a
+        // relative meter (2026-09-01, Matt's call). Same $0-$1,200 scale on
+        // every row, Safe/Balanced/Risky alike. Nested inside the swing
+        // element itself (not a sixth grid column) so it stays under the
+        // bars in the same table cell.
+        var swingScale = el('div', 'rc-sponsor-swing-scale');
+        swingScale.appendChild(el('span', 'rc-sponsor-swing-scale-label', '0'));
+        swingScale.appendChild(el('span', 'rc-sponsor-swing-scale-tick'));
+        swingScale.appendChild(el('span', 'rc-sponsor-swing-scale-label', '$' + SWING_SCALE_MAX.toLocaleString()));
+        swing.appendChild(swingScale);
+
+        row.appendChild(swing);
+
+        table.appendChild(row);
       });
-      panel.appendChild(group);
     });
+    panel.appendChild(table);
+
+    panel.appendChild(el('p', 'rc-sponsor-table-legend',
+      'Risk / Reward shows bonus (top) and penalty (bottom) on the same $0-$1,200 scale, so a longer bar in either row means a bigger dollar swing.'));
+
     return panel;
   }
 
@@ -2081,68 +2452,43 @@
     function render(data, catalog) {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Sponsors'));
-
-      var panel = el('div', 'rc-panel');
-      section.appendChild(panel);
+      // Explainer paragraph under the page header (2026-09-01, Matt's
+      // call -- the one piece of the Direction 1 mockup he called out by
+      // name). Also does double duty as the place that spells out the
+      // race-by-race vs. season-long distinction Matt asked for.
+      section.appendChild(el('p', 'rc-sponsors-explainer',
+        'Every sponsor lines up in one table below so you can compare tier, bonus, and penalty side by side instead of digging through separate cards. Sponsor bonuses and penalties are evaluated race by race for the rest of the season; your car carries its own separate, season-long Season Objective.'));
 
       if (!data || !data.success) {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Could not load your sponsors right now.'));
+        var errPanel = el('div', 'rc-panel');
+        errPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Could not load your sponsors right now.'));
+        section.appendChild(errPanel);
         return;
       }
       if (!data.hasSeat) {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Not on a team yet -- register for a season to choose sponsors.'));
-        if (catalog.length) section.appendChild(buildSponsorCatalogBrowsePanel(catalog));
+        // Same "Current Picks" container title + red line as the
+        // registered version below, just with the note in place of the
+        // picks strip (2026-09-01, Matt's call: "keep the container
+        // title with the red line and below it add this note").
+        var notSeatedPanel = el('div', 'rc-panel rc-dash-card');
+        notSeatedPanel.appendChild(el('h3', 'rc-dash-card-title', 'Current Picks'));
+        notSeatedPanel.appendChild(el('p', 'rc-hint', 'Not on a team yet -- register for a season to choose sponsors.'));
+        section.appendChild(notSeatedPanel);
+        if (catalog.length) section.appendChild(buildSponsorComparisonTable(catalog, []));
+        section.appendChild(buildSponsorTriggerGlossary());
         return;
       }
 
-      if (data.hasSponsors) {
-        var grid = el('div', 'rc-sponsor-pick-list');
-        data.sponsors.forEach(function (s) {
-          var card = el('div', 'rc-sponsor-pick-card rc-sponsor-pick-card-readonly rc-tooltip');
-          var logoCol = el('div', 'rc-sponsor-pick-logo-col');
-          var logo = document.createElement('img');
-          logo.className = 'rc-sponsor-pick-logo';
-          logo.alt = '';
-          logo.src = sponsorLogoSrc(s.Name || '');
-          logo.onerror = function () { this.style.display = 'none'; };
-          logoCol.appendChild(logo);
-          card.appendChild(logoCol);
+      section.appendChild(buildCurrentPicksPanel(data, token, function () { renderSponsorsSection(token); }));
 
-          var textCol = el('div', 'rc-sponsor-pick-text');
-          textCol.appendChild(el('div', 'rc-sponsor-pick-name', escapeHtml(s.Name || '(unnamed sponsor)')));
-          var bonusAmt = Number(s.BonusAmount) || 0;
-          var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
-          textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-bonus', 'Bonus: ' + escapeHtml(s.BonusType || '—') + ' (+$' + bonusAmt + ')'));
-          textCol.appendChild(el('div', 'rc-sponsor-pick-terms rc-sponsor-pick-penalty', 'Penalty: ' + escapeHtml(s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
-          card.appendChild(textCol);
-          card.setAttribute('data-tooltip', sponsorTermsTooltip(s));
+      var pickedIds = (data.sponsors || []).map(function (s) { return s.SponsorID; });
+      if (catalog.length) section.appendChild(buildSponsorComparisonTable(catalog, pickedIds));
 
-          grid.appendChild(card);
-        });
-        panel.appendChild(grid);
-      } else if (data.locked) {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'The season started before you chose your sponsors -- sponsors can no longer be picked this season.'));
-      } else {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;', 'You haven\'t chosen your sponsors yet.'));
-      }
-
-      if (!data.locked) {
-        var chooseBtn = el('button', 'rc-btn-primary rc-btn-sm', data.hasSponsors ? 'Change Sponsors' : 'Choose Sponsors');
-        chooseBtn.type = 'button';
-        chooseBtn.style.marginTop = '16px';
-        chooseBtn.addEventListener('click', function () {
-          openChooseSponsorsModal(token, data.seasonId, data.sponsors || [], function () {
-            renderSponsorsSection(token);
-          });
-        });
-        panel.appendChild(chooseBtn);
-      } else if (data.hasSponsors) {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season has started -- sponsors are locked in for the rest of it.'));
-      }
-
-      // Full catalog, every sponsor grouped by tier, sits below the
-      // driver's own pick -- see buildSponsorCatalogBrowsePanel above.
-      if (catalog.length) section.appendChild(buildSponsorCatalogBrowsePanel(catalog));
+      // Third container: every possible bonus/penalty trigger with its
+      // plain description (2026-09-01, Matt's call) -- independent of this
+      // driver's own picks or the live catalog, so it always renders once
+      // there's a seat, same list every time.
+      section.appendChild(buildSponsorTriggerGlossary());
     }
 
     Promise.all([
@@ -2168,12 +2514,13 @@
     fetchApi('getSponsors', { token: token }).then(function (data) {
       body.innerHTML = '';
       var sponsors = (data.success && data.sponsors) ? data.sponsors : [];
-      if (sponsors.length < 3) {
-        body.appendChild(el('p', 'color:var(--rc-red);', 'Not enough sponsors are set up yet to choose 3.'));
+      if (!sponsors.length) {
+        body.appendChild(el('p', 'color:var(--rc-red);', 'No sponsors are set up yet.'));
         return;
       }
 
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 12px;', 'Pick 3 sponsors for the season. This can be changed again any time before the season starts.'));
+      // Up to 3, not required (2026-08-31, Matt's call).
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 12px;', 'Pick up to 3 sponsors for the season. This can be changed again any time before the season starts.'));
 
       var preselected = (currentSponsors || []).map(function (s) { return s.SponsorID; });
       var picker = buildSponsorPickerList(sponsors, preselected);
@@ -2186,13 +2533,12 @@
       confirmBtn.type = 'button';
       confirmBtn.addEventListener('click', function () {
         var picked = picker.getSelected();
-        if (picked.length !== 3) { errorLine.textContent = 'Pick 3 sponsors.'; return; }
 
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Saving...';
         fetchApi('chooseSponsors', {
           method: 'POST', token: token,
-          body: { seasonId: seasonId, sponsorId1: picked[0], sponsorId2: picked[1], sponsorId3: picked[2] }
+          body: { seasonId: seasonId, sponsorId1: picked[0] || '', sponsorId2: picked[1] || '', sponsorId3: picked[2] || '' }
         }).then(function (result) {
           if (!result.success) {
             confirmBtn.disabled = false;
@@ -2201,7 +2547,6 @@
             return;
           }
           showToast('Sponsors saved.', 'success');
-          modal.close();
           rcReloadAfterSave();
         }).catch(function () {
           confirmBtn.disabled = false;
@@ -2294,13 +2639,24 @@
     // this avoids accidental clicks and nothing saves"). Backdrop-click
     // and Escape-key close are deliberately gone -- neither the dimmed
     // backdrop nor document keydown gets a listener anymore.
-    function close() {
+    // skipOnClose (2026-09-01): lets a caller tear this modal down WITHOUT
+    // firing opts.onClose -- see openSigningSequence's advanceToContract,
+    // which closes the registration modal silently right before a reload/
+    // in-place refresh is about to happen anyway. Every other caller
+    // (the X button, a Cancel button) calls close() with no argument, so
+    // onClose still fires normally there.
+    function close(skipOnClose) {
       backdrop.remove();
       document.body.classList.remove('rc-modal-scroll-locked');
       document.body.style.top = '';
       window.scrollTo(0, scrollYBeforeModal);
-      if (opts.onClose) opts.onClose();
+      // Only clear the tracker if THIS modal is still the one it's
+      // pointing at -- guards against a theoretical stale clear if a
+      // second modal somehow opened before this one's close() ran.
+      if (rcActiveModalCloseFn === close) rcActiveModalCloseFn = null;
+      if (opts.onClose && !skipOnClose) opts.onClose();
     }
+    rcActiveModalCloseFn = close;
     closeBtn.addEventListener('click', close);
 
     // el: the modal card itself (not the dimmed backdrop) -- exposed so a
@@ -2539,7 +2895,6 @@
           }
           setProfileCache(data.profile);
           showToast('Avatar updated.', 'success');
-          pickerModal.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -2720,7 +3075,6 @@
           }
           setProfileCache(data.profile); // keeps the header avatar current here and on every other page, once the reload below actually re-renders it
           showToast('Profile updated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -2759,14 +3113,18 @@
     websiteHelp.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Website Help'));
     websiteHelp.appendChild(el('p', 'rc-help-panel-note', 'A fuller set of how-to topics for using the site is still being written. In the meantime:'));
     var contactList = el('ul', 'rc-help-list');
-    contactList.appendChild(el('li', null, 'Questions about your account, results, or standings — email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
+    contactList.appendChild(el('li', null, 'Questions about your account, results, or standings: email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
     contactList.appendChild(el('li', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    // Points at the Rulebook's own Getting Started section (2026-09-01)
+    // rather than duplicating the registration/sponsor-picking steps here
+    // -- one place to keep that content current instead of two.
+    contactList.appendChild(el('li', null, 'New here? See Section 2, Getting Started, in the Rulebook below for how registering for a team and choosing sponsors works.'));
     websiteHelp.appendChild(contactList);
     section.appendChild(websiteHelp);
 
     var rulebook = el('div', 'rc-panel');
     rulebook.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Rules and Regulations'));
-    rulebook.appendChild(el('p', 'rc-help-panel-note', 'The Race Club Rulebook is a work in progress — sections are written and added periodically as the season design comes together. Anything marked "Not yet drafted" is on the plan but not written yet.'));
+    rulebook.appendChild(el('p', 'rc-help-panel-note', 'The Race Club Rulebook is a work in progress. Sections are written and added periodically as the season design comes together. Anything marked "Not yet drafted" is on the plan but not written yet.'));
 
     var rbIndex = el('div', 'rc-rulebook-index');
     var rbSections = el('div');
@@ -2782,7 +3140,7 @@
         secWrap.id = 'rc-rulebook-sec-' + sec.id;
         secWrap.appendChild(el('h3', null, sec.num + '. ' + sec.title));
         if (sec.draft) {
-          secWrap.appendChild(el('p', 'rc-rulebook-draft-note', sec.draftNote ? ('Not yet drafted — ' + sec.draftNote) : 'Not yet drafted.'));
+          secWrap.appendChild(el('p', 'rc-rulebook-draft-note', sec.draftNote ? ('Not yet drafted. ' + sec.draftNote) : 'Not yet drafted.'));
         } else {
           // Safe to use innerHTML here -- RULEBOOK_SECTIONS' html strings
           // are hand-authored by us, not sourced from user input (see
@@ -3219,7 +3577,7 @@
 
     var trackLine = el('div', 'rc-cal-track');
     trackLine.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
-      (entry.layout ? ' <span class="rc-cal-layout">— ' + escapeHtml(entry.layout) + '</span>' : '');
+      (entry.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(entry.layout) + '</span>' : '');
     body.appendChild(trackLine);
 
     var datetime = el('div', 'rc-cal-datetime');
@@ -3324,11 +3682,8 @@
       // "finish flag" top accent, and a slightly heavier drop shadow.
       var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
       var head = el('div', 'rc-cal-season-head');
-      // "Season N: <name>" -- N is the numeric suffix off SeasonID (e.g.
-      // "SZN-0003" -> 3), same sequential number the ID itself already
-      // encodes, so there's no separate "season number" to maintain.
-      var seasonNumMatch = /(\d+)\s*$/.exec(String(res.seasonId || ''));
-      var seasonNumLabel = seasonNumMatch ? String(parseInt(seasonNumMatch[1], 10)) : '';
+      // "Season N: <name>" -- see seasonNumberLabel() above.
+      var seasonNumLabel = seasonNumberLabel(res.seasonId);
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + res.seasonName));
       panel.appendChild(head);
 
@@ -4552,7 +4907,7 @@
       // season-wide lock check above (a season can be locked overall
       // while still having later, unraced rounds stay fully editable).
       if (race.raced) {
-        var racedBadge = el('span', null, 'Raced — Locked');
+        var racedBadge = el('span', null, 'Raced · Locked');
         racedBadge.style.cssText = 'display:inline-block;margin-left:10px;padding:2px 8px;border-radius:4px;background:var(--rc-steel);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;vertical-align:middle;';
         card.querySelector('h4').appendChild(racedBadge);
         card.querySelectorAll('input, select, textarea').forEach(function (fieldEl) { fieldEl.disabled = true; });
@@ -4780,7 +5135,7 @@
     var econPanel = el('div', 'rc-panel'); econPanel.style.marginTop = '12px';
     econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Economy'));
     econPanel.appendChild(previewLine('Wager Stake Cap', state.economy.wagerStakeCapPct + '% of available'));
-    econPanel.appendChild(previewLine('Car Objectives — Seat Cost Avgs.',
+    econPanel.appendChild(previewLine('Car Objectives · Seat Cost Avgs.',
       'Low $' + Number(state.economy.carTierSeatCost.Low || 0).toLocaleString() +
       ' · Mid $' + Number(state.economy.carTierSeatCost.Mid || 0).toLocaleString() +
       ' · High $' + Number(state.economy.carTierSeatCost.High || 0).toLocaleString() + ' (±20% per car)'));
@@ -4794,7 +5149,7 @@
         eliteClassEntries.map(function (c) {
           var car = WIZARD_CARS.filter(function (w) { return w.CarID === state.eliteByClass[c]; })[0];
           return c + ': ' + (car ? (car.TeamName || car.CarID) : state.eliteByClass[c]);
-        }).join(' · ') + ' — ' + Number(state.economy.eliteObjectiveMultiplier).toFixed(2) + 'x'));
+        }).join(' · ') + ' · ' + Number(state.economy.eliteObjectiveMultiplier).toFixed(2) + 'x'));
     }
     container.appendChild(econPanel);
 
@@ -4805,8 +5160,8 @@
     } else {
       var previewRaceDates = computeRaceDates(state);
       state.races.forEach(function (race, idx) {
-        var trackLine = (previewRaceDates[idx] || '(date not set)') + ' — ' +
-          (race.track || '(no track)') + (race.layout ? ' — ' + race.layout : '');
+        var trackLine = (previewRaceDates[idx] || '(date not set)') + ' · ' +
+          (race.track || '(no track)') + (race.layout ? ' · ' + race.layout : '');
         var detailsLine = race.tier + ' · ' + (race.weather || 'Clear') +
           ' · ' + (race.chanceOfRain || 0) + '% Rain / ' + (race.temperatureC === undefined ? 20 : race.temperatureC) + '°C' +
           ' · Race Start ' + (race.igRaceStart || '(not set)');
@@ -4823,7 +5178,7 @@
         var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
         var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
         var trackLine = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
-          ' · ' + (evt.track || '(no track)') + (evt.layout ? ' — ' + evt.layout : '');
+          ' · ' + (evt.track || '(no track)') + (evt.layout ? ' · ' + evt.layout : '');
         var detailsLine = (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
           ' · ' + (evt.chanceOfRain || 0) + '% Rain / ' + (evt.temperatureC === undefined ? 20 : evt.temperatureC) + '°C' +
           ' · Race Start ' + (evt.igRaceStart || '(not set)') +
@@ -5602,7 +5957,6 @@
             return;
           }
           showToast('Track added.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -5710,7 +6064,6 @@
             return;
           }
           showToast('Car added.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -5964,7 +6317,6 @@
             return;
           }
           showToast('Driver updated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -5988,7 +6340,6 @@
             return;
           }
           showToast(isActive ? 'Account disabled.' : 'Account reactivated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6136,7 +6487,6 @@
           }
           rows.forEach(function (r) { r.Region = newRegion; });
           showToast('Region updated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6250,7 +6600,6 @@
             return;
           }
           showToast('Track renamed.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6362,7 +6711,7 @@
           if (c.CarNumber) subParts.push('#' + c.CarNumber);
           var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
           if (makeModel) subParts.push(makeModel);
-          textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' — ') || '(unspecified car)')));
+          textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
           info.appendChild(textCol);
           row.appendChild(info);
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
@@ -6481,7 +6830,6 @@
             return;
           }
           showToast('Car updated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6504,7 +6852,6 @@
             return;
           }
           showToast(isActive ? 'Car deactivated.' : 'Car reactivated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6549,18 +6896,20 @@
     return el('span', 'rc-badge-chip rc-badge-cartier ' + colorClass, escapeHtml(key) + ' Tier');
   }
 
-  // Tier badge -- Easy/Balanced/Risky (renamed from Safe/Balanced/
-  // Aggressive, 2026-08-31, Matt's call: "not aggressive"), same
-  // colored-chip pattern as _rcClassBadge above, just a different color
-  // mapping (risk level, not car class).
+  // Tier badge -- Safe/Balanced/Risky (renamed from Safe/Balanced/
+  // Aggressive, 2026-08-31, Matt's call: "not aggressive" -- Matt briefly
+  // tried "Easy" in place of "Safe" the same day and then asked for Safe
+  // back, so only Aggressive->Risky stuck), same colored-chip pattern as
+  // _rcClassBadge above, just a different color mapping (risk level, not
+  // car class).
   function _rcTierBadge(tier) {
     var key = String(tier || '').trim();
-    var map = { Easy: 'rc-badge-tier-easy', Balanced: 'rc-badge-tier-balanced', Risky: 'rc-badge-tier-risky' };
+    var map = { Safe: 'rc-badge-tier-safe', Balanced: 'rc-badge-tier-balanced', Risky: 'rc-badge-tier-risky' };
     var colorClass = map[key] || '';
     return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(key || 'Unclassified'));
   }
 
-  // Grouped by Tier (Easy -> Balanced -> Risky, the same order the
+  // Grouped by Tier (Safe -> Balanced -> Risky, the same order the
   // catalog was designed in -- see v0.3-Economy-Reputation-Design.md's
   // Sponsorship System), then one row per sponsor -- logo, name, bonus/
   // penalty summary, Edit button. Unlike Cars, deactivated sponsors stay
@@ -6576,7 +6925,7 @@
       return panel;
     }
 
-    var TIER_ORDER = ['Easy', 'Balanced', 'Risky'];
+    var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
     var byTier = {};
     all.forEach(function (s) {
       var tier = s.Tier || 'Unclassified';
@@ -6638,6 +6987,32 @@
     return panel;
   }
 
+  // Shared by openAddSponsorModal/openEditSponsorModal below (2026-09-01,
+  // Matt's call: assign bonus/penalty amounts by Tier + trigger difficulty,
+  // in order -- see SPONSOR_BONUS_SUGGESTED_AMOUNT/
+  // SPONSOR_PENALTY_SUGGESTED_AMOUNT, reference-data.js). Auto-fills
+  // amountInput with the recommended dollar value for whichever Tier +
+  // trigger are currently selected, every time either dropdown changes,
+  // and keeps a "Tier range: $X-Y" hint under the field up to date either
+  // way. Never locks the field -- an admin can still type over the
+  // suggestion by hand afterward, and editing an existing sponsor without
+  // touching Tier/trigger never overwrites its real amount (both listeners
+  // only fire on an actual change, not on the modal's initial populate).
+  function _rcWireSponsorAmountSuggestion(tierSelect, triggerSelect, amountInput, hintEl, suggestedMap, rangeLabelMap) {
+    function refreshHint() {
+      var rangeLabel = rangeLabelMap[tierSelect.value];
+      hintEl.textContent = rangeLabel ? (tierSelect.value + ' range: ' + rangeLabel) : '';
+    }
+    function applySuggestion() {
+      var suggested = (suggestedMap[tierSelect.value] || {})[triggerSelect.value];
+      if (suggested != null) amountInput.value = suggested;
+      refreshHint();
+    }
+    tierSelect.addEventListener('change', applySuggestion);
+    triggerSelect.addEventListener('change', applySuggestion);
+    refreshHint();
+  }
+
   // Sponsor edit popup -- Name/Tier/Bonus Trigger/Bonus Amount/Penalty
   // Trigger/Penalty Amount, posting to adminUpdateSponsor, plus a separate
   // Deactivate/Reactivate button (adminSetSponsorActive -- never deletes
@@ -6667,6 +7042,8 @@
     var bonusAmount = el('input'); bonusAmount.type = 'number'; bonusAmount.min = '0'; bonusAmount.step = '1';
     bonusAmount.value = Number(sponsor.BonusAmount) || 0;
     form.appendChild(bonusAmount);
+    var bonusAmountHint = el('div', 'rc-hint');
+    form.appendChild(bonusAmountHint);
 
     form.appendChild(el('label', null, 'Penalty Trigger'));
     var penaltyType = _rcBuildSelectWithFallback(SPONSOR_PENALTY_TRIGGERS, sponsor.PenaltyType);
@@ -6677,6 +7054,10 @@
     var penaltyAmount = el('input'); penaltyAmount.type = 'number'; penaltyAmount.min = '0'; penaltyAmount.step = '1';
     penaltyAmount.value = Math.abs(Number(sponsor.PenaltyAmount) || 0);
     form.appendChild(penaltyAmount);
+    var penaltyAmountHint = el('div', 'rc-hint');
+    form.appendChild(penaltyAmountHint);
+    _rcWireSponsorAmountSuggestion(tier, bonusType, bonusAmount, bonusAmountHint, SPONSOR_BONUS_SUGGESTED_AMOUNT, SPONSOR_BONUS_TIER_RANGE_LABEL);
+    _rcWireSponsorAmountSuggestion(tier, penaltyType, penaltyAmount, penaltyAmountHint, SPONSOR_PENALTY_SUGGESTED_AMOUNT, SPONSOR_PENALTY_TIER_RANGE_LABEL);
 
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
@@ -6722,7 +7103,6 @@
             return;
           }
           showToast('Sponsor updated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6745,7 +7125,6 @@
             return;
           }
           showToast(isActive ? 'Sponsor deactivated.' : 'Sponsor reactivated.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6780,6 +7159,8 @@
     form.appendChild(el('label', null, 'Bonus Amount ($, GT3 base)'));
     var bonusAmount = el('input'); bonusAmount.type = 'number'; bonusAmount.min = '0'; bonusAmount.step = '1'; bonusAmount.value = 0;
     form.appendChild(bonusAmount);
+    var bonusAmountHint = el('div', 'rc-hint');
+    form.appendChild(bonusAmountHint);
 
     form.appendChild(el('label', null, 'Penalty Trigger'));
     var penaltyType = _rcBuildSelectWithFallback(SPONSOR_PENALTY_TRIGGERS, '');
@@ -6789,6 +7170,10 @@
     form.appendChild(el('label', null, 'Penalty Amount ($, GT3 base)'));
     var penaltyAmount = el('input'); penaltyAmount.type = 'number'; penaltyAmount.min = '0'; penaltyAmount.step = '1'; penaltyAmount.value = 0;
     form.appendChild(penaltyAmount);
+    var penaltyAmountHint = el('div', 'rc-hint');
+    form.appendChild(penaltyAmountHint);
+    _rcWireSponsorAmountSuggestion(tier, bonusType, bonusAmount, bonusAmountHint, SPONSOR_BONUS_SUGGESTED_AMOUNT, SPONSOR_BONUS_TIER_RANGE_LABEL);
+    _rcWireSponsorAmountSuggestion(tier, penaltyType, penaltyAmount, penaltyAmountHint, SPONSOR_PENALTY_SUGGESTED_AMOUNT, SPONSOR_PENALTY_TIER_RANGE_LABEL);
 
     var saveBtn = el('button', null, 'Add Sponsor');
     saveBtn.type = 'submit';
@@ -6826,7 +7211,6 @@
             return;
           }
           showToast('Sponsor added.', 'success');
-          modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
@@ -6843,6 +7227,25 @@
   function buildFullProfileUI(profile, token, dashboardData) {
     currentProfile = profile;
     currentToken = token;
+
+    // Cross-page bridge for the header's Edit Profile menu item
+    // (2026-09-01, Matt's call) -- js/header.js runs on every page in its
+    // own scope and can't reach openEditProfileModal directly (it's
+    // closured inside this page's own IIFE), so it calls this instead
+    // whenever it's here. See header.js's own comment for the fallback
+    // path (a page where this bridge doesn't exist yet).
+    window.rcOpenEditProfileModal = function () { openEditProfileModal(currentProfile, currentToken); };
+
+    // Same bridge, other direction -- a click on Edit Profile from a page
+    // OTHER than Account.html sets this flag and navigates here; once
+    // this driver's own profile/token are actually loaded (right here),
+    // open the modal immediately, same one-shot "consume and clear"
+    // handoff pattern raceclub_fresh_profile already uses below.
+    if (sessionStorage.getItem('raceclub_open_edit_profile')) {
+      sessionStorage.removeItem('raceclub_open_edit_profile');
+      openEditProfileModal(currentProfile, currentToken);
+    }
+
     buildSidebarNav();
     document.getElementById('rc-sidebar-nav').classList.remove('rc-nav-loading');
     renderPlaceholderSections();
@@ -6876,7 +7279,29 @@
     }
 
     renderDashboardSection(profile, token, dashboardData);
-    showSection('dashboard');
+
+    // Same-page restore after a popup save (2026-09-01, Matt's call) --
+    // see rcReloadAfterSave() above for the full story. Only trusts the
+    // URL hash if it names a section that both actually exists AND this
+    // driver's own role currently has a visible nav button for (covers
+    // Admin/League Management/Protests, which are permission-gated above
+    // this point) -- anything else falls back to Dashboard, same as a
+    // plain visit to this page always has.
+    var restoreSectionId = 'dashboard';
+    var hashSectionId = (window.location.hash || '').replace(/^#/, '');
+    if (hashSectionId && document.getElementById('rc-section-' + hashSectionId)) {
+      var hashNavBtn = document.getElementById('rc-nav-' + hashSectionId);
+      if (!hashNavBtn || hashNavBtn.style.display !== 'none') restoreSectionId = hashSectionId;
+    }
+    if (RC_LAZY_SECTION_RENDERERS[restoreSectionId]) RC_LAZY_SECTION_RENDERERS[restoreSectionId](token);
+    showSection(restoreSectionId);
+    // Clean the hash off the URL bar once it's been consumed -- leaves the
+    // reload's destination unmarked in history rather than piling up a
+    // '#sponsors' etc. that a plain refresh or back-button visit would
+    // otherwise keep re-landing on.
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
   }
 
   // Red dot on the Admin sidebar link itself, same "something's waiting
@@ -6972,9 +7397,11 @@
     fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
     fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
     fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; })
+    fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
+    fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
+    fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; })
   ]).then(function (results) {
-    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2], financesReputation: results[3] };
+    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2], financesReputation: results[3], sponsors: results[4], seasonObjective: results[5] };
   });
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
@@ -6996,7 +7423,7 @@
       .then(function (data) {
         if (!data.success) {
           clearToken();
-          sessionStorage.setItem('raceclub_login_message', 'Your session expired — please log in again.');
+          sessionStorage.setItem('raceclub_login_message', 'Your session expired. Please log in again.');
           window.location.href = 'login.html';
           return;
         }

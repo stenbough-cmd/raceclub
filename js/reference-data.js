@@ -280,58 +280,64 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
 // Sponsor risk tiers -- fixed 3-tier ladder, see
 // v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
 // Tier dropdown in both the Sponsors popup's Add and Edit forms.
-// Renamed 2026-08-31 (Matt's call: "EASY, BALANCED, RISKY -- not
-// aggressive") from Safe/Balanced/Aggressive -- purely a label change,
-// same 3-tier ladder underneath. Any existing Sponsors row still holding
-// the old text ("Safe"/"Aggressive") in its Tier column falls into an
-// "Unclassified" group everywhere sponsors are listed until an admin
-// reopens that sponsor in Edit Sponsor and reselects its tier from this
-// new list -- nothing renames those cells automatically.
-var SPONSOR_TIER_LIST = ['Easy', 'Balanced', 'Risky'];
+// Aggressive renamed to Risky 2026-08-31 (Matt's call: "not aggressive").
+// Safe briefly became "Easy" the same day, then Matt asked for Safe back
+// -- so only the Aggressive->Risky half of that rename stuck. Purely a
+// label change either way, same 3-tier ladder underneath. Any existing
+// Sponsors row still holding the old text ("Aggressive") in its Tier
+// column falls into an "Unclassified" group everywhere sponsors are
+// listed until an admin reopens that sponsor in Edit Sponsor and
+// reselects its tier from this list -- nothing renames those cells
+// automatically.
+var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Risky'];
 
-// Bonus/penalty trigger vocabulary -- every trigger currently used across
-// the Season 1 Starting Sponsor Catalog (see Website.gs's old
-// seedSponsorCatalog, now retired since the catalog's seeded), kept here
-// as the admin-curated, fixed list Matt asked for ("ALL the options we
-// can make for bonus triggers show up in a dropdown box instead of
-// free-text") rather than free text -- same "preconfigured options, not
-// free text" pattern as CLASS_PLACEMENT_DENIAL_REASONS above. Add a new
-// trigger here first if a future sponsor needs one that isn't already
-// covered.
-// v0.25 (2026-08-29) -- added 5 bonus + 2 penalty triggers so every
-// sponsor's payout is actually backed by evaluation logic (see
-// DataCache.gs's SPONSOR_BONUS_EVALUATORS_/SPONSOR_PENALTY_EVALUATORS_,
-// the payout engine that reads this exact vocabulary).
+// Bonus/penalty trigger vocabulary -- zero-ambiguity rewrite (2026-09-01,
+// Matt's call: "I don't want ambiguity at all. I want something that can
+// be gleamed from the race XML file without any manual intervention (ie
+// Steward decisions)... I want someone to do something within the race
+// and go 'shoot, I just ruined my bonus for the race'"). Full audit in
+// claude/sponsor-triggers-zero-ambiguity-audit-2026-09-01.md. Every entry
+// below reads one discrete, game-computed field (DriverResults/Laps/
+// RaceEvents) with either zero threshold at all or a straight in-class
+// ranking (fastest/most/fewest) instead of an arbitrary cutoff number.
+// Ordered easiest -> hardest (bonuses) and mildest -> most severe
+// (penalties) on purpose -- SPONSOR_BONUS_SUGGESTED_AMOUNT/
+// SPONSOR_PENALTY_SUGGESTED_AMOUNT below assign dollar values by this
+// exact order, so don't reorder these arrays without re-deriving those
+// tables too.
 //
-// v0.26 (2026-08-29) -- "Beat your rival" replaces the short-lived "Beat
-// your teammate" (Matt's call): a driver's "rival" is whoever they've
-// wagered against, not whoever shares their car -- it fires when a driver
-// wins a Settled Wagers row for this round. This reuses data that already
-// exists (Wagers.Status/WinnerProfileID) instead of needing a new
-// admin-picked-rival field/UI.
+// Cut entirely, and why: Clean Race / Reckless-tier contact / any
+// incident-severity trigger -- confirmed from the actual sample XML that
+// a single collision logs TWICE, once from each car's own perspective,
+// each with its own severity number and zero fault attribution, so ANY
+// trigger built on Incident events risks penalizing whichever driver got
+// hit exactly as often as whoever caused it, at any threshold. DSQ --
+// never seen in this project's sample XML, and disqualification in sim
+// racing is normally a steward ruling anyway. Driver-caused vs.
+// mechanical DNF -- DNFReason values seen so far (Suspension, generic
+// DNF) don't reliably separate fault from bad luck. Beat your rival --
+// depends on the Wagers sheet, not race data. Consistency/fuel-tire
+// bonuses -- genuinely computable but have the same "what's the right
+// threshold" problem as contact severity as an absolute cutoff; could
+// come back later as an in-class ranking instead.
 var SPONSOR_BONUS_TRIGGERS = [
-  'Clean race',
   'Finish, no DNF',
-  'Points finish (P4-P10)',
-  'Hard charger',
-  'Pole position',
-  'Fastest lap',
-  'Podium / Win',
-  'Win (P1 only)',
-  'Led at least one lap',
-  'Consistency bonus',
+  'Zero penalties',
+  'Led for one lap',
+  'Points finish',
   'Front-row start',
-  'Zero-incident bonus',
-  'Beat your rival'
+  'Hard charger',
+  'Podium finish',
+  'Fastest lap',
+  'Most laps led',
+  'Pole position',
+  'Race win (P1)'
 ];
 var SPONSOR_PENALTY_TRIGGERS = [
-  'Any penalty-tier event',
-  'DNF (driver-caused)',
   'Low placement',
-  'Reckless-tier contact+',
-  'DNF or DSQ',
-  'DSQ (steward ruling)',
-  'Grid slipper'
+  'Grid slipper',
+  'Any penalty',
+  'DNF'
 ];
 
 // One plain-language, driver-facing description per trigger above --
@@ -342,38 +348,89 @@ var SPONSOR_PENALTY_TRIGGERS = [
 // being rewritten ad hoc at each call site (Matt's call, 2026-08-30:
 // "I want a detailed tooltip of what the bonus entails and what the
 // penalty entails... so it stays uniform every time it's referenced").
-// Grounded in claude/sponsor-bonus-penalty-catalog.md's mapping of each
-// trigger to the actual LMU XML/DriverResults field that backs it. Add a
-// new description here first if SPONSOR_BONUS_TRIGGERS/
+// Grounded in claude/sponsor-triggers-zero-ambiguity-audit-2026-09-01.md's
+// mapping of each trigger to the actual LMU XML/DriverResults field that
+// backs it. Add a new description here first if SPONSOR_BONUS_TRIGGERS/
 // SPONSOR_PENALTY_TRIGGERS above ever gains an entry -- a trigger with
 // no matching key here just shows its own name in the tooltip instead of
 // a description (see sponsorTriggerDescription() below), so this isn't a
 // hard dependency, just a "should always be kept in sync" one, same as
 // CAR_OBJECTIVE_DESCRIPTIONS above.
 var SPONSOR_BONUS_TRIGGER_DESCRIPTIONS = {
-  'Clean race': 'No penalty-tier incidents, no track-limits violations, and no upheld protest against you this round.',
   'Finish, no DNF': 'Crosses the finish line under power this round -- no DNF.',
-  'Points finish (P4-P10)': 'Finishes P4 through P10 in class -- inside the scoring positions, just outside the podium.',
-  'Hard charger': 'Gains positions in class between the start of the race and the finish.',
-  'Pole position': 'Qualifies fastest in class.',
-  'Fastest lap': 'Sets the fastest single lap in class this round.',
-  'Podium / Win': 'Finishes P1, P2, or P3 in class.',
-  'Win (P1 only)': 'Wins the round outright in class -- P1 only, not P2 or P3.',
-  'Led at least one lap': 'Leads at least one lap in class at any point during the round.',
-  'Consistency bonus': 'Keeps lap times tightly grouped across the run, rewarding smooth and repeatable pace over outright speed.',
+  'Zero penalties': 'No Drive Through, Stop/Go, or Time penalty issued by the sim this round -- the game\'s own automatic call, not a steward\'s.',
+  'Led for one lap': 'Leads at least one lap in class at any point during the round.',
+  'Points finish': 'Finishes P4 through P10 in class -- inside the scoring positions, just outside the podium.',
   'Front-row start': 'Qualifies P1 or P2 in class.',
-  'Zero-incident bonus': 'Zero flagged incidents of any kind this round -- a stricter bar than Clean Race, which still tolerates a few minor ones.',
-  'Beat your rival': 'Wins a settled wager against another driver for this round.'
+  'Hard charger': 'Gains positions in class between the start of the race and the finish.',
+  'Podium finish': 'Finishes P1, P2, or P3 in class.',
+  'Fastest lap': 'Sets the fastest single lap in class this round.',
+  'Most laps led': 'Leads more laps in class than anyone else this round.',
+  'Pole position': 'Qualifies fastest in class.',
+  'Race win (P1)': 'Wins the round outright in class -- P1 only, not P2 or P3.'
 };
 var SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS = {
-  'Any penalty-tier event': 'Any sim-issued or served penalty this round -- a cut-track warning escalated to a penalty, contact penalty, and so on.',
-  'DNF (driver-caused)': 'Fails to finish due to a driver-caused incident, as opposed to a mechanical failure.',
-  'Low placement': 'Finishes near the back of the class field this round.',
-  'Reckless-tier contact+': 'An incident flagged at or above the reckless-contact severity threshold -- more severe than an ordinary racing incident.',
-  'DNF or DSQ': 'Fails to finish or is disqualified this round.',
-  'DSQ (steward ruling)': 'Disqualified from the round by steward ruling.',
-  'Grid slipper': 'Loses positions in class between the start of the race and the finish -- the mirror of Hard Charger.'
+  // Bottom third of the class field, not a fixed head count -- scales
+  // with field size instead of meaning something different in a 6-car
+  // field than a 20-car one (2026-09-01, Matt's call: "clean up Low
+  // placement and give an exact finishing position, whether that's the
+  // back 1/3 or something"). See LOW_PLACEMENT_BACK_FRACTION_ in
+  // DataCache.gs for the matching evaluator.
+  'Low placement': 'Finishes in the back third of the class field this round (rounded up -- e.g. P7 of 9, or worse).',
+  'Grid slipper': 'Loses positions in class between the start of the race and the finish -- the mirror of Hard Charger.',
+  'Any penalty': 'The sim itself issues a Drive Through, Stop/Go, or Time penalty this round -- track limits, speeding, speeding in the pit lane, or an illegal pass. The game\'s own automatic call, not a steward\'s.',
+  'DNF': 'Fails to finish this round, for any reason -- this doesn\'t distinguish a driver-caused DNF from a mechanical one.'
 };
+
+// Suggested dollar amount per Tier + trigger (2026-09-01, Matt's call) --
+// shown as a live hint and auto-filled into the amount field in the Add/
+// Edit Sponsor popup whenever the tier or trigger dropdown changes
+// (Account.html), never locked -- an admin can still type over it. Spans
+// the whole Tier range evenly across SPONSOR_BONUS_TRIGGERS/
+// SPONSOR_PENALTY_TRIGGERS' own easiest->hardest / mildest->severest
+// order above, so the hardest bonus to earn and the most severe penalty
+// always land at the top of their Tier's range and the easiest/mildest
+// always land at the bottom. Risky's penalty range ($900-1200) is
+// deliberately set HIGHER than Risky's own bonus range ($750-1000) --
+// Matt's call: "That's a true risk. You can get a much higher bonus but
+// a penalty from one of these prestigious sponsors means a bigger hit."
+// Safe bonus range moved to $75-200 (2026-09-01, up from $50-150) and
+// Balanced bonus/penalty both shifted up $100 across the board (bonus
+// $250-500 -> $350-600, penalty $350-500 -> $450-600), Matt's calls same
+// day -- Risky is untouched. Safe's 11-value step no longer divides into a
+// whole dollar amount ($125/10 = 12.5), so those 11 values are rounded to
+// the nearest dollar rather than landing on a clean step like the other
+// two Tiers do.
+var SPONSOR_BONUS_SUGGESTED_AMOUNT = {
+  Safe: {
+    'Finish, no DNF': 75, 'Zero penalties': 88, 'Led for one lap': 100,
+    'Points finish': 113, 'Front-row start': 125, 'Hard charger': 138,
+    'Podium finish': 150, 'Fastest lap': 163, 'Most laps led': 175,
+    'Pole position': 188, 'Race win (P1)': 200
+  },
+  Balanced: {
+    'Finish, no DNF': 350, 'Zero penalties': 375, 'Led for one lap': 400,
+    'Points finish': 425, 'Front-row start': 450, 'Hard charger': 475,
+    'Podium finish': 500, 'Fastest lap': 525, 'Most laps led': 550,
+    'Pole position': 575, 'Race win (P1)': 600
+  },
+  Risky: {
+    'Finish, no DNF': 750, 'Zero penalties': 775, 'Led for one lap': 800,
+    'Points finish': 825, 'Front-row start': 850, 'Hard charger': 875,
+    'Podium finish': 900, 'Fastest lap': 925, 'Most laps led': 950,
+    'Pole position': 975, 'Race win (P1)': 1000
+  }
+};
+var SPONSOR_PENALTY_SUGGESTED_AMOUNT = {
+  Safe: { 'Low placement': 25, 'Grid slipper': 40, 'Any penalty': 60, 'DNF': 75 },
+  Balanced: { 'Low placement': 450, 'Grid slipper': 500, 'Any penalty': 550, 'DNF': 600 },
+  Risky: { 'Low placement': 900, 'Grid slipper': 1000, 'Any penalty': 1100, 'DNF': 1200 }
+};
+// Whole-Tier range text (e.g. "Safe: $75-200"), shown next to the amount
+// field so an admin overriding the auto-filled suggestion still sees
+// what range this Tier is supposed to land in.
+var SPONSOR_BONUS_TIER_RANGE_LABEL = { Safe: '$75-200', Balanced: '$350-600', Risky: '$750-1,000' };
+var SPONSOR_PENALTY_TIER_RANGE_LABEL = { Safe: '$25-75', Balanced: '$450-600', Risky: '$900-1,200' };
 
 // Looks up a trigger's plain-language description from whichever of the
 // two maps above actually has it, falling back to the raw trigger name
