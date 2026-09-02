@@ -213,6 +213,194 @@
     </div>
   </section>
 
+  <!-- "Meet The Grid" teaser (2026-09-01, built; 2026-09-02, made fully
+       dynamic per Matt's call) -- real team data, live off whatever
+       season/classes are actually running, not a hardcoded team list.
+       Backed by the new PUBLIC action getGridTeaser (handleGetGridTeaser,
+       Website.gs) -- no token needed, same "usable with no auth, active-
+       only" convention handleGetCars/handleGetSponsors already establish.
+       It resolves the current season the same way the rest of the site
+       does (most recent Registration/Active season), reads which classes
+       that season has switched on and which real-world car-data year each
+       one draws its roster from, and returns real Cars rows (TeamName,
+       manufacturer, car model/number, class, and that team's own TeamDesc
+       bio) matching those class+year pairs -- one entry per distinct team.
+       So when Matt starts Season 2, or runs multiple classes at once, or
+       swaps which real-world year a class's roster comes from, this
+       section updates itself with no code change here.
+
+       Deliberately lazy: the fetch only fires once this section actually
+       scrolls near the viewport (see the IntersectionObserver in the
+       <script> below), not on page load -- Apps Script's cold-start
+       latency is real, and there's no reason to spend it before the user
+       has scrolled anywhere near this far down the page. rootMargin gives
+       it a head start (starts loading a little before the section is
+       actually on screen) so the data is normally already in hand by the
+       time it comes into view; cards then fade in one at a time, quickly,
+       rather than all snapping in at once.
+
+       The header text (season name/number, class list, car count, start
+       date) and every card are entirely JS-rendered from the fetched
+       payload -- nothing here is hardcoded per-team any more. A static
+       fallback line covers "no season configured yet" / "couldn't reach
+       the server" so the section degrades gracefully rather than sitting
+       empty or broken if the backend isn't deployed yet. -->
+  <section class="rc-landing-section rc-grid-section" id="rc-grid-section">
+    <div class="rc-landing-inner">
+      <div class="rc-eyebrow">The Grid</div>
+      <h2>Meet The Grid</h2>
+      <p class="rc-landing-tagline" id="rc-grid-tagline"></p>
+
+      <div class="rc-grid-teaser-row" id="rc-grid-teaser-row"></div>
+
+      <p class="rc-grid-teaser-footnote" id="rc-grid-teaser-footnote"></p>
+    </div>
+  </section>
+
+  <script>
+  (function () {
+    var section = document.getElementById('rc-grid-section');
+    var taglineEl = document.getElementById('rc-grid-tagline');
+    var rowEl = document.getElementById('rc-grid-teaser-row');
+    var footnoteEl = document.getElementById('rc-grid-teaser-footnote');
+    var started = false;
+
+    // Same slugging rule as manufacturerLogoSrc() in js/reference-data.js
+    // (not loaded on this page -- everything else here is plain strings/
+    // DOM, so a whole extra script tag just for one function wasn't worth
+    // it). Keep this in sync if that convention ever changes.
+    function manufacturerLogoSrc_(name) {
+      var slug = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+      return 'assets/manufacturers/' + slug + '.png';
+    }
+
+    // "SZN-0001" -> "1" -- same convention Account.html's own
+    // seasonNumberLabel() uses.
+    function seasonNumberLabel_(seasonId) {
+      var m = /(\d+)\s*$/.exec(String(seasonId || ''));
+      return m ? String(parseInt(m[1], 10)) : '';
+    }
+
+    function formatStartDate_(iso) {
+      if (!iso) return '';
+      // seasonStartDate is stored as a plain "YYYY-MM-DD" (no time), so
+      // parse it as local rather than via `new Date(iso)` (which treats a
+      // bare date as UTC midnight and can print a day early/late
+      // depending on the visitor's own timezone).
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+      if (!m) return '';
+      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function firstSentence_(text) {
+      var s = String(text || '').trim();
+      var m = /^(.*?[.!?])(\s|$)/.exec(s);
+      return m ? m[1] : s;
+    }
+
+
+    function showFallback_(message) {
+      taglineEl.textContent = message;
+      rowEl.innerHTML = '';
+      footnoteEl.textContent = '';
+    }
+
+    function render(data) {
+      if (!data || !data.success || !data.hasSeason || !data.teams || !data.teams.length) {
+        showFallback_('Season details will show up here as soon as a season is open.');
+        return;
+      }
+
+      var seasonNum = seasonNumberLabel_(data.seasonId);
+      var seasonLabel = seasonNum ? ('Season ' + seasonNum) : 'This season';
+      var classLabel = (data.activeClasses || []).join(' / ') || 'racing';
+      var startLabel = formatStartDate_(data.seasonStartDate);
+
+      var tagline = seasonLabel + (data.seasonName ? (': ' + data.seasonName) : '') + '. ' +
+        (data.totalCarCount || data.teams.length) + ' real ' + classLabel + ' entries are already locked in' +
+        (startLabel ? (' ahead of the green flag on ' + startLabel) : '') + '. ' +
+        'Here are the teams that could be lining up next to you.';
+      taglineEl.textContent = tagline;
+
+      rowEl.innerHTML = '';
+      data.teams.forEach(function (team) {
+        var card = document.createElement('div');
+        card.className = 'rc-grid-teaser-card';
+
+        var head = document.createElement('div');
+        head.className = 'rc-grid-teaser-head';
+
+        var logo = document.createElement('img');
+        logo.className = 'rc-grid-teaser-logo';
+        logo.alt = '';
+        logo.src = manufacturerLogoSrc_(team.manufacturer);
+        logo.onerror = function () { logo.style.display = 'none'; };
+        head.appendChild(logo);
+
+        var identity = document.createElement('div');
+        identity.className = 'rc-grid-teaser-identity';
+        var nameEl = document.createElement('div');
+        nameEl.className = 'rc-grid-teaser-name';
+        nameEl.textContent = team.teamName || 'Unnamed Team';
+        var subEl = document.createElement('div');
+        subEl.className = 'rc-grid-teaser-sub';
+        subEl.textContent = [team.carModel, team.carNumber ? ('#' + team.carNumber) : ''].filter(Boolean).join(' · ');
+        identity.appendChild(nameEl);
+        identity.appendChild(subEl);
+        head.appendChild(identity);
+
+        card.appendChild(head);
+
+        var line = document.createElement('p');
+        line.className = 'rc-grid-teaser-line';
+        line.textContent = firstSentence_(team.bio);
+        card.appendChild(line);
+
+        rowEl.appendChild(card);
+      });
+
+      footnoteEl.textContent = (data.totalCarCount || data.teams.length) + ' seats. One class: ' + classLabel +
+        '. The full grid, plus every team’s buy-in cost and bonus/penalty structure, is waiting inside.';
+
+      // Fade cards in one by one, quickly, rather than all at once
+      // (Matt's ask). Each card starts at opacity:0/translateY via CSS
+      // (.rc-grid-teaser-card); adding .rc-grid-teaser-visible on a short
+      // stagger per card triggers its own transition.
+      var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
+      cards.forEach(function (card, i) {
+        setTimeout(function () { card.classList.add('rc-grid-teaser-visible'); }, i * 90);
+      });
+    }
+
+    function loadGridTeaser() {
+      if (started) return;
+      started = true;
+      fetchApi('getGridTeaser', {})
+        .then(render)
+        .catch(function () { showFallback_('Could not load this season’s grid right now.'); });
+    }
+
+    if ('IntersectionObserver' in window) {
+      // rootMargin gives it a head start -- the fetch fires a bit before
+      // the section is actually on screen, so an Apps Script cold start
+      // usually has time to finish before the user actually scrolls this
+      // far, without spending that latency before the user has scrolled
+      // anywhere near here.
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) { loadGridTeaser(); observer.disconnect(); }
+        });
+      }, { rootMargin: '800px 0px' });
+      observer.observe(section);
+    } else {
+      // No IntersectionObserver support -- just load it, same as every
+      // other section on the page already does unconditionally.
+      loadGridTeaser();
+    }
+  })();
+  </script>
+
   <!-- Closing call to action. Dark band on purpose -- visual bookend to
        the mid-banner and the dark tier cards above it, and a clear last
        stop before the footer. -->

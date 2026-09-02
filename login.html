@@ -150,8 +150,18 @@
     btn.disabled = true;
     btn.textContent = 'Logging in...';
 
-    var username = document.getElementById('rc-username').value.trim();
-    var password = document.getElementById('rc-password').value;
+    // Lock the username/password fields for the duration of the request
+    // (2026-09-01, Matt's call: "I should not be able to change anything
+    // in the username or password box until I either get through or am
+    // denied") -- previously only the button itself was disabled, so the
+    // text could still be edited while the login call was in flight.
+    var usernameField = document.getElementById('rc-username');
+    var passwordField = document.getElementById('rc-password');
+    usernameField.disabled = true;
+    passwordField.disabled = true;
+
+    var username = usernameField.value.trim();
+    var password = passwordField.value;
 
     // IMPORTANT: Content-Type is deliberately 'text/plain' (see
     // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
@@ -162,6 +172,8 @@
         btn.disabled = false;
         btn.textContent = 'Log In';
         if (!data.success) {
+          usernameField.disabled = false;
+          passwordField.disabled = false;
           var resendBtn = document.getElementById('rc-login-resend');
           resendBtn.style.display = 'none';
           if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
@@ -203,6 +215,8 @@
       .catch(function () {
         btn.disabled = false;
         btn.textContent = 'Log In';
+        usernameField.disabled = false;
+        passwordField.disabled = false;
         showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
       });
   });

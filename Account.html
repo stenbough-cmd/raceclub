@@ -2547,6 +2547,12 @@
             return;
           }
           showToast('Sponsors saved.', 'success');
+          // Clears the "Choose your sponsors" bell notification right away
+          // instead of leaving it up to the next 45s poll tick (2026-09-01,
+          // Matt's call: acknowledge automatically on the relevant action,
+          // without requiring a visit to the notification dropdown) -- see
+          // rcRefreshNotificationsNow in header.js.
+          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
           rcReloadAfterSave();
         }).catch(function () {
           confirmBtn.disabled = false;
@@ -2827,7 +2833,12 @@
   // ---------------------------------------------------------------------
   function openAvatarPickerModal(profile, token, onSaved) {
     var body = el('div');
-    body.appendChild(el('p', 'rc-hint', 'margin-top:0;', 'Choose a profile picture. You can change this again any time.'));
+    // el(tag, style, html) only takes 3 args -- this used to pass 4
+    // ('rc-hint' AND a stray 'margin-top:0;' string), so the real message
+    // silently got shifted out and el() rendered the literal text
+    // "margin-top:0;" instead (2026-09-01 bug report: "this displays on
+    // the change avatar popup"). Fixed to the intended 2-arg call.
+    body.appendChild(el('p', 'rc-hint', 'Choose a profile picture. You can change this again any time.'));
 
     var grid = el('div', 'rc-avatar-picker-grid');
     var selected = profile.avatarFilename || null;

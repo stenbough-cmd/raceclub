@@ -2133,20 +2133,34 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    onerror just hides the <img> itself, same "silently fall back to
    initials" convention as Account.html's own buildAvatarCircle(). */
 .rc-header-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-/* Apple-style notification dot -- a small red circle with a white ring.
-   Sits against .rc-header-bell-icon-wrap (sized to the bell glyph itself,
-   see below) rather than the bell button's own much-larger circular hit
-   target, so it actually lands on the bell's corner instead of floating
-   out past it. Slightly bigger (2026-08-30, Matt's call) -- was 11px. */
+/* Notification badge -- a red circle with a white ring, sitting against
+   .rc-header-bell-icon-wrap (sized to the bell glyph itself, see below)
+   rather than the bell button's own much-larger circular hit target, so it
+   actually lands on the bell's corner instead of floating out past it.
+   2026-09-01 (Matt's call: "make the bubble larger and add a notification
+   number to it") -- grown from a plain 13px dot to an 18px badge that
+   shows the actual unread count as text (see updateHeaderNotifDot in
+   header.js, which sets both .textContent and a min-width for double-digit
+   counts to still read as a circle/pill rather than a squeezed oval). */
 .rc-notif-dot {
   position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
+  top: -10px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
   background: var(--rc-red);
   border: 2px solid var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--rc-white);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 /* Sized to exactly the 19x19 bell SVG so .rc-notif-dot's top/right offsets
    above are measured against the icon itself, not the button's 38x38
@@ -2217,6 +2231,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   overflow: hidden;
 }
 .rc-header-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--rc-silver);
   font-family: var(--rc-font-heading);
@@ -2226,6 +2244,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.05em;
   color: var(--rc-carbon);
 }
+/* "Clear" (2026-09-01, Matt's call: "add a clear option to clear the
+   list") -- sits in the top-right corner of the dropdown, same row as the
+   "Notifications" label. Acknowledges/dismisses everything currently
+   showing at once (see _rcClearAllNotifications in header.js); hidden
+   whenever there's nothing to clear (see header.js's _rcRenderNotifList,
+   which toggles this via [hidden]). Plain text-link treatment, not a
+   button -- it's a secondary, low-emphasis action next to the header
+   label, not a primary action competing with the OK buttons below it. */
+.rc-header-notif-clear {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--rc-steel);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.rc-header-notif-clear:hover { color: var(--rc-red); }
+.rc-header-notif-clear[hidden] { display: none; }
 .rc-header-notif-list { max-height: 320px; overflow-y: auto; }
 .rc-header-notif-empty {
   padding: 20px 14px;
@@ -2469,10 +2511,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 600px) {
   .rc-hero-badge { height: 38px; bottom: 14px; right: 14px; }
 }
+/* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
+   .rc-highlight-card sit on top of -- since .rc-site-footer (like every
+   other page's) has no background of its own and just shows through
+   whatever it's sitting on, that made index.html's footer read pure
+   white while every other page's footer (sitting directly on <body>,
+   which is var(--rc-offwhite)) reads off-white -- a visible mismatch
+   scrolling from one page to the next. Matched to --rc-offwhite here
+   (2026-09-01, Matt's call) so the index page's background -- footer
+   included -- is the same color the rest of the site already uses;
+   every card/section on this page (.rc-highlight-card, .rc-tier-card,
+   etc.) already sets its own explicit white background for contrast
+   against the page, same "white card on off-white page" pattern
+   Account.html's own .rc-panel/.rc-dash-card already establishes, so
+   nothing else needed to change for this. */
 .rc-hero-content {
   position: relative;
   z-index: 2;
-  background: var(--rc-white);
+  background: var(--rc-offwhite);
 }
 .rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
 .rc-landing-inner h2 { font-size: 26px; }
@@ -2492,6 +2548,81 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
   color: var(--rc-red);
   margin-bottom: 8px;
+}
+
+/* -------------------------------------------------------------------- */
+/* "Meet The Grid" teaser (2026-09-01) -- real Season 1 team cards, see  */
+/* index.html's own comment above the section for the full rationale.   */
+/* Deliberately its own look, not a reuse of .rc-highlight-card, per     */
+/* Matt's ask that the content read as "unique" -- a manufacturer logo + */
+/* team identity header (mirroring how Current Seat/team-select already */
+/* pair a logo with a team name elsewhere on the site), a thin red rule  */
+/* underneath standing in for a start/finish line, then the hype line.  */
+/* -------------------------------------------------------------------- */
+.rc-grid-teaser-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 32px;
+}
+.rc-grid-teaser-card {
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.05);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    opacity 0.4s ease, transform 0.4s ease;
+}
+.rc-grid-teaser-card.rc-grid-teaser-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.rc-grid-teaser-card.rc-grid-teaser-visible:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
+  border-color: var(--rc-carbon);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rc-grid-teaser-card {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+.rc-grid-teaser-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--rc-red);
+}
+/* Fixed width AND height (not max-width/max-height) so object-fit:contain
+   actually letterboxes -- a wide logo that hits the width limit first gets
+   even padding added above/below automatically to fill out the same 60px
+   slot every card reserves, so every card's logo sits on the same
+   baseline no matter its own aspect ratio (Matt's call, 2026-09-02). */
+.rc-grid-teaser-logo { flex: none; width: 128px; height: 60px; object-fit: contain; }
+.rc-grid-teaser-identity { min-width: 0; }
+.rc-grid-teaser-name {
+  font-family: var(--rc-font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rc-carbon);
+  line-height: 1.25;
+}
+.rc-grid-teaser-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 2px; }
+.rc-grid-teaser-line { font-size: 13.5px; line-height: 1.55; color: var(--rc-steel); margin: 0; }
+.rc-grid-teaser-footnote {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rc-steel);
 }
 
 /* -------------------------------------------------------------------- */

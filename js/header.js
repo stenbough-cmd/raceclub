@@ -216,11 +216,24 @@ function _rcHeaderInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// The bell's Apple-style red dot -- shown whenever there's at least one
-// unacknowledged notification.
-function updateHeaderNotifDot(hasPending) {
+// The bell's notification badge -- shown, with the actual unread count as
+// its text, whenever there's at least one unacknowledged notification
+// (2026-09-01, Matt's call: "make the bubble larger and add a notification
+// number to it" -- this used to just be a plain dot with no count, toggled
+// by a boolean). Accepts a number now; anything above 9 collapses to "9+"
+// so the badge never has to stretch wide enough to look like a pill instead
+// of a circle.
+function updateHeaderNotifDot(count) {
   var dot = document.getElementById('rc-header-bell-dot');
-  if (dot) dot.style.display = hasPending ? 'block' : 'none';
+  if (!dot) return;
+  count = count || 0;
+  if (count > 0) {
+    dot.textContent = count > 9 ? '9+' : String(count);
+    dot.style.display = 'flex';
+  } else {
+    dot.textContent = '';
+    dot.style.display = 'none';
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -271,6 +284,32 @@ function _rcFetchNotifications(token, cached) {
           };
         })
         .filter(function (n) { return acked.indexOf(n.id) === -1; });
+    })
+    .catch(function () { return []; });
+}
+
+// "Choose your sponsors" notification (2026-09-01, Matt's call: "make a
+// notification to choose sponsors after signing up for a team"). Derived
+// LIVE off getMySponsors -- not its own stored/tracked event -- so it
+// simply stops being generated the moment it's no longer true: the driver
+// picks at least one sponsor, or the season locks sponsor picks at
+// season-start. That's also what satisfies "automatically acknowledge...
+// if the driver picks sponsors" for this notification specifically, with
+// no separate dismiss bookkeeping needed. Still goes through the same
+// client-side ack list as the pending-approval type (kind isn't 'season'
+// or 'upgrade', see _rcRenderNotifList's OK-button check below), so a
+// driver who isn't ready to pick yet can dismiss it by hand too -- picking
+// sponsors later still clears it on its own regardless of ack state, since
+// it just won't be regenerated once hasSponsors is true.
+function _rcFetchSponsorNotifications(token, cached) {
+  if (!cached || cached.role === 'Prospect') return Promise.resolve([]);
+  return fetchApi('getMySponsors', { token: token })
+    .then(function (data) {
+      if (!data || !data.success || !data.hasSeat || data.hasSponsors || data.locked) return [];
+      var id = 'sponsors-' + data.seasonId;
+      var acked = _rcGetAckedNotifIds();
+      if (acked.indexOf(id) !== -1) return [];
+      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.' }];
     })
     .catch(function () { return []; });
 }
@@ -374,6 +413,19 @@ function rcDismissSeasonNotification(seasonId) {
   }
 }
 
+// Called by Account.html right after any action that should clear a
+// notification without the driver ever opening the bell (2026-09-01,
+// Matt's call: "automatically acknowledge any pending notification if any
+// relevant action is done without visiting the notification dropdown
+// first") -- e.g. right after a driver's sponsor picks save successfully,
+// so the "Choose your sponsors" notification (which is derived live off
+// getMySponsors, see _rcFetchSponsorNotifications) disappears immediately
+// instead of lingering until the next 45s poll tick. A no-op if the bell
+// hasn't rendered this state yet (logged out, or this page has no header).
+function rcRefreshNotificationsNow() {
+  if (_rcNotifController && typeof _rcNotifController.refresh === 'function') _rcNotifController.refresh();
+}
+
 // Shared hover-away-closes helper: closeFn fires once the pointer has
 // left every element in `elements` for `delayMs` without re-entering any
 // of them. The delay is what lets a mouse cross the gap between a toggle
@@ -461,7 +513,9 @@ function renderHeader(opts) {
               '</span>' +
             '</button>' +
             '<div class="rc-header-notif-menu" id="rc-header-notif-menu" style="display:none;">' +
-              '<div class="rc-header-notif-head">Notifications</div>' +
+              '<div class="rc-header-notif-head"><span>Notifications</span>' +
+                '<button type="button" class="rc-header-notif-clear" id="rc-header-notif-clear" hidden>Clear</button>' +
+              '</div>' +
               '<div class="rc-header-notif-list" id="rc-header-notif-list"></div>' +
             '</div>';
 
@@ -607,6 +661,13 @@ function renderHeader(opts) {
     function _rcRenderNotifList() {
       var listEl = document.getElementById('rc-header-notif-list');
       if (!listEl) return;
+      // Shown whenever there's anything to clear -- active items OR a
+      // lingering "Recently Opened" history entry (2026-09-02 fix: this used
+      // to only check currentNotifications, so once nothing was active the
+      // button vanished even though a stale history item was still sitting
+      // there with no way to get rid of it).
+      var clearBtn = document.getElementById('rc-header-notif-clear');
+      if (clearBtn) clearBtn.hidden = currentNotifications.length === 0 && currentNotifHistory.length === 0;
       listEl.innerHTML = '';
       if (currentNotifications.length === 0) {
         var empty = document.createElement('div');
@@ -643,7 +704,7 @@ function renderHeader(opts) {
               _rcAckNotif(n.id);
               currentNotifications = currentNotifications.filter(function (x) { return x.id !== n.id; });
               _rcRenderNotifList();
-              updateHeaderNotifDot(currentNotifications.length > 0);
+              updateHeaderNotifDot(currentNotifications.length);
             });
             item.appendChild(okBtn);
           }
@@ -684,10 +745,19 @@ function renderHeader(opts) {
     // comes back as active next time this driver logs in or the header
     // re-renders. No-op if there's nothing season/upgrade-typed currently
     // active.
-    function _rcDismissShownSeasonNotifs() {
+    // clearHistory (2026-09-02, Matt's ask) -- optional, defaults to false
+    // for the normal dismiss-on-close path (a season/upgrade item just
+    // shown should still fall into "Recently Opened", same as always).
+    // Clear (see _rcClearAllNotifications below) passes true instead, so it
+    // wipes the ENTIRE stored history rather than just prepending to it --
+    // that's the only way a stale history item with nothing newer to push
+    // it off its 5-slot cap ever actually goes away. When true, this runs
+    // even with nothing currently active, since there's nothing to dismiss
+    // but still a history to clear.
+    function _rcDismissShownSeasonNotifs(clearHistory) {
       var shownSeason = currentNotifications.filter(function (n) { return n.kind === 'season'; });
       var shownUpgrade = currentNotifications.filter(function (n) { return n.kind === 'upgrade'; });
-      if (!shownSeason.length && !shownUpgrade.length) return;
+      if (!shownSeason.length && !shownUpgrade.length && !clearHistory) return;
       var seasonIds = shownSeason.map(function (n) { return n.seasonId; });
       var notificationIds = shownUpgrade.map(function (n) { return n.notificationId; });
       currentNotifications = currentNotifications.filter(function (n) { return n.kind !== 'season' && n.kind !== 'upgrade'; });
@@ -696,16 +766,50 @@ function renderHeader(opts) {
       }).concat(shownUpgrade.map(function (n) {
         return { message: n.message, dateStamp: n.dateStamp };
       }));
-      currentNotifHistory = newHistory.concat(currentNotifHistory).slice(0, 5);
-      updateHeaderNotifDot(currentNotifications.length > 0);
-      fetchApi('dismissNotifications', { method: 'POST', token: token, body: { seasonIds: JSON.stringify(seasonIds), notificationIds: JSON.stringify(notificationIds) } })
+      currentNotifHistory = clearHistory ? newHistory.slice(0, 5) : newHistory.concat(currentNotifHistory).slice(0, 5);
+      updateHeaderNotifDot(currentNotifications.length);
+      var body = { seasonIds: JSON.stringify(seasonIds), notificationIds: JSON.stringify(notificationIds) };
+      if (clearHistory) body.clearHistory = '1';
+      fetchApi('dismissNotifications', { method: 'POST', token: token, body: body })
         .catch(function () { /* fire-and-forget -- already reflected on screen either way */ });
     }
 
+    // "Clear" (2026-09-01, Matt's call) -- acknowledges/dismisses
+    // EVERYTHING currently showing at once, regardless of kind: the
+    // OK-ackable types (pending-approval, sponsors) get their ids written
+    // to the client-side ack list same as clicking each OK button by hand,
+    // and any season/upgrade items go through the exact same
+    // dismiss-and-move-to-history path _rcDismissShownSeasonNotifs already
+    // uses on close. Leaves the dropdown open (clearing isn't the same
+    // gesture as closing) so the driver sees the empty state right away.
+    //
+    // 2026-09-02 fix: also wipes "Recently Opened" history (pass true) --
+    // Clear is meant to actually empty the dropdown, and a stale
+    // already-dismissed item with nothing newer to bump it off its 5-slot
+    // cap was sitting there indefinitely with no way to get rid of it.
+    function _rcClearAllNotifications() {
+      currentNotifications.filter(function (n) { return n.kind !== 'season' && n.kind !== 'upgrade'; })
+        .forEach(function (n) { _rcAckNotif(n.id); });
+      currentNotifications = currentNotifications.filter(function (n) { return n.kind === 'season' || n.kind === 'upgrade'; });
+      currentNotifHistory = [];
+      _rcRenderNotifList();
+      updateHeaderNotifDot(currentNotifications.length);
+      _rcDismissShownSeasonNotifs(true);
+      _rcRenderNotifList();
+      updateHeaderNotifDot(currentNotifications.length);
+    }
+    var clearAllBtn = document.getElementById('rc-header-notif-clear');
+    if (clearAllBtn) clearAllBtn.addEventListener('click', function (evt) { evt.stopPropagation(); _rcClearAllNotifications(); });
+
     // Exposes a way for code OUTSIDE this render (Account.html's
-    // registration flow) to dismiss one season's notification the instant
-    // a driver registers, even if the bell was never opened -- see
-    // rcDismissSeasonNotification() above.
+    // registration/sponsor flows) to dismiss one season's notification, or
+    // force an immediate re-fetch of everything, even if the bell was
+    // never opened -- see rcDismissSeasonNotification() and
+    // rcRefreshNotificationsNow() above/below. The immediate refresh
+    // matters for the sponsors notification specifically: it's derived
+    // live off getMySponsors, so without an explicit nudge here it would
+    // otherwise only clear itself on the next 45s poll tick after a driver
+    // actually picks their sponsors.
     _rcNotifController = {
       dismissSeason: function (seasonId) {
         var match = currentNotifications.filter(function (n) { return n.kind === 'season' && n.seasonId === seasonId; })[0];
@@ -713,10 +817,11 @@ function renderHeader(opts) {
         currentNotifications = currentNotifications.filter(function (n) { return n !== match; });
         currentNotifHistory = [{ message: match.message.replace('is open for', 'opened for'), dateStamp: match.dateStamp }].concat(currentNotifHistory).slice(0, 5);
         _rcRenderNotifList();
-        updateHeaderNotifDot(currentNotifications.length > 0);
+        updateHeaderNotifDot(currentNotifications.length);
         fetchApi('dismissNotifications', { method: 'POST', token: token, body: { seasonIds: JSON.stringify([seasonId]) } })
           .catch(function () {});
-      }
+      },
+      refresh: function () { return _rcRefreshNotifications(); }
     };
 
     // Named so both the initial load AND the poll interval below call the
@@ -727,14 +832,16 @@ function renderHeader(opts) {
     function _rcRefreshNotifications() {
       return Promise.all([
         _rcFetchNotifications(token, cached),
-        _rcFetchSeasonNotifications(token, cached)
+        _rcFetchSeasonNotifications(token, cached),
+        _rcFetchSponsorNotifications(token, cached)
       ]).then(function (results) {
         var pending = results[0] || [];
         var season = results[1] || { active: [], history: [] };
-        currentNotifications = pending.concat(season.active);
+        var sponsors = results[2] || [];
+        currentNotifications = pending.concat(sponsors).concat(season.active);
         currentNotifHistory = season.history;
         _rcRenderNotifList();
-        updateHeaderNotifDot(currentNotifications.length > 0);
+        updateHeaderNotifDot(currentNotifications.length);
       });
     }
 
