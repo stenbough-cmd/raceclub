@@ -155,10 +155,18 @@
     // in the username or password box until I either get through or am
     // denied") -- previously only the button itself was disabled, so the
     // text could still be edited while the login call was in flight.
+    // rc-field-locked (2026-09-02, Matt's call: "I want the text boxes
+    // grayed out, not just locked... obvious that nothing can be
+    // changed") -- same class the Edit Season wizard's own locked fields
+    // already use for this exact "grayed out, not just disabled" look
+    // (see .rc-field-locked in style.css), reused here instead of a
+    // second one-off style.
     var usernameField = document.getElementById('rc-username');
     var passwordField = document.getElementById('rc-password');
     usernameField.disabled = true;
     passwordField.disabled = true;
+    usernameField.classList.add('rc-field-locked');
+    passwordField.classList.add('rc-field-locked');
 
     var username = usernameField.value.trim();
     var password = passwordField.value;
@@ -174,6 +182,8 @@
         if (!data.success) {
           usernameField.disabled = false;
           passwordField.disabled = false;
+          usernameField.classList.remove('rc-field-locked');
+          passwordField.classList.remove('rc-field-locked');
           var resendBtn = document.getElementById('rc-login-resend');
           resendBtn.style.display = 'none';
           if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
@@ -217,6 +227,8 @@
         btn.textContent = 'Log In';
         usernameField.disabled = false;
         passwordField.disabled = false;
+        usernameField.classList.remove('rc-field-locked');
+        passwordField.classList.remove('rc-field-locked');
         showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
       });
   });

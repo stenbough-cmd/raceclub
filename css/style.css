@@ -2375,6 +2375,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-bottom: 1px solid var(--rc-silver);
 }
 .rc-header-notif-item:last-child { border-bottom: none; }
+/* Whole-row link variant (2026-09-02, Matt's call, sponsors notification
+   specifically: "get rid of the CHOOSE SPONSORS button... make the whole
+   message thing a link") -- .rc-header-notif-item is a <div> normally;
+   when the item itself is an <a> (see header.js's fullRowLink), reset the
+   anchor defaults (underline, link color, inline display) back to plain
+   text, add a pointer cursor and a hover tint so it still reads as
+   clickable without looking like a button. */
+.rc-header-notif-item-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.rc-header-notif-item-link:hover { background: var(--rc-offwhite); }
 .rc-header-notif-text {
   flex: 1;
   font-size: 13px;
@@ -2384,25 +2397,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 /* Replaces the old "OK" acknowledge button (2026-09-02, Matt's call: a
    link straight to the page the notification is about, not just a way to
-   dismiss it) -- same pill shape/weight so the row layout doesn't shift,
-   just an <a> instead of a <button>. */
+   dismiss it). FIRST pass kept the old button's solid pill styling (dark
+   background, white text) even though the element itself was already an
+   <a> -- still read as a "physical button" sitting in the menu. REVISED
+   same day (Matt's call: "just make a linked text to the page") -- plain
+   underlined text in the site's own link-red, no background/border/
+   padding, same as any other inline link on the site (see the sitewide
+   `a`/`a:hover` rule up top). */
 .rc-header-notif-link {
   flex: none;
-  font-family: var(--rc-font-heading);
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--rc-white);
-  background: var(--rc-carbon);
-  border: none;
-  border-radius: 5px;
-  padding: 6px 12px;
+  color: var(--rc-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
-  text-decoration: none;
   white-space: nowrap;
 }
-.rc-header-notif-link:hover { background: var(--rc-red); }
+.rc-header-notif-link:hover { color: var(--rc-red-dark); }
 /* New-season notifications (2026-08-30) -- text + date stamp stacked in
    their own column so the date sits under the message rather than
    competing with it on one line; history entries below reuse

@@ -310,7 +310,7 @@ function _rcFetchSponsorNotifications(token, cached) {
       var id = 'sponsors-' + data.seasonId;
       var acked = _rcGetAckedNotifIds();
       if (acked.indexOf(id) !== -1) return [];
-      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.', section: 'sponsors', linkLabel: 'Choose Sponsors' }];
+      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.', section: 'sponsors', fullRowLink: true }];
     })
     .catch(function () { return []; });
 }
@@ -678,8 +678,26 @@ function renderHeader(opts) {
         listEl.appendChild(empty);
       } else {
         currentNotifications.forEach(function (n) {
-          var item = document.createElement('div');
-          item.className = 'rc-header-notif-item';
+          // fullRowLink (2026-09-02, Matt's call, sponsors specifically:
+          // "get rid of the CHOOSE SPONSORS button... make the whole
+          // message thing a link") -- the item itself becomes the <a>
+          // (its whole row is clickable, not just a chip inside it) when
+          // n.fullRowLink is set (currently just the sponsors kind, see
+          // _rcFetchSponsorNotifications above); everything else (pending
+          // approval's "Review", a future kind) keeps the separate
+          // trailing text link below, unchanged.
+          var item = document.createElement(n.fullRowLink ? 'a' : 'div');
+          item.className = 'rc-header-notif-item' + (n.fullRowLink ? ' rc-header-notif-item-link' : '');
+          if (n.fullRowLink) {
+            item.href = 'Account.html#' + n.section;
+            item.addEventListener('click', function (evt) {
+              if (typeof window.rcNavigateToSection === 'function') {
+                evt.preventDefault();
+                window.rcNavigateToSection(this.getAttribute('href').replace(/^Account\.html#/, ''));
+                closeNotifMenu();
+              }
+            });
+          }
           var textCol = document.createElement('div');
           textCol.className = 'rc-header-notif-text-col';
           var text = document.createElement('span');
@@ -709,7 +727,7 @@ function renderHeader(opts) {
           // same way it always has (pending/sponsors: naturally stops
           // being generated once resolved, or Clear; season: dismissed
           // when the dropdown closes).
-          if (n.section) {
+          if (n.section && !n.fullRowLink) {
             var linkEl = document.createElement('a');
             linkEl.className = 'rc-header-notif-link';
             linkEl.href = 'Account.html#' + n.section;
