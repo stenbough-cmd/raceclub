@@ -1060,7 +1060,14 @@
     // consume a round number, so they don't get this either -- same rule
     // the Calendar page's own round-number column follows.
     if (!isSpecial && data.roundNum) {
-      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', 'ROUND ' + data.roundNum));
+      // "ROUND n OF total" (2026-09-02, Matt's call) -- totalRounds comes
+      // straight off _rcBuildActiveSeasonCalendar_'s own rounds.length
+      // (DataCache.gs), the same season the round number itself is drawn
+      // from, so this can never disagree with the Calendar page's own
+      // round count. Falls back to the bare "ROUND n" if a season somehow
+      // has no totalRounds figure (defensive only -- shouldn't happen).
+      var roundLabel = 'ROUND ' + data.roundNum + (data.totalRounds ? (' OF ' + data.totalRounds) : '');
+      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', roundLabel));
     }
 
     var body = el('div', 'rc-nextrace-body');
@@ -1438,7 +1445,7 @@
   //     with no sponsor IDs attached. Sponsors aren't picked at
   //     registration at all any more (Matt's call, 2026-09-01) -- a driver
   //     picks them later, any time before the season starts, from the
-  //     Sponsors page (openChooseSponsorsModal below), which the Dashboard
+  //     Sponsors page (renderSponsorsSection below), which the Dashboard
   //     Sponsors card links straight to until they've picked at least one.
   //   - Team cards show this car's assigned Tier + Car Objective (name +
   //     bonus payout) instead of the old bonus/penalty perk chips -- the
@@ -1461,14 +1468,17 @@
     return line;
   }
 
-  // Shared sponsor-picking list -- every sponsor as a selectable card
-  // (logo capped 140px wide / 80px tall, name, bonus + penalty numbers),
-  // used identically by the registration flow's sponsor-pick step above
-  // and the Sponsors page's "Choose Sponsors" modal below (Matt's call,
-  // 2026-08-30: one shared listing, not two separately-built pickers).
-  // Clicking a sponsor toggles it; picking a 4th bumps the oldest of the
-  // current 3 rather than refusing the click, so this stays a plain
-  // click-to-toggle interaction with no separate "deselect first" step.
+  // Sponsor-picking list used by the registration flow's own sponsor-pick
+  // step (added 2026-08-30). The Sponsors page used to reuse this exact
+  // same list inside a "Choose/Change Sponsors" popup; that popup is gone
+  // now (2026-09-02 redesign -- picking there happens inline against the
+  // All Sponsors table instead, see renderSponsorsSection), but
+  // registration is a different moment (picking a team, not yet on the
+  // Sponsors page at all) and still wants its own compact card-grid
+  // picker, so this stays as-is for that one caller. Clicking a sponsor
+  // toggles it; picking a 4th bumps the oldest of the current 3 rather
+  // than refusing the click, so this stays a plain click-to-toggle
+  // interaction with no separate "deselect first" step.
   function buildSponsorPickerList(sponsors, preselected) {
     var wrap = el('div', 'rc-sponsor-pick-list');
     var selected = (preselected || []).slice(0, 3);
@@ -2170,42 +2180,94 @@
   // this driver's picked sponsors' Bonus/Penalty triggers, as two
   // side-by-side columns, so what's actually "in play" for the next race
   // reads as one quick-glance checklist without leaving the picks panel.
-  function buildCurrentPicksPanel(data, token, onDone) {
+  // In-place picker (2026-09-02 redesign, replacing the "Choose/Change
+  // Sponsors" popup, Matt's call): instead of opening a modal, clicking a
+  // slot here -- an Open Slot, or a chip you already picked and want to
+  // swap -- targets that slot and scrolls down to the All Sponsors table,
+  // where clicking a row fills it. The pick shows up in this strip (and
+  // checkmarks in the table) THE INSTANT it's clicked; the actual
+  // chooseSponsors save happens quietly in the background (see saveNow()
+  // in renderSponsorsSection) with no spinner, no "Saving..." state, no
+  // popup to close -- the driver never has to wait on it. ctx (built by
+  // renderSponsorsSection) is the shared state/behavior this panel and
+  // buildSponsorComparisonTable both read and drive:
+  //   ctx.getPickedIds()    -> current up-to-3 SponsorIDs (may include one
+  //                            just picked but not yet confirmed saved)
+  //   ctx.getActiveTarget() -> null | '__open__' | a SponsorID -- which
+  //                            slot (if any) is currently awaiting a pick
+  //   ctx.catalogById       -> SponsorID -> full sponsor row, for display
+  //   ctx.locked            -> true once the season's started
+  //   ctx.onSlotClick(id)   -> called with a SponsorID or '__open__'
+  // Returns { el, refresh() } -- refresh() rebuilds just the strip/goals
+  // in place (called after every pick/removal) without touching the rest
+  // of the page.
+  function buildCurrentPicksPanel(ctx) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Current Picks'));
-    panel.appendChild(el('p', 'rc-hint', 'You can choose up to 3 sponsors for the season.'));
+    panel.appendChild(el('p', 'rc-hint', ctx.locked
+      ? 'You can choose up to 3 sponsors for the season.'
+      : 'You can choose up to 3 sponsors for the season. Click a slot below, then pick a sponsor from the list to fill it.'));
+
+    var stripHolder = el('div');
+    panel.appendChild(stripHolder);
+    var goalsHolder = el('div');
+    panel.appendChild(goalsHolder);
 
     var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
-    var sponsors = (data.sponsors || []).slice().sort(function (a, b) {
-      var ai = TIER_ORDER.indexOf(a.Tier); if (ai === -1) ai = TIER_ORDER.length;
-      var bi = TIER_ORDER.indexOf(b.Tier); if (bi === -1) bi = TIER_ORDER.length;
-      return ai - bi;
-    });
-
-    var strip = el('div', 'rc-picks-strip');
-    sponsors.forEach(function (s) {
-      var chip = el('div', 'rc-pick-chip');
-      var logo = document.createElement('img');
-      logo.className = 'rc-pick-chip-logo';
-      logo.alt = '';
-      logo.src = sponsorLogoSrc(s.Name || '');
-      logo.onerror = function () { this.style.display = 'none'; };
-      chip.appendChild(logo);
-
-      var textCol = el('div', 'rc-pick-chip-text');
-      textCol.appendChild(el('div', 'rc-pick-chip-name', escapeHtml(s.Name || '(unnamed sponsor)')));
-      var tierClass = _RC_TIER_TEXT_CLASS[s.Tier] || '';
-      textCol.appendChild(el('div', 'rc-pick-chip-tier' + (tierClass ? ' ' + tierClass : ''), escapeHtml(s.Tier || 'Unclassified')));
-      chip.appendChild(textCol);
-
-      strip.appendChild(chip);
-    });
-    for (var i = sponsors.length; i < 3; i++) {
-      var open = el('div', 'rc-pick-chip rc-pick-chip-open');
-      open.appendChild(el('div', 'rc-pick-chip-open-label', 'Open Slot'));
-      strip.appendChild(open);
+    function sortedPicks() {
+      var ids = ctx.getPickedIds();
+      var sponsors = ids.map(function (id) { return ctx.catalogById[id]; }).filter(Boolean);
+      sponsors.sort(function (a, b) {
+        var ai = TIER_ORDER.indexOf(a.Tier); if (ai === -1) ai = TIER_ORDER.length;
+        var bi = TIER_ORDER.indexOf(b.Tier); if (bi === -1) bi = TIER_ORDER.length;
+        return ai - bi;
+      });
+      return sponsors;
     }
-    panel.appendChild(strip);
+
+    function renderStrip() {
+      stripHolder.innerHTML = '';
+      var sponsors = sortedPicks();
+      var activeTarget = ctx.getActiveTarget();
+      var strip = el('div', 'rc-picks-strip');
+      sponsors.forEach(function (s) {
+        var isActive = activeTarget === s.SponsorID;
+        var chip = el('div', 'rc-pick-chip' + (!ctx.locked ? ' rc-pick-chip-clickable' : '') + (isActive ? ' rc-pick-chip-active' : ''));
+        var logo = document.createElement('img');
+        logo.className = 'rc-pick-chip-logo';
+        logo.alt = '';
+        logo.src = sponsorLogoSrc(s.Name || '');
+        logo.onerror = function () { this.style.display = 'none'; };
+        chip.appendChild(logo);
+
+        var textCol = el('div', 'rc-pick-chip-text');
+        textCol.appendChild(el('div', 'rc-pick-chip-name', escapeHtml(s.Name || '(unnamed sponsor)')));
+        var tierClass = _RC_TIER_TEXT_CLASS[s.Tier] || '';
+        textCol.appendChild(el('div', 'rc-pick-chip-tier' + (tierClass ? ' ' + tierClass : ''), escapeHtml(s.Tier || 'Unclassified')));
+        chip.appendChild(textCol);
+
+        if (!ctx.locked) {
+          chip.setAttribute('role', 'button');
+          chip.tabIndex = 0;
+          chip.addEventListener('click', function () { ctx.onSlotClick(s.SponsorID); });
+          chip.addEventListener('keydown', function (evt) { if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ctx.onSlotClick(s.SponsorID); } });
+        }
+        strip.appendChild(chip);
+      });
+      for (var i = sponsors.length; i < 3; i++) {
+        var isOpenActive = activeTarget === '__open__';
+        var open = el('div', 'rc-pick-chip rc-pick-chip-open' + (!ctx.locked ? ' rc-pick-chip-clickable' : '') + (isOpenActive ? ' rc-pick-chip-active' : ''));
+        open.appendChild(el('div', 'rc-pick-chip-open-label', 'Open Slot'));
+        if (!ctx.locked) {
+          open.setAttribute('role', 'button');
+          open.tabIndex = 0;
+          open.addEventListener('click', function () { ctx.onSlotClick('__open__'); });
+          open.addEventListener('keydown', function (evt) { if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ctx.onSlotClick('__open__'); } });
+        }
+        strip.appendChild(open);
+      }
+      stripHolder.appendChild(strip);
+    }
 
     // Sponsor Goals -- folded into this same card (2026-09-01, Matt's
     // call), separated from the picks strip above by its own light rule +
@@ -2214,14 +2276,17 @@
     // race-by-race, unlike the car's own season-long Season Objective,
     // since that distinction isn't obvious just from looking at a
     // sponsor's terms.
-    panel.appendChild(el('div', 'rc-panel-subhead', 'Sponsor Goals'));
-
-    if (!sponsors.length) {
-      // Short empty-state note only (2026-09-01, Matt's call) -- not the
-      // longer two-line explainer this used to have, just enough to say
-      // why the section below is blank.
-      panel.appendChild(el('p', 'rc-hint', 'Goals will appear once sponsors are chosen.'));
-    } else {
+    function renderGoals() {
+      goalsHolder.innerHTML = '';
+      goalsHolder.appendChild(el('div', 'rc-panel-subhead', 'Sponsor Goals'));
+      var sponsors = sortedPicks();
+      if (!sponsors.length) {
+        // Short empty-state note only (2026-09-01, Matt's call) -- not the
+        // longer two-line explainer this used to have, just enough to say
+        // why the section below is blank.
+        goalsHolder.appendChild(el('p', 'rc-hint', 'Goals will appear once sponsors are chosen.'));
+        return;
+      }
       var goalsGrid = el('div', 'rc-sponsor-goals-grid');
       var bonusCol = el('div', 'rc-sponsor-goals-col');
       bonusCol.appendChild(el('div', 'rc-sponsor-goals-col-head rc-sponsor-goals-col-head-bonus', 'Bonuses'));
@@ -2251,24 +2316,18 @@
 
       goalsGrid.appendChild(bonusCol);
       goalsGrid.appendChild(penaltyCol);
-      panel.appendChild(goalsGrid);
+      goalsHolder.appendChild(goalsGrid);
     }
 
-    if (!data.locked) {
-      var chooseBtn = el('button', 'rc-btn-primary rc-btn-sm', data.hasSponsors ? 'Change Sponsors' : 'Choose Sponsors');
-      chooseBtn.type = 'button';
-      chooseBtn.style.marginTop = '16px';
-      chooseBtn.addEventListener('click', function () {
-        openChooseSponsorsModal(token, data.seasonId, data.sponsors || [], onDone);
-      });
-      panel.appendChild(chooseBtn);
-    } else if (data.hasSponsors) {
-      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season has started -- sponsors are locked in for the rest of it.'));
-    } else {
-      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', 'The season started before you chose your sponsors -- sponsors can no longer be picked this season.'));
+    if (ctx.locked) {
+      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-top:14px;', ctx.getPickedIds().length
+        ? 'The season has started -- sponsors are locked in for the rest of it.'
+        : 'The season started before you chose your sponsors -- sponsors can no longer be picked this season.'));
     }
 
-    return panel;
+    renderStrip();
+    renderGoals();
+    return { el: panel, refresh: function () { renderStrip(); renderGoals(); } };
   }
 
   // Trigger glossary -- the Sponsors page's third container (2026-09-01,
@@ -2320,14 +2379,21 @@
   // row was redundant; sponsor rows are inset further under their group
   // header instead, the same "rows nested under their group" look Cars/
   // Members use.
-  function buildSponsorComparisonTable(sponsors, pickedIds) {
+  // ctx.interactive (2026-09-02 redesign) makes every row clickable --
+  // ctx.onRowClick(SponsorID) fires the pick/replace/remove/duplicate-guard
+  // logic in renderSponsorsSection, which then calls updateMarks() (see
+  // the returned object below) to flip that row's checkmark instantly,
+  // without rebuilding the whole table. Not interactive on the "no seat
+  // yet" call site (Matt's original browse-only table), where there's
+  // nothing to click into.
+  function buildSponsorComparisonTable(ctx) {
     var panel = el('div', 'rc-panel rc-dash-card rc-sponsor-table-panel');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'All Sponsors'));
 
-    var active = (sponsors || []).filter(function (s) { return _rcRowActive(s); });
+    var active = (ctx.catalog || []).filter(function (s) { return _rcRowActive(s); });
     if (!active.length) {
       panel.appendChild(el('div', 'rc-dm-empty', 'No sponsors in the catalog yet.'));
-      return panel;
+      return { el: panel, updateMarks: function () {} };
     }
 
     var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
@@ -2349,6 +2415,11 @@
     headRow.appendChild(el('div', 'rc-sponsor-table-head-cell', 'Risk / Reward'));
     table.appendChild(headRow);
 
+    // SponsorID -> its row's pickmark element, so updateMarks() can flip
+    // just the affected rows after a pick/removal instead of rebuilding
+    // the whole table (which would lose scroll position mid-pick).
+    var marksById = {};
+
     tierOrder.forEach(function (tier) {
       var list = byTier[tier];
       if (!list) return;
@@ -2358,12 +2429,13 @@
       table.appendChild(groupHead);
 
       list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
-        var picked = pickedIds.indexOf(s.SponsorID) !== -1;
-        var row = el('div', 'rc-sponsor-table-row');
+        var picked = ctx.getPickedIds ? ctx.getPickedIds().indexOf(s.SponsorID) !== -1 : false;
+        var row = el('div', 'rc-sponsor-table-row' + (ctx.interactive ? ' rc-sponsor-table-row-clickable' : ''));
 
         var mark = el('div', 'rc-sponsor-pickmark' + (picked ? ' rc-sponsor-pickmark-on' : ' rc-sponsor-pickmark-off'));
         if (picked) mark.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>';
         row.appendChild(mark);
+        marksById[s.SponsorID] = mark;
 
         var sponsorCol = el('div', 'rc-sponsor-table-sponsor');
         var logo = document.createElement('img');
@@ -2426,6 +2498,14 @@
 
         row.appendChild(swing);
 
+        // Clicking a row is a no-op unless a slot is currently targeted
+        // (ctx.onRowClick itself checks that and just returns) -- there's
+        // no separate "select a slot first" error state here, clicking
+        // with nothing targeted simply does nothing.
+        if (ctx.interactive) {
+          row.addEventListener('click', function () { ctx.onRowClick(s.SponsorID); });
+        }
+
         table.appendChild(row);
       });
     });
@@ -2434,9 +2514,27 @@
     panel.appendChild(el('p', 'rc-sponsor-table-legend',
       'Risk / Reward shows bonus (top) and penalty (bottom) on the same $0-$1,200 scale, so a longer bar in either row means a bigger dollar swing.'));
 
-    return panel;
+    function updateMarks() {
+      var pickedIds = ctx.getPickedIds ? ctx.getPickedIds() : [];
+      Object.keys(marksById).forEach(function (sponsorId) {
+        var mark = marksById[sponsorId];
+        var picked = pickedIds.indexOf(sponsorId) !== -1;
+        mark.className = 'rc-sponsor-pickmark' + (picked ? ' rc-sponsor-pickmark-on' : ' rc-sponsor-pickmark-off');
+        mark.innerHTML = picked ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>' : '';
+      });
+    }
+
+    return { el: panel, updateMarks: updateMarks };
   }
 
+  // 2026-09-02 redesign (Matt's call): no more "Choose/Change Sponsors"
+  // popup. Clicking a slot in Current Picks targets it and scrolls down to
+  // this page's own All Sponsors table; clicking a sponsor row there fills
+  // it -- instantly, in both places at once -- while chooseSponsors saves
+  // quietly in the background with nothing on screen showing it's in
+  // flight. See buildCurrentPicksPanel/buildSponsorComparisonTable above
+  // for the two halves of that interaction; everything below just wires
+  // them together and owns the actual pickedIds/activeTarget state.
   function renderSponsorsSection(token) {
     var section = document.getElementById('rc-section-sponsors');
     if (!section) return;
@@ -2474,15 +2572,121 @@
         notSeatedPanel.appendChild(el('h3', 'rc-dash-card-title', 'Current Picks'));
         notSeatedPanel.appendChild(el('p', 'rc-hint', 'Not on a team yet -- register for a season to choose sponsors.'));
         section.appendChild(notSeatedPanel);
-        if (catalog.length) section.appendChild(buildSponsorComparisonTable(catalog, []));
+        if (catalog.length) section.appendChild(buildSponsorComparisonTable({ catalog: catalog, interactive: false }).el);
         section.appendChild(buildSponsorTriggerGlossary());
         return;
       }
 
-      section.appendChild(buildCurrentPicksPanel(data, token, function () { renderSponsorsSection(token); }));
+      // pickedIds: up to 3 SponsorIDs, the single source of truth both
+      // panels below read through ctx.getPickedIds(). lastSavedIds is
+      // whatever the server last actually confirmed -- saveNow() rolls
+      // pickedIds back to it if a save fails, so a dropped request can't
+      // leave the screen showing a pick that never actually landed.
+      var catalogById = {};
+      catalog.forEach(function (s) { catalogById[s.SponsorID] = s; });
+      var pickedIds = (data.sponsors || []).map(function (s) { return s.SponsorID; }).slice(0, 3);
+      var lastSavedIds = pickedIds.slice();
+      // null | '__open__' | a SponsorID -- which slot (if any) is currently
+      // waiting for a click in the table below.
+      var activeTarget = null;
+      var locked = !!data.locked;
+      var picksPanel, tablePanel;
 
-      var pickedIds = (data.sponsors || []).map(function (s) { return s.SponsorID; });
-      if (catalog.length) section.appendChild(buildSponsorComparisonTable(catalog, pickedIds));
+      function refreshBoth() {
+        picksPanel.refresh();
+        tablePanel.updateMarks();
+      }
+
+      // Fire-and-forget by design (Matt's call: "the backend does its
+      // thing without the user being aware that it's still saving") -- no
+      // spinner, no disabled state, no toast on success. The only visible
+      // trace of a save is if it FAILS: pickedIds rolls back to the last
+      // confirmed-good state and a toast explains why, since silently
+      // losing a pick would be worse than a brief interruption.
+      function saveNow() {
+        var idsToSend = pickedIds.slice();
+        fetchApi('chooseSponsors', {
+          method: 'POST', token: token,
+          body: { seasonId: data.seasonId, sponsorId1: idsToSend[0] || '', sponsorId2: idsToSend[1] || '', sponsorId3: idsToSend[2] || '' }
+        }).then(function (result) {
+          if (!result || !result.success) {
+            pickedIds = lastSavedIds.slice();
+            refreshBoth();
+            showToast((result && result.message) || 'Could not save your sponsor pick. Try again.', 'error');
+            return;
+          }
+          lastSavedIds = idsToSend.slice();
+          // Clears the "Choose your sponsors" bell notification right away
+          // instead of leaving it up to the next 45s poll tick (2026-09-01,
+          // Matt's call: acknowledge automatically on the relevant action,
+          // without requiring a visit to the notification dropdown) -- see
+          // rcRefreshNotificationsNow in header.js.
+          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
+        }).catch(function () {
+          pickedIds = lastSavedIds.slice();
+          refreshBoth();
+          showToast('Could not reach the server. Try again in a moment.', 'error');
+        });
+      }
+
+      function handleSlotClick(targetId) {
+        if (locked) return;
+        // Clicking the already-active slot again cancels targeting instead
+        // of re-triggering the scroll -- an escape hatch for "actually
+        // never mind."
+        activeTarget = (activeTarget === targetId) ? null : targetId;
+        refreshBoth();
+        if (activeTarget !== null) {
+          tablePanel.el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      function handleRowClick(sponsorId) {
+        if (locked || activeTarget === null) return; // nothing targeted -- a row click is a no-op
+        if (activeTarget === '__open__') {
+          if (pickedIds.indexOf(sponsorId) !== -1) {
+            showToast('Already picked in another slot.', 'error');
+            return;
+          }
+          if (pickedIds.length >= 3) { activeTarget = null; refreshBoth(); return; } // shouldn't happen -- no open slot to have targeted
+          pickedIds.push(sponsorId);
+        } else {
+          var targetId = activeTarget;
+          if (sponsorId === targetId) {
+            // Clicking the slot's own current sponsor again removes it --
+            // the pick and its removal share the same gesture, no separate
+            // "x" button needed.
+            pickedIds = pickedIds.filter(function (id) { return id !== targetId; });
+          } else if (pickedIds.indexOf(sponsorId) !== -1) {
+            showToast('Already picked in another slot.', 'error');
+            return;
+          } else {
+            pickedIds = pickedIds.map(function (id) { return id === targetId ? sponsorId : id; });
+          }
+        }
+        activeTarget = null;
+        refreshBoth();
+        saveNow();
+      }
+
+      picksPanel = buildCurrentPicksPanel({
+        getPickedIds: function () { return pickedIds; },
+        getActiveTarget: function () { return activeTarget; },
+        catalogById: catalogById,
+        locked: locked,
+        onSlotClick: handleSlotClick
+      });
+      section.appendChild(picksPanel.el);
+
+      if (catalog.length) {
+        tablePanel = buildSponsorComparisonTable({
+          catalog: catalog,
+          getPickedIds: function () { return pickedIds; },
+          interactive: !locked,
+          onRowClick: handleRowClick
+        });
+        section.appendChild(tablePanel.el);
+      }
 
       // Third container: every possible bonus/penalty trigger with its
       // plain description (2026-09-01, Matt's call) -- independent of this
@@ -2497,73 +2701,6 @@
     ]).then(function (results) {
       var catalog = (results[1] && results[1].success && results[1].sponsors) ? results[1].sponsors : [];
       render(results[0], catalog);
-    });
-  }
-
-  // "Choose Sponsors" / "Change Sponsors" popup -- reuses the exact same
-  // buildSponsorPickerList() the registration flow's sponsor-pick step
-  // uses (Matt's call: one shared listing, not two). No skip option here
-  // (unlike registration) -- a driver who opens this already has a team
-  // and is deliberately here to pick, so Cancel (closing the modal) is
-  // the "not now" path instead.
-  function openChooseSponsorsModal(token, seasonId, currentSponsors, onDone) {
-    var modal = showModal('Choose Your Sponsors', { wide: true });
-    var body = modal.body;
-    body.appendChild(buildSpinner('Loading sponsors...'));
-
-    fetchApi('getSponsors', { token: token }).then(function (data) {
-      body.innerHTML = '';
-      var sponsors = (data.success && data.sponsors) ? data.sponsors : [];
-      if (!sponsors.length) {
-        body.appendChild(el('p', 'color:var(--rc-red);', 'No sponsors are set up yet.'));
-        return;
-      }
-
-      // Up to 3, not required (2026-08-31, Matt's call).
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 12px;', 'Pick up to 3 sponsors for the season. This can be changed again any time before the season starts.'));
-
-      var preselected = (currentSponsors || []).map(function (s) { return s.SponsorID; });
-      var picker = buildSponsorPickerList(sponsors, preselected);
-      body.appendChild(picker.el);
-
-      var errorLine = el('div', 'color:var(--rc-red);font-size:13px;margin:10px 0;');
-      body.appendChild(errorLine);
-
-      var confirmBtn = el('button', 'rc-btn-primary', 'Confirm Sponsors');
-      confirmBtn.type = 'button';
-      confirmBtn.addEventListener('click', function () {
-        var picked = picker.getSelected();
-
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Saving...';
-        fetchApi('chooseSponsors', {
-          method: 'POST', token: token,
-          body: { seasonId: seasonId, sponsorId1: picked[0] || '', sponsorId2: picked[1] || '', sponsorId3: picked[2] || '' }
-        }).then(function (result) {
-          if (!result.success) {
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = 'Confirm Sponsors';
-            errorLine.textContent = result.message || 'Could not save your sponsors.';
-            return;
-          }
-          showToast('Sponsors saved.', 'success');
-          // Clears the "Choose your sponsors" bell notification right away
-          // instead of leaving it up to the next 45s poll tick (2026-09-01,
-          // Matt's call: acknowledge automatically on the relevant action,
-          // without requiring a visit to the notification dropdown) -- see
-          // rcRefreshNotificationsNow in header.js.
-          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
-          rcReloadAfterSave();
-        }).catch(function () {
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = 'Confirm Sponsors';
-          errorLine.textContent = 'Could not reach the server. Try again in a moment.';
-        });
-      });
-      body.appendChild(confirmBtn);
-    }).catch(function () {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
     });
   }
 
@@ -7247,6 +7384,28 @@
     // path (a page where this bridge doesn't exist yet).
     window.rcOpenEditProfileModal = function () { openEditProfileModal(currentProfile, currentToken); };
 
+    // Same bridge pattern, for the header bell's notification links
+    // (2026-09-02, Matt's call: notifications should link straight to the
+    // page they're about, not just carry an OK button). A plain
+    // href="Account.html#admin" would only work correctly when clicked
+    // from a DIFFERENT page -- clicking it while already ON Account.html
+    // is a same-document hash change (no reload), which showSection() is
+    // never told about, so the visible section wouldn't actually switch.
+    // js/header.js calls this instead whenever it's here (this page,
+    // already loaded); its own click handler falls back to a real
+    // navigation (window.location.href) when this bridge doesn't exist,
+    // same "call it directly if present, otherwise navigate and let the
+    // other side pick it up" shape as rcOpenEditProfileModal above. Runs
+    // the section's own lazy renderer too, same as an actual nav-item
+    // click (see RC_LAZY_SECTION_RENDERERS/makeNavButton above) so the
+    // section shows current data rather than whatever it last held (or
+    // nothing, if it was never opened this page load).
+    window.rcNavigateToSection = function (id) {
+      showSection(id);
+      var lazyRenderer = RC_LAZY_SECTION_RENDERERS[id];
+      if (lazyRenderer) lazyRenderer(currentToken);
+    };
+
     // Same bridge, other direction -- a click on Edit Profile from a page
     // OTHER than Account.html sets this flag and navigates here; once
     // this driver's own profile/token are actually loaded (right here),
@@ -7286,7 +7445,6 @@
     if (profile.role === 'Admin') {
       document.getElementById('rc-nav-admin').style.display = 'flex';
       showUpperNavDivider();
-      updateAdminNavDot(token);
     }
 
     renderDashboardSection(profile, token, dashboardData);
@@ -7315,26 +7473,11 @@
     }
   }
 
-  // Red dot on the Admin sidebar link itself, same "something's waiting
-  // on you" signal as the header bell -- lets an Admin see there's a
-  // pending sign-up without having to open Admin/Members first. Re-run
-  // after Approve/Deny (see buildDriversPanel) so it clears the instant
-  // the queue is empty, not just on next page load. Renamed from
-  // updateDataMgmtNavDot (2026-08-30) now that this dot lives on the
-  // Admin nav item instead of the removed Data Management one.
-  function updateAdminNavDot(token) {
-    fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
-      var btn = document.getElementById('rc-nav-admin');
-      if (!btn) return;
-      var hasPending = !!(data && data.success && data.pending && data.pending.length);
-      var dot = btn.querySelector('.rc-nav-dot');
-      if (hasPending && !dot) {
-        btn.appendChild(el('span', 'rc-nav-dot'));
-      } else if (!hasPending && dot) {
-        dot.remove();
-      }
-    }).catch(function () { /* leave whatever dot state was already showing */ });
-  }
+  // updateAdminNavDot() removed (2026-09-02, Matt's call: "get rid of
+  // notification bubbles on the links" -- the sidebar Admin link used to
+  // carry its own red dot for a pending sign-up, duplicating the header
+  // bell's own pending-approval notification for the same event. One
+  // signal (the bell) now covers it.
 
   // mustChangePassword forces a password change before the driver can do
   // anything else -- the sidebar/topbar stay hidden and #rc-forced-password

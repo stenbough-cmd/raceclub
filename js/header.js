@@ -280,7 +280,8 @@ function _rcFetchNotifications(token, cached) {
         .map(function (u) {
           return {
             id: 'pending-' + u.ProfileID,
-            message: (u.DisplayName || 'A driver') + ' is waiting for account approval.'
+            message: (u.DisplayName || 'A driver') + ' is waiting for account approval.',
+            section: 'admin', linkLabel: 'Review'
           };
         })
         .filter(function (n) { return acked.indexOf(n.id) === -1; });
@@ -309,7 +310,7 @@ function _rcFetchSponsorNotifications(token, cached) {
       var id = 'sponsors-' + data.seasonId;
       var acked = _rcGetAckedNotifIds();
       if (acked.indexOf(id) !== -1) return [];
-      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.' }];
+      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.', section: 'sponsors', linkLabel: 'Choose Sponsors' }];
     })
     .catch(function () { return []; });
 }
@@ -340,7 +341,8 @@ function _rcFetchSeasonNotifications(token, cached) {
         return {
           id: 'season-' + n.seasonId, seasonId: n.seasonId, kind: 'season',
           message: 'Registration is open for ' + (n.seasonName || 'a new season') + '.',
-          dateStamp: _rcFormatNotifDate(n.createdAt)
+          dateStamp: _rcFormatNotifDate(n.createdAt),
+          section: 'dashboard', linkLabel: 'Register'
         };
       });
       // History entries come back as the RAW stored shape (no kind field)
@@ -691,22 +693,42 @@ function renderHeader(opts) {
             textCol.appendChild(date);
           }
           item.appendChild(textCol);
-          // Only the pending-approval type gets an OK button -- season AND
-          // upgrade notifications both dismiss themselves when this
-          // dropdown closes (see closeNotifMenu/_rcDismissShownSeasonNotifs
-          // above), neither is ever acknowledged by hand.
-          if (n.kind !== 'season' && n.kind !== 'upgrade') {
-            var okBtn = document.createElement('button');
-            okBtn.type = 'button';
-            okBtn.className = 'rc-header-notif-ok';
-            okBtn.textContent = 'OK';
-            okBtn.addEventListener('click', function () {
-              _rcAckNotif(n.id);
-              currentNotifications = currentNotifications.filter(function (x) { return x.id !== n.id; });
-              _rcRenderNotifList();
-              updateHeaderNotifDot(currentNotifications.length);
+          // A link straight to wherever this notification needs the driver
+          // to actually go, not an "OK" acknowledge button (2026-09-02,
+          // Matt's call: "it should be links listed for actions that need
+          // to happen... a link that takes the user directly to the page").
+          // Every kind that names something actionable sets n.section when
+          // it's built below (pending -> Admin, sponsors -> Sponsors,
+          // season -> Dashboard, where the Registration Status card lives);
+          // 'upgrade' is purely informational (an account/role change
+          // already happened, there's nothing left to go do) so it never
+          // gets one. Clicking just navigates -- it does NOT acknowledge/
+          // dismiss the notification itself, since visiting the page
+          // doesn't mean the underlying thing (an approval, a sponsor
+          // pick) actually got done; each kind still clears itself the
+          // same way it always has (pending/sponsors: naturally stops
+          // being generated once resolved, or Clear; season: dismissed
+          // when the dropdown closes).
+          if (n.section) {
+            var linkEl = document.createElement('a');
+            linkEl.className = 'rc-header-notif-link';
+            linkEl.href = 'Account.html#' + n.section;
+            linkEl.textContent = n.linkLabel || 'Go';
+            linkEl.addEventListener('click', function (evt) {
+              // window.rcNavigateToSection is the bridge Account.html sets
+              // once it's loaded (see buildFullProfileUI there) -- present
+              // means this IS Account.html already, so switch sections in
+              // place instead of letting the href fire a same-document
+              // hash change that showSection() would never find out about.
+              // Absent (any other page) just falls through to the href's
+              // real navigation.
+              if (typeof window.rcNavigateToSection === 'function') {
+                evt.preventDefault();
+                window.rcNavigateToSection(this.getAttribute('href').replace(/^Account\.html#/, ''));
+                closeNotifMenu();
+              }
             });
-            item.appendChild(okBtn);
+            item.appendChild(linkEl);
           }
           listEl.appendChild(item);
         });
