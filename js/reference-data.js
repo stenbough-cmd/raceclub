@@ -520,3 +520,27 @@ function manufacturerAvatarSrc(manufacturerName) {
 // side dropdown source; the server independently re-validates against its
 // own copy, so this list is never trusted as the actual validation.
 var DRIVER_NAME_SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
+
+// Ledger event labels -- the Finances page (2026-09-02) shows every one of
+// a driver's own Transactions rows, keyed by Type (see
+// season-1-sheet-schema.md's Transactions section: StartingBalance / BuyIn /
+// SponsorBonus / SponsorPenalty / PrizePool / Fine / WagerWin / WagerLoss /
+// SpecialEvent). This is the one place that turns each raw Type value into
+// the plain-language label shown in the ledger's Event column -- falls back
+// to the raw Type string for anything not listed here, same "never a hard
+// dependency, just keep in sync" convention as SPONSOR_*_TRIGGER_DESCRIPTIONS
+// above, so an unmapped Type still renders instead of showing blank.
+var RC_LEDGER_TYPE_LABELS = {
+  StartingBalance: 'Starting Balance',
+  BuyIn: 'Team Buy-In',
+  SponsorBonus: 'Sponsor Bonus',
+  SponsorPenalty: 'Sponsor Penalty',
+  PrizePool: 'Prize Pool',
+  Fine: 'Steward Fine',
+  WagerWin: 'Wager Won',
+  WagerLoss: 'Wager Lost',
+  SpecialEvent: 'Special Event'
+};
+function ledgerTypeLabel(type) {
+  return RC_LEDGER_TYPE_LABELS[type] || type || 'Transaction';
+}

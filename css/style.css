@@ -617,18 +617,38 @@ p { margin: 0 0 0.75em; }
    panel's full width instead of getting cut short by the inset. */
 .rc-sponsor-table-row { padding: 11px 0 11px 28px; margin-left: -28px; width: calc(100% + 28px); border-top: 1px solid var(--rc-offwhite); }
 .rc-sponsor-tier-group-head { margin-left: -28px; width: calc(100% + 28px); padding-left: 28px; }
-/* Interactive rows (2026-09-02 redesign) -- a row is clickable whenever a
-   slot is targeted; the whole row highlights on hover so it's obvious
-   this is a click target, not just a comparison table. */
-.rc-sponsor-table-row-clickable { cursor: pointer; transition: background-color 0.12s ease; }
-.rc-sponsor-table-row-clickable:hover { background-color: var(--rc-offwhite); }
+/* Interactive rows (2026-09-02 redesign). rc-sponsor-table-row-clickable
+   sits on every row whenever the season isn't locked, but the hover
+   highlight/pointer cursor only activate while .rc-sponsor-table itself
+   also carries rc-sponsor-table-picking -- i.e. only while a Current
+   Picks slot is actually targeted (see setPicking() in Account.html).
+   Otherwise a click here is a no-op (see handleRowClick's activeTarget
+   guard), so the table shouldn't visually invite clicks it would just
+   ignore (Matt's call, 2026-09-02: "don't let the hover highlight
+   anything on the table" outside of actually choosing a sponsor). */
+.rc-sponsor-table.rc-sponsor-table-picking .rc-sponsor-table-row-clickable { cursor: pointer; transition: background-color 0.12s ease; }
+.rc-sponsor-table.rc-sponsor-table-picking .rc-sponsor-table-row-clickable:hover { background-color: var(--rc-offwhite); }
 /* Picked rows -- no row-level highlight (2026-09-01, Matt's call: drop the
    green row background/left-accent, the pickmark circle below is the only
    "you picked this one" signal now -- a solid green circle with a white
-   checkmark, versus a plain dashed outline when not picked). */
-.rc-sponsor-pickmark { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; }
+   checkmark. That green mark always shows, picking or not (2026-09-02,
+   Matt's call: "keep the green circle white check after clicking"). */
+.rc-sponsor-pickmark { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; transition: background-color 0.12s ease, border-color 0.12s ease; }
 .rc-sponsor-pickmark-on { background: var(--rc-ok); }
-.rc-sponsor-pickmark-off { border: 1.5px dashed var(--rc-silver); }
+/* The dashed "not picked yet" outline is a picking-mode-only affordance
+   (2026-09-02, Matt's call: "don't show the dashed circle next to the
+   sponsors" outside of actively choosing) -- invisible by default,
+   visibility:hidden rather than display:none so the mark column doesn't
+   shift width when it reappears. Hovering a row while picking fills it
+   solid gray, previewing "this is what clicking here selects" before the
+   click actually commits it (green only happens after the real pick). */
+.rc-sponsor-pickmark-off { border: 1.5px dashed var(--rc-silver); visibility: hidden; }
+.rc-sponsor-table-picking .rc-sponsor-pickmark-off { visibility: visible; }
+.rc-sponsor-table-picking .rc-sponsor-table-row-clickable:hover .rc-sponsor-pickmark-off {
+  border-style: solid;
+  border-color: var(--rc-steel);
+  background: var(--rc-steel);
+}
 .rc-sponsor-table-sponsor { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .rc-sponsor-table-logo { max-width: 34px; max-height: 34px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
@@ -1994,7 +2014,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    context (how much of the balance to the left is locked in wagers), not
    a competing headline figure. */
 .rc-finrep-frozen-inline { font-size: 13px; font-weight: 600; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-.rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; padding-bottom: 10px; }
 .rc-finrep-delta-up { color: #1f5c25; }
 .rc-finrep-delta-down { color: var(--rc-red); }
 /* Bottom category row -- Finances: Frozen Balance/Bank Rank/Largest Win;
@@ -2052,6 +2072,67 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-objective-progress-fill-met { background: var(--rc-ok); }
 .rc-objective-progress-count { font-size: 11.5px; color: var(--rc-steel); margin-top: 6px; }
 .rc-finrep-rank-value-payout { color: var(--rc-ok); }
+.rc-finrep-rank-value-penalty { color: var(--rc-red); }
+
+/* -------------------------------------------------------------------- */
+/* Finances page (2026-09-02) -- a "checking account" style overview:    */
+/* a bigger balance hero, a running ledger of every Transactions row,    */
+/* and a Sponsorship Outlook panel reusing the same bonus/penalty grid   */
+/* language as the Sponsors page's own "Sponsor Goals" (kept as its own  */
+/* copy rather than sharing a function, so a future edit to either one   */
+/* doesn't silently change the other). Team Objective reuses             */
+/* seasonObjectiveCard() verbatim, so it needs no CSS of its own here.   */
+/* -------------------------------------------------------------------- */
+/* Finances page container chrome (2026-09-02, Matt's call: "make the
+   container details like the top border and the line under the header...
+   the same light gray color that we used in the CALENDAR page") -- every
+   other page's cards use rc-dash-card-title's red-accent header underline
+   (var(--rc-red)), matching the Calendar page's own .rc-cal-season-title.
+   The Calendar page's individual race cards, though, are plain gray
+   throughout: .rc-cal-race's whole border is var(--rc-silver) (already
+   what .rc-panel's own top/side/bottom border uses -- no change needed
+   there) and .rc-cal-track's under-header divider is var(--rc-offwhite).
+   Scoped to #rc-section-finances only, on purpose -- this is a Finances-
+   page-specific exception to the red-underline convention, not a
+   sitewide change to rc-dash-card-title. (.rc-panel-subhead's own
+   border-top is already var(--rc-offwhite) -- light gray by default,
+   nothing to override there.) Also catches .rc-dash-card::before, the
+   slanted red accent strip along each card's top-left edge -- easy to
+   miss since it's a pseudo-element, not a plain border, but it's exactly
+   what read as "the top red border" here. Matched to the same gray as
+   .rc-panel's own outside border (var(--rc-silver)), per Matt's ask. */
+#rc-section-finances .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
+#rc-section-finances .rc-dash-card::before { background: var(--rc-silver); }
+.rc-fin-hero-card { padding: 26px 30px; }
+.rc-fin-hero-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.rc-fin-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); }
+.rc-fin-hero-balance { font-family: var(--rc-font-heading); font-size: 44px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+/* Ledger -- flex rows rather than a strict grid so it wraps gracefully on
+   narrow screens without a separate mobile layout, same "let flexbox do
+   it" posture as most of this site's other list-style panels. */
+.rc-ledger-summary { display: flex; gap: 16px; flex-wrap: wrap; margin: 14px 0 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rc-silver); }
+.rc-ledger-summary-item { flex: 1 1 120px; text-align: center; }
+.rc-ledger-summary-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
+.rc-ledger-summary-value { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--rc-carbon); }
+.rc-ledger-summary-value-positive { color: var(--rc-ok); }
+.rc-ledger-summary-value-negative { color: var(--rc-red); }
+.rc-ledger-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--rc-offwhite); flex-wrap: wrap; }
+.rc-ledger-row:first-child { border-top: none; }
+.rc-ledger-date { flex: 0 0 88px; font-size: 12px; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+.rc-ledger-main { flex: 1 1 220px; min-width: 160px; }
+.rc-ledger-event { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
+.rc-ledger-note { font-size: 11.5px; color: var(--rc-steel); margin-top: 2px; }
+.rc-ledger-season { flex: 0 0 110px; font-size: 11.5px; color: var(--rc-steel); text-align: right; }
+.rc-ledger-amt { flex: 0 0 100px; text-align: right; font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rc-ledger-amt-positive { color: var(--rc-ok); }
+.rc-ledger-amt-negative { color: var(--rc-red); }
+
+/* Sponsorship Outlook -- same two-column bonus/penalty grid the Sponsors
+   page's "Sponsor Goals" uses (rc-sponsor-goals-*), reused verbatim here
+   since it's already exactly the right shape for "potential upside vs.
+   potential downside per sponsor". */
+.rc-fin-outlook-hint { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
 
 @media (max-width: 900px) {
   .rc-details-row { grid-template-columns: 1fr; }

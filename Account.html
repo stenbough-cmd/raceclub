@@ -135,7 +135,7 @@
         <span class="rc-startlight"></span>
         <span class="rc-startlight"></span>
       </div>
-      <div class="rc-loading-text">Loading account information&hellip;</div>
+      <div class="rc-loading-text">Loading your dashboard&hellip;</div>
     </div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
 
@@ -433,8 +433,10 @@
   // already exists (Core.gs) but no admin tooling has been built against
   // it yet, so it gets the same generic "Coming soon" panel every other
   // not-yet-built section gets, same convention as Admin used to follow.
+  // Finances removed from this list (2026-09-02) -- it now gets real
+  // content (renderFinancesSection), same "not a placeholder anymore"
+  // move every other real section made before it.
   var PLACEHOLDER_LABELS = {
-    finances: 'Finances',
     results: 'Results', career: 'Career', reputation: 'Reputation',
     halloffame: 'Hall of Fame',
     protests: 'Protests'
@@ -474,10 +476,34 @@
   // the DOM before the save.
   var RC_LAZY_SECTION_RENDERERS = {
     calendar: function (token) { renderCalendarSection(token); },
+    finances: function (token) { renderFinancesSection(token); },
     sponsors: function (token) { renderSponsorsSection(token); },
     admin: function (token) { renderAdminSection(token); },
     league: function (token) { renderLeagueManagementSection(token); }
   };
+
+  // Once a lazy section has actually loaded this page load, flipping back
+  // to it just shows what's already in the DOM -- no spinner, no re-fetch
+  // (2026-09-02, Matt's call: "once the calendar and finances and
+  // sponsors etc are loaded once, they should stay loaded when flipping
+  // back and forth unless there is a change in the data"). rcLoadedLazySections
+  // tracks which section IDs have actually been fetched; every nav click
+  // and cross-page link that opens one of these sections should go
+  // through showLazySection (not call showSection + the renderer
+  // separately) so this cache is the one place that decides "reuse" vs.
+  // "reload". rcReloadAfterSave() below is the one place that clears it --
+  // a save happened, so treat every lazy section as stale again, not just
+  // the one on screen.
+  var rcLoadedLazySections = {};
+
+  function showLazySection(id, token) {
+    showSection(id);
+    if (rcLoadedLazySections[id]) return; // already fetched this page load, nothing's changed since
+    var renderer = RC_LAZY_SECTION_RENDERERS[id];
+    if (!renderer) return;
+    rcLoadedLazySections[id] = true;
+    renderer(token);
+  }
 
   // ---------------------------------------------------------------------
   // SIDEBAR NAV + SECTION SWITCHING
@@ -519,8 +545,7 @@
       // shown until the driver actually opens it.
       if (item.id === 'calendar') {
         nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showSection('calendar');
-          renderCalendarSection(currentToken);
+          showLazySection('calendar', currentToken);
         }));
         return;
       }
@@ -529,8 +554,24 @@
       // the driver actually opens it.
       if (item.id === 'sponsors') {
         nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showSection('sponsors');
-          renderSponsorsSection(currentToken);
+          showLazySection('sponsors', currentToken);
+        }));
+        return;
+      }
+      // Finances is real content now (renderFinancesSection), same
+      // lazy-fetch-on-click pattern as Calendar/Sponsors -- BUG FIX
+      // (2026-09-02): this case was missing entirely when the Finances
+      // page was first built, so the sidebar nav item fell through to the
+      // generic branch below (bare showSection('finances') with no
+      // renderer call) and just showed the empty <section>, now that
+      // 'finances' no longer gets a placeholder either (see
+      // PLACEHOLDER_LABELS above) -- the page never loaded any content at
+      // all. Every other entry point (the Dashboard card's own link,
+      // rcNavigateToSection) already called renderFinancesSection
+      // correctly; only this one, most-used path was broken.
+      if (item.id === 'finances') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showLazySection('finances', currentToken);
         }));
         return;
       }
@@ -547,8 +588,7 @@
     // tools from here instead (Matt's call: "DATA MANAGEMENT page can be
     // moved to ADMIN...admins can only access this ADMIN section").
     var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true, function () {
-      showSection('admin');
-      renderAdminSection(currentToken);
+      showLazySection('admin', currentToken);
     });
     nav.appendChild(adminBtn);
     // Protests (added 2026-08-30) -- Steward and above (Matt's call:
@@ -562,8 +602,7 @@
     // League Management is real content now (renderLeagueManagementSection),
     // same lazy-fetch-on-click pattern as Admin.
     var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true, function () {
-      showSection('league');
-      renderLeagueManagementSection(currentToken);
+      showLazySection('league', currentToken);
     });
     nav.appendChild(leagueBtn);
     nav.appendChild(navDivider());
@@ -736,8 +775,17 @@
   // wrong -- see git history for the full story).
   function rcReloadAfterSave() {
     var sectionId = rcActiveSectionId || 'dashboard';
+    // A save just happened -- every lazy section counts as stale now, not
+    // just the one on screen (an Admin edit on one page can ripple into
+    // another page's numbers, e.g. an Economy change touching Finances'
+    // loan amount while the driver is looking at Sponsors), so the whole
+    // showLazySection cache above gets cleared. The section on screen
+    // right now still gets its fresh data immediately below; every other
+    // one just re-fetches the next time it's actually opened.
+    Object.keys(RC_LAZY_SECTION_RENDERERS).forEach(function (id) { rcLoadedLazySections[id] = false; });
     var lazyRenderer = RC_LAZY_SECTION_RENDERERS[sectionId];
     if (lazyRenderer && currentToken) {
+      rcLoadedLazySections[sectionId] = true;
       lazyRenderer(currentToken);
       if (rcActiveModalCloseFn) rcActiveModalCloseFn();
       return;
@@ -1145,8 +1193,7 @@
     var viewSeasonBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View full season');
     viewSeasonBtn.type = 'button';
     viewSeasonBtn.addEventListener('click', function () {
-      showSection('calendar');
-      renderCalendarSection(currentToken);
+      showLazySection('calendar', currentToken);
     });
     card.appendChild(viewSeasonBtn);
 
@@ -1211,6 +1258,16 @@
       card.appendChild(el('p', 'rc-cs-empty', 'Your balance will appear here once your driver account is approved.'));
     }
 
+    // Link to the full Finances page (2026-09-02, Matt's call) -- same
+    // "show the section, then fetch it" pair every other dashboard card's
+    // own link uses (see viewSeasonBtn/sponsorsLink above).
+    var financesLink = el('button', 'rc-link-btn rc-dash-card-link', '← View Finances');
+    financesLink.type = 'button';
+    financesLink.addEventListener('click', function () {
+      showLazySection('finances', currentToken);
+    });
+    card.appendChild(financesLink);
+
     return card;
   }
 
@@ -1262,28 +1319,29 @@
   // season (see that handler's own comment for exactly how each objective
   // is scored). Same gating pattern as Next Race/Current Seat -- "not
   // registered" first, then whatever the fetch actually returned.
-  function seasonObjectiveCard(data, activeSeasonData) {
-    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Season Objective'));
-
+  // Body only (no card/h3) -- factored out (2026-09-02) so both the
+  // Dashboard's own Season Objective card AND the Finances page's merged
+  // Season Outlook panel (buildSeasonOutlookPanel below) render the exact
+  // same content instead of keeping two copies in sync by hand.
+  function appendSeasonObjectiveBody(container, data, activeSeasonData) {
     var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
     if (!registered) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to take on a Season Objective.'));
-      return card;
+      container.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to take on a Season Objective.'));
+      return;
     }
     if (!data || !data.success || !data.hasSeat) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Could not load your Season Objective right now.'));
-      return card;
+      container.appendChild(el('p', 'rc-cs-empty', 'Could not load your Season Objective right now.'));
+      return;
     }
     if (!data.hasObjective) {
-      card.appendChild(el('p', 'rc-cs-empty', 'This seat has no Season Objective assigned.'));
-      return card;
+      container.appendChild(el('p', 'rc-cs-empty', 'This seat has no Season Objective assigned.'));
+      return;
     }
 
     var objDescMap = (typeof CAR_OBJECTIVE_DESCRIPTIONS !== 'undefined') ? CAR_OBJECTIVE_DESCRIPTIONS : {};
-    card.appendChild(el('div', 'rc-objective-name', escapeHtml(data.objectiveName)));
+    container.appendChild(el('div', 'rc-objective-name', escapeHtml(data.objectiveName)));
     if (objDescMap[data.objectiveName]) {
-      card.appendChild(el('p', 'rc-objective-desc', escapeHtml(objDescMap[data.objectiveName])));
+      container.appendChild(el('p', 'rc-objective-desc', escapeHtml(objDescMap[data.objectiveName])));
     }
 
     var percent = Math.max(0, Math.min(100, Number(data.percent) || 0));
@@ -1306,7 +1364,7 @@
       countLabel = data.current + ' of ' + data.target;
     }
     progressWrap.appendChild(el('div', 'rc-objective-progress-count', countLabel + (data.met ? ' -- complete' : '')));
-    card.appendChild(progressWrap);
+    container.appendChild(progressWrap);
 
     // Progress percent and payout, same large-number "categories at the
     // bottom" treatment every other dashboard card uses -- payout gets its
@@ -1321,9 +1379,359 @@
     payoutStat.appendChild(el('div', 'rc-finrep-rank-label', 'Payout'));
     payoutStat.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-payout', formatMoney(data.objectiveBonus)));
     stats.appendChild(payoutStat);
+    container.appendChild(stats);
+  }
+
+  // Season Objective -- Dashboard card (2026-09-01, Matt's call), backed
+  // by action=getMySeasonObjective (handleGetMySeasonObjective, DataCache.gs).
+  // Real progress tracking, not a placeholder: every objective's target is
+  // computed off this driver's own SeasonHistory rows for the active
+  // season (see that handler's own comment for exactly how each objective
+  // is scored). Same gating pattern as Next Race/Current Seat -- "not
+  // registered" first, then whatever the fetch actually returned.
+  function seasonObjectiveCard(data, activeSeasonData) {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Season Objective'));
+    appendSeasonObjectiveBody(card, data, activeSeasonData);
+    return card;
+  }
+
+  // ---------------------------------------------------------------------
+  // FINANCES PAGE (2026-09-02, Matt's ask: "anything money related should
+  // flow through here to manage the account"). A "checking account" style
+  // overview -- one hero panel with the running balance, a full ledger of
+  // every Transactions row this driver has ever had (action=getMyLedger,
+  // handleGetMyLedger in DataCache.gs -- a thin, uncomputed read of the
+  // same Transactions sheet handleGetMyFinancesReputation already sums),
+  // a Sponsorship Outlook panel (the potential upside/downside of this
+  // driver's currently-chosen sponsors, reusing the same bonus/penalty
+  // language as the Sponsors page's own "Sponsor Goals"), and the Team
+  // Objective card reused verbatim from the Dashboard (seasonObjectiveCard
+  // above) since it's already exactly "the team objective's potential
+  // payout and progress" -- no reason to build a second version of it.
+  // ---------------------------------------------------------------------
+
+  function formatLedgerDate(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+
+  // Big balance hero -- same underlying numbers as the Dashboard's
+  // Finances card (financesCard above), just given more room and folded
+  // in with Class Rank (financesCard never had room to show it) since
+  // this page has the space a quick-glance dashboard card doesn't.
+  function buildFinHeroPanel(data) {
+    var card = el('div', 'rc-panel rc-fin-hero-card');
+    if (!data || !data.success || !data.statsKnown) {
+      card.appendChild(el('div', 'rc-fin-hero-label', 'Account Balance'));
+      card.appendChild(el('p', 'rc-cs-empty', 'Your balance will appear here once your driver account is approved.'));
+      return card;
+    }
+
+    var top = el('div', 'rc-fin-hero-top');
+    var balCol = el('div');
+    balCol.appendChild(el('div', 'rc-fin-hero-label', 'Account Balance'));
+    var balanceRow = el('div', 'rc-finrep-balance-row');
+    balanceRow.appendChild(el('div', 'rc-fin-hero-balance', formatMoney(data.bankBalance)));
+    balanceRow.appendChild(el('div', 'rc-finrep-frozen-inline',
+      'Frozen ' + ((data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—')));
+    balCol.appendChild(balanceRow);
+    var delta = Number(data.deltaSinceLastRound) || 0;
+    if (delta !== 0) {
+      balCol.appendChild(el('div', 'rc-finrep-delta ' + (delta > 0 ? 'rc-finrep-delta-up' : 'rc-finrep-delta-down'),
+        (delta > 0 ? '+' : '') + formatMoney(delta) + ' since last update'));
+    }
+    top.appendChild(balCol);
+    card.appendChild(top);
+
+    var stats = el('div', 'rc-finrep-ranks');
+    [
+      ['Bank Rank', data.globalBalanceRank ? (ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')) : '—'],
+      ['Class Rank', data.classBalanceRank ? (ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')) : '—'],
+      ['Largest Win', (data.largestWin != null) ? formatMoney(data.largestWin) : '—']
+    ].forEach(function (pair) {
+      var stat = el('div', 'rc-finrep-rank');
+      stat.appendChild(el('div', 'rc-finrep-rank-label', pair[0]));
+      stat.appendChild(el('div', 'rc-finrep-rank-value' + (pair[1] === '—' ? ' rc-finrep-rank-value-empty' : ''), pair[1]));
+      stats.appendChild(stat);
+    });
     card.appendChild(stats);
 
     return card;
+  }
+
+  // Ledger -- every Transactions row this driver has ever had, newest
+  // first. A summary strip up top (Total In / Total Out / Net) is the one
+  // piece of real "insight" this pass adds beyond a flat list -- Matt's
+  // ask specifically called out that insights will be needed here going
+  // forward, and a running in/out/net total is the most basic one a real
+  // checking account statement already gives you for free.
+  function buildLedgerPanel(entries) {
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Transaction Ledger'));
+
+    if (!entries || !entries.length) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No transactions yet -- your ledger will fill in as money moves through your account.'));
+      return card;
+    }
+
+    var totalIn = 0, totalOut = 0;
+    entries.forEach(function (t) {
+      if (t.amount > 0) totalIn += t.amount; else totalOut += t.amount;
+    });
+    var summary = el('div', 'rc-ledger-summary');
+    [
+      ['Total In', formatMoney(totalIn), 'rc-ledger-summary-value-positive'],
+      ['Total Out', formatMoney(totalOut), 'rc-ledger-summary-value-negative'],
+      ['Net', (totalIn + totalOut >= 0 ? '+' : '') + formatMoney(totalIn + totalOut), (totalIn + totalOut >= 0 ? 'rc-ledger-summary-value-positive' : 'rc-ledger-summary-value-negative')]
+    ].forEach(function (item) {
+      var wrap = el('div', 'rc-ledger-summary-item');
+      wrap.appendChild(el('div', 'rc-ledger-summary-label', item[0]));
+      wrap.appendChild(el('div', 'rc-ledger-summary-value ' + item[2], item[1]));
+      summary.appendChild(wrap);
+    });
+    card.appendChild(summary);
+
+    var list = el('div');
+    entries.forEach(function (t) {
+      var row = el('div', 'rc-ledger-row');
+      row.appendChild(el('div', 'rc-ledger-date', formatLedgerDate(t.timestamp)));
+
+      var main = el('div', 'rc-ledger-main');
+      main.appendChild(el('div', 'rc-ledger-event', escapeHtml(ledgerTypeLabel(t.type))));
+      if (t.note) main.appendChild(el('div', 'rc-ledger-note', escapeHtml(t.note)));
+      row.appendChild(main);
+
+      row.appendChild(el('div', 'rc-ledger-season', escapeHtml(t.seasonName || '—')));
+
+      var amt = el('div', 'rc-ledger-amt ' + (t.amount >= 0 ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'),
+        (t.amount > 0 ? '+' : '') + formatMoney(t.amount));
+      row.appendChild(amt);
+
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+
+    return card;
+  }
+
+  // Season Outlook (2026-09-02, Matt's call: fold Season Objective and
+  // Sponsorship Outlook into one card) -- Team Objective body reused
+  // verbatim from appendSeasonObjectiveBody above, the sponsor bonus/
+  // penalty grid reused from the Sponsors page's own "Sponsor Goals"
+  // language, and a new Season Potential strip totaling everything up:
+  // every chosen sponsor's bonus/penalty amount, multiplied out across
+  // every round left in the season, plus the Team Objective's one-time
+  // payout added onto the bonus side. This is a ceiling/floor, not a
+  // forecast -- it assumes every trigger fires every round, which is why
+  // the hint under it says so plainly rather than implying it's likely.
+  function buildSeasonOutlookPanel(objectiveData, activeSeasonData, sponsorsData) {
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Season Outlook'));
+
+    card.appendChild(el('div', 'rc-panel-subhead', 'Team Objective'));
+    appendSeasonObjectiveBody(card, objectiveData, activeSeasonData);
+
+    card.appendChild(el('div', 'rc-panel-subhead', 'Sponsorship Outlook'));
+    var hasSeat = !!(sponsorsData && sponsorsData.success && sponsorsData.hasSeat);
+    var sponsors = hasSeat ? (sponsorsData.sponsors || []) : [];
+    if (!hasSeat) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to pick sponsors.'));
+      return card;
+    }
+    if (!sponsors.length) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No sponsors chosen yet.'));
+      var pickLink = el('button', 'rc-link-btn rc-dash-card-link', '← Choose Sponsors');
+      pickLink.type = 'button';
+      pickLink.addEventListener('click', function () {
+        showLazySection('sponsors', currentToken);
+      });
+      card.appendChild(pickLink);
+      return card;
+    }
+
+    card.appendChild(el('p', 'rc-fin-outlook-hint',
+      'What each of your chosen sponsors could pay out or cost you this round, if their trigger fires.'));
+
+    var grid = el('div', 'rc-sponsor-goals-grid');
+    var bonusCol = el('div', 'rc-sponsor-goals-col');
+    bonusCol.appendChild(el('div', 'rc-sponsor-goals-col-head rc-sponsor-goals-col-head-bonus', 'Potential Upside'));
+    var penaltyCol = el('div', 'rc-sponsor-goals-col');
+    penaltyCol.appendChild(el('div', 'rc-sponsor-goals-col-head rc-sponsor-goals-col-head-penalty', 'Potential Downside'));
+
+    var bonusPerRound = 0, penaltyPerRound = 0;
+    sponsors.forEach(function (s) {
+      var bonusAmt = Number(s.BonusAmount) || 0;
+      var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+      bonusPerRound += bonusAmt;
+      penaltyPerRound += penaltyAmt;
+
+      var bRow = el('div', 'rc-sponsor-goal-row');
+      bRow.appendChild(el('div', 'rc-sponsor-goal-amt rc-sponsor-goal-amt-bonus', '+$' + bonusAmt));
+      var bText = el('div', 'rc-sponsor-goal-text');
+      bText.appendChild(el('div', 'rc-sponsor-goal-trigger', escapeHtml(s.BonusType || 'Bonus')));
+      bText.appendChild(el('div', 'rc-sponsor-goal-sponsor', escapeHtml(s.Name || '')));
+      bRow.appendChild(bText);
+      bonusCol.appendChild(bRow);
+
+      var pRow = el('div', 'rc-sponsor-goal-row');
+      pRow.appendChild(el('div', 'rc-sponsor-goal-amt rc-sponsor-goal-amt-penalty', '−$' + penaltyAmt));
+      var pText = el('div', 'rc-sponsor-goal-text');
+      pText.appendChild(el('div', 'rc-sponsor-goal-trigger', escapeHtml(s.PenaltyType || 'Penalty')));
+      pText.appendChild(el('div', 'rc-sponsor-goal-sponsor', escapeHtml(s.Name || '')));
+      pRow.appendChild(pText);
+      penaltyCol.appendChild(pRow);
+    });
+
+    grid.appendChild(bonusCol);
+    grid.appendChild(penaltyCol);
+    card.appendChild(grid);
+
+    var manageLink = el('button', 'rc-link-btn', '← Manage Sponsors');
+    manageLink.type = 'button';
+    manageLink.style.cssText = 'display:block;margin-top:14px;';
+    manageLink.addEventListener('click', function () {
+      showLazySection('sponsors', currentToken);
+    });
+    card.appendChild(manageLink);
+
+    // Season Potential -- Matt's ask: "a total potential bonus and
+    // penalty for the season based on what the driver chose". Every
+    // sponsor's per-round amount times however many rounds this season
+    // actually has (objectiveData.totalRounds -- already computed by
+    // handleGetMySeasonObjective off the active season's own round count,
+    // so no separate fetch is needed here), plus the Team Objective's
+    // one-time payout folded onto the bonus side since it isn't a
+    // per-round amount at all.
+    var totalRounds = Number(objectiveData && objectiveData.totalRounds) || 0;
+    var objectiveBonus = (objectiveData && objectiveData.hasObjective) ? (Number(objectiveData.objectiveBonus) || 0) : 0;
+    var totalPotentialBonus = bonusPerRound * totalRounds + objectiveBonus;
+    var totalPotentialPenalty = penaltyPerRound * totalRounds;
+
+    card.appendChild(el('div', 'rc-panel-subhead', 'Season Potential'));
+    card.appendChild(el('p', 'rc-fin-outlook-hint',
+      totalRounds
+        ? ('The ceiling and floor if every sponsor trigger fires (or misses) every one of this season\'s ' + totalRounds + ' rounds, plus your Team Objective payout on top.')
+        : 'The ceiling and floor if every sponsor trigger fires (or misses) every round -- round count not available yet.'));
+    var potentialStats = el('div', 'rc-finrep-ranks');
+    var potBonusStat = el('div', 'rc-finrep-rank');
+    potBonusStat.appendChild(el('div', 'rc-finrep-rank-label', 'Total Potential Bonus'));
+    potBonusStat.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-payout', '+' + formatMoney(totalPotentialBonus)));
+    potentialStats.appendChild(potBonusStat);
+    var potPenaltyStat = el('div', 'rc-finrep-rank');
+    potPenaltyStat.appendChild(el('div', 'rc-finrep-rank-label', 'Total Potential Penalty'));
+    potPenaltyStat.appendChild(el('div', 'rc-finrep-rank-value rc-finrep-rank-value-penalty', '−' + formatMoney(totalPotentialPenalty)));
+    potentialStats.appendChild(potPenaltyStat);
+    card.appendChild(potentialStats);
+
+    return card;
+  }
+
+  // Request Loan (2026-09-02, Matt's call: self-service, no organizer
+  // review -- "this can all be done from the user's finance page"). Three
+  // states per Matt's own description ("the button goes from a locked
+  // state to a live state"): locked/grayed while balance is 0 or positive,
+  // live once it's gone negative, and a plain note once this season's
+  // one-time loan has already been taken (one-per-season is our own
+  // safeguard, not something Matt specified -- flagged to him separately).
+  // The loan is free money right now on purpose: Matt's design ties the
+  // real cost to a future performance-based penalty ("Track it now, build
+  // the penalty later") and, later still, a public "league bank account"
+  // page for the "fun public shaming" he asked for -- neither exists yet.
+  function buildLoanPanel(loanStatus, token) {
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Bank Loan'));
+
+    if (!loanStatus || !loanStatus.success || !loanStatus.hasSeat) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to be eligible for a loan.'));
+      return card;
+    }
+
+    if (loanStatus.alreadyTakenThisSeason) {
+      card.appendChild(el('p', 'rc-cs-empty', 'You\'ve already taken your one loan for this season.'));
+    } else if (loanStatus.eligible) {
+      card.appendChild(el('p', 'rc-fin-outlook-hint',
+        'Your balance has gone negative. You can request a one-time ' + loanStatus.carClass + '-class loan of ' +
+        formatMoney(loanStatus.loanAmount) + ' to get back on your feet -- it\'s not repaid, but it comes at a price down the line.'));
+      var reqBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')');
+      reqBtn.type = 'button';
+      reqBtn.style.cssText = 'width:auto;margin-top:10px;';
+      reqBtn.addEventListener('click', function () {
+        reqBtn.disabled = true;
+        reqBtn.textContent = 'Requesting...';
+        fetchApi('requestLoan', { token: token }).then(function (res) {
+          if (!res || !res.success) {
+            alert((res && res.message) || 'Could not process the loan request.');
+            reqBtn.disabled = false;
+            reqBtn.textContent = 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')';
+            return;
+          }
+          rcReloadAfterSave();
+        }).catch(function () {
+          alert('Could not process the loan request.');
+          reqBtn.disabled = false;
+          reqBtn.textContent = 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')';
+        });
+      });
+      card.appendChild(reqBtn);
+    } else {
+      card.appendChild(el('p', 'rc-cs-empty', 'A loan is only available once your balance has gone negative.'));
+      var lockedBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Request Loan');
+      lockedBtn.type = 'button';
+      lockedBtn.disabled = true;
+      lockedBtn.style.cssText = 'width:auto;margin-top:10px;';
+      card.appendChild(lockedBtn);
+    }
+
+    if (loanStatus.loans && loanStatus.loans.length) {
+      card.appendChild(el('div', 'rc-panel-subhead', 'Loan History'));
+      loanStatus.loans.forEach(function (l) {
+        var row = el('div', 'rc-ledger-row');
+        row.appendChild(el('div', 'rc-ledger-date', formatLedgerDate(l.grantedAt)));
+        var main = el('div', 'rc-ledger-main');
+        main.appendChild(el('div', 'rc-ledger-event', escapeHtml(l.carClass) + ' Class Loan'));
+        row.appendChild(main);
+        row.appendChild(el('div', 'rc-ledger-amt rc-ledger-amt-positive', '+' + formatMoney(l.amount)));
+        card.appendChild(row);
+      });
+    }
+
+    return card;
+  }
+
+  function renderFinancesSection(token) {
+    var section = document.getElementById('rc-section-finances');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(buildPageSpinner('Loading your finances...'));
+
+    Promise.all([
+      fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMyLedger', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMyLoanStatus', { token: token }).catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      var activeSeason = results[0], finances = results[1], ledger = results[2],
+        sponsors = results[3], objective = results[4], loanStatus = results[5];
+
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Finances'));
+      section.appendChild(el('p', 'rc-sponsors-explainer',
+        'Everything money-related in your account lives here -- your running balance, every bonus and penalty that has hit your ledger, what your current sponsors could still pay out or cost you, and your car\'s own Season Objective payout.'));
+
+      section.appendChild(buildFinHeroPanel(finances));
+
+      section.appendChild(buildLoanPanel(loanStatus, token));
+
+      section.appendChild(buildSeasonOutlookPanel(objective, activeSeason, sponsors));
+
+      section.appendChild(buildLedgerPanel((ledger && ledger.success) ? ledger.entries : []));
+    });
   }
 
   // Recent Results -- placeholder card, second on the third row, next to
@@ -1417,8 +1825,7 @@
     var sponsorsLink = el('button', 'rc-link-btn rc-dash-card-link', hasSponsors ? '← Manage Sponsors' : '← Choose Sponsors');
     sponsorsLink.type = 'button';
     sponsorsLink.addEventListener('click', function () {
-      showSection('sponsors');
-      renderSponsorsSection(currentToken);
+      showLazySection('sponsors', currentToken);
     });
     card.appendChild(sponsorsLink);
 
@@ -2524,7 +2931,15 @@
       });
     }
 
-    return { el: panel, updateMarks: updateMarks };
+    // Toggles the hover/pointer-cursor affordance on the whole table
+    // (see the CSS's .rc-sponsor-table-picking guard) -- called whenever
+    // a Current Picks slot becomes targeted or un-targeted, so a click
+    // here only ever LOOKS clickable while it actually does something.
+    function setPicking(isPicking) {
+      table.classList.toggle('rc-sponsor-table-picking', !!isPicking);
+    }
+
+    return { el: panel, updateMarks: updateMarks, setPicking: setPicking };
   }
 
   // 2026-09-02 redesign (Matt's call): no more "Choose/Change Sponsors"
@@ -2594,7 +3009,14 @@
 
       function refreshBoth() {
         picksPanel.refresh();
-        tablePanel.updateMarks();
+        if (tablePanel) {
+          tablePanel.updateMarks();
+          // Hover/pointer-cursor on the table only while a slot is
+          // actually targeted (Matt's call, 2026-09-02) -- outside of
+          // that, a row click is a no-op (see handleRowClick's guard
+          // above), so it shouldn't look clickable either.
+          tablePanel.setPicking(activeTarget !== null);
+        }
       }
 
       // Fire-and-forget by design (Matt's call: "the backend does its
@@ -4528,14 +4950,32 @@
 
     var privateQualifyingSelect = wizSelect(['Yes', 'No'], state.privateQualifying, function (v) { state.privateQualifying = v; });
     var trackLimitsSelect = wizSelect(['Strict', 'Relaxed', 'Default'], state.trackLimitsPreset, function (v) { state.trackLimitsPreset = v; });
-    privateQualifyingSelect.classList.add('rc-wiz-editable-when-locked');
-    trackLimitsSelect.classList.add('rc-wiz-editable-when-locked');
+    // NOTE (2026-09-02, Matt's call): Private Qualifying and Track Limits
+    // Preset no longer get .rc-wiz-editable-when-locked -- once a season's
+    // first round has passed, ONLY Season Name and Default Password stay
+    // editable. Everything else on this page (including these two) freezes
+    // with the rest in the state.__locked blanket-disable pass below.
     container.appendChild(fieldPairRow(
       'Private Qualifying', privateQualifyingSelect,
       'Track Limits Preset', trackLimitsSelect
     ));
 
-    container.appendChild(wizSubhead('Format'));
+    // Classes/Economy/Objectives/Elite Tier are locked PERMANENTLY the
+    // moment a season is edited at all -- not just once the first round has
+    // raced (Matt's call, 2026-09-02). state.__editSeasonId is only set
+    // when editing an existing season (never on Create Season), so a brand
+    // new season stays fully open here; every field below tagged
+    // .rc-wiz-locked-in-edit gets disabled up front via editSeasonLock,
+    // independent of and in addition to the time-based state.__locked pass
+    // further down this function.
+    var editSeasonLock = !!state.__editSeasonId;
+    if (editSeasonLock) {
+      var classLockNote = el('div', 'rc-hint', 'Car Class(es), Economy, Objectives, and Elite Tier are locked once a season is created -- they can no longer be changed here.');
+      classLockNote.style.marginBottom = '8px';
+      container.appendChild(classLockNote);
+    }
+
+    container.appendChild(wizSubhead('Car Class(es)'));
     var classesWrap = el('div');
     var classesGroupEntry;
     // Also refreshes the Economy step's Elite Tier dropdowns (see
@@ -4561,7 +5001,13 @@
       var seasons = availableSeasonsForClass(cls);
       var available = seasons.length > 0;
       if (!available && state.classes[cls]) { state.classes[cls] = false; state.classSeasons[cls] = ''; }
-      var row = el('div', 'padding:6px 0;' + (available ? '' : 'opacity:0.55;'));
+      // Dimmed whenever the class has no cars entered (as before) OR this
+      // whole group is permanently locked (editSeasonLock) -- Matt's call,
+      // 2026-09-02: "dim the car class font so that it's obvious that it's
+      // not able to be edited". opacity on the whole row dims the label
+      // text along with the checkbox/radios, same visual language as the
+      // "no cars entered yet" dimming this already had.
+      var row = el('div', 'padding:6px 0;' + ((available && !editSeasonLock) ? '' : 'opacity:0.55;'));
       var topRow = el('div', 'display:flex;align-items:center;gap:12px;');
 
       var classLabel = wizCheckboxRow(cls, state.classes[cls] && available, function (c) {
@@ -4577,7 +5023,9 @@
         recheckClassesGroup();
       });
       var classCb = classLabel.querySelector('input');
-      classCb.disabled = !available;
+      classCb.disabled = !available || editSeasonLock;
+      classCb.classList.add('rc-wiz-locked-in-edit');
+      if (editSeasonLock) classCb.classList.add('rc-field-locked');
       classLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
       topRow.appendChild(classLabel);
       var noCarsHint = el('span', 'font-size:12px;color:var(--rc-steel);font-style:italic;display:' + (available ? 'none' : ''), 'no cars entered for this class yet');
@@ -4594,7 +5042,9 @@
           radio.type = 'radio';
           radio.name = 'wizard-class-season-' + cls;
           radio.checked = state.classSeasons[cls] === season;
-          radio.disabled = !state.classes[cls];
+          radio.disabled = !state.classes[cls] || editSeasonLock;
+          radio.classList.add('rc-wiz-locked-in-edit');
+          if (editSeasonLock) radio.classList.add('rc-field-locked');
           radio.addEventListener('change', function () {
             if (radio.checked) { state.classSeasons[cls] = season; recheckClassesGroup(); }
           });
@@ -4614,8 +5064,13 @@
       var anySelected = Object.keys(state.classes).some(function (c) { return state.classes[c]; });
       return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || !!state.classSeasons[c]; });
     }, requiredEls);
-    container.appendChild(wizField('Car Class(es) For The Season', classesWrap));
+    // Appended directly (2026-09-02, Matt's call: remove the "Car Class(es)
+    // For The Season" label) -- the "Car Class(es)" subhead right above
+    // this already says what the group is, so the old wizField() label
+    // underneath it was just repeating the same thing a second time.
+    container.appendChild(classesWrap);
 
+    container.appendChild(wizSubhead('Format'));
     var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
     requireField(byeWeeksInput, requiredEls);
     container.appendChild(wizFieldPairRow(
@@ -4699,6 +5154,12 @@
     balDisplayInput.classList.add('rc-field-locked');
     var stakeCapInput = wizNumberInput(state.economy.wagerStakeCapPct, function (v) { state.economy.wagerStakeCapPct = v; }, { min: 0, max: 100 });
     requireField(stakeCapInput, requiredEls);
+    // Wager Stake Cap joins the permanently-locked-in-edit group
+    // (2026-09-02, Matt's call) -- same as Classes/Economy seat costs/
+    // Objectives/Elite Tier, locked from the moment a season is edited at
+    // all, not just once it's time-locked.
+    stakeCapInput.classList.add('rc-wiz-locked-in-edit');
+    if (editSeasonLock) { stakeCapInput.disabled = true; stakeCapInput.classList.add('rc-field-locked'); }
     container.appendChild(wizFieldPairRow(
       'Starting Bank Balance ($)', balDisplayInput,
       'Read-only -- only an Admin can change this, from the Admin panel\'s Economy settings.',
@@ -4715,6 +5176,10 @@
     var lowSeatInput = wizNumberInput(state.economy.carTierSeatCost.Low, function (v) { state.economy.carTierSeatCost.Low = v; }, { min: 100, step: 100 });
     var midSeatInput = wizNumberInput(state.economy.carTierSeatCost.Mid, function (v) { state.economy.carTierSeatCost.Mid = v; }, { min: 100, step: 100 });
     var highSeatInput = wizNumberInput(state.economy.carTierSeatCost.High, function (v) { state.economy.carTierSeatCost.High = v; }, { min: 100, step: 100 });
+    [lowSeatInput, midSeatInput, highSeatInput].forEach(function (input) {
+      input.classList.add('rc-wiz-locked-in-edit');
+      if (editSeasonLock) { input.disabled = true; input.classList.add('rc-field-locked'); }
+    });
     var seatCostRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
     [['Low Tier Avg. Seat Cost ($)', lowSeatInput], ['Mid Tier Avg. Seat Cost ($)', midSeatInput], ['High Tier Avg. Seat Cost ($)', highSeatInput]].forEach(function (pair) {
       var col = el('div', 'flex:1;min-width:160px;');
@@ -4754,6 +5219,8 @@
     (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (tier) {
       var snapped = snapMultiplier(Number(state.economy.objectiveBonusMultiplier[tier]));
       var input = wizSelect(multiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snapped.toFixed(2) + 'x', function (v) { state.economy.objectiveBonusMultiplier[tier] = parseFloat(v); });
+      input.classList.add('rc-wiz-locked-in-edit');
+      if (editSeasonLock) { input.disabled = true; input.classList.add('rc-field-locked'); }
       var col = el('div', 'flex:1;min-width:160px;');
       col.appendChild(wizField(tier + ' Tier Objective Multiplier', input, null));
       multiplierRow.appendChild(col);
@@ -4810,6 +5277,8 @@
         var select = wizSelect(options, currentLabel, function (v) {
           state.eliteByClass[cls] = (v === 'No Elite Seat') ? '' : (carIdByLabel[v] || '');
         });
+        select.classList.add('rc-wiz-locked-in-edit');
+        if (editSeasonLock) { select.disabled = true; select.classList.add('rc-field-locked'); }
         var col = el('div', 'flex:1;min-width:220px;');
         col.appendChild(wizField(cls + ' Elite Team', select));
         eliteWrap.appendChild(col);
@@ -4827,25 +5296,39 @@
     }, eliteMultiplierOptions[0]);
     var eliteMultiplierInput = wizSelect(eliteMultiplierOptions.map(function (v) { return v.toFixed(2) + 'x'; }), snappedEliteMultiplier.toFixed(2) + 'x', function (v) { state.economy.eliteObjectiveMultiplier = parseFloat(v); });
     eliteMultiplierInput.style.maxWidth = '25%';
+    eliteMultiplierInput.classList.add('rc-wiz-locked-in-edit');
+    if (editSeasonLock) { eliteMultiplierInput.disabled = true; eliteMultiplierInput.classList.add('rc-field-locked'); }
     container.appendChild(wizField('Elite Tier Objective Multiplier', eliteMultiplierInput,
       'Applies to every Elite car\'s objective bonus this season -- e.g. an Elite seat costing $22,500 at 7.50x pays a $168,750 bonus for winning the championship.'));
 
-    // Locked season (Matt's call, 2026-08-29; widened 2026-08-30): once
-    // any round has been raced, this page freezes down to just Identity
-    // and Access & Server Behavior -- blanket disable every input/select/
-    // textarea just built above EXCEPT those two categories'
-    // .rc-wiz-editable-when-locked fields, rather than threading a locked
+    // Locked season (Matt's call, 2026-09-02): once the season's first
+    // round date/time has passed, the ENTIRE season freezes down to just
+    // Season Name and Default Password -- blanket disable every input/
+    // select/textarea just built above EXCEPT those two fields'
+    // .rc-wiz-editable-when-locked class, rather than threading a locked
     // check through each individual field. Inserted at the very top so it
-    // reads first, before the fields it explains.
+    // reads first, before the fields it explains. This is separate from
+    // (and stricter than) editSeasonLock above, which only ever freezes
+    // Classes/Economy/Objectives/Elite Tier and applies from the moment a
+    // season is first edited, time-locked or not.
     if (state.__locked) {
       var lockNote = el('div', 'rc-panel', '');
       lockNote.style.cssText = 'border-color:var(--rc-red);background:#fdf2f2;margin-bottom:16px;';
-      lockNote.appendChild(el('div', 'font-weight:700;color:var(--rc-carbon);font-size:13px;', 'This season has raced rounds'));
+      lockNote.appendChild(el('div', 'font-weight:700;color:var(--rc-carbon);font-size:13px;', 'This season\'s first round has started'));
       lockNote.appendChild(el('div', 'color:var(--rc-steel);font-size:12.5px;margin-top:4px;',
-        'Season Details are locked -- only Identity and Access & Server Behavior can still change. On the next page, only races that haven\'t been completed yet stay editable.'));
+        'The season is locked into place -- only Season Name and Default Password can still change. On the next page, races can no longer be edited.'));
       container.insertBefore(lockNote, container.firstChild);
       container.querySelectorAll('input, select, textarea').forEach(function (fieldEl) {
-        if (!fieldEl.classList.contains('rc-wiz-editable-when-locked')) fieldEl.disabled = true;
+        if (!fieldEl.classList.contains('rc-wiz-editable-when-locked')) {
+          fieldEl.disabled = true;
+          // Grayed out rather than left to the browser's own disabled
+          // look (2026-09-02, Matt's call: "the locked boxes [should be]
+          // grayed out, similar to the season money") -- same
+          // .rc-field-locked treatment the permanently-locked fields
+          // above already carry, so every non-editable box on this page
+          // reads the same way once the season starts.
+          fieldEl.classList.add('rc-field-locked');
+        }
       });
     }
   }
@@ -5048,17 +5531,18 @@
       card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(igPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(igQualify, 'Sim Time')));
       card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(igRace, 'Sim Time')));
 
-      // Editing an already-raced round is never allowed (Matt's call;
-      // widened 2026-08-30 to gray out the WHOLE card, not just disable
-      // its fields) -- freeze every field this specific card just built
-      // and dim the whole container, rather than touching the
-      // season-wide lock check above (a season can be locked overall
-      // while still having later, unraced rounds stay fully editable).
-      if (race.raced) {
-        var racedBadge = el('span', null, 'Raced · Locked');
+      // Season-wide time lock (Matt's call, 2026-09-02): once the first
+      // round's date/time has passed, the WHOLE Race Events page freezes
+      // together -- every round's card, not just the ones already raced.
+      // This replaced the old per-round race.raced granularity (a season
+      // used to stay editable round-by-round as each one got raced); now
+      // it's all-or-nothing, driven by the same state.__locked flag the
+      // Season Details page checks.
+      if (state.__locked) {
+        var racedBadge = el('span', null, 'Locked');
         racedBadge.style.cssText = 'display:inline-block;margin-left:10px;padding:2px 8px;border-radius:4px;background:var(--rc-steel);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;vertical-align:middle;';
         card.querySelector('h4').appendChild(racedBadge);
-        card.querySelectorAll('input, select, textarea').forEach(function (fieldEl) { fieldEl.disabled = true; });
+        card.querySelectorAll('input, select, textarea').forEach(function (fieldEl) { fieldEl.disabled = true; fieldEl.classList.add('rc-field-locked'); });
         card.style.opacity = '0.55';
         card.style.pointerEvents = 'none';
       }
@@ -5369,10 +5853,16 @@
   // pattern as normalizeWizardState() above, for the same reason (a field
   // the wizard expects today might not exist in an older season's stored
   // seasonDetails). state.__editSeasonId and state.__locked drive every
-  // edit-specific branch elsewhere (saveWizardDraft becoming a no-op, the
-  // Season Details page's blanket-disable, the Race Events page's
-  // per-round "Raced -- Locked" treatment, and finishEditWizard() below
-  // calling updateSeason instead of createSeason).
+  // edit-specific branch elsewhere. __editSeasonId alone (editSeasonLock,
+  // in renderWizardSeasonDetailsPage) permanently freezes Classes/Economy/
+  // Objectives/Elite Tier from the moment a season is edited at all.
+  // __locked (2026-09-02: now time-based -- whether the season's first
+  // round date/time has passed, not whether Sessions data exists) is the
+  // stricter, later-arriving freeze covering everything else: the Season
+  // Details page's blanket-disable down to just Season Name + Default
+  // Password, and the Race Events page's whole-page lock (saveWizardDraft
+  // becoming a no-op, and finishEditWizard() below calling updateSeason
+  // instead of createSeason, both key off __editSeasonId being set).
   function buildEditWizardState(ctx) {
     var base = defaultWizardState();
     var details = ctx.seasonDetails || {};
@@ -5398,7 +5888,6 @@
       var trackInfo = trackNameFromId(r.trackId);
       return {
         roundId: r.roundId,
-        raced: !!r.raced,
         eventName: rd.eventName || '',
         track: trackInfo.track,
         layout: rd.layout || trackInfo.layout,
@@ -5817,6 +6306,7 @@
         token: token,
         body: {
           seasonId: state.__editSeasonId,
+          seasonName: state.seasonName,
           seasonDetails: JSON.stringify(payload.seasonDetails),
           races: JSON.stringify(payload.racesPayload)
         }
@@ -5989,11 +6479,40 @@
       balField.style.width = '50%'; // half the popup's width, not full (Matt's call) -- this modal is wide now to match the other Admin popups
       modal.body.appendChild(balField);
 
+      // Loan Amounts by Class (2026-09-02) -- one field per CAR_CLASS_LIST
+      // entry, backing the self-service "Request Loan" button on the
+      // Finances page. Matt's own words: "The loan amount varies depending
+      // on the class you're in and scales up from the GT3 number" -- so
+      // GT3 is the base field and the rest are just the same idea per class.
+      // Built as two wizFieldPairRow rows (not a raw flex-wrap of wizField
+      // boxes) -- FIX (2026-09-02): a flex-wrap of plain wizField divs hits
+      // ".rc-wiz-field:first-child { margin-top: 0; }", which only zeroes
+      // the very first box (GT3) and leaves the other three at their normal
+      // margin-top: 18px, so GT3 sat noticeably higher than LMP3 beside it.
+      // wizFieldPairRow's own CSS zeroes margin-top/bottom on every field
+      // in the row, which is what actually keeps a row's two boxes level.
+      modal.body.appendChild(el('div', 'rc-panel-subhead', 'Bank Loan Amounts By Class ($)'));
+      var loanByClass = data.loanAmountByClass || {};
+      var loanInputs = {};
+      ['LMGT3', 'LMP3'].forEach(function (cls) { loanInputs[cls] = wizNumberInput(loanByClass[cls], function () {}, { min: 0, step: 500 }); });
+      ['LMP2', 'Hypercar'].forEach(function (cls) { loanInputs[cls] = wizNumberInput(loanByClass[cls], function () {}, { min: 0, step: 500 }); });
+      modal.body.appendChild(wizFieldPairRow('LMGT3', loanInputs.LMGT3, null, 'LMP3', loanInputs.LMP3, null));
+      modal.body.appendChild(wizFieldPairRow('LMP2', loanInputs.LMP2, null, 'Hypercar', loanInputs.Hypercar, null));
+      modal.body.appendChild(el('p', 'rc-hint', 'The one-time, no-repayment loan amount granted per car class once a driver\'s balance goes negative.'));
+
       var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:16px;');
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
       saveBtn.type = 'button';
       saveBtn.addEventListener('click', function () {
-        fetchApi('adminUpdateEconomySettings', { method: 'POST', token: token, body: { newDriverStartingBalance: balInput.value } })
+        fetchApi('adminUpdateEconomySettings', {
+          method: 'POST', token: token, body: {
+            newDriverStartingBalance: balInput.value,
+            loanAmountLMGT3: loanInputs.LMGT3.value,
+            loanAmountLMP3: loanInputs.LMP3.value,
+            loanAmountLMP2: loanInputs.LMP2.value,
+            loanAmountHypercar: loanInputs.Hypercar.value
+          }
+        })
           .then(function (result) {
             if (result && result.success) { rcReloadAfterSave(); }
             else { showToast((result && result.message) || 'Could not save. Check the value and try again.', 'error'); }
@@ -7401,9 +7920,7 @@
     // section shows current data rather than whatever it last held (or
     // nothing, if it was never opened this page load).
     window.rcNavigateToSection = function (id) {
-      showSection(id);
-      var lazyRenderer = RC_LAZY_SECTION_RENDERERS[id];
-      if (lazyRenderer) lazyRenderer(currentToken);
+      showLazySection(id, currentToken);
     };
 
     // Same bridge, other direction -- a click on Edit Profile from a page
@@ -7462,7 +7979,10 @@
       var hashNavBtn = document.getElementById('rc-nav-' + hashSectionId);
       if (!hashNavBtn || hashNavBtn.style.display !== 'none') restoreSectionId = hashSectionId;
     }
-    if (RC_LAZY_SECTION_RENDERERS[restoreSectionId]) RC_LAZY_SECTION_RENDERERS[restoreSectionId](token);
+    if (RC_LAZY_SECTION_RENDERERS[restoreSectionId]) {
+      rcLoadedLazySections[restoreSectionId] = true;
+      RC_LAZY_SECTION_RENDERERS[restoreSectionId](token);
+    }
     showSection(restoreSectionId);
     // Clean the hash off the URL bar once it's been consumed -- leaves the
     // reload's destination unmarked in history rather than piling up a
@@ -7539,7 +8059,7 @@
   // loaders in any of the cards, ever, I don't even want the
   // functionality to exist") -- both card fetches are fired here,
   // immediately, in parallel with the profile load itself, and the site's
-  // ONE loading screen ("Loading account information...") stays up until
+  // ONE loading screen ("Loading your dashboard...") stays up until
   // everything (profile + both cards' data) is actually ready. By the
   // time buildFullProfileUI()/renderDashboardSection() run, every card
   // renders its final content on the first paint, already fully loaded --
