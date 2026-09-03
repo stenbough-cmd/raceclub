@@ -147,6 +147,7 @@
       <section id="rc-section-dashboard" class="rc-content-section"></section>
       <section id="rc-section-calendar" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-finances" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-wager" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-results" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-reputation" class="rc-content-section" style="display:none;"></section>
@@ -400,6 +401,11 @@
   // -- a caution triangle, matching how the rest of this icon set favors
   // one clear symbol per concept over anything decorative.
   var ICON_PROTESTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line><line x1="12" y1="17.2" x2="12" y2="17.4"></line></svg>';
+  // Added 2026-09-02 for the new Wager sidebar item, directly under
+  // Finances (Matt's call) -- two facing hands, the clearest one-symbol
+  // read for "a bet between two drivers," matching how the rest of this
+  // icon set favors one clear symbol over anything decorative.
+  var ICON_WAGER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12l5-3 4 2 3-2 3 1.5 5-3.5"></path><path d="M2 12l5 3 4-2 3 2 3-1.5 5 3.5"></path></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -408,6 +414,7 @@
     { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
     { id: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
     { id: 'finances', label: 'Finances', icon: ICON_FINANCES },
+    { id: 'wager', label: 'Wagers', icon: ICON_WAGER },
     { id: 'results', label: 'Results', icon: ICON_RESULTS },
     { id: 'career', label: 'Career', icon: ICON_CAREER },
     { id: 'reputation', label: 'Reputation', icon: ICON_NAV_STAR },
@@ -449,6 +456,15 @@
   var currentProfile = null;
   var currentToken = null;
 
+  // Live handle to the Dashboard's own Wager preview card (2026-09-03) --
+  // Dashboard is built once at page load, not re-fetched on every visit,
+  // so this card would otherwise go stale the moment a wager is placed/
+  // accepted/etc. from the Wager page. Set once, in renderDashboardSection,
+  // when the card is first built; renderWagerSection's own quietRefresh
+  // calls rcDashboardWagerCard.rcRefresh() after every wager action so
+  // flipping back to Dashboard always shows what's actually current.
+  var rcDashboardWagerCard = null;
+
   // Tracks whichever section is on screen right now -- set by showSection()
   // below, read by rcReloadAfterSave() so a popup save's reload can return
   // to this same page instead of always landing back on Dashboard (see
@@ -477,6 +493,7 @@
   var RC_LAZY_SECTION_RENDERERS = {
     calendar: function (token) { renderCalendarSection(token); },
     finances: function (token) { renderFinancesSection(token); },
+    wager: function (token) { renderWagerSection(token); },
     sponsors: function (token) { renderSponsorsSection(token); },
     admin: function (token) { renderAdminSection(token); },
     league: function (token) { renderLeagueManagementSection(token); }
@@ -575,6 +592,15 @@
         }));
         return;
       }
+      // Wager (added 2026-09-02, real content -- renderWagerSection),
+      // same lazy-fetch-on-click pattern as Finances right above it.
+      // Sits directly under Finances in NAV_ITEMS (Matt's call).
+      if (item.id === 'wager') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showLazySection('wager', currentToken);
+        }));
+        return;
+      }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
     var upperDivider = navDivider('rc-nav-divider-upper');
@@ -661,6 +687,79 @@
   // in its own top row by itself (Matt's call: build/verify cards one at
   // a time, more join this row later).
   // ---------------------------------------------------------------------
+  // Fires all six dashboard data calls independently, all at once, and
+  // hands back their raw in-flight promises (2026-09-03 rewrite, Matt's
+  // call: "instead of loading everything in on the dash, have the dash
+  // populate instantly and load the cards one by one... fading into
+  // place" -- extends the "3 priority / 3 background" split that came
+  // before it into "nothing gates anything, every card loads and fades
+  // in on its own"). Nothing here is awaited by the caller -- see the
+  // bottom of this file, where the Dashboard section now paints the
+  // instant the PROFILE fetch resolves, full stop.
+  function fetchDashboardData(token) {
+    return {
+      activeSeasonPromise: fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
+      currentSeatPromise: fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
+      financesPromise: fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
+      seasonObjectivePromise: fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
+      nextRacePromise: fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
+      sponsorsPromise: fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; })
+    };
+  }
+
+  // Builds the three data-driven rows (Registration Status/Current
+  // Seat/Season Objective, Finances/Reputation/Sponsors, Next Race/
+  // Recent Results) as instantly-painted placeholders that each fade
+  // their real content in the moment their own fetch resolves -- no card
+  // waits on any other card, and nothing here waits on this function's
+  // caller either. Registration Status and Current Seat are handled by
+  // hand (not via the generic asyncDashCard helper) because they need to
+  // be built together: Registration Status' onRegistered callback needs
+  // a live handle to Current Seat's own rcRefresh, which only exists
+  // once currentSeatCard() has actually run.
+  //
+  // Returns { topRow, financeRow, resultsRow } -- callers own attaching
+  // them to the page and (for a refresh) swapping their children out.
+  function buildDashboardDataRows(profile, token, dashboardData, onRegistered) {
+    var topRow = el('div', 'rc-quick-row');
+    var financeRow = el('div', 'rc-quick-row');
+    var resultsRow = el('div', 'rc-quick-row');
+
+    var seatPlaceholder = el('div', 'rc-panel rc-currentseat-card rc-dash-card rc-dash-card-fade');
+    var regPlaceholder = el('div', 'rc-panel rc-regstatus-card rc-dash-card rc-dash-card-fade');
+
+    Promise.all([
+      dashboardData.activeSeasonPromise.catch(function () { return { success: false }; }),
+      dashboardData.currentSeatPromise.catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      var activeSeason = results[0];
+      var currentSeat = results[1];
+      var seatCard = currentSeatCard(profile, token, currentSeat);
+      var regCard = registrationStatusCard(profile, token, activeSeason, function () {
+        if (seatCard.rcRefresh) seatCard.rcRefresh();
+        if (onRegistered) onRegistered();
+      });
+      while (seatCard.firstChild) seatPlaceholder.appendChild(seatCard.firstChild);
+      seatPlaceholder.classList.add('rc-dash-card-fade-in');
+      if (seatCard.rcRefresh) seatPlaceholder.rcRefresh = seatCard.rcRefresh;
+      while (regCard.firstChild) regPlaceholder.appendChild(regCard.firstChild);
+      regPlaceholder.classList.add('rc-dash-card-fade-in');
+    });
+
+    topRow.appendChild(regPlaceholder);
+    topRow.appendChild(seatPlaceholder);
+    topRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.seasonObjectivePromise, seasonObjectiveCard, dashboardData.activeSeasonPromise));
+
+    financeRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.financesPromise, financesCard));
+    financeRow.appendChild(reputationCard());
+    financeRow.appendChild(asyncDashCard('rc-panel rc-sponsors-dash-card rc-dash-card', dashboardData.sponsorsPromise, sponsorsCard, dashboardData.activeSeasonPromise));
+
+    resultsRow.appendChild(asyncDashCard('rc-panel rc-nextrace-card rc-dash-card', dashboardData.nextRacePromise, nextRaceCard, dashboardData.activeSeasonPromise));
+    resultsRow.appendChild(recentResultsCard());
+
+    return { topRow: topRow, financeRow: financeRow, resultsRow: resultsRow };
+  }
+
   function renderDashboardSection(profile, token, dashboardData) {
     var section = document.getElementById('rc-section-dashboard');
     if (!section) return;
@@ -672,65 +771,38 @@
     //   Row 2: Finances, Reputation, Sponsors
     //   Row 3: Next Race, Recent Results
     //   Row 4: Wager, Protest (placeholders, no data yet)
-    // Season Objective/Finances/Next Race/Sponsors all depend on
-    // registration state, so topRow, financeRow and resultsRow are all
-    // rebuilt wholesale (innerHTML cleared, cards re-appended) on
-    // Registration Status' onRegistered callback below, the same
-    // "re-fetch everything gated on it and swap the row in place" trick
-    // used before this layout change. Wager/Protest are static
-    // placeholders with nothing to refresh, so wagerRow is just appended
-    // once below, same as recentResultsCard.
-    var financeRow = el('div', 'rc-quick-row');
-    financeRow.appendChild(financesCard(dashboardData.financesReputation));
-    financeRow.appendChild(reputationCard());
-    financeRow.appendChild(sponsorsCard(dashboardData.sponsors, dashboardData.activeSeason));
-
-    var resultsRow = el('div', 'rc-quick-row');
-    resultsRow.appendChild(nextRaceCard(dashboardData.nextRace, dashboardData.activeSeason));
-    resultsRow.appendChild(recentResultsCard());
+    //
+    // 2026-09-03 rewrite (Matt's call): the Dashboard section itself no
+    // longer waits on ANY data fetch -- see the bottom of this file,
+    // where it's built the instant the profile resolves. Every single
+    // card below is its own instantly-painted placeholder that fades its
+    // real content in independently the moment its own fetch resolves
+    // (buildDashboardDataRows above), the exact same treatment the Wager
+    // card pioneered. Nothing blocks anything else.
+    function onRegisteredRebuild() {
+      // Registration just completed -- re-fetch everything that's
+      // gated/built on registration state and swap the three rows'
+      // contents in place, same "fresh promises, fade in again" path as
+      // the very first paint. Named (not anonymous) so it can pass
+      // itself back in as the next rebuild's own onRegistered callback.
+      var freshDashboardData = fetchDashboardData(token);
+      var fresh = buildDashboardDataRows(profile, token, freshDashboardData, onRegisteredRebuild);
+      rows.topRow.innerHTML = '';
+      while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
+      rows.financeRow.innerHTML = '';
+      while (fresh.financeRow.firstChild) rows.financeRow.appendChild(fresh.financeRow.firstChild);
+      rows.resultsRow.innerHTML = '';
+      while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+    }
+    var rows = buildDashboardDataRows(profile, token, dashboardData, onRegisteredRebuild);
+    section.appendChild(rows.topRow);
+    section.appendChild(rows.financeRow);
+    section.appendChild(rows.resultsRow);
 
     var wagerRow = el('div', 'rc-quick-row');
-    wagerRow.appendChild(wagerCard());
+    rcDashboardWagerCard = wagerCard(token);
+    wagerRow.appendChild(rcDashboardWagerCard);
     wagerRow.appendChild(protestCard());
-
-    var topRow = el('div', 'rc-quick-row');
-    // Current Seat is built first, purely so Registration Status can wire
-    // its own onRegistered callback to also refresh Current Seat -- both
-    // still append to topRow in the same visual order as before.
-    var seatCard = currentSeatCard(profile, token, dashboardData.currentSeat);
-    var regCard = registrationStatusCard(profile, token, dashboardData.activeSeason, function () {
-      if (seatCard.rcRefresh) seatCard.rcRefresh();
-      // Season Objective/Next Race/Finances/Sponsors have no rcRefresh of
-      // their own (plain renders, not stateful cards) -- re-fetch
-      // everything they're gated/built on and just rebuild their rows in
-      // place.
-      Promise.all([
-        fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
-        fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; })
-      ]).then(function (results) {
-        var freshActiveSeason = results[0];
-        topRow.innerHTML = '';
-        topRow.appendChild(regCard);
-        topRow.appendChild(seatCard);
-        topRow.appendChild(seasonObjectiveCard(results[4], freshActiveSeason));
-        financeRow.innerHTML = '';
-        financeRow.appendChild(financesCard(results[2]));
-        financeRow.appendChild(reputationCard());
-        financeRow.appendChild(sponsorsCard(results[3], freshActiveSeason));
-        resultsRow.innerHTML = '';
-        resultsRow.appendChild(nextRaceCard(results[1], freshActiveSeason));
-        resultsRow.appendChild(recentResultsCard());
-      });
-    });
-    topRow.appendChild(regCard);
-    topRow.appendChild(seatCard);
-    topRow.appendChild(seasonObjectiveCard(dashboardData.seasonObjective, dashboardData.activeSeason));
-    section.appendChild(topRow);
-    section.appendChild(financeRow);
-    section.appendChild(resultsRow);
     section.appendChild(wagerRow);
   }
 
@@ -992,12 +1064,22 @@
       var row = el('div', 'rc-cs-row');
 
       if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
+        // Wrapped in rc-cs-logo-wrap (2026-09-02, Matt's call: "minimum
+        // width of the manufacturer logo... 60px -- if the graphic is
+        // less than 60px wide, add padding to each side") -- a narrow/
+        // tall logo scaled down to the 50px height cap can render well
+        // under 60px wide on its own; the wrap's min-width + centering is
+        // what actually adds the padding, rather than trying to pad the
+        // <img> itself (object-fit: contain wouldn't add visible padding,
+        // just letterbox inside whatever box the img itself is given).
+        var logoWrap = el('div', 'rc-cs-logo-wrap');
         var logo = document.createElement('img');
         logo.className = 'rc-cs-logo';
         logo.src = manufacturerLogoSrc(data.manufacturer);
         logo.alt = data.manufacturer;
-        logo.onerror = function () { logo.style.display = 'none'; };
-        row.appendChild(logo);
+        logo.onerror = function () { logoWrap.style.display = 'none'; };
+        logoWrap.appendChild(logo);
+        row.appendChild(logoWrap);
       }
 
       var textCol = el('div');
@@ -1051,6 +1133,51 @@
     }
 
     return card;
+  }
+
+  // Generic wrapper that turns any "sync data -> card" builder (one that
+  // takes (data, activeSeasonData) and returns a fully-built card element,
+  // like nextRaceCard/seasonObjectiveCard/sponsorsCard below) into a card
+  // that fetches its own data and fades into place once it lands --
+  // 2026-09-03, Matt's ask: "would it work the same if all cards did that
+  // on the dashboard... limited to like 3 of the most important cards and
+  // let the rest organically load after and fade into existence."
+  //
+  // Only Registration Status / Current Seat / Finances stay in the
+  // page-wide "Loading your dashboard..." batch now (Matt's pick of the 3
+  // most important); Season Objective, Next Race, and Sponsors each fire
+  // their own fetchApi call off that critical path (still kicked off at
+  // the same moment, right alongside the priority batch -- see the load
+  // block at the bottom of this file -- just no longer something the
+  // spinner waits on) and use this wrapper to fade in independently.
+  //
+  // Returns a placeholder card immediately, already carrying the real
+  // card's own classes (so it takes up the exact same grid slot, same
+  // size, from the very first paint) plus .rc-dash-card-fade (invisible).
+  // Once fetchPromise resolves (or fails), the real card is built via
+  // buildFn(data, activeSeasonData) and its children are moved (not
+  // cloned -- keeps any event listeners intact) into the placeholder,
+  // which then gets .rc-dash-card-fade-in added to fade to fully opaque.
+  // If the fetch was already fast/instant, this reads as no visible fade
+  // at all (the class flip lands before the placeholder's first paint) --
+  // only a genuinely slow card visibly fades in, which is exactly the
+  // point: nothing is EVER artificially delayed for the animation's sake.
+  // activeSeasonData may be an already-resolved value OR a promise --
+  // Promise.resolve() wraps a plain value as a genuine (already-settled)
+  // promise, so the same Promise.all works either way (2026-09-03: now
+  // needed since the priority-batch rewrite hands this a still-in-flight
+  // getActiveSeason promise instead of a pre-resolved value).
+  function asyncDashCard(cardClass, fetchPromise, buildFn, activeSeasonData) {
+    var placeholder = el('div', cardClass + ' rc-dash-card-fade');
+    Promise.all([
+      fetchPromise.catch(function () { return { success: false }; }),
+      Promise.resolve(activeSeasonData).catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      var built = buildFn(results[0], results[1]);
+      while (built.firstChild) placeholder.appendChild(built.firstChild);
+      placeholder.classList.add('rc-dash-card-fade-in');
+    });
+    return placeholder;
   }
 
   // Full-width "quick glance" banner, backed by action=getNextRace
@@ -1228,8 +1355,17 @@
       // the headline balance for attention, but it's still the portion
       // locked in active wagers, so it belongs right beside the number
       // it's carved out of rather than off in its own category.
+      // Headline balance is AVAILABLE balance (bank minus whatever's
+      // frozen in active/offered wagers), not the raw bank total
+      // (2026-09-03, Matt's call: "the bank balance should reflect the
+      // frozen money missing and decrease") -- the Frozen chip right next
+      // to it is what explains WHY the number moved. bankBalance itself
+      // never changes from this (it's still the true ledger total, used
+      // as-is by things like Bank Rank), only what's shown as the
+      // headline.
+      var availableBalance = data.bankBalance - (data.frozenBalance || 0);
       var balanceRow = el('div', 'rc-finrep-balance-row');
-      balanceRow.appendChild(el('div', 'rc-finrep-balance', formatMoney(data.bankBalance)));
+      balanceRow.appendChild(el('div', 'rc-finrep-balance', formatMoney(availableBalance)));
       balanceRow.appendChild(el('div', 'rc-finrep-frozen-inline',
         'Frozen ' + ((data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—')));
       card.appendChild(balanceRow);
@@ -1258,15 +1394,10 @@
       card.appendChild(el('p', 'rc-cs-empty', 'Your balance will appear here once your driver account is approved.'));
     }
 
-    // Link to the full Finances page (2026-09-02, Matt's call) -- same
-    // "show the section, then fetch it" pair every other dashboard card's
-    // own link uses (see viewSeasonBtn/sponsorsLink above).
-    var financesLink = el('button', 'rc-link-btn rc-dash-card-link', '← View Finances');
-    financesLink.type = 'button';
-    financesLink.addEventListener('click', function () {
-      showLazySection('finances', currentToken);
-    });
-    card.appendChild(financesLink);
+    // The "← View Finances" link that used to live here (2026-09-02,
+    // Matt's call: remove it) -- removed. The whole card no longer needs
+    // a dedicated link down to the Finances page; the sidebar nav item
+    // already gets a driver there directly.
 
     return card;
   }
@@ -1434,8 +1565,13 @@
     var top = el('div', 'rc-fin-hero-top');
     var balCol = el('div');
     balCol.appendChild(el('div', 'rc-fin-hero-label', 'Account Balance'));
+    // Same "headline is available, not raw bank total" treatment as
+    // financesCard above (2026-09-03, Matt's call) -- kept in sync here
+    // since this hero panel shows the identical underlying numbers, just
+    // with more room.
+    var heroAvailableBalance = data.bankBalance - (data.frozenBalance || 0);
     var balanceRow = el('div', 'rc-finrep-balance-row');
-    balanceRow.appendChild(el('div', 'rc-fin-hero-balance', formatMoney(data.bankBalance)));
+    balanceRow.appendChild(el('div', 'rc-fin-hero-balance', formatMoney(heroAvailableBalance)));
     balanceRow.appendChild(el('div', 'rc-finrep-frozen-inline',
       'Frozen ' + ((data.frozenBalance != null) ? formatMoney(data.frozenBalance) : '—')));
     balCol.appendChild(balanceRow);
@@ -1734,6 +1870,704 @@
     });
   }
 
+  // ---------------------------------------------------------------------
+  // WAGER PAGE (2026-09-02, Matt's full spec, reordered 2026-09-02:
+  // Current Wagers (top, portrait flip-cards + dashed open slots), Place
+  // a Wager (middle), Wager History (bottom) -- styled to match the rest
+  // of the site (wizField/wizSelect/wizNumberInput, the same
+  // .rc-panel/.rc-dash-card shell every other real section already
+  // uses). See Wagers.gs for the backend this renders.
+  // ---------------------------------------------------------------------
+  function renderWagerSection(token) {
+    var section = document.getElementById('rc-section-wager');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(buildPageSpinner('Loading your wagers...'));
+
+    // quietRefresh -- re-fetches both endpoints and swaps both remaining
+    // containers' CONTENT in place, with no spinner and no section wipe
+    // (2026-09-02, Matt's call: "no loading, let it load in the
+    // background... I want it to feel instant"). This is what every
+    // wager action (propose/accept/deny/counter) triggers AFTER already
+    // patching the DOM optimistically itself -- see buildWagerProposeFormBody
+    // and buildWagerFlipCard below -- so by the time this actually
+    // resolves, the page already shows the right thing and this call just
+    // quietly reconciles it against the server's real numbers (accurate
+    // opponent stats, updated caps, a driver dropped from the Opponent
+    // list once they're no longer available, etc.). Guarded per-card
+    // (`if (x && x.parentNode)`) so a background refresh that lands after
+    // the driver has already navigated away from this page is a silent
+    // no-op instead of an error. Place a Wager is no longer one of these
+    // containers (2026-09-03, Matt's call: it lives in a popup now,
+    // opened from an empty Current Wagers slot -- see buildWagerOpenSlot/
+    // openWagerProposeModal) -- formOptions is still fetched here on
+    // every refresh since Current Wagers' own open slots need a current
+    // copy of it to hand to that popup.
+    var limboCard, historyCard;
+    function quietRefresh() {
+      Promise.all([
+        fetchApi('getWagerFormOptions', { token: token }).catch(function () { return { success: false }; }),
+        fetchApi('getMyWagers', { token: token }).catch(function () { return { success: false }; })
+      ]).then(function (results) {
+        var formOptions = results[0], wagers = results[1];
+        var newLimbo = buildWagerLimboPanel(wagers, formOptions, token, quietRefresh);
+        var newHistory = buildWagerHistoryPanel(wagers);
+        if (limboCard && limboCard.parentNode) limboCard.parentNode.replaceChild(newLimbo, limboCard);
+        limboCard = newLimbo;
+        if (historyCard && historyCard.parentNode) historyCard.parentNode.replaceChild(newHistory, historyCard);
+        historyCard = newHistory;
+      });
+      // Also quietly refreshes the Dashboard's own Wager preview card
+      // (2026-09-03, Matt's bug report -- see rcDashboardWagerCard above)
+      // so it's already current by the time the driver flips back over to
+      // Dashboard, instead of showing whatever was there at page load.
+      if (rcDashboardWagerCard && rcDashboardWagerCard.rcRefresh) rcDashboardWagerCard.rcRefresh();
+    }
+
+    Promise.all([
+      fetchApi('getWagerFormOptions', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMyWagers', { token: token }).catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      var formOptions = results[0], wagers = results[1];
+
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Wager'));
+      section.appendChild(el('p', 'rc-sponsors-explainer',
+        'Challenge another driver in your season to a head-to-head wager on an upcoming race. Click an empty slot below to place one. Once they accept, both stakes are frozen until the race results come in -- settlement is automatic.'));
+
+      limboCard = buildWagerLimboPanel(wagers, formOptions, token, quietRefresh);
+      historyCard = buildWagerHistoryPanel(wagers);
+      section.appendChild(limboCard);
+      section.appendChild(historyCard);
+    });
+  }
+
+  // Place a Wager -- lives in a popup now, opened by clicking an empty
+  // Current Wagers slot (2026-09-03, Matt's call: "when clicking a slot to
+  // place a wager, a popup comes up... instead of a container on the main
+  // page"). This builds just the modal's BODY (no card wrapper, no own
+  // title -- showModal already renders "Place a Wager" as the popup's
+  // header) -- see openWagerProposeModal right below, which wraps this in
+  // showModal(), and buildWagerOpenSlot further down, which is what
+  // actually triggers it.
+  //
+  // onPlaced fires the instant the optimistic card is dropped into the
+  // grid (2026-09-03, Matt's follow-up: "still keep it instant when the
+  // button is pressed and the popup closes and the card appears
+  // instantly") -- openWagerProposeModal wires it to close the popup,
+  // so pressing Place Wager closes the popup and shows the card in the
+  // same beat, with the actual proposeWager write still happening
+  // entirely in the background afterward (see the instant-placement
+  // comment further down, unchanged from before this became a modal).
+  function buildWagerProposeFormBody(formOptions, token, onQuietRefresh, onPlaced) {
+    var wrap = el('div');
+
+    if (!formOptions || !formOptions.success) {
+      wrap.appendChild(el('p', 'rc-cs-empty', 'Could not load the wager form right now.'));
+      return wrap;
+    }
+    if (!formOptions.hasSeat) {
+      wrap.appendChild(el('p', 'rc-cs-empty', 'You need to be registered for a season to place a wager.'));
+      return wrap;
+    }
+    if (!formOptions.opponents.length) {
+      wrap.appendChild(el('p', 'rc-cs-empty', 'No other drivers are registered for your season yet.'));
+      return wrap;
+    }
+    if (!formOptions.rounds.length) {
+      wrap.appendChild(el('p', 'rc-cs-empty', 'No upcoming races on your season\'s calendar to wager on.'));
+      return wrap;
+    }
+    if (formOptions.atCap) {
+      wrap.appendChild(el('p', 'rc-cs-empty', 'You already have 3 active wagers -- resolve one before placing another.'));
+      return wrap;
+    }
+
+    var form = el('form');
+
+    var oppSelect = document.createElement('select');
+    formOptions.opponents.forEach(function (o) {
+      var opt = document.createElement('option');
+      opt.value = o.profileId;
+      opt.textContent = o.displayName + (o.activeCount >= 3 ? ' (at wager cap)' : '');
+      opt.disabled = o.activeCount >= 3;
+      oppSelect.appendChild(opt);
+    });
+
+    var roundSelect = document.createElement('select');
+    formOptions.rounds.forEach(function (r) {
+      var opt = document.createElement('option');
+      opt.value = r.roundId;
+      opt.textContent = r.label;
+      roundSelect.appendChild(opt);
+    });
+
+    var conditionSelect = document.createElement('select');
+    formOptions.conditions.forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c.key;
+      opt.textContent = c.label;
+      conditionSelect.appendChild(opt);
+    });
+    var conditionHint = el('div', 'rc-hint', (formOptions.conditions[0] || {}).description || '');
+    conditionSelect.addEventListener('change', function () {
+      var cd = formOptions.conditions.filter(function (c) { return c.key === conditionSelect.value; })[0];
+      conditionHint.textContent = cd ? cd.description : '';
+    });
+
+    // Stake stepper -- steps by 100 up to whichever cap is lower right now
+    // (this driver's own Wager Stake Cap %, or the chosen opponent's),
+    // defaulting to half that cap the moment an opponent is picked
+    // (Matt's spec). Recomputed on every opponent change, since each
+    // driver's own cap can differ.
+    var stakeInput = wizNumberInput(0, function () {}, { min: 0, step: 100 });
+    var stakeHint = el('div', 'rc-hint', '');
+    function currentCap() {
+      var opp = formOptions.opponents.filter(function (o) { return o.profileId === oppSelect.value; })[0];
+      if (!opp) return 0;
+      return Math.min(formOptions.myMaxStake, opp.maxStake);
+    }
+    function refreshStakeForOpponent() {
+      var cap = currentCap();
+      stakeInput.max = cap;
+      stakeInput.value = cap > 0 ? Math.floor((cap / 2) / 100) * 100 : 0;
+      stakeHint.textContent = 'Max right now: ' + formatMoney(cap) + '.';
+    }
+    oppSelect.addEventListener('change', refreshStakeForOpponent);
+    refreshStakeForOpponent();
+    // Clamp to the cap even when the cap itself isn't a multiple of 100
+    // (2026-09-02, Matt's call: "the stake goes by 100 but when it gets
+    // to the end, allow it to be the max number should it be somewhere
+    // in between 100") -- stepping up from e.g. $4,500 toward a $4,550
+    // cap would otherwise overshoot to $4,600 and get silently rejected
+    // by the server; this snaps that overshoot straight to the real cap
+    // instead, so the very last step always lands exactly on the max.
+    stakeInput.addEventListener('input', function () {
+      var cap = currentCap();
+      var v = Number(stakeInput.value);
+      if (!isNaN(v) && cap > 0 && v > cap) stakeInput.value = cap;
+    });
+
+    var condWrap = el('div', 'rc-wiz-field');
+    condWrap.appendChild(wizLabel('Condition'));
+    condWrap.appendChild(conditionSelect);
+    condWrap.appendChild(conditionHint);
+
+    var stakeWrap = el('div', 'rc-wiz-field');
+    stakeWrap.appendChild(wizLabel('Stake'));
+    stakeWrap.appendChild(stakeInput);
+    stakeWrap.appendChild(stakeHint);
+
+    // Four stacked rows, each field full width (2026-09-03, Matt's latest
+    // spec) -- was Opponent full + Race/Condition/Stake each at half
+    // width before this. Still the same 4-column .rc-wiz-field-row grid
+    // per row, each field wrapper just claiming the whole span now.
+    var oppWrap = el('div', 'rc-wiz-field');
+    oppWrap.style.gridColumn = 'span 4';
+    oppWrap.appendChild(wizLabel('Opponent'));
+    oppWrap.appendChild(oppSelect);
+    var oppRow = el('div', 'rc-wiz-field-row');
+    oppRow.appendChild(oppWrap);
+
+    var raceWrap = el('div', 'rc-wiz-field');
+    raceWrap.style.gridColumn = 'span 4';
+    raceWrap.appendChild(wizLabel('Race'));
+    raceWrap.appendChild(roundSelect);
+    var raceRow = el('div', 'rc-wiz-field-row');
+    raceRow.appendChild(raceWrap);
+
+    condWrap.style.gridColumn = 'span 4';
+    var condRow = el('div', 'rc-wiz-field-row');
+    condRow.appendChild(condWrap);
+
+    stakeWrap.style.gridColumn = 'span 4';
+    var stakeRow = el('div', 'rc-wiz-field-row');
+    stakeRow.appendChild(stakeWrap);
+
+    form.appendChild(oppRow);
+    form.appendChild(raceRow);
+    form.appendChild(condRow);
+    form.appendChild(stakeRow);
+
+    var submitBtn = el('button', 'rc-btn-primary', 'Place Wager');
+    submitBtn.type = 'submit';
+    submitBtn.style.marginTop = '16px';
+    form.appendChild(submitBtn);
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      var stake = Number(stakeInput.value);
+      if (!oppSelect.value || !roundSelect.value || !conditionSelect.value) {
+        showToast('Please fill out every field.', 'error');
+        return;
+      }
+      if (!(stake > 0)) {
+        showToast('Enter a stake greater than $0.', 'error');
+        return;
+      }
+      var chosenOpponent = formOptions.opponents.filter(function (o) { return o.profileId === oppSelect.value; })[0];
+      var chosenRound = formOptions.rounds.filter(function (r) { return r.roundId === roundSelect.value; })[0];
+      var chosenCondition = formOptions.conditions.filter(function (c) { return c.key === conditionSelect.value; })[0];
+
+      // Instant, no wait on the server AT ALL (2026-09-03, Matt's call:
+      // "the card should instantly appear... all the saving happens
+      // silently on the backend... the user should not have to wait for
+      // the sheet to save or the script to run" -- his stated standing
+      // rule for how the whole site should behave, not just this form).
+      // The card is built and dropped into the grid synchronously, before
+      // proposeWager is even called -- wagerId starts blank since the
+      // server hasn't assigned one yet (buildWagerFlipCard only shows the
+      // Cancel button once a card has a real wagerId, so there's nothing
+      // clickable here that would need one before it exists). The
+      // opponent's career stats aren't known client-side either, so the
+      // back face shows 0s until the quiet background refresh below fills
+      // in the real numbers.
+      var optimisticWager = {
+        wagerId: '',
+        seasonId: formOptions.seasonId, seasonName: '',
+        roundId: roundSelect.value, roundLabel: chosenRound ? chosenRound.label : '',
+        condition: conditionSelect.value, conditionLabel: chosenCondition ? chosenCondition.label : conditionSelect.value,
+        stake: stake, status: 'Pending', isProposedByMe: true, awaitingMe: false,
+        opponentProfileId: oppSelect.value,
+        opponentDisplayName: chosenOpponent ? chosenOpponent.displayName : '',
+        opponentAvatarFilename: chosenOpponent ? chosenOpponent.avatarFilename : '',
+        opponentCarClass: chosenOpponent ? chosenOpponent.carClass : '',
+        opponentWagerRecord: { wins: 0, losses: 0 }, opponentCareerRaces: 0,
+        winnerProfileId: '', iWon: false,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), settledAt: ''
+      };
+      var grid = document.getElementById('rc-wager-current-grid');
+      var openSlot = grid ? grid.querySelector('.rc-wager-card-open') : null;
+      var placedCard = null;
+      if (grid && openSlot) {
+        placedCard = buildWagerFlipCard(optimisticWager, token, formOptions.conditions, onQuietRefresh, formOptions);
+        grid.replaceChild(placedCard, openSlot);
+      }
+
+      // Popup closes the instant the card is in the grid -- nothing here
+      // waits on the network either (see onPlaced's own doc comment
+      // above).
+      if (onPlaced) onPlaced();
+
+      // The actual write fires now, entirely in the background -- nothing
+      // above waited on it, and nothing below blocks the UI either. A
+      // success just quietly reconciles (fills in the real wagerId and
+      // everything the client couldn't have known); a failure pulls the
+      // optimistic card back out and says why, since the wager was never
+      // actually placed.
+      fetchApi('proposeWager', {
+        method: 'POST', token: token,
+        body: { opponentProfileId: oppSelect.value, roundId: roundSelect.value, condition: conditionSelect.value, stake: stake }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            if (placedCard && placedCard.parentNode) placedCard.parentNode.replaceChild(buildWagerOpenSlot(token, onQuietRefresh, formOptions), placedCard);
+            showToast(data.message || 'Could not place that wager.', 'error');
+            return;
+          }
+          if (onQuietRefresh) onQuietRefresh();
+        })
+        .catch(function () {
+          if (placedCard && placedCard.parentNode) placedCard.parentNode.replaceChild(buildWagerOpenSlot(token, onQuietRefresh, formOptions), placedCard);
+          showToast('Could not reach the server -- that wager was not placed.', 'error');
+        });
+    });
+
+    wrap.appendChild(form);
+    return wrap;
+  }
+
+  // Opens Place a Wager as a popup (2026-09-03, Matt's call) -- showModal
+  // renders the "Place a Wager" title itself, buildWagerProposeFormBody
+  // supplies just the form. `modal` is referenced inside the onPlaced
+  // callback before it's assigned below, which is safe: that callback
+  // only ever runs later, on submit, well after this function has
+  // returned and `modal` is set (var hoisting + closures, same pattern
+  // used throughout this file).
+  function openWagerProposeModal(formOptions, token, onQuietRefresh) {
+    var modal;
+    var body = buildWagerProposeFormBody(formOptions, token, onQuietRefresh, function () { if (modal) modal.close(); });
+    modal = showModal('Place a Wager', { bodyEl: body });
+    return modal;
+  }
+
+  // Every driver can hold at most 3 active wagers at once (the site-wide
+  // cap Wagers.gs itself enforces) -- Current Wagers below always shows
+  // exactly this many slots, real flip-cards first, then dashed "Place a
+  // Wager" open slots filling out the rest, same "here's your whole
+  // roster of slots, filled or not" treatment the Sponsors page's own
+  // pick chips already use (.rc-pick-chip-open).
+  var RC_WAGER_SLOT_COUNT = 3;
+
+  // ---- Top container: Current Wagers (portrait flip-cards + open slots) ----
+  function buildWagerLimboPanel(wagers, formOptions, token, onQuietRefresh) {
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Current Wagers'));
+
+    if (!wagers || !wagers.success) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Could not load your wagers right now.'));
+      return card;
+    }
+
+    var conditions = (formOptions && formOptions.success) ? formOptions.conditions : WAGER_CONDITIONS_FALLBACK_;
+    // Stable id -- every rebuild (initial load, quietRefresh) creates a
+    // fresh grid under this same id, so an optimistic action elsewhere
+    // (buildWagerProposeFormBody's submit handler) can always find "the
+    // current grid on screen right now" via document.getElementById
+    // rather than needing its own stale closure reference to it.
+    var grid = el('div', 'rc-wager-card-grid');
+    grid.id = 'rc-wager-current-grid';
+    wagers.active.forEach(function (w) {
+      grid.appendChild(buildWagerFlipCard(w, token, conditions, onQuietRefresh, formOptions));
+    });
+    for (var i = wagers.active.length; i < RC_WAGER_SLOT_COUNT; i++) {
+      grid.appendChild(buildWagerOpenSlot(token, onQuietRefresh, formOptions));
+    }
+    card.appendChild(grid);
+    return card;
+  }
+
+  // Dashed placeholder slot -- an unfilled wager card, same size/shape as
+  // a real one so the grid reads as "your 3 wager slots," filled or not.
+  // Clicking it opens the Place a Wager popup (2026-09-03, Matt's call --
+  // was a scroll-down-to-an-inline-form before this) via
+  // openWagerProposeModal. formOptions is whatever this slot's caller
+  // already had on hand (buildWagerLimboPanel's own param, or a
+  // Deny/Cancel button's closure elsewhere in this file) -- reused as-is
+  // rather than re-fetched, so opening the popup is instant; if it's
+  // slightly stale (an opponent stopped being available in the last few
+  // seconds, say), the server-side check inside proposeWager still catches
+  // it, same "client hint, server enforces" pattern as everywhere else on
+  // this page.
+  function buildWagerOpenSlot(token, onQuietRefresh, formOptions) {
+    var slot = el('div', 'rc-wager-card-open');
+    slot.appendChild(el('div', 'rc-wager-card-open-label', 'Place a Wager'));
+    slot.addEventListener('click', function () {
+      openWagerProposeModal(formOptions, token, onQuietRefresh);
+    });
+    return slot;
+  }
+
+  // Client-side mirror of Wagers.gs's WAGER_CONDITIONS, used ONLY as a
+  // fallback for the Counter modal's condition dropdown on the rare path
+  // where getWagerFormOptions itself failed to load (so there's no live
+  // list to reuse) but getMyWagers still came back fine -- keeps Counter
+  // usable even then, rather than leaving the dropdown empty. The server
+  // is always the source of truth and re-validates whatever key is sent.
+  var WAGER_CONDITIONS_FALLBACK_ = [
+    { key: 'RaceFinish', label: 'Race Finish' },
+    { key: 'Qualifying', label: 'Qualifying' },
+    { key: 'FastestLap', label: 'Fastest Lap' },
+    { key: 'CleanRace', label: 'Clean Race' }
+  ];
+
+  // One portrait "card in the shape of a card" (Matt's own words) -- a
+  // 3D CSS flip, front face showing the opponent's avatar/condition/stake/
+  // status (plus Accept/Deny/Counter when it's this driver's turn to act),
+  // back face showing that opponent's stats. A rounded arrow button on
+  // each face flips it.
+  function buildWagerFlipCard(w, token, conditions, onQuietRefresh, formOptions) {
+    var outer = el('div', 'rc-wager-card');
+    // Class-accent, not a flat red (2026-09-03, Matt's ask: "cards should
+    // have class-specific color accents not red") -- same palette as
+    // every other class badge on the site (CAR_CLASS_BADGE_COLOR_VAR,
+    // js/reference-data.js), keyed off the OPPONENT's own car class.
+    // Falls back to red (the CSS default on --rc-wager-accent) when the
+    // class is unknown -- an opponent with no seat yet, or a stale wager
+    // predating this field.
+    var accentVar = (w.opponentCarClass && typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[w.opponentCarClass])
+      ? CAR_CLASS_BADGE_COLOR_VAR[w.opponentCarClass] : null;
+    if (accentVar) outer.style.setProperty('--rc-wager-accent', 'var(' + accentVar + ')');
+    var inner = el('div', 'rc-wager-card-inner');
+    var front = el('div', 'rc-wager-card-face rc-wager-card-front');
+    var back = el('div', 'rc-wager-card-face rc-wager-card-back');
+
+    // Swaps THIS card for a freshly-built one reflecting an optimistic
+    // state change (accepted / countered), without waiting on a reload --
+    // same "feel instant, reconcile quietly after" pattern the propose
+    // popup uses. deny replaces the card with an open slot instead (see
+    // denyBtn below).
+    function replaceWithUpdatedWager(updates) {
+      var updated = {};
+      Object.keys(w).forEach(function (k) { updated[k] = w[k]; });
+      Object.keys(updates).forEach(function (k) { updated[k] = updates[k]; });
+      if (outer.parentNode) outer.parentNode.replaceChild(buildWagerFlipCard(updated, token, conditions, onQuietRefresh, formOptions), outer);
+    }
+
+    function flip() { outer.classList.toggle('rc-wager-card-flipped'); }
+    function flipArrow() {
+      var btn = el('button', 'rc-icon-btn rc-wager-flip-btn', '&#8635;');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Flip card');
+      btn.addEventListener('click', flip);
+      return btn;
+    }
+
+    // Cancel (X in a rounded square, bottom-left corner -- mirrors
+    // flipArrow's rounded circle in the bottom-right) -- 2026-09-03,
+    // Matt's ask. Only ever rendered while the wager is still Pending:
+    // "once a wager is accepted, it can't be cancelled" (both sides'
+    // money is already committed by then). Cancelling also removes the
+    // notification(s) this wager created (server-side, see
+    // handleCancelWager/_rcDeleteNotificationsForWager_) so the bell
+    // clears for whoever it was sent to.
+    //
+    // Instant + quiet background reconcile (2026-09-03, Matt's call: "it
+    // should instantly disappear and then remove the offer from the
+    // backend silently") -- same optimistic pattern as everywhere else on
+    // this page (propose/accept/deny/counter): the card is swapped out
+    // for an open slot the moment the X is clicked, with no wait on the
+    // server at all, and the actual cancelWager call fires in the
+    // background. A failure is rare (the wager would have to have just
+    // been accepted or settled out from under this driver in the last
+    // instant) but isn't swallowed silently -- onQuietRefresh() re-fetches
+    // and repaints the grid with whatever's actually true server-side, and
+    // a toast explains why if the optimistic removal didn't stick.
+    function cancelBtn() {
+      var btn = el('button', 'rc-icon-btn rc-wager-cancel-btn', '&#10005;');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Cancel wager');
+      btn.addEventListener('click', function () {
+        if (outer.parentNode) outer.parentNode.replaceChild(buildWagerOpenSlot(token, onQuietRefresh, formOptions), outer);
+        fetchApi('cancelWager', { method: 'POST', token: token, body: { wagerId: w.wagerId } })
+          .then(function (data) {
+            if (!data.success) showToast(data.message || 'Could not cancel that wager -- refreshing.', 'error');
+            if (onQuietRefresh) onQuietRefresh();
+          })
+          .catch(function () {
+            showToast('Could not reach the server -- refreshing.', 'error');
+            if (onQuietRefresh) onQuietRefresh();
+          });
+      });
+      return btn;
+    }
+
+    var avatarWrap = el('div', 'rc-wager-card-avatar-wrap');
+    avatarWrap.appendChild(buildAvatarCircle({ displayName: w.opponentDisplayName, avatarFilename: w.opponentAvatarFilename }, 'rc-avatar-circle-lg'));
+    front.appendChild(avatarWrap);
+    front.appendChild(el('div', 'rc-wager-card-name', escapeHtml(w.opponentDisplayName)));
+    front.appendChild(el('div', 'rc-wager-card-condition', escapeHtml(w.conditionLabel)));
+    front.appendChild(el('div', 'rc-wager-card-stake', formatMoney(w.stake)));
+    var statusLabel = w.status === 'Accepted' ? 'Locked In' : (w.awaitingMe ? 'Offered' : 'Waiting Response');
+    front.appendChild(el('div', 'rc-wager-status-pill' + (w.awaitingMe ? ' rc-wager-status-pill-action' : ''), statusLabel));
+
+    if (w.awaitingMe) {
+      // Accept + Deny side by side, Counter as its own full-width button
+      // below both (2026-09-03, Matt's call: "make one more additional
+      // button below these that says COUNTER" -- was a bare text link
+      // before this). Card grew taller specifically to fit this two-row
+      // shape without feeling cramped -- see .rc-wager-card's height.
+      var actions = el('div', 'rc-wager-card-actions');
+      var actionsRow = el('div', 'rc-wager-card-actions-row');
+      var acceptBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Accept');
+      acceptBtn.type = 'button';
+      var denyBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Deny');
+      denyBtn.type = 'button';
+      var counterBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Counter');
+      counterBtn.type = 'button';
+
+      acceptBtn.addEventListener('click', function () {
+        acceptBtn.disabled = true; denyBtn.disabled = true;
+        fetchApi('respondToWager', { method: 'POST', token: token, body: { wagerId: w.wagerId, action: 'accept' } })
+          .then(function (data) {
+            if (!data.success) {
+              acceptBtn.disabled = false; denyBtn.disabled = false;
+              showToast(data.message || 'Could not accept that wager.', 'error');
+              return;
+            }
+            showToast('Wager accepted -- stake frozen.', 'success');
+            replaceWithUpdatedWager({ status: 'Accepted', awaitingMe: false, acceptedAt: new Date().toISOString() });
+            if (onQuietRefresh) onQuietRefresh();
+          })
+          .catch(function () {
+            acceptBtn.disabled = false; denyBtn.disabled = false;
+            showToast('Could not reach the server. Try again in a moment.', 'error');
+          });
+      });
+      denyBtn.addEventListener('click', function () {
+        acceptBtn.disabled = true; denyBtn.disabled = true;
+        fetchApi('respondToWager', { method: 'POST', token: token, body: { wagerId: w.wagerId, action: 'deny' } })
+          .then(function (data) {
+            if (!data.success) {
+              acceptBtn.disabled = false; denyBtn.disabled = false;
+              showToast(data.message || 'Could not deny that wager.', 'error');
+              return;
+            }
+            showToast('Wager denied.', 'success');
+            if (outer.parentNode) outer.parentNode.replaceChild(buildWagerOpenSlot(token, onQuietRefresh, formOptions), outer);
+            if (onQuietRefresh) onQuietRefresh();
+          })
+          .catch(function () {
+            acceptBtn.disabled = false; denyBtn.disabled = false;
+            showToast('Could not reach the server. Try again in a moment.', 'error');
+          });
+      });
+      counterBtn.addEventListener('click', function () { openWagerCounterModal(w, token, conditions, onQuietRefresh, replaceWithUpdatedWager); });
+
+      actionsRow.appendChild(acceptBtn);
+      actionsRow.appendChild(denyBtn);
+      actions.appendChild(actionsRow);
+      actions.appendChild(counterBtn);
+      front.appendChild(actions);
+    } else if (w.status === 'Accepted') {
+      // Both sides' stakes are frozen once Accepted (unchanged).
+      front.appendChild(el('div', 'rc-hint', 'Money is frozen -- settles automatically after the race.'));
+    } else if (w.isProposedByMe) {
+      // 2026-09-02, Matt's call: freezing now starts the moment a wager
+      // is PROPOSED, not just once it's accepted -- but only the
+      // proposer's own stake, since the other driver hasn't agreed to
+      // anything yet (see _rcGetFrozenBalance_, Wagers.gs).
+      front.appendChild(el('div', 'rc-hint', 'Your stake is frozen while ' + escapeHtml(w.opponentDisplayName) + ' decides.'));
+    } else {
+      front.appendChild(el('div', 'rc-hint', 'Waiting on ' + escapeHtml(w.opponentDisplayName) + '.'));
+    }
+    front.appendChild(flipArrow());
+    if (w.status === 'Pending' && w.wagerId && !w.awaitingMe) front.appendChild(cancelBtn());
+
+    back.appendChild(el('div', 'rc-wager-card-back-title', escapeHtml(w.opponentDisplayName)));
+    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Career Races: ' + (w.opponentCareerRaces || 0)));
+    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Career Wager Record: ' + w.opponentWagerRecord.wins + 'W – ' + w.opponentWagerRecord.losses + 'L'));
+    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Race: ' + escapeHtml(w.roundLabel)));
+    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Condition: ' + escapeHtml(w.conditionLabel)));
+    back.appendChild(flipArrow());
+    if (w.status === 'Pending' && w.wagerId && !w.awaitingMe) back.appendChild(cancelBtn());
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    outer.appendChild(inner);
+    return outer;
+  }
+
+  // Counter popup -- a compact form (new Stake + new Condition) reusing
+  // the same wizField/wizNumberInput primitives as the propose form
+  // above, opened from a flip-card's Counter link.
+  //
+  // Stake is capped at w.counterCap (2026-09-03, Matt's ask: "I should
+  // see and have a max that I can counter") -- the live "min of what
+  // either side could still afford on this wager right now" figure
+  // handleGetMyWagers now computes and sends down with every wager (see
+  // Wagers.gs). Same "type past it and it snaps back" clamp the propose
+  // form's own stake stepper uses.
+  function openWagerCounterModal(w, token, conditions, onQuietRefresh, replaceWithUpdatedWager) {
+    var cap = Number(w.counterCap) || 0;
+    var body = el('div');
+    body.appendChild(el('p', 'rc-hint', 'Send back a different stake and/or condition -- ' + escapeHtml(w.opponentDisplayName) + ' will need to accept, deny, or counter it again.'));
+
+    var stakeInput = wizNumberInput(cap > 0 ? Math.min(w.stake, cap) : w.stake, function () {}, { min: 0, step: 100, max: cap || undefined });
+    var conditionSelect = document.createElement('select');
+    conditions.forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c.key;
+      opt.textContent = c.label;
+      if (c.key === w.condition) opt.selected = true;
+      conditionSelect.appendChild(opt);
+    });
+
+    body.appendChild(wizField('New Stake', stakeInput, 'Max right now: ' + formatMoney(cap) + '.'));
+    stakeInput.addEventListener('input', function () {
+      var v = Number(stakeInput.value);
+      if (!isNaN(v) && cap > 0 && v > cap) stakeInput.value = cap;
+    });
+    var condWrap = el('div', 'rc-wiz-field');
+    condWrap.appendChild(wizLabel('Condition'));
+    condWrap.appendChild(conditionSelect);
+    body.appendChild(condWrap);
+
+    var sendBtn = el('button', 'rc-btn-primary', 'Send Counter');
+    sendBtn.type = 'button';
+    sendBtn.style.marginTop = '16px';
+    body.appendChild(sendBtn);
+
+    var modalHandle = showModal('Counter Wager', { bodyEl: body });
+
+    // Instant + quiet background reconcile (2026-09-03, Matt's call: "it
+    // should instantly take me back to the card page after hitting the
+    // button and then run in the background") -- same optimistic pattern
+    // as everywhere else on this page (propose/accept/deny/cancel): the
+    // popup closes and the card updates the moment Send Counter is
+    // clicked, with no wait on the server, and the actual respondToWager
+    // call fires in the background. A failure is rare (the cap could
+    // have moved in the last instant) but isn't swallowed silently --
+    // onQuietRefresh() re-fetches and repaints the grid with whatever's
+    // actually true server-side, and a toast explains why if the
+    // optimistic counter didn't stick.
+    sendBtn.addEventListener('click', function () {
+      var stake = Number(stakeInput.value);
+      if (!(stake > 0)) {
+        showToast('Enter a stake greater than $0.', 'error');
+        return;
+      }
+      if (cap > 0 && stake > cap) {
+        showToast('That stake is more than one of you can afford -- max right now is ' + formatMoney(cap) + '.', 'error');
+        return;
+      }
+      var chosenCondition = conditions.filter(function (c) { return c.key === conditionSelect.value; })[0];
+      modalHandle.close();
+      replaceWithUpdatedWager({
+        stake: stake, condition: conditionSelect.value,
+        conditionLabel: chosenCondition ? chosenCondition.label : conditionSelect.value,
+        awaitingMe: false, updatedAt: new Date().toISOString()
+      });
+      fetchApi('respondToWager', {
+        method: 'POST', token: token,
+        body: { wagerId: w.wagerId, action: 'counter', stake: stake, condition: conditionSelect.value }
+      })
+        .then(function (data) {
+          if (!data.success) showToast(data.message || 'Could not send that counter -- refreshing.', 'error');
+          if (onQuietRefresh) onQuietRefresh();
+        })
+        .catch(function () {
+          showToast('Could not reach the server -- refreshing.', 'error');
+          if (onQuietRefresh) onQuietRefresh();
+        });
+    });
+  }
+
+  // ---- Bottom container: Wager History ----
+  function buildWagerHistoryPanel(wagers) {
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Wager History'));
+
+    if (!wagers || !wagers.success) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Could not load your wager history right now.'));
+      return card;
+    }
+
+    card.appendChild(el('div', 'rc-wager-record-line', wagers.record.wins + ' Won — ' + wagers.record.losses + ' Lost (career)'));
+
+    if (!wagers.history.length) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No settled wagers yet.'));
+      return card;
+    }
+
+    // Only the 10 most recent (2026-09-03, Matt's call) -- wagers.history
+    // already comes back newest-first (handleGetMyWagers sorts by
+    // UpdatedAt desc), so this is just "show the front of the list." The
+    // record line above still reflects the driver's whole career, not
+    // just what's shown here.
+    var list = el('div');
+    wagers.history.slice(0, 10).forEach(function (w) {
+      var row = el('div', 'rc-ledger-row');
+      var main = el('div');
+      main.appendChild(el('div', 'rc-ledger-event', escapeHtml(w.opponentDisplayName) + ' — ' + escapeHtml(w.conditionLabel)));
+      main.appendChild(el('div', 'rc-hint', escapeHtml(w.seasonName) + ' · ' + escapeHtml(w.roundLabel)));
+      row.appendChild(main);
+
+      var amtEl;
+      if (w.status === 'Settled' && w.winnerProfileId) {
+        amtEl = el('div', 'rc-ledger-amt ' + (w.iWon ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'), (w.iWon ? '+' : '−') + formatMoney(w.stake));
+      } else if (w.status === 'Settled') {
+        amtEl = el('div', 'rc-ledger-amt', 'Void'); // condition never resolved (e.g. both DNF) -- no money moved
+      } else {
+        amtEl = el('div', 'rc-ledger-amt', w.status); // Denied / Cancelled
+      }
+      row.appendChild(amtEl);
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+    return card;
+  }
+
   // Recent Results -- placeholder card, second on the third row, next to
   // Next Race (2026-09-01, Matt's call: Next Race in front of Recent
   // Results). No backend/data wired up yet -- just holding the spot in
@@ -1745,14 +2579,93 @@
     return card;
   }
 
-  // Wager + Protest -- placeholder cards, new fourth row (2026-09-01,
-  // Matt's call). Same "Coming soon" treatment as Recent Results above --
-  // no wager/protest system exists yet, this is just holding the layout
-  // spot until each one gets its own design pass.
-  function wagerCard() {
-    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+  // Wager -- Dashboard preview card (2026-09-02, real content now that
+  // the wager system exists -- see renderWagerSection/Wagers.gs).
+  // Fetches its own data OFF the dashboard's own critical path, same
+  // self-contained pattern reputationCard already uses -- this briefly
+  // rode the shared dashboardDataPromise batch instead, but that turned
+  // out to roughly double the WHOLE dashboard's load time (see the long
+  // comment on dashboardDataPromise below for why), so it's back to its
+  // own request. To still avoid looking like a second, disconnected
+  // loading state (the ORIGINAL complaint that led here), this card shows
+  // NOTHING in its body while the fetch is in flight -- no "Loading..."
+  // text, no spinner -- title and the "<- Make a Wager" link both render
+  // immediately, and the wager list/empty-state just quietly fills in
+  // once the (small, fast) response lands, with nothing visible flashing
+  // in between on the common case. Shows up to 3 active/in-limbo wagers
+  // (the site-wide 3-active cap means "up to 3" is really "all of them"
+  // in practice).
+  function wagerCard(token) {
+    // Starts fully transparent and fades in once its data actually lands
+    // (2026-09-03, Matt's call: "instead of cards that haven't loaded yet
+    // showing empty... completely transparent until it loads and then it
+    // fades into place") -- .rc-dash-card-fade/.rc-dash-card-fade-in
+    // (style.css) instead of the earlier empty-body approach, since this
+    // card renders its title and "<- Make a Wager" link synchronously
+    // (nothing to wait on there) but its actual wager rows only exist
+    // once getMyWagerSummary resolves -- rather than that gap reading as
+    // "an empty card," the whole card (title, link, and all) stays
+    // invisible until there's something real to show, then the entire
+    // thing fades in together as one finished card.
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card rc-dash-card-fade');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Wager'));
-    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+    var body = el('div');
+    card.appendChild(body);
+
+    function reveal() { card.classList.add('rc-dash-card-fade-in'); }
+
+    // Factored out of the initial fetch below so it can also be called as
+    // a quiet re-check (2026-09-03, Matt's bug report: placing a wager on
+    // the Wager page and clicking over to Dashboard didn't update this
+    // card -- Dashboard is built once at page load, not re-fetched on
+    // every visit, so this card's data just went stale the moment
+    // anything changed elsewhere). Same "stash a refresher on the card
+    // element" convention currentSeatCard already uses -- see its own
+    // card.rcRefresh above. Rewrites body in place, no reveal()/fade
+    // needed on a refresh (the card is already visible by then).
+    function loadInto(target) {
+      return fetchApi('getMyWagerSummary', { token: token }).then(function (data) {
+        target.innerHTML = '';
+        if (!data || !data.success) {
+          target.appendChild(el('p', 'rc-cs-empty', 'Could not load your wagers right now.'));
+        } else if (!data.items.length) {
+          target.appendChild(el('p', 'rc-cs-empty', 'No active wagers right now.'));
+        } else {
+          var list = el('div', 'rc-wager-dash-list');
+          data.items.forEach(function (w) {
+            var row = el('div', 'rc-wager-dash-row');
+            row.appendChild(el('div', 'rc-wager-dash-row-name', escapeHtml(w.opponentDisplayName)));
+            // Race the wager belongs to (2026-09-03, Matt's ask: "add more
+            // details to the wager like the race it belongs to") -- same
+            // roundLabel getMyWagers already sends the full Wager page,
+            // now also included in getMyWagerSummary for this mini card.
+            if (w.roundLabel) row.appendChild(el('div', 'rc-wager-dash-row-race', escapeHtml(w.roundLabel)));
+            var sub = el('div', 'rc-wager-dash-row-sub');
+            sub.appendChild(el('span', null, escapeHtml(w.conditionLabel) + ' · ' + formatMoney(w.stake)));
+            var statusLabel = w.status === 'Accepted' ? 'Locked In' : (w.awaitingMe ? 'Offered' : 'Waiting Response');
+            sub.appendChild(el('span', 'rc-wager-status-pill' + (w.awaitingMe ? ' rc-wager-status-pill-action' : ''), statusLabel));
+            row.appendChild(sub);
+            list.appendChild(row);
+          });
+          target.appendChild(list);
+        }
+      }).catch(function () {
+        target.innerHTML = '';
+        target.appendChild(el('p', 'rc-cs-empty', 'Could not reach the server.'));
+      });
+    }
+
+    loadInto(body).then(reveal);
+
+    card.rcRefresh = function () { if (card.parentNode) loadInto(body); };
+
+    var wagerLink = el('button', 'rc-link-btn rc-dash-card-link', '← Make a Wager');
+    wagerLink.type = 'button';
+    wagerLink.addEventListener('click', function () {
+      showLazySection('wager', currentToken);
+    });
+    card.appendChild(wagerLink);
+
     return card;
   }
 
@@ -3603,6 +4516,26 @@
     });
     form.appendChild(timeZone);
 
+    // Email-notification opt-in (2026-09-02, Matt's ask: same checkbox as
+    // registration, now editable here too -- defaults off at signup,
+    // this is where a driver turns it on/off afterward). See
+    // rcSendPendingNotificationEmails (DataCache.gs) for what it actually
+    // gates: an automatic email for a notification still unread 24 hours
+    // after it was created (season starts, account upgrades, a pending
+    // wager awaiting a response).
+    var emailNotifyRow = el('div', 'rc-check-row');
+    emailNotifyRow.style.marginTop = '16px';
+    var emailNotify = document.createElement('input');
+    emailNotify.type = 'checkbox';
+    emailNotify.id = 'rc-editprofile-email-notify';
+    emailNotify.checked = !!profile.emailNotificationsOptIn;
+    var emailNotifyLabel = document.createElement('label');
+    emailNotifyLabel.setAttribute('for', 'rc-editprofile-email-notify');
+    emailNotifyLabel.textContent = 'Email me about things I might miss, like pending wagers and season starts.';
+    emailNotifyRow.appendChild(emailNotify);
+    emailNotifyRow.appendChild(emailNotifyLabel);
+    form.appendChild(emailNotifyRow);
+
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -3633,7 +4566,8 @@
           suffix: suffix.value,
           email: email.value.trim(),
           location: location.value,
-          timeZone: timeZone.value
+          timeZone: timeZone.value,
+          emailNotificationsOptIn: emailNotify.checked ? '1' : '0'
         }
       })
         .then(function (data) {
@@ -7966,6 +8900,29 @@
 
     renderDashboardSection(profile, token, dashboardData);
 
+    // Silently prefetch Calendar and keep it loaded for the rest of the
+    // session (2026-09-03, Matt's call: "silently load, and keep loaded
+    // the calendar page AFTER the dashboard has completely loaded...
+    // since this page will not change much throughout the season, it can
+    // stay loaded for the session"). Waits on every one of the Dashboard's
+    // own card fetches settling first, rather than firing alongside them
+    // -- Apps Script Web Apps queue same-user fetch() calls somewhat
+    // rather than truly running them in parallel (see the long comment on
+    // fetchDashboardData above), so prefetching Calendar at the same time
+    // would compete with, and slow down, the cards the driver is actually
+    // looking at first. Reuses the exact same "loaded once, stays loaded"
+    // cache showLazySection already relies on (rcLoadedLazySections) --
+    // guarded so this never double-fetches if the driver manually clicks
+    // into Calendar before this background prefetch gets there first.
+    Promise.all([
+      dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise, dashboardData.financesPromise,
+      dashboardData.seasonObjectivePromise, dashboardData.nextRacePromise, dashboardData.sponsorsPromise
+    ]).then(function () {
+      if (rcLoadedLazySections.calendar) return;
+      rcLoadedLazySections.calendar = true;
+      renderCalendarSection(token);
+    });
+
     // Same-page restore after a popup save (2026-09-01, Matt's call) --
     // see rcReloadAfterSave() above for the full story. Only trusts the
     // URL hash if it names a section that both actually exists AND this
@@ -8057,26 +9014,36 @@
 
   // Dashboard cards never show their own loading state (Matt's call: "no
   // loaders in any of the cards, ever, I don't even want the
-  // functionality to exist") -- both card fetches are fired here,
-  // immediately, in parallel with the profile load itself, and the site's
-  // ONE loading screen ("Loading your dashboard...") stays up until
-  // everything (profile + both cards' data) is actually ready. By the
-  // time buildFullProfileUI()/renderDashboardSection() run, every card
-  // renders its final content on the first paint, already fully loaded --
-  // there's nothing left to fetch, so there's nothing for a card to show
-  // a spinner for. A failed card fetch still resolves (to a
-  // {success:false} stand-in via .catch) rather than rejecting, so one
-  // card's server error never blocks the whole page from loading.
-  var dashboardDataPromise = Promise.all([
-    fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
-    fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; })
-  ]).then(function (results) {
-    return { activeSeason: results[0], currentSeat: results[1], nextRace: results[2], financesReputation: results[3], sponsors: results[4], seasonObjective: results[5] };
-  });
+  // functionality to exist") -- every card fetch is fired here,
+  // immediately, in parallel with the profile load itself.
+  //
+  // 2026-09-03 rewrite (Matt's ask: "instead of loading everything in on
+  // the dash, have the dash populate instantly and load the cards one by
+  // one like the wager card loads, fading into place"): NOTHING here
+  // gates the page anymore -- not even the 3-call "priority batch" from
+  // earlier the same day. All 6 dashboard-data calls fire in this same
+  // breath (fetchDashboardData below) and are handed straight through as
+  // still-in-flight promises; the Dashboard section is built (see
+  // renderProfile -> renderDashboardSection) the instant the PROFILE
+  // fetch itself resolves, and every single card fades its real content
+  // in independently the moment its own fetch resolves, via
+  // asyncDashCard/buildDashboardDataRows above. The only thing the
+  // page-wide "Loading your dashboard..." spinner still waits on is the
+  // profile fetch.
+  //
+  // A failed card fetch still resolves (to a {success:false} stand-in via
+  // .catch) rather than rejecting, so one card's server error never
+  // leaves that one card's own placeholder hanging forever or blocks any
+  // other card.
+  //
+  // getMyWagerSummary is deliberately NOT part of this batch -- folding
+  // it in here (2026-09-02) roughly DOUBLED the whole dashboard's load
+  // time, because Apps Script Web Apps don't actually run several
+  // fetch() calls from the same user fully in parallel server-side
+  // (per-user concurrent-execution limits mean they queue up behind each
+  // other to some degree). The Wager dashboard card fetches its own data
+  // separately, same as it always has.
+  var dashboardData = fetchDashboardData(token);
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
@@ -8087,11 +9054,9 @@
 
   if (freshProfile && freshProfile.success) {
     renderHeader(); // header fetches its own notifications now -- see js/header.js
-    dashboardDataPromise.then(function (dashboardData) {
-      document.getElementById('rc-loading').style.display = 'none';
-      document.getElementById('rc-profile-root').style.display = 'block';
-      renderProfile(freshProfile.profile, token, dashboardData);
-    });
+    document.getElementById('rc-loading').style.display = 'none';
+    document.getElementById('rc-profile-root').style.display = 'block';
+    renderProfile(freshProfile.profile, token, dashboardData);
   } else {
     fetchApi('getProfile', { token: token })
       .then(function (data) {
@@ -8103,11 +9068,9 @@
         }
         setProfileCache(data.profile); // keeps the header avatar current on every other page too
         renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
-        return dashboardDataPromise.then(function (dashboardData) {
-          document.getElementById('rc-loading').style.display = 'none';
-          document.getElementById('rc-profile-root').style.display = 'block';
-          renderProfile(data.profile, token, dashboardData);
-        });
+        document.getElementById('rc-loading').style.display = 'none';
+        document.getElementById('rc-profile-root').style.display = 'block';
+        renderProfile(data.profile, token, dashboardData);
       })
       .catch(function () {
         renderHeader({ forceLoggedOut: true });

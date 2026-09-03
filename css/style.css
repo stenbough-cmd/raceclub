@@ -822,6 +822,28 @@ input[type="checkbox"], input[type="radio"] {
 }
 input[type="radio"] { border-radius: 50%; }
 textarea { resize: vertical; }
+
+/* Checkbox + label row (2026-09-02, email-notification opt-in checkbox --
+   register.html's "before clicking the button to join" checkbox, and the
+   matching one on the Edit Profile popup). A plain flex row rather than
+   reusing the <label>/<input> stacked pattern every other field on the
+   page uses -- a checkbox reads naturally sitting to the LEFT of its own
+   description, not stacked above a full-width box the way a text field's
+   label is. */
+.rc-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rc-check-row input[type="checkbox"] { margin-top: 3px; flex: none; }
+.rc-check-row label {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--rc-carbon);
+  cursor: pointer;
+}
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--rc-red);
@@ -1906,7 +1928,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-cs-row { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
 /* No circle/avatar container (Matt's call) -- the logo stands on its own,
    sized directly rather than cropped to fit a fixed box. */
-.rc-cs-logo { flex: none; max-width: 118px; max-height: 50px; object-fit: contain; }
+.rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
+.rc-cs-logo { max-width: 118px; max-height: 50px; object-fit: contain; }
 /* Matches .rc-regstatus-headline exactly (Matt's call: same size/weight
    as "REGISTERED FOR <season name>") rather than its own bigger/bolder
    treatment. */
@@ -2103,6 +2126,236 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    .rc-panel's own outside border (var(--rc-silver)), per Matt's ask. */
 #rc-section-finances .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
 #rc-section-finances .rc-dash-card::before { background: var(--rc-silver); }
+
+/* -------------------------------------------------------------------- */
+/* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
+   and the matching Dashboard preview card (wagerCard). */
+/* -------------------------------------------------------------------- */
+
+/* Wagers In Limbo -- portrait "card in the shape of a card" grid (Matt's
+   own words). Each .rc-wager-card is the fixed-size 3D flip stage;
+   .rc-wager-card-inner is what actually rotates; the two
+   .rc-wager-card-face elements are stacked on top of each other via
+   position:absolute + backface-visibility:hidden, so exactly one is ever
+   readable at a time. */
+.rc-wager-card-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 16px; }
+/* Height: 320 -> 400px when the flip/cancel icons first moved to the top
+   corners, then trimmed back to 360px (2026-09-03, Matt's follow-up: "now
+   that accept and deny live on the same row, you can reduce the height
+   again") -- Accept+Deny sharing one row plus Counter below is only two
+   button-rows tall, not three, so 400px had more slack than the new
+   layout actually needs. Width is deliberately UNCHANGED throughout
+   (Matt's earlier call: "don't make the card wider, just taller"). */
+.rc-wager-card { width: 250px; height: 360px; perspective: 1200px; -webkit-perspective: 1200px; flex: none; }
+.rc-wager-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+.rc-wager-card-flipped .rc-wager-card-inner { transform: rotateY(180deg); -webkit-transform: rotateY(180deg); }
+.rc-wager-card-face {
+  position: absolute;
+  inset: 0;
+  /* -webkit- prefix is load-bearing, not decoration -- without it Safari
+     never actually hides the face that's rotated away, and the "back"
+     face's mirrored, reversed content shows straight through on top of
+     whichever face should be readable (2026-09-03 bug report: "I can see
+     the reverse of the backside of the card overtop the information
+     part"). */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border: 1px solid var(--rc-silver);
+  border-radius: 10px;
+  /* Faint card-stock gradient instead of flat white (2026-09-03, Matt's
+     ask: "dress them up to look more like trading cards") -- subtle on
+     its own, but sits underneath the checkered-corner/flag-stripe accent
+     below for a bit more material presence than a plain UI panel. */
+  background: linear-gradient(165deg, var(--rc-white) 0%, #f3f0ec 100%);
+  box-shadow: 0 8px 24px rgba(15, 17, 21, 0.10);
+  /* clip-path, NOT overflow:hidden -- overflow:hidden on the same element
+     as backface-visibility:hidden is a known Safari/Chrome bug where the
+     browser silently drops the backface hiding once overflow clipping is
+     also in play, which is exactly what was still letting the flipped-
+     away face show through (2026-09-03 follow-up bug report: "the card
+     is still see through on the backside" -- the earlier -webkit- prefix
+     fix alone wasn't enough while this was still here). clip-path gives
+     the same rounded-corner clipping for the checkered-corner/flag-stripe
+     accents below without triggering that bug. */
+  clip-path: inset(0 round 10px);
+  /* Top padding grown 18px -> 42px (both faces) so the flip/cancel icons,
+     now pinned to the top corners, never sit on top of the front face's
+     centered avatar or the back face's left-aligned title -- everything
+     below just flows down from a lower start instead of needing its own
+     per-element clearance. */
+  padding: 42px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+/* Trading-card treatment (2026-09-03, Matt's ask: "dress them up to look
+   more like trading cards... use the banner in assets as a vibe") --
+   reuses this site's OWN established "Race Club" visual signature rather
+   than inventing a new one: the same faint checkered-flag corner and
+   angled red "finish flag" stripe every other Dashboard card already
+   carries (see .rc-dash-card further up this file, which is exactly
+   banner.jpg's own diagonal-checker + red-accent language, just already
+   translated into this site's card chrome). Scaled down to fit a card
+   this size instead of copy-pasting the larger dashboard-card numbers.
+   Direct children get position:relative + z-index:1 so real content
+   paints above these two decorative pseudo-elements -- the flip/cancel
+   icon buttons need to stay position:absolute despite being direct
+   children too, which their own rules (further down this file, so later
+   in source order) still win on equal specificity. */
+.rc-wager-card-face > * { position: relative; z-index: 1; }
+.rc-wager-card-face::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 130px;
+  height: 90px;
+  background:
+    conic-gradient(
+      from 90deg,
+      rgba(30, 30, 30, 0.07) 25%,
+      transparent 0 50%,
+      rgba(30, 30, 30, 0.07) 0 75%,
+      transparent 0
+    );
+  background-size: 26px 26px;
+  transform: skewX(-20deg);
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(circle at top right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 72%);
+  mask-image: radial-gradient(circle at top right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+.rc-wager-card-face::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 4px;
+  /* Class-accent, not a fixed red (2026-09-03, Matt's ask) -- --rc-wager-accent
+     is set inline per card, straight to the opponent's car-class color
+     (buildWagerFlipCard, Account.html), same palette as every other
+     class badge on the site (.rc-badge-lmgt3 etc.). Falls back to red
+     only if the class is unknown -- Hypercar's own class color already
+     IS red (--rc-class-hypercar: var(--rc-red)), so this never looks
+     like a regression for that class, just a name change under the hood. */
+  background: var(--rc-wager-accent, var(--rc-red));
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  z-index: 2;
+}
+.rc-wager-card-back {
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+  align-items: flex-start;
+  text-align: left;
+}
+.rc-wager-card-avatar-wrap { margin-bottom: 10px; }
+/* Avatar bumped up slightly (2026-09-03, Matt's call), scoped to just
+   this card so the shared .rc-avatar-circle-lg size used elsewhere on the
+   site is untouched. A red-ringed portrait frame (white gap, then a red
+   ring) is the other half of the "trading card" ask -- the same treatment
+   a real driver/team trading card gives its portrait photo. */
+.rc-wager-card-avatar-wrap .rc-avatar-circle-lg { width: 84px; height: 84px; font-size: 26px; }
+.rc-wager-card-avatar-wrap .rc-avatar-circle { box-shadow: 0 0 0 3px var(--rc-white), 0 0 0 5px var(--rc-wager-accent, var(--rc-red)); }
+.rc-wager-card-name { font-weight: 800; font-size: 14px; color: var(--rc-carbon); text-transform: uppercase; letter-spacing: 0.03em; font-family: var(--rc-font-heading); }
+.rc-wager-card-condition { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
+.rc-wager-card-stake { font-size: 21px; font-weight: 800; color: var(--rc-carbon); margin-top: 10px; font-variant-numeric: tabular-nums; }
+.rc-wager-card-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; width: 100%; }
+/* Accept + Deny share a row (2026-09-03, Matt's call), Counter is a
+   separate full-width button below them -- was a bare text link before
+   this, now an actual .rc-btn-secondary like Deny. */
+.rc-wager-card-actions-row { display: flex; gap: 6px; width: 100%; }
+.rc-wager-card-actions-row .rc-btn-sm { flex: 1; }
+.rc-wager-card-actions .rc-btn-sm { width: 100%; }
+.rc-wager-card-back-title { font-weight: 800; font-size: 14px; margin-bottom: 12px; color: var(--rc-carbon); text-transform: uppercase; letter-spacing: 0.03em; font-family: var(--rc-font-heading); }
+.rc-wager-card-stat-row { font-size: 12.5px; color: var(--rc-carbon); margin-bottom: 8px; }
+/* .rc-icon-btn is a 34px rounded-square; the flip control reads better as
+   a true circle. Moved to the top-right corner of whichever face is
+   currently showing (2026-09-03, Matt's call -- was bottom-right), which
+   frees the whole bottom of the card for the Accept/Deny/Counter stack. */
+.rc-wager-flip-btn { position: absolute; top: 12px; right: 12px; border-radius: 50%; font-size: 15px; line-height: 1; }
+
+/* Cancel -- X in a rounded square (Matt's own spec), pinned to the
+   top-left corner opposite the flip button (2026-09-03 -- was
+   bottom-left). Only rendered while a wager is still Pending AND it
+   isn't this driver's turn to Accept/Deny/Counter (see buildWagerFlipCard
+   -- Matt's call: "if there is an APPROVE or DENY, there shouldn't be an
+   X icon", since Deny already covers "I don't want this" for that side).
+   Red on hover since it's a destructive, one-click action with no
+   confirmation step. */
+.rc-wager-cancel-btn { position: absolute; top: 12px; left: 12px; font-size: 12px; line-height: 1; }
+.rc-wager-cancel-btn:hover { background: rgba(242, 27, 12, 0.1); color: var(--rc-red); border-color: var(--rc-red); }
+
+.rc-wager-status-pill {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--rc-offwhite);
+  color: var(--rc-steel);
+}
+/* "It's your move" -- awaiting THIS driver's response -- gets the one
+   accent color on the card, same red the rest of the site reserves for
+   something that needs attention. */
+.rc-wager-status-pill-action { background: rgba(242, 27, 12, 0.1); color: var(--rc-red); }
+
+.rc-wager-record-line { font-size: 13px; font-weight: 700; color: var(--rc-carbon); margin-bottom: 14px; }
+
+/* Open (unfilled) wager slot -- same size as a real .rc-wager-card, same
+   dashed/muted/uppercase "nothing here on purpose, click to fill it"
+   treatment the Sponsors page's own open pick slot uses
+   (.rc-pick-chip-open/.rc-pick-chip-clickable). */
+.rc-wager-card-open {
+  width: 250px;
+  height: 360px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--rc-silver);
+  border-radius: 10px;
+  background: var(--rc-white);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.rc-wager-card-open:hover { border-color: var(--rc-carbon); }
+.rc-wager-card-open-label { font-size: 12.5px; font-weight: 700; color: var(--rc-steel); text-transform: uppercase; letter-spacing: 0.04em; text-align: center; padding: 0 20px; }
+
+/* Dashboard preview card (wagerCard) -- plain stacked rows, same
+   light-divider convention the Sponsors dashboard card already uses
+   (.rc-sponsors-dash-row), not full flip-cards -- there's no room for
+   those in a quick-glance dashboard tile. */
+.rc-wager-dash-list { display: flex; flex-direction: column; gap: 10px; }
+.rc-wager-dash-row { border-top: 1px solid var(--rc-offwhite); padding-top: 8px; }
+.rc-wager-dash-row:first-child { border-top: none; padding-top: 0; }
+.rc-wager-dash-row-name { font-weight: 700; font-size: 13px; color: var(--rc-carbon); }
+/* Race the wager belongs to (2026-09-03, Matt's ask) -- sits between the
+   opponent name and the condition/stake/status line, same steel gray as
+   the rest of the card's secondary text but slightly smaller so it reads
+   as a detail line, not a second headline. */
+.rc-wager-dash-row-race { font-size: 11.5px; color: var(--rc-steel); margin-top: 1px; }
+.rc-wager-dash-row-sub { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 3px; font-size: 12px; color: var(--rc-steel); }
+
+/* Dashboard wager card fade-in -- card renders invisible while its own
+   getMyWagerSummary fetch is in flight (kept off the main dashboard
+   batch, see the comment above dashboardDataPromise in Account.html),
+   then fades to fully opaque once content lands, instead of showing an
+   empty/loading card. */
+.rc-dash-card-fade { opacity: 0; transition: opacity 0.55s ease; }
+.rc-dash-card-fade-in { opacity: 1; }
 .rc-fin-hero-card { padding: 26px 30px; }
 .rc-fin-hero-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
 .rc-fin-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); }
@@ -3048,6 +3301,19 @@ body.rc-modal-scroll-locked {
 .rc-wiz-field-pair .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
 @media (max-width: 640px) {
   .rc-wiz-field-pair { grid-template-columns: 1fr; }
+}
+/* Four-column version (2026-09-02, the Wager form's Opponent/Race/
+   Condition/Stake row -- Matt's call on exact widths: Opponent alone at
+   1/4 width on its own row, then Race at 1/2 + Condition/Stake at 1/4
+   each on the row below). Each field wrapper sets its own inline
+   grid-column: span N (1 = a quarter, 2 = a half) rather than this class
+   assuming a fixed shape, so the same row class covers both rows. */
+.rc-wiz-field-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 16px; margin-top: 18px; }
+.rc-wiz-field-row:first-child { margin-top: 0; }
+.rc-wiz-field-row .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
+@media (max-width: 640px) {
+  .rc-wiz-field-row { grid-template-columns: 1fr; }
+  .rc-wiz-field-row .rc-wiz-field { grid-column: auto !important; }
 }
 /* Special event bonus category payouts -- two columns of label+box pairs
    instead of one long stacked column (Matt's call). */
