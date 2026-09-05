@@ -1878,7 +1878,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    to the bottom with margin-top: auto below, the same trick already used
    for .rc-dash-card-link. */
 .rc-regstatus-body { display: flex; flex-direction: column; flex: 1 1 auto; }
-.rc-regstatus-row { display: flex; align-items: center; gap: 16px; }
+/* Slightly larger gap under the row (2026-09-03, Matt's ask: "add a
+   slightly larger space between the bottom of the registration circle to
+   the line within the container") -- between the icon/headline row and
+   the divider line above the Registered On/Class stats (.rc-regstatus-
+   footer's border-top). Registration Status is a flex column with the
+   footer pinned to the card's bottom via margin-top: auto (see the
+   comment on .rc-regstatus-footer below), so this row previously had
+   whatever leftover space was left over, which could read as tight when
+   this card's content is close in height to its row-mates'. */
+.rc-regstatus-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
 .rc-regstatus-row-clickable { cursor: pointer; }
 .rc-regstatus-icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 20px; font-weight: 700; border: 2px solid; }
 .rc-regstatus-icon-none { color: var(--rc-steel); border-color: var(--rc-silver); }

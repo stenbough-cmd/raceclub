@@ -3093,6 +3093,17 @@
     // team popup"). Joining a team now locks in immediately on click, with
     // no separate sponsor-pick screen in between -- straight from "Join
     // This Team" into the signing sequence.
+    // Deliberately left waiting on the server (2026-09-03 pass -- every
+    // other save on this page went instant/optimistic per Matt's
+    // standing rule, but this one specifically shouldn't): a team seat is
+    // a shared, exclusive resource another driver can grab in the same
+    // instant ("That seat was just taken" is a real, not-rare failure
+    // here, unlike a sponsor pick or a wager), and success plays the
+    // full-screen "EPIC" signing sequence right after -- there's no
+    // tasteful way to play that irreversible moment optimistically and
+    // then yank it back if the seat turns out to have been taken a
+    // second earlier. The button still gives immediate feedback
+    // ("Locking In...") rather than sitting inert.
     function doJoinTeamDirect(team, carClass, joinBtn) {
       joinBtn.disabled = true;
       joinBtn.textContent = 'Locking In...';
@@ -4061,6 +4072,13 @@
         showToast('New password and confirmation don\'t match.', 'error');
         return;
       }
+      // Deliberately left waiting on the server (2026-09-03 pass): unlike
+      // everything else on this page, success here genuinely depends on
+      // a fact only the server can check -- whether currentPassword is
+      // actually correct -- and that's a common, expected way for this
+      // particular action to fail (a typo, forgetting which password),
+      // not a rare edge case. There's nothing honest to show optimistically
+      // before that check runs, so this one action still waits.
       fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
         .then(function (data) {
           showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
@@ -4353,8 +4371,23 @@
         showToast('Pick an avatar first.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+
+      // Instant, no wait on the server (2026-09-03, Matt's call: "the
+      // user should not have to wait for the sheet to save or the script
+      // to run" -- his standing rule for the whole site). The picker
+      // closes and the new avatar shows up everywhere on screen the
+      // instant it's picked; the actual write to the sheet happens
+      // silently in the background below. avatarFilename is the only
+      // field genuinely changing here, and it's already known
+      // client-side (it's whatever was just clicked), so there's nothing
+      // to fake or leave blank.
+      var previousAvatarFilename = profile.avatarFilename;
+      profile.avatarFilename = selected;
+      if (onSaved) onSaved(profile);
+      setProfileCache(profile);
+      if (typeof renderHeader === 'function') renderHeader();
+      if (pickerModal) pickerModal.close();
+
       fetchApi('updateOwnProfile', {
         method: 'POST',
         token: token,
@@ -4370,20 +4403,23 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Avatar';
           if (!data.success) {
-            showToast(data.message || 'Could not save your avatar.', 'error');
+            profile.avatarFilename = previousAvatarFilename;
+            if (onSaved) onSaved(profile);
+            setProfileCache(profile);
+            if (typeof renderHeader === 'function') renderHeader();
+            showToast(data.message || 'Could not save your avatar -- reverted.', 'error');
             return;
           }
           setProfileCache(data.profile);
-          showToast('Avatar updated.', 'success');
-          rcReloadAfterSave();
+          if (typeof renderHeader === 'function') renderHeader();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Avatar';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          profile.avatarFilename = previousAvatarFilename;
+          if (onSaved) onSaved(profile);
+          setProfileCache(profile);
+          if (typeof renderHeader === 'function') renderHeader();
+          showToast('Could not reach the server -- avatar change reverted.', 'error');
         });
     });
     body.appendChild(saveBtn);
@@ -4436,7 +4472,21 @@
     deleteAvatarLink.addEventListener('click', function (evt) {
       evt.preventDefault();
       if (!profile.avatarFilename) return; // nothing to delete
-      deleteAvatarLink.textContent = 'Removing...';
+
+      // Instant, no wait on the server (2026-09-03, Matt's call) -- the
+      // avatar drops back to initials on screen (here and in the header)
+      // the moment this is clicked; the actual clear happens silently in
+      // the background. Failure just puts the old avatar back and says
+      // why, same "feel instant, reconcile quietly after" pattern as
+      // Save Avatar above.
+      var previousAvatarFilename = profile.avatarFilename;
+      profile.avatarFilename = '';
+      var freshCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
+      avatarRow.replaceChild(freshCircle, avatarCircle);
+      avatarCircle = freshCircle;
+      setProfileCache(profile);
+      if (typeof renderHeader === 'function') renderHeader();
+
       fetchApi('updateOwnProfile', {
         method: 'POST',
         token: token,
@@ -4448,18 +4498,27 @@
         }
       })
         .then(function (data) {
-          deleteAvatarLink.textContent = 'Delete Avatar';
           if (!data.success) {
-            showToast(data.message || 'Could not remove your avatar.', 'error');
+            profile.avatarFilename = previousAvatarFilename;
+            var revertedCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
+            avatarRow.replaceChild(revertedCircle, avatarCircle);
+            avatarCircle = revertedCircle;
+            setProfileCache(profile);
+            if (typeof renderHeader === 'function') renderHeader();
+            showToast(data.message || 'Could not remove your avatar -- reverted.', 'error');
             return;
           }
           setProfileCache(data.profile);
-          showToast('Avatar removed.', 'success');
-          rcReloadAfterSave();
+          if (typeof renderHeader === 'function') renderHeader();
         })
         .catch(function () {
-          deleteAvatarLink.textContent = 'Delete Avatar';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          profile.avatarFilename = previousAvatarFilename;
+          var revertedCircle2 = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
+          avatarRow.replaceChild(revertedCircle2, avatarCircle);
+          avatarCircle = revertedCircle2;
+          setProfileCache(profile);
+          if (typeof renderHeader === 'function') renderHeader();
+          showToast('Could not reach the server -- avatar removal reverted.', 'error');
         });
     });
     avatarRow.appendChild(deleteAvatarLink);
@@ -4554,8 +4613,26 @@
         showToast('Username, first name, last name, and email are required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+
+      // Instant, no wait on the server (2026-09-03, Matt's call: "the
+      // user should not have to wait for the sheet to save or the script
+      // to run" -- his standing rule for the whole site). The popup
+      // closes the moment Save Changes is clicked, and the header's
+      // name/avatar update right away too -- displayName itself is
+      // computed server-side from First/Last/Suffix (never edited
+      // directly here), so this builds the same "First Last Suffix"
+      // shape client-side as a stand-in; the quiet background reload
+      // below fills in the server's actual computed value once the save
+      // lands, same "placeholder now, real value later" pattern used
+      // elsewhere on this page. A failure (e.g. that username is already
+      // taken) reverts the header back to what it showed before and
+      // explains why via toast, since the popup is already gone.
+      var previousProfileCache = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+      var optimisticDisplayName = [firstName.value.trim(), lastName.value.trim(), suffix.value].filter(function (s) { return s; }).join(' ');
+      setProfileCache({ displayName: optimisticDisplayName, role: previousProfileCache ? previousProfileCache.role : '', avatarFilename: profile.avatarFilename || '' });
+      if (typeof renderHeader === 'function') renderHeader();
+      if (modalHandle) modalHandle.close();
+
       fetchApi('updateOwnProfile', {
         method: 'POST',
         token: token,
@@ -4571,20 +4648,19 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
           if (!data.success) {
-            showToast(data.message || 'Could not save your changes.', 'error');
+            if (previousProfileCache) setProfileCache(previousProfileCache);
+            if (typeof renderHeader === 'function') renderHeader();
+            showToast(data.message || 'Could not save your changes -- reverted.', 'error');
             return;
           }
-          setProfileCache(data.profile); // keeps the header avatar current here and on every other page, once the reload below actually re-renders it
-          showToast('Profile updated.', 'success');
+          setProfileCache(data.profile); // keeps the header avatar/name current here and on every other page, once the reload below actually re-renders it
           rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          if (previousProfileCache) setProfileCache(previousProfileCache);
+          if (typeof renderHeader === 'function') renderHeader();
+          showToast('Could not reach the server -- changes reverted.', 'error');
         });
     });
   }
@@ -4704,7 +4780,8 @@
 
     var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
     nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(s.name || s.seasonId)));
-    nameLine.appendChild(_rcSeasonStatusBadge(s.status));
+    var statusBadge = _rcSeasonStatusBadge(s.status);
+    nameLine.appendChild(statusBadge);
     textCol.appendChild(nameLine);
 
     var metaParts = [];
@@ -4742,18 +4819,35 @@
             'END SEASON',
             'End Season',
             function () {
+              // Instant, no wait on the server (2026-09-03, Matt's call:
+              // "all the admin/data management functions work the same"
+              // as the rest of the site). The confirm popup is already
+              // gone by the time this runs (openTypeToConfirmModal closes
+              // it before calling through); the row itself flips to
+              // Completed right away and the actual write happens
+              // silently in the background. A failure puts the status
+              // badge back and explains why via toast, since the row is
+              // still on screen either way.
+              var badgeAfter = _rcSeasonStatusBadge('Completed');
+              nameLine.replaceChild(badgeAfter, statusBadge);
+              statusBadge = badgeAfter;
               endSeasonBtn.disabled = true;
               fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
                 if (!data.success) {
-                  showToast(data.message || 'Could not end this season.', 'error');
+                  var reverted = _rcSeasonStatusBadge(s.status);
+                  nameLine.replaceChild(reverted, statusBadge);
+                  statusBadge = reverted;
                   endSeasonBtn.disabled = false;
+                  showToast(data.message || 'Could not end this season -- reverted.', 'error');
                   return;
                 }
-                showToast(escapeHtml(s.name) + ' ended.', 'success');
-                rcReloadAfterSave();
+                if (reload) reload();
               }).catch(function () {
-                showToast('Could not reach the server. Try again in a moment.', 'error');
+                var reverted = _rcSeasonStatusBadge(s.status);
+                nameLine.replaceChild(reverted, statusBadge);
+                statusBadge = reverted;
                 endSeasonBtn.disabled = false;
+                showToast('Could not reach the server -- season not ended.', 'error');
               });
             }
           );
@@ -4766,15 +4860,25 @@
       deleteBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
       deleteBtn.addEventListener('click', function () {
         openConfirmModal('Delete Season', 'Permanently delete "' + (s.name || s.seasonId) + '"? This removes its rounds and registrations too. This can\'t be undone.', 'Delete', function () {
+          // Instant, no wait on the server (2026-09-03, Matt's call: "all
+          // the admin/data management functions work the same" as the
+          // rest of the site). The row disappears from the list the
+          // moment Delete is confirmed; the actual delete happens
+          // silently in the background. A failure puts the row back and
+          // explains why via toast, since it was never actually deleted.
+          var nextSibling = row.nextSibling;
+          var parent = row.parentNode;
+          if (parent) parent.removeChild(row);
           fetchApi('adminDeleteSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
             if (!data.success) {
-              showToast(data.message || 'Could not delete this season.', 'error');
+              if (parent) parent.insertBefore(row, nextSibling);
+              showToast(data.message || 'Could not delete this season -- restored.', 'error');
               return;
             }
-            showToast(escapeHtml(s.name) + ' deleted.', 'success');
-            rcReloadAfterSave();
+            if (reload) reload();
           }).catch(function () {
-            showToast('Could not reach the server. Try again in a moment.', 'error');
+            if (parent) parent.insertBefore(row, nextSibling);
+            showToast('Could not reach the server -- season not deleted.', 'error');
           });
         });
       });
@@ -7164,6 +7268,16 @@
       return { racesPayload: racesPayload, seasonDetails: seasonDetails };
     }
 
+    // finishWizard/finishEditWizard (below) are deliberately left waiting
+    // on the server (2026-09-03 pass): creating/updating a season is a
+    // single write that fans out into many rows (races, rounds, bye
+    // weeks, special events) built server-side from this payload, keyed
+    // off a season/round ID this wizard doesn't have yet -- there's no
+    // real "next screen" to optimistically show that doesn't just recreate
+    // the whole season summary the server is about to compute anyway, and
+    // this is a rare, deliberate admin action (not a fast, repeated one
+    // like a sponsor pick or a wager), so a few seconds of spinner here
+    // reads as normal rather than as the site feeling slow.
     function finishWizard() {
       saveWizardDraft(state);
       contentWrap.innerHTML = '';
@@ -7438,6 +7552,13 @@
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
       saveBtn.type = 'button';
       saveBtn.addEventListener('click', function () {
+        // Instant, no wait on the server (2026-09-03, Matt's call: "all
+        // the admin/data management functions work the same" as the rest
+        // of the site). The modal closes the moment Save is clicked; the
+        // actual write happens silently in the background. A failure
+        // can't un-close an already-closed modal, so it just says so via
+        // toast -- the admin can reopen Economy and try again.
+        modal.close();
         fetchApi('adminUpdateEconomySettings', {
           method: 'POST', token: token, body: {
             newDriverStartingBalance: balInput.value,
@@ -7449,7 +7570,10 @@
         })
           .then(function (result) {
             if (result && result.success) { rcReloadAfterSave(); }
-            else { showToast((result && result.message) || 'Could not save. Check the value and try again.', 'error'); }
+            else { showToast((result && result.message) || 'Could not save Economy settings -- reopen Economy and try again.', 'error'); }
+          })
+          .catch(function () {
+            showToast('Could not reach the server -- Economy settings not saved.', 'error');
           });
       });
       btnRow.appendChild(saveBtn);
@@ -7544,26 +7668,26 @@
         showToast('Track name and layout are required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Adding...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Add Track is submitted;
+      // the actual write happens silently in the background. A failure
+      // can't un-close an already-closed modal, so it just says so via
+      // toast -- the admin can reopen Add Track and try again.
+      modalHandle.close();
       fetchApi('adminAddTrackLayout', {
         method: 'POST', token: token,
         body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim() }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Track';
           if (!data.success) {
-            showToast(data.message || 'Could not add this track.', 'error');
+            showToast(data.message || 'Could not add this track -- reopen Add Track and try again.', 'error');
             return;
           }
-          showToast('Track added.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Track';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- track not added.', 'error');
         });
     });
   }
@@ -7642,8 +7766,13 @@
         showToast('Season is required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Adding...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Add Car is submitted; the
+      // actual write happens silently in the background. A failure can't
+      // un-close an already-closed modal, so it just says so via toast --
+      // the admin can reopen Add Car and try again.
+      modalHandle.close();
       fetchApi('adminAddCar', {
         method: 'POST', token: token,
         body: {
@@ -7658,19 +7787,14 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Car';
           if (!data.success) {
-            showToast(data.message || 'Could not add this car.', 'error');
+            showToast(data.message || 'Could not add this car -- reopen Add Car and try again.', 'error');
             return;
           }
-          showToast('Car added.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Car';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- car not added.', 'error');
         });
     });
   }
@@ -7750,36 +7874,43 @@
           approveBtn.style.cssText = 'color:#1f5c25;border-color:#1f5c25;';
           approveBtn.type = 'button';
           approveBtn.addEventListener('click', function () {
-            approveBtn.disabled = true; denyBtn.disabled = true;
+            // Instant, no wait on the server (2026-09-03, Matt's call:
+            // "all the admin/data management functions work the same" as
+            // the rest of the site). The row drops out of Pending Approval
+            // the instant Approve is clicked; the actual promotion happens
+            // silently in the background. A failure puts the row back and
+            // explains why via toast, since it was never actually approved.
+            var nextSibling = row.nextSibling, parent = row.parentNode;
+            if (parent) parent.removeChild(row);
             fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
               if (data && data.success) {
-                showToast((person.DisplayName || 'Driver') + ' approved.', 'success');
-                rcReloadAfterSave();
+                if (reload) reload();
               } else {
-                showToast((data && data.message) || 'Could not approve this account.', 'error');
-                approveBtn.disabled = false; denyBtn.disabled = false;
+                if (parent) parent.insertBefore(row, nextSibling);
+                showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
               }
             }).catch(function () {
-              showToast('Could not reach the server. Try again in a moment.', 'error');
-              approveBtn.disabled = false; denyBtn.disabled = false;
+              if (parent) parent.insertBefore(row, nextSibling);
+              showToast('Could not reach the server -- account not approved.', 'error');
             });
           });
           var denyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Deny');
           denyBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
           denyBtn.type = 'button';
           denyBtn.addEventListener('click', function () {
-            approveBtn.disabled = true; denyBtn.disabled = true;
+            // Same instant pattern as Approve above.
+            var nextSibling = row.nextSibling, parent = row.parentNode;
+            if (parent) parent.removeChild(row);
             fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
               if (data && data.success) {
-                showToast((person.DisplayName || 'Driver') + ' denied.', 'success');
-                rcReloadAfterSave();
+                if (reload) reload();
               } else {
-                showToast((data && data.message) || 'Could not deny this account.', 'error');
-                approveBtn.disabled = false; denyBtn.disabled = false;
+                if (parent) parent.insertBefore(row, nextSibling);
+                showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
               }
             }).catch(function () {
-              showToast('Could not reach the server. Try again in a moment.', 'error');
-              approveBtn.disabled = false; denyBtn.disabled = false;
+              if (parent) parent.insertBefore(row, nextSibling);
+              showToast('Could not reach the server -- account not denied.', 'error');
             });
           });
           btnGroup.appendChild(approveBtn);
@@ -7893,8 +8024,13 @@
         showToast('Username, first name, last name, and email are required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Save Changes is submitted;
+      // the actual write happens silently in the background. A failure
+      // can't un-close an already-closed modal, so it just says so via
+      // toast -- the admin can reopen Edit Driver and try again.
+      modalHandle.close();
       fetchApi('adminUpdateProfile', {
         method: 'POST',
         token: token,
@@ -7911,41 +8047,34 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
           if (!data.success) {
-            showToast(data.message || 'Could not save changes.', 'error');
+            showToast(data.message || 'Could not save changes -- reopen Edit Driver and try again.', 'error');
             return;
           }
-          showToast('Driver updated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- changes not saved.', 'error');
         });
     });
 
     toggleBtn.addEventListener('click', function () {
-      toggleBtn.disabled = true;
+      // Same instant pattern as Save Changes above.
+      modalHandle.close();
       fetchApi('adminSetUserStatus', {
         method: 'POST',
         token: token,
         body: { profileId: driver.ProfileID, status: isActive ? 'Disabled' : 'Active' }
       })
         .then(function (data) {
-          toggleBtn.disabled = false;
           if (!data.success) {
-            showToast(data.message || 'Could not update this account.', 'error');
+            showToast(data.message || 'Could not update this account -- reopen Edit Driver and try again.', 'error');
             return;
           }
-          showToast(isActive ? 'Account disabled.' : 'Account reactivated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          toggleBtn.disabled = false;
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- account status not changed.', 'error');
         });
     });
   }
@@ -8072,28 +8201,31 @@
     body.appendChild(regionWrap);
 
     saveRegionBtn.addEventListener('click', function () {
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all
+      // the admin/data management functions work the same" as the rest
+      // of the site). rows[] updates and the modal stays open on this
+      // same screen right away; the actual write happens silently in
+      // the background. A failure puts the previous region back into
+      // the field and explains why via toast.
       var newRegion = regionInput.value.trim();
-      saveRegionBtn.disabled = true;
-      saveRegionBtn.textContent = 'Saving...';
+      var previousRegion = (rows[0] && rows[0].Region) || '';
+      rows.forEach(function (r) { r.Region = newRegion; });
       fetchApi('adminUpdateTrackRegion', {
         method: 'POST', token: token,
         body: { trackName: venueName, region: newRegion }
       })
         .then(function (data) {
-          saveRegionBtn.disabled = false;
-          saveRegionBtn.textContent = 'Save Region';
           if (!data.success) {
-            showToast(data.message || 'Could not update this track\'s region.', 'error');
+            rows.forEach(function (r) { r.Region = previousRegion; });
+            regionInput.value = previousRegion;
+            showToast(data.message || 'Could not update this track\'s region -- reverted.', 'error');
             return;
           }
-          rows.forEach(function (r) { r.Region = newRegion; });
-          showToast('Region updated.', 'success');
-          rcReloadAfterSave();
         })
         .catch(function () {
-          saveRegionBtn.disabled = false;
-          saveRegionBtn.textContent = 'Save Region';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          rows.forEach(function (r) { r.Region = previousRegion; });
+          regionInput.value = previousRegion;
+          showToast('Could not reach the server -- region change reverted.', 'error');
         });
     });
 
@@ -8115,23 +8247,30 @@
         var toggleBtn = el('button', 'rc-btn-secondary rc-btn-row', active ? 'Deactivate' : 'Reactivate');
         toggleBtn.type = 'button';
         toggleBtn.addEventListener('click', function () {
-          toggleBtn.disabled = true;
+          // Instant, no wait on the server (2026-09-03, Matt's call: "all
+          // the admin/data management functions work the same" as the
+          // rest of the site). The row flips to its new Active/Inactive
+          // state (and the list repaints) the instant this is clicked;
+          // the actual write happens silently in the background. A
+          // failure flips it back and explains why via toast.
+          var newActive = active ? 'Inactive' : 'Active';
+          r.Active = newActive;
+          renderLayoutList();
           fetchApi('adminSetTrackLayoutActive', {
             method: 'POST', token: token,
-            body: { trackId: r.TrackID, active: active ? 'Inactive' : 'Active' }
+            body: { trackId: r.TrackID, active: newActive }
           })
             .then(function (data) {
-              toggleBtn.disabled = false;
               if (!data.success) {
-                showToast(data.message || 'Could not update that layout.', 'error');
-                return;
+                r.Active = active ? 'Active' : 'Inactive';
+                renderLayoutList();
+                showToast(data.message || 'Could not update that layout -- reverted.', 'error');
               }
-              showToast(active ? 'Layout deactivated.' : 'Layout reactivated.', 'success');
-              rcReloadAfterSave();
             })
             .catch(function () {
-              toggleBtn.disabled = false;
-              showToast('Could not reach the server. Try again in a moment.', 'error');
+              r.Active = active ? 'Active' : 'Inactive';
+              renderLayoutList();
+              showToast('Could not reach the server -- layout change reverted.', 'error');
             });
         });
         layoutRow.appendChild(toggleBtn);
@@ -8154,23 +8293,37 @@
         showToast('Enter a layout name first.', 'error');
         return;
       }
-      addBtn.disabled = true;
+
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all
+      // the admin/data management functions work the same" as the rest
+      // of the site). The new layout shows up in the list right away;
+      // its real TrackID isn't known until the server assigns one, but
+      // nothing on screen needs it before then (the row's own Deactivate
+      // button is the only thing that reads it, and this layout is
+      // brand new -- there's nothing to deactivate yet). The quiet
+      // background reconcile below fills the real TrackID in once the
+      // write lands; a failure removes the row and explains why.
+      var provisionalRow = { TrackID: '', TrackName: venueName, Layout: layoutName, Region: (rows[0] && rows[0].Region) || '', Active: 'Active' };
+      rows.push(provisionalRow);
+      addInput.value = '';
+      renderLayoutList();
       fetchApi('adminAddTrackLayout', {
         method: 'POST', token: token,
         body: { trackName: venueName, layout: layoutName }
       })
         .then(function (data) {
-          addBtn.disabled = false;
           if (!data.success) {
-            showToast(data.message || 'Could not add that layout.', 'error');
+            rows.splice(rows.indexOf(provisionalRow), 1);
+            renderLayoutList();
+            showToast(data.message || 'Could not add that layout -- removed.', 'error');
             return;
           }
-          showToast('Layout added.', 'success');
-          rcReloadAfterSave();
+          provisionalRow.TrackID = data.trackId || '';
         })
         .catch(function () {
-          addBtn.disabled = false;
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          rows.splice(rows.indexOf(provisionalRow), 1);
+          renderLayoutList();
+          showToast('Could not reach the server -- layout not added.', 'error');
         });
     });
 
@@ -8187,26 +8340,26 @@
         modalHandle.close();
         return;
       }
-      saveNameBtn.disabled = true;
-      saveNameBtn.textContent = 'Saving...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Save Name is submitted;
+      // the actual rename happens silently in the background. A failure
+      // can't un-close an already-closed modal, so it just says so via
+      // toast -- the admin can reopen Edit Track and try again.
+      modalHandle.close();
       fetchApi('adminUpdateTrackName', {
         method: 'POST', token: token,
         body: { oldName: venueName, newName: newName }
       })
         .then(function (data) {
-          saveNameBtn.disabled = false;
-          saveNameBtn.textContent = 'Save Name';
           if (!data.success) {
-            showToast(data.message || 'Could not rename this track.', 'error');
+            showToast(data.message || 'Could not rename this track -- reopen Edit Track and try again.', 'error');
             return;
           }
-          showToast('Track renamed.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveNameBtn.disabled = false;
-          saveNameBtn.textContent = 'Save Name';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- track not renamed.', 'error');
         });
     });
   }
@@ -8407,8 +8560,13 @@
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Save Changes is
+      // submitted; the actual write happens silently in the background.
+      // A failure can't un-close an already-closed modal, so it just
+      // says so via toast -- the admin can reopen Edit Car and try again.
+      modalHandle.close();
       fetchApi('adminUpdateCar', {
         method: 'POST', token: token,
         body: {
@@ -8424,40 +8582,33 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
           if (!data.success) {
-            showToast(data.message || 'Could not save changes.', 'error');
+            showToast(data.message || 'Could not save changes -- reopen Edit Car and try again.', 'error');
             return;
           }
-          showToast('Car updated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- changes not saved.', 'error');
         });
     });
 
     toggleBtn.addEventListener('click', function () {
-      toggleBtn.disabled = true;
+      // Same instant pattern as Save Changes above.
+      modalHandle.close();
       fetchApi('adminSetCarActive', {
         method: 'POST', token: token,
         body: { carId: car.CarID, active: isActive ? 'Inactive' : 'Active' }
       })
         .then(function (data) {
-          toggleBtn.disabled = false;
           if (!data.success) {
-            showToast(data.message || 'Could not update this car.', 'error');
+            showToast(data.message || 'Could not update this car -- reopen Edit Car and try again.', 'error');
             return;
           }
-          showToast(isActive ? 'Car deactivated.' : 'Car reactivated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          toggleBtn.disabled = false;
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- car status not changed.', 'error');
         });
     });
   }
@@ -8682,8 +8833,14 @@
         showToast('Sponsor name and bonus trigger are required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Save Changes is
+      // submitted; the actual write happens silently in the background.
+      // A failure can't un-close an already-closed modal, so it just
+      // says so via toast -- the admin can reopen Edit Sponsor and try
+      // again.
+      modalHandle.close();
       fetchApi('adminUpdateSponsor', {
         method: 'POST', token: token,
         body: {
@@ -8697,40 +8854,33 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
           if (!data.success) {
-            showToast(data.message || 'Could not save changes.', 'error');
+            showToast(data.message || 'Could not save changes -- reopen Edit Sponsor and try again.', 'error');
             return;
           }
-          showToast('Sponsor updated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Changes';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- changes not saved.', 'error');
         });
     });
 
     toggleBtn.addEventListener('click', function () {
-      toggleBtn.disabled = true;
+      // Same instant pattern as Save Changes above.
+      modalHandle.close();
       fetchApi('adminSetSponsorActive', {
         method: 'POST', token: token,
         body: { sponsorId: sponsor.SponsorID, active: isActive ? 'Inactive' : 'Active' }
       })
         .then(function (data) {
-          toggleBtn.disabled = false;
           if (!data.success) {
-            showToast(data.message || 'Could not update this sponsor.', 'error');
+            showToast(data.message || 'Could not update this sponsor -- reopen Edit Sponsor and try again.', 'error');
             return;
           }
-          showToast(isActive ? 'Sponsor deactivated.' : 'Sponsor reactivated.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          toggleBtn.disabled = false;
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- sponsor status not changed.', 'error');
         });
     });
   }
@@ -8791,8 +8941,13 @@
         showToast('Sponsor name is required.', 'error');
         return;
       }
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Adding...';
+      // Instant, no wait on the server (2026-09-03, Matt's call: "all the
+      // admin/data management functions work the same" as the rest of
+      // the site). The popup closes the moment Add Sponsor is submitted;
+      // the actual write happens silently in the background. A failure
+      // can't un-close an already-closed modal, so it just says so via
+      // toast -- the admin can reopen Add Sponsor and try again.
+      modalHandle.close();
       fetchApi('adminAddSponsor', {
         method: 'POST', token: token,
         body: {
@@ -8805,19 +8960,14 @@
         }
       })
         .then(function (data) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Sponsor';
           if (!data.success) {
-            showToast(data.message || 'Could not add this sponsor.', 'error');
+            showToast(data.message || 'Could not add this sponsor -- reopen Add Sponsor and try again.', 'error');
             return;
           }
-          showToast('Sponsor added.', 'success');
-          rcReloadAfterSave();
+          if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Add Sponsor';
-          showToast('Could not reach the server. Try again in a moment.', 'error');
+          showToast('Could not reach the server -- sponsor not added.', 'error');
         });
     });
   }
