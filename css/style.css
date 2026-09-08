@@ -1829,9 +1829,42 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* -------------------------------------------------------------------- */
 /* Dashboard -- card grid (2026-08-29, first cards back after the pre-   */
 /* ECO dashboard was dropped). .rc-quick-row holds Registration Status + */
-/* Current Seat for now; more cards join it later, one at a time.        */
+/* Current Seat for now; more cards join it later, one at a time. Rows   */
+/* now hold 2 or 3 cards each (Registration Status/Current Seat/Season   */
+/* Objective; Finances/Reputation/Sponsors; Next Race/Recent Results;    */
+/* Wager/Protests) -- see buildDashboardDataRows in Account.html.        */
 /* -------------------------------------------------------------------- */
-.rc-quick-row { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; align-items: stretch; }
+/* display: grid, not flex (2026-09-08, Matt's report: on a 3-card row,
+   narrowing the window used to leave 2 cards on one line and strand the
+   3rd alone on the next, and that lone 3rd card visibly stretched to
+   fill the ENTIRE row width -- flexbox's flex-grow doing exactly what it
+   was told, but not what a card grid should look like. That happened
+   because .rc-panel > .rc-quick-row's cards each carry flex-grow: 1 (from
+   `flex: 1 1 320px` -- see .rc-regstatus-card etc. below), so a lone item
+   on its own line, with no sibling to share the line's width, grows to
+   claim all of it.
+
+   `grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))` fixes
+   this at the layout-model level rather than patching it with extra
+   breakpoints: the browser fits as many 280px-or-wider columns as the
+   row has room for (3, then 2, then 1, as the row narrows), and every
+   column in that count is the SAME width, splitting the row evenly. A
+   card that ends up alone on the last row still only occupies ONE
+   column's width, not the full row -- there's no flex-grow analog to
+   fight here, grid items don't stretch across tracks they weren't
+   explicitly placed to span. So a 3-card row now goes 3-across, then
+   cleanly 2-across (both cards evenly sized, nothing stretched), then
+   1-across, with no in-between state where one card is oddly full-width
+   while its sibling above it isn't. The individual cards' own
+   `flex: 1 1 320px; min-width: 280px;` (below) is simply ignored now
+   that the parent is a grid, not a flex container -- harmless leftover,
+   not worth stripping out row by row. A row with only one card (none
+   currently, but the layout supports it) still fills the whole row: with
+   only one item, `auto-fit` collapses every OTHER, empty column track to
+   0 width, leaving that single item's one live track to claim the
+   `1fr` maximum, which is the full row -- the "full-width banner card"
+   behavior a lone card always had under flex is unchanged. */
+.rc-quick-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; align-items: stretch; }
 /* Every Dashboard card in a quick row stretches to the row's tallest card
    height (align-items: stretch above); making the card itself a flex
    column, and pushing its bottom-left link down with margin-top: auto,
