@@ -135,8 +135,8 @@
           <div class="rc-highlight-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 0 0-2-2H8.5L4 10v4a2 2 0 0 0 2 2h1"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle><path d="M9 17h6"></path></svg>
           </div>
-          <h3>Every Team Comes With Sponsors</h3>
-          <p>Every team is bundled with its own sponsors before you ever commit. Chase a demanding, high-payout lineup or a steady, conservative one. Either way, hit the conditions and it lands in your bank account.</p>
+          <h3>Pick Your Own Sponsors</h3>
+          <p>Every season you choose up to three sponsors from that season's catalog, each with its own bonus and penalty conditions read straight off the race results. Chase a demanding, high-payout lineup or a steady, conservative one.</p>
         </div>
 
         <div class="rc-highlight-card">
@@ -152,7 +152,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"></rect><path d="M2 10h20"></path><circle cx="7" cy="14.5" r="1"></circle></svg>
           </div>
           <h3>Real Money On The Line</h3>
-          <p>Sponsor bonuses land every race, a season-end prize pool pays out by standing, and you can wager rivals for the fun of it. Once a wager's accepted, both stakes are locked in until the results are in.</p>
+          <p>Sponsor bonuses and penalties are read straight from each race's results and land in your account automatically. Wager a rival for the fun of it too. Once a wager's accepted, both stakes are locked in until the results are in.</p>
         </div>
 
         <div class="rc-highlight-card">
@@ -320,7 +320,7 @@
       var tagline = seasonLabel + (data.seasonName ? (': ' + data.seasonName) : '') + '. ' +
         (data.totalCarCount || data.teams.length) + ' real ' + classLabel + ' entries are already locked in' +
         (startLabel ? (' ahead of the green flag on ' + startLabel) : '') + '. ' +
-        'Here are the teams that could be lining up next to you.';
+        'Here are just some of the teams that could be lining up next to you.';
       taglineEl.textContent = tagline;
 
       rowEl.innerHTML = '';
@@ -360,8 +360,9 @@
         rowEl.appendChild(card);
       });
 
-      footnoteEl.textContent = (data.totalCarCount || data.teams.length) + ' seats. One class: ' + classLabel +
-        '. The full grid, plus every team’s buy-in cost and bonus/penalty structure, is waiting inside.';
+      // Footnote sentence removed (2026-09-08, Matt's call) -- footnoteEl
+      // stays declared/cleared in showFallback_ in case a future pass wants
+      // it again, but nothing populates it any more.
 
       // Fade cards in one by one, quickly, rather than all at once
       // (Matt's ask). Each card starts at opacity:0/translateY via CSS
@@ -386,12 +387,21 @@
       // the section is actually on screen, so an Apps Script cold start
       // usually has time to finish before the user actually scrolls this
       // far, without spending that latency before the user has scrolled
-      // anywhere near here.
+      // anywhere near here. Bumped from 800px to 2400px (2026-09-08,
+      // Matt's call: "make Meet The Grid populate faster") -- most of
+      // this section's own latency is now a cache hit server-side (see
+      // _rcGridTeaserPool_, Website.gs) rather than a fresh Sheets read,
+      // but Apps Script's own cold-start/dispatch overhead is still real
+      // and out of this page's control, so the only lever left here is
+      // starting the request as early as possible -- effectively as soon
+      // as the page loads for most viewport heights, so the fetch has the
+      // whole time the visitor spends reading the hero/tier sections
+      // above to finish before they ever reach this one.
       var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) { loadGridTeaser(); observer.disconnect(); }
         });
-      }, { rootMargin: '800px 0px' });
+      }, { rootMargin: '2400px 0px' });
       observer.observe(section);
     } else {
       // No IntersectionObserver support -- just load it, same as every

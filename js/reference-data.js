@@ -440,6 +440,61 @@ function sponsorTriggerDescription(triggerName) {
   return SPONSOR_BONUS_TRIGGER_DESCRIPTIONS[triggerName] || SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS[triggerName] || triggerName;
 }
 
+// ---------------------------------------------------------------------------
+// PROTESTS (2026-09-08) -- backs the driver-facing Protest submission page,
+// the Dashboard's Protest card, and League Management's EDIT (penalty-tier
+// assessment) popup. Everything here is admin/steward-facing catalog data,
+// same "one source of truth, referenced everywhere it's shown" pattern as
+// the Sponsor triggers above.
+
+// What a driver picks from when filing a protest -- exactly Matt's own
+// list, nothing added or reworded. "AVOIDABLE CONTACT (Self report)" is a
+// driver reporting their OWN at-fault contact rather than someone else's --
+// the "Drivers Involved" picker still applies (who else was involved), it's
+// just this driver admitting fault up front rather than naming someone else
+// as the cause.
+var PROTEST_INFRACTION_TYPES = [
+  'Intentional Wrecking',
+  'Unsafe Rejoin',
+  'Avoidable Contact (Other Driver)',
+  'Avoidable Contact (Self Report)',
+  'Unsportsmanlike Behavior'
+];
+
+// Race Club Rulebook.md Section 5.1 Penalty Tiers, mirrored here as data so
+// the EDIT popup's penalty-tier dropdown and its resulting time-penalty/
+// fine effect can never drift from the published rulebook text. `effect` is
+// the plain-language consequence shown next to the tier in the dropdown;
+// `fine` is the working-value League Prize Pool fine amount for that tier
+// (v0.3-Economy-Reputation-Design.md's "$100-$360 Steward Fine Amounts,
+// tiered to severity" -- Tier 1 (Warning) intentionally carries no fine,
+// matching the Rulebook's "logged only, no time or position impact").
+var PENALTY_TIERS = [
+  { tier: 1, label: 'Tier 1 -- Warning', effect: 'Logged only, no time or position impact', fine: 0 },
+  { tier: 2, label: 'Tier 2 -- Time Penalty (5s)', effect: '+5s added to final race time', fine: 100 },
+  { tier: 3, label: 'Tier 3 -- Time Penalty (10s)', effect: '+10s added to final race time', fine: 150 },
+  { tier: 4, label: 'Tier 4 -- Drive-Through Equivalent', effect: '+20s added to final race time', fine: 220 },
+  { tier: 5, label: 'Tier 5 -- Stop-and-Go Equivalent', effect: '+40s added to final race time', fine: 290 },
+  { tier: 6, label: 'Tier 6 -- Disqualification', effect: 'Removed from session results', fine: 360 },
+  { tier: 7, label: 'Tier 7 -- Suspension', effect: 'Sits out one or more future rounds (requires a prior Tier 6)', fine: 360 }
+];
+
+function penaltyTierByNumber(tierNum) {
+  var n = Number(tierNum);
+  for (var i = 0; i < PENALTY_TIERS.length; i++) {
+    if (PENALTY_TIERS[i].tier === n) return PENALTY_TIERS[i];
+  }
+  return null;
+}
+
+// How long after a round's results are imported a driver can still file a
+// protest for it (Matt's rule: "48 hours ... after that, they can no longer
+// submit a protest for that race"). Measured against that Round's Sessions
+// row(s) ImportedAt, the same timestamp Ingestion.gs stamps on every
+// session it writes -- see protestWindowStillOpen()/its backend mirror in
+// DataCache.gs.
+var PROTEST_WINDOW_HOURS = 48;
+
 // Builds the full multi-line tooltip text for a sponsor card -- shared by
 // every place a sponsor's bonus/penalty terms are shown with a hover
 // tooltip, so the exact wording/format is defined in exactly one place.

@@ -416,6 +416,14 @@
     { id: 'finances', label: 'Finances', icon: ICON_FINANCES },
     { id: 'wager', label: 'Wagers', icon: ICON_WAGER },
     { id: 'results', label: 'Results', icon: ICON_RESULTS },
+    // Protests (2026-09-08) -- moved into the main, ungated nav list from
+    // its old Steward-and-above-only spot next to Admin/League Management
+    // (see the removed protestsBtn block further down) -- filing a protest
+    // is something every Driver needs to do for themselves, not just
+    // Stewards reviewing them. Ruling on a protest still only happens from
+    // League Management's own EDIT popup (Admin/Organizer/Steward only,
+    // enforced server-side by handleAdminRuleOnProtest).
+    { id: 'protests', label: 'Protests', icon: ICON_PROTESTS },
     { id: 'career', label: 'Career', icon: ICON_CAREER },
     { id: 'reputation', label: 'Reputation', icon: ICON_NAV_STAR },
     { id: 'sponsors', label: 'Sponsors', icon: ICON_SPONSORS },
@@ -435,18 +443,15 @@
   // removed the same day/way (renderCalendarSection).
   // Admin removed from this list (2026-08-30) -- it now hosts what Data
   // Management used to show (see renderAdminSection), same "not a
-  // placeholder anymore" move League Management made earlier. Protests
-  // takes its place as a placeholder -- a real Protests sheet/schema
-  // already exists (Core.gs) but no admin tooling has been built against
-  // it yet, so it gets the same generic "Coming soon" panel every other
-  // not-yet-built section gets, same convention as Admin used to follow.
+  // placeholder anymore" move League Management made earlier.
   // Finances removed from this list (2026-09-02) -- it now gets real
   // content (renderFinancesSection), same "not a placeholder anymore"
-  // move every other real section made before it.
+  // move every other real section made before it. Protests removed from
+  // this list (2026-09-08) -- it now gets real content
+  // (renderProtestsSection), same move.
   var PLACEHOLDER_LABELS = {
-    results: 'Results', career: 'Career', reputation: 'Reputation',
-    halloffame: 'Hall of Fame',
-    protests: 'Protests'
+    career: 'Career', reputation: 'Reputation',
+    halloffame: 'Hall of Fame'
   };
 
   // Set once, in buildFullProfileUI() -- lets the Edit Profile/Help nav
@@ -496,7 +501,9 @@
     wager: function (token) { renderWagerSection(token); },
     sponsors: function (token) { renderSponsorsSection(token); },
     admin: function (token) { renderAdminSection(token); },
-    league: function (token) { renderLeagueManagementSection(token); }
+    league: function (token) { renderLeagueManagementSection(token); },
+    results: function (token) { renderResultsSection(token); },
+    protests: function (token) { renderProtestsSection(token); }
   };
 
   // Once a lazy section has actually loaded this page load, flipping back
@@ -601,6 +608,21 @@
         }));
         return;
       }
+      // Results (added 2026-09-07, real content -- renderResultsSection),
+      // same lazy-fetch-on-click pattern as Calendar/Sponsors/Finances/
+      // Wager above it.
+      if (item.id === 'results') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showLazySection('results', currentToken);
+        }));
+        return;
+      }
+      if (item.id === 'protests') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showLazySection('protests', currentToken);
+        }));
+        return;
+      }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
     var upperDivider = navDivider('rc-nav-divider-upper');
@@ -617,14 +639,8 @@
       showLazySection('admin', currentToken);
     });
     nav.appendChild(adminBtn);
-    // Protests (added 2026-08-30) -- Steward and above (Matt's call:
-    // "PROTESTS button above LEAGUE MANAGEMENT that stewards and above
-    // can access"). Still a placeholder (see PLACEHOLDER_LABELS) -- the
-    // Protests sheet/schema already exists (Core.gs) but no admin tooling
-    // has been built against it yet, same "button exists, content lands
-    // later" treatment Admin itself used to get.
-    var protestsBtn = makeNavButton('protests', 'Protests', ICON_PROTESTS, 'rc-nav-protests', true);
-    nav.appendChild(protestsBtn);
+    // Protests moved into the main ungated nav list above (2026-09-08) --
+    // it's no longer added here.
     // League Management is real content now (renderLeagueManagementSection),
     // same lazy-fetch-on-click pattern as Admin.
     var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true, function () {
@@ -703,7 +719,9 @@
       financesPromise: fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
       seasonObjectivePromise: fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
       nextRacePromise: fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-      sponsorsPromise: fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; })
+      sponsorsPromise: fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
+      recentResultsPromise: fetchApi('getRecentResults', { token: token }).catch(function () { return { success: false }; }),
+      myProtestsPromise: fetchApi('getMyProtests', { token: token }).catch(function () { return { success: false }; })
     };
   }
 
@@ -755,7 +773,7 @@
     financeRow.appendChild(asyncDashCard('rc-panel rc-sponsors-dash-card rc-dash-card', dashboardData.sponsorsPromise, sponsorsCard, dashboardData.activeSeasonPromise));
 
     resultsRow.appendChild(asyncDashCard('rc-panel rc-nextrace-card rc-dash-card', dashboardData.nextRacePromise, nextRaceCard, dashboardData.activeSeasonPromise));
-    resultsRow.appendChild(recentResultsCard());
+    resultsRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.recentResultsPromise, recentResultsCard));
 
     return { topRow: topRow, financeRow: financeRow, resultsRow: resultsRow };
   }
@@ -770,7 +788,9 @@
     //   Row 1: Registration Status, Current Seat, Season Objective
     //   Row 2: Finances, Reputation, Sponsors
     //   Row 3: Next Race, Recent Results
-    //   Row 4: Wager, Protest (placeholders, no data yet)
+    //   Row 4: Wager, Protest (2026-09-08: Protest now shows the driver's
+    //   last 3 filed protests, same asyncDashCard treatment as every other
+    //   data-driven card)
     //
     // 2026-09-03 rewrite (Matt's call): the Dashboard section itself no
     // longer waits on ANY data fetch -- see the bottom of this file,
@@ -802,7 +822,7 @@
     var wagerRow = el('div', 'rc-quick-row');
     rcDashboardWagerCard = wagerCard(token);
     wagerRow.appendChild(rcDashboardWagerCard);
-    wagerRow.appendChild(protestCard());
+    wagerRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.myProtestsPromise, protestCard));
     section.appendChild(wagerRow);
   }
 
@@ -938,6 +958,25 @@
       body.appendChild(row);
     }
 
+    // Season Full (2026-09-07, Matt's call: registration should stay open
+    // "until there are no more seats left to pick from" -- this is the
+    // other half of that: once they ARE gone, say so plainly instead of
+    // still inviting an unregistered driver to click in and discover every
+    // team card already disabled. Not clickable -- there's genuinely
+    // nothing to pick.
+    function renderSeasonFull(data) {
+      body.innerHTML = '';
+      var row = el('div', 'rc-regstatus-row');
+      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#10005;'));
+      var text = el('div');
+      var fullSeasonNum = seasonNumberLabel(data.seasonId);
+      var fullSeasonLabel = fullSeasonNum ? ('SEASON ' + fullSeasonNum) : 'SEASON';
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', escapeHtml(fullSeasonLabel) + ' FULL'));
+      text.appendChild(el('div', 'rc-regstatus-sub', 'Every seat is taken -- check back if a spot opens up.'));
+      row.appendChild(text);
+      body.appendChild(row);
+    }
+
     function renderOpenToRegister(data) {
       body.innerHTML = '';
       var row = el('div', 'rc-regstatus-row rc-regstatus-row-clickable');
@@ -946,7 +985,15 @@
       var openSeasonNum = seasonNumberLabel(data.seasonId);
       var openSeasonLabel = openSeasonNum ? ('SEASON ' + openSeasonNum) : 'SEASON';
       text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml(openSeasonLabel)));
-      text.appendChild(el('div', 'rc-regstatus-sub', 'Click to choose your car and lock in your seat.'));
+      // Seats-remaining count (2026-09-07) -- only shown once it's
+      // gotten low enough to matter (Matt's call is about the "no more
+      // seats" edge, not turning this into a running counter from day
+      // one of the season).
+      var subLine = 'Click to choose your car and lock in your seat.';
+      if (typeof data.seatsRemaining === 'number' && data.seatsRemaining <= 5) {
+        subLine += ' Only ' + data.seatsRemaining + ' seat' + (data.seatsRemaining === 1 ? '' : 's') + ' left.';
+      }
+      text.appendChild(el('div', 'rc-regstatus-sub', subLine));
       row.appendChild(text);
       body.appendChild(row);
       row.addEventListener('click', function () {
@@ -973,6 +1020,32 @@
       body.appendChild(row);
 
       var reg = data.registration || {};
+
+      // Yellow/red status flag (2026-09-08, Matt's call) -- only shown
+      // when this driver's Registration Status for the active season is
+      // actually Probation or Suspended/Removed; the ordinary Active case
+      // (the vast majority of the time) renders nothing here at all, same
+      // "REGISTERED FOR SEASON n" card as before. Makes this card more
+      // than just an "I signed up" confirmation once something real is
+      // going on with a driver's standing.
+      if (reg.status === 'Probation') {
+        var flagP = el('div', 'rc-regstatus-flag rc-regstatus-flag-probation');
+        flagP.appendChild(el('div', 'rc-regstatus-flag-dot rc-regstatus-flag-dot-probation'));
+        var flagPText = el('div');
+        flagPText.appendChild(el('div', 'rc-regstatus-flag-label rc-regstatus-flag-label-probation', 'PROBATION'));
+        if (reg.statusReason) flagPText.appendChild(el('div', 'rc-regstatus-flag-reason', escapeHtml(reg.statusReason)));
+        flagP.appendChild(flagPText);
+        body.appendChild(flagP);
+      } else if (reg.status === 'Suspended' || reg.status === 'Removed') {
+        var flagS = el('div', 'rc-regstatus-flag rc-regstatus-flag-suspended');
+        flagS.appendChild(el('div', 'rc-regstatus-flag-dot rc-regstatus-flag-dot-suspended'));
+        var flagSText = el('div');
+        flagSText.appendChild(el('div', 'rc-regstatus-flag-label rc-regstatus-flag-label-suspended', reg.status === 'Removed' ? 'REMOVED FROM LEAGUE' : 'SUSPENDED'));
+        if (reg.statusReason) flagSText.appendChild(el('div', 'rc-regstatus-flag-reason', escapeHtml(reg.statusReason)));
+        flagS.appendChild(flagSText);
+        body.appendChild(flagS);
+      }
+
       var footer = el('div', 'rc-regstatus-footer');
       var joinedDate = reg.joinedAt ? formatDateLabel(String(reg.joinedAt).slice(0, 10)) : '—';
       [
@@ -990,6 +1063,7 @@
     function renderFromData(data) {
       if (!data || !data.success || !data.hasActiveSeason) { renderUnregistered(); return; }
       if (data.registered) { renderRegistered(data); return; }
+      if (data.seasonFull) { renderSeasonFull(data); return; }
       renderOpenToRegister(data);
     }
 
@@ -1101,7 +1175,7 @@
       body.appendChild(row);
 
       var stats = el('div', 'rc-cs-stats');
-      var posValue = (data.statsKnown && data.position) ? (ordinal(data.position) + (data.positionOutOf ? ' / ' + data.positionOutOf : '')) : '—';
+      var posValue = (data.statsKnown && data.position) ? (String(data.position) + (data.positionOutOf ? '/' + data.positionOutOf : '')) : '—';
       var pointsValue = data.statsKnown ? String(data.points || 0) : '—';
       var podiumsValue = data.statsKnown ? String(data.podiums || 0) : '—';
       [['Position', posValue], ['Points', pointsValue], ['Podiums', podiumsValue]].forEach(function (pair) {
@@ -1378,7 +1452,7 @@
 
       var stats = el('div', 'rc-finrep-ranks');
       [
-        ['Bank Rank', data.globalBalanceRank ? (ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')) : '—'],
+        ['Bank Rank', data.globalBalanceRank ? (String(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? '/' + data.globalBalanceRankOutOf : '')) : '—'],
         // Largest Win -- biggest single positive Transaction ever, not
         // counting the StartingBalance grant. Dash until this driver has
         // actually earned one (a sponsor bonus, etc.).
@@ -1585,8 +1659,8 @@
 
     var stats = el('div', 'rc-finrep-ranks');
     [
-      ['Bank Rank', data.globalBalanceRank ? (ordinal(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? ' of ' + data.globalBalanceRankOutOf : '')) : '—'],
-      ['Class Rank', data.classBalanceRank ? (ordinal(data.classBalanceRank) + (data.classBalanceRankOutOf ? ' of ' + data.classBalanceRankOutOf : '')) : '—'],
+      ['Bank Rank', data.globalBalanceRank ? (String(data.globalBalanceRank) + (data.globalBalanceRankOutOf ? '/' + data.globalBalanceRankOutOf : '')) : '—'],
+      ['Class Rank', data.classBalanceRank ? (String(data.classBalanceRank) + (data.classBalanceRankOutOf ? '/' + data.classBalanceRankOutOf : '')) : '—'],
       ['Largest Win', (data.largestWin != null) ? formatMoney(data.largestWin) : '—']
     ].forEach(function (pair) {
       var stat = el('div', 'rc-finrep-rank');
@@ -1605,6 +1679,73 @@
   // ask specifically called out that insights will be needed here going
   // forward, and a running in/out/net total is the most basic one a real
   // checking account statement already gives you for free.
+  // One ledger row -- shared by the Finances page's capped preview list
+  // and the "Show full history" popup's paginated list below, so the two
+  // can never render a transaction differently.
+  function buildLedgerRow(t) {
+    var row = el('div', 'rc-ledger-row');
+    row.appendChild(el('div', 'rc-ledger-date', formatLedgerDate(t.timestamp)));
+
+    var main = el('div', 'rc-ledger-main');
+    main.appendChild(el('div', 'rc-ledger-event', escapeHtml(ledgerTypeLabel(t.type))));
+    if (t.note) main.appendChild(el('div', 'rc-ledger-note', escapeHtml(t.note)));
+    row.appendChild(main);
+
+    row.appendChild(el('div', 'rc-ledger-season', escapeHtml(t.seasonName || '—')));
+
+    var amt = el('div', 'rc-ledger-amt ' + (t.amount >= 0 ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'),
+      (t.amount > 0 ? '+' : '') + formatMoney(t.amount));
+    row.appendChild(amt);
+    return row;
+  }
+
+  // Full ledger popup (2026-09-08, Matt's call: "show full history" link
+  // at the bottom of the Finances page's ledger, 25 per page, with a way
+  // to navigate between pages) -- entries are already fetched in full by
+  // renderFinancesSection (one getMyLedger call backs both the capped
+  // preview and this popup, no second fetch needed), so paging here is
+  // pure client-side slicing.
+  var RC_LEDGER_PAGE_SIZE = 25;
+
+  function openFullLedgerModal(entries) {
+    var body = el('div');
+    var listEl = el('div');
+    var pagerEl = el('div', 'rc-ledger-pager');
+    body.appendChild(listEl);
+    body.appendChild(pagerEl);
+
+    var page = 0;
+    var totalPages = Math.max(1, Math.ceil(entries.length / RC_LEDGER_PAGE_SIZE));
+
+    function renderPage() {
+      listEl.innerHTML = '';
+      var start = page * RC_LEDGER_PAGE_SIZE;
+      entries.slice(start, start + RC_LEDGER_PAGE_SIZE).forEach(function (t) {
+        listEl.appendChild(buildLedgerRow(t));
+      });
+
+      pagerEl.innerHTML = '';
+      var prevBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Previous');
+      prevBtn.type = 'button';
+      prevBtn.disabled = page === 0;
+      prevBtn.addEventListener('click', function () { page--; renderPage(); });
+
+      var pageLabel = el('span', 'rc-hint', 'Page ' + (page + 1) + ' of ' + totalPages);
+
+      var nextBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Next');
+      nextBtn.type = 'button';
+      nextBtn.disabled = page >= totalPages - 1;
+      nextBtn.addEventListener('click', function () { page++; renderPage(); });
+
+      pagerEl.appendChild(prevBtn);
+      pagerEl.appendChild(pageLabel);
+      pagerEl.appendChild(nextBtn);
+    }
+    renderPage();
+
+    showModal('Full Transaction History', { bodyEl: body, wide: true });
+  }
+
   function buildLedgerPanel(entries) {
     var card = el('div', 'rc-panel rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Transaction Ledger'));
@@ -1631,25 +1772,21 @@
     });
     card.appendChild(summary);
 
+    // Preview list -- most recent 10 only (2026-09-08, Matt's call: add a
+    // "show full history" link instead of always dumping every
+    // transaction inline). "Show full history" only appears once there's
+    // actually more to see.
+    var RC_LEDGER_PREVIEW_COUNT = 10;
     var list = el('div');
-    entries.forEach(function (t) {
-      var row = el('div', 'rc-ledger-row');
-      row.appendChild(el('div', 'rc-ledger-date', formatLedgerDate(t.timestamp)));
-
-      var main = el('div', 'rc-ledger-main');
-      main.appendChild(el('div', 'rc-ledger-event', escapeHtml(ledgerTypeLabel(t.type))));
-      if (t.note) main.appendChild(el('div', 'rc-ledger-note', escapeHtml(t.note)));
-      row.appendChild(main);
-
-      row.appendChild(el('div', 'rc-ledger-season', escapeHtml(t.seasonName || '—')));
-
-      var amt = el('div', 'rc-ledger-amt ' + (t.amount >= 0 ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'),
-        (t.amount > 0 ? '+' : '') + formatMoney(t.amount));
-      row.appendChild(amt);
-
-      list.appendChild(row);
-    });
+    entries.slice(0, RC_LEDGER_PREVIEW_COUNT).forEach(function (t) { list.appendChild(buildLedgerRow(t)); });
     card.appendChild(list);
+
+    if (entries.length > RC_LEDGER_PREVIEW_COUNT) {
+      var fullHistoryBtn = el('button', 'rc-link-btn rc-dash-card-link', '← Show full history');
+      fullHistoryBtn.type = 'button';
+      fullHistoryBtn.addEventListener('click', function () { openFullLedgerModal(entries); });
+      card.appendChild(fullHistoryBtn);
+    }
 
     return card;
   }
@@ -1777,6 +1914,33 @@
   // real cost to a future performance-based penalty ("Track it now, build
   // the penalty later") and, later still, a public "league bank account"
   // page for the "fun public shaming" he asked for -- neither exists yet.
+  // Account Status (2026-09-08, Matt's call: "show the last 3 changes in
+  // account status and have them slowly fade away so that the fourth
+  // status (not even displayed) would be assumed to be transparent") --
+  // backed by action=getMyStatusHistory (handleGetMyStatusHistory,
+  // DataCache.gs), which already caps at 3 and sorts newest-first, so
+  // this never re-slices the array itself. Returns null (render nothing)
+  // when there's no history yet, rather than an empty panel with just a
+  // title -- most drivers will never see this card at all.
+  function buildStatusHistoryPanel(entries) {
+    if (!entries || !entries.length) return null;
+    var card = el('div', 'rc-panel rc-dash-card');
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Account Status'));
+    entries.forEach(function (h) {
+      var row = el('div', 'rc-status-history-row');
+      var dotClass = h.status === 'Probation' ? 'rc-status-history-dot-probation' :
+        (h.status === 'Suspended' || h.status === 'Removed') ? 'rc-status-history-dot-suspended' : 'rc-status-history-dot-active';
+      row.appendChild(el('div', 'rc-status-history-dot ' + dotClass));
+      var text = el('div');
+      text.appendChild(el('div', 'rc-status-history-label', escapeHtml((h.status || '').toUpperCase())));
+      if (h.reason) text.appendChild(el('div', 'rc-status-history-reason', escapeHtml(h.reason)));
+      row.appendChild(text);
+      if (h.at) row.appendChild(el('div', 'rc-status-history-date', formatDateLabel(String(h.at).slice(0, 10))));
+      card.appendChild(row);
+    });
+    return card;
+  }
+
   function buildLoanPanel(loanStatus, token) {
     var card = el('div', 'rc-panel rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Bank Loan'));
@@ -1844,23 +2008,41 @@
     section.innerHTML = '';
     section.appendChild(buildPageSpinner('Loading your finances...'));
 
-    Promise.all([
+    // `return`ed (2026-09-08) so the Dashboard's own background-prefetch
+    // chain (see the Promise chain right after renderDashboardSection in
+    // buildFullProfileUI) can wait for this section's own fetch to settle
+    // before starting the next one, instead of firing every lazy section's
+    // fetch at once and having them compete for the same Apps Script quota.
+    return Promise.all([
       fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMyLedger', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
-      fetchApi('getMyLoanStatus', { token: token }).catch(function () { return { success: false }; })
+      fetchApi('getMyLoanStatus', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getMyStatusHistory', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
       var activeSeason = results[0], finances = results[1], ledger = results[2],
-        sponsors = results[3], objective = results[4], loanStatus = results[5];
+        sponsors = results[3], objective = results[4], loanStatus = results[5], statusHistory = results[6];
 
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Finances'));
       section.appendChild(el('p', 'rc-sponsors-explainer',
         'Everything money-related in your account lives here -- your running balance, every bonus and penalty that has hit your ledger, what your current sponsors could still pay out or cost you, and your car\'s own Season Objective payout.'));
+      // Same .rc-page-howto treatment the Wager and Sponsors pages use --
+      // the one action a driver actually takes on this page (2026-09-08,
+      // Matt's call: add this note "for all pages that require the driver
+      // to change something or use it").
+      section.appendChild(el('p', 'rc-page-howto',
+        '<strong>How to use this page:</strong> if your balance has gone negative, a Request Loan button appears in the Bank Loan card below -- click it to take your one allowed loan for the season. Everything else on this page is read-only, updating automatically as races are run and sponsor bonuses land.'));
 
       section.appendChild(buildFinHeroPanel(finances));
+
+      // Account Status (2026-09-08, Matt's call) -- only rendered once
+      // there's at least one status change to show, so a driver with a
+      // clean record never sees an empty panel here.
+      var statusHistoryPanel = buildStatusHistoryPanel((statusHistory && statusHistory.success) ? statusHistory.entries : []);
+      if (statusHistoryPanel) section.appendChild(statusHistoryPanel);
 
       section.appendChild(buildLoanPanel(loanStatus, token));
 
@@ -1924,7 +2106,10 @@
       if (rcDashboardWagerCard && rcDashboardWagerCard.rcRefresh) rcDashboardWagerCard.rcRefresh();
     }
 
-    Promise.all([
+    // `return`ed (2026-09-08), same reason as renderFinancesSection above --
+    // lets the Dashboard's background prefetch chain wait for this to
+    // settle before moving on to the next lazy section.
+    return Promise.all([
       fetchApi('getWagerFormOptions', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMyWagers', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
@@ -1934,6 +2119,11 @@
       section.appendChild(el('h2', 'margin-top:0;', 'Wager'));
       section.appendChild(el('p', 'rc-sponsors-explainer',
         'Challenge another driver in your season to a head-to-head wager on an upcoming race. Click an empty slot below to place one. Once they accept, both stakes are frozen until the race results come in -- settlement is automatic.'));
+      // How-to instructions (2026-09-07, Matt's call) -- underneath the
+      // explainer line above, one level more concrete than it: exactly
+      // which click does what, not just what the page is for.
+      section.appendChild(el('p', 'rc-page-howto',
+        '<strong>How to use this page:</strong> click an empty slot under Current Wagers to propose a new wager -- pick an opponent, a race, a condition, and your stake. An offer someone sends you shows Accept, Deny, or Counter; Counter lets you send back different terms on the same wager instead of starting over. A wager you’re still waiting on can be cancelled from its card before the other driver responds. Once both sides accept, the stake is frozen for both drivers until that race’s results are imported -- payout or loss then happens automatically, no action needed from either side.'));
 
       limboCard = buildWagerLimboPanel(wagers, formOptions, token, quietRefresh);
       historyCard = buildWagerHistoryPanel(wagers);
@@ -2523,6 +2713,74 @@
     });
   }
 
+  // One wager-history row -- shared by the Wager page's capped preview
+  // list and the "Show full history" popup below, same split
+  // buildLedgerRow/openFullLedgerModal already use for the Finances page.
+  function buildWagerHistoryRow(w) {
+    var row = el('div', 'rc-ledger-row');
+    var main = el('div');
+    main.appendChild(el('div', 'rc-ledger-event', escapeHtml(w.opponentDisplayName) + ' — ' + escapeHtml(w.conditionLabel)));
+    main.appendChild(el('div', 'rc-hint', escapeHtml(w.seasonName) + ' · ' + escapeHtml(w.roundLabel)));
+    row.appendChild(main);
+
+    var amtEl;
+    if (w.status === 'Settled' && w.winnerProfileId) {
+      amtEl = el('div', 'rc-ledger-amt ' + (w.iWon ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'), (w.iWon ? '+' : '−') + formatMoney(w.stake));
+    } else if (w.status === 'Settled') {
+      amtEl = el('div', 'rc-ledger-amt', 'Void'); // condition never resolved (e.g. both DNF) -- no money moved
+    } else {
+      amtEl = el('div', 'rc-ledger-amt', w.status); // Denied / Cancelled
+    }
+    row.appendChild(amtEl);
+    return row;
+  }
+
+  // Full wager history popup (2026-09-08, Matt's call: "make the wager
+  // history work the same" as the Finances page's Transaction Ledger --
+  // same paginated-popup shape, RC_LEDGER_PAGE_SIZE per page). wagers.
+  // history is already fetched in full by renderWagerSection, so paging
+  // here is pure client-side slicing, no second fetch needed.
+  function openFullWagerHistoryModal(entries) {
+    var body = el('div');
+    var listEl = el('div');
+    var pagerEl = el('div', 'rc-ledger-pager');
+    body.appendChild(listEl);
+    body.appendChild(pagerEl);
+
+    var page = 0;
+    var totalPages = Math.max(1, Math.ceil(entries.length / RC_LEDGER_PAGE_SIZE));
+
+    function renderPage() {
+      listEl.innerHTML = '';
+      var start = page * RC_LEDGER_PAGE_SIZE;
+      entries.slice(start, start + RC_LEDGER_PAGE_SIZE).forEach(function (w) {
+        listEl.appendChild(buildWagerHistoryRow(w));
+      });
+
+      pagerEl.innerHTML = '';
+      var prevBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Previous');
+      prevBtn.type = 'button';
+      prevBtn.disabled = page === 0;
+      prevBtn.addEventListener('click', function () { page--; renderPage(); });
+
+      var pageLabel = el('span', 'rc-hint', 'Page ' + (page + 1) + ' of ' + totalPages);
+
+      var nextBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Next');
+      nextBtn.type = 'button';
+      nextBtn.disabled = page >= totalPages - 1;
+      nextBtn.addEventListener('click', function () { page++; renderPage(); });
+
+      pagerEl.appendChild(prevBtn);
+      pagerEl.appendChild(pageLabel);
+      pagerEl.appendChild(nextBtn);
+    }
+    renderPage();
+
+    showModal('Full Wager History', { bodyEl: body, wide: true });
+  }
+
+  var RC_WAGER_HISTORY_PREVIEW_COUNT = 10;
+
   // ---- Bottom container: Wager History ----
   function buildWagerHistoryPanel(wagers) {
     var card = el('div', 'rc-panel rc-dash-card');
@@ -2544,38 +2802,149 @@
     // already comes back newest-first (handleGetMyWagers sorts by
     // UpdatedAt desc), so this is just "show the front of the list." The
     // record line above still reflects the driver's whole career, not
-    // just what's shown here.
+    // just what's shown here. A "Show full history" popup (2026-09-08)
+    // covers the rest, same shape as the Finances page's ledger.
     var list = el('div');
-    wagers.history.slice(0, 10).forEach(function (w) {
-      var row = el('div', 'rc-ledger-row');
-      var main = el('div');
-      main.appendChild(el('div', 'rc-ledger-event', escapeHtml(w.opponentDisplayName) + ' — ' + escapeHtml(w.conditionLabel)));
-      main.appendChild(el('div', 'rc-hint', escapeHtml(w.seasonName) + ' · ' + escapeHtml(w.roundLabel)));
-      row.appendChild(main);
-
-      var amtEl;
-      if (w.status === 'Settled' && w.winnerProfileId) {
-        amtEl = el('div', 'rc-ledger-amt ' + (w.iWon ? 'rc-ledger-amt-positive' : 'rc-ledger-amt-negative'), (w.iWon ? '+' : '−') + formatMoney(w.stake));
-      } else if (w.status === 'Settled') {
-        amtEl = el('div', 'rc-ledger-amt', 'Void'); // condition never resolved (e.g. both DNF) -- no money moved
-      } else {
-        amtEl = el('div', 'rc-ledger-amt', w.status); // Denied / Cancelled
-      }
-      row.appendChild(amtEl);
-      list.appendChild(row);
-    });
+    wagers.history.slice(0, RC_WAGER_HISTORY_PREVIEW_COUNT).forEach(function (w) { list.appendChild(buildWagerHistoryRow(w)); });
     card.appendChild(list);
+
+    if (wagers.history.length > RC_WAGER_HISTORY_PREVIEW_COUNT) {
+      var fullHistoryBtn = el('button', 'rc-link-btn rc-dash-card-link', '← Show full history');
+      fullHistoryBtn.type = 'button';
+      fullHistoryBtn.addEventListener('click', function () { openFullWagerHistoryModal(wagers.history); });
+      card.appendChild(fullHistoryBtn);
+    }
+
     return card;
   }
 
-  // Recent Results -- placeholder card, second on the third row, next to
-  // Next Race (2026-09-01, Matt's call: Next Race in front of Recent
-  // Results). No backend/data wired up yet -- just holding the spot in
-  // the dashboard layout for whenever this gets built.
-  function recentResultsCard() {
+  // Recent Results -- second on the third row, next to Next Race
+  // (2026-09-01, Matt's call: Next Race in front of Recent Results).
+  // Backed by action=getRecentResults (2026-09-07, handleGetRecentResults
+  // in 4_DataCache.gs) -- same active-season entries Calendar/Next Race
+  // already use, filtered to finished rounds with hasResults, most recent
+  // first, capped at 3. Each one shows the top 3 finishers off its Race
+  // session's DriverResults plus this driver's own finish if they were in
+  // it (ProfileID match) -- "Not Classified" covers DNF/DNS/DQ rows where
+  // FinishStatus is set but Position isn't a real number.
+  // Recent Results (2026-09-07, narrowed to ONE race in full instead of up
+  // to 3 in brief -- Matt's call: "make RECENT RESULTS only display the
+  // last race and give more detailed information... whatever is
+  // important to know at a quick glance"). Full P1-10 finishing order
+  // plus a dedicated "Your Race" strip pulling everything
+  // appendSeasonHistoryForRound already computes for this driver/round --
+  // points, bank balance change, qualifying position, and the pole/
+  // fastest-lap/most-laps-led/clean-race callouts -- so this card is the
+  // one place all of that shows up together instead of being buried a
+  // click away.
+  function recentResultsCard(data) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Recent Results'));
-    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+
+    if (!data || !data.success || !data.hasResults || !data.race) {
+      card.appendChild(el('h3', 'rc-dash-card-title', 'Recent Results'));
+      card.appendChild(el('p', 'rc-cs-empty', 'No results posted yet.'));
+      return card;
+    }
+    var race = data.race;
+    var you = race.you;
+
+    // Title + finishing place share one header row, same
+    // .rc-dash-card-header-row treatment Next Race uses for "ROUND n OF
+    // total" (2026-09-07, Matt's call: put it "in the top right of the
+    // card the same way it says the round number in the NEXT RACE card")
+    // -- "1st PLACE"/"2nd PLACE"/etc, only shown when this driver actually
+    // has a numeric finishing position to report.
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Recent Results'));
+    if (you && you.position) {
+      // Suffix (st/nd/rd/th) set smaller and raised against the number
+      // (2026-09-07, Matt's call: "vertically placed against the number
+      // so it looks better") -- ordinal() returns them joined ("1st"),
+      // split back apart here purely for this styling.
+      var ordFull = ordinal(you.position);
+      var ordSuffix = ordFull.replace(/^\d+/, '');
+      var ordNum = ordFull.slice(0, ordFull.length - ordSuffix.length);
+      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure',
+        escapeHtml(ordNum) + '<span class="rc-ordinal-suffix">' + escapeHtml(ordSuffix) + '</span> PLACE'));
+    }
+    card.appendChild(headerRow);
+
+    var head = el('div', 'rc-recent-results-head');
+    head.appendChild(el('span', 'rc-recent-results-name',
+      (race.roundNum ? 'Round ' + race.roundNum + ': ' : '') + escapeHtml(race.eventName || race.track || 'Race')));
+    if (race.track) head.appendChild(el('span', 'rc-hint', escapeHtml(race.track)));
+    card.appendChild(head);
+
+    // Your Race headline only (2026-09-08 trim, Matt's call: "keep the
+    // player's race pills OFF of the recent results... if they want to
+    // see their pills, make them display in the full results page" --
+    // also drops the bank-balance line for the same reason: this card is
+    // now purely "top 5 per class + the class pill," a quick snapshot,
+    // not the full personal breakdown. The pills/balance still show in
+    // full on the Results page's resultsRoundPanel, unchanged.
+    if (you && !you.position) {
+      card.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
+    } else if (!you) {
+      card.appendChild(el('p', 'rc-hint', 'You weren\'t in this race.'));
+    }
+
+    // Full finishing order, one column per class (2026-09-07, Matt's
+    // call: "create up to 3 columns for multiclass... top 5 in each
+    // class... top of the columns should be the colored class pills") --
+    // a single-class season (like this one) just renders as one column.
+    // Manufacturer logo sits between the driver's name and their car
+    // number, capped at the row's own font height (Matt's call:
+    // "shouldn't be taller than the font is tall") via height:1em on
+    // .rc-recent-results-mfr-logo -- built as a real <img> with its own
+    // onerror handler (not an innerHTML string) so a manufacturer with no
+    // logo uploaded yet just quietly disappears, same convention as every
+    // other manufacturer logo on this site (see currentSeatCard above).
+    if (race.classes && race.classes.length) {
+      var columns = el('div', 'rc-recent-results-columns rc-recent-results-columns-' + race.classes.length);
+      race.classes.forEach(function (cls) {
+        var col = el('div', 'rc-recent-results-column');
+        col.appendChild(_rcClassBadge(cls.className));
+
+        var table = el('div', 'rc-recent-results-table');
+        (cls.standings || []).forEach(function (r) {
+          var isYou = you && you.carClass === cls.className && r.position === you.position && you.position !== null;
+          var rowEl = el('div', 'rc-recent-results-row' + (isYou ? ' rc-recent-results-row-you' : ''));
+          rowEl.appendChild(el('span', 'rc-recent-results-pos', 'P' + (r.classPosition || r.position || '?')));
+
+          var driverCell = el('span', 'rc-recent-results-driver');
+          driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
+          if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
+            var mlogo = document.createElement('img');
+            mlogo.className = 'rc-recent-results-mfr-logo';
+            mlogo.src = manufacturerLogoSrc(r.manufacturer);
+            mlogo.alt = r.manufacturer;
+            mlogo.onerror = function () { this.style.display = 'none'; };
+            driverCell.appendChild(mlogo);
+          }
+          if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
+          rowEl.appendChild(driverCell);
+
+          table.appendChild(rowEl);
+        });
+        col.appendChild(table);
+        columns.appendChild(col);
+      });
+      card.appendChild(columns);
+    }
+
+    // Link to the full Results page (2026-09-07, Matt's call: instead of
+    // "+n more" under a truncated column, a single link off the whole
+    // card to a dedicated Results page with the complete finishing order
+    // for every class, every round in the season) -- same
+    // "← label" card-footer link pattern every other Dashboard card uses
+    // (see e.g. viewSeasonBtn above).
+    var viewResultsBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View all results');
+    viewResultsBtn.type = 'button';
+    viewResultsBtn.addEventListener('click', function () {
+      showLazySection('results', currentToken);
+    });
+    card.appendChild(viewResultsBtn);
+
     return card;
   }
 
@@ -2669,10 +3038,48 @@
     return card;
   }
 
-  function protestCard() {
+  // Protest -- Dashboard preview card (2026-09-08, Matt's call: "the
+  // PROTEST card shows the last 3 PROTESTS that the driver submitted and
+  // whether they're Pending, Upheld or Denied... a link to the PROTEST
+  // page at the bottom left like the other cards"). Backed by
+  // action=getMyProtests with no `full`/`limit` param, which the server
+  // already caps at the most recent 3 (see handleGetMyProtests,
+  // Protests.gs) -- this card never re-slices the array itself, it just
+  // renders whatever comes back. That same endpoint now also includes
+  // protests filed AGAINST this driver, not just ones they filed (2026-
+  // 09-08 rewrite -- see the full Protests page for the "PROTESTS"
+  // history panel this mirrors). Reuses _rcProtestStatusBadge (defined
+  // below, alongside the full Protests page) for the exact same Pending/
+  // Upheld/Denied/Withdrawn chip look in both places.
+  function protestCard(data) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Protest'));
-    card.appendChild(el('p', 'rc-cs-empty', 'Coming soon.'));
+
+    var protests = (data && data.success && data.protests) ? data.protests : [];
+
+    if (!protests.length) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
+    } else {
+      var list = el('div', 'rc-protest-dash-list');
+      protests.forEach(function (p) {
+        var row = el('div', 'rc-dm-row');
+        var info = el('div', null);
+        info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel || '') + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
+        if (p.infractionType) info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType)));
+        row.appendChild(info);
+        row.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
+        list.appendChild(row);
+      });
+      card.appendChild(list);
+    }
+
+    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← Go to Protests');
+    protestLink.type = 'button';
+    protestLink.addEventListener('click', function () {
+      showLazySection('protests', currentToken);
+    });
+    card.appendChild(protestLink);
+
     return card;
   }
 
@@ -3895,6 +4302,11 @@
       // race-by-race vs. season-long distinction Matt asked for.
       section.appendChild(el('p', 'rc-sponsors-explainer',
         'Every sponsor lines up in one table below so you can compare tier, bonus, and penalty side by side instead of digging through separate cards. Sponsor bonuses and penalties are evaluated race by race for the rest of the season; your car carries its own separate, season-long Season Objective.'));
+      // How-to instructions (2026-09-07, Matt's call) -- underneath the
+      // explainer line above, one level more concrete than it: exactly
+      // which click does what, not just what the page is for.
+      section.appendChild(el('p', 'rc-page-howto',
+        '<strong>How to use this page:</strong> click one of your three Current Picks slots above, then click a sponsor’s row in the table below to assign it to that slot. To swap a slot, click it again and choose a different row. To drop a sponsor entirely, click its slot, then click that same sponsor’s row a second time. Every change saves automatically the moment you make it -- there’s no separate Save button.'));
 
       if (!data || !data.success) {
         var errPanel = el('div', 'rc-panel');
@@ -4041,7 +4453,8 @@
       section.appendChild(buildSponsorTriggerGlossary());
     }
 
-    Promise.all([
+    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
+    return Promise.all([
       fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getSponsors', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
@@ -4209,11 +4622,22 @@
     var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
     var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
     cancelBtn.type = 'button';
-    var confirmBtn = el('button', 'rc-btn-primary rc-btn-sm', confirmLabel || 'Confirm');
+    var confirmBtn = el('button', 'rc-btn-secondary rc-btn-sm', confirmLabel || 'Confirm');
     confirmBtn.type = 'button';
-    confirmBtn.style.cssText = 'background:var(--rc-red);';
     confirmBtn.disabled = true;
-    input.addEventListener('input', function () { confirmBtn.disabled = input.value !== requiredPhrase; });
+    confirmBtn.style.cssText = 'opacity:0.5;';
+    // Stays grayed out (secondary style, dimmed, disabled) until the exact
+    // phrase is typed -- ONLY THEN does it turn red and become clickable
+    // (2026-09-07, Matt's call on the End Season button specifically, but
+    // this is the one shared typed-confirm button every irreversible admin
+    // action on the site uses, so the fix applies everywhere at once: it
+    // used to render red from the start even while still disabled, which
+    // read as already-armed when it wasn't).
+    input.addEventListener('input', function () {
+      var matches = input.value === requiredPhrase;
+      confirmBtn.disabled = !matches;
+      confirmBtn.style.cssText = matches ? 'background:var(--rc-red);opacity:1;' : 'opacity:0.5;';
+    });
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(confirmBtn);
     body.appendChild(btnRow);
@@ -4773,7 +5197,8 @@
   // button on the right" shape the Data Management Cars/Tracks lists
   // already use, just under its own .rc-group-row class since it's
   // indented one level deeper (year -> season) than those lists ever go.
-  function buildSeasonRow(s, token, reload) {
+  function buildSeasonRow(s, races, token, reload, defaultExpanded) {
+    var container = el('div', null);
     var row = el('div', 'rc-group-row');
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
@@ -4796,10 +5221,79 @@
 
     var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
+    // RECOMPUTE SEASON (2026-09-08) -- only offered once the season has at
+    // least one round with results (s.locked -- same "has actually raced"
+    // gate End Season/Delete already use). Re-runs SeasonHistory for every
+    // completed round in order, so an edit to an earlier round's results
+    // (a corrected re-import, a protest ruling recorded after later rounds
+    // were already imported) is reflected in every later round's numbers
+    // and in Season Standings -- see handleAdminRecomputeSeason,
+    // DataCache.gs.
+    if (s.locked) {
+      var recomputeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Recompute Season');
+      recomputeBtn.type = 'button';
+      recomputeBtn.addEventListener('click', function () {
+        recomputeBtn.disabled = true;
+        fetchApi('adminRecomputeSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
+          recomputeBtn.disabled = false;
+          if (!data.success) {
+            showToast(data.message || 'Could not recompute this season.', 'error');
+            return;
+          }
+          var msg = 'Recomputed ' + data.roundsRecomputed + ' round' + (data.roundsRecomputed === 1 ? '' : 's') + '.';
+          if (data.unmatchedSponsorTriggers && data.unmatchedSponsorTriggers.length) {
+            msg += ' ' + data.unmatchedSponsorTriggers.length + ' sponsor(s) have an unrecognized trigger and are not paying out -- check the Sponsors admin list.';
+          }
+          showToast(msg, data.unmatchedSponsorTriggers && data.unmatchedSponsorTriggers.length ? 'error' : 'success');
+        }).catch(function () {
+          recomputeBtn.disabled = false;
+          showToast('Could not reach the server.', 'error');
+        });
+      });
+      btnGroup.appendChild(recomputeBtn);
+    }
+
     var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
     editBtn.type = 'button';
     editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
     btnGroup.appendChild(editBtn);
+
+    // Races (2026-09-07) -- replaces the old standalone Race Ingestion
+    // container: instead of a separate "pick a round from a dropdown"
+    // panel, every race/special event for THIS season expands right here,
+    // each with its own Add Results / Delete pair already scoped to that
+    // race -- Matt's call: "kills two birds with one stone using the
+    // already setup season list." Lazy-fetched on first expand (same
+    // "nothing loads until it's actually opened" convention as every other
+    // per-row expansion on this site) via action=adminGetSeasonRaces,
+    // which reuses the exact same entries Calendar itself builds, so the
+    // status pill shown here can never disagree with what a driver sees
+    // on the Calendar page.
+    // No bordered box around this (2026-09-07, Matt's call: "the line
+    // below the season works well enough") -- just an indented plain
+    // container, relying on .rc-group-row's own border-bottom (the season
+    // row sitting right above it) as the only separator.
+    // `races` already loaded (2026-09-07, Matt's call: everything loads
+    // up front alongside the season list itself -- see
+    // renderLeagueManagementSection's Promise.all -- so clicking this
+    // toggle is pure show/hide, never a fetch). The list is built once,
+    // right now, and just sits hidden until the toggle is clicked.
+    // Renamed "Races (n)" -> "Show Races (n)" (2026-09-08, Matt's call) so
+    // the collapsed state reads as an action ("show me") rather than just a
+    // count. The most current season (defaultExpanded, passed in from
+    // buildSeasonsListFragment -- seasons already arrive most-recently-
+    // created first, so this is simply seasons[0]) starts already expanded
+    // on page load instead of requiring a click.
+    var racesBox = el('div', 'padding-left:20px;' + (defaultExpanded ? '' : 'display:none;'));
+    racesBox.appendChild(buildSeasonRacesList(races || [], token, reload));
+    var racesToggleBtn = el('button', 'rc-btn-secondary rc-btn-row', defaultExpanded ? 'Hide Races' : ('Show Races (' + (s.raceCount || 0) + ')'));
+    racesToggleBtn.type = 'button';
+    racesToggleBtn.addEventListener('click', function () {
+      var isOpen = racesBox.style.display !== 'none';
+      racesBox.style.display = isOpen ? 'none' : '';
+      racesToggleBtn.textContent = isOpen ? ('Show Races (' + (s.raceCount || 0) + ')') : 'Hide Races';
+    });
+    btnGroup.appendChild(racesToggleBtn);
 
     if (s.locked) {
       // Already raced -- Delete is refused server-side anyway, so the
@@ -4886,6 +5380,150 @@
     }
 
     row.appendChild(btnGroup);
+    container.appendChild(row);
+    container.appendChild(racesBox);
+    return container;
+  }
+
+  // One row per race/special event within a season's expanded Races box
+  // (buildSeasonRow above) -- status pill reads finished/hasResults off
+  // the same entries Calendar builds (adminGetSeasonRaces reuses
+  // _rcBuildSeasonEntriesById_, DataCache.gs), and Add Results/Delete are
+  // only offered for a real Round (a Special Event has no RoundID to
+  // import against until that system is designed for real -- see Rounds'
+  // schema comment in Core.gs). Bye weeks are filtered out entirely --
+  // they're not a race at all.
+  function buildSeasonRacesList(races, token, reload) {
+    var box = el('div');
+    var real = (races || []).filter(function (r) { return r.kind !== 'bye'; });
+    if (!real.length) {
+      box.appendChild(el('div', 'rc-dm-empty', 'No races scheduled for this season yet.'));
+      return box;
+    }
+    real.forEach(function (r) { box.appendChild(buildSeasonRaceRow(r, token, reload)); });
+    return box;
+  }
+
+  function buildSeasonRaceRow(r, token, reload) {
+    var row = el('div', 'rc-group-row');
+    var info = el('div', 'rc-dm-row-info');
+    var textCol = el('div', null);
+
+    var isSpecial = r.kind === 'special';
+    var title = isSpecial ? (r.eventName || 'Special Event') : ('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''));
+    var roundLabel = 'Round ' + r.roundNumber + (r.track ? ': ' + r.track : '');
+
+    var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+    nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(title)));
+
+    var statusText, statusClass;
+    if (!r.finished) {
+      statusText = 'Scheduled'; statusClass = 'rc-badge-race-scheduled';
+    } else if (isSpecial) {
+      statusText = 'Completed'; statusClass = 'rc-badge-race-posted';
+    } else if (r.hasResults) {
+      statusText = 'Completed -- Results Posted'; statusClass = 'rc-badge-race-posted';
+    } else {
+      statusText = 'Completed -- No Results Posted Yet'; statusClass = 'rc-badge-race-noresults';
+    }
+    nameLine.appendChild(el('span', 'rc-badge-chip ' + statusClass, statusText));
+    textCol.appendChild(nameLine);
+
+    var metaParts = [];
+    if (!isSpecial && r.track) metaParts.push(r.track);
+    if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
+    textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'Date/time not set')));
+
+    info.appendChild(textCol);
+    row.appendChild(info);
+
+    var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+
+    if (!isSpecial && r.roundId) {
+      // No round picker in either popup below -- the click that opened
+      // this row already knows exactly which round it's for (Matt's
+      // call), so openImportXmlModal/openEraseRoundIngestionModal go
+      // straight to the upload/erase form.
+      var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
+      addBtn.type = 'button';
+      if (r.hasResults) {
+        // Grayed out once this round already has results (2026-09-07,
+        // Matt's call) -- makes it obvious at a glance that this round is
+        // done; Delete first (right next to it) to re-import.
+        addBtn.disabled = true;
+        addBtn.title = 'Results already imported for this round. Delete them first to re-import.';
+        addBtn.style.cssText = 'opacity:0.5;';
+      } else {
+        addBtn.addEventListener('click', function () {
+          openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+        });
+      }
+      btnGroup.appendChild(addBtn);
+
+      // FINALIZE / VIEW / EDIT (2026-09-08) -- only meaningful once a round
+      // actually has results. Sits between Import Results and Delete, per
+      // Matt's spec: "IMPORT RESULTS | FINALIZE VIEW EDIT | DELETE".
+      if (r.hasResults) {
+        var finalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', r.resultsFinalized ? 'Un-Finalize' : 'Finalize');
+        finalizeBtn.type = 'button';
+        finalizeBtn.addEventListener('click', function () {
+          var action = r.resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
+          var confirmMsg = r.resultsFinalized
+            ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
+            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed -- these are the most current, correct results for this round. The EDIT button will be disabled until this is un-finalized.';
+          openConfirmModal(r.resultsFinalized ? 'Un-Finalize Results' : 'Finalize Results', confirmMsg, r.resultsFinalized ? 'Un-Finalize' : 'Finalize', function () {
+            finalizeBtn.disabled = true;
+            fetchApi(action, { method: 'POST', token: token, body: { roundId: r.roundId } }).then(function (data) {
+              if (!data.success) {
+                finalizeBtn.disabled = false;
+                showToast(data.message || 'Could not update this round.', 'error');
+                return;
+              }
+              if (!r.resultsFinalized && data.objectivePayout && data.objectivePayout.teamsPaid) {
+                showToast(data.objectivePayout.teamsPaid + ' car objective bonus' + (data.objectivePayout.teamsPaid === 1 ? '' : 'es') + ' paid out.', 'success');
+              }
+              if (typeof reload === 'function') reload(); else location.reload();
+            }).catch(function () {
+              finalizeBtn.disabled = false;
+              showToast('Could not reach the server.', 'error');
+            });
+          });
+        });
+        btnGroup.appendChild(finalizeBtn);
+
+        var viewBtn = el('button', 'rc-btn-secondary rc-btn-row', 'View');
+        viewBtn.type = 'button';
+        viewBtn.addEventListener('click', function () { openRoundViewModal(token, { roundId: r.roundId, roundLabel: roundLabel }); });
+        btnGroup.appendChild(viewBtn);
+
+        var editProtestsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editProtestsBtn.type = 'button';
+        if (r.resultsFinalized) {
+          editProtestsBtn.disabled = true;
+          editProtestsBtn.title = 'This round is finalized -- un-finalize it first to rule on protests.';
+          editProtestsBtn.style.cssText = 'opacity:0.5;';
+        } else {
+          editProtestsBtn.addEventListener('click', function () { openRoundEditProtestsModal(token, { roundId: r.roundId, roundLabel: roundLabel }, reload); });
+        }
+        btnGroup.appendChild(editProtestsBtn);
+      }
+
+      var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
+      delBtn.type = 'button';
+      if (r.hasResults) {
+        delBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+        delBtn.addEventListener('click', function () {
+          openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+        });
+      } else {
+        delBtn.disabled = true;
+        delBtn.title = 'No results imported yet for this round.';
+        delBtn.style.cssText = 'opacity:0.5;';
+      }
+      btnGroup.appendChild(delBtn);
+    }
+
+    row.appendChild(btnGroup);
     return row;
   }
 
@@ -4898,7 +5536,7 @@
   // result in its own bordered .rc-panel box (2026-08-30), same as every
   // other Data Management list, rather than this function owning that
   // border itself.
-  function buildSeasonsListFragment(seasons, token, reload) {
+  function buildSeasonsListFragment(seasons, racesBySeasonId, token, reload) {
     var wrap = el('div');
     if (!seasons.length) {
       wrap.appendChild(el('div', 'rc-dm-empty', 'No seasons yet.'));
@@ -4917,12 +5555,19 @@
     // pass over createdAt strings.
     years.sort(function (a, b) { return b.localeCompare(a); });
 
+    // Seasons arrive most-recently-created first (handleAdminListSeasons),
+    // so seasons[0] IS the most current one -- that's the row that starts
+    // with its races already shown on page load (2026-09-08, Matt's call:
+    // "have the most current season to already have their races shown upon
+    // page load").
+    var mostCurrentSeasonId = seasons[0] && seasons[0].seasonId;
+
     years.forEach(function (year) {
       var yearHead = el('div', 'rc-group-head');
       yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(year)));
       wrap.appendChild(yearHead);
       byYear[year].forEach(function (s) {
-        wrap.appendChild(buildSeasonRow(s, token, reload));
+        wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId));
       });
     });
 
@@ -4938,36 +5583,43 @@
   // whole League Management section (see renderLeagueManagementSection)
   // rather than patching just this panel in place -- keeps "nothing shows
   // until it's loaded" true after a mutation too, not just on first load.
-  function buildSeasonsPanel(seasons, token, reload) {
+  // `showCreateButton` -- Create a Season (and its Resume/Clear Draft
+  // controls) only renders when true. Moved to the Admin page only
+  // (2026-09-08, Matt's call: "only an admin can create a season") --
+  // League Management passes false so this panel there is just the
+  // read-only-ish season list with its per-row Edit/Races controls.
+  function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, showCreateButton) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
-    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
-    var hasDraft = !!loadWizardDraft();
-    var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
-    createBtn.type = 'button';
-    createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
-    row.appendChild(createBtn);
+    if (showCreateButton) {
+      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+      var hasDraft = !!loadWizardDraft();
+      var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+      createBtn.type = 'button';
+      createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
+      row.appendChild(createBtn);
 
-    // The standalone Edit Season button is gone (2026-08-30) -- editing
-    // now happens per-row in the season list below, which can point at
-    // ANY season instead of always whichever one is most recent.
-    //
-    // Only shows up once a draft actually exists -- there's nothing to
-    // clear otherwise, so this never adds a second button to the steady-
-    // state row.
-    if (hasDraft) {
-      var clearDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
-      clearDraftBtn.type = 'button';
-      clearDraftBtn.addEventListener('click', function () {
-        clearWizardDraft();
-        showToast('Season draft cleared.', 'success');
-        reload();
-      });
-      row.appendChild(clearDraftBtn);
+      // The standalone Edit Season button is gone (2026-08-30) -- editing
+      // now happens per-row in the season list below, which can point at
+      // ANY season instead of always whichever one is most recent.
+      //
+      // Only shows up once a draft actually exists -- there's nothing to
+      // clear otherwise, so this never adds a second button to the steady-
+      // state row.
+      if (hasDraft) {
+        var clearDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
+        clearDraftBtn.type = 'button';
+        clearDraftBtn.addEventListener('click', function () {
+          clearWizardDraft();
+          showToast('Season draft cleared.', 'success');
+          reload();
+        });
+        row.appendChild(clearDraftBtn);
+      }
+
+      panel.appendChild(row);
     }
-
-    panel.appendChild(row);
 
     // The season list gets its own bordered box, separate from the button
     // row above it (2026-08-30, Matt's call: "add a border around the
@@ -4976,7 +5628,7 @@
     // Members/Tracks/Cars/Sponsors, where each one's own Add button sits
     // in the modal above a bordered .rc-panel holding just the list.
     var listBox = el('div', 'rc-panel');
-    listBox.appendChild(buildSeasonsListFragment(seasons, token, reload));
+    listBox.appendChild(buildSeasonsListFragment(seasons, racesBySeasonId, token, reload));
     panel.appendChild(listBox);
 
     return panel;
@@ -4995,16 +5647,36 @@
     // the same pattern). Nothing else renders until the season list has
     // actually loaded (Matt's 2026-08-30 call) -- no flash of buttons
     // appearing before the list underneath them is ready.
-    section.appendChild(buildPageSpinner('Loading seasons...'));
+    section.appendChild(buildPageSpinner('Loading season tools...'));
 
     fetchApi('adminListSeasons', { token: token }).then(function (data) {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
       if (!data.success) {
+        section.innerHTML = '';
+        section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
         section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
         return;
       }
-      section.appendChild(buildSeasonsPanel(data.seasons || [], token, function () { renderLeagueManagementSection(token); }));
+      var seasons = data.seasons || [];
+      // Every season's races load NOW, all in parallel, alongside the
+      // season list itself (2026-09-07, Matt's call: "don't make me load
+      // the races for the season AFTER the page has already loaded... have
+      // everything loaded so I can click and it instantly pulls up the
+      // races below") -- so by the time a row's Races toggle is actually
+      // clicked, there's no fetch left to do, just showing/hiding DOM
+      // that's already built. A season whose races call fails gets an
+      // empty array rather than blocking the rest of the page.
+      Promise.all(seasons.map(function (s) {
+        return fetchApi('adminGetSeasonRaces', { token: token, params: { seasonId: s.seasonId } })
+          .then(function (r) { return (r && r.success) ? (r.races || []) : []; })
+          .catch(function () { return []; });
+      })).then(function (racesPerSeason) {
+        var racesBySeasonId = {};
+        seasons.forEach(function (s, i) { racesBySeasonId[s.seasonId] = racesPerSeason[i]; });
+
+        section.innerHTML = '';
+        section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+        section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, false));
+      });
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
@@ -5085,18 +5757,6 @@
     var wrap = el('div', 'rc-cal-season-details');
     wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Settings'));
 
-    var stats = el('div', 'rc-cal-stats');
-    if (details.defaultPassword) {
-      stats.appendChild(calStat(ICON_UNLOCK, 'Password Set', 'Server password: ' + details.defaultPassword));
-    } else {
-      stats.appendChild(calStat(ICON_UNLOCK, 'No Password', 'Server has no default password.'));
-    }
-    if (details.frequency) stats.appendChild(calStat(ICON_CLOCK, details.frequency, 'Race frequency'));
-    stats.appendChild(calStat(ICON_FLAG, (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'), 'Worst results dropped from the standings'));
-    if (details.trackLimitsPreset) stats.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits', 'Track limits enforcement preset'));
-    stats.appendChild(calStat(ICON_FLAG, details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying', 'Qualifying session visibility'));
-    wrap.appendChild(stats);
-
     var classKeys = Object.keys(details.classes || {}).filter(function (k) { return details.classes[k]; });
     if (classKeys.length) {
       var classesRow = el('div', 'rc-cal-classes');
@@ -5109,6 +5769,18 @@
       });
       wrap.appendChild(classesRow);
     }
+
+    var stats = el('div', 'rc-cal-stats');
+    if (details.defaultPassword) {
+      stats.appendChild(calStat(ICON_UNLOCK, 'Password Set', 'Server password: ' + details.defaultPassword));
+    } else {
+      stats.appendChild(calStat(ICON_UNLOCK, 'No Password', 'Server has no default password.'));
+    }
+    if (details.frequency) stats.appendChild(calStat(ICON_CLOCK, details.frequency, 'Race frequency'));
+    stats.appendChild(calStat(ICON_FLAG, (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'), 'Worst results dropped from the standings'));
+    if (details.trackLimitsPreset) stats.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits', 'Track limits enforcement preset'));
+    stats.appendChild(calStat(ICON_FLAG, details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying', 'Qualifying session visibility'));
+    wrap.appendChild(stats);
 
     var tierStats = el('div', 'rc-cal-stats');
     // Practice/Qualifying session LENGTH -- season-wide (seasonDetails.
@@ -5248,9 +5920,29 @@
     // Gray semi-transparent overlay + large bold "EVENT COMPLETED" label
     // once a round/special event's start time has passed (Matt's call) --
     // covers the whole card rather than the old faded-background + small
-    // pill treatment.
+    // pill treatment. 2026-09-07: the label itself now says whether
+    // results have actually been imported yet for a real Round (isSpecial
+    // and bye entries have no RoundID to check against, so they only ever
+    // get the plain label) -- hasResults comes straight off the same
+    // entries _rcBuildActiveSeasonCalendar_ builds for League Management's
+    // per-race Add Results/Delete buttons, so this can never disagree with
+    // what an Admin sees there. 2026-09-08: a third state -- once results
+    // are posted AND the round has been finalized (League Management's
+    // Finalize button, adminFinalizeRound/resultsFinalized -- same field
+    // the round entry already carries), the label says so explicitly
+    // rather than staying at the generic "Results Posted" forever.
     if (entry.finished) {
-      card.appendChild(el('div', 'rc-cal-completed-overlay', 'Event Completed'));
+      var completedLabel = 'Event Completed';
+      if (!isSpecial) {
+        if (!entry.hasResults) {
+          completedLabel += ' (No Results Posted Yet)';
+        } else if (entry.resultsFinalized) {
+          completedLabel += ' (Results Posted and Finalized)';
+        } else {
+          completedLabel += ' (Results Posted)';
+        }
+      }
+      card.appendChild(el('div', 'rc-cal-completed-overlay', completedLabel));
     }
 
     return card;
@@ -5266,7 +5958,8 @@
     // either. The heading only appears once real content replaces this.
     section.appendChild(buildPageSpinner('Loading season calendar...'));
 
-    fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
+    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
+    return fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
 
@@ -5308,6 +6001,608 @@
       section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
       section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
     });
+  }
+
+  // =======================================================================
+  // RESULTS (2026-09-07) -- the comprehensive breakdown the Dashboard's
+  // Recent Results card links out to ("← View all results" instead of a
+  // truncated "+n more" per column). Every completed, results-posted round
+  // in the current season, most recent first, each with its FULL finishing
+  // order (not capped to top-5/3-classes the way the Dashboard preview is)
+  // plus this driver's own detailed line for that round -- reuses the same
+  // .rc-recent-results-* row/column CSS the Dashboard card already
+  // established, just with the caps lifted, so a driver never sees the
+  // dashboard and this page disagree about a result.
+  // -----------------------------------------------------------------------
+  // Small labeled number for the race-conditions/headline strip below
+  // (2026-09-07, Matt's call: "a plethora of numbers and stats") -- one
+  // <div> per stat, label above value, so the strip reads at a glance
+  // without needing a legend.
+  function resultsStatBlock(label, value) {
+    if (value === null || value === undefined || value === '') return null;
+    var block = el('div', 'rc-results-stat');
+    block.appendChild(el('div', 'rc-results-stat-label', escapeHtml(label)));
+    block.appendChild(el('div', 'rc-results-stat-value', escapeHtml(String(value))));
+    return block;
+  }
+
+  function resultsRoundPanel(race) {
+    var you = race.you;
+    var panel = el('div', 'rc-results-round');
+
+    // Header is the round # + event name, track underneath as the
+    // subheader (2026-09-08, Matt's call) -- the finishing-place corner
+    // figure the Dashboard's Recent Results card shows is deliberately
+    // NOT repeated here; this page's job is the comprehensive breakdown,
+    // not a personal-highlight headline.
+    panel.appendChild(el('h3', 'rc-results-round-title',
+      (race.roundNum ? 'Round ' + race.roundNum + ': ' : '') + escapeHtml(race.eventName || race.track || 'Race')));
+    if (race.track) panel.appendChild(el('div', 'rc-results-round-track', escapeHtml(race.track)));
+
+    // Race-wide conditions/format + headline names (2026-09-07) -- winner/
+    // pole/fastest lap of the whole event, track/weather/format numbers,
+    // all pulled straight off DriverResults/Sessions/RoundDetails, nothing
+    // guessed. Skips any stat this round's data doesn't actually have
+    // (resultsStatBlock returns null and el() silently drops nulls below).
+    var statStrip = el('div', 'rc-results-stat-strip');
+    [
+      resultsStatBlock('Winner', race.overallWinner),
+      resultsStatBlock('Pole Sitter', race.overallPoleSitter),
+      resultsStatBlock('Fastest Lap', race.overallFastestLapDriver ?
+        (race.overallFastestLapDriver + (race.overallFastestLapTime ? ' (' + race.overallFastestLapTime + ')' : '')) : ''),
+      resultsStatBlock('Finishers', race.totalFinishers),
+      resultsStatBlock('Race Laps', race.totalLaps || race.mostLapsCompleted),
+      resultsStatBlock('Race Length', race.raceLengthTier),
+      resultsStatBlock('Track Length', race.trackLengthMeters ? (Math.round(race.trackLengthMeters) + ' m') : ''),
+      resultsStatBlock('Weather', race.weather),
+      resultsStatBlock('Chance of Rain', race.chanceOfRain ? (race.chanceOfRain + '%') : ''),
+      resultsStatBlock('Temperature', (race.temperatureC !== null && race.temperatureC !== undefined) ? (race.temperatureC + '°C') : '')
+    ].forEach(function (block) { if (block) statStrip.appendChild(block); });
+    if (statStrip.childNodes.length) panel.appendChild(statStrip);
+
+    if (you) {
+      var yourRace = el('div', 'rc-recent-results-yours');
+      if (!you.position) yourRace.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
+      var chips = el('div', 'rc-recent-results-yours-chips');
+      if (you.points !== null) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-positive', '+' + you.points + ' PTS'));
+      if (you.moneyDelta !== null) {
+        var moneyLabel = 'TOTAL ' + (you.moneyDelta >= 0 ? '+' : '-') + formatMoney(Math.abs(you.moneyDelta));
+        chips.appendChild(el('span', 'rc-badge-chip rc-badge-result ' + (you.moneyDelta >= 0 ? 'rc-badge-result-positive' : 'rc-badge-result-negative'), moneyLabel));
+      }
+      if (you.qualifyingPos) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', 'Qualified P' + you.qualifyingPos));
+      if (you.wonPole) chips.appendChild(el('span', 'rc-badge-chip rc-badge-cartier rc-badge-cartier-elite', 'Pole'));
+      if (you.wonFastestLap) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-fastestlap', 'Fastest Lap'));
+      if (you.wonMostLapsLed) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-mostlapsled', 'Most Laps Led'));
+      if (you.isCleanRace === true) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-clean', 'Clean Race'));
+      if (you.laps) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', you.laps + ' Laps'));
+      if (you.pitstops) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', you.pitstops + ' Pit Stop' + (you.pitstops === 1 ? '' : 's')));
+      if (you.incidentsCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.incidentsCount + ' Incident' + (you.incidentsCount === 1 ? '' : 's')));
+      if (you.trackLimitsCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.trackLimitsCount + ' Track Limits'));
+      if (you.penaltiesCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.penaltiesCount + ' Penalt' + (you.penaltiesCount === 1 ? 'y' : 'ies')));
+      (you.sponsorHits || []).forEach(function (s) {
+        if (s.bonusTriggered) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result-sponsor', s.name + ' +' + formatMoney(s.bonusPayout)));
+        if (s.penaltyTriggered) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result-sponsor', s.name + ' ' + formatMoney(s.penaltyPayout)));
+      });
+      if (chips.childNodes.length) yourRace.appendChild(chips);
+      if (you.bankBalance !== null) yourRace.appendChild(el('div', 'rc-hint', 'Bank balance: ' + formatMoney(you.bankBalance)));
+      panel.appendChild(yourRace);
+    }
+
+    // Full per-class breakdown, one comprehensive table per class instead
+    // of the Dashboard card's compact position/name/logo rows -- every
+    // column DriverResults/SeasonHistory can supply for that finisher
+    // (2026-09-07, Matt's call). Horizontally scrollable on its own
+    // container so a narrow screen never forces the whole page to scroll
+    // sideways.
+    (race.classes || []).forEach(function (cls) {
+      var classPanel = el('div', 'rc-results-class');
+      var classHead = el('div', 'rc-results-class-head');
+      classHead.appendChild(_rcClassBadge(cls.className));
+      var classMeta = [];
+      if (cls.classWinner) classMeta.push('Winner: ' + cls.classWinner);
+      if (cls.classFastestLapDriver) classMeta.push('Fastest Lap: ' + cls.classFastestLapDriver + (cls.classFastestLapTime ? ' (' + cls.classFastestLapTime + ')' : ''));
+      if (classMeta.length) classHead.appendChild(el('span', 'rc-hint', escapeHtml(classMeta.join(' · '))));
+      classPanel.appendChild(classHead);
+
+      var scrollWrap = el('div', 'rc-results-table-wrap');
+      var table = document.createElement('table');
+      table.className = 'rc-results-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Status', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen', 'Bonus'].forEach(function (h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      (cls.standings || []).forEach(function (r) {
+        var isYou = you && r.profileId === you.profileId;
+        var tr = document.createElement('tr');
+        if (isYou) tr.className = 'rc-results-row-you';
+
+        var posTd = document.createElement('td');
+        posTd.className = 'rc-results-td-pos';
+        posTd.textContent = 'P' + (r.classPosition || r.position || '?');
+        tr.appendChild(posTd);
+
+        var driverTd = document.createElement('td');
+        var driverCell = el('span', 'rc-recent-results-driver');
+        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
+        if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
+          var mlogo = document.createElement('img');
+          mlogo.className = 'rc-recent-results-mfr-logo';
+          mlogo.src = manufacturerLogoSrc(r.manufacturer);
+          mlogo.alt = r.manufacturer;
+          mlogo.onerror = function () { this.style.display = 'none'; };
+          driverCell.appendChild(mlogo);
+        }
+        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
+        var badgeBits = [];
+        if (r.wonPole) badgeBits.push('P');
+        if (r.wonFastestLap) badgeBits.push('FL');
+        if (r.wonMostLapsLed) badgeBits.push('MLL');
+        if (badgeBits.length) driverCell.appendChild(el('span', 'rc-hint', ' ' + badgeBits.join('/')));
+        driverTd.appendChild(driverCell);
+        tr.appendChild(driverTd);
+
+        function plainTd(text) {
+          var td = document.createElement('td');
+          td.textContent = (text === null || text === undefined || text === '') ? '—' : String(text);
+          tr.appendChild(td);
+          return td;
+        }
+        plainTd(r.classGridPos || r.gridPos || '');
+        plainTd(r.laps || '');
+        plainTd(r.pitstops || '');
+        plainTd(r.bestLapTime || '');
+        plainTd(r.finishStatus || (r.position ? 'Finished' : ''));
+        plainTd(r.points === null ? '' : r.points);
+        var moneyTd = plainTd(r.moneyDelta === null ? '' : ((r.moneyDelta >= 0 ? '+' : '') + formatMoney(r.moneyDelta)));
+        if (r.moneyDelta !== null) moneyTd.style.color = r.moneyDelta >= 0 ? 'var(--rc-green, #2e7d32)' : 'var(--rc-red)';
+        plainTd(r.isCleanRace === null ? '' : (r.isCleanRace ? 'Yes' : 'No'));
+        var incBits = [r.incidentsCount || 0, r.trackLimitsCount || 0, r.penaltiesCount || 0];
+        plainTd(incBits.join(' / '));
+        var bonusText = (r.sponsorHits || []).map(function (s) {
+          if (s.bonusTriggered) return s.name + ' +' + formatMoney(s.bonusPayout);
+          if (s.penaltyTriggered) return s.name + ' ' + formatMoney(s.penaltyPayout);
+          return '';
+        }).filter(Boolean).join(', ');
+        plainTd(bonusText);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      scrollWrap.appendChild(table);
+      classPanel.appendChild(scrollWrap);
+      panel.appendChild(classPanel);
+    });
+
+    return panel;
+  }
+
+  // Season-cumulative standings container (2026-09-08, Matt's call: the
+  // FIRST container in the Results page, above every individual race --
+  // "just a couple columns for points" next to name/team/manufacturer,
+  // same per-class grouping every other container on this page uses, just
+  // a much shorter table than a single race's full breakdown).
+  function seasonStandingsPanel(standings) {
+    var panel = el('div', 'rc-results-round rc-results-season-standings');
+    panel.appendChild(el('h3', 'rc-results-round-title', 'Season Standings'));
+
+    // Drop-weeks note (2026-09-08, Matt's call): standings rank on Raw
+    // Points (every completed round, nothing dropped) until there are
+    // dropWeeks-or-fewer rounds left to run, then switch to ranking on
+    // Championship Points (each driver's own worst dropWeeks round(s)
+    // excluded). Both columns always show -- before the switch they're
+    // identical, since dropsEligible=false means nothing was actually
+    // dropped yet.
+    var dropsEligible = (standings || []).length ? !!standings[0].dropsEligible : false;
+    panel.appendChild(el('p', 'rc-hint', dropsEligible
+      ? 'Standings are ranked by Championship Points -- each driver\'s worst round(s) this season are dropped.'
+      : 'Standings are ranked by Raw Points for now -- Championship Points (with drop weeks applied) take over once the season is close enough to the end for dropping to make sense.'));
+
+    (standings || []).forEach(function (cls) {
+      var classHead = el('div', 'rc-results-class-head');
+      classHead.appendChild(_rcClassBadge(cls.className));
+      panel.appendChild(classHead);
+
+      var scrollWrap = el('div', 'rc-results-table-wrap');
+      var table = document.createElement('table');
+      table.className = 'rc-results-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Pos', 'Driver', 'Team', 'Manufacturer', 'Raw Points', 'Championship Points'].forEach(function (h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      (cls.standings || []).forEach(function (r, idx) {
+        var tr = document.createElement('tr');
+        var posTd = document.createElement('td');
+        posTd.className = 'rc-results-td-pos';
+        posTd.textContent = 'P' + (idx + 1);
+        tr.appendChild(posTd);
+
+        var driverTd = document.createElement('td');
+        var driverCell = el('span', 'rc-recent-results-driver');
+        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
+        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
+        driverTd.appendChild(driverCell);
+        tr.appendChild(driverTd);
+
+        function plainTd(text) {
+          var td = document.createElement('td');
+          td.textContent = (text === null || text === undefined || text === '') ? '—' : String(text);
+          tr.appendChild(td);
+          return td;
+        }
+        plainTd(r.teamName || '');
+        plainTd(r.manufacturer || '');
+        plainTd(r.rawPoints);
+        plainTd(r.championshipPoints);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      scrollWrap.appendChild(table);
+      panel.appendChild(scrollWrap);
+    });
+
+    return panel;
+  }
+
+  function renderResultsSection(token) {
+    var section = document.getElementById('rc-section-results');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(buildPageSpinner('Loading results...'));
+
+    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
+    return fetchApi('getSeasonResults', { token: token }).then(function (res) {
+      section.innerHTML = '';
+
+      if (!res || !res.success) {
+        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
+        return;
+      }
+      if (!res.hasSeason) {
+        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        var empty = el('div', 'rc-panel');
+        empty.appendChild(el('h3', 'margin-top:0;', 'No Season Right Now'));
+        empty.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s no season open right now -- results fill in once one is underway.'));
+        section.appendChild(empty);
+        return;
+      }
+
+      section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+
+      // One outer container for the whole page (2026-09-08, Matt's call),
+      // same rc-dash-card chrome the Calendar page's season panel already
+      // uses -- header is the season number + name, exactly like
+      // Calendar's own season header, so the two pages read as one family.
+      var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
+      var head = el('div', 'rc-cal-season-head');
+      var seasonNumLabel = seasonNumberLabel(res.seasonId);
+      head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
+      panel.appendChild(head);
+
+      // Season Standings -- always first, above every individual race
+      // (Matt's call), whether or not any races have posted results yet.
+      panel.appendChild(seasonStandingsPanel(res.standings));
+
+      var rounds = (res.rounds || []).slice().sort(function (a, b) {
+        var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
+        var bt = b.startUtc ? new Date(b.startUtc).getTime() : 0;
+        return bt - at; // most recent first
+      });
+
+      if (rounds.length) {
+        var list = el('div', 'rc-results-round-list');
+        rounds.forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
+        panel.appendChild(list);
+      } else {
+        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No results have been posted yet this season.'));
+      }
+
+      section.appendChild(panel);
+    }).catch(function () {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
+    });
+  }
+
+  // =======================================================================
+  // PROTESTS (2026-09-08) -- the driver-facing Protest page. A submission
+  // form (round -> lap/driver options populate from that round's own data,
+  // infraction type, an optional 200-word description) above this driver's
+  // own protest history (every one they've filed, newest first, with its
+  // Pending/Upheld/Denied outcome). Filing a ruling on someone else's
+  // protest happens from League Management's EDIT popup instead (Admin/
+  // Organizer/Steward only) -- this page is purely "file one of your own,
+  // see what happened to the ones you filed."
+  function renderProtestsSection(token) {
+    var section = document.getElementById('rc-section-protests');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(buildPageSpinner('Loading protests...'));
+
+    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
+    return Promise.all([
+      fetchApi('getProtestFilingOptions', { token: token }),
+      fetchApi('getMyProtests', { token: token, params: { limit: '10' } })
+    ]).then(function (results) {
+      var filing = results[0], mine = results[1];
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
+
+      if (!filing || !filing.success) {
+        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the Protest page right now.'));
+        return;
+      }
+
+      section.appendChild(buildProtestFormPanel(token, filing.rounds || [], filing.myProfileId, function () { renderProtestsSection(token); }));
+      section.appendChild(buildMyProtestsHistoryPanel(token, mine && mine.success ? (mine.protests || []) : [], (mine && mine.totalCount) || 0, function () { renderProtestsSection(token); }));
+    }).catch(function () {
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
+      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not reach the server.'));
+    });
+  }
+
+  // 2026-09-08 rewrite (Matt's call): Race + Lap Number + Infraction Type
+  // on one row, then three "Driver Involved" boxes on the row below --
+  // box 1 always defaults to whoever's filing (so a driver naming no one
+  // else, e.g. a self-report, still has a valid, non-blank box 1), boxes
+  // 2/3 default to an unset "Choose Driver" placeholder and are entirely
+  // optional. Only box 1 is ever required, and since it's always
+  // pre-filled that's automatic -- nothing here can actually block a
+  // submission over it. Same 3-equal-column .rc-wiz-field-row-3 grid for
+  // both rows (style.css).
+  function buildProtestFormPanel(token, rounds, myProfileId, onSubmitted) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'File a Protest'));
+
+    if (!rounds.length) {
+      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 48-hour filing window has closed for all of them.'));
+      return panel;
+    }
+
+    panel.appendChild(el('p', 'rc-page-howto',
+      '<strong>How to use this page:</strong> pick the race and the lap the incident happened on, choose an infraction type, and name up to two other drivers involved if there are any -- leave those two boxes on "Choose Driver" for a pure self-report. Add an optional description, then click Submit Protest. You have 48 hours after a round\'s results are posted to file for it, and you can withdraw a protest below any time before a steward rules on it.'));
+
+    var roundSelect = document.createElement('select');
+    rounds.forEach(function (r) {
+      roundSelect.appendChild(new Option('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''), r.roundId));
+    });
+
+    var lapSelect = document.createElement('select');
+    var infractionSelect = document.createElement('select');
+    PROTEST_INFRACTION_TYPES.forEach(function (t) { infractionSelect.appendChild(new Option(t, t)); });
+
+    var topRow = el('div', 'rc-wiz-field-row-3');
+    topRow.appendChild(wizField('Race', roundSelect, null));
+    topRow.appendChild(wizField('Lap Number', lapSelect, null));
+    topRow.appendChild(wizField('Infraction Type', infractionSelect, null));
+    panel.appendChild(topRow);
+
+    var driver1Select = document.createElement('select');
+    var driver2Select = document.createElement('select');
+    var driver3Select = document.createElement('select');
+
+    var driversRow = el('div', 'rc-wiz-field-row-3');
+    driversRow.appendChild(wizField('Driver Involved 1', driver1Select, null));
+    driversRow.appendChild(wizField('Driver Involved 2', driver2Select, null));
+    driversRow.appendChild(wizField('Driver Involved 3', driver3Select, null));
+    panel.appendChild(driversRow);
+
+    function populateForRound(roundId) {
+      var round = rounds.filter(function (r) { return r.roundId === roundId; })[0];
+      lapSelect.innerHTML = '';
+      driver1Select.innerHTML = '';
+      driver2Select.innerHTML = '';
+      driver3Select.innerHTML = '';
+      if (!round) return;
+      round.laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
+
+      driver2Select.appendChild(new Option('Choose Driver', ''));
+      driver3Select.appendChild(new Option('Choose Driver', ''));
+      round.driverRoster.forEach(function (d) {
+        var label = d.name + (d.carNumber ? (' (#' + d.carNumber + ')') : '');
+        driver1Select.appendChild(new Option(label, d.profileId));
+        driver2Select.appendChild(new Option(label, d.profileId));
+        driver3Select.appendChild(new Option(label, d.profileId));
+      });
+      // Box 1 defaults to whoever's filing -- falls back to the first
+      // roster entry only in the unlikely case the filer's own result
+      // somehow isn't in this round's roster.
+      if (myProfileId && round.driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
+        driver1Select.value = myProfileId;
+      }
+    }
+    populateForRound(rounds[0].roundId);
+    roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
+
+    var descBox = document.createElement('textarea');
+    descBox.rows = 4;
+    descBox.maxLength = 2000;
+    var descWrap = wizField('Description', descBox, null);
+    descWrap.appendChild(el('div', 'rc-hint', '(Optional, 200 words or fewer)'));
+    panel.appendChild(descWrap);
+
+    var resultBox = el('div', 'rc-message');
+    panel.appendChild(resultBox);
+
+    var submitBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Submit Protest');
+    submitBtn.type = 'button';
+    submitBtn.addEventListener('click', function () {
+      var words = descBox.value.trim().length ? descBox.value.trim().split(/\s+/).length : 0;
+      if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
+      submitBtn.disabled = true;
+      resultBox.className = 'rc-message';
+      resultBox.textContent = '';
+      fetchApi('submitProtest', {
+        method: 'POST', token: token, body: {
+          roundId: roundSelect.value, infractionType: infractionSelect.value,
+          lapNumber: lapSelect.value, againstProfileId: driver2Select.value,
+          against2ProfileId: driver3Select.value, description: descBox.value.trim()
+        }
+      }).then(function (data) {
+        submitBtn.disabled = false;
+        if (!data.success) {
+          resultBox.className = 'rc-message rc-error';
+          resultBox.textContent = data.message || 'Could not submit that protest.';
+          showToast(data.message || 'Could not submit that protest.', 'error');
+          return;
+        }
+        showToast('Protest submitted.', 'success');
+        if (typeof onSubmitted === 'function') onSubmitted();
+      }).catch(function () {
+        submitBtn.disabled = false;
+        resultBox.className = 'rc-message rc-error';
+        resultBox.textContent = 'Could not reach the server.';
+      });
+    });
+    panel.appendChild(submitBtn);
+
+    return panel;
+  }
+
+  // PROTESTS history (2026-09-08 rewrite, Matt's call: rename from "Your
+  // Protests" since it now also carries protests filed AGAINST this
+  // driver, not just ones they filed themselves -- last 10 either way,
+  // newest first, with a "Show full history" popup once there's more,
+  // same convention as the Finances page's Transaction Ledger
+  // (buildLedgerPanel/openFullLedgerModal above). Only a protest THIS
+  // driver filed, and still Pending, gets a Withdraw button.
+  function buildProtestHistoryRow(p, token, onChanged) {
+    var row = el('div', 'rc-dm-row');
+    var info = el('div', null);
+    info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel) + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
+    info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
+    row.appendChild(info);
+
+    var right = el('div', 'display:flex;align-items:center;gap:10px;');
+    right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
+    if (p.isMine && p.status === 'Pending') {
+      var withdrawBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Withdraw');
+      withdrawBtn.type = 'button';
+      withdrawBtn.style.cssText = 'width:auto;padding:4px 12px;';
+      withdrawBtn.addEventListener('click', function () {
+        withdrawBtn.disabled = true;
+        withdrawBtn.textContent = 'Withdrawing...';
+        fetchApi('withdrawProtest', { method: 'POST', token: token, body: { protestId: p.protestId } }).then(function (data) {
+          if (!data || !data.success) {
+            showToast((data && data.message) || 'Could not withdraw that protest.', 'error');
+            withdrawBtn.disabled = false;
+            withdrawBtn.textContent = 'Withdraw';
+            return;
+          }
+          showToast('Protest withdrawn.', 'success');
+          if (typeof onChanged === 'function') onChanged();
+        }).catch(function () {
+          showToast('Could not reach the server.', 'error');
+          withdrawBtn.disabled = false;
+          withdrawBtn.textContent = 'Withdraw';
+        });
+      });
+      right.appendChild(withdrawBtn);
+    }
+    row.appendChild(right);
+    return row;
+  }
+
+  function openFullProtestHistoryModal(token, entries) {
+    var listEl = el('div');
+    var pagerEl = el('div', 'rc-ledger-pager');
+    var body = el('div');
+    body.appendChild(listEl);
+    body.appendChild(pagerEl);
+
+    var modal = showModal('Full Protest History', { bodyEl: body, wide: true });
+
+    var page = 0;
+
+    // A withdraw inside the popup re-fetches the full list fresh (so the
+    // withdrawn protest's new status shows immediately) and also quietly
+    // refreshes the page underneath, same "everything stays in sync"
+    // pattern the League Management EDIT popup uses.
+    function reload() {
+      fetchApi('getMyProtests', { token: token, params: { full: '1' } }).then(function (data) {
+        entries = (data && data.success) ? (data.protests || []) : [];
+        renderPage();
+      });
+      renderProtestsSection(token);
+    }
+
+    function renderPage() {
+      var totalPages = Math.max(1, Math.ceil(entries.length / RC_LEDGER_PAGE_SIZE));
+      if (page > totalPages - 1) page = totalPages - 1;
+      listEl.innerHTML = '';
+      var start = page * RC_LEDGER_PAGE_SIZE;
+      entries.slice(start, start + RC_LEDGER_PAGE_SIZE).forEach(function (p) {
+        listEl.appendChild(buildProtestHistoryRow(p, token, reload));
+      });
+
+      pagerEl.innerHTML = '';
+      var prevBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Previous');
+      prevBtn.type = 'button';
+      prevBtn.disabled = page === 0;
+      prevBtn.addEventListener('click', function () { page--; renderPage(); });
+
+      var pageLabel = el('span', 'rc-hint', 'Page ' + (page + 1) + ' of ' + totalPages);
+
+      var nextBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Next');
+      nextBtn.type = 'button';
+      nextBtn.disabled = page >= totalPages - 1;
+      nextBtn.addEventListener('click', function () { page++; renderPage(); });
+
+      pagerEl.appendChild(prevBtn);
+      pagerEl.appendChild(pageLabel);
+      pagerEl.appendChild(nextBtn);
+    }
+    renderPage();
+    return modal;
+  }
+
+  var RC_PROTEST_PREVIEW_COUNT = 10;
+
+  function buildMyProtestsHistoryPanel(token, protests, totalCount, onChanged) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.style.cssText = 'margin-top:16px;';
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
+    if (!protests.length) {
+      panel.appendChild(el('div', 'rc-dm-empty', 'No protests filed by or against you yet.'));
+      return panel;
+    }
+    protests.forEach(function (p) { panel.appendChild(buildProtestHistoryRow(p, token, onChanged)); });
+
+    if (totalCount > RC_PROTEST_PREVIEW_COUNT) {
+      var fullHistoryBtn = el('button', 'rc-link-btn rc-dash-card-link', '← Show full history');
+      fullHistoryBtn.type = 'button';
+      fullHistoryBtn.addEventListener('click', function () {
+        fetchApi('getMyProtests', { token: token, params: { full: '1' } }).then(function (data) {
+          openFullProtestHistoryModal(token, (data && data.success) ? (data.protests || []) : []);
+        }).catch(function () { showToast('Could not load your full protest history.', 'error'); });
+      });
+      panel.appendChild(fullHistoryBtn);
+    }
+
+    return panel;
+  }
+
+  function _rcProtestStatusBadge(status, penaltyTier) {
+    var cls = status === 'Upheld' ? 'rc-badge-race-posted' : (status === 'Denied' ? 'rc-badge-chip' : (status === 'Withdrawn' ? 'rc-badge-chip' : 'rc-badge-race-scheduled'));
+    var label = status === 'Upheld' ? ('Upheld -- Tier ' + penaltyTier) : status;
+    return el('span', 'rc-badge-chip ' + cls, label);
   }
 
   // =======================================================================
@@ -7462,6 +8757,335 @@
 
     panel.appendChild(row);
     section.appendChild(panel);
+
+    // Create a Season -- moved here from League Management (2026-09-08,
+    // Matt's call: "only an admin can create a season"). Just the
+    // Create/Resume/Clear Draft controls, not the full season list --
+    // the list itself (with per-row Edit/Races) still lives on the
+    // League Management page for both admins and members to browse.
+    var seasonPanel = el('div', 'rc-panel rc-dash-card');
+    seasonPanel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
+
+    var seasonRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+    var hasDraft = !!loadWizardDraft();
+    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+    createSeasonBtn.type = 'button';
+    createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
+    seasonRow.appendChild(createSeasonBtn);
+
+    if (hasDraft) {
+      var clearSeasonDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
+      clearSeasonDraftBtn.type = 'button';
+      clearSeasonDraftBtn.addEventListener('click', function () {
+        clearWizardDraft();
+        showToast('Season draft cleared.', 'success');
+        renderAdminSection(token);
+      });
+      seasonRow.appendChild(clearSeasonDraftBtn);
+    }
+
+    seasonPanel.appendChild(seasonRow);
+    section.appendChild(seasonPanel);
+  }
+
+  // ---------------------------------------------------------------------
+  // RACE INGESTION (2026-09-07, revised 2026-09-07) -- no longer a
+  // standalone container within League Management. Add Results/Delete now
+  // live directly on each race row inside a season's own expanded Races
+  // list (buildSeasonRow/buildSeasonRaceRow above) -- Matt's call: "kills
+  // two birds with one stone using the already setup season list" instead
+  // of a separate panel with its own round-picker dropdown. Both modals
+  // below always open already knowing which round they're for (roundId is
+  // handed in by whichever race row's button was clicked), so there's no
+  // "No Round" test-import path anymore and no dropdown to render.
+  // ---------------------------------------------------------------------
+
+  // IMPORT RACE RESULTS -- Admin picks an LMU results XML off their own
+  // computer and it uploads directly to the importXml backend route
+  // (Ingestion.gs), through the website itself rather than the Sheet's
+  // manual "paste XML" dev dialog or an external script. `opts.roundId`/
+  // `opts.roundLabel` are required now -- the click that opened this modal
+  // (a race row's Add Results button) already knows exactly which round
+  // it's for, so this never has to ask.
+  //
+  // This bypasses fetchApi() on purpose for the actual upload -- fetchApi
+  // always JSON.stringifies its POST body, but handleImportXml reads the
+  // raw XML straight off e.postData.contents, so the body here has to be
+  // the file's own text, untouched.
+  function openImportXmlModal(token, opts) {
+    opts = opts || {};
+    var roundId = opts.roundId || '';
+    var roundLabel = opts.roundLabel || roundId;
+
+    var modal = showModal('Import Results -- ' + roundLabel, { wide: true });
+
+    var fileInput = el('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.xml';
+    modal.body.appendChild(wizField('Race Results XML File', fileInput, 'The results file LMU writes after a session -- select it from wherever it saved on your computer. This import is tied to ' + roundLabel + '.'));
+
+    var resultBox = el('div', 'rc-message');
+    modal.body.appendChild(resultBox);
+
+    var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+    var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Import');
+    importBtn.type = 'button';
+    importBtn.addEventListener('click', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) { showToast('Choose an XML file first.', 'error'); return; }
+
+      importBtn.disabled = true;
+      importBtn.textContent = 'Importing…';
+      resultBox.className = 'rc-message';
+      resultBox.textContent = '';
+
+      var reader = new FileReader();
+      reader.onload = function () {
+        var xmlText = reader.result;
+        var url = API_BASE_URL + '?action=importXml' +
+          '&token=' + encodeURIComponent(token) +
+          '&filename=' + encodeURIComponent(file.name) +
+          '&roundId=' + encodeURIComponent(roundId);
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: xmlText
+        }).then(function (res) { return res.json(); }).then(function (data) {
+          importBtn.disabled = false;
+          importBtn.textContent = 'Import';
+          if (data && data.success) {
+            var msg = 'Imported ' + data.sessionId + ' -- ' + data.driversImported + ' driver(s), ' +
+              data.lapsImported + ' lap row(s), ' + data.raceEventsImported + ' race event(s).';
+            if (data.unmatchedDriverNames && data.unmatchedDriverNames.length) {
+              msg += ' Unmatched driver names (no ProfileID yet): ' + data.unmatchedDriverNames.join(', ') + '.';
+            }
+            resultBox.className = 'rc-message rc-ok';
+            resultBox.textContent = msg;
+            showToast('Import complete.', 'success');
+            rcReloadAfterSave();
+          } else {
+            resultBox.className = 'rc-message rc-error';
+            resultBox.textContent = (data && data.message) || 'Import failed.';
+            showToast((data && data.message) || 'Could not import that file.', 'error');
+          }
+        }).catch(function () {
+          importBtn.disabled = false;
+          importBtn.textContent = 'Import';
+          resultBox.className = 'rc-message rc-error';
+          resultBox.textContent = 'Could not reach the server.';
+          showToast('Could not reach the server -- file not imported.', 'error');
+        });
+      };
+      reader.readAsText(file);
+    });
+    btnRow.appendChild(importBtn);
+    modal.body.appendChild(btnRow);
+  }
+
+  // ERASE ROUND INGESTION DATA -- the undo for the Import modal above.
+  // `opts.roundId`/`opts.roundLabel` are required, same as
+  // openImportXmlModal -- this is only ever opened from a race row whose
+  // Delete button is already scoped to that round (and only enabled once
+  // that round actually has results to erase -- see buildSeasonRaceRow).
+  // Requires typing ERASE, same weight as every other irreversible admin
+  // action on this site (openTypeToConfirmModal). See
+  // handleAdminEraseRoundIngestion / _rcEraseRoundIngestion_ (DataCache.gs)
+  // for exactly what gets removed/reverted.
+  function openEraseRoundIngestionModal(token, opts) {
+    opts = opts || {};
+    var roundId = opts.roundId || '';
+    var roundLabel = opts.roundLabel || roundId;
+
+    var modal = showModal('Erase Round Ingestion Data', { wide: true });
+    modal.body.appendChild(el('div', 'rc-hint', 'Every imported Session/Driver Result/Lap/Race Event and Season History row for ' + escapeHtml(roundLabel) + ' is deleted. Any Wager it settled reverts to Accepted and its win/loss Transactions are removed. The Season, its Rounds, and every driver’s registration/seat are left alone.'));
+
+    var resultBox = el('div', 'rc-message');
+    modal.body.appendChild(resultBox);
+
+    var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+    var eraseBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Erase');
+    eraseBtn.type = 'button';
+    eraseBtn.style.cssText = 'background:var(--rc-red);';
+    eraseBtn.addEventListener('click', function () {
+      openTypeToConfirmModal(
+        'Erase Round Ingestion Data',
+        'Permanently erase all ingested race data for ' + roundLabel + '?',
+        'ERASE', 'Erase',
+        function () {
+          eraseBtn.disabled = true;
+          eraseBtn.textContent = 'Erasing…';
+          resultBox.className = 'rc-message';
+          resultBox.textContent = '';
+
+          fetchApi('adminEraseRoundIngestion', { method: 'POST', token: token, body: { roundId: roundId } })
+            .then(function (data) {
+              eraseBtn.disabled = false;
+              eraseBtn.textContent = 'Erase';
+              if (data && data.success) {
+                var s = data.summary || {};
+                resultBox.className = 'rc-message rc-ok';
+                resultBox.textContent = 'Erased ' + roundLabel + ' -- ' + s.sessionsRemoved + ' session(s), ' +
+                  s.driverResultsRemoved + ' driver result(s), ' + s.lapsRemoved + ' lap row(s), ' +
+                  s.raceEventsRemoved + ' race event(s), ' + s.seasonHistoryRemoved + ' Season History row(s). ' +
+                  s.wagersReverted + ' wager(s) reverted, ' + s.transactionsRemoved + ' transaction(s) removed.';
+                showToast('Round ingestion data erased.', 'success');
+                rcReloadAfterSave();
+              } else {
+                resultBox.className = 'rc-message rc-error';
+                resultBox.textContent = (data && data.message) || 'Could not erase that round\'s data.';
+                showToast((data && data.message) || 'Could not erase that round\'s data.', 'error');
+              }
+            })
+            .catch(function () {
+              eraseBtn.disabled = false;
+              eraseBtn.textContent = 'Erase';
+              resultBox.className = 'rc-message rc-error';
+              resultBox.textContent = 'Could not reach the server.';
+              showToast('Could not reach the server -- nothing was erased.', 'error');
+            });
+        }
+      );
+    });
+    btnRow.appendChild(eraseBtn);
+    modal.body.appendChild(btnRow);
+  }
+
+  // VIEW (2026-09-08) -- League Management round row. Recent results for
+  // that round, full finishing order per class, plus a "Penalties Assessed"
+  // list underneath sourced from every Upheld protest for the round (see
+  // handleAdminGetRoundResultDetail, DataCache.gs). Read-only -- ruling on
+  // a protest happens from the EDIT popup instead.
+  function openRoundViewModal(token, opts) {
+    var roundId = opts.roundId || '';
+    var roundLabel = opts.roundLabel || roundId;
+    var modal = showModal('Results -- ' + roundLabel, { wide: true });
+    modal.body.appendChild(buildSpinner('Loading results...'));
+
+    fetchApi('adminGetRoundResultDetail', { token: token, params: { roundId: roundId } }).then(function (data) {
+      modal.body.innerHTML = '';
+      if (!data.success || !data.race) {
+        modal.body.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load results for this round.'));
+        return;
+      }
+      var race = data.race;
+      (race.classes || []).forEach(function (cls) {
+        modal.body.appendChild(el('h4', 'margin-bottom:6px;', escapeHtml(cls.className || '')));
+        var wrap = el('div', 'rc-results-table-wrap');
+        var table = document.createElement('table');
+        table.className = 'rc-results-table';
+        var thead = el('tr', null);
+        ['Pos', 'Driver', 'Team', 'Pts', 'Status'].forEach(function (h) { thead.appendChild(el('th', null, h)); });
+        table.appendChild(thead);
+        (cls.standings || []).forEach(function (row) {
+          var tr = el('tr', null);
+          tr.appendChild(el('td', null, String(row.classPosition || row.position || '')));
+          tr.appendChild(el('td', null, escapeHtml(row.name || '')));
+          tr.appendChild(el('td', null, escapeHtml(row.teamName || '')));
+          tr.appendChild(el('td', null, String(row.points || 0)));
+          tr.appendChild(el('td', null, escapeHtml(row.finishStatus || '')));
+          table.appendChild(tr);
+        });
+        wrap.appendChild(table);
+        modal.body.appendChild(wrap);
+      });
+
+      modal.body.appendChild(el('h4', 'margin-top:18px;margin-bottom:6px;', 'Penalties Assessed'));
+      if (!data.penaltiesAssessed || !data.penaltiesAssessed.length) {
+        modal.body.appendChild(el('div', 'rc-hint', 'No upheld protests for this round.'));
+      } else {
+        var list = el('div', null);
+        data.penaltiesAssessed.forEach(function (p) {
+          var line = el('div', 'rc-dm-row');
+          line.appendChild(el('div', null, escapeHtml(p.againstName) + ' -- ' + escapeHtml(p.infractionType) + ' -- Tier ' + p.penaltyTier + (p.fineAmount ? (' -- ' + formatMoney(-p.fineAmount) + ' fine') : '')));
+          list.appendChild(line);
+        });
+        modal.body.appendChild(list);
+      }
+    }).catch(function () {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
+  }
+
+  // EDIT (2026-09-08) -- League Management round row's protest-ruling popup.
+  // Lists every protest filed for this round; a Pending one gets a penalty-
+  // tier dropdown (or Deny) and an Apply button, an already-ruled one shows
+  // its outcome read-only. Disabled entirely on the frontend once the round
+  // is finalized (see buildSeasonRaceRow) -- the server refuses it too
+  // (ROUND_FINALIZED, handleAdminRuleOnProtest) as the real guard.
+  function openRoundEditProtestsModal(token, opts, outerReload) {
+    var roundId = opts.roundId || '';
+    var roundLabel = opts.roundLabel || roundId;
+    var modal = showModal('Protests -- ' + roundLabel, { wide: true });
+
+    function render() {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(buildSpinner('Loading protests...'));
+      fetchApi('adminGetRoundProtests', { token: token, params: { roundId: roundId } }).then(function (data) {
+        modal.body.innerHTML = '';
+        if (!data.success) {
+          modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests for this round.'));
+          return;
+        }
+        if (!data.protests.length) {
+          modal.body.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
+          return;
+        }
+        data.protests.forEach(function (p) {
+          var row = el('div', 'rc-panel');
+          row.style.cssText = 'margin-bottom:10px;';
+          row.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || [p.filerName]).join(', '))));
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + ' -- Lap ' + escapeHtml(String(p.lapNumber || '')) + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
+
+          if (p.status === 'Pending') {
+            var controlRow = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;');
+            var select = document.createElement('select');
+            select.appendChild(new Option('Choose a ruling...', ''));
+            select.appendChild(new Option('Deny', 'deny'));
+            PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
+            controlRow.appendChild(select);
+
+            var applyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Apply Ruling');
+            applyBtn.type = 'button';
+            applyBtn.addEventListener('click', function () {
+              if (!select.value) { showToast('Choose a ruling first.', 'error'); return; }
+              var decision = select.value === 'deny' ? 'Denied' : 'Upheld';
+              var tier = select.value.indexOf('uphold:') === 0 ? Number(select.value.split(':')[1]) : null;
+              applyBtn.disabled = true;
+              fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: { protestId: p.protestId, decision: decision, penaltyTier: tier } })
+                .then(function (result) {
+                  applyBtn.disabled = false;
+                  if (!result.success) {
+                    showToast(result.message || 'Could not save this ruling.', 'error');
+                    return;
+                  }
+                  showToast('Ruling saved.', 'success');
+                  render();
+                  if (typeof outerReload === 'function') outerReload();
+                }).catch(function () {
+                  applyBtn.disabled = false;
+                  showToast('Could not reach the server.', 'error');
+                });
+            });
+            controlRow.appendChild(applyBtn);
+            row.appendChild(controlRow);
+          } else {
+            var outcome = el('div', 'rc-hint', 'margin-top:8px;');
+            outcome.textContent = p.status + (p.status === 'Upheld' ? (' -- Tier ' + p.penaltyTier + ', ' + formatMoney(-(p.fineAmount || 0)) + ' fine') : '') +
+              (p.reviewedByName ? (' -- ruled by ' + p.reviewedByName) : '');
+            row.appendChild(outcome);
+          }
+
+          modal.body.appendChild(row);
+        });
+      }).catch(function () {
+        modal.body.innerHTML = '';
+        modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+      });
+    }
+
+    render();
   }
 
   // Generic "open a popup, show the loading lights, then fetch and render
@@ -9027,18 +10651,14 @@
     // capability is "edit season info & schedule", which is exactly
     // League Management -- so Organizer unlocks that nav item too, same
     // as Admin (who has every Organizer capability plus more). Protests
-    // is Steward-and-above (2026-08-30, Matt's call) -- everyone who can
-    // reach League Management or Admin can also reach it, since both of
-    // those sit above Steward in the hierarchy. Admin (which now hosts
-    // what Data Management used to show -- Members/Tracks/Cars/Sponsors
-    // popups) stays Admin-only -- that maps to Level 4 capabilities
-    // ("change anyone's access level", manage reference data), not
-    // anything Organizer has per the system map. Revisit if that design
-    // changes.
-    if (profile.role === 'Steward' || profile.role === 'Organizer' || profile.role === 'Admin') {
-      document.getElementById('rc-nav-protests').style.display = 'flex';
-      showUpperNavDivider();
-    }
+    // is no longer gated here (2026-09-08) -- filing one is an ordinary
+    // Driver action, moved into the main nav list above; only RULING on
+    // one (League Management's EDIT popup) stays Steward-and-above,
+    // enforced server-side. Admin (which now hosts what Data Management
+    // used to show -- Members/Tracks/Cars/Sponsors popups) stays
+    // Admin-only -- that maps to Level 4 capabilities ("change anyone's
+    // access level", manage reference data), not anything Organizer has
+    // per the system map. Revisit if that design changes.
     if (profile.role === 'Admin' || profile.role === 'Organizer') {
       document.getElementById('rc-nav-league').style.display = 'flex';
       showUpperNavDivider();
@@ -9064,13 +10684,44 @@
     // cache showLazySection already relies on (rcLoadedLazySections) --
     // guarded so this never double-fetches if the driver manually clicks
     // into Calendar before this background prefetch gets there first.
+    // Extended (2026-09-08, Matt's call: "lazy load all the pages on the
+    // account page AFTER the dashboard has loaded so that flipping through
+    // the pages feels snappy... the user doesn't realize that these were
+    // all loading in the background") from just Calendar to every other
+    // lazy-fetch section EXCEPT Admin and League Management -- those two
+    // stay fetch-on-click only (Matt's call: "don't lazy load ADMIN page or
+    // LEAGUE MANAGEMENT though"), since they're Admin/Organizer-only and
+    // there's no benefit to spending a driver's own page-load budget
+    // silently loading pages most drivers can't even see.
+    //
+    // RC_BACKGROUND_PREFETCH_ORDER is chained ONE AT A TIME with .then,
+    // not fired together with Promise.all, for the same reason Calendar's
+    // own prefetch already waited on the Dashboard cards first: Apps
+    // Script Web Apps queue same-user fetch() calls rather than truly
+    // running them in parallel, so six sections' worth of fetches all
+    // competing at once would slow down whichever one the driver actually
+    // clicks into first. Each render function above now `return`s its own
+    // fetch promise specifically so this chain can wait for one section to
+    // fully settle before starting the next.
+    //
+    // Every step re-checks rcLoadedLazySections right before it runs (not
+    // just once at the top) -- if the driver manually clicks into a page
+    // themselves while this background chain is still working through an
+    // earlier one, showLazySection() (below) will have already set that
+    // section's flag and fetched it directly, so this chain just skips its
+    // own turn for that section instead of double-fetching it.
+    var RC_BACKGROUND_PREFETCH_ORDER = ['calendar', 'finances', 'wager', 'sponsors', 'results', 'protests'];
     Promise.all([
       dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise, dashboardData.financesPromise,
       dashboardData.seasonObjectivePromise, dashboardData.nextRacePromise, dashboardData.sponsorsPromise
     ]).then(function () {
-      if (rcLoadedLazySections.calendar) return;
-      rcLoadedLazySections.calendar = true;
-      renderCalendarSection(token);
+      return RC_BACKGROUND_PREFETCH_ORDER.reduce(function (chain, id) {
+        return chain.then(function () {
+          if (rcLoadedLazySections[id]) return null;
+          rcLoadedLazySections[id] = true;
+          return RC_LAZY_SECTION_RENDERERS[id](token);
+        });
+      }, Promise.resolve());
     });
 
     // Same-page restore after a popup save (2026-09-01, Matt's call) --

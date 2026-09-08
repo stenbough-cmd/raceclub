@@ -355,6 +355,14 @@ p { margin: 0 0 0.75em; }
 .rc-badge-status-registration { background: #1f5c25; }
 .rc-badge-status-active { background: var(--rc-red); }
 .rc-badge-status-completed { background: var(--rc-steel); }
+/* Per-race status pill (League Management's per-season Races list, added
+   2026-09-07) -- same chip shape/colors as the season status pills above,
+   reused for the same meaning: green = still ahead of it (Scheduled),
+   red = something needs attention (Completed, no results posted yet),
+   steel = fully settled (Completed, results posted). */
+.rc-badge-race-scheduled { background: #1f5c25; }
+.rc-badge-race-noresults { background: var(--rc-red); }
+.rc-badge-race-posted { background: var(--rc-steel); }
 /* Car Objective Tier pill (Data Management's Cars popup, the Choose Your
    Team screen, the dashboard's Current Seat card, and the signing
    sequence's contract recap) -- colored per tier (gray/blue/purple/gold).
@@ -389,6 +397,39 @@ p { margin: 0 0 0.75em; }
    a plain outline + steel-colored numbers, since this is a range for
    reference, not a category badge like the class chip next to it. */
 .rc-badge-cost-range { background: none; border: 1px solid var(--rc-silver); color: var(--rc-steel); margin-left: 6px; }
+/* Recent Results pills (Dashboard's Recent Results card + the full
+   Results page's "Your Race" chip row) -- 2026-09-08, Matt's call: give
+   every pill its own outline color instead of the old mix of solid green/
+   red/black fills so they read apart at a glance. Same outline shape/sizing
+   trick .rc-badge-cartier already uses (transparent fill, border+text in
+   one color, padding trimmed by the border width). Bright green/red reuse
+   the exact colors the Sponsors comparison table already uses for bonus/
+   penalty (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative"
+   means the same color everywhere on the site. Clean Race and Fastest Lap
+   reuse the existing tier-mid (blue) / tier-high (purple) tokens so they
+   match the Car Objective tier pills' palette rather than inventing new
+   colors that happen to look similar. Pole keeps the existing gold
+   tier-elite color; Most Laps Led gets its own amber now that Fastest Lap
+   has moved off gold. Points/Qualifying/Laps/Pit Stops are informational
+   counts, not a win or a loss, so they get a neutral steel outline --
+   Points is the one exception, reusing the positive green since scoring
+   points is always a good outcome. */
+.rc-badge-result {
+  background: none;
+  font-weight: 700;
+  padding: 1.5px 8.5px; /* trimmed by the 1.5px border, same as .rc-badge-cartier */
+}
+.rc-badge-result-positive { border: 1.5px solid #22c55e; color: #22c55e; }
+.rc-badge-result-negative { border: 1.5px solid #ff3b30; color: #ff3b30; }
+.rc-badge-result-clean { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
+.rc-badge-result-fastestlap { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
+.rc-badge-result-mostlapsled { border: 1.5px solid #d97706; color: #d97706; }
+.rc-badge-result-neutral { border: 1.5px solid var(--rc-steel); color: var(--rc-steel); }
+/* Sponsor hit pill (bonus or penalty) -- solid light gray fill rather than
+   an outline, deliberately set apart from every other Recent Results pill
+   since it already carries its own meaning (sponsor name + payout) and
+   doesn't need color-coding by positive/negative on top of that. */
+.rc-badge-result-sponsor { background: var(--rc-silver); color: var(--rc-carbon); }
 /* Elite team card on the Choose Your Team screen -- a muted gold border to
    set it apart from the Low/Mid/High cards around it. */
 .rc-team-card-elite {
@@ -512,6 +553,13 @@ p { margin: 0 0 0.75em; }
    but slightly larger/roomier since it's carrying real explanatory copy,
    not a one-line field hint. */
 .rc-sponsors-explainer { color: var(--rc-steel); font-size: 13px; line-height: 1.55; max-width: 760px; margin: 6px 0 20px; }
+/* Page how-to line (2026-09-07) -- sits directly under a page's own
+   .rc-sponsors-explainer summary (Sponsors/Wager so far), one level more
+   concrete: exactly which click does what, not just what the page is
+   for. Boxed and slightly tinted so it reads as reference material,
+   distinct from the plain-text explainer above it. */
+.rc-page-howto { color: var(--rc-carbon); font-size: 12.5px; line-height: 1.6; max-width: 760px; margin: -10px 0 20px; padding: 10px 14px; background: var(--rc-offwhite); border-left: 3px solid var(--rc-steel); border-radius: 4px; }
+.rc-page-howto strong { text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
 
 /* "Current Picks" -- a compact chip strip (2026-09-01, replacing the
    prior 3-column layout), always 3 slots wide. align-items: stretch (the
@@ -1917,6 +1965,45 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-regstatus-stat { flex: 1 1 100px; text-align: center; }
 .rc-regstatus-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
 .rc-regstatus-stat-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); margin-top: 2px; }
+/* Registration Status flag (2026-09-08, Matt's call: "make a status
+   section for those who have REGISTRATION status that is yellow or red...
+   a yellow circle would show here and the reason below it") -- Probation
+   (yellow) and Suspended/Removed (red), sits inside the same card between
+   the top row and the footer stats, only rendered when a driver's
+   Registration Status is actually one of those two states (see
+   registrationStatusCard's renderRegistered, Account.html) -- the
+   ordinary Active case never shows this block at all. Same solid-circle-
+   plus-text shape as .rc-regstatus-icon-done above, just colored per
+   severity instead of always green.
+*/
+.rc-regstatus-flag { display: flex; align-items: flex-start; gap: 12px; margin-top: 4px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; }
+.rc-regstatus-flag-probation { background: #fef9e7; }
+.rc-regstatus-flag-suspended { background: #fdecea; }
+.rc-regstatus-flag-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; }
+.rc-regstatus-flag-dot-probation { background: #eab308; }
+.rc-regstatus-flag-dot-suspended { background: var(--rc-red); }
+.rc-regstatus-flag-label { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.rc-regstatus-flag-label-probation { color: #a3790a; }
+.rc-regstatus-flag-label-suspended { color: var(--rc-red); }
+.rc-regstatus-flag-reason { font-size: 12.5px; color: var(--rc-carbon); margin-top: 3px; line-height: 1.4; }
+
+/* Finances page -- Account Status panel (2026-09-08, Matt's call: "show
+   the last 3 changes in account status and have them slowly fade away so
+   that the fourth status (not even displayed) would be assumed to be
+   transparent") -- linear fade, most recent at full opacity, each older
+   one a step lower, so a hypothetical 4th entry extrapolates to 0. */
+.rc-status-history-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid var(--rc-offwhite); }
+.rc-status-history-row:first-child { border-top: none; }
+.rc-status-history-row:nth-child(1) { opacity: 1; }
+.rc-status-history-row:nth-child(2) { opacity: 0.65; }
+.rc-status-history-row:nth-child(3) { opacity: 0.35; }
+.rc-status-history-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; }
+.rc-status-history-dot-active { background: #1f5c25; }
+.rc-status-history-dot-probation { background: #eab308; }
+.rc-status-history-dot-suspended { background: var(--rc-red); }
+.rc-status-history-label { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
+.rc-status-history-reason { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
+.rc-status-history-date { font-size: 11px; color: var(--rc-steel); margin-left: auto; flex: none; white-space: nowrap; }
 
 /* Current Seat card -- manufacturer logo left, team/car identity + class
    pill next to it, Position/Points/Podiums stat row underneath (sourced
@@ -2389,6 +2476,86 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-ledger-amt { flex: 0 0 100px; text-align: right; font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .rc-ledger-amt-positive { color: var(--rc-ok); }
 .rc-ledger-amt-negative { color: var(--rc-red); }
+
+/* Full Transaction History popup pager (2026-09-08). */
+.rc-ledger-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
+
+/* Recent Results -- Dashboard card (2026-09-07), same "bordered rows
+   stacked in a card" shape as the Ledger above, one row per race. */
+.rc-recent-results-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.rc-recent-results-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
+/* Your Race -- the driver's own points/money/qualifying/callout chips.
+   No background box around this (2026-09-07, Matt's call: "remove the
+   colored cell that stretches across the card above the class
+   positions" -- it used to sit in its own tinted offwhite strip); just
+   plain spacing now, sitting in the card's own flow above the columns. */
+.rc-recent-results-yours { margin-bottom: 8px; }
+.rc-recent-results-yours-headline { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rc-carbon); }
+.rc-recent-results-yours-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Ordinal suffix (st/nd/rd/th) on the corner "1st PLACE" figure --
+   smaller and raised against the number (2026-09-07, Matt's call). */
+.rc-ordinal-suffix { font-size: 0.6em; vertical-align: super; }
+/* One column per class present (2026-09-07, Matt's call: "up to 3
+   columns for multiclass... if only one class, make it one column, 2
+   classes, 2 columns") -- the modifier class sets the column count so a
+   single-class season (this one, today) just renders one full-width
+   column instead of a lonely narrow one. */
+.rc-recent-results-columns { display: grid; gap: 18px; align-items: start; }
+.rc-recent-results-columns-1 { grid-template-columns: 1fr; }
+.rc-recent-results-columns-2 { grid-template-columns: 1fr 1fr; }
+.rc-recent-results-columns-3 { grid-template-columns: 1fr 1fr 1fr; }
+.rc-recent-results-columns-flex { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+/* Results page (2026-09-07) -- one .rc-results-round panel per completed
+   round, most recent first, each reusing the Dashboard Recent Results
+   card's own row/column styling (uncapped here) plus a full per-class
+   stats table below (every column DriverResults/SeasonHistory can supply,
+   Matt's call: "a plethora of numbers and stats"). */
+.rc-results-round-list { display: flex; flex-direction: column; gap: 16px; }
+/* Nested container -- a bordered box (not a full rc-panel shadow, since
+   these sit inside the season's own rc-panel) per race event, same
+   "gray border" weight Calendar's own per-race cards use
+   (.rc-cal-race). */
+.rc-results-round { border: 2px solid var(--rc-offwhite); border-radius: 10px; padding: 16px 18px; }
+.rc-results-round .rc-hint { margin-top: 2px; margin-bottom: 8px; display: block; }
+.rc-results-round-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
+.rc-results-round-track { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
+.rc-results-season-standings { margin-bottom: 16px; }
+
+.rc-results-stat-strip { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 10px 0 14px; padding: 10px 0; border-top: 1px solid var(--rc-offwhite); border-bottom: 1px solid var(--rc-offwhite); }
+.rc-results-stat { min-width: 0; }
+.rc-results-stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 2px; }
+.rc-results-stat-value { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 700; color: var(--rc-carbon); white-space: nowrap; }
+
+.rc-results-class { margin-top: 16px; }
+.rc-results-class-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+
+.rc-results-table-wrap { overflow-x: auto; }
+.rc-results-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.rc-results-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--rc-steel); font-weight: 700; padding: 6px 10px; border-bottom: 2px solid var(--rc-offwhite); white-space: nowrap; }
+.rc-results-table td { padding: 6px 10px; border-bottom: 1px solid var(--rc-offwhite); white-space: nowrap; color: var(--rc-carbon); }
+.rc-results-table tbody tr:last-child td { border-bottom: none; }
+.rc-results-row-you { background: var(--rc-offwhite); font-weight: 700; }
+.rc-results-td-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); }
+.rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
+/* Full finishing order -- one compact grid row per driver, position /
+   name+car#, two-column shape (team name dropped, 2026-09-07) the whole
+   way down so numbers and names both line up. */
+.rc-recent-results-table { display: flex; flex-direction: column; }
+.rc-recent-results-row { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--rc-offwhite); font-size: 12.5px; }
+.rc-recent-results-row:first-child { border-top: none; }
+.rc-recent-results-row-you { background: var(--rc-offwhite); border-radius: 4px; padding-left: 6px; margin-left: -6px; padding-right: 6px; margin-right: -6px; font-weight: 700; }
+.rc-recent-results-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+.rc-recent-results-driver { display: flex; align-items: center; gap: 5px; color: var(--rc-carbon); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Manufacturer logo, inline between driver name and car number
+   (2026-09-07) -- capped at exactly the row's own font height (Matt's
+   call: "shouldn't be taller than the font is tall"), never the row's
+   full line-height, so it never pushes the row taller than plain text
+   would. Car number uses its own class (not the sitewide .rc-hint, which
+   carries a margin-top that broke vertical centering against the logo,
+   2026-09-07 fix) so both sit dead center on the flex row's cross axis. */
+.rc-recent-results-mfr-logo { height: 1em; width: auto; max-width: 1.8em; object-fit: contain; flex: none; }
+.rc-recent-results-carnum { color: var(--rc-steel); font-size: 12px; flex: none; }
 
 /* Sponsorship Outlook -- same two-column bonus/penalty grid the Sponsors
    page's "Sponsor Goals" uses (rc-sponsor-goals-*), reused verbatim here
@@ -3323,6 +3490,16 @@ body.rc-modal-scroll-locked {
 @media (max-width: 640px) {
   .rc-wiz-field-row { grid-template-columns: 1fr; }
   .rc-wiz-field-row .rc-wiz-field { grid-column: auto !important; }
+}
+/* Three-equal-column version (2026-09-08, the Protest form's Race/Lap
+   Number/Infraction Type row and its Driver Involved 1/2/3 row) -- unlike
+   .rc-wiz-field-row's 4-column grid with per-field spans, this is always
+   exactly three equal columns, no spans needed. */
+.rc-wiz-field-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 16px; margin-top: 18px; }
+.rc-wiz-field-row-3:first-child { margin-top: 0; }
+.rc-wiz-field-row-3 .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
+@media (max-width: 640px) {
+  .rc-wiz-field-row-3 { grid-template-columns: 1fr; }
 }
 /* Special event bonus category payouts -- two columns of label+box pairs
    instead of one long stacked column (Matt's call). */
