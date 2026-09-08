@@ -3034,37 +3034,48 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background-repeat: no-repeat;
   background-color: var(--rc-carbon);
 }
-/* Portrait phones, AND a plain narrow desktop browser window, get a
-   dedicated portrait-shaped image instead of the standard landscape one
-   cropped/shrunk to fit. Two conditions, combined with a comma (CSS media
-   queries are logical OR when comma-separated, not AND):
-     - `orientation: portrait` -- re-evaluates live as a phone is rotated,
-       no JS needed. Flip the phone sideways and this stops matching, so
-       it falls back to the plain .rc-hero rule above.
-     - `max-width: 400px` -- added 2026-09-08 (Matt's report: "when the
-       browser window width shrinks, the banner extends beyond the
-       browser window... I want the width to scale down until it's at the
-       point where a vertical banner is more appropriate"; threshold moved
-       700px -> 550px -> 400px the same day, Matt's follow-up calls). A
-       desktop window can be narrowed a long way in WIDTH while staying
-       wider than it is tall the whole time (e.g. 450px wide x 900px tall
-       never trips `orientation: portrait` since that only fires once
-       width drops below height) -- with only the orientation check, that
-       case kept showing the wide landscape photo `background-size: cover`
-       into an ever-narrower box, so the framing (the row of cars the
-       photo is built around) kept getting cropped tighter and tighter
-       until barely any of it was left on screen. 400px is this rule's own
-       number, not tied to this file's other "go to the narrow/mobile
-       layout" breakpoints (several of which do still use 700px elsewhere
-       in this file for unrelated layout switches -- only this hero image
-       swap moved) -- below it, the portrait image (already framed to
-       work as a narrow vertical crop) takes over instead of the
-       landscape one squeezing further. The old approach here (same image
-       at a smaller `background-size: contain` on any narrow viewport) is
-       gone now that there's a proper portrait image to switch to --
-       "cover" looks right on it without needing to shrink/letterbox
-       anything. */
-@media (max-width: 400px), (orientation: portrait) {
+/* A dedicated portrait-shaped image takes over from the standard
+   landscape one once the window's own SHAPE actually calls for it --
+   not a fixed pixel number in either dimension alone. History of how
+   this rule got here, all 2026-09-08, Matt's session:
+     1. Started as `max-width: 700px` (his report: "when the browser
+        window width shrinks, the banner extends beyond the browser
+        window... I want the width to scale down until it's at the point
+        where a vertical banner is more appropriate"), tightened to 550px
+        then 400px on follow-up asks for it to trigger later.
+     2. That was briefly OR'd with `(orientation: portrait)` too (fires
+        once a window is taller than it is wide) -- pulled back out when
+        Matt reported it "still flipping at 760px": with his browser
+        window around 760px tall, narrowing WIDTH below 760 alone made
+        the window taller-than-wide, tripping orientation regardless of
+        the max-width number, so the swap point was really "however tall
+        your window happens to be," not the pixel value he kept asking
+        for.
+     3. Pure width alone (just `max-width: 400px`, no orientation) was
+        tried next -- Matt didn't want this either ("I don't want it
+        driven by width alone... I want it to make sense"): a fixed
+        width ignores height completely, so a short-but-wide window could
+        cross under 400px and switch to portrait despite having plenty of
+        room, while a very tall narrow-ish window could stay on the
+        landscape crop too long.
+     4. Landed here: `aspect-ratio`, which is a genuine width-VS-height
+        comparison, not either dimension in isolation -- it reacts
+        correctly no matter how tall or short the window is. The
+        threshold itself, `max-aspect-ratio: 2/3`, is deliberately NOT
+        "as soon as the window stops being wide" (e.g. 1/1, square) --
+        Matt's follow-up call: "the banner isn't made for a square
+        orientation, just portrait, so it looks odd" when it flipped too
+        early. 2/3 is banner-portrait.jpg's OWN pixel ratio (1024x1536) --
+        the swap only happens once the window's box is at least that
+        portrait-shaped itself, so the image is never asked to fill a box
+        meaningfully squarer than the photo it's built for. Below that
+        point the landscape banner.jpg (2:1) stays put and just keeps
+        cropping tighter off the right (see the left-anchored
+        background-position on the plain .rc-hero rule above) --
+        genuinely square-ish windows now stay on the landscape crop
+        rather than switching to a portrait image that doesn't fit that
+        shape either. */
+@media (max-aspect-ratio: 2/3) {
   /* background-position overridden to `left top` here (2026-09-08, Matt's
      follow-up: "make the top stick to the top of the window when changing
      size") -- same reasoning as the left-anchored crop above, just for
