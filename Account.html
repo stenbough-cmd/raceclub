@@ -6524,7 +6524,7 @@
       table.className = 'rc-results-table';
       var thead = document.createElement('thead');
       var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen'].forEach(function (h) {
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Inc/TL/Pen'].forEach(function (h) {
         var th = document.createElement('th');
         th.textContent = h;
         headRow.appendChild(th);
@@ -6579,14 +6579,31 @@
         plainTd(r.classGridPos || r.gridPos || '');
         plainTd(r.laps || '');
         plainTd(r.pitstops || '');
-        plainTd(r.bestLapTime || '');
+        // Purple font for whoever set the class's fastest lap (2026-09-09,
+        // Matt's call: "make the fastest lap guy purple font") -- same
+        // purple-for-fastest-lap convention real motorsport timing
+        // screens use. Formatted through the same _rcFormatTotalTime_
+        // helper as the Total Time column (2026-09-09, Matt's call: "make
+        // the fastest lap formatted the same as the total time") -- the
+        // backend/XML source (BestLapTime) is always a raw decimal-seconds
+        // string like "83.4508", never pre-formatted, confirmed against a
+        // real race XML sample.
+        var bestLapSeconds = r.bestLapTime ? parseFloat(r.bestLapTime) : null;
+        var bestLapTd = plainTd((bestLapSeconds !== null && !isNaN(bestLapSeconds)) ? _rcFormatTotalTime_(bestLapSeconds) : '');
+        if (r.wonFastestLap) bestLapTd.style.color = '#9b30d9';
         plainTd(_rcFormatTotalTime_(r.finishTimeSeconds));
         plainTd(r.points === null ? '' : r.points);
         var moneyTd = plainTd(r.moneyDelta === null ? '' : ((r.moneyDelta >= 0 ? '+' : '') + formatMoney(r.moneyDelta)));
         if (r.moneyDelta !== null) moneyTd.style.color = r.moneyDelta >= 0 ? 'var(--rc-green, #2e7d32)' : 'var(--rc-red)';
-        plainTd(r.isCleanRace === null ? '' : (r.isCleanRace ? 'Yes' : 'No'));
         var incBits = [r.incidentsCount || 0, r.trackLimitsCount || 0, r.penaltiesCount || 0];
-        plainTd(incBits.join(' / '));
+        // Clean-race column dropped in favor of blue font right on the
+        // incidents/track-limits/penalties cell itself (2026-09-09, Matt's
+        // call: "make clean racers blue font and remove the clean column")
+        // -- a clean race already means these three numbers are all zero,
+        // so coloring the cell says the same thing the old Yes/No column
+        // did without needing a column of its own.
+        var incTd = plainTd(incBits.join(' / '));
+        if (r.isCleanRace === true) incTd.style.color = '#2f6fed';
 
         tbody.appendChild(tr);
       });
@@ -6713,6 +6730,17 @@
       }
 
       section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+
+      // Info paragraph under the page header (2026-09-09, Matt's call: "give
+      // some info about the results page under the results header") --
+      // explains the leaderboard/per-race layout and what the color coding
+      // in the results tables means, and ties results back into the same
+      // sponsors/wagers/reputation systems the Protests page paragraph
+      // references, since a result here is never just a finishing position.
+      // Reuses rc-sponsors-explainer, same explainer-paragraph class every
+      // other page already uses above its howto/content.
+      section.appendChild(el('p', 'rc-sponsors-explainer',
+        'Every round lands here the moment it\'s scored -- your class leaderboard up top, then a full breakdown race by race. Purple marks whoever set the fastest lap, red rows are a DNF or DSQ, and blue text on incidents/track limits/penalties flags a clean race. Points and money in these tables are already final: sponsor bonuses and penalties, wager payouts, and reputation shifts have all been applied before a result ever reaches this page.'));
 
       // One outer container for the whole page (2026-09-08, Matt's call),
       // same rc-dash-card chrome the Calendar page's season panel already
