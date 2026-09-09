@@ -2276,6 +2276,26 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 #rc-section-finances .rc-fin-hero-card .rc-dash-card-title { border-bottom-color: var(--rc-red); }
 #rc-section-finances .rc-fin-hero-card.rc-dash-card::before { background: var(--rc-red); }
 
+/* Same gray-accent exception as Finances, applied one card at a time on
+   pages that otherwise keep the red rc-dash-card convention (2026-09-09,
+   Matt's call: "make wager history, protests, all sponsors, bonus and
+   penalty triggers containers the same gray style border and lines as
+   transaction ledger") -- Wager History (Wager page), the Protests-page
+   protest history list, All Sponsors and Bonus & Penalty Triggers
+   (Sponsors page) each get their own class here rather than a section-
+   wide rule like Finances gets, since every OTHER card on these same
+   pages (File a Protest, the Wager trading card, Sponsor Goals, etc.)
+   is meant to stay red. Higher specificity than the plain .rc-dash-card-
+   title/::before rules further up, so no !important needed. */
+.rc-wager-history-panel .rc-dash-card-title,
+.rc-protest-history-panel .rc-dash-card-title,
+.rc-sponsor-table-panel .rc-dash-card-title,
+.rc-trigger-glossary-panel .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
+.rc-wager-history-panel.rc-dash-card::before,
+.rc-protest-history-panel.rc-dash-card::before,
+.rc-sponsor-table-panel.rc-dash-card::before,
+.rc-trigger-glossary-panel.rc-dash-card::before { background: var(--rc-silver); }
+
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
    and the matching Dashboard preview card (wagerCard). */

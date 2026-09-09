@@ -2801,7 +2801,7 @@
 
   // ---- Bottom container: Wager History ----
   function buildWagerHistoryPanel(wagers) {
-    var card = el('div', 'rc-panel rc-dash-card');
+    var card = el('div', 'rc-panel rc-dash-card rc-wager-history-panel');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Wager History'));
 
     if (!wagers || !wagers.success) {
@@ -7009,7 +7009,7 @@
   var RC_PROTEST_PREVIEW_COUNT = 10;
 
   function buildMyProtestsHistoryPanel(token, protests, totalCount, onChanged) {
-    var panel = el('div', 'rc-panel rc-dash-card');
+    var panel = el('div', 'rc-panel rc-dash-card rc-protest-history-panel');
     panel.style.cssText = 'margin-top:16px;';
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
     if (!protests.length) {
