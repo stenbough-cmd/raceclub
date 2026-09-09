@@ -6026,6 +6026,361 @@
     return block;
   }
 
+  // =======================================================================
+  // RACE RECAP ARTICLES (2026-09-09, Matt's call: "instead of the pills
+  // showing what the player won/got/taken from them... make it feel like a
+  // reporter wrote it"). Replaces the old chip row under "your" result on
+  // the Results page with a two-paragraph recap in a pull-quote, byline
+  // underneath: paragraph 1 is personalized to whoever's viewing (built
+  // from race.you), paragraph 2 is the shared "rest of the field" story,
+  // the same for every viewer of that round, with a fake reporter/mag
+  // byline attached to whichever field template got picked.
+  //
+  // WHICH template number applies to a given round (and driver, for
+  // paragraph 1) is decided once and permanently remembered by the
+  // backend -- see race.driverRecapTemplateIndex / race.fieldRecapTemplate
+  // Index, and _rcGetOrAssignRecapTemplateIndex_ in DataCache.gs, which
+  // also enforces "never repeat within a season" (separately per driver
+  // for paragraph 1, per season for the shared paragraph 2). This file
+  // only owns what each template number actually SAYS.
+  //
+  // Each template is a full, flexible ARTICLE STRUCTURE, not a script for
+  // one specific outcome -- the same template number has to read
+  // naturally whether the driver podiumed, finished mid-pack, or didn't
+  // finish at all, since assignment doesn't know in advance what actually
+  // happened. That is what the small _rcRecap*_ helpers below are for:
+  // every template branches on the real data through them rather than
+  // assuming a result shape.
+  //
+  // FIRST DRAFTING BATCH (Matt's call: "draft 4-5 first, then the rest")
+  // -- 5 of each for now, not the full 20. RC_RECAP_DRIVER_TEMPLATE_COUNT/
+  // RC_RECAP_FIELD_TEMPLATE_COUNT in DataCache.gs must always equal these
+  // two arrays' lengths -- bump all three together when more are added,
+  // or newly-assignable indices will never actually get selected.
+  // =======================================================================
+
+  // "1:04.221" for a gap at or past a minute, plain "12.904s" under one --
+  // matches how a real timing screen would round a margin, never inventing
+  // more precision than the source data (FinishTime, DriverResults.gs)
+  // actually carries.
+  function _rcRecapGapText_(sec) {
+    if (sec === null || sec === undefined) return '';
+    var abs = Math.abs(sec);
+    if (abs >= 60) {
+      var m = Math.floor(abs / 60);
+      var s = abs - m * 60;
+      return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
+    }
+    return abs.toFixed(3) + 's';
+  }
+
+  // "up from P9 on the grid" / "down from P4 on the grid" / "" -- only
+  // speaks up when there's an actual move to report.
+  function _rcRecapGridMoveClause_(you) {
+    if (!you || !you.classGridPos || !you.classPosition) return '';
+    var diff = you.classGridPos - you.classPosition;
+    if (diff > 0) return 'up from P' + you.classGridPos + ' on the grid';
+    if (diff < 0) return 'down from P' + you.classGridPos + ' on the grid';
+    return '';
+  }
+
+  function _rcRecapIsDnf_(row) {
+    return !!row && /DNF|DSQ|Disqualif/i.test(row.finishStatus || '');
+  }
+
+  function _rcRecapFirstSponsorHit_(you) {
+    if (!you || !you.sponsorHits) return null;
+    return you.sponsorHits.filter(function (s) { return s.bonusTriggered || s.penaltyTriggered; })[0] || null;
+  }
+
+  // Whichever class the shared field paragraph leads with -- this league's
+  // own top class (Hypercar, per CAR_CLASS_LIST's order, same source
+  // js/reference-data.js every other class list on the site already
+  // reads) if the round has one, otherwise just the first class present.
+  function _rcRecapLeadClass_(race) {
+    if (!race.classes || !race.classes.length) return null;
+    var order = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : [];
+    var byRank = race.classes.slice().sort(function (a, b) {
+      var ai = order.indexOf(a.className), bi = order.indexOf(b.className);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return bi - ai; // reversed -- top class first
+    });
+    return byRank[0] || race.classes[0];
+  }
+
+  // Closest fight anywhere in the field this round -- the smallest
+  // gap-to-the-car-ahead among every classified finisher outside the
+  // class winner, across every class (not just the lead one), since the
+  // tightest battle of the day isn't always at the front.
+  function _rcRecapClosestBattle_(race) {
+    var best = null;
+    (race.classes || []).forEach(function (cls) {
+      (cls.standings || []).forEach(function (row, i) {
+        if (i === 0 || row.gapToAheadSeconds === null || row.gapToAheadSeconds === undefined) return;
+        var gap = Math.abs(row.gapToAheadSeconds);
+        if (!best || gap < best.gap) best = { gap: gap, row: row, ahead: cls.standings[i - 1], className: cls.className };
+      });
+    });
+    return best;
+  }
+
+  function _rcRecapDnfCount_(race) {
+    var n = 0;
+    (race.classes || []).forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (_rcRecapIsDnf_(r)) n++; }); });
+    return n;
+  }
+
+  function _rcRecapClassPointsLeader_(cls) {
+    return (cls && cls.standings || []).filter(function (r) { return r.seasonPosition === 1; })[0] || null;
+  }
+
+  // ---- Paragraph 1: personalized to whoever's viewing (race.you) -------
+  var RC_RECAP_DRIVER_TEMPLATES = [
+    // 0 -- result-first, then color: states the finish plainly, then adds
+    // whatever else is worth mentioning.
+    function (you, race) {
+      var name = you.name || 'the driver';
+      var cls = you.carClass || 'the field';
+      var event = race.eventName || race.track || 'the round';
+      var bits = [];
+      if (_rcRecapIsDnf_(you)) {
+        bits.push(name + '’s race at ' + event + ' ended before the checkered flag' +
+          (you.dnfReason ? ', ' + you.dnfReason.toLowerCase() + ' the culprit' : '') + '.');
+      } else if (you.classPosition) {
+        bits.push(name + ' brought it home P' + you.classPosition + ' in ' + cls + ' at ' + event + '.');
+      } else {
+        bits.push(name + '’s day at ' + event + ' didn’t end with a result on the board.');
+      }
+      var gridClause = _rcRecapGridMoveClause_(you);
+      if (gridClause) bits.push('That was a drive ' + gridClause + ', for whatever that’s worth once the numbers are official.');
+      if (you.wonFastestLap) bits.push('The fastest lap in ' + cls + ' belonged to ' + name + ' regardless of where the race itself ended up.');
+      if (you.points) {
+        bits.push(name + ' takes ' + you.points + ' points from it' +
+          (you.seasonPosition ? ', sitting P' + you.seasonPosition + (you.seasonPositionOutOf ? ' of ' + you.seasonPositionOutOf : '') + ' in the ' + cls + ' order now' : '') + '.');
+      }
+      var sponsor = _rcRecapFirstSponsorHit_(you);
+      if (sponsor) bits.push(sponsor.bonusTriggered ? sponsor.name + ' paid out as promised.' : sponsor.name + ' will not be pleased.');
+      return bits.join(' ');
+    },
+    // 1 -- opens on the grid-to-flag arc (a "story of the race" framing),
+    // useful whether that arc trended up or down.
+    function (you, race) {
+      var name = you.name || 'the driver';
+      var cls = you.carClass || 'the field';
+      var bits = [];
+      var startText = you.classGridPos ? 'off P' + you.classGridPos + ' on the grid' : 'from wherever qualifying left them';
+      if (_rcRecapIsDnf_(you)) {
+        bits.push(name + ' started ' + startText + ' and never saw the checkered flag' +
+          (you.dnfReason ? ' -- ' + you.dnfReason.toLowerCase() : '') + '.');
+      } else if (you.classPosition) {
+        var moved = you.classGridPos && you.classGridPos !== you.classPosition;
+        bits.push(name + ' started ' + startText + ' and crossed the line P' + you.classPosition +
+          (moved ? (you.classGridPos > you.classPosition ? ', clawing back ground all race long' : ', unable to hold the position') : ', right about where they started') + '.');
+      } else {
+        bits.push(name + ' started ' + startText + ' but the result never made it to the sheet.');
+      }
+      if (you.incidentsCount || you.penaltiesCount) {
+        bits.push('It wasn’t the cleanest version of that race either -- ' +
+          [you.incidentsCount ? you.incidentsCount + ' logged incident' + (you.incidentsCount === 1 ? '' : 's') : '',
+            you.penaltiesCount ? you.penaltiesCount + ' penalt' + (you.penaltiesCount === 1 ? 'y' : 'ies') : '']
+            .filter(Boolean).join(' and ') + ' along the way.');
+      } else if (you.isCleanRace === true) {
+        bits.push('Not a mark against the name all race -- a clean one, start to finish.');
+      }
+      if (you.wonMostLapsLed) bits.push(name + ' led more of it than anyone else in ' + cls + '.');
+      if (you.moneyDelta) bits.push('The bank account moved ' + (you.moneyDelta >= 0 ? 'up ' : 'down ') + formatMoney(Math.abs(you.moneyDelta)) + ' on the back of it.');
+      return bits.join(' ');
+    },
+    // 2 -- ledger/accounting voice: leads with what the round actually
+    // cost or paid, then the on-track detail.
+    function (you, race) {
+      var name = you.name || 'the driver';
+      var cls = you.carClass || 'the field';
+      var bits = [];
+      var moneyBit = you.moneyDelta !== null ? (you.moneyDelta >= 0 ? name + '’s account is up ' + formatMoney(you.moneyDelta) : name + '’s account is down ' + formatMoney(Math.abs(you.moneyDelta))) + ' after ' + (race.eventName || race.track || 'the round') + '.' : name + '’s finances didn’t move much after ' + (race.eventName || race.track || 'the round') + '.';
+      bits.push(moneyBit);
+      if (_rcRecapIsDnf_(you)) {
+        bits.push('The number tells most of the story on its own -- the car didn’t see the finish.');
+      } else if (you.classPosition) {
+        bits.push('On track, that was a P' + you.classPosition + ' in ' + cls + (you.points ? ' worth ' + you.points + ' points' : '') + '.');
+      }
+      var sponsor = _rcRecapFirstSponsorHit_(you);
+      if (sponsor) bits.push((sponsor.bonusTriggered ? sponsor.name + '’s bonus clause did the heavy lifting.' : sponsor.name + '’s penalty clause bit into it.'));
+      if (you.wonPole) bits.push('Pole position was banked before a wheel was turned in anger.');
+      if (you.seasonPodiums) bits.push('That’s podium number ' + you.seasonPodiums + ' on the season for ' + name + '.');
+      return bits.join(' ');
+    },
+    // 3 -- measured, third-person "beat writer" voice: understated, states
+    // facts in sequence without much editorializing.
+    function (you, race) {
+      var name = you.name || 'the driver';
+      var cls = you.carClass || 'the field';
+      var bits = [];
+      bits.push(name + ' was entered in ' + cls + ' for ' + (race.eventName || race.track || 'this round') + '.');
+      if (_rcRecapIsDnf_(you)) {
+        bits.push('The result: did not finish' + (you.dnfReason ? ', ' + you.dnfReason.toLowerCase() : '') + '.');
+      } else if (you.classPosition) {
+        bits.push('The result: P' + you.classPosition + (you.laps ? ' after ' + you.laps + ' laps' : '') + '.');
+      } else {
+        bits.push('No classified result was recorded.');
+      }
+      if (you.qualifyingPos) bits.push('Qualifying had them P' + you.qualifyingPos + '.');
+      if (you.trackLimitsCount) bits.push(you.trackLimitsCount + ' track limits violation' + (you.trackLimitsCount === 1 ? '' : 's') + ' went on the sheet.');
+      if (you.wonFastestLap) bits.push('Fastest lap of the class was theirs.');
+      if (you.points) bits.push(you.points + ' championship points follow.');
+      return bits.join(' ');
+    },
+    // 4 -- direct-address, second person ("you") -- the one template that
+    // speaks straight to the viewer rather than narrating them in third
+    // person, for variety in voice across the pool.
+    function (you, race) {
+      var cls = you.carClass || 'the field';
+      var bits = [];
+      if (_rcRecapIsDnf_(you)) {
+        bits.push('Not the result you wanted at ' + (race.eventName || race.track || 'this round') + ' -- your race ended before the flag' +
+          (you.dnfReason ? ', ' + you.dnfReason.toLowerCase() : '') + '.');
+      } else if (you.classPosition) {
+        bits.push('You crossed the line P' + you.classPosition + ' in ' + cls +
+          (you.classGridPos && you.classGridPos > you.classPosition ? ', better than the grid slot you started from.' :
+            (you.classGridPos && you.classGridPos < you.classPosition ? ', a step behind where qualifying had you.' : '.')));
+      } else {
+        bits.push('Your name didn’t make it onto the classified results this time.');
+      }
+      if (you.isCleanRace === true) bits.push('You kept it clean the entire way, for what that’s worth to the stewards.');
+      if (you.wonMostLapsLed) bits.push('You spent more time at the front of ' + cls + ' than anyone else did.');
+      if (you.points) bits.push('That’s ' + you.points + ' points in your pocket for the effort.');
+      var sponsor = _rcRecapFirstSponsorHit_(you);
+      if (sponsor) bits.push(sponsor.bonusTriggered ? sponsor.name + ' owes you a payout.' : sponsor.name + ' isn’t going to like this one.');
+      return bits.join(' ');
+    }
+  ];
+
+  // ---- Paragraph 2: the shared field/podium/battles story, plus byline -
+  var RC_RECAP_FIELD_TEMPLATES = [
+    // 0
+    {
+      mag: 'Apex Weekly', reporter: 'Marguerite Voss',
+      build: function (race) {
+        var cls = _rcRecapLeadClass_(race);
+        var bits = [];
+        if (race.overallWinner) bits.push(race.overallWinner + ' took the overall win at ' + (race.eventName || race.track || 'the round') + '.');
+        if (cls && cls.standings && cls.standings[1] && cls.standings[2]) {
+          var gap = cls.standings[2].gapToLeaderSeconds;
+          bits.push(cls.standings[0].name + ' headed home ' + cls.standings[1].name + ' and ' + cls.standings[2].name + ' for a clean ' + cls.className + ' podium' +
+            (gap !== null && gap !== undefined ? ', covered by ' + _rcRecapGapText_(gap) + ' from first to third' : '') + '.');
+        }
+        var battle = _rcRecapClosestBattle_(race);
+        if (battle) bits.push('The closest margin of the day belonged to ' + battle.row.name + ' and ' + battle.ahead.name + ' in ' + battle.className + ', split by just ' + _rcRecapGapText_(battle.gap) + '.');
+        var dnfs = _rcRecapDnfCount_(race);
+        if (dnfs) bits.push(dnfs + ' car' + (dnfs === 1 ? '' : 's') + ' failed to see the checkered flag.');
+        return bits.join(' ');
+      }
+    },
+    // 1
+    {
+      mag: 'The Chicane Report', reporter: 'Colm Faraday',
+      build: function (race) {
+        var cls = _rcRecapLeadClass_(race);
+        var bits = [];
+        if (race.overallPoleSitter) bits.push(race.overallPoleSitter + ' started it from the front, and the field spent the rest of the afternoon reacting to that.');
+        if (race.overallFastestLapDriver) bits.push('The fastest lap of the day went to ' + race.overallFastestLapDriver + (race.overallFastestLapTime ? ' at ' + race.overallFastestLapTime : '') + '.');
+        if (cls && cls.classWinner) bits.push(cls.classWinner + ' took ' + cls.className + ' honors' + (cls.totalInClass ? ' out of a field of ' + cls.totalInClass : '') + '.');
+        var leader = cls ? _rcRecapClassPointsLeader_(cls) : null;
+        if (leader) bits.push(leader.name + ' remains at the top of the ' + cls.className + ' standings after this one.');
+        return bits.join(' ');
+      }
+    },
+    // 2
+    {
+      mag: 'Slipstream Monthly', reporter: 'Priya Nakamura',
+      build: function (race) {
+        var cls = _rcRecapLeadClass_(race);
+        var bits = [];
+        var battle = _rcRecapClosestBattle_(race);
+        if (battle) {
+          bits.push('Forget the winner for a moment -- the real fight was ' + battle.row.name + ' against ' + battle.ahead.name + ' in ' + battle.className + ', decided by ' + _rcRecapGapText_(battle.gap) + '.');
+        } else if (race.overallWinner) {
+          bits.push(race.overallWinner + ' controlled ' + (race.eventName || race.track || 'the round') + ' with little argument from the rest of the field.');
+        }
+        if (cls && cls.standings && cls.standings[0]) {
+          bits.push(cls.standings[0].name + ' led the ' + cls.className + ' class home' + (cls.standings[0].laps ? ' after ' + cls.standings[0].laps + ' laps' : '') + '.');
+        }
+        var dnfs = _rcRecapDnfCount_(race);
+        if (dnfs) bits.push('Attrition claimed ' + dnfs + ' entr' + (dnfs === 1 ? 'y' : 'ies') + ' before the finish.');
+        return bits.join(' ');
+      }
+    },
+    // 3
+    {
+      mag: 'Grid Talk', reporter: 'Dez Okonkwo',
+      build: function (race) {
+        var cls = _rcRecapLeadClass_(race);
+        var bits = [];
+        bits.push((race.totalFinishers || 0) + ' cars were classified at the finish of ' + (race.eventName || race.track || 'the round') + '.');
+        if (race.overallWinner) bits.push(race.overallWinner + ' was the one who mattered when the flag came out.');
+        if (cls && cls.standings && cls.standings[1]) {
+          var gap = cls.standings[1].gapToLeaderSeconds;
+          bits.push('Second in ' + cls.className + ' went to ' + cls.standings[1].name +
+            (gap !== null && gap !== undefined ? ', ' + _rcRecapGapText_(gap) + ' adrift at the flag' : '') + '.');
+        }
+        var leader = cls ? _rcRecapClassPointsLeader_(cls) : null;
+        if (leader && leader.seasonPoints !== null) bits.push(leader.name + ' leads the ' + cls.className + ' points table on ' + leader.seasonPoints + '.');
+        return bits.join(' ');
+      }
+    },
+    // 4
+    {
+      mag: 'Full Course Digest', reporter: 'Talia Renard',
+      build: function (race) {
+        var cls = _rcRecapLeadClass_(race);
+        var bits = [];
+        if (cls && cls.standings && cls.standings[0] && cls.standings[1] && cls.standings[2]) {
+          bits.push('The ' + cls.className + ' podium reads ' + cls.standings[0].name + ', ' + cls.standings[1].name + ', ' + cls.standings[2].name + ' -- in that order, for the record.');
+        } else if (race.overallWinner) {
+          bits.push(race.overallWinner + ' takes the result at ' + (race.eventName || race.track || 'the round') + '.');
+        }
+        if (race.overallFastestLapDriver && race.overallFastestLapDriver !== (cls && cls.standings && cls.standings[0] && cls.standings[0].name)) {
+          bits.push('Fastest lap went elsewhere, to ' + race.overallFastestLapDriver + '.');
+        }
+        var dnfs = _rcRecapDnfCount_(race);
+        if (dnfs) bits.push('Not everyone made it that far -- ' + dnfs + ' retirement' + (dnfs === 1 ? '' : 's') + ' on the day.');
+        else bits.push('A clean day for attrition -- everyone who started saw the flag.');
+        return bits.join(' ');
+      }
+    }
+  ];
+
+  // Builds the quote-block DOM (or null if there's nothing to show --
+  // e.g. neither template pool has anything usable yet). Escapes each
+  // paragraph string as a whole since none of it contains real markup,
+  // only interpolated plain-text field values.
+  function buildRaceRecapBlock(race) {
+    var driverPara = '', fieldPara = '', byline = '';
+    if (race.you && race.driverRecapTemplateIndex !== null && race.driverRecapTemplateIndex !== undefined) {
+      var driverFn = RC_RECAP_DRIVER_TEMPLATES[race.driverRecapTemplateIndex % RC_RECAP_DRIVER_TEMPLATES.length];
+      if (driverFn) driverPara = driverFn(race.you, race) || '';
+    }
+    if (race.fieldRecapTemplateIndex !== null && race.fieldRecapTemplateIndex !== undefined) {
+      var fieldTpl = RC_RECAP_FIELD_TEMPLATES[race.fieldRecapTemplateIndex % RC_RECAP_FIELD_TEMPLATES.length];
+      if (fieldTpl) {
+        fieldPara = fieldTpl.build(race) || '';
+        if (fieldPara) byline = fieldTpl.reporter + ', ' + fieldTpl.mag;
+      }
+    }
+    if (!driverPara && !fieldPara) return null;
+
+    var wrap = el('div', 'rc-recap');
+    var quote = document.createElement('blockquote');
+    quote.className = 'rc-recap-quote';
+    if (driverPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(driverPara)));
+    if (fieldPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(fieldPara)));
+    wrap.appendChild(quote);
+    if (byline) wrap.appendChild(el('div', 'rc-recap-byline', '· ' + escapeHtml(byline)));
+    return wrap;
+  }
+
   function resultsRoundPanel(race) {
     var you = race.you;
     var panel = el('div', 'rc-results-round');
@@ -6060,32 +6415,19 @@
     ].forEach(function (block) { if (block) statStrip.appendChild(block); });
     if (statStrip.childNodes.length) panel.appendChild(statStrip);
 
+    // Race recap article (2026-09-09, Matt's call) -- replaces the old
+    // pill/chip row entirely. Paragraph 1 (personalized, off race.you) only
+    // renders when this driver was actually in the round; paragraph 2 (the
+    // shared field story) renders regardless, so a round still gets its
+    // recap even for a viewer who sat it out. See buildRaceRecapBlock
+    // above for the full story on template selection/no-repeat.
+    var recapBlock = buildRaceRecapBlock(race);
+    if (recapBlock) panel.appendChild(recapBlock);
     if (you) {
       var yourRace = el('div', 'rc-recent-results-yours');
       if (!you.position) yourRace.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
-      var chips = el('div', 'rc-recent-results-yours-chips');
-      if (you.points !== null) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-positive', '+' + you.points + ' PTS'));
-      if (you.moneyDelta !== null) {
-        var moneyLabel = 'TOTAL ' + (you.moneyDelta >= 0 ? '+' : '-') + formatMoney(Math.abs(you.moneyDelta));
-        chips.appendChild(el('span', 'rc-badge-chip rc-badge-result ' + (you.moneyDelta >= 0 ? 'rc-badge-result-positive' : 'rc-badge-result-negative'), moneyLabel));
-      }
-      if (you.qualifyingPos) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', 'Qualified P' + you.qualifyingPos));
-      if (you.wonPole) chips.appendChild(el('span', 'rc-badge-chip rc-badge-cartier rc-badge-cartier-elite', 'Pole'));
-      if (you.wonFastestLap) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-fastestlap', 'Fastest Lap'));
-      if (you.wonMostLapsLed) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-mostlapsled', 'Most Laps Led'));
-      if (you.isCleanRace === true) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-clean', 'Clean Race'));
-      if (you.laps) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', you.laps + ' Laps'));
-      if (you.pitstops) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-neutral', you.pitstops + ' Pit Stop' + (you.pitstops === 1 ? '' : 's')));
-      if (you.incidentsCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.incidentsCount + ' Incident' + (you.incidentsCount === 1 ? '' : 's')));
-      if (you.trackLimitsCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.trackLimitsCount + ' Track Limits'));
-      if (you.penaltiesCount) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result rc-badge-result-negative', you.penaltiesCount + ' Penalt' + (you.penaltiesCount === 1 ? 'y' : 'ies')));
-      (you.sponsorHits || []).forEach(function (s) {
-        if (s.bonusTriggered) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result-sponsor', s.name + ' +' + formatMoney(s.bonusPayout)));
-        if (s.penaltyTriggered) chips.appendChild(el('span', 'rc-badge-chip rc-badge-result-sponsor', s.name + ' ' + formatMoney(s.penaltyPayout)));
-      });
-      if (chips.childNodes.length) yourRace.appendChild(chips);
       if (you.bankBalance !== null) yourRace.appendChild(el('div', 'rc-hint', 'Bank balance: ' + formatMoney(you.bankBalance)));
-      panel.appendChild(yourRace);
+      if (yourRace.childNodes.length) panel.appendChild(yourRace);
     }
 
     // Full per-class breakdown, one comprehensive table per class instead
