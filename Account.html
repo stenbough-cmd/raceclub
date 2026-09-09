@@ -4673,6 +4673,85 @@
     input.focus();
   }
 
+  // END SEASON -- moved here to the Admin page from League Management
+  // (2026-09-09, Matt's call: "only admins should be able to create and
+  // end seasons" -- both the League Management/Admin nav links are already
+  // gated on profile.role === 'Admin', and the backend's
+  // handleAdminArchiveSeason/handleCreateSeason both already call
+  // requireRole(admin, ['Admin']) too, so this move just keeps every
+  // irreversible season action living on the one page only admins can even
+  // see, alongside Create a Season). Unlike the old per-row League
+  // Management button, this page has no season already in hand when the
+  // button is clicked, so a season-picker step comes first here, THEN the
+  // same typed "END SEASON" confirmation every other irreversible admin
+  // action on the site uses (openTypeToConfirmModal) -- two separate
+  // popups in sequence, picking a season alone never ends it.
+  function openEndSeasonModal(token, reload) {
+    var body = el('div');
+    body.appendChild(buildSpinner('Loading seasons...'));
+    var modal = showModal('End Season', { bodyEl: body });
+
+    fetchApi('adminListSeasons', { token: token }).then(function (data) {
+      body.innerHTML = '';
+      if (!data.success) {
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
+        return;
+      }
+      // Same eligibility the old per-row button gated on: a season needs
+      // at least one posted race result (locked) and can't already be
+      // Completed -- ending a season that's already ended doesn't make
+      // sense, and a season with no races yet should be Deleted instead.
+      var eligible = (data.seasons || []).filter(function (s) { return s.locked && s.status !== 'Completed'; });
+      if (!eligible.length) {
+        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to end -- a season needs at least one posted race result, and can\'t already be Completed.'));
+        return;
+      }
+
+      body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', 'Choose which season to end.'));
+      var select = document.createElement('select');
+      eligible.forEach(function (s) { select.appendChild(new Option(s.name || s.seasonId, s.seasonId)); });
+      body.appendChild(wizField('Season', select, null));
+
+      var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+      var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+      cancelBtn.type = 'button';
+      cancelBtn.addEventListener('click', modal.close);
+      var continueBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Continue');
+      continueBtn.type = 'button';
+      continueBtn.addEventListener('click', function () {
+        var chosenId = select.value;
+        var chosen = eligible.filter(function (s) { return s.seasonId === chosenId; })[0];
+        // skipOnClose (true) -- the second popup opens right behind this
+        // one, no need to fire this modal's (nonexistent) onClose.
+        modal.close(true);
+        openTypeToConfirmModal(
+          'End Season',
+          'End "' + (chosen ? (chosen.name || chosenId) : chosenId) + '"? Ending a season is irreversible.',
+          'END SEASON',
+          'End Season',
+          function () {
+            fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId } }).then(function (data2) {
+              if (!data2.success) {
+                showToast(data2.message || 'Could not end this season.', 'error');
+                return;
+              }
+              showToast('Season ended.', 'success');
+              if (typeof reload === 'function') reload();
+            }).catch(function () {
+              showToast('Could not reach the server -- season not ended.', 'error');
+            });
+          }
+        );
+      });
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(continueBtn);
+      body.appendChild(btnRow);
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
+  }
+
   // Inline branded loading indicator (the "Starting Grid Lights" sequence
   // also used for full-page/section loading states) -- reused here for the
   // Season Wizard's "fetching tracks & cars" and "creating season" waits so
@@ -5316,60 +5395,15 @@
     });
     btnGroup.appendChild(racesToggleBtn);
 
-    if (s.locked) {
-      // Already raced -- Delete is refused server-side anyway, so the
-      // button isn't even offered. End Season (renamed from Archive,
-      // 2026-08-30 -- Matt's call, same handleAdminArchiveSeason call
-      // underneath, just a heavier typed-confirmation popup so hitting it
-      // takes real deliberation) only makes sense once -- a season
-      // already Completed has already been ended.
-      if (s.status !== 'Completed') {
-        var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-row', 'End Season');
-        endSeasonBtn.type = 'button';
-        endSeasonBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
-        endSeasonBtn.addEventListener('click', function () {
-          openTypeToConfirmModal(
-            'End Season',
-            'End "' + (s.name || s.seasonId) + '"? Ending a season is irreversible.',
-            'END SEASON',
-            'End Season',
-            function () {
-              // Instant, no wait on the server (2026-09-03, Matt's call:
-              // "all the admin/data management functions work the same"
-              // as the rest of the site). The confirm popup is already
-              // gone by the time this runs (openTypeToConfirmModal closes
-              // it before calling through); the row itself flips to
-              // Completed right away and the actual write happens
-              // silently in the background. A failure puts the status
-              // badge back and explains why via toast, since the row is
-              // still on screen either way.
-              var badgeAfter = _rcSeasonStatusBadge('Completed');
-              nameLine.replaceChild(badgeAfter, statusBadge);
-              statusBadge = badgeAfter;
-              endSeasonBtn.disabled = true;
-              fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
-                if (!data.success) {
-                  var reverted = _rcSeasonStatusBadge(s.status);
-                  nameLine.replaceChild(reverted, statusBadge);
-                  statusBadge = reverted;
-                  endSeasonBtn.disabled = false;
-                  showToast(data.message || 'Could not end this season -- reverted.', 'error');
-                  return;
-                }
-                if (reload) reload();
-              }).catch(function () {
-                var reverted = _rcSeasonStatusBadge(s.status);
-                nameLine.replaceChild(reverted, statusBadge);
-                statusBadge = reverted;
-                endSeasonBtn.disabled = false;
-                showToast('Could not reach the server -- season not ended.', 'error');
-              });
-            }
-          );
-        });
-        btnGroup.appendChild(endSeasonBtn);
-      }
-    } else {
+    // End Season moved to the Admin page (2026-09-09, Matt's call: "only
+    // admins should be able to create and end seasons") -- League
+    // Management is visible to every member, not just admins, so an
+    // irreversible action like this no longer lives on a page anyone can
+    // see, only trigger if they happen to be an admin. See
+    // openEndSeasonModal/renderAdminSection for the replacement (a
+    // season-picker popup there, since Admin doesn't already have a
+    // specific season's row in hand the way this one did).
+    if (!s.locked) {
       var deleteBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
       deleteBtn.type = 'button';
       deleteBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
@@ -9291,6 +9325,20 @@
       });
       seasonRow.appendChild(clearSeasonDraftBtn);
     }
+
+    // End Season -- moved here from League Management (2026-09-09, Matt's
+    // call). This page has no single season already in hand the way each
+    // League Management row did, so the button opens the season-picker
+    // popup first (openEndSeasonModal), which chains into the same typed
+    // "END SEASON" confirmation before anything actually happens server-
+    // side.
+    var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
+    endSeasonBtn.type = 'button';
+    endSeasonBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+    endSeasonBtn.addEventListener('click', function () {
+      openEndSeasonModal(token, function () { renderAdminSection(token); });
+    });
+    seasonRow.appendChild(endSeasonBtn);
 
     seasonPanel.appendChild(seasonRow);
     section.appendChild(seasonPanel);
