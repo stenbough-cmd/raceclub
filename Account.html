@@ -6083,6 +6083,13 @@
   // matches how a real timing screen would round a margin, never inventing
   // more precision than the source data (FinishTime, DriverResults.gs)
   // actually carries.
+  // Standard motorsport gap notation (2026-09-09, Matt's call: "instead
+  // of giving [gaps] in seconds, give how it is normally given in
+  // motorsports... to the thousandth") -- a plain M:SS.sss once the gap
+  // clears a minute (never just a big raw seconds number, which nobody
+  // reads at a glance), and a bare seconds.sss below that, always to
+  // three decimal places, with no "s" unit tacked on -- same shape a
+  // timing tower or a race report actually prints a gap in.
   function _rcRecapGapText_(sec) {
     if (sec === null || sec === undefined) return '';
     var abs = Math.abs(sec);
@@ -6091,7 +6098,7 @@
       var s = abs - m * 60;
       return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
     }
-    return abs.toFixed(3) + 's';
+    return abs.toFixed(3);
   }
 
   // "up from P9 on the grid" / "down from P4 on the grid" / "" -- only
@@ -6154,6 +6161,26 @@
 
   function _rcRecapClassPointsLeader_(cls) {
     return (cls && cls.standings || []).filter(function (r) { return r.seasonPosition === 1; })[0] || null;
+  }
+
+  // Wager side-story for the field paragraph (2026-09-09, Matt's call:
+  // "work in any wagers... if no wagers for that race, note that in the
+  // paragraph") -- race.wagers is every Settled wager tied to this round
+  // (DataCache.gs's _rcBuildRoundResultData_). Explicitly says so when
+  // there were none, rather than just quietly skipping the topic --
+  // that was Matt's specific ask, not just "mention wagers when there
+  // happen to be some."
+  function _rcRecapWagerClause_(race) {
+    var wagers = race.wagers || [];
+    if (!wagers.length) return 'Nobody had money riding on this one -- no wagers were settled on this race.';
+    if (wagers.length === 1) {
+      var w = wagers[0];
+      return w.winnerName
+        ? (w.winnerName + ' walked away ' + formatMoney(w.stake) + ' richer off a wager on this one.')
+        : ('A ' + formatMoney(w.stake) + ' wager rode on this result too.');
+    }
+    var totalStake = wagers.reduce(function (sum, w) { return sum + (w.stake || 0); }, 0);
+    return wagers.length + ' separate wagers were settled off this result, ' + formatMoney(totalStake) + ' changing hands between the drivers who had a piece of it.';
   }
 
   // ---- Paragraph 1: personalized to whoever's viewing (race.you) -------
@@ -6295,6 +6322,7 @@
         if (battle) bits.push('The closest margin of the day belonged to ' + battle.row.name + ' and ' + battle.ahead.name + ' in ' + battle.className + ', split by just ' + _rcRecapGapText_(battle.gap) + '.');
         var dnfs = _rcRecapDnfCount_(race);
         if (dnfs) bits.push(dnfs + ' car' + (dnfs === 1 ? '' : 's') + ' failed to see the checkered flag.');
+        bits.push(_rcRecapWagerClause_(race));
         return bits.join(' ');
       }
     },
@@ -6329,6 +6357,7 @@
         }
         var dnfs = _rcRecapDnfCount_(race);
         if (dnfs) bits.push('Attrition claimed ' + dnfs + ' entr' + (dnfs === 1 ? 'y' : 'ies') + ' before the finish.');
+        bits.push(_rcRecapWagerClause_(race));
         return bits.join(' ');
       }
     },
@@ -6471,7 +6500,7 @@
       table.className = 'rc-results-table';
       var thead = document.createElement('thead');
       var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Status', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen', 'Bonus'].forEach(function (h) {
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Status', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen'].forEach(function (h) {
         var th = document.createElement('th');
         th.textContent = h;
         headRow.appendChild(th);
@@ -6527,12 +6556,6 @@
         plainTd(r.isCleanRace === null ? '' : (r.isCleanRace ? 'Yes' : 'No'));
         var incBits = [r.incidentsCount || 0, r.trackLimitsCount || 0, r.penaltiesCount || 0];
         plainTd(incBits.join(' / '));
-        var bonusText = (r.sponsorHits || []).map(function (s) {
-          if (s.bonusTriggered) return s.name + ' +' + formatMoney(s.bonusPayout);
-          if (s.penaltyTriggered) return s.name + ' ' + formatMoney(s.penaltyPayout);
-          return '';
-        }).filter(Boolean).join(', ');
-        plainTd(bonusText);
 
         tbody.appendChild(tr);
       });
@@ -6731,6 +6754,19 @@
       var filing = results[0], mine = results[1];
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
+      // Short scene-setting lede (2026-09-09, Matt's call: "give a little
+      // info on the protests page between how to use and the header,"
+      // written with some actual flair instead of reading like a stats
+      // readout -- ties protests into the rest of what the league already
+      // has running (sponsors, wagers, reputation) rather than describing
+      // the form in isolation. Static copy, not templated/rotating like
+      // the race recap paragraphs -- this is page-level scene-setting, not
+      // a per-result narrative, so one well-written paragraph is the
+      // whole job here. Reuses rc-sponsors-explainer, the same "explainer
+      // paragraph above the howto box" class Sponsors/Wager already use,
+      // rather than inventing a fourth near-identical style.
+      section.appendChild(el('p', 'rc-sponsors-explainer',
+        'Racing for real money changes what a bump in Turn 3 means. Every result here touches something -- a sponsor\'s bonus clause, a wager two other drivers placed before the green flag, the reputation number that follows a driver into next season\'s contract talks. Most of the time a race sorts itself out and nobody thinks twice about it. Protests exist for the times it doesn\'t: a late dive that ends someone else\'s night, a call worth putting in front of a steward instead of arguing about after the fact. File one when it\'s worth the 48-hour wait, not every time a corner gets tight.'));
       // Moved here, under the page header, out of the "File a Protest"
       // container (2026-09-09, Matt's call: "The 'How to use this page'
       // should be under the page header in Protests, not within the
