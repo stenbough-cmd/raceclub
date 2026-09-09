@@ -1160,16 +1160,27 @@
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
       var carLine = data.carModel || '';
       if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
-      if (data.carClass) {
-        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
-        var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
-        pill.style.background = 'var(' + colorVar + ')';
-        textCol.appendChild(pill);
-      }
-      if (data.carTier) {
-        var tierPill = _rcCarTierBadge(data.carTier);
-        tierPill.style.marginLeft = '6px';
-        textCol.appendChild(tierPill);
+      // Class pill + tier pill now share one flex row (2026-09-09, Matt's
+      // report: "make sure the class and tier are at the same vertical
+      // height") -- they used to just be two sibling inline-block spans in
+      // textCol, and .rc-cs-class-pill's own margin-top: 9px (there to
+      // space the pill row down from the car model line above it) applied
+      // ONLY to the class pill, not the tier pill next to it, so the tier
+      // pill sat 9px higher than the class pill it was supposed to be
+      // level with. Moving that spacing onto this wrapping row instead --
+      // and centering both pills' baselines against each other with
+      // align-items: center, since .rc-cs-class-pill and the tier pill
+      // (.rc-badge-chip) don't share a line-height -- fixes both at once.
+      if (data.carClass || data.carTier) {
+        var pillRow = el('div', 'rc-cs-pill-row');
+        if (data.carClass) {
+          var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
+          var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
+          pill.style.background = 'var(' + colorVar + ')';
+          pillRow.appendChild(pill);
+        }
+        if (data.carTier) pillRow.appendChild(_rcCarTierBadge(data.carTier));
+        textCol.appendChild(pillRow);
       }
       row.appendChild(textCol);
       body.appendChild(row);
@@ -1629,16 +1640,23 @@
   // in with Class Rank (financesCard never had room to show it) since
   // this page has the space a quick-glance dashboard card doesn't.
   function buildFinHeroPanel(data) {
-    var card = el('div', 'rc-panel rc-fin-hero-card');
+    // Same rc-dash-card chrome every other page's containers use (2026-09-09,
+    // Matt's call) -- red top-left accent, red line under the header, gray
+    // checkered-flag corner -- rather than the Finances page's own plain-gray
+    // exception (see the #rc-section-finances override further down in
+    // style.css); this one card is deliberately carved back out to red via
+    // a more specific override there, since Matt wants THIS container to
+    // read like every other page's cards, not like Finances' own ledger/
+    // sponsorship panels.
+    var card = el('div', 'rc-panel rc-dash-card rc-fin-hero-card');
+    card.appendChild(el('div', 'rc-dash-card-title', 'Account Balance'));
     if (!data || !data.success || !data.statsKnown) {
-      card.appendChild(el('div', 'rc-fin-hero-label', 'Account Balance'));
       card.appendChild(el('p', 'rc-cs-empty', 'Your balance will appear here once your driver account is approved.'));
       return card;
     }
 
     var top = el('div', 'rc-fin-hero-top');
     var balCol = el('div');
-    balCol.appendChild(el('div', 'rc-fin-hero-label', 'Account Balance'));
     // Same "headline is available, not raw bank total" treatment as
     // financesCard above (2026-09-03, Matt's call) -- kept in sync here
     // since this hero panel shows the identical underlying numbers, just
@@ -2888,47 +2906,50 @@
       card.appendChild(el('p', 'rc-hint', 'You weren\'t in this race.'));
     }
 
-    // Full finishing order, one column per class (2026-09-07, Matt's
-    // call: "create up to 3 columns for multiclass... top 5 in each
-    // class... top of the columns should be the colored class pills") --
-    // a single-class season (like this one) just renders as one column.
-    // Manufacturer logo sits between the driver's name and their car
-    // number, capped at the row's own font height (Matt's call:
-    // "shouldn't be taller than the font is tall") via height:1em on
-    // .rc-recent-results-mfr-logo -- built as a real <img> with its own
-    // onerror handler (not an innerHTML string) so a manufacturer with no
-    // logo uploaded yet just quietly disappears, same convention as every
-    // other manufacturer logo on this site (see currentSeatCard above).
-    if (race.classes && race.classes.length) {
-      var columns = el('div', 'rc-recent-results-columns rc-recent-results-columns-' + race.classes.length);
-      race.classes.forEach(function (cls) {
-        var col = el('div', 'rc-recent-results-column');
-        col.appendChild(_rcClassBadge(cls.className));
+    // Only the viewing driver's own class now (2026-09-09, Matt's call:
+    // "only show the top for the driver's class who's looking at the
+    // account page") -- replaces the old up-to-3-columns-one-per-class
+    // layout. Falls back to the first class present if this driver wasn't
+    // actually in the race (no `you`, or `you.carClass` missing), so the
+    // card still shows SOMETHING rather than going empty. Each row is now
+    // 2 columns (Matt's call): the driver (position + name, same as
+    // before) and, new, the points that driver actually gained THIS race
+    // -- not their season total, `r.points` off SeasonHistory.RecentResults
+    // is already exactly that per-round number (see buildDriverRow_,
+    // DataCache.gs), so no backend change was needed.
+    var recentResultsClass = (race.classes || []).filter(function (cls) {
+      return you && you.carClass ? cls.className === you.carClass : true;
+    })[0] || (race.classes || [])[0];
+    if (recentResultsClass) {
+      var columns = el('div', 'rc-recent-results-columns rc-recent-results-columns-1');
+      var col = el('div', 'rc-recent-results-column');
+      col.appendChild(_rcClassBadge(recentResultsClass.className));
 
-        var table = el('div', 'rc-recent-results-table');
-        (cls.standings || []).forEach(function (r) {
-          var isYou = you && you.carClass === cls.className && r.position === you.position && you.position !== null;
-          var rowEl = el('div', 'rc-recent-results-row' + (isYou ? ' rc-recent-results-row-you' : ''));
-          rowEl.appendChild(el('span', 'rc-recent-results-pos', 'P' + (r.classPosition || r.position || '?')));
+      var table = el('div', 'rc-recent-results-table');
+      (recentResultsClass.standings || []).forEach(function (r) {
+        var isYou = you && you.carClass === recentResultsClass.className && r.position === you.position && you.position !== null;
+        var rowEl = el('div', 'rc-recent-results-row' + (isYou ? ' rc-recent-results-row-you' : ''));
+        rowEl.appendChild(el('span', 'rc-recent-results-pos', 'P' + (r.classPosition || r.position || '?')));
 
-          var driverCell = el('span', 'rc-recent-results-driver');
-          driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
-          if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
-            var mlogo = document.createElement('img');
-            mlogo.className = 'rc-recent-results-mfr-logo';
-            mlogo.src = manufacturerLogoSrc(r.manufacturer);
-            mlogo.alt = r.manufacturer;
-            mlogo.onerror = function () { this.style.display = 'none'; };
-            driverCell.appendChild(mlogo);
-          }
-          if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
-          rowEl.appendChild(driverCell);
+        var driverCell = el('span', 'rc-recent-results-driver');
+        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
+        if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
+          var mlogo = document.createElement('img');
+          mlogo.className = 'rc-recent-results-mfr-logo';
+          mlogo.src = manufacturerLogoSrc(r.manufacturer);
+          mlogo.alt = r.manufacturer;
+          mlogo.onerror = function () { this.style.display = 'none'; };
+          driverCell.appendChild(mlogo);
+        }
+        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
+        rowEl.appendChild(driverCell);
 
-          table.appendChild(rowEl);
-        });
-        col.appendChild(table);
-        columns.appendChild(col);
+        rowEl.appendChild(el('span', 'rc-recent-results-points', (r.points === null || r.points === undefined) ? '—' : ((r.points >= 0 ? '+' : '') + r.points + ' PTS')));
+
+        table.appendChild(rowEl);
       });
+      col.appendChild(table);
+      columns.appendChild(col);
       card.appendChild(columns);
     }
 
@@ -5832,12 +5853,11 @@
       (entry.finished ? ' rc-cal-finished' : '') +
       (isSpecial ? ' rc-cal-race-special' : ''));
 
-    // Big round number, left edge of the card -- Matt's call: plain 1/2/3
-    // (no zero-padding), muted so it blends into the card instead of
-    // competing with the race details, vertically centered against the
-    // info column next to it rather than pinned to the top. Special
-    // Events and bye weeks don't consume a round number, so they don't
-    // get this column at all -- their body/image start flush left.
+    // Round number bar, left edge of the card (2026-09-09, Matt's call) --
+    // a full-height gray bar with the round number in white, replacing
+    // the old giant faded number. Special Events and bye weeks don't
+    // consume a round number, so they don't get this column at all --
+    // their body/image start flush left.
     if (!isSpecial && entry.roundNum) {
       card.appendChild(el('div', 'rc-cal-round-number', String(entry.roundNum)));
     }
@@ -6530,9 +6550,21 @@
   // "just a couple columns for points" next to name/team/manufacturer,
   // same per-class grouping every other container on this page uses, just
   // a much shorter table than a single race's full breakdown).
-  function seasonStandingsPanel(standings) {
+  // `myClass` (2026-09-09, Matt's call: rename to LEADERBOARD, and "make
+  // sure this LEADERBOARD container contains only the driver's class, no
+  // other classes... there will be a public page eventually that will
+  // contain all of the classes") -- when known (derived from any round
+  // this driver actually raced this season, see renderResultsSection),
+  // every class but that one is filtered out here so this container is
+  // one driver's own competitive picture, not the whole grid. Falls back
+  // to showing every class if this driver hasn't raced a round yet this
+  // season (no way to know which one is theirs) rather than showing
+  // nothing.
+  function seasonStandingsPanel(standings, myClass) {
     var panel = el('div', 'rc-results-round rc-results-season-standings');
-    panel.appendChild(el('h3', 'rc-results-round-title', 'Season Standings'));
+    panel.appendChild(el('h3', 'rc-results-round-title', 'Leaderboard'));
+
+    var visibleStandings = myClass ? (standings || []).filter(function (cls) { return cls.className === myClass; }) : (standings || []);
 
     // Drop-weeks note (2026-09-08, Matt's call): standings rank on Raw
     // Points (every completed round, nothing dropped) until there are
@@ -6541,12 +6573,18 @@
     // excluded). Both columns always show -- before the switch they're
     // identical, since dropsEligible=false means nothing was actually
     // dropped yet.
-    var dropsEligible = (standings || []).length ? !!standings[0].dropsEligible : false;
+    var dropsEligible = visibleStandings.length ? !!visibleStandings[0].dropsEligible : false;
     panel.appendChild(el('p', 'rc-hint', dropsEligible
       ? 'Standings are ranked by Championship Points -- each driver\'s worst round(s) this season are dropped.'
       : 'Standings are ranked by Raw Points for now -- Championship Points (with drop weeks applied) take over once the season is close enough to the end for dropping to make sense.'));
+    // Scoping note (2026-09-09, Matt's call) -- only shown once we've
+    // actually narrowed this down to one class, so it doesn't read as a
+    // non sequitur on the "haven't raced yet" fallback above.
+    if (myClass) {
+      panel.appendChild(el('p', 'rc-hint', 'Showing your class only. A full, all-classes leaderboard for the season will have its own public page.'));
+    }
 
-    (standings || []).forEach(function (cls) {
+    visibleStandings.forEach(function (cls) {
       var classHead = el('div', 'rc-results-class-head');
       classHead.appendChild(_rcClassBadge(cls.className));
       panel.appendChild(classHead);
@@ -6636,9 +6674,17 @@
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
       panel.appendChild(head);
 
-      // Season Standings -- always first, above every individual race
-      // (Matt's call), whether or not any races have posted results yet.
-      panel.appendChild(seasonStandingsPanel(res.standings));
+      // Leaderboard -- always first, above every individual race (Matt's
+      // call), whether or not any races have posted results yet. myClass
+      // (2026-09-09) is derived from any round this driver actually raced
+      // this season -- the Leaderboard panel uses it to show only their
+      // own class.
+      var myClass = null;
+      (res.rounds || []).some(function (r) {
+        if (r.you && r.you.carClass) { myClass = r.you.carClass; return true; }
+        return false;
+      });
+      panel.appendChild(seasonStandingsPanel(res.standings, myClass));
 
       var rounds = (res.rounds || []).slice().sort(function (a, b) {
         var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
@@ -6685,6 +6731,18 @@
       var filing = results[0], mine = results[1];
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
+      // Moved here, under the page header, out of the "File a Protest"
+      // container (2026-09-09, Matt's call: "The 'How to use this page'
+      // should be under the page header in Protests, not within the
+      // container") -- matches how every other page's howto note already
+      // sits (see e.g. renderFinancesSection/renderWagerSection above),
+      // this page was the one holdout still nesting it inside a card.
+      // Shown unconditionally now, even when there's nothing open to
+      // protest right now (buildProtestFormPanel below can return early
+      // in that case) -- it's a description of the page as a whole, not
+      // tied to whether the form itself is currently usable.
+      section.appendChild(el('p', 'rc-page-howto',
+        '<strong>How to use this page:</strong> pick the race and the lap the incident happened on, choose an infraction type, and name up to two other drivers involved if there are any -- leave those two boxes on "Choose Driver" for a pure self-report. Add an optional description, then click Submit Protest. You have 48 hours after a round\'s results are posted to file for it, and you can withdraw a protest below any time before a steward rules on it.'));
 
       if (!filing || !filing.success) {
         section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the Protest page right now.'));
@@ -6717,9 +6775,6 @@
       panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 48-hour filing window has closed for all of them.'));
       return panel;
     }
-
-    panel.appendChild(el('p', 'rc-page-howto',
-      '<strong>How to use this page:</strong> pick the race and the lap the incident happened on, choose an infraction type, and name up to two other drivers involved if there are any -- leave those two boxes on "Choose Driver" for a pure self-report. Add an optional description, then click Submit Protest. You have 48 hours after a round\'s results are posted to file for it, and you can withdraw a protest below any time before a steward rules on it.'));
 
     var roundSelect = document.createElement('select');
     rounds.forEach(function (r) {

@@ -2064,7 +2064,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    treatment. */
 .rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
-.rc-cs-class-pill { display: inline-block; margin-top: 9px; padding: 3px 10px; border-radius: 4px; color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 0.03em; }
+/* Wraps the class + tier pills together (2026-09-09, Matt's report: "make
+   sure the class and tier are at the same vertical height") -- the 9px
+   top spacing that used to live on .rc-cs-class-pill alone (so only the
+   class pill dropped down from the car model line above, not the tier
+   pill next to it) now lives here, on the row both pills share, and
+   align-items: center squares up their baselines regardless of the two
+   pills' own differing line-heights. */
+.rc-cs-pill-row { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
+.rc-cs-class-pill { display: inline-block; padding: 3px 10px; border-radius: 4px; color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 0.03em; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
@@ -2255,6 +2263,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    .rc-panel's own outside border (var(--rc-silver)), per Matt's ask. */
 #rc-section-finances .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
 #rc-section-finances .rc-dash-card::before { background: var(--rc-silver); }
+
+/* Account Balance card exception (2026-09-09, Matt's call: "make account
+   balance container in finances similar to the other containers in pages
+   with the red border on top, the red line below the header") -- carved
+   back out of the gray-Finances rule right above with a more specific
+   selector, so this one card reads like every other page's rc-dash-card
+   (red accent + red underline) while the rest of Finances stays gray. The
+   checkered-flag corner (.rc-dash-card::after) was never touched by the
+   gray override above, so it's already the plain gray Matt asked for here
+   with no extra rule needed. */
+#rc-section-finances .rc-fin-hero-card .rc-dash-card-title { border-bottom-color: var(--rc-red); }
+#rc-section-finances .rc-fin-hero-card.rc-dash-card::before { background: var(--rc-red); }
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
@@ -2487,7 +2507,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-dash-card-fade-in { opacity: 1; }
 .rc-fin-hero-card { padding: 26px 30px; }
 .rc-fin-hero-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-.rc-fin-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); }
 .rc-fin-hero-balance { font-family: var(--rc-font-heading); font-size: 44px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; margin-top: 4px; }
 
 /* Ledger -- flex rows rather than a strict grid so it wraps gracefully on
@@ -2620,11 +2639,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    name+car#, two-column shape (team name dropped, 2026-09-07) the whole
    way down so numbers and names both line up. */
 .rc-recent-results-table { display: flex; flex-direction: column; }
-.rc-recent-results-row { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--rc-offwhite); font-size: 12.5px; }
+/* 3rd grid track added (2026-09-09, Matt's call: "make it only 2 columns
+   with the 2nd column containing the points gained that race") -- the
+   position number and driver name together read as column 1, points
+   gained this round is the new column 2. `auto` (not `1fr`) so the points
+   text sizes to its own content and sits flush right, rather than
+   stretching to share the driver name's leftover space. */
+.rc-recent-results-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--rc-offwhite); font-size: 12.5px; }
 .rc-recent-results-row:first-child { border-top: none; }
 .rc-recent-results-row-you { background: var(--rc-offwhite); border-radius: 4px; padding-left: 6px; margin-left: -6px; padding-right: 6px; margin-right: -6px; font-weight: 700; }
 .rc-recent-results-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-recent-results-driver { display: flex; align-items: center; gap: 5px; color: var(--rc-carbon); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.rc-recent-results-points { font-family: var(--rc-font-heading); font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Manufacturer logo, inline between driver name and car number
    (2026-09-07) -- capped at exactly the row's own font height (Matt's
    call: "shouldn't be taller than the font is tall"), never the row's
@@ -4138,49 +4164,34 @@ body.rc-modal-scroll-locked {
   padding: 16px 18px;
   width: 100%;
 }
-/* Big round number, left edge of the card (Matt's call) -- plain 1/2/3,
-   own column with a small 5px padding, vertically centered against the
-   race-info column next to it (align-self:center, rather than pinned to
-   the row's top). Muted via reduced opacity, on top of the already-gray
-   steel color, so it blends into the card instead of competing with the
-   race details for attention. Special Events/byes never render this
-   element at all (see raceCard()), so it never eats into their layout. */
+/* Round number bar, left edge of the card (2026-09-09, Matt's call:
+   "instead of a giant number, take the gray border from the top of each
+   race container, make it a lot taller vertically, and insert the round
+   number inside that border in white font") -- this replaces BOTH the
+   old giant faded number AND the old horizontal top accent strip in one
+   move. It IS that same gray accent, just turned from a short strip
+   along the top into a full-height bar down the card's left edge, with
+   the round number set in white inside it. Negative margins bleed it
+   out to the card's own edges (.rc-cal-race has 16px/18px padding);
+   .rc-cal-race's overflow:hidden clips it to match the card's own
+   rounded corners. Special Events/byes never render this element at all
+   (see raceCard()) -- they keep their own separate gold top accent
+   instead (.rc-cal-race-special::before, unchanged). */
 .rc-cal-round-number {
   flex: none;
-  min-width: 135px;
-  align-self: center;
+  align-self: stretch;
+  width: 56px;
+  margin: -16px 0 -16px -18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5px;
+  background: var(--rc-silver);
   font-family: var(--rc-font-heading);
-  font-size: 120px;
+  font-size: 26px;
   line-height: 1;
   font-weight: 900;
-  color: var(--rc-steel);
-  opacity: 0.35;
+  color: #fff;
   user-select: none;
-}
-/* Every race card gets the same diagonal "finish flag" top accent the
-   Dashboard cards and Special Events use, just gray (2026-08-31, Matt's
-   call) -- ties the whole calendar list into the same visual system
-   instead of only Special Events getting the accent treatment. Same
-   --rc-silver the card's own border already uses (2026-08-31, Matt's
-   correction: the first pass used --rc-steel, a darker gray that stood
-   out too much -- "shouldn't be that noticeable") so the accent reads as
-   a quiet extension of the existing border, not a second competing
-   color. Defined on the base .rc-cal-race so it also covers plain
-   rounds; the more specific .rc-cal-race-special::before rule right
-   below wins for Special Events and repaints it gold. */
-.rc-cal-race::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40%;
-  height: 4px;
-  background: var(--rc-silver);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 /* Special Events get a bit more of the same gold the star icon already
    uses (Matt's call: "stick out a little better") -- a gold-tinted
