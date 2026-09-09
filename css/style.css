@@ -4277,6 +4277,28 @@ body.rc-modal-scroll-locked {
   object-position: center center;
   border-radius: 6px;
 }
+/* Track image drops to its own row below the round-number+text side on
+   narrow/mobile widths, instead of squeezing into the same row as
+   everything else (2026-09-09, Matt's call: "if the browser is too
+   narrow, don't force everything onto the same row... let the track
+   image fall to the next row below the info so it's not overlapping").
+   .rc-cal-track-img is flex:none (never shrinks below its fixed 100px
+   box) and .rc-cal-race-body's own min-width:0 lets it shrink all the
+   way down to nothing, so below this width there just isn't room for
+   the round-number bar, the image, AND readable text all on one line --
+   flex-wrap alone would just as easily wrap the round-number bar away
+   from the body it belongs next to, so the real fix is giving the body
+   a real min-width here: the wrapping algorithm decides line breaks
+   using each item's hypothetical (pre-shrink) size, so a body that's
+   guaranteed at least 220px keeps it paired with the round-number bar
+   on the first line every time, leaving the image as the one thing that
+   doesn't fit and wraps to its own line below (centered there via the
+   classic flex auto-margin trick, since it's alone on that line). */
+@media (max-width: 560px) {
+  .rc-cal-race { flex-wrap: wrap; }
+  .rc-cal-race-body { min-width: 220px; }
+  .rc-cal-track-img { margin: 12px auto 0; }
+}
 
 /* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
    covering the whole card once its start time has passed (Matt's call --
@@ -4378,6 +4400,16 @@ body.rc-modal-scroll-locked {
 /* -------------------------------------------------------------------- */
 .rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
 .rc-help-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--rc-carbon); }
+/* Page-by-page how-to content (2026-09-09) -- reuses the Rulebook's own
+   h4/p/ul sizing so the two panels read as one visual family, but without
+   .rc-rulebook-section's top border/margin between entries: this reads as
+   one continuous walkthrough, not a chain of numbered sections. */
+.rc-help-content { margin-top: 18px; }
+.rc-help-content h4 { font-family: var(--rc-font-heading); font-size: 14px; color: var(--rc-carbon); margin: 18px 0 6px; }
+.rc-help-content h4:first-child { margin-top: 0; }
+.rc-help-content p, .rc-help-content li { font-size: 13px; color: var(--rc-carbon); line-height: 1.6; }
+.rc-help-content p { margin: 0 0 10px; }
+.rc-help-content ul { margin: 6px 0 12px; padding-left: 20px; }
 .rc-rulebook-index {
   display: flex;
   flex-direction: column;

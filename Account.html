@@ -5215,7 +5215,6 @@
 
     var websiteHelp = el('div', 'rc-panel');
     websiteHelp.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Website Help'));
-    websiteHelp.appendChild(el('p', 'rc-help-panel-note', 'A fuller set of how-to topics for using the site is still being written. In the meantime:'));
     var contactList = el('ul', 'rc-help-list');
     contactList.appendChild(el('li', null, 'Questions about your account, results, or standings: email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
     contactList.appendChild(el('li', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
@@ -5224,6 +5223,38 @@
     // -- one place to keep that content current instead of two.
     contactList.appendChild(el('li', null, 'New here? See Section 2, Getting Started, in the Rulebook below for how registering for a team and choosing sponsors works.'));
     websiteHelp.appendChild(contactList);
+
+    // Page-by-page how-to content (2026-09-09, Matt's call: replace the
+    // old "still being written" placeholder with the real thing). Written
+    // straight from what's actually live on the site right now -- every
+    // line below describes a page or feature that exists and works today.
+    // Deliberately excludes anything season-1-specific (class names, buy-
+    // in numbers, which sponsors are active) and anything built but not
+    // yet driver-facing or not yet fully working (e.g. Reputation, which
+    // still shows placeholder dashes on the Dashboard) -- this should stay
+    // accurate as new seasons and features come online, not need a rewrite
+    // every time Season 1's specifics change.
+    websiteHelp.appendChild(el('div', 'rc-help-content',
+      '<h4>Dashboard</h4>' +
+      '<p>Your homepage after logging in. One glance covers your Registration Status, your Current Seat (car and team, once you have one), your Season Objective progress, a Finances summary, your Sponsors, your next scheduled race, your most recent result, your open Wagers, and your last few filed Protests. Cards that depend on being registered fill in once you\'ve actually joined a team.</p>' +
+      '<h4>Calendar</h4>' +
+      '<p>The full season schedule, in order: every race\'s date and time (converted to your own timezone), its track, session details, and a weather forecast icon. Special events and bye weeks appear in the same list alongside regular races.</p>' +
+      '<h4>Results</h4>' +
+      '<p>One page per season. Season Standings sits at the top, grouped by class. Below it, every completed round gets its own container with a full stat breakdown per driver: finishing position, grid, laps, best lap, total time, points, money, and incidents/track limits/penalties. Whoever set a class\'s fastest lap is marked, and a driver who didn\'t finish is flagged directly on their row.</p>' +
+      '<h4>Finances</h4>' +
+      '<p>Your running balance, a transaction ledger (with a full-history popup beyond the most recent entries), what your current sponsors could still pay out or cost you, and your Season Objective\'s own payout and progress. If your balance goes negative, a Request Loan button appears for the one loan you\'re allowed to take per season.</p>' +
+      '<h4>Sponsors</h4>' +
+      '<p>Every active sponsor listed in one table so tier, bonus, and penalty are easy to compare side by side. Pick up to three for the season: click a Current Picks slot, then a sponsor\'s row to assign it, and click again to swap or drop it. Changes save the instant you make them. Every bonus and penalty is tied to one specific, verifiable result straight from race data, not a judgment call.</p>' +
+      '<h4>Wager</h4>' +
+      '<p>Challenge another driver in your season to a head-to-head bet on an upcoming race. Click an empty slot to propose one: opponent, race, condition, and stake. The other driver can accept, deny, or counter with different terms, and a wager you\'re still waiting on can be cancelled before they respond. Once both sides accept, the stakes are frozen until that race\'s results are imported, and settlement happens automatically.</p>' +
+      '<h4>Protests</h4>' +
+      '<p>File a protest against an incident from a completed race. Choose the race and lap, an infraction type, and up to two other drivers involved if any, with an optional description. You have 48 hours after a round\'s results are posted to file, and you can withdraw a protest any time before a steward rules on it.</p>' +
+      '<h4>Notifications</h4>' +
+      '<p>The bell icon in the header surfaces anything new that needs your attention, including newly opened seasons and sponsor-related updates. Dismissing one clears it for good.</p>' +
+      '<h4>Account Settings</h4>' +
+      '<p>Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password, all from the same popup.</p>' +
+      '<h4>Admin &amp; League Management</h4>' +
+      '<p>Admin accounts get two additional pages: League Management, for browsing every season and its races and recomputing a season\'s results if an earlier round gets corrected, and Admin, for managing members, tracks, cars, and sponsors, adjusting league-wide economy settings, and creating or ending a season.</p>'));
     section.appendChild(websiteHelp);
 
     var rulebook = el('div', 'rc-panel');
