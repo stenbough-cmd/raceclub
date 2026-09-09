@@ -6079,17 +6079,15 @@
   // or newly-assignable indices will never actually get selected.
   // =======================================================================
 
-  // "1:04.221" for a gap at or past a minute, plain "12.904s" under one --
-  // matches how a real timing screen would round a margin, never inventing
-  // more precision than the source data (FinishTime, DriverResults.gs)
-  // actually carries.
   // Standard motorsport gap notation (2026-09-09, Matt's call: "instead
   // of giving [gaps] in seconds, give how it is normally given in
   // motorsports... to the thousandth") -- a plain M:SS.sss once the gap
   // clears a minute (never just a big raw seconds number, which nobody
   // reads at a glance), and a bare seconds.sss below that, always to
   // three decimal places, with no "s" unit tacked on -- same shape a
-  // timing tower or a race report actually prints a gap in.
+  // timing tower or a race report actually prints a gap in. Never
+  // invents more precision than the source data (FinishTime,
+  // DriverResults.gs) actually carries.
   function _rcRecapGapText_(sec) {
     if (sec === null || sec === undefined) return '';
     var abs = Math.abs(sec);
@@ -6099,6 +6097,24 @@
       return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
     }
     return abs.toFixed(3);
+  }
+
+  // Full race classification time, same M:SS.sss motorsport shape as
+  // _rcRecapGapText_ above, but with an H:MM:SS.sss fallback since a
+  // whole race's elapsed time (not just a margin between two drivers)
+  // can genuinely run past an hour on a longer endurance round
+  // (2026-09-09, Matt's call: "add a total time column after fastest
+  // lap column" on the Results page's per-class table).
+  function _rcFormatTotalTime_(sec) {
+    if (sec === null || sec === undefined || isNaN(sec)) return '';
+    var abs = Math.abs(sec);
+    var h = Math.floor(abs / 3600);
+    var m = Math.floor((abs - h * 3600) / 60);
+    var s = abs - h * 3600 - m * 60;
+    if (h > 0) {
+      return h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
+    }
+    return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
   }
 
   // "up from P9 on the grid" / "down from P4 on the grid" / "" -- only
@@ -6425,8 +6441,11 @@
     quote.className = 'rc-recap-quote';
     if (driverPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(driverPara)));
     if (fieldPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(fieldPara)));
+    // Byline moved inside the quote box, right-justified at the bottom
+    // (2026-09-09, Matt's call) -- reads like an actual pull-quote
+    // attribution now instead of a caption floating below it.
+    if (byline) quote.appendChild(el('div', 'rc-recap-byline', '· ' + escapeHtml(byline)));
     wrap.appendChild(quote);
-    if (byline) wrap.appendChild(el('div', 'rc-recap-byline', '· ' + escapeHtml(byline)));
     return wrap;
   }
 
@@ -6500,7 +6519,7 @@
       table.className = 'rc-results-table';
       var thead = document.createElement('thead');
       var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Status', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen'].forEach(function (h) {
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Clean', 'Inc/TL/Pen'].forEach(function (h) {
         var th = document.createElement('th');
         th.textContent = h;
         headRow.appendChild(th);
@@ -6511,8 +6530,15 @@
       var tbody = document.createElement('tbody');
       (cls.standings || []).forEach(function (r) {
         var isYou = you && r.profileId === you.profileId;
+        var isDnf = _rcRecapIsDnf_(r);
         var tr = document.createElement('tr');
+        // DNF/DSQ rows highlighted red instead of a text Status column
+        // (2026-09-09, Matt's call: "instead of STATUS, mark DNF by
+        // highlighting them in red") -- isYou still wins if a driver's own
+        // row also happens to be a DNF, since "this is you" is the more
+        // useful thing to flag at a glance than "this car didn't finish."
         if (isYou) tr.className = 'rc-results-row-you';
+        else if (isDnf) tr.className = 'rc-results-row-dnf';
 
         var posTd = document.createElement('td');
         posTd.className = 'rc-results-td-pos';
@@ -6549,7 +6575,7 @@
         plainTd(r.laps || '');
         plainTd(r.pitstops || '');
         plainTd(r.bestLapTime || '');
-        plainTd(r.finishStatus || (r.position ? 'Finished' : ''));
+        plainTd(_rcFormatTotalTime_(r.finishTimeSeconds));
         plainTd(r.points === null ? '' : r.points);
         var moneyTd = plainTd(r.moneyDelta === null ? '' : ((r.moneyDelta >= 0 ? '+' : '') + formatMoney(r.moneyDelta)));
         if (r.moneyDelta !== null) moneyTd.style.color = r.moneyDelta >= 0 ? 'var(--rc-green, #2e7d32)' : 'var(--rc-red)';

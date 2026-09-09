@@ -2635,8 +2635,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-carbon);
 }
 .rc-recap-para + .rc-recap-para { margin-top: 10px; }
+/* Right-justified at the bottom of the quote box itself (2026-09-09,
+   Matt's call: "move the person writing the paragraph to inside the
+   quote box and make them right justified at the bottom") -- reads like
+   a real pull-quote attribution instead of a caption sitting below it. */
 .rc-recap-byline {
-  margin-top: 8px;
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
+  text-align: right;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -2653,6 +2660,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-table td { padding: 6px 10px; border-bottom: 1px solid var(--rc-offwhite); white-space: nowrap; color: var(--rc-carbon); }
 .rc-results-table tbody tr:last-child td { border-bottom: none; }
 .rc-results-row-you { background: var(--rc-offwhite); font-weight: 700; }
+/* DNF/DSQ rows highlighted red instead of a text Status column
+   (2026-09-09, Matt's call: "instead of STATUS, mark DNF by
+   highlighting them in red") -- a faint red wash across the row plus
+   red text, so it reads at a glance without needing a legend. */
+.rc-results-row-dnf { background: rgba(198, 40, 40, 0.07); }
+.rc-results-row-dnf td { color: var(--rc-red); }
+.rc-results-row-dnf .rc-results-td-pos { color: var(--rc-red); }
 .rc-results-td-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); }
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
