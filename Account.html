@@ -6631,12 +6631,8 @@
     panel.appendChild(el('p', 'rc-hint', dropsEligible
       ? 'Standings are ranked by Championship Points -- each driver\'s worst round(s) this season are dropped.'
       : 'Standings are ranked by Raw Points for now -- Championship Points (with drop weeks applied) take over once the season is close enough to the end for dropping to make sense.'));
-    // Scoping note (2026-09-09, Matt's call) -- only shown once we've
-    // actually narrowed this down to one class, so it doesn't read as a
-    // non sequitur on the "haven't raced yet" fallback above.
-    if (myClass) {
-      panel.appendChild(el('p', 'rc-hint', 'Showing your class only. A full, all-classes leaderboard for the season will have its own public page.'));
-    }
+    // Scoping note removed (2026-09-09, Matt's call) -- the class pill
+    // right above each table already makes clear which class this is.
 
     visibleStandings.forEach(function (cls) {
       var classHead = el('div', 'rc-results-class-head');
