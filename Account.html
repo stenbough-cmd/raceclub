@@ -6513,10 +6513,10 @@
       var classPanel = el('div', 'rc-results-class');
       var classHead = el('div', 'rc-results-class-head');
       classHead.appendChild(_rcClassBadge(cls.className));
-      var classMeta = [];
-      if (cls.classWinner) classMeta.push('Winner: ' + cls.classWinner);
-      if (cls.classFastestLapDriver) classMeta.push('Fastest Lap: ' + cls.classFastestLapDriver + (cls.classFastestLapTime ? ' (' + cls.classFastestLapTime + ')' : ''));
-      if (classMeta.length) classHead.appendChild(el('span', 'rc-hint', escapeHtml(classMeta.join(' · '))));
+      // Winner/Fastest Lap summary line removed from next to the class
+      // pill (2026-09-09, Matt's call) -- both are already visible in the
+      // per-class table below (P1 row, and the FL badge next to whoever
+      // set it), so this was a redundant repeat of the same two facts.
       classPanel.appendChild(classHead);
 
       var scrollWrap = el('div', 'rc-results-table-wrap');
