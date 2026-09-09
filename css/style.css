@@ -2588,7 +2588,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    these sit inside the season's own rc-panel) per race event, same
    "gray border" weight Calendar's own per-race cards use
    (.rc-cal-race). */
-.rc-results-round { border: 2px solid var(--rc-offwhite); border-radius: 10px; padding: 16px 18px; }
+.rc-results-round { position: relative; overflow: hidden; border: 2px solid var(--rc-offwhite); border-radius: 10px; padding: 16px 18px; }
+/* Light-gray top accent (2026-09-09, Matt's call: "add a light gray top
+   border similar to the same rules as the gold special event top border
+   in the calendar") -- same diagonal "finish flag" clipped strip shape
+   as Calendar's .rc-cal-race-special::before, just var(--rc-silver)
+   instead of gold, so each round card on this page gets the same family
+   of accent the Calendar's own cards use for their top border. */
+.rc-results-round::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 4px;
+  background: var(--rc-silver);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
 .rc-results-round .rc-hint { margin-top: 2px; margin-bottom: 8px; display: block; }
 .rc-results-round-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
 .rc-results-round-track { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
@@ -2606,11 +2622,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    checkered-flag/red-accent language, same family as .rc-dash-card's
    corner flourish), byline in small-caps steel below. */
 .rc-recap { margin-bottom: 14px; }
+/* Left border + quote mark + text switched from red to gray (2026-09-09,
+   Matt's call: "make the left red border in the quote gray, and a slight
+   shade darker than the background. Make the quote text the same color")
+   -- background stays var(--rc-offwhite) (#F5F5F3); var(--rc-steel)
+   (#536575) is the darker-gray accent/muted-text token already used
+   elsewhere on the site (e.g. .rc-hint), which reads clearly darker than
+   the offwhite box while staying legible for the paragraph text itself. */
 .rc-recap-quote {
   position: relative;
   margin: 0;
   padding: 14px 20px 14px 26px;
-  border-left: 3px solid var(--rc-red);
+  border-left: 3px solid var(--rc-steel);
   background: var(--rc-offwhite);
   border-radius: 0 8px 8px 0;
 }
@@ -2622,7 +2645,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   font-size: 42px;
   line-height: 1;
   font-family: Georgia, 'Times New Roman', serif;
-  color: var(--rc-red);
+  color: var(--rc-steel);
   opacity: 0.35;
 }
 .rc-recap-para {
@@ -2632,7 +2655,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   font-size: 14px;
   font-style: italic;
   line-height: 1.6;
-  color: var(--rc-carbon);
+  color: var(--rc-steel);
 }
 /* rc-recap-byline removed (2026-09-09, Matt's call: "remove... the
    person who supposedly quoted the saying") -- the recap is one plain

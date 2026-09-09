@@ -6524,7 +6524,7 @@
       table.className = 'rc-results-table';
       var thead = document.createElement('thead');
       var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Pit', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Inc/TL/Pen'].forEach(function (h) {
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Inc/TL/Pen'].forEach(function (h) {
         var th = document.createElement('th');
         th.textContent = h;
         headRow.appendChild(th);
@@ -6578,7 +6578,7 @@
         }
         plainTd(r.classGridPos || r.gridPos || '');
         plainTd(r.laps || '');
-        plainTd(r.pitstops || '');
+        // Pit column removed (2026-09-09, Matt's call).
         // Purple font for whoever set the class's fastest lap (2026-09-09,
         // Matt's call: "make the fastest lap guy purple font") -- same
         // purple-for-fastest-lap convention real motorsport timing
@@ -6876,10 +6876,21 @@
     var infractionSelect = document.createElement('select');
     PROTEST_INFRACTION_TYPES.forEach(function (t) { infractionSelect.appendChild(new Option(t, t)); });
 
-    var topRow = el('div', 'rc-wiz-field-row-3');
-    topRow.appendChild(wizField('Race', roundSelect, null));
-    topRow.appendChild(wizField('Lap Number', lapSelect, null));
-    topRow.appendChild(wizField('Infraction Type', infractionSelect, null));
+    // Race/Lap row (2026-09-09, Matt's call: "make race dropdown box 50%
+    // width and make lap number 25% width") -- reuses the same 4-column
+    // .rc-wiz-field-row grid the Wager form's Opponent/Race/Condition/Stake
+    // row already uses (see buildWagerForm above), with each field wrapper
+    // claiming its own span (2 = half, 1 = quarter) rather than the fixed
+    // 3-equal-column .rc-wiz-field-row-3 this row used before. The row's
+    // 4th column is left unclaimed on purpose -- 50% + 25% is all the
+    // width these two fields need.
+    var raceFieldWrap = wizField('Race', roundSelect, null);
+    raceFieldWrap.style.gridColumn = 'span 2';
+    var lapFieldWrap = wizField('Lap Number', lapSelect, null);
+    lapFieldWrap.style.gridColumn = 'span 1';
+    var topRow = el('div', 'rc-wiz-field-row');
+    topRow.appendChild(raceFieldWrap);
+    topRow.appendChild(lapFieldWrap);
     panel.appendChild(topRow);
 
     var driver1Select = document.createElement('select');
@@ -6891,6 +6902,15 @@
     driversRow.appendChild(wizField('Driver Involved 2', driver2Select, null));
     driversRow.appendChild(wizField('Driver Involved 3', driver3Select, null));
     panel.appendChild(driversRow);
+
+    // Infraction Type, moved to its own third row at 50% width (2026-09-09,
+    // Matt's call: "Move infraction type box to the 3rd row and make it
+    // 50% width") -- was in the Race/Lap row above, now on its own line.
+    var infractionFieldWrap = wizField('Infraction Type', infractionSelect, null);
+    infractionFieldWrap.style.gridColumn = 'span 2';
+    var infractionRow = el('div', 'rc-wiz-field-row');
+    infractionRow.appendChild(infractionFieldWrap);
+    panel.appendChild(infractionRow);
 
     function populateForRound(roundId) {
       var round = rounds.filter(function (r) { return r.roundId === roundId; })[0];
