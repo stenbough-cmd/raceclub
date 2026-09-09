@@ -6422,29 +6422,31 @@
   // paragraph string as a whole since none of it contains real markup,
   // only interpolated plain-text field values.
   function buildRaceRecapBlock(race) {
-    var driverPara = '', fieldPara = '', byline = '';
+    var driverPara = '', fieldPara = '';
     if (race.you && race.driverRecapTemplateIndex !== null && race.driverRecapTemplateIndex !== undefined) {
       var driverFn = RC_RECAP_DRIVER_TEMPLATES[race.driverRecapTemplateIndex % RC_RECAP_DRIVER_TEMPLATES.length];
       if (driverFn) driverPara = driverFn(race.you, race) || '';
     }
     if (race.fieldRecapTemplateIndex !== null && race.fieldRecapTemplateIndex !== undefined) {
       var fieldTpl = RC_RECAP_FIELD_TEMPLATES[race.fieldRecapTemplateIndex % RC_RECAP_FIELD_TEMPLATES.length];
-      if (fieldTpl) {
-        fieldPara = fieldTpl.build(race) || '';
-        if (fieldPara) byline = fieldTpl.reporter + ', ' + fieldTpl.mag;
-      }
+      if (fieldTpl) fieldPara = fieldTpl.build(race) || '';
     }
     if (!driverPara && !fieldPara) return null;
+
+    // Combined into one paragraph, not two stacked <p>s (2026-09-09,
+    // Matt's call: "since it's only 1 sentence long for each... put into
+    // one paragraph so it doesn't look stupid") -- a couple of the
+    // templates only ever produce a single sentence, and two one-line
+    // paragraphs back to back read as an obvious template seam rather
+    // than an actual article. The reporter/mag byline is dropped
+    // entirely per the same request ("remove... the person who
+    // supposedly quoted the saying").
+    var combined = [driverPara, fieldPara].filter(Boolean).join(' ');
 
     var wrap = el('div', 'rc-recap');
     var quote = document.createElement('blockquote');
     quote.className = 'rc-recap-quote';
-    if (driverPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(driverPara)));
-    if (fieldPara) quote.appendChild(el('p', 'rc-recap-para', escapeHtml(fieldPara)));
-    // Byline moved inside the quote box, right-justified at the bottom
-    // (2026-09-09, Matt's call) -- reads like an actual pull-quote
-    // attribution now instead of a caption floating below it.
-    if (byline) quote.appendChild(el('div', 'rc-recap-byline', '· ' + escapeHtml(byline)));
+    quote.appendChild(el('p', 'rc-recap-para', escapeHtml(combined)));
     wrap.appendChild(quote);
     return wrap;
   }
@@ -6491,11 +6493,14 @@
     // above for the full story on template selection/no-repeat.
     var recapBlock = buildRaceRecapBlock(race);
     if (recapBlock) panel.appendChild(recapBlock);
-    if (you) {
+    // Bank balance line removed (2026-09-09, Matt's call) -- just the
+    // Not Classified headline now, when there's no finishing position to
+    // show; the recap paragraph and the per-class table below already
+    // cover the money side of the round.
+    if (you && !you.position) {
       var yourRace = el('div', 'rc-recent-results-yours');
-      if (!you.position) yourRace.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
-      if (you.bankBalance !== null) yourRace.appendChild(el('div', 'rc-hint', 'Bank balance: ' + formatMoney(you.bankBalance)));
-      if (yourRace.childNodes.length) panel.appendChild(yourRace);
+      yourRace.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
+      panel.appendChild(yourRace);
     }
 
     // Full per-class breakdown, one comprehensive table per class instead

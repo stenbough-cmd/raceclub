@@ -2634,22 +2634,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   line-height: 1.6;
   color: var(--rc-carbon);
 }
-.rc-recap-para + .rc-recap-para { margin-top: 10px; }
-/* Right-justified at the bottom of the quote box itself (2026-09-09,
-   Matt's call: "move the person writing the paragraph to inside the
-   quote box and make them right justified at the bottom") -- reads like
-   a real pull-quote attribution instead of a caption sitting below it. */
-.rc-recap-byline {
-  position: relative;
-  z-index: 1;
-  margin-top: 10px;
-  text-align: right;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rc-steel);
-}
+/* rc-recap-byline removed (2026-09-09, Matt's call: "remove... the
+   person who supposedly quoted the saying") -- the recap is one plain
+   pull-quote paragraph now, no reporter/mag attribution underneath it,
+   and no second .rc-recap-para exists anymore either (driver + field
+   copy are joined into a single paragraph in buildRaceRecapBlock, since
+   two one-sentence paragraphs back to back read as an obvious template
+   seam). */
 
 .rc-results-class { margin-top: 16px; }
 .rc-results-class-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
