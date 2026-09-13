@@ -3260,15 +3260,27 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   position: absolute;
   top: 50%;
   left: 0;
-  transform: translateY(-50%);
+  /* 50px above dead-center (2026-09-13, Matt's follow-up call) -- stacked
+     onto the same translateY that centers the block, rather than a
+     separate top offset, so it stays exactly centered-then-shifted at
+     every viewport height. */
+  transform: translateY(calc(-50% - 50px));
   z-index: 2;
-  padding-left: 160px;
+  /* Fluid instead of two fixed breakpoints (2026-09-13, Matt's follow-up
+     call: "make it scale smoothly as the window collapses") -- clamp()
+     between a 360px phone and a 1600px desktop: 24px at 360px wide,
+     160px at 1600px and up, a straight linear ramp in between, no jump
+     at any particular width. */
+  padding-left: clamp(24px, -15.48px + 10.97vw, 160px);
   max-width: 100%;
 }
 .rc-hero-title {
   font-family: var(--rc-font-heading);
-  font-size: 90px;
+  /* Same fluid approach as padding-left above: 24px at 360px wide, 80px
+     at 1600px and up. */
+  font-size: clamp(24px, 7.74px + 4.52vw, 80px);
   font-weight: 800;
+  font-style: italic;
   line-height: 0.92;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -3281,29 +3293,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-hero-title-accent { color: var(--rc-red); }
 .rc-hero-subtitle {
   font-family: var(--rc-font-heading);
-  font-size: 30px;
+  /* Same fluid approach again: 8px at 360px wide, 15px at 1600px and up. */
+  font-size: clamp(8px, 5.97px + 0.56vw, 15px);
   /* Thin, not bold (2026-09-13, Matt's follow-up call) -- contrasts
      against the bold 800-weight title lines above it. */
   font-weight: 300;
+  font-style: italic;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--rc-white);
   margin-top: 24px;
-}
-/* Scaled down below the site's usual tablet/mobile breakpoints -- the
-   90px/30px desktop sizes and 160px inset are Matt's literal numbers for
-   a full-width desktop hero; left as-is they would overflow on anything
-   much narrower. Same breakpoints (900px/560px) already used elsewhere
-   on this page (.rc-highlight-grid, .rc-tier-card, etc.). */
-@media (max-width: 900px) {
-  .rc-hero-text { padding-left: 60px; }
-  .rc-hero-title { font-size: 44px; }
-  .rc-hero-subtitle { font-size: 14px; letter-spacing: 0.08em; margin-top: 16px; }
-}
-@media (max-width: 560px) {
-  .rc-hero-text { padding-left: 24px; }
-  .rc-hero-title { font-size: 24px; }
-  .rc-hero-subtitle { font-size: 8px; letter-spacing: 0.06em; margin-top: 12px; }
 }
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
