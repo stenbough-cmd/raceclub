@@ -4,12 +4,19 @@
   WHAT CHANGED VS. v0.2.5:
   index.html used to be a pure redirect gate (check localStorage, bounce
   to Account.html or login.html, never actually render). It's now a real
-  landing page: fixed site header (js/header.js) on top, a full-bleed hero
-  banner below it with a "content slides up and covers the banner as you
-  scroll" effect, a short tagline blurb, and the class tiers as simple
-  cards. See the .rc-hero / .rc-hero-spacer / .rc-hero-content rules in
-  css/style.css for exactly how the scroll-cover effect is built and why
-  fixed+spacer was chosen over `position: sticky`.
+  landing page: fixed site header (js/header.js) on top, a hero banner
+  below it, a short tagline blurb, and the class tiers as simple cards.
+
+  WHAT CHANGED IN THIS PASS (hero no longer fixed, 2026-09-13, Matt's
+  follow-up call: "the image should not be sticky anywhere... I want it
+  to scale when the user shrinks the window... if I can see the next
+  section creep up as I'm closing the window, that's ok"):
+  The hero used to be `position: fixed` with a same-height spacer div
+  faking scroll distance, so later content would slide up and visually
+  "cover" it. That's gone -- the hero is now a normal in-flow block sized
+  by its own aspect-ratio (see .rc-hero in css/style.css), so it scales
+  with the window's width and the page just flows normally underneath it,
+  same as any other stacked section.
 
   There is no login/session logic on this page beyond what js/header.js
   already provides (it reads getToken() itself to decide whether to show
@@ -67,15 +74,13 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
-<!-- Empty spacer, same total height as header+hero, so the page has real
-     scroll distance even though the hero itself is position:fixed. -->
-<div class="rc-hero-spacer"></div>
-
-<!-- Fixed hero banner, pinned just under the header. Stays put while the
-     content below scrolls up and over it (see css/style.css). The image
+<!-- Hero banner, in normal document flow right under the fixed header
+     (see .rc-hero in css/style.css for the 72px top margin that clears
+     it). Sized by aspect-ratio, not viewport height, so it scales with
+     the window's width instead of being pinned to the screen. The image
      itself is set entirely in CSS now (not inline here) specifically so
-     an @media (orientation: portrait) rule can swap it for a dedicated
-     portrait-shaped image on phones held upright, falling back to this
+     an @media (max-aspect-ratio) rule can swap it for a dedicated
+     portrait-shaped image on narrow/tall windows, falling back to this
      standard landscape one otherwise -- an inline style here would beat
      that media query on specificity and the swap would never show. -->
 <div class="rc-hero" role="img" aria-label="Race Club: league cars on track">
@@ -87,9 +92,6 @@
   <img class="rc-hero-badge" src="assets/Race Club (Small, Black).png" alt="">
 </div>
 
-<!-- Everything from here down is normal document flow, opaque white
-     background, higher z-index than the hero -- this is what visually
-     "covers" the banner as the user scrolls. -->
 <div class="rc-hero-content">
 
   <section class="rc-landing-section">

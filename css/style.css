@@ -3116,49 +3116,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* -------------------------------------------------------------------- */
-/* index.html — hero banner + scroll-cover effect                       */
+/* index.html — hero banner                                             */
 /*                                                                       */
-/* The hero image is `position: fixed`, pinned just under the header,   */
-/* and a same-height spacer sits in the normal document flow above it   */
-/* so the page has real scroll distance. Because the hero is fixed it   */
-/* never moves; what makes it look "covered" is that the very next      */
-/* element after the spacer (.rc-hero-content) is a normal in-flow,     */
-/* opaque, higher-z-index block, so as the page scrolls that block      */
-/* slides up and passes directly over the fixed hero, hiding it. This   */
-/* is the reliable version of the effect: plain `position: sticky` on   */
-/* the hero with a lower z-index than its sibling does NOT reliably     */
-/* produce a "covered" look in every browser, because a sticky element  */
-/* and its following sibling don't automatically form the stacking      */
-/* relationship needed — you can end up with the sticky banner stuck    */
-/* under the header the whole time with nothing ever drawing over it,   */
-/* depending on how their stacking contexts resolve. Fixed + spacer     */
-/* sidesteps that entirely: it's plain document flow + z-index, no      */
-/* dependence on sticky's positioning quirks.                           */
-/* -------------------------------------------------------------------- */
-/* height is given twice on purpose: the plain `vh` value first as a
-   fallback for browsers that don't understand `dvh`, then `dvh` (dynamic
-   viewport height) right after so browsers that DO support it use that
-   instead -- CSS keeps whichever declaration is last and valid. This
-   matters specifically on mobile: `100vh` there is measured as if the
-   browser's address bar is always hidden, which it usually isn't, so the
-   spacer/hero end up taller than what's actually on screen and the
-   "anchored right under the header, page catches up to it on scroll"
-   effect drifts out of sync as the address bar shows/hides during
-   scrolling. `dvh` tracks the REAL visible viewport continuously, which
-   keeps the hero properly pinned directly under the header with no drift. */
-.rc-hero-spacer {
-  height: 100vh;
-  height: 100dvh;
-}
+/* No longer `position: fixed` (2026-09-13, Matt's follow-up call: "the  */
+/* image should not be sticky anywhere... I want it to scale when the   */
+/* user shrinks the window... if I can see the next section creep up    */
+/* as I'm closing the window, that's ok"). The hero is now a plain       */
+/* in-flow block sized by `aspect-ratio` instead of viewport height, so  */
+/* it scales proportionally with the window's WIDTH and never has to    */
+/* fill the screen top-to-bottom -- narrowing the window just shrinks    */
+/* the banner and lets .rc-hero-content ride up right behind it, same    */
+/* as any normal stacked page content. `margin-top: 72px` is only there  */
+/* to clear the site's own fixed 72px header (see .rc-fixed-header)      */
+/* since nothing about the header changed here. No spacer element is     */
+/* needed anymore -- that was only ever there to fake scroll distance    */
+/* for the old fixed hero. */
 .rc-hero {
-  position: fixed;
-  top: 72px;
-  left: 0;
-  right: 0;
+  position: relative;
+  margin-top: 72px;
   width: 100%;
-  max-width: 100vw;
-  height: calc(100vh - 72px);
-  height: calc(100dvh - 72px);
+  /* banner.jpg's own pixel ratio (2:1 landscape) -- sizing the box off   */
+  /* the image's real proportions, rather than a fixed height, is what   */
+  /* lets it scale cleanly at any window width instead of ever being     */
+  /* stretched or letterboxed. */
+  aspect-ratio: 2 / 1;
   z-index: 1;
   background-image: url('../assets/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/ is a sibling of css/, not a child of it */
   background-size: cover;
@@ -3231,11 +3212,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      amount the bottom does. Anchoring to `top` instead keeps the top of
      the image (and whatever's framed up there) pinned to the top of the
      window at every height, with all the cropping coming off the bottom. */
-  .rc-hero { background-image: url('../assets/banner-portrait.jpg'); background-position: left top; }
+  .rc-hero {
+    background-image: url('../assets/banner-portrait.jpg');
+    background-position: left top;
+    /* banner-portrait.jpg's own pixel ratio (1024x1536 = 2:3) -- swapped
+       in alongside the image itself so the box's proportions still match
+       whichever photo is actually showing, now that height comes from
+       aspect-ratio instead of the viewport. */
+    aspect-ratio: 2 / 3;
+  }
 }
 /* Small watermark badge, bottom-right corner of the hero. .rc-hero is
-   `position: fixed`, which is itself a positioning context, so this can
-   sit absolute against it directly with no extra wrapper needed. */
+   `position: relative`, which is itself a positioning context, so this
+   can sit absolute against it directly with no extra wrapper needed. */
 .rc-hero-badge {
   position: absolute;
   bottom: 22px;
@@ -3250,7 +3239,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
    tagline, middle-left over the hero photo (2026-09-13, Matt's call).
    Needs no extra positioning wrapper: .rc-hero is already `position:
-   fixed`, which is itself a positioning context, same reason
+   relative`, which is itself a positioning context, same reason
    .rc-hero-badge above can sit `position: absolute` directly against it.
    Font treatment matches every h1-h4 and .rc-eyebrow on the site --
    var(--rc-font-heading), uppercase, bold -- rather than a one-off font,
@@ -3268,10 +3257,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 2;
   /* Fluid instead of two fixed breakpoints (2026-09-13, Matt's follow-up
      call: "make it scale smoothly as the window collapses") -- clamp()
-     between a 360px phone and a 1600px desktop: 24px at 360px wide,
-     160px at 1600px and up, a straight linear ramp in between, no jump
-     at any particular width. */
-  padding-left: clamp(24px, -15.48px + 10.97vw, 160px);
+     between a 360px phone and a 1600px desktop, a straight linear ramp
+     in between, no jump at any particular width. Shifted 25px closer to
+     the edge across the whole range (2026-09-13, Matt's second
+     follow-up call: "reduce the padding to the left side... by 25px")
+     -- 0px at 360px wide (was 24px), 135px at 1600px and up (was 160px),
+     same slope as before, just moved 25px closer to the window edge at
+     every width. */
+  padding-left: clamp(0px, -40.48px + 10.97vw, 135px);
   max-width: 100%;
 }
 .rc-hero-title {
