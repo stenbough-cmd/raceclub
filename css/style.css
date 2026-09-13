@@ -3293,15 +3293,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      in between, no jump at any particular width. Shifted 25px closer to
      the edge (2026-09-13, second follow-up: "reduce the padding to the
      left side... by 25px"), then another 10px (2026-09-13, third
-     follow-up: "move all text over to the left 10px") -- net 0px at
-     360px wide (was 24px originally), 125px at 1600px and up (was 160px
-     originally), same slope throughout, just moved closer to the window
-     edge at every width each time. This affects EVERY line in
-     .rc-hero-text equally (YOUR CAREER, YOUR LEGACY, and the subtitle
-     all share this one padding-left); .rc-hero-title-shift below is the
-     separate, additional offset that pulls just two of those three
-     lines further left still. */
-  padding-left: clamp(0px, -50.48px + 10.97vw, 125px);
+     follow-up: "move all text over to the left 10px") -- 125px at
+     1600px and up (was 160px originally), same slope throughout, just
+     moved closer to the window edge at every width each time.
+     Floor raised to 20px, not 0px (2026-09-13, Matt's follow-up: "keep
+     the padding on the left side of the image so the text doesn't
+     shrink past the edge and get cut off") -- .rc-hero-title-shift
+     below pulls YOUR CAREER and the subtitle a further FIXED 20px left
+     of whatever this padding-left computes to, so once this hit its old
+     0px floor below ~640px wide, those two lines were landing at -20px
+     -- past the hero's own left edge and clipped off-screen. A 20px
+     floor here guarantees that shifted position never goes below 0,
+     whatever the window width. This affects EVERY line in .rc-hero-text
+     equally (YOUR CAREER, YOUR LEGACY, and the subtitle all share this
+     one padding-left); .rc-hero-title-shift below is the separate,
+     additional offset that pulls just two of those three lines further
+     left still. */
+  padding-left: clamp(20px, -50.48px + 10.97vw, 125px);
   max-width: 100%;
 }
 .rc-hero-title {
@@ -3334,10 +3342,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-hero-subtitle {
   font-family: var(--rc-font-heading);
-  /* Same fluid approach again, shifted up 10px across the whole range
-     (2026-09-13, Matt's follow-up call) -- 18px at 360px wide (was 8px),
-     25px at 1600px and up (was 15px), same slope as before. */
-  font-size: clamp(18px, 15.97px + 0.56vw, 25px);
+  /* Widened again (2026-09-13, Matt's follow-up call: "the subtitle...
+     still isn't changing size like the heading text above it") -- the
+     previous 18px-to-25px range only shrank by 28% end to end, next to
+     invisible compared to the title's dramatic 24px-to-80px swing (a
+     70% shrink), so it looked static by comparison even though it WAS
+     technically scaling. Now matches the title's own shrink RATIO
+     (min is 30% of max on both): 8px at 360px wide, 25px at 1600px and
+     up, so the subtitle visibly scales in step with the title instead
+     of barely moving next to it. */
+  font-size: clamp(8px, 3.06px + 1.37vw, 25px);
   /* Thin, not bold (2026-09-13, Matt's follow-up call) -- contrasts
      against the bold 800-weight title lines above it. */
   font-weight: 300;
