@@ -83,10 +83,19 @@ html, body {
      but if ANYTHING else on the page is even one pixel wider than the
      viewport, the browser grows the whole scrollable area to fit it,
      which then makes fixed left:0/right:0 elements span that WIDER area
-     instead of the visible screen. overflow-x:hidden here means even if
-     something does overflow, it gets clipped instead of dragging the
-     hero along with it. */
-  overflow-x: hidden;
+     instead of the visible screen. `clip`, not `hidden` (2026-09-13,
+     found while chasing Matt's report "the index bottom part doesn't
+     scroll over the banner"): `overflow-x: hidden` set on BOTH html and
+     body is a known browser quirk that silently disables `position:
+     sticky` for every descendant on the page -- the index.html hero
+     banner (.rc-hero) went from sticking under the header to just
+     scrolling away like a normal block, with no error or warning
+     anywhere. `clip` gives the exact same "nothing bleeds past the
+     screen edge" clipping behavior this rule was added for, without
+     that side effect. Confirmed by direct test: same page, same
+     scroll, .rc-hero's position went from drifting off-screen with
+     `hidden` to correctly pinned at top:72px with `clip`. */
+  overflow-x: clip;
   max-width: 100%;
 }
 
