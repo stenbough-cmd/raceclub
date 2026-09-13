@@ -5373,7 +5373,7 @@
     // and in Season Standings -- see handleAdminRecomputeSeason,
     // DataCache.gs.
     if (s.locked) {
-      var recomputeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Recompute Season');
+      var recomputeBtn = el('button', 'rc-btn-secondary rc-btn-row rc-btn-row-red', 'Recompute Season');
       recomputeBtn.type = 'button';
       recomputeBtn.addEventListener('click', function () {
         recomputeBtn.disabled = true;
@@ -5396,7 +5396,7 @@
       btnGroup.appendChild(recomputeBtn);
     }
 
-    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row rc-btn-row-red', 'Edit Season');
     editBtn.type = 'button';
     editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
     btnGroup.appendChild(editBtn);

@@ -227,6 +227,19 @@ p { margin: 0 0 0.75em; }
   min-width: 0;
 }
 
+/* Red modifier for a .rc-btn-row action that needs to read as distinct
+   from the plain gray row buttons around it (2026-09-13, Matt's call:
+   differentiate League Management's season-level Recompute Season/Edit
+   Season from the race-level buttons underneath each expanded season).
+   Stack alongside .rc-btn-secondary/.rc-btn-row rather than replacing
+   them, so sizing/padding stay identical -- only the color changes. */
+.rc-btn-row-red {
+  border-color: var(--rc-red);
+  color: var(--rc-red);
+}
+.rc-btn-row-red:hover { background: var(--rc-red); color: var(--rc-white); }
+.rc-btn-row-red:disabled { border-color: var(--rc-silver); color: var(--rc-steel); }
+
 .rc-link-btn {
   background: none;
   border: none;
