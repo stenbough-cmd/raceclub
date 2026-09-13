@@ -807,10 +807,23 @@ p { margin: 0 0 0.75em; }
   background: var(--rc-steel);
 }
 .rc-sponsor-table-sponsor { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.rc-sponsor-table-logo { max-width: 34px; max-height: 34px; object-fit: contain; flex: none; }
+/* 150px wide / 35px tall (2026-09-13, Matt's call -- this "All Sponsors"
+   table on the Sponsors page is the other place drivers actually see a
+   list of sponsor logos, and it was still on its old 34x34 cap while
+   Data Management's own Sponsors list had already moved to 150x35).
+   .rc-pick-chip-logo (Current Picks strip, same page) deliberately keeps
+   its own smaller 46x46 cap -- that's a compact summary chip, not a
+   list row, and a 150px logo would overrun its 190px-min-width card. */
+.rc-sponsor-table-logo { max-width: 150px; max-height: 35px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-sponsor-table-amt { font-family: var(--rc-font-heading); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.rc-sponsor-table-amt-bonus { color: var(--rc-positive); }
+/* Bright green (2026-09-13, Matt's call: "same color green as the green
+   bar to the right") -- matches .rc-sponsor-swing-seg-bonus's own bright
+   green further down, which sits in the same row as this dollar amount.
+   Was --rc-positive (the darker green used elsewhere for bonus text),
+   which no longer matched once the swing bar switched to the brighter
+   --rc-positive-bright shade. */
+.rc-sponsor-table-amt-bonus { color: var(--rc-positive-bright); }
 .rc-sponsor-table-amt-penalty { color: var(--rc-negative); }
 .rc-sponsor-table-trigger { font-size: 11.5px; color: var(--rc-steel); margin-top: 2px; }
 .rc-sponsor-swing { display: flex; flex-direction: column; gap: 3px; width: 100%; }
@@ -873,7 +886,14 @@ p { margin: 0 0 0.75em; }
    already uses between car rows, instead of the darker silver default
    above (which stays as-is for Cars' Class head / Sponsors' Tier head,
    where the heavier line is still the right weight). */
-.rc-dm-row-light { border-bottom-color: var(--rc-offwhite); }
+/* 20px left inset (2026-09-13, Matt's call: "move all the tracks in
+   slightly compared to the location pills") -- matches the indent every
+   other list on this page already gives its rows relative to its own
+   group-head pill (.rc-group-row's own padding-left: 20px, used by the
+   Members list under this exact same .rc-group-head component). Track
+   venue rows were the one list still sitting flush with their Region
+   pill instead of inset under it. */
+.rc-dm-row-light { padding-left: 20px; border-bottom-color: var(--rc-offwhite); }
 .rc-dm-row-label { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 600; color: var(--rc-carbon); }
 /* Sub-rows (a track's layouts, a class's seasons, a season's cars) --
    indented and prefixed with a tree glyph rather than a bullet, so the

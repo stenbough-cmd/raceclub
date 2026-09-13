@@ -8937,11 +8937,16 @@
   // adminRejectAccount) and instant-optimistic-then-toast-on-failure
   // pattern as everywhere else on this page.
   // ---------------------------------------------------------------------
-  function buildPendingApprovalPanel(token) {
+  // Takes already-fetched `pending` rows rather than fetching its own
+  // (2026-09-13 follow-up, Matt's call: "don't display the admin page
+  // until all data is loaded") -- renderAdminSection below now fetches
+  // Pending Approval alongside Tracks/Cars/Sponsors up front, behind one
+  // shared page-level spinner, instead of this card popping in a beat
+  // later behind its own separate one.
+  function buildPendingApprovalPanel(pending, token) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Pending Approval'));
     var body = el('div');
-    body.appendChild(buildSpinner('Loading pending approvals…'));
     panel.appendChild(body);
 
     function showEmptyIfNoRowsLeft() {
@@ -8951,85 +8956,78 @@
       }
     }
 
-    fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
-      body.innerHTML = '';
-      var pending = (data && data.success) ? (data.pending || []) : [];
-      if (!pending.length) {
-        body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
-        return;
-      }
-      pending.slice().sort(function (a, b) {
-        return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
-      }).forEach(function (person) {
-        var row = el('div', 'rc-group-row');
-        var info = el('div', 'rc-dm-row-info');
-        info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-        row.appendChild(info);
+    if (!pending || !pending.length) {
+      body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
+      return panel;
+    }
+    pending.slice().sort(function (a, b) {
+      return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
+    }).forEach(function (person) {
+      var row = el('div', 'rc-group-row');
+      var info = el('div', 'rc-dm-row-info');
+      info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+      row.appendChild(info);
 
-        var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+      var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
-        // Same sitewide button rule as buildDriversPanel's own Approve/
-        // Deny (2026-09-13, Matt's call): both write straight to the sheet
-        // the instant they're clicked, so both get the save-style red
-        // button rather than the row's usual gray.
-        var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
-        approveBtn.type = 'button';
-        approveBtn.addEventListener('click', function () {
-          var nextSibling = row.nextSibling, parent = row.parentNode;
-          if (parent) parent.removeChild(row);
-          fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-            if (data && data.success) {
-              showEmptyIfNoRowsLeft();
-            } else {
-              if (parent) parent.insertBefore(row, nextSibling);
-              showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
-            }
-          }).catch(function () {
+      // Same sitewide button rule as buildDriversPanel's own Approve/
+      // Deny (2026-09-13, Matt's call): both write straight to the sheet
+      // the instant they're clicked, so both get the save-style red
+      // button rather than the row's usual gray.
+      var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
+      approveBtn.type = 'button';
+      approveBtn.addEventListener('click', function () {
+        var nextSibling = row.nextSibling, parent = row.parentNode;
+        if (parent) parent.removeChild(row);
+        fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+          if (data && data.success) {
+            showEmptyIfNoRowsLeft();
+          } else {
             if (parent) parent.insertBefore(row, nextSibling);
-            showToast('Could not reach the server -- account not approved.', 'error');
-          });
+            showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
+          }
+        }).catch(function () {
+          if (parent) parent.insertBefore(row, nextSibling);
+          showToast('Could not reach the server -- account not approved.', 'error');
         });
-
-        var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
-        denyBtn.type = 'button';
-        denyBtn.addEventListener('click', function () {
-          var nextSibling = row.nextSibling, parent = row.parentNode;
-          if (parent) parent.removeChild(row);
-          fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-            if (data && data.success) {
-              showEmptyIfNoRowsLeft();
-            } else {
-              if (parent) parent.insertBefore(row, nextSibling);
-              showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
-            }
-          }).catch(function () {
-            if (parent) parent.insertBefore(row, nextSibling);
-            showToast('Could not reach the server -- account not denied.', 'error');
-          });
-        });
-
-        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-        editBtn.type = 'button';
-        // Reopens as a normal edit popup -- reload here just re-labels the
-        // row's text if the admin changes the display name, same as any
-        // other Edit button; it doesn't need to touch this panel's
-        // Approve/Deny wiring at all.
-        editBtn.addEventListener('click', function () {
-          openEditDriverModal(person, token, function () {
-            info.innerHTML = '';
-            info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-          });
-        });
-
-        btnGroup.appendChild(approveBtn);
-        btnGroup.appendChild(denyBtn);
-        btnGroup.appendChild(editBtn);
-        row.appendChild(btnGroup);
-        body.appendChild(row);
       });
-    }).catch(function () {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'rc-cs-empty', 'Could not load pending approvals right now.'));
+
+      var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
+      denyBtn.type = 'button';
+      denyBtn.addEventListener('click', function () {
+        var nextSibling = row.nextSibling, parent = row.parentNode;
+        if (parent) parent.removeChild(row);
+        fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+          if (data && data.success) {
+            showEmptyIfNoRowsLeft();
+          } else {
+            if (parent) parent.insertBefore(row, nextSibling);
+            showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
+          }
+        }).catch(function () {
+          if (parent) parent.insertBefore(row, nextSibling);
+          showToast('Could not reach the server -- account not denied.', 'error');
+        });
+      });
+
+      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+      editBtn.type = 'button';
+      // Reopens as a normal edit popup -- reload here just re-labels the
+      // row's text if the admin changes the display name, same as any
+      // other Edit button; it doesn't need to touch this panel's
+      // Approve/Deny wiring at all.
+      editBtn.addEventListener('click', function () {
+        openEditDriverModal(person, token, function () {
+          info.innerHTML = '';
+          info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+        });
+      });
+
+      btnGroup.appendChild(approveBtn);
+      btnGroup.appendChild(denyBtn);
+      btnGroup.appendChild(editBtn);
+      row.appendChild(btnGroup);
+      body.appendChild(row);
     });
 
     return panel;
@@ -9051,22 +9049,50 @@
   // Management's standalone sidebar button is gone; this exact content
   // (Members/Tracks/Cars/Sponsors) now lives under Admin instead, still
   // Admin-only (Matt's call: "admins can only access this ADMIN section").
+  // Waits on Pending Approval + Tracks + Cars + Sponsors ALL together
+  // before anything on the page renders (2026-09-13, Matt's call: "don't
+  // display the admin page until all data is loaded, including the
+  // pending members, track list, car list, sponsor list") -- previously
+  // the button row/Seasons panel rendered instantly while Pending
+  // Approval alone popped in a beat later behind its own separate
+  // spinner. One shared page-level spinner now covers the whole wait;
+  // Tracks/Cars/Sponsors' own popups (openTracksModal etc.) still fetch
+  // their own copy when clicked, same as before -- this earlier fetch is
+  // purely a display gate, not a cache handed into those popups.
   function renderAdminSection(token) {
     var section = document.getElementById('rc-section-admin');
     if (!section) return;
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
+    section.appendChild(buildSpinner('Loading Admin…'));
 
-    // Pending Approval -- sits above Data Management (2026-09-13, Matt's
-    // call) so a waiting account surfaces right on the Admin page itself
-    // instead of only inside Data Management > Members, which an admin
-    // has to open on purpose to even find out someone's waiting. Fetches
-    // and renders its own data independently of the rest of this
-    // function (same adminListPendingAccounts call and Approve/Deny
-    // actions the Members popup's own Pending Approval group already
-    // uses -- see buildDriversPanel above) so it doesn't hold up the
-    // rest of the Admin page while it loads.
-    section.appendChild(buildPendingApprovalPanel(token));
+    Promise.all([
+      fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getTracks', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getCars', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('getSponsors', { token: token }).catch(function () { return { success: false }; })
+    ]).then(function (results) {
+      // The admin could have navigated to a different page while this was
+      // still in flight -- #rc-section-admin would be gone (or hidden
+      // and about to be replaced) by the time this resolves, same "don't
+      // paint into a stale section" guard the other lazy sections use.
+      var section = document.getElementById('rc-section-admin');
+      if (!section) return;
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
+
+      var pendingData = results[0];
+      renderAdminSectionBody(section, token, pendingData && pendingData.success ? (pendingData.pending || []) : []);
+    });
+  }
+
+  // The actual Admin page content, split out from renderAdminSection
+  // above so that function's only job is "wait for everything, then call
+  // this" -- pendingRows is already-fetched data (see
+  // buildPendingApprovalPanel's own comment for why it stopped fetching
+  // its own copy).
+  function renderAdminSectionBody(section, token, pendingRows) {
+    section.appendChild(buildPendingApprovalPanel(pendingRows, token));
 
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
@@ -9470,7 +9496,14 @@
         modal.body.innerHTML = '';
         if (addButtonConfig) {
           var addRow = el('div', 'display:flex;justify-content:flex-end;margin-bottom:14px;');
-          var addBtn = el('button', 'rc-btn-secondary rc-btn-sm', addButtonConfig.label);
+          // Red, not the row's usual gray (2026-09-13, Matt's call: put
+          // Add Track/Add Car/Add Sponsor back to how they looked before).
+          // Same kind of named exception to the sitewide button-color rule
+          // as index.html's "Create Your Driver" and Account.html's
+          // "Create a Season" -- each of those OPENS a form rather than
+          // itself writing to a sheet, but Matt wants them red anyway as
+          // the page's one attention-grabbing action.
+          var addBtn = el('button', 'rc-btn-primary rc-btn-sm', addButtonConfig.label);
           addBtn.type = 'button';
           addBtn.addEventListener('click', function () { addButtonConfig.onClick(load); });
           addRow.appendChild(addBtn);
