@@ -710,25 +710,41 @@
   // in its own top row by itself (Matt's call: build/verify cards one at
   // a time, more join this row later).
   // ---------------------------------------------------------------------
-  // Fires all six dashboard data calls independently, all at once, and
-  // hands back their raw in-flight promises (2026-09-03 rewrite, Matt's
-  // call: "instead of loading everything in on the dash, have the dash
-  // populate instantly and load the cards one by one... fading into
-  // place" -- extends the "3 priority / 3 background" split that came
-  // before it into "nothing gates anything, every card loads and fades
-  // in on its own"). Nothing here is awaited by the caller -- see the
-  // bottom of this file, where the Dashboard section now paints the
-  // instant the PROFILE fetch resolves, full stop.
+  // ONE combined call instead of 8 separate ones (2026-09-13, Matt's
+  // report: Dashboard taking 20+ seconds to load). Each card used to fire
+  // its own action call -- 8 separate HTTP round trips to the Apps
+  // Script Web App, and Apps Script does not run several requests from
+  // the same user in true parallel, so those 8 stacked up one after
+  // another instead of finishing together. action=getDashboardData
+  // (handleGetDashboardData, DataCache.gs) does the same 8 lookups
+  // server-side, in one execution, and returns them all in one response.
+  //
+  // Every card still gets its own promise, exactly as before -- they all
+  // just resolve (or reject) together off that one underlying fetch,
+  // instead of off 8 independent ones. This is why every card render
+  // function below (asyncDashCard, the Registration Status/Current Seat
+  // pair, etc.) needed no changes at all: as far as they know, they're
+  // still each waiting on their own fetch. The tradeoff, since this is
+  // one response now instead of 8: the cards no longer fade in one by
+  // one as each finishes (2026-09-03 rewrite) -- they now all populate
+  // together the moment the one combined call resolves. Matt's call,
+  // trading that fade-in for the much shorter total wait.
   function fetchDashboardData(token) {
+    var combined = fetchApi('getDashboardData', { token: token }).catch(function () { return { success: false }; });
+    function slice(key) {
+      return combined.then(function (data) {
+        return (data && data.success && data[key]) ? data[key] : { success: false };
+      });
+    }
     return {
-      activeSeasonPromise: fetchApi('getActiveSeason', { token: token }).catch(function () { return { success: false }; }),
-      currentSeatPromise: fetchApi('getMyCurrentSeat', { token: token }).catch(function () { return { success: false }; }),
-      financesPromise: fetchApi('getMyFinancesReputation', { token: token }).catch(function () { return { success: false }; }),
-      seasonObjectivePromise: fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
-      nextRacePromise: fetchApi('getNextRace', { token: token }).catch(function () { return { success: false }; }),
-      sponsorsPromise: fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
-      recentResultsPromise: fetchApi('getRecentResults', { token: token }).catch(function () { return { success: false }; }),
-      myProtestsPromise: fetchApi('getMyProtests', { token: token }).catch(function () { return { success: false }; })
+      activeSeasonPromise: slice('activeSeason'),
+      currentSeatPromise: slice('currentSeat'),
+      financesPromise: slice('finances'),
+      seasonObjectivePromise: slice('seasonObjective'),
+      nextRacePromise: slice('nextRace'),
+      sponsorsPromise: slice('sponsors'),
+      recentResultsPromise: slice('recentResults'),
+      myProtestsPromise: slice('myProtests')
     };
   }
 
@@ -785,6 +801,17 @@
     return { topRow: topRow, financeRow: financeRow, resultsRow: resultsRow };
   }
 
+  // Every promise buildDashboardDataRows/the wager row's Protest card read
+  // off, bundled so both the first paint and a post-registration rebuild
+  // can wait on "the whole combined fetch is back" in one place.
+  function _rcDashboardAllSettled_(dashboardData) {
+    return Promise.all([
+      dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise, dashboardData.financesPromise,
+      dashboardData.seasonObjectivePromise, dashboardData.nextRacePromise, dashboardData.sponsorsPromise,
+      dashboardData.recentResultsPromise, dashboardData.myProtestsPromise
+    ]);
+  }
+
   function renderDashboardSection(profile, token, dashboardData) {
     var section = document.getElementById('rc-section-dashboard');
     if (!section) return;
@@ -799,38 +826,66 @@
     //   last 3 filed protests, same asyncDashCard treatment as every other
     //   data-driven card)
     //
-    // 2026-09-03 rewrite (Matt's call): the Dashboard section itself no
-    // longer waits on ANY data fetch -- see the bottom of this file,
-    // where it's built the instant the profile resolves. Every single
-    // card below is its own instantly-painted placeholder that fades its
-    // real content in independently the moment its own fetch resolves
-    // (buildDashboardDataRows above), the exact same treatment the Wager
-    // card pioneered. Nothing blocks anything else.
+    // Branded loading spinner while the combined fetch is in flight
+    // (2026-09-13, Matt's call: "add the loading popup that we use
+    // throughout the account page" -- keep the Dashboard's own wait
+    // consistent with Calendar/League Management/every other section that
+    // fetches on load, now that fetchDashboardData is one combined
+    // action=getDashboardData round trip instead of 8 separate ones. The
+    // 2026-09-03 "every card fades in independently, nothing blocks
+    // anything else" treatment doesn't really apply anymore since all 8
+    // cards' data now arrives together in that one response -- they still
+    // use the exact same asyncDashCard/fade-in code as before, it just
+    // all resolves at once, so showing the standard spinner for that one
+    // wait (instead of a grid of blank fading cards) reads better and
+    // matches how every other page on the site shows a loading state.
+    var spinner = buildPageSpinner('Loading your dashboard...');
+    section.appendChild(spinner);
+
+    var rows = null;
+
+    function paintRows(data, onRegistered) {
+      var built = buildDashboardDataRows(profile, token, data, onRegistered);
+      section.appendChild(built.topRow);
+      section.appendChild(built.financeRow);
+      section.appendChild(built.resultsRow);
+
+      var wagerRow = el('div', 'rc-quick-row');
+      rcDashboardWagerCard = wagerCard(token);
+      wagerRow.appendChild(rcDashboardWagerCard);
+      wagerRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', data.myProtestsPromise, protestCard));
+      section.appendChild(wagerRow);
+
+      return built;
+    }
+
     function onRegisteredRebuild() {
       // Registration just completed -- re-fetch everything that's
       // gated/built on registration state and swap the three rows'
       // contents in place, same "fresh promises, fade in again" path as
       // the very first paint. Named (not anonymous) so it can pass
       // itself back in as the next rebuild's own onRegistered callback.
+      // Shows the same spinner while the fresh combined fetch is in
+      // flight, rather than swapping stale content for a moment.
       var freshDashboardData = fetchDashboardData(token);
-      var fresh = buildDashboardDataRows(profile, token, freshDashboardData, onRegisteredRebuild);
-      rows.topRow.innerHTML = '';
-      while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
-      rows.financeRow.innerHTML = '';
-      while (fresh.financeRow.firstChild) rows.financeRow.appendChild(fresh.financeRow.firstChild);
-      rows.resultsRow.innerHTML = '';
-      while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+      var rebuildSpinner = buildPageSpinner('Loading your dashboard...');
+      rows.topRow.parentNode.insertBefore(rebuildSpinner, rows.topRow);
+      _rcDashboardAllSettled_(freshDashboardData).then(function () {
+        rebuildSpinner.remove();
+        var fresh = buildDashboardDataRows(profile, token, freshDashboardData, onRegisteredRebuild);
+        rows.topRow.innerHTML = '';
+        while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
+        rows.financeRow.innerHTML = '';
+        while (fresh.financeRow.firstChild) rows.financeRow.appendChild(fresh.financeRow.firstChild);
+        rows.resultsRow.innerHTML = '';
+        while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+      });
     }
-    var rows = buildDashboardDataRows(profile, token, dashboardData, onRegisteredRebuild);
-    section.appendChild(rows.topRow);
-    section.appendChild(rows.financeRow);
-    section.appendChild(rows.resultsRow);
 
-    var wagerRow = el('div', 'rc-quick-row');
-    rcDashboardWagerCard = wagerCard(token);
-    wagerRow.appendChild(rcDashboardWagerCard);
-    wagerRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.myProtestsPromise, protestCard));
-    section.appendChild(wagerRow);
+    _rcDashboardAllSettled_(dashboardData).then(function () {
+      spinner.remove();
+      rows = paintRows(dashboardData, onRegisteredRebuild);
+    });
   }
 
   // Runs after ANY popup save (added 2026-08-30, Matt's call: "Whenever
