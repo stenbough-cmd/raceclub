@@ -88,16 +88,22 @@
     longer exists (see race-club-eco-season-1.md's "Moving up a class"
     section) -- now describes the actual current policy: no money gate,
     no experience checklist, open the moment a class is on the schedule.
-  - "Meet The Grid" rebuilt from a live, season-linked data fetch
+  - "Meet The Grid" first rebuilt from a live, season-linked data fetch
     (getGridTeaser, real Cars rows off whatever season/classes were
-    actually running) into a static five-team carousel with illustrative
-    example teams baked directly into this page -- no API call, no
-    IntersectionObserver, nothing that changes based on which season is
-    open. Center-spotlight layout: one team fully shown in the middle,
-    the previous/next teams peeking faded at the edges, cycled with the
-    two arrow buttons (wraps around both directions). Angled/slanted
-    card shape (clip-path) plus a diagonal red accent stripe per Matt's
-    "aggressive/edgy" ask -- see .rc-grid-card in css/style.css.
+    actually running) into an illustrative carousel with made-up team
+    names -- Matt flagged this immediately (wanted real teams, not
+    invented ones) and asked for a fictional-slant/carousel redesign to
+    be undone too. Reworked again same day (2026-09-13) into what's here
+    now: a static 3-across grid of REAL teams pulled from the Cars tab
+    of the "Race Club Data Sheets" spreadsheet, baked into this page as
+    plain per-class data (see the <script> below the section) so it
+    stays generic/evergreen -- no API call, no live season link. On
+    every page load, JS randomly picks one class (LMGT3/LMP3/LMP2/
+    Hypercar), then randomly samples up to 9 distinct teams from within
+    that class (fewer if the class has under 9 -- LMP2 currently has 6),
+    laid out 3-per-row. Card look is the original clean white teaser
+    card (logo badge, name/sub, red rule, description), badge colored
+    per class to match the Class Tiers accents above it.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -259,113 +265,173 @@
     </div>
   </section>
 
-  <!-- "Meet The Grid" carousel (2026-09-13, replaced the old live/
-       season-linked teaser -- see the top-of-file comment for why). Five
-       illustrative example teams, baked directly into this page as
-       plain data below -- nothing here changes based on which season or
-       classes are actually running. One card spotlighted center at a
-       time; the previous/next cards peek in, faded and scaled down, at
-       the left/right edges; the two arrow buttons cycle through all
-       five, wrapping around in both directions. Full-bleed: .rc-carousel
-       sits as a sibling of .rc-landing-inner, same "escape the 960px
-       reading column" pattern .rc-mid-banner already uses elsewhere on
-       this page, so it can genuinely span the entire page width. -->
+  <!-- "Meet The Grid" (2026-09-13, reworked back to a real-roster grid
+       per Matt's call -- the earlier carousel used made-up team names,
+       which he flagged immediately). Real teams pulled from the Cars
+       tab of the "Race Club Data Sheets" spreadsheet, baked into this
+       page as plain data below (grouped by class) so the page stays
+       static/generic per the earlier "don't reference a specific
+       season" ask, while still showing the actual grid. On every page
+       load, JS randomly picks ONE class, then randomly samples up to 9
+       distinct teams from within that class (fewer if the class has
+       fewer than 9 -- LMP2 currently only fields 6), and lays them out
+       3-across. Multiple cars entered by the same team are folded into
+       one card showing every car number that team runs. -->
   <section class="rc-landing-section rc-grid-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Grid</div>
       <h2>Meet The Grid</h2>
-      <p class="rc-landing-tagline">Every seat on Race Club is modeled on a real-world team identity: a real livery, a real class, a real car number. Here's a sample of who you could be lining up against.</p>
+      <p class="rc-landing-tagline">Every seat on Race Club is a real team pulled from our own roster: a real livery, a real class, a real car number. Here's a random sample of who you could be lining up against.</p>
     </div>
 
-    <div class="rc-carousel">
-      <button type="button" class="rc-carousel-arrow rc-carousel-arrow-left" id="rc-grid-prev" aria-label="Previous team">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
-      </button>
-      <div class="rc-carousel-track" id="rc-grid-track"></div>
-      <button type="button" class="rc-carousel-arrow rc-carousel-arrow-right" id="rc-grid-next" aria-label="Next team">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
-      </button>
-    </div>
+    <div class="rc-grid-teaser-row" id="rc-grid-track"></div>
+    <p class="rc-grid-teaser-footnote" id="rc-grid-footnote"></p>
   </section>
 
   <script>
   (function () {
-    // Static example roster -- deliberately illustrative, not a real
-    // season's actual entry list (Matt's call: this page should read the
-    // same regardless of which season or classes happen to be running).
-    // Spans all four class tiers on purpose so the carousel itself
-    // reinforces the Class Tiers section right above it.
-    var GRID_TEAMS = [
-      { name: 'Northgate GT', cls: 'LMGT3', car: 'Porsche 911 GT3 R', number: '14',
-        blurb: 'The rookie-friendly home of the entry tier: a forgiving car, a patient crew, and a livery built for drivers writing the first chapter of a career.' },
-      { name: 'Ten10 Motorsports', cls: 'LMP3', car: 'Ligier JS P320', number: '30',
-        blurb: 'A privateer LMP3 outfit built around discipline over raw pace: clean stints, smart strategy, and a paddock that treats every seat like it matters.' },
-      { name: 'Meridian Endurance', cls: 'LMP2', car: 'Oreca 07', number: '52',
-        blurb: 'A mid-field prototype squad known for surviving the chaos: strong reliability and a lineup that rarely throws a race away.' },
-      { name: 'Vantage Prototype Team', cls: 'Hypercar', car: 'Porsche 963', number: '7',
-        blurb: 'The top of the ladder. A factory-grade Hypercar effort for drivers who have earned the biggest stakes on the grid, and the pace to back it up.' },
-      { name: 'Apex Circuit Racing', cls: 'LMP3', car: 'Duqueine M30', number: '81',
-        blurb: 'An aggressive, podium-hunting LMP3 team that leans on qualifying pace and hard-charging race craft over pure conservatism.' }
-    ];
+    // Real roster data, grouped by class -- source of truth is the Cars
+    // tab of the "Race Club Data Sheets" spreadsheet. Cars entered under
+    // the same TeamName are folded into one entry here (numbers holds
+    // every car number that team fields); desc is each team's TeamDesc
+    // column verbatim.
+    var CARS_BY_CLASS = {
+      LMGT3: [
+        { team: 'Garage 59', car: 'McLaren 720S GT3 Evo', numbers: ['10', '58'],
+          desc: 'Garage 59 is one of endurance racing’s most respected independent GT teams, building a reputation through victories and podiums in premier global championships while maintaining a close relationship with McLaren’s customer racing program. Operating the McLaren 720S LMGT3 Evo, the British squad combines technical expertise, strategic consistency, and years of GT racing experience to compete against factory-backed rivals.' },
+        { team: 'Vista AF Corse', car: 'Ferrari 296 GT3 Evo', numbers: ['21', '54'],
+          desc: 'Vista AF Corse represents the latest chapter in the legendary AF Corse story, one of the most successful Ferrari teams in modern endurance racing. With multiple world championships, Le Mans victories, and a long-standing partnership with Ferrari, the organization has become synonymous with excellence in sports car racing.' },
+        { team: 'Heart of Racing Team', car: 'Aston Martin Vantage AMR GT3', numbers: ['23', '27'],
+          desc: 'Heart of Racing Team has rapidly grown into one of the most admired programs in international GT competition, pairing professional success with a charitable mission that has earned widespread respect throughout motorsport. Closely aligned with Aston Martin Racing, the team has collected victories across major endurance championships.' },
+        { team: 'Team WRT', car: 'BMW M4 LMGT3 Evo', numbers: ['32', '69'],
+          desc: 'Team WRT is among the most accomplished endurance racing organizations of the modern era, collecting championships and race wins across GT3, prototype, and endurance competition worldwide. Originally renowned for its success with Audi before becoming BMW’s flagship endurance partner.' },
+        { team: 'TF Sport', car: 'Corvette Z06 GT3.R', numbers: ['33'],
+          desc: 'TF Sport has steadily established itself as one of the leading customer racing teams in international endurance competition. The British outfit has earned victories and championship success across multiple GT categories while developing a reputation for professionalism and strong race-day strategy.' },
+        { team: 'Racing Team Turkey by TF', car: 'Corvette Z06 GT3.R', numbers: ['34'],
+          desc: 'Racing Team Turkey by TF brings together ambitious international talent and the race-winning expertise of TF Sport in one highly competitive LMGT3 package, benefiting from TF Sport’s extensive endurance racing knowledge and Corvette’s legendary GT pedigree.' },
+        { team: 'Iron Lynx', car: 'Mercedes-AMG GT3 Evo', numbers: ['61', '79'],
+          desc: 'Iron Lynx has become one of endurance racing’s standout success stories, rapidly growing from a developing GT outfit into a championship-winning organization competing on the world stage, known for aggressive yet calculated racecraft.' },
+        { team: 'Proton Competition', car: 'Ford Mustang GT3', numbers: ['77', '88'],
+          desc: 'Proton Competition is one of endurance racing’s most experienced and respected privateer organizations, with decades of participation in top-level sports car events around the globe and a reputation for persistence and professionalism.' },
+        { team: 'Akkodis ASP Team', car: 'Lexus RC F GT3', numbers: ['78', '87'],
+          desc: 'Akkodis ASP Team enters LMGT3 competition with a wealth of experience gained through years of success in GT championships across Europe and beyond, and has become one of Lexus’ premier international partners.' },
+        { team: 'Manthey DK Engineering', car: 'Porsche 911 GT3 R (Type 992)', numbers: ['91'],
+          desc: 'Manthey DK Engineering combines the unrivaled endurance racing expertise of Manthey with a team structure built around Porsche’s legendary GT heritage, entering every race with championship-level expectations.' },
+        { team: 'The Bend Manthey', car: 'Porsche 911 GT3 R (Type 992)', numbers: ['92'],
+          desc: 'The Bend Manthey brings together the world-class capabilities of Manthey Racing and strong international backing to create a formidable Porsche-powered contender with the experience and pedigree to challenge for podiums.' }
+      ],
+      LMP3: [
+        { team: 'DKR Engineering', car: 'Ligier JS P325', numbers: ['4'],
+          desc: 'DKR Engineering is a Luxembourg-based endurance racing team founded in 2004. After establishing itself in GT racing, the team became a major force in prototype competition, winning multiple Michelin Le Mans Cup LMP3 titles and the 2021 European Le Mans Series LMP3 championship.' },
+        { team: 'Rinaldi Racing', car: 'Ligier JS P325', numbers: ['5'],
+          desc: 'Rinaldi Racing is a German motorsport team with decades of experience across GT and prototype racing. Best known for its Ferrari programs and success in endurance classics such as the Nürburgring 24 Hours, the team has expanded its presence in LMP3 competition.' },
+        { team: 'Team Virage', car: 'Ligier JS P325', numbers: ['8'],
+          desc: 'Team Virage is a Polish endurance racing organization that evolved from the successful G-TEC Sport operation founded in 1998. Backed by a strong driver-development philosophy through the Virage Academy, the team blends emerging talent with professional endurance racing expertise.' },
+        { team: 'Eurointernational', car: 'Ligier JS P325', numbers: ['11'],
+          desc: 'Eurointernational is an Italian racing organization led by Antonio Ferrari with a history dating back to 1989, and has become one of the most accomplished outfits in modern LMP3 racing, collecting dozens of championships and hundreds of podium finishes.' },
+        { team: 'Inter Europol Competition', car: 'Ligier JS P325', numbers: ['13'],
+          desc: 'Inter Europol Competition is a Polish endurance racing team founded in 2010 and widely recognized by its "Turbo Bakers" nickname, competing in ELMS, IMSA, Asian Le Mans Series, and the 24 Hours of Le Mans.' },
+        { team: 'CLX Motorsport', car: 'Ligier JS P325', numbers: ['17'],
+          desc: 'CLX Motorsport, formerly known as Cool Racing, is a Swiss-rooted team based in France founded in 2017 and led by former Le Mans class winner Nicolas Lapierre, established as a powerhouse in both LMP2 and LMP3 competition.' },
+        { team: 'Racing Spirit of Leman', car: 'Ligier JS P325', numbers: ['31'],
+          desc: 'Racing Spirit of Léman is a French-Swiss endurance racing team founded in 2019 near Lake Geneva, from which it takes its name, and has quickly become a respected name in international endurance racing.' },
+        { team: 'Ultimate', car: 'Ligier JS P325', numbers: ['35'],
+          desc: 'Ultimate is a French family-run racing team founded by former endurance racer Matthieu Lahaye, known for its determination, hands-on management style, and strong endurance-racing heritage.' },
+        { team: 'M Racing', car: 'Ligier JS P325', numbers: ['68'],
+          desc: 'M Racing is a French endurance racing team headquartered at the Magny-Cours Technopole and supported by touring car legend Yvan Muller, focused on developing drivers while pursuing competitive results.' },
+        { team: 'R-ace GP', car: 'Duqueine D09', numbers: ['85'],
+          desc: 'R-ace GP is a French motorsport organization founded in 2011 that built its reputation through elite junior single-seater racing programs, helping develop future Formula 1 stars including Oscar Piastri, Pierre Gasly, and Esteban Ocon.' }
+      ],
+      LMP2: [
+        { team: 'Prema Racing', car: 'Oreca 07 - Gibson', numbers: ['9', '63'],
+          desc: 'PREMA Racing is one of the most successful teams in modern motorsport, founded in Italy in 1983 and renowned for developing generations of top drivers before expanding into endurance racing in 2022.' },
+        { team: 'Vector Sport', car: 'Oreca 07 - Gibson', numbers: ['10'],
+          desc: 'Vector Sport is a British endurance racing team based in Silverstone and founded in 2021 by Gary Holland, building a reputation for professionalism, technical expertise, and strong performances in the highly competitive LMP2 category.' },
+        { team: 'United Autosports', car: 'Oreca 07 - Gibson', numbers: ['22', '23'],
+          desc: 'United Autosports is one of the most accomplished endurance racing teams in the world, founded by Zak Brown and Richard Dean in 2009, with victories and championships across ELMS, WEC, IMSA, and the Asian Le Mans Series.' },
+        { team: 'JOTA Sport', car: 'Oreca 07 - Gibson', numbers: ['28'],
+          desc: 'JOTA Sport is a British endurance racing powerhouse founded in 2000, with championship titles in ELMS, FIA WEC, and the FIA Hypercar World Cup, as well as numerous Le Mans podiums.' },
+        { team: 'Team WRT', car: 'Oreca 07 - Gibson', numbers: ['31', '41'],
+          desc: 'Team WRT is a Belgian racing team founded in 2009 that rose to prominence through dominant performances in GT racing before expanding into prototype competition, capturing the LMP2 class victory at the 2021 24 Hours of Le Mans.' },
+        { team: 'Inter Europol Competition', car: 'Oreca 07 - Gibson', numbers: ['34'],
+          desc: 'Inter Europol Competition is a Polish endurance racing team founded in 2010 and affectionately known as the "Turbo Bakers", earning championship success across multiple series including landmark victories at the 24 Hours of Le Mans.' }
+      ],
+      Hypercar: [
+        { team: 'Aston Martin THOR Team', car: 'Aston Martin Valkyrie', numbers: ['007', '009'],
+          desc: 'Aston Martin THOR Team represents Aston Martin’s factory Hypercar effort in the FIA World Endurance Championship, built around the spectacular Valkyrie platform in partnership with The Heart of Racing.' },
+        { team: 'Toyota Gazoo Racing', car: 'Toyota GR010 Hybrid', numbers: ['7', '8'],
+          desc: 'Toyota Gazoo Racing is the benchmark team of modern endurance racing, having dominated the FIA World Endurance Championship and 24 Hours of Le Mans over the past decade with cutting-edge hybrid technology.' },
+        { team: 'Cadillac Hertz Team JOTA', car: 'Cadillac V-Series.R', numbers: ['12', '38'],
+          desc: 'Cadillac Hertz Team JOTA brings together Cadillac’s factory-backed Hypercar program and the championship-winning expertise of JOTA Sport, combining American engineering with one of endurance racing’s most respected private teams.' },
+        { team: 'BMW M Team WRT', car: 'BMW M Hybrid V8', numbers: ['15', '20'],
+          desc: 'BMW M Team WRT is the factory endurance racing partnership between BMW Motorsport and Belgian powerhouse Team WRT, known for its professionalism, technical strength, and ability to compete for victories on the world stage.' },
+        { team: 'Genesis Magma Racing', car: 'Genesis GMR-001', numbers: ['17', '19'],
+          desc: 'Genesis Magma Racing is the premium Korean manufacturer’s ambitious entry into top-level endurance racing, combining advanced engineering, elite personnel, and a long-term commitment to Hypercar competition.' },
+        { team: 'Alpine Endurance Team', car: 'Alpine A424', numbers: ['35', '36'],
+          desc: 'Alpine Endurance Team is the factory sports car racing division of Alpine, representing the French brand at the highest level of endurance competition with Renault Group engineering expertise.' },
+        { team: 'Ferrari AF Corse', car: 'Ferrari 499P', numbers: ['50', '51'],
+          desc: 'Ferrari AF Corse is the official factory team responsible for Ferrari’s modern prototype racing program, combining Ferrari’s rich endurance racing heritage with cutting-edge technology and world-class talent.' },
+        { team: 'AF Corse', car: 'Ferrari 499P', numbers: ['83'],
+          desc: 'AF Corse is one of endurance racing’s most accomplished independent teams, renowned for its close relationship with Ferrari and extensive success across international sports car championships.' },
+        { team: 'Peugeot TotalEnergies', car: 'Peugeot 9X8', numbers: ['93', '94'],
+          desc: 'Peugeot TotalEnergies is the factory Hypercar team representing the historic French manufacturer in the FIA World Endurance Championship, focused on returning the marque to the front of prototype racing.' }
+      ]
+    };
 
     var track = document.getElementById('rc-grid-track');
-    var prevBtn = document.getElementById('rc-grid-prev');
-    var nextBtn = document.getElementById('rc-grid-next');
-    var active = 0;
-    var n = GRID_TEAMS.length;
+    var footnote = document.getElementById('rc-grid-footnote');
 
-    function render() {
-      track.innerHTML = '';
-      GRID_TEAMS.forEach(function (team, i) {
-        // Shortest wraparound distance from the active card, e.g. with 5
-        // teams and active=0, team index 4 reads as offset -1 (it's the
-        // "previous" card just to the left) rather than +4.
-        var diff = i - active;
-        if (diff > n / 2) diff -= n;
-        if (diff < -n / 2) diff += n;
+    var classNames = Object.keys(CARS_BY_CLASS);
+    var chosenClass = classNames[Math.floor(Math.random() * classNames.length)];
+    var pool = CARS_BY_CLASS[chosenClass].slice();
 
-        var card = document.createElement('div');
-        card.className = 'rc-grid-card';
-        card.setAttribute('data-offset', String(diff));
-        card.setAttribute('data-class', team.cls);
-
-        var head = document.createElement('div');
-        head.className = 'rc-grid-card-head';
-
-        var badge = document.createElement('div');
-        badge.className = 'rc-grid-card-badge';
-        badge.textContent = team.cls;
-        head.appendChild(badge);
-
-        var identity = document.createElement('div');
-        identity.className = 'rc-grid-card-identity';
-
-        var nameEl = document.createElement('div');
-        nameEl.className = 'rc-grid-card-name';
-        nameEl.textContent = team.name;
-        identity.appendChild(nameEl);
-
-        var subEl = document.createElement('div');
-        subEl.className = 'rc-grid-card-sub';
-        subEl.textContent = team.car + ' · #' + team.number;
-        identity.appendChild(subEl);
-
-        head.appendChild(identity);
-        card.appendChild(head);
-
-        var blurbEl = document.createElement('p');
-        blurbEl.className = 'rc-grid-card-blurb';
-        blurbEl.textContent = team.blurb;
-        card.appendChild(blurbEl);
-
-        track.appendChild(card);
-      });
+    // Fisher-Yates shuffle, then take up to 9 -- if the class has fewer
+    // than 9 real teams (LMP2 currently has 6), show all of them rather
+    // than padding with anything fake.
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
     }
+    var picks = pool.slice(0, Math.min(9, pool.length));
 
-    prevBtn.addEventListener('click', function () { active = (active - 1 + n) % n; render(); });
-    nextBtn.addEventListener('click', function () { active = (active + 1) % n; render(); });
+    picks.forEach(function (entry) {
+      var card = document.createElement('div');
+      card.className = 'rc-grid-card';
+      card.setAttribute('data-class', chosenClass);
 
-    render();
+      var head = document.createElement('div');
+      head.className = 'rc-grid-card-head';
+
+      var badge = document.createElement('div');
+      badge.className = 'rc-grid-card-badge';
+      badge.textContent = chosenClass;
+      head.appendChild(badge);
+
+      var identity = document.createElement('div');
+      identity.className = 'rc-grid-card-identity';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'rc-grid-card-name';
+      nameEl.textContent = entry.team;
+      identity.appendChild(nameEl);
+
+      var subEl = document.createElement('div');
+      subEl.className = 'rc-grid-card-sub';
+      subEl.textContent = entry.car + ' · #' + entry.numbers.join(', #');
+      identity.appendChild(subEl);
+
+      head.appendChild(identity);
+      card.appendChild(head);
+
+      var blurbEl = document.createElement('p');
+      blurbEl.className = 'rc-grid-card-blurb';
+      blurbEl.textContent = entry.desc;
+      card.appendChild(blurbEl);
+
+      track.appendChild(card);
+    });
+
+    footnote.textContent = 'Showing ' + picks.length + ' of our ' + chosenClass + ' teams — refresh the page for a different class.';
   })();
   </script>
 
