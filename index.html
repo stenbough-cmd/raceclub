@@ -68,6 +68,36 @@
   - Em dashes removed throughout the page copy (replaced with periods,
     commas, or colons depending on the sentence) per Matt's house style:
     use them sparingly, not as the default punctuation.
+
+  WHAT CHANGED IN THIS PASS (static page, 2026-09-13, Matt's call:
+  "Instead of the index being a 'live' page that updates based on the
+  season running, make it static... keep it generic and informational
+  about the service instead"):
+  - Class Tiers: dropped the "Season 1" / "Future Season" status badges
+    on each card (those described which season was actually running,
+    exactly the kind of specific-to-right-now reference this pass
+    removes) and the tagline's "Season 1 starts every driver in LMGT3"
+    framing. The bottom footer line on each card, previously "Gate: ...",
+    is now a difficulty label instead (2026-09-13, Matt's follow-up
+    call: "go from Rookie, Rookie to Intermediate, Intermediate and
+    Advanced for the 4 classes so there's some correlation with the
+    higher classes and difficulty level") -- purely informational and
+    evergreen, same regardless of which season or classes are live.
+  - "Reputation You Earn" highlight card reworded -- it used to describe
+    the old earned-eligibility checklist for moving up a class, which no
+    longer exists (see race-club-eco-season-1.md's "Moving up a class"
+    section) -- now describes the actual current policy: no money gate,
+    no experience checklist, open the moment a class is on the schedule.
+  - "Meet The Grid" rebuilt from a live, season-linked data fetch
+    (getGridTeaser, real Cars rows off whatever season/classes were
+    actually running) into a static five-team carousel with illustrative
+    example teams baked directly into this page -- no API call, no
+    IntersectionObserver, nothing that changes based on which season is
+    open. Center-spotlight layout: one team fully shown in the middle,
+    the previous/next teams peeking faded at the edges, cycled with the
+    two arrow buttons (wraps around both directions). Angled/slanted
+    card shape (clip-path) plus a diagonal red accent stripe per Matt's
+    "aggressive/edgy" ask -- see .rc-grid-card in css/style.css.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -147,8 +177,8 @@
           <div class="rc-highlight-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 10l-5 4.4L17.4 21 12 17.3 6.6 21 8 14.4 3 10l6.6-1.4z"></path></svg>
           </div>
-          <h3>Reputation You Earn</h3>
-          <p>No shortcuts to the top. Moving up a class takes real seat time, real attendance, and a clean record on track. Money alone won't get you there.</p>
+          <h3>Race Any Class You Want</h3>
+          <p>No money gate, no experience checklist. The moment the league is racing a class, it's open to you: pick the seat that actually fits how you want to race.</p>
         </div>
 
         <div class="rc-highlight-card">
@@ -203,231 +233,129 @@
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Ladder</div>
       <h2>Class Tiers</h2>
-      <p class="rc-landing-tagline">Season 1 starts every driver in LMGT3. The rest of the ladder opens up as the league adds classes to the schedule: no money or experience checklist standing between you and the seat you want.</p>
+      <p class="rc-landing-tagline">Race Club runs a four-tier class ladder from LMGT3 up to Hypercar. Every class is open the moment the league puts it on the schedule: no money gate, no experience checklist.</p>
       <div class="rc-tier-row">
         <div class="rc-card rc-tier-card rc-tier-bronze">
           <h3>LMGT3</h3>
-          <div class="rc-tier-label">Season 1</div>
           <p>Where every career begins. Accessible, competitive, and the proving ground for everything above it.</p>
-          <div class="rc-tier-gate">Gate: Buy in and race</div>
+          <div class="rc-tier-difficulty">Rookie</div>
         </div>
         <div class="rc-card rc-tier-card rc-tier-platinum">
           <h3>LMP3</h3>
-          <div class="rc-tier-label">Future Season</div>
           <p>Rookie friendly but a step up. Faster cars and higher stakes means bigger swings in reward.</p>
-          <div class="rc-tier-gate">Gate: Race it when it's running</div>
+          <div class="rc-tier-difficulty">Rookie to Intermediate</div>
         </div>
         <div class="rc-card rc-tier-card rc-tier-silver">
           <h3>LMP2</h3>
-          <div class="rc-tier-label">Future Season</div>
           <p>The mid-tier proving ground on the way to Hypercar. Where a serious career really starts to show.</p>
-          <div class="rc-tier-gate">Gate: Race it when it's running</div>
+          <div class="rc-tier-difficulty">Intermediate</div>
         </div>
         <div class="rc-card rc-tier-card rc-tier-gold">
           <h3>Hypercar</h3>
-          <div class="rc-tier-label">Future Season</div>
           <p>The pinnacle of a Race Club career. The fastest cars and the biggest stakes on the roster.</p>
-          <div class="rc-tier-gate">Gate: Race it when it's running</div>
+          <div class="rc-tier-difficulty">Advanced</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- "Meet The Grid" teaser (2026-09-01, built; 2026-09-02, made fully
-       dynamic per Matt's call) -- real team data, live off whatever
-       season/classes are actually running, not a hardcoded team list.
-       Backed by the new PUBLIC action getGridTeaser (handleGetGridTeaser,
-       Website.gs) -- no token needed, same "usable with no auth, active-
-       only" convention handleGetCars/handleGetSponsors already establish.
-       It resolves the current season the same way the rest of the site
-       does (most recent Registration/Active season), reads which classes
-       that season has switched on and which real-world car-data year each
-       one draws its roster from, and returns real Cars rows (TeamName,
-       manufacturer, car model/number, class, and that team's own TeamDesc
-       bio) matching those class+year pairs -- one entry per distinct team.
-       So when Matt starts Season 2, or runs multiple classes at once, or
-       swaps which real-world year a class's roster comes from, this
-       section updates itself with no code change here.
-
-       Deliberately lazy: the fetch only fires once this section actually
-       scrolls near the viewport (see the IntersectionObserver in the
-       <script> below), not on page load -- Apps Script's cold-start
-       latency is real, and there's no reason to spend it before the user
-       has scrolled anywhere near this far down the page. rootMargin gives
-       it a head start (starts loading a little before the section is
-       actually on screen) so the data is normally already in hand by the
-       time it comes into view; cards then fade in one at a time, quickly,
-       rather than all snapping in at once.
-
-       The header text (season name/number, class list, car count, start
-       date) and every card are entirely JS-rendered from the fetched
-       payload -- nothing here is hardcoded per-team any more. A static
-       fallback line covers "no season configured yet" / "couldn't reach
-       the server" so the section degrades gracefully rather than sitting
-       empty or broken if the backend isn't deployed yet. -->
-  <section class="rc-landing-section rc-grid-section" id="rc-grid-section">
+  <!-- "Meet The Grid" carousel (2026-09-13, replaced the old live/
+       season-linked teaser -- see the top-of-file comment for why). Five
+       illustrative example teams, baked directly into this page as
+       plain data below -- nothing here changes based on which season or
+       classes are actually running. One card spotlighted center at a
+       time; the previous/next cards peek in, faded and scaled down, at
+       the left/right edges; the two arrow buttons cycle through all
+       five, wrapping around in both directions. Full-bleed: .rc-carousel
+       sits as a sibling of .rc-landing-inner, same "escape the 960px
+       reading column" pattern .rc-mid-banner already uses elsewhere on
+       this page, so it can genuinely span the entire page width. -->
+  <section class="rc-landing-section rc-grid-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Grid</div>
       <h2>Meet The Grid</h2>
-      <p class="rc-landing-tagline" id="rc-grid-tagline"></p>
+      <p class="rc-landing-tagline">Every seat on Race Club is modeled on a real-world team identity: a real livery, a real class, a real car number. Here's a sample of who you could be lining up against.</p>
+    </div>
 
-      <div class="rc-grid-teaser-row" id="rc-grid-teaser-row"></div>
-
-      <p class="rc-grid-teaser-footnote" id="rc-grid-teaser-footnote"></p>
+    <div class="rc-carousel">
+      <button type="button" class="rc-carousel-arrow rc-carousel-arrow-left" id="rc-grid-prev" aria-label="Previous team">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <div class="rc-carousel-track" id="rc-grid-track"></div>
+      <button type="button" class="rc-carousel-arrow rc-carousel-arrow-right" id="rc-grid-next" aria-label="Next team">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+      </button>
     </div>
   </section>
 
   <script>
   (function () {
-    var section = document.getElementById('rc-grid-section');
-    var taglineEl = document.getElementById('rc-grid-tagline');
-    var rowEl = document.getElementById('rc-grid-teaser-row');
-    var footnoteEl = document.getElementById('rc-grid-teaser-footnote');
-    var started = false;
+    // Static example roster -- deliberately illustrative, not a real
+    // season's actual entry list (Matt's call: this page should read the
+    // same regardless of which season or classes happen to be running).
+    // Spans all four class tiers on purpose so the carousel itself
+    // reinforces the Class Tiers section right above it.
+    var GRID_TEAMS = [
+      { name: 'Northgate GT', cls: 'LMGT3', car: 'Porsche 911 GT3 R', number: '14',
+        blurb: 'The rookie-friendly home of the entry tier: a forgiving car, a patient crew, and a livery built for drivers writing the first chapter of a career.' },
+      { name: 'Ten10 Motorsports', cls: 'LMP3', car: 'Ligier JS P320', number: '30',
+        blurb: 'A privateer LMP3 outfit built around discipline over raw pace: clean stints, smart strategy, and a paddock that treats every seat like it matters.' },
+      { name: 'Meridian Endurance', cls: 'LMP2', car: 'Oreca 07', number: '52',
+        blurb: 'A mid-field prototype squad known for surviving the chaos: strong reliability and a lineup that rarely throws a race away.' },
+      { name: 'Vantage Prototype Team', cls: 'Hypercar', car: 'Porsche 963', number: '7',
+        blurb: 'The top of the ladder. A factory-grade Hypercar effort for drivers who have earned the biggest stakes on the grid, and the pace to back it up.' },
+      { name: 'Apex Circuit Racing', cls: 'LMP3', car: 'Duqueine M30', number: '81',
+        blurb: 'An aggressive, podium-hunting LMP3 team that leans on qualifying pace and hard-charging race craft over pure conservatism.' }
+    ];
 
-    // Same slugging rule as manufacturerLogoSrc() in js/reference-data.js
-    // (not loaded on this page -- everything else here is plain strings/
-    // DOM, so a whole extra script tag just for one function wasn't worth
-    // it). Keep this in sync if that convention ever changes.
-    function manufacturerLogoSrc_(name) {
-      var slug = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-      return 'assets/manufacturers/' + slug + '.png';
-    }
+    var track = document.getElementById('rc-grid-track');
+    var prevBtn = document.getElementById('rc-grid-prev');
+    var nextBtn = document.getElementById('rc-grid-next');
+    var active = 0;
+    var n = GRID_TEAMS.length;
 
-    // "SZN-0001" -> "1" -- same convention Account.html's own
-    // seasonNumberLabel() uses.
-    function seasonNumberLabel_(seasonId) {
-      var m = /(\d+)\s*$/.exec(String(seasonId || ''));
-      return m ? String(parseInt(m[1], 10)) : '';
-    }
+    function render() {
+      track.innerHTML = '';
+      GRID_TEAMS.forEach(function (team, i) {
+        // Shortest wraparound distance from the active card, e.g. with 5
+        // teams and active=0, team index 4 reads as offset -1 (it's the
+        // "previous" card just to the left) rather than +4.
+        var diff = i - active;
+        if (diff > n / 2) diff -= n;
+        if (diff < -n / 2) diff += n;
 
-    function formatStartDate_(iso) {
-      if (!iso) return '';
-      // seasonStartDate is stored as a plain "YYYY-MM-DD" (no time), so
-      // parse it as local rather than via `new Date(iso)` (which treats a
-      // bare date as UTC midnight and can print a day early/late
-      // depending on the visitor's own timezone).
-      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-      if (!m) return '';
-      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-      return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
-    function firstSentence_(text) {
-      var s = String(text || '').trim();
-      var m = /^(.*?[.!?])(\s|$)/.exec(s);
-      return m ? m[1] : s;
-    }
-
-
-    function showFallback_(message) {
-      taglineEl.textContent = message;
-      rowEl.innerHTML = '';
-      footnoteEl.textContent = '';
-    }
-
-    function render(data) {
-      if (!data || !data.success || !data.hasSeason || !data.teams || !data.teams.length) {
-        showFallback_('Season details will show up here as soon as a season is open.');
-        return;
-      }
-
-      var seasonNum = seasonNumberLabel_(data.seasonId);
-      var seasonLabel = seasonNum ? ('Season ' + seasonNum) : 'This season';
-      var classLabel = (data.activeClasses || []).join(' / ') || 'racing';
-      var startLabel = formatStartDate_(data.seasonStartDate);
-
-      var tagline = seasonLabel + (data.seasonName ? (': ' + data.seasonName) : '') + '. ' +
-        (data.totalCarCount || data.teams.length) + ' real ' + classLabel + ' entries are already locked in' +
-        (startLabel ? (' ahead of the green flag on ' + startLabel) : '') + '. ' +
-        'Here are just some of the teams that could be lining up next to you.';
-      taglineEl.textContent = tagline;
-
-      rowEl.innerHTML = '';
-      data.teams.forEach(function (team) {
         var card = document.createElement('div');
-        card.className = 'rc-grid-teaser-card';
+        card.className = 'rc-grid-card';
+        card.setAttribute('data-offset', String(diff));
 
-        var head = document.createElement('div');
-        head.className = 'rc-grid-teaser-head';
+        var classEl = document.createElement('div');
+        classEl.className = 'rc-grid-card-class';
+        classEl.textContent = team.cls;
+        card.appendChild(classEl);
 
-        var logo = document.createElement('img');
-        logo.className = 'rc-grid-teaser-logo';
-        logo.alt = '';
-        logo.src = manufacturerLogoSrc_(team.manufacturer);
-        logo.onerror = function () { logo.style.display = 'none'; };
-        head.appendChild(logo);
+        var nameEl = document.createElement('h3');
+        nameEl.className = 'rc-grid-card-name';
+        nameEl.textContent = team.name;
+        card.appendChild(nameEl);
 
-        var identity = document.createElement('div');
-        identity.className = 'rc-grid-teaser-identity';
-        var nameEl = document.createElement('div');
-        nameEl.className = 'rc-grid-teaser-name';
-        nameEl.textContent = team.teamName || 'Unnamed Team';
         var subEl = document.createElement('div');
-        subEl.className = 'rc-grid-teaser-sub';
-        subEl.textContent = [team.carModel, team.carNumber ? ('#' + team.carNumber) : ''].filter(Boolean).join(' · ');
-        identity.appendChild(nameEl);
-        identity.appendChild(subEl);
-        head.appendChild(identity);
+        subEl.className = 'rc-grid-card-sub';
+        subEl.textContent = team.car + ' · #' + team.number;
+        card.appendChild(subEl);
 
-        card.appendChild(head);
+        var blurbEl = document.createElement('p');
+        blurbEl.className = 'rc-grid-card-blurb';
+        blurbEl.textContent = team.blurb;
+        card.appendChild(blurbEl);
 
-        var line = document.createElement('p');
-        line.className = 'rc-grid-teaser-line';
-        line.textContent = firstSentence_(team.bio);
-        card.appendChild(line);
-
-        rowEl.appendChild(card);
-      });
-
-      // Footnote sentence removed (2026-09-08, Matt's call) -- footnoteEl
-      // stays declared/cleared in showFallback_ in case a future pass wants
-      // it again, but nothing populates it any more.
-
-      // Fade cards in one by one, quickly, rather than all at once
-      // (Matt's ask). Each card starts at opacity:0/translateY via CSS
-      // (.rc-grid-teaser-card); adding .rc-grid-teaser-visible on a short
-      // stagger per card triggers its own transition.
-      var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
-      cards.forEach(function (card, i) {
-        setTimeout(function () { card.classList.add('rc-grid-teaser-visible'); }, i * 90);
+        track.appendChild(card);
       });
     }
 
-    function loadGridTeaser() {
-      if (started) return;
-      started = true;
-      fetchApi('getGridTeaser', {})
-        .then(render)
-        .catch(function () { showFallback_('Could not load this season’s grid right now.'); });
-    }
+    prevBtn.addEventListener('click', function () { active = (active - 1 + n) % n; render(); });
+    nextBtn.addEventListener('click', function () { active = (active + 1) % n; render(); });
 
-    if ('IntersectionObserver' in window) {
-      // rootMargin gives it a head start -- the fetch fires a bit before
-      // the section is actually on screen, so an Apps Script cold start
-      // usually has time to finish before the user actually scrolls this
-      // far, without spending that latency before the user has scrolled
-      // anywhere near here. Bumped from 800px to 2400px (2026-09-08,
-      // Matt's call: "make Meet The Grid populate faster") -- most of
-      // this section's own latency is now a cache hit server-side (see
-      // _rcGridTeaserPool_, Website.gs) rather than a fresh Sheets read,
-      // but Apps Script's own cold-start/dispatch overhead is still real
-      // and out of this page's control, so the only lever left here is
-      // starting the request as early as possible -- effectively as soon
-      // as the page loads for most viewport heights, so the fetch has the
-      // whole time the visitor spends reading the hero/tier sections
-      // above to finish before they ever reach this one.
-      var observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) { loadGridTeaser(); observer.disconnect(); }
-        });
-      }, { rootMargin: '2400px 0px' });
-      observer.observe(section);
-    } else {
-      // No IntersectionObserver support -- just load it, same as every
-      // other section on the page already does unconditionally.
-      loadGridTeaser();
-    }
+    render();
   })();
   </script>
 

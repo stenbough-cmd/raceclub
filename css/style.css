@@ -3386,78 +3386,162 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* -------------------------------------------------------------------- */
-/* "Meet The Grid" teaser (2026-09-01) -- real Season 1 team cards, see  */
-/* index.html's own comment above the section for the full rationale.   */
-/* Deliberately its own look, not a reuse of .rc-highlight-card, per     */
-/* Matt's ask that the content read as "unique" -- a manufacturer logo + */
-/* team identity header (mirroring how Current Seat/team-select already */
-/* pair a logo with a team name elsewhere on the site), a thin red rule  */
-/* underneath standing in for a start/finish line, then the hype line.  */
+/* "Meet The Grid" carousel (2026-09-13) -- replaces the old live/API-   */
+/* backed teaser grid now that index.html is a static, generic page.    */
+/* Five illustrative team cards, one spotlighted center-stage at full   */
+/* size/opacity, the immediate neighbors peeking in faded and scaled    */
+/* down at the edges, the two furthest teams hidden entirely. Built as  */
+/* a full-bleed section (sibling of .rc-landing-inner, same pattern as  */
+/* .rc-mid-banner above) so it can span the whole page width instead of */
+/* being capped by .rc-landing-inner's max-width. Cards get an angled   */
+/* clip-path plus diagonal accent stripes in the corners for a more     */
+/* aggressive, motorsport-livery feel per Matt's "slant/edgy" ask.      */
 /* -------------------------------------------------------------------- */
-.rc-grid-teaser-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
-  margin-top: 32px;
+.rc-carousel {
+  position: relative;
+  width: 100%;
+  padding: 56px 0 64px;
+  margin-top: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.rc-grid-teaser-card {
-  background: var(--rc-white);
-  border: 1px solid var(--rc-silver);
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.05);
-  opacity: 0;
-  transform: translateY(18px);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
-    opacity 0.4s ease, transform 0.4s ease;
+.rc-carousel-track {
+  position: relative;
+  width: 100%;
+  max-width: 1600px;
+  height: 360px;
 }
-.rc-grid-teaser-card.rc-grid-teaser-visible {
+.rc-grid-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(160deg, var(--rc-carbon), #262626);
+  color: var(--rc-white);
+  box-shadow: 0 18px 40px rgba(23, 23, 23, 0.35);
+  clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px);
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease;
+}
+.rc-grid-card::before,
+.rc-grid-card::after {
+  content: '';
+  position: absolute;
+  width: 56px;
+  height: 6px;
+  background: var(--rc-red);
+}
+.rc-grid-card::before {
+  top: 14px;
+  left: -14px;
+  transform: rotate(-45deg);
+}
+.rc-grid-card::after {
+  bottom: 14px;
+  right: -14px;
+  transform: rotate(-45deg);
+}
+/* Center card: full size, fully opaque, sits above the neighbors. */
+.rc-grid-card[data-offset="0"] {
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
-  transform: translateY(0);
+  z-index: 3;
 }
-.rc-grid-teaser-card.rc-grid-teaser-visible:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
+/* Immediate neighbors: peeking in at the edges, faded and scaled down. */
+.rc-grid-card[data-offset="-1"] {
+  transform: translate(calc(-50% - 340px), -50%) scale(0.82);
+  opacity: 0.4;
+  z-index: 2;
+}
+.rc-grid-card[data-offset="1"] {
+  transform: translate(calc(-50% + 340px), -50%) scale(0.82);
+  opacity: 0.4;
+  z-index: 2;
+}
+/* Furthest two teams: pushed off past the edges and hidden. */
+.rc-grid-card[data-offset="-2"] {
+  transform: translate(calc(-50% - 620px), -50%) scale(0.68);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.rc-grid-card[data-offset="2"] {
+  transform: translate(calc(-50% + 620px), -50%) scale(0.68);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.rc-grid-card-class {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 6px;
+}
+.rc-grid-card-name {
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--rc-white);
+}
+.rc-grid-card-sub {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 4px;
+}
+.rc-grid-card-blurb {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+.rc-carousel-arrow {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--rc-silver);
+  background: var(--rc-white);
+  color: var(--rc-carbon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  margin: 0 8px;
+}
+.rc-carousel-arrow svg { width: 20px; height: 20px; }
+.rc-carousel-arrow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(23, 23, 23, 0.18);
   border-color: var(--rc-carbon);
 }
 @media (prefers-reduced-motion: reduce) {
-  .rc-grid-teaser-card {
-    transition: none;
-    opacity: 1;
-    transform: none;
+  .rc-grid-card { transition: none; }
+}
+/* Narrow screens: the peeking neighbors have no room to breathe without
+   overlapping the center card or clipping against the viewport edge, so
+   hide them and show just the spotlighted card, arrows on either side. */
+@media (max-width: 720px) {
+  .rc-carousel-track { height: 300px; }
+  .rc-grid-card { width: 240px; height: 260px; padding: 20px 22px; }
+  .rc-grid-card[data-offset="-1"],
+  .rc-grid-card[data-offset="1"] {
+    opacity: 0;
+    pointer-events: none;
   }
-}
-.rc-grid-teaser-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
-  border-bottom: 2px solid var(--rc-red);
-}
-/* Fixed width AND height (not max-width/max-height) so object-fit:contain
-   actually letterboxes -- a wide logo that hits the width limit first gets
-   even padding added above/below automatically to fill out the same 60px
-   slot every card reserves, so every card's logo sits on the same
-   baseline no matter its own aspect ratio (Matt's call, 2026-09-02). */
-.rc-grid-teaser-logo { flex: none; width: 128px; height: 60px; object-fit: contain; }
-.rc-grid-teaser-identity { min-width: 0; }
-.rc-grid-teaser-name {
-  font-family: var(--rc-font-heading);
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--rc-carbon);
-  line-height: 1.25;
-}
-.rc-grid-teaser-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 2px; }
-.rc-grid-teaser-line { font-size: 13.5px; line-height: 1.55; color: var(--rc-steel); margin: 0; }
-.rc-grid-teaser-footnote {
-  margin-top: 28px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--rc-steel);
 }
 
 /* -------------------------------------------------------------------- */
@@ -3577,32 +3661,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-tier-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(23, 23, 23, 0.24); }
 .rc-tier-card h3 { font-size: 17px; color: var(--rc-white); }
-.rc-tier-label {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
 .rc-tier-card p { font-size: 13px; color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
-.rc-tier-gate {
+/* Difficulty label (2026-09-13) -- replaces the old "Season 1"/"Future
+   Season" .rc-tier-label plus the .rc-tier-gate money-gate footer, now
+   that the page no longer gates classes by affordability. One label per
+   card instead of two, so it just takes over the old gate's footer
+   position/border-top treatment, colored to match each tier's accent. */
+.rc-tier-difficulty {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: var(--rc-font-heading);
   font-size: 11px;
-  letter-spacing: 0.03em;
-  color: rgba(255, 255, 255, 0.65);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .rc-tier-bronze { background: linear-gradient(160deg, #a05a2c, #7c4420); }
-.rc-tier-bronze .rc-tier-label { color: #f0c9a3; }
+.rc-tier-bronze .rc-tier-difficulty { color: #f0c9a3; }
 .rc-tier-platinum { background: linear-gradient(160deg, #7d92a3, #4f6373); }
-.rc-tier-platinum .rc-tier-label { color: #e3ebf0; }
+.rc-tier-platinum .rc-tier-difficulty { color: #e3ebf0; }
 .rc-tier-silver { background: linear-gradient(160deg, #536575, #313d47); }
-.rc-tier-silver .rc-tier-label { color: #d8dde1; }
+.rc-tier-silver .rc-tier-difficulty { color: #d8dde1; }
 .rc-tier-gold { background: linear-gradient(160deg, #1f1f1f, #000000); }
-.rc-tier-gold .rc-tier-label { color: #e6c15c; }
+.rc-tier-gold .rc-tier-difficulty { color: #e6c15c; }
 
 /* -------------------------------------------------------------------- */
 /* Closing CTA band — dark bookend to the mid-banner/tier cards above   */
