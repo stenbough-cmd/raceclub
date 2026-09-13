@@ -3284,15 +3284,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    YOUR LEGACY both sit flush against .rc-hero-text's own left padding
    now, replacing the earlier staggered "CAREER offset inward" treatment. */
 .rc-hero-title-accent { color: var(--rc-red); }
+/* Shifted 20px left of the shared padding-left (2026-09-13, Matt's
+   follow-up call: "move the YOUR CAREER and subtitle to the left 20px.
+   Leave YOUR LEGACY where it's at") -- applied to just the first title
+   line and the subtitle, not .rc-hero-title as a whole, so YOUR LEGACY
+   stays flush with .rc-hero-text's own padding-left while these two
+   pull 20px further toward the window edge. A fixed px offset (not a
+   clamp()) since Matt asked for a flat 20px, not a value that scales
+   with viewport width like the padding-left/font-size clamps above. */
+.rc-hero-title-shift {
+  margin-left: -20px;
+}
 .rc-hero-subtitle {
   font-family: var(--rc-font-heading);
-  /* Same fluid approach again: 8px at 360px wide, 15px at 1600px and up. */
-  font-size: clamp(8px, 5.97px + 0.56vw, 15px);
+  /* Same fluid approach again, shifted up 10px across the whole range
+     (2026-09-13, Matt's follow-up call) -- 18px at 360px wide (was 8px),
+     25px at 1600px and up (was 15px), same slope as before. */
+  font-size: clamp(18px, 15.97px + 0.56vw, 25px);
   /* Thin, not bold (2026-09-13, Matt's follow-up call) -- contrasts
      against the bold 800-weight title lines above it. */
   font-weight: 300;
   font-style: italic;
-  letter-spacing: 0.1em;
+  /* Widened from 0.1em (2026-09-13, Matt's follow-up call: "add a little
+     extra spacing between all the letters in the subtitle"). */
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--rc-white);
   margin-top: 24px;
