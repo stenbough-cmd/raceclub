@@ -3247,6 +3247,66 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 600px) {
   .rc-hero-badge { height: 38px; bottom: 14px; right: 14px; }
 }
+/* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
+   tagline, middle-left over the hero photo (2026-09-13, Matt's call).
+   Needs no extra positioning wrapper: .rc-hero is already `position:
+   fixed`, which is itself a positioning context, same reason
+   .rc-hero-badge above can sit `position: absolute` directly against it.
+   Font treatment matches every h1-h4 and .rc-eyebrow on the site --
+   var(--rc-font-heading), uppercase, bold -- rather than a one-off font,
+   per Matt's call to keep this matching the rest of the site's type
+   instead of introducing a second display face. */
+.rc-hero-text {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding-left: 160px;
+  max-width: 100%;
+}
+.rc-hero-title {
+  font-family: var(--rc-font-heading);
+  font-size: 180px;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  margin: 0;
+}
+/* "Slightly offset inwards" (Matt's call) -- YOUR CAREER sits a bit
+   further right than YOUR LEGACY below it, so the two lines don't stack
+   flush-left like a plain block of text. */
+.rc-hero-title-career { margin-left: 48px; }
+.rc-hero-title-accent { color: var(--rc-red); }
+.rc-hero-subtitle {
+  font-family: var(--rc-font-heading);
+  font-size: 60px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  margin-top: 24px;
+}
+/* Scaled down below the site's usual tablet/mobile breakpoints -- the
+   180px/60px desktop sizes and 160px inset are Matt's literal numbers for
+   a full-width desktop hero; left as-is they would overflow badly on
+   anything narrower (a single word like "CAREER" alone runs 700px+ wide
+   at 180px). Same breakpoints (900px/560px) already used elsewhere on
+   this page (.rc-highlight-grid, .rc-tier-card, etc.). */
+@media (max-width: 900px) {
+  .rc-hero-text { padding-left: 60px; }
+  .rc-hero-title { font-size: 88px; }
+  .rc-hero-title-career { margin-left: 24px; }
+  .rc-hero-subtitle { font-size: 28px; letter-spacing: 0.08em; margin-top: 16px; }
+}
+@media (max-width: 560px) {
+  .rc-hero-text { padding-left: 24px; }
+  .rc-hero-title { font-size: 48px; }
+  .rc-hero-title-career { margin-left: 12px; }
+  .rc-hero-subtitle { font-size: 15px; letter-spacing: 0.06em; margin-top: 12px; }
+}
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
    other page's) has no background of its own and just shows through
