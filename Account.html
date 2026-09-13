@@ -455,9 +455,10 @@
   // content (renderFinancesSection), same "not a placeholder anymore"
   // move every other real section made before it. Protests removed from
   // this list (2026-09-08) -- it now gets real content
-  // (renderProtestsSection), same move.
+  // (renderProtestsSection), same move. Career removed (2026-09-13) --
+  // it now gets real content (renderCareerSection), same move.
   var PLACEHOLDER_LABELS = {
-    career: 'Career', reputation: 'Reputation',
+    reputation: 'Reputation',
     halloffame: 'Hall of Fame'
   };
 
@@ -505,6 +506,7 @@
   var RC_LAZY_SECTION_RENDERERS = {
     calendar: function (token) { renderCalendarSection(token); },
     finances: function (token) { renderFinancesSection(token); },
+    career: function (token) { renderCareerSection(token); },
     wager: function (token) { renderWagerSection(token); },
     sponsors: function (token) { renderSponsorsSection(token); },
     admin: function (token) { renderAdminSection(token); },
@@ -612,6 +614,14 @@
       if (item.id === 'wager') {
         nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
           showLazySection('wager', currentToken);
+        }));
+        return;
+      }
+      // Career (added 2026-09-13, real content -- renderCareerSection),
+      // same lazy-fetch-on-click pattern as Finances/Wager above it.
+      if (item.id === 'career') {
+        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
+          showLazySection('career', currentToken);
         }));
         return;
       }
@@ -2072,6 +2082,207 @@
 
       section.appendChild(buildLedgerPanel((ledger && ledger.success) ? ledger.entries : []));
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // CAREER PAGE (2026-09-13, Matt's spec: "a complete history of the
+  // driver's season by season record... kept in numerical order (newest
+  // season on top)... arrange them so it feels like you're looking at a
+  // CAREER CARD vs. a wall of data"). Backed by handleGetMyCareerHistory
+  // (DataCache.gs), which already returns everything pre-aggregated,
+  // newest season first -- this function only has to render it.
+  // ---------------------------------------------------------------------
+  function renderCareerSection(token) {
+    var section = document.getElementById('rc-section-career');
+    if (!section) return;
+    section.innerHTML = '';
+    section.appendChild(buildPageSpinner('Loading your career history...'));
+
+    return fetchApi('getMyCareerHistory', { token: token }).catch(function () { return { success: false }; })
+      .then(function (result) {
+        section.innerHTML = '';
+        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
+        section.appendChild(el('p', 'rc-sponsors-explainer',
+          'Your complete season-by-season record -- every car, team, result, and dollar the league has on file for you, newest season first.'));
+
+        if (!result || !result.success || !result.seasons || !result.seasons.length) {
+          section.appendChild(el('p', 'rc-career-empty-note',
+            'No seasons on record yet -- your first Career card appears here once you\'ve registered for a season.'));
+          return;
+        }
+
+        var list = el('div', 'rc-career-list');
+        result.seasons.forEach(function (s) { list.appendChild(buildCareerCard(s)); });
+        section.appendChild(list);
+      });
+  }
+
+  // One season's "career card." Keeps the numbers-first hero row up top
+  // (rank/points/wins/podiums -- the things a driver actually brags
+  // about), then groups everything else into small labeled clusters
+  // rather than one long stat list, so the card reads as a handful of
+  // digestible chunks instead of a wall of numbers.
+  function buildCareerCard(s) {
+    var card = el('div', 'rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
+
+    // --- Header: season number/name, date range, status pills ---------
+    var head = el('div', 'rc-career-card-head');
+    var title = el('div', 'rc-career-card-title');
+    title.appendChild(el('div', 'rc-career-season-num', escapeHtml(seasonNumberLabel(s.seasonId) || '?')));
+    var titleText = el('div');
+    titleText.appendChild(el('h3', null, escapeHtml(s.seasonName || s.seasonId)));
+    var dateRange = (s.startDate || s.endDate)
+      ? [s.startDate, s.endDate].filter(Boolean).map(function (d) {
+        var dt = new Date(d);
+        return isNaN(dt.getTime()) ? d : dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }).join(' - ')
+      : 'No races run yet';
+    titleText.appendChild(el('div', 'rc-career-card-dates', escapeHtml(dateRange)));
+    title.appendChild(titleText);
+    head.appendChild(title);
+
+    var badges = el('div', 'rc-career-card-badges');
+    badges.appendChild(_rcSeasonStatusBadge(s.seasonStatus));
+    // Registration-status pill -- only Probation/Suspended/Removed ever
+    // show here; a clean Active registration says nothing extra (same
+    // "only flag it when it's not fine" convention as the Dashboard's own
+    // Registration Status card, see .rc-regstatus-flag above).
+    if (s.registrationStatus && s.registrationStatus !== 'Active') {
+      var regKey = String(s.registrationStatus).toLowerCase();
+      badges.appendChild(el('span', 'rc-badge-chip rc-badge-regstatus-' + regKey, escapeHtml(s.registrationStatus)));
+    }
+    head.appendChild(badges);
+    card.appendChild(head);
+
+    if (!s.statsKnown) {
+      var body0 = el('div', 'rc-career-card-body');
+      var teamLine = [s.teamName, [s.manufacturer, s.carModel].filter(Boolean).join(' '), s.class]
+        .filter(Boolean).join(' &middot; ');
+      if (teamLine) body0.appendChild(el('p', 'rc-career-line', teamLine));
+      body0.appendChild(el('p', 'rc-career-empty-note', 'No round results have been recorded for this season yet.'));
+      card.appendChild(body0);
+      return card;
+    }
+
+    // --- Hero row: the headline numbers -------------------------------
+    var hero = el('div', 'rc-career-hero');
+    hero.appendChild(buildCareerStat(
+      s.finalRank ? (ordinal(s.finalRank) + (s.finalRankOutOf ? ' / ' + s.finalRankOutOf : '')) : '--',
+      'Class Standing'));
+    hero.appendChild(buildCareerStat(Number(s.finalPoints || 0).toLocaleString(), 'Points'));
+    hero.appendChild(buildCareerStat(s.wins || 0, 'Wins'));
+    hero.appendChild(buildCareerStat(s.podiums || 0, 'Podiums'));
+    card.appendChild(hero);
+
+    var body = el('div', 'rc-career-card-body');
+
+    // --- Team & Car ------------------------------------------------------
+    var teamGroup = el('div');
+    teamGroup.appendChild(el('div', 'rc-career-group-title', 'Team &amp; Car'));
+    var carLine = [s.manufacturer, s.carModel].filter(Boolean).join(' ') + (s.carNumber ? ' #' + escapeHtml(s.carNumber) : '');
+    teamGroup.appendChild(el('p', 'rc-career-line',
+      '<strong>Team:</strong> ' + escapeHtml(s.teamName || '--') +
+      ' &nbsp; <strong>Car:</strong> ' + (carLine.trim() || '--') +
+      ' &nbsp; <strong>Class:</strong> ' + escapeHtml(s.class || '--')));
+    body.appendChild(teamGroup);
+
+    // --- Race Record ------------------------------------------------------
+    var raceGroup = el('div');
+    raceGroup.appendChild(el('div', 'rc-career-group-title', 'Race Record'));
+    var raceGrid = el('div', 'rc-career-stat-grid');
+    raceGrid.appendChild(buildCareerStat(s.racesStarted || 0, 'Started'));
+    raceGrid.appendChild(buildCareerStat(s.poles || 0, 'Poles'));
+    raceGrid.appendChild(buildCareerStat(s.fastestLaps || 0, 'Fastest Laps'));
+    raceGrid.appendChild(buildCareerStat(s.cleanRaces || 0, 'Clean Races'));
+    raceGrid.appendChild(buildCareerStat(s.dnfs || 0, 'DNFs'));
+    raceGrid.appendChild(buildCareerStat((s.avgFinish != null) ? s.avgFinish.toFixed(1) : '--', 'Avg. Finish'));
+    raceGroup.appendChild(raceGrid);
+    body.appendChild(raceGroup);
+
+    // --- Finances ------------------------------------------------------
+    var finGroup = el('div');
+    finGroup.appendChild(el('div', 'rc-career-group-title', 'Finances'));
+    var finGrid = el('div', 'rc-career-stat-grid');
+    finGrid.appendChild(buildCareerStat(formatMoney(s.seasonNetEarnings), 'Season Earnings'));
+    finGrid.appendChild(buildCareerStat(formatMoney(s.seasonEndingBalance), 'Ending Balance'));
+    finGrid.appendChild(buildCareerStat((s.largestWin != null) ? formatMoney(s.largestWin) : '--', 'Largest Payout'));
+    if (s.sponsorBonusTotal || s.sponsorPenaltyTotal) {
+      finGrid.appendChild(buildCareerStat(formatMoney(s.sponsorBonusTotal), 'Sponsor Bonuses'));
+      finGrid.appendChild(buildCareerStat(formatMoney(s.sponsorPenaltyTotal), 'Sponsor Penalties'));
+    }
+    finGroup.appendChild(finGrid);
+    body.appendChild(finGroup);
+
+    // --- Sponsors ------------------------------------------------------
+    if (s.sponsors && s.sponsors.length) {
+      var sponsorGroup = el('div');
+      sponsorGroup.appendChild(el('div', 'rc-career-group-title', 'Sponsors'));
+      var chipRow = el('div', 'rc-career-chip-row');
+      s.sponsors.forEach(function (sp) {
+        var chip = el('span', 'rc-badge-chip', escapeHtml(sp.name || 'Sponsor'));
+        chip.style.background = 'var(--rc-steel)';
+        chipRow.appendChild(chip);
+        if (sp.tier) chipRow.appendChild(_rcTierBadge(sp.tier));
+      });
+      sponsorGroup.appendChild(chipRow);
+      body.appendChild(sponsorGroup);
+    }
+
+    // --- Car Objective ------------------------------------------------------
+    if (s.objectiveName) {
+      var objGroup = el('div');
+      objGroup.appendChild(el('div', 'rc-career-group-title', 'Car Objective'));
+      var metBadge = (s.objectiveMet === true) ? '<span class="rc-badge-chip rc-badge-status-registration">Met</span>'
+        : (s.objectiveMet === false ? '<span class="rc-badge-chip rc-badge-status-active">Not Met</span>' : '');
+      objGroup.appendChild(el('p', 'rc-career-line',
+        escapeHtml(s.objectiveName) + (s.objectiveBonus ? ' &nbsp; (' + formatMoney(s.objectiveBonus) + ' bonus)' : '') +
+        (metBadge ? ' &nbsp; ' + metBadge : '')));
+      body.appendChild(objGroup);
+    }
+
+    // --- Wagers ------------------------------------------------------
+    if ((s.wagerWins || 0) + (s.wagerLosses || 0) > 0) {
+      var wagerGroup = el('div');
+      wagerGroup.appendChild(el('div', 'rc-career-group-title', 'Wagers'));
+      wagerGroup.appendChild(el('p', 'rc-career-line',
+        '<strong>Record:</strong> ' + (s.wagerWins || 0) + '-' + (s.wagerLosses || 0) +
+        ' &nbsp; <strong>Net:</strong> ' + formatMoney(s.wagerEarnings)));
+      body.appendChild(wagerGroup);
+    }
+
+    // --- Discipline ------------------------------------------------------
+    var incidents = (s.statusHistory || []).slice().reverse();
+    if (incidents.length || s.penaltyCount) {
+      var discGroup = el('div');
+      discGroup.appendChild(el('div', 'rc-career-group-title', 'Discipline'));
+      if (s.penaltyCount) {
+        discGroup.appendChild(el('p', 'rc-career-line',
+          '<strong>Upheld Protests:</strong> ' + s.penaltyCount +
+          (s.penaltyFinesTotal ? ' &nbsp; <strong>Fines:</strong> ' + formatMoney(s.penaltyFinesTotal) : '')));
+      }
+      incidents.forEach(function (h) {
+        var when = h.at ? new Date(h.at) : null;
+        var whenStr = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : '';
+        var line = el('div', 'rc-career-incident',
+          escapeHtml(h.status || '') + (h.reason ? ' -- ' + escapeHtml(h.reason) : ''));
+        if (whenStr) line.appendChild(el('span', 'rc-career-incident-date', whenStr));
+        discGroup.appendChild(line);
+      });
+      body.appendChild(discGroup);
+    }
+
+    card.appendChild(body);
+    return card;
+  }
+
+  // Same tile shape as the Wager page's .rc-cs-stat -- reused rather than
+  // reinvented so every "important number in a box" on the site looks
+  // like the same component.
+  function buildCareerStat(value, label) {
+    var tile = el('div', 'rc-cs-stat');
+    tile.appendChild(el('div', 'rc-cs-stat-value', String(value)));
+    tile.appendChild(el('div', 'rc-cs-stat-label', escapeHtml(label)));
+    return tile;
   }
 
   // ---------------------------------------------------------------------
