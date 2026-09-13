@@ -565,7 +565,11 @@ p { margin: 0 0 0.75em; }
    this fixed column, a plain inline <img> would push the text column
    left/right by however wide that one logo happened to be. */
 .rc-dm-sponsor-logo-col {
-  width: 120px;
+  /* Widened to 150px (2026-09-13) alongside .rc-dm-sponsor-logo's own
+     max-width bump below -- this column has to be at least as wide as
+     the logo's cap or a wide wordmark gets clipped against the column's
+     own fixed width regardless of what the image's max-width allows. */
+  width: 150px;
   flex: none;
   display: flex;
   justify-content: center;
@@ -582,12 +586,15 @@ p { margin: 0 0 0.75em; }
 .rc-dm-sponsor-logo {
   width: auto;
   height: auto;
-  /* 75px wide / 35px tall (2026-09-13, Matt's call) -- was 100/40. Only
-     this list's logo cap changed; the picker/table/chip sponsor logos
-     elsewhere in this file (rc-sponsor-pick-logo, rc-sponsor-table-logo,
+  /* 150px wide / 35px tall (2026-09-13, Matt's call -- revised same day
+     from an earlier 75/35 pass, was 100/40 before that). Only this list's
+     logo cap changed; the picker/table/chip sponsor logos elsewhere in
+     this file (rc-sponsor-pick-logo, rc-sponsor-table-logo,
      rc-pick-chip-logo) each have their own already-documented sizing for
-     their own context and weren't touched. */
-  max-width: 75px;
+     their own context and weren't touched. .rc-dm-sponsor-logo-col above
+     is widened to match, so a wide wordmark near the 150px cap doesn't
+     get clipped by the column itself. */
+  max-width: 150px;
   max-height: 35px;
   object-fit: contain;
   flex: none;
