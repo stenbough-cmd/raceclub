@@ -3304,6 +3304,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-white);
   margin-top: 24px;
 }
+/* Red underline spanning just "RACE - EARN - PROGRESS" (2026-09-13,
+   Matt's follow-up call) -- stops short of " - BE REMEMBERED", which
+   stays plain white text with no line under it. border-bottom instead
+   of text-decoration so the line's thickness/color/gap-from-text are
+   all controllable independently of the italic subtitle font. */
+.rc-hero-subtitle-underline {
+  border-bottom: 2px solid var(--rc-red);
+  padding-bottom: 4px;
+}
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
    other page's) has no background of its own and just shows through
