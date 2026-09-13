@@ -2191,7 +2191,7 @@
       return wrap;
     }
     if (formOptions.atCap) {
-      wrap.appendChild(el('p', 'rc-cs-empty', 'You already have 3 active wagers -- resolve one before placing another.'));
+      wrap.appendChild(el('p', 'rc-cs-empty', 'You already have 4 active wagers -- resolve one before placing another.'));
       return wrap;
     }
 
@@ -2201,8 +2201,8 @@
     formOptions.opponents.forEach(function (o) {
       var opt = document.createElement('option');
       opt.value = o.profileId;
-      opt.textContent = o.displayName + (o.activeCount >= 3 ? ' (at wager cap)' : '');
-      opt.disabled = o.activeCount >= 3;
+      opt.textContent = o.displayName + (o.activeCount >= 4 ? ' (at wager cap)' : '');
+      opt.disabled = o.activeCount >= 4;
       oppSelect.appendChild(opt);
     });
 
@@ -2403,13 +2403,14 @@
     return modal;
   }
 
-  // Every driver can hold at most 3 active wagers at once (the site-wide
-  // cap Wagers.gs itself enforces) -- Current Wagers below always shows
-  // exactly this many slots, real flip-cards first, then dashed "Place a
-  // Wager" open slots filling out the rest, same "here's your whole
-  // roster of slots, filled or not" treatment the Sponsors page's own
-  // pick chips already use (.rc-pick-chip-open).
-  var RC_WAGER_SLOT_COUNT = 3;
+  // Every driver can hold at most 4 active wagers at once (the site-wide
+  // cap Wagers.gs itself enforces -- bumped from 3 to 4, 2026-09-13,
+  // Matt's call) -- Current Wagers below always shows exactly this many
+  // slots, real flip-cards first, then dashed "Place a Wager" open slots
+  // filling out the rest, same "here's your whole roster of slots, filled
+  // or not" treatment the Sponsors page's own pick chips already use
+  // (.rc-pick-chip-open).
+  var RC_WAGER_SLOT_COUNT = 4;
 
   // ---- Top container: Current Wagers (portrait flip-cards + open slots) ----
   function buildWagerLimboPanel(wagers, formOptions, token, onQuietRefresh) {
@@ -2418,6 +2419,21 @@
 
     if (!wagers || !wagers.success) {
       card.appendChild(el('p', 'rc-cs-empty', 'Could not load your wagers right now.'));
+      return card;
+    }
+
+    // Not currently registered for a season (2026-09-13, Matt's call) --
+    // same hasSeat flag buildWagerProposeFormBody already checks before
+    // letting the Place a Wager popup's form render, surfaced here too so
+    // the explanation shows up on the page itself instead of only after
+    // clicking an open slot. Same rc-cs-empty pattern the Sponsorship
+    // Outlook card uses for its own "not on a team yet" state. Only acts
+    // on a CONFIRMED "no seat" (formOptions.success true, hasSeat false)
+    // -- if formOptions itself failed to load (network hiccup), that's
+    // not evidence the driver isn't in a season, so this falls through to
+    // the normal slot grid below instead of wrongly claiming they aren't.
+    if (formOptions && formOptions.success && !formOptions.hasSeat) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Wagers can only be made during an active season -- register for a season to challenge another driver.'));
       return card;
     }
 
@@ -2440,7 +2456,7 @@
   }
 
   // Dashed placeholder slot -- an unfilled wager card, same size/shape as
-  // a real one so the grid reads as "your 3 wager slots," filled or not.
+  // a real one so the grid reads as "your 4 wager slots," filled or not.
   // Clicking it opens the Place a Wager popup (2026-09-03, Matt's call --
   // was a scroll-down-to-an-inline-form before this) via
   // openWagerProposeModal. formOptions is whatever this slot's caller
@@ -8908,6 +8924,118 @@
   }
 
   // ---------------------------------------------------------------------
+  // PENDING APPROVAL -- standalone card above Data Management on the Admin
+  // page (2026-09-13, Matt's call), listing every Prospect account
+  // (Status PendingApproval, not yet a Role) with Approve/Deny/Edit right
+  // there, no popup to open first. Deliberately a plain, self-contained
+  // rewrite of buildDriversPanel's own Prospect group rather than a call
+  // into it -- that function's Approve/Deny closures are wired to the
+  // Members popup's own `reload` (a full re-fetch-and-rebuild of that
+  // popup), which doesn't exist here; this panel manages its own local
+  // re-render instead (removeRow, plus an empty-state swap once the last
+  // row is gone). Same fetchApi actions (adminApproveAccount/
+  // adminRejectAccount) and instant-optimistic-then-toast-on-failure
+  // pattern as everywhere else on this page.
+  // ---------------------------------------------------------------------
+  function buildPendingApprovalPanel(token) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Pending Approval'));
+    var body = el('div');
+    body.appendChild(buildSpinner('Loading pending approvals…'));
+    panel.appendChild(body);
+
+    function showEmptyIfNoRowsLeft() {
+      if (!body.querySelector('.rc-group-row')) {
+        body.innerHTML = '';
+        body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
+      }
+    }
+
+    fetchApi('adminListPendingAccounts', { token: token }).then(function (data) {
+      body.innerHTML = '';
+      var pending = (data && data.success) ? (data.pending || []) : [];
+      if (!pending.length) {
+        body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
+        return;
+      }
+      pending.slice().sort(function (a, b) {
+        return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
+      }).forEach(function (person) {
+        var row = el('div', 'rc-group-row');
+        var info = el('div', 'rc-dm-row-info');
+        info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+        row.appendChild(info);
+
+        var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+
+        // Same sitewide button rule as buildDriversPanel's own Approve/
+        // Deny (2026-09-13, Matt's call): both write straight to the sheet
+        // the instant they're clicked, so both get the save-style red
+        // button rather than the row's usual gray.
+        var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
+        approveBtn.type = 'button';
+        approveBtn.addEventListener('click', function () {
+          var nextSibling = row.nextSibling, parent = row.parentNode;
+          if (parent) parent.removeChild(row);
+          fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+            if (data && data.success) {
+              showEmptyIfNoRowsLeft();
+            } else {
+              if (parent) parent.insertBefore(row, nextSibling);
+              showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
+            }
+          }).catch(function () {
+            if (parent) parent.insertBefore(row, nextSibling);
+            showToast('Could not reach the server -- account not approved.', 'error');
+          });
+        });
+
+        var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
+        denyBtn.type = 'button';
+        denyBtn.addEventListener('click', function () {
+          var nextSibling = row.nextSibling, parent = row.parentNode;
+          if (parent) parent.removeChild(row);
+          fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+            if (data && data.success) {
+              showEmptyIfNoRowsLeft();
+            } else {
+              if (parent) parent.insertBefore(row, nextSibling);
+              showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
+            }
+          }).catch(function () {
+            if (parent) parent.insertBefore(row, nextSibling);
+            showToast('Could not reach the server -- account not denied.', 'error');
+          });
+        });
+
+        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editBtn.type = 'button';
+        // Reopens as a normal edit popup -- reload here just re-labels the
+        // row's text if the admin changes the display name, same as any
+        // other Edit button; it doesn't need to touch this panel's
+        // Approve/Deny wiring at all.
+        editBtn.addEventListener('click', function () {
+          openEditDriverModal(person, token, function () {
+            info.innerHTML = '';
+            info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+          });
+        });
+
+        btnGroup.appendChild(approveBtn);
+        btnGroup.appendChild(denyBtn);
+        btnGroup.appendChild(editBtn);
+        row.appendChild(btnGroup);
+        body.appendChild(row);
+      });
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'rc-cs-empty', 'Could not load pending approvals right now.'));
+    });
+
+    return panel;
+  }
+
+  // ---------------------------------------------------------------------
   // DATA MANAGEMENT PAGE -- a League-Management-style container (h2 + one
   // rc-panel labeled "Data Management") with a row of buttons: Members / Tracks
   // / Cars / Sponsors. Each button opens its own popup (openAdminListModal
@@ -8928,6 +9056,17 @@
     if (!section) return;
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
+
+    // Pending Approval -- sits above Data Management (2026-09-13, Matt's
+    // call) so a waiting account surfaces right on the Admin page itself
+    // instead of only inside Data Management > Members, which an admin
+    // has to open on purpose to even find out someone's waiting. Fetches
+    // and renders its own data independently of the rest of this
+    // function (same adminListPendingAccounts call and Approve/Deny
+    // actions the Members popup's own Pending Approval group already
+    // uses -- see buildDriversPanel above) so it doesn't hold up the
+    // rest of the Admin page while it loads.
+    section.appendChild(buildPendingApprovalPanel(token));
 
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));

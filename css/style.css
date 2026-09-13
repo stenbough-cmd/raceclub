@@ -91,7 +91,14 @@
      races, the gold stat pill) -- not the same token as --rc-tier-elite
      above, which is a Car Objective Tier color with its own separate
      meaning even though both happen to render as gold.
-     --rc-warning/--rc-warning-accent: probation/pending-review amber. */
+     --rc-warning/--rc-warning-accent: probation/pending-review amber.
+     --rc-orange: the Risky sponsor tier's color (2026-09-13, Matt's call:
+     Risky should read as orange, not red -- red was already claimed
+     sitewide for "primary action"/"error"/penalty, so a Risky sponsor
+     badge sitting next to a penalty number in the same red was reading
+     as more alarming than intended). Reuses the exact value the
+     Reputation bar's own orange zone already uses (.rc-rep-bar-orange,
+     further down this file) rather than inventing a second orange. */
   --rc-positive: #1f5c25;
   --rc-positive-bright: #22c55e;
   --rc-positive-bg: #eaf6ec;
@@ -102,6 +109,7 @@
   --rc-gold: #b8860b;
   --rc-warning: #a3790a;
   --rc-warning-accent: #eab308;
+  --rc-orange: #e8892b;
 
   --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -431,7 +439,7 @@ p { margin: 0 0 0.75em; }
    rather than by class. */
 .rc-badge-tier-safe { background: var(--rc-positive); }
 .rc-badge-tier-balanced { background: var(--rc-balanced); }
-.rc-badge-tier-risky { background: var(--rc-red); }
+.rc-badge-tier-risky { background: var(--rc-orange); }
 /* Season status pill (League Management's Season Tools list, added
    2026-08-30) -- same chip shape, colored so Draft/Scheduled/Registration/
    Active/Completed read apart from each other at a glance in a flat list
@@ -574,8 +582,13 @@ p { margin: 0 0 0.75em; }
 .rc-dm-sponsor-logo {
   width: auto;
   height: auto;
-  max-width: 100px;
-  max-height: 40px;
+  /* 75px wide / 35px tall (2026-09-13, Matt's call) -- was 100/40. Only
+     this list's logo cap changed; the picker/table/chip sponsor logos
+     elsewhere in this file (rc-sponsor-pick-logo, rc-sponsor-table-logo,
+     rc-pick-chip-logo) each have their own already-documented sizing for
+     their own context and weren't touched. */
+  max-width: 75px;
+  max-height: 35px;
   object-fit: contain;
   flex: none;
 }
@@ -672,7 +685,7 @@ p { margin: 0 0 0.75em; }
 .rc-pick-chip-tier { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; color: var(--rc-steel); }
 .rc-tier-text-safe { color: var(--rc-positive); }
 .rc-tier-text-balanced { color: var(--rc-balanced); }
-.rc-tier-text-risky { color: var(--rc-red); }
+.rc-tier-text-risky { color: var(--rc-orange); }
 /* Open Slot -- same dashed/muted/uppercase treatment as the Calendar
    page's Bye Week card (.rc-cal-bye), so an unfilled pick reads the same
    "nothing here on purpose" way a bye week does. */
