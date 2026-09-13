@@ -5680,7 +5680,18 @@
     // openEndSeasonModal/renderAdminSection for the replacement (a
     // season-picker popup there, since Admin doesn't already have a
     // specific season's row in hand the way this one did).
-    if (!s.locked) {
+    // Admin-only (2026-09-14, Matt's call: "only admins can delete
+    // seasons... league organizers, however, can edit seasons") --
+    // Edit Season above stays visible to both Organizer and Admin (who
+    // both land on this League Management page, see the role check in
+    // buildFullProfileUI), but Delete now only renders for an Admin
+    // viewer. The backend already enforced this (handleAdminDeleteSeason,
+    // DataCache.gs, requireRole(admin, ['Admin'])) -- an Organizer
+    // clicking Delete before this fix would confirm the popup and then
+    // get a silent "could not delete" failure toast, since the request
+    // was never going to succeed. This just stops offering a button
+    // that was never going to work for them.
+    if (!s.locked && currentProfile && currentProfile.role === 'Admin') {
       var deleteBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
       deleteBtn.type = 'button';
       // Plain gray, not red (2026-09-13) -- this button only opens the
@@ -9764,12 +9775,17 @@
   // ECONOMY -- league-wide settings, admin-editable, independent of any one
   // season (2026-08-30, Matt's call: moved Starting Balance out of the
   // Season Creation Wizard since it's a persistent, account-level value,
-  // not something re-chosen every season). Just one field today (New
-  // Driver Starting Balance -- deposited automatically the moment a
-  // Prospect is approved into a Driver, see handleAdminApproveAccount,
-  // Auth.gs); built as a small form popup rather than openAdminListModal's
-  // "list of many rows" shape so more Economy settings can be added here
-  // later without restructuring this modal.
+  // not something re-chosen every season); built as a small form popup
+  // rather than openAdminListModal's "list of many rows" shape so more
+  // Economy settings can be added here later without restructuring this
+  // modal -- Class Seat Cost Multiplier (2026-09-14) is exactly that next
+  // addition, Matt's call: "GT3s are the base seat cost, LMP3s are 1.7x
+  // base, LMP2s are 3x base and Hypercars are 5x base cost as a rule of
+  // thumb and moving forward." A per-CLASS multiplier is a standing,
+  // league-wide ratio (not re-picked every season the way the wizard's own
+  // per-TIER seat cost averages are), so it lives here rather than in the
+  // Season Creation Wizard -- see _rcGetClassMultipliers_ (Website.gs) for
+  // how it's actually applied at Create Season/Edit Season time.
   function openEconomyModal(token) {
     var modal = showModal('Economy', { wide: true });
     modal.body.appendChild(buildSpinner('Loading Economy settings…'));
@@ -9789,6 +9805,32 @@
       balField.style.width = '50%'; // half the popup's width, not full (Matt's call) -- this modal is wide now to match the other Admin popups
       modal.body.appendChild(balField);
 
+      modal.body.appendChild(wizSubhead('Class Seat Cost Multiplier'));
+      var classMultipliers = data.classMultipliers || {};
+      // LMGT3 is shown, not editable -- it's always exactly the 1.0x base
+      // every other class's multiplier is relative to (Matt's own framing:
+      // "GT3s are the base seat cost").
+      var gt3Input = wizNumberInput(1, function () {}, { min: 1, step: 0.1 });
+      gt3Input.disabled = true;
+      gt3Input.classList.add('rc-field-locked');
+      var lmp3Input = wizNumberInput(classMultipliers.LMP3 || 1.7, function () {}, { min: 0.1, step: 0.1 });
+      var lmp2Input = wizNumberInput(classMultipliers.LMP2 || 3, function () {}, { min: 0.1, step: 0.1 });
+      var hypercarInput = wizNumberInput(classMultipliers.Hypercar || 5, function () {}, { min: 0.1, step: 0.1 });
+      // Flex-wrap, not the fixed-3-column rc-wiz-field-row-3 grid used
+      // elsewhere in the wizard -- there are 4 classes here (GT3/LMP3/LMP2/
+      // Hypercar), so this wraps 2-up on a narrow popup instead of leaving
+      // an awkward mostly-empty second grid row (same pattern the Season
+      // Wizard's own 3-item seat cost row uses -- flex + flex-wrap, not a
+      // fixed grid, whenever the item count isn't a clean fit).
+      var classMultiplierRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;');
+      [['GT3 (base)', gt3Input], ['LMP3', lmp3Input], ['LMP2', lmp2Input], ['Hypercar', hypercarInput]].forEach(function (pair) {
+        var col = el('div', 'flex:1;min-width:120px;');
+        col.appendChild(wizField(pair[0], pair[1], null));
+        classMultiplierRow.appendChild(col);
+      });
+      modal.body.appendChild(classMultiplierRow);
+      modal.body.appendChild(el('div', 'rc-hint', 'A car\'s seat cost is its Tier\'s average (set per season in the Season Creation Wizard), randomized ±20%, then multiplied by its class\'s number here -- e.g. a Mid Tier LMP2 car at 3x prices three times what an equivalent Mid Tier GT3 car does. Applies to every season created or edited from now on; already-created seasons keep whatever they were built with.'));
+
       var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:16px;');
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
       saveBtn.type = 'button';
@@ -9802,7 +9844,10 @@
         modal.close();
         fetchApi('adminUpdateEconomySettings', {
           method: 'POST', token: token, body: {
-            newDriverStartingBalance: balInput.value
+            newDriverStartingBalance: balInput.value,
+            classMultiplierLMP3: lmp3Input.value,
+            classMultiplierLMP2: lmp2Input.value,
+            classMultiplierHypercar: hypercarInput.value
           }
         })
           .then(function (result) {
