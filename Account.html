@@ -1004,7 +1004,13 @@
     var body = el('div', 'rc-regstatus-body');
     card.appendChild(body);
 
-    if (profile.role === 'Prospect') {
+    // status, not role -- Role is set to 'Driver' at registration time
+    // and never actually reads 'Prospect' (Prospect is a Status concept,
+    // PendingApproval/PendingVerification, not a Role -- see Auth.gs).
+    // Fixed 2026-09-13 alongside letting Prospects log in at all (Matt's
+    // call: verified-but-not-yet-approved accounts can reach the
+    // dashboard now, they just can't register for a season yet).
+    if (profile.status !== 'Active') {
       body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Registration opens once your account is approved.'));
       return card;
     }
@@ -1176,7 +1182,13 @@
       if (text) headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', text));
     }
 
-    if (profile.role === 'Prospect') {
+    // status, not role -- Role is set to 'Driver' at registration time
+    // and never actually reads 'Prospect' (Prospect is a Status concept,
+    // PendingApproval/PendingVerification, not a Role -- see Auth.gs).
+    // Fixed 2026-09-13 alongside letting Prospects log in at all (Matt's
+    // call: verified-but-not-yet-approved accounts can reach the
+    // dashboard now, they just can't register for a season yet).
+    if (profile.status !== 'Active') {
       body.appendChild(el('p', 'rc-cs-empty', 'Available once your account is approved.'));
       return card;
     }
