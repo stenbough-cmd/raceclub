@@ -63,6 +63,46 @@
   --rc-tier-high: #9333ea;
   --rc-tier-elite: #c9a227;
 
+  /* Semantic bonus/penalty/status colors (named 2026-09-13, sitewide review
+     fix) -- these five hex values were previously hand-typed at 29 separate
+     call sites across the file (--rc-positive alone at 15 of them), so a
+     future "make the penalty red a bit darker" ask meant hunting down every
+     occurrence instead of editing one line. Named here as the semantic
+     concept they represent (not as a literal color name), matching how
+     --rc-red/--rc-ok already work above. Only colors that repeated 2+ times
+     were promoted -- a handful of true one-off hex values remain literal
+     rather than invent a token for a single call site.
+     --rc-positive: dark green -- Safe tier, bonus amounts, Active/Done
+     status, upward deltas.
+     --rc-positive-bright: a separate, more saturated green used only for
+     the Recent Results pill outline and the sponsor risk/reward swing bar
+     -- intentionally a different shade of "positive" than --rc-positive,
+     not a duplicate of it (see the Recent Results comment further down).
+     --rc-positive-bg/--rc-positive-border: the light-fill/border pair that
+     goes with --rc-positive wherever a badge/chip needs a tinted
+     background instead of a solid fill.
+     --rc-negative: the site's "penalty" red -- deliberately distinct from
+     --rc-red (which means "primary action" or "form error"), since a
+     sponsor penalty or a negative result isn't either of those.
+     --rc-negative-bg: the light-fill pairing for --rc-negative.
+     --rc-balanced: the Balanced sponsor tier's blue, reused for the
+     matching "Balanced"/"Scheduled" status meaning elsewhere.
+     --rc-gold: the site's one non-tier gold accent (special calendar
+     races, the gold stat pill) -- not the same token as --rc-tier-elite
+     above, which is a Car Objective Tier color with its own separate
+     meaning even though both happen to render as gold.
+     --rc-warning/--rc-warning-accent: probation/pending-review amber. */
+  --rc-positive: #1f5c25;
+  --rc-positive-bright: #22c55e;
+  --rc-positive-bg: #eaf6ec;
+  --rc-positive-border: #bfe2c4;
+  --rc-negative: #ff3b30;
+  --rc-negative-bg: #fdecea;
+  --rc-balanced: #1a5276;
+  --rc-gold: #b8860b;
+  --rc-warning: #a3790a;
+  --rc-warning-accent: #eab308;
+
   --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 }
@@ -164,6 +204,13 @@ p { margin: 0 0 0.75em; }
 .rc-btn-primary:hover { background: var(--rc-red-dark); color: var(--rc-white); }
 .rc-btn-primary:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
 
+/* Sitewide button rule (2026-09-13, Matt's call): every button is this
+   gray outline/gray text style UNLESS it saves something to a sheet --
+   a save button is .rc-btn-primary instead (solid red, darkens on
+   hover). Don't hand-pick colors per button going forward; pick
+   .rc-btn-primary or .rc-btn-secondary by that one question. See the
+   race-club-ui-consistency skill for the full writeup and the audited
+   list of which existing buttons are which. */
 .rc-btn-secondary {
   padding: 8px 14px;
   font-family: var(--rc-font-heading);
@@ -174,7 +221,7 @@ p { margin: 0 0 0.75em; }
   border: 1px solid var(--rc-silver);
   border-radius: 4px;
   background: var(--rc-white);
-  color: var(--rc-carbon);
+  color: var(--rc-steel);
   cursor: pointer;
   text-decoration: none;
 }
@@ -236,18 +283,10 @@ p { margin: 0 0 0.75em; }
   min-width: 0;
 }
 
-/* Red modifier for a .rc-btn-row action that needs to read as distinct
-   from the plain gray row buttons around it (2026-09-13, Matt's call:
-   differentiate League Management's season-level Recompute Season/Edit
-   Season from the race-level buttons underneath each expanded season).
-   Stack alongside .rc-btn-secondary/.rc-btn-row rather than replacing
-   them, so sizing/padding stay identical -- only the color changes. */
-.rc-btn-row-red {
-  border-color: var(--rc-red);
-  color: var(--rc-red);
-}
-.rc-btn-row-red:hover { background: var(--rc-red); color: var(--rc-white); }
-.rc-btn-row-red:disabled { border-color: var(--rc-silver); color: var(--rc-steel); }
+/* .rc-btn-row-red (2026-09-13) was a one-off red outline modifier for
+   Recompute Season/Edit Season. Removed the same day it was added --
+   superseded by the sitewide rule below, where color is decided by
+   save-vs-not, not by which row a button happens to sit in. */
 
 .rc-link-btn {
   background: none;
@@ -295,10 +334,10 @@ p { margin: 0 0 0.75em; }
   border: 1px solid var(--rc-silver);
   border-radius: 4px;
   background: var(--rc-white);
-  color: var(--rc-carbon);
+  color: var(--rc-steel);
   cursor: pointer;
 }
-.rc-disclosure-btn:hover { background: var(--rc-offwhite); }
+.rc-disclosure-btn:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
 .rc-disclosure-btn svg { display: block; transition: transform 0.15s ease; }
 .rc-disclosure-btn.rc-disclosure-open svg { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) {
@@ -390,8 +429,8 @@ p { margin: 0 0 0.75em; }
    Aggressive->Risky stuck; Safe stayed Safe), same chip shape as the
    class badges, colored by risk level (green -> steel blue -> red)
    rather than by class. */
-.rc-badge-tier-safe { background: #1f5c25; }
-.rc-badge-tier-balanced { background: #1a5276; }
+.rc-badge-tier-safe { background: var(--rc-positive); }
+.rc-badge-tier-balanced { background: var(--rc-balanced); }
 .rc-badge-tier-risky { background: var(--rc-red); }
 /* Season status pill (League Management's Season Tools list, added
    2026-08-30) -- same chip shape, colored so Draft/Scheduled/Registration/
@@ -401,8 +440,8 @@ p { margin: 0 0 0.75em; }
    is actually underway right now); Completed is steel, muted like an
    archived record. */
 .rc-badge-status-draft { background: var(--rc-tier-low); }
-.rc-badge-status-scheduled { background: #1a5276; }
-.rc-badge-status-registration { background: #1f5c25; }
+.rc-badge-status-scheduled { background: var(--rc-balanced); }
+.rc-badge-status-registration { background: var(--rc-positive); }
 .rc-badge-status-active { background: var(--rc-red); }
 .rc-badge-status-completed { background: var(--rc-steel); }
 /* Per-race status pill (League Management's per-season Races list, added
@@ -410,7 +449,7 @@ p { margin: 0 0 0.75em; }
    reused for the same meaning: green = still ahead of it (Scheduled),
    red = something needs attention (Completed, no results posted yet),
    steel = fully settled (Completed, results posted). */
-.rc-badge-race-scheduled { background: #1f5c25; }
+.rc-badge-race-scheduled { background: var(--rc-positive); }
 .rc-badge-race-noresults { background: var(--rc-red); }
 .rc-badge-race-posted { background: var(--rc-steel); }
 /* Car Objective Tier pill (Data Management's Cars popup, the Choose Your
@@ -469,8 +508,8 @@ p { margin: 0 0 0.75em; }
   font-weight: 700;
   padding: 1.5px 8.5px; /* trimmed by the 1.5px border, same as .rc-badge-cartier */
 }
-.rc-badge-result-positive { border: 1.5px solid #22c55e; color: #22c55e; }
-.rc-badge-result-negative { border: 1.5px solid #ff3b30; color: #ff3b30; }
+.rc-badge-result-positive { border: 1.5px solid var(--rc-positive-bright); color: var(--rc-positive-bright); }
+.rc-badge-result-negative { border: 1.5px solid var(--rc-negative); color: var(--rc-negative); }
 .rc-badge-result-clean { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
 .rc-badge-result-fastestlap { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
 .rc-badge-result-mostlapsled { border: 1.5px solid #d97706; color: #d97706; }
@@ -569,7 +608,7 @@ p { margin: 0 0 0.75em; }
 /* Selected state, registration/Choose Sponsors modal only -- a light
    green fill plus a green border (Matt's call, 2026-08-30 -- NOT red,
    since red reads as an error/warning color everywhere else on the site). */
-.rc-sponsor-pick-card-selected { border-color: var(--rc-ok); background: #eaf6ec; }
+.rc-sponsor-pick-card-selected { border-color: var(--rc-ok); background: var(--rc-positive-bg); }
 /* Read-only variant -- the Sponsors page's "your 3 sponsors" display, not
    a picker, so no hover/selection affordance. */
 .rc-sponsor-pick-card-readonly { cursor: default; }
@@ -591,7 +630,7 @@ p { margin: 0 0 0.75em; }
    Penalty red matches the Risk/Reward bar's penalty color (2026-09-01,
    Matt's call: keep every red penalty number the same red sitewide). */
 .rc-sponsor-pick-bonus { color: var(--rc-ok); }
-.rc-sponsor-pick-penalty { color: #ff3b30; }
+.rc-sponsor-pick-penalty { color: var(--rc-negative); }
 
 /* -------------------------------------------------------------------- */
 /* Sponsors page -- Comparison Table redesign (2026-09-01, Matt's call)  */
@@ -631,8 +670,8 @@ p { margin: 0 0 0.75em; }
 .rc-pick-chip-text { min-width: 0; }
 .rc-pick-chip-name { font-weight: 700; font-size: 13.5px; color: var(--rc-carbon); }
 .rc-pick-chip-tier { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; color: var(--rc-steel); }
-.rc-tier-text-safe { color: #1f5c25; }
-.rc-tier-text-balanced { color: #1a5276; }
+.rc-tier-text-safe { color: var(--rc-positive); }
+.rc-tier-text-balanced { color: var(--rc-balanced); }
 .rc-tier-text-risky { color: var(--rc-red); }
 /* Open Slot -- same dashed/muted/uppercase treatment as the Calendar
    page's Bye Week card (.rc-cal-bye), so an unfilled pick reads the same
@@ -670,13 +709,13 @@ p { margin: 0 0 0.75em; }
    "in play" for the next race reads as one quick-glance checklist. */
 .rc-sponsor-goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin-top: 14px; }
 .rc-sponsor-goals-col-head { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-sponsor-goals-col-head-bonus { color: #1f5c25; }
-.rc-sponsor-goals-col-head-penalty { color: #ff3b30; }
+.rc-sponsor-goals-col-head-bonus { color: var(--rc-positive); }
+.rc-sponsor-goals-col-head-penalty { color: var(--rc-negative); }
 .rc-sponsor-goal-row { display: flex; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rc-offwhite); }
 .rc-sponsor-goal-row:last-child { border-bottom: none; }
 .rc-sponsor-goal-amt { flex: none; width: 62px; font-family: var(--rc-font-heading); font-size: 14px; font-weight: 700; }
-.rc-sponsor-goal-amt-bonus { color: #1f5c25; }
-.rc-sponsor-goal-amt-penalty { color: #ff3b30; }
+.rc-sponsor-goal-amt-bonus { color: var(--rc-positive); }
+.rc-sponsor-goal-amt-penalty { color: var(--rc-negative); }
 .rc-sponsor-goal-text { min-width: 0; }
 .rc-sponsor-goal-trigger { font-size: 12.5px; font-weight: 600; color: var(--rc-carbon); }
 .rc-sponsor-goal-sponsor { font-size: 11.5px; color: var(--rc-steel); margin-top: 1px; }
@@ -751,14 +790,14 @@ p { margin: 0 0 0.75em; }
 .rc-sponsor-table-logo { max-width: 34px; max-height: 34px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-sponsor-table-amt { font-family: var(--rc-font-heading); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.rc-sponsor-table-amt-bonus { color: #1f5c25; }
-.rc-sponsor-table-amt-penalty { color: #ff3b30; }
+.rc-sponsor-table-amt-bonus { color: var(--rc-positive); }
+.rc-sponsor-table-amt-penalty { color: var(--rc-negative); }
 .rc-sponsor-table-trigger { font-size: 11.5px; color: var(--rc-steel); margin-top: 2px; }
 .rc-sponsor-swing { display: flex; flex-direction: column; gap: 3px; width: 100%; }
 .rc-sponsor-swing-row { display: flex; align-items: stretch; gap: 1px; height: 10px; width: 100%; }
 .rc-sponsor-swing-seg { flex: 1; height: 100%; border-radius: 1px; min-width: 1px; }
-.rc-sponsor-swing-seg-bonus { background: #22c55e; }
-.rc-sponsor-swing-seg-penalty { background: #ff3b30; }
+.rc-sponsor-swing-seg-bonus { background: var(--rc-positive-bright); }
+.rc-sponsor-swing-seg-penalty { background: var(--rc-negative); }
 .rc-sponsor-swing-seg-empty { background: #e2e2e2; }
 .rc-sponsor-swing-scale { position: relative; display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--rc-steel); }
 .rc-sponsor-swing-scale-label { font-variant-numeric: tabular-nums; }
@@ -787,13 +826,13 @@ p { margin: 0 0 0.75em; }
 .rc-trigger-glossary-group + .rc-trigger-glossary-group { margin-top: 8px; }
 .rc-trigger-glossary-group-head { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 0 8px; border-top: 1px solid var(--rc-offwhite); }
 .rc-trigger-glossary-group:first-child .rc-trigger-glossary-group-head { border-top: none; padding-top: 0; }
-.rc-trigger-glossary-group-head-bonus { color: #1f5c25; }
-.rc-trigger-glossary-group-head-penalty { color: #ff3b30; }
+.rc-trigger-glossary-group-head-bonus { color: var(--rc-positive); }
+.rc-trigger-glossary-group-head-penalty { color: var(--rc-negative); }
 .rc-trigger-glossary-row { display: grid; grid-template-columns: 200px 1fr; gap: 18px; padding: 9px 0; align-items: baseline; }
 .rc-trigger-glossary-row + .rc-trigger-glossary-row { border-top: 1px solid var(--rc-offwhite); }
 .rc-trigger-glossary-name { font-weight: 700; font-size: 13px; }
-.rc-trigger-glossary-name-bonus { color: #1f5c25; }
-.rc-trigger-glossary-name-penalty { color: #ff3b30; }
+.rc-trigger-glossary-name-bonus { color: var(--rc-positive); }
+.rc-trigger-glossary-name-penalty { color: var(--rc-negative); }
 .rc-trigger-glossary-desc { font-size: 12.5px; color: var(--rc-steel); line-height: 1.5; }
 @media (max-width: 700px) {
   .rc-trigger-glossary-row { grid-template-columns: 1fr; gap: 3px; }
@@ -880,7 +919,7 @@ p { margin: 0 0 0.75em; }
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-.rc-dm-status-pill-active { background: #eaf6ec; color: #1f5c25; }
+.rc-dm-status-pill-active { background: var(--rc-positive-bg); color: var(--rc-positive); }
 .rc-dm-status-pill-inactive { background: var(--rc-offwhite); color: var(--rc-steel); }
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
@@ -1252,7 +1291,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-badge-pill-red { background: var(--rc-red); }
 .rc-badge-pill-gray { background: var(--rc-steel); }
 .rc-badge-pill-green { background: var(--rc-ok); }
-.rc-badge-pill-yellow { background: #b8860b; color: var(--rc-white); }
+.rc-badge-pill-yellow { background: var(--rc-gold); color: var(--rc-white); }
 
 @media (max-width: 900px) {
   .rc-avatar-col { position: static; left: auto; width: auto; flex-direction: row; margin-bottom: 12px; }
@@ -1416,36 +1455,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Current Seat -- driver profile hero card, replaces the old Time Zone/
    Birthday/Contact row.
    Bug fix (2026-08-21, Matt's call): dropped the manufacturer logo image
-   and the colored car-number pill badge (.rc-seat-logo/.rc-seat-row/
-   .rc-seat-team/.rc-seat-number, all now unused -- left in place rather
-   than deleted in case a future spot wants the same look back) in favor
-   of one plain-text header line -- see .rc-seat-text-header below and
-   the matching .rc-team-details-header used by the Dashboard's Team
-   Details widget. */
-/* Sizes bumped up (2026-08-21, Matt's ask) -- the logo increased by more
-   than the text (28px -> 44px, +57%, vs. 15px -> 19px, +27%) so it reads
-   as the more prominent of the two, per Matt's explicit "increase the
-   logo a little more than the car and team" call. sizeLogoByArea() reads
-   .rc-seat-logo's own CSS box size at runtime, so bumping this width/
-   height here is the only change needed for it to fill proportionally
-   more space too. */
+   and the colored car-number pill badge in favor of one plain-text header
+   line -- see .rc-seat-text-header below and the matching
+   .rc-team-details-header used by the Dashboard's Team Details widget.
+   Dead rule cleanup (2026-09-13, sitewide review): .rc-seat-logo/
+   .rc-seat-row/.rc-seat-team/.rc-seat-number (the old logo+pill markup
+   this replaced) were left in place "in case a future spot wants the
+   same look back," but a year+ later nothing in Account.html, the other
+   pages, or the .gs templates references any of the four -- removed for
+   real this time. */
 .rc-seat-text-header { font-size: 19px; font-weight: 700; color: var(--rc-carbon); font-family: var(--rc-font-heading); margin-top: 4px; }
-.rc-seat-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
-.rc-seat-logo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
-.rc-seat-team { font-size: 14px; color: var(--rc-carbon); font-family: var(--rc-font-body); }
-.rc-seat-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 7px;
-  color: var(--rc-white);
-  font-family: var(--rc-font-heading);
-  font-weight: 700;
-  font-size: 13px;
-}
 .rc-team-details-header { font-size: 15px; font-weight: 700; color: var(--rc-carbon); font-family: var(--rc-font-heading); }
 .rc-accomplishments { margin-top: 14px; }
 .rc-accomplishments h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
@@ -1595,8 +1614,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   flex: 1 1 220px;
 }
 .rc-team-perk-chip strong { font-family: var(--rc-font-heading); font-weight: 700; }
-.rc-team-perk-bonus { background: #eaf6ec; border-color: #bfe2c4; color: #1f5c25; }
-.rc-team-perk-penalty { background: #fdecea; border-color: #f4c2bd; color: #ff3b30; }
+.rc-team-perk-bonus { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
+.rc-team-perk-penalty { background: var(--rc-negative-bg); border-color: #f4c2bd; color: var(--rc-negative); }
 .rc-team-perk-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
 /* Tier chip / objective chip width split (2026-08-30, Matt's call) --
    overrides .rc-team-perk-chip's default 1-1-220px equal-growth basis so
@@ -2032,12 +2051,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    but the "+" character's own glyph metrics sit it slightly low/left of
    true center. padding-bottom pushes the centered content up; padding-left
    pushes it right. */
-.rc-regstatus-icon-open { color: #a3790a; border-color: #e8b93a; background: #fdf6e3; padding-bottom: 2px; padding-left: 1px; }
-.rc-regstatus-icon-done { color: #1f5c25; border-color: #bfe2c4; background: #eaf6ec; }
+.rc-regstatus-icon-open { color: var(--rc-warning); border-color: #e8b93a; background: #fdf6e3; padding-bottom: 2px; padding-left: 1px; }
+.rc-regstatus-icon-done { color: var(--rc-positive); border-color: var(--rc-positive-border); background: var(--rc-positive-bg); }
 .rc-regstatus-headline { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
 .rc-regstatus-headline-none { color: var(--rc-steel); }
-.rc-regstatus-headline-open { color: #a3790a; }
-.rc-regstatus-headline-done { color: #1f5c25; }
+.rc-regstatus-headline-open { color: var(--rc-warning); }
+.rc-regstatus-headline-done { color: var(--rc-positive); }
 .rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
 /* padding-top back to the same 14px every other card's divider row uses
    (2026-09-01, Matt's call: "move up the date and class to the same
@@ -2066,12 +2085,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 */
 .rc-regstatus-flag { display: flex; align-items: flex-start; gap: 12px; margin-top: 4px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; }
 .rc-regstatus-flag-probation { background: #fef9e7; }
-.rc-regstatus-flag-suspended { background: #fdecea; }
+.rc-regstatus-flag-suspended { background: var(--rc-negative-bg); }
 .rc-regstatus-flag-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; }
-.rc-regstatus-flag-dot-probation { background: #eab308; }
+.rc-regstatus-flag-dot-probation { background: var(--rc-warning-accent); }
 .rc-regstatus-flag-dot-suspended { background: var(--rc-red); }
 .rc-regstatus-flag-label { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.rc-regstatus-flag-label-probation { color: #a3790a; }
+.rc-regstatus-flag-label-probation { color: var(--rc-warning); }
 .rc-regstatus-flag-label-suspended { color: var(--rc-red); }
 .rc-regstatus-flag-reason { font-size: 12.5px; color: var(--rc-carbon); margin-top: 3px; line-height: 1.4; }
 
@@ -2086,8 +2105,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-status-history-row:nth-child(2) { opacity: 0.65; }
 .rc-status-history-row:nth-child(3) { opacity: 0.35; }
 .rc-status-history-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; }
-.rc-status-history-dot-active { background: #1f5c25; }
-.rc-status-history-dot-probation { background: #eab308; }
+.rc-status-history-dot-active { background: var(--rc-positive); }
+.rc-status-history-dot-probation { background: var(--rc-warning-accent); }
 .rc-status-history-dot-suspended { background: var(--rc-red); }
 .rc-status-history-label { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-status-history-reason { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
@@ -2180,7 +2199,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.rc-nextrace-pill-gold { background: #b8860b; }
+.rc-nextrace-pill-gold { background: var(--rc-gold); }
 /* Nudged up a few px from true vertical-center (2026-08-31, Matt's call)
    so it sits closer to the event title at the top of .rc-nextrace-info,
    instead of centering against the taller stat-row/pill content below the
@@ -2230,7 +2249,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    a competing headline figure. */
 .rc-finrep-frozen-inline { font-size: 13px; font-weight: 600; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; padding-bottom: 10px; }
-.rc-finrep-delta-up { color: #1f5c25; }
+.rc-finrep-delta-up { color: var(--rc-positive); }
 .rc-finrep-delta-down { color: var(--rc-red); }
 /* Bottom category row -- Finances: Frozen Balance/Bank Rank/Largest Win;
    Reputation: League Rank/Percentile. Same size/weight/border-top-divider
@@ -4376,7 +4395,7 @@ body.rc-modal-scroll-locked {
    border plus the same diagonal "finish flag" accent shape the Dashboard
    cards use, just gold instead of red (and gold instead of the gray every
    other race card now gets). */
-.rc-cal-race-special { border-color: #b8860b; }
+.rc-cal-race-special { border-color: var(--rc-gold); }
 .rc-cal-race-special::before {
   content: "";
   position: absolute;
@@ -4384,7 +4403,7 @@ body.rc-modal-scroll-locked {
   left: 0;
   width: 40%;
   height: 4px;
-  background: #b8860b;
+  background: var(--rc-gold);
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
@@ -4461,7 +4480,7 @@ body.rc-modal-scroll-locked {
 /* Star marks a special/named event (Matt: "any special events have a
    star next to the race name") -- normal rounds have no star, no name,
    just "Race 0N". */
-.rc-cal-race-star { display: inline-flex; align-items: center; color: #b8860b; }
+.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); }
 
 /* Light divider under the track name/layout line (2026-08-30, Matt's
    call), separating it from the date/time row below it -- same offwhite
@@ -4507,8 +4526,8 @@ body.rc-modal-scroll-locked {
 /* Special Event's Prize Pool chip -- same gold as the star icon, more of
    it (Matt's call), so the money chip itself reads as special too instead
    of blending into the same gray chip as every other stat. */
-.rc-cal-stat-gold { background: rgba(184, 134, 11, 0.1); border-color: #b8860b; color: #8a6508; }
-.rc-cal-stat-gold svg { color: #b8860b; }
+.rc-cal-stat-gold { background: rgba(184, 134, 11, 0.1); border-color: var(--rc-gold); color: #8a6508; }
+.rc-cal-stat-gold svg { color: var(--rc-gold); }
 /* Extra breathing room after the Qualifying-length chip, before the
    Sprint/Medium/Long race-length chips in Season Settings (2026-08-30,
    Matt's call) -- marks that boundary without widening .rc-cal-stats' own

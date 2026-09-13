@@ -2638,7 +2638,7 @@
 
     back.appendChild(el('div', 'rc-wager-card-back-title', escapeHtml(w.opponentDisplayName)));
     back.appendChild(el('div', 'rc-wager-card-stat-row', 'Career Races: ' + (w.opponentCareerRaces || 0)));
-    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Career Wager Record: ' + w.opponentWagerRecord.wins + 'W – ' + w.opponentWagerRecord.losses + 'L'));
+    back.appendChild(el('div', 'rc-wager-card-stat-row', 'Career Wager Record: ' + w.opponentWagerRecord.wins + 'W -- ' + w.opponentWagerRecord.losses + 'L'));
     back.appendChild(el('div', 'rc-wager-card-stat-row', 'Race: ' + escapeHtml(w.roundLabel)));
     back.appendChild(el('div', 'rc-wager-card-stat-row', 'Condition: ' + escapeHtml(w.conditionLabel)));
     back.appendChild(flipArrow());
@@ -2741,7 +2741,7 @@
   function buildWagerHistoryRow(w) {
     var row = el('div', 'rc-ledger-row');
     var main = el('div');
-    main.appendChild(el('div', 'rc-ledger-event', escapeHtml(w.opponentDisplayName) + ' — ' + escapeHtml(w.conditionLabel)));
+    main.appendChild(el('div', 'rc-ledger-event', escapeHtml(w.opponentDisplayName) + ' · ' + escapeHtml(w.conditionLabel)));
     main.appendChild(el('div', 'rc-hint', escapeHtml(w.seasonName) + ' · ' + escapeHtml(w.roundLabel)));
     row.appendChild(main);
 
@@ -2813,7 +2813,7 @@
       return card;
     }
 
-    card.appendChild(el('div', 'rc-wager-record-line', wagers.record.wins + ' Won — ' + wagers.record.losses + ' Lost (career)'));
+    card.appendChild(el('div', 'rc-wager-record-line', wagers.record.wins + ' Won · ' + wagers.record.losses + ' Lost (career)'));
 
     if (!wagers.history.length) {
       card.appendChild(el('p', 'rc-cs-empty', 'No settled wagers yet.'));
@@ -3371,7 +3371,7 @@
         var costs = teamsInClass.map(function (t) { return t.buyInCost; });
         if (costs.length) {
           var costPill = el('span', 'rc-badge-chip rc-badge-cost-range',
-            formatMoney(Math.min.apply(null, costs)) + ' – ' + formatMoney(Math.max.apply(null, costs)));
+            formatMoney(Math.min.apply(null, costs)) + ' -- ' + formatMoney(Math.max.apply(null, costs)));
           label.appendChild(costPill);
         }
         // Inset 10px from the badge/pill above it (2026-08-30, Matt's
@@ -3866,7 +3866,12 @@
       });
       btnRow.appendChild(replayBtn);
 
-      var continueBtn = el('button', 'rc-btn-primary rc-signing-continue', 'Continue');
+      // Gray, not red (2026-09-13 fix) -- this click only advances to the
+      // next reveal screen (advanceToContract); the actual write already
+      // happened a moment earlier at "Join This Team." Per the site's
+      // button-color rule, color means "this click saves," not "this
+      // screen follows a save."
+      var continueBtn = el('button', 'rc-btn-secondary rc-signing-continue', 'Continue');
       continueBtn.type = 'button';
       continueBtn.addEventListener('click', advanceToContract);
       btnRow.appendChild(continueBtn);
@@ -9878,6 +9883,28 @@
     });
 
     toggleBtn.addEventListener('click', function () {
+      // Confirm step added (2026-09-13 fix) -- this used to fire the write
+      // the instant it was clicked, the one admin toggle on the site with
+      // no undo-before-you-commit step at all, unlike every other
+      // moderately-destructive action here. Disabling an account is
+      // reversible (Reactivate undoes it), so this uses the light
+      // openConfirmModal rather than the heavier type-to-confirm dialog
+      // reserved for truly irreversible actions like End Season/Erase.
+      if (!isActive) {
+        // Reactivating needs no extra confirmation -- only the
+        // disable direction is destructive enough to double-check.
+        doToggleAccountStatus_();
+        return;
+      }
+      openConfirmModal(
+        'Disable Account',
+        'Disable ' + (driver.DisplayName || driver.ProfileID) + '\'s account? They will be signed out and unable to log back in until an admin reactivates it.',
+        'Disable This Account',
+        doToggleAccountStatus_
+      );
+    });
+
+    function doToggleAccountStatus_() {
       // Same instant pattern as Save Changes above.
       modalHandle.close();
       fetchApi('adminSetUserStatus', {
@@ -9895,7 +9922,7 @@
         .catch(function () {
           showToast('Could not reach the server -- account status not changed.', 'error');
         });
-    });
+    }
   }
 
   // Grouped by Region (added 2026-08-30, Matt's call), same black-pill-
@@ -10413,6 +10440,27 @@
     });
 
     toggleBtn.addEventListener('click', function () {
+      // Confirm step added (2026-09-13 fix) -- same reasoning as the
+      // account status toggle above: deactivating a car is reversible
+      // (Reactivate undoes it) but had no undo-before-you-commit step at
+      // all, unlike every other moderately-destructive action here. Use
+      // the light openConfirmModal, not the heavier type-to-confirm
+      // dialog reserved for truly irreversible actions like End Season/Erase.
+      if (!isActive) {
+        // Reactivating needs no extra confirmation -- only the
+        // deactivate direction is destructive enough to double-check.
+        doToggleCarActive_();
+        return;
+      }
+      openConfirmModal(
+        'Deactivate Car',
+        'Deactivate car #' + (car.CarNumber || '') + ' (' + (car.Manufacturer || '') + ' ' + (car.CarModel || '') + ', ' + (car.TeamName || '') + ')? It will no longer be available for a driver to select.',
+        'Deactivate This Car',
+        doToggleCarActive_
+      );
+    });
+
+    function doToggleCarActive_() {
       // Same instant pattern as Save Changes above.
       modalHandle.close();
       fetchApi('adminSetCarActive', {
@@ -10429,7 +10477,7 @@
         .catch(function () {
           showToast('Could not reach the server -- car status not changed.', 'error');
         });
-    });
+    }
   }
 
   // Dropdown for a standardized option list (Matt's call: "use dropdown
@@ -10685,6 +10733,27 @@
     });
 
     toggleBtn.addEventListener('click', function () {
+      // Confirm step added (2026-09-13 fix) -- same reasoning as the
+      // account and car status toggles above: deactivating a sponsor is
+      // reversible (Reactivate undoes it) but had no undo-before-you-commit
+      // step at all, unlike every other moderately-destructive action here.
+      // Use the light openConfirmModal, not the heavier type-to-confirm
+      // dialog reserved for truly irreversible actions like End Season/Erase.
+      if (!isActive) {
+        // Reactivating needs no extra confirmation -- only the
+        // deactivate direction is destructive enough to double-check.
+        doToggleSponsorActive_();
+        return;
+      }
+      openConfirmModal(
+        'Deactivate Sponsor',
+        'Deactivate ' + (sponsor.Name || sponsor.SponsorID) + '? It will no longer be available for a driver to pick.',
+        'Deactivate This Sponsor',
+        doToggleSponsorActive_
+      );
+    });
+
+    function doToggleSponsorActive_() {
       // Same instant pattern as Save Changes above.
       modalHandle.close();
       fetchApi('adminSetSponsorActive', {
@@ -10701,7 +10770,7 @@
         .catch(function () {
           showToast('Could not reach the server -- sponsor status not changed.', 'error');
         });
-    });
+    }
   }
 
   // Add Sponsor -- same field set as Edit Sponsor minus the Deactivate

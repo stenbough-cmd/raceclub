@@ -396,6 +396,22 @@ var _rcNotifController = null;
 var _rcNotifPollTimer = null;
 var RC_NOTIF_POLL_MS = 45000;
 
+// Click-outside/Escape listener leak fix (2026-09-13, sitewide review) --
+// renderHeader() runs more than once per page (same reason the poll timer
+// above needs the clear-then-restart dance), and every run used to attach
+// a FRESH document-level click and keydown listener via a fresh closure
+// over that run's own toggle/menu/bellToggle/notifMenu elements, with
+// nothing ever removing the previous run's pair. mount.innerHTML replaces
+// those elements each render, so the old listeners kept running forever
+// against now-detached nodes -- harmless individually (a `.contains()`
+// check against a disconnected element is just always false) but an
+// unbounded, ever-growing pair of document listeners for the life of the
+// tab, one more added every single header re-render. Same fix as the poll
+// timer: stash the current handler here, remove it before attaching the
+// next one.
+var _rcHeaderOutsideClickHandler = null;
+var _rcHeaderEscapeHandler = null;
+
 // Called by Account.html once a registration actually succeeds (see
 // buildRegistrationModal's onDone) -- dismisses that season's notification
 // immediately, same as closing the bell after seeing it would. Falls back
@@ -509,6 +525,14 @@ function renderHeader(opts) {
               // much bigger than the visible icon, so a dot positioned off
               // the button's own corner used to land well outside the bell
               // itself. Matt's call, 2026-08-30.
+              // Left at 19x19, not the site's usual 16x16 icon standard
+              // (2026-09-13 sitewide review flagged this as an inconsistency
+              // "where feasible" to fix -- this one isn't): .rc-header-bell-
+              // icon-wrap above is sized to match this exact 19x19, and the
+              // .rc-notif-dot's -10px/-8px offsets were tuned against that
+              // same size. Shrinking the svg without re-tuning both would
+              // pull the unread-count dot off the bell's corner again --
+              // the exact bug this whole wrapper was built to fix.
               '<span class="rc-header-bell-icon-wrap">' +
                 '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>' +
                 '<span class="rc-notif-dot" id="rc-header-bell-dot" style="display:none;"></span>' +
@@ -544,7 +568,14 @@ function renderHeader(opts) {
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
                 '<span class="rc-header-account-role">' + escapeHtmlHeader_(role) + '</span>' +
               '</span>' +
-              '<svg class="rc-header-account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+              // 16x16 (2026-09-13 fix, sitewide review) -- was 14x14, the one
+              // outlier against the 16x16 standard every other small nav/menu
+              // icon on the site uses (Account.html's ICON_CHEVRON_DOWN and
+              // the rest of its icon set). No CSS width/height override on
+              // .rc-header-account-chevron, so this inline attribute is the
+              // only place the size is set -- safe to bump with no other
+              // measurement (unlike the bell icon below) tied to it.
+              '<svg class="rc-header-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               '<a class="rc-header-menu-item" href="Account.html">Dashboard</a>' +
@@ -597,15 +628,23 @@ function renderHeader(opts) {
       evt.stopPropagation();
       if (notifMenu.style.display === 'block') closeNotifMenu(); else openNotifMenu();
     });
-    document.addEventListener('click', function (evt) {
+    // Remove the previous render's document-level listeners before adding
+    // this render's (2026-09-13 leak fix -- see _rcHeaderOutsideClickHandler
+    // above) instead of just stacking another pair on top.
+    if (_rcHeaderOutsideClickHandler) document.removeEventListener('click', _rcHeaderOutsideClickHandler);
+    if (_rcHeaderEscapeHandler) document.removeEventListener('keydown', _rcHeaderEscapeHandler);
+
+    _rcHeaderOutsideClickHandler = function (evt) {
       if (menu.style.display === 'block' && !menu.contains(evt.target) && !toggle.contains(evt.target)) closeAccountMenu();
       if (notifMenu.style.display === 'block' && !notifMenu.contains(evt.target) && !bellToggle.contains(evt.target)) closeNotifMenu();
-    });
-    document.addEventListener('keydown', function (evt) {
+    };
+    _rcHeaderEscapeHandler = function (evt) {
       if (evt.key !== 'Escape') return;
       if (menu.style.display === 'block') closeAccountMenu();
       if (notifMenu.style.display === 'block') closeNotifMenu();
-    });
+    };
+    document.addEventListener('click', _rcHeaderOutsideClickHandler);
+    document.addEventListener('keydown', _rcHeaderEscapeHandler);
 
     // Both dropdowns also close the instant the pointer leaves BOTH their
     // toggle button and their own menu, not just on an outside click --
