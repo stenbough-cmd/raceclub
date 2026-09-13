@@ -941,6 +941,11 @@ textarea { resize: vertical; }
   font-weight: 400;
   color: var(--rc-carbon);
   cursor: pointer;
+  /* Override the global `label` rule's uppercase/letter-spacing (2026-09-13,
+     Matt's ask) -- this is a sentence-style checkbox description, not a
+     field label, so it should read like normal text. */
+  text-transform: none;
+  letter-spacing: normal;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
