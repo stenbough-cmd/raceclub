@@ -327,21 +327,31 @@
         var card = document.createElement('div');
         card.className = 'rc-grid-card';
         card.setAttribute('data-offset', String(diff));
+        card.setAttribute('data-class', team.cls);
 
-        var classEl = document.createElement('div');
-        classEl.className = 'rc-grid-card-class';
-        classEl.textContent = team.cls;
-        card.appendChild(classEl);
+        var head = document.createElement('div');
+        head.className = 'rc-grid-card-head';
 
-        var nameEl = document.createElement('h3');
+        var badge = document.createElement('div');
+        badge.className = 'rc-grid-card-badge';
+        badge.textContent = team.cls;
+        head.appendChild(badge);
+
+        var identity = document.createElement('div');
+        identity.className = 'rc-grid-card-identity';
+
+        var nameEl = document.createElement('div');
         nameEl.className = 'rc-grid-card-name';
         nameEl.textContent = team.name;
-        card.appendChild(nameEl);
+        identity.appendChild(nameEl);
 
         var subEl = document.createElement('div');
         subEl.className = 'rc-grid-card-sub';
         subEl.textContent = team.car + ' · #' + team.number;
-        card.appendChild(subEl);
+        identity.appendChild(subEl);
+
+        head.appendChild(identity);
+        card.appendChild(head);
 
         var blurbEl = document.createElement('p');
         blurbEl.className = 'rc-grid-card-blurb';

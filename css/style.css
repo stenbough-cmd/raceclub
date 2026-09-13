@@ -3386,16 +3386,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* -------------------------------------------------------------------- */
-/* "Meet The Grid" carousel (2026-09-13) -- replaces the old live/API-   */
-/* backed teaser grid now that index.html is a static, generic page.    */
-/* Five illustrative team cards, one spotlighted center-stage at full   */
-/* size/opacity, the immediate neighbors peeking in faded and scaled    */
-/* down at the edges, the two furthest teams hidden entirely. Built as  */
-/* a full-bleed section (sibling of .rc-landing-inner, same pattern as  */
-/* .rc-mid-banner above) so it can span the whole page width instead of */
-/* being capped by .rc-landing-inner's max-width. Cards get an angled   */
-/* clip-path plus diagonal accent stripes in the corners for a more     */
-/* aggressive, motorsport-livery feel per Matt's "slant/edgy" ask.      */
+/* "Meet The Grid" carousel (2026-09-13, reworked same day per Matt's    */
+/* "go back to the previous design" call) -- keeps the carousel          */
+/* mechanic (full-width, one spotlighted card center-stage, faded        */
+/* neighbors peeking at the edges, prev/next cycling with wraparound)    */
+/* but drops the dark slanted/striped card look Matt didn't like and     */
+/* brings back the original teaser card's clean white-card treatment:    */
+/* a logo-style badge + team identity header separated by a thin red     */
+/* rule, then the description line. The one new touch is coloring each   */
+/* badge by class using the same bronze/platinum/silver/gold accents as  */
+/* the Class Tiers section above it, tying the two sections together.    */
 /* -------------------------------------------------------------------- */
 .rc-carousel {
   position: relative;
@@ -3411,99 +3411,106 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   position: relative;
   width: 100%;
   max-width: 1600px;
-  height: 360px;
+  height: 320px;
 }
 .rc-grid-card {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 320px;
-  height: 320px;
-  padding: 26px 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  background: linear-gradient(160deg, var(--rc-carbon), #262626);
-  color: var(--rc-white);
-  box-shadow: 0 18px 40px rgba(23, 23, 23, 0.35);
-  clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px);
-  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease;
+  width: 300px;
+  height: 280px;
+  padding: 22px 24px;
+  overflow: hidden;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.05);
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease,
+    box-shadow 0.45s ease;
 }
-.rc-grid-card::before,
-.rc-grid-card::after {
-  content: '';
-  position: absolute;
-  width: 56px;
-  height: 6px;
-  background: var(--rc-red);
-}
-.rc-grid-card::before {
-  top: 14px;
-  left: -14px;
-  transform: rotate(-45deg);
-}
-.rc-grid-card::after {
-  bottom: 14px;
-  right: -14px;
-  transform: rotate(-45deg);
-}
-/* Center card: full size, fully opaque, sits above the neighbors. */
+/* Center card: full size, fully opaque, and lifted with a stronger
+   shadow so the spotlight reads as depth, not just an opacity change. */
 .rc-grid-card[data-offset="0"] {
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
+  box-shadow: 0 24px 48px rgba(23, 23, 23, 0.18);
   z-index: 3;
 }
 /* Immediate neighbors: peeking in at the edges, faded and scaled down. */
 .rc-grid-card[data-offset="-1"] {
-  transform: translate(calc(-50% - 340px), -50%) scale(0.82);
-  opacity: 0.4;
+  transform: translate(calc(-50% - 320px), -50%) scale(0.82);
+  opacity: 0.45;
   z-index: 2;
 }
 .rc-grid-card[data-offset="1"] {
-  transform: translate(calc(-50% + 340px), -50%) scale(0.82);
-  opacity: 0.4;
+  transform: translate(calc(-50% + 320px), -50%) scale(0.82);
+  opacity: 0.45;
   z-index: 2;
 }
 /* Furthest two teams: pushed off past the edges and hidden. */
 .rc-grid-card[data-offset="-2"] {
-  transform: translate(calc(-50% - 620px), -50%) scale(0.68);
+  transform: translate(calc(-50% - 580px), -50%) scale(0.68);
   opacity: 0;
   z-index: 1;
   pointer-events: none;
 }
 .rc-grid-card[data-offset="2"] {
-  transform: translate(calc(-50% + 620px), -50%) scale(0.68);
+  transform: translate(calc(-50% + 580px), -50%) scale(0.68);
   opacity: 0;
   z-index: 1;
   pointer-events: none;
 }
-.rc-grid-card-class {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  margin-bottom: 6px;
+.rc-grid-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--rc-red);
 }
+/* Stand-in for a team/manufacturer logo until real artwork exists --
+   colored per class using the same accent gradients as the Class Tiers
+   cards above, so the two sections read as one visual system. */
+.rc-grid-card-badge {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--rc-font-heading);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: var(--rc-white);
+  background: linear-gradient(160deg, var(--rc-steel), var(--rc-carbon));
+}
+.rc-grid-card[data-class="LMGT3"] .rc-grid-card-badge { background: linear-gradient(160deg, #a05a2c, #7c4420); }
+.rc-grid-card[data-class="LMP3"] .rc-grid-card-badge { background: linear-gradient(160deg, #7d92a3, #4f6373); }
+.rc-grid-card[data-class="LMP2"] .rc-grid-card-badge { background: linear-gradient(160deg, #536575, #313d47); }
+.rc-grid-card[data-class="Hypercar"] .rc-grid-card-badge { background: linear-gradient(160deg, #1f1f1f, #000000); color: #e6c15c; }
+.rc-grid-card-identity { min-width: 0; }
 .rc-grid-card-name {
   font-family: var(--rc-font-heading);
-  font-size: 20px;
+  font-size: 15.5px;
   font-weight: 800;
-  line-height: 1.2;
-  color: var(--rc-white);
+  color: var(--rc-carbon);
+  line-height: 1.25;
 }
-.rc-grid-card-sub {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.65);
-  margin-top: 4px;
-}
+.rc-grid-card-sub { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
 .rc-grid-card-blurb {
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.82);
-  margin-top: 14px;
-  margin-bottom: 0;
+  color: var(--rc-steel);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
 }
 .rc-carousel-arrow {
   position: relative;
@@ -3536,7 +3543,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    hide them and show just the spotlighted card, arrows on either side. */
 @media (max-width: 720px) {
   .rc-carousel-track { height: 300px; }
-  .rc-grid-card { width: 240px; height: 260px; padding: 20px 22px; }
+  .rc-grid-card { width: 240px; height: 260px; padding: 18px 20px; }
   .rc-grid-card[data-offset="-1"],
   .rc-grid-card[data-offset="1"] {
     opacity: 0;
