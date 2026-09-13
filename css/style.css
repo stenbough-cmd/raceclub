@@ -3296,20 +3296,22 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      follow-up: "move all text over to the left 10px") -- 125px at
      1600px and up (was 160px originally), same slope throughout, just
      moved closer to the window edge at every width each time.
-     Floor raised to 20px, not 0px (2026-09-13, Matt's follow-up: "keep
-     the padding on the left side of the image so the text doesn't
-     shrink past the edge and get cut off") -- .rc-hero-title-shift
+     Floor raised to 30px, not 0px (2026-09-13, Matt's follow-up calls:
+     first "keep the padding on the left side of the image so the text
+     doesn't shrink past the edge and get cut off", then "have it bottom
+     out at 10px padding on the left side instead") -- .rc-hero-title-shift
      below pulls YOUR CAREER and the subtitle a further FIXED 20px left
      of whatever this padding-left computes to, so once this hit its old
      0px floor below ~640px wide, those two lines were landing at -20px
-     -- past the hero's own left edge and clipped off-screen. A 20px
-     floor here guarantees that shifted position never goes below 0,
+     -- past the hero's own left edge and clipped off-screen. A 30px
+     floor here (20px of shift + Matt's requested 10px of breathing
+     room) guarantees that shifted position never goes below 10px,
      whatever the window width. This affects EVERY line in .rc-hero-text
      equally (YOUR CAREER, YOUR LEGACY, and the subtitle all share this
      one padding-left); .rc-hero-title-shift below is the separate,
      additional offset that pulls just two of those three lines further
      left still. */
-  padding-left: clamp(20px, -50.48px + 10.97vw, 125px);
+  padding-left: clamp(30px, -50.48px + 10.97vw, 125px);
   max-width: 100%;
 }
 .rc-hero-title {
