@@ -565,11 +565,13 @@ p { margin: 0 0 0.75em; }
    this fixed column, a plain inline <img> would push the text column
    left/right by however wide that one logo happened to be. */
 .rc-dm-sponsor-logo-col {
-  /* Widened to 150px (2026-09-13) alongside .rc-dm-sponsor-logo's own
-     max-width bump below -- this column has to be at least as wide as
+  /* Back down to 100px (2026-09-13, Matt's third pass on this size --
+     100/40 was actually the very first value here, then 75/35, then
+     150/35, now settled back on 100/40) alongside .rc-dm-sponsor-logo's
+     own max-width below -- this column has to be at least as wide as
      the logo's cap or a wide wordmark gets clipped against the column's
      own fixed width regardless of what the image's max-width allows. */
-  width: 150px;
+  width: 100px;
   flex: none;
   display: flex;
   justify-content: center;
@@ -586,16 +588,16 @@ p { margin: 0 0 0.75em; }
 .rc-dm-sponsor-logo {
   width: auto;
   height: auto;
-  /* 150px wide / 35px tall (2026-09-13, Matt's call -- revised same day
-     from an earlier 75/35 pass, was 100/40 before that). Only this list's
+  /* 100px wide / 40px tall (2026-09-13, Matt's final call on this pass --
+     100/40 -> 75/35 -> 150/35 -> back to 100/40). Only this list's
      logo cap changed; the picker/table/chip sponsor logos elsewhere in
      this file (rc-sponsor-pick-logo, rc-sponsor-table-logo,
      rc-pick-chip-logo) each have their own already-documented sizing for
      their own context and weren't touched. .rc-dm-sponsor-logo-col above
-     is widened to match, so a wide wordmark near the 150px cap doesn't
-     get clipped by the column itself. */
-  max-width: 150px;
-  max-height: 35px;
+     is narrowed to match, so the column never sits wider than the logo's
+     own cap. */
+  max-width: 100px;
+  max-height: 40px;
   object-fit: contain;
   flex: none;
 }
@@ -807,14 +809,15 @@ p { margin: 0 0 0.75em; }
   background: var(--rc-steel);
 }
 .rc-sponsor-table-sponsor { display: flex; align-items: center; gap: 10px; min-width: 0; }
-/* 150px wide / 35px tall (2026-09-13, Matt's call -- this "All Sponsors"
-   table on the Sponsors page is the other place drivers actually see a
-   list of sponsor logos, and it was still on its old 34x34 cap while
-   Data Management's own Sponsors list had already moved to 150x35).
+/* 100px wide / 40px tall (2026-09-13, Matt's third pass on this cap --
+   34x34 -> 150x35 -> 100x40 -- this "All Sponsors" table on the Sponsors
+   page is the other place drivers actually see a list of sponsor logos,
+   kept matching Data Management's own Sponsors list cap at every step).
    .rc-pick-chip-logo (Current Picks strip, same page) deliberately keeps
    its own smaller 46x46 cap -- that's a compact summary chip, not a
-   list row, and a 150px logo would overrun its 190px-min-width card. */
-.rc-sponsor-table-logo { max-width: 150px; max-height: 35px; object-fit: contain; flex: none; }
+   list row, and a 100px logo would still overrun its 190px-min-width
+   card. */
+.rc-sponsor-table-logo { max-width: 100px; max-height: 40px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-sponsor-table-amt { font-family: var(--rc-font-heading); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Bright green (2026-09-13, Matt's call: "same color green as the green
