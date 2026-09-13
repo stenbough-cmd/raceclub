@@ -6901,8 +6901,13 @@
   // Shown READ-ONLY in the Economy step purely as context (Matt's call:
   // "so you can see what the current starting pay is so you can balance
   // the rest from that info") -- the wizard never sends this value
-  // anywhere; it's display-only.
-  var WIZARD_NEW_DRIVER_STARTING_BALANCE = 25000;
+  // anywhere; it's display-only. Raised 25000 -> 100000 (2026-09-13,
+  // Matt's call: starting balance should be enough to join any class on
+  // the roster) -- this is only the hardcoded fallback shown for a
+  // moment before the real live value loads; the actual number a new
+  // driver gets comes from the Admin panel's Economy setting (or its
+  // own 100000 fallback, see Website.gs/DataCache.gs/Auth.gs).
+  var WIZARD_NEW_DRIVER_STARTING_BALANCE = 100000;
 
   // Real LMU track/layout list -- hardcoded FALLBACK only. loadWizardTrackList()
   // below overwrites WIZARD_TRACK_LIST/WIZARD_TRACK_LAYOUTS/WIZARD_TRACK_ROWS
