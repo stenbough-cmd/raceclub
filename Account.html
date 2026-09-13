@@ -9274,8 +9274,15 @@
     var section = document.getElementById('rc-section-admin');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
-    section.appendChild(buildSpinner('Loading Admin…'));
+    // buildPageSpinner (not a bare buildSpinner + heading) -- same fixed
+    // 180px-from-top position every other lazy section's loading state
+    // uses (see .rc-inline-spinner-page, style.css). This used to render
+    // the "Admin" heading immediately and a bare, unpositioned spinner
+    // right under it, which sat noticeably higher than every other page's
+    // loading state (2026-09-13, Matt's catch) -- the heading now waits
+    // until the real content renders below, exactly like Finances/Career/
+    // Wager/etc. already do.
+    section.appendChild(buildPageSpinner('Loading Admin...'));
 
     Promise.all([
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
