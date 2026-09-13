@@ -3259,12 +3259,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      call: "make it scale smoothly as the window collapses") -- clamp()
      between a 360px phone and a 1600px desktop, a straight linear ramp
      in between, no jump at any particular width. Shifted 25px closer to
-     the edge across the whole range (2026-09-13, Matt's second
-     follow-up call: "reduce the padding to the left side... by 25px")
-     -- 0px at 360px wide (was 24px), 135px at 1600px and up (was 160px),
-     same slope as before, just moved 25px closer to the window edge at
-     every width. */
-  padding-left: clamp(0px, -40.48px + 10.97vw, 135px);
+     the edge (2026-09-13, second follow-up: "reduce the padding to the
+     left side... by 25px"), then another 10px (2026-09-13, third
+     follow-up: "move all text over to the left 10px") -- net 0px at
+     360px wide (was 24px originally), 125px at 1600px and up (was 160px
+     originally), same slope throughout, just moved closer to the window
+     edge at every width each time. This affects EVERY line in
+     .rc-hero-text equally (YOUR CAREER, YOUR LEGACY, and the subtitle
+     all share this one padding-left); .rc-hero-title-shift below is the
+     separate, additional offset that pulls just two of those three
+     lines further left still. */
+  padding-left: clamp(0px, -50.48px + 10.97vw, 125px);
   max-width: 100%;
 }
 .rc-hero-title {
@@ -3316,10 +3321,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Matt's follow-up call) -- stops short of " - BE REMEMBERED", which
    stays plain white text with no line under it. border-bottom instead
    of text-decoration so the line's thickness/color/gap-from-text are
-   all controllable independently of the italic subtitle font. */
+   all controllable independently of the italic subtitle font. Both the
+   thickness and the gap are now fluid too (2026-09-13, Matt's follow-up
+   call: "make sure the subtitle and line also scales with the window
+   size change") -- same 360px-to-1600px clamp() range as the rest of
+   the hero text, so the line doesn't stay a fixed pixel weight while
+   the subtitle text it sits under shrinks and grows around it. */
 .rc-hero-subtitle-underline {
-  border-bottom: 2px solid var(--rc-red);
-  padding-bottom: 4px;
+  border-bottom: clamp(1px, 0.71px + 0.08vw, 2px) solid var(--rc-red);
+  padding-bottom: clamp(2px, 1.42px + 0.16vw, 4px);
 }
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
