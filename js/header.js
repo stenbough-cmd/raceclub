@@ -145,13 +145,11 @@
   newest at the bottom, each auto-dismisses after `durationMs` (default
   4200ms) or on its own close (x) click. See the .rc-toast* rules in
   style.css. NOTE: a message that comes bundled with its own follow-up
-  action -- login.html's "Resend verification email" button,
-  register.html's EMAIL_TAKEN "Log in with that account" panel -- keeps
-  its explanatory text inline next to that button rather than moving to a
-  toast, since a toast that auto-dismisses in a few seconds is the wrong
-  home for text a driver needs to still be reading when they click the
-  button below it. Everything else (plain success/failure results with no
-  attached action) now goes through showToast.
+  action keeps its explanatory text inline next to that button rather
+  than moving to a toast, since a toast that auto-dismisses in a few
+  seconds is the wrong home for text a driver needs to still be reading
+  when they click the button below it. Everything else (plain
+  success/failure results with no attached action) goes through showToast.
 */
 var RC_HEADER_HEIGHT = 72;
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';

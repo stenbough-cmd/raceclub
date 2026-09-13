@@ -179,6 +179,8 @@
     return;
   }
 
+  consumeDiscordTokenFromUrl(); // picks up ?token=... from a Discord sign-in redirect, if present
+
   var token = redirectIfNoToken();
   if (!token) return; // already redirected to login.html
 
@@ -5284,7 +5286,7 @@
     websiteHelp.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Website Help'));
     var contactList = el('ul', 'rc-help-list');
     contactList.appendChild(el('li', null, 'Questions about your account, results, or standings: email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
-    contactList.appendChild(el('li', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    contactList.appendChild(el('li', null, 'Can\'t log in? Race Club accounts sign in through Discord — make sure you\'re using the same Discord account you signed up with, and that you\'re still a member of the Race Club Discord server.'));
     // Points at the Rulebook's own Getting Started section (2026-09-01)
     // rather than duplicating the registration/sponsor-picking steps here
     // -- one place to keep that content current instead of two.

@@ -5,10 +5,10 @@
   In the single-file embed, the country list, country->flag-emoji lookup,
   and the curated/offset-sorted timezone list were declared once and used
   by both the registration form and the profile edit form because
-  everything shared one <script> scope. Split into real pages, both
-  register.html and Account.html need this same data — rather than
-  duplicating ~150 lines of country/timezone tables in two files, it lives
-  here once and both pages load it via <script src="js/reference-data.js">.
+  everything shared one <script> scope. Split into real pages, it lives
+  here once so any page needing this data (Account.html's Edit Profile
+  popup, today) loads it via <script src="js/reference-data.js"> instead
+  of duplicating ~150 lines of country/timezone tables.
 
   Every value below (COUNTRY_CODES, COUNTRIES, TIMEZONE_LIST,
   PREFERRED_CLASSES, EVENT_LENGTHS, and the flagEmoji/timezoneLabel/
