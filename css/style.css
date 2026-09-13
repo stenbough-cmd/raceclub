@@ -3570,6 +3570,25 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
   border-color: var(--rc-carbon);
 }
+/* "What You'll Need" cards -- shiny brushed-aluminum background
+   (2026-09-13, Matt's call). .rc-highlight-card is shared with the "Why
+   Race Club" section above (see that section's own HTML comment), so
+   this is scoped to just .rc-needs-section's copies rather than
+   restyling .rc-highlight-card itself -- the Why Race Club cards stay
+   plain white. Same technique as the Class Tiers cards below
+   (.rc-tier-bronze/-silver/-gold/-platinum's own 160deg two-tone
+   gradient), just a much lighter, cooler gray family so it reads as
+   aluminum rather than one of the four class-tier metals -- a light
+   top-left highlight fading through a mid gray to a slightly deeper
+   gray at the bottom-right is what gives it the "shiny sheet of metal"
+   look instead of a flat gray fill. */
+.rc-needs-section .rc-highlight-card {
+  background: linear-gradient(160deg, #fbfbfc 0%, #e4e7ea 45%, #cfd4d8 70%, #e8ebed 100%);
+  border-color: #c7ccd0;
+}
+.rc-needs-section .rc-highlight-card:hover {
+  border-color: #a8afb5;
+}
 .rc-highlight-icon {
   width: 44px;
   height: 44px;
