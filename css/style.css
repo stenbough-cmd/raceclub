@@ -816,8 +816,20 @@ p { margin: 0 0 0.75em; }
    .rc-pick-chip-logo (Current Picks strip, same page) deliberately keeps
    its own smaller 46x46 cap -- that's a compact summary chip, not a
    list row, and a 100px logo would still overrun its 190px-min-width
-   card. */
-.rc-sponsor-table-logo { max-width: 100px; max-height: 40px; object-fit: contain; flex: none; }
+   card.
+
+   width/height are now FIXED (2026-09-13, same-day follow-up -- was
+   max-width/max-height) rather than just capped: .rc-sponsor-table-sponsor
+   above has no fixed-width logo column the way the Data Management list's
+   .rc-dm-sponsor-logo-col does, just a flat `gap: 10px` between the <img>
+   and the name text -- so a narrow/square logo (rendered well under
+   100px by object-fit: contain) let the name start closer than a wide
+   wordmark's name did, and the whole list read as uneven going down the
+   page. Fixing width/height turns object-fit: contain into a real
+   letterbox: every logo now sits centered inside the SAME 100x40 box
+   regardless of its own aspect ratio, so the gap to the name (and the
+   name's own start position) is identical on every row. */
+.rc-sponsor-table-logo { width: 100px; height: 40px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-sponsor-table-amt { font-family: var(--rc-font-heading); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Bright green (2026-09-13, Matt's call: "same color green as the green
