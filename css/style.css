@@ -3267,7 +3267,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-hero-title {
   font-family: var(--rc-font-heading);
-  font-size: 180px;
+  font-size: 90px;
   font-weight: 800;
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -3275,37 +3275,35 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-white);
   margin: 0;
 }
-/* "Slightly offset inwards" (Matt's call) -- YOUR CAREER sits a bit
-   further right than YOUR LEGACY below it, so the two lines don't stack
-   flush-left like a plain block of text. */
-.rc-hero-title-career { margin-left: 48px; }
+/* Left-justified (2026-09-13, Matt's follow-up call) -- YOUR CAREER and
+   YOUR LEGACY both sit flush against .rc-hero-text's own left padding
+   now, replacing the earlier staggered "CAREER offset inward" treatment. */
 .rc-hero-title-accent { color: var(--rc-red); }
 .rc-hero-subtitle {
   font-family: var(--rc-font-heading);
-  font-size: 60px;
-  font-weight: 700;
+  font-size: 30px;
+  /* Thin, not bold (2026-09-13, Matt's follow-up call) -- contrasts
+     against the bold 800-weight title lines above it. */
+  font-weight: 300;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--rc-white);
   margin-top: 24px;
 }
 /* Scaled down below the site's usual tablet/mobile breakpoints -- the
-   180px/60px desktop sizes and 160px inset are Matt's literal numbers for
-   a full-width desktop hero; left as-is they would overflow badly on
-   anything narrower (a single word like "CAREER" alone runs 700px+ wide
-   at 180px). Same breakpoints (900px/560px) already used elsewhere on
-   this page (.rc-highlight-grid, .rc-tier-card, etc.). */
+   90px/30px desktop sizes and 160px inset are Matt's literal numbers for
+   a full-width desktop hero; left as-is they would overflow on anything
+   much narrower. Same breakpoints (900px/560px) already used elsewhere
+   on this page (.rc-highlight-grid, .rc-tier-card, etc.). */
 @media (max-width: 900px) {
   .rc-hero-text { padding-left: 60px; }
-  .rc-hero-title { font-size: 88px; }
-  .rc-hero-title-career { margin-left: 24px; }
-  .rc-hero-subtitle { font-size: 28px; letter-spacing: 0.08em; margin-top: 16px; }
+  .rc-hero-title { font-size: 44px; }
+  .rc-hero-subtitle { font-size: 14px; letter-spacing: 0.08em; margin-top: 16px; }
 }
 @media (max-width: 560px) {
   .rc-hero-text { padding-left: 24px; }
-  .rc-hero-title { font-size: 48px; }
-  .rc-hero-title-career { margin-left: 12px; }
-  .rc-hero-subtitle { font-size: 15px; letter-spacing: 0.06em; margin-top: 12px; }
+  .rc-hero-title { font-size: 24px; }
+  .rc-hero-subtitle { font-size: 8px; letter-spacing: 0.06em; margin-top: 12px; }
 }
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
