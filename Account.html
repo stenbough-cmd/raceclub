@@ -5699,7 +5699,7 @@
     if (showCreateButton) {
       var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
       var hasDraft = !!loadWizardDraft();
-      var createBtn = el('button', 'rc-btn-secondary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+      var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
       createBtn.type = 'button';
       createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
       row.appendChild(createBtn);
@@ -8971,7 +8971,7 @@
 
     var seasonRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
     var hasDraft = !!loadWizardDraft();
-    var createSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
     createSeasonBtn.type = 'button';
     createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
     seasonRow.appendChild(createSeasonBtn);
