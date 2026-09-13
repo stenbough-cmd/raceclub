@@ -409,6 +409,10 @@
       footnoteEl.textContent = '';
     }
 
+    // Real-world car-data year each class's roster is pulled from (the
+    // Cars tab's own Season column) -- used only for the footnote below.
+    var STATIC_CLASS_YEAR = { LMGT3: 2026, LMP3: 2026, LMP2: 2023, Hypercar: 2026 };
+
     // Real roster data, grouped by class -- source of truth is the Cars
     // tab of the "Race Club Data Sheets" spreadsheet. Used ONLY as the
     // no-season fallback below: when getGridTeaser comes back with no
@@ -504,10 +508,13 @@
     // "check back later" message, pick one class at random and up to 9
     // real teams from it (fewer if the class has under 9 -- LMP2 has 6)
     // and show those instead, in the exact same card design the live
-    // grid uses. Unlike the live grid's per-card stagger (there's a
-    // network round-trip to hide latency behind there), every card here
-    // is built up front and faded in together on the next frame -- there's
-    // no server wait to mask, so a stagger would only slow the perceived
+    // grid uses. No explanatory sentence in the tagline (Matt's follow-up
+    // call: "not everything needs an explanation") -- just a short
+    // "N of the M teams for the <year> <class> class" note below the
+    // cards. Unlike the live grid's per-card stagger (there's a network
+    // round-trip to hide latency behind there), every card here is built
+    // up front and faded in together on the next frame -- there's no
+    // server wait to mask, so a stagger would only slow the perceived
     // load down for no reason.
     function renderStaticSample_() {
       var classNames = Object.keys(STATIC_CARS_BY_CLASS);
@@ -521,14 +528,14 @@
       }
       var picks = pool.slice(0, Math.min(9, pool.length));
 
-      taglineEl.textContent = 'No season is running right now. Here’s a random sample of ' +
-        picks.length + ' ' + chosenClass + ' teams from our roster.';
+      taglineEl.textContent = '';
 
       rowEl.innerHTML = '';
       picks.forEach(function (entry) {
         rowEl.appendChild(buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc));
       });
-      footnoteEl.textContent = '';
+      footnoteEl.textContent = picks.length + ' of the ' + pool.length + ' teams for the ' +
+        STATIC_CLASS_YEAR[chosenClass] + ' ' + chosenClass + ' class';
 
       // Two nested rAFs: the first lets the browser commit the cards'
       // initial opacity:0/translateY styles (set by .rc-grid-teaser-card
