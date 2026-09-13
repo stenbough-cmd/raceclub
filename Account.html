@@ -932,7 +932,7 @@
     // A save just happened -- every lazy section counts as stale now, not
     // just the one on screen (an Admin edit on one page can ripple into
     // another page's numbers, e.g. an Economy change touching Finances'
-    // loan amount while the driver is looking at Sponsors), so the whole
+    // starting balance while the driver is looking at Sponsors), so the whole
     // showLazySection cache above gets cleared. The section on screen
     // right now still gets its fresh data immediately below; every other
     // one just re-fetches the next time it's actually opened.
@@ -2000,17 +2000,6 @@
     return card;
   }
 
-  // Request Loan (2026-09-02, Matt's call: self-service, no organizer
-  // review -- "this can all be done from the user's finance page"). Three
-  // states per Matt's own description ("the button goes from a locked
-  // state to a live state"): locked/grayed while balance is 0 or positive,
-  // live once it's gone negative, and a plain note once this season's
-  // one-time loan has already been taken (one-per-season is our own
-  // safeguard, not something Matt specified -- flagged to him separately).
-  // The loan is free money right now on purpose: Matt's design ties the
-  // real cost to a future performance-based penalty ("Track it now, build
-  // the penalty later") and, later still, a public "league bank account"
-  // page for the "fun public shaming" he asked for -- neither exists yet.
   // Account Status (2026-09-08, Matt's call: "show the last 3 changes in
   // account status and have them slowly fade away so that the fourth
   // status (not even displayed) would be assumed to be transparent") --
@@ -2038,67 +2027,6 @@
     return card;
   }
 
-  function buildLoanPanel(loanStatus, token) {
-    var card = el('div', 'rc-panel rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Bank Loan'));
-
-    if (!loanStatus || !loanStatus.success || !loanStatus.hasSeat) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to be eligible for a loan.'));
-      return card;
-    }
-
-    if (loanStatus.alreadyTakenThisSeason) {
-      card.appendChild(el('p', 'rc-cs-empty', 'You\'ve already taken your one loan for this season.'));
-    } else if (loanStatus.eligible) {
-      card.appendChild(el('p', 'rc-fin-outlook-hint',
-        'Your balance has gone negative. You can request a one-time ' + loanStatus.carClass + '-class loan of ' +
-        formatMoney(loanStatus.loanAmount) + ' to get back on your feet -- it\'s not repaid, but it comes at a price down the line.'));
-      var reqBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')');
-      reqBtn.type = 'button';
-      reqBtn.style.cssText = 'width:auto;margin-top:10px;';
-      reqBtn.addEventListener('click', function () {
-        reqBtn.disabled = true;
-        reqBtn.textContent = 'Requesting...';
-        fetchApi('requestLoan', { token: token }).then(function (res) {
-          if (!res || !res.success) {
-            alert((res && res.message) || 'Could not process the loan request.');
-            reqBtn.disabled = false;
-            reqBtn.textContent = 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')';
-            return;
-          }
-          rcReloadAfterSave();
-        }).catch(function () {
-          alert('Could not process the loan request.');
-          reqBtn.disabled = false;
-          reqBtn.textContent = 'Request Loan (' + formatMoney(loanStatus.loanAmount) + ')';
-        });
-      });
-      card.appendChild(reqBtn);
-    } else {
-      card.appendChild(el('p', 'rc-cs-empty', 'A loan is only available once your balance has gone negative.'));
-      var lockedBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Request Loan');
-      lockedBtn.type = 'button';
-      lockedBtn.disabled = true;
-      lockedBtn.style.cssText = 'width:auto;margin-top:10px;';
-      card.appendChild(lockedBtn);
-    }
-
-    if (loanStatus.loans && loanStatus.loans.length) {
-      card.appendChild(el('div', 'rc-panel-subhead', 'Loan History'));
-      loanStatus.loans.forEach(function (l) {
-        var row = el('div', 'rc-ledger-row');
-        row.appendChild(el('div', 'rc-ledger-date', formatLedgerDate(l.grantedAt)));
-        var main = el('div', 'rc-ledger-main');
-        main.appendChild(el('div', 'rc-ledger-event', escapeHtml(l.carClass) + ' Class Loan'));
-        row.appendChild(main);
-        row.appendChild(el('div', 'rc-ledger-amt rc-ledger-amt-positive', '+' + formatMoney(l.amount)));
-        card.appendChild(row);
-      });
-    }
-
-    return card;
-  }
-
   function renderFinancesSection(token) {
     var section = document.getElementById('rc-section-finances');
     if (!section) return;
@@ -2116,11 +2044,10 @@
       fetchApi('getMyLedger', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMySponsors', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMySeasonObjective', { token: token }).catch(function () { return { success: false }; }),
-      fetchApi('getMyLoanStatus', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getMyStatusHistory', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
       var activeSeason = results[0], finances = results[1], ledger = results[2],
-        sponsors = results[3], objective = results[4], loanStatus = results[5], statusHistory = results[6];
+        sponsors = results[3], objective = results[4], statusHistory = results[5];
 
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Finances'));
@@ -2131,7 +2058,7 @@
       // Matt's call: add this note "for all pages that require the driver
       // to change something or use it").
       section.appendChild(el('p', 'rc-page-howto',
-        '<strong>How to use this page:</strong> if your balance has gone negative, a Request Loan button appears in the Bank Loan card below -- click it to take your one allowed loan for the season. Everything else on this page is read-only, updating automatically as races are run and sponsor bonuses land.'));
+        '<strong>How to use this page:</strong> everything here is read-only, updating automatically as races are run and sponsor bonuses land.'));
 
       section.appendChild(buildFinHeroPanel(finances));
 
@@ -2140,8 +2067,6 @@
       // clean record never sees an empty panel here.
       var statusHistoryPanel = buildStatusHistoryPanel((statusHistory && statusHistory.success) ? statusHistory.entries : []);
       if (statusHistoryPanel) section.appendChild(statusHistoryPanel);
-
-      section.appendChild(buildLoanPanel(loanStatus, token));
 
       section.appendChild(buildSeasonOutlookPanel(objective, activeSeason, sponsors));
 
@@ -2213,7 +2138,7 @@
       var formOptions = results[0], wagers = results[1];
 
       section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Wager'));
+      section.appendChild(el('h2', 'margin-top:0;', 'Wagers'));
       section.appendChild(el('p', 'rc-sponsors-explainer',
         'Challenge another driver in your season to a head-to-head wager on an upcoming race. Click an empty slot below to place one. Once they accept, both stakes are frozen until the race results come in -- settlement is automatic.'));
       // How-to instructions (2026-09-07, Matt's call) -- underneath the
@@ -2648,7 +2573,7 @@
       var actionsRow = el('div', 'rc-wager-card-actions-row');
       var acceptBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Accept');
       acceptBtn.type = 'button';
-      var denyBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Deny');
+      var denyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Deny');
       denyBtn.type = 'button';
       var counterBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Counter');
       counterBtn.type = 'button';
@@ -4795,7 +4720,7 @@
       var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
       cancelBtn.type = 'button';
       cancelBtn.addEventListener('click', modal.close);
-      var continueBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Continue');
+      var continueBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Continue');
       continueBtn.type = 'button';
       continueBtn.addEventListener('click', function () {
         var chosenId = select.value;
@@ -5321,7 +5246,7 @@
       '<h4>Results</h4>' +
       '<p>One page per season. Season Standings sits at the top, grouped by class. Below it, every completed round gets its own container with a full stat breakdown per driver: finishing position, grid, laps, best lap, total time, points, money, and incidents/track limits/penalties. Whoever set a class\'s fastest lap is marked, and a driver who didn\'t finish is flagged directly on their row.</p>' +
       '<h4>Finances</h4>' +
-      '<p>Your running balance, a transaction ledger (with a full-history popup beyond the most recent entries), what your current sponsors could still pay out or cost you, and your Season Objective\'s own payout and progress. If your balance goes negative, a Request Loan button appears for the one loan you\'re allowed to take per season.</p>' +
+      '<p>Your running balance, a transaction ledger (with a full-history popup beyond the most recent entries), what your current sponsors could still pay out or cost you, and your Season Objective\'s own payout and progress.</p>' +
       '<h4>Sponsors</h4>' +
       '<p>Every active sponsor listed in one table so tier, bonus, and penalty are easy to compare side by side. Pick up to three for the season: click a Current Picks slot, then a sponsor\'s row to assign it, and click again to swap or drop it. Changes save the instant you make them. Every bonus and penalty is tied to one specific, verifiable result straight from race data, not a judgment call.</p>' +
       '<h4>Wager</h4>' +
@@ -5440,7 +5365,7 @@
     // and in Season Standings -- see handleAdminRecomputeSeason,
     // DataCache.gs.
     if (s.locked) {
-      var recomputeBtn = el('button', 'rc-btn-secondary rc-btn-row rc-btn-row-red', 'Recompute Season');
+      var recomputeBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Recompute Season');
       recomputeBtn.type = 'button';
       recomputeBtn.addEventListener('click', function () {
         recomputeBtn.disabled = true;
@@ -5463,7 +5388,7 @@
       btnGroup.appendChild(recomputeBtn);
     }
 
-    var editBtn = el('button', 'rc-btn-secondary rc-btn-row rc-btn-row-red', 'Edit Season');
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
     editBtn.type = 'button';
     editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
     btnGroup.appendChild(editBtn);
@@ -5526,7 +5451,10 @@
     if (!s.locked) {
       var deleteBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
       deleteBtn.type = 'button';
-      deleteBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+      // Plain gray, not red (2026-09-13) -- this button only opens the
+      // confirm popup, it doesn't itself delete anything; the popup's own
+      // Delete button is the one that's actually red, since that's the
+      // click that writes. See the sitewide button rule in style.css.
       deleteBtn.addEventListener('click', function () {
         openConfirmModal('Delete Season', 'Permanently delete "' + (s.name || s.seasonId) + '"? This removes its rounds and registrations too. This can\'t be undone.', 'Delete', function () {
           // Instant, no wait on the server (2026-09-03, Matt's call: "all
@@ -5686,7 +5614,8 @@
       var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
       delBtn.type = 'button';
       if (r.hasResults) {
-        delBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+        // Plain gray, not red -- opens the erase popup, doesn't erase by
+        // itself (see the Delete Season comment above for why).
         delBtn.addEventListener('click', function () {
           openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
         });
@@ -5770,7 +5699,7 @@
     if (showCreateButton) {
       var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
       var hasDraft = !!loadWizardDraft();
-      var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+      var createBtn = el('button', 'rc-btn-secondary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
       createBtn.type = 'button';
       createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
       row.appendChild(createBtn);
@@ -6762,7 +6691,7 @@
     var right = el('div', 'display:flex;align-items:center;gap:10px;');
     right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
     if (p.isMine && p.status === 'Pending') {
-      var withdrawBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Withdraw');
+      var withdrawBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Withdraw');
       withdrawBtn.type = 'button';
       withdrawBtn.style.cssText = 'width:auto;padding:4px 12px;';
       withdrawBtn.addEventListener('click', function () {
@@ -8716,7 +8645,7 @@
           navGroup.appendChild(backBtnNorm);
         }
         var nextBtn = el('button', null, 'Next');
-        nextBtn.className = 'rc-btn-primary rc-btn-sm rc-btn-nav'; nextBtn.type = 'button';
+        nextBtn.className = 'rc-btn-secondary rc-btn-sm rc-btn-nav'; nextBtn.type = 'button';
         nextBtn.addEventListener('click', function () {
           if (validateCurrentStep()) {
             maxUnlockedStep = Math.max(maxUnlockedStep, stepIndex + 1);
@@ -8864,7 +8793,7 @@
         note.appendChild(el('h3', 'margin-top:0;', title));
         note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
         var closeBtn = el('button', null, 'Close');
-        closeBtn.className = 'rc-btn-primary rc-btn-sm'; closeBtn.type = 'button';
+        closeBtn.className = 'rc-btn-secondary rc-btn-sm'; closeBtn.type = 'button';
         closeBtn.addEventListener('click', modal.close);
         note.appendChild(closeBtn);
         contentWrap.appendChild(note);
@@ -8912,7 +8841,7 @@
         note.appendChild(el('h3', 'margin-top:0;', title));
         note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
         var closeBtn = el('button', null, 'Close');
-        closeBtn.className = 'rc-btn-primary rc-btn-sm'; closeBtn.type = 'button';
+        closeBtn.className = 'rc-btn-secondary rc-btn-sm'; closeBtn.type = 'button';
         closeBtn.addEventListener('click', modal.close);
         note.appendChild(closeBtn);
         contentWrap.appendChild(note);
@@ -9000,22 +8929,22 @@
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
 
-    var membersBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Members');
+    var membersBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Members');
     membersBtn.type = 'button';
     membersBtn.addEventListener('click', function () { openMembersModal(token); });
     row.appendChild(membersBtn);
 
-    var tracksBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Tracks');
+    var tracksBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Tracks');
     tracksBtn.type = 'button';
     tracksBtn.addEventListener('click', function () { openTracksModal(token); });
     row.appendChild(tracksBtn);
 
-    var carsBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Cars');
+    var carsBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cars');
     carsBtn.type = 'button';
     carsBtn.addEventListener('click', function () { openCarsModal(token); });
     row.appendChild(carsBtn);
 
-    var sponsorsBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Sponsors');
+    var sponsorsBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Sponsors');
     sponsorsBtn.type = 'button';
     sponsorsBtn.addEventListener('click', function () { openSponsorsModal(token); });
     row.appendChild(sponsorsBtn);
@@ -9024,7 +8953,7 @@
     // from Members/Tracks/Cars/Sponsors' "list of many rows" shape, so it
     // gets its own small form popup (openEconomyModal) instead of
     // openAdminListModal.
-    var economyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Economy');
+    var economyBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Economy');
     economyBtn.type = 'button';
     economyBtn.addEventListener('click', function () { openEconomyModal(token); });
     row.appendChild(economyBtn);
@@ -9042,7 +8971,7 @@
 
     var seasonRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
     var hasDraft = !!loadWizardDraft();
-    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+    var createSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
     createSeasonBtn.type = 'button';
     createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
     seasonRow.appendChild(createSeasonBtn);
@@ -9066,7 +8995,8 @@
     // side.
     var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
     endSeasonBtn.type = 'button';
-    endSeasonBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+    // Plain gray, not red -- opens the season-picker/confirm chain, doesn't
+    // end the season by itself (see Delete Season's comment above).
     endSeasonBtn.addEventListener('click', function () {
       openEndSeasonModal(token, function () { renderAdminSection(token); });
     });
@@ -9192,9 +9122,10 @@
     modal.body.appendChild(resultBox);
 
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
-    var eraseBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Erase');
+    var eraseBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Erase');
     eraseBtn.type = 'button';
-    eraseBtn.style.cssText = 'background:var(--rc-red);';
+    // Plain gray, not red -- opens the type-to-confirm popup, doesn't erase
+    // by itself (see Delete Season's comment further up this file).
     eraseBtn.addEventListener('click', function () {
       openTypeToConfirmModal(
         'Erase Round Ingestion Data',
@@ -9395,7 +9326,7 @@
         modal.body.innerHTML = '';
         if (addButtonConfig) {
           var addRow = el('div', 'display:flex;justify-content:flex-end;margin-bottom:14px;');
-          var addBtn = el('button', 'rc-btn-primary rc-btn-sm', addButtonConfig.label);
+          var addBtn = el('button', 'rc-btn-secondary rc-btn-sm', addButtonConfig.label);
           addBtn.type = 'button';
           addBtn.addEventListener('click', function () { addButtonConfig.onClick(load); });
           addRow.appendChild(addBtn);
@@ -9439,27 +9370,6 @@
       balField.style.width = '50%'; // half the popup's width, not full (Matt's call) -- this modal is wide now to match the other Admin popups
       modal.body.appendChild(balField);
 
-      // Loan Amounts by Class (2026-09-02) -- one field per CAR_CLASS_LIST
-      // entry, backing the self-service "Request Loan" button on the
-      // Finances page. Matt's own words: "The loan amount varies depending
-      // on the class you're in and scales up from the GT3 number" -- so
-      // GT3 is the base field and the rest are just the same idea per class.
-      // Built as two wizFieldPairRow rows (not a raw flex-wrap of wizField
-      // boxes) -- FIX (2026-09-02): a flex-wrap of plain wizField divs hits
-      // ".rc-wiz-field:first-child { margin-top: 0; }", which only zeroes
-      // the very first box (GT3) and leaves the other three at their normal
-      // margin-top: 18px, so GT3 sat noticeably higher than LMP3 beside it.
-      // wizFieldPairRow's own CSS zeroes margin-top/bottom on every field
-      // in the row, which is what actually keeps a row's two boxes level.
-      modal.body.appendChild(el('div', 'rc-panel-subhead', 'Bank Loan Amounts By Class ($)'));
-      var loanByClass = data.loanAmountByClass || {};
-      var loanInputs = {};
-      ['LMGT3', 'LMP3'].forEach(function (cls) { loanInputs[cls] = wizNumberInput(loanByClass[cls], function () {}, { min: 0, step: 500 }); });
-      ['LMP2', 'Hypercar'].forEach(function (cls) { loanInputs[cls] = wizNumberInput(loanByClass[cls], function () {}, { min: 0, step: 500 }); });
-      modal.body.appendChild(wizFieldPairRow('LMGT3', loanInputs.LMGT3, null, 'LMP3', loanInputs.LMP3, null));
-      modal.body.appendChild(wizFieldPairRow('LMP2', loanInputs.LMP2, null, 'Hypercar', loanInputs.Hypercar, null));
-      modal.body.appendChild(el('p', 'rc-hint', 'The one-time, no-repayment loan amount granted per car class once a driver\'s balance goes negative.'));
-
       var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:16px;');
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save');
       saveBtn.type = 'button';
@@ -9473,11 +9383,7 @@
         modal.close();
         fetchApi('adminUpdateEconomySettings', {
           method: 'POST', token: token, body: {
-            newDriverStartingBalance: balInput.value,
-            loanAmountLMGT3: loanInputs.LMGT3.value,
-            loanAmountLMP3: loanInputs.LMP3.value,
-            loanAmountLMP2: loanInputs.LMP2.value,
-            loanAmountHypercar: loanInputs.Hypercar.value
+            newDriverStartingBalance: balInput.value
           }
         })
           .then(function (result) {
@@ -9777,13 +9683,15 @@
         var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
         if (g.isPending) {
-          // Row actions are always .rc-btn-secondary (site convention --
-          // see .rc-btn-row in style.css), so Approve/Deny read as
-          // equal-weight choices, colored via the same green/red already
-          // used for Active/Inactive status pills elsewhere in Data
-          // Management.
-          var approveBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Approve');
-          approveBtn.style.cssText = 'color:#1f5c25;border-color:#1f5c25;';
+          // Approve/Deny both write straight to the sheet the instant
+          // they're clicked (no confirm step), so per the sitewide button
+          // rule (2026-09-13, Matt's call: gray outline/text unless a
+          // button saves to a sheet, then solid red) both get the
+          // save-style red button rather than the row's usual gray --
+          // dropped the old green/red text-only treatment that used to
+          // distinguish them, since that was a status-pill borrow, not
+          // this site's actual save/non-save convention.
+          var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
           approveBtn.type = 'button';
           approveBtn.addEventListener('click', function () {
             // Instant, no wait on the server (2026-09-03, Matt's call:
@@ -9806,8 +9714,7 @@
               showToast('Could not reach the server -- account not approved.', 'error');
             });
           });
-          var denyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Deny');
-          denyBtn.style.cssText = 'color:var(--rc-red);border-color:var(--rc-red);';
+          var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
           denyBtn.type = 'button';
           denyBtn.addEventListener('click', function () {
             // Same instant pattern as Approve above.
@@ -9923,7 +9830,7 @@
 
     var isActive = driver.Status !== 'Disabled';
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
+    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
@@ -10156,7 +10063,7 @@
         var layoutRow = el('div', 'rc-dm-layout-row' + (active ? '' : ' rc-dm-layout-inactive'));
         layoutRow.appendChild(el('span', 'rc-dm-layout-name', escapeHtml(r.Layout || '(unnamed layout)')));
         layoutRow.appendChild(el('span', 'rc-dm-status-pill ' + (active ? 'rc-dm-status-pill-active' : 'rc-dm-status-pill-inactive'), active ? 'Active' : 'Inactive'));
-        var toggleBtn = el('button', 'rc-btn-secondary rc-btn-row', active ? 'Deactivate' : 'Reactivate');
+        var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', active ? 'Deactivate' : 'Reactivate');
         toggleBtn.type = 'button';
         toggleBtn.addEventListener('click', function () {
           // Instant, no wait on the server (2026-09-03, Matt's call: "all
@@ -10193,7 +10100,7 @@
 
     var addRow = el('div', 'rc-dm-add-row');
     var addInput = el('input'); addInput.type = 'text'; addInput.placeholder = 'New layout name';
-    var addBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Add Layout');
+    var addBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Add Layout');
     addBtn.type = 'button';
     addRow.appendChild(addInput);
     addRow.appendChild(addBtn);
@@ -10463,7 +10370,7 @@
 
     var isActive = _rcRowActive(car);
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Deactivate This Car' : 'Reactivate This Car');
+    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Deactivate This Car' : 'Reactivate This Car');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
@@ -10732,7 +10639,7 @@
 
     var isActive = _rcRowActive(sponsor);
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Deactivate This Sponsor' : 'Reactivate This Sponsor');
+    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Deactivate This Sponsor' : 'Reactivate This Sponsor');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
