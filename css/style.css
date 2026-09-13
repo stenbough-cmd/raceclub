@@ -3507,6 +3507,41 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-highlight-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
 
 /* -------------------------------------------------------------------- */
+/* "How It Works" steps (2026-09-13, then reworked same day per Matt's  */
+/* "no containers, just circles with numbers" call) -- deliberately NOT */
+/* a card component: no background, border, or shadow. Just a numbered  */
+/* red circle, a headline, and one line underneath, open against the    */
+/* page itself. Reads as a sequence rather than another set of claim    */
+/* cards, and visually distinct from "Why Race Club"/"What You'll Need" */
+/* right above and below it. 4/2/1 column breakpoints match the same    */
+/* pattern .rc-tier-row and .rc-details-row already use elsewhere.      */
+/* -------------------------------------------------------------------- */
+.rc-steps-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 32px; }
+@media (max-width: 900px) {
+  .rc-steps-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .rc-steps-row { grid-template-columns: 1fr; }
+}
+.rc-step-card { text-align: center; }
+.rc-step-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-weight: 800;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.rc-step-card h3 { font-size: 15px; letter-spacing: 0.03em; }
+.rc-step-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
+
+/* -------------------------------------------------------------------- */
 /* Mid-page banner (assets/banner-highlights.jpg)                       */
 /*                                                                       */
 /* Plain full-bleed image in normal document flow -- NOT the top hero's */
