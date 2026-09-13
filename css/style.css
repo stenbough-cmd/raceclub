@@ -2643,56 +2643,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 2px; }
 .rc-results-stat-value { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 700; color: var(--rc-carbon); white-space: nowrap; }
 
-/* Race recap article (2026-09-09, Matt's call: "put quotes around it with
-   a different motorsports mag editor underneath") -- a pull-quote
-   treatment standing in for the old pill/chip row: a large opening quote
-   mark, italic article copy, red left-border accent (this site's own
-   checkered-flag/red-accent language, same family as .rc-dash-card's
-   corner flourish), byline in small-caps steel below. */
-.rc-recap { margin-bottom: 14px; }
-/* Left border + quote mark + text switched from red to gray (2026-09-09,
-   Matt's call: "make the left red border in the quote gray, and a slight
-   shade darker than the background. Make the quote text the same color")
-   -- background stays var(--rc-offwhite) (#F5F5F3); var(--rc-steel)
-   (#536575) is the darker-gray accent/muted-text token already used
-   elsewhere on the site (e.g. .rc-hint), which reads clearly darker than
-   the offwhite box while staying legible for the paragraph text itself. */
-.rc-recap-quote {
-  position: relative;
-  margin: 0;
-  padding: 14px 20px 14px 26px;
-  border-left: 3px solid var(--rc-steel);
-  background: var(--rc-offwhite);
-  border-radius: 0 8px 8px 0;
-}
-.rc-recap-quote::before {
-  content: '\201C';
-  position: absolute;
-  top: -6px;
-  left: 8px;
-  font-size: 42px;
-  line-height: 1;
-  font-family: Georgia, 'Times New Roman', serif;
-  color: var(--rc-steel);
-  opacity: 0.35;
-}
-.rc-recap-para {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  font-size: 14px;
-  font-style: italic;
-  line-height: 1.6;
-  color: var(--rc-steel);
-}
-/* rc-recap-byline removed (2026-09-09, Matt's call: "remove... the
-   person who supposedly quoted the saying") -- the recap is one plain
-   pull-quote paragraph now, no reporter/mag attribution underneath it,
-   and no second .rc-recap-para exists anymore either (driver + field
-   copy are joined into a single paragraph in buildRaceRecapBlock, since
-   two one-sentence paragraphs back to back read as an obvious template
-   seam). */
-
 .rc-results-class { margin-top: 16px; }
 .rc-results-class-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 
