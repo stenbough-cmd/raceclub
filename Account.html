@@ -9771,6 +9771,84 @@
   // openAdminListModal) afterward, plus the sidebar dot/header bell, so
   // nothing here goes stale. No panel heading here -- this renders inside
   // the Members popup, whose modal title already says "Members".
+  // ---------------------------------------------------------------------
+  // SHARED GROUPED-LIST BUILDER (2026-09-13, Matt's call: "I want lists to
+  // appear the same way on the website... function nearly the same...
+  // don't want the user to feel like they're learning a new function every
+  // time they visit a new page"). Every Data Management list (Drivers/
+  // Tracks/Cars/Sponsors) groups its rows under a canonically-ordered set
+  // of group headers (Role, Region, Class, Tier), falls back to
+  // alphabetical for any group key the reference data doesn't already
+  // know about, and shows one shared empty-state message when there's
+  // nothing at all -- each of the four used to duplicate this exact
+  // "bucket by key, order the buckets, render a header, don't lose an
+  // unrecognized key" loop with its own slightly different variable
+  // names. This is that loop, written once. What's genuinely different
+  // per entity -- a Sponsor row carries a logo, a Track's group nests a
+  // venue row under each of which sit its own layout sub-rows, a Car's
+  // group nests a Season sub-head above each of ITS cars -- stays with
+  // the caller via buildGroupHeader/buildBody, since there's no single
+  // row shape that fits all four honestly.
+  //
+  // opts:
+  //   groupKey(item) -> string key this item belongs under.
+  //   canonicalOrder -> array of keys that should always lead, in this
+  //     order, even with zero rows right now to show (omit to sort every
+  //     key purely by sortExtraKeys instead, e.g. Tracks' Region groups,
+  //     which have no fixed canonical list).
+  //   sortExtraKeys(a, b) -> comparator for keys NOT in canonicalOrder
+  //     (default: plain alphabetical).
+  //   buildGroupHeader(key, itemsInGroup) -> the group header DOM element
+  //     (a .rc-group-head/.rc-dm-row/.rc-dm-season-head, whichever this
+  //     list already uses).
+  //   buildBody(key, itemsInGroup, group) -> called once per non-empty
+  //     group; appends whatever rows/sub-rows that group needs onto
+  //     `group` (already appended to the panel by the time this runs).
+  //   emptyMessage -> shown instead of any groups when there are zero
+  //     items total.
+  // ---------------------------------------------------------------------
+  function buildGroupedAdminList(items, opts) {
+    var panel = el('div', 'rc-panel');
+    if (!items || !items.length) {
+      panel.appendChild(el('div', 'rc-dm-empty', opts.emptyMessage));
+      return panel;
+    }
+
+    var byKey = {};
+    items.forEach(function (item) {
+      var key = opts.groupKey(item);
+      if (!byKey[key]) byKey[key] = [];
+      byKey[key].push(item);
+    });
+
+    var sortExtras = opts.sortExtraKeys || function (a, b) { return a.localeCompare(b); };
+    var keyOrder;
+    if (opts.canonicalOrder) {
+      // Canonical keys keep their given order (even ones with zero rows
+      // right now, so a caller can rely on them always appearing) --
+      // anything else found in the actual data (a real key the reference
+      // data doesn't list yet, rather than dropped silently) sorts after
+      // them via sortExtraKeys.
+      var extras = Object.keys(byKey).filter(function (k) { return opts.canonicalOrder.indexOf(k) === -1; }).sort(sortExtras);
+      keyOrder = opts.canonicalOrder.concat(extras);
+    } else {
+      keyOrder = Object.keys(byKey).sort(sortExtras);
+    }
+
+    var renderedAny = false;
+    keyOrder.forEach(function (key) {
+      var itemsInGroup = byKey[key];
+      if (!itemsInGroup || !itemsInGroup.length) return;
+      renderedAny = true;
+      var group = el('div', 'rc-dm-group');
+      group.appendChild(opts.buildGroupHeader(key, itemsInGroup));
+      panel.appendChild(group);
+      opts.buildBody(key, itemsInGroup, group);
+    });
+    if (!renderedAny) panel.appendChild(el('div', 'rc-dm-empty', opts.emptyMessage));
+    return panel;
+  }
+
   // Members list -- reorganized 2026-08-30 (Matt's call) into one list
   // grouped by Role, same black-pill-plus-indented-rows pattern as the
   // Seasons list's year grouping and the Tracks list's Region grouping
@@ -9784,112 +9862,104 @@
   // alongside Edit (added 2026-08-30 -- previously Edit wasn't offered
   // for a pending account at all); every other row just gets Edit.
   function buildDriversPanel(drivers, pending, token, reload) {
-    var panel = el('div', 'rc-panel');
+    // Prospects don't carry a real Role (see Auth.gs) -- tagged here so
+    // groupKey below can bucket them separately without a second data
+    // source threaded through buildGroupedAdminList itself.
+    var items = (pending || []).map(function (p) {
+      p._isProspect = true;
+      return p;
+    }).concat(drivers || []);
+    var ROLE_ORDER = ['Prospect', 'Driver', 'Steward', 'Organizer', 'Admin'];
 
-    function byName(a, b) {
-      return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
-    }
+    return buildGroupedAdminList(items, {
+      emptyMessage: 'No members yet.',
+      // A Role not in the canonical list (shouldn't happen, but data can
+      // drift) still shows -- bucketed under Driver rather than silently
+      // dropped, same "don't lose the row" instinct as _rcClassBadge uses
+      // for cars.
+      groupKey: function (d) { return d._isProspect ? 'Prospect' : (ROLE_ORDER.indexOf(d.Role) !== -1 ? d.Role : 'Driver'); },
+      canonicalOrder: ROLE_ORDER,
+      buildGroupHeader: function (role) {
+        var head = el('div', 'rc-group-head');
+        head.appendChild(el('span', 'rc-badge-chip rc-badge-group', role.toUpperCase()));
+        return head;
+      },
+      buildBody: function (role, people, group) {
+        var isPending = role === 'Prospect';
+        people.slice().sort(function (a, b) {
+          return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
+        }).forEach(function (person) {
+          var row = el('div', 'rc-group-row');
+          var info = el('div', 'rc-dm-row-info');
+          info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+          row.appendChild(info);
 
-    var groups = [
-      { key: 'Prospect', rows: (pending || []).slice().sort(byName), isPending: true },
-      { key: 'Driver', rows: [], isPending: false },
-      { key: 'Steward', rows: [], isPending: false },
-      { key: 'Organizer', rows: [], isPending: false },
-      { key: 'Admin', rows: [], isPending: false }
-    ];
-    var byRole = {};
-    groups.forEach(function (g) { byRole[g.key] = g; });
-    // A Role not in the canonical list (shouldn't happen, but data can
-    // drift) still shows -- bucketed under Driver rather than silently
-    // dropped, same "don't lose the row" instinct as _rcClassBadge above.
-    (drivers || []).forEach(function (d) {
-      (byRole[d.Role] || byRole.Driver).rows.push(d);
-    });
-    groups.forEach(function (g) { if (!g.isPending) g.rows.sort(byName); });
+          var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
-    if (groups.every(function (g) { return g.rows.length === 0; })) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No members yet.'));
-      return panel;
-    }
-
-    groups.forEach(function (g) {
-      if (g.rows.length === 0) return;
-      var head = el('div', 'rc-group-head');
-      head.appendChild(el('span', 'rc-badge-chip rc-badge-group', g.key.toUpperCase()));
-      panel.appendChild(head);
-
-      g.rows.forEach(function (person) {
-        var row = el('div', 'rc-group-row');
-        var info = el('div', 'rc-dm-row-info');
-        info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-        row.appendChild(info);
-
-        var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
-
-        if (g.isPending) {
-          // Approve/Deny both write straight to the sheet the instant
-          // they're clicked (no confirm step), so per the sitewide button
-          // rule (2026-09-13, Matt's call: gray outline/text unless a
-          // button saves to a sheet, then solid red) both get the
-          // save-style red button rather than the row's usual gray --
-          // dropped the old green/red text-only treatment that used to
-          // distinguish them, since that was a status-pill borrow, not
-          // this site's actual save/non-save convention.
-          var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
-          approveBtn.type = 'button';
-          approveBtn.addEventListener('click', function () {
-            // Instant, no wait on the server (2026-09-03, Matt's call:
-            // "all the admin/data management functions work the same" as
-            // the rest of the site). The row drops out of Pending Approval
-            // the instant Approve is clicked; the actual promotion happens
-            // silently in the background. A failure puts the row back and
-            // explains why via toast, since it was never actually approved.
-            var nextSibling = row.nextSibling, parent = row.parentNode;
-            if (parent) parent.removeChild(row);
-            fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-              if (data && data.success) {
-                if (reload) reload();
-              } else {
+          if (isPending) {
+            // Approve/Deny both write straight to the sheet the instant
+            // they're clicked (no confirm step), so per the sitewide button
+            // rule (2026-09-13, Matt's call: gray outline/text unless a
+            // button saves to a sheet, then solid red) both get the
+            // save-style red button rather than the row's usual gray --
+            // dropped the old green/red text-only treatment that used to
+            // distinguish them, since that was a status-pill borrow, not
+            // this site's actual save/non-save convention.
+            var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
+            approveBtn.type = 'button';
+            approveBtn.addEventListener('click', function () {
+              // Instant, no wait on the server (2026-09-03, Matt's call:
+              // "all the admin/data management functions work the same" as
+              // the rest of the site). The row drops out of Pending Approval
+              // the instant Approve is clicked; the actual promotion happens
+              // silently in the background. A failure puts the row back and
+              // explains why via toast, since it was never actually approved.
+              var nextSibling = row.nextSibling, parent = row.parentNode;
+              if (parent) parent.removeChild(row);
+              fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+                if (data && data.success) {
+                  if (reload) reload();
+                } else {
+                  if (parent) parent.insertBefore(row, nextSibling);
+                  showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
+                }
+              }).catch(function () {
                 if (parent) parent.insertBefore(row, nextSibling);
-                showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
-              }
-            }).catch(function () {
-              if (parent) parent.insertBefore(row, nextSibling);
-              showToast('Could not reach the server -- account not approved.', 'error');
+                showToast('Could not reach the server -- account not approved.', 'error');
+              });
             });
-          });
-          var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
-          denyBtn.type = 'button';
-          denyBtn.addEventListener('click', function () {
-            // Same instant pattern as Approve above.
-            var nextSibling = row.nextSibling, parent = row.parentNode;
-            if (parent) parent.removeChild(row);
-            fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-              if (data && data.success) {
-                if (reload) reload();
-              } else {
+            var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
+            denyBtn.type = 'button';
+            denyBtn.addEventListener('click', function () {
+              // Same instant pattern as Approve above.
+              var nextSibling = row.nextSibling, parent = row.parentNode;
+              if (parent) parent.removeChild(row);
+              fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
+                if (data && data.success) {
+                  if (reload) reload();
+                } else {
+                  if (parent) parent.insertBefore(row, nextSibling);
+                  showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
+                }
+              }).catch(function () {
                 if (parent) parent.insertBefore(row, nextSibling);
-                showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
-              }
-            }).catch(function () {
-              if (parent) parent.insertBefore(row, nextSibling);
-              showToast('Could not reach the server -- account not denied.', 'error');
+                showToast('Could not reach the server -- account not denied.', 'error');
+              });
             });
-          });
-          btnGroup.appendChild(approveBtn);
-          btnGroup.appendChild(denyBtn);
-        }
+            btnGroup.appendChild(approveBtn);
+            btnGroup.appendChild(denyBtn);
+          }
 
-        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-        editBtn.type = 'button';
-        editBtn.addEventListener('click', function () { openEditDriverModal(person, token, reload); });
-        btnGroup.appendChild(editBtn);
+          var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+          editBtn.type = 'button';
+          editBtn.addEventListener('click', function () { openEditDriverModal(person, token, reload); });
+          btnGroup.appendChild(editBtn);
 
-        row.appendChild(btnGroup);
-        panel.appendChild(row);
-      });
+          row.appendChild(btnGroup);
+          group.appendChild(row);
+        });
+      }
     });
-    return panel;
   }
 
   // Same field set as openEditProfileModal (Username/First/Last/Suffix/
@@ -10077,68 +10147,72 @@
   // main list -- the edit popup is where inactive ones are visible (and
   // can be reactivated).
   function buildTracksPanel(tracks, token, reload) {
-    var panel = el('div', 'rc-panel');
     var venues = {};
-    var names = [];
+    var venueNames = [];
     (tracks || []).forEach(function (t) {
       var name = t.TrackName || '(unnamed)';
-      if (!venues[name]) { venues[name] = []; names.push(name); }
+      if (!venues[name]) { venues[name] = []; venueNames.push(name); }
       venues[name].push(t);
     });
-    if (names.length === 0) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No tracks yet.'));
-      return panel;
-    }
+    // buildGroupedAdminList groups ITEMS by key -- here each "item" is a
+    // venue (one TrackName, however many layout rows it has), not a raw
+    // row, since Region grouping happens one level up from the raw
+    // Tracks rows.
+    var venueItems = venueNames.map(function (name) { return { name: name, rows: venues[name] }; });
 
-    var byRegion = {};
-    var regions = [];
-    names.forEach(function (name) {
-      var region = (venues[name][0] && venues[name][0].Region) || '';
-      var key = region || 'Unassigned';
-      if (!byRegion[key]) { byRegion[key] = []; regions.push(key); }
-      byRegion[key].push(name);
+    return buildGroupedAdminList(venueItems, {
+      emptyMessage: 'No tracks yet.',
+      groupKey: function (v) { return (v.rows[0] && v.rows[0].Region) || 'Unassigned'; },
+      // No fixed Region list exists (free-text field, see openAddTrackModal's
+      // comment) -- alphabetical, except "Unassigned" always sorts last so
+      // venues nobody's tagged yet don't scatter alphabetically among real
+      // regions.
+      sortExtraKeys: function (a, b) {
+        if (a === 'Unassigned') return 1;
+        if (b === 'Unassigned') return -1;
+        return a.localeCompare(b);
+      },
+      buildGroupHeader: function (region) {
+        var head = el('div', 'rc-group-head');
+        head.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(region.toUpperCase())));
+        return head;
+      },
+      buildBody: function (region, venuesInRegion, regionGroup) {
+        venuesInRegion.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (v) {
+          var rows = v.rows;
+          // Each venue keeps its own .rc-dm-group (Edit row + its layout
+          // sub-rows nested inside), same as before this became a shared-
+          // helper call -- the region's own .rc-dm-group from
+          // buildGroupedAdminList just wraps the whole set of them now,
+          // which only adds a few px of shared margin, nothing visible.
+          var group = el('div', 'rc-dm-group');
+          var row = el('div', 'rc-dm-row rc-dm-row-light');
+          row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(v.name)));
+          var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+          editBtn.type = 'button';
+          editBtn.addEventListener('click', function () { openEditTrackModal(v.name, rows, token, reload); });
+          row.appendChild(editBtn);
+          group.appendChild(row);
+
+          var activeLayouts = rows.filter(_rcRowActive).map(function (r) { return r.Layout; })
+            .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
+          if (activeLayouts.length === 0) {
+            var noneRow = el('div', 'rc-dm-subrow');
+            noneRow.appendChild(el('span', 'rc-dm-tree', '└'));
+            noneRow.appendChild(el('span', null, 'No active layouts.'));
+            group.appendChild(noneRow);
+          } else {
+            activeLayouts.forEach(function (layout) {
+              var layoutRow = el('div', 'rc-dm-subrow');
+              layoutRow.appendChild(el('span', 'rc-dm-tree', '└'));
+              layoutRow.appendChild(el('span', null, escapeHtml(layout)));
+              group.appendChild(layoutRow);
+            });
+          }
+          regionGroup.appendChild(group);
+        });
+      }
     });
-    regions.sort(function (a, b) {
-      if (a === 'Unassigned') return 1;
-      if (b === 'Unassigned') return -1;
-      return a.localeCompare(b);
-    });
-
-    regions.forEach(function (region) {
-      var head = el('div', 'rc-group-head');
-      head.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(region.toUpperCase())));
-      panel.appendChild(head);
-
-      byRegion[region].slice().sort(function (a, b) { return a.localeCompare(b); }).forEach(function (name) {
-        var rows = venues[name];
-        var group = el('div', 'rc-dm-group');
-        var row = el('div', 'rc-dm-row rc-dm-row-light');
-        row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(name)));
-        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-        editBtn.type = 'button';
-        editBtn.addEventListener('click', function () { openEditTrackModal(name, rows, token, reload); });
-        row.appendChild(editBtn);
-        group.appendChild(row);
-
-        var activeLayouts = rows.filter(_rcRowActive).map(function (r) { return r.Layout; })
-          .filter(Boolean).sort(function (a, b) { return a.localeCompare(b); });
-        if (activeLayouts.length === 0) {
-          var noneRow = el('div', 'rc-dm-subrow');
-          noneRow.appendChild(el('span', 'rc-dm-tree', '└'));
-          noneRow.appendChild(el('span', null, 'No active layouts.'));
-          group.appendChild(noneRow);
-        } else {
-          activeLayouts.forEach(function (layout) {
-            var layoutRow = el('div', 'rc-dm-subrow');
-            layoutRow.appendChild(el('span', 'rc-dm-tree', '└'));
-            layoutRow.appendChild(el('span', null, escapeHtml(layout)));
-            group.appendChild(layoutRow);
-          });
-        }
-        panel.appendChild(group);
-      });
-    });
-    return panel;
   }
 
   // Track edit popup -- ONLY the venue name is editable here (Matt's
@@ -10370,99 +10444,81 @@
   // once you know the car's still-active season/class to find it, or
   // directly in the Sheet).
   function buildCarsPanel(cars, token, reload) {
-    var panel = el('div', 'rc-panel');
-
     var activeCars = (cars || []).filter(_rcRowActive);
-
-    var byClass = {};
-    activeCars.forEach(function (c) {
-      var cls = c.Class || 'Unclassified';
-      if (!byClass[cls]) byClass[cls] = {};
-      var season = c.Season || 'Unknown Season';
-      if (!byClass[cls][season]) byClass[cls][season] = [];
-      byClass[cls][season].push(c);
-    });
-
-    if (Object.keys(byClass).length === 0) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No cars yet.'));
-      return panel;
-    }
-
-    var classOrder = (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).slice();
-    // A class present in the data but missing from the canonical list
-    // (typo, a future class not added there yet) still shows -- appended
-    // after the canonical ones rather than silently dropped.
-    Object.keys(byClass).forEach(function (cls) {
-      if (classOrder.indexOf(cls) === -1) classOrder.push(cls);
-    });
-
-    classOrder.forEach(function (cls) {
-      var seasons = byClass[cls];
-      if (!seasons) return; // canonical class with zero active cars entered
-      var group = el('div', 'rc-dm-group');
-      var classHead = el('div', 'rc-dm-row');
-      classHead.appendChild(_rcClassBadge(cls));
-      group.appendChild(classHead);
-
-      var seasonKeys = Object.keys(seasons).sort(function (a, b) {
-        var na = parseFloat(a), nb = parseFloat(b);
-        if (!isNaN(na) && !isNaN(nb)) return nb - na; // numeric seasons, most recent first
-        return String(b).localeCompare(String(a)); // fallback: reverse alpha
-      });
-
-      seasonKeys.forEach(function (season) {
-        var seasonHead = el('div', 'rc-dm-season-head');
-        seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
-        seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(season)));
-        group.appendChild(seasonHead);
-
-        seasons[season].forEach(function (c) {
-          var row = el('div', 'rc-dm-subrow-edit');
-          var info = el('div', 'rc-dm-car-info');
-
-          // Fixed-width, centered logo column -- same centered-column
-          // treatment as the Sponsors popup's logo column (capped 80px
-          // wide / 40px tall here, narrower than the sponsor logos' 100px),
-          // so the text column's left edge lands in the same place row to
-          // row regardless of a given manufacturer logo's own aspect ratio.
-          var logoCol = el('div', 'rc-dm-car-logo-col');
-          var logo = document.createElement('img');
-          logo.className = 'rc-dm-car-logo';
-          logo.alt = '';
-          logo.src = manufacturerLogoSrc(c.Manufacturer || '');
-          // Hides gracefully rather than showing a broken-image icon when
-          // that manufacturer's logo file hasn't been uploaded yet -- same
-          // pattern currentSeatBlock() uses elsewhere for this exact file
-          // naming convention (see manufacturerLogoSrc()'s own comment).
-          logo.onerror = function () { this.style.display = 'none'; };
-          logoCol.appendChild(logo);
-          info.appendChild(logoCol);
-
-          // Two-line text column, left-justified: Team Name (black, primary)
-          // with the tier pill on the same line, Manufacturer + Car Model
-          // below it in a lighter color (Matt's call).
-          var textCol = el('div', null);
-          var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
-          nameLine.appendChild(_rcCarTierBadge(c.Tier));
-          textCol.appendChild(nameLine);
-          var subParts = [];
-          if (c.CarNumber) subParts.push('#' + c.CarNumber);
-          var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
-          if (makeModel) subParts.push(makeModel);
-          textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
-          info.appendChild(textCol);
-          row.appendChild(info);
-          var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-          editBtn.type = 'button';
-          editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
-          row.appendChild(editBtn);
-          group.appendChild(row);
+    return buildGroupedAdminList(activeCars, {
+      emptyMessage: 'No cars yet.',
+      groupKey: function (c) { return c.Class || 'Unclassified'; },
+      canonicalOrder: (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).slice(),
+      buildGroupHeader: function (cls) {
+        var classHead = el('div', 'rc-dm-row');
+        classHead.appendChild(_rcClassBadge(cls));
+        return classHead;
+      },
+      buildBody: function (cls, carsInClass, group) {
+        var bySeason = {};
+        carsInClass.forEach(function (c) {
+          var season = c.Season || 'Unknown Season';
+          if (!bySeason[season]) bySeason[season] = [];
+          bySeason[season].push(c);
         });
-      });
-      panel.appendChild(group);
+        var seasonKeys = Object.keys(bySeason).sort(function (a, b) {
+          var na = parseFloat(a), nb = parseFloat(b);
+          if (!isNaN(na) && !isNaN(nb)) return nb - na; // numeric seasons, most recent first
+          return String(b).localeCompare(String(a)); // fallback: reverse alpha
+        });
+
+        seasonKeys.forEach(function (season) {
+          var seasonHead = el('div', 'rc-dm-season-head');
+          seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
+          seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(season)));
+          group.appendChild(seasonHead);
+
+          bySeason[season].forEach(function (c) {
+            var row = el('div', 'rc-dm-subrow-edit');
+            var info = el('div', 'rc-dm-car-info');
+
+            // Fixed-width, centered logo column -- same centered-column
+            // treatment as the Sponsors popup's logo column (capped 80px
+            // wide / 40px tall here, narrower than the sponsor logos' 100px),
+            // so the text column's left edge lands in the same place row to
+            // row regardless of a given manufacturer logo's own aspect ratio.
+            var logoCol = el('div', 'rc-dm-car-logo-col');
+            var logo = document.createElement('img');
+            logo.className = 'rc-dm-car-logo';
+            logo.alt = '';
+            logo.src = manufacturerLogoSrc(c.Manufacturer || '');
+            // Hides gracefully rather than showing a broken-image icon when
+            // that manufacturer's logo file hasn't been uploaded yet -- same
+            // pattern currentSeatBlock() uses elsewhere for this exact file
+            // naming convention (see manufacturerLogoSrc()'s own comment).
+            logo.onerror = function () { this.style.display = 'none'; };
+            logoCol.appendChild(logo);
+            info.appendChild(logoCol);
+
+            // Two-line text column, left-justified: Team Name (black, primary)
+            // with the tier pill on the same line, Manufacturer + Car Model
+            // below it in a lighter color (Matt's call).
+            var textCol = el('div', null);
+            var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+            nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
+            nameLine.appendChild(_rcCarTierBadge(c.Tier));
+            textCol.appendChild(nameLine);
+            var subParts = [];
+            if (c.CarNumber) subParts.push('#' + c.CarNumber);
+            var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
+            if (makeModel) subParts.push(makeModel);
+            textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
+            info.appendChild(textCol);
+            row.appendChild(info);
+            var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
+            row.appendChild(editBtn);
+            group.appendChild(row);
+          });
+        });
+      }
     });
-    return panel;
   }
 
   // Car edit popup -- Season/Class/Manufacturer/Car Model/Car Number/Team
@@ -10676,73 +10732,57 @@
   // catalog is small enough that hiding them would just make them hard to
   // find again to reactivate.
   function buildSponsorsPanel(sponsors, token, reload) {
-    var panel = el('div', 'rc-panel');
-    var all = sponsors || [];
-    if (all.length === 0) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No sponsors yet.'));
-      return panel;
-    }
+    return buildGroupedAdminList(sponsors, {
+      emptyMessage: 'No sponsors yet.',
+      groupKey: function (s) { return s.Tier || 'Unclassified'; },
+      canonicalOrder: ['Safe', 'Balanced', 'Risky'],
+      buildGroupHeader: function (tier) {
+        var tierHead = el('div', 'rc-dm-row');
+        tierHead.appendChild(_rcTierBadge(tier));
+        return tierHead;
+      },
+      buildBody: function (tier, list, group) {
+        list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
+          var active = _rcRowActive(s);
+          var row = el('div', 'rc-dm-subrow-edit');
+          var info = el('div', 'rc-dm-car-info');
+          // Fixed-width column, logo right-justified inside it -- so the
+          // text column's left edge lands in the same place row to row no
+          // matter how wide any one sponsor's actual logo file is (a narrow
+          // square mark vs. a wide wordmark would otherwise push textCol
+          // around unpredictably).
+          var logoCol = el('div', 'rc-dm-sponsor-logo-col');
+          var logo = document.createElement('img');
+          logo.className = 'rc-dm-sponsor-logo';
+          logo.alt = '';
+          logo.src = sponsorLogoSrc(s.Name || '');
+          // Hides gracefully rather than showing a broken-image icon when
+          // that sponsor's logo file hasn't been uploaded yet -- same
+          // pattern buildCarsPanel uses for manufacturer logos.
+          logo.onerror = function () { this.style.display = 'none'; };
+          logoCol.appendChild(logo);
+          info.appendChild(logoCol);
 
-    var TIER_ORDER = ['Safe', 'Balanced', 'Risky'];
-    var byTier = {};
-    all.forEach(function (s) {
-      var tier = s.Tier || 'Unclassified';
-      if (!byTier[tier]) byTier[tier] = [];
-      byTier[tier].push(s);
+          var textCol = el('div', null);
+          var nameLine = el('div', null, escapeHtml(s.Name || '(unnamed sponsor)'));
+          if (!active) nameLine.style.cssText = 'color:var(--rc-steel);text-decoration:line-through;';
+          textCol.appendChild(nameLine);
+          var bonusAmt = Number(s.BonusAmount) || 0;
+          var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
+          textCol.appendChild(el('div', 'rc-hint', 'Bonus: ' + (s.BonusType || '—') + ' (+$' + bonusAmt + ')  ·  Penalty: ' + (s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
+          info.appendChild(textCol);
+          row.appendChild(info);
+
+          if (!active) row.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'Inactive'));
+
+          var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+          editBtn.type = 'button';
+          editBtn.addEventListener('click', function () { openEditSponsorModal(s, token, reload); });
+          row.appendChild(editBtn);
+          group.appendChild(row);
+        });
+      }
     });
-    var tierOrder = TIER_ORDER.slice();
-    Object.keys(byTier).forEach(function (t) { if (tierOrder.indexOf(t) === -1) tierOrder.push(t); });
-
-    tierOrder.forEach(function (tier) {
-      var list = byTier[tier];
-      if (!list) return;
-      var group = el('div', 'rc-dm-group');
-      var tierHead = el('div', 'rc-dm-row');
-      tierHead.appendChild(_rcTierBadge(tier));
-      group.appendChild(tierHead);
-
-      list.slice().sort(function (a, b) { return (a.Name || '').localeCompare(b.Name || ''); }).forEach(function (s) {
-        var active = _rcRowActive(s);
-        var row = el('div', 'rc-dm-subrow-edit');
-        var info = el('div', 'rc-dm-car-info');
-        // Fixed-width column, logo right-justified inside it -- so the
-        // text column's left edge lands in the same place row to row no
-        // matter how wide any one sponsor's actual logo file is (a narrow
-        // square mark vs. a wide wordmark would otherwise push textCol
-        // around unpredictably).
-        var logoCol = el('div', 'rc-dm-sponsor-logo-col');
-        var logo = document.createElement('img');
-        logo.className = 'rc-dm-sponsor-logo';
-        logo.alt = '';
-        logo.src = sponsorLogoSrc(s.Name || '');
-        // Hides gracefully rather than showing a broken-image icon when
-        // that sponsor's logo file hasn't been uploaded yet -- same
-        // pattern buildCarsPanel uses for manufacturer logos.
-        logo.onerror = function () { this.style.display = 'none'; };
-        logoCol.appendChild(logo);
-        info.appendChild(logoCol);
-
-        var textCol = el('div', null);
-        var nameLine = el('div', null, escapeHtml(s.Name || '(unnamed sponsor)'));
-        if (!active) nameLine.style.cssText = 'color:var(--rc-steel);text-decoration:line-through;';
-        textCol.appendChild(nameLine);
-        var bonusAmt = Number(s.BonusAmount) || 0;
-        var penaltyAmt = Math.abs(Number(s.PenaltyAmount) || 0);
-        textCol.appendChild(el('div', 'rc-hint', 'Bonus: ' + (s.BonusType || '—') + ' (+$' + bonusAmt + ')  ·  Penalty: ' + (s.PenaltyType || '—') + ' (−$' + penaltyAmt + ')'));
-        info.appendChild(textCol);
-        row.appendChild(info);
-
-        if (!active) row.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'Inactive'));
-
-        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-        editBtn.type = 'button';
-        editBtn.addEventListener('click', function () { openEditSponsorModal(s, token, reload); });
-        row.appendChild(editBtn);
-        group.appendChild(row);
-      });
-      panel.appendChild(group);
-    });
-    return panel;
   }
 
   // Shared by openAddSponsorModal/openEditSponsorModal below (2026-09-01,
