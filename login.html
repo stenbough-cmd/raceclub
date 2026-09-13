@@ -1,29 +1,61 @@
 <!--
-  Race Club — login.html  (v0.3, Discord OAuth edition)
+  Race Club — login.html  (v0.2.5, GitHub Pages edition)
 
-  REBUILT 2026-09-13 (Matt's call): the whole username/password form is
-  gone. Login is a single "Sign in with Discord" button that sends the
-  browser straight to Discord's own authorize screen -- no server round
-  trip needed to build that link first, since the Client ID and this
-  site's redirect URL are both meant to be public (same idea as
-  API_BASE_URL already being a plain, visible constant in js/api.js).
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  This is the source file's "LOGIN VIEW" pulled out into its own real
+  page. All the Sites-only workarounds (reportHeight()/postMessage resize
+  hack, scrollbar-hiding CSS, single #rc-root view-toggle div) are gone —
+  see the top-level migration notes for the full list. The actual login
+  logic (fetch to ?action=login with a text/plain POST body, the
+  EMAIL_NOT_VERIFIED inline "Resend verification email" flow, the
+  ACCOUNT_DISABLED mailto link) is preserved exactly, just reorganized:
 
-  Discord redirects back to the Apps Script Web App's bare URL (not this
-  page) with ?code=..., which Core.gs's doGet hands to
-  handleDiscordCallback (Auth.gs) -- THAT function does the real work
-  (token exchange, membership/Steam-connection check, Users lookup,
-  session token) and finally redirects the browser to
-  Account.html?token=..., which js/auth.js's consumeDiscordTokenFromUrl()
-  picks up. This page's only job is sending someone TO Discord in the
-  first place.
+  - On success, the token is stored via setToken() (js/auth.js) and the
+    browser navigates to Account.html — the source rendered the profile
+    view in place instead, since it was still the same embed/page.
+  - On a "Resend verification email" click (either from a failed
+    EMAIL_NOT_VERIFIED login, or a fresh registration), the ProfileID is
+    stashed in sessionStorage under 'raceclub_pending_profile_id' and the
+    browser navigates to verify.html, which reads it from there. The
+    source kept this in a plain in-memory JS variable
+    (lastRegisteredUsername) since the code-entry view lived in the same
+    page; sessionStorage is the equivalent for a real page navigation and
+    is cleared automatically when the tab closes.
+  - A message can be queued for this page by another page via
+    sessionStorage's 'raceclub_login_message' key (used by the 30-minute
+    inactivity auto-logout in js/auth.js, and by verify.html after a
+    successful code verification) — read once on load, then cleared.
 
-  DISCORD_CLIENT_ID below is the public half of the OAuth app -- safe to
-  ship in plain HTML, same as any other OAuth "Sign in with ___" button
-  anywhere on the web. The Client SECRET never leaves Script Properties
-  server-side and is never referenced here.
+  FLIP-BACK (this pass, Matt's direct call): login is by USERNAME again,
+  not email -- email's only job now is where a password-reset code gets
+  sent (reset-password.html). The field is Username, sent as the
+  `username` key, matching handleLogin. The "Resend verification email"
+  button now sends `username` too (handleResendVerification accepts
+  username as well as ProfileID, specifically for this screen, since a
+  driver who hasn't verified yet has no ProfileID typed in anywhere on
+  this page) and stashes the ProfileID the server hands back for
+  verify.html to use.
 
-  register.html / verify.html / reset-password.html are gone too --
-  there's no password to register, verify, or reset anymore.
+  ADDED (this pass): a "Forgot password?" link under the "New here?" line,
+  pointing to the new reset-password.html.
+
+  TOASTS (this pass): every plain result message on this page (queued
+  cross-page messages, login failure, "could not reach the server", the
+  resend-code result) now goes through js/header.js's showToast() instead
+  of the old inline #rc-login-message box -- see that file's header
+  comment for why. The two exceptions are ACCOUNT_DISABLED (its mailto
+  link needs to stay clickable, which an auto-dismissing toast can't
+  guarantee) and EMAIL_NOT_VERIFIED (its message explains the Resend
+  button that appears right under it, and that button needs to still be
+  legible after the toast that announced it has faded) -- both keep their
+  explanatory text inline, right next to the control they belong to,
+  since a toast is the wrong home for text a driver still needs to be
+  reading when they act on it.
+
+  FIX (this pass): setProfileCache() was being handed the raw login
+  response ({success, token, profile}) instead of its nested .profile --
+  meant every field it cached (name, role) read back out blank on every
+  other page's header. Now passes data.profile through.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -41,20 +73,26 @@
 <script>renderHeader();</script>
 <div class="rc-auth-page">
   <div class="rc-auth-wrap">
-    <h1>Log In</h1>
+    <h1>Login / Register</h1>
 
     <div id="rc-setup-warning" class="rc-message rc-error" style="display:none;text-align:center;"></div>
 
-    <div class="rc-card" style="margin-top:24px;text-align:center;">
-      <p style="margin-top:0;color:var(--rc-steel);">Race Club accounts run through Discord — the same server you already use for the league.</p>
-      <button id="rc-discord-login-btn" type="button" class="rc-btn-primary rc-discord-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-4px;margin-right:8px;"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.099.246.197.373.291a.077.077 0 0 1-.006.128c-.598.35-1.22.645-1.873.892a.076.076 0 0 0-.04.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.056c.5-5.177-.838-9.673-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.955 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.211 0 2.176 1.094 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z"/></svg>
-        Sign in with Discord
-      </button>
+    <div class="rc-card" style="margin-top:24px;">
+      <form id="rc-login-form">
+        <label style="margin-top:0;">Username</label>
+        <input id="rc-username" type="text" autocomplete="username" required>
+        <label>Password</label>
+        <input id="rc-password" type="password" autocomplete="current-password" required>
+        <button id="rc-login-btn" type="submit" class="rc-btn-primary">Log In</button>
+      </form>
       <div id="rc-login-message" class="rc-message"></div>
+      <button type="button" class="rc-link-btn" id="rc-login-resend" style="display:none;margin-top:8px;">Resend verification email</button>
     </div>
     <p class="rc-auth-footer">
-      Not in the Discord yet? <a href="index.html#rc-needs-section" class="rc-link-btn">See what you'll need to join</a>
+      New here? <button type="button" class="rc-link-btn" id="rc-show-register" onclick="window.location.href='register.html'">Create an account</button>
+    </p>
+    <p class="rc-auth-footer" style="margin-top:6px;">
+      <a href="reset-password.html" class="rc-link-btn">Forgot password?</a>
     </p>
   </div>
 </div>
@@ -66,15 +104,11 @@
 
 <script>
 (function () {
-  // Public by design -- see the file header comment above.
-  var DISCORD_CLIENT_ID = '1548732673240080424';
-  var DISCORD_SCOPES = 'identify guilds.members.read connections';
-
   if (apiBaseUrlIsUnset()) {
     var warn = document.getElementById('rc-setup-warning');
     warn.style.display = 'block';
     warn.textContent = 'API_BASE_URL is not set. Edit js/api.js and paste in your Apps Script Web App URL.';
-    document.getElementById('rc-discord-login-btn').disabled = true;
+    document.getElementById('rc-login-form').querySelectorAll('input,button').forEach(function (i) { i.disabled = true; });
     return;
   }
 
@@ -84,26 +118,147 @@
     return;
   }
 
-  // Message queued by another page (inactivity timeout, etc.) -- shown
-  // once, then cleared.
+  // Message queued by another page (inactivity timeout, verify.html
+  // success, reset-password.html success, etc.) -- shown once, then
+  // cleared.
   var queuedMessage = sessionStorage.getItem('raceclub_login_message');
   if (queuedMessage) {
     showToast(queuedMessage, 'success');
     sessionStorage.removeItem('raceclub_login_message');
   }
 
-  document.getElementById('rc-discord-login-btn').addEventListener('click', function () {
-    // API_BASE_URL (js/api.js) doubles as the OAuth redirect_uri -- it has
-    // to be the EXACT string registered as a Redirect in Discord's
-    // Developer Portal, which is why this isn't built with any extra
-    // query params tacked on.
-    var authorizeUrl = 'https://discord.com/oauth2/authorize' +
-      '?client_id=' + encodeURIComponent(DISCORD_CLIENT_ID) +
-      '&redirect_uri=' + encodeURIComponent(API_BASE_URL) +
-      '&response_type=code' +
-      '&scope=' + encodeURIComponent(DISCORD_SCOPES) +
-      '&prompt=consent';
-    window.location.href = authorizeUrl;
+  // After a successful registration+verification, register.html stashes
+  // the username here (verify.html leaves it untouched, just carries it
+  // forward) so it can be pre-filled here and the password field focused,
+  // matching the source file's post-verify behavior of jumping straight
+  // back to a ready-to-type login form. reset-password.html only ever
+  // knows the driver's EMAIL, not their username, so it doesn't set this
+  // -- a password reset just queues the login-message toast instead.
+  var prefillUsername = sessionStorage.getItem('raceclub_prefill_username');
+  if (prefillUsername) {
+    document.getElementById('rc-username').value = prefillUsername;
+    sessionStorage.removeItem('raceclub_prefill_username');
+    document.getElementById('rc-password').focus();
+  }
+
+  document.getElementById('rc-login-form').addEventListener('submit', function (evt) {
+    evt.preventDefault();
+    var btn = document.getElementById('rc-login-btn');
+    var msg = document.getElementById('rc-login-message');
+    msg.className = 'rc-message';
+    msg.innerHTML = '';
+    btn.disabled = true;
+    btn.textContent = 'Logging in...';
+
+    // Lock the username/password fields for the duration of the request
+    // (2026-09-01, Matt's call: "I should not be able to change anything
+    // in the username or password box until I either get through or am
+    // denied") -- previously only the button itself was disabled, so the
+    // text could still be edited while the login call was in flight.
+    // rc-field-locked (2026-09-02, Matt's call: "I want the text boxes
+    // grayed out, not just locked... obvious that nothing can be
+    // changed") -- same class the Edit Season wizard's own locked fields
+    // already use for this exact "grayed out, not just disabled" look
+    // (see .rc-field-locked in style.css), reused here instead of a
+    // second one-off style.
+    var usernameField = document.getElementById('rc-username');
+    var passwordField = document.getElementById('rc-password');
+    usernameField.disabled = true;
+    passwordField.disabled = true;
+    usernameField.classList.add('rc-field-locked');
+    passwordField.classList.add('rc-field-locked');
+
+    var username = usernameField.value.trim();
+    var password = passwordField.value;
+
+    // IMPORTANT: Content-Type is deliberately 'text/plain' (see
+    // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
+    // Apps can't handle a CORS preflight (OPTIONS) request, which
+    // application/json would trigger. Do not change this.
+    fetchApi('login', { method: 'POST', body: { username: username, password: password } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+        if (!data.success) {
+          usernameField.disabled = false;
+          passwordField.disabled = false;
+          usernameField.classList.remove('rc-field-locked');
+          passwordField.classList.remove('rc-field-locked');
+          var resendBtn = document.getElementById('rc-login-resend');
+          resendBtn.style.display = 'none';
+          if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
+            // Keeps its mailto link inline rather than a toast -- a
+            // driver needs to still be able to click it after reading it.
+            msg.className = 'rc-message rc-error';
+            msg.innerHTML = (data.message || 'This account has been disabled.') +
+              ' <a href="mailto:' + data.contactEmail + '?subject=Race%20Club%20account">Contact administrator</a>';
+          } else if (data.error === 'EMAIL_NOT_VERIFIED') {
+            // Stays inline too -- it explains the Resend button that
+            // appears right under it, which needs to still be legible
+            // after a toast would have already faded.
+            msg.className = 'rc-message rc-error';
+            msg.textContent = data.message || 'Please verify your email before logging in.';
+            resendBtn.style.display = 'inline-block';
+          } else {
+            showToast(data.message || 'Login failed.', 'error');
+          }
+          return;
+        }
+        // The login response IS a full profile payload plus a token (see
+        // the source file's buildProfilePayload comment) -- we don't need
+        // a second getProfile round-trip here. Account.html will pick the
+        // data back up itself via getProfile on load, same as any other
+        // direct visit to that page.
+        setToken(data.token);
+        setProfileCache(data.profile); // so the header avatar has something to show immediately, site-wide
+        // The login response IS the full profile payload already (see the
+        // comment above) -- stash it so Account.html can render straight
+        // from it instead of firing its own getProfile call right after
+        // redirecting here, which was a second full Apps Script round-trip
+        // back to back with the login call itself (each one can take
+        // several seconds on a cold start) and was the main reason login
+        // felt like it hung. sessionStorage, not localStorage, since this
+        // is meant to be read exactly once by the very next page load.
+        sessionStorage.setItem('raceclub_fresh_profile', JSON.stringify(data));
+        window.location.href = 'Account.html';
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+        usernameField.disabled = false;
+        passwordField.disabled = false;
+        usernameField.classList.remove('rc-field-locked');
+        passwordField.classList.remove('rc-field-locked');
+        showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
+      });
+  });
+
+  // From the login screen, "Resend" sends a fresh code and jumps straight
+  // to verify.html's code-entry view, rather than just firing off an
+  // email and leaving the user on the login form.
+  document.getElementById('rc-login-resend').addEventListener('click', function () {
+    var username = document.getElementById('rc-username').value.trim();
+    var btn = this;
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    fetchApi('resendVerification', { method: 'POST', body: { username: username } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        if (data.success) {
+          sessionStorage.setItem('raceclub_pending_profile_id', data.profileId);
+          sessionStorage.setItem('raceclub_verify_message', data.message || 'We emailed you a new 6-digit code. Enter it below.');
+          window.location.href = 'verify.html';
+        } else {
+          showToast(data.message || 'Could not send a new code.', 'error');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showToast('Could not reach the server. Try again in a moment.', 'error');
+      });
   });
 })();
 </script>

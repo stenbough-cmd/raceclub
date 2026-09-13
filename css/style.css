@@ -164,13 +164,6 @@ p { margin: 0 0 0.75em; }
 .rc-btn-primary:hover { background: var(--rc-red-dark); color: var(--rc-white); }
 .rc-btn-primary:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
 
-/* Discord sign-in button (2026-09-13, login.html) -- Discord's own brand
-   color ("blurple"), not the site's red, so the button reads as "this is
-   Discord's screen next," same convention any other "Sign in with ___"
-   button follows. Same shape/sizing as .rc-btn-primary otherwise. */
-.rc-discord-btn { background: #5865F2; width: auto; padding: 12px 28px; }
-.rc-discord-btn:hover { background: #4752C4; color: var(--rc-white); }
-
 .rc-btn-secondary {
   padding: 8px 14px;
   font-family: var(--rc-font-heading);

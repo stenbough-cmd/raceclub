@@ -1,0 +1,212 @@
+<!--
+  Race Club — verify.html  (v0.2.5, GitHub Pages edition)
+
+  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
+  This is the source file's "VERIFICATION CODE VIEW" pulled out into its
+  own real page. The 6-box code entry UI (auto-advance on type, backspace
+  steps back, paste distributes a full code across all boxes, auto-submit
+  the instant all 6 digits are filled) and the resend-code button are
+  ported verbatim from the source's codeBoxes/verifyCode logic.
+
+  The one real change is how the identity gets here: the source kept it
+  in an in-memory variable (lastRegisteredUsername) because register.html
+  and this view were the same embed. Since navigation now leaves that
+  variable behind, register.html and login.html's resend button instead
+  write it to sessionStorage under 'raceclub_pending_profile_id' before
+  navigating here, and this page reads it on load. If that key is missing
+  (e.g. someone bookmarks this page directly), we send them back to
+  login.html rather than guessing.
+
+  This page keys off ProfileID throughout -- verifyEmailCode and
+  resendVerification both take `profileId`. On success, this page no
+  longer stashes anything email-related for login.html (login is by
+  Username again, not email -- see login.html's header comment); the
+  'raceclub_prefill_username' key register.html already set before
+  sending the driver here is simply left untouched, so login.html still
+  has it to prefill from. This page just queues 'raceclub_login_message'
+  and (after the same short readable pause the source used) navigates to
+  login.html.
+
+  TOASTS (this pass): the code-incorrect/expired result, "verified!"
+  confirmation, resend-code result, and the unreachable-server fallback
+  all now go through js/header.js's showToast() instead of the old inline
+  message boxes -- see that file's header comment for why. The intro line
+  ("Enter the 6-digit code we emailed you.") stays inline since it's page
+  copy, not a transient result.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Your Email · Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+</head>
+<body>
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+<div class="rc-auth-page">
+  <div class="rc-auth-wrap" style="text-align:center;">
+    <h1>Verify Your Email</h1>
+
+    <div id="rc-setup-warning" class="rc-message rc-error" style="display:none;"></div>
+
+    <div class="rc-card" style="margin-top:24px;">
+      <p id="rc-register-success-message" style="margin:0 0 16px;font-size:14px;"></p>
+      <div class="rc-code-row">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+        <input class="rc-code-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+      </div>
+      <button type="button" class="rc-btn-secondary" id="rc-resend-from-splash" style="margin-top:16px;">Resend code</button>
+    </div>
+    <p class="rc-auth-footer">
+      <button type="button" class="rc-link-btn" onclick="window.location.href='login.html'">Back to login</button>
+    </p>
+  </div>
+</div>
+
+<!-- Site footer -- on every page now (Matt's call), not just index.html. -->
+<footer class="rc-site-footer">
+  Copyright Race Club 2026. All rights reserved. Created and developed with the help of Claude AI.
+</footer>
+
+<script>
+(function () {
+  if (apiBaseUrlIsUnset()) {
+    var warn = document.getElementById('rc-setup-warning');
+    warn.style.display = 'block';
+    warn.textContent = 'API_BASE_URL is not set. Edit js/api.js and paste in your Apps Script Web App URL.';
+    return;
+  }
+
+  // Normally arrives via sessionStorage (same-tab flow from register.html/
+  // login.html). But someone might open the verification EMAIL's "back to
+  // this page" link in a brand new tab, on a different device, or after
+  // closing the original one -- sessionStorage wouldn't have anything in
+  // that case, so the emailed link includes ?u=profileId as a fallback the
+  // way in. This is the failsafe: even with no session state at all, a
+  // click from the email always lands on a working code-entry screen.
+  var urlProfileId = new URLSearchParams(window.location.search).get('u');
+  var pendingProfileId = sessionStorage.getItem('raceclub_pending_profile_id') || urlProfileId;
+  if (!pendingProfileId) {
+    // No profile to verify -- nothing useful to do on this page.
+    window.location.replace('login.html');
+    return;
+  }
+
+  document.getElementById('rc-register-success-message').textContent =
+    sessionStorage.getItem('raceclub_verify_message') || 'Enter the 6-digit code we emailed you.';
+  sessionStorage.removeItem('raceclub_verify_message');
+
+  // ---------------------------------------------------------------------
+  // VERIFICATION CODE ENTRY — 6 single-digit boxes, auto-advance on typing,
+  // backspace steps back, paste distributes a full code across all boxes,
+  // and the code auto-submits the instant all 6 are filled (no separate
+  // submit button — feels snappier and there's nothing else to fill in).
+  // ---------------------------------------------------------------------
+  var codeBoxes = Array.prototype.slice.call(document.querySelectorAll('.rc-code-box'));
+
+  function resetCodeBoxes() {
+    codeBoxes.forEach(function (box) {
+      box.value = '';
+      box.disabled = false;
+      box.classList.remove('rc-code-error');
+    });
+    if (codeBoxes[0]) codeBoxes[0].focus();
+  }
+  resetCodeBoxes();
+
+  codeBoxes.forEach(function (box, idx) {
+    box.addEventListener('input', function () {
+      box.value = box.value.replace(/[^0-9]/g, '').slice(0, 1);
+      box.classList.remove('rc-code-error');
+      if (box.value && idx < codeBoxes.length - 1) {
+        codeBoxes[idx + 1].focus();
+      }
+      maybeAutoSubmitCode();
+    });
+    box.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Backspace' && !box.value && idx > 0) {
+        codeBoxes[idx - 1].focus();
+      }
+    });
+    box.addEventListener('paste', function (evt) {
+      var pasted = ((evt.clipboardData || window.clipboardData).getData('text') || '').replace(/[^0-9]/g, '');
+      if (pasted.length >= 6) {
+        evt.preventDefault();
+        for (var i = 0; i < 6; i++) codeBoxes[i].value = pasted[i];
+        codeBoxes[5].focus();
+        maybeAutoSubmitCode();
+      }
+    });
+  });
+
+  function maybeAutoSubmitCode() {
+    var code = codeBoxes.map(function (b) { return b.value; }).join('');
+    if (code.length === 6) verifyCode(code);
+  }
+
+  function verifyCode(code) {
+    codeBoxes.forEach(function (box) { box.disabled = true; });
+
+    fetchApi('verifyEmailCode', { method: 'POST', body: { profileId: pendingProfileId, code: code } })
+      .then(function (data) {
+        if (!data.success) {
+          codeBoxes.forEach(function (box) {
+            box.disabled = false;
+            box.classList.add('rc-code-error');
+            box.value = '';
+          });
+          showToast(data.message || 'That code did not work. Try again.', 'error');
+          codeBoxes[0].focus();
+          return;
+        }
+        showToast(data.message || 'Your email has been verified!', 'success');
+        // Brief pause so the confirmation is actually readable, then send
+        // them to the login page. register.html already stashed
+        // 'raceclub_prefill_username' before sending the driver here --
+        // we leave it as-is so login.html can still prefill from it.
+        setTimeout(function () {
+          sessionStorage.removeItem('raceclub_pending_profile_id');
+          sessionStorage.setItem('raceclub_login_message', "You're verified! Log in below.");
+          window.location.href = 'login.html';
+        }, 1600);
+      })
+      .catch(function () {
+        codeBoxes.forEach(function (box) { box.disabled = false; });
+        showToast('Could not reach the server. Try again in a moment.', 'error');
+      });
+  }
+
+  // ---------------------------------------------------------------------
+  // RESEND VERIFICATION
+  // ---------------------------------------------------------------------
+  document.getElementById('rc-resend-from-splash').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    fetchApi('resendVerification', { method: 'POST', body: { profileId: pendingProfileId } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showToast(data.message || (data.success ? 'Sent.' : 'Could not resend.'), data.success ? 'success' : 'error');
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showToast('Could not reach the server. Try again in a moment.', 'error');
+      });
+    resetCodeBoxes();
+  });
+})();
+</script>
+</body>
+</html>

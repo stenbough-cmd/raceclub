@@ -11,11 +11,11 @@
   token helpers and the 30-minute inactivity auto-logout timer so every
   page uses the exact same logic instead of copy-pasting it.
 
-  LOGIN REBUILT 2026-09-13 (Discord OAuth, Matt's call): there's no
-  password to register/verify/reset anymore -- login.html sends the
-  browser straight to Discord, and Discord's redirect lands on
-  Account.html?token=..., picked up by consumeDiscordTokenFromUrl() below
-  before the normal auth gate runs.
+  NAVIGATION NOTE: since the token now persists reliably across real page
+  loads, the "carry the username to verify.html" step (register/login ->
+  verify) uses sessionStorage (see js reference in register.html/login.html/
+  verify.html) rather than an in-memory JS variable — that only survives
+  within one page's lifetime, and verify.html is a separate page load.
 */
 
 var TOKEN_KEY = 'raceclub_token';
@@ -75,25 +75,6 @@ function getProfileCache() {
   } catch (err) {
     return null;
   }
-}
-
-// Discord sign-in (2026-09-13) lands the browser on Account.html?token=...
-// -- Auth.gs's handleDiscordCallback issues the session token server-side
-// and hands it off this way instead of a login.html form ever seeing it.
-// Called once at the top of Account.html, BEFORE redirectIfNoToken() --
-// picks the token out of the URL, saves it the normal way, then strips it
-// from the address bar (history.replaceState, no reload) so it doesn't
-// linger in the URL, browser history, or get shared if the page is
-// bookmarked/copied. A direct visit to Account.html with no token in the
-// URL (the normal case, already-logged-in driver) is a silent no-op.
-function consumeDiscordTokenFromUrl() {
-  var params = new URLSearchParams(window.location.search);
-  var token = params.get('token');
-  if (!token) return;
-  setToken(token);
-  params.delete('token');
-  var cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-  window.history.replaceState({}, document.title, cleanUrl);
 }
 
 // Call at the top of any page that requires a logged-in user (Account.html).
