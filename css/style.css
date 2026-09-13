@@ -3180,84 +3180,44 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background-repeat: no-repeat;
   background-color: var(--rc-carbon);
 }
-/* A dedicated portrait-shaped image takes over from the standard
-   landscape one once the window's own SHAPE actually calls for it --
-   not a fixed pixel number in either dimension alone. History of how
-   this rule got here, all 2026-09-08, Matt's session:
-     1. Started as `max-width: 700px` (his report: "when the browser
-        window width shrinks, the banner extends beyond the browser
-        window... I want the width to scale down until it's at the point
-        where a vertical banner is more appropriate"), tightened to 550px
-        then 400px on follow-up asks for it to trigger later.
-     2. That was briefly OR'd with `(orientation: portrait)` too (fires
-        once a window is taller than it is wide) -- pulled back out when
-        Matt reported it "still flipping at 760px": with his browser
-        window around 760px tall, narrowing WIDTH below 760 alone made
-        the window taller-than-wide, tripping orientation regardless of
-        the max-width number, so the swap point was really "however tall
-        your window happens to be," not the pixel value he kept asking
-        for.
-     3. Pure width alone (just `max-width: 400px`, no orientation) was
-        tried next -- Matt didn't want this either ("I don't want it
-        driven by width alone... I want it to make sense"): a fixed
-        width ignores height completely, so a short-but-wide window could
-        cross under 400px and switch to portrait despite having plenty of
-        room, while a very tall narrow-ish window could stay on the
-        landscape crop too long.
-     4. Landed here: `aspect-ratio`, which is a genuine width-VS-height
-        comparison, not either dimension in isolation -- it reacts
-        correctly no matter how tall or short the window is. The
-        threshold itself, `max-aspect-ratio: 2/3`, is deliberately NOT
-        "as soon as the window stops being wide" (e.g. 1/1, square) --
-        Matt's follow-up call: "the banner isn't made for a square
-        orientation, just portrait, so it looks odd" when it flipped too
-        early. 2/3 is banner-portrait.jpg's OWN pixel ratio (1024x1536) --
-        the swap only happens once the window's box is at least that
-        portrait-shaped itself, so the image is never asked to fill a box
-        meaningfully squarer than the photo it's built for. Below that
-        point the landscape banner.jpg (2:1) stays put and just keeps
-        cropping tighter off the right (see the left-anchored
-        background-position on the plain .rc-hero rule above) --
-        genuinely square-ish windows now stay on the landscape crop
-        rather than switching to a portrait image that doesn't fit that
-        shape either. */
-@media (max-aspect-ratio: 2/3) {
-  /* background-position overridden to `left top` here (2026-09-08, Matt's
-     follow-up: "make the top stick to the top of the window when changing
-     size") -- same reasoning as the left-anchored crop above, just for
-     the vertical image's own top edge instead. The plain .rc-hero rule's
-     `left center` is vertically centered, which is right for the wide
-     landscape photo but wrong here: as the WINDOW'S HEIGHT changes (the
-     axis that actually varies once you're in this portrait image), a
-     vertically-centered `cover` crop trims off the top and bottom evenly,
-     so the top of the portrait photo drifts down out of frame the same
-     amount the bottom does. Anchoring to `top` instead keeps the top of
-     the image (and whatever's framed up there) pinned to the top of the
-     window at every height, with all the cropping coming off the bottom. */
-  .rc-hero {
-    background-image: url('../assets/banner-portrait.jpg');
-    background-position: left top;
-    /* banner-portrait.jpg's own pixel ratio (1024x1536 = 2:3) -- swapped
-       in alongside the image itself so the box's proportions still match
-       whichever photo is actually showing, now that height comes from
-       aspect-ratio instead of the viewport. */
-    aspect-ratio: 2 / 3;
-  }
-}
+/* Portrait-swap image REMOVED (2026-09-13, Matt's follow-up call: "we can
+   get rid of the index page using a different banner for portrait mode
+   now that we have a scaling horizontal banner with text that also
+   scales"). This used to swap in a dedicated banner-portrait.jpg below
+   an aspect-ratio: 2/3 window threshold, back when the hero was sized
+   off the VIEWPORT (needing a differently-cropped image once the window
+   got too tall-and-narrow for the landscape crop to read well). Now that
+   .rc-hero is sized off its own aspect-ratio (2:1) and scales smoothly
+   with the window's WIDTH -- and the overlay text scales right along
+   with it -- the single landscape banner.jpg holds up at every window
+   shape on its own, so the second image and the swap rule are no longer
+   needed. banner-portrait.jpg itself was left alone in assets/ in case
+   it's wanted again later; only the CSS rule that referenced it is
+   gone. */
 /* Small watermark badge, bottom-right corner of the hero. .rc-hero is
    `position: sticky`, which is itself a positioning context (same as
    `relative` would be), so this can sit absolute against it directly
-   with no extra wrapper needed. */
+   with no extra wrapper needed.
+
+   Fluid now, same clamp() approach as the hero text (2026-09-13, Matt's
+   follow-up call: "make the Race Club logo in the bottom right also
+   scale with the image but make it scale towards the bottom right of
+   the image so it stays locked into that part of the banner") -- was a
+   flat 52px with a single 600px-breakpoint jump to 38px. `bottom`/
+   `right` are themselves fluid too, not just `height`: shrinking a
+   bottom/right-anchored element by height ALONE (leaving bottom/right
+   fixed) would already look reasonably anchored, but scaling its inset
+   from the corner down in step with its own size is what actually
+   reads as "the badge scales toward that corner" rather than just
+   "the badge gets smaller while floating at a fixed distance from it" --
+   same 360px-to-1600px range as everything else on this component. */
 .rc-hero-badge {
   position: absolute;
-  bottom: 22px;
-  right: 22px;
-  height: 52px;
+  bottom: clamp(14px, 11.68px + 0.65vw, 22px);
+  right: clamp(14px, 11.68px + 0.65vw, 22px);
+  height: clamp(38px, 33.94px + 1.13vw, 52px);
   width: auto;
   z-index: 2;
-}
-@media (max-width: 600px) {
-  .rc-hero-badge { height: 38px; bottom: 14px; right: 14px; }
 }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
    tagline, middle-left over the hero photo (2026-09-13, Matt's call).
