@@ -12,11 +12,22 @@
   to scale when the user shrinks the window... if I can see the next
   section creep up as I'm closing the window, that's ok"):
   The hero used to be `position: fixed` with a same-height spacer div
-  faking scroll distance, so later content would slide up and visually
-  "cover" it. That's gone -- the hero is now a normal in-flow block sized
-  by its own aspect-ratio (see .rc-hero in css/style.css), so it scales
-  with the window's width and the page just flows normally underneath it,
-  same as any other stacked section.
+  faking scroll distance, sized off the viewport's HEIGHT. That's gone --
+  the hero is now sized by its own aspect-ratio (see .rc-hero in
+  css/style.css), so it scales with the window's WIDTH instead.
+
+  WHAT CHANGED IN THIS PASS (hero re-pinned as `sticky`, 2026-09-13,
+  Matt's later follow-up call: "can we still stick the banner to the top
+  of the webpage and have the bottom part scroll over top of it?"):
+  Brought back the "content slides up and covers the banner as you
+  scroll" effect, but via `position: sticky` instead of the old
+  `fixed` + spacer -- sticky keeps the hero's aspect-ratio-driven sizing
+  (so the width-based scaling above still works) while still pinning it
+  to `top: 72px`, right under the header, once the page scrolls that
+  far. No spacer needed this time: sticky reserves the hero's own space
+  in the document, which is exactly what lets .rc-hero-content (right
+  after it, opaque background, higher z-index) scroll up and visually
+  cover it.
 
   There is no login/session logic on this page beyond what js/header.js
   already provides (it reads getToken() itself to decide whether to show
@@ -74,15 +85,17 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
-<!-- Hero banner, in normal document flow right under the fixed header
-     (see .rc-hero in css/style.css for the 72px top margin that clears
-     it). Sized by aspect-ratio, not viewport height, so it scales with
-     the window's width instead of being pinned to the screen. The image
-     itself is set entirely in CSS now (not inline here) specifically so
-     an @media (max-aspect-ratio) rule can swap it for a dedicated
-     portrait-shaped image on narrow/tall windows, falling back to this
-     standard landscape one otherwise -- an inline style here would beat
-     that media query on specificity and the swap would never show. -->
+<!-- Hero banner, sticky right under the fixed header (see .rc-hero in
+     css/style.css) -- it sits in normal document flow until scrolled,
+     then pins to top: 72px while .rc-hero-content scrolls up and covers
+     it. Sized by aspect-ratio, not viewport height, so it still scales
+     with the window's width instead of being pinned to a fixed screen
+     height. The image itself is set entirely in CSS now (not inline
+     here) specifically so an @media (max-aspect-ratio) rule can swap it
+     for a dedicated portrait-shaped image on narrow/tall windows,
+     falling back to this standard landscape one otherwise -- an inline
+     style here would beat that media query on specificity and the swap
+     would never show. -->
 <div class="rc-hero" role="img" aria-label="Race Club: league cars on track">
   <div class="rc-hero-text">
     <div class="rc-hero-title rc-hero-title-shift">YOUR <span class="rc-hero-title-accent">CAREER</span></div>

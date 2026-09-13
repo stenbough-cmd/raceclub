@@ -3120,19 +3120,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /*                                                                       */
 /* No longer `position: fixed` (2026-09-13, Matt's follow-up call: "the  */
 /* image should not be sticky anywhere... I want it to scale when the   */
-/* user shrinks the window... if I can see the next section creep up    */
-/* as I'm closing the window, that's ok"). The hero is now a plain       */
-/* in-flow block sized by `aspect-ratio` instead of viewport height, so  */
-/* it scales proportionally with the window's WIDTH and never has to    */
-/* fill the screen top-to-bottom -- narrowing the window just shrinks    */
-/* the banner and lets .rc-hero-content ride up right behind it, same    */
-/* as any normal stacked page content. `margin-top: 72px` is only there  */
-/* to clear the site's own fixed 72px header (see .rc-fixed-header)      */
-/* since nothing about the header changed here. No spacer element is     */
-/* needed anymore -- that was only ever there to fake scroll distance    */
-/* for the old fixed hero. */
+/* user shrinks the window"). The hero is sized by `aspect-ratio`        */
+/* instead of viewport height, so it scales proportionally with the      */
+/* window's WIDTH and never has to fill the screen top-to-bottom.        */
+/*                                                                       */
+/* `position: sticky` (2026-09-13, Matt's later follow-up call: "can we  */
+/* still stick the banner to the top of the webpage and have the bottom  */
+/* part scroll over top of it?") -- different from the old `fixed` setup */
+/* in one key way: `fixed` forces the element's SIZE to be computed      */
+/* from the viewport (which is why it needed `height: calc(100vh -      */
+/* 72px)` and a matching spacer div to fake scroll distance). `sticky`   */
+/* keeps the element's normal, in-flow size -- still driven by its own   */
+/* `aspect-ratio` below, so the width-based scaling still works -- and   */
+/* just pins it to `top: 72px` (right under the fixed header) once the   */
+/* page scrolls that far, while the space it would have occupied stays   */
+/* reserved in the document. That reserved space is exactly what lets    */
+/* .rc-hero-content (opaque background, higher z-index, right after it   */
+/* in the HTML) scroll up and visually cover the pinned banner once the   */
+/* user has scrolled roughly the banner's own height -- no spacer needed  */
+/* this time, sticky's reserved space does that job on its own.          */
+/* `margin-top: 72px` still clears the fixed header for the banner's      */
+/* normal (not-yet-stuck) position; `top: 72px` is what it sticks to      */
+/* once scrolled -- same 72px both times since that's the header's own    */
+/* height either way. */
 .rc-hero {
-  position: relative;
+  position: sticky;
+  top: 72px;
   margin-top: 72px;
   width: 100%;
   /* banner.jpg's own pixel ratio (2:1 landscape) -- sizing the box off   */
@@ -3223,8 +3236,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   }
 }
 /* Small watermark badge, bottom-right corner of the hero. .rc-hero is
-   `position: relative`, which is itself a positioning context, so this
-   can sit absolute against it directly with no extra wrapper needed. */
+   `position: sticky`, which is itself a positioning context (same as
+   `relative` would be), so this can sit absolute against it directly
+   with no extra wrapper needed. */
 .rc-hero-badge {
   position: absolute;
   bottom: 22px;
@@ -3239,7 +3253,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
    tagline, middle-left over the hero photo (2026-09-13, Matt's call).
    Needs no extra positioning wrapper: .rc-hero is already `position:
-   relative`, which is itself a positioning context, same reason
+   sticky`, which is itself a positioning context, same reason
    .rc-hero-badge above can sit `position: absolute` directly against it.
    Font treatment matches every h1-h4 and .rc-eyebrow on the site --
    var(--rc-font-heading), uppercase, bold -- rather than a one-off font,
@@ -3249,11 +3263,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   position: absolute;
   top: 50%;
   left: 0;
-  /* 50px above dead-center (2026-09-13, Matt's follow-up call) -- stacked
-     onto the same translateY that centers the block, rather than a
-     separate top offset, so it stays exactly centered-then-shifted at
-     every viewport height. */
-  transform: translateY(calc(-50% - 50px));
+  /* Above dead-center (2026-09-13, Matt's follow-up call) -- stacked onto
+     the same translateY that centers the block, rather than a separate
+     top offset, so it stays exactly centered-then-shifted at every
+     viewport height. The offset itself is now fluid too (2026-09-13,
+     Matt's later follow-up: "make sure the text is scaling from the
+     same vertical point between all text fields so it scales at the
+     same point and looks the same when shrunk") -- 20px at 360px wide,
+     50px at 1600px and up, same 360-1600 range as every other clamp()
+     on this component. Before this it was a flat 50px at every width,
+     which on a short, shrunk block reads as a much bigger jump above
+     center than the same 50px does on a tall, full-size block -- that
+     mismatch was what made the block's vertical anchor point drift as
+     the window resized. */
+  transform: translateY(calc(-50% - clamp(20px, 11.29px + 2.42vw, 50px)));
   z-index: 2;
   /* Fluid instead of two fixed breakpoints (2026-09-13, Matt's follow-up
      call: "make it scale smoothly as the window collapses") -- clamp()
@@ -3315,7 +3338,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--rc-white);
-  margin-top: 24px;
+  /* Fluid now too, same reason as the block's own vertical offset above
+     (2026-09-13, Matt's follow-up: "scaling from the same vertical
+     point... looks the same when shrunk") -- 12px at 360px wide, 24px
+     at 1600px and up. Was a flat 24px at every width, which meant the
+     gap between YOUR LEGACY and the subtitle stayed full-size even as
+     the text around it shrank, throwing off the block's proportions at
+     narrow widths. */
+  margin-top: clamp(12px, 8.52px + 0.97vw, 24px);
 }
 /* Red underline spanning just "RACE - EARN - PROGRESS" (2026-09-13,
    Matt's follow-up call) -- stops short of " - BE REMEMBERED", which
