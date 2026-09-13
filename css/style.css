@@ -255,6 +255,34 @@ p { margin: 0 0 0.75em; }
 .rc-icon-btn:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
 .rc-icon-btn svg { display: block; }
 
+/* Small triangle/chevron disclosure toggle for expandable rows (League
+   Management's Races toggle, 2026-09-13, Matt's call: "use triangles to
+   open and close seasons") -- same border/background/hover treatment as
+   .rc-btn-secondary + .rc-btn-row so it sits in that same button row
+   without looking like a different kind of control, just icon-only and
+   square instead of a text pill. The chevron itself rotates on open
+   rather than swapping between two icons -- one element, one transition. */
+.rc-disclosure-btn {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rc-silver);
+  border-radius: 4px;
+  background: var(--rc-white);
+  color: var(--rc-carbon);
+  cursor: pointer;
+}
+.rc-disclosure-btn:hover { background: var(--rc-offwhite); }
+.rc-disclosure-btn svg { display: block; transition: transform 0.15s ease; }
+.rc-disclosure-btn.rc-disclosure-open svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .rc-disclosure-btn svg { transition: none; }
+}
+
 /* -------------------------------------------------------------------- */
 /* Cards / panels */
 /* -------------------------------------------------------------------- */

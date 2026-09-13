@@ -373,6 +373,13 @@
   var ICON_CAREER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
   var ICON_FINANCES = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M17 6H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H7"></path></svg>';
   var ICON_NAV_STAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
+  // Disclosure triangle (2026-09-13, Matt's call: "use triangles to open
+  // and close seasons" instead of a Show/Hide Races text button) -- a
+  // plain down-chevron, same 24x24/stroke-1.8 family as every other icon
+  // here. Points down when collapsed (the direction it'll open) and
+  // rotates 180deg via .rc-disclosure-open when expanded, so this one
+  // element animates rather than swapping between two different icons.
+  var ICON_CHEVRON_DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   var ICON_SPONSORS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12l-8 8-9-9V4h7z"></path><circle cx="7.5" cy="7.5" r="1"></circle></svg>';
   var ICON_HALLOFFAME = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M7 5H4a3 3 0 0 0 3 4"></path><path d="M17 5h3a3 3 0 0 1-3 4"></path></svg>';
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
@@ -5422,12 +5429,22 @@
     // on page load instead of requiring a click.
     var racesBox = el('div', 'padding-left:20px;' + (defaultExpanded ? '' : 'display:none;'));
     racesBox.appendChild(buildSeasonRacesList(races || [], token, reload));
-    var racesToggleBtn = el('button', 'rc-btn-secondary rc-btn-row', defaultExpanded ? 'Hide Races' : ('Show Races (' + (s.raceCount || 0) + ')'));
+    // Triangle disclosure toggle (2026-09-13, Matt's call) -- replaces the
+    // old "Show Races (n)"/"Hide Races" text button. The race count isn't
+    // lost, it's already shown right above in this row's own meta line
+    // (metaParts, "N races · N drivers registered"), so the button itself
+    // only needs to say open/closed, which a rotating chevron does without
+    // any text at all.
+    var racesToggleBtn = el('button', 'rc-disclosure-btn' + (defaultExpanded ? ' rc-disclosure-open' : ''), ICON_CHEVRON_DOWN);
     racesToggleBtn.type = 'button';
+    racesToggleBtn.setAttribute('aria-expanded', defaultExpanded ? 'true' : 'false');
+    racesToggleBtn.setAttribute('aria-label', defaultExpanded ? 'Hide races' : 'Show races');
     racesToggleBtn.addEventListener('click', function () {
       var isOpen = racesBox.style.display !== 'none';
       racesBox.style.display = isOpen ? 'none' : '';
-      racesToggleBtn.textContent = isOpen ? ('Show Races (' + (s.raceCount || 0) + ')') : 'Hide Races';
+      racesToggleBtn.classList.toggle('rc-disclosure-open', !isOpen);
+      racesToggleBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      racesToggleBtn.setAttribute('aria-label', isOpen ? 'Show races' : 'Hide races');
     });
     btnGroup.appendChild(racesToggleBtn);
 
