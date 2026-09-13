@@ -7443,12 +7443,20 @@
         qualifyLengthMin: 7
       },
       // ECO doesn't do per-race/per-class registration fees or the old
-      // wager/no-show/vanity income streams -- Wager Stake Cap is the only
-      // per-season economy setting left here (Matt's call). Starting
-      // Balance moved to the Admin panel's league-wide Economy settings
-      // (2026-08-30) -- see the wizSubhead('Economy') comment below.
+      // wager/no-show/vanity income streams -- Wager Stake Cap (%) and
+      // Wager Stake Max ($, added 2026-09-14, Matt's call: "add a wager
+      // stake max instead of just a percentage") are the only per-season
+      // economy settings left here. Starting Balance moved to the Admin
+      // panel's league-wide Economy settings (2026-08-30) -- see the
+      // wizSubhead('Economy') comment below.
       economy: {
         wagerStakeCapPct: 25,
+        // Absolute-dollar ceiling on any single wager, applied ALONGSIDE
+        // the percentage cap above (a driver's actual max stake is
+        // whichever of the two is lower) -- see _rcGetMaxStakeForDriver_,
+        // Wagers.gs. Steps by $100, defaults to $2,500 (Matt's exact
+        // spec).
+        wagerStakeMax: 2500,
         // Car Objectives system (added 2026-08-29) -- one average seat
         // cost per Tier (Low/Mid/High, CAR_TIER_LIST), each car's actual
         // BuyInCost randomized ±20% around its tier's average and rounded
@@ -7904,10 +7912,11 @@
     var qualifyLenInput = wizNumberInput(state.raceSettings.qualifyLengthMin, function (v) { state.raceSettings.qualifyLengthMin = v; }, { min: 0 }); requireField(qualifyLenInput, requiredEls);
     container.appendChild(fieldPairRow('Practice Length (min)', practiceLenInput, 'Qualifying Length (min)', qualifyLenInput));
 
-    // Economy -- Wager Stake Cap is the only setting this wizard actually
-    // WRITES (Matt's call: no per-class/per-race registration fees, no
-    // wager house cut/forfeiture, no no-show fees, no vanity spend cut, no
-    // pool-feed cuts). Starting Balance is shown alongside it again
+    // Economy -- Wager Stake Cap (%) and Wager Stake Max ($, added
+    // 2026-09-14) are the only settings this wizard actually WRITES
+    // (Matt's call: no per-class/per-race registration fees, no wager
+    // house cut/forfeiture, no no-show fees, no vanity spend cut, no
+    // pool-feed cuts). Starting Balance is shown alongside them again
     // (2026-08-30) but READ-ONLY -- it's a league-wide, persistent Economy
     // setting now (Admin panel -> Economy), seeded once per driver at
     // Prospect->Driver approval rather than chosen fresh in every season's
@@ -7928,12 +7937,27 @@
     // all, not just once it's time-locked.
     stakeCapInput.classList.add('rc-wiz-locked-in-edit');
     if (editSeasonLock) { stakeCapInput.disabled = true; stakeCapInput.classList.add('rc-field-locked'); }
-    container.appendChild(wizFieldPairRow(
-      'Starting Bank Balance ($)', balDisplayInput,
-      'Read-only -- only an Admin can change this, from the Admin panel\'s Economy settings.',
-      'Wager Stake Cap (% of available)', stakeCapInput,
-      'Limits a single wager to this % of a driver\'s available balance.'
-    ));
+    // Wager Stake Max ($, 2026-09-14, Matt's call: "add a wager stake max
+    // instead of just a percentage... place it next to wager stake cap in
+    // the same row... move by 100s and have it default at 2500") -- an
+    // absolute-dollar ceiling alongside the percentage one; a driver's
+    // real max stake is whichever of the two is lower (see
+    // _rcGetMaxStakeForDriver_, Wagers.gs). Same permanently-locked-in-edit
+    // treatment as Wager Stake Cap right above it -- it's the same kind of
+    // per-season economy knob.
+    var stakeMaxInput = wizNumberInput(state.economy.wagerStakeMax, function (v) { state.economy.wagerStakeMax = v; }, { min: 100, step: 100 });
+    requireField(stakeMaxInput, requiredEls);
+    stakeMaxInput.classList.add('rc-wiz-locked-in-edit');
+    if (editSeasonLock) { stakeMaxInput.disabled = true; stakeMaxInput.classList.add('rc-field-locked'); }
+    // Three-equal-column row (.rc-wiz-field-row-3, the same grid the
+    // Protest form's Driver Involved row uses) rather than
+    // wizFieldPairRow's fixed 2-up grid, now that there are three fields
+    // to fit on this line.
+    var economyRow = el('div', 'rc-wiz-field-row-3');
+    economyRow.appendChild(wizField('Starting Bank Balance ($)', balDisplayInput, 'Change in economy settings'));
+    economyRow.appendChild(wizField('Wager Stake Cap (% of available)', stakeCapInput, 'Limits a single wager to this % of a driver\'s available balance.'));
+    economyRow.appendChild(wizField('Wager Stake Max ($)', stakeMaxInput, 'Limits a single wager to this dollar amount, whichever cap is lower.'));
+    container.appendChild(economyRow);
 
     // Car Objectives system -- three average seat costs (one per Tier),
     // kept here in Economy alongside the other dollar-figure inputs. Each
@@ -8534,7 +8558,7 @@
 
     var econPanel = el('div', 'rc-panel'); econPanel.style.marginTop = '12px';
     econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Economy'));
-    econPanel.appendChild(previewLine('Wager Stake Cap', state.economy.wagerStakeCapPct + '% of available'));
+    econPanel.appendChild(previewLine('Wager Stake Cap', state.economy.wagerStakeCapPct + '% of available, up to $' + Number(state.economy.wagerStakeMax || 0).toLocaleString() + ' max'));
     econPanel.appendChild(previewLine('Car Objectives · Seat Cost Avgs.',
       'Low $' + Number(state.economy.carTierSeatCost.Low || 0).toLocaleString() +
       ' · Mid $' + Number(state.economy.carTierSeatCost.Mid || 0).toLocaleString() +
