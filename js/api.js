@@ -30,6 +30,63 @@ function apiBaseUrlIsUnset() {
   return !API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') !== -1;
 }
 
+// How long a single attempt is allowed to hang before it's treated as
+// failed (2026-09-14, Matt's report: "the dashboard sometimes never loads
+// anything"). Apps Script Web Apps queue same-user requests rather than
+// truly running them in parallel (see the long comment on
+// fetchDashboardData in Account.html), so a request can sit waiting on the
+// server's own queue far longer than a normal page load should ever
+// tolerate. Previously fetchApi had NO timeout at all -- a slow/stuck
+// request just left whatever was waiting on it (most visibly, the
+// Dashboard's "Loading your dashboard..." spinner) spinning forever, with
+// nothing ever resolving or rejecting to say otherwise. 20s is generous
+// (Apps Script cold starts genuinely can take several seconds) while still
+// being far short of "the driver gives up and reloads."
+var RC_FETCH_TIMEOUT_MS = 20000;
+
+// One automatic retry after a short pause (2026-09-14, same report: "no
+// season is currently open" shown when one genuinely was). A transient
+// failure -- a timeout, a dropped connection, or Apps Script returning a
+// non-JSON error page under load -- used to be indistinguishable from a
+// real "no" answer by the time it reached calling code, since every caller
+// across the site treats a rejected fetchApi promise as "there's nothing
+// here" (see e.g. registrationStatusCard's renderUnregistered in
+// Account.html). Retrying once, silently, before actually giving up cuts
+// out the single most common cause of that: one bad round trip, on a site
+// with no other retry logic anywhere in the request path.
+var RC_FETCH_RETRY_DELAY_MS = 700;
+
+function _rcFetchOnce_(url, fetchOpts) {
+  // AbortController -- not supported on truly ancient browsers, but every
+  // browser this site otherwise targets has it; fetchApi already assumes a
+  // modern `fetch()` exists at all, so this adds no new floor.
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timedOut = false;
+  var timer = null;
+  if (controller) {
+    fetchOpts = Object.assign({}, fetchOpts, { signal: controller.signal });
+    timer = setTimeout(function () {
+      timedOut = true;
+      controller.abort();
+    }, RC_FETCH_TIMEOUT_MS);
+  }
+  return fetch(url, fetchOpts)
+    .then(function (res) {
+      if (timer) clearTimeout(timer);
+      // Apps Script occasionally answers a struggling request with an HTML
+      // error page instead of JSON (not a network failure -- the request
+      // "succeeded" as far as fetch() is concerned). res.json() throws on
+      // that, which is exactly what should count as a failed attempt here
+      // rather than an unhandled parse error further down the chain.
+      return res.json();
+    })
+    .catch(function (err) {
+      if (timer) clearTimeout(timer);
+      if (timedOut) throw new Error('RC_FETCH_TIMEOUT');
+      throw err;
+    });
+}
+
 /**
  * fetchApi(action, options) -> Promise<Object>
  *
@@ -53,6 +110,13 @@ function apiBaseUrlIsUnset() {
  * (OPTIONS) request, which application/json would trigger. text/plain
  * avoids the preflight; the server still parses the body as JSON
  * regardless of the declared content type. Do not change this.
+ *
+ * Times out after RC_FETCH_TIMEOUT_MS and retries once after
+ * RC_FETCH_RETRY_DELAY_MS before finally rejecting (2026-09-14) -- see the
+ * comments on those constants above. Every existing caller already either
+ * chains .then/.catch or just awaits the promise, so this is invisible to
+ * them except that a single bad round trip no longer has to become a
+ * dead spinner or a wrong "nothing here" render.
  */
 function fetchApi(action, options) {
   options = options || {};
@@ -73,5 +137,11 @@ function fetchApi(action, options) {
     fetchOpts.body = JSON.stringify(options.body || {});
   }
 
-  return fetch(url, fetchOpts).then(function (res) { return res.json(); });
+  return _rcFetchOnce_(url, fetchOpts).catch(function () {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        _rcFetchOnce_(url, fetchOpts).then(resolve, reject);
+      }, RC_FETCH_RETRY_DELAY_MS);
+    });
+  });
 }

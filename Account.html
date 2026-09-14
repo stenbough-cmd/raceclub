@@ -785,15 +785,27 @@
     ]).then(function (results) {
       var activeSeason = results[0];
       var currentSeat = results[1];
-      var seatCard = currentSeatCard(profile, token, currentSeat);
-      var regCard = registrationStatusCard(profile, token, activeSeason, function () {
-        if (seatCard.rcRefresh) seatCard.rcRefresh();
-        if (onRegistered) onRegistered();
-      });
-      while (seatCard.firstChild) seatPlaceholder.appendChild(seatCard.firstChild);
+      // Wrapped in try/catch (2026-09-14 fix) -- these two cards are built
+      // by hand here rather than through asyncDashCard, but shared the
+      // same gap: nothing caught a render-function exception, so either
+      // card throwing left BOTH placeholders permanently blank (they're
+      // built together in this one block) with no error, no fade-in, no
+      // trace. Same fallback message as asyncDashCard's own fix above.
+      try {
+        var seatCard = currentSeatCard(profile, token, currentSeat);
+        var regCard = registrationStatusCard(profile, token, activeSeason, function () {
+          if (seatCard.rcRefresh) seatCard.rcRefresh();
+          if (onRegistered) onRegistered();
+        });
+        while (seatCard.firstChild) seatPlaceholder.appendChild(seatCard.firstChild);
+        if (seatCard.rcRefresh) seatPlaceholder.rcRefresh = seatCard.rcRefresh;
+        while (regCard.firstChild) regPlaceholder.appendChild(regCard.firstChild);
+      } catch (err) {
+        if (window.console && console.error) console.error('Dashboard card failed to render:', err);
+        seatPlaceholder.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
+        regPlaceholder.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
+      }
       seatPlaceholder.classList.add('rc-dash-card-fade-in');
-      if (seatCard.rcRefresh) seatPlaceholder.rcRefresh = seatCard.rcRefresh;
-      while (regCard.firstChild) regPlaceholder.appendChild(regCard.firstChild);
       regPlaceholder.classList.add('rc-dash-card-fade-in');
     });
 
@@ -1138,18 +1150,56 @@
       body.appendChild(footer);
     }
 
+    // "Couldn't check" is NOT the same thing as "checked, and there's
+    // genuinely nothing open" (2026-09-14 fix, Matt's report: "the
+    // dashboard sometimes returns 'no season is currently open for
+    // registration' when there actually is"). Before this, data.success
+    // being false -- which happens whenever the fetch itself failed, timed
+    // out, or the server-side lookup threw -- was folded into the exact
+    // same branch as a real "success:true, hasActiveSeason:false" answer,
+    // so a driver had no way to tell a transient hiccup apart from an
+    // actual answer. This state is deliberately non-alarming (a season IS
+    // probably open) and self-heals once via refreshStatus() below rather
+    // than asking the driver to do anything.
+    function renderLoadError() {
+      body.innerHTML = '';
+      var row = el('div', 'rc-regstatus-row');
+      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#8635;'));
+      var text = el('div');
+      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', 'CHECKING...'));
+      text.appendChild(el('div', 'rc-regstatus-sub', 'Could not reach the server just now -- trying again.'));
+      row.appendChild(text);
+      body.appendChild(row);
+    }
+
+    var didRetryLoad = false;
     function renderFromData(data) {
-      if (!data || !data.success || !data.hasActiveSeason) { renderUnregistered(); return; }
+      if (!data || !data.success) {
+        renderLoadError();
+        // One silent, automatic retry (not a loop -- didRetryLoad only
+        // ever lets this fire once per page view) so the common case, a
+        // single bad round trip, resolves itself without the driver
+        // needing to notice anything or refresh the page by hand.
+        if (!didRetryLoad) {
+          didRetryLoad = true;
+          setTimeout(refreshStatus, 2500);
+        }
+        return;
+      }
+      if (!data.hasActiveSeason) { renderUnregistered(); return; }
       if (data.registered) { renderRegistered(data); return; }
       if (data.seasonFull) { renderSeasonFull(data); return; }
       renderOpenToRegister(data);
     }
 
-    // Quiet re-check after a registration completes -- no spinner, the
-    // card's current content stays exactly as-is until the new data
-    // actually arrives, then swaps in one shot.
+    // Quiet re-check after a registration completes (or after a load
+    // failure above) -- no spinner, the card's current content stays
+    // exactly as-is until the new data actually arrives, then swaps in one
+    // shot. Routed through renderFromData on failure too now (rather than
+    // straight to renderUnregistered) so a retry that ALSO fails still
+    // reads as "couldn't check," not as a false "nothing open."
     function refreshStatus() {
-      fetchApi('getActiveSeason', { token: token }).then(renderFromData).catch(function () { renderUnregistered(); });
+      fetchApi('getActiveSeason', { token: token }).then(renderFromData).catch(function () { renderFromData({ success: false }); });
     }
 
     renderFromData(initialData);
@@ -1342,7 +1392,22 @@
       fetchPromise.catch(function () { return { success: false }; }),
       Promise.resolve(activeSeasonData).catch(function () { return { success: false }; })
     ]).then(function (results) {
-      var built = buildFn(results[0], results[1]);
+      var built;
+      try {
+        built = buildFn(results[0], results[1]);
+      } catch (err) {
+        // A card's own render function throwing on some unexpected data
+        // shape used to leave this placeholder permanently blank -- no
+        // fade-in, no message, nothing (2026-09-14 fix, same report as the
+        // registrationStatusCard change above: "the dashboard sometimes
+        // never loads anything"). Every OTHER promise in this chain was
+        // already defensively .catch()-guarded; the actual card-building
+        // step was the one place that wasn't. Logs to the console for
+        // debugging rather than failing completely silently.
+        if (window.console && console.error) console.error('Dashboard card failed to render:', err);
+        built = el('div');
+        built.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
+      }
       while (built.firstChild) placeholder.appendChild(built.firstChild);
       placeholder.classList.add('rc-dash-card-fade-in');
     });
@@ -11611,6 +11676,9 @@
   // separately, same as it always has.
   var dashboardData = fetchDashboardData(token);
 
+  // See the stagger comment below, at the getProfile call this gates.
+  var RC_PROFILE_FETCH_STAGGER_MS = 150;
+
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
   var freshProfile = null;
@@ -11624,7 +11692,20 @@
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile.profile, token, dashboardData);
   } else {
-    fetchApi('getProfile', { token: token })
+    // Staggered by RC_PROFILE_FETCH_STAGGER_MS behind the dashboard fetch
+    // above, rather than fired in the very same breath (2026-09-14 fix,
+    // part of the same "dashboard sometimes never loads" report). These
+    // two used to hit the Apps Script Web App at the exact same instant on
+    // every page load; since Apps Script queues same-user requests instead
+    // of truly running them in parallel (see the long comment above
+    // fetchDashboardData), sending them simultaneously just meant they
+    // fought over the same queue slot right out of the gate. A short delay
+    // is enough to let the heavier 8-lookup dashboard call actually get
+    // queued first, without meaningfully lengthening the wait for either
+    // one -- this is a small head start, not a "wait for the dashboard to
+    // fully finish" sequencing.
+    new Promise(function (resolve) { setTimeout(resolve, RC_PROFILE_FETCH_STAGGER_MS); })
+      .then(function () { return fetchApi('getProfile', { token: token }); })
       .then(function (data) {
         if (!data.success) {
           clearToken();
