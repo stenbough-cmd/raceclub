@@ -3570,24 +3570,28 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
   border-color: var(--rc-carbon);
 }
-/* "What You'll Need" cards -- shiny brushed-aluminum background
-   (2026-09-13, Matt's call). .rc-highlight-card is shared with the "Why
-   Race Club" section above (see that section's own HTML comment), so
-   this is scoped to just .rc-needs-section's copies rather than
-   restyling .rc-highlight-card itself -- the Why Race Club cards stay
-   plain white. Same technique as the Class Tiers cards below
-   (.rc-tier-bronze/-silver/-gold/-platinum's own 160deg two-tone
-   gradient), just a much lighter, cooler gray family so it reads as
-   aluminum rather than one of the four class-tier metals -- a light
-   top-left highlight fading through a mid gray to a slightly deeper
-   gray at the bottom-right is what gives it the "shiny sheet of metal"
-   look instead of a flat gray fill. */
+/* "What You'll Need" cards -- brushed-nickel background (2026-09-14,
+   Matt's call: "more of a brushed nickle coloring instead of aluminum" --
+   replaces the previous same-day aluminum pass). .rc-highlight-card is
+   shared with the "Why Race Club" section above (see that section's own
+   HTML comment), so this is scoped to just .rc-needs-section's copies
+   rather than restyling .rc-highlight-card itself -- the Why Race Club
+   cards stay plain white. Two layers: a 160deg two-tone sheen gradient
+   (same technique as the Class Tiers cards below,
+   .rc-tier-bronze/-silver/-gold/-platinum), now a warmer, more muted,
+   noticeably deeper gray family than aluminum's near-white one, since
+   real brushed nickel is a duller satin metal, not a bright polished
+   one -- plus a fine repeating-linear-gradient hairline layer on top of
+   it, angled close to the sheen's own diagonal, which is what actually
+   reads as "brushed" texture rather than a flat two-tone gradient. */
 .rc-needs-section .rc-highlight-card {
-  background: linear-gradient(160deg, #fbfbfc 0%, #e4e7ea 45%, #cfd4d8 70%, #e8ebed 100%);
-  border-color: #c7ccd0;
+  background:
+    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.12) 0px, rgba(255, 255, 255, 0.12) 1px, rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0.05) 2px),
+    linear-gradient(160deg, #e7e4df 0%, #c8c4bb 35%, #a29e94 60%, #c3bfb6 100%);
+  border-color: #a29e94;
 }
 .rc-needs-section .rc-highlight-card:hover {
-  border-color: #a8afb5;
+  border-color: #85806f;
 }
 .rc-highlight-icon {
   width: 44px;
