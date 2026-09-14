@@ -9352,6 +9352,37 @@
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
 
+    // Create a Season -- moved into this row, and the standalone "Seasons"
+    // container removed entirely (2026-09-14, Matt's call: "Move Create a
+    // Season to the Data Management container and delete the SEASONS
+    // container"). Stays red/primary and sits first, ahead of every other
+    // button here, with its own vertical divider (rc-btn-row-vdivider,
+    // style.css) marking it off from the rest -- Matt's explicit ask,
+    // since it's the one button here that actually creates something new
+    // rather than opening an editor popup. Clear Season Draft and End
+    // Season (both previously living in the deleted Seasons panel) join
+    // Members/Tracks/Cars/Sponsors/Economy on the other side of that
+    // divider instead -- only Create a Season itself gets the standalone
+    // treatment.
+    var hasDraft = !!loadWizardDraft();
+    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+    createSeasonBtn.type = 'button';
+    createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
+    row.appendChild(createSeasonBtn);
+
+    row.appendChild(el('div', 'rc-btn-row-vdivider'));
+
+    if (hasDraft) {
+      var clearSeasonDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
+      clearSeasonDraftBtn.type = 'button';
+      clearSeasonDraftBtn.addEventListener('click', function () {
+        clearWizardDraft();
+        showToast('Season draft cleared.', 'success');
+        renderAdminSection(token);
+      });
+      row.appendChild(clearSeasonDraftBtn);
+    }
+
     var membersBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Members');
     membersBtn.type = 'button';
     membersBtn.addEventListener('click', function () { openMembersModal(token); });
@@ -9381,41 +9412,13 @@
     economyBtn.addEventListener('click', function () { openEconomyModal(token); });
     row.appendChild(economyBtn);
 
-    panel.appendChild(row);
-    section.appendChild(panel);
-
-    // Create a Season -- moved here from League Management (2026-09-08,
-    // Matt's call: "only an admin can create a season"). Just the
-    // Create/Resume/Clear Draft controls, not the full season list --
-    // the list itself (with per-row Edit/Races) still lives on the
-    // League Management page for both admins and members to browse.
-    var seasonPanel = el('div', 'rc-panel rc-dash-card');
-    seasonPanel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
-
-    var seasonRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
-    var hasDraft = !!loadWizardDraft();
-    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
-    createSeasonBtn.type = 'button';
-    createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
-    seasonRow.appendChild(createSeasonBtn);
-
-    if (hasDraft) {
-      var clearSeasonDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
-      clearSeasonDraftBtn.type = 'button';
-      clearSeasonDraftBtn.addEventListener('click', function () {
-        clearWizardDraft();
-        showToast('Season draft cleared.', 'success');
-        renderAdminSection(token);
-      });
-      seasonRow.appendChild(clearSeasonDraftBtn);
-    }
-
     // End Season -- moved here from League Management (2026-09-09, Matt's
-    // call). This page has no single season already in hand the way each
-    // League Management row did, so the button opens the season-picker
-    // popup first (openEndSeasonModal), which chains into the same typed
-    // "END SEASON" confirmation before anything actually happens server-
-    // side.
+    // call), then from its own now-deleted Seasons panel into this same
+    // Data Management row (2026-09-14). This page has no single season
+    // already in hand the way each League Management row did, so the
+    // button opens the season-picker popup first (openEndSeasonModal),
+    // which chains into the same typed "END SEASON" confirmation before
+    // anything actually happens server-side.
     var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
     endSeasonBtn.type = 'button';
     // Plain gray, not red -- opens the season-picker/confirm chain, doesn't
@@ -9423,10 +9426,10 @@
     endSeasonBtn.addEventListener('click', function () {
       openEndSeasonModal(token, function () { renderAdminSection(token); });
     });
-    seasonRow.appendChild(endSeasonBtn);
+    row.appendChild(endSeasonBtn);
 
-    seasonPanel.appendChild(seasonRow);
-    section.appendChild(seasonPanel);
+    panel.appendChild(row);
+    section.appendChild(panel);
   }
 
   // ---------------------------------------------------------------------

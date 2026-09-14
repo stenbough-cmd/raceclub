@@ -268,6 +268,21 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
+/* Vertical separator for a row of buttons (2026-09-14, added for the
+   Admin page's Data Management row: "separate the Create a Season
+   button from the rest with a vertical gray line" -- Create a Season
+   sits first, this divider right after it, then every other button).
+   A plain 1px gray rule, not a bordered/padded element -- align-self:
+   stretch makes it match whatever height the row's own buttons are
+   rendering at (the row is a flex container), rather than a fixed
+   height that could mismatch a future button size change. */
+.rc-btn-row-vdivider {
+  align-self: stretch;
+  width: 1px;
+  background: var(--rc-silver);
+  margin: 0 4px;
+}
+
 /* Wizard Next/Back only ("Make the Next and Back buttons slightly less
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
    so Save & Close / Create Season / League Management's row stay put. */
