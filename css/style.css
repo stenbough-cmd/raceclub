@@ -3585,34 +3585,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   box-shadow: 0 14px 30px rgba(23, 23, 23, 0.12);
   border-color: var(--rc-carbon);
 }
-/* "What You'll Need" cards -- brushed-nickel background (2026-09-14,
-   Matt's call: "more of a brushed nickle coloring instead of aluminum" --
-   replaces the previous same-day aluminum pass). .rc-highlight-card is
-   shared with the "Why Race Club" section above (see that section's own
-   HTML comment), so this is scoped to just .rc-needs-section's copies
-   rather than restyling .rc-highlight-card itself -- the Why Race Club
-   cards stay plain white. Two layers: a 160deg two-tone sheen gradient
-   (same technique as the Class Tiers cards below,
-   .rc-tier-bronze/-silver/-gold/-platinum), a warmer, muted gray family
-   than aluminum's near-white one, since real brushed nickel is a duller
-   satin metal, not a bright polished one -- plus a fine
-   repeating-linear-gradient hairline layer on top of it, angled close to
-   the sheen's own diagonal, which is what actually reads as "brushed"
-   texture rather than a flat two-tone gradient. Lightened a step
-   (2026-09-14, same day) after Matt flagged the card text (.rc-steel)
-   being hard to read against the original darker stops -- the darkest
-   stop (was #a29e94) came up the most so the card's midtone stays
-   readable, with the others raised to match; border/hover colors raised
-   to stay in step with the new fill. */
-.rc-needs-section .rc-highlight-card {
-  background:
-    repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.12) 0px, rgba(255, 255, 255, 0.12) 1px, rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0.05) 2px),
-    linear-gradient(160deg, #edece8 0%, #d6d2c8 35%, #b7b2a6 60%, #d2cec3 100%);
-  border-color: #b0ab9d;
-}
-.rc-needs-section .rc-highlight-card:hover {
-  border-color: #948d7c;
-}
+/* "What You'll Need" cards -- reverted to plain white (2026-09-14). Was
+   briefly a brushed-nickel background per Matt's earlier call, then
+   lightened once for text contrast, then Matt decided to just go back to
+   white like the cards started -- .rc-highlight-card's own white/border
+   styling above already covers this section with no override needed. */
 .rc-highlight-icon {
   width: 44px;
   height: 44px;
