@@ -3593,20 +3593,25 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    rather than restyling .rc-highlight-card itself -- the Why Race Club
    cards stay plain white. Two layers: a 160deg two-tone sheen gradient
    (same technique as the Class Tiers cards below,
-   .rc-tier-bronze/-silver/-gold/-platinum), now a warmer, more muted,
-   noticeably deeper gray family than aluminum's near-white one, since
-   real brushed nickel is a duller satin metal, not a bright polished
-   one -- plus a fine repeating-linear-gradient hairline layer on top of
-   it, angled close to the sheen's own diagonal, which is what actually
-   reads as "brushed" texture rather than a flat two-tone gradient. */
+   .rc-tier-bronze/-silver/-gold/-platinum), a warmer, muted gray family
+   than aluminum's near-white one, since real brushed nickel is a duller
+   satin metal, not a bright polished one -- plus a fine
+   repeating-linear-gradient hairline layer on top of it, angled close to
+   the sheen's own diagonal, which is what actually reads as "brushed"
+   texture rather than a flat two-tone gradient. Lightened a step
+   (2026-09-14, same day) after Matt flagged the card text (.rc-steel)
+   being hard to read against the original darker stops -- the darkest
+   stop (was #a29e94) came up the most so the card's midtone stays
+   readable, with the others raised to match; border/hover colors raised
+   to stay in step with the new fill. */
 .rc-needs-section .rc-highlight-card {
   background:
     repeating-linear-gradient(100deg, rgba(255, 255, 255, 0.12) 0px, rgba(255, 255, 255, 0.12) 1px, rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0.05) 2px),
-    linear-gradient(160deg, #e7e4df 0%, #c8c4bb 35%, #a29e94 60%, #c3bfb6 100%);
-  border-color: #a29e94;
+    linear-gradient(160deg, #edece8 0%, #d6d2c8 35%, #b7b2a6 60%, #d2cec3 100%);
+  border-color: #b0ab9d;
 }
 .rc-needs-section .rc-highlight-card:hover {
-  border-color: #85806f;
+  border-color: #948d7c;
 }
 .rc-highlight-icon {
   width: 44px;
