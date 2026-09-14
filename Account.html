@@ -5642,7 +5642,7 @@
     // edit" call). The backend already required Admin here
     // (handleUpdateSeason, DataCache.gs, requireRole(admin, ['Admin']));
     // an Organizer viewer no longer gets a button that was never going
-    // to work for them, same reasoning as Delete below.
+    // to work for them.
     if (currentProfile && currentProfile.role === 'Admin') {
       var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
       editBtn.type = 'button';
@@ -5650,45 +5650,12 @@
       btnGroup.appendChild(editBtn);
     }
 
-    // Delete -- sits between Edit Season and the races disclosure arrow
-    // (2026-09-14, Matt's call: "put the DELETE button for the season in
-    // between the arrow and EDIT button"), moved up from after the arrow.
-    // Still Admin-only (2026-09-14, unchanged from the day before) -- the
-    // backend already enforced this (handleAdminDeleteSeason, DataCache.gs,
-    // requireRole(admin, ['Admin'])).
-    if (!s.locked && currentProfile && currentProfile.role === 'Admin') {
-      var deleteBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
-      deleteBtn.type = 'button';
-      // Plain gray, not red (2026-09-13) -- this button only opens the
-      // confirm popup, it doesn't itself delete anything; the popup's own
-      // Delete button is the one that's actually red, since that's the
-      // click that writes. See the sitewide button rule in style.css.
-      deleteBtn.addEventListener('click', function () {
-        openConfirmModal('Delete Season', 'Permanently delete "' + (s.name || s.seasonId) + '"? This removes its rounds and registrations too. This can\'t be undone.', 'Delete', function () {
-          // Instant, no wait on the server (2026-09-03, Matt's call: "all
-          // the admin/data management functions work the same" as the
-          // rest of the site). The row disappears from the list the
-          // moment Delete is confirmed; the actual delete happens
-          // silently in the background. A failure puts the row back and
-          // explains why via toast, since it was never actually deleted.
-          var nextSibling = row.nextSibling;
-          var parent = row.parentNode;
-          if (parent) parent.removeChild(row);
-          fetchApi('adminDeleteSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
-            if (!data.success) {
-              if (parent) parent.insertBefore(row, nextSibling);
-              showToast(data.message || 'Could not delete this season -- restored.', 'error');
-              return;
-            }
-            if (reload) reload();
-          }).catch(function () {
-            if (parent) parent.insertBefore(row, nextSibling);
-            showToast('Could not reach the server -- season not deleted.', 'error');
-          });
-        });
-      });
-      btnGroup.appendChild(deleteBtn);
-    }
+    // Delete removed from this row entirely (2026-09-14, Matt's call:
+    // "Remove DELETE from the Season buttons so that only EDIT SEASON
+    // and the arrow is there") -- only Edit Season and the races
+    // disclosure arrow remain per-row. adminDeleteSeason (DataCache.gs)
+    // is untouched server-side; there's just no button wired to it here
+    // anymore.
 
     // Races (2026-09-07) -- replaces the old standalone Race Ingestion
     // container: instead of a separate "pick a round from a dropdown"
@@ -9380,16 +9347,33 @@
     // button here, with its own vertical divider (rc-btn-row-vdivider,
     // style.css) marking it off from the rest -- Matt's explicit ask,
     // since it's the one button here that actually creates something new
-    // rather than opening an editor popup. Clear Season Draft and End
-    // Season (both previously living in the deleted Seasons panel) join
-    // Members/Tracks/Cars/Sponsors/Economy on the other side of that
-    // divider instead -- only Create a Season itself gets the standalone
-    // treatment.
+    // rather than opening an editor popup. End Season now sits right next
+    // to it, before that same divider (2026-09-14 follow-up, Matt's call:
+    // "Move END SEASON to the right of CREATE SEASON") -- the two season-
+    // lifecycle actions together, everything else (Clear Season Draft,
+    // Members/Tracks/Cars/Sponsors/Economy) on the other side.
     var hasDraft = !!loadWizardDraft();
     var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
     createSeasonBtn.type = 'button';
     createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
     row.appendChild(createSeasonBtn);
+
+    // End Season -- moved here from League Management (2026-09-09, Matt's
+    // call), then from its own now-deleted Seasons panel into this row
+    // (2026-09-14), then right next to Create a Season within this same
+    // row (2026-09-14 follow-up). This page has no single season already
+    // in hand the way each League Management row did, so the button opens
+    // the season-picker popup first (openEndSeasonModal), which chains
+    // into the same typed "END SEASON" confirmation before anything
+    // actually happens server-side.
+    var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
+    endSeasonBtn.type = 'button';
+    // Plain gray, not red -- opens the season-picker/confirm chain, doesn't
+    // end the season by itself.
+    endSeasonBtn.addEventListener('click', function () {
+      openEndSeasonModal(token, function () { renderAdminSection(token); });
+    });
+    row.appendChild(endSeasonBtn);
 
     row.appendChild(el('div', 'rc-btn-row-vdivider'));
 
@@ -9432,22 +9416,6 @@
     economyBtn.type = 'button';
     economyBtn.addEventListener('click', function () { openEconomyModal(token); });
     row.appendChild(economyBtn);
-
-    // End Season -- moved here from League Management (2026-09-09, Matt's
-    // call), then from its own now-deleted Seasons panel into this same
-    // Data Management row (2026-09-14). This page has no single season
-    // already in hand the way each League Management row did, so the
-    // button opens the season-picker popup first (openEndSeasonModal),
-    // which chains into the same typed "END SEASON" confirmation before
-    // anything actually happens server-side.
-    var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
-    endSeasonBtn.type = 'button';
-    // Plain gray, not red -- opens the season-picker/confirm chain, doesn't
-    // end the season by itself (see Delete Season's comment above).
-    endSeasonBtn.addEventListener('click', function () {
-      openEndSeasonModal(token, function () { renderAdminSection(token); });
-    });
-    row.appendChild(endSeasonBtn);
 
     panel.appendChild(row);
     section.appendChild(panel);
