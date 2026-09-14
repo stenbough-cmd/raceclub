@@ -3752,50 +3752,66 @@
     // team popup"). Joining a team now locks in immediately on click, with
     // no separate sponsor-pick screen in between -- straight from "Join
     // This Team" into the signing sequence.
-    // Deliberately left waiting on the server (2026-09-03 pass -- every
-    // other save on this page went instant/optimistic per Matt's
-    // standing rule, but this one specifically shouldn't): a team seat is
-    // a shared, exclusive resource another driver can grab in the same
-    // instant ("That seat was just taken" is a real, not-rare failure
-    // here, unlike a sponsor pick or a wager), and success plays the
-    // full-screen "EPIC" signing sequence right after -- there's no
-    // tasteful way to play that irreversible moment optimistically and
-    // then yank it back if the seat turns out to have been taken a
-    // second earlier. The button still gives immediate feedback
-    // ("Locking In...") rather than sitting inert.
+    //
+    // REWORKED (2026-09-14, Matt's bug report): this used to wait on the
+    // joinTeam response (a "Locking In..." disabled button) before ever
+    // opening the signing sequence -- reasoned at the time (2026-09-03) as
+    // the one save on this page that SHOULDN'T go optimistic, since a
+    // team seat is a shared, exclusive resource someone else can grab in
+    // the same instant, and there's no tasteful way to play the "EPIC"
+    // signing video and then yank it back. In practice that wait was the
+    // bug: Apps Script can take longer to finish a write than the
+    // browser's own connection is willing to wait, so the fetch call
+    // itself fails/errors out ("Could not reach the server") even though
+    // Apps Script keeps running server-side and the join goes through
+    // anyway -- confirmed by Matt: closing the error and reloading showed
+    // him already registered into that seat. So the wait was both the
+    // worse experience AND actively misleading about whether anything had
+    // failed.
+    //
+    // Now: the joinTeam call fires immediately, but the driver is never
+    // made to wait on it -- the signing sequence (suspense -> video ->
+    // reveal, several seconds on its own) opens right away, in parallel,
+    // giving Apps Script's response far more time to actually come back
+    // before anything depends on it. The result is only checked once the
+    // driver hits Continue on the reveal screen: by then it's almost
+    // always already resolved, so Continue still feels instant; on the
+    // rare case it's still in flight, this simply waits right there
+    // instead of up front. Either a real failure (TEAM_TAKEN) or the
+    // exact "connection dropped, but Apps Script may have written it
+    // anyway" case above reload straight into a fresh fetch of the
+    // dashboard rather than asserting success or failure from here --
+    // only the Registrations sheet itself can say for sure which one
+    // happened, and rcReloadAfterSave() re-fetches from it.
     function doJoinTeamDirect(team, carClass, joinBtn) {
       joinBtn.disabled = true;
-      joinBtn.textContent = 'Locking In...';
       if (joinBtn.rcErrorLine) joinBtn.rcErrorLine.textContent = '';
-      fetchApi('joinTeam', { method: 'POST', token: token, body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId } }).then(function (data) {
-        if (!data.success) {
-          joinBtn.disabled = false;
-          joinBtn.textContent = 'Join This Team';
-          if (joinBtn.rcErrorLine) {
-            joinBtn.rcErrorLine.textContent = data.message || (data.error === 'TEAM_TAKEN' ? 'That seat was just taken. Pick a different team.' : 'Could not complete registration.');
-          }
-          if (data.error === 'TEAM_TAKEN') showTeamScreen(carClass);
-          return;
-        }
-        // Registration itself is done the instant the API call above
-        // succeeds -- everything from here down is presentation. The old
-        // immediate toast+close (now moved into finishRegistration below)
-        // is deferred until the driver has actually watched the signing
-        // sequence and hit Continue on the congratulations screen (Matt's
-        // call, 2026-08-30: "I want this to feel EPIC").
-        function finishRegistration() {
-          showToast('You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
-          // Registering for a season dismisses its bell notification the
-          // same way closing the bell after seeing it would (Matt's call,
-          // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
-          if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+
+      var joinPromise = fetchApi('joinTeam', { method: 'POST', token: token, body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId } });
+
+      function finishRegistration() {
+        showToast('You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
+        // Registering for a season dismisses its bell notification the
+        // same way closing the bell after seeing it would (Matt's call,
+        // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
+        if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+        rcReloadAfterSave();
+      }
+
+      openSigningSequence(team, carClass, function () {
+        joinPromise.then(function (data) {
+          if (data && data.success) { finishRegistration(); return; }
+          showToast((data && data.message) || (data && data.error === 'TEAM_TAKEN' ? 'That seat was just taken -- reloading to show what\'s still open.' : 'Could not confirm this registration -- reloading to check.'), 'error');
           rcReloadAfterSave();
-        }
-        openSigningSequence(team, carClass, finishRegistration);
-      }).catch(function () {
-        joinBtn.disabled = false;
-        joinBtn.textContent = 'Join This Team';
-        if (joinBtn.rcErrorLine) joinBtn.rcErrorLine.textContent = 'Could not reach the server. Try again in a moment.';
+        }).catch(function () {
+          // The connection to Apps Script itself dropped/errored -- this
+          // is the exact case from Matt's bug report, where the join had
+          // actually gone through server-side anyway. No way to tell from
+          // here, so reload and let the real Registrations data answer it
+          // rather than telling the driver it failed when it may not have.
+          showToast('Reloading to confirm your registration...', 'success');
+          rcReloadAfterSave();
+        });
       });
     }
 
