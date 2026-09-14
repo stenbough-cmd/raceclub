@@ -966,6 +966,26 @@
       if (rcActiveModalCloseFn) rcActiveModalCloseFn();
       return;
     }
+    // Dashboard rebuilt in place now instead of falling through to a full
+    // window.location.reload() (2026-09-14 fix, Matt's report: "Could not
+    // reach the server" right after joining a team). Dashboard was never
+    // in RC_LAZY_SECTION_RENDERERS -- it's built unconditionally up front,
+    // not fetch-on-click -- so it used to be the one section that fell
+    // through to a hard reload after every save. A hard reload re-runs the
+    // ENTIRE page bootstrap: a fresh getProfile call (profile hasn't
+    // actually changed, just refetched anyway) PLUS a fresh combined
+    // getDashboardData call, fired right after whatever heavy write just
+    // happened (joinTeam especially -- Registration/Team/Transaction rows,
+    // sponsor bookkeeping) is still the freshest thing Apps Script has
+    // done for this user. currentProfile/currentToken (set once in
+    // buildFullProfileUI) are already in hand -- there's no need to
+    // refetch the profile at all, only the dashboard's own data, exactly
+    // like onRegisteredRebuild already does inside renderDashboardSection.
+    if (sectionId === 'dashboard' && currentProfile && currentToken) {
+      renderDashboardSection(currentProfile, currentToken, fetchDashboardData(currentToken));
+      if (rcActiveModalCloseFn) rcActiveModalCloseFn();
+      return;
+    }
     var targetHash = '#' + encodeURIComponent(sectionId);
     if (window.location.hash !== targetHash) window.location.hash = targetHash;
     window.location.reload();
@@ -3856,21 +3876,41 @@
 
       function finishRegistration() {
         showToast('You’re registered! Pick your sponsors any time from the Sponsors page.', 'success');
-        // Registering for a season dismisses its bell notification the
-        // same way closing the bell after seeing it would (Matt's call,
-        // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
-        if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
-        // Bug fix (2026-09-14, Matt's report: "no notification to choose
-        // sponsors in the bell after buying a seat"). The "Choose your
-        // sponsors" notification is derived live off getMySponsors (see
-        // _rcFetchSponsorNotifications, header.js) and only recomputed
-        // when the bell actually re-fetches -- normally just the 45s poll
-        // tick, same gap chooseSponsors' own save already fixed itself
-        // (rcRefreshNotificationsNow below, mirroring that same call).
-        // Without forcing it here, a driver who checks the bell right
-        // after joining sees nothing yet, same as before this fix.
-        if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
+        // Dashboard rebuild fires first, immediately -- it's the thing the
+        // driver is actually looking at and waiting on.
         rcReloadAfterSave();
+        // Notification bell refresh, staggered a beat behind it
+        // (2026-09-14 fix, Matt's report: "Could not reach the server"
+        // right after joining a team). This used to fire in the exact
+        // same breath as the dashboard reload: rcDismissSeasonNotification
+        // (1 call) plus rcRefreshNotificationsNow's own 3 concurrent
+        // fetches (see _rcRefreshNotifications, header.js) plus the
+        // dashboard rebuild's own call -- 5 near-simultaneous Apps Script
+        // requests from this one user, right on top of joinTeam's own
+        // heavy write (Registration/Team/Transaction rows, sponsor
+        // bookkeeping). Apps Script queues same-user requests rather than
+        // truly running them in parallel, so that pileup is exactly the
+        // kind of thing that produces a timed-out/failed request. None of
+        // this is as time-critical as the dashboard itself, so it's
+        // delayed just long enough to land after the dashboard's own
+        // request is already underway instead of racing it.
+        setTimeout(function () {
+          // Registering for a season dismisses its bell notification the
+          // same way closing the bell after seeing it would (Matt's call,
+          // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
+          if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+          // Bug fix (2026-09-14, Matt's report: "no notification to
+          // choose sponsors in the bell after buying a seat"). The
+          // "Choose your sponsors" notification is derived live off
+          // getMySponsors (see _rcFetchSponsorNotifications, header.js)
+          // and only recomputed when the bell actually re-fetches --
+          // normally just the 45s poll tick, same gap chooseSponsors' own
+          // save already fixed itself (rcRefreshNotificationsNow below,
+          // mirroring that same call). Without forcing it here, a driver
+          // who checks the bell right after joining sees nothing yet,
+          // same as before this fix.
+          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
+        }, 1500);
       }
 
       openSigningSequence(team, carClass, function () {

@@ -44,17 +44,24 @@ function apiBaseUrlIsUnset() {
 // being far short of "the driver gives up and reloads."
 var RC_FETCH_TIMEOUT_MS = 20000;
 
-// One automatic retry after a short pause (2026-09-14, same report: "no
-// season is currently open" shown when one genuinely was). A transient
-// failure -- a timeout, a dropped connection, or Apps Script returning a
-// non-JSON error page under load -- used to be indistinguishable from a
-// real "no" answer by the time it reached calling code, since every caller
-// across the site treats a rejected fetchApi promise as "there's nothing
-// here" (see e.g. registrationStatusCard's renderUnregistered in
-// Account.html). Retrying once, silently, before actually giving up cuts
-// out the single most common cause of that: one bad round trip, on a site
-// with no other retry logic anywhere in the request path.
-var RC_FETCH_RETRY_DELAY_MS = 700;
+// Automatic retries after a short, then longer, pause (2026-09-14, same
+// report: "no season is currently open" shown when one genuinely was, plus
+// a follow-up report that a single retry still wasn't enough headroom
+// under real load). A transient failure -- a timeout, a dropped
+// connection, or Apps Script returning a non-JSON error page under load --
+// used to be indistinguishable from a real "no" answer by the time it
+// reached calling code, since every caller across the site treats a
+// rejected fetchApi promise as "there's nothing here" (see e.g.
+// registrationStatusCard's renderUnregistered in Account.html). Two
+// retries, backing off (700ms, then 2500ms) rather than hammering
+// immediately, gives Apps Script's own same-user request queue real time
+// to drain between attempts instead of just adding a 3rd request to the
+// same pileup that likely caused the failure in the first place.
+var RC_FETCH_RETRY_DELAYS_MS = [700, 2500];
+
+// GET-only (see fetchApi below for why) -- every GET action in this
+// codebase is a pure read, so retrying one is always safe: worst case, it
+// re-reads data that hasn't changed. A POST is never blindly retried here.
 
 function _rcFetchOnce_(url, fetchOpts) {
   // AbortController -- not supported on truly ancient browsers, but every
@@ -111,12 +118,26 @@ function _rcFetchOnce_(url, fetchOpts) {
  * avoids the preflight; the server still parses the body as JSON
  * regardless of the declared content type. Do not change this.
  *
- * Times out after RC_FETCH_TIMEOUT_MS and retries once after
- * RC_FETCH_RETRY_DELAY_MS before finally rejecting (2026-09-14) -- see the
- * comments on those constants above. Every existing caller already either
- * chains .then/.catch or just awaits the promise, so this is invisible to
- * them except that a single bad round trip no longer has to become a
- * dead spinner or a wrong "nothing here" render.
+ * Times out after RC_FETCH_TIMEOUT_MS. GET requests then retry up to
+ * twice, backing off per RC_FETCH_RETRY_DELAYS_MS, before finally
+ * rejecting (2026-09-14) -- see the comments on those constants above.
+ * Every existing caller already either chains .then/.catch or just awaits
+ * the promise, so this is invisible to them except that a single bad round
+ * trip no longer has to become a dead spinner or a wrong "nothing here"
+ * render.
+ *
+ * POST requests are deliberately NEVER auto-retried here, timeout or not.
+ * A POST is a write (joinTeam, proposeWager, chooseSponsors, an admin
+ * save...) and a timeout does not mean the write failed -- Apps Script may
+ * well keep running and complete it after the client gives up waiting (see
+ * doJoinTeamDirect's own long comment in Account.html, which exists
+ * because of exactly this ambiguity). Blindly retrying a timed-out POST
+ * risks silently DOUBLE-submitting a write the first attempt actually
+ * completed -- a second team purchase, a duplicate wager, a repeated
+ * sponsor pick -- which would be a worse bug than the timeout itself. A
+ * POST's own call site is the right place to decide how to recover from an
+ * ambiguous outcome (reload and check real server state, same pattern
+ * doJoinTeamDirect already uses), not this shared helper.
  */
 function fetchApi(action, options) {
   options = options || {};
@@ -137,11 +158,19 @@ function fetchApi(action, options) {
     fetchOpts.body = JSON.stringify(options.body || {});
   }
 
-  return _rcFetchOnce_(url, fetchOpts).catch(function () {
-    return new Promise(function (resolve, reject) {
-      setTimeout(function () {
-        _rcFetchOnce_(url, fetchOpts).then(resolve, reject);
-      }, RC_FETCH_RETRY_DELAY_MS);
+  if (method === 'POST') return _rcFetchOnce_(url, fetchOpts);
+
+  var attempt = function (retriesLeft) {
+    return _rcFetchOnce_(url, fetchOpts).catch(function (err) {
+      if (!retriesLeft.length) throw err;
+      var delay = retriesLeft[0];
+      var rest = retriesLeft.slice(1);
+      return new Promise(function (resolve, reject) {
+        setTimeout(function () {
+          attempt(rest).then(resolve, reject);
+        }, delay);
+      });
     });
-  });
+  };
+  return attempt(RC_FETCH_RETRY_DELAYS_MS);
 }
