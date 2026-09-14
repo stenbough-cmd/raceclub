@@ -3795,6 +3795,16 @@
         // same way closing the bell after seeing it would (Matt's call,
         // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
         if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+        // Bug fix (2026-09-14, Matt's report: "no notification to choose
+        // sponsors in the bell after buying a seat"). The "Choose your
+        // sponsors" notification is derived live off getMySponsors (see
+        // _rcFetchSponsorNotifications, header.js) and only recomputed
+        // when the bell actually re-fetches -- normally just the 45s poll
+        // tick, same gap chooseSponsors' own save already fixed itself
+        // (rcRefreshNotificationsNow below, mirroring that same call).
+        // Without forcing it here, a driver who checks the bell right
+        // after joining sees nothing yet, same as before this fix.
+        if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
         rcReloadAfterSave();
       }
 

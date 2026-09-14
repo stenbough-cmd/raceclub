@@ -302,8 +302,22 @@ function _rcFetchNotifications(token, cached) {
 // driver who isn't ready to pick yet can dismiss it by hand too -- picking
 // sponsors later still clears it on its own regardless of ack state, since
 // it just won't be regenerated once hasSponsors is true.
+// FIX (2026-09-14, Matt's report: "no notification to choose sponsors in
+// the bell after buying a seat"). This used to also skip the fetch
+// whenever `cached.role === 'Prospect'` -- `cached` is a snapshot of
+// getProfileCache() taken once, when this page's header first rendered,
+// and never refreshed again for the life of the page (see renderHeader's
+// closure over `cached`, further down this file). An account approved
+// mid-session (Prospect -> Driver) without an intervening page reload
+// keeps that stale 'Prospect' snapshot in the header even though the
+// driver can now join a team -- so this check could silently suppress
+// the notification for the rest of that page view no matter how many
+// times the 45s poll (or rcRefreshNotificationsNow) re-ran it. Dropped
+// entirely: getMySponsors already safely returns hasSeat:false for
+// anyone without a registration, Prospect or not, so the shortcut wasn't
+// needed for correctness, only to skip one harmless extra fetch.
 function _rcFetchSponsorNotifications(token, cached) {
-  if (!cached || cached.role === 'Prospect') return Promise.resolve([]);
+  if (!token) return Promise.resolve([]);
   return fetchApi('getMySponsors', { token: token })
     .then(function (data) {
       if (!data || !data.success || !data.hasSeat || data.hasSponsors || data.locked) return [];
