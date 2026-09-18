@@ -4321,6 +4321,29 @@ body.rc-modal-scroll-locked {
 .rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
 .rc-forced-password-wrap > p { color: var(--rc-steel); margin-bottom: 14px; }
 
+/* Session-expired lock screen (2026-09-18) -- shown in place of the
+   dashboard when the background token check comes back invalid, now
+   that the header paints optimistically instead of waiting for that
+   check first. Same shape as the password-change lock above (one
+   centered panel, sidebar/topbar hidden) but with its own icon-circle +
+   heading treatment since this is a dead end, not a form to fill out. */
+.rc-session-locked-wrap { max-width: 380px; margin: 90px auto; text-align: center; }
+.rc-session-locked-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--rc-offwhite);
+  color: var(--rc-steel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.rc-session-locked-icon svg { width: 26px; height: 26px; }
+.rc-session-locked-wrap h2 { font-size: 19px; }
+.rc-session-locked-wrap p { color: var(--rc-steel); margin-top: 8px; margin-bottom: 22px; line-height: 1.55; }
+.rc-session-locked-wrap .rc-btn-primary { display: inline-block; text-decoration: none; }
+
 /* -------------------------------------------------------------------- */
 /* THEMED TOOLTIP -- generic, sitewide hover bubble. Add class          */
 /* "rc-tooltip" plus a data-tooltip="..." attribute to any element and  */

@@ -109,11 +109,19 @@
 <body>
 
 <div id="rc-header"></div>
-<!-- Logo-only placeholder until we actually know whether this session is
-     valid -- see the LOAD PROFILE section below, which calls the real
-     renderHeader() once its own API call resolves (or forceLoggedOut if
-     it couldn't even reach the server). -->
-<script>renderHeaderPending();</script>
+<!-- Paint the header immediately from whatever's already cached in
+     localStorage (2026-09-18, Matt's call: "paint the avatar immediately
+     ... user experience is paramount, I want the site to feel fast and
+     continuous between pages") -- same renderHeader() index.html already
+     calls on load, so navigating here from anywhere else shows the same
+     avatar without a blank flash while the real check happens in the
+     background. This is optimistic: the LOAD PROFILE section below still
+     verifies the token against the server, and if it turns out to be
+     invalid, showSessionExpiredLock() swaps the whole page (header
+     included, via renderHeader({forceLoggedOut:true})) over to a
+     logged-out state with a link back to login.html -- see that function
+     for the full story. -->
+<script>renderHeader();</script>
 
 <!-- Mobile-only topbar. -->
 <div class="rc-topbar" id="rc-topbar">
@@ -142,6 +150,13 @@
     <!-- Forced password-change lock screen -- shown instead of the
          normal dashboard whenever profile.mustChangePassword is true. -->
     <div id="rc-forced-password" style="display:none;"></div>
+
+    <!-- Session-expired lock screen (2026-09-18) -- shown instead of the
+         normal dashboard when the background token check comes back
+         invalid, now that the header paints optimistically from cache
+         instead of waiting to confirm the session first. See
+         showSessionExpiredLock() below. -->
+    <div id="rc-session-locked" style="display:none;"></div>
 
     <div id="rc-profile-root" style="display:none;">
       <section id="rc-section-dashboard" class="rc-content-section"></section>
@@ -8439,59 +8454,19 @@
 
     renderDashboardSection(profile, token, dashboardData);
 
-    // Silently prefetch Calendar and keep it loaded for the rest of the
-    // session (2026-09-03, Matt's call: "silently load, and keep loaded
-    // the calendar page AFTER the dashboard has completely loaded...
-    // since this page will not change much throughout the season, it can
-    // stay loaded for the session"). Waits on every one of the Dashboard's
-    // own card fetches settling first, rather than firing alongside them
-    // -- Apps Script Web Apps queue same-user fetch() calls somewhat
-    // rather than truly running them in parallel (see the long comment on
-    // fetchDashboardData above), so prefetching Calendar at the same time
-    // would compete with, and slow down, the cards the driver is actually
-    // looking at first. Reuses the exact same "loaded once, stays loaded"
-    // cache showLazySection already relies on (rcLoadedLazySections) --
-    // guarded so this never double-fetches if the driver manually clicks
-    // into Calendar before this background prefetch gets there first.
-    // Extended (2026-09-08, Matt's call: "lazy load all the pages on the
-    // account page AFTER the dashboard has loaded so that flipping through
-    // the pages feels snappy... the user doesn't realize that these were
-    // all loading in the background") from just Calendar to every other
-    // lazy-fetch section EXCEPT Admin and League Management -- those two
-    // stay fetch-on-click only (Matt's call: "don't lazy load ADMIN page or
-    // LEAGUE MANAGEMENT though"), since they're Admin/Organizer-only and
-    // there's no benefit to spending a driver's own page-load budget
-    // silently loading pages most drivers can't even see.
-    //
-    // RC_BACKGROUND_PREFETCH_ORDER is chained ONE AT A TIME with .then,
-    // not fired together with Promise.all, for the same reason Calendar's
-    // own prefetch already waited on the Dashboard cards first: Apps
-    // Script Web Apps queue same-user fetch() calls rather than truly
-    // running them in parallel, so six sections' worth of fetches all
-    // competing at once would slow down whichever one the driver actually
-    // clicks into first. Each render function above now `return`s its own
-    // fetch promise specifically so this chain can wait for one section to
-    // fully settle before starting the next.
-    //
-    // Every step re-checks rcLoadedLazySections right before it runs (not
-    // just once at the top) -- if the driver manually clicks into a page
-    // themselves while this background chain is still working through an
-    // earlier one, showLazySection() (below) will have already set that
-    // section's flag and fetched it directly, so this chain just skips its
-    // own turn for that section instead of double-fetching it.
-    var RC_BACKGROUND_PREFETCH_ORDER = ['calendar', 'results', 'protests'];
-    Promise.all([
-      dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise,
-      dashboardData.nextRacePromise, dashboardData.recentResultsPromise, dashboardData.myProtestsPromise
-    ]).then(function () {
-      return RC_BACKGROUND_PREFETCH_ORDER.reduce(function (chain, id) {
-        return chain.then(function () {
-          if (rcLoadedLazySections[id]) return null;
-          rcLoadedLazySections[id] = true;
-          return RC_LAZY_SECTION_RENDERERS[id](token);
-        });
-      }, Promise.resolve());
-    });
+    // No more background prefetching of Calendar/Results/Protests after
+    // the Dashboard loads (2026-09-18, Matt's call: "kill the load
+    // everything on the page when visiting Account.html... just load the
+    // dashboard, and when someone clicks on a link from the sidebar, then
+    // load that page" -- reversing the 2026-09-03/09-08 calls that put
+    // this prefetch chain here in the first place). Visiting Account.html
+    // now only ever fetches the Dashboard's own cards; every other
+    // section (Calendar, Results, Career, Protests, League Management,
+    // Admin) still loads itself the first time its nav item is actually
+    // clicked, via RC_LAZY_SECTION_RENDERERS/showLazySection below --
+    // that on-click behavior was already there and needed no changes,
+    // this only removes the extra silent fetching that used to run ahead
+    // of it.
 
     // Same-page restore after a popup save (2026-09-01, Matt's call) --
     // see rcReloadAfterSave() above for the full story. Only trusts the
@@ -8567,6 +8542,43 @@
     }
 
     buildFullProfileUI(profile, token, dashboardData);
+  }
+
+  // ---------------------------------------------------------------------
+  // SESSION EXPIRED LOCK (2026-09-18) -- the header now paints
+  // optimistically from cache the instant the page loads (see the
+  // <script>renderHeader() call up top), instead of waiting on the
+  // server to confirm the token first. That's a trade: most of the time
+  // the session really is still valid and the driver gets an instant,
+  // no-flash avatar; but if the background getProfile check below comes
+  // back and says the token is no longer good, we can't just quietly
+  // redirect to login.html anymore -- the driver may have already been
+  // looking at (stale, cached) account chrome for a moment. This swaps
+  // the whole page over to a plain "you got logged out, here's how to
+  // get back in" screen instead, same shape as the mustChangePassword
+  // lock above (sidebar/topbar hidden, one centered panel), so it reads
+  // as an intentional state rather than the page silently vanishing out
+  // from under them.
+  // ---------------------------------------------------------------------
+  function showSessionExpiredLock() {
+    document.getElementById('rc-sidebar').style.display = 'none';
+    document.getElementById('rc-topbar').style.display = 'none';
+    document.getElementById('rc-profile-root').style.display = 'none';
+
+    var lockWrap = document.getElementById('rc-session-locked');
+    lockWrap.style.display = 'block';
+    lockWrap.innerHTML = '';
+
+    var container = el('div', 'rc-session-locked-wrap');
+    container.appendChild(el('div', 'rc-session-locked-icon', ICON_LOCK.replace('width="18" height="18"', 'width="26" height="26"')));
+    container.appendChild(el('h2', 'margin:0 0 8px;', 'Your Session Has Expired'));
+    container.appendChild(el('p', null, 'For your security, you\'ve been logged out. Log back in to keep going.'));
+    var link = document.createElement('a');
+    link.href = 'login.html';
+    link.className = 'rc-btn-primary';
+    link.textContent = 'Log Back In';
+    container.appendChild(link);
+    lockWrap.appendChild(container);
   }
 
   // ---------------------------------------------------------------------
@@ -8647,9 +8659,17 @@
       .then(function () { return fetchApi('getProfile', { token: token }); })
       .then(function (data) {
         if (!data.success) {
+          // Token confirmed invalid/expired by the server (2026-09-18,
+          // Matt's call) -- no more silently yanking the driver away to
+          // login.html mid-read. clearToken() still actually logs them
+          // out locally, and the header swaps from its optimistic
+          // (possibly stale) logged-in avatar to a plain logged-out
+          // state, but the page itself stays put and explains what
+          // happened via showSessionExpiredLock() instead of vanishing.
           clearToken();
-          sessionStorage.setItem('raceclub_login_message', 'Your session expired. Please log in again.');
-          window.location.href = 'login.html';
+          renderHeader({ forceLoggedOut: true });
+          document.getElementById('rc-loading').style.display = 'none';
+          showSessionExpiredLock();
           return;
         }
         setProfileCache(data.profile); // keeps the header avatar current on every other page too
@@ -8659,7 +8679,13 @@
         renderProfile(data.profile, token, dashboardData);
       })
       .catch(function () {
-        renderHeader({ forceLoggedOut: true });
+        // Couldn't even REACH the server -- unlike the branch above, this
+        // says nothing about whether the token itself is still good (see
+        // the long-standing comment on renderHeader's opts.forceLoggedOut
+        // in js/header.js), so the header is deliberately left exactly as
+        // it was optimistically painted on page load instead of being
+        // forced to a logged-out state over what might just be a dropped
+        // connection.
         document.getElementById('rc-loading').style.display = 'none';
         var err = document.getElementById('rc-error');
         err.style.display = 'block';
