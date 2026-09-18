@@ -111,12 +111,24 @@
   intro tagline ("buy into a team" -> "join a real team", dropped "build a
   bank balance", which no longer exists), the "Real Teams, Real Seats" and
   "A Fresh Grid, Every Season" highlight cards (both said "Buy into"), and
-  the closing CTA ("pay the buy-in" removed entirely). The "Why Race Club"
-  section comment's stale "Six ... cards" count fixed to five (it's been
-  five since the Sponsors/Money cards were pulled in an earlier pass). No
-  markup, styling, or the live Meet The Grid data-fetch changed -- that
-  backend (handleGetGridTeaser/_rcGridTeaserPool_, Website.gs) never
-  touched money/sponsors to begin with and is untouched by any of this.
+  the closing CTA ("pay the buy-in" removed entirely). No markup, styling,
+  or the live Meet The Grid data-fetch changed -- that backend
+  (handleGetGridTeaser/_rcGridTeaserPool_, Website.gs) never touched
+  money/sponsors to begin with and is untouched by any of this.
+
+  WHAT CHANGED IN THIS PASS (2026-09-18, same session, two follow-up
+  calls):
+  1) "What You'll Need" no longer shares .rc-highlight-grid/-card/-icon
+     with "Why Race Club" -- it now has its own .rc-needs-* markup and CSS
+     (full-bleed dark band, plain icon-left list instead of white cards),
+     so the two sections read as visually distinct instead of the same
+     component repeated with different text. See the section's own
+     comment below for the reasoning.
+  2) Added a 6th "Why Race Club" card, "Every Race, Tracked" -- points out
+     the site itself (results pulled straight from real race data via
+     Ingestion.gs's XML import, not hand-typed) as its own selling point
+     alongside the five existing claims. Card count comment above updated
+     back to six.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -169,7 +181,7 @@
     </div>
   </section>
 
-  <!-- "Why Race Club" -- the recruiting section. Five short highlight
+  <!-- "Why Race Club" -- the recruiting section. Six short highlight
        cards, each icon + headline + one line, built specifically so this
        reads as scannable claims instead of another paragraph of copy. -->
   <section class="rc-landing-section rc-why-section">
@@ -224,6 +236,14 @@
           <p>Seats reset when a season ends, but your career record carries forward. Join a new team and write the next chapter.</p>
         </div>
 
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M7 15l4-5 3 3 5-7"></path></svg>
+          </div>
+          <h3>Every Race, Tracked</h3>
+          <p>Results are pulled straight from your actual league race data, not typed in by hand. Standings, points, and your driving record update the moment a round is scored.</p>
+        </div>
+
       </div>
     </div>
   </section>
@@ -269,41 +289,53 @@
     </div>
   </section>
 
-  <!-- "What You'll Need" (2026-09-13, Matt's ask) -- reuses the exact
-       same .rc-highlight-grid/.rc-highlight-card/.rc-highlight-icon
-       component the "Why Race Club" section above already defines
-       (generic, not scoped to that section), just with a second set of
-       cards, so this doesn't need any new CSS of its own. -->
+  <!-- "What You'll Need" (2026-09-13, Matt's ask; given its own distinct
+       look 2026-09-18, Matt's follow-up call: "make WHAT YOU'LL NEED
+       section look different than THE EXPERIENCE section" -- both used to
+       share .rc-highlight-grid/.rc-highlight-card/.rc-highlight-icon
+       verbatim, which read as the same section repeated with new text.
+       This one now gets its own markup (.rc-needs-*, scoped CSS below) --
+       full-bleed dark band instead of white cards on the off-white page,
+       and a plain numbered checklist instead of icon-top boxes, so it
+       reads as "here's what to line up before you join" rather than
+       another set of pitch claims. Same three items, same icons, just a
+       different frame -- nothing about "The Experience" section changed. -->
   <section class="rc-landing-section rc-needs-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">Before You Join</div>
       <h2>What You'll Need</h2>
       <p class="rc-landing-tagline">Race Club runs on real simracing hardware and a real league schedule, not a browser tab.</p>
 
-      <div class="rc-highlight-grid">
+      <div class="rc-needs-list">
 
-        <div class="rc-highlight-card">
-          <div class="rc-highlight-icon">
+        <div class="rc-needs-item">
+          <div class="rc-needs-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>
           </div>
-          <h3>Le Mans Ultimate</h3>
-          <p>Every race happens in LMU itself. You'll need your own copy of the game and a PC that can run it.</p>
+          <div class="rc-needs-body">
+            <h3>Le Mans Ultimate</h3>
+            <p>Every race happens in LMU itself. You'll need your own copy of the game and a PC that can run it.</p>
+          </div>
         </div>
 
-        <div class="rc-highlight-card">
-          <div class="rc-highlight-icon">
+        <div class="rc-needs-item">
+          <div class="rc-needs-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M3 12h4"></path><path d="M17 12h4"></path></svg>
           </div>
-          <h3>A Wheel Or Controller</h3>
-          <p>Bring whatever setup you already race with. A wheel and pedals are recommended, but not required to join.</p>
+          <div class="rc-needs-body">
+            <h3>A Wheel Or Controller</h3>
+            <p>Bring whatever setup you already race with. A wheel and pedals are recommended, but not required to join.</p>
+          </div>
         </div>
 
-        <div class="rc-highlight-card">
-          <div class="rc-highlight-icon">
+        <div class="rc-needs-item">
+          <div class="rc-needs-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           </div>
-          <h3>Discord</h3>
-          <p>Race Club's community, scheduling, and results all run through our Discord server.</p>
+          <div class="rc-needs-body">
+            <h3>Discord</h3>
+            <p>Race Club's community, scheduling, and results all run through our Discord server.</p>
+          </div>
         </div>
 
       </div>
