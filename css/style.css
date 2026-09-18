@@ -4315,8 +4315,8 @@ body.rc-modal-scroll-locked {
    darker than the page's own off-white background, no box around it --
    reads as an intentional state, not another wall of text. */
 .rc-empty-state { text-align: center; padding: 90px 20px; }
-.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 18px; }
-.rc-empty-state-icon svg { width: 64px; height: 64px; }
+.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 26px; }
+.rc-empty-state-icon svg { width: 160px; height: 160px; }
 .rc-empty-state-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; color: var(--rc-steel); letter-spacing: 0.02em; }
 .rc-empty-state-subtitle { font-size: 13px; color: var(--rc-steel); opacity: 0.75; margin-top: 8px; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 

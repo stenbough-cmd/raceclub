@@ -4557,6 +4557,15 @@
         section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the Protest page right now.'));
         return;
       }
+      // Same "no season" empty state as Calendar/Results/Career
+      // (2026-09-18, Matt's call: add Protests to that list) --
+      // handleGetProtestFilingOptions already returns hasSeason:false
+      // when there's no active season calendar, same signal Calendar and
+      // Results already gate on.
+      if (!filing.hasSeason) {
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
+        return;
+      }
 
       section.appendChild(buildProtestFormPanel(token, filing.rounds || [], filing.myProfileId, function () { renderProtestsSection(token); }));
       section.appendChild(buildMyProtestsHistoryPanel(token, mine && mine.success ? (mine.protests || []) : [], (mine && mine.totalCount) || 0, function () { renderProtestsSection(token); }));
