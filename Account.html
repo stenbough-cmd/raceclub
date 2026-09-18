@@ -7410,7 +7410,7 @@
         token,
         reload
       );
-    });
+    }, { label: 'Add Driver', onClick: function (reload) { openAddDriverModal(token, reload); } });
   }
 
   function openTracksModal(token) {
@@ -8159,6 +8159,111 @@
           group.appendChild(row);
         });
       }
+    });
+  }
+
+  // Add Driver (2026-09-19, Matt's ask: "give me the ability to add
+  // drivers in the members list as an admin") -- Username/First/Last/
+  // Suffix/Email, same identity fields as Edit Driver above minus
+  // Location/Time Zone/Role (new accounts always start Role: Driver,
+  // Status: Active; Location/Time Zone can be filled in later from this
+  // same Edit Driver popup). Backed by adminAddDriver, which generates a
+  // random temporary password server-side -- unlike every other Add-X
+  // popup on this page, this one deliberately stays open through the
+  // save (same "Saving..." pattern openNewsPostModal uses, for the same
+  // reason: there's a one-time value the admin needs to actually see
+  // before the popup can close) and then swaps its own body for a
+  // confirmation screen showing that password, since it's never
+  // recoverable again after this screen closes. The new driver can also
+  // always get in on their own afterward via the ordinary Forgot
+  // Password email flow.
+  function openAddDriverModal(token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Username'));
+    var username = el('input'); username.type = 'text'; username.required = true;
+    form.appendChild(username);
+
+    form.appendChild(el('label', null, 'First Name'));
+    var firstName = el('input'); firstName.type = 'text'; firstName.required = true;
+    form.appendChild(firstName);
+
+    form.appendChild(el('label', null, 'Last Name'));
+    var lastName = el('input'); lastName.type = 'text'; lastName.required = true;
+    form.appendChild(lastName);
+
+    form.appendChild(el('label', null, 'Suffix (optional)'));
+    var suffix = document.createElement('select');
+    var suffixBlank = document.createElement('option'); suffixBlank.value = ''; suffixBlank.textContent = 'None';
+    suffix.appendChild(suffixBlank);
+    (typeof DRIVER_NAME_SUFFIXES !== 'undefined' ? DRIVER_NAME_SUFFIXES : []).forEach(function (s) {
+      var opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+      suffix.appendChild(opt);
+    });
+    form.appendChild(suffix);
+
+    form.appendChild(el('label', null, 'Email Address'));
+    var email = el('input'); email.type = 'email'; email.required = true;
+    form.appendChild(email);
+    form.appendChild(el('div', 'rc-hint', 'Used for password-reset delivery only -- this driver logs in with their username, not this email.'));
+
+    var saveBtn = el('button', null, 'Add Driver');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var modalHandle = showModal('Add Driver', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
+        showToast('Username, first name, last name, and email are required.', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      fetchApi('adminAddDriver', {
+        method: 'POST', token: token,
+        body: {
+          username: username.value.trim(), firstName: firstName.value.trim(),
+          lastName: lastName.value.trim(), suffix: suffix.value, email: email.value.trim()
+        }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Add Driver';
+            showToast(data.message || 'Could not add this driver -- try again.', 'error');
+            return;
+          }
+          if (reload) reload(); else rcReloadAfterSave();
+
+          // Swap the form out for a one-time confirmation screen -- the
+          // temp password is only ever returned in this one response, so
+          // it has to be shown here or it's gone for good.
+          body.innerHTML = '';
+          body.appendChild(el('div', 'rc-message rc-ok', 'Driver account created.'));
+          var credWrap = el('div', 'margin-top:14px;');
+          credWrap.appendChild(el('label', 'margin-top:0;', 'Username'));
+          credWrap.appendChild(el('div', 'rc-dm-row-label', escapeHtml(username.value.trim())));
+          credWrap.appendChild(el('label', null, 'Temporary Password'));
+          var pwEl = el('div', 'rc-dm-row-label', escapeHtml(data.tempPassword));
+          pwEl.style.userSelect = 'all';
+          pwEl.style.fontFamily = 'monospace';
+          credWrap.appendChild(pwEl);
+          body.appendChild(credWrap);
+          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(firstName.value.trim()) + '. They can also set their own password anytime via Forgot Password on the login page, using ' + escapeHtml(email.value.trim()) + '.'));
+        })
+        .catch(function (err) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Add Driver';
+          showToast((err && err.message) || 'Could not reach the server -- driver not added.', 'error');
+        });
     });
   }
 
