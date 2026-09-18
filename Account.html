@@ -1437,7 +1437,7 @@
     // is, so the plain text node and the star span were sitting flush
     // against each other with nothing between them.
     if (isSpecial) nameWrap.appendChild(document.createTextNode(' '));
-    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- money only, no championship points.'));
+    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     info.appendChild(nameWrap);
 
     // Same track-name/layout text treatment as the Calendar page's own
@@ -3794,7 +3794,7 @@
     var head = el('div', 'rc-cal-race-head');
     var nameWrap = el('div', 'rc-cal-race-name');
     nameWrap.appendChild(document.createTextNode(entry.eventName || (isSpecial ? 'Special Event' : ('Round ' + entry.roundNum))));
-    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- money only, no championship points.'));
+    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     head.appendChild(nameWrap);
     body.appendChild(head);
 
@@ -3826,9 +3826,9 @@
     stats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
     if (entry.passwordOverride) stats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
     if (isSpecial) {
-      var poolTotal = (entry.moneyPlaces || []).reduce(function (s, v) { return s + (Number(v) || 0); }, 0) +
-        Object.keys(entry.bonusPayouts || {}).reduce(function (s, k) { return s + (Number(entry.bonusPayouts[k]) || 0); }, 0);
-      stats.appendChild(calStat(ICON_FLAG, 'Prize Pool $' + poolTotal.toLocaleString(), 'Top 10 money payout + bonus categories', 'rc-cal-stat-gold'));
+      // Prize Pool stat removed entirely 2026-09-18 -- Matt's call: Special
+      // Events are just fun races now, no money/prize payouts. See
+      // season-1-mvp-scope.md.
     } else if (entry.raceLengthTier) {
       stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthTier, 'Race length tier'));
     }
@@ -4811,23 +4811,15 @@
   // disables consumption entirely.
   var RACE_SETTINGS_MULTIPLIER_OPTIONS = ['Off', 'Realistic', '2x', '3x'];
 
-  // Special events are strictly money -- no championship points -- split
-  // two ways: a top-10 finishing pool (default $15,000 total) and a
-  // handful of fun one-off categories each with their own payout.
-  var SPECIAL_EVENT_MONEY_PLACES_DEFAULT = [4000, 2800, 2200, 1700, 1300, 1000, 800, 600, 400, 200]; // sums to $15,000
-  var SPECIAL_EVENT_BONUS_CATEGORIES = [
-    { key: 'fastestLap', label: 'Fastest Lap' },
-    { key: 'mostLapsLed', label: 'Most Laps Led' },
-    { key: 'mostPositionsGained', label: 'Most Positions Gained' },
-    { key: 'polePosition', label: 'Pole Position' },
-    { key: 'cleanRaceAward', label: 'Clean Race Award' },
-    { key: 'hardLuckAward', label: 'Hard Luck Award (best recovery drive)' }
-  ];
-  function defaultSpecialEventBonusPayouts() {
-    var obj = {};
-    SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (c) { obj[c.key] = 250; });
-    return obj;
-  }
+  // Special events are just-for-fun races -- no championship points, no
+  // money/prize payouts (2026-09-18, Matt's call: "strip money and special
+  // payouts from the special event race; for now it will just be a 'fun
+  // race'" -- see season-1-mvp-scope.md). Previously split two ways, a
+  // top-10 finishing money pool and a handful of bonus-category payouts;
+  // both removed entirely, including their SPECIAL_EVENT_MONEY_PLACES_
+  // DEFAULT/SPECIAL_EVENT_BONUS_CATEGORIES/defaultSpecialEventBonusPayouts
+  // definitions and the moneyPlaces/bonusPayouts fields on the event object
+  // itself.
   function defaultSpecialEvent() {
     return {
       eventName: '',
@@ -4842,9 +4834,7 @@
       passwordOverride: '',
       igPracticeStart: '12:00',
       igQualifyStart: '13:00',
-      igRaceStart: '14:00',
-      moneyPlaces: SPECIAL_EVENT_MONEY_PLACES_DEFAULT.slice(),
-      bonusPayouts: defaultSpecialEventBonusPayouts()
+      igRaceStart: '14:00'
     };
   }
 
@@ -5774,17 +5764,16 @@
       container.appendChild(card);
     });
 
-    // Special events -- strictly money, no championship points. One card
-    // per event, after every regular race card. Left in for this restore
-    // pass per Matt's "make it look identical... then we'll trim it"
-    // framing, even though the earlier scoping round said to leave Special
-    // Events out for now -- Type stays 'Points' only on the backend
-    // (Core.gs), so this data rides along inertly in seasonDetails until
-    // Special Events gets designed for real.
+    // Special events -- just-for-fun races, no championship points and (as
+    // of 2026-09-18, Matt's call: "strip money and special payouts from the
+    // special event race; for now it will just be a 'fun race'") no money/
+    // prize payouts either. One card per event, after every regular race
+    // card. Type stays 'Points' only on the backend (Core.gs), so this data
+    // rides along inertly in seasonDetails.
     if (state.specialEvents.length) {
       container.appendChild(wizSubhead('Special Events'));
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Money-only mini-events -- no championship points.'));
+        'Fun races -- no championship points, no payouts.'));
       state.specialEvents.forEach(function (evt, idx) {
         var card = el('div', 'rc-panel rc-wizard-race-card');
         card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
@@ -5859,88 +5848,10 @@
         card.appendChild(fieldPairRow('In-Game Practice Start Time', wizTimeWithBadge(evtIgPractice, 'Sim Time'), 'In-Game Qualify Start Time', wizTimeWithBadge(evtIgQualify, 'Sim Time')));
         card.appendChild(wizField('In-Game Race Start Time', wizTimeWithBadge(evtIgRace, 'Sim Time')));
 
-        var moneyWrap = el('div', 'rc-panel'); moneyWrap.style.marginTop = '10px';
-        var moneyHead = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
-        moneyHead.appendChild(el('h4', 'margin:0;font-size:13px;', 'Top 10 Money Payout'));
-        var poolTotalInput = el('input'); poolTotalInput.type = 'number'; poolTotalInput.min = 0; poolTotalInput.step = 100;
-        poolTotalInput.style.cssText = 'width:90px;max-width:90px;display:inline-block;margin:0;';
-        var poolWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
-        poolWrap.appendChild(document.createTextNode('Prize Pool ($)'));
-        poolWrap.appendChild(poolTotalInput);
-        moneyHead.appendChild(poolWrap);
-        moneyWrap.appendChild(moneyHead);
-        var moneyInputs = [];
-        var bonusInputs = [];
-        function poolTotalNow() {
-          var placesSum = evt.moneyPlaces.reduce(function (s, v) { return s + (Number(v) || 0); }, 0);
-          var bonusSum = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (s, c) { return s + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
-          return placesSum + bonusSum;
-        }
-        function refreshPoolTotal() {
-          poolTotalInput.value = poolTotalNow();
-        }
-        poolTotalInput.addEventListener('change', function () {
-          var newTotal = Math.max(0, Number(poolTotalInput.value) || 0);
-          var oldTotal = poolTotalNow();
-          var allVals = evt.moneyPlaces.concat(SPECIAL_EVENT_BONUS_CATEGORIES.map(function (c) { return Number(evt.bonusPayouts[c.key]) || 0; }));
-          var scaled;
-          if (oldTotal > 0) {
-            scaled = allVals.map(function (v) { return Math.round((Number(v) || 0) / oldTotal * newTotal); });
-          } else {
-            var share = Math.floor(newTotal / allVals.length);
-            scaled = allVals.map(function () { return share; });
-          }
-          var scaledSum = scaled.reduce(function (s, v) { return s + v; }, 0);
-          scaled[0] += (newTotal - scaledSum);
-
-          evt.moneyPlaces.forEach(function (v, i) { evt.moneyPlaces[i] = scaled[i]; moneyInputs[i].value = scaled[i]; });
-          SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (c, i) {
-            var v = scaled[evt.moneyPlaces.length + i];
-            evt.bonusPayouts[c.key] = v;
-            bonusInputs[i].value = v;
-          });
-          refreshPoolTotal();
-        });
-        var moneyTable = document.createElement('table');
-        moneyTable.style.cssText = 'width:100%;margin-top:8px;border-collapse:collapse;';
-        var moneyHeadRow = document.createElement('tr');
-        for (var p = 1; p <= 10; p++) {
-          var th = document.createElement('td');
-          th.style.cssText = 'font-size:10px;color:var(--rc-steel);text-align:center;padding:2px;';
-          th.textContent = 'P' + p;
-          moneyHeadRow.appendChild(th);
-        }
-        moneyTable.appendChild(moneyHeadRow);
-        var moneyInputRow = document.createElement('tr');
-        evt.moneyPlaces.forEach(function (val, pIdx) {
-          var td = document.createElement('td');
-          td.style.padding = '2px';
-          var input = wizNumberInput(val, function (v) { evt.moneyPlaces[pIdx] = v; refreshPoolTotal(); }, { min: 0, step: 100 });
-          input.style.cssText = 'width:100%;max-width:100%;text-align:center;padding:4px;margin:0;box-sizing:border-box;';
-          requireField(input, requiredEls);
-          moneyInputs.push(input);
-          td.appendChild(input);
-          moneyInputRow.appendChild(td);
-        });
-        moneyTable.appendChild(moneyInputRow);
-        moneyWrap.appendChild(moneyTable);
-        card.appendChild(moneyWrap);
-        refreshPoolTotal();
-
-        var bonusPayoutWrap = el('div', 'rc-panel'); bonusPayoutWrap.style.marginTop = '10px';
-        bonusPayoutWrap.appendChild(el('h4', 'margin:0 0 8px;font-size:13px;', 'Bonus Categories'));
-        var bonusGrid = el('div', 'rc-bonus-payout-grid');
-        SPECIAL_EVENT_BONUS_CATEGORIES.forEach(function (cat) {
-          var catInput = wizNumberInput(evt.bonusPayouts[cat.key], function (v) { evt.bonusPayouts[cat.key] = v; refreshPoolTotal(); }, { min: 0 });
-          requireField(catInput, requiredEls);
-          bonusInputs.push(catInput);
-          var field = el('div');
-          field.appendChild(wizLabel(cat.label + ' ($)'));
-          field.appendChild(catInput);
-          bonusGrid.appendChild(field);
-        });
-        bonusPayoutWrap.appendChild(bonusGrid);
-        card.appendChild(bonusPayoutWrap);
+        // Top 10 Money Payout / Bonus Categories panels removed entirely
+        // 2026-09-18 -- Matt's call: strip money and special payouts from
+        // the Special Event, it's just a fun race for now. See
+        // season-1-mvp-scope.md.
 
         container.appendChild(card);
       });
@@ -6024,14 +5935,11 @@
       var specialPanel = el('div', 'rc-panel'); specialPanel.style.marginTop = '12px';
       specialPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Events (' + state.specialEvents.length + ')'));
       state.specialEvents.forEach(function (evt, idx) {
-        var moneyTotal = evt.moneyPlaces.reduce(function (sum, v) { return sum + (Number(v) || 0); }, 0);
-        var bonusTotal = SPECIAL_EVENT_BONUS_CATEGORIES.reduce(function (sum, c) { return sum + (Number(evt.bonusPayouts[c.key]) || 0); }, 0);
         var trackLine = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
           ' · ' + (evt.track || '(no track)') + (evt.layout ? ' · ' + evt.layout : '');
         var detailsLine = (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
           ' · ' + (evt.chanceOfRain || 0) + '% Rain / ' + (evt.temperatureC === undefined ? 20 : evt.temperatureC) + '°C' +
-          ' · Race Start ' + (evt.igRaceStart || '(not set)') +
-          ' · Top 10 pool $' + moneyTotal.toLocaleString() + ' · Bonus categories $' + bonusTotal.toLocaleString();
+          ' · Race Start ' + (evt.igRaceStart || '(not set)') + ' · Fun race, no payouts';
         specialPanel.appendChild(previewLine((evt.eventName || 'Special Event ' + (idx + 1)), trackLine));
         specialPanel.appendChild(previewLine('', detailsLine));
       });

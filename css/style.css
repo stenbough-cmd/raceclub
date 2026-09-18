@@ -3931,12 +3931,6 @@ body.rc-modal-scroll-locked {
 @media (max-width: 640px) {
   .rc-wiz-field-row-3 { grid-template-columns: 1fr; }
 }
-/* Special event bonus category payouts -- two columns of label+box pairs
-   instead of one long stacked column (Matt's call). */
-.rc-bonus-payout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
-@media (max-width: 640px) {
-  .rc-bonus-payout-grid { grid-template-columns: 1fr; }
-}
 .rc-wizard-subhead {
   font-family: var(--rc-font-heading);
   font-size: 12px;
@@ -4598,11 +4592,6 @@ body.rc-modal-scroll-locked {
   color: var(--rc-carbon);
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
-/* Special Event's Prize Pool chip -- same gold as the star icon, more of
-   it (Matt's call), so the money chip itself reads as special too instead
-   of blending into the same gray chip as every other stat. */
-.rc-cal-stat-gold { background: rgba(184, 134, 11, 0.1); border-color: var(--rc-gold); color: #8a6508; }
-.rc-cal-stat-gold svg { color: var(--rc-gold); }
 /* Extra breathing room after the Qualifying-length chip, before the
    Sprint/Medium/Long race-length chips in Season Settings (2026-08-30,
    Matt's call) -- marks that boundary without widening .rc-cal-stats' own
