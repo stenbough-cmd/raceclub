@@ -916,11 +916,6 @@
     window.location.reload();
   }
 
-  function formatMoney(n) {
-    n = Number(n) || 0;
-    return '$' + n.toLocaleString();
-  }
-
   // "Season N" -- N is the numeric suffix off a SeasonID (e.g. "SZN-0003"
   // -> "Season 3"), the same sequential number the ID itself already
   // encodes, so there's no separate "season number" field to maintain.
@@ -3430,9 +3425,6 @@
                 showToast(data.message || 'Could not update this round.', 'error');
                 return;
               }
-              if (!r.resultsFinalized && data.objectivePayout && data.objectivePayout.teamsPaid) {
-                showToast(data.objectivePayout.teamsPaid + ' car objective bonus' + (data.objectivePayout.teamsPaid === 1 ? '' : 'es') + ' paid out.', 'success');
-              }
               if (typeof reload === 'function') reload(); else location.reload();
             }).catch(function () {
               finalizeBtn.disabled = false;
@@ -4063,7 +4055,7 @@
       table.className = 'rc-results-table';
       var thead = document.createElement('thead');
       var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Best Lap', 'Total Time', 'Pts', 'Money', 'Inc/TL/Pen'].forEach(function (h) {
+      ['Pos', 'Driver', 'Grid', 'Laps', 'Best Lap', 'Total Time', 'Pts', 'Inc/TL/Pen'].forEach(function (h) {
         var th = document.createElement('th');
         th.textContent = h;
         headRow.appendChild(th);
@@ -4132,8 +4124,6 @@
         if (r.wonFastestLap) bestLapTd.style.color = '#9b30d9';
         plainTd(_rcFormatTotalTime_(r.finishTimeSeconds));
         plainTd(r.points === null ? '' : r.points);
-        var moneyTd = plainTd(r.moneyDelta === null ? '' : ((r.moneyDelta >= 0 ? '+' : '') + formatMoney(r.moneyDelta)));
-        if (r.moneyDelta !== null) moneyTd.style.color = r.moneyDelta >= 0 ? 'var(--rc-green, #2e7d32)' : 'var(--rc-red)';
         var incBits = [r.incidentsCount || 0, r.trackLimitsCount || 0, r.penaltiesCount || 0];
         // Clean-race column dropped in favor of blue font right on the
         // incidents/track-limits/penalties cell itself (2026-09-09, Matt's
