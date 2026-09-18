@@ -978,6 +978,12 @@ p { margin: 0 0 0.75em; }
   margin-top: 4px;
   padding-top: 8px;
 }
+/* Cars list: no divider line directly under a season/year head -- only
+   the .rc-dm-subrow-edit's own border-top was creating it, landing right
+   below .rc-dm-season-head since that row is always the first car in the
+   season group (2026-09-19, Matt's call). Later cars within the same
+   season keep their divider as normal. */
+.rc-dm-season-head + .rc-dm-subrow-edit { border-top: none; }
 .rc-dm-empty { padding: 14px 0; font-size: 13px; color: var(--rc-steel); }
 
 /* Layout list inside the Track edit popup (openEditTrackModal) -- each

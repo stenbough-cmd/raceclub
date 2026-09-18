@@ -421,6 +421,11 @@
   // -- a caution triangle, matching how the rest of this icon set favors
   // one clear symbol per concept over anything decorative.
   var ICON_PROTESTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line><line x1="12" y1="17.2" x2="12" y2="17.4"></line></svg>';
+  // Stewarding (2026-09-19, Matt's call: "make the stewarding icon
+  // something other that's relevant instead of the same icon as
+  // protests") -- a shield with a checkmark, reading as "official
+  // ruling/oversight" rather than reusing the Protests caution triangle.
+  var ICON_STEWARDING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -642,7 +647,7 @@
     // Sits right below League Tools, Steward-and-above (same
     // Driver<Steward<Organizer<Admin cumulative access hierarchy every
     // other gated nav item on this page already follows).
-    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_PROTESTS, 'rc-nav-stewarding', true, function () {
+    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_STEWARDING, 'rc-nav-stewarding', true, function () {
       showSection('stewarding');
     });
     nav.appendChild(stewardingBtn);
