@@ -3283,13 +3283,25 @@
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
-    // About panel -- a plain-language description of what Race Club
-    // actually is, up top, before any how-to content. Same "persistent
-    // career, real league races" framing as index.html's own "What Is
-    // Race Club" section, trimmed to a couple of sentences.
+    // About panel (2026-09-18 rewrite, Matt's call) -- NOT a description
+    // of what the site does (the "How To Use This Site" grid below
+    // already covers that, and Matt didn't want it said twice). This is
+    // a personal note instead: why Race Club exists, how it's actually
+    // built, and where it might go -- written in Matt's voice, about the
+    // project rather than about the product. Placeholder copy for now;
+    // Matt plans to write his own version of this later, with a
+    // signature image underneath it (see rc-about-signature below --
+    // points at assets/signature.png, which doesn't exist yet, so the
+    // onerror hides the whole line cleanly instead of showing a broken
+    // image icon until that file is actually added).
     var about = el('div', 'rc-panel rc-dash-card');
     about.appendChild(el('h3', 'rc-dash-card-title', 'About Race Club'));
-    about.appendChild(el('p', null, 'Race Club is a persistent multiplayer league and career mode built on real Le Mans Ultimate races. You join a team, race scheduled league rounds against real drivers, and build a season by season driving record that carries forward as your career.'));
+    about.appendChild(el('div', 'rc-about-blurb',
+      '<p>Race Club started as a way to give our Le Mans Ultimate races the shape of a real season instead of a string of one-off lobbies. I wanted a good weekend to actually mean something the following week, not just bragging rights until the server closed -- standings, a season, a driving record that carries forward.</p>' +
+      '<p>Everything here is hand-built: Google Sheets as the database, Apps Script as the backend, and this site reading straight from each race\'s own results data. That was a deliberate choice -- it\'s a foundation I can keep extending myself, not a fixed product I\'m stuck with.</p>' +
+      '<p>Where it goes next is still open. I\'d like this to grow past one title and one group of drivers eventually, and there are a few ideas I\'m sitting on for tying more of a driver\'s actual racing into their profile here. Nothing below is locked in -- this is just where my head\'s at.</p>' +
+      '<p><em>This is placeholder copy. I\'ll swap it out with what I actually want to say here, signed below.</em></p>'));
+    about.appendChild(el('div', 'rc-about-signature', '<img src="assets/signature.png" alt="Matt\'s signature" onerror="this.parentNode.style.display=\'none\';">'));
     section.appendChild(about);
 
     // Need Help? -- short icon-led contact list, same icon-left row shape
@@ -3300,7 +3312,7 @@
     var contactList = el('div', 'rc-help-contact-list');
     var contactRow1 = el('div', 'rc-help-contact-row');
     contactRow1.appendChild(el('div', 'rc-help-contact-icon', ICON_MAIL));
-    contactRow1.appendChild(el('div', null, 'Questions about your account, results, or standings? Email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
+    contactRow1.appendChild(el('div', null, 'Questions about your account, results, or standings? Email <a href="mailto:stenbough@gmail.com">Race Club Admin</a>.'));
     contactList.appendChild(contactRow1);
     var contactRow2 = el('div', 'rc-help-contact-row');
     contactRow2.appendChild(el('div', 'rc-help-contact-icon', ICON_LOCK));

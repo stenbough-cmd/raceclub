@@ -4686,7 +4686,20 @@ body.rc-modal-scroll-locked {
 /* -------------------------------------------------------------------- */
 .rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
 
-/* "Need Help?" -- icon-left contact rows, same shape as index.html's
+/* "About Race Club" -- Matt's personal note (2026-09-18), not a product
+   description. Slightly roomier line-height than the rest of Help since
+   it's meant to read like a written note, not reference material; the
+   last (placeholder-disclosure) paragraph is italic and a touch muted so
+   it reads as an aside once real copy replaces the rest. */
+.rc-about-blurb p { font-size: 13.5px; color: var(--rc-carbon); line-height: 1.65; margin: 0 0 14px; }
+.rc-about-blurb p:last-child { margin-bottom: 0; color: var(--rc-steel); }
+/* Signature image slot -- hidden entirely via the <img>'s own onerror
+   until assets/signature.png actually exists (Account.html), so this
+   never shows a broken-image icon in the meantime. */
+.rc-about-signature { margin-top: 18px; }
+.rc-about-signature img { max-height: 56px; display: block; }
+
+/* "Need Help?" -- icon-led contact rows, same shape as index.html's
    "What You'll Need" list, instead of a plain bulleted <ul>. */
 .rc-help-contact-list { display: flex; flex-direction: column; gap: 14px; }
 .rc-help-contact-row { display: flex; align-items: flex-start; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
