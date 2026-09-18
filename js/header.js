@@ -289,45 +289,9 @@ function _rcFetchNotifications(token, cached) {
     .catch(function () { return []; });
 }
 
-// "Choose your sponsors" notification (2026-09-01, Matt's call: "make a
-// notification to choose sponsors after signing up for a team"). Derived
-// LIVE off getMySponsors -- not its own stored/tracked event -- so it
-// simply stops being generated the moment it's no longer true: the driver
-// picks at least one sponsor, or the season locks sponsor picks at
-// season-start. That's also what satisfies "automatically acknowledge...
-// if the driver picks sponsors" for this notification specifically, with
-// no separate dismiss bookkeeping needed. Still goes through the same
-// client-side ack list as the pending-approval type (kind isn't 'season'
-// or 'upgrade', see _rcRenderNotifList's OK-button check below), so a
-// driver who isn't ready to pick yet can dismiss it by hand too -- picking
-// sponsors later still clears it on its own regardless of ack state, since
-// it just won't be regenerated once hasSponsors is true.
-// FIX (2026-09-14, Matt's report: "no notification to choose sponsors in
-// the bell after buying a seat"). This used to also skip the fetch
-// whenever `cached.role === 'Prospect'` -- `cached` is a snapshot of
-// getProfileCache() taken once, when this page's header first rendered,
-// and never refreshed again for the life of the page (see renderHeader's
-// closure over `cached`, further down this file). An account approved
-// mid-session (Prospect -> Driver) without an intervening page reload
-// keeps that stale 'Prospect' snapshot in the header even though the
-// driver can now join a team -- so this check could silently suppress
-// the notification for the rest of that page view no matter how many
-// times the 45s poll (or rcRefreshNotificationsNow) re-ran it. Dropped
-// entirely: getMySponsors already safely returns hasSeat:false for
-// anyone without a registration, Prospect or not, so the shortcut wasn't
-// needed for correctness, only to skip one harmless extra fetch.
-function _rcFetchSponsorNotifications(token, cached) {
-  if (!token) return Promise.resolve([]);
-  return fetchApi('getMySponsors', { token: token })
-    .then(function (data) {
-      if (!data || !data.success || !data.hasSeat || data.hasSponsors || data.locked) return [];
-      var id = 'sponsors-' + data.seasonId;
-      var acked = _rcGetAckedNotifIds();
-      if (acked.indexOf(id) !== -1) return [];
-      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.', section: 'sponsors', fullRowLink: true }];
-    })
-    .catch(function () { return []; });
-}
+// "Choose your sponsors" notification (and its _rcFetchSponsorNotifications
+// helper) removed entirely 2026-09-17 -- V1 scope cut, the whole
+// Sponsorship system is out of the site for now. See season-1-mvp-scope.md.
 
 // New-season + account-upgrade notifications (added 2026-08-30). Backed by
 // a real Notifications sheet + each driver's own NotificationState, not
@@ -449,11 +413,11 @@ function rcDismissSeasonNotification(seasonId) {
 // notification without the driver ever opening the bell (2026-09-01,
 // Matt's call: "automatically acknowledge any pending notification if any
 // relevant action is done without visiting the notification dropdown
-// first") -- e.g. right after a driver's sponsor picks save successfully,
-// so the "Choose your sponsors" notification (which is derived live off
-// getMySponsors, see _rcFetchSponsorNotifications) disappears immediately
-// instead of lingering until the next 45s poll tick. A no-op if the bell
-// hasn't rendered this state yet (logged out, or this page has no header).
+// first"). The sponsor-picking use case this was originally written for is
+// gone (2026-09-17 V1 scope cut), but other callers (e.g. right after
+// joinTeam) still use this to refresh the bell immediately instead of
+// waiting for the next 45s poll tick. A no-op if the bell hasn't rendered
+// this state yet (logged out, or this page has no header).
 function rcRefreshNotificationsNow() {
   if (_rcNotifController && typeof _rcNotifController.refresh === 'function') _rcNotifController.refresh();
 }
@@ -923,15 +887,16 @@ function renderHeader(opts) {
     // currently open (rare -- a driver rarely leaves it open 45+ seconds --
     // and matches how a freshly-arrived item should just appear).
     function _rcRefreshNotifications() {
+      // Sponsor notifications dropped from this Promise.all 2026-09-17 --
+      // V1 scope cut, Sponsorship system out of the site. See
+      // season-1-mvp-scope.md.
       return Promise.all([
         _rcFetchNotifications(token, cached),
-        _rcFetchSeasonNotifications(token, cached),
-        _rcFetchSponsorNotifications(token, cached)
+        _rcFetchSeasonNotifications(token, cached)
       ]).then(function (results) {
         var pending = results[0] || [];
         var season = results[1] || { active: [], history: [] };
-        var sponsors = results[2] || [];
-        currentNotifications = pending.concat(sponsors).concat(season.active);
+        currentNotifications = pending.concat(season.active);
         currentNotifHistory = season.history;
         _rcRenderNotifList();
         updateHeaderNotifDot(currentNotifications.length);
