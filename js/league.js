@@ -256,7 +256,11 @@ function _rclRenderCalendar(hub) {
     // (see its own comment in Website.gs).
     var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : ''));
     var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (entry.kind === 'special' ? 'SP' : '');
-    row.appendChild(_rclEl('div', 'rcl-cal-round', _rclEscapeHtml(roundLabel)));
+    // Special-event rounds get a platinum background instead of the
+    // standard brand red (2026-09-19, Matt's ask) -- makes a special
+    // round visually distinct at a glance in the schedule.
+    var roundClass = 'rcl-cal-round' + (entry.kind === 'special' ? ' rcl-cal-round-special' : '');
+    row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
@@ -276,8 +280,16 @@ function _rclRenderCalendar(hub) {
       else item.textContent = value;
       metaRow.appendChild(item);
     }
-    if (entry.startUtc) metaItem('', _rclFormatDateTime(entry.startUtc));
-    if (entry.raceLengthTier) metaItem('', entry.raceLengthTier + ' Race');
+    // Time + length tier grouped into one light-gray pill (2026-09-19,
+    // Matt's ask: "put the time next to the length tier in a light gray
+    // pill") -- previously two separate plain meta items; now one chip so
+    // "when" and "how long" read as a single fact at a glance.
+    var timeTierParts = [];
+    if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
+    if (entry.raceLengthTier) timeTierParts.push(entry.raceLengthTier + ' Race');
+    if (timeTierParts.length) {
+      metaRow.appendChild(_rclEl('span', 'rcl-cal-meta-pill', _rclEscapeHtml(timeTierParts.join(' · '))));
+    }
     if (entry.igRaceStart) {
       var igParts = ['IG Race ' + entry.igRaceStart];
       if (entry.igPracticeStart) igParts.push('Practice ' + entry.igPracticeStart);
@@ -338,7 +350,12 @@ function _rclRenderPoints(hub) {
   var bonusChips = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
   if (bonusChips.length) {
     var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
-    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label', 'Bonus Points This Season'));
+    // Same type style as a tier name above (.rcl-points-tier-name) --
+    // Matt's ask: "make Bonus Points This Season the same style as the
+    // tier in the points tables". .rcl-points-bonus-label still carries
+    // this row's own layout (full-width, margin-bottom) -- see its rule
+    // in css/league.css, which now shares the tier name's font styling.
+    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-points-tier-name', 'Bonus Points This Season'));
     bonusChips.forEach(function (key) {
       bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-chip', _rclEscapeHtml(bonusLabels[key]) + ' <strong>+' + Number(bonus[key]) + '</strong>'));
     });
@@ -602,6 +619,16 @@ function _rclBuildSnapshotStats(hub) {
     }
   }
 
+  // Which car classes are running this season (added 2026-09-19,
+  // Matt's ask: "add which cars are participating" between the season
+  // dates and race-count stats) -- pulled from hub.standings, the same
+  // per-class list the Leaderboard/Drivers sections below already use,
+  // so this can never name a class that isn't actually fielding cars.
+  var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
+  if (classNames.length) {
+    stats.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
+  }
+
   if (hub.totalRounds) {
     stats.push({ value: String(hub.totalRounds), label: hub.totalRounds === 1 ? 'Race' : 'Races' });
   }
@@ -661,7 +688,7 @@ function _rclRenderHero(hub) {
   var seasonEl = document.getElementById('rcl-hero-season');
   if (seasonEl) {
     seasonEl.textContent = hub.hasSeason && hub.seasonNumber
-      ? ('Season ' + hub.seasonNumber + (hub.seasonName ? ' -- ' + hub.seasonName : ''))
+      ? ('Season ' + hub.seasonNumber + (hub.seasonName ? ' / ' + hub.seasonName : ''))
       : '';
   }
 

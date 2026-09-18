@@ -31,8 +31,13 @@ body.rc-league-page {
   --rcl-line: #2c2d31;
   --rcl-line-bright: #45474d;
   --rcl-ink: #f2f2f0;
-  --rcl-ink-dim: #a8abb2;
-  --rcl-ink-faint: #6c6f76;
+  /* Both nudged a little lighter (2026-09-19, Matt's ask: "make the dark
+     gray font just a little lighter") -- these two tokens carry most of
+     the page's secondary/tertiary text (meta lines, labels, chip text),
+     so a small bump here improves legibility across every section that
+     already reads off them, with no per-rule changes needed. */
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
 
   background: var(--rcl-bg);
   color: var(--rcl-ink);
@@ -383,6 +388,20 @@ body.rc-league-page {
   color: var(--rc-white);
   text-align: center;
   user-select: none;
+  /* Slight curve on just the top-left corner (2026-09-19, Matt's ask) --
+     the row's other three corners stay square, matching the bar's flush
+     fit against the row's left/top/bottom edges; only the one corner
+     that isn't already pinned against .rcl-panel's own rounded shell
+     gets softened. */
+  border-top-left-radius: 8px;
+}
+/* Special-event rounds (SP) get a platinum background instead of the
+   standard brand red (2026-09-19, Matt's ask) -- a deliberately different
+   metal-toned accent so a special round reads as distinct from a normal
+   points round at a glance. Dark text since platinum is light. */
+.rcl-cal-round-special {
+  background: linear-gradient(135deg, #e9e8e6 0%, #c6c4bf 100%);
+  color: #1c1d20;
 }
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -397,6 +416,24 @@ body.rc-league-page {
   white-space: nowrap;
 }
 .rcl-cal-meta-item-label { color: var(--rcl-ink-faint); font-weight: 600; }
+/* Time + length tier chip (2026-09-19, Matt's ask: "put the time next to
+   the length tier in a light gray pill with a slightly darker border") --
+   a literal light-gray pill (not this dark page's usual translucent-white
+   chip treatment) so it reads as a deliberate little tag against the dark
+   row, with dark text for contrast on the light fill. */
+.rcl-cal-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #d9dadd;
+  border: 1px solid #b6b8bd;
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1c1d20;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .rcl-cal-status {
   font-family: var(--rc-font-heading);
   font-size: 10px;
@@ -438,7 +475,11 @@ body.rc-league-page {
 .rcl-points-pos-num { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
 .rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
 .rcl-points-bonus-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
-.rcl-points-bonus-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink-dim); width: 100%; margin-bottom: 2px; }
+/* Layout only (full-width row + spacing below it) -- the actual type
+   style now comes from .rcl-points-tier-name, applied alongside this
+   class in js/league.js so "Bonus Points This Season" reads exactly like
+   a tier name above it (2026-09-19, Matt's ask). */
+.rcl-points-bonus-label { width: 100%; margin-bottom: 2px; }
 .rcl-points-bonus-chip { font-size: 12.5px; color: var(--rcl-ink-dim); }
 .rcl-points-bonus-chip strong { color: var(--rc-red); font-variant-numeric: tabular-nums; }
 
