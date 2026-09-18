@@ -143,7 +143,7 @@
         <span class="rc-startlight"></span>
         <span class="rc-startlight"></span>
       </div>
-      <div class="rc-loading-text">Loading your dashboard&hellip;</div>
+      <div class="rc-loading-text">Loading your results (dashboard, protests, calendar, career)&hellip;</div>
     </div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
 
@@ -396,6 +396,11 @@
   var ICON_DATAMGMT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>';
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
   var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
+  // Same glyph as the header's own notification bell (js/header.js) --
+  // duplicated here rather than shared, since that file runs in its own
+  // separate scope. Used by the Help page's page-by-page guide.
+  var ICON_BELL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+  var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
 
   // Restored from the pre-v0.5 archive (commit ab231e0) for the Calendar
   // page -- weather/session/setup chip icons, none of which the current
@@ -806,7 +811,7 @@
     // all resolves at once, so showing the standard spinner for that one
     // wait (instead of a grid of blank fading cards) reads better and
     // matches how every other page on the site shows a loading state.
-    var spinner = buildPageSpinner('Loading your dashboard...');
+    var spinner = buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...');
     section.appendChild(spinner);
 
     var rows = null;
@@ -832,7 +837,7 @@
       // Shows the same spinner while the fresh combined fetch is in
       // flight, rather than swapping stale content for a moment.
       var freshDashboardData = fetchDashboardData(token);
-      var rebuildSpinner = buildPageSpinner('Loading your dashboard...');
+      var rebuildSpinner = buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...');
       rows.topRow.parentNode.insertBefore(rebuildSpinner, rows.topRow);
       _rcDashboardAllSettled_(freshDashboardData).then(function () {
         rebuildSpinner.remove();
@@ -1525,18 +1530,17 @@
     var section = document.getElementById('rc-section-career');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your career history...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     return fetchApi('getMyCareerHistory', { token: token }).catch(function () { return { success: false }; })
       .then(function (result) {
         section.innerHTML = '';
         section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-        section.appendChild(el('p', 'rc-sponsors-explainer',
-          'Your complete season-by-season record -- every car, team, result, and dollar the league has on file for you, newest season first.'));
+        // Explainer paragraph removed (2026-09-18, Matt's call) -- see
+        // renderHelpSection's Career entry instead.
 
         if (!result || !result.success || !result.seasons || !result.seasons.length) {
-          section.appendChild(el('p', 'rc-career-empty-note',
-            'No seasons on record yet -- your first Career card appears here once you\'ve registered for a season.'));
+          section.appendChild(buildEmptyStatePanel('No Data To Display', 'Your first Career card appears here once you\'ve registered for a season.'));
           return;
         }
 
@@ -2783,9 +2787,35 @@
   // NOT for spinners inside a modal (buildSpinner() alone is still right
   // there -- the modal card itself is already the container, and modal
   // body centering handles its own vertical position).
+  // Every call site below passes the exact same message, 'Loading your
+  // results (dashboard, protests, calendar, career)...' (2026-09-18,
+  // Matt's call: "all the Loading notifications should say [that] to
+  // keep it consistent") -- one wording for every full-section load,
+  // rather than a different sentence per page.
   function buildPageSpinner(message) {
     var wrap = buildSpinner(message);
     wrap.classList.add('rc-inline-spinner-page');
+    return wrap;
+  }
+
+  // Whole-page "nothing to show" state (2026-09-18, Matt's call: "get rid
+  // of the ugly containers with text saying that there is no season etc"
+  // -- replaces the bordered .rc-panel + heading + sentence that Calendar/
+  // Results/Career used to show when there's no season, no data, or
+  // nothing else to render). One big icon (a plain "no entry" circle-
+  // slash, same 24x24/stroke-1.8 icon family as everywhere else on the
+  // site) sitting a shade darker than the page background -- var(--rc-
+  // silver) is exactly that "one step darker than --rc-offwhite" neutral
+  // already used for borders sitewide -- plus a short title underneath.
+  // `subtitle` is optional, second line, smaller and lighter, for the one
+  // extra sentence of context a page sometimes still needs (e.g. "Check
+  // back once a new season opens").
+  function buildEmptyStatePanel(title, subtitle) {
+    var wrap = el('div', 'rc-empty-state');
+    wrap.appendChild(el('div', 'rc-empty-state-icon',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>'));
+    wrap.appendChild(el('div', 'rc-empty-state-title', escapeHtml(title || 'No Data To Display')));
+    if (subtitle) wrap.appendChild(el('div', 'rc-empty-state-subtitle', escapeHtml(subtitle)));
     return wrap;
   }
 
@@ -3199,22 +3229,53 @@
   }
 
   // ---------------------------------------------------------------------
-  // HELP SECTION -- Website Help + Rules and Regulations (the Rulebook),
-  // in that order, each its own .rc-panel container. This briefly lived
-  // as a standalone page (help.html) so the Rulebook would have more
-  // room to grow, but Matt's call was to fold it back into the sidebar
-  // shell -- losing the sidebar/nav chrome on its own separate page felt
-  // like leaving the site, not like part of the account. help.html has
-  // been removed; the Help nav button goes back to showSection('help')
-  // like every other link.
+  // Page-by-page guide content for the Help section's icon-card grid
+  // (2026-09-18 redesign -- see renderHelpSection below). Each entry:
+  // icon (one of the ICON_* constants above, same glyph used in the
+  // sidebar/header for that page), title, and one short plain-English
+  // description. Kept as data, not inline markup, so the grid-building
+  // code below stays generic.
+  // ---------------------------------------------------------------------
+  var HELP_GUIDE_ITEMS = [
+    { icon: ICON_DASHBOARD, title: 'Dashboard',
+      body: 'Your homepage after logging in. Shows your Registration Status, your Current Seat once you have one, your next scheduled race, your most recent result, and your last few filed Protests.' },
+    { icon: ICON_CALENDAR, title: 'Calendar',
+      body: 'The full season schedule, in order. Each race shows its date and time in your own timezone, the track, session details, and a weather forecast icon.' },
+    { icon: ICON_RESULTS, title: 'Results',
+      body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
+    { icon: ICON_CAREER, title: 'Career',
+      body: 'Your season by season record: every car, team, and result the league has on file for you, newest season first.' },
+    { icon: ICON_PROTESTS, title: 'Protests',
+      body: 'Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 48 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+    { icon: ICON_BELL, title: 'Notifications',
+      body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
+    { icon: ICON_SETTINGS, title: 'Account Settings',
+      body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
+    { icon: ICON_ADMIN, title: 'Admin and League Management',
+      body: 'Admin accounts get two extra pages. League Management browses every season and its races, and can recompute a season\'s results if an earlier round gets corrected. Admin manages members, tracks, cars, and creating or ending a season.' }
+  ];
+
+  // ---------------------------------------------------------------------
+  // HELP SECTION -- About Race Club, Need Help?, How To Use This Site,
+  // then Rules and Regulations (the Rulebook), each its own card using
+  // the same "rc-panel rc-dash-card" + "rc-dash-card-title" chrome as
+  // every other featured panel on the site (Calendar's season panel,
+  // Results, League Management, Admin's Data Management) -- 2026-09-18
+  // redesign, Matt's call: "make the styling of the containers consistent
+  // with the rest of the website account pages... add icons for sections
+  // that show icons on the page... make it more human-friendly." This
+  // briefly lived as a standalone page (help.html) so the Rulebook would
+  // have more room to grow, but Matt's call was to fold it back into the
+  // sidebar shell -- losing the sidebar/nav chrome on its own separate
+  // page felt like leaving the site, not like part of the account.
   //
-  // Content here is fully static -- Website Help's two contact lines are
-  // hand-written below, and the Rulebook comes from js/rulebook-content.js's
-  // RULEBOOK_SECTIONS (kept separate from this file for the same reason as
-  // before: updating the rulebook as it grows should be a small edit
-  // there, not a hunt through this already-large file). Nothing here
-  // needs a live fetch, so this renders once, eagerly, rather than
-  // lazily like Data Management does.
+  // Content here is fully static -- the About/Need Help/guide copy is
+  // hand-written below, and the Rulebook comes from
+  // js/rulebook-content.js's RULEBOOK_SECTIONS (kept separate from this
+  // file for the same reason as before: updating the rulebook as it
+  // grows should be a small edit there, not a hunt through this already-
+  // large file). Nothing here needs a live fetch, so this renders once,
+  // eagerly, rather than lazily like Data Management does.
   // ---------------------------------------------------------------------
   function renderHelpSection() {
     var section = document.getElementById('rc-section-help');
@@ -3222,65 +3283,82 @@
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
-    // About panel (2026-09-18) -- a plain-language description of what
-    // Race Club actually is, up top, before any how-to content. Same
-    // "persistent career, real league races" framing as index.html's own
-    // "What Is Race Club" section, trimmed to a couple of sentences.
-    var about = el('div', 'rc-panel');
-    about.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'About Race Club'));
+    // About panel -- a plain-language description of what Race Club
+    // actually is, up top, before any how-to content. Same "persistent
+    // career, real league races" framing as index.html's own "What Is
+    // Race Club" section, trimmed to a couple of sentences.
+    var about = el('div', 'rc-panel rc-dash-card');
+    about.appendChild(el('h3', 'rc-dash-card-title', 'About Race Club'));
     about.appendChild(el('p', null, 'Race Club is a persistent multiplayer league and career mode built on real Le Mans Ultimate races. You join a team, race scheduled league rounds against real drivers, and build a season by season driving record that carries forward as your career.'));
     section.appendChild(about);
 
-    var websiteHelp = el('div', 'rc-panel');
-    websiteHelp.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Website Help'));
-    var contactList = el('ul', 'rc-help-list');
-    contactList.appendChild(el('li', null, 'Questions about your account, results, or standings: email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
-    contactList.appendChild(el('li', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    // Need Help? -- short icon-led contact list, same icon-left row shape
+    // as index.html's "What You'll Need" section, instead of a plain
+    // bulleted <ul>.
+    var contact = el('div', 'rc-panel rc-dash-card');
+    contact.appendChild(el('h3', 'rc-dash-card-title', 'Need Help?'));
+    var contactList = el('div', 'rc-help-contact-list');
+    var contactRow1 = el('div', 'rc-help-contact-row');
+    contactRow1.appendChild(el('div', 'rc-help-contact-icon', ICON_MAIL));
+    contactRow1.appendChild(el('div', null, 'Questions about your account, results, or standings? Email <a href="mailto:raceclub@example.com">raceclub@example.com</a>.'));
+    contactList.appendChild(contactRow1);
+    var contactRow2 = el('div', 'rc-help-contact-row');
+    contactRow2.appendChild(el('div', 'rc-help-contact-icon', ICON_LOCK));
+    contactRow2.appendChild(el('div', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    contactList.appendChild(contactRow2);
     // Points at the Rulebook's own Getting Started section (2026-09-01)
     // rather than duplicating the registration steps here -- one place to
     // keep that content current instead of two.
-    contactList.appendChild(el('li', null, 'New here? See Section 2, Getting Started, in the Rulebook below for how registering for a team works.'));
-    websiteHelp.appendChild(contactList);
+    var contactRow3 = el('div', 'rc-help-contact-row');
+    contactRow3.appendChild(el('div', 'rc-help-contact-icon', ICON_FLAG));
+    contactRow3.appendChild(el('div', null, 'New here? Jump to Section 2, Getting Started, in the Rulebook below for how registering for a team works.'));
+    contactList.appendChild(contactRow3);
+    contact.appendChild(contactList);
+    section.appendChild(contact);
 
-    // Page-by-page how-to content (2026-09-09, Matt's call: replace the
-    // old "still being written" placeholder with the real thing; rewritten
-    // 2026-09-18 for the V1 scope cut -- Finances, Sponsors, Wager, and
-    // Reputation/Hall of Fame no longer exist, and nothing below mentions
-    // a future feature or anything planned for later. Every line
-    // describes a page or feature that exists and works on the site
-    // today, in plain sentences instead of run-on ones.
-    websiteHelp.appendChild(el('div', 'rc-help-content',
-      '<h4>Dashboard</h4>' +
-      '<p>Your homepage after logging in. It shows your Registration Status, your Current Seat once you have one, your next scheduled race, your most recent result, and your last few filed Protests. Cards that depend on being registered fill in once you\'ve actually joined a team.</p>' +
-      '<h4>Calendar</h4>' +
-      '<p>The full season schedule, in order. Each race shows its date and time in your own timezone, the track, session details, and a weather forecast icon. Special events and bye weeks appear in the same list alongside regular races.</p>' +
-      '<h4>Results</h4>' +
-      '<p>One page per season. Season Standings sits at the top, grouped by class. Below it, every completed round has its own section with a full stat breakdown per driver: finishing position, grid, laps, best lap, total time, points, and incidents, track limits, and penalties. Whoever set a class\'s fastest lap is marked, and a driver who did not finish is flagged directly on their row.</p>' +
-      '<h4>Career</h4>' +
-      '<p>Your season by season record. Every car, team, and result the league has on file for you, newest season first.</p>' +
-      '<h4>Protests</h4>' +
-      '<p>File a protest against an incident from a completed race. Choose the race and lap, an infraction type, and up to two other drivers involved if any, with an optional description. You have 48 hours after a round\'s results are posted to file, and you can withdraw a protest any time before a steward rules on it.</p>' +
-      '<h4>Notifications</h4>' +
-      '<p>The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.</p>' +
-      '<h4>Account Settings</h4>' +
-      '<p>Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password, all from the same popup.</p>' +
-      '<h4>Admin and League Management</h4>' +
-      '<p>Admin accounts get two additional pages. League Management is for browsing every season and its races, and recomputing a season\'s results if an earlier round gets corrected. Admin is for managing members, tracks, cars, and creating or ending a season.</p>'));
-    section.appendChild(websiteHelp);
+    // How To Use This Site -- the old stacked h4/p walkthrough replaced
+    // with an icon-card grid (2026-09-18, Matt's call), one card per
+    // page, each using the exact same glyph that page's own sidebar
+    // link/header icon uses so a driver can match a card to a nav item
+    // at a glance. Every line still describes only what's live today --
+    // rewritten 2026-09-18 for the V1 scope cut (Finances, Sponsors,
+    // Wager, and Reputation/Hall of Fame no longer exist).
+    var guide = el('div', 'rc-panel rc-dash-card');
+    guide.appendChild(el('h3', 'rc-dash-card-title', 'How To Use This Site'));
+    var guideGrid = el('div', 'rc-help-guide-grid');
+    HELP_GUIDE_ITEMS.forEach(function (item) {
+      var card = el('div', 'rc-help-guide-card');
+      card.appendChild(el('div', 'rc-help-guide-icon', item.icon));
+      card.appendChild(el('h4', null, item.title));
+      card.appendChild(el('p', null, item.body));
+      guideGrid.appendChild(card);
+    });
+    guide.appendChild(guideGrid);
+    section.appendChild(guide);
 
-    var rulebook = el('div', 'rc-panel');
-    rulebook.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Rules and Regulations'));
+    // Rules and Regulations (the Rulebook) -- same rc-dash-card chrome as
+    // the panels above, plus its own "Jump To A Section" quick-nav grid
+    // right under the intro note (2026-09-18, Matt's call: "give a
+    // navigation section at the top of the league rules section so
+    // people can find their topic quickly and go to it") -- a wider,
+    // chip-style grid instead of the old single-column list of links, so
+    // more of the Rulebook's table of contents is visible without
+    // scrolling.
+    var rulebook = el('div', 'rc-panel rc-dash-card');
+    rulebook.appendChild(el('h3', 'rc-dash-card-title', 'Rules and Regulations'));
     rulebook.appendChild(el('p', 'rc-help-panel-note', 'The Race Club Rulebook is a work in progress. Sections are written and added periodically as the season design comes together. Anything marked "Not yet drafted" is on the plan but not written yet.'));
 
-    var rbIndex = el('div', 'rc-rulebook-index');
+    var rbNav = el('div', 'rc-rulebook-nav');
+    rbNav.appendChild(el('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+    var rbNavGrid = el('div', 'rc-rulebook-nav-grid');
     var rbSections = el('div');
     if (typeof RULEBOOK_SECTIONS !== 'undefined') {
       RULEBOOK_SECTIONS.forEach(function (sec) {
         var link = document.createElement('a');
         link.href = '#rc-rulebook-sec-' + sec.id;
-        if (sec.draft) link.className = 'rc-rulebook-draft';
+        link.className = 'rc-rulebook-nav-link' + (sec.draft ? ' rc-rulebook-draft' : '');
         link.textContent = sec.num + '. ' + sec.title;
-        rbIndex.appendChild(link);
+        rbNavGrid.appendChild(link);
 
         var secWrap = el('div', 'rc-rulebook-section');
         secWrap.id = 'rc-rulebook-sec-' + sec.id;
@@ -3298,7 +3376,8 @@
         rbSections.appendChild(secWrap);
       });
     }
-    rulebook.appendChild(rbIndex);
+    rbNav.appendChild(rbNavGrid);
+    rulebook.appendChild(rbNav);
     rulebook.appendChild(rbSections);
     section.appendChild(rulebook);
   }
@@ -3735,7 +3814,7 @@
     // the same pattern). Nothing else renders until the season list has
     // actually loaded (Matt's 2026-08-30 call) -- no flash of buttons
     // appearing before the list underneath them is ready.
-    section.appendChild(buildPageSpinner('Loading season tools...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     fetchApi('adminListSeasons', { token: token }).then(function (data) {
       if (!data.success) {
@@ -4043,7 +4122,7 @@
     // section loading state should sit at the exact same vertical height
     // as the initial #rc-loading screen, which has no heading above it
     // either. The heading only appears once real content replaces this.
-    section.appendChild(buildPageSpinner('Loading season calendar...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
@@ -4055,10 +4134,7 @@
         return;
       }
       if (!res.hasSeason) {
-        var empty = el('div', 'rc-panel');
-        empty.appendChild(el('h3', 'margin-top:0;', 'No Season Right Now'));
-        empty.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s no season open for registration at the moment -- the calendar fills in once one is.'));
-        section.appendChild(empty);
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'The calendar fills in once a season is open.'));
         return;
       }
 
@@ -4382,7 +4458,7 @@
     var section = document.getElementById('rc-section-results');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading results...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return fetchApi('getSeasonResults', { token: token }).then(function (res) {
@@ -4395,25 +4471,16 @@
       }
       if (!res.hasSeason) {
         section.appendChild(el('h2', 'margin-top:0;', 'Results'));
-        var empty = el('div', 'rc-panel');
-        empty.appendChild(el('h3', 'margin-top:0;', 'No Season Right Now'));
-        empty.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s no season open right now -- results fill in once one is underway.'));
-        section.appendChild(empty);
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Results fill in once a season is underway.'));
         return;
       }
 
       section.appendChild(el('h2', 'margin-top:0;', 'Results'));
 
-      // Info paragraph under the page header (2026-09-09, Matt's call: "give
-      // some info about the results page under the results header") --
-      // explains the leaderboard/per-race layout and what the color coding
-      // in the results tables means, and ties results back into the same
-      // sponsors/wagers/reputation systems the Protests page paragraph
-      // references, since a result here is never just a finishing position.
-      // Reuses rc-sponsors-explainer, same explainer-paragraph class every
-      // other page already uses above its howto/content.
-      section.appendChild(el('p', 'rc-sponsors-explainer',
-        'Every round lands here the moment it\'s scored -- your class leaderboard up top, then a full breakdown race by race. Purple marks whoever set the fastest lap, red rows are a DNF or DSQ, and blue text on incidents/track limits/penalties flags a clean race. Points in these tables are already final.'));
+      // Explainer paragraph removed (2026-09-18, Matt's call: "remove any
+      // descriptions from below the headers on the pages... we have a
+      // help file for help on these sections and I want to keep it
+      // clean") -- see renderHelpSection's Results entry instead.
 
       // One outer container for the whole page (2026-09-08, Matt's call),
       // same rc-dash-card chrome the Calendar page's season panel already
@@ -4472,7 +4539,7 @@
     var section = document.getElementById('rc-section-protests');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading protests...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return Promise.all([
@@ -4482,30 +4549,9 @@
       var filing = results[0], mine = results[1];
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
-      // Short scene-setting lede (2026-09-09, Matt's call: "give a little
-      // info on the protests page between how to use and the header,"
-      // written with some actual flair instead of reading like a stats
-      // readout -- ties protests into the rest of what the league already
-      // has running (sponsors, wagers, reputation) rather than describing
-      // the form in isolation. Static copy -- page-level scene-setting,
-      // not a per-result narrative, so one well-written paragraph is the
-      // whole job here. Reuses rc-sponsors-explainer, the same "explainer
-      // paragraph above the howto box" class Sponsors/Wager already use,
-      // rather than inventing a fourth near-identical style.
-      section.appendChild(el('p', 'rc-sponsors-explainer',
-        'Most of the time a race sorts itself out and nobody thinks twice about it. Protests exist for the times it doesn\'t: a late dive that ends someone else\'s night, a call worth putting in front of a steward instead of arguing about after the fact. File one when it\'s worth the 48-hour wait, not every time a corner gets tight.'));
-      // Moved here, under the page header, out of the "File a Protest"
-      // container (2026-09-09, Matt's call: "The 'How to use this page'
-      // should be under the page header in Protests, not within the
-      // container") -- matches how every other page's howto note already
-      // sits (see e.g. renderFinancesSection/renderWagerSection above),
-      // this page was the one holdout still nesting it inside a card.
-      // Shown unconditionally now, even when there's nothing open to
-      // protest right now (buildProtestFormPanel below can return early
-      // in that case) -- it's a description of the page as a whole, not
-      // tied to whether the form itself is currently usable.
-      section.appendChild(el('p', 'rc-page-howto',
-        '<strong>How to use this page:</strong> pick the race and the lap the incident happened on, choose an infraction type, and name up to two other drivers involved if there are any -- leave those two boxes on "Choose Driver" for a pure self-report. Add an optional description, then click Submit Protest. You have 48 hours after a round\'s results are posted to file for it, and you can withdraw a protest below any time before a steward rules on it.'));
+      // Both the lede paragraph and the "How to use this page" box that
+      // used to sit here are gone (2026-09-18, Matt's call) -- see
+      // renderHelpSection's Protests entry instead.
 
       if (!filing || !filing.success) {
         section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the Protest page right now.'));
@@ -6780,7 +6826,7 @@
     // loading state (2026-09-13, Matt's catch) -- the heading now waits
     // until the real content renders below, exactly like Finances/Career/
     // Wager/etc. already do.
-    section.appendChild(buildPageSpinner('Loading Admin...'));
+    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
 
     Promise.all([
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
@@ -8610,8 +8656,7 @@
   // fetch itself resolves, and every single card fades its real content
   // in independently the moment its own fetch resolves, via
   // asyncDashCard/buildDashboardDataRows above. The only thing the
-  // page-wide "Loading your dashboard..." spinner still waits on is the
-  // profile fetch.
+  // page-wide loading spinner still waits on is the profile fetch.
   //
   // A failed card fetch still resolves (to a {success:false} stand-in via
   // .catch) rather than rejecting, so one card's server error never

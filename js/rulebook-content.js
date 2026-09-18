@@ -25,7 +25,8 @@
 // title: shown in the index and as the section heading.
 // draft: true for sections not yet written -- renders a "Not yet
 //   drafted" note instead of html, and is visually de-emphasized in the
-//   index (see .rc-rulebook-index a.rc-rulebook-draft in style.css).
+//   "Jump To A Section" quick-nav (see .rc-rulebook-nav-link.rc-rulebook-
+//   draft in style.css).
 // html: the section body. Safe to use innerHTML here since every string
 //   below is authored by us, not sourced from user input.
 var RULEBOOK_SECTIONS = [

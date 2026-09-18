@@ -672,20 +672,12 @@ p { margin: 0 0 0.75em; }
 /* -------------------------------------------------------------------- */
 /* Sponsors page -- Comparison Table redesign (2026-09-01, Matt's call)  */
 /* -------------------------------------------------------------------- */
-/* Explainer paragraph under the "Sponsors" page header -- the one piece
-   of the 3-mockup Direction 1 pitch Matt called out by name ("I
-   especially like the explanation at the top under the SPONSORS
-   header"). Sits above every panel on the page, same rc-hint-family gray
-   but slightly larger/roomier since it's carrying real explanatory copy,
-   not a one-line field hint. */
-.rc-sponsors-explainer { color: var(--rc-steel); font-size: 13px; line-height: 1.55; max-width: 760px; margin: 6px 0 20px; }
-/* Page how-to line (2026-09-07) -- sits directly under a page's own
-   .rc-sponsors-explainer summary (Sponsors/Wager so far), one level more
-   concrete: exactly which click does what, not just what the page is
-   for. Boxed and slightly tinted so it reads as reference material,
-   distinct from the plain-text explainer above it. */
-.rc-page-howto { color: var(--rc-carbon); font-size: 12.5px; line-height: 1.6; max-width: 760px; margin: -10px 0 20px; padding: 10px 14px; background: var(--rc-offwhite); border-left: 3px solid var(--rc-steel); border-radius: 4px; }
-.rc-page-howto strong { text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
+/* .rc-sponsors-explainer and .rc-page-howto removed (2026-09-18) -- the
+   last page-header explainer paragraphs and "how to use this page" boxes
+   that used these (Career/Results/Protests) were all taken out per
+   Matt's call to remove page descriptions now that the Help section
+   covers this ground; nothing on the site references either class
+   anymore. */
 
 /* "Current Picks" -- a compact chip strip (2026-09-01, replacing the
    prior 3-column layout), always 3 slots wide. align-items: stretch (the
@@ -4317,6 +4309,17 @@ body.rc-modal-scroll-locked {
 .rc-placeholder-panel { text-align: center; padding: 90px 20px; }
 .rc-placeholder-panel p { margin-top: 10px; }
 
+/* Whole-page "nothing to show" empty state (2026-09-18) -- replaces the
+   old bordered .rc-panel + heading + sentence Calendar/Results/Career
+   used to show for "no season"/"nothing on file." Big icon, a shade
+   darker than the page's own off-white background, no box around it --
+   reads as an intentional state, not another wall of text. */
+.rc-empty-state { text-align: center; padding: 90px 20px; }
+.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 18px; }
+.rc-empty-state-icon svg { width: 64px; height: 64px; }
+.rc-empty-state-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; color: var(--rc-steel); letter-spacing: 0.02em; }
+.rc-empty-state-subtitle { font-size: 13px; color: var(--rc-steel); opacity: 0.75; margin-top: 8px; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+
 /* Forced password-change lock screen (mustChangePassword) */
 .rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
 .rc-forced-password-wrap > p { color: var(--rc-steel); margin-bottom: 14px; }
@@ -4666,56 +4669,102 @@ body.rc-modal-scroll-locked {
 .rc-cal-stat-gap-after { margin-right: 22px; }
 
 /* -------------------------------------------------------------------- */
-/* Account.html's Help section (renderHelpSection()) -- two stacked      */
-/* .rc-panel containers, Website Help then Rules and Regulations (the    */
-/* Rulebook). This briefly lived as its own page (help.html) so the      */
-/* Rulebook would have room to grow, but that page dropped the sidebar/  */
-/* nav chrome entirely -- Matt's call to fold it back into Account.html  */
-/* as an ordinary section instead, same shell as every other link.       */
-/* ".rc-rulebook-*" below was originally written for a Rulebook POPUP    */
-/* that never actually got wired up -- .rc-rulebook-section's            */
-/* scroll-margin-top (76px) happens to already clear the site's 72px     */
-/* fixed header almost exactly, which is why it's untouched here even    */
-/* though the popup it was tuned for never shipped.                      */
+/* Account.html's Help section (renderHelpSection()) -- redesigned        */
+/* 2026-09-18 (Matt's call: "make the styling of the containers           */
+/* consistent with the rest of the website account pages... add icons    */
+/* for sections that show icons on the page... more human-friendly, not  */
+/* a container of boring text"). Every panel now uses "rc-panel rc-dash- */
+/* card" + "rc-dash-card-title", the same featured-panel chrome (red     */
+/* underline, checkered corner) Calendar/Results/League Management/      */
+/* Admin already use, instead of a plain unstyled box. This briefly      */
+/* lived as its own page (help.html) so the Rulebook would have room to  */
+/* grow, but that page dropped the sidebar/nav chrome entirely -- Matt's */
+/* call to fold it back into Account.html as an ordinary section        */
+/* instead, same shell as every other link. ".rc-rulebook-section"'s     */
+/* scroll-margin-top (76px) happens to already clear the site's 70px     */
+/* fixed header with a little room to spare.                             */
 /* -------------------------------------------------------------------- */
 .rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
-.rc-help-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--rc-carbon); }
-/* Page-by-page how-to content (2026-09-09) -- reuses the Rulebook's own
-   h4/p/ul sizing so the two panels read as one visual family, but without
-   .rc-rulebook-section's top border/margin between entries: this reads as
-   one continuous walkthrough, not a chain of numbered sections. */
-.rc-help-content { margin-top: 18px; }
-.rc-help-content h4 { font-family: var(--rc-font-heading); font-size: 14px; color: var(--rc-carbon); margin: 18px 0 6px; }
-.rc-help-content h4:first-child { margin-top: 0; }
-.rc-help-content p, .rc-help-content li { font-size: 13px; color: var(--rc-carbon); line-height: 1.6; }
-.rc-help-content p { margin: 0 0 10px; }
-.rc-help-content ul { margin: 6px 0 12px; padding-left: 20px; }
-.rc-rulebook-index {
+
+/* "Need Help?" -- icon-left contact rows, same shape as index.html's
+   "What You'll Need" list, instead of a plain bulleted <ul>. */
+.rc-help-contact-list { display: flex; flex-direction: column; gap: 14px; }
+.rc-help-contact-row { display: flex; align-items: flex-start; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
+.rc-help-contact-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rc-red);
+  color: var(--rc-red);
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.rc-help-contact-icon svg { width: 15px; height: 15px; }
+
+/* "How To Use This Site" -- one icon card per page, replacing the old
+   stacked h4/p walkthrough. Lighter treatment than .rc-highlight-card
+   (offwhite fill, no shadow/hover-lift) since these already sit inside a
+   featured rc-dash-card panel -- a shadowed card inside a shadowed card
+   would read as heavy, not polished. */
+.rc-help-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+.rc-help-guide-card {
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  padding: 16px;
+}
+.rc-help-guide-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(160deg, var(--rc-carbon), #2c2c2c);
+  color: var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.rc-help-guide-icon svg { width: 17px; height: 17px; }
+.rc-help-guide-card h4 { font-family: var(--rc-font-heading); font-size: 13.5px; color: var(--rc-carbon); margin: 0 0 6px; letter-spacing: 0.02em; }
+.rc-help-guide-card p { font-size: 12.5px; color: var(--rc-steel); line-height: 1.55; margin: 0; }
+
+/* Rulebook "Jump To A Section" quick-nav (2026-09-18, replaces the old
+   single-column .rc-rulebook-index list) -- a wider chip grid so more of
+   the table of contents is visible at once, sitting right under the
+   intro note instead of blending into it. */
+.rc-rulebook-nav {
   padding: 16px;
   border: 1px solid var(--rc-silver);
   border-radius: 8px;
   background: var(--rc-offwhite);
   margin-bottom: 24px;
 }
+.rc-rulebook-nav-title { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); margin-bottom: 10px; }
+.rc-rulebook-nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
 /* Categories shown in red (Matt's call: "categories in the HELP menu
    should be red to distinguish them") -- each link gets real padding and
    a rounded hit area instead of sitting flush against its neighbors, so
-   the list reads as a set of distinct rows, not one cramped block of
+   the grid reads as a set of distinct chips, not one cramped block of
    text. Draft (not-yet-written) sections stay muted steel so the two
    states stay easy to tell apart at a glance. */
-.rc-rulebook-index a {
+.rc-rulebook-nav-link {
   font-size: 13px;
   color: var(--rc-red);
   text-decoration: none;
   padding: 7px 10px;
   border-radius: 5px;
 }
-.rc-rulebook-index a:hover { color: var(--rc-red-dark); background: var(--rc-white); }
-.rc-rulebook-index a.rc-rulebook-draft { color: var(--rc-steel); }
-.rc-rulebook-index a.rc-rulebook-draft:hover { color: var(--rc-carbon); background: var(--rc-white); }
+.rc-rulebook-nav-link:hover { color: var(--rc-red-dark); background: var(--rc-white); }
+.rc-rulebook-nav-link.rc-rulebook-draft { color: var(--rc-steel); }
+.rc-rulebook-nav-link.rc-rulebook-draft:hover { color: var(--rc-carbon); background: var(--rc-white); }
 
 /* scroll-margin-top clears the modal's sticky header (see .rc-modal-head)
    -- without it, jumping here from the index puts the section heading
