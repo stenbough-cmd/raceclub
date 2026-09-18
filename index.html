@@ -101,6 +101,22 @@
     data as before, rendered with the identical card markup as the live
     grid -- and, since there's no server round-trip to hide behind here,
     all built up front and faded in together rather than staggered.
+
+  WHAT CHANGED IN THIS PASS (2026-09-18, "fix the index page to align with
+  what we've built" -- V1 scope cut cleanup, see season-1-mvp-scope.md):
+  This page still described a "buy into a team" economy left over from an
+  earlier design that never shipped -- registration is actually free and
+  first-come-first-served (see handleJoinTeam, DataCache.gs -- no
+  BuyInCost read anymore). Fixed every live line that said otherwise: the
+  intro tagline ("buy into a team" -> "join a real team", dropped "build a
+  bank balance", which no longer exists), the "Real Teams, Real Seats" and
+  "A Fresh Grid, Every Season" highlight cards (both said "Buy into"), and
+  the closing CTA ("pay the buy-in" removed entirely). The "Why Race Club"
+  section comment's stale "Six ... cards" count fixed to five (it's been
+  five since the Sponsors/Money cards were pulled in an earlier pass). No
+  markup, styling, or the live Meet The Grid data-fetch changed -- that
+  backend (handleGetGridTeaser/_rcGridTeaserPool_, Website.gs) never
+  touched money/sponsors to begin with and is untouched by any of this.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -145,15 +161,15 @@
       <h2>What Is Race Club</h2>
       <p class="rc-landing-tagline">
         Race Club is a persistent, solo-driver career built on real Le Mans
-        Ultimate league races. You buy into a team, race real league rounds
-        against real friends, and build a bank balance and a driving record
-        that carry your career forward: no NPC grid, no shortcuts, just
-        your results, race after race.
+        Ultimate league races. You join a real team, race real league
+        rounds against real friends, and build a driving record that
+        carries your career forward: no NPC grid, no shortcuts, just your
+        results, race after race.
       </p>
     </div>
   </section>
 
-  <!-- "Why Race Club" -- the recruiting section. Six short highlight
+  <!-- "Why Race Club" -- the recruiting section. Five short highlight
        cards, each icon + headline + one line, built specifically so this
        reads as scannable claims instead of another paragraph of copy. -->
   <section class="rc-landing-section rc-why-section">
@@ -173,7 +189,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="15" height="11" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path></svg>
           </div>
           <h3>Real Teams, Real Seats</h3>
-          <p>Every car on the grid is modeled on an actual real-world team, not a made-up livery. Buy into the team that fits how you want to race, and the seat is yours.</p>
+          <p>Every car on the grid is modeled on an actual real-world team, not a made-up livery. Join the team that fits how you want to race, first-come first-served, and the seat is yours.</p>
         </div>
 
         <div class="rc-highlight-card">
@@ -205,7 +221,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
           </div>
           <h3>A Fresh Grid, Every Season</h3>
-          <p>Seats reset when a season ends, but your career record carries forward. Buy into a new team and write the next chapter.</p>
+          <p>Seats reset when a season ends, but your career record carries forward. Join a new team and write the next chapter.</p>
         </div>
 
       </div>
@@ -345,8 +361,8 @@
        manufacturer logos and all, not a reinterpretation of it.
        Backed by the existing PUBLIC action getGridTeaser
        (handleGetGridTeaser, Website.gs) -- no token needed, same
-       "usable with no auth, active-only" convention handleGetCars/
-       handleGetSponsors already establish. It resolves the current
+       "usable with no auth, active-only" convention handleGetCars
+       already establishes. It resolves the current
        season the same way the rest of the site does (most recent
        Registration/Active season), reads which classes that season has
        switched on and which real-world car-data year each one draws
@@ -704,7 +720,7 @@
   <section class="rc-cta-section">
     <div class="rc-landing-inner rc-cta-inner">
       <h2>Ready To Race?</h2>
-      <p>Pick a team, pay the buy-in, and you're on the grid. No waitlist, no draft, just the seat you chose. Sign up, get approved, and stake your claim before the season starts.</p>
+      <p>Pick a team and you're on the grid. No waitlist, no draft, just the seat you chose. Sign up, get approved, and stake your claim before the season starts.</p>
       <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Driver</a>
     </div>
   </section>
