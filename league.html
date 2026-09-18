@@ -35,7 +35,7 @@
 <script>renderHeader();</script>
 
 <div class="rcl-ticker-wrap">
-  <div class="rcl-ticker-label">Recent Highlights</div>
+  <div class="rcl-ticker-label">Highlights</div>
   <div class="rcl-ticker-viewport">
     <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
   </div>
@@ -43,11 +43,12 @@
 
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
-    <!-- Eyebrow now shows the season number ("SEASON n"), filled in by
-         _rclRenderHero once getLeagueHub resolves -- static "League Hub"
-         moved down to the title itself below. -->
-    <div class="rcl-hero-eyebrow" id="rcl-hero-eyebrow">League Hub</div>
+    <!-- Eyebrow is static "Race Club" now (2026-09-19) -- the season
+         number moved down to its own line between the title and the
+         season-context details, filled in by _rclRenderHero. -->
+    <div class="rcl-hero-eyebrow">Race Club</div>
     <h1 class="rcl-hero-title">League Hub</h1>
+    <div class="rcl-hero-season" id="rcl-hero-season"></div>
     <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
   </div>
 </section>

@@ -232,6 +232,13 @@ function _rcBuildAccountMenuSectionLinks(role) {
     link('protests', 'Protests') + link('career', 'Career');
   html += '<hr class="rc-header-menu-divider">';
   html += '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
+  // A second divider between League Hub and the permission-gated items
+  // (added 2026-09-19, Matt's call) -- only when at least one of them
+  // actually shows for this role, so a Driver/Steward-without-Organizer
+  // account never ends up with two dividers back to back and nothing
+  // between them.
+  var hasGatedItems = role === 'Admin' || role === 'Organizer' || role === 'Steward';
+  if (hasGatedItems) html += '<hr class="rc-header-menu-divider">';
   if (role === 'Admin') html += link('admin', 'Admin');
   if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools');
   if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding');

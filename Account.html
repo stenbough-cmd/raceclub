@@ -6883,7 +6883,7 @@
     // loading state (2026-09-13, Matt's catch) -- the heading now waits
     // until the real content renders below, exactly like Finances/Career/
     // Wager/etc. already do.
-    section.appendChild(buildPageSpinner('Loading admin...'));
+    section.appendChild(buildPageSpinner('Loading admin tools...'));
 
     Promise.all([
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
@@ -8380,8 +8380,14 @@
           // helper call -- the region's own .rc-dm-group from
           // buildGroupedAdminList just wraps the whole set of them now,
           // which only adds a few px of shared margin, nothing visible.
-          var group = el('div', 'rc-dm-group');
-          var row = el('div', 'rc-dm-row rc-dm-row-light');
+          // Divider moved to sit BETWEEN tracks (2026-09-19, Matt's call:
+          // "make the faded gray line appear in between each track, not in
+          // between the location and layout") -- the venue name row no
+          // longer carries its own border-bottom; instead .rc-dm-venue-group
+          // draws a top border on every venue after the first within a
+          // region, via the adjacent-sibling CSS rule.
+          var group = el('div', 'rc-dm-group rc-dm-venue-group');
+          var row = el('div', 'rc-dm-row rc-dm-row-light rc-dm-row-noborder');
           row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(v.name)));
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
@@ -8645,7 +8651,11 @@
       groupKey: function (c) { return c.Class || 'Unclassified'; },
       canonicalOrder: (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).slice(),
       buildGroupHeader: function (cls) {
-        var classHead = el('div', 'rc-dm-row');
+        // No divider line under the class badge itself (2026-09-19, Matt's
+        // call) -- the season/car rows beneath it already carry their own
+        // lighter dividers, so the heavier .rc-dm-row line here just read
+        // as a redundant rule right under the pill.
+        var classHead = el('div', 'rc-dm-row rc-dm-row-noborder');
         classHead.appendChild(_rcClassBadge(cls));
         return classHead;
       },

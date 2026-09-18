@@ -964,6 +964,20 @@ p { margin: 0 0 0.75em; }
    badge itself (.rc-badge-group) now rather than on this wrapper. */
 .rc-dm-season-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px 20px; }
 .rc-dm-group { margin-bottom: 4px; }
+/* Suppresses .rc-dm-row's default border-bottom for a group header that
+   shouldn't carry one -- currently the Cars list's Class badge head and
+   the Tracks list's venue name row (2026-09-19, Matt's call). */
+.rc-dm-row-noborder { border-bottom: none; }
+/* Tracks list: the faded divider now sits BETWEEN tracks rather than
+   between a track's name and its layout rows (2026-09-19, Matt's call).
+   Adjacent-sibling rule so the first venue in a region never gets a
+   leading line, matching how .rc-dm-row:last-child already avoids a
+   trailing one elsewhere on this page. */
+.rc-dm-venue-group + .rc-dm-venue-group {
+  border-top: 1px solid var(--rc-offwhite);
+  margin-top: 4px;
+  padding-top: 8px;
+}
 .rc-dm-empty { padding: 14px 0; font-size: 13px; color: var(--rc-steel); }
 
 /* Layout list inside the Track edit popup (openEditTrackModal) -- each

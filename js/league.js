@@ -383,7 +383,10 @@ function _rclRenderNews(hub) {
   if (_rclNewsList.length > 1) {
     var prevWrap = _rclEl('div', 'rcl-news-previous');
     prevWrap.appendChild(_rclEl('div', 'rcl-news-previous-head', 'More Stories'));
-    _rclNewsList.slice(1).forEach(function (item, i) {
+    // Capped at the next 5 (2026-09-19, Matt's call) -- anything older
+    // than that stays reachable only through the read-story popup's own
+    // "Load More News" button, not listed out here on the page.
+    _rclNewsList.slice(1, 6).forEach(function (item, i) {
       var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclEscapeHtml(item.title || '(untitled)'));
       titleBtn.type = 'button';
       titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1); });
@@ -404,10 +407,13 @@ function _rclOpenStoryModal(startIndex) {
 
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'League News'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
-  dialog.appendChild(closeBtn);
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
   var storiesWrap = _rclEl('div', 'rcl-modal-body');
   dialog.appendChild(storiesWrap);
   var loadMoreWrap = _rclEl('div', 'rcl-modal-loadmore-wrap');
@@ -457,14 +463,13 @@ function _rclOpenStoryModal(startIndex) {
     updateLoadMoreVisibility();
   });
 
+  // Closable ONLY via the X button (2026-09-19, Matt's call) -- no
+  // backdrop click, no Escape key. Same "avoid an accidental close"
+  // posture Account.html's own generic modal already uses.
   function close() {
     document.body.removeChild(overlay);
-    document.removeEventListener('keydown', onKeyDown);
   }
-  function onKeyDown(evt) { if (evt.key === 'Escape') close(); }
   closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', function (evt) { if (evt.target === overlay) close(); });
-  document.addEventListener('keydown', onKeyDown);
 
   document.body.appendChild(overlay);
 }
@@ -509,8 +514,12 @@ function _rclBuildSeasonContext(hub) {
 }
 
 function _rclRenderHero(hub) {
-  var eyebrowEl = document.getElementById('rcl-hero-eyebrow');
-  if (eyebrowEl) eyebrowEl.textContent = hub.hasSeason && hub.seasonNumber ? ('Season ' + hub.seasonNumber) : 'League Hub';
+  // Eyebrow is static "Race Club" (set directly in league.html) --
+  // nothing to fill in here anymore. The season number gets its own
+  // line between the title and the season-context details instead
+  // (2026-09-19, Matt's call).
+  var seasonEl = document.getElementById('rcl-hero-season');
+  if (seasonEl) seasonEl.textContent = hub.hasSeason && hub.seasonNumber ? ('Season ' + hub.seasonNumber) : '';
   var subEl = document.getElementById('rcl-hero-sub');
   if (subEl) {
     subEl.textContent = hub.hasSeason
