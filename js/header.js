@@ -228,15 +228,19 @@ function _rcBuildAccountMenuSectionLinks(role) {
   function link(section, label) {
     return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + label + '</a>';
   }
-  var html = link('dashboard', 'Dashboard') + link('calendar', 'Calendar') + link('results', 'Results') +
-    link('protests', 'Protests') + link('career', 'Career');
+  // League Hub moved to the very top of the dropdown, above Dashboard
+  // (2026-09-19, Matt's call) -- mirrors the same move in Account.html's
+  // sidebar (buildSidebarNav). Off-page link to the public league.html,
+  // not an in-page section, so it skips data-rc-section entirely (same as
+  // before this reorder).
+  var html = '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
   html += '<hr class="rc-header-menu-divider">';
-  html += '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
-  // A second divider between League Hub and the permission-gated items
-  // (added 2026-09-19, Matt's call) -- only when at least one of them
-  // actually shows for this role, so a Driver/Steward-without-Organizer
-  // account never ends up with two dividers back to back and nothing
-  // between them.
+  html += link('dashboard', 'Dashboard') + link('calendar', 'Calendar') + link('results', 'Results') +
+    link('protests', 'Protests') + link('career', 'Career');
+  // A second divider between Career and the permission-gated items --
+  // only when at least one of them actually shows for this role, so a
+  // Driver/Steward-without-Organizer account never ends up with two
+  // dividers back to back and nothing between them.
   var hasGatedItems = role === 'Admin' || role === 'Organizer' || role === 'Steward';
   if (hasGatedItems) html += '<hr class="rc-header-menu-divider">';
   if (role === 'Admin') html += link('admin', 'Admin');

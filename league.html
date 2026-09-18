@@ -2,13 +2,13 @@
   Race Club -- league.html  (added 2026-09-18, reworked 2026-09-19)
 
   Public ESPN-style league hub: a scrolling results/standings ticker under
-  the shared site header, a season hero band (season number, "League Hub"
-  title, and a season-context write-up built from real data), then four
-  rows of content -- Recent Results + League News side by side, then
-  Leaderboard, Calendar, and Drivers each full width. Public, no login
-  required -- same "usable with no token at all" convention as index.html
-  and its getGridTeaser call (see js/league.js -> getLeagueHub,
-  Website.gs).
+  the shared site header, a season hero band (season number + name,
+  "League Hub" title, and two stat strips built from real data -- This
+  Season and League Format), then Recent Results + League News side by
+  side, then Leaderboard, Points, Calendar, and Drivers each full width.
+  Public, no login required -- same "usable with no token at all"
+  convention as index.html and its getGridTeaser call (see js/league.js ->
+  getLeagueHub, Website.gs).
 
   Header: loaded and mounted exactly like every other page on the site
   (js/header.js's shared #rc-header div + renderHeader() call) -- it reads
@@ -45,11 +45,25 @@
   <div class="rcl-hero-inner">
     <!-- Eyebrow is static "Race Club" now (2026-09-19) -- the season
          number moved down to its own line between the title and the
-         season-context details, filled in by _rclRenderHero. -->
+         season-context details, filled in by _rclRenderHero. Season NAME
+         (added 2026-09-19) sits right after the number on that same line. -->
     <div class="rcl-hero-eyebrow">Race Club</div>
     <h1 class="rcl-hero-title">League Hub</h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
+    <!-- Season snapshot + League Format stat strips (added 2026-09-19,
+         replacing the old single pipe-separated sentence -- Matt's call:
+         "find a better way to display this... boring to look at"). Both
+         built by _rclRenderHero/_rclRenderHeroStats in js/league.js;
+         rcl-hero-sub is the plain-text fallback for "no season" only. -->
     <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
+    <div class="rcl-hero-stats-group" id="rcl-hero-snapshot-group" style="display:none;">
+      <div class="rcl-hero-stats-label">This Season</div>
+      <div class="rcl-hero-stats-row" id="rcl-hero-snapshot"></div>
+    </div>
+    <div class="rcl-hero-stats-group" id="rcl-hero-format-group" style="display:none;">
+      <div class="rcl-hero-stats-label">League Format</div>
+      <div class="rcl-hero-stats-row" id="rcl-hero-format"></div>
+    </div>
   </div>
 </section>
 
@@ -82,6 +96,17 @@
         <div class="rcl-panel-title">Leaderboard</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
+    </section>
+  </div>
+
+  <!-- POINTS -- race-length-tier points tables + bonus points, between
+       LEADERBOARD and CALENDAR (added 2026-09-19, Matt's ask). -->
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title">Points</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-points-body"></div>
     </section>
   </div>
 

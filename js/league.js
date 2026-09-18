@@ -49,6 +49,19 @@ function _rclFormatDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// Date + time, viewer's own local timezone (added 2026-09-19, Calendar
+// redesign) -- league.html is a public, no-token page, so there's no
+// driver timezone to read the way Account.html's Calendar does; the
+// browser's own locale/timezone is the only thing available here, same
+// as every other date this page already formats.
+function _rclFormatDateTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
 // ---------------------------------------------------------------------
 // TICKER
 // ---------------------------------------------------------------------
@@ -226,22 +239,114 @@ function _rclRenderCalendar(hub) {
     if (entry.kind === 'bye') {
       var byeRow = _rclEl('div', 'rcl-cal-row rcl-cal-row-bye');
       byeRow.appendChild(_rclEl('div', 'rcl-cal-round', 'BYE'));
-      byeRow.appendChild(_rclEl('div', 'rcl-cal-event', 'Bye Week'));
-      byeRow.appendChild(_rclEl('div', 'rcl-cal-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
+      var byeBody = _rclEl('div', 'rcl-cal-row-body');
+      byeBody.appendChild(_rclEl('div', 'rcl-cal-track', 'Bye Week'));
+      byeBody.appendChild(_rclEl('div', 'rcl-cal-meta', '<span class="rcl-cal-meta-item">' + _rclEscapeHtml(_rclFormatDate(entry.startUtc)) + '</span>'));
+      byeRow.appendChild(byeBody);
       body.appendChild(byeRow);
       return;
     }
+
+    // Redesigned 2026-09-19 (Matt's call): the round label owns the row's
+    // left edge (bright, large, solid red -- see .rcl-cal-round), Track
+    // is now the bold primary line with the event name underneath it in a
+    // lighter weight (previously the other way around), and a meta chip
+    // row adds length tier + in-game session times alongside the
+    // date/time -- all public-safe fields handleGetLeagueHub now sends
+    // (see its own comment in Website.gs).
     var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : ''));
-    row.appendChild(_rclEl('div', 'rcl-cal-round', entry.roundNum ? ('R' + entry.roundNum) : (entry.kind === 'special' ? 'SP' : '')));
-    var eventCol = _rclEl('div');
-    eventCol.appendChild(_rclEl('div', 'rcl-cal-event', _rclEscapeHtml(entry.eventName || 'Race')));
-    eventCol.appendChild(_rclEl('div', 'rcl-cal-track', _rclEscapeHtml([entry.track, entry.layout].filter(Boolean).join(' -- '))));
-    row.appendChild(eventCol);
-    row.appendChild(_rclEl('div', 'rcl-cal-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
+    var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (entry.kind === 'special' ? 'SP' : '');
+    row.appendChild(_rclEl('div', 'rcl-cal-round', _rclEscapeHtml(roundLabel)));
+
+    var rowBody = _rclEl('div', 'rcl-cal-row-body');
+    var topLine = _rclEl('div', 'rcl-cal-row-top');
+    topLine.appendChild(_rclEl('div', 'rcl-cal-track',
+      '<strong>' + _rclEscapeHtml(entry.track || '(no track)') + '</strong>' +
+      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
     var statusText = idx === nextIdx ? 'UP NEXT' : (entry.finished ? (entry.hasResults ? 'COMPLETE' : 'AWAITING RESULTS') : 'UPCOMING');
-    row.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusText.split(' ')[0].toLowerCase(), statusText));
+    topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusText.split(' ')[0].toLowerCase(), statusText));
+    rowBody.appendChild(topLine);
+
+    rowBody.appendChild(_rclEl('div', 'rcl-cal-event', _rclEscapeHtml(entry.eventName || 'Race')));
+
+    var metaRow = _rclEl('div', 'rcl-cal-meta');
+    function metaItem(label, value) {
+      var item = _rclEl('span', 'rcl-cal-meta-item');
+      if (label) item.innerHTML = '<span class="rcl-cal-meta-item-label">' + _rclEscapeHtml(label) + '</span> ' + _rclEscapeHtml(value);
+      else item.textContent = value;
+      metaRow.appendChild(item);
+    }
+    if (entry.startUtc) metaItem('', _rclFormatDateTime(entry.startUtc));
+    if (entry.raceLengthTier) metaItem('', entry.raceLengthTier + ' Race');
+    if (entry.igRaceStart) {
+      var igParts = ['IG Race ' + entry.igRaceStart];
+      if (entry.igPracticeStart) igParts.push('Practice ' + entry.igPracticeStart);
+      if (entry.igQualifyStart) igParts.push('Qualifying ' + entry.igQualifyStart);
+      metaItem('', igParts.join(' -- '));
+    }
+    rowBody.appendChild(metaRow);
+
+    row.appendChild(rowBody);
     body.appendChild(row);
   });
+}
+
+// ---------------------------------------------------------------------
+// POINTS -- race-length-tier point tables + bonus points (added
+// 2026-09-19). Straight passthrough of Seasons.SeasonDetails.
+// pointsTables/bonusPoints (same shape the Season Creation Wizard writes
+// and handleGetSeasonCalendar already hands a logged-in driver), just
+// public here. Table order follows the tiers as they come back from the
+// server object (Sprint/Medium/Long, the only tiers the wizard creates)
+// rather than a hardcoded list, so a renamed or added tier still shows up
+// without a frontend change.
+// ---------------------------------------------------------------------
+function _rclRenderPoints(hub) {
+  var body = document.getElementById('rcl-points-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  var tables = hub.pointsTables || {};
+  var tierNames = Object.keys(tables);
+  if (!hub.hasSeason || !tierNames.length) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Points tables fill in once a season is underway.'));
+    return;
+  }
+
+  tierNames.forEach(function (tierName) {
+    var tier = tables[tierName] || {};
+    var points = tier.points || [];
+    if (!points.length) return;
+    var wrap = _rclEl('div', 'rcl-points-tier');
+    var head = _rclEl('div', 'rcl-points-tier-head');
+    head.appendChild(_rclEl('div', 'rcl-points-tier-name', _rclEscapeHtml(tierName)));
+    if (tier.duration) head.appendChild(_rclEl('div', 'rcl-points-tier-duration', tier.duration + ' min'));
+    wrap.appendChild(head);
+    var table = _rclEl('div', 'rcl-points-table');
+    points.forEach(function (val, idx) {
+      var pos = _rclEl('div', 'rcl-points-pos');
+      pos.appendChild(_rclEl('div', 'rcl-points-pos-num', 'P' + (idx + 1)));
+      pos.appendChild(_rclEl('div', 'rcl-points-pos-val', String(val)));
+      table.appendChild(pos);
+    });
+    wrap.appendChild(table);
+    body.appendChild(wrap);
+  });
+
+  var bonus = hub.bonusPoints || {};
+  var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
+  var bonusChips = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
+  if (bonusChips.length) {
+    var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
+    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label', 'Bonus Points This Season'));
+    bonusChips.forEach(function (key) {
+      bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-chip', _rclEscapeHtml(bonusLabels[key]) + ' <strong>+' + Number(bonus[key]) + '</strong>'));
+    });
+    body.appendChild(bonusRow);
+  } else if (tierNames.length) {
+    body.appendChild(_rclEl('div', 'rcl-points-bonus-row',
+      '<div class="rcl-points-bonus-chip">No bonus points are awarded this season.</div>'));
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -475,61 +580,115 @@ function _rclOpenStoryModal(startIndex) {
 }
 
 // ---------------------------------------------------------------------
-// PAGE HERO -- season number + a season-context write-up built from
-// real data (dates, round count, per-class driver counts, drop weeks).
-// Reworked 2026-09-19: the title itself is now the static "League Hub"
-// (set directly in league.html), the eyebrow above it carries the
-// season number instead, and the sub-line is this generated summary
-// instead of a fixed sentence.
+// PAGE HERO -- season number + name, and two stat strips built from real
+// data instead of one long pipe-separated sentence (2026-09-19, Matt's
+// call: the old sentence was "boring to look at"). "This Season" is
+// season-specific (dates, race count, per-class driver counts, drop
+// races, rounds completed); "League Format" is the season-wide race
+// rules (tires, practice/qualifying length, setup/pit stop rules, fuel
+// and tire wear multipliers) pulled from hub.raceSettings, same field
+// set the Season Creation Wizard's Race Settings step writes. The title
+// itself stays the static "League Hub" (set directly in league.html);
+// the eyebrow above it carries "Race Club".
 // ---------------------------------------------------------------------
-function _rclBuildSeasonContext(hub) {
-  var parts = [];
+function _rclBuildSnapshotStats(hub) {
+  var stats = [];
 
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
     var endLabel = _rclFormatDate(hub.seasonEndUtc);
     if (startLabel && endLabel) {
-      parts.push('Date: ' + startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''));
+      stats.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
     }
   }
 
   if (hub.totalRounds) {
-    parts.push('Calendar: ' + hub.totalRounds + (hub.totalRounds === 1 ? ' Race' : ' Races'));
+    stats.push({ value: String(hub.totalRounds), label: hub.totalRounds === 1 ? 'Race' : 'Races' });
   }
 
   (hub.standings || []).forEach(function (cls) {
     var count = (cls.standings || []).length;
-    if (count) parts.push((cls.className || 'Class') + ' Drivers - ' + count);
+    if (count) stats.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
   });
 
   if (hub.dropWeeks) {
-    parts.push('Drop Races: ' + hub.dropWeeks);
+    stats.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
   }
 
   if (hub.totalRounds) {
-    parts.push('Rounds Completed: ' + (hub.roundsCompleted || 0) + '/' + hub.totalRounds);
+    stats.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
   }
 
-  return parts.join(' | ');
+  return stats;
+}
+
+// League Format -- season-wide race rules, not season-specific results
+// (added 2026-09-19, Matt's ask: "add information about the league like
+// tires allowed each event, practice length, qualifying length, etc.").
+// Multiplier fields ('Off'/'Realistic'/'2x'/'3x', see
+// RACE_SETTINGS_MULTIPLIER_OPTIONS in Account.html) are shown as-is --
+// same labels the wizard itself uses, so this page can never say
+// something different from what the admin actually picked.
+function _rclBuildFormatStats(hub) {
+  var rs = hub.raceSettings || {};
+  var stats = [];
+  if (rs.tireCount) stats.push({ value: String(rs.tireCount), label: 'Tires Per Event' });
+  if (rs.practiceLengthMin) stats.push({ value: rs.practiceLengthMin + ' min', label: 'Practice Length' });
+  if (rs.qualifyLengthMin) stats.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualifying Length' });
+  if (rs.setupRules) stats.push({ value: rs.setupRules, label: 'Setup Rules' });
+  if (rs.pitStopReq) stats.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
+  if (rs.fuelMultiplier) stats.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
+  if (rs.tireWearMultiplier) stats.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
+  if (rs.trackLimitPoints) stats.push({ value: String(rs.trackLimitPoints), label: 'Track Limit Points' });
+  return stats;
+}
+
+function _rclRenderStatsRow(containerId, stats) {
+  var row = document.getElementById(containerId);
+  if (!row) return;
+  row.innerHTML = '';
+  stats.forEach(function (s) {
+    var tile = _rclEl('div', 'rcl-hero-stat');
+    tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
+    tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
+    row.appendChild(tile);
+  });
 }
 
 function _rclRenderHero(hub) {
   // Eyebrow is static "Race Club" (set directly in league.html) --
-  // nothing to fill in here anymore. The season number gets its own
-  // line between the title and the season-context details instead
-  // (2026-09-19, Matt's call).
+  // nothing to fill in here anymore.
   var seasonEl = document.getElementById('rcl-hero-season');
-  if (seasonEl) seasonEl.textContent = hub.hasSeason && hub.seasonNumber ? ('Season ' + hub.seasonNumber) : '';
-  var subEl = document.getElementById('rcl-hero-sub');
-  if (subEl) {
-    subEl.textContent = hub.hasSeason
-      ? (_rclBuildSeasonContext(hub) || 'Live standings, race results, and league news -- updated after every round.')
-      : 'No season is currently underway. Check back once the next one opens.';
+  if (seasonEl) {
+    seasonEl.textContent = hub.hasSeason && hub.seasonNumber
+      ? ('Season ' + hub.seasonNumber + (hub.seasonName ? ' -- ' + hub.seasonName : ''))
+      : '';
   }
+
+  var subEl = document.getElementById('rcl-hero-sub');
+  var snapshotGroup = document.getElementById('rcl-hero-snapshot-group');
+  var formatGroup = document.getElementById('rcl-hero-format-group');
+
+  if (!hub.hasSeason) {
+    if (subEl) { subEl.textContent = 'No season is currently underway. Check back once the next one opens.'; subEl.style.display = ''; }
+    if (snapshotGroup) snapshotGroup.style.display = 'none';
+    if (formatGroup) formatGroup.style.display = 'none';
+    return;
+  }
+
+  if (subEl) subEl.style.display = 'none';
+
+  var snapshotStats = _rclBuildSnapshotStats(hub);
+  if (snapshotGroup) snapshotGroup.style.display = snapshotStats.length ? '' : 'none';
+  _rclRenderStatsRow('rcl-hero-snapshot', snapshotStats);
+
+  var formatStats = _rclBuildFormatStats(hub);
+  if (formatGroup) formatGroup.style.display = formatStats.length ? '' : 'none';
+  _rclRenderStatsRow('rcl-hero-format', formatStats);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderDrivers, _rclRenderNews];
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderPoints, _rclRenderCalendar, _rclRenderDrivers, _rclRenderNews];
   fetchApi('getLeagueHub', {}).then(function (hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });

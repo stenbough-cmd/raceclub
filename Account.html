@@ -569,6 +569,17 @@
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
+    // League Hub (added 2026-09-18) -- moved to the very top of the
+    // sidebar, above Dashboard (2026-09-19, Matt's call). Links off-page
+    // to the public league.html, not another in-page section, so it
+    // navigates directly instead of going through showSection/
+    // showLazySection. Shown for every account regardless of role, same
+    // as the header dropdown's own League Hub link (see header.js's
+    // _rcBuildAccountMenuSectionLinks, moved to match).
+    nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
+      window.location.href = 'league.html';
+    }));
+    nav.appendChild(navDivider());
     NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
       // Calendar fetches fresh every time the link is clicked (same
       // lazy-fetch-on-click pattern as Data/League Management) rather than
@@ -607,17 +618,6 @@
       }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
-    // League Hub (added 2026-09-18) -- links off-page to the public
-    // league.html, not another in-page section, so it navigates directly
-    // instead of going through showSection/showLazySection. Sits right
-    // after Career, ahead of the admin-gated divider below, for every
-    // account regardless of role -- the same header-dropdown link every
-    // page's shared header now offers logged-in drivers, just reachable
-    // from the sidebar too.
-    nav.appendChild(navDivider());
-    nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
-      window.location.href = 'league.html';
-    }));
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);

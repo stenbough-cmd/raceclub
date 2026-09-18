@@ -167,6 +167,51 @@ body.rc-league-page {
 }
 .rcl-hero-sub { margin-top: 12px; font-size: 14px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }
 
+/* Season snapshot / League Format stat strips (added 2026-09-19,
+   replacing the old single pipe-separated sentence -- "Date: ... |
+   Calendar: ... | Drop Races: ... | Rounds Completed: ..." read as boring
+   plain text; this reads as a real stat strip instead, same family as the
+   Recent Results headline stats (.rcl-race-headline-stat) just themed for
+   the hero's dark gradient background). Two groups (This Season / League
+   Format) rather than one long row so the two different kinds of
+   information -- what's happening this season vs. how the league always
+   runs -- stay visually separate. */
+.rcl-hero-stats-group { margin-top: 22px; }
+.rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 20px; }
+.rcl-hero-stats-label {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 10px;
+}
+.rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.rcl-hero-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 6px;
+  padding: 8px 14px;
+  min-width: 92px;
+}
+.rcl-hero-stat-value {
+  font-family: var(--rc-font-heading);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.rcl-hero-stat-label {
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+
 /* -------------------------------------------------------------------- */
 /* Layout                                                                */
 /* -------------------------------------------------------------------- */
@@ -301,20 +346,57 @@ body.rc-league-page {
 /* standalone "Next Race" mini-card -- the UP NEXT pill on the schedule  */
 /* itself does that job now, no separate widget needed.                 */
 /* -------------------------------------------------------------------- */
+/* Redesigned 2026-09-19 (Matt's call): the round label (R1/R2/SP/BYE)
+   moves off the small centered text it used to be and into a full-height
+   bar down the row's left edge -- same "own the left side of the
+   container" move Account.html's driver-facing Calendar already makes
+   with .rc-cal-round-number, just in solid brand red with white text
+   here to match this page's one loud accent (the ticker label, the hero's
+   diagonal bar) rather than the light page's neutral gray. Track/event
+   name also swap emphasis here (Matt: "make the Track bolder... and the
+   event name less bold") -- Track is now the primary bold line, event
+   name the lighter secondary one underneath it.
+   .rcl-cal-row is now a flex row (bar + body), not a grid -- the body
+   itself stacks three lines: top (track + status), event name, then a
+   meta row of chips (date/time, length tier, in-game times). */
 .rcl-cal-row {
-  display: grid;
-  grid-template-columns: 40px 1fr auto auto;
+  display: flex;
+  align-items: stretch;
   gap: 14px;
-  align-items: center;
-  padding: 10px 0;
+  padding: 0;
   border-bottom: 1px solid var(--rcl-line);
+  overflow: hidden;
 }
 .rcl-cal-row:last-child { border-bottom: none; }
 .rcl-cal-row-next { background: rgba(198, 30, 30, 0.08); }
-.rcl-cal-round { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; color: var(--rcl-ink-faint); text-align: center; }
-.rcl-cal-event { font-size: 13.5px; font-weight: 700; color: var(--rcl-ink); }
-.rcl-cal-track { font-size: 11.5px; color: var(--rcl-ink-faint); margin-top: 1px; }
-.rcl-cal-date { font-size: 12px; color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcl-cal-round {
+  flex: none;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rc-red);
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rc-white);
+  text-align: center;
+  user-select: none;
+}
+.rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
+.rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.rcl-cal-track { font-size: 14.5px; font-weight: 800; color: var(--rcl-ink); }
+.rcl-cal-layout { font-weight: 600; color: var(--rcl-ink-faint); }
+.rcl-cal-event { font-size: 12px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
+.rcl-cal-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+.rcl-cal-meta-item {
+  font-size: 11.5px;
+  color: var(--rcl-ink-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rcl-cal-meta-item-label { color: var(--rcl-ink-faint); font-weight: 600; }
 .rcl-cal-status {
   font-family: var(--rc-font-heading);
   font-size: 10px;
@@ -327,7 +409,38 @@ body.rc-league-page {
 .rcl-cal-status-up { color: var(--rc-red); }
 .rcl-cal-status-complete { color: var(--rcl-ink-dim); }
 .rcl-cal-row-bye { opacity: 0.7; }
-.rcl-cal-row-bye .rcl-cal-event { font-weight: 600; color: var(--rcl-ink-dim); }
+.rcl-cal-row-bye .rcl-cal-round { background: var(--rcl-line-bright); font-size: 13px; }
+.rcl-cal-row-bye .rcl-cal-track { font-weight: 600; color: var(--rcl-ink-dim); }
+
+/* -------------------------------------------------------------------- */
+/* Points -- race-length-tier tables + bonus points (added 2026-09-19)  */
+/* -------------------------------------------------------------------- */
+.rcl-points-tier + .rcl-points-tier { margin-top: 22px; }
+.rcl-points-tier-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.rcl-points-tier-name {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+}
+.rcl-points-tier-duration { font-size: 11.5px; color: var(--rcl-ink-faint); }
+.rcl-points-table { display: flex; flex-wrap: wrap; gap: 8px; }
+.rcl-points-pos {
+  background: var(--rcl-bg-raised-2);
+  border: 1px solid var(--rcl-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 46px;
+  text-align: center;
+}
+.rcl-points-pos-num { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
+.rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
+.rcl-points-bonus-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+.rcl-points-bonus-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink-dim); width: 100%; margin-bottom: 2px; }
+.rcl-points-bonus-chip { font-size: 12.5px; color: var(--rcl-ink-dim); }
+.rcl-points-bonus-chip strong { color: var(--rc-red); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------------- */
 /* Drivers -- full roster, grouped by class (added 2026-09-19)          */
