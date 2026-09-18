@@ -2195,47 +2195,46 @@
 
   // ---------------------------------------------------------------------
   // SIGNING SEQUENCE (2026-08-30, Matt's call: "I want this to feel
-  // EPIC") -- plays after a driver locks in a team (with or without
-  // sponsors), before the old immediate "you're registered" toast. Its
-  // own full-viewport overlay, stacked above the registration modal's own
+  // EPIC"; reworked 2026-09-18 -- video swapped for a full-viewport class
+  // welcome image, Matt: "Instead of a video playing, I have an image
+  // that I want displayed across the entire website. It fades in, stays
+  // up for 3 seconds, then dims to half brightness. That's when the
+  // congratulations message displays with the team principal quote.")
+  // Plays after a driver locks in a team (with or without sponsors),
+  // before the old immediate "you're registered" toast. Its own
+  // full-viewport overlay, stacked above the registration modal's own
   // backdrop (z-index 5000 vs. the modal's 2000) rather than replacing
   // it -- the registration modal is left open but hidden behind this
   // overlay the whole time, so closing it (and everything that used to
   // fire immediately on join: the toast, the notification dismiss,
   // onDone()) is deferred to whenever this sequence actually finishes.
   //
-  // Three beats:
+  // Two beats:
   //   1. SUSPENSE -- a small dark card cycles contract-flavor status
-  //      lines ("Drafting team documents...") while assets/images/videos/
-  //      signing-a-team.mp4 preloads in the background, reusing the same
+  //      lines ("Drafting team documents...") while the class's welcome
+  //      image (see rcSigningWelcomeImageSrc_ below -- gt_welcome.jpg,
+  //      prototype_welcome.jpg, or hypercar_welcome.jpg depending on
+  //      carClass) preloads in the background, reusing the same
   //      .rc-startlights gantry as every other loading state sitewide.
-  //      Held for at least SIGNING_SUSPENSE_MIN_MS even if the video is
+  //      Held for at least SIGNING_SUSPENSE_MIN_MS even if the image is
   //      already cached, so it never flashes past unnoticed; extended for
-  //      as long as the video actually needs past that floor.
-  //   2. FILM -- the card grows into a 16:9 box (capped at 1280x720,
-  //      matching the video's own native size) and it autoplays muted --
-  //      browser autoplay policies are the reason it can't safely
-  //      autoplay WITH sound -- with a small icon-only mute/unmute control
-  //      (bottom-left, standard volume glyph) fading in after a beat for
-  //      anyone who wants sound. No skip button at all, by design (Matt's
-  //      call) -- every driver watches the full 14 seconds.
-  //      SIGNING_FAILSAFE_MS guards against a video that never fires
-  //      'canplay' (a bad connection, a renamed file) by moving on anyway
-  //      instead of trapping the driver on a blank screen forever. Once
-  //      the video ends, it does NOT auto-advance -- a dark gradient +
-  //      "Continue" button fades in over the last frame, and only that
-  //      click moves on to REVEAL (Matt's call: don't move on until the
-  //      driver clicks continue).
-  //   3. REVEAL -- the whole dark stage collapses to a true full-viewport
-  //      beat: the Race Club wordmark, "CONGRATULATIONS", and the new
-  //      team's manufacturer logo/name scale up together, with "Continue"
-  //      and "Replay Video" fading in. This beat HOLDS here indefinitely --
-  //      no auto-advance timer -- only Continue moves on to the contract
-  //      screen (Matt's call, 2026-08-30).
+  //      as long as the image actually needs past that floor.
+  //   2. WELCOME -- the card grows to fill the entire viewport with the
+  //      class's welcome image. It fades in (SIGNING_IMAGE_FADE_MS), holds
+  //      at full brightness for SIGNING_IMAGE_HOLD_MS, then dims to half
+  //      brightness -- and right as that dim starts, the reveal content
+  //      (the Race Club wordmark logo, "CONGRATULATIONS", the team-
+  //      principal quote, the team identity pill, and "Continue") fades
+  //      in on top of the dimmed image. This beat HOLDS here indefinitely
+  //      once revealed -- no auto-advance timer -- only Continue moves on
+  //      to the contract screen (Matt's call, 2026-08-30, still true here).
+  //      SIGNING_IMAGE_FAILSAFE_MS guards against an image that never
+  //      fires 'load' (a bad connection, a renamed file) by moving on
+  //      anyway instead of trapping the driver on a blank screen forever.
   //
   // From there the whole dark overlay is torn down and onFinish() (the
   // caller's finishRegistration) fires immediately -- Continue on the
-  // congratulations screen now goes straight to the toast + reload (Matt's
+  // congratulations screen goes straight to the toast + reload (Matt's
   // call, 2026-09-01), no contract-recap modal step in between. Sponsors
   // aren't picked at signing time any more either, so there was nothing
   // left for that recap to add beyond what's already on the dashboard.
@@ -2263,7 +2262,7 @@
   // rewritten as an upbeat, energetic, exactly-3-sentence quote (no mixed
   // "don't make us regret it"/challenge-toned lines from the first draft),
   // rendered inside big quotation marks with a "— Team Principal"
-  // attribution underneath (see advanceToReveal below).
+  // attribution underneath (see dimAndReveal below).
   var SIGNING_WELCOME_LINES_ = [
     'Welcome to {team}! We’ve been waiting for a driver like you, and we finally found one. This seat is yours, now let’s go show everyone what we can do!',
     'You earned this, plain and simple! {team} doesn’t hand out seats, we award them. Buckle up, this is going to be a season to remember!',
@@ -2281,18 +2280,26 @@
     return template.split('{team}').join(escapeHtml(team.teamName || 'the team'));
   }
   var SIGNING_SUSPENSE_MIN_MS = 3800;
-  var SIGNING_FAILSAFE_MS = 20000;
+  var SIGNING_IMAGE_FAILSAFE_MS = 8000;
+  // Image-fade timing for the WELCOME beat -- fades in, holds at full
+  // brightness, then dims to half brightness as the reveal content
+  // appears (Matt: "It fades in, stays up for 3 seconds, then dims to
+  // half brightness. That's when the congratulations message displays").
+  var SIGNING_IMAGE_FADE_MS = 900;
+  var SIGNING_IMAGE_HOLD_MS = 3000;
 
-  // Standard flat mute/unmute glyphs (Feather-style "volume-2"/"volume-x")
-  // for the FILM stage's sound control -- plain line icons, not the emoji
-  // speakers used before (Matt: "make it a standard speaker icon, not the
-  // 3d one you chose").
-  function rcVolumeIconSvg_(muted) {
-    var speaker = '<path d="M11 5 6 9H2v6h4l5 4V5z"></path>';
-    var rest = muted
-      ? '<line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>'
-      : '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>';
-    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + speaker + rest + '</svg>';
+  // Which full-viewport welcome image plays, keyed off the car class the
+  // driver just signed into (Matt, 2026-09-18): GT3 seats get
+  // gt_welcome.jpg, LMP2 and LMP3 get prototype_welcome.jpg, and
+  // Hypercars get hypercar_welcome.jpg. CAR_CLASS_LIST (js/reference-
+  // data.js) is the source of truth for the exact string values carClass
+  // holds ('LMGT3', 'LMP3', 'LMP2', 'Hypercar'); prototype_welcome.jpg is
+  // also the fallback for anything unrecognized rather than leaving the
+  // beat with no image at all.
+  function rcSigningWelcomeImageSrc_(carClass) {
+    if (carClass === 'LMGT3') return 'assets/images/gt_welcome.jpg';
+    if (carClass === 'Hypercar') return 'assets/images/hypercar_welcome.jpg';
+    return 'assets/images/prototype_welcome.jpg';
   }
 
   function openSigningSequence(team, carClass, onFinish) {
@@ -2302,7 +2309,11 @@
     document.body.appendChild(overlay);
 
     // ---- Stage 1: SUSPENSE ------------------------------------------
-    stage.appendChild(el('div', 'rc-signing-wordmark', 'RACE CLUB'));
+    var suspenseWordmark = document.createElement('img');
+    suspenseWordmark.className = 'rc-signing-wordmark-img';
+    suspenseWordmark.alt = 'Race Club';
+    suspenseWordmark.src = 'assets/images/Race Club (Full, Black).png';
+    stage.appendChild(suspenseWordmark);
     var lights = el('div', 'rc-startlights');
     for (var i = 0; i < 5; i++) lights.appendChild(el('div', 'rc-startlight'));
     stage.appendChild(lights);
@@ -2319,126 +2330,74 @@
       }, 180);
     }, 1400);
 
-    var video = document.createElement('video');
-    video.className = 'rc-signing-video-preload';
-    video.src = 'assets/images/videos/signing-a-team.mp4';
-    video.muted = true;
-    video.setAttribute('muted', ''); // belt-and-suspenders -- some browsers
-    // weigh the HTML attribute more heavily than the JS property when
-    // deciding whether muted autoplay is allowed.
-    video.playsInline = true;
-    video.setAttribute('playsinline', ''); // required as an attribute (not
-    // just the property) on older iOS Safari to avoid forcing fullscreen.
-    video.preload = 'auto';
-    // Attached to the overlay (hidden, 1x1) from the very start rather than
-    // held detached in memory -- some browsers (mobile Safari especially)
-    // only actually fetch a <video>'s data once it's a real part of the
-    // document, so a detached element's 'canplay'/'canplaythrough' can
-    // simply never fire, silently falling through to the failsafe timer
-    // every time (2026-08-30 bug: "the video didn't play at all... held
-    // onto what seemed like the entire length of the video"). Moving this
-    // same node into the visible video-wrap in advanceToFilm() below
-    // preserves whatever it already buffered -- reparenting a media
-    // element doesn't reset its network state, only changing .src does.
-    overlay.appendChild(video);
+    // Preloaded the same way the old video was (present in the DOM from
+    // the very start, not held detached in memory) so the browser starts
+    // fetching it immediately, in parallel with the SUSPENSE beat's
+    // status-message cycling above.
+    var welcomeImg = document.createElement('img');
+    welcomeImg.className = 'rc-signing-welcome-img';
+    welcomeImg.alt = '';
 
     var startedAt = Date.now();
-    var videoReady = false;
-    var advancedToFilm = false;
-    var failsafeTimer = setTimeout(function () { videoReady = true; tryAdvanceToFilm(); }, SIGNING_FAILSAFE_MS);
-    // 'canplay' (enough data for the current frame) rather than
-    // 'canplaythrough' (confident it can play to the end without
-    // buffering) -- canplaythrough can take a very long time to fire for a
-    // multi-megabyte file depending on how the browser estimates download
-    // speed, and playback can start smoothly well before that point since
-    // the browser keeps buffering during playback anyway.
-    video.addEventListener('canplay', function onReady() {
-      video.removeEventListener('canplay', onReady);
-      videoReady = true;
-      tryAdvanceToFilm();
+    var imageReady = false;
+    var advancedToWelcome = false;
+    var failsafeTimer = setTimeout(function () { imageReady = true; tryAdvanceToWelcome(); }, SIGNING_IMAGE_FAILSAFE_MS);
+    welcomeImg.addEventListener('load', function onReady() {
+      welcomeImg.removeEventListener('load', onReady);
+      imageReady = true;
+      tryAdvanceToWelcome();
     });
-    video.addEventListener('error', function () { videoReady = true; tryAdvanceToFilm(); });
-    video.load();
+    welcomeImg.addEventListener('error', function () { imageReady = true; tryAdvanceToWelcome(); });
+    welcomeImg.src = rcSigningWelcomeImageSrc_(carClass);
 
-    function tryAdvanceToFilm() {
-      if (advancedToFilm) return;
+    function tryAdvanceToWelcome() {
+      if (advancedToWelcome) return;
       var wait = Math.max(0, SIGNING_SUSPENSE_MIN_MS - (Date.now() - startedAt));
       setTimeout(function () {
-        if (advancedToFilm || !videoReady) return;
-        advancedToFilm = true;
+        if (advancedToWelcome || !imageReady) return;
+        advancedToWelcome = true;
         clearInterval(msgTimer);
         clearTimeout(failsafeTimer);
-        advanceToFilm();
+        advanceToWelcome();
       }, wait);
     }
 
-    // ---- Stage 2: FILM ------------------------------------------------
-    // Its own function (not inlined into advanceToFilm) so "Replay Video"
-    // on the REVEAL beat below can re-enter this exact same stage a
-    // second time. { once: true } on the ended/error listeners means each
-    // call wires up its own independent, self-cleaning pair -- a replay's
-    // fresh listeners don't stack on top of whichever ones the first
-    // playthrough already used and already fired.
-    function playFilmStage() {
-      stage.className = 'rc-signing-stage rc-signing-stage-film';
-      stage.innerHTML = '';
-      var videoWrap = el('div', 'rc-signing-video-wrap');
-      video.className = 'rc-signing-video';
-      videoWrap.appendChild(video);
-
-      // Bottom-left icon-only control, standard flat volume/mute SVG glyphs
-      // (2026-08-30, Matt: "make it a standard speaker icon, not the 3d one
-      // you chose" -- the emoji speakers read as too illustrative/"3D" next
-      // to the rest of the site's plain-line iconography; also moved from
-      // top-right to bottom-left per Matt's call, matching where a mute
-      // control normally sits on a video player).
-      var unmuteBtn = el('button', 'rc-signing-unmute');
-      unmuteBtn.type = 'button';
-      var unmuteIcon = el('span', 'rc-signing-unmute-icon');
-      unmuteIcon.innerHTML = rcVolumeIconSvg_(video.muted);
-      unmuteBtn.appendChild(unmuteIcon);
-      unmuteBtn.setAttribute('aria-label', video.muted ? 'Unmute video' : 'Mute video');
-      unmuteBtn.addEventListener('click', function () {
-        video.muted = !video.muted;
-        unmuteIcon.innerHTML = rcVolumeIconSvg_(video.muted);
-        unmuteBtn.setAttribute('aria-label', video.muted ? 'Unmute video' : 'Mute video');
-      });
-      videoWrap.appendChild(unmuteBtn);
-
-      stage.appendChild(videoWrap);
-      setTimeout(function () { unmuteBtn.classList.add('rc-signing-unmute-visible'); }, 900);
-
-      // Goes straight to REVEAL the instant the video ends -- no "Continue"
-      // gate (Matt's call, 2026-08-30: "I want it to go right to the
-      // congratulations screen without stopping to hit continue"). 'error'
-      // (a genuine playback failure, or play() rejecting below) advances
-      // the same way -- there's no last frame worth pausing on either way.
-      // advanceToReveal's own revealStarted guard means only the first of
-      // these to fire on a given playthrough matters.
-      video.addEventListener('ended', advanceToReveal, { once: true });
-      video.addEventListener('error', advanceToReveal, { once: true });
-      video.currentTime = 0;
-      var playAttempt = video.play();
-      if (playAttempt && typeof playAttempt.catch === 'function') {
-        playAttempt.catch(function () { advanceToReveal(); });
-      }
-    }
-    function advanceToFilm() { playFilmStage(); }
-
-    // ---- Stage 3: REVEAL ------------------------------------------------
-    // Holds here indefinitely -- no auto-advance timer (Matt's call,
-    // 2026-08-30: "What the video SHOULD do is go [to] the congratulations
-    // screen at the end with the CONTINUE/REPLAY options and hold"). Only
+    // ---- Stage 2: WELCOME ---------------------------------------------
+    // Grows the stage to fill the whole viewport with the class's welcome
+    // image: fades in, holds at full brightness, then dims to half
+    // brightness -- and the reveal content (wordmark, CONGRATULATIONS,
+    // team-principal quote, team identity, Continue) fades in on top of
+    // the dimmed image right as that dim starts. Holds here indefinitely
+    // once revealed (Matt's call, 2026-08-30, still true here) -- only
     // the Continue button below moves on to the contract screen.
     var revealStarted = false;
     var advancedPastReveal = false;
-    function advanceToReveal() {
+    function advanceToWelcome() {
+      stage.className = 'rc-signing-stage rc-signing-stage-welcome';
+      stage.innerHTML = '';
+      stage.appendChild(welcomeImg);
+      // Force a reflow before adding the fade-in class so the browser
+      // actually animates the opacity transition instead of starting
+      // already at its end state (the element was just inserted/reparented
+      // this same tick).
+      void welcomeImg.offsetHeight;
+      welcomeImg.classList.add('rc-signing-welcome-img-visible');
+
+      setTimeout(dimAndReveal, SIGNING_IMAGE_FADE_MS + SIGNING_IMAGE_HOLD_MS);
+    }
+
+    function dimAndReveal() {
       if (revealStarted) return;
       revealStarted = true;
-      stage.className = 'rc-signing-stage rc-signing-stage-reveal';
-      stage.innerHTML = '';
-      stage.appendChild(el('div', 'rc-signing-wordmark rc-signing-wordmark-lg', 'RACE CLUB'));
-      stage.appendChild(el('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
+      welcomeImg.classList.add('rc-signing-welcome-img-dim');
+
+      var overlayContent = el('div', 'rc-signing-welcome-overlay');
+      var wordmark = document.createElement('img');
+      wordmark.className = 'rc-signing-wordmark-img rc-signing-wordmark-img-lg';
+      wordmark.alt = 'Race Club';
+      wordmark.src = 'assets/images/Race Club (Full, Black).png';
+      overlayContent.appendChild(wordmark);
+      overlayContent.appendChild(el('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
       // Big open/close quote marks + a "— Team Principal" attribution
       // underneath, right-aligned (2026-08-30, Matt: "add larger
       // quotations in front and after it to show that someone from the
@@ -2458,7 +2417,7 @@
       hypeQuote.appendChild(el('span', 'rc-signing-hype-mark rc-signing-hype-mark-close', '”'));
       hypeWrap.appendChild(hypeQuote);
       hypeWrap.appendChild(el('div', 'rc-signing-hype-attribution', '· Team Principal'));
-      stage.appendChild(hypeWrap);
+      overlayContent.appendChild(hypeWrap);
 
       var identity = el('div', 'rc-signing-reveal-identity');
       if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -2471,18 +2430,10 @@
       }
       identity.appendChild(el('div', 'rc-signing-reveal-team',
         escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
-      stage.appendChild(identity);
+      overlayContent.appendChild(identity);
 
       var btnRow = el('div', 'rc-signing-reveal-btn-row');
       btnRow.style.opacity = '0';
-
-      var replayBtn = el('button', 'rc-btn-secondary rc-signing-replay', '↻ Replay Video');
-      replayBtn.type = 'button';
-      replayBtn.addEventListener('click', function () {
-        revealStarted = false;
-        playFilmStage();
-      });
-      btnRow.appendChild(replayBtn);
 
       // Gray, not red (2026-09-13 fix) -- this click only advances to the
       // next reveal screen (advanceToContract); the actual write already
@@ -2494,7 +2445,12 @@
       continueBtn.addEventListener('click', advanceToContract);
       btnRow.appendChild(continueBtn);
 
-      stage.appendChild(btnRow);
+      overlayContent.appendChild(btnRow);
+      stage.appendChild(overlayContent);
+      // Force a reflow before fading in, same reason as the welcome image
+      // above -- the overlay was just inserted this same tick.
+      void overlayContent.offsetHeight;
+      overlayContent.classList.add('rc-signing-welcome-overlay-visible');
       setTimeout(function () { btnRow.style.opacity = '1'; }, 1400);
     }
 

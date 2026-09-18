@@ -1740,16 +1740,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* -------------------------------------------------------------------- */
 /* SIGNING SEQUENCE (2026-08-30, Matt's call: "I want this to feel       */
-/* EPIC") -- the cinematic overlay played after locking in a team, before */
-/* the recap settles into a normal .rc-modal. See openSigningSequence()   */
-/* and showSigningContractModal() in Account.html for the full sequence. */
-/* One dark stage that fluidly resizes between its three beats           */
-/* (suspense card -> 16:9 film box -> full-viewport reveal) via a single */
-/* width/height/padding/border-radius transition, rather than three      */
+/* EPIC"; reworked 2026-09-18 -- video swapped for a full-viewport class */
+/* welcome image) -- the cinematic overlay played after locking in a     */
+/* team, before the recap settles into a normal .rc-modal. See           */
+/* openSigningSequence() and showSigningContractModal() in Account.html  */
+/* for the full sequence. One dark stage that fluidly resizes between    */
+/* its two beats (suspense card -> full-viewport welcome image) via a    */
+/* single width/height/padding/border-radius transition, rather than     */
 /* separately-styled elements swapped in and out. z-index 5000 sits      */
 /* above .rc-modal-backdrop's 2000 -- the registration modal underneath  */
 /* is left open, just visually covered, until this overlay tears itself  */
-/* down at the end of the REVEAL beat.                                   */
+/* down once Continue is clicked.                                        */
 /* -------------------------------------------------------------------- */
 .rc-signing-overlay {
   position: fixed;
@@ -1772,49 +1773,41 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1), height 0.55s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.4s ease, border-radius 0.4s ease;
 }
-/* Beat 1 -- small suspense card while the video preloads. */
+/* Beat 1 -- small suspense card while the welcome image preloads. */
 .rc-signing-stage-suspense { width: min(90vw, 420px); padding: 44px 32px; }
-/* Beat 2 -- grows to the video's own native size (1280x720, 16:9),
-   capped so it never overflows a short viewport. object-fit:cover on
-   the video itself (below) fills this box edge-to-edge since the ratio
-   already matches -- no letterboxing. */
-/* Bug fix (2026-08-30, Matt: "the top and bottom of the video are being
-   cut off... use 1280x720 ratio") -- width:min(94vw,1280px) paired with a
-   separate max-height:80vh let the box's actual height get clamped below
-   what the 16:9 aspect-ratio would have made it, on a short viewport,
-   without the WIDTH shrinking to match -- the box silently became wider
-   than 16:9, and object-fit:cover cropped the video's top and bottom to
-   fill that mismatched shape. The third min() term below folds the
-   height cap directly into the width itself (142.22vh = 80vh * 16/9), so
-   whichever of the three constraints binds, the box's width and height
-   always resolve to an exact 16:9 pair -- there's no longer a height cap
-   that isn't equally a width cap. object-fit is also switched to contain
-   as a second, independent guarantee: even if a future edit reintroduces
-   a mismatched box, contain letterboxes on the existing black background
-   instead of ever cropping the frame. */
-.rc-signing-stage-film {
-  width: min(94vw, 1280px, 142.22vh);
-  aspect-ratio: 16 / 9;
+/* Beat 2 -- grows to fill the entire viewport for the class's welcome
+   image (2026-09-18, Matt: "an image that I want displayed across the
+   entire website"). position:fixed + inset:0 takes it out of the
+   .rc-signing-overlay flex box's normal centering/padding entirely, so
+   it reaches every edge regardless of the overlay's own 24px padding --
+   the width/height transition inherited from .rc-signing-stage still
+   animates the grow from the small suspense card up to fullscreen. */
+.rc-signing-stage-welcome {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   background: #000;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65);
 }
-/* Beat 3 -- collapses back down for the full-viewport "CONGRATULATIONS"
-   moment; still centered on the same dark backdrop, not truly edge-to-
-   edge, so the reveal reads as a moment ON the stage rather than a
-   totally different screen. */
-.rc-signing-stage-reveal { width: min(92vw, 720px); padding: 20px; }
-.rc-signing-wordmark {
-  font-family: var(--rc-font-heading);
-  font-weight: 800;
-  letter-spacing: 0.35em;
-  font-size: 13px;
-  color: var(--rc-silver);
-  text-transform: uppercase;
+/* Race Club wordmark as the actual logo file now (2026-09-18, Matt:
+   "Instead of it saying RACE CLUB... I want Race Club (Full, Black).png
+   to show"), replacing the old letter-spaced text label. Two sizes: a
+   small one for the SUSPENSE card, a larger one above the reveal
+   content once the class image dims. Sized by width with height:auto so
+   the logo's own aspect ratio is preserved either way. Rendered on the
+   overlay's near-black backdrop, so the black wordmark gets a light
+   backing so it stays legible -- see .rc-signing-wordmark-img below. */
+.rc-signing-wordmark-img {
+  width: 140px;
+  height: auto;
+  background: var(--rc-offwhite);
+  border-radius: 6px;
+  padding: 6px 10px;
 }
-.rc-signing-wordmark-lg { font-size: 15px; margin-bottom: -6px; }
+.rc-signing-wordmark-img-lg { width: 200px; margin-bottom: -4px; }
 .rc-signing-message {
   font-size: 14px;
   color: var(--rc-offwhite);
@@ -1822,49 +1815,49 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.02em;
   transition: opacity 0.18s ease;
 }
-.rc-signing-video-wrap { position: relative; width: 100%; height: 100%; }
-/* The <video> lives in the DOM from the moment the overlay opens (see
-   Account.html's openSigningSequence) so the browser actually starts
-   fetching it -- some browsers never load a detached element's data at
-   all. Kept off-screen and inert rather than display:none (a display:none
-   video can also get its loading paused by some browsers) while it's
-   still just preloading, then re-classed to .rc-signing-video once moved
-   into the visible film stage. */
-.rc-signing-video-preload { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
-.rc-signing-video { width: 100%; height: 100%; object-fit: contain; display: block; }
-/* Icon-only circular control, bottom-left (2026-08-30, Matt: moved off
-   top-right and switched from a labeled pill + emoji speakers to "a
-   standard speaker icon" -- see rcVolumeIconSvg_() in Account.html for the
-   plain line-icon SVG). Bottom-left keeps it clear of the "Continue"
-   button, which fades in bottom-CENTER once the video ends. A couple of
-   attention-pulses still play when it first appears so it isn't missed. */
-.rc-signing-unmute {
+/* The class welcome image itself -- edge-to-edge cover, fading in from
+   fully transparent, then dimming to half brightness once the reveal
+   content appears on top of it (Matt: "It fades in, stays up for 3
+   seconds, then dims to half brightness. That's when the congratulations
+   message displays"). Both the opacity fade-in and the brightness dim
+   are plain CSS transitions -- the JS in openSigningSequence just toggles
+   the two modifier classes below at the right moments. */
+.rc-signing-welcome-img {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  filter: brightness(1);
+  transition: opacity 0.9s ease, filter 1.1s ease;
+}
+.rc-signing-welcome-img-visible { opacity: 1; }
+.rc-signing-welcome-img-dim { filter: brightness(0.5); }
+/* Reveal content layered on top of the dimmed welcome image, filling the
+   same full-viewport stage and centered within it -- not a separate
+   collapsed card the way the old video REVEAL beat was, since the
+   welcome image itself is already the full-viewport backdrop. Starts
+   invisible and fades in together with the image's dim transition. */
+.rc-signing-welcome-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(10, 10, 10, 0.65);
-  color: var(--rc-white);
-  cursor: pointer;
+  gap: 22px;
+  text-align: center;
+  padding: 24px;
   opacity: 0;
-  transition: opacity 0.3s ease, background 0.2s ease;
+  transition: opacity 1.1s ease;
 }
-.rc-signing-unmute:hover { background: rgba(10, 10, 10, 0.85); }
-.rc-signing-unmute-icon { display: flex; line-height: 1; }
-.rc-signing-unmute-visible { opacity: 1; animation: rc-signing-unmute-pulse 1.6s ease-out 2; }
-@keyframes rc-signing-unmute-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
-  70% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
+.rc-signing-welcome-overlay-visible { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .rc-signing-unmute-visible { animation: none; }
+  .rc-signing-welcome-img { transition: none; }
+  .rc-signing-welcome-overlay { transition: none; }
 }
 .rc-signing-congrats {
   font-family: var(--rc-font-heading);
@@ -1924,30 +1917,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-signing-reveal-logo { width: 56px; height: 40px; object-fit: contain; }
 /* Bumped from 18px (2026-08-30, Matt: "make the team name and number
    larger") -- this element already includes the car number appended to
-   the team name (see openSigningSequence's advanceToReveal), so enlarging
+   the team name (see openSigningSequence's dimAndReveal), so enlarging
    it covers both at once. Color flipped to black (2026-08-30) to match
    the pill's inverted white background above. */
 .rc-signing-reveal-team { font-family: var(--rc-font-heading); font-weight: 800; font-size: 26px; color: var(--rc-carbon); }
 /* Overrides .rc-btn-primary's default width:100% -- full-width would
-   stretch oddly across the reveal beat's 720px-wide stage; this button
-   should size to its own label instead. Wins on cascade order alone
-   (equal specificity, declared later in the file) rather than needing
-   !important. */
-/* margin-top: 0 (2026-08-30 fix) -- .rc-btn-primary's base margin-top:20px
-   was still winning here (only left/right padding were overridden below),
-   and that top margin sat INSIDE this row's own flex box, shifting
-   continueBtn's margin box down relative to the borderless replayBtn
-   sitting beside it (align-items:center centers the margin box, not just
-   the border box) -- the actual cause of "replay and continue still look
-   like they're at different heights" even after the box-shadow/padding
-   fix above made their own boxes pixel-identical. .rc-signing-reveal-btn-row
-   already supplies its own margin-top for spacing from the content above,
-   so this button never needed one of its own. */
+   stretch oddly on the reveal overlay; this button sizes to its own
+   label instead. Wins on cascade order alone (equal specificity,
+   declared later in the file) rather than needing !important. */
 .rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease; }
-/* Row holding the reveal beat's Replay/Continue pair -- replaces the
-   single centered .rc-signing-continue that used to sit alone here.
-   transition: opacity 0.4s ease matches the old single-button fade-in
-   timing (JS still fades this whole row in via style.opacity). */
+/* Row holding the reveal beat's Continue button (2026-09-18: the video-
+   era "Replay Video" button that used to sit alongside it is gone --
+   there's no video to replay any more -- so this is now a one-button
+   row, kept as its own flex row rather than folded back into
+   .rc-signing-continue so the fade-in timing/opacity toggle in
+   openSigningSequence's dimAndReveal doesn't need to change). */
 .rc-signing-reveal-btn-row {
   display: flex;
   align-items: center;
@@ -1956,32 +1940,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   margin-top: 6px;
   transition: opacity 0.4s ease;
 }
-/* .rc-signing-reveal-btn-row already centers/gaps this; .rc-btn-secondary
-   is naturally width:auto (unlike .rc-btn-primary), so this only needs to
-   match .rc-signing-continue's dark-stage treatment -- pale outline/text
-   since the default secondary button (white bg, carbon text) would be
-   invisible against the reveal stage's near-black background.
-   .rc-btn-secondary's own padding/font-size (8px 14px, 12px) are smaller
-   than .rc-btn-primary's (12px, 14px) -- matched here so the two buttons
-   are the same height. border: none + an inset box-shadow standing in for
-   the pale outline is the actual fix, not just the padding match: even
-   with matching padding, .rc-btn-secondary's own 1px border still added
-   2px of total height on top of .rc-btn-primary's borderless box (an
-   intrinsically-sized box with no explicit height isn't shrunk by
-   box-sizing: border-box the way a fixed-size box would be) -- a
-   box-shadow paints inside the box without adding to its size, so this is
-   the one border-style that can never reintroduce that mismatch
-   (2026-08-30, Matt: "replay video and continue are on different
-   heights"). */
-.rc-signing-replay {
-  padding: 12px 22px;
-  font-size: 14px;
-  background: transparent;
-  border: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  color: var(--rc-white);
-}
-.rc-signing-replay:hover { background: rgba(255, 255, 255, 0.08); }
 @keyframes rc-signing-pop {
   0% { opacity: 0; transform: scale(0.85) translateY(10px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
