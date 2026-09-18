@@ -6960,6 +6960,14 @@
     carsBtn.addEventListener('click', function () { openCarsModal(token); });
     row.appendChild(carsBtn);
 
+    // News -- backs league.html's freeform news/narrative feed (added
+    // 2026-09-18). Same openAdminListModal shape as Members/Tracks/Cars
+    // above.
+    var newsBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'News');
+    newsBtn.type = 'button';
+    newsBtn.addEventListener('click', function () { openNewsModal(token); });
+    row.appendChild(newsBtn);
+
     // Sponsors and Economy admin buttons removed entirely (V1 scope cut,
     // 2026-09-18) -- those systems no longer exist.
 
@@ -7381,6 +7389,189 @@
     }, function (carsData, reload) {
       return buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token, reload);
     }, { label: 'Add Car', onClick: function (reload) { openAddCarModal(token, reload); } });
+  }
+
+  // NEWS -- backs league.html's public news/narrative feed (added
+  // 2026-09-18). Flat list, newest first, no grouping (unlike Tracks/Cars
+  // there's no natural category to group posts by) -- same
+  // openAdminListModal shell, just its own row/panel builder below.
+  function openNewsModal(token) {
+    openAdminListModal('League News', 'Loading news…', function () {
+      return fetchApi('adminListNews', { token: token });
+    }, function (newsData, reload) {
+      return buildNewsPanel(newsData && newsData.success ? newsData.news : [], token, reload);
+    }, { label: 'Add Post', onClick: function (reload) { openAddNewsModal(token, reload); } });
+  }
+
+  function buildNewsPanel(news, token, reload) {
+    var wrap = el('div');
+    var sorted = (news || []).slice().sort(function (a, b) {
+      return String(b.PublishedAt).localeCompare(String(a.PublishedAt));
+    });
+    if (!sorted.length) {
+      wrap.appendChild(el('div', 'rc-dm-empty', 'No news posts yet.'));
+      return wrap;
+    }
+    sorted.forEach(function (n) {
+      var isActive = _rcRowActive(n);
+      var row = el('div', 'rc-dm-row');
+      var textCol = el('div', null);
+      var titleLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+      titleLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(n.Title || '(untitled)')));
+      if (!isActive) {
+        titleLine.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'INACTIVE'));
+      }
+      textCol.appendChild(titleLine);
+      var metaParts = [];
+      if (n.AuthorName) metaParts.push('By ' + n.AuthorName);
+      var dateLabel = n.PublishedAt ? formatDateLabel(String(n.PublishedAt).slice(0, 10)) : '';
+      if (dateLabel) metaParts.push(dateLabel);
+      textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'No date')));
+      row.appendChild(textCol);
+      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+      editBtn.type = 'button';
+      editBtn.addEventListener('click', function () { openEditNewsModal(n, token, reload); });
+      row.appendChild(editBtn);
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+
+  function openAddNewsModal(token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Title'));
+    var title = el('input'); title.type = 'text'; title.required = true;
+    form.appendChild(title);
+
+    form.appendChild(el('label', null, 'Post'));
+    var post = document.createElement('textarea');
+    post.rows = 8;
+    post.required = true;
+    form.appendChild(post);
+    form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
+
+    var saveBtn = el('button', null, 'Publish Post');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var modalHandle = showModal('Add News Post', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!title.value.trim() || !post.value.trim()) {
+        showToast('Title and post text are required.', 'error');
+        return;
+      }
+      modalHandle.close();
+      fetchApi('adminCreateNews', {
+        method: 'POST', token: token,
+        body: { title: title.value.trim(), body: post.value.trim() }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            showToast(data.message || 'Could not publish this post -- reopen Add Post and try again.', 'error');
+            return;
+          }
+          if (reload) reload(); else rcReloadAfterSave();
+        })
+        .catch(function () {
+          showToast('Could not reach the server -- post not published.', 'error');
+        });
+    });
+  }
+
+  function openEditNewsModal(newsRow, token, reload) {
+    var body = el('div');
+    var form = el('form');
+
+    form.appendChild(el('label', 'margin-top:0;', 'Title'));
+    var title = el('input'); title.type = 'text'; title.value = newsRow.Title || '';
+    form.appendChild(title);
+
+    form.appendChild(el('label', null, 'Post'));
+    var post = document.createElement('textarea');
+    post.rows = 8;
+    post.value = newsRow.Body || '';
+    form.appendChild(post);
+    form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
+
+    var saveBtn = el('button', null, 'Save Changes');
+    saveBtn.type = 'submit';
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '16px';
+    form.appendChild(saveBtn);
+    body.appendChild(form);
+
+    var isActive = _rcRowActive(newsRow);
+    var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
+    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Withdraw This Post' : 'Republish This Post');
+    toggleBtn.type = 'button';
+    statusWrap.appendChild(toggleBtn);
+    body.appendChild(statusWrap);
+
+    var modalHandle = showModal('Edit News Post', { bodyEl: body });
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!title.value.trim() || !post.value.trim()) {
+        showToast('Title and post text are required.', 'error');
+        return;
+      }
+      modalHandle.close();
+      fetchApi('adminUpdateNews', {
+        method: 'POST', token: token,
+        body: { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim() }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            showToast(data.message || 'Could not save changes -- reopen Edit News Post and try again.', 'error');
+            return;
+          }
+          if (reload) reload(); else rcReloadAfterSave();
+        })
+        .catch(function () {
+          showToast('Could not reach the server -- changes not saved.', 'error');
+        });
+    });
+
+    toggleBtn.addEventListener('click', function () {
+      if (!isActive) {
+        // Republishing needs no extra confirmation -- only withdrawing is
+        // destructive enough to double-check, same asymmetry the Car/
+        // Track deactivate toggles use.
+        doToggleNewsActive_();
+        return;
+      }
+      openConfirmModal(
+        'Withdraw Post',
+        'Withdraw "' + (newsRow.Title || 'this post') + '" from the public League Hub? It stays saved here and can be republished later.',
+        'Withdraw This Post',
+        doToggleNewsActive_
+      );
+    });
+
+    function doToggleNewsActive_() {
+      modalHandle.close();
+      fetchApi('adminSetNewsActive', {
+        method: 'POST', token: token,
+        body: { newsId: newsRow.NewsID, active: isActive ? 'Inactive' : 'Active' }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            showToast(data.message || 'Could not update this post.', 'error');
+            return;
+          }
+          if (reload) reload(); else rcReloadAfterSave();
+        })
+        .catch(function () {
+          showToast('Could not reach the server -- post not updated.', 'error');
+        });
+    }
   }
 
   // Add Track -- Track Name + first Layout, posting to the same

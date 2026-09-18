@@ -1,0 +1,308 @@
+/*
+  Race Club — css/league.css  (added 2026-09-18)
+
+  WHAT THIS FILE IS FOR
+  league.html is a deliberately different visual world from the rest of
+  the site: black background, light gray/steel accents, hard diagonal
+  edges -- an ESPN-style league hub, not another white rc-panel page. Site
+  convention (see the race-club-ui-consistency skill) is "never hardcode a
+  color or font, always pull from a token" -- but every --rc-* token in
+  style.css is tuned for the site's white/offwhite pages, so there's
+  nothing there to reuse for a black page. This file defines its OWN small
+  token set below, scoped under body.rc-league-page, and every rule in
+  this file pulls from those tokens, same discipline as the rest of the
+  site just with a second palette. Two things ARE still pulled straight
+  from the shared tokens on purpose: --rc-red/--rc-red-dark (the site's
+  one brand accent stays the same color everywhere) and
+  --rc-font-heading/--rc-font-body (typography stays one family sitewide;
+  this page leans on size/weight/letter-spacing for its more aggressive
+  feel, not a different typeface).
+
+  Loaded ONLY by league.html, alongside (after) the shared style.css --
+  the fixed header (js/header.js) and its light theme are untouched here;
+  only the page content below it goes dark. See league.html for the load
+  order and js/league.js for what renders into these classes.
+*/
+
+body.rc-league-page {
+  --rcl-bg: #0a0a0b;
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #a8abb2;
+  --rcl-ink-faint: #6c6f76;
+
+  background: var(--rcl-bg);
+  color: var(--rcl-ink);
+  padding-top: 70px; /* clears the shared fixed header, same convention as .rc-shell/.rc-auth-page */
+}
+
+/* -------------------------------------------------------------------- */
+/* Ticker -- scrolling strip, right under the fixed header              */
+/* -------------------------------------------------------------------- */
+.rcl-ticker-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--rcl-bg-raised);
+  border-bottom: 2px solid var(--rc-red);
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+.rcl-ticker-label {
+  flex: none;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Hard diagonal cut on the trailing edge -- the one recurring "angle"
+     motif this page uses everywhere a colored block meets a dark one. */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  padding-right: 28px;
+  z-index: 2;
+}
+.rcl-ticker-viewport { flex: 1 1 auto; overflow: hidden; height: 100%; position: relative; }
+.rcl-ticker-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: max-content;
+  animation: rcl-ticker-scroll 38s linear infinite;
+}
+.rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
+@keyframes rcl-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rcl-ticker-track { animation: none; }
+  .rcl-ticker-viewport { overflow-x: auto; }
+}
+.rcl-ticker-item {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  font-family: var(--rc-font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rcl-ink);
+  white-space: nowrap;
+  border-right: 1px solid var(--rcl-line);
+}
+.rcl-ticker-item-tag {
+  font-family: var(--rc-font-heading);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--rc-red);
+}
+.rcl-ticker-empty { padding: 0 24px; font-size: 12.5px; color: var(--rcl-ink-faint); }
+
+/* -------------------------------------------------------------------- */
+/* Hero band -- season name, hard angled bottom edge                    */
+/* -------------------------------------------------------------------- */
+.rcl-hero {
+  position: relative;
+  padding: 46px 32px 58px;
+  background: linear-gradient(135deg, var(--rcl-bg-raised) 0%, var(--rcl-bg) 70%);
+  border-bottom: 1px solid var(--rcl-line);
+  overflow: hidden;
+}
+.rcl-hero::after {
+  /* Diagonal red bar bleeding off the right edge -- the page's one loud
+     brand mark, echoing the ticker label's angled cut. */
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -6%;
+  width: 220px;
+  height: 220%;
+  background: var(--rc-red);
+  opacity: 0.9;
+  transform: rotate(18deg);
+  z-index: 0;
+}
+.rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+.rcl-hero-eyebrow {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 10px;
+}
+.rcl-hero-title {
+  font-family: var(--rc-font-heading);
+  font-size: clamp(32px, 5.4vw, 56px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.02;
+  color: var(--rcl-ink);
+  margin: 0;
+}
+.rcl-hero-sub { margin-top: 12px; font-size: 14px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }
+
+/* -------------------------------------------------------------------- */
+/* Layout                                                                */
+/* -------------------------------------------------------------------- */
+.rcl-main { max-width: 1180px; margin: 0 auto; padding: 36px 32px 80px; }
+.rcl-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) {
+  .rcl-grid { grid-template-columns: 1fr; }
+}
+.rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+
+/* -------------------------------------------------------------------- */
+/* Section / card shell -- angled corner tab on every section header,   */
+/* the dark-page equivalent of .rc-dash-card's red-underline title.      */
+/* -------------------------------------------------------------------- */
+.rcl-panel {
+  background: var(--rcl-bg-raised);
+  border: 1px solid var(--rcl-line);
+  position: relative;
+}
+.rcl-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--rc-red);
+  background: var(--rcl-bg-raised-2);
+}
+.rcl-panel-title {
+  font-family: var(--rc-font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rcl-panel-title::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--rc-red);
+  clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
+}
+.rcl-panel-meta { font-size: 11px; color: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
+.rcl-panel-body { padding: 18px; }
+
+/* -------------------------------------------------------------------- */
+/* Standings                                                             */
+/* -------------------------------------------------------------------- */
+.rcl-standings-class + .rcl-standings-class { margin-top: 22px; }
+.rcl-standings-class-name {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-dim);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-standings-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-standings-row:last-child { border-bottom: none; }
+.rcl-standings-pos {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--rcl-ink-faint);
+  text-align: center;
+}
+.rcl-standings-row-lead .rcl-standings-pos { color: var(--rc-red); }
+.rcl-standings-name { font-size: 13.5px; font-weight: 700; color: var(--rcl-ink); }
+.rcl-standings-team { font-size: 11.5px; color: var(--rcl-ink-faint); margin-top: 1px; }
+.rcl-standings-pts { text-align: right; }
+.rcl-standings-pts-num {
+  font-family: var(--rc-font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+}
+.rcl-standings-pts-gap { font-size: 10.5px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------------------------- */
+/* Last race results                                                    */
+/* -------------------------------------------------------------------- */
+.rcl-race-headline { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+.rcl-race-headline-stat { min-width: 120px; }
+.rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
+.rcl-race-headline-value { font-size: 14px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
+.rcl-race-headline-value-accent { color: var(--rc-red); }
+.rcl-race-class + .rcl-race-class { margin-top: 18px; }
+.rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
+.rcl-race-row {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-race-row:last-child { border-bottom: none; }
+.rcl-race-row-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rcl-ink-faint); }
+.rcl-race-row-name { color: var(--rcl-ink); font-weight: 600; }
+.rcl-race-row-num { color: var(--rcl-ink-faint); font-size: 11.5px; }
+.rcl-race-row-time { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+
+/* -------------------------------------------------------------------- */
+/* News feed                                                             */
+/* -------------------------------------------------------------------- */
+.rcl-news-item + .rcl-news-item { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rcl-line); }
+.rcl-news-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; letter-spacing: 0.01em; color: var(--rcl-ink); line-height: 1.25; }
+.rcl-news-meta { margin-top: 4px; font-size: 11px; color: var(--rcl-ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+.rcl-news-body { margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--rcl-ink-dim); }
+.rcl-news-body p { margin: 0 0 0.8em; }
+.rcl-news-body p:last-child { margin-bottom: 0; }
+
+/* -------------------------------------------------------------------- */
+/* Next race mini-card                                                  */
+/* -------------------------------------------------------------------- */
+.rcl-nextrace-event { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--rcl-ink); }
+.rcl-nextrace-track { margin-top: 4px; font-size: 13px; color: var(--rcl-ink-dim); }
+.rcl-nextrace-date { margin-top: 12px; font-size: 12px; color: var(--rcl-ink-faint); }
+
+/* -------------------------------------------------------------------- */
+/* Empty state -- same large circle-slash icon the rest of the site     */
+/* uses for "no data," just recolored for the dark ground.               */
+/* -------------------------------------------------------------------- */
+.rcl-empty-state { text-align: center; padding: 40px 12px; }
+.rcl-empty-state-icon { color: var(--rcl-line-bright); margin: 0 auto 18px; }
+.rcl-empty-state-icon svg { width: 72px; height: 72px; }
+.rcl-empty-state-title { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink-dim); }
+.rcl-empty-state-subtitle { margin-top: 6px; font-size: 12.5px; color: var(--rcl-ink-faint); }
+
+@media (max-width: 560px) {
+  .rcl-hero { padding: 34px 20px 42px; }
+  .rcl-main { padding: 26px 16px 60px; }
+  .rcl-panel-body { padding: 14px; }
+}

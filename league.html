@@ -1,0 +1,91 @@
+<!--
+  Race Club -- league.html  (added 2026-09-18)
+
+  Public ESPN-style league hub: a scrolling results/standings ticker under
+  the shared site header, then a season hero band, standings, last race's
+  results, a news/narrative feed (admin-authored, see Account.html's Data
+  Management > News editor), and a next-race mini-card. Public, no login
+  required -- same "usable with no token at all" convention as index.html
+  and its getGridTeaser call (see js/league.js -> getLeagueHub,
+  Website.gs).
+
+  Header: loaded and mounted exactly like every other page on the site
+  (js/header.js's shared #rc-header div + renderHeader() call) -- it reads
+  getToken() itself to decide REGISTER/LOGIN vs. the account menu, no
+  page-specific logic needed here. The header itself stays the site's
+  standard light theme; only the content below it (css/league.css) goes
+  dark -- see that file's header comment for the full design rationale.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League Hub -- Race Club</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/league.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+</head>
+<body class="rc-league-page">
+
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<div class="rcl-ticker-wrap">
+  <div class="rcl-ticker-label">Race Club</div>
+  <div class="rcl-ticker-viewport">
+    <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
+  </div>
+</div>
+
+<section class="rcl-hero">
+  <div class="rcl-hero-inner">
+    <div class="rcl-hero-eyebrow">League Hub</div>
+    <h1 class="rcl-hero-title" id="rcl-hero-title">Race Club</h1>
+    <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
+  </div>
+</section>
+
+<main class="rcl-main">
+  <div class="rcl-grid">
+
+    <div class="rcl-col">
+      <section class="rcl-panel">
+        <div class="rcl-panel-head">
+          <div class="rcl-panel-title">Standings</div>
+        </div>
+        <div class="rcl-panel-body" id="rcl-standings-body"></div>
+      </section>
+
+      <section class="rcl-panel">
+        <div class="rcl-panel-head">
+          <div class="rcl-panel-title">Last Race Results</div>
+        </div>
+        <div class="rcl-panel-body" id="rcl-results-body"></div>
+      </section>
+    </div>
+
+    <div class="rcl-col">
+      <section class="rcl-panel">
+        <div class="rcl-panel-head">
+          <div class="rcl-panel-title">Next Race</div>
+        </div>
+        <div class="rcl-panel-body" id="rcl-nextrace-body"></div>
+      </section>
+
+      <section class="rcl-panel">
+        <div class="rcl-panel-head">
+          <div class="rcl-panel-title">League News</div>
+        </div>
+        <div class="rcl-panel-body" id="rcl-news-body"></div>
+      </section>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/league.js"></script>
+</body>
+</html>

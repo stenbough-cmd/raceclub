@@ -488,7 +488,13 @@ function renderHeader(opts) {
             '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
   html += '<nav class="rc-header-nav">';
+  // League Hub link -- shows regardless of login state (league.html is
+  // public, added 2026-09-18), same .rc-header-link treatment as the
+  // logged-out REGISTER/LOGIN link below. Sits first in the nav, ahead of
+  // the bell/account cluster or the login link.
+  html += '<a class="rc-header-link" href="league.html">LEAGUE</a>';
   if (token) {
+    html += '<span class="rc-header-sep">·</span>';
     var displayName = cached ? (cached.displayName || '') : '';
     var initials = _rcHeaderInitials(displayName);
     var role = cached ? (cached.role || 'Driver') : 'Driver';
@@ -561,6 +567,7 @@ function renderHeader(opts) {
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
+    html += '<span class="rc-header-sep">·</span>';
     html += '<a class="rc-header-link" href="login.html">REGISTER/LOGIN</a>';
   }
   html += '</nav>';
