@@ -1,10 +1,11 @@
 <!--
-  Race Club -- league.html  (added 2026-09-18)
+  Race Club -- league.html  (added 2026-09-18, reworked 2026-09-19)
 
   Public ESPN-style league hub: a scrolling results/standings ticker under
-  the shared site header, then a season hero band, standings, last race's
-  results, a news/narrative feed (admin-authored, see Account.html's Data
-  Management > News editor), and a next-race mini-card. Public, no login
+  the shared site header, a season hero band (season number, "League Hub"
+  title, and a season-context write-up built from real data), then four
+  rows of content -- Recent Results + League News side by side, then
+  Leaderboard, Calendar, and Drivers each full width. Public, no login
   required -- same "usable with no token at all" convention as index.html
   and its getGridTeaser call (see js/league.js -> getLeagueHub,
   Website.gs).
@@ -34,7 +35,7 @@
 <script>renderHeader();</script>
 
 <div class="rcl-ticker-wrap">
-  <div class="rcl-ticker-label">League Hub</div>
+  <div class="rcl-ticker-label">Recent Highlights</div>
   <div class="rcl-ticker-viewport">
     <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
   </div>
@@ -42,8 +43,11 @@
 
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
-    <div class="rcl-hero-eyebrow">League Hub</div>
-    <h1 class="rcl-hero-title" id="rcl-hero-title">Race Club</h1>
+    <!-- Eyebrow now shows the season number ("SEASON n"), filled in by
+         _rclRenderHero once getLeagueHub resolves -- static "League Hub"
+         moved down to the title itself below. -->
+    <div class="rcl-hero-eyebrow" id="rcl-hero-eyebrow">League Hub</div>
+    <h1 class="rcl-hero-title">League Hub</h1>
     <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
   </div>
 </section>
@@ -54,27 +58,13 @@
     <div class="rcl-col">
       <section class="rcl-panel">
         <div class="rcl-panel-head">
-          <div class="rcl-panel-title">Standings</div>
-        </div>
-        <div class="rcl-panel-body" id="rcl-standings-body"></div>
-      </section>
-
-      <section class="rcl-panel">
-        <div class="rcl-panel-head">
-          <div class="rcl-panel-title">Last Race Results</div>
+          <div class="rcl-panel-title">Recent Results</div>
         </div>
         <div class="rcl-panel-body" id="rcl-results-body"></div>
       </section>
     </div>
 
     <div class="rcl-col">
-      <section class="rcl-panel">
-        <div class="rcl-panel-head">
-          <div class="rcl-panel-title">Next Race</div>
-        </div>
-        <div class="rcl-panel-body" id="rcl-nextrace-body"></div>
-      </section>
-
       <section class="rcl-panel">
         <div class="rcl-panel-head">
           <div class="rcl-panel-title">League News</div>
@@ -84,7 +74,39 @@
     </div>
 
   </div>
+
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title">Leaderboard</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-standings-body"></div>
+    </section>
+  </div>
+
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title">Calendar</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-calendar-body"></div>
+    </section>
+  </div>
+
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title">Drivers</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-drivers-body"></div>
+    </section>
+  </div>
 </main>
+
+<!-- Site footer -- on every page. -->
+<footer class="rc-site-footer">
+  Copyright Race Club 2026. All rights reserved. Created and developed with the help of Claude AI.
+</footer>
 
 <script src="js/league.js"></script>
 </body>

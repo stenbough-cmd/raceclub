@@ -20,6 +20,13 @@
   - Logged in: League Hub moves out of the top bar and into the account
     dropdown instead (top of the menu, above a divider) -- added
     2026-09-18, same day league.html shipped.
+  - The dropdown now mirrors Account.html's own sidebar order/gating in
+    full (2026-09-19): Dashboard, Calendar, Results, Protests, Career, a
+    divider, League Hub, then whichever of Admin/League Tools/Stewarding
+    this role unlocks, a divider, Help, Edit Profile, a divider, Logout.
+    See _rcBuildAccountMenuSectionLinks below and its click wiring in
+    renderHeader() for how each link switches sections in place on
+    Account.html itself but does a real navigation from anywhere else.
   - Logged in: the avatar + name/role stack (First Last in caps, bold;
     role -- Prospect/Driver/Steward/Organizer/Admin -- underneath in a
     lighter weight and color) and the chevron are now ONE single clickable
@@ -210,6 +217,25 @@ function showToast(message, type, durationMs) {
   closeBtn.addEventListener('click', dismiss);
   timeoutId = setTimeout(dismiss, durationMs);
   return { dismiss: dismiss };
+}
+
+// Builds the Dashboard..Stewarding portion of the account dropdown,
+// mirroring Account.html's sidebar order/gating exactly (see the big
+// comment at that markup's call site above). Kept as its own function
+// since it needs the role gating math but not any of the DOM the rest
+// of renderHeader() has already built yet.
+function _rcBuildAccountMenuSectionLinks(role) {
+  function link(section, label) {
+    return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + label + '</a>';
+  }
+  var html = link('dashboard', 'Dashboard') + link('calendar', 'Calendar') + link('results', 'Results') +
+    link('protests', 'Protests') + link('career', 'Career');
+  html += '<hr class="rc-header-menu-divider">';
+  html += '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
+  if (role === 'Admin') html += link('admin', 'Admin');
+  if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools');
+  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding');
+  return html;
 }
 
 function _rcHeaderInitials(name) {
@@ -566,14 +592,23 @@ function renderHeader(opts) {
               // measurement (unlike the bell icon below) tied to it.
               '<svg class="rc-header-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
             '</button>' +
-            // League Hub sits at the top of the dropdown while logged in
-            // (2026-09-18, Matt's call: it's in the top navbar only while
-            // logged OUT -- see above) -- then a divider, Dashboard, Edit
-            // Profile, another divider, Logout.
+            // Dropdown now mirrors Account.html's own sidebar, same order
+            // (2026-09-19, Matt's call) -- Dashboard/Calendar/Results/
+            // Protests/Career, a divider, League Hub, then whichever of
+            // Admin/League Tools/Stewarding this role actually unlocks
+            // (same cumulative Driver<Steward<Organizer<Admin hierarchy
+            // Account.html's own nav gating uses), a divider, Help/Edit
+            // Profile, a divider, Logout. Every section link uses the
+            // Account.html#<id> hash + data-rc-section pattern the
+            // notification bell's own links already established -- see
+            // the click wiring below, which reuses that exact "call
+            // window.rcNavigateToSection in place if it's there (we're
+            // already on Account.html), otherwise let the href really
+            // navigate there" bridge.
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
-              '<a class="rc-header-menu-item" href="league.html">League Hub</a>' +
+              _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
-              '<a class="rc-header-menu-item" href="Account.html">Dashboard</a>' +
+              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
@@ -649,6 +684,23 @@ function renderHeader(opts) {
     // ever closes them early.
     _rcWireHoverAwayClose([toggle, menu], closeAccountMenu);
     _rcWireHoverAwayClose([bellToggle, notifMenu], closeNotifMenu);
+
+    // Section links (Dashboard..Stewarding/Help, added 2026-09-19) --
+    // same bridge pattern the notification bell's own links use just
+    // above: call window.rcNavigateToSection in place when it exists
+    // (we're already on Account.html, so this just switches sections,
+    // no reload), otherwise let the href do a real navigation to
+    // Account.html#<section>, which that page's own load-time hash
+    // check picks up and opens directly.
+    Array.prototype.forEach.call(menu.querySelectorAll('[data-rc-section]'), function (a) {
+      a.addEventListener('click', function (evt) {
+        closeAccountMenu();
+        if (typeof window.rcNavigateToSection === 'function') {
+          evt.preventDefault();
+          window.rcNavigateToSection(a.getAttribute('data-rc-section'));
+        }
+      });
+    });
 
     // Edit Profile -- works from any page (2026-09-01, Matt's call), not
     // just Account.html's own sidebar. window.rcOpenEditProfileModal is a

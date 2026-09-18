@@ -164,14 +164,24 @@ body.rc-league-page {
   .rcl-grid { grid-template-columns: 1fr; }
 }
 .rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+/* Full-width rows below the two-column grid (Leaderboard/Calendar/
+   Drivers, added 2026-09-19) -- same vertical rhythm as .rcl-grid's own
+   row gap. */
+.rcl-row-full { margin-top: 28px; }
 
 /* -------------------------------------------------------------------- */
 /* Section / card shell -- angled corner tab on every section header,   */
 /* the dark-page equivalent of .rc-dash-card's red-underline title.      */
+/* Rounded corners (2026-09-19, Matt's call) match the Dashboard cards'  */
+/* own radius (.rc-panel in style.css) -- overflow:hidden so the header  */
+/* strip's square top corners get clipped to match instead of poking     */
+/* out past the rounded card edge.                                       */
 /* -------------------------------------------------------------------- */
 .rcl-panel {
   background: var(--rcl-bg-raised);
   border: 1px solid var(--rcl-line);
+  border-radius: 8px;
+  overflow: hidden;
   position: relative;
 }
 .rcl-panel-head {
@@ -275,7 +285,51 @@ body.rc-league-page {
 .rcl-race-row-time { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 12px; }
 
 /* -------------------------------------------------------------------- */
-/* News feed                                                             */
+/* Calendar -- full season schedule (added 2026-09-19). Replaces the old */
+/* standalone "Next Race" mini-card -- the UP NEXT pill on the schedule  */
+/* itself does that job now, no separate widget needed.                 */
+/* -------------------------------------------------------------------- */
+.rcl-cal-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-cal-row:last-child { border-bottom: none; }
+.rcl-cal-row-next { background: rgba(198, 30, 30, 0.08); }
+.rcl-cal-round { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; color: var(--rcl-ink-faint); text-align: center; }
+.rcl-cal-event { font-size: 13.5px; font-weight: 700; color: var(--rcl-ink); }
+.rcl-cal-track { font-size: 11.5px; color: var(--rcl-ink-faint); margin-top: 1px; }
+.rcl-cal-date { font-size: 12px; color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcl-cal-status {
+  font-family: var(--rc-font-heading);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--rcl-ink-faint);
+}
+.rcl-cal-status-up { color: var(--rc-red); }
+.rcl-cal-status-complete { color: var(--rcl-ink-dim); }
+.rcl-cal-row-bye { opacity: 0.7; }
+.rcl-cal-row-bye .rcl-cal-event { font-weight: 600; color: var(--rcl-ink-dim); }
+
+/* -------------------------------------------------------------------- */
+/* Drivers -- full roster, grouped by class (added 2026-09-19)          */
+/* -------------------------------------------------------------------- */
+.rcl-drivers-class + .rcl-drivers-class { margin-top: 22px; }
+.rcl-drivers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.rcl-driver-card { background: var(--rcl-bg-raised-2); border: 1px solid var(--rcl-line); padding: 10px 12px; }
+.rcl-driver-name { font-size: 13px; font-weight: 700; color: var(--rcl-ink); }
+.rcl-driver-meta { margin-top: 2px; font-size: 11px; color: var(--rcl-ink-faint); }
+
+/* -------------------------------------------------------------------- */
+/* News feed -- redesigned 2026-09-19. Only the most recent story shows */
+/* in full (clamped + "Continue reading..."); every older one is just a */
+/* clickable title. Both open the same read-story popup below.          */
 /* -------------------------------------------------------------------- */
 .rcl-news-item + .rcl-news-item { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rcl-line); }
 .rcl-news-hero { display: block; width: 100%; max-height: 220px; object-fit: cover; margin-bottom: 12px; border: 1px solid var(--rcl-line); }
@@ -284,14 +338,109 @@ body.rc-league-page {
 .rcl-news-body { margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--rcl-ink-dim); }
 .rcl-news-body p { margin: 0 0 0.8em; }
 .rcl-news-body p:last-child { margin-bottom: 0; }
+.rcl-news-body strong { color: var(--rcl-ink); }
+.rcl-news-quote {
+  margin: 0 0 0.8em;
+  padding-left: 14px;
+  border-left: 2px solid var(--rc-red);
+  color: var(--rcl-ink-dim);
+  font-style: italic;
+}
 .rcl-news-editnote { margin-top: 10px; font-size: 11.5px; font-style: italic; color: var(--rcl-ink-faint); }
+/* Clamped preview -- fills the card down to about 2 lines short of the
+   box, per Matt's ask; the "Continue reading..." link right below sits
+   in that remaining space rather than pixel-measuring the exact cutoff. */
+.rcl-news-current-body {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--rcl-ink-dim);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+}
+.rcl-news-current-body strong { color: var(--rcl-ink); }
+.rcl-news-continue {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  text-decoration: none;
+  cursor: pointer;
+}
+.rcl-news-continue:hover { text-decoration: underline; }
+.rcl-news-previous { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rcl-line); display: flex; flex-direction: column; gap: 8px; }
+.rcl-news-previous-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-bottom: 2px; }
+.rcl-news-previous-title {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rcl-ink-dim);
+  cursor: pointer;
+}
+.rcl-news-previous-title:hover { color: var(--rcl-ink); text-decoration: underline; }
 
 /* -------------------------------------------------------------------- */
-/* Next race mini-card                                                  */
+/* Read-story popup -- centered card over a dimmed backdrop, opened from */
+/* "Continue reading..." or any previous-story title.                   */
 /* -------------------------------------------------------------------- */
-.rcl-nextrace-event { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--rcl-ink); }
-.rcl-nextrace-track { margin-top: 4px; font-size: 13px; color: var(--rcl-ink-dim); }
-.rcl-nextrace-date { margin-top: 12px; font-size: 12px; color: var(--rcl-ink-faint); }
+.rcl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 20px;
+  overflow-y: auto;
+  z-index: 500;
+}
+.rcl-modal-dialog {
+  position: relative;
+  background: var(--rcl-bg-raised);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 8px;
+  max-width: 640px;
+  width: 100%;
+  padding: 32px 28px 24px;
+}
+.rcl-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--rcl-ink-faint);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.rcl-modal-close:hover { color: var(--rcl-ink); }
+.rcl-modal-body .rcl-news-item + .rcl-news-item { margin-top: 24px; padding-top: 24px; }
+.rcl-modal-loadmore-wrap { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rcl-line); text-align: center; }
+.rcl-modal-loadmore-btn {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  background: var(--rc-red);
+  border: none;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+.rcl-modal-loadmore-btn:hover { background: var(--rc-red-dark); }
 
 /* -------------------------------------------------------------------- */
 /* Empty state -- same large circle-slash icon the rest of the site     */

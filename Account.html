@@ -7441,6 +7441,69 @@
   // see the matching note above handleAdminCreateNews in Website.gs for
   // why. May return later behind a narrower Drive scope.
 
+  var RC_NEWS_BODY_MAX_CHARS = 2500;
+
+  // Formatting toolbar (added 2026-09-19) -- inserts plain-text markers
+  // around the textarea's current selection: **bold**, *italic*,
+  // ++underline++, and "> " line-quote. No rich-text editor here on
+  // purpose -- the Body column stays a plain string, and js/league.js's
+  // public feed is what turns these specific markers into real <strong>/
+  // <em>/<u>/<blockquote> tags at render time (see its
+  // _rclApplyInlineMarkup/_rclRenderStoryBodyBlocks). Wrapping/prefixing
+  // by hand (not execCommand, which is for contenteditable, not a plain
+  // textarea) so this works identically in every browser.
+  function _rcWrapTextareaSelection(textarea, before, after) {
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var value = textarea.value;
+    var selected = value.slice(start, end);
+    textarea.value = value.slice(0, start) + before + selected + after + value.slice(end);
+    var newStart = start + before.length;
+    textarea.focus();
+    textarea.setSelectionRange(newStart, newStart + selected.length);
+    textarea.dispatchEvent(new Event('input'));
+  }
+  function _rcPrefixTextareaLines(textarea, prefix) {
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var value = textarea.value;
+    var lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    var lineEnd = value.indexOf('\n', end);
+    if (lineEnd === -1) lineEnd = value.length;
+    var block = value.slice(lineStart, lineEnd);
+    var newBlock = block.split('\n').map(function (line) { return prefix + line; }).join('\n');
+    textarea.value = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
+    textarea.focus();
+    textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
+    textarea.dispatchEvent(new Event('input'));
+  }
+  function _rcBuildNewsFormattingToolbar(textarea) {
+    var bar = el('div', 'display:flex;gap:6px;margin-bottom:6px;');
+    function toolBtn(label, title, onClick) {
+      var btn = el('button', 'rc-btn-secondary rc-btn-sm', label);
+      btn.type = 'button';
+      btn.title = title;
+      btn.addEventListener('click', function (evt) { evt.preventDefault(); onClick(); });
+      bar.appendChild(btn);
+      return btn;
+    }
+    toolBtn('B', 'Bold', function () { _rcWrapTextareaSelection(textarea, '**', '**'); }).style.fontWeight = '800';
+    toolBtn('I', 'Italic', function () { _rcWrapTextareaSelection(textarea, '*', '*'); }).style.fontStyle = 'italic';
+    toolBtn('U', 'Underline', function () { _rcWrapTextareaSelection(textarea, '++', '++'); }).style.textDecoration = 'underline';
+    toolBtn('"', 'Quote', function () { _rcPrefixTextareaLines(textarea, '> '); });
+    return bar;
+  }
+  // Character counter + hard cap -- textarea.maxLength stops typing/most
+  // pastes at the limit; this just keeps the "X / 2500" label current.
+  function _rcAttachNewsCharCounter(textarea) {
+    textarea.maxLength = RC_NEWS_BODY_MAX_CHARS;
+    var counter = el('div', 'rc-hint', textarea.value.length + ' / ' + RC_NEWS_BODY_MAX_CHARS);
+    textarea.addEventListener('input', function () {
+      counter.textContent = textarea.value.length + ' / ' + RC_NEWS_BODY_MAX_CHARS;
+    });
+    return counter;
+  }
+
   function buildLeagueNewsPanel(newsRows, token, reload) {
     var panel = el('div', 'rc-panel rc-dash-card');
     var headerRow = el('div', 'rc-dash-card-header-row');
@@ -7500,7 +7563,9 @@
     var post = document.createElement('textarea');
     post.rows = 8;
     post.required = true;
+    form.appendChild(_rcBuildNewsFormattingToolbar(post));
     form.appendChild(post);
+    form.appendChild(_rcAttachNewsCharCounter(post));
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
 
     // Post Now vs. Schedule -- radio pair, the datetime field only shows
@@ -7533,7 +7598,11 @@
     form.appendChild(saveBtn);
     body.appendChild(form);
 
-    var modalHandle = showModal('New League News Post', { bodyEl: body });
+    // Wide (2026-09-19, Matt's call: "a bit wider... same height so I can
+    // see more of the text box without having to resize right off the
+    // bat") -- .rc-modal-wide only changes max-width, so the textarea's
+    // rows="8" height is untouched, just more of each line is visible.
+    var modalHandle = showModal('New League News Post', { bodyEl: body, wide: true });
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -7555,10 +7624,16 @@
         publishedAtIso = scheduledDate.toISOString();
       }
 
-      // Close now, save in the background -- matches the rest of the
-      // site's convention (Matt: "the website automatically closes the
-      // popup and the sheet save is handled in the background").
-      modalHandle.close();
+      // Deliberately NOT the site's usual "close now, save in the
+      // background" pattern (Matt's explicit call for this popup, 2026-
+      // 09-19): the button goes gray and reads "Saving..." (free from
+      // .rc-btn-primary:disabled's existing style, no new CSS needed)
+      // and the popup stays open until the save actually finishes, THEN
+      // it closes and League Tools flips to its own "Loading league
+      // tools..." refetch -- see renderLeagueManagementSection, which is
+      // exactly what `reload` here points at.
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
 
       var reqBody = { title: title.value.trim(), body: post.value.trim() };
       if (publishedAtIso) reqBody.publishedAt = publishedAtIso;
@@ -7566,12 +7641,17 @@
       fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not publish this post -- reopen New Post and try again.', 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Publish Post';
+            showToast(data.message || 'Could not publish this post -- try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
+          modalHandle.close();
         })
         .catch(function (err) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Publish Post';
           showToast((err && err.message) || 'Could not reach the server -- post not published.', 'error');
         });
     });
@@ -7589,7 +7669,9 @@
     var post = document.createElement('textarea');
     post.rows = 8;
     post.value = newsRow.Body || '';
+    form.appendChild(_rcBuildNewsFormattingToolbar(post));
     form.appendChild(post);
+    form.appendChild(_rcAttachNewsCharCounter(post));
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
 
     // Required reason-for-edit dropdown -- the date/time on the post never
@@ -7627,7 +7709,8 @@
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
 
-    var modalHandle = showModal('Edit League News Post', { bodyEl: body });
+    // Wide, same reasoning as the New Post popup above.
+    var modalHandle = showModal('Edit League News Post', { bodyEl: body, wide: true });
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -7641,19 +7724,27 @@
         return;
       }
 
-      modalHandle.close();
+      // Same "stay open, go gray, say Saving..." flow as New Post -- see
+      // that popup's submit handler for the full explanation.
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
 
       var reqBody = { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim(), editNote: editNote };
 
       fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not save changes -- reopen Edit and try again.', 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+            showToast(data.message || 'Could not save changes -- try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
+          modalHandle.close();
         })
         .catch(function (err) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
           showToast((err && err.message) || 'Could not reach the server -- changes not saved.', 'error');
         });
     });
