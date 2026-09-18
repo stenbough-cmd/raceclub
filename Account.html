@@ -165,6 +165,7 @@
       <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-protests" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
+      <section id="rc-section-stewarding" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-help" class="rc-content-section" style="display:none;"></section>
     </div>
@@ -460,10 +461,11 @@
   // (renderProtestsSection), same move. Career removed (2026-09-13) --
   // it now gets real content (renderCareerSection), same move.
   // Reputation and Hall of Fame removed entirely (V1 scope cut, 2026-09-18)
-  // -- they were "Coming soon" placeholder stubs with no real content, so
-  // PLACEHOLDER_LABELS is empty for now until a future section needs it
-  // again.
-  var PLACEHOLDER_LABELS = {};
+  // -- they were "Coming soon" placeholder stubs with no real content.
+  // Stewarding (added 2026-09-18) is a real placeholder for now, on
+  // purpose -- the nav link/gating is going in ahead of the actual page
+  // (Matt's call), which will hold protest rulings once it's built.
+  var PLACEHOLDER_LABELS = { stewarding: 'Stewarding' };
 
   // Set once, in buildFullProfileUI() -- lets the Edit Profile/Help nav
   // button handlers (built earlier, in buildSidebarNav(), before profile/
@@ -633,6 +635,17 @@
       showLazySection('league', currentToken);
     });
     nav.appendChild(leagueBtn);
+    // Stewarding (added 2026-09-18) -- placeholder page for now ("Coming
+    // soon", see PLACEHOLDER_LABELS/renderPlaceholderSections), but the
+    // nav link + role gating go in now per Matt's call, ahead of the
+    // actual protest-rulings content that will eventually live here.
+    // Sits right below League Tools, Steward-and-above (same
+    // Driver<Steward<Organizer<Admin cumulative access hierarchy every
+    // other gated nav item on this page already follows).
+    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_PROTESTS, 'rc-nav-stewarding', true, function () {
+      showSection('stewarding');
+    });
+    nav.appendChild(stewardingBtn);
     nav.appendChild(navDivider());
     // Edit Profile is a popup, not a section -- its click handler opens a
     // modal instead of falling through to showSection(id); it reads
@@ -7422,10 +7435,11 @@
     'Fixed a typo or wording',
     'Corrected a fact or figure',
     'Added new details',
-    'Updated an image',
     'Other'
   ];
-  var RC_NEWS_IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB raw file cap before base64 encoding
+  // Hero image upload was pulled back out (2026-09-18, Matt's call) --
+  // see the matching note above handleAdminCreateNews in Website.gs for
+  // why. May return later behind a narrower Drive scope.
 
   function buildLeagueNewsPanel(newsRows, token, reload) {
     var panel = el('div', 'rc-panel rc-dash-card');
@@ -7474,26 +7488,6 @@
     return panel;
   }
 
-  // Reads a File as base64 (no data: prefix) via FileReader, resolved as a
-  // promise. Rejects up front if the file is over RC_NEWS_IMAGE_MAX_BYTES
-  // so a huge upload never even gets encoded.
-  function _rcReadImageFileAsBase64_(file) {
-    return new Promise(function (resolve, reject) {
-      if (file.size > RC_NEWS_IMAGE_MAX_BYTES) {
-        reject(new Error('Image is too large -- please use a file under 4MB.'));
-        return;
-      }
-      var reader = new FileReader();
-      reader.onload = function () {
-        var result = String(reader.result || '');
-        var commaIdx = result.indexOf(',');
-        resolve({ base64: commaIdx === -1 ? result : result.slice(commaIdx + 1), mimeType: file.type || 'image/jpeg' });
-      };
-      reader.onerror = function () { reject(new Error('Could not read that image file.')); };
-      reader.readAsDataURL(file);
-    });
-  }
-
   function openNewsPostModal(token, reload) {
     var body = el('div');
     var form = el('form');
@@ -7508,11 +7502,6 @@
     post.required = true;
     form.appendChild(post);
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
-
-    form.appendChild(el('label', null, 'Hero Image (optional)'));
-    var imageInput = el('input'); imageInput.type = 'file'; imageInput.accept = 'image/*';
-    form.appendChild(imageInput);
-    form.appendChild(el('div', 'rc-hint', 'Shows at the top of the story on the public League Hub. Up to 4MB.'));
 
     // Post Now vs. Schedule -- radio pair, the datetime field only shows
     // (and is only required) once Schedule is picked.
@@ -7565,11 +7554,6 @@
         }
         publishedAtIso = scheduledDate.toISOString();
       }
-      var imageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
-      if (imageFile && imageFile.size > RC_NEWS_IMAGE_MAX_BYTES) {
-        showToast('Image is too large -- please use a file under 4MB.', 'error');
-        return;
-      }
 
       // Close now, save in the background -- matches the rest of the
       // site's convention (Matt: "the website automatically closes the
@@ -7579,14 +7563,7 @@
       var reqBody = { title: title.value.trim(), body: post.value.trim() };
       if (publishedAtIso) reqBody.publishedAt = publishedAtIso;
 
-      (imageFile ? _rcReadImageFileAsBase64_(imageFile) : Promise.resolve(null))
-        .then(function (imageResult) {
-          if (imageResult) {
-            reqBody.heroImageBase64 = imageResult.base64;
-            reqBody.heroImageMimeType = imageResult.mimeType;
-          }
-          return fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody });
-        })
+      fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody })
         .then(function (data) {
           if (!data.success) {
             showToast(data.message || 'Could not publish this post -- reopen New Post and try again.', 'error');
@@ -7614,11 +7591,6 @@
     post.value = newsRow.Body || '';
     form.appendChild(post);
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
-
-    form.appendChild(el('label', null, 'Replace Hero Image (optional)'));
-    var imageInput = el('input'); imageInput.type = 'file'; imageInput.accept = 'image/*';
-    form.appendChild(imageInput);
-    form.appendChild(el('div', 'rc-hint', 'Leave blank to keep the current image (if any). Up to 4MB.'));
 
     // Required reason-for-edit dropdown -- the date/time on the post never
     // changes (Matt: "the date and time remain the same"); this note is
@@ -7668,24 +7640,12 @@
         showToast('Pick (or describe) a reason for this edit before saving.', 'error');
         return;
       }
-      var imageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
-      if (imageFile && imageFile.size > RC_NEWS_IMAGE_MAX_BYTES) {
-        showToast('Image is too large -- please use a file under 4MB.', 'error');
-        return;
-      }
 
       modalHandle.close();
 
       var reqBody = { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim(), editNote: editNote };
 
-      (imageFile ? _rcReadImageFileAsBase64_(imageFile) : Promise.resolve(null))
-        .then(function (imageResult) {
-          if (imageResult) {
-            reqBody.heroImageBase64 = imageResult.base64;
-            reqBody.heroImageMimeType = imageResult.mimeType;
-          }
-          return fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody });
-        })
+      fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody })
         .then(function (data) {
           if (!data.success) {
             showToast(data.message || 'Could not save changes -- reopen Edit and try again.', 'error');
@@ -8919,6 +8879,14 @@
     // per the system map. Revisit if that design changes.
     if (profile.role === 'Admin' || profile.role === 'Organizer') {
       document.getElementById('rc-nav-league').style.display = 'flex';
+      showUpperNavDivider();
+    }
+    // Stewarding -- Steward and above (cumulative hierarchy: Steward <
+    // Organizer < Admin), same level Protests RULING already requires
+    // server-side (Protests.gs). See the nav-button comment above for why
+    // this link exists ahead of the page it opens.
+    if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') {
+      document.getElementById('rc-nav-stewarding').style.display = 'flex';
       showUpperNavDivider();
     }
     if (profile.role === 'Admin') {
