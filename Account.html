@@ -1643,6 +1643,125 @@
     return card;
   }
 
+  // Recent Results -- Dashboard preview card. Restored 2026-09-18 (Matt's
+  // report: "no cards are showing up on the dashboard") -- the earlier V1
+  // scope-cut pass (commit 6193181) deleted this whole function while
+  // stripping money/finance fields from the Results-related cards, but
+  // left its call site (buildDashboardDataRows above,
+  // `asyncDashCard(..., dashboardData.recentResultsPromise,
+  // recentResultsCard)`) in place. Referencing an undefined
+  // `recentResultsCard` there threw a synchronous ReferenceError the
+  // moment paintRows() ran, right after the loading spinner had already
+  // been removed -- which is exactly why the WHOLE dashboard (every card,
+  // not just this one) rendered blank instead of just this card failing:
+  // the crash happened before any of the three rows got appended to the
+  // section at all. Restored verbatim from before that deletion (it only
+  // ever showed points/position, never money, so nothing here needed to
+  // change for the V1 scope cut) -- see backed-by comment inline.
+  //
+  // Backed by action=getDashboardData's recentResults slice
+  // (handleGetRecentResults, DataCache.gs) -- shows this driver's own
+  // finishing headline plus the top of their own class's standings for
+  // the most recently completed round, with a link through to the full
+  // Results page.
+  function recentResultsCard(data) {
+    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
+
+    if (!data || !data.success || !data.hasResults || !data.race) {
+      card.appendChild(el('h3', 'rc-dash-card-title', 'Recent Results'));
+      card.appendChild(el('p', 'rc-cs-empty', 'No results posted yet.'));
+      return card;
+    }
+    var race = data.race;
+    var you = race.you;
+
+    // Title + finishing place share one header row, same
+    // .rc-dash-card-header-row treatment Next Race uses for "ROUND n OF
+    // total" -- "1st PLACE"/"2nd PLACE"/etc, only shown when this driver
+    // actually has a numeric finishing position to report.
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Recent Results'));
+    if (you && you.position) {
+      // Suffix (st/nd/rd/th) set smaller and raised against the number --
+      // ordinal() returns them joined ("1st"), split back apart here
+      // purely for this styling.
+      var ordFull = ordinal(you.position);
+      var ordSuffix = ordFull.replace(/^\d+/, '');
+      var ordNum = ordFull.slice(0, ordFull.length - ordSuffix.length);
+      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure',
+        escapeHtml(ordNum) + '<span class="rc-ordinal-suffix">' + escapeHtml(ordSuffix) + '</span> PLACE'));
+    }
+    card.appendChild(headerRow);
+
+    var head = el('div', 'rc-recent-results-head');
+    head.appendChild(el('span', 'rc-recent-results-name',
+      (race.roundNum ? 'Round ' + race.roundNum + ': ' : '') + escapeHtml(race.eventName || race.track || 'Race')));
+    if (race.track) head.appendChild(el('span', 'rc-hint', escapeHtml(race.track)));
+    card.appendChild(head);
+
+    // Your Race headline only -- this card is purely "top 5 per class +
+    // the class pill," a quick snapshot, not the full personal breakdown.
+    // The full pills still show on the Results page's resultsRoundPanel,
+    // unchanged.
+    if (you && !you.position) {
+      card.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
+    } else if (!you) {
+      card.appendChild(el('p', 'rc-hint', 'You weren\'t in this race.'));
+    }
+
+    // Only the viewing driver's own class (falls back to the first class
+    // present if this driver wasn't actually in the race). Each row is 2
+    // columns: the driver (position + name) and the points that driver
+    // actually gained THIS race -- `r.points` off SeasonHistory.
+    // RecentResults is already exactly that per-round number (see
+    // buildDriverRow_, DataCache.gs).
+    var recentResultsClass = (race.classes || []).filter(function (cls) {
+      return you && you.carClass ? cls.className === you.carClass : true;
+    })[0] || (race.classes || [])[0];
+    if (recentResultsClass) {
+      var columns = el('div', 'rc-recent-results-columns rc-recent-results-columns-1');
+      var col = el('div', 'rc-recent-results-column');
+      col.appendChild(_rcClassBadge(recentResultsClass.className));
+
+      var table = el('div', 'rc-recent-results-table');
+      (recentResultsClass.standings || []).forEach(function (r) {
+        var isYou = you && you.carClass === recentResultsClass.className && r.position === you.position && you.position !== null;
+        var rowEl = el('div', 'rc-recent-results-row' + (isYou ? ' rc-recent-results-row-you' : ''));
+        rowEl.appendChild(el('span', 'rc-recent-results-pos', 'P' + (r.classPosition || r.position || '?')));
+
+        var driverCell = el('span', 'rc-recent-results-driver');
+        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
+        if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
+          var mlogo = document.createElement('img');
+          mlogo.className = 'rc-recent-results-mfr-logo';
+          mlogo.src = manufacturerLogoSrc(r.manufacturer);
+          mlogo.alt = r.manufacturer;
+          mlogo.onerror = function () { this.style.display = 'none'; };
+          driverCell.appendChild(mlogo);
+        }
+        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
+        rowEl.appendChild(driverCell);
+
+        rowEl.appendChild(el('span', 'rc-recent-results-points', (r.points === null || r.points === undefined) ? '—' : ((r.points >= 0 ? '+' : '') + r.points + ' PTS')));
+
+        table.appendChild(rowEl);
+      });
+      col.appendChild(table);
+      columns.appendChild(col);
+      card.appendChild(columns);
+    }
+
+    // Link to the full Results page.
+    var viewResultsBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View all results');
+    viewResultsBtn.type = 'button';
+    viewResultsBtn.addEventListener('click', function () {
+      showLazySection('results', currentToken);
+    });
+    card.appendChild(viewResultsBtn);
+
+    return card;
+  }
+
   // Same tile shape as the Wager page's .rc-cs-stat -- reused rather than
   // reinvented so every "important number in a box" on the site looks
   // like the same component.
