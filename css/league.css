@@ -170,6 +170,13 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rcl-ink-dim);
 }
+/* "Season N / Name" (2026-09-19, Matt's ask: color the separator and the
+   name distinctly) -- "Season N" itself stays the line's base ink-dim
+   color, the "/" reads in the brand accent, and the season name reads
+   bright white against it. Built as spans in js/league.js's
+   _rclRenderHero rather than one plain text string. */
+.rcl-hero-season-sep { color: var(--rc-red); }
+.rcl-hero-season-name { color: var(--rcl-ink); }
 .rcl-hero-sub { margin-top: 12px; font-size: 14px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }
 
 /* Season snapshot / League Format stat strips (added 2026-09-19,
@@ -395,20 +402,37 @@ body.rc-league-page {
      gets softened. */
   border-top-left-radius: 8px;
 }
-/* Special-event rounds (SP) get a platinum background instead of the
-   standard brand red (2026-09-19, Matt's ask) -- a deliberately different
-   metal-toned accent so a special round reads as distinct from a normal
-   points round at a glance. Dark text since platinum is light. */
+/* Special-event rounds (SP) get a gold accent instead of the standard
+   brand red (2026-09-19, Matt's ask, refined same day from an earlier
+   platinum treatment to "gold accents including the event and track
+   names") -- a deliberately different metal-toned accent, now carried
+   through onto the row's own event/track text too, so a special round
+   reads as distinct from a normal points round at a glance, not just on
+   its round-number bar. Dark text on the bar since gold is light. */
 .rcl-cal-round-special {
-  background: linear-gradient(135deg, #e9e8e6 0%, #c6c4bf 100%);
-  color: #1c1d20;
+  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
+  color: #241b04;
 }
+.rcl-cal-row-special .rcl-cal-event { color: #e0b64c; }
+.rcl-cal-row-special .rcl-cal-track { color: #b99a4f; }
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.rcl-cal-track { font-size: 14.5px; font-weight: 800; color: var(--rcl-ink); }
+/* Event name / track name swapped emphasis (2026-09-19, Matt's follow-up
+   call: "move the event to above the track name") -- .rcl-cal-event is
+   now the bold PRIMARY line at the top of the row (was track), .rcl-cal-
+   track is now the lighter SECONDARY line underneath it (was event). The
+   class names stay put (still literally "the event line"/"the track
+   line") -- only which one reads as bold/primary changed, so this is a
+   property swap between the two rules, not a rename. */
+.rcl-cal-event { font-size: 14.5px; font-weight: 800; color: var(--rcl-ink); }
+.rcl-cal-track { font-size: 12px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
 .rcl-cal-layout { font-weight: 600; color: var(--rcl-ink-faint); }
-.rcl-cal-event { font-size: 12px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
-.rcl-cal-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+/* Vertically centers every meta chip against its siblings (2026-09-19,
+   Matt's ask: "vertically align the pill text with the rest of the race
+   details next to it") -- without this, the padded pill chips (taller,
+   own box) and the site's default stretch alignment left them looking
+   offset from each other on the same row. */
+.rcl-cal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
 .rcl-cal-meta-item {
   font-size: 11.5px;
   color: var(--rcl-ink-dim);
@@ -416,24 +440,34 @@ body.rc-league-page {
   white-space: nowrap;
 }
 .rcl-cal-meta-item-label { color: var(--rcl-ink-faint); font-weight: 600; }
-/* Time + length tier chip (2026-09-19, Matt's ask: "put the time next to
-   the length tier in a light gray pill with a slightly darker border") --
-   a literal light-gray pill (not this dark page's usual translucent-white
-   chip treatment) so it reads as a deliberate little tag against the dark
-   row, with dark text for contrast on the light fill. */
-.rcl-cal-meta-pill {
+/* Shared light chip -- date/time+length, in-game time, and weather all
+   use this one shape now (2026-09-19, Matt's asks across two turns: "put
+   the time next to the length tier in a light gray pill with a slightly
+   darker border", then "make the pills more rectangular" and "use icons
+   when possible for maximum aesthetics") -- a literal light-gray pill
+   (not this dark page's usual translucent-white chip treatment) so each
+   fact reads as a deliberate little tag against the dark row, with dark
+   text/icons for contrast on the light fill. Small 5px radius rather than
+   the fully round 999px this used to be -- "more rectangular" per Matt's
+   ask, while still being a pill and not a hard square. Reused as-is for
+   the Points Tables tier duration chip below (see .rcl-points-tier-head).
+   */
+.rcl-chip-light {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   background: #d9dadd;
   border: 1px solid #b6b8bd;
-  border-radius: 999px;
-  padding: 3px 11px;
+  border-radius: 5px;
+  padding: 3px 10px;
   font-size: 11.5px;
   font-weight: 600;
   color: #1c1d20;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.rcl-chip-icon { display: flex; flex: none; line-height: 1; }
+.rcl-chip-icon svg { display: block; width: 13px; height: 13px; }
 .rcl-cal-status {
   font-family: var(--rc-font-heading);
   font-size: 10px;
@@ -453,7 +487,12 @@ body.rc-league-page {
 /* Points -- race-length-tier tables + bonus points (added 2026-09-19)  */
 /* -------------------------------------------------------------------- */
 .rcl-points-tier + .rcl-points-tier { margin-top: 22px; }
-.rcl-points-tier-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+/* align-items: center (was baseline) -- the duration is now a padded
+   .rcl-chip-light pill instead of plain text, and baseline alignment
+   against a padded box no longer lines the two up the way it did for two
+   plain text runs (2026-09-19, Matt's ask: "make the tier length and time
+   more aesthetic"). */
+.rcl-points-tier-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .rcl-points-tier-name {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -462,7 +501,6 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rcl-ink);
 }
-.rcl-points-tier-duration { font-size: 11.5px; color: var(--rcl-ink-faint); }
 .rcl-points-table { display: flex; flex-wrap: wrap; gap: 8px; }
 .rcl-points-pos {
   background: var(--rcl-bg-raised-2);
@@ -472,16 +510,32 @@ body.rc-league-page {
   min-width: 46px;
   text-align: center;
 }
+/* Wider variant for the Bonus Points row below (2026-09-19) -- "Pole
+   Position"/"Fastest Lap"/"Most Laps Led" need more room than a bare
+   position number like "P1". */
+.rcl-points-pos-wide { min-width: 96px; }
 .rcl-points-pos-num { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
 .rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-.rcl-points-bonus-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
-/* Layout only (full-width row + spacing below it) -- the actual type
-   style now comes from .rcl-points-tier-name, applied alongside this
-   class in js/league.js so "Bonus Points This Season" reads exactly like
-   a tier name above it (2026-09-19, Matt's ask). */
-.rcl-points-bonus-label { width: 100%; margin-bottom: 2px; }
+/* Bonus points' own value reads in the brand accent (2026-09-19) --
+   distinguishes "+1 bonus" from a tier table's plain championship points,
+   the same way the old text version did with a red <strong>. */
+.rcl-points-pos-val-accent { color: var(--rc-red); }
+/* Bonus Points row (renamed from "Bonus Points This Season", 2026-09-19)
+   now mirrors a tier block's own structure exactly -- label, then a
+   .rcl-points-table of position-style boxes underneath -- instead of a
+   flat row of plain-text chips, so it reads as visually consistent with
+   the tier tables above it (Matt's ask: "style it more closely to the
+   tier points tables so it looks like it's consistent"). Block layout,
+   not flex, since its two children (label + table) already stack the way
+   a tier's head+table do. */
+.rcl-points-bonus-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+/* The actual type style comes from .rcl-points-tier-name, applied
+   alongside this class in js/league.js so "Bonus Points" reads exactly
+   like a tier name above it -- this rule only adds this row's own
+   spacing, matching .rcl-points-tier-head's margin-bottom exactly. */
+.rcl-points-bonus-label { margin-bottom: 10px; }
+/* Only used by the "no bonus points this season" fallback message now. */
 .rcl-points-bonus-chip { font-size: 12.5px; color: var(--rcl-ink-dim); }
-.rcl-points-bonus-chip strong { color: var(--rc-red); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------------- */
 /* Drivers -- full roster, grouped by class (added 2026-09-19)          */

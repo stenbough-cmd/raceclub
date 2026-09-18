@@ -53,14 +53,86 @@ function _rclFormatDate(iso) {
 // redesign) -- league.html is a public, no-token page, so there's no
 // driver timezone to read the way Account.html's Calendar does; the
 // browser's own locale/timezone is the only thing available here, same
-// as every other date this page already formats.
+// as every other date this page already formats. timeZoneName: 'short'
+// (added same day, Matt's ask: "put the timezone behind the race time")
+// puts the abbreviation (EDT/PST/etc.) right after the time itself,
+// same option Account.html's own formatRaceDateTime already uses.
 function _rclFormatDateTime(iso) {
   if (!iso) return '';
   var d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
-    ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
+
+// A sim-clock "HH:MM" string (24-hour, as the admin typed it into the
+// wizard's in-game time fields) into a 12-hour "H:MM AM/PM" label, purely
+// cosmetic -- matches the 12-hour clock every other time on this page
+// already reads in (2026-09-19, Calendar redesign polish pass).
+function _rclFormat12h(hhmm) {
+  if (!hhmm) return '';
+  var parts = String(hhmm).split(':');
+  if (parts.length < 2) return hhmm;
+  var h = parseInt(parts[0], 10);
+  if (isNaN(h)) return hhmm;
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12; if (h12 === 0) h12 = 12;
+  return h12 + ':' + parts[1] + ' ' + ampm;
+}
+
+// A calendar entry's race length in actual minutes rather than its
+// Sprint/Medium/Long tier name (2026-09-19, Matt's ask: "instead of
+// saying the tier, say the minutes"). A Special Event entry already
+// carries a raw raceLengthMinutes figure (see Website.gs's
+// handleGetLeagueHub); a regular round only carries its tier NAME, so its
+// actual minutes are looked up off that same season's own points tables
+// (hub.pointsTables[tierName].duration) -- the one place that duration
+// actually lives, and the same number Points Tables below shows for that
+// tier, so this can never disagree with it.
+function _rclEntryLengthMinutes(entry, hub) {
+  if (entry.raceLengthMinutes) return Number(entry.raceLengthMinutes) || 0;
+  var tier = (hub.pointsTables || {})[entry.raceLengthTier];
+  return (tier && tier.duration) ? Number(tier.duration) : 0;
+}
+
+// Same 5-tier icon-by-rain-chance logic as Account.html's own
+// weatherIcon() (Calendar page) -- duplicated locally rather than shared
+// since league.html doesn't load Account.html (see file header comment).
+function _rclWeatherIcon(entry) {
+  var rc = entry.chanceOfRain || 0;
+  if (rc <= 0) return (entry.weather === 'Cloudy') ? _RCL_ICON_CLOUD_PARTLY : _RCL_ICON_SUN;
+  if (rc <= 25) return _RCL_ICON_CLOUD;
+  if (rc <= 75) return _RCL_ICON_RAIN;
+  return _RCL_ICON_RAIN_HEAVY;
+}
+
+// Builds one .rcl-chip-light pill (icon + text) -- shared by the Calendar
+// meta row and the Points Tables tier duration (2026-09-19, Matt's ask:
+// "use icons when possible for maximum aesthetics"). `text` is inserted
+// as a real text node, never HTML, so nothing here needs escaping.
+function _rclChip(iconSvg, text) {
+  var chip = _rclEl('span', 'rcl-chip-light');
+  var iconSpan = _rclEl('span', 'rcl-chip-icon');
+  iconSpan.innerHTML = iconSvg;
+  chip.appendChild(iconSpan);
+  chip.appendChild(document.createTextNode(text));
+  return chip;
+}
+
+// Local copies of a handful of Account.html's ICON_* constants (same
+// viewBox/stroke-width/cap/join convention -- see the
+// race-club-ui-consistency skill's icon section) -- league.html doesn't
+// load Account.html, so these can't be shared directly.
+var _RCL_ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 16 14"></polyline></svg>';
+var _RCL_ICON_SUN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line></svg>';
+var _RCL_ICON_CLOUD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7-1.6A4.5 4.5 0 0 0 7 18z"></path></svg>';
+var _RCL_ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
+var _RCL_ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
+var _RCL_ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
+// Game controller -- no equivalent in Account.html's icon set (its
+// in-game times are plain text there), drawn fresh in the same style for
+// the Calendar's new "In-Game" chip.
+var _RCL_ICON_GAMEPAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="10" rx="5"></rect><line x1="7" y1="11" x2="7" y2="15"></line><line x1="5" y1="13" x2="9" y2="13"></line><circle cx="16" cy="11" r="1"></circle><circle cx="18" cy="14" r="1"></circle></svg>';
 
 // ---------------------------------------------------------------------
 // TICKER
@@ -247,54 +319,61 @@ function _rclRenderCalendar(hub) {
       return;
     }
 
-    // Redesigned 2026-09-19 (Matt's call): the round label owns the row's
-    // left edge (bright, large, solid red -- see .rcl-cal-round), Track
-    // is now the bold primary line with the event name underneath it in a
-    // lighter weight (previously the other way around), and a meta chip
-    // row adds length tier + in-game session times alongside the
-    // date/time -- all public-safe fields handleGetLeagueHub now sends
-    // (see its own comment in Website.gs).
-    var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : ''));
-    var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (entry.kind === 'special' ? 'SP' : '');
-    // Special-event rounds get a platinum background instead of the
-    // standard brand red (2026-09-19, Matt's ask) -- makes a special
-    // round visually distinct at a glance in the schedule.
-    var roundClass = 'rcl-cal-round' + (entry.kind === 'special' ? ' rcl-cal-round-special' : '');
+    // Redesigned 2026-09-19 (Matt's call, two passes): the round label
+    // owns the row's left edge (bright, large, solid red or gold for a
+    // special -- see .rcl-cal-round), event name is now the bold primary
+    // line at the top with the track underneath it in a lighter weight
+    // ("move the event to above the track name" -- previously the other
+    // way around), and a meta chip row below adds time+length, in-game
+    // start, and weather -- all public-safe fields handleGetLeagueHub now
+    // sends (see its own comment in Website.gs).
+    var isSpecial = entry.kind === 'special';
+    var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : '') + (isSpecial ? ' rcl-cal-row-special' : ''));
+    var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : '');
+    // Special-event rounds get a gold accent instead of the standard
+    // brand red (2026-09-19, Matt's ask, refined same day to also color
+    // the event/track text -- see .rcl-cal-row-special in css/league.css)
+    // -- makes a special round visually distinct at a glance in the
+    // schedule.
+    var roundClass = 'rcl-cal-round' + (isSpecial ? ' rcl-cal-round-special' : '');
     row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
-    topLine.appendChild(_rclEl('div', 'rcl-cal-track',
-      '<strong>' + _rclEscapeHtml(entry.track || '(no track)') + '</strong>' +
-      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
+    topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(entry.eventName || 'Race') + '</strong>'));
     var statusText = idx === nextIdx ? 'UP NEXT' : (entry.finished ? (entry.hasResults ? 'COMPLETE' : 'AWAITING RESULTS') : 'UPCOMING');
     topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusText.split(' ')[0].toLowerCase(), statusText));
     rowBody.appendChild(topLine);
 
-    rowBody.appendChild(_rclEl('div', 'rcl-cal-event', _rclEscapeHtml(entry.eventName || 'Race')));
+    rowBody.appendChild(_rclEl('div', 'rcl-cal-track',
+      _rclEscapeHtml(entry.track || '(no track)') +
+      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');
-    function metaItem(label, value) {
-      var item = _rclEl('span', 'rcl-cal-meta-item');
-      if (label) item.innerHTML = '<span class="rcl-cal-meta-item-label">' + _rclEscapeHtml(label) + '</span> ' + _rclEscapeHtml(value);
-      else item.textContent = value;
-      metaRow.appendChild(item);
-    }
-    // Time + length tier grouped into one light-gray pill (2026-09-19,
-    // Matt's ask: "put the time next to the length tier in a light gray
-    // pill") -- previously two separate plain meta items; now one chip so
-    // "when" and "how long" read as a single fact at a glance.
+    // Time + length grouped into one light-gray pill (2026-09-19, Matt's
+    // asks across two turns: pair the time with the length, then "say the
+    // minutes" instead of the tier name and "put the timezone behind the
+    // race time" -- both handled inside _rclFormatDateTime/
+    // _rclEntryLengthMinutes above).
     var timeTierParts = [];
     if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
-    if (entry.raceLengthTier) timeTierParts.push(entry.raceLengthTier + ' Race');
+    var lengthMin = _rclEntryLengthMinutes(entry, hub);
+    if (lengthMin) timeTierParts.push(lengthMin + ' Min');
     if (timeTierParts.length) {
-      metaRow.appendChild(_rclEl('span', 'rcl-cal-meta-pill', _rclEscapeHtml(timeTierParts.join(' · '))));
+      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · ')));
     }
+    // In-game time: spelled out ("In-Game"), race time only -- practice/
+    // qualify in-game times dropped from this line (2026-09-19, Matt's
+    // ask: "spell out In-game and only put the race time for in-game").
     if (entry.igRaceStart) {
-      var igParts = ['IG Race ' + entry.igRaceStart];
-      if (entry.igPracticeStart) igParts.push('Practice ' + entry.igPracticeStart);
-      if (entry.igQualifyStart) igParts.push('Qualifying ' + entry.igQualifyStart);
-      metaItem('', igParts.join(' -- '));
+      metaRow.appendChild(_rclChip(_RCL_ICON_GAMEPAD, 'In-Game ' + _rclFormat12h(entry.igRaceStart)));
+    }
+    // Weather + chance of precipitation (2026-09-19, Matt's ask), same
+    // "N% Rain" convention and 5-tier icon Account.html's own Calendar
+    // page already uses for this (weatherIcon() + "N% Rain") -- only
+    // shows once a weather value has actually been set for this entry.
+    if (entry.weather) {
+      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain'));
     }
     rowBody.appendChild(metaRow);
 
@@ -332,7 +411,10 @@ function _rclRenderPoints(hub) {
     var wrap = _rclEl('div', 'rcl-points-tier');
     var head = _rclEl('div', 'rcl-points-tier-head');
     head.appendChild(_rclEl('div', 'rcl-points-tier-name', _rclEscapeHtml(tierName)));
-    if (tier.duration) head.appendChild(_rclEl('div', 'rcl-points-tier-duration', tier.duration + ' min'));
+    // Duration as a .rcl-chip-light pill with a clock icon (2026-09-19,
+    // Matt's ask: "make the tier length and time more aesthetic") --
+    // same shared chip the Calendar's own time+length pill uses.
+    if (tier.duration) head.appendChild(_rclChip(_RCL_ICON_CLOCK, tier.duration + ' Min'));
     wrap.appendChild(head);
     var table = _rclEl('div', 'rcl-points-table');
     points.forEach(function (val, idx) {
@@ -350,15 +432,24 @@ function _rclRenderPoints(hub) {
   var bonusChips = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
   if (bonusChips.length) {
     var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
-    // Same type style as a tier name above (.rcl-points-tier-name) --
-    // Matt's ask: "make Bonus Points This Season the same style as the
-    // tier in the points tables". .rcl-points-bonus-label still carries
-    // this row's own layout (full-width, margin-bottom) -- see its rule
-    // in css/league.css, which now shares the tier name's font styling.
-    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-points-tier-name', 'Bonus Points This Season'));
+    // "Bonus Points" (shortened from "Bonus Points This Season",
+    // 2026-09-19, Matt's ask). Same type style as a tier name above
+    // (.rcl-points-tier-name) -- .rcl-points-bonus-label carries this
+    // row's own layout (margin-bottom) -- see css/league.css.
+    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-points-tier-name', 'Bonus Points'));
+    // Each bonus category now renders as a .rcl-points-pos box, same
+    // shape as a tier table's P1/P2/etc. boxes, inside its own
+    // .rcl-points-table -- mirrors a tier block's head+table structure
+    // exactly (2026-09-19, Matt's ask: "style it more closely to the
+    // tier points tables so it looks like it's consistent").
+    var bonusTable = _rclEl('div', 'rcl-points-table');
     bonusChips.forEach(function (key) {
-      bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-chip', _rclEscapeHtml(bonusLabels[key]) + ' <strong>+' + Number(bonus[key]) + '</strong>'));
+      var chip = _rclEl('div', 'rcl-points-pos rcl-points-pos-wide');
+      chip.appendChild(_rclEl('div', 'rcl-points-pos-num', _rclEscapeHtml(bonusLabels[key])));
+      chip.appendChild(_rclEl('div', 'rcl-points-pos-val rcl-points-pos-val-accent', '+' + Number(bonus[key])));
+      bonusTable.appendChild(chip);
     });
+    bonusRow.appendChild(bonusTable);
     body.appendChild(bonusRow);
   } else if (tierNames.length) {
     body.appendChild(_rclEl('div', 'rcl-points-bonus-row',
@@ -660,13 +751,16 @@ function _rclBuildFormatStats(hub) {
   var rs = hub.raceSettings || {};
   var stats = [];
   if (rs.tireCount) stats.push({ value: String(rs.tireCount), label: 'Tires Per Event' });
-  if (rs.practiceLengthMin) stats.push({ value: rs.practiceLengthMin + ' min', label: 'Practice Length' });
-  if (rs.qualifyLengthMin) stats.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualifying Length' });
+  // "Practice"/"Qualifying" (dropped "Length", 2026-09-19, Matt's ask) --
+  // the value itself already reads as a duration ("30 min"), so the word
+  // was redundant on the label.
+  if (rs.practiceLengthMin) stats.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
+  if (rs.qualifyLengthMin) stats.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualifying' });
   if (rs.setupRules) stats.push({ value: rs.setupRules, label: 'Setup Rules' });
   if (rs.pitStopReq) stats.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
   if (rs.fuelMultiplier) stats.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
   if (rs.tireWearMultiplier) stats.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
-  if (rs.trackLimitPoints) stats.push({ value: String(rs.trackLimitPoints), label: 'Track Limit Points' });
+  if (rs.trackLimitPoints) stats.push({ value: String(rs.trackLimitPoints), label: 'Track Limit Pts' });
   return stats;
 }
 
@@ -685,11 +779,24 @@ function _rclRenderStatsRow(containerId, stats) {
 function _rclRenderHero(hub) {
   // Eyebrow is static "Race Club" (set directly in league.html) --
   // nothing to fill in here anymore.
+  // "Season N / Name" -- the "/" reads in the brand red, the season name
+  // itself in bright white, "Season N" stays the line's base dim color
+  // (2026-09-19, Matt's ask). Built as real spans rather than one text
+  // string so each piece can carry its own color.
   var seasonEl = document.getElementById('rcl-hero-season');
   if (seasonEl) {
-    seasonEl.textContent = hub.hasSeason && hub.seasonNumber
-      ? ('Season ' + hub.seasonNumber + (hub.seasonName ? ' / ' + hub.seasonName : ''))
-      : '';
+    seasonEl.innerHTML = '';
+    if (hub.hasSeason && hub.seasonNumber) {
+      seasonEl.appendChild(document.createTextNode('Season ' + hub.seasonNumber));
+      if (hub.seasonName) {
+        var sep = _rclEl('span', 'rcl-hero-season-sep');
+        sep.textContent = ' / ';
+        seasonEl.appendChild(sep);
+        var nameSpan = _rclEl('span', 'rcl-hero-season-name');
+        nameSpan.textContent = hub.seasonName;
+        seasonEl.appendChild(nameSpan);
+      }
+    }
   }
 
   var subEl = document.getElementById('rcl-hero-sub');
