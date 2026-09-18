@@ -494,7 +494,7 @@ function renderHeaderPending() {
   if (!mount) return;
   mount.className = 'rc-fixed-header';
   mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
-      '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
+      '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
     '</a><nav class="rc-header-nav"></nav>';
 }
 
@@ -525,7 +525,7 @@ function renderHeader(opts) {
 
   var html = '';
   html += '<a class="rc-header-logo-link" href="index.html">' +
-            '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
+            '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
   html += '<nav class="rc-header-nav">';
   // League Hub link -- top navbar only while logged OUT, next to LOGIN/
@@ -586,7 +586,7 @@ function renderHeader(opts) {
     // setProfileCache() (js/auth.js).
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
     var avatarImgHtml = avatarFilename
-      ? '<img class="rc-header-avatar-img" src="assets/avatars/' + escapeHtmlHeader_(avatarFilename) + '" alt="" onerror="this.style.display=\'none\';">'
+      ? '<img class="rc-header-avatar-img" src="assets/images/avatars/' + escapeHtmlHeader_(avatarFilename) + '" alt="" onerror="this.style.display=\'none\';">'
       : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +

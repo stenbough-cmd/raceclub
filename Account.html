@@ -1405,7 +1405,7 @@
   // JSON shape/fields the Calendar's raceCard() already works with
   // (eventName/track/layout/startUtc/trackId/roundNum) rather than
   // inventing a second one, and the same trackImageSrc() convention for
-  // the track image (assets/tracks/{TrackID}.png, silently hidden if
+  // the track image (assets/images/tracks/{TrackID}.png, silently hidden if
   // missing) -- no live location/country data exists on Tracks yet, so
   // (unlike the WEC reference mockup) there's no flag/location line here.
   //
@@ -2206,7 +2206,7 @@
   //
   // Three beats:
   //   1. SUSPENSE -- a small dark card cycles contract-flavor status
-  //      lines ("Drafting team documents...") while assets/videos/
+  //      lines ("Drafting team documents...") while assets/images/videos/
   //      signing-a-team.mp4 preloads in the background, reusing the same
   //      .rc-startlights gantry as every other loading state sitewide.
   //      Held for at least SIGNING_SUSPENSE_MIN_MS even if the video is
@@ -2321,7 +2321,7 @@
 
     var video = document.createElement('video');
     video.className = 'rc-signing-video-preload';
-    video.src = 'assets/videos/signing-a-team.mp4';
+    video.src = 'assets/images/videos/signing-a-team.mp4';
     video.muted = true;
     video.setAttribute('muted', ''); // belt-and-suspenders -- some browsers
     // weigh the HTML attribute more heavily than the JS property when
@@ -2867,7 +2867,7 @@
   }
 
   // Fixed set of 15 preset avatar images a driver can pick from (2026-08-30,
-  // Matt's ask) -- assets/avatars/avatar-01.png through avatar-15.png,
+  // Matt's ask) -- assets/images/avatars/avatar-01.png through avatar-15.png,
   // zero-padded to 2 digits to match the files on disk. No admin/catalog
   // sheet involved -- this is just a fixed image set, same spirit as the
   // fixed CAR_OBJECTIVE_CATALOG_/SPONSOR_*_TRIGGERS vocabularies elsewhere.
@@ -2878,11 +2878,11 @@
   })();
 
   // Shared avatar circle -- an uploaded/picked image (profile.avatarFilename,
-  // from assets/avatars/) when one is set, otherwise the same initials
+  // from assets/images/avatars/) when one is set, otherwise the same initials
   // fallback the header uses (_rcHeaderInitials(), global from header.js --
   // loaded before this script, so it's safe to call directly here without
   // duplicating that logic). onerror falls back to initials too, in case a
-  // stored filename doesn't actually exist under assets/avatars/.
+  // stored filename doesn't actually exist under assets/images/avatars/.
   function buildAvatarCircle(profile, extraClass) {
     var circle = el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
     var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
@@ -2890,7 +2890,7 @@
       var img = document.createElement('img');
       img.className = 'rc-avatar-circle-img';
       img.alt = '';
-      img.src = 'assets/avatars/' + profile.avatarFilename;
+      img.src = 'assets/images/avatars/' + profile.avatarFilename;
       img.onerror = function () {
         img.remove();
         circle.textContent = initials;
@@ -2937,12 +2937,12 @@
       btn.type = 'button';
       btn.setAttribute('data-filename', filename);
       var img = document.createElement('img');
-      img.src = 'assets/avatars/' + filename;
+      img.src = 'assets/images/avatars/' + filename;
       img.alt = 'Avatar option';
       img.loading = 'lazy';
       // Hides the button entirely instead of showing a broken-image icon if
       // a filename in RC_AVATAR_FILENAMES_ doesn't actually exist under
-      // assets/avatars/ (e.g. a mismatched name on disk).
+      // assets/images/avatars/ (e.g. a mismatched name on disk).
       img.onerror = function () { btn.style.display = 'none'; };
       btn.appendChild(img);
       btn.addEventListener('click', function () {
@@ -3320,7 +3320,7 @@
     // project rather than about the product. Placeholder copy for now;
     // Matt plans to write his own version of this later, with a
     // signature image underneath it (see rc-about-signature below --
-    // points at assets/signature.png, which doesn't exist yet, so the
+    // points at assets/images/signature.png, which doesn't exist yet, so the
     // onerror hides the whole line cleanly instead of showing a broken
     // image icon until that file is actually added).
     var about = el('div', 'rc-panel rc-dash-card');
@@ -3330,7 +3330,7 @@
       '<p>Everything here is hand-built: Google Sheets as the database, Apps Script as the backend, and this site reading straight from each race\'s own results data. That was a deliberate choice -- it\'s a foundation I can keep extending myself, not a fixed product I\'m stuck with.</p>' +
       '<p>Where it goes next is still open. I\'d like this to grow past one title and one group of drivers eventually, and there are a few ideas I\'m sitting on for tying more of a driver\'s actual racing into their profile here. Nothing below is locked in -- this is just where my head\'s at.</p>' +
       '<p><em>This is placeholder copy. I\'ll swap it out with what I actually want to say here, signed below.</em></p>'));
-    about.appendChild(el('div', 'rc-about-signature', '<img src="assets/signature.png" alt="Matt\'s signature" onerror="this.parentNode.style.display=\'none\';">'));
+    about.appendChild(el('div', 'rc-about-signature', '<img src="assets/images/signature.png" alt="Matt\'s signature" onerror="this.parentNode.style.display=\'none\';">'));
     section.appendChild(about);
 
     // Need Help? -- short icon-led contact list, same icon-left row shape
@@ -4121,7 +4121,7 @@
 
     card.appendChild(body);
 
-    // Track image, right side of the card -- assets/tracks/{TrackID}.png,
+    // Track image, right side of the card -- assets/images/tracks/{TrackID}.png,
     // capped at 250px either dimension via CSS (object-fit:contain keeps
     // the image's own aspect ratio inside that box). Special Events have
     // no TrackID (they pick a track by name only, not a Tracks row), so
@@ -7903,7 +7903,7 @@
     form.appendChild(el('label', null, 'Manufacturer'));
     var manufacturer = el('input'); manufacturer.type = 'text';
     form.appendChild(manufacturer);
-    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
+    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/images/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
 
     form.appendChild(el('label', null, 'Car Model'));
     var carModel = el('input'); carModel.type = 'text';
@@ -8885,7 +8885,7 @@
     form.appendChild(el('label', null, 'Manufacturer'));
     var manufacturer = el('input'); manufacturer.type = 'text'; manufacturer.value = car.Manufacturer || '';
     form.appendChild(manufacturer);
-    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
+    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/images/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
 
     form.appendChild(el('label', null, 'Car Model'));
     var carModel = el('input'); carModel.type = 'text'; carModel.value = car.CarModel || '';

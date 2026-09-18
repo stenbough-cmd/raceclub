@@ -346,8 +346,8 @@ var PROTEST_WINDOW_HOURS = 48;
 // anywhere else a class needs the same consistent color.
 var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
 
-// Manufacturer logo file convention -- assets/manufacturers/{slug}.png,
-// same folder structure as the site's existing assets/avatars/ (see
+// Manufacturer logo file convention -- assets/images/manufacturers/{slug}.png,
+// same folder structure as the site's existing assets/images/avatars/ (see
 // avatarImageSrc() in Account.html/profile.html), keyed by manufacturer
 // name instead of by driver, since the same manufacturer (e.g. "Ford")
 // logo is reused across every car/team that drives one. Admin uploads the
@@ -358,13 +358,13 @@ var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-l
 // uploaded yet (see currentSeatBlock() in Account.html).
 function manufacturerLogoSrc(manufacturerName) {
   var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/manufacturers/' + slug + '.png';
+  return 'assets/images/manufacturers/' + slug + '.png';
 }
 
 // sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
 // system out of the site. See season-1-mvp-scope.md.
 
-// Track image file convention -- assets/tracks/{TrackID}.png, keyed by the
+// Track image file convention -- assets/images/tracks/{TrackID}.png, keyed by the
 // raw TrackID (e.g. "TRK-0001") verbatim, NOT slugified like the
 // manufacturer/sponsor logos above -- Matt's call, since TrackID is
 // already a clean, stable identifier. Admin uploads the actual image
@@ -372,11 +372,11 @@ function manufacturerLogoSrc(manufacturerName) {
 // <img> gracefully (silently, no broken-image icon) if that track's file
 // hasn't been uploaded yet -- see raceCard() in Account.html.
 function trackImageSrc(trackId) {
-  return 'assets/tracks/' + String(trackId || '') + '.png';
+  return 'assets/images/tracks/' + String(trackId || '') + '.png';
 }
 
 // Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
+// assets/images/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
 // Not currently called from anywhere client-side (the server auto-writes
 // this exact filename to ProfileID.AvatarFile at team lock -- see
 // manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
@@ -387,7 +387,7 @@ function trackImageSrc(trackId) {
 // is actually locked.
 function manufacturerAvatarSrc(manufacturerName) {
   var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/avatars/' + slug + '.jpg';
+  return 'assets/images/avatars/' + slug + '.jpg';
 }
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-

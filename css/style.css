@@ -3284,7 +3284,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   /* stretched or letterboxed. */
   aspect-ratio: 2 / 1;
   z-index: 1;
-  background-image: url('../assets/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/ is a sibling of css/, not a child of it */
+  background-image: url('../assets/images/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/images/ is a sibling of css/, not a child of it */
   background-size: cover;
   /* left center, not plain center (2026-09-08, Matt's report: "the text on
      the left side keeps getting cut off when it gets pushed beyond the
@@ -3312,7 +3312,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    with the window's WIDTH -- and the overlay text scales right along
    with it -- the single landscape banner.jpg holds up at every window
    shape on its own, so the second image and the swap rule are no longer
-   needed. banner-portrait.jpg itself was left alone in assets/ in case
+   needed. banner-portrait.jpg itself was left alone in assets/images/ in case
    it's wanted again later; only the CSS rule that referenced it is
    gone. */
 /* Small watermark badge, bottom-right corner of the hero. .rc-hero is
@@ -3710,7 +3710,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-step-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
 
 /* -------------------------------------------------------------------- */
-/* Mid-page banner (assets/banner-highlights.jpg)                       */
+/* Mid-page banner (assets/images/banner-highlights.jpg)                       */
 /*                                                                       */
 /* Plain full-bleed image in normal document flow -- NOT the top hero's */
 /* fixed/spacer scroll-cover trick. It's meant to be scrolled past like */
@@ -3724,7 +3724,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   width: 100%;
   min-height: 340px;
   height: 46vh;
-  background-image: url('../assets/banner-highlights.jpg');
+  background-image: url('../assets/images/banner-highlights.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -4580,7 +4580,7 @@ body.rc-modal-scroll-locked {
 }
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
 /* Track image, right side of every race/special-event card -- Matt's
-   call: assets/tracks/{TrackID}.png, in a fixed 100x100 box (2026-08-30,
+   call: assets/images/tracks/{TrackID}.png, in a fixed 100x100 box (2026-08-30,
    reduced from 150px), object-fit:contain to keep the image's own aspect
    ratio while object-position centers it inside that box both ways --
    a wide (horizontal) layout and a tall (vertical) one land centered in
@@ -4727,7 +4727,7 @@ body.rc-modal-scroll-locked {
 .rc-about-blurb p { font-size: 13.5px; color: var(--rc-carbon); line-height: 1.65; margin: 0 0 14px; }
 .rc-about-blurb p:last-child { margin-bottom: 0; color: var(--rc-steel); }
 /* Signature image slot -- hidden entirely via the <img>'s own onerror
-   until assets/signature.png actually exists (Account.html), so this
+   until assets/images/signature.png actually exists (Account.html), so this
    never shows a broken-image icon in the meantime. */
 .rc-about-signature { margin-top: 18px; }
 .rc-about-signature img { max-height: 56px; display: block; }
