@@ -216,6 +216,14 @@ function _rclRenderNews(hub) {
 
   hub.news.forEach(function (item) {
     var wrap = _rclEl('div', 'rcl-news-item');
+    if (item.heroImageUrl) {
+      var heroImg = document.createElement('img');
+      heroImg.className = 'rcl-news-hero';
+      heroImg.src = item.heroImageUrl;
+      heroImg.alt = item.title || '';
+      heroImg.loading = 'lazy';
+      wrap.appendChild(heroImg);
+    }
     wrap.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(item.title)));
     var metaParts = [];
     if (item.authorName) metaParts.push('By ' + item.authorName);
@@ -228,6 +236,14 @@ function _rclRenderNews(hub) {
       bodyEl.appendChild(_rclEl('p', null, _rclEscapeHtml(para.trim()).replace(/\n/g, '<br>')));
     });
     wrap.appendChild(bodyEl);
+    // Edit note -- a single overwritten note (not a running history, same
+    // pattern as Cars.PreviousTier), shown italicized at the bottom of the
+    // story only once the post has actually been edited.
+    if (item.editNote) {
+      var editLabel = _rclFormatDate(item.editedAt);
+      var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
+      wrap.appendChild(_rclEl('div', 'rcl-news-editnote', _rclEscapeHtml(editText)));
+    }
     body.appendChild(wrap);
   });
 }

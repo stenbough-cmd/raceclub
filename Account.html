@@ -600,6 +600,17 @@
       }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
+    // League Hub (added 2026-09-18) -- links off-page to the public
+    // league.html, not another in-page section, so it navigates directly
+    // instead of going through showSection/showLazySection. Sits right
+    // after Career, ahead of the admin-gated divider below, for every
+    // account regardless of role -- the same header-dropdown link every
+    // page's shared header now offers logged-in drivers, just reachable
+    // from the sidebar too.
+    nav.appendChild(navDivider());
+    nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
+      window.location.href = 'league.html';
+    }));
     var upperDivider = navDivider('rc-nav-divider-upper');
     upperDivider.style.display = 'none';
     nav.appendChild(upperDivider);
@@ -618,7 +629,7 @@
     // it's no longer added here.
     // League Management is real content now (renderLeagueManagementSection),
     // same lazy-fetch-on-click pattern as Admin.
-    var leagueBtn = makeNavButton('league', 'League Management', ICON_LEAGUE, 'rc-nav-league', true, function () {
+    var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', true, function () {
       showLazySection('league', currentToken);
     });
     nav.appendChild(leagueBtn);
@@ -3251,8 +3262,8 @@
       body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
       body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
-    { icon: ICON_ADMIN, title: 'Admin and League Management',
-      body: 'Admin accounts get two extra pages. League Management browses every season and its races, and can recompute a season\'s results if an earlier round gets corrected. Admin manages members, tracks, cars, and creating or ending a season.' }
+    { icon: ICON_ADMIN, title: 'Admin and League Tools',
+      body: 'Admin accounts get two extra pages. League Tools browses every season and its races, can recompute a season\'s results if an earlier round gets corrected, and publishes League News posts. Admin manages members, tracks, cars, and creating or ending a season.' }
   ];
 
   // ---------------------------------------------------------------------
@@ -3826,12 +3837,12 @@
     // the same pattern). Nothing else renders until the season list has
     // actually loaded (Matt's 2026-08-30 call) -- no flash of buttons
     // appearing before the list underneath them is ready.
-    section.appendChild(buildPageSpinner('Loading league management...'));
+    section.appendChild(buildPageSpinner('Loading league tools...'));
 
     fetchApi('adminListSeasons', { token: token }).then(function (data) {
       if (!data.success) {
         section.innerHTML = '';
-        section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+        section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
         section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
         return;
       }
@@ -3844,21 +3855,33 @@
       // clicked, there's no fetch left to do, just showing/hiding DOM
       // that's already built. A season whose races call fails gets an
       // empty array rather than blocking the rest of the page.
-      Promise.all(seasons.map(function (s) {
+      var racesPromise = Promise.all(seasons.map(function (s) {
         return fetchApi('adminGetSeasonRaces', { token: token, params: { seasonId: s.seasonId } })
           .then(function (r) { return (r && r.success) ? (r.races || []) : []; })
           .catch(function () { return []; });
-      })).then(function (racesPerSeason) {
+      }));
+      // League News loads alongside the season/races data (2026-09-18) so
+      // the whole League Tools page is ready in one pass, same "load it
+      // all up front" rule the races-per-season fetch above already
+      // follows.
+      var newsPromise = fetchApi('adminListNews', { token: token })
+        .then(function (r) { return (r && r.success) ? (r.news || []) : []; })
+        .catch(function () { return []; });
+
+      Promise.all([racesPromise, newsPromise]).then(function (results) {
+        var racesPerSeason = results[0];
+        var newsRows = results[1];
         var racesBySeasonId = {};
         seasons.forEach(function (s, i) { racesBySeasonId[s.seasonId] = racesPerSeason[i]; });
 
         section.innerHTML = '';
-        section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+        section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
         section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, false));
+        section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }));
       });
     }).catch(function () {
       section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'League Management'));
+      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
       section.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
   }
@@ -6960,13 +6983,10 @@
     carsBtn.addEventListener('click', function () { openCarsModal(token); });
     row.appendChild(carsBtn);
 
-    // News -- backs league.html's freeform news/narrative feed (added
-    // 2026-09-18). Same openAdminListModal shape as Members/Tracks/Cars
-    // above.
-    var newsBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'News');
-    newsBtn.type = 'button';
-    newsBtn.addEventListener('click', function () { openNewsModal(token); });
-    row.appendChild(newsBtn);
+    // News button removed from here (2026-09-18 follow-up) -- League News
+    // moved to its own panel on the League Tools page (Matt's call), with
+    // a much bigger editor (scheduling, a hero image) than this popup ever
+    // had. See buildLeagueNewsPanel/openNewsPostModal further down.
 
     // Sponsors and Economy admin buttons removed entirely (V1 scope cut,
     // 2026-09-18) -- those systems no longer exist.
@@ -7391,26 +7411,43 @@
     }, { label: 'Add Car', onClick: function (reload) { openAddCarModal(token, reload); } });
   }
 
-  // NEWS -- backs league.html's public news/narrative feed (added
-  // 2026-09-18). Flat list, newest first, no grouping (unlike Tracks/Cars
-  // there's no natural category to group posts by) -- same
-  // openAdminListModal shell, just its own row/panel builder below.
-  function openNewsModal(token) {
-    openAdminListModal('League News', 'Loading news…', function () {
-      return fetchApi('adminListNews', { token: token });
-    }, function (newsData, reload) {
-      return buildNewsPanel(newsData && newsData.success ? newsData.news : [], token, reload);
-    }, { label: 'Add Post', onClick: function (reload) { openAddNewsModal(token, reload); } });
-  }
+  // LEAGUE NEWS -- backs league.html's public news/narrative feed and
+  // lives directly on the League Tools page now, not in a Data Management
+  // popup (moved 2026-09-18, Matt's call). buildLeagueNewsPanel is the
+  // panel itself (header + New Post button + chronological list);
+  // openNewsPostModal/openEditNewsPostModal are the two popups. Flat list,
+  // newest first, no grouping -- there's no natural category to group
+  // posts by the way Tracks/Cars have.
+  var RC_NEWS_EDIT_REASONS = [
+    'Fixed a typo or wording',
+    'Corrected a fact or figure',
+    'Added new details',
+    'Updated an image',
+    'Other'
+  ];
+  var RC_NEWS_IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB raw file cap before base64 encoding
 
-  function buildNewsPanel(news, token, reload) {
-    var wrap = el('div');
-    var sorted = (news || []).slice().sort(function (a, b) {
+  function buildLeagueNewsPanel(newsRows, token, reload) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'League News'));
+    var newPostBtn = el('button', 'rc-btn-primary rc-btn-sm', 'New Post');
+    newPostBtn.type = 'button';
+    newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
+    headerRow.appendChild(newPostBtn);
+    panel.appendChild(headerRow);
+
+    // Faint divider between the New Post button and the post history --
+    // just a plain silver hairline, not a new named rule (Matt: "seperated
+    // by a faint gray line").
+    panel.appendChild(el('hr', 'border:none;border-top:1px solid var(--rc-silver);margin:0 0 12px;'));
+
+    var sorted = (newsRows || []).slice().sort(function (a, b) {
       return String(b.PublishedAt).localeCompare(String(a.PublishedAt));
     });
     if (!sorted.length) {
-      wrap.appendChild(el('div', 'rc-dm-empty', 'No news posts yet.'));
-      return wrap;
+      panel.appendChild(el('div', 'rc-dm-empty', 'No news posts yet.'));
+      return panel;
     }
     sorted.forEach(function (n) {
       var isActive = _rcRowActive(n);
@@ -7430,14 +7467,34 @@
       row.appendChild(textCol);
       var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
       editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditNewsModal(n, token, reload); });
+      editBtn.addEventListener('click', function () { openEditNewsPostModal(n, token, reload); });
       row.appendChild(editBtn);
-      wrap.appendChild(row);
+      panel.appendChild(row);
     });
-    return wrap;
+    return panel;
   }
 
-  function openAddNewsModal(token, reload) {
+  // Reads a File as base64 (no data: prefix) via FileReader, resolved as a
+  // promise. Rejects up front if the file is over RC_NEWS_IMAGE_MAX_BYTES
+  // so a huge upload never even gets encoded.
+  function _rcReadImageFileAsBase64_(file) {
+    return new Promise(function (resolve, reject) {
+      if (file.size > RC_NEWS_IMAGE_MAX_BYTES) {
+        reject(new Error('Image is too large -- please use a file under 4MB.'));
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var commaIdx = result.indexOf(',');
+        resolve({ base64: commaIdx === -1 ? result : result.slice(commaIdx + 1), mimeType: file.type || 'image/jpeg' });
+      };
+      reader.onerror = function () { reject(new Error('Could not read that image file.')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function openNewsPostModal(token, reload) {
     var body = el('div');
     var form = el('form');
 
@@ -7452,6 +7509,34 @@
     form.appendChild(post);
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
 
+    form.appendChild(el('label', null, 'Hero Image (optional)'));
+    var imageInput = el('input'); imageInput.type = 'file'; imageInput.accept = 'image/*';
+    form.appendChild(imageInput);
+    form.appendChild(el('div', 'rc-hint', 'Shows at the top of the story on the public League Hub. Up to 4MB.'));
+
+    // Post Now vs. Schedule -- radio pair, the datetime field only shows
+    // (and is only required) once Schedule is picked.
+    var scheduleWrap = el('div', 'margin-top:16px;');
+    scheduleWrap.appendChild(el('label', 'margin-top:0;', 'When should this post go live?'));
+    var radioRow = el('div', 'display:flex;gap:16px;align-items:center;flex-wrap:wrap;');
+    var radioNowLabel = el('label', 'display:flex;gap:6px;align-items:center;font-weight:normal;');
+    var radioNow = el('input'); radioNow.type = 'radio'; radioNow.name = 'rc-news-when'; radioNow.value = 'now'; radioNow.checked = true;
+    radioNowLabel.appendChild(radioNow);
+    radioNowLabel.appendChild(document.createTextNode('Post right away'));
+    var radioLaterLabel = el('label', 'display:flex;gap:6px;align-items:center;font-weight:normal;');
+    var radioLater = el('input'); radioLater.type = 'radio'; radioLater.name = 'rc-news-when'; radioLater.value = 'later';
+    radioLaterLabel.appendChild(radioLater);
+    radioLaterLabel.appendChild(document.createTextNode('Schedule for later'));
+    radioRow.appendChild(radioNowLabel);
+    radioRow.appendChild(radioLaterLabel);
+    scheduleWrap.appendChild(radioRow);
+    var scheduleWhen = el('input'); scheduleWhen.type = 'datetime-local'; scheduleWhen.style.marginTop = '8px'; scheduleWhen.style.display = 'none';
+    scheduleWrap.appendChild(scheduleWhen);
+    form.appendChild(scheduleWrap);
+
+    radioNow.addEventListener('change', function () { scheduleWhen.style.display = 'none'; });
+    radioLater.addEventListener('change', function () { scheduleWhen.style.display = ''; });
+
     var saveBtn = el('button', null, 'Publish Post');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -7459,7 +7544,7 @@
     form.appendChild(saveBtn);
     body.appendChild(form);
 
-    var modalHandle = showModal('Add News Post', { bodyEl: body });
+    var modalHandle = showModal('New League News Post', { bodyEl: body });
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -7467,25 +7552,55 @@
         showToast('Title and post text are required.', 'error');
         return;
       }
+      var publishedAtIso = null;
+      if (radioLater.checked) {
+        if (!scheduleWhen.value) {
+          showToast('Pick a date and time to schedule this post, or choose "Post right away."', 'error');
+          return;
+        }
+        var scheduledDate = new Date(scheduleWhen.value);
+        if (isNaN(scheduledDate.getTime())) {
+          showToast('That scheduled date and time is not valid.', 'error');
+          return;
+        }
+        publishedAtIso = scheduledDate.toISOString();
+      }
+      var imageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+      if (imageFile && imageFile.size > RC_NEWS_IMAGE_MAX_BYTES) {
+        showToast('Image is too large -- please use a file under 4MB.', 'error');
+        return;
+      }
+
+      // Close now, save in the background -- matches the rest of the
+      // site's convention (Matt: "the website automatically closes the
+      // popup and the sheet save is handled in the background").
       modalHandle.close();
-      fetchApi('adminCreateNews', {
-        method: 'POST', token: token,
-        body: { title: title.value.trim(), body: post.value.trim() }
-      })
+
+      var reqBody = { title: title.value.trim(), body: post.value.trim() };
+      if (publishedAtIso) reqBody.publishedAt = publishedAtIso;
+
+      (imageFile ? _rcReadImageFileAsBase64_(imageFile) : Promise.resolve(null))
+        .then(function (imageResult) {
+          if (imageResult) {
+            reqBody.heroImageBase64 = imageResult.base64;
+            reqBody.heroImageMimeType = imageResult.mimeType;
+          }
+          return fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody });
+        })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not publish this post -- reopen Add Post and try again.', 'error');
+            showToast(data.message || 'Could not publish this post -- reopen New Post and try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
         })
-        .catch(function () {
-          showToast('Could not reach the server -- post not published.', 'error');
+        .catch(function (err) {
+          showToast((err && err.message) || 'Could not reach the server -- post not published.', 'error');
         });
     });
   }
 
-  function openEditNewsModal(newsRow, token, reload) {
+  function openEditNewsPostModal(newsRow, token, reload) {
     var body = el('div');
     var form = el('form');
 
@@ -7499,6 +7614,32 @@
     post.value = newsRow.Body || '';
     form.appendChild(post);
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
+
+    form.appendChild(el('label', null, 'Replace Hero Image (optional)'));
+    var imageInput = el('input'); imageInput.type = 'file'; imageInput.accept = 'image/*';
+    form.appendChild(imageInput);
+    form.appendChild(el('div', 'rc-hint', 'Leave blank to keep the current image (if any). Up to 4MB.'));
+
+    // Required reason-for-edit dropdown -- the date/time on the post never
+    // changes (Matt: "the date and time remain the same"); this note is
+    // what shows, italicized, at the bottom of the public story instead.
+    form.appendChild(el('label', null, 'Reason for This Edit'));
+    var reasonSelect = document.createElement('select');
+    reasonSelect.appendChild(el('option', null, 'Select a reason…'));
+    RC_NEWS_EDIT_REASONS.forEach(function (reasonText) {
+      var opt = el('option', null, escapeHtml(reasonText));
+      opt.value = reasonText;
+      reasonSelect.appendChild(opt);
+    });
+    reasonSelect.value = '';
+    form.appendChild(reasonSelect);
+    var reasonOther = el('input'); reasonOther.type = 'text'; reasonOther.placeholder = 'Describe the change';
+    reasonOther.style.marginTop = '8px'; reasonOther.style.display = 'none';
+    form.appendChild(reasonOther);
+    reasonSelect.addEventListener('change', function () {
+      reasonOther.style.display = reasonSelect.value === 'Other' ? '' : 'none';
+    });
+    form.appendChild(el('div', 'rc-hint', 'Shown italicized at the bottom of the story on the public League Hub.'));
 
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
@@ -7514,7 +7655,7 @@
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
 
-    var modalHandle = showModal('Edit News Post', { bodyEl: body });
+    var modalHandle = showModal('Edit League News Post', { bodyEl: body });
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -7522,20 +7663,38 @@
         showToast('Title and post text are required.', 'error');
         return;
       }
+      var editNote = reasonSelect.value === 'Other' ? reasonOther.value.trim() : reasonSelect.value;
+      if (!reasonSelect.value || (reasonSelect.value === 'Other' && !editNote)) {
+        showToast('Pick (or describe) a reason for this edit before saving.', 'error');
+        return;
+      }
+      var imageFile = imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+      if (imageFile && imageFile.size > RC_NEWS_IMAGE_MAX_BYTES) {
+        showToast('Image is too large -- please use a file under 4MB.', 'error');
+        return;
+      }
+
       modalHandle.close();
-      fetchApi('adminUpdateNews', {
-        method: 'POST', token: token,
-        body: { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim() }
-      })
+
+      var reqBody = { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim(), editNote: editNote };
+
+      (imageFile ? _rcReadImageFileAsBase64_(imageFile) : Promise.resolve(null))
+        .then(function (imageResult) {
+          if (imageResult) {
+            reqBody.heroImageBase64 = imageResult.base64;
+            reqBody.heroImageMimeType = imageResult.mimeType;
+          }
+          return fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody });
+        })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not save changes -- reopen Edit News Post and try again.', 'error');
+            showToast(data.message || 'Could not save changes -- reopen Edit and try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
         })
-        .catch(function () {
-          showToast('Could not reach the server -- changes not saved.', 'error');
+        .catch(function (err) {
+          showToast((err && err.message) || 'Could not reach the server -- changes not saved.', 'error');
         });
     });
 

@@ -3140,6 +3140,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-decoration: none;
 }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
+/* Divider between menu items (added 2026-09-18 for the League Hub /
+   Dashboard+Edit Profile / Logout grouping) -- light theme equivalent of
+   Account.html's dark-sidebar .rc-nav-divider. */
+.rc-header-menu-divider { border: none; border-top: 1px solid var(--rc-silver); margin: 6px 4px; }
 
 @media (min-width: 480px) {
   .rc-header-account-text { display: flex; }

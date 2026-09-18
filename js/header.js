@@ -15,8 +15,11 @@
     to index.html, so it was a redundant second way to do the same thing.
   - The logo and avatar are both slightly larger (38px -> 46px logo,
     32px -> 40px avatar) to give the header a bit more presence.
-  - Logged out: just "REGISTER/LOGIN", same single link to login.html as
-    before, HOME's separator gone with it.
+  - Logged out: "LEAGUE HUB · REGISTER/LOGIN" (League Hub added 2026-09-18,
+    since league.html is public).
+  - Logged in: League Hub moves out of the top bar and into the account
+    dropdown instead (top of the menu, above a divider) -- added
+    2026-09-18, same day league.html shipped.
   - Logged in: the avatar + name/role stack (First Last in caps, bold;
     role -- Prospect/Driver/Steward/Organizer/Admin -- underneath in a
     lighter weight and color) and the chevron are now ONE single clickable
@@ -488,13 +491,15 @@ function renderHeader(opts) {
             '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
   html += '<nav class="rc-header-nav">';
-  // League Hub link -- shows regardless of login state (league.html is
-  // public, added 2026-09-18), same .rc-header-link treatment as the
-  // logged-out REGISTER/LOGIN link below. Sits first in the nav, ahead of
-  // the bell/account cluster or the login link.
-  html += '<a class="rc-header-link" href="league.html">LEAGUE</a>';
-  if (token) {
+  // League Hub link -- top navbar only while logged OUT, next to LOGIN/
+  // REGISTER (2026-09-18, Matt's call). Once logged in it moves into the
+  // account dropdown instead (see the menu markup below) rather than
+  // sitting in the top bar twice.
+  if (!token) {
+    html += '<a class="rc-header-link" href="league.html">LEAGUE HUB</a>';
     html += '<span class="rc-header-sep">·</span>';
+  }
+  if (token) {
     var displayName = cached ? (cached.displayName || '') : '';
     var initials = _rcHeaderInitials(displayName);
     var role = cached ? (cached.role || 'Driver') : 'Driver';
@@ -561,13 +566,19 @@ function renderHeader(opts) {
               // measurement (unlike the bell icon below) tied to it.
               '<svg class="rc-header-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
             '</button>' +
+            // League Hub sits at the top of the dropdown while logged in
+            // (2026-09-18, Matt's call: it's in the top navbar only while
+            // logged OUT -- see above) -- then a divider, Dashboard, Edit
+            // Profile, another divider, Logout.
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
+              '<a class="rc-header-menu-item" href="league.html">League Hub</a>' +
+              '<hr class="rc-header-menu-divider">' +
               '<a class="rc-header-menu-item" href="Account.html">Dashboard</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
+              '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
-    html += '<span class="rc-header-sep">·</span>';
     html += '<a class="rc-header-link" href="login.html">REGISTER/LOGIN</a>';
   }
   html += '</nav>';
