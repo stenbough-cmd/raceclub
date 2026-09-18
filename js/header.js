@@ -586,7 +586,7 @@ function renderHeader(opts) {
     // setProfileCache() (js/auth.js).
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
     var avatarImgHtml = avatarFilename
-      ? '<img class="rc-header-avatar-img" src="assets/images/avatars/' + escapeHtmlHeader_(avatarFilename) + '" alt="" onerror="this.style.display=\'none\';">'
+      ? '<img class="rc-header-avatar-img" src="assets/avatars/' + escapeHtmlHeader_(avatarFilename) + '" alt="" onerror="this.style.display=\'none\';">'
       : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +

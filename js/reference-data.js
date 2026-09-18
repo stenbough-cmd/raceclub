@@ -347,7 +347,7 @@ var PROTEST_WINDOW_HOURS = 48;
 var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
 
 // Manufacturer logo file convention -- assets/images/manufacturers/{slug}.png,
-// same folder structure as the site's existing assets/images/avatars/ (see
+// same folder structure as the site's existing assets/avatars/ (see
 // avatarImageSrc() in Account.html/profile.html), keyed by manufacturer
 // name instead of by driver, since the same manufacturer (e.g. "Ford")
 // logo is reused across every car/team that drives one. Admin uploads the
@@ -376,7 +376,7 @@ function trackImageSrc(trackId) {
 }
 
 // Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/images/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
+// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
 // Not currently called from anywhere client-side (the server auto-writes
 // this exact filename to ProfileID.AvatarFile at team lock -- see
 // manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
@@ -387,7 +387,7 @@ function trackImageSrc(trackId) {
 // is actually locked.
 function manufacturerAvatarSrc(manufacturerName) {
   var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/images/avatars/' + slug + '.jpg';
+  return 'assets/avatars/' + slug + '.jpg';
 }
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-

@@ -2823,7 +2823,7 @@
   }
 
   // Fixed set of 15 preset avatar images a driver can pick from (2026-08-30,
-  // Matt's ask) -- assets/images/avatars/avatar-01.png through avatar-15.png,
+  // Matt's ask) -- assets/avatars/avatar-01.png through avatar-15.png,
   // zero-padded to 2 digits to match the files on disk. No admin/catalog
   // sheet involved -- this is just a fixed image set, same spirit as the
   // fixed CAR_OBJECTIVE_CATALOG_/SPONSOR_*_TRIGGERS vocabularies elsewhere.
@@ -2834,11 +2834,11 @@
   })();
 
   // Shared avatar circle -- an uploaded/picked image (profile.avatarFilename,
-  // from assets/images/avatars/) when one is set, otherwise the same initials
+  // from assets/avatars/) when one is set, otherwise the same initials
   // fallback the header uses (_rcHeaderInitials(), global from header.js --
   // loaded before this script, so it's safe to call directly here without
   // duplicating that logic). onerror falls back to initials too, in case a
-  // stored filename doesn't actually exist under assets/images/avatars/.
+  // stored filename doesn't actually exist under assets/avatars/.
   function buildAvatarCircle(profile, extraClass) {
     var circle = el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
     var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
@@ -2846,7 +2846,7 @@
       var img = document.createElement('img');
       img.className = 'rc-avatar-circle-img';
       img.alt = '';
-      img.src = 'assets/images/avatars/' + profile.avatarFilename;
+      img.src = 'assets/avatars/' + profile.avatarFilename;
       img.onerror = function () {
         img.remove();
         circle.textContent = initials;
@@ -2893,12 +2893,12 @@
       btn.type = 'button';
       btn.setAttribute('data-filename', filename);
       var img = document.createElement('img');
-      img.src = 'assets/images/avatars/' + filename;
+      img.src = 'assets/avatars/' + filename;
       img.alt = 'Avatar option';
       img.loading = 'lazy';
       // Hides the button entirely instead of showing a broken-image icon if
       // a filename in RC_AVATAR_FILENAMES_ doesn't actually exist under
-      // assets/images/avatars/ (e.g. a mismatched name on disk).
+      // assets/avatars/ (e.g. a mismatched name on disk).
       img.onerror = function () { btn.style.display = 'none'; };
       btn.appendChild(img);
       btn.addEventListener('click', function () {
