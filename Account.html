@@ -143,7 +143,7 @@
         <span class="rc-startlight"></span>
         <span class="rc-startlight"></span>
       </div>
-      <div class="rc-loading-text">Loading your results (dashboard, protests, calendar, career)&hellip;</div>
+      <div class="rc-loading-text">Loading your dashboard&hellip;</div>
     </div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
 
@@ -811,7 +811,7 @@
     // all resolves at once, so showing the standard spinner for that one
     // wait (instead of a grid of blank fading cards) reads better and
     // matches how every other page on the site shows a loading state.
-    var spinner = buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...');
+    var spinner = buildPageSpinner('Loading your dashboard...');
     section.appendChild(spinner);
 
     var rows = null;
@@ -837,7 +837,7 @@
       // Shows the same spinner while the fresh combined fetch is in
       // flight, rather than swapping stale content for a moment.
       var freshDashboardData = fetchDashboardData(token);
-      var rebuildSpinner = buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...');
+      var rebuildSpinner = buildPageSpinner('Loading your dashboard...');
       rows.topRow.parentNode.insertBefore(rebuildSpinner, rows.topRow);
       _rcDashboardAllSettled_(freshDashboardData).then(function () {
         rebuildSpinner.remove();
@@ -1530,7 +1530,7 @@
     var section = document.getElementById('rc-section-career');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading your career...'));
 
     return fetchApi('getMyCareerHistory', { token: token }).catch(function () { return { success: false }; })
       .then(function (result) {
@@ -2787,11 +2787,11 @@
   // NOT for spinners inside a modal (buildSpinner() alone is still right
   // there -- the modal card itself is already the container, and modal
   // body centering handles its own vertical position).
-  // Every call site below passes the exact same message, 'Loading your
-  // results (dashboard, protests, calendar, career)...' (2026-09-18,
-  // Matt's call: "all the Loading notifications should say [that] to
-  // keep it consistent") -- one wording for every full-section load,
-  // rather than a different sentence per page.
+  // Every call site below follows the same short "Loading your
+  // <page>..." shape (2026-09-18, Matt's call: keep every full-section
+  // loading message in that one consistent format, but specific to
+  // whichever page is actually loading -- not one long sentence naming
+  // every page at once).
   function buildPageSpinner(message) {
     var wrap = buildSpinner(message);
     wrap.classList.add('rc-inline-spinner-page');
@@ -3814,7 +3814,7 @@
     // the same pattern). Nothing else renders until the season list has
     // actually loaded (Matt's 2026-08-30 call) -- no flash of buttons
     // appearing before the list underneath them is ready.
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading league management...'));
 
     fetchApi('adminListSeasons', { token: token }).then(function (data) {
       if (!data.success) {
@@ -4122,7 +4122,7 @@
     // section loading state should sit at the exact same vertical height
     // as the initial #rc-loading screen, which has no heading above it
     // either. The heading only appears once real content replaces this.
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading your calendar...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
@@ -4458,7 +4458,7 @@
     var section = document.getElementById('rc-section-results');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading your results...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return fetchApi('getSeasonResults', { token: token }).then(function (res) {
@@ -4539,7 +4539,7 @@
     var section = document.getElementById('rc-section-protests');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading your protests...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
     return Promise.all([
@@ -6826,7 +6826,7 @@
     // loading state (2026-09-13, Matt's catch) -- the heading now waits
     // until the real content renders below, exactly like Finances/Career/
     // Wager/etc. already do.
-    section.appendChild(buildPageSpinner('Loading your results (dashboard, protests, calendar, career)...'));
+    section.appendChild(buildPageSpinner('Loading admin...'));
 
     Promise.all([
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
