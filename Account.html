@@ -6852,7 +6852,13 @@
     Promise.all([
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getTracks', { token: token }).catch(function () { return { success: false }; }),
-      fetchApi('getCars', { token: token }).catch(function () { return { success: false }; })
+      fetchApi('getCars', { token: token }).catch(function () { return { success: false }; }),
+      // Members + Seasons -- added 2026-09-18 to back the Data Management
+      // panel's counts line and season status line (see
+      // renderAdminSectionBody). Same "wait on everything together" gate
+      // the rest of this fetch already uses.
+      fetchApi('adminListDrivers', { token: token }).catch(function () { return { success: false }; }),
+      fetchApi('adminListSeasons', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
       // The admin could have navigated to a different page while this was
       // still in flight -- #rc-section-admin would be gone (or hidden
@@ -6864,7 +6870,16 @@
       section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
 
       var pendingData = results[0];
-      renderAdminSectionBody(section, token, pendingData && pendingData.success ? (pendingData.pending || []) : []);
+      var tracksData = results[1];
+      var carsData = results[2];
+      var driversData = results[3];
+      var seasonsData = results[4];
+      renderAdminSectionBody(section, token, pendingData && pendingData.success ? (pendingData.pending || []) : [], {
+        memberCount: driversData && driversData.success ? (driversData.drivers || []).length : null,
+        trackCount: tracksData && tracksData.success ? (tracksData.tracks || []).length : null,
+        carCount: carsData && carsData.success ? (carsData.cars || []).length : null,
+        seasons: seasonsData && seasonsData.success ? (seasonsData.seasons || []) : null
+      });
     });
   }
 
@@ -6873,9 +6888,10 @@
   // this" -- pendingRows is already-fetched data (see
   // buildPendingApprovalPanel's own comment for why it stopped fetching
   // its own copy).
-  function renderAdminSectionBody(section, token, pendingRows) {
+  function renderAdminSectionBody(section, token, pendingRows, dmSummary) {
     section.appendChild(buildPendingApprovalPanel(pendingRows, token));
 
+    dmSummary = dmSummary || {};
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
 
@@ -6948,6 +6964,47 @@
     // 2026-09-18) -- those systems no longer exist.
 
     panel.appendChild(row);
+
+    // Counts line + season status line -- added 2026-09-18 underneath the
+    // button row so the panel shows a quick at-a-glance snapshot without
+    // having to open any of the popups above. Counts line: how many
+    // Members/Tracks/Cars records exist. Season status line: which season
+    // (if any) is currently in play and its status pill, same badge
+    // component the League Management Season Tools list uses
+    // (_rcSeasonStatusBadge) so the color/label read identically in both
+    // places.
+    var summaryWrap = el('div', 'rc-dm-summary');
+
+    var countsParts = [];
+    if (dmSummary.memberCount !== null) countsParts.push(dmSummary.memberCount + ' member' + (dmSummary.memberCount === 1 ? '' : 's'));
+    if (dmSummary.trackCount !== null) countsParts.push(dmSummary.trackCount + ' track' + (dmSummary.trackCount === 1 ? '' : 's'));
+    if (dmSummary.carCount !== null) countsParts.push(dmSummary.carCount + ' car' + (dmSummary.carCount === 1 ? '' : 's'));
+    if (countsParts.length) {
+      summaryWrap.appendChild(el('div', 'rc-dm-summary-line', escapeHtml(countsParts.join(' · '))));
+    }
+
+    var seasonLine = el('div', 'rc-dm-summary-line rc-dm-summary-season');
+    // "Current" season -- not necessarily the only season on file, just
+    // the one worth surfacing here: prefer whichever is actually underway
+    // (Active), then Registration, then Scheduled, then Draft, skipping
+    // anything already Completed. Ties (e.g. two Scheduled seasons) take
+    // the first one the API returned.
+    var STATUS_PRIORITY = ['Active', 'Registration', 'Scheduled', 'Draft'];
+    var currentSeason = null;
+    if (dmSummary.seasons && dmSummary.seasons.length) {
+      for (var i = 0; i < STATUS_PRIORITY.length && !currentSeason; i++) {
+        currentSeason = dmSummary.seasons.filter(function (s) { return s.status === STATUS_PRIORITY[i]; })[0] || null;
+      }
+    }
+    if (currentSeason) {
+      seasonLine.appendChild(document.createTextNode((currentSeason.name || currentSeason.seasonId) + ' — '));
+      seasonLine.appendChild(_rcSeasonStatusBadge(currentSeason.status));
+    } else {
+      seasonLine.textContent = 'No season currently underway.';
+    }
+    summaryWrap.appendChild(seasonLine);
+
+    panel.appendChild(summaryWrap);
     section.appendChild(panel);
   }
 

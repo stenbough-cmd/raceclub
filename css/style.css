@@ -283,6 +283,15 @@ p { margin: 0 0 0.75em; }
   margin: 0 4px;
 }
 
+/* Data Management panel summary -- counts line (Members/Tracks/Cars) +
+   season status line, sitting under the button row (2026-09-18, Matt's
+   call: give this panel a quick at-a-glance snapshot). Small, muted,
+   deliberately quieter than the buttons above it -- this is context, not
+   another action. */
+.rc-dm-summary { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rc-offwhite); display: flex; flex-direction: column; gap: 6px; }
+.rc-dm-summary-line { font-size: 12.5px; color: var(--rc-steel); }
+.rc-dm-summary-season { display: flex; align-items: center; gap: 8px; }
+
 /* Wizard Next/Back only ("Make the Next and Back buttons slightly less
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
    so Save & Close / Create Season / League Management's row stay put. */
