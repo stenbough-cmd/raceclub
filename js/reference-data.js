@@ -277,168 +277,11 @@ var CLASS_PLACEMENT_DENIAL_REASONS = [
   'Other'
 ];
 
-// Sponsor risk tiers -- fixed 3-tier ladder, see
-// v0.3-Economy-Reputation-Design.md's Sponsorship System. Used for the
-// Tier dropdown in both the Sponsors popup's Add and Edit forms.
-// Aggressive renamed to Risky 2026-08-31 (Matt's call: "not aggressive").
-// Safe briefly became "Easy" the same day, then Matt asked for Safe back
-// -- so only the Aggressive->Risky half of that rename stuck. Purely a
-// label change either way, same 3-tier ladder underneath. Any existing
-// Sponsors row still holding the old text ("Aggressive") in its Tier
-// column falls into an "Unclassified" group everywhere sponsors are
-// listed until an admin reopens that sponsor in Edit Sponsor and
-// reselects its tier from this list -- nothing renames those cells
-// automatically.
-var SPONSOR_TIER_LIST = ['Safe', 'Balanced', 'Risky'];
-
-// Bonus/penalty trigger vocabulary -- zero-ambiguity rewrite (2026-09-01,
-// Matt's call: "I don't want ambiguity at all. I want something that can
-// be gleamed from the race XML file without any manual intervention (ie
-// Steward decisions)... I want someone to do something within the race
-// and go 'shoot, I just ruined my bonus for the race'"). Full audit in
-// claude/sponsor-triggers-zero-ambiguity-audit-2026-09-01.md. Every entry
-// below reads one discrete, game-computed field (DriverResults/Laps/
-// RaceEvents) with either zero threshold at all or a straight in-class
-// ranking (fastest/most/fewest) instead of an arbitrary cutoff number.
-// Ordered easiest -> hardest (bonuses) and mildest -> most severe
-// (penalties) on purpose -- SPONSOR_BONUS_SUGGESTED_AMOUNT/
-// SPONSOR_PENALTY_SUGGESTED_AMOUNT below assign dollar values by this
-// exact order, so don't reorder these arrays without re-deriving those
-// tables too.
-//
-// Cut entirely, and why: Clean Race / Reckless-tier contact / any
-// incident-severity trigger -- confirmed from the actual sample XML that
-// a single collision logs TWICE, once from each car's own perspective,
-// each with its own severity number and zero fault attribution, so ANY
-// trigger built on Incident events risks penalizing whichever driver got
-// hit exactly as often as whoever caused it, at any threshold. DSQ --
-// never seen in this project's sample XML, and disqualification in sim
-// racing is normally a steward ruling anyway. Driver-caused vs.
-// mechanical DNF -- DNFReason values seen so far (Suspension, generic
-// DNF) don't reliably separate fault from bad luck. Beat your rival --
-// depends on the Wagers sheet, not race data. Consistency/fuel-tire
-// bonuses -- genuinely computable but have the same "what's the right
-// threshold" problem as contact severity as an absolute cutoff; could
-// come back later as an in-class ranking instead.
-var SPONSOR_BONUS_TRIGGERS = [
-  'Finish, no DNF',
-  'Zero penalties',
-  'Led for one lap',
-  'Points finish',
-  'Front-row start',
-  'Hard charger',
-  'Podium finish',
-  'Fastest lap',
-  'Most laps led',
-  'Pole position',
-  'Race win (P1)'
-];
-var SPONSOR_PENALTY_TRIGGERS = [
-  'Low placement',
-  'Grid slipper',
-  'Any penalty',
-  'DNF'
-];
-
-// One plain-language, driver-facing description per trigger above --
-// shown in the detailed hover tooltip on a sponsor card wherever one
-// appears (the Choose Your Sponsors picker, the registration flow's
-// sponsor step, the post-signing contract recap, the Sponsors page), so
-// the wording is uniform every time a trigger is referenced instead of
-// being rewritten ad hoc at each call site (Matt's call, 2026-08-30:
-// "I want a detailed tooltip of what the bonus entails and what the
-// penalty entails... so it stays uniform every time it's referenced").
-// Grounded in claude/sponsor-triggers-zero-ambiguity-audit-2026-09-01.md's
-// mapping of each trigger to the actual LMU XML/DriverResults field that
-// backs it. Add a new description here first if SPONSOR_BONUS_TRIGGERS/
-// SPONSOR_PENALTY_TRIGGERS above ever gains an entry -- a trigger with
-// no matching key here just shows its own name in the tooltip instead of
-// a description (see sponsorTriggerDescription() below), so this isn't a
-// hard dependency, just a "should always be kept in sync" one, same as
-// CAR_OBJECTIVE_DESCRIPTIONS above.
-var SPONSOR_BONUS_TRIGGER_DESCRIPTIONS = {
-  'Finish, no DNF': 'Crosses the finish line under power this round -- no DNF.',
-  'Zero penalties': 'No Drive Through, Stop/Go, or Time penalty issued by the sim this round -- the game\'s own automatic call, not a steward\'s.',
-  'Led for one lap': 'Leads at least one lap in class at any point during the round.',
-  'Points finish': 'Finishes P4 through P10 in class -- inside the scoring positions, just outside the podium.',
-  'Front-row start': 'Qualifies P1 or P2 in class.',
-  'Hard charger': 'Gains positions in class between the start of the race and the finish.',
-  'Podium finish': 'Finishes P1, P2, or P3 in class.',
-  'Fastest lap': 'Sets the fastest single lap in class this round.',
-  'Most laps led': 'Leads more laps in class than anyone else this round.',
-  'Pole position': 'Qualifies fastest in class.',
-  'Race win (P1)': 'Wins the round outright in class -- P1 only, not P2 or P3.'
-};
-var SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS = {
-  // Bottom third of the class field, not a fixed head count -- scales
-  // with field size instead of meaning something different in a 6-car
-  // field than a 20-car one (2026-09-01, Matt's call: "clean up Low
-  // placement and give an exact finishing position, whether that's the
-  // back 1/3 or something"). See LOW_PLACEMENT_BACK_FRACTION_ in
-  // DataCache.gs for the matching evaluator.
-  'Low placement': 'Finishes in the back third of the class field this round (rounded up -- e.g. P7 of 9, or worse).',
-  'Grid slipper': 'Loses positions in class between the start of the race and the finish -- the mirror of Hard Charger.',
-  'Any penalty': 'The sim itself issues a Drive Through, Stop/Go, or Time penalty this round -- track limits, speeding, speeding in the pit lane, or an illegal pass. The game\'s own automatic call, not a steward\'s.',
-  'DNF': 'Fails to finish this round, for any reason -- this doesn\'t distinguish a driver-caused DNF from a mechanical one.'
-};
-
-// Suggested dollar amount per Tier + trigger (2026-09-01, Matt's call) --
-// shown as a live hint and auto-filled into the amount field in the Add/
-// Edit Sponsor popup whenever the tier or trigger dropdown changes
-// (Account.html), never locked -- an admin can still type over it. Spans
-// the whole Tier range evenly across SPONSOR_BONUS_TRIGGERS/
-// SPONSOR_PENALTY_TRIGGERS' own easiest->hardest / mildest->severest
-// order above, so the hardest bonus to earn and the most severe penalty
-// always land at the top of their Tier's range and the easiest/mildest
-// always land at the bottom. Risky's penalty range ($900-1200) is
-// deliberately set HIGHER than Risky's own bonus range ($750-1000) --
-// Matt's call: "That's a true risk. You can get a much higher bonus but
-// a penalty from one of these prestigious sponsors means a bigger hit."
-// Safe bonus range moved to $75-200 (2026-09-01, up from $50-150) and
-// Balanced bonus/penalty both shifted up $100 across the board (bonus
-// $250-500 -> $350-600, penalty $350-500 -> $450-600), Matt's calls same
-// day -- Risky is untouched. Safe's 11-value step no longer divides into a
-// whole dollar amount ($125/10 = 12.5), so those 11 values are rounded to
-// the nearest dollar rather than landing on a clean step like the other
-// two Tiers do.
-var SPONSOR_BONUS_SUGGESTED_AMOUNT = {
-  Safe: {
-    'Finish, no DNF': 75, 'Zero penalties': 88, 'Led for one lap': 100,
-    'Points finish': 113, 'Front-row start': 125, 'Hard charger': 138,
-    'Podium finish': 150, 'Fastest lap': 163, 'Most laps led': 175,
-    'Pole position': 188, 'Race win (P1)': 200
-  },
-  Balanced: {
-    'Finish, no DNF': 350, 'Zero penalties': 375, 'Led for one lap': 400,
-    'Points finish': 425, 'Front-row start': 450, 'Hard charger': 475,
-    'Podium finish': 500, 'Fastest lap': 525, 'Most laps led': 550,
-    'Pole position': 575, 'Race win (P1)': 600
-  },
-  Risky: {
-    'Finish, no DNF': 750, 'Zero penalties': 775, 'Led for one lap': 800,
-    'Points finish': 825, 'Front-row start': 850, 'Hard charger': 875,
-    'Podium finish': 900, 'Fastest lap': 925, 'Most laps led': 950,
-    'Pole position': 975, 'Race win (P1)': 1000
-  }
-};
-var SPONSOR_PENALTY_SUGGESTED_AMOUNT = {
-  Safe: { 'Low placement': 25, 'Grid slipper': 40, 'Any penalty': 60, 'DNF': 75 },
-  Balanced: { 'Low placement': 450, 'Grid slipper': 500, 'Any penalty': 550, 'DNF': 600 },
-  Risky: { 'Low placement': 900, 'Grid slipper': 1000, 'Any penalty': 1100, 'DNF': 1200 }
-};
-// Whole-Tier range text (e.g. "Safe: $75-200"), shown next to the amount
-// field so an admin overriding the auto-filled suggestion still sees
-// what range this Tier is supposed to land in.
-var SPONSOR_BONUS_TIER_RANGE_LABEL = { Safe: '$75-200', Balanced: '$350-600', Risky: '$750-1,000' };
-var SPONSOR_PENALTY_TIER_RANGE_LABEL = { Safe: '$25-75', Balanced: '$450-600', Risky: '$900-1,200' };
-
-// Looks up a trigger's plain-language description from whichever of the
-// two maps above actually has it, falling back to the raw trigger name
-// itself so a not-yet-described trigger never renders a blank tooltip.
-function sponsorTriggerDescription(triggerName) {
-  if (!triggerName) return '';
-  return SPONSOR_BONUS_TRIGGER_DESCRIPTIONS[triggerName] || SPONSOR_PENALTY_TRIGGER_DESCRIPTIONS[triggerName] || triggerName;
-}
+// SPONSOR_TIER_LIST, SPONSOR_BONUS_TRIGGERS/SPONSOR_PENALTY_TRIGGERS and
+// their description/suggested-amount/range-label tables, and
+// sponsorTriggerDescription() were all removed entirely 2026-09-17 -- V1
+// scope cut, the whole Sponsorship system is out of the site for now. See
+// season-1-mvp-scope.md.
 
 // ---------------------------------------------------------------------------
 // PROTESTS (2026-09-08) -- backs the driver-facing Protest submission page,
@@ -495,24 +338,8 @@ function penaltyTierByNumber(tierNum) {
 // DataCache.gs.
 var PROTEST_WINDOW_HOURS = 48;
 
-// Builds the full multi-line tooltip text for a sponsor card -- shared by
-// every place a sponsor's bonus/penalty terms are shown with a hover
-// tooltip, so the exact wording/format is defined in exactly one place.
-// Real newlines (rendered via .rc-tooltip-bubble's white-space:pre-line,
-// see style.css) separate the bonus half from the penalty half.
-function sponsorTermsTooltip(sponsor) {
-  var bonusAmt = Number(sponsor.BonusAmount) || 0;
-  var penaltyAmt = Math.abs(Number(sponsor.PenaltyAmount) || 0);
-  var bonusType = sponsor.BonusType || '';
-  var penaltyType = sponsor.PenaltyType || '';
-  var lines = [];
-  lines.push('BONUS +$' + bonusAmt + (bonusType ? ' -- ' + bonusType : ''));
-  if (bonusType) lines.push(sponsorTriggerDescription(bonusType));
-  lines.push('');
-  lines.push('PENALTY -$' + penaltyAmt + (penaltyType ? ' -- ' + penaltyType : ''));
-  if (penaltyType) lines.push(sponsorTriggerDescription(penaltyType));
-  return lines.join('\n');
-}
+// sponsorTermsTooltip() removed entirely 2026-09-17 -- V1 scope cut,
+// Sponsorship system out of the site. See season-1-mvp-scope.md.
 
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
@@ -534,16 +361,8 @@ function manufacturerLogoSrc(manufacturerName) {
   return 'assets/manufacturers/' + slug + '.png';
 }
 
-// Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/sponsors/{slug}.png instead -- e.g. "Blackline Motor Oil" ->
-// "blackline-motor-oil.png" (Matt's own example). Admin uploads the
-// actual image files by hand, same as manufacturer logos; callers should
-// always set an onerror handler to hide the <img> gracefully if that
-// sponsor's file hasn't been uploaded yet.
-function sponsorLogoSrc(sponsorName) {
-  var slug = String(sponsorName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/sponsors/' + slug + '.png';
-}
+// sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
+// system out of the site. See season-1-mvp-scope.md.
 
 // Track image file convention -- assets/tracks/{TrackID}.png, keyed by the
 // raw TrackID (e.g. "TRK-0001") verbatim, NOT slugified like the
@@ -576,26 +395,7 @@ function manufacturerAvatarSrc(manufacturerName) {
 // own copy, so this list is never trusted as the actual validation.
 var DRIVER_NAME_SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
 
-// Ledger event labels -- the Finances page (2026-09-02) shows every one of
-// a driver's own Transactions rows, keyed by Type (see
-// season-1-sheet-schema.md's Transactions section: StartingBalance / BuyIn /
-// SponsorBonus / SponsorPenalty / PrizePool / Fine / WagerWin / WagerLoss /
-// SpecialEvent). This is the one place that turns each raw Type value into
-// the plain-language label shown in the ledger's Event column -- falls back
-// to the raw Type string for anything not listed here, same "never a hard
-// dependency, just keep in sync" convention as SPONSOR_*_TRIGGER_DESCRIPTIONS
-// above, so an unmapped Type still renders instead of showing blank.
-var RC_LEDGER_TYPE_LABELS = {
-  StartingBalance: 'Starting Balance',
-  BuyIn: 'Team Buy-In',
-  SponsorBonus: 'Sponsor Bonus',
-  SponsorPenalty: 'Sponsor Penalty',
-  PrizePool: 'Prize Pool',
-  Fine: 'Steward Fine',
-  WagerWin: 'Wager Won',
-  WagerLoss: 'Wager Lost',
-  SpecialEvent: 'Special Event'
-};
-function ledgerTypeLabel(type) {
-  return RC_LEDGER_TYPE_LABELS[type] || type || 'Transaction';
-}
+// RC_LEDGER_TYPE_LABELS/ledgerTypeLabel() removed entirely 2026-09-17 -- V1
+// scope cut, the Finances page they backed is gone along with the whole
+// Finances/Economy, Sponsorship, and Wager/Betting systems. See
+// season-1-mvp-scope.md.

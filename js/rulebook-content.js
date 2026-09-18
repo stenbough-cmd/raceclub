@@ -44,10 +44,10 @@ var RULEBOOK_SECTIONS = [
       '<li>Clean race and fastest lap bonuses are tracked automatically each session</li>' +
       '<li>Season 1 races a single class (LMGT3); multiclass grids return once more classes are active (see below)</li>' +
       '</ul></div>' +
-      '<p>Season 1 races LMGT3 only, so there’s nowhere to move up to yet. The rest of the ladder, LMP3, LMP2, and Hypercar, is where a Race Club career is headed in future seasons, and each step up is earned rather than simply bought. Moving into a higher class will take clearing two bars at once: enough bank balance to cover that class’s buy-in, and enough proven experience, consistency, and safety on track. There’s no Reputation score behind that second bar: it’s a plain, checkable bar built from real race count, attendance, and a clean-enough record (see Section 9, and Section 10, Class Progression, for exactly how it works). Clearing both bars is always the driver’s own choice to act on, never an admin decision.</p>' +
+      '<p>Season 1 races LMGT3 only, so there’s nowhere to move up to yet. The rest of the ladder, LMP3, LMP2, and Hypercar, is where a Race Club career is headed in future seasons, and each step up is earned rather than simply granted. Moving into a higher class will take clearing a plain, checkable bar built from real race count, attendance, and a clean-enough record (see Section 9, and Section 10, Class Progression, for exactly how it works). Clearing that bar is always the driver’s own choice to act on, never an admin decision.</p>' +
       '<div class="rc-rulebook-callout"><strong>The ladder:</strong><ul>' +
-      '<li><strong>LMGT3</strong> (Season 1): where every career starts, buy in and race, no other gate</li>' +
-      '<li><strong>LMP3, LMP2, Hypercar</strong> (future seasons): each gated by affording the seat <em>and</em> clearing the experience/consistency/safety bar in Section 9, never by money alone</li>' +
+      '<li><strong>LMGT3</strong> (Season 1): where every career starts, join a seat and race, no other gate</li>' +
+      '<li><strong>LMP3, LMP2, Hypercar</strong> (future seasons): gated by the experience/consistency/safety bar in Section 9</li>' +
       '<li>Clearing a class’s gate is always the driver’s own choice, no approval needed</li>' +
       '</ul></div>'
   },
@@ -56,22 +56,13 @@ var RULEBOOK_SECTIONS = [
     html: '<h4>2.1 Registering For a Season</h4>' +
       '<p>When a season is open for registration, the Dashboard’s Registration Status card shows REGISTER FOR [SEASON NAME]. Clicking it opens the registration popup:</p>' +
       '<ol><li>Choose a class. Season 1 races LMGT3 only, so this step is skipped whenever only one class is open.</li>' +
-      '<li>Choose a car. Each car shows its Tier and its Season Objective, a bonus tied to that seat for the whole season (see Section 10, Class Progression, for how classes work once more than one is open).</li>' +
+      '<li>Choose a car. Each car shows its Tier (see Section 10, Class Progression, for how classes work once more than one is open).</li>' +
       '<li>Click Join This Team. This locks the seat in immediately and cannot be undone.</li></ol>' +
       '<p>Joining a team plays a short signing sequence, then holds on a congratulations screen until Continue is clicked. Continue reloads the page and returns to the Dashboard with the new team reflected everywhere.</p>' +
       '<div class="rc-rulebook-callout"><strong>Registering:</strong><ul>' +
-      '<li>Buy in cost is the car’s full seat cost, charged the instant Join This Team is clicked</li>' +
+      '<li>Seats are first-come, first-served: once a driver joins a team, that seat is locked for the rest of the season</li>' +
       '<li>Class and team choice both lock in immediately, no confirmation step after Join This Team</li>' +
-      '<li>Sponsors are not part of this flow, see 2.2 below</li>' +
-      '</ul></div>' +
-      '<h4>2.2 Choosing Sponsors</h4>' +
-      '<p>Sponsors are picked separately from registration, any time before the season starts. A freshly registered driver sees a Sponsors card on the Dashboard prompting them to choose one, and that card links straight to the same picker the Sponsors page itself uses.</p>' +
-      '<ul><li>Up to 3 sponsors, never required to pick all 3</li>' +
-      '<li>Each sponsor pays a bonus for hitting one specific in-race trigger (for example a podium finish) and a penalty for a different one (for example a DNF), both read automatically off the race XML with no steward judgment involved</li>' +
-      '<li>Picks can be changed any time before the season starts, from the Sponsors page’s Change Sponsors button</li>' +
-      '<li>The Sponsors page lists every sponsor grouped by tier, plus a full glossary of every possible bonus and penalty trigger and exactly what it takes to earn or avoid it</li>' +
-      '</ul>' +
-      '<p class="rc-hint"><em>Sponsor bonuses and penalties are evaluated race by race for the rest of the season. This is separate from a car’s own season-long Season Objective, which is fixed for the whole season the moment a team is joined.</em></p>'
+      '</ul></div>'
   },
   {
     id: 'race-weekend-format', num: '3', title: 'Race Weekend Format',
@@ -86,8 +77,8 @@ var RULEBOOK_SECTIONS = [
       '<h4>3.3 Formation Lap &amp; Start</h4>' +
       '<p>The formation lap is always a short formation lap and, like the start procedure itself, is handled automatically by LMU. Drivers must follow the game’s visual cues to avoid an automatic in-game penalty (see Section 4.3, these calls are final and not reviewable).</p>' +
       '<h4>3.4 No-Shows (Dropped Races)</h4>' +
-      '<p>A driver who doesn’t attend a round has that round recorded as a dropped race. Dropping a race carries no monetary consequence on its own: Race Club’s economy has no recurring per-race cost or attendance fee to avoid in the first place (see Section 8, Career Economy, once finalized). A dropped race is simply excluded from that round’s championship points; nothing else about it is different from a race the driver could have attended.</p>' +
-      '<p>Attendance still matters, just not financially: a driver’s overall attendance rate is one of the three bars that decides eligibility to move into a higher class once more than one class exists (see Section 9). Missing a race, on its own, never costs a driver money. It can only affect that longer-term eligibility bar.</p>' +
+      '<p>A driver who doesn’t attend a round has that round recorded as a dropped race. A dropped race is simply excluded from that round’s championship points; nothing else about it is different from a race the driver could have attended.</p>' +
+      '<p>Attendance still matters: a driver’s overall attendance rate is one of the three bars that decides eligibility to move into a higher class once more than one class exists (see Section 9).</p>' +
       '<p class="rc-hint"><em>Not yet decided: the exact number of drops allowed per season, and whether that number is fixed league-wide or set by the admin each season.</em></p>'
   },
   {
@@ -113,7 +104,7 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<div class="rc-rulebook-callout"><strong>Not yet active for Season 1.</strong> This formal, graduated penalty system depends on a Career Economy and Steward Board Race Club hasn’t built yet. For now, contentious incidents are handled manually (an admin judgment call, worked out directly with the drivers involved) rather than through this tiered process. This section stays fully drafted so it’s ready to switch on once those systems exist.</div>' +
+    html: '<div class="rc-rulebook-callout"><strong>Partially active for Season 1.</strong> Drivers can file a protest, and the Steward Board can rule on it and assign a tier below -- that part is live. What isn’t live yet: the time-penalty/grid/points effects a tier implies aren’t automatically applied to results or standings, so a ruling is currently a recorded judgment, not something that moves your finishing position on its own. Tier 7 (Suspension) is the exception -- it is enforced automatically. There is no monetary fine of any kind; Race Club doesn’t run a money/economy system.</div>' +
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
@@ -147,7 +138,7 @@ var RULEBOOK_SECTIONS = [
   },
   { id: 'race-control', num: '6', title: 'Race Control Procedures', draft: true },
   { id: 'points-standings', num: '7', title: 'Points & Standings', draft: true },
-  { id: 'career-economy', num: '8', title: 'Career Economy', draft: true, draftNote: 'Design pending, separate conversation.' },
+  { id: 'career-economy', num: '8', title: 'Career Economy', draft: true, draftNote: 'Cut from the site for now (2026-09-17) -- Race Club runs no money/economy system in V1. May return in a later season.' },
   {
     id: 'reputation', num: '9', title: 'Reputation',
     html: '<p>Race Club doesn’t track Reputation as a single blended score right now. That’s a planned future system, not what’s running for Season 1 (see the note at the bottom of this section). What actually stands between a driver and a higher class today is a plain, three-part checklist: real seat time, showing up consistently, and staying clean enough on track. All three are things Race Club already has real data for once enough races have been run, and a driver needs to clear all three bars, not just the strongest one.</p>' +
@@ -161,19 +152,16 @@ var RULEBOOK_SECTIONS = [
   {
     id: 'class-progression', num: '10', title: 'Class Progression',
     html: '<p>Season 1 runs LMGT3 only, so there’s nowhere to move up to yet, every driver races the same class. This section describes the rule for once a second class becomes available in a future season.</p>' +
-      '<p>Moving into a higher class will take clearing two independent bars at once: money alone is never enough.</p>' +
-      '<ol><li><strong>Can they afford it?</strong> Enough bank balance to cover that class’s buy-in.</li>' +
-      '<li><strong>Have they earned it?</strong> Not by finishing position or wins, but by the experience/consistency/safety checklist in Section 9 (real seat time, consistent attendance, a clean enough record).</li></ol>' +
-      '<p>There’s no admin approval step in this process. Clearing both bars is the driver’s own choice to act on, the same as choosing LMGT3 is today. A driver who hasn’t cleared a class’s bars yet simply stays where they are and tries again the following season. Nobody is bumped up or held back by an admin decision.</p>' +
+      '<p>Moving into a higher class isn’t about finishing position or wins -- it’s earned by the experience/consistency/safety checklist in Section 9: real seat time, consistent attendance, and a clean enough record.</p>' +
+      '<p>There’s no admin approval step in this process. Clearing the bar is the driver’s own choice to act on, the same as choosing LMGT3 is today. A driver who hasn’t cleared a class’s bar yet simply stays where they are and tries again the following season. Nobody is bumped up or held back by an admin decision.</p>' +
       '<div class="rc-rulebook-callout"><strong>Class progression (once more than one class exists):</strong><ul>' +
-      '<li>Money alone is never enough: a driver needs to clear the money bar <em>and</em> the Section 9 checklist</li>' +
-      '<li>No admin approval needed for a normal move, it’s the driver’s own choice once both bars are cleared</li>' +
-      '<li>Falling short of either bar just means trying again next season, from wherever the driver currently qualifies</li>' +
+      '<li>Earned by the Section 9 checklist, not by finishing position, wins, or money -- Race Club runs no money/economy system</li>' +
+      '<li>No admin approval needed for a normal move, it’s the driver’s own choice once the bar is cleared</li>' +
+      '<li>Falling short just means trying again next season, from wherever the driver currently qualifies</li>' +
       '</ul></div>'
   },
-  { id: 'wagering', num: '11', title: 'Wagering, "Battles to Watch"', draft: true },
-  { id: 'car-class-selection', num: '12', title: 'Car & Class Selection', draft: true, draftNote: 'Naming pending confirmation.' },
-  { id: 'conduct-discipline', num: '13', title: 'Conduct & Discipline (Off-Track)', draft: true },
-  { id: 'appeals', num: '14', title: 'Appeals', draft: true },
-  { id: 'glossary', num: '15', title: 'Glossary', draft: true }
+  { id: 'car-class-selection', num: '11', title: 'Car & Class Selection', draft: true, draftNote: 'Naming pending confirmation.' },
+  { id: 'conduct-discipline', num: '12', title: 'Conduct & Discipline (Off-Track)', draft: true },
+  { id: 'appeals', num: '13', title: 'Appeals', draft: true },
+  { id: 'glossary', num: '14', title: 'Glossary', draft: true }
 ];
