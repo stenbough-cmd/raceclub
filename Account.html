@@ -6410,7 +6410,7 @@
         var btnRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
         var createNowBtn = el('button', null, 'Create Season');
         createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
-        createNowBtn.addEventListener('click', function () { state.releaseMode = 'now'; finishWizard(); });
+        createNowBtn.addEventListener('click', function () { state.releaseMode = 'now'; finishWizard(createNowBtn); });
         btnRow.appendChild(createNowBtn);
 
         var futureBtn = el('button', null, 'Create a Future Season');
@@ -6447,7 +6447,7 @@
             return;
           }
           state.releaseMode = 'scheduled';
-          finishWizard();
+          finishWizard(confirmFutureBtn);
         });
         futurePanel.appendChild(confirmFutureBtn);
         createWrap.appendChild(futurePanel);
@@ -6604,42 +6604,52 @@
       return { racesPayload: racesPayload, seasonDetails: seasonDetails };
     }
 
-    // finishWizard/finishEditWizard (below) are deliberately left waiting
-    // on the server (2026-09-03 pass): creating/updating a season is a
-    // single write that fans out into many rows (races, rounds, bye
-    // weeks, special events) built server-side from this payload, keyed
-    // off a season/round ID this wizard doesn't have yet -- there's no
-    // real "next screen" to optimistically show that doesn't just recreate
-    // the whole season summary the server is about to compute anyway, and
-    // this is a rare, deliberate admin action (not a fast, repeated one
-    // like a sponsor pick or a wager), so a few seconds of spinner here
-    // reads as normal rather than as the site feeling slow.
-    function finishWizard() {
+    // finishWizard stays on the wizard's own review step while it saves,
+    // rather than blanking the popup out for a spinner (2026-09-19,
+    // Matt's call) -- the triggering button (createNowBtn or
+    // confirmFutureBtn, whichever was actually clicked) goes gray and
+    // reads "SAVING SEASON...", same free-from-.rc-btn-primary:disabled
+    // pattern the League News popup already uses, and every other footer
+    // button is disabled alongside it so nothing else in the wizard can
+    // be touched mid-save. On success the popup closes and the admin
+    // lands on Dashboard with fresh data (Matt: "throw the admin to the
+    // dashboard and have it update it") rather than back wherever Season
+    // Tools happened to be -- a brand-new season is exactly the kind of
+    // change a dashboard card (Registration Status chief among them)
+    // should reflect immediately.
+    //
+    // Root cause of "unable to save to server, your season is saved":
+    // createSeason fans one submit out into many Rounds/Races/bye-week/
+    // special-event rows server-side, which can genuinely take longer
+    // than the site's normal 20s fetch budget (js/api.js's
+    // RC_FETCH_TIMEOUT_MS, sized for dashboard-style reads) once a season
+    // has a long calendar -- the client gave up and reported failure
+    // while Apps Script kept running and finished the write anyway. Two
+    // fixes: a longer timeoutMs budget for just this call
+    // (RC_FETCH_TIMEOUT_MS_LONG, see js/api.js), and a timeout-specific
+    // error message below that says what actually might have happened
+    // instead of the old, actively wrong "your draft is untouched."
+    function finishWizard(triggerBtn) {
       saveWizardDraft(state);
-      contentWrap.innerHTML = '';
-      contentWrap.appendChild(buildSpinner('Creating season...'));
-      footerBar.innerHTML = '';
+
+      var footerButtons = Array.prototype.slice.call(footerBar.querySelectorAll('button'));
+      footerButtons.forEach(function (b) { b.disabled = true; });
+      var originalLabel = triggerBtn.textContent;
+      triggerBtn.textContent = 'SAVING SEASON...';
+
+      function restoreButtons() {
+        footerButtons.forEach(function (b) { b.disabled = false; });
+        triggerBtn.textContent = originalLabel;
+      }
 
       var payload = buildSeasonWizardPayload(false);
       var racesPayload = payload.racesPayload;
       var seasonDetails = payload.seasonDetails;
 
-      function showResultPanel(ok, title, message) {
-        contentWrap.innerHTML = '';
-        var note = el('div', 'rc-panel');
-        note.style.borderColor = ok ? 'var(--rc-ok)' : 'var(--rc-red)';
-        note.appendChild(el('h3', 'margin-top:0;', title));
-        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
-        var closeBtn = el('button', null, 'Close');
-        closeBtn.className = 'rc-btn-secondary rc-btn-sm'; closeBtn.type = 'button';
-        closeBtn.addEventListener('click', modal.close);
-        note.appendChild(closeBtn);
-        contentWrap.appendChild(note);
-      }
-
       fetchApi('createSeason', {
         method: 'POST',
         token: token,
+        timeoutMs: RC_FETCH_TIMEOUT_MS_LONG,
         body: {
           name: state.seasonName,
           seasonDetails: JSON.stringify(seasonDetails),
@@ -6649,14 +6659,26 @@
         if (data && data.success) {
           clearWizardDraft();
           showToast(data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'), 'success');
-          rcReloadAfterSave();
+          // Every lazy section is stale now (a new season ripples well
+          // beyond just Season Tools), same cache-clear rcReloadAfterSave
+          // itself does -- but this always lands on Dashboard specifically
+          // rather than back on whichever section the wizard was opened
+          // from.
+          Object.keys(RC_LAZY_SECTION_RENDERERS).forEach(function (id) { rcLoadedLazySections[id] = false; });
+          showSection('dashboard');
+          if (currentProfile && currentToken) renderDashboardSection(currentProfile, currentToken, fetchDashboardData(currentToken));
+          modal.close();
         } else {
-          showResultPanel(false, 'Could Not Create Season',
-            (data && data.message) || 'Something went wrong talking to the server. Your draft is untouched, so it\'s safe to try again.');
+          restoreButtons();
+          showToast((data && data.message) || 'Something went wrong talking to the server. Your draft is untouched, so it\'s safe to try again.', 'error');
         }
-      }).catch(function () {
-        showResultPanel(false, 'Could Not Reach The Server',
-          'Check your connection and try again -- your draft is untouched.');
+      }).catch(function (err) {
+        restoreButtons();
+        if (err && err.message === 'RC_FETCH_TIMEOUT') {
+          showToast('This is taking longer than expected. Apps Script may still be finishing the write -- check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
+        } else {
+          showToast('Could not reach the server -- check your connection and try again. Your draft is untouched.', 'error');
+        }
       });
     }
 
@@ -6688,6 +6710,9 @@
       fetchApi('updateSeason', {
         method: 'POST',
         token: token,
+        // Same heavy-write timeout as createSeason above, and for the same
+        // reason -- see finishWizard's comment.
+        timeoutMs: RC_FETCH_TIMEOUT_MS_LONG,
         body: {
           seasonId: state.__editSeasonId,
           seasonName: state.seasonName,

@@ -44,6 +44,20 @@ function apiBaseUrlIsUnset() {
 // being far short of "the driver gives up and reloads."
 var RC_FETCH_TIMEOUT_MS = 20000;
 
+// Longer budget for the handful of POST actions that are genuinely heavy,
+// multi-row writes rather than a normal single-row save -- createSeason/
+// updateSeason especially, which fan a single admin submit out into many
+// Rounds/Races/bye-week/special-event rows server-side (2026-09-19, Matt's
+// report: "unable to save to server, your season is saved" right after a
+// Create Season that actually went through). The default 20s budget above
+// was sized for dashboard-style reads, not this -- a full season with a
+// long calendar can genuinely take longer than that to finish writing, so
+// the client was aborting and reporting failure on writes that were still
+// quietly completing on the server. Passed as options.timeoutMs on the
+// specific fetchApi calls that need it; every other caller keeps the
+// default above.
+var RC_FETCH_TIMEOUT_MS_LONG = 45000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom
@@ -63,7 +77,7 @@ var RC_FETCH_RETRY_DELAYS_MS = [700, 2500];
 // codebase is a pure read, so retrying one is always safe: worst case, it
 // re-reads data that hasn't changed. A POST is never blindly retried here.
 
-function _rcFetchOnce_(url, fetchOpts) {
+function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
   // AbortController -- not supported on truly ancient browsers, but every
   // browser this site otherwise targets has it; fetchApi already assumes a
   // modern `fetch()` exists at all, so this adds no new floor.
@@ -75,7 +89,7 @@ function _rcFetchOnce_(url, fetchOpts) {
     timer = setTimeout(function () {
       timedOut = true;
       controller.abort();
-    }, RC_FETCH_TIMEOUT_MS);
+    }, timeoutMs || RC_FETCH_TIMEOUT_MS);
   }
   return fetch(url, fetchOpts)
     .then(function (res) {
@@ -111,6 +125,10 @@ function _rcFetchOnce_(url, fetchOpts) {
  *                   read these off e.parameter, same as action/token.
  *                   Blank/null/undefined values are skipped rather than
  *                   sent as the literal string "undefined".
+ *   options.timeoutMs: overrides RC_FETCH_TIMEOUT_MS for just this call --
+ *                   pass RC_FETCH_TIMEOUT_MS_LONG for a heavy multi-row
+ *                   write (createSeason/updateSeason). Leave unset for the
+ *                   normal 20s budget.
  *
  * IMPORTANT: POST requests use Content-Type: text/plain;charset=utf-8, NOT
  * application/json. Apps Script Web Apps can't handle a CORS preflight
@@ -158,10 +176,10 @@ function fetchApi(action, options) {
     fetchOpts.body = JSON.stringify(options.body || {});
   }
 
-  if (method === 'POST') return _rcFetchOnce_(url, fetchOpts);
+  if (method === 'POST') return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
 
   var attempt = function (retriesLeft) {
-    return _rcFetchOnce_(url, fetchOpts).catch(function (err) {
+    return _rcFetchOnce_(url, fetchOpts, options.timeoutMs).catch(function (err) {
       if (!retriesLeft.length) throw err;
       var delay = retriesLeft[0];
       var rest = retriesLeft.slice(1);
