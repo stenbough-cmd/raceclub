@@ -2813,7 +2813,7 @@
   function buildEmptyStatePanel(title, subtitle) {
     var wrap = el('div', 'rc-empty-state');
     wrap.appendChild(el('div', 'rc-empty-state-icon',
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>'));
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>'));
     wrap.appendChild(el('div', 'rc-empty-state-title', escapeHtml(title || 'No Data To Display')));
     if (subtitle) wrap.appendChild(el('div', 'rc-empty-state-subtitle', escapeHtml(subtitle)));
     return wrap;
