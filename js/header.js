@@ -153,7 +153,7 @@
   button below it. Everything else (plain success/failure results with no
   attached action) now goes through showToast.
 */
-var RC_HEADER_HEIGHT = 72;
+var RC_HEADER_HEIGHT = 70;
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
 function _rcEnsureToastContainer() {

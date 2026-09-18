@@ -3207,6 +3207,15 @@
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
+    // About panel (2026-09-18) -- a plain-language description of what
+    // Race Club actually is, up top, before any how-to content. Same
+    // "persistent career, real league races" framing as index.html's own
+    // "What Is Race Club" section, trimmed to a couple of sentences.
+    var about = el('div', 'rc-panel');
+    about.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'About Race Club'));
+    about.appendChild(el('p', null, 'Race Club is a persistent multiplayer league and career mode built on real Le Mans Ultimate races. You join a team, race scheduled league rounds against real drivers, and build a season by season driving record that carries forward as your career.'));
+    section.appendChild(about);
+
     var websiteHelp = el('div', 'rc-panel');
     websiteHelp.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Website Help'));
     var contactList = el('ul', 'rc-help-list');
@@ -3219,28 +3228,29 @@
     websiteHelp.appendChild(contactList);
 
     // Page-by-page how-to content (2026-09-09, Matt's call: replace the
-    // old "still being written" placeholder with the real thing; trimmed
+    // old "still being written" placeholder with the real thing; rewritten
     // 2026-09-18 for the V1 scope cut -- Finances, Sponsors, Wager, and
-    // Reputation/Hall of Fame no longer exist). Written straight from
-    // what's actually live on the site right now -- every line below
-    // describes a page or feature that exists and works today.
+    // Reputation/Hall of Fame no longer exist, and nothing below mentions
+    // a future feature or anything planned for later. Every line
+    // describes a page or feature that exists and works on the site
+    // today, in plain sentences instead of run-on ones.
     websiteHelp.appendChild(el('div', 'rc-help-content',
       '<h4>Dashboard</h4>' +
-      '<p>Your homepage after logging in. One glance covers your Registration Status, your Current Seat (car and team, once you have one), your next scheduled race, your most recent result, and your last few filed Protests. Cards that depend on being registered fill in once you\'ve actually joined a team.</p>' +
+      '<p>Your homepage after logging in. It shows your Registration Status, your Current Seat once you have one, your next scheduled race, your most recent result, and your last few filed Protests. Cards that depend on being registered fill in once you\'ve actually joined a team.</p>' +
       '<h4>Calendar</h4>' +
-      '<p>The full season schedule, in order: every race\'s date and time (converted to your own timezone), its track, session details, and a weather forecast icon. Special events and bye weeks appear in the same list alongside regular races.</p>' +
+      '<p>The full season schedule, in order. Each race shows its date and time in your own timezone, the track, session details, and a weather forecast icon. Special events and bye weeks appear in the same list alongside regular races.</p>' +
       '<h4>Results</h4>' +
-      '<p>One page per season. Season Standings sits at the top, grouped by class. Below it, every completed round gets its own container with a full stat breakdown per driver: finishing position, grid, laps, best lap, total time, points, and incidents/track limits/penalties. Whoever set a class\'s fastest lap is marked, and a driver who didn\'t finish is flagged directly on their row.</p>' +
+      '<p>One page per season. Season Standings sits at the top, grouped by class. Below it, every completed round has its own section with a full stat breakdown per driver: finishing position, grid, laps, best lap, total time, points, and incidents, track limits, and penalties. Whoever set a class\'s fastest lap is marked, and a driver who did not finish is flagged directly on their row.</p>' +
       '<h4>Career</h4>' +
-      '<p>Your complete season-by-season record -- every car, team, and result the league has on file for you, newest season first.</p>' +
+      '<p>Your season by season record. Every car, team, and result the league has on file for you, newest season first.</p>' +
       '<h4>Protests</h4>' +
       '<p>File a protest against an incident from a completed race. Choose the race and lap, an infraction type, and up to two other drivers involved if any, with an optional description. You have 48 hours after a round\'s results are posted to file, and you can withdraw a protest any time before a steward rules on it.</p>' +
       '<h4>Notifications</h4>' +
-      '<p>The bell icon in the header surfaces anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.</p>' +
+      '<p>The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.</p>' +
       '<h4>Account Settings</h4>' +
       '<p>Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password, all from the same popup.</p>' +
-      '<h4>Admin &amp; League Management</h4>' +
-      '<p>Admin accounts get two additional pages: League Management, for browsing every season and its races and recomputing a season\'s results if an earlier round gets corrected, and Admin, for managing members, tracks, cars, and creating or ending a season.</p>'));
+      '<h4>Admin and League Management</h4>' +
+      '<p>Admin accounts get two additional pages. League Management is for browsing every season and its races, and recomputing a season\'s results if an earlier round gets corrected. Admin is for managing members, tracks, cars, and creating or ending a season.</p>'));
     section.appendChild(websiteHelp);
 
     var rulebook = el('div', 'rc-panel');

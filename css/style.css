@@ -2821,7 +2821,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-fixed-header {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 72px;
+  height: 70px;
+  min-height: 70px;
+  max-height: 70px;
   background: var(--rc-white);
   border-bottom: 1px solid var(--rc-silver);
   display: flex;
@@ -3143,17 +3145,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* Pages other than index.html sit below the fixed header. */
-.rc-auth-page { padding-top: 72px; }
-.rc-shell { padding-top: 72px; }
-.rc-topbar { margin-top: 72px; }
+.rc-auth-page { padding-top: 70px; }
+.rc-shell { padding-top: 70px; }
+.rc-topbar { margin-top: 70px; }
 /* THE ACTUAL BUG BEHIND THE PERSISTENT MOBILE GAP: the earlier mobile
    override (".rc-shell { padding-top: 0; }" in the @media block above)
    has the exact same specificity as the unconditional rule directly
    above this comment -- and since THIS one comes later in the file, it
    was winning on mobile too, silently cancelling that override back to
-   72px the whole time. Repeating the override here, after the rule it
-   needs to beat, guarantees it's actually the last matching declaration
-   so it wins for real. */
+   70px (formerly 72px) the whole time. Repeating the override here,
+   after the rule it needs to beat, guarantees it's actually the last
+   matching declaration so it wins for real. */
 @media (max-width: 768px) {
   .rc-shell { padding-top: 0; }
 }
@@ -3242,14 +3244,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* in the HTML) scroll up and visually cover the pinned banner once the   */
 /* user has scrolled roughly the banner's own height -- no spacer needed  */
 /* this time, sticky's reserved space does that job on its own.          */
-/* `margin-top: 72px` still clears the fixed header for the banner's      */
-/* normal (not-yet-stuck) position; `top: 72px` is what it sticks to      */
-/* once scrolled -- same 72px both times since that's the header's own    */
-/* height either way. */
+/* `margin-top: 70px` still clears the fixed header for the banner's      */
+/* normal (not-yet-stuck) position; `top: 70px` is what it sticks to      */
+/* once scrolled -- same 70px both times since that's the header's own    */
+/* height either way (locked at 70px, 2026-09-18). */
 .rc-hero {
   position: sticky;
-  top: 72px;
-  margin-top: 72px;
+  top: 70px;
+  margin-top: 70px;
   width: 100%;
   /* banner.jpg's own pixel ratio (2:1 landscape) -- sizing the box off   */
   /* the image's real proportions, rather than a fixed height, is what   */
