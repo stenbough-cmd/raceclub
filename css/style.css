@@ -4702,7 +4702,7 @@ body.rc-modal-scroll-locked {
 /* "Need Help?" -- icon-led contact rows, same shape as index.html's
    "What You'll Need" list, instead of a plain bulleted <ul>. */
 .rc-help-contact-list { display: flex; flex-direction: column; gap: 14px; }
-.rc-help-contact-row { display: flex; align-items: flex-start; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
+.rc-help-contact-row { display: flex; align-items: center; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
 .rc-help-contact-icon {
   flex: none;
   width: 32px;
@@ -4713,7 +4713,6 @@ body.rc-modal-scroll-locked {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 1px;
 }
 .rc-help-contact-icon svg { width: 15px; height: 15px; }
 
