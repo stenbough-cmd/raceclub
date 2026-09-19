@@ -4540,18 +4540,21 @@ body.rc-modal-scroll-locked {
    already separates the header from this block. */
 .rc-cal-season-details { margin-top: 16px; }
 .rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
-/* Season Format list (renamed from "Season Settings," rebuilt from a row
-   of pill chips into a plain label/value list, 2026-09-19, Matt's call:
-   "gives all the information of the league without using the pills that
-   are currently there") -- one row per detail, label left (small, steel,
-   uppercase, same treatment as .rc-results-stat-label) and value right
-   (carbon, semibold), a faint divider between rows so a long list still
-   reads as organized rather than a wall of text. */
-.rc-cal-format-list { display: flex; flex-direction: column; }
-.rc-cal-format-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-cal-format-row:last-child { border-bottom: none; }
-.rc-cal-format-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); flex: 0 0 auto; }
-.rc-cal-format-value { font-size: 13.5px; font-weight: 600; color: var(--rc-carbon); text-align: right; }
+/* Season Format grid (renamed from "Season Settings," 2026-09-19, Matt's
+   call: "gives all the information of the league without using the
+   pills that are currently there"). First built as one row per detail,
+   which Matt caught the same day as "takes up an enormous amount of
+   space" -- reworked into a wrapping grid of small tiles instead (same
+   shape as .rc-cs-stat, the Current Seat card's own stat tiles, just
+   left-aligned and denser): several tiles share a row, so the same
+   information collapses from ~13 stacked lines down to 2-3 rows of
+   tiles, well under a third of the old list's height. A tile with a
+   longer detail (the Sprint/Medium/Long points lists) carries it in a
+   hover tooltip via withTooltip rather than widening the tile. */
+.rc-cal-format-list { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.rc-cal-format-tile { flex: 1 1 108px; min-width: 92px; }
+.rc-cal-format-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 3px; }
+.rc-cal-format-value { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 /* Rounded rectangle, not an oval pill (Matt's call: every class badge on

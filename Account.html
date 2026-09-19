@@ -4064,59 +4064,75 @@
     return classesRow;
   }
 
-  // One label/value row for the Season Format list below.
-  function formatDetailRow(label, value) {
-    var row = el('div', 'rc-cal-format-row');
-    row.appendChild(el('span', 'rc-cal-format-label', label));
-    row.appendChild(el('span', 'rc-cal-format-value', value));
-    return row;
+  // One compact label/value tile for the Season Format grid below --
+  // reworked 2026-09-19 (Matt's catch: the one-row-per-detail list "takes
+  // up an enormous amount of space") from a stacked list into a wrapping
+  // grid of small tiles, same shape as the Current Seat card's own
+  // Position/Points/Podiums stat tiles (.rc-cs-stat) just left-aligned and
+  // denser -- several tiles share a row instead of each detail claiming a
+  // full-width line, which is what actually cuts the height down (a wide
+  // list wrapping into 3-5 tiles per row instead of one detail per row).
+  // tooltip (optional) keeps a longer detail (the full points list) out
+  // of the tile's own visible text so the tile stays a fixed, compact
+  // size -- same "value visible, detail on hover" split the original
+  // .rc-cal-stat chips used before this panel became a plain list.
+  function formatDetailTile(label, value, tooltip) {
+    var tile = el('div', 'rc-cal-format-tile');
+    tile.appendChild(el('div', 'rc-cal-format-label', label));
+    tile.appendChild(el('div', 'rc-cal-format-value', escapeHtml(value)));
+    if (tooltip) withTooltip(tile, tooltip);
+    return tile;
   }
 
   // Season-wide format panel -- renamed from "Season Settings" to "Season
-  // Format" (2026-09-19, Matt's call), and rebuilt from a row of pill
-  // chips into a plain, comprehensive label/value list ("gives all the
-  // information of the league without using the pills") -- every field
-  // that used to be a .rc-cal-stat chip here is now its own row instead,
-  // plus the server password is now shown outright rather than only on
-  // hover, since the point of this list is to be the one place a driver
-  // can read every season-wide detail at a glance. Class pills stay out
-  // of this panel entirely (moved to the season header row, 2026-09-19 --
-  // see buildClassPillsRow above); the race list below still shows
-  // per-round specifics (dates, weather, track).
+  // Format" (2026-09-19, Matt's call), rebuilt from a row of pill chips
+  // into a dense wrapping grid of tiles ("gives all the information of
+  // the league without using the pills" + "take up less than 1/3 of its
+  // current height" -- see formatDetailTile above for how). Class pills
+  // stay out of this panel entirely (moved to the season header row,
+  // 2026-09-19 -- see buildClassPillsRow above); the race list below
+  // still shows per-round specifics (dates, weather, track).
   function seasonDetailsPanel(details) {
     var wrap = el('div', 'rc-cal-season-details');
     wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Format'));
 
-    var list = el('div', 'rc-cal-format-list');
-    list.appendChild(formatDetailRow('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
-    if (details.frequency) list.appendChild(formatDetailRow('Race Frequency', details.frequency));
-    list.appendChild(formatDetailRow('Drop Weeks', (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's')));
-    if (details.trackLimitsPreset) list.appendChild(formatDetailRow('Track Limits', details.trackLimitsPreset));
-    list.appendChild(formatDetailRow('Qualifying Visibility', details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying'));
+    var grid = el('div', 'rc-cal-format-list');
+    grid.appendChild(formatDetailTile('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
+    if (details.frequency) grid.appendChild(formatDetailTile('Race Frequency', details.frequency));
+    grid.appendChild(formatDetailTile('Drop Weeks', String(details.dropWeeks || 0)));
+    if (details.trackLimitsPreset) grid.appendChild(formatDetailTile('Track Limits', details.trackLimitsPreset));
+    grid.appendChild(formatDetailTile('Qualifying', details.privateQualifying === 'Yes' ? 'Private' : 'Public'));
 
     // Fuel/Tire Wear/Setups -- season-wide (Seasons.SeasonDetails.
     // raceSettings), same source the individual race cards below used to
-    // read them from before they moved up here (2026-09-19).
+    // read them from before they moved up here (2026-09-19). These are
+    // preset LABELS ('Off'/'Realistic'/'2x'/'3x' -- see
+    // RACE_SETTINGS_MULTIPLIER_OPTIONS), not raw numbers, so they're shown
+    // as-is -- appending a literal "×" here (2026-09-19 bug, Matt's catch)
+    // is what produced "Realisticx multiplier" for the 'Realistic' preset;
+    // '2x'/'3x' already carry their own "x" and 'Off'/'Realistic' aren't
+    // multiplied values at all.
     var raceSettings = details.raceSettings || {};
-    if (raceSettings.fuelMultiplier) list.appendChild(formatDetailRow('Fuel Consumption', raceSettings.fuelMultiplier + '× multiplier'));
-    if (raceSettings.tireWearMultiplier) list.appendChild(formatDetailRow('Tire Wear', raceSettings.tireWearMultiplier + '× multiplier'));
-    if (raceSettings.setupRules) list.appendChild(formatDetailRow('Car Setups', raceSettings.setupRules));
-    if (raceSettings.practiceLengthMin) list.appendChild(formatDetailRow('Practice Length', raceSettings.practiceLengthMin + ' min'));
-    if (raceSettings.qualifyLengthMin) list.appendChild(formatDetailRow('Qualifying Length', raceSettings.qualifyLengthMin + ' min'));
+    if (raceSettings.fuelMultiplier) grid.appendChild(formatDetailTile('Fuel', raceSettings.fuelMultiplier));
+    if (raceSettings.tireWearMultiplier) grid.appendChild(formatDetailTile('Tire Wear', raceSettings.tireWearMultiplier));
+    if (raceSettings.setupRules) grid.appendChild(formatDetailTile('Setups', raceSettings.setupRules));
+    if (raceSettings.practiceLengthMin) grid.appendChild(formatDetailTile('Practice', raceSettings.practiceLengthMin + ' min'));
+    if (raceSettings.qualifyLengthMin) grid.appendChild(formatDetailTile('Qualifying Length', raceSettings.qualifyLengthMin + ' min'));
 
-    // Race formats -- one row per tier that actually has a points table
-    // set up (Sprint/Medium/Long), duration + full points list together
-    // rather than split across two separate chips the way the old pill
-    // row had it.
+    // Race formats -- one tile per tier that actually has a points table
+    // set up (Sprint/Medium/Long). The tile's own value stays just the
+    // duration so it's no wider than any other tile in this grid; the
+    // full points list (which can run long -- P1 25 · P2 18 · ...) sits
+    // in a hover tooltip instead, same info, none of the extra width.
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
       var pointsList = formatPointsList(table.points);
-      list.appendChild(formatDetailRow(tier + ' Race Format', (table.duration || 0) + ' min' + (pointsList ? ' · ' + pointsList : '')));
+      grid.appendChild(formatDetailTile(tier, (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : null));
     });
 
-    wrap.appendChild(list);
+    wrap.appendChild(grid);
     return wrap;
   }
 
