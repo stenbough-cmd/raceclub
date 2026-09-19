@@ -459,44 +459,10 @@ function _rclRenderPoints(hub) {
   }
 }
 
-// ---------------------------------------------------------------------
-// DRIVERS -- full roster, grouped by class (added 2026-09-19). Reuses
-// the same per-class driver rows the Leaderboard already computed
-// server-side (hub.standings) -- alphabetical here instead of ranked,
-// since a roster isn't a leaderboard.
-// ---------------------------------------------------------------------
-function _rclRenderDrivers(hub) {
-  var body = document.getElementById('rcl-drivers-body');
-  if (!body) return;
-  body.innerHTML = '';
-
-  if (!hub.hasSeason || !hub.standings || !hub.standings.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'The driver roster fills in once a season is underway.'));
-    return;
-  }
-
-  hub.standings.forEach(function (cls) {
-    var rows = (cls.standings || []).slice().sort(function (a, b) {
-      return String(a.name || '').localeCompare(String(b.name || ''));
-    });
-    if (!rows.length) return;
-    var wrap = _rclEl('div', 'rcl-drivers-class');
-    wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
-    var grid = _rclEl('div', 'rcl-drivers-grid');
-    rows.forEach(function (row) {
-      var card = _rclEl('div', 'rcl-driver-card');
-      card.appendChild(_rclEl('div', 'rcl-driver-name', _rclEscapeHtml(row.name)));
-      var metaParts = [];
-      if (row.teamName) metaParts.push(row.teamName);
-      if (row.carNumber) metaParts.push('#' + row.carNumber);
-      if (row.manufacturer) metaParts.push(row.manufacturer);
-      card.appendChild(_rclEl('div', 'rcl-driver-meta', _rclEscapeHtml(metaParts.join(' · '))));
-      grid.appendChild(card);
-    });
-    wrap.appendChild(grid);
-    body.appendChild(wrap);
-  });
-}
+// Drivers section removed 2026-09-19 (Matt's call: "drivers can be seen
+// by viewing the leaderboard") -- _rclRenderDrivers/#rcl-drivers-body
+// removed; the roster it built was a plain, unranked duplicate of what
+// the Leaderboard panel already shows per class.
 
 // ---------------------------------------------------------------------
 // NEWS FEED -- admin-authored, Body is plain text with a small set of
@@ -715,8 +681,8 @@ function _rclBuildSnapshotStats(hub) {
   // Which car classes are running this season (added 2026-09-19,
   // Matt's ask: "add which cars are participating" between the season
   // dates and race-count stats) -- pulled from hub.standings, the same
-  // per-class list the Leaderboard/Drivers sections below already use,
-  // so this can never name a class that isn't actually fielding cars.
+  // per-class list the Leaderboard section below already uses, so this
+  // can never name a class that isn't actually fielding cars.
   var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
   if (classNames.length) {
     stats.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
@@ -824,7 +790,7 @@ function _rclRenderHero(hub) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderPoints, _rclRenderCalendar, _rclRenderDrivers, _rclRenderNews];
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderPoints, _rclRenderCalendar, _rclRenderNews];
   fetchApi('getLeagueHub', {}).then(function (hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });

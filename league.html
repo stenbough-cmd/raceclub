@@ -5,7 +5,9 @@
   the shared site header, a season hero band (season number + name,
   "League Hub" title, and two stat strips built from real data -- This
   Season and League Format), then Recent Results + League News side by
-  side, then Leaderboard, Points, Calendar, and Drivers each full width.
+  side, then Leaderboard + Points Tables side by side (50/50, 2026-09-19),
+  then Calendar full width. No separate Drivers section (removed
+  2026-09-19 -- the Leaderboard already lists every driver per class).
   Public, no login required -- same "usable with no token at all"
   convention as index.html and its getGridTeaser call (see js/league.js ->
   getLeagueHub, Website.gs).
@@ -88,18 +90,19 @@
 
   </div>
 
-  <div class="rcl-row-full">
+  <!-- LEADERBOARD + POINTS -- side by side, 50/50 (2026-09-19, Matt's call:
+       "make LEADERBOARD and POINTS TABLES 50/50 in the same row"). Own grid
+       class (.rcl-grid-even) rather than reusing .rcl-grid, which is the
+       2fr/1fr Recent Results/League News split above -- these two panels
+       are equal-weight, not primary/secondary. -->
+  <div class="rcl-grid-even rcl-row-full">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
         <div class="rcl-panel-title">Leaderboard</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
-  </div>
 
-  <!-- POINTS -- race-length-tier points tables + bonus points, between
-       LEADERBOARD and CALENDAR (added 2026-09-19, Matt's ask). -->
-  <div class="rcl-row-full">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
         <div class="rcl-panel-title">Points Tables</div>
@@ -117,14 +120,11 @@
     </section>
   </div>
 
-  <div class="rcl-row-full">
-    <section class="rcl-panel">
-      <div class="rcl-panel-head">
-        <div class="rcl-panel-title">Drivers</div>
-      </div>
-      <div class="rcl-panel-body" id="rcl-drivers-body"></div>
-    </section>
-  </div>
+  <!-- Drivers section removed (2026-09-19, Matt's call: "drivers can be
+       seen by viewing the leaderboard") -- the Leaderboard panel above
+       already lists every driver per class, so a separate roster panel
+       was redundant. _rclRenderDrivers/#rcl-drivers-body removed to match
+       (js/league.js, css/league.css). -->
 </main>
 
 <!-- Site footer -- on every page. -->

@@ -4411,7 +4411,6 @@ body.rc-modal-scroll-locked {
 .rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.rc-cal-classes-label { font-size: 12px; color: var(--rc-steel); margin-right: 2px; }
 /* Rounded rectangle, not an oval pill (Matt's call: every class badge on
    the site uses this one shape). */
 .rc-cal-class-pill {
