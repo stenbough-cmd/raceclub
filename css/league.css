@@ -237,34 +237,34 @@ body.rc-league-page {
 }
 /* Banner image layer (added 2026-09-19, Matt's ask) -- sits behind the
    red angled accent (::after, below) and behind the text (.rcl-hero-inner,
-   z-index:1), but above the hero's own gradient background. Anchored to
-   the viewport width with left:50%/translateX(-50%) + width:100vw rather
-   than width:100%, so it always stretches to the full window regardless
-   of any scrollbar-width rounding -- NOT sized to the hero's own
-   (content-driven) box. background-size:100% auto stretches the image to
-   exactly that width and lets height follow naturally; overflow:hidden on
-   .rcl-hero crops whatever spills past the hero's own height so the
-   container never grows to match the banner's natural size. A soft
-   opacity keeps it a backdrop rather than competing with the title/stat
-   text sitting on top of it. */
+   z-index:1), but above the hero's own gradient background.
+   inset:0 sizes the layer to the hero's own box (.rcl-hero is already a
+   full-bleed section, so this reaches the window's edges without the
+   100vw/translateX viewport-anchoring trick this used to need).
+   background-size:cover (2026-09-19 fix -- was 100% auto, which force-
+   stretched the image's WIDTH to match the viewport regardless of the
+   image's own resolution, upscaling it well past its native size on a
+   wide window and reading as "super stretched and blown up"; cover scales
+   the image just enough to fill the box on both axes with its aspect
+   ratio intact, so it only ever crops, never distorts or upscales past
+   what actually fills the space) + background-position:center (crops
+   symmetrically top/bottom, so the header always shows the image's middle
+   section, not whatever the top-anchored crop happened to land on).
+   overflow:hidden on .rcl-hero crops whatever spills past the hero's own
+   height so the container never grows to match the banner's natural size.
+   A soft opacity keeps it a backdrop rather than competing with the
+   title/stat text sitting on top of it. */
 .rcl-hero::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  height: 100%;
-  transform: translateX(-50%);
+  inset: 0;
   /* Relative to THIS file (css/league.css), not the page -- assets/images/
      is a sibling of css/, not a child of it, same gotcha style.css's own
-     banner rules already have a comment for. This was the actual reason
-     the banner never rendered: the browser was requesting
-     css/assets/images/league_banner.jpg, which doesn't exist, and just
-     silently failed to paint -- not an opacity/darkness issue. */
+     banner rules already have a comment for. */
   background-image: url('../assets/images/league_banner.jpg');
   background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 100% auto;
+  background-position: center;
+  background-size: cover;
   opacity: 0.28;
   z-index: 0;
   pointer-events: none;
@@ -440,9 +440,11 @@ body.rc-league-page {
    z-index:1) so it stays readable on top of it. Scoped to
    .rcl-panel-head-news specifically (see league.html) so Recent Results'
    identical-looking header, right next to this one, is unaffected.
-   90% opacity per Matt's ask -- noticeably more present than the main
-   hero's own 0.28 banner opacity, since this is a much smaller, busier
-   area where a faint image would just disappear. */
+   50% opacity (2026-09-19, dimmed down from the original 90% ask -- Matt's
+   follow-up call: "dim the league news background to 50%") -- still more
+   present than the main hero's own 0.28 banner opacity, since this is a
+   much smaller, busier area where a faint image would just disappear, but
+   not competing with the "League News" title text sitting on top of it. */
 .rcl-panel-head-news { position: relative; overflow: hidden; }
 .rcl-panel-head-news::before {
   content: '';
@@ -455,7 +457,7 @@ body.rc-league-page {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  opacity: 0.9;
+  opacity: 0.5;
   z-index: 0;
   pointer-events: none;
 }
