@@ -498,7 +498,17 @@ p { margin: 0 0 0.75em; }
    archived record. */
 .rc-badge-status-draft { background: var(--rc-tier-low); }
 .rc-badge-status-scheduled { background: var(--rc-balanced); }
-.rc-badge-status-registration { background: var(--rc-positive); }
+/* Registration status pill (2026-09-19, Matt's call: "Registration pills
+   that show up on the site should be a dashed green border with an empty
+   fill") -- every other status pill is a solid filled chip, but
+   Registration specifically reads as "open, come join" rather than a
+   settled state, so it gets an outline treatment instead: transparent
+   background, dashed green border, green text. Overrides .rc-badge-chip's
+   white-on-color default (background/border/color all set here) rather
+   than adding a new modifier class, so any existing "Registration" pill
+   markup (Season Tools list, League Hub, wherever else Season status
+   renders) picks this up automatically. */
+.rc-badge-status-registration { background: transparent; border: 1.5px dashed var(--rc-positive); color: var(--rc-positive); padding: 1.5px 8.5px; }
 .rc-badge-status-active { background: var(--rc-red); }
 .rc-badge-status-completed { background: var(--rc-steel); }
 /* Per-race status pill (League Management's per-season Races list, added

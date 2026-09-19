@@ -7915,8 +7915,19 @@
   // Alphabetical by display name within each group. There's no more
   // Approve/Deny here -- a Prospect can already use the site (see the
   // VALID_ROLES header comment in Auth.gs) -- every row just gets Edit.
+  //
+  // Narrowed 2026-09-19 (Matt's follow-up call): hasSeat only demotes a
+  // Driver-level account to Prospect -- Steward, Organizer, and Admin
+  // retain their level in this list (and everywhere else) regardless of
+  // whether they currently hold a seat in the open-to-registration
+  // season. Those roles are staff/permission grants, not a season
+  // participation state, so losing a seat (or never taking one) doesn't
+  // take away what they can DO on the site -- it shouldn't take away how
+  // they're shown here either. Only an account whose Role is plain
+  // 'Driver' (or unrecognized) with no current seat reads as Prospect.
   function buildDriversPanel(drivers, token, reload) {
     var ROLE_ORDER = ['Admin', 'Organizer', 'Steward', 'Driver', 'Prospect'];
+    var PRIVILEGED_ROLES = ['Admin', 'Organizer', 'Steward'];
     // Role-to-pill-color map (2026-09-19, Matt's call: "gold, silver,
     // bronze and then graphite for prospect and driver") -- see the
     // .rc-badge-role-* rules in style.css for the actual colors.
@@ -7930,14 +7941,15 @@
 
     return buildGroupedAdminList(drivers || [], {
       emptyMessage: 'No members yet.',
-      // A Role not in the canonical list (shouldn't happen, but data can
-      // drift) still shows -- bucketed under Driver rather than silently
-      // dropped, same "don't lose the row" instinct as _rcClassBadge uses
-      // for cars. hasSeat wins over Role for the Prospect bucket: any
-      // account without a seat in the currently-open-to-registration
-      // season reads as Prospect regardless of Role, per Matt's
-      // definition ("someone without a current seat in a season").
-      groupKey: function (d) { return d.hasSeat ? (ROLE_ORDER.indexOf(d.Role) !== -1 ? d.Role : 'Driver') : 'Prospect'; },
+      // Admin/Organizer/Steward always group under their own Role, seat
+      // or no seat -- see the header comment above. Everyone else (Role
+      // 'Driver', or a stray unrecognized Role -- same "don't lose the
+      // row" fallback as before) groups by hasSeat: seated reads as
+      // Driver, unseated reads as Prospect.
+      groupKey: function (d) {
+        if (PRIVILEGED_ROLES.indexOf(d.Role) !== -1) return d.Role;
+        return d.hasSeat ? 'Driver' : 'Prospect';
+      },
       canonicalOrder: ROLE_ORDER,
       buildGroupHeader: function (role) {
         var head = el('div', 'rc-group-head');
