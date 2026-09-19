@@ -1797,15 +1797,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    to show"), replacing the old letter-spaced text label. Two sizes: a
    small one for the SUSPENSE card, a larger one above the reveal
    content once the class image dims. Sized by width with height:auto so
-   the logo's own aspect ratio is preserved either way. Rendered on the
-   overlay's near-black backdrop, so the black wordmark gets a light
-   backing so it stays legible -- see .rc-signing-wordmark-img below. */
+   the logo's own aspect ratio is preserved either way. No background
+   "backing" card behind it (2026-09-19, Matt's catch: it was showing as
+   a stray white/offwhite pill sitting over the welcome photo) -- the
+   PNG itself is already a white + red wordmark on a transparent
+   background, not black ink, so it's already legible straight over the
+   near-black overlay / dimmed welcome image with nothing behind it. */
 .rc-signing-wordmark-img {
   width: 140px;
   height: auto;
-  background: var(--rc-offwhite);
-  border-radius: 6px;
-  padding: 6px 10px;
 }
 .rc-signing-wordmark-img-lg { width: 200px; margin-bottom: -4px; }
 .rc-signing-message {
@@ -1898,17 +1898,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-align: right;
   font-size: 12.5px;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.5);
+  /* Full white, not the old 50%-opacity dim gray (2026-09-19, Matt's
+     call: "make the team principal font white") -- was faint enough
+     against the dark reveal stage to read as an afterthought; the "Team
+     Principal" attribution should read clearly. */
+  color: var(--rc-white);
 }
 /* Inverted to a white pill (2026-08-30, Matt's call) -- was a dark,
    near-transparent panel with white text; now a solid white background
    with the team name in black (see .rc-signing-reveal-team below), a
-   deliberate bright beat against the dark reveal stage. */
+   deliberate bright beat against the dark reveal stage. Dropped to 90%
+   opacity (2026-09-19, Matt's call) -- still reads as the same bright
+   white pill, just with the faintest hint of the dimmed image showing
+   through instead of a flat opaque card. */
 .rc-signing-reveal-identity {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--rc-white);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   padding: 14px 20px;
@@ -1925,7 +1932,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    stretch oddly on the reveal overlay; this button sizes to its own
    label instead. Wins on cascade order alone (equal specificity,
    declared later in the file) rather than needing !important. */
-.rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease; }
+.rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+/* Explicit hover (2026-09-19, Matt's call: "make a hover effect on the
+   button to continue") -- .rc-btn-secondary's own :hover only nudges the
+   background from white to off-white, which barely reads against this
+   button's already-white default fill; this adds a small lift + shadow
+   on top of a slightly deeper shade so hovering the one interactive
+   element on the reveal beat is unmistakable. Wins on cascade order
+   alone (equal specificity, declared after .rc-btn-secondary above). */
+.rc-signing-continue:hover {
+  background: var(--rc-silver);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
 /* Row holding the reveal beat's Continue button (2026-09-18: the video-
    era "Replay Video" button that used to sit alongside it is gone --
    there's no video to replay any more -- so this is now a one-button
