@@ -331,13 +331,19 @@ function _rclRenderStandings(hub) {
         var rowEl = _rclEl('div', 'rcl-standings-row' + (POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
         rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
 
-        // Identity block: manufacturer logo, then name/team text, then a
-        // country flag next to the driver's name (2026-09-19, Matt's ask:
-        // "Add a manufacturer logo before the driver's name / team...
-        // add a flat flag of the driver's home country after their
-        // name"). Both are optional images that hide themselves via
-        // onerror if the asset hasn't been uploaded yet, or if
-        // reference-data.js's helpers aren't available for some reason.
+        // Identity block, all on one line now (2026-09-19 follow-up,
+        // Matt's call: "reduce the size of the manufacturer logo, place
+        // it next to the name, then show the nationality flag... then
+        // show the team number... then place the team after it -- all of
+        // this in the same size font as the driver name"): logo, driver
+        // name, country flag, car number, team name, left to right in a
+        // single row instead of name+flag on one line and team on its
+        // own line below. Logo/flag are optional images that hide
+        // themselves via onerror if the asset hasn't been uploaded yet
+        // (see countryFlagSrc's own comment in reference-data.js -- no
+        // assets/flags/ folder exists on disk yet, which is why the flag
+        // has never actually shown up), or if reference-data.js's
+        // helpers aren't available for some reason.
         var identity = _rclEl('div', 'rcl-standings-identity');
         var logoSlot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
         if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -352,7 +358,6 @@ function _rclRenderStandings(hub) {
         }
         identity.appendChild(logoSlot);
 
-        var nameCol = _rclEl('div', 'rcl-standings-identity-text');
         var nameRow = _rclEl('div', 'rcl-standings-name-row');
         nameRow.appendChild(_rclEl('span', 'rcl-standings-name', _rclEscapeHtml(row.name)));
         if (row.country && typeof countryFlagSrc === 'function') {
@@ -367,9 +372,9 @@ function _rclRenderStandings(hub) {
             nameRow.appendChild(flagImg);
           }
         }
-        nameCol.appendChild(nameRow);
-        nameCol.appendChild(_rclEl('div', 'rcl-standings-team', _rclEscapeHtml(row.teamName || '')));
-        identity.appendChild(nameCol);
+        if (row.carNumber) nameRow.appendChild(_rclEl('span', 'rcl-standings-carnum', '#' + _rclEscapeHtml(row.carNumber)));
+        if (row.teamName) nameRow.appendChild(_rclEl('span', 'rcl-standings-team', _rclEscapeHtml(row.teamName)));
+        identity.appendChild(nameRow);
         rowEl.appendChild(identity);
 
         var ptsCol = _rclEl('div', 'rcl-standings-pts');

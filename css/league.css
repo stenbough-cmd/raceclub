@@ -372,7 +372,14 @@ body.rc-league-page {
   grid-template-columns: 40px 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 10px 0;
+  /* Minimal top/bottom padding (2026-09-19 follow-up, Matt's call:
+     "reduce the height of the leaderboard drivers individual entries...
+     minimal padding above and below or else the leaderboard list is
+     going to be super long") -- name/team/car-number collapsed onto one
+     line in the same pass (see .rcl-standings-name-row below) is most of
+     what makes this height cut work without feeling cramped; this was
+     10px before. */
+  padding: 4px 0;
   border-bottom: 1px solid var(--rcl-line);
 }
 .rcl-standings-row:last-child { border-bottom: none; }
@@ -391,7 +398,9 @@ body.rc-league-page {
    plain background. */
 .rcl-standings-pos {
   align-self: stretch;
-  margin: -10px 0;
+  /* Matches .rcl-standings-row's own padding above (2026-09-19 follow-up
+     -- was -10px 0 when the row's padding was 10px). */
+  margin: -4px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,8 +417,13 @@ body.rc-league-page {
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
 .rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
 .rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
-.rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); }
-.rcl-standings-team { font-size: 12.5px; color: var(--rcl-ink-faint); margin-top: 1px; }
+.rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; }
+/* Same font-size as the driver name now (2026-09-19 follow-up, Matt's
+   call: "place the team after it... all of this in the same size font
+   as the driver name") -- was its own smaller line below the name; a
+   lighter weight/color is still what tells it apart from the bold name
+   next to it on the same line. */
+.rcl-standings-team { font-size: 14.5px; font-weight: 500; color: var(--rcl-ink-faint); white-space: nowrap; }
 .rcl-standings-pts { text-align: right; }
 .rcl-standings-pts-num {
   font-family: var(--rc-font-heading);
@@ -419,33 +433,37 @@ body.rc-league-page {
   font-variant-numeric: tabular-nums;
 }
 .rcl-standings-pts-gap { font-size: 11.5px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
-/* Driver identity block -- manufacturer logo + name/team text + country
-   flag, all on one row (2026-09-19, Matt's ask: "Add a manufacturer logo
-   before the driver's name / team... add a flat flag of the driver's home
-   country after their name"). Logo box is a fixed 70px wide slot so every
-   row's text column lines up regardless of a given logo's actual aspect
-   ratio -- the image itself is capped at 70px wide / 40px tall and centered
-   in the slot, so a wide-but-short logo and a narrow-but-tall one both look
-   like they belong to the same row height. */
-.rcl-standings-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Driver identity block -- manufacturer logo, then everything else
+   (name, flag, car number, team) on one single line (2026-09-19 follow-
+   up, Matt's call: "reduce the size of the manufacturer logo, place it
+   next to the name, then show the nationality flag... team number...
+   team after it -- all of this on one line"). Logo box is a smaller
+   fixed slot (was 70x40) now that the row itself is much shorter -- the
+   image is capped to match and centered in the slot, so a wide-but-short
+   logo and a narrow-but-tall one both still look like they belong to the
+   same compact row height. */
+.rcl-standings-identity { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .rcl-standings-mfr-logo-slot {
   flex: none;
-  width: 70px;
-  height: 40px;
+  width: 40px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .rcl-standings-mfr-logo {
-  max-width: 70px;
-  max-height: 40px;
+  max-width: 40px;
+  max-height: 24px;
   width: auto;
   height: auto;
   object-fit: contain;
   display: block;
 }
-.rcl-standings-identity-text { min-width: 0; }
-.rcl-standings-name-row { display: flex; align-items: center; gap: 6px; }
+/* Name/flag/car-number/team, all in this one row now (2026-09-19 follow-
+   up) -- flex-wrap so a long team name still degrades gracefully on a
+   narrow viewport instead of overflowing the panel, rather than a hard
+   nowrap+ellipsis truncation. */
+.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; }
 .rcl-standings-flag {
   flex: none;
   width: 16px;
@@ -453,6 +471,16 @@ body.rc-league-page {
   object-fit: cover;
   border-radius: 2px;
   border: 1px solid var(--rcl-line-bright);
+}
+/* Car number -- same size as the name (Matt's call), brand-red so it
+   reads as its own distinct fact on the line rather than blending into
+   the team name text next to it. */
+.rcl-standings-carnum {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--rc-red);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 /* "View Points Tables" link at the bottom of the Leaderboard panel
    (2026-09-19, Matt's call) -- opens the points tables in a popup instead
