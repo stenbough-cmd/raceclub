@@ -233,10 +233,17 @@ body.rc-league-page {
   .rcl-grid { grid-template-columns: 1fr; }
 }
 .rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
-/* Full-width rows below the two-column grid (Leaderboard/Calendar/
-   Drivers, added 2026-09-19) -- same vertical rhythm as .rcl-grid's own
-   row gap. */
+/* Full-width rows below the two-column grid (Leaderboard+Points/Calendar,
+   added 2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 28px; }
+/* Leaderboard / Points Tables 50/50 row (2026-09-19, Matt's call) --
+   separate from .rcl-grid above, which is an intentionally uneven 2fr/1fr
+   split for Recent Results/League News; these two panels are equal
+   weight. Stacks on the same breakpoint as .rcl-grid for consistency. */
+.rcl-grid-even { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+@media (max-width: 900px) {
+  .rcl-grid-even { grid-template-columns: 1fr; }
+}
 
 /* -------------------------------------------------------------------- */
 /* Section / card shell -- angled corner tab on every section header,   */
@@ -566,14 +573,9 @@ body.rc-league-page {
 /* Only used by the "no bonus points this season" fallback message now. */
 .rcl-points-bonus-chip { font-size: 12.5px; color: var(--rcl-ink-dim); }
 
-/* -------------------------------------------------------------------- */
-/* Drivers -- full roster, grouped by class (added 2026-09-19)          */
-/* -------------------------------------------------------------------- */
-.rcl-drivers-class + .rcl-drivers-class { margin-top: 22px; }
-.rcl-drivers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-.rcl-driver-card { background: var(--rcl-bg-raised-2); border: 1px solid var(--rcl-line); padding: 10px 12px; }
-.rcl-driver-name { font-size: 13px; font-weight: 700; color: var(--rcl-ink); }
-.rcl-driver-meta { margin-top: 2px; font-size: 11px; color: var(--rcl-ink-faint); }
+/* Drivers section removed 2026-09-19 (Matt's call: drivers are already
+   visible via the Leaderboard) -- .rcl-drivers-class/.rcl-drivers-grid/
+   .rcl-driver-card/.rcl-driver-name/.rcl-driver-meta rules removed. */
 
 /* -------------------------------------------------------------------- */
 /* News feed -- redesigned 2026-09-19. Only the most recent story shows */
