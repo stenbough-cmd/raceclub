@@ -380,6 +380,12 @@ body.rc-league-page {
   border-radius: 8px;
   overflow: hidden;
   position: relative;
+  /* Tiniest bit of glow (2026-09-19, Matt's ask: "a little dimension...
+     nothing crazy obvious, just something subtle") -- a soft, wide,
+     very-low-opacity light halo plus a barely-there drop shadow for a
+     touch of lift, instead of any of this page's brand-red accent. Kept
+     deliberately faint so it reads as ambient depth, not a highlight. */
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.035), 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 .rcl-panel-head {
   display: flex;
