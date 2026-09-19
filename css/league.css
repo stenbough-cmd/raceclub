@@ -353,11 +353,15 @@ body.rc-league-page {
    22px). The clip-path's skew is a percentage of WIDTH, not height, so a
    taller box spreads that same horizontal offset over more vertical
    distance -- the diagonal edge reads noticeably closer to vertical
-   without touching thickness or width at all. */
+   without touching thickness or width at all. Width nudged back up
+   slightly (2026-09-19 follow-up, Matt: "increase the width... ever
+   slightly to add a little extra lean") -- same skew percentage, so a
+   touch more width brings back a touch more angle, without undoing the
+   height change above.  */
 .rcl-panel-title::before {
   content: '';
   display: inline-block;
-  width: 12px;
+  width: 14px;
   height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
@@ -991,11 +995,12 @@ body.rc-league-page {
   gap: 10px;
 }
 /* Same taller/less-angled treatment as .rcl-panel-title::before above
-   (2026-09-19, Matt's call -- "in each container", popups included). */
+   (2026-09-19, Matt's call -- "in each container", popups included), same
+   slight width bump for a touch more lean (2026-09-19 follow-up). */
 .rcl-modal-title::before {
   content: '';
   display: inline-block;
-  width: 12px;
+  width: 14px;
   height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
