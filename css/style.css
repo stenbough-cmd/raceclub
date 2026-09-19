@@ -2263,9 +2263,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    in the stats row. */
 .rc-nextrace-date { font-size: 12px; font-weight: 700; color: var(--rc-steel); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .rc-nextrace-name { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; color: var(--rc-carbon); text-transform: uppercase; }
-/* .rc-nextrace-track removed entirely 2026-09-19 (Matt's call: "remove the
-   tracks from being shown within each") -- the track name/layout line and
-   its .rc-nextrace-track-img aside are both gone from nextRaceCard now. */
+/* .rc-nextrace-track is back (2026-09-19 follow-up, Matt's catch: "I
+   don't want the track names gone... what I don't want is the track
+   images" -- only .rc-nextrace-track-img, the image, stays removed).
+   Same size/color treatment .rc-cal-track always used. */
+.rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
+.rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;
@@ -4618,19 +4621,24 @@ body.rc-modal-scroll-locked {
    just "Race 0N". */
 .rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); }
 
-/* .rc-cal-track/.rc-cal-layout removed entirely 2026-09-19 (Matt's call:
-   "remove the tracks from being shown within each") -- see .rc-cal-mini-
-   stats below, the small pill row that took over this row's spot. */
-
-/* Small pill row where the track name/layout line used to sit (2026-09-19,
-   Matt's call: "next to the race track and layout, add a smaller race
-   length pill and a weather pill" -- track itself removed for now, so
-   these pills took over that same row). Deliberately smaller than the
-   regular .rc-cal-stat chips below (.rc-cal-mini-stat) so this doesn't
-   just become the old bottom stats row moved up a few lines. Keeps the
-   same light divider the track line used to have, separating it from the
-   date/time row below. */
-.rc-cal-mini-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+/* Track name/layout are BACK (2026-09-19 follow-up, Matt's catch: "I
+   don't want the track names gone! There was a misunderstanding. I want
+   the tracks and layouts there just how they were. What I don't want is
+   the track images" -- the earlier same-day removal of the whole track
+   line was a misread of "remove the tracks" as covering the text too,
+   not just the image). .rc-cal-track-row wraps the track/layout text
+   together with the small length/weather pills on one row -- "next to
+   the race track and layout, add a smaller race length pill and a
+   weather pill" reads literally now that the track text exists again.
+   Keeps the light divider under this row, same as it always had. */
+.rc-cal-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-cal-track { font-size: 13px; color: var(--rc-steel); }
+.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
+.rc-cal-layout { color: var(--rc-steel); font-weight: 400; }
+/* Small pills next to the track/layout text (2026-09-19, Matt's ask) --
+   deliberately smaller than the regular .rc-cal-stat chips below (.rc-cal-
+   mini-stat) so this doesn't just become the bottom stats row moved up. */
+.rc-cal-mini-stats { display: flex; flex-wrap: wrap; gap: 6px; }
 .rc-cal-mini-stat {
   padding: 2px 8px;
   font-size: 11px;

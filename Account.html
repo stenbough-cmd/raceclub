@@ -1499,9 +1499,16 @@
     if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     info.appendChild(nameWrap);
 
-    // Track name/layout line removed entirely (2026-09-19, Matt's call:
-    // "remove the tracks from being shown within each. I am removing this
-    // design choice for now and may add it back later somehow").
+    // Track name/layout line is back (2026-09-19 follow-up, Matt's catch:
+    // "I don't want the track names gone! There was a misunderstanding.
+    // I want the tracks and layouts there just how they were. What I
+    // don't want is the track images" -- only the track IMAGE below was
+    // ever meant to go). Same treatment as the Calendar's own .rc-cal-
+    // track (bold track name, layout trailing in lighter steel text).
+    var trackLine = el('div', 'rc-nextrace-track');
+    trackLine.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
+      (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
+    info.appendChild(trackLine);
 
     var stats = el('div', 'rc-cal-stats');
     // Weather pill (2026-08-31, Matt's call) -- same chip the Calendar
@@ -4115,19 +4122,26 @@
     head.appendChild(nameWrap);
     body.appendChild(head);
 
-    // Small pill row where the track line used to sit (2026-09-19, Matt's
-    // call: "next to the race track and layout, add a smaller race length
-    // pill and a weather pill" -- track itself is being removed for now,
-    // so these two small pills take over that row instead). Deliberately
-    // smaller than the old .rc-cal-stats chips (.rc-cal-mini-stat) so this
-    // row doesn't just become the same bottom stats row moved upward.
+    // Track name/layout are back (2026-09-19 follow-up, Matt's catch:
+    // "I don't want the track names gone! There was a misunderstanding.
+    // I want the tracks and layouts there just how they were. What I
+    // don't want is the track images" -- only the track IMAGE was ever
+    // meant to go, not the text). Small length/weather pills sit next to
+    // it on the same row (Matt's original ask), in .rc-cal-track-row.
+    var trackRow = el('div', 'rc-cal-track-row');
+    var trackText = el('div', 'rc-cal-track');
+    trackText.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
+      (entry.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(entry.layout) + '</span>' : '');
+    trackRow.appendChild(trackText);
+
     var miniStats = el('div', 'rc-cal-mini-stats');
     if (!isSpecial && entry.raceLengthMinutes) {
       miniStats.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length', 'rc-cal-mini-stat'));
     }
     miniStats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
     if (entry.passwordOverride) miniStats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride, 'rc-cal-mini-stat'));
-    body.appendChild(miniStats);
+    trackRow.appendChild(miniStats);
+    body.appendChild(trackRow);
 
     var datetime = el('div', 'rc-cal-datetime');
     var dtSpan = el('span', null, ICON_CLOCK + '<span>' + escapeHtml(formatRaceDateTime(entry.startUtc, driverTz)) + '</span>');
