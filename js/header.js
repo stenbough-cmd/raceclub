@@ -15,8 +15,18 @@
     to index.html, so it was a redundant second way to do the same thing.
   - The logo and avatar are both slightly larger (38px -> 46px logo,
     32px -> 40px avatar) to give the header a bit more presence.
-  - Logged out: just "REGISTER/LOGIN", same single link to login.html as
-    before, HOME's separator gone with it.
+  - Logged out: "LEAGUE HUB · REGISTER/LOGIN" (League Hub added 2026-09-18,
+    since league.html is public).
+  - Logged in: League Hub moves out of the top bar and into the account
+    dropdown instead (top of the menu, above a divider) -- added
+    2026-09-18, same day league.html shipped.
+  - The dropdown now mirrors Account.html's own sidebar order/gating in
+    full (2026-09-19): Dashboard, Calendar, Results, Protests, Career, a
+    divider, League Hub, then whichever of Admin/League Tools/Stewarding
+    this role unlocks, a divider, Help, Edit Profile, a divider, Logout.
+    See _rcBuildAccountMenuSectionLinks below and its click wiring in
+    renderHeader() for how each link switches sections in place on
+    Account.html itself but does a real navigation from anywhere else.
   - Logged in: the avatar + name/role stack (First Last in caps, bold;
     role -- Prospect/Driver/Steward/Organizer/Admin -- underneath in a
     lighter weight and color) and the chevron are now ONE single clickable
@@ -75,15 +85,15 @@
   deliberately separate from the avatar's own account-menu dropdown, so
   "there's something to react to" and "here's your account menu" stay two
   unrelated ideas. Every renderHeader() call fetches its own notifications
-  in the background (no opts flag to skip it). The admin "an account is
-  waiting on your approval" type that originally lived here (sourced from
-  adminListPendingAccounts, client-side-acknowledged via localStorage) is
-  gone entirely (2026-09-19, Matt's call: no more admin-approval queue --
-  see the VALID_ROLES header comment in Auth.gs). What's left: 'season'
-  and 'welcome'/'upgrade' (server-side, Notifications sheet-backed -- see
-  NEW-SEASON NOTIFICATIONS below) and 'sponsors' (derived live, still
-  client-side-acked via RC_NOTIF_ACK_KEY/localStorage -- see
-  _rcFetchSponsorNotifications).
+  in the background. The admin "an account is waiting on your approval"
+  type that used to live here (sourced from adminListPendingAccounts,
+  client-side-acknowledged via localStorage) is gone entirely (2026-09-19,
+  Matt's call: no more admin-approval queue -- Members are grouped by role
+  via adminListDrivers' hasSeat flag instead, see Account.html). What's
+  left: 'season', 'upgrade', and 'welcome' ("Choose an avatar!", added
+  2026-09-19) -- all server-side, Notifications sheet-backed, see
+  NEW-SEASON NOTIFICATIONS below. The old sponsors notification type is
+  also gone (2026-09-17 V1 scope cut, Sponsorship system out of the site).
 
   ACCOUNT DROPDOWN STAYS RED WHILE OPEN (this pass): the avatar used to
   only turn red on :hover. Now .rc-header-account-toggle[aria-expanded]
@@ -100,14 +110,12 @@
 
   NEW-SEASON NOTIFICATIONS (2026-08-30, Matt's ask): a notification type
   backed by a real server-side Notifications sheet + each driver's own
-  NotificationState (unlike the client-side-only localStorage
-  acknowledgement the sponsors type still uses) -- see
-  handleGetNotifications/handleDismissNotifications in DataCache.gs. Fires
-  the moment a season actually becomes open for registration; visible to
-  Driver role and above (Prospects have nothing to
+  NotificationState -- see handleGetNotifications/handleDismissNotifications
+  in DataCache.gs. Fires the moment a season actually becomes open for
+  registration; visible to Driver role and above (Prospects have nothing to
   register for yet, same gate the Registration Status/Current Seat dashboard
   cards already use). Each item shows a date stamp and has NO OK button --
-  unlike the sponsors type, it dismisses itself automatically once
+  it dismisses itself automatically once
   the driver has actually seen it: closing the bell dropdown (not opening
   it -- see below) dismisses every season notification that was showing,
   moving it into that driver's own capped-at-5 history list (shown further
@@ -143,7 +151,7 @@
   button below it. Everything else (plain success/failure results with no
   attached action) now goes through showToast.
 */
-var RC_HEADER_HEIGHT = 72;
+var RC_HEADER_HEIGHT = 70;
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
 function _rcEnsureToastContainer() {
@@ -197,6 +205,36 @@ function showToast(message, type, durationMs) {
   closeBtn.addEventListener('click', dismiss);
   timeoutId = setTimeout(dismiss, durationMs);
   return { dismiss: dismiss };
+}
+
+// Builds the Dashboard..Stewarding portion of the account dropdown,
+// mirroring Account.html's sidebar order/gating exactly (see the big
+// comment at that markup's call site above). Kept as its own function
+// since it needs the role gating math but not any of the DOM the rest
+// of renderHeader() has already built yet.
+function _rcBuildAccountMenuSectionLinks(role) {
+  function link(section, label) {
+    return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + label + '</a>';
+  }
+  // League Hub moved to the very top of the dropdown, above Dashboard
+  // (2026-09-19, Matt's call) -- mirrors the same move in Account.html's
+  // sidebar (buildSidebarNav). Off-page link to the public league.html,
+  // not an in-page section, so it skips data-rc-section entirely (same as
+  // before this reorder).
+  var html = '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
+  html += '<hr class="rc-header-menu-divider">';
+  html += link('dashboard', 'Dashboard') + link('calendar', 'Calendar') + link('results', 'Results') +
+    link('protests', 'Protests') + link('career', 'Career');
+  // A second divider between Career and the permission-gated items --
+  // only when at least one of them actually shows for this role, so a
+  // Driver/Steward-without-Organizer account never ends up with two
+  // dividers back to back and nothing between them.
+  var hasGatedItems = role === 'Admin' || role === 'Organizer' || role === 'Steward';
+  if (hasGatedItems) html += '<hr class="rc-header-menu-divider">';
+  if (role === 'Admin') html += link('admin', 'Admin');
+  if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools');
+  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding');
+  return html;
 }
 
 function _rcHeaderInitials(name) {
@@ -274,31 +312,12 @@ function _rcAckNotif(id) {
   }
 }
 
-// "Choose your sponsors" notification (2026-09-01, Matt's call: "make a
-// notification to choose sponsors after signing up for a team"). Derived
-// LIVE off getMySponsors -- not its own stored/tracked event -- so it
-// simply stops being generated the moment it's no longer true: the driver
-// picks at least one sponsor, or the season locks sponsor picks at
-// season-start. That's also what satisfies "automatically acknowledge...
-// if the driver picks sponsors" for this notification specifically, with
-// no separate dismiss bookkeeping needed. Still goes through the same
-// client-side ack list ("Clear" -- see _rcClearAllNotifications below --
-// acks any kind that isn't 'season'/'upgrade'/'welcome'), so a
-// driver who isn't ready to pick yet can dismiss it by hand too -- picking
-// sponsors later still clears it on its own regardless of ack state, since
-// it just won't be regenerated once hasSponsors is true.
-function _rcFetchSponsorNotifications(token, cached) {
-  if (!cached || cached.role === 'Prospect') return Promise.resolve([]);
-  return fetchApi('getMySponsors', { token: token })
-    .then(function (data) {
-      if (!data || !data.success || !data.hasSeat || data.hasSponsors || data.locked) return [];
-      var id = 'sponsors-' + data.seasonId;
-      var acked = _rcGetAckedNotifIds();
-      if (acked.indexOf(id) !== -1) return [];
-      return [{ id: id, kind: 'sponsors', message: 'Choose your sponsors for the season.', section: 'sponsors', fullRowLink: true }];
-    })
-    .catch(function () { return []; });
-}
+// The admin "an account is waiting on your approval" notification (and
+// its _rcFetchNotifications helper) is gone entirely (2026-09-19, Matt's
+// call: no more admin-approval queue). "Choose your sponsors" (and its
+// _rcFetchSponsorNotifications helper) was removed earlier, 2026-09-17 --
+// V1 scope cut, the whole Sponsorship system is out of the site for now.
+// See season-1-mvp-scope.md.
 
 // New-season + account-upgrade notifications (added 2026-08-30). Backed by
 // a real Notifications sheet + each driver's own NotificationState, not
@@ -393,6 +412,22 @@ var _rcNotifController = null;
 var _rcNotifPollTimer = null;
 var RC_NOTIF_POLL_MS = 45000;
 
+// Click-outside/Escape listener leak fix (2026-09-13, sitewide review) --
+// renderHeader() runs more than once per page (same reason the poll timer
+// above needs the clear-then-restart dance), and every run used to attach
+// a FRESH document-level click and keydown listener via a fresh closure
+// over that run's own toggle/menu/bellToggle/notifMenu elements, with
+// nothing ever removing the previous run's pair. mount.innerHTML replaces
+// those elements each render, so the old listeners kept running forever
+// against now-detached nodes -- harmless individually (a `.contains()`
+// check against a disconnected element is just always false) but an
+// unbounded, ever-growing pair of document listeners for the life of the
+// tab, one more added every single header re-render. Same fix as the poll
+// timer: stash the current handler here, remove it before attaching the
+// next one.
+var _rcHeaderOutsideClickHandler = null;
+var _rcHeaderEscapeHandler = null;
+
 // Called by Account.html once a registration actually succeeds (see
 // buildRegistrationModal's onDone) -- dismisses that season's notification
 // immediately, same as closing the bell after seeing it would. Falls back
@@ -416,11 +451,11 @@ function rcDismissSeasonNotification(seasonId) {
 // notification without the driver ever opening the bell (2026-09-01,
 // Matt's call: "automatically acknowledge any pending notification if any
 // relevant action is done without visiting the notification dropdown
-// first") -- e.g. right after a driver's sponsor picks save successfully,
-// so the "Choose your sponsors" notification (which is derived live off
-// getMySponsors, see _rcFetchSponsorNotifications) disappears immediately
-// instead of lingering until the next 45s poll tick. A no-op if the bell
-// hasn't rendered this state yet (logged out, or this page has no header).
+// first"). The sponsor-picking use case this was originally written for is
+// gone (2026-09-17 V1 scope cut), but other callers (e.g. right after
+// joinTeam) still use this to refresh the bell immediately instead of
+// waiting for the next 45s poll tick. A no-op if the bell hasn't rendered
+// this state yet (logged out, or this page has no header).
 function rcRefreshNotificationsNow() {
   if (_rcNotifController && typeof _rcNotifController.refresh === 'function') _rcNotifController.refresh();
 }
@@ -483,6 +518,14 @@ function renderHeader(opts) {
             '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
   html += '<nav class="rc-header-nav">';
+  // League Hub link -- top navbar only while logged OUT, next to LOGIN/
+  // REGISTER (2026-09-18, Matt's call). Once logged in it moves into the
+  // account dropdown instead (see the menu markup below) rather than
+  // sitting in the top bar twice.
+  if (!token) {
+    html += '<a class="rc-header-link" href="league.html">LEAGUE HUB</a>';
+    html += '<span class="rc-header-sep">·</span>';
+  }
   if (token) {
     var displayName = cached ? (cached.displayName || '') : '';
     var initials = _rcHeaderInitials(displayName);
@@ -498,6 +541,14 @@ function renderHeader(opts) {
               // much bigger than the visible icon, so a dot positioned off
               // the button's own corner used to land well outside the bell
               // itself. Matt's call, 2026-08-30.
+              // Left at 19x19, not the site's usual 16x16 icon standard
+              // (2026-09-13 sitewide review flagged this as an inconsistency
+              // "where feasible" to fix -- this one isn't): .rc-header-bell-
+              // icon-wrap above is sized to match this exact 19x19, and the
+              // .rc-notif-dot's -10px/-8px offsets were tuned against that
+              // same size. Shrinking the svg without re-tuning both would
+              // pull the unread-count dot off the bell's corner again --
+              // the exact bug this whole wrapper was built to fix.
               '<span class="rc-header-bell-icon-wrap">' +
                 '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>' +
                 '<span class="rc-notif-dot" id="rc-header-bell-dot" style="display:none;"></span>' +
@@ -533,11 +584,34 @@ function renderHeader(opts) {
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
                 '<span class="rc-header-account-role">' + escapeHtmlHeader_(role) + '</span>' +
               '</span>' +
-              '<svg class="rc-header-account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+              // 16x16 (2026-09-13 fix, sitewide review) -- was 14x14, the one
+              // outlier against the 16x16 standard every other small nav/menu
+              // icon on the site uses (Account.html's ICON_CHEVRON_DOWN and
+              // the rest of its icon set). No CSS width/height override on
+              // .rc-header-account-chevron, so this inline attribute is the
+              // only place the size is set -- safe to bump with no other
+              // measurement (unlike the bell icon below) tied to it.
+              '<svg class="rc-header-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
             '</button>' +
+            // Dropdown now mirrors Account.html's own sidebar, same order
+            // (2026-09-19, Matt's call) -- Dashboard/Calendar/Results/
+            // Protests/Career, a divider, League Hub, then whichever of
+            // Admin/League Tools/Stewarding this role actually unlocks
+            // (same cumulative Driver<Steward<Organizer<Admin hierarchy
+            // Account.html's own nav gating uses), a divider, Help/Edit
+            // Profile, a divider, Logout. Every section link uses the
+            // Account.html#<id> hash + data-rc-section pattern the
+            // notification bell's own links already established -- see
+            // the click wiring below, which reuses that exact "call
+            // window.rcNavigateToSection in place if it's there (we're
+            // already on Account.html), otherwise let the href really
+            // navigate there" bridge.
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
-              '<a class="rc-header-menu-item" href="Account.html">Dashboard</a>' +
+              _rcBuildAccountMenuSectionLinks(role) +
+              '<hr class="rc-header-menu-divider">' +
+              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
+              '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
@@ -586,15 +660,23 @@ function renderHeader(opts) {
       evt.stopPropagation();
       if (notifMenu.style.display === 'block') closeNotifMenu(); else openNotifMenu();
     });
-    document.addEventListener('click', function (evt) {
+    // Remove the previous render's document-level listeners before adding
+    // this render's (2026-09-13 leak fix -- see _rcHeaderOutsideClickHandler
+    // above) instead of just stacking another pair on top.
+    if (_rcHeaderOutsideClickHandler) document.removeEventListener('click', _rcHeaderOutsideClickHandler);
+    if (_rcHeaderEscapeHandler) document.removeEventListener('keydown', _rcHeaderEscapeHandler);
+
+    _rcHeaderOutsideClickHandler = function (evt) {
       if (menu.style.display === 'block' && !menu.contains(evt.target) && !toggle.contains(evt.target)) closeAccountMenu();
       if (notifMenu.style.display === 'block' && !notifMenu.contains(evt.target) && !bellToggle.contains(evt.target)) closeNotifMenu();
-    });
-    document.addEventListener('keydown', function (evt) {
+    };
+    _rcHeaderEscapeHandler = function (evt) {
       if (evt.key !== 'Escape') return;
       if (menu.style.display === 'block') closeAccountMenu();
       if (notifMenu.style.display === 'block') closeNotifMenu();
-    });
+    };
+    document.addEventListener('click', _rcHeaderOutsideClickHandler);
+    document.addEventListener('keydown', _rcHeaderEscapeHandler);
 
     // Both dropdowns also close the instant the pointer leaves BOTH their
     // toggle button and their own menu, not just on an outside click --
@@ -604,6 +686,23 @@ function renderHeader(opts) {
     _rcWireHoverAwayClose([toggle, menu], closeAccountMenu);
     _rcWireHoverAwayClose([bellToggle, notifMenu], closeNotifMenu);
 
+    // Section links (Dashboard..Stewarding/Help, added 2026-09-19) --
+    // same bridge pattern the notification bell's own links use just
+    // above: call window.rcNavigateToSection in place when it exists
+    // (we're already on Account.html, so this just switches sections,
+    // no reload), otherwise let the href do a real navigation to
+    // Account.html#<section>, which that page's own load-time hash
+    // check picks up and opens directly.
+    Array.prototype.forEach.call(menu.querySelectorAll('[data-rc-section]'), function (a) {
+      a.addEventListener('click', function (evt) {
+        closeAccountMenu();
+        if (typeof window.rcNavigateToSection === 'function') {
+          evt.preventDefault();
+          window.rcNavigateToSection(a.getAttribute('data-rc-section'));
+        }
+      });
+    });
+
     // Edit Profile -- works from any page (2026-09-01, Matt's call), not
     // just Account.html's own sidebar. window.rcOpenEditProfileModal is a
     // bridge Account.html sets once its profile/token are actually loaded
@@ -612,10 +711,7 @@ function renderHeader(opts) {
     // (any other page, or Account.html mid-load), stash a flag and
     // navigate there instead; Account.html checks that flag once its own
     // load finishes and opens the modal itself, same handoff pattern
-    // already used for a fresh-login profile payload. Factored out to
-    // _rcOpenEditProfileFromHeader (2026-09-19) so the "Choose an avatar!"
-    // notification link (see the 'welcome' kind below) can reuse the exact
-    // same bridge instead of navigating to an Account.html section.
+    // already used for a fresh-login profile payload.
     document.getElementById('rc-header-menu-editprofile').addEventListener('click', function () {
       closeAccountMenu();
       _rcOpenEditProfileFromHeader();
@@ -631,17 +727,18 @@ function renderHeader(opts) {
     });
 
     // ---------------------------------------------------------------
-    // NOTIFICATION BELL -- fetched in the background on every render.
+    // NOTIFICATION BELL -- fetched in the background on every render
+    // (see header comment above for why opts.skipNotifCheck is gone).
     // currentNotifications/currentNotifHistory are closured so the
-    // sponsors type's client-side ack (via "Clear") and the dismiss-on-
-    // close flow (season/upgrade/welcome types, see closeNotifMenu above)
-    // can mutate and re-render them. Kinds sharing this one list: 'season'
-    // (Driver+, server-side dismiss, added 2026-08-30), 'upgrade' (any
-    // account whose Status/Role just increased, server-side dismiss, also
-    // added 2026-08-30), 'welcome' ("Choose an avatar!", server-side
+    // dismiss-on-close flow (season/upgrade/welcome types, see
+    // closeNotifMenu above) can mutate and re-render them. Three
+    // notification kinds share this one list: 'season' (Driver+,
+    // server-side dismiss, added 2026-08-30), 'upgrade' (any account whose
+    // Status/Role just increased, server-side dismiss, also added
+    // 2026-08-30 -- see handleGetNotifications/createAccountUpgradeNotification_
+    // in DataCache.gs), and 'welcome' ("Choose an avatar!", server-side
     // dismiss, added 2026-09-19 -- see createChooseAvatarNotification_ in
-    // DataCache.gs), and 'sponsors' (client-side ack, derived live off
-    // getMySponsors).
+    // DataCache.gs).
     // ---------------------------------------------------------------
     var currentNotifications = [];
     var currentNotifHistory = [];
@@ -724,8 +821,8 @@ function renderHeader(opts) {
               linkEl.href = 'Account.html';
               linkEl.addEventListener('click', function (evt) {
                 evt.preventDefault();
-                _rcOpenEditProfileFromHeader();
                 closeNotifMenu();
+                _rcOpenEditProfileFromHeader();
               });
             } else {
               linkEl.href = 'Account.html#' + n.section;
@@ -817,9 +914,9 @@ function renderHeader(opts) {
 
     // "Clear" (2026-09-01, Matt's call) -- acknowledges/dismisses
     // EVERYTHING currently showing at once, regardless of kind: the
-    // OK-ackable, client-side-tracked type (sponsors) gets its id written
-    // to the client-side ack list same as clicking its OK button by hand,
-    // and any season/upgrade/welcome items go through the exact same
+    // OK-ackable types (pending-approval, sponsors) get their ids written
+    // to the client-side ack list same as clicking each OK button by hand,
+    // and any season/upgrade items go through the exact same
     // dismiss-and-move-to-history path _rcDismissShownSeasonNotifs already
     // uses on close. Leaves the dropdown open (clearing isn't the same
     // gesture as closing) so the driver sees the empty state right away.
@@ -871,13 +968,12 @@ function renderHeader(opts) {
     // currently open (rare -- a driver rarely leaves it open 45+ seconds --
     // and matches how a freshly-arrived item should just appear).
     function _rcRefreshNotifications() {
-      return Promise.all([
-        _rcFetchSeasonNotifications(token, cached),
-        _rcFetchSponsorNotifications(token, cached)
-      ]).then(function (results) {
-        var season = results[0] || { active: [], history: [] };
-        var sponsors = results[1] || [];
-        currentNotifications = sponsors.concat(season.active);
+      // No more admin-approval-queue fetch here (2026-09-19, Matt's call).
+      // Sponsor notifications were dropped earlier, 2026-09-17 -- V1 scope
+      // cut, Sponsorship system out of the site. See season-1-mvp-scope.md.
+      return _rcFetchSeasonNotifications(token, cached).then(function (season) {
+        season = season || { active: [], history: [] };
+        currentNotifications = season.active;
         currentNotifHistory = season.history;
         _rcRenderNotifList();
         updateHeaderNotifDot(currentNotifications.length);
