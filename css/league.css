@@ -115,6 +115,22 @@ body.rc-league-page {
   color: var(--rc-red);
 }
 .rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
+/* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated
+   line") -- closes out each run before it repeats, so the ticker reads as
+   a continuous "...item • item..." at the point it loops back to the
+   start, the same way a real news ticker marks its repeat. No
+   border-right of its own (unlike .rcl-ticker-item) -- the dot itself is
+   the separator here, a second vertical line right next to it would be
+   redundant. */
+.rcl-ticker-loop-dot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--rc-red);
+}
 
 /* -------------------------------------------------------------------- */
 /* Hero band -- season name, hard angled bottom edge                    */

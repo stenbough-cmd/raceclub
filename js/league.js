@@ -207,6 +207,16 @@ function _rclRenderTicker(hub) {
     return;
   }
 
+  // A trailing dot closes out every run (2026-09-19, Matt's ask: "just
+  // repeat the same line after the first one automatically... a dot in
+  // between the repeated line would be a nice touch") -- since each run
+  // is identical and both carry the same trailing dot, the seam where the
+  // second run picks back up right after the first reads as "...item •
+  // item..." the same way a real news ticker separates its loop point,
+  // rather than the two runs just butting up against each other. Kept
+  // INSIDE buildRun (not appended once between the two calls below) so
+  // the two halves stay exactly equal-width, which is what makes the
+  // translateX(-50%) loop seamless in the first place.
   function buildRun() {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
@@ -215,6 +225,7 @@ function _rclRenderTicker(hub) {
       el.appendChild(document.createTextNode(item.text));
       frag.appendChild(el);
     });
+    frag.appendChild(_rclEl('div', 'rcl-ticker-loop-dot', '&bull;'));
     return frag;
   }
 

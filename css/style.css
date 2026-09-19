@@ -2149,6 +2149,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-regstatus-headline-open { color: var(--rc-warning); }
 .rc-regstatus-headline-done { color: var(--rc-positive); }
 .rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
+/* Roster-lock memo (2026-09-19) -- reuses .rc-regstatus-sub's size/color
+   but italicized and given its own top margin so it reads as a standing
+   rule sitting below the confirmation line, not a continuation of it. */
+.rc-regstatus-memo { font-style: italic; margin-top: 6px; }
 /* padding-top back to the same 14px every other card's divider row uses
    (2026-09-01, Matt's call: "move up the date and class to the same
    level as the other cards' categories, don't change anything with the

@@ -1091,13 +1091,22 @@
       var row = el('div', 'rc-regstatus-row');
       row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-done', '&#10003;'));
       var text = el('div');
-      // Just "REGISTERED FOR SEASON n" now (2026-09-01, Matt's call) --
-      // dropped the season name, which was redundant with the season
-      // number right next to it.
+      // "REGISTERED FOR SEASON N: <SEASON NAME>" (2026-09-19, Matt's
+      // call) -- reverses the 2026-09-01 change that dropped the season
+      // name as redundant; Matt now wants it back alongside the number.
       var regSeasonNum = seasonNumberLabel(data.seasonId);
       var regSeasonLabel = regSeasonNum ? ('SEASON ' + regSeasonNum) : 'SEASON';
+      if (data.seasonName) regSeasonLabel += ': ' + data.seasonName;
       text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml(regSeasonLabel)));
       text.appendChild(el('div', 'rc-regstatus-sub', 'Your registration is complete.'));
+      // Roster-lock memo (2026-09-19, Matt's ask: add a note that a driver
+      // must race only their registered car for the whole season, with
+      // penalties for not doing so) -- sits right under the "complete"
+      // line as its own smaller, muted note rather than folded into that
+      // sentence, so it reads as a standing rule rather than part of the
+      // confirmation itself.
+      text.appendChild(el('div', 'rc-regstatus-sub rc-regstatus-memo',
+        'All drivers must race in only their registered car for the entire season. Penalties will be levied for violations.'));
       row.appendChild(text);
       body.appendChild(row);
 
