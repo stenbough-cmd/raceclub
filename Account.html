@@ -558,10 +558,6 @@
     return hr;
   }
 
-  function showUpperNavDivider() {
-    document.getElementById('rc-nav-divider-upper').style.display = '';
-  }
-
   // Sets whether a sidebar nav item (by its elId) is usable, instead of
   // hiding it entirely (2026-09-19, Matt's call: "I want all buttons to be
   // visible in the LEAGUE TOOLS... and only show disabled if they cannot
@@ -641,9 +637,16 @@
       }
       nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
     });
-    var upperDivider = navDivider('rc-nav-divider-upper');
-    upperDivider.style.display = 'none';
-    nav.appendChild(upperDivider);
+    // Always visible from the moment the sidebar first renders (2026-09-19
+    // fix, Matt's catch: "the line above ADMIN... isn't visible
+    // automatically and only becomes visible after the page confirms the
+    // level of the user... I want the sidebar to look the same from the
+    // moment it loads"). Admin/League Tools/Stewarding themselves already
+    // always render now too (see the comment on adminBtn below), so there's
+    // no longer any state where this divider should be hidden -- showing it
+    // immediately, instead of waiting on setNavAccess() to reveal it once
+    // the profile loads, removes the layout shift that caused.
+    nav.appendChild(navDivider('rc-nav-divider-upper'));
     // Admin (2026-08-30: no longer just a placeholder) now hosts what
     // Data Management used to show -- Members/Tracks/Cars/Sponsors, each
     // opening its own popup from here (openMembersModal etc.) rather than
@@ -9026,9 +9029,9 @@
     // this link exists ahead of the page it opens.
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
-    // Divider above these three always shows now that they're always
-    // visible (it used to only appear once at least one of them unlocked).
-    showUpperNavDivider();
+    // Divider above these three is always visible from initial sidebar
+    // render now (see navDivider('rc-nav-divider-upper') in
+    // buildSidebarNav) -- nothing left to do here.
 
     renderDashboardSection(profile, token, dashboardData);
 
