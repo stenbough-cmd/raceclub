@@ -761,6 +761,12 @@ body.rc-league-page {
 .rcl-news-body p { margin: 0 0 0.8em; }
 .rcl-news-body p:last-child { margin-bottom: 0; }
 .rcl-news-body strong { color: var(--rcl-ink); }
+/* Email link (2026-09-19, from the news editor's new "@" toolbar button)
+   -- brand red, underlined, so it reads as a deliberate link against the
+   page's dim body-text color rather than blending into the surrounding
+   sentence. */
+.rcl-news-link { color: var(--rc-red); text-decoration: underline; }
+.rcl-news-link:hover { color: var(--rc-red-dark); }
 .rcl-news-quote {
   margin: 0 0 0.8em;
   padding-left: 14px;

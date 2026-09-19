@@ -662,12 +662,16 @@ function _rclOpenPointsModal(hub) {
 // ---------------------------------------------------------------------
 // NEWS FEED -- admin-authored, Body is plain text with a small set of
 // hand-rolled formatting markers the New/Edit Post popup's toolbar
-// inserts (Account.html): **bold**, *italic*, ++underline++, and lines
-// starting with "> " become a blockquote. Escaped first, THEN those
-// markers are turned into real tags -- the markers themselves (*, +, >)
-// are never touched by HTML-escaping, so this order is safe: nothing a
-// poster types can inject a real tag, only these four specific patterns
-// ever turn into one.
+// inserts (Account.html): **bold**, *italic*, ++underline++, lines
+// starting with "> " become a blockquote, and (2026-09-19 follow-up)
+// [Link Text](mailto:someone@example.com) becomes a real mailto link.
+// Escaped first, THEN those markers are turned into real tags -- the
+// markers themselves (*, +, >, [, ], (, )) are never touched by HTML-
+// escaping, so this order is safe: nothing a poster types can inject a
+// real tag, only these five specific patterns ever turn into one. The
+// mailto pattern only matches an actual mailto: URL (never an arbitrary
+// href) -- Account.html's toolbar button is the only thing meant to
+// produce this marker, and it always writes a mailto: prefix.
 //
 // Redesigned 2026-09-19 (Matt's call): only the single most recent story
 // shows in full (clamped to a few lines with a "Continue reading..."
@@ -680,7 +684,12 @@ function _rclApplyInlineMarkup(escapedText) {
   return escapedText
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\+\+([^+]+)\+\+/g, '<u>$1</u>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // Email link, added 2026-09-19 -- [Link Text](mailto:someone@x.com).
+    // Run last, and its own capture groups are matched against the
+    // ALREADY-escaped text, so this can't be tricked into matching across
+    // an entity like &amp; the way an earlier, greedier pass might.
+    .replace(/\[([^\]]+)\]\(mailto:([^)]+)\)/g, '<a class="rcl-news-link" href="mailto:$2">$1</a>');
 }
 
 // Renders a story's Body into `container` as real paragraph/blockquote

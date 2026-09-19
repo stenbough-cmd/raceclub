@@ -2149,10 +2149,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-regstatus-headline-open { color: var(--rc-warning); }
 .rc-regstatus-headline-done { color: var(--rc-positive); }
 .rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
-/* Roster-lock memo (2026-09-19) -- reuses .rc-regstatus-sub's size/color
-   but italicized and given its own top margin so it reads as a standing
-   rule sitting below the confirmation line, not a continuation of it. */
-.rc-regstatus-memo { font-style: italic; margin-top: 6px; }
+/* .rc-regstatus-memo removed 2026-09-19 follow-up -- the roster-lock memo
+   now REPLACES the "Your registration is complete." .rc-regstatus-sub
+   line entirely (Matt's call) instead of sitting below it as its own
+   italicized line, so it just uses the plain .rc-regstatus-sub style. */
 /* padding-top back to the same 14px every other card's divider row uses
    (2026-09-01, Matt's call: "move up the date and class to the same
    level as the other cards' categories, don't change anything with the
@@ -4476,7 +4476,11 @@ body.rc-modal-scroll-locked {
    pills here) on the right. The red underline moved here from the title
    itself, so it spans the whole row including the pills, not just the
    text. */
-.rc-cal-season-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
+/* align-items: center, not baseline (2026-09-19, Matt's call: "make the
+   class pills vertically centered with the header") -- baseline aligned
+   the pill row to the h3 title's text baseline, which sat the pills
+   noticeably low against the title's own cap-height/line-box. */
+.rc-cal-season-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 .rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
 /* Overrides .rc-cal-classes' own margin-top (below) -- that spacing is for
    when the pills sit under something; inline in the header row, they need

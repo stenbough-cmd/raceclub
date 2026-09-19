@@ -1098,14 +1098,13 @@
       var regSeasonLabel = regSeasonNum ? ('SEASON ' + regSeasonNum) : 'SEASON';
       if (data.seasonName) regSeasonLabel += ': ' + data.seasonName;
       text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml(regSeasonLabel)));
-      text.appendChild(el('div', 'rc-regstatus-sub', 'Your registration is complete.'));
-      // Roster-lock memo (2026-09-19, Matt's ask: add a note that a driver
-      // must race only their registered car for the whole season, with
-      // penalties for not doing so) -- sits right under the "complete"
-      // line as its own smaller, muted note rather than folded into that
-      // sentence, so it reads as a standing rule rather than part of the
-      // confirmation itself.
-      text.appendChild(el('div', 'rc-regstatus-sub rc-regstatus-memo',
+      // Roster-lock memo REPLACES "Your registration is complete." now
+      // (2026-09-19 follow-up, Matt's call: "put this... in place for
+      // 'Your registration is complete.'") -- the plain confirmation line
+      // said nothing the headline above it didn't already say, so the
+      // standing-rule memo just takes its spot instead of sitting as a
+      // second line underneath it.
+      text.appendChild(el('div', 'rc-regstatus-sub',
         'All drivers must race in only their registered car for the entire season. Penalties will be levied for violations.'));
       row.appendChild(text);
       body.appendChild(row);
@@ -1608,13 +1607,18 @@
     // Finances/every other featured panel on the site already uses.
     var card = el('div', 'rc-panel rc-dash-card rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
 
-    // --- Header: season name + number (standard header-row/corner-figure
-    // treatment, same as Next Race's "ROUND N OF total"), then a plain
-    // meta line underneath for the date range and status pills. ---------
+    // --- Header: "SEASON N: <NAME>" in the title itself (2026-09-19
+    // follow-up, Matt's call: "make the title of the container say
+    // SEASON N: <SEASON NAME> like the other pages") -- same combined
+    // format the Calendar/Results season headers already use (see
+    // renderCalendarSection's own head.appendChild(el('h3', ...)) below),
+    // replacing the separate corner-figure treatment this card used
+    // instead. Plain meta line underneath for the date range and status
+    // pills. ---------------------------------------------------------
     var head = el('div', 'rc-dash-card-header-row');
-    head.appendChild(el('h3', 'rc-dash-card-header-title', escapeHtml(s.seasonName || s.seasonId)));
     var seasonNumLabel = seasonNumberLabel(s.seasonId);
-    if (seasonNumLabel) head.appendChild(el('div', 'rc-dash-card-corner-figure', 'SEASON ' + seasonNumLabel));
+    var titleText = (seasonNumLabel ? ('Season ' + seasonNumLabel + ': ') : '') + (s.seasonName || s.seasonId);
+    head.appendChild(el('h3', 'rc-dash-card-header-title', escapeHtml(titleText)));
     card.appendChild(head);
 
     var metaRow = el('div', 'rc-career-card-meta');
@@ -7283,10 +7287,12 @@
 
   // Formatting toolbar (added 2026-09-19) -- inserts plain-text markers
   // around the textarea's current selection: **bold**, *italic*,
-  // ++underline++, and "> " line-quote. No rich-text editor here on
-  // purpose -- the Body column stays a plain string, and js/league.js's
-  // public feed is what turns these specific markers into real <strong>/
-  // <em>/<u>/<blockquote> tags at render time (see its
+  // ++underline++, "> " line-quote, and (2026-09-19 follow-up)
+  // [Link Text](mailto:EMAIL@EXAMPLE.COM) for an email link. No rich-text
+  // editor here on purpose -- the Body column stays a plain string, and
+  // js/league.js's public feed is what turns these specific markers into
+  // real <strong>/<em>/<u>/<blockquote>/<a href="mailto:..."> tags at
+  // render time (see its
   // _rclApplyInlineMarkup/_rclRenderStoryBodyBlocks). Wrapping/prefixing
   // by hand (not execCommand, which is for contenteditable, not a plain
   // textarea) so this works identically in every browser.
@@ -7329,6 +7335,31 @@
     toolBtn('I', 'Italic', function () { _rcWrapTextareaSelection(textarea, '*', '*'); }).style.fontStyle = 'italic';
     toolBtn('U', 'Underline', function () { _rcWrapTextareaSelection(textarea, '++', '++'); }).style.textDecoration = 'underline';
     toolBtn('"', 'Quote', function () { _rcPrefixTextareaLines(textarea, '> '); });
+    // Email link (2026-09-19, Matt's ask: "give me the ability to add an
+    // email link to a news story... a button click adds the necessary
+    // code within the story and I can just add my email where it needs
+    // to go") -- new [Link Text](mailto:EMAIL@EXAMPLE.COM) marker, same
+    // family as the four markers above (plain-text so it's still just a
+    // string in the Body column; js/league.js's public feed is what turns
+    // it into a real <a href="mailto:..."> at render time -- see
+    // _rclApplyInlineMarkup). Inserts around the current selection (or
+    // "Contact Us" if nothing's selected) as the link text, then
+    // highlights the EMAIL@EXAMPLE.COM placeholder so typing an address
+    // immediately replaces it, same "ready to type over" feel as double-
+    // clicking a placeholder word.
+    toolBtn('@', 'Email Link', function () {
+      var start = textarea.selectionStart;
+      var end = textarea.selectionEnd;
+      var value = textarea.value;
+      var linkText = value.slice(start, end) || 'Contact Us';
+      var prefix = '[' + linkText + '](mailto:';
+      var placeholder = 'EMAIL@EXAMPLE.COM';
+      textarea.value = value.slice(0, start) + prefix + placeholder + ')' + value.slice(end);
+      var emailStart = start + prefix.length;
+      textarea.focus();
+      textarea.setSelectionRange(emailStart, emailStart + placeholder.length);
+      textarea.dispatchEvent(new Event('input'));
+    });
     return bar;
   }
   // Character counter + hard cap -- textarea.maxLength stops typing/most
@@ -7476,7 +7507,14 @@
       var reqBody = { title: title.value.trim(), body: post.value.trim() };
       if (publishedAtIso) reqBody.publishedAt = publishedAtIso;
 
-      fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody })
+      // Long timeout budget (2026-09-19, Matt's report: "RC_FETCH_TIMEOUT"
+      // on posting a news story, but the story still posts) -- same root
+      // cause and same fix as createSeason/updateSeason's own timeoutMs
+      // override (see RC_FETCH_TIMEOUT_MS_LONG in js/api.js): the client
+      // aborting at 20s doesn't stop Apps Script from finishing the write
+      // server-side, so a slow response was surfacing as a false failure
+      // on a post that actually succeeded.
+      fetchApi('adminCreateNews', { method: 'POST', token: token, body: reqBody, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG })
         .then(function (data) {
           if (!data.success) {
             saveBtn.disabled = false;
@@ -7569,7 +7607,8 @@
 
       var reqBody = { newsId: newsRow.NewsID, title: title.value.trim(), body: post.value.trim(), editNote: editNote };
 
-      fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody })
+      // Same timeoutMs bump as adminCreateNews above, same reason.
+      fetchApi('adminUpdateNews', { method: 'POST', token: token, body: reqBody, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG })
         .then(function (data) {
           if (!data.success) {
             saveBtn.disabled = false;
