@@ -1247,6 +1247,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-nav-item svg { flex: none; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
+/* Admin/League Tools/Stewarding now always render in the sidebar instead
+   of being hidden from a role that can't use them (2026-09-19, Matt's
+   call: "I want all buttons to be visible in the LEAGUE TOOLS... and only
+   show disabled if they cannot be used... drivers can see the admin/
+   league tools/stewarding section in the sidebar but the links are
+   disabled") -- this is that disabled state: dimmed, no pointer, hover
+   suppressed so it doesn't look clickable. See Account.html's
+   setNavAccess() for what applies/removes it. */
+.rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
+.rc-nav-item:disabled:hover { background: none; color: #cfd4d8; }
 .rc-main {
   flex: 1;
   min-width: 0;

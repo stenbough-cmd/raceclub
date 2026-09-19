@@ -562,6 +562,29 @@
     document.getElementById('rc-nav-divider-upper').style.display = '';
   }
 
+  // Sets whether a sidebar nav item (by its elId) is usable, instead of
+  // hiding it entirely (2026-09-19, Matt's call: "I want all buttons to be
+  // visible in the LEAGUE TOOLS... and only show disabled if they cannot
+  // be used at that time or the user doesn't have credentials to use that
+  // function. That goes for the whole account page so drivers can see the
+  // admin/league tools/stewarding section in the sidebar but the links
+  // are disabled") -- native `disabled` already blocks the click listener
+  // from firing, so no extra guard is needed in each button's own onClick.
+  // Uses the same withTooltip()/.rc-tooltip bubble every other disabled
+  // button on the site already uses (see buildSeasonsPanel's Create a
+  // Season button) rather than the native title attribute.
+  function setNavAccess(elId, allowed, deniedText) {
+    var btn = document.getElementById(elId);
+    if (!btn) return;
+    btn.disabled = !allowed;
+    if (!allowed && deniedText) {
+      withTooltip(btn, deniedText);
+    } else {
+      btn.classList.remove('rc-tooltip');
+      btn.removeAttribute('data-tooltip');
+    }
+  }
+
   // Order: the 10 general section links, a divider, Admin/Data
   // Management/League Management (only if this user's permissions unlock
   // them), a second divider, then Help, Settings, Log Out -- identical
@@ -628,7 +651,11 @@
     // Management button is gone; Admin-only accounts reach the exact same
     // tools from here instead (Matt's call: "DATA MANAGEMENT page can be
     // moved to ADMIN...admins can only access this ADMIN section").
-    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', true, function () {
+    // hiddenByDefault is false for Admin/League Tools/Stewarding now
+    // (2026-09-19) -- they always render; setNavAccess() (called once
+    // currentProfile is known, below) disables the ones this driver's
+    // role can't use instead of removing them from the sidebar.
+    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', false, function () {
       showLazySection('admin', currentToken);
     });
     nav.appendChild(adminBtn);
@@ -636,7 +663,7 @@
     // it's no longer added here.
     // League Management is real content now (renderLeagueManagementSection),
     // same lazy-fetch-on-click pattern as Admin.
-    var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', true, function () {
+    var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', false, function () {
       showLazySection('league', currentToken);
     });
     nav.appendChild(leagueBtn);
@@ -649,7 +676,7 @@
     // already follows) -- and unlike League Tools, a Steward DOES see this
     // one (Matt's call: "Stewards should not be able to see LEAGUE TOOLS
     // at all... They will get to see the STEWARDING page").
-    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_STEWARDING, 'rc-nav-stewarding', true, function () {
+    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_STEWARDING, 'rc-nav-stewarding', false, function () {
       showLazySection('stewarding', currentToken);
     });
     nav.appendChild(stewardingBtn);
@@ -3451,15 +3478,21 @@
     // able to edit seasons, only import race data and deal with
     // protests etc" -- reverses the previous day's "organizers can
     // edit" call). The backend already required Admin here
-    // (handleUpdateSeason, DataCache.gs, requireRole(admin, ['Admin']));
-    // an Organizer viewer no longer gets a button that was never going
-    // to work for them.
+    // (handleUpdateSeason, DataCache.gs, requireRole(admin, ['Admin'])).
+    // Always renders now (2026-09-19, Matt's call: "I want all buttons to
+    // be visible in the LEAGUE TOOLS... and only show disabled if...the
+    // user doesn't have credentials to use that function") -- an
+    // Organizer viewer sees the button but it's disabled with a tooltip
+    // instead of missing entirely.
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
+    editBtn.type = 'button';
     if (currentProfile && currentProfile.role === 'Admin') {
-      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
-      editBtn.type = 'button';
       editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
-      btnGroup.appendChild(editBtn);
+    } else {
+      editBtn.disabled = true;
+      withTooltip(editBtn, 'Only Admins can edit season details.');
     }
+    btnGroup.appendChild(editBtn);
 
     // Delete removed from this row entirely (2026-09-14, Matt's call:
     // "Remove DELETE from the Season buttons so that only EDIT SEASON
@@ -3712,25 +3745,28 @@
   // whole League Management section (see renderLeagueManagementSection)
   // rather than patching just this panel in place -- keeps "nothing shows
   // until it's loaded" true after a mutation too, not just on first load.
-  // `showCreateButton` -- Create a Season / End Season only render when
-  // true, i.e. only for an Admin viewer (see the renderLeagueManagementSection
-  // call site below). Admin-only, same rule as everywhere else on this page
-  // (2026-09-19, Matt's call: "CREATE SEASON and END SEASON... only appear
-  // to admins" -- moved here from the Admin > Data Management panel,
-  // right-aligned "just below" the Seasons title, same shape as the Add
-  // Track/Add Car button that sits right above the list in those Data
-  // Management popups).
+  // `isAdmin` -- Create a Season / End Season always render now (2026-09-19
+  // follow-up, Matt's call: "I want all buttons to be visible in the
+  // LEAGUE TOOLS... and only show disabled if...the user doesn't have
+  // credentials to use that function"), but both stay disabled with a
+  // tooltip for anyone who isn't an Admin -- they write straight to the
+  // Seasons sheet the moment they're clicked (handleCreateSeason/
+  // handleAdminArchiveSeason, DataCache.gs, both requireRole(admin,
+  // ['Admin'])), same as Edit Season below. This reverses the previous
+  // 2026-09-19 call earlier the same day ("CREATE SEASON and END
+  // SEASON... only appear to admins") that hid the whole row from
+  // Organizer viewers -- Matt's later message this session supersedes it.
   //
   // Resume/Clear Season Draft removed entirely (2026-09-19, Matt's call:
   // "get rid of the SAVE DRAFT functionality... and get rid of the button
   // that appears if a draft saves") -- the wizard no longer persists a
   // localStorage draft (see openSeasonWizard), so Create a Season always
   // shows the same label and there's never a second button to clear.
-  function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, showCreateButton) {
+  function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, isAdmin) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
-    if (showCreateButton) {
+    {
       var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
 
       // Create a Season disables once any season exists that hasn't been
@@ -3738,11 +3774,16 @@
       // SEASON button if a season is already in progress and hasn't been
       // officially 'ended' with the END SEASON button") -- only one season
       // should ever be live at a time; End Season (below) is what frees
-      // this back up.
+      // this back up. Checked only after the Admin gate below, so a
+      // non-Admin always sees the "Admin only" reason rather than the
+      // open-season reason even when both happen to be true.
       var hasOpenSeason = (seasons || []).some(function (s) { return s.status !== 'Completed'; });
       var createBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Create a Season');
       createBtn.type = 'button';
-      if (hasOpenSeason) {
+      if (!isAdmin) {
+        createBtn.disabled = true;
+        withTooltip(createBtn, 'Only Admins can create a season.');
+      } else if (hasOpenSeason) {
         createBtn.disabled = true;
         withTooltip(createBtn, 'End the current season before creating a new one.');
       } else {
@@ -3758,7 +3799,12 @@
       // same typed "END SEASON" confirmation before anything happens.
       var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
       endSeasonBtn.type = 'button';
-      endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
+      if (!isAdmin) {
+        endSeasonBtn.disabled = true;
+        withTooltip(endSeasonBtn, 'Only Admins can end a season.');
+      } else {
+        endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
+      }
       row.appendChild(endSeasonBtn);
 
       // The standalone Edit Season button is gone (2026-08-30) -- editing
@@ -4131,8 +4177,19 @@
     // (nameWrap on the left), so appending these here puts them at the
     // right edge for free.
     var headPills = el('div', 'rc-cal-mini-stats');
+    // Tier + minutes together now (2026-09-19 follow-up, Matt's ask: "have
+    // it say the full tier and time like it does for season in each
+    // individual container") -- same "Tier · N min" format the Season
+    // Settings panel's own per-tier chips already use (see tierStats
+    // above: tier + ' · ' + table.duration + ' min'). entry.raceLengthTier
+    // comes straight off handleGetSeasonCalendar's full entry objects
+    // (unlike league.html's public hub, this driver-facing call was never
+    // trimmed of it) -- was already there, just unused client-side since
+    // the 2026-09-19 "display length in mins" pass dropped the tier label
+    // entirely rather than pairing it with the minutes.
     if (!isSpecial && entry.raceLengthMinutes) {
-      headPills.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length', 'rc-cal-mini-stat'));
+      var lengthLabel = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min');
+      headPills.appendChild(calStat(ICON_CLOCK, lengthLabel, 'Race length', 'rc-cal-mini-stat'));
     }
     headPills.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
     head.appendChild(headPills);
@@ -8955,22 +9012,23 @@
     // Admin-only -- that maps to Level 4 capabilities ("change anyone's
     // access level", manage reference data), not anything Organizer has
     // per the system map. Revisit if that design changes.
-    if (profile.role === 'Admin' || profile.role === 'Organizer') {
-      document.getElementById('rc-nav-league').style.display = 'flex';
-      showUpperNavDivider();
-    }
+    //
+    // These three items always render now (2026-09-19, Matt's call --
+    // see setNavAccess() above); this block only decides which ones are
+    // clickable for this driver, via disabled + a tooltip explaining why,
+    // instead of removing them from the sidebar. Every write these pages
+    // lead to is still enforced server-side by the matching requireRole()
+    // call regardless of what the sidebar shows.
+    setNavAccess('rc-nav-league', profile.role === 'Admin' || profile.role === 'Organizer', 'Requires Organizer or Admin access.');
     // Stewarding -- Steward and above (cumulative hierarchy: Steward <
     // Organizer < Admin), same level Protests RULING already requires
     // server-side (Protests.gs). See the nav-button comment above for why
     // this link exists ahead of the page it opens.
-    if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') {
-      document.getElementById('rc-nav-stewarding').style.display = 'flex';
-      showUpperNavDivider();
-    }
-    if (profile.role === 'Admin') {
-      document.getElementById('rc-nav-admin').style.display = 'flex';
-      showUpperNavDivider();
-    }
+    setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
+    setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
+    // Divider above these three always shows now that they're always
+    // visible (it used to only appear once at least one of them unlocked).
+    showUpperNavDivider();
 
     renderDashboardSection(profile, token, dashboardData);
 
