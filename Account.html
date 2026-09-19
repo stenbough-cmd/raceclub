@@ -3656,8 +3656,8 @@
     return wrap;
   }
 
-  // The whole Seasons panel -- button row (Create/Resume, Clear Draft) plus
-  // the season list underneath it, both built together in one shot once
+  // The whole Seasons panel -- button row (Create/End Season) plus the
+  // season list underneath it, both built together in one shot once
   // `seasons` has actually loaded. Named "Seasons" now (renamed from
   // "Season Tools", 2026-08-30), using the same card chrome as the
   // Dashboard's own cards (rc-dash-card/rc-dash-card-title) for visual
@@ -3665,24 +3665,42 @@
   // whole League Management section (see renderLeagueManagementSection)
   // rather than patching just this panel in place -- keeps "nothing shows
   // until it's loaded" true after a mutation too, not just on first load.
-  // `showCreateButton` -- Create a Season / End Season (and Resume/Clear
-  // Draft) only render when true, i.e. only for an Admin viewer (see the
-  // renderLeagueManagementSection call site below). Admin-only, same rule
-  // as everywhere else on this page (2026-09-19, Matt's call: "CREATE
-  // SEASON and END SEASON... only appear to admins" -- moved here from
-  // the Admin > Data Management panel, right-aligned "just below" the
-  // Seasons title, same shape as the Add Track/Add Car button that sits
-  // right above the list in those Data Management popups).
+  // `showCreateButton` -- Create a Season / End Season only render when
+  // true, i.e. only for an Admin viewer (see the renderLeagueManagementSection
+  // call site below). Admin-only, same rule as everywhere else on this page
+  // (2026-09-19, Matt's call: "CREATE SEASON and END SEASON... only appear
+  // to admins" -- moved here from the Admin > Data Management panel,
+  // right-aligned "just below" the Seasons title, same shape as the Add
+  // Track/Add Car button that sits right above the list in those Data
+  // Management popups).
+  //
+  // Resume/Clear Season Draft removed entirely (2026-09-19, Matt's call:
+  // "get rid of the SAVE DRAFT functionality... and get rid of the button
+  // that appears if a draft saves") -- the wizard no longer persists a
+  // localStorage draft (see openSeasonWizard), so Create a Season always
+  // shows the same label and there's never a second button to clear.
   function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, showCreateButton) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
     if (showCreateButton) {
       var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
-      var hasDraft = !!loadWizardDraft();
-      var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
+
+      // Create a Season disables once any season exists that hasn't been
+      // Completed yet (2026-09-19, Matt's call: "disable the CREATE A
+      // SEASON button if a season is already in progress and hasn't been
+      // officially 'ended' with the END SEASON button") -- only one season
+      // should ever be live at a time; End Season (below) is what frees
+      // this back up.
+      var hasOpenSeason = (seasons || []).some(function (s) { return s.status !== 'Completed'; });
+      var createBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Create a Season');
       createBtn.type = 'button';
-      createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
+      if (hasOpenSeason) {
+        createBtn.disabled = true;
+        withTooltip(createBtn, 'End the current season before creating a new one.');
+      } else {
+        createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
+      }
       row.appendChild(createBtn);
 
       // End Season -- moved here from the Admin > Data Management row
@@ -3699,20 +3717,6 @@
       // The standalone Edit Season button is gone (2026-08-30) -- editing
       // now happens per-row in the season list below, which can point at
       // ANY season instead of always whichever one is most recent.
-      //
-      // Only shows up once a draft actually exists -- there's nothing to
-      // clear otherwise, so this never adds a second button to the steady-
-      // state row.
-      if (hasDraft) {
-        var clearDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
-        clearDraftBtn.type = 'button';
-        clearDraftBtn.addEventListener('click', function () {
-          clearWizardDraft();
-          showToast('Season draft cleared.', 'success');
-          reload();
-        });
-        row.appendChild(clearDraftBtn);
-      }
 
       panel.appendChild(row);
     }
@@ -4815,7 +4819,10 @@
   //      Events on the Rounds side: "explicitly deferred until that
   //      system gets designed").
   // =======================================================================
-  var WIZARD_DRAFT_KEY = 'raceclub_season_wizard_draft';
+  // WIZARD_DRAFT_KEY / loadWizardDraft / saveWizardDraft / clearWizardDraft
+  // removed 2026-09-19 (Matt's call: "get rid of the SAVE DRAFT
+  // functionality") -- the wizard no longer persists any in-progress state
+  // to localStorage; closing it without finishing just discards it.
   var WIZARD_STEPS = ['Season Details', 'Race Events', 'Season Preview'];
 
   // Real LMU track/layout list -- hardcoded FALLBACK only. loadWizardTrackList()
@@ -5123,7 +5130,12 @@
       defaultPassword: '',
       privateQualifying: 'No',
       trackLimitsPreset: 'Default',
-      releaseMode: 'now', // decided at the very end (Create Season vs. Create a Future Season)
+      // Always 'now' -- the scheduled-release option ("Create a Future
+      // Season") was removed 2026-09-19 (Matt's call: "keep things
+      // simplified"). releaseDateTime/releaseAtUtc stay wired through to
+      // the backend payload below for compatibility, just never set to
+      // anything but blank/'now' any more.
+      releaseMode: 'now',
       releaseDateTime: '',
       classes: { LMGT3: true, LMP2: false, LMP3: false, Hypercar: false },
       classSeasons: { LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
@@ -5168,25 +5180,6 @@
       // seat to hand-pick at season creation.
       races: [] // resized to numRaces by syncRaceCount() when Race Events opens
     };
-  }
-
-  function loadWizardDraft() {
-    try {
-      var raw = localStorage.getItem(WIZARD_DRAFT_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (err) { return null; }
-  }
-  function saveWizardDraft(state) {
-    // Editing an existing season never touches the "Create a Season" draft
-    // -- they're unrelated flows sharing one localStorage key would let an
-    // in-progress edit silently clobber (or resume into) a half-finished
-    // new-season draft. An edit's only save point is finishEditWizard()'s
-    // real updateSeason call.
-    if (state && state.__editSeasonId) return;
-    try { localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify(state)); } catch (err) { /* storage full/unavailable -- draft just won't persist this time */ }
-  }
-  function clearWizardDraft() {
-    try { localStorage.removeItem(WIZARD_DRAFT_KEY); } catch (err) { /* nothing to do */ }
   }
 
   // Shows the branded spinner in a small modal, fetches tracks + cars
@@ -5950,10 +5943,9 @@
     idPanel.appendChild(previewLine('Default Password', state.defaultPassword || '(none set)'));
     idPanel.appendChild(previewLine('Private Qualifying', state.privateQualifying));
     idPanel.appendChild(previewLine('Track Limits Preset', state.trackLimitsPreset));
-    idPanel.appendChild(previewLine('Registration Opens',
-      state.releaseMode === 'scheduled'
-        ? (state.releaseDateTime ? formatDateTimeLabel(state.releaseDateTime) : '(pick a release date/time below)')
-        : 'Immediately, when this season is created'));
+    // Always immediate now -- the scheduled-release option was removed
+    // 2026-09-19 (Matt's call: "keep things simplified").
+    idPanel.appendChild(previewLine('Registration Opens', 'Immediately, when this season is created'));
     container.appendChild(idPanel);
 
     var fmtPanel = el('div', 'rc-panel'); fmtPanel.style.marginTop = '12px';
@@ -6055,9 +6047,9 @@
   // round date/time has passed, not whether Sessions data exists) is the
   // stricter, later-arriving freeze covering everything else: the Season
   // Details page's blanket-disable down to just Season Name + Default
-  // Password, and the Race Events page's whole-page lock (saveWizardDraft
-  // becoming a no-op, and finishEditWizard() below calling updateSeason
-  // instead of createSeason, both key off __editSeasonId being set).
+  // Password, and the Race Events page's whole-page lock (finishEditWizard()
+  // below calling updateSeason instead of createSeason keys off
+  // __editSeasonId being set).
   function buildEditWizardState(ctx) {
     var base = defaultWizardState();
     var details = ctx.seasonDetails || {};
@@ -6103,8 +6095,10 @@
   }
 
   function openSeasonWizard(editState) {
-    var existingDraft = editState ? null : loadWizardDraft();
-    var state = editState || normalizeWizardState(existingDraft);
+    // No more localStorage draft to resume from (2026-09-19, Matt's call:
+    // "get rid of the SAVE DRAFT functionality") -- every wizard open
+    // starts from a clean state, editing or not.
+    var state = editState || normalizeWizardState(null);
     var stepIndex = 0;
     var modal = showModal(editState ? 'Edit Season' : 'Create a Season', { wide: true, onClose: function () { if (typeof renderLeagueManagementSection === 'function') renderLeagueManagementSection(token); } });
     var body = modal.body;
@@ -6118,35 +6112,11 @@
     var lastStep = WIZARD_STEPS.length - 1;
     var currentRequiredEls = [];
     // Editing loads a complete, already-valid season -- every step starts
-    // unlocked rather than running the draft-resume probe below (which is
-    // only meaningful for a possibly-half-finished localStorage draft).
+    // unlocked. A fresh Create starts locked past Step 1 same as always --
+    // there's no draft-resume probe to run any more (removed 2026-09-19).
     var maxUnlockedStep = editState ? lastStep : 0;
 
-    if (existingDraft) {
-      // Belt-and-suspenders: normalizeWizardState() above should already
-      // make this safe, but a probe render is throwaway work anyway --
-      // never let it take the whole wizard down if some future field
-      // mismatch slips through. Worst case, the admin just starts back at
-      // Step 1 instead of wherever they left off.
-      try {
-        var probeEls0 = [];
-        renderWizardSeasonDetailsPage(state, el('div'), probeEls0);
-        if (probeEls0.every(function (entry) { return entry.isValid(); })) {
-          maxUnlockedStep = 1;
-          syncRaceCount(state); syncByeWeekDates(state); syncSpecialEvents(state);
-          var probeEls1 = [];
-          renderWizardRaceEventsPage(state, el('div'), probeEls1);
-          if (probeEls1.every(function (entry) { return entry.isValid(); })) {
-            maxUnlockedStep = 2;
-          }
-        }
-      } catch (err) {
-        maxUnlockedStep = 0;
-      }
-    }
-
     function goToStep(i) {
-      saveWizardDraft(state);
       stepIndex = i;
       renderStep();
     }
@@ -6214,10 +6184,15 @@
       } else if (stepIndex === lastStep) {
         footerBar.style.alignItems = 'flex-end';
 
-        var saveBtn = el('button', null, 'Save & Close');
-        saveBtn.className = 'rc-btn-secondary rc-btn-sm'; saveBtn.type = 'button';
-        saveBtn.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
-        footerBar.appendChild(saveBtn);
+        // Cancel + Save & Close (draft-saving) both removed here (2026-09-19,
+        // Matt's call: "get rid of the SAVE DRAFT functionality... let's keep
+        // things simplified") -- closing this modal without finishing just
+        // discards the in-progress wizard state now, same as any other
+        // cancel elsewhere on the site.
+        var cancelCreateBtn = el('button', null, 'Cancel');
+        cancelCreateBtn.className = 'rc-btn-secondary rc-btn-sm'; cancelCreateBtn.type = 'button';
+        cancelCreateBtn.addEventListener('click', function () { modal.close(); });
+        footerBar.appendChild(cancelCreateBtn);
 
         var rightGroup = el('div', 'display:flex;gap:8px;align-items:flex-end;');
 
@@ -6226,73 +6201,26 @@
         backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
         rightGroup.appendChild(backBtn);
 
-        var createWrap = el('div', 'position:relative;');
-        var btnRow = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+        // "Create a Future Season" (scheduled release) removed (2026-09-19,
+        // Matt's call: "remove ability to SAVE A FUTURE SEASON BUTTON...
+        // let's keep things simplified") -- a season is always created and
+        // opens registration immediately now; state.releaseMode stays hard-
+        // coded to 'now' (set in the wizard's initial state) rather than
+        // ever becoming 'scheduled'.
         var createNowBtn = el('button', null, 'Create Season');
         createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
         createNowBtn.addEventListener('click', function () { state.releaseMode = 'now'; finishWizard(createNowBtn); });
-        btnRow.appendChild(createNowBtn);
-
-        var futureBtn = el('button', null, 'Create a Future Season');
-        futureBtn.className = 'rc-btn-secondary rc-btn-sm'; futureBtn.type = 'button';
-        btnRow.appendChild(futureBtn);
-        createWrap.appendChild(btnRow);
-
-        var futurePanel = el('div', 'rc-panel');
-        futurePanel.style.cssText = 'position:absolute;bottom:calc(100% + 8px);right:0;display:none;width:320px;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
-        var futureHead = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;');
-        futureHead.appendChild(el('span', 'font-family:var(--rc-font-heading);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--rc-carbon);', 'Release Date/Time'));
-        var closeFutureBtn = el('button', null, '×');
-        closeFutureBtn.type = 'button';
-        closeFutureBtn.style.cssText = 'background:none;border:none;font-size:18px;line-height:1;color:var(--rc-steel);cursor:pointer;padding:0 2px;';
-        futureHead.appendChild(closeFutureBtn);
-        futurePanel.appendChild(futureHead);
-        var dt = el('input'); dt.type = 'datetime-local'; dt.value = state.releaseDateTime || '';
-        dt.style.margin = '0';
-        dt.addEventListener('input', function () { state.releaseDateTime = dt.value; });
-        futurePanel.appendChild(dt);
-        futurePanel.appendChild(el('div', 'rc-hint',
-          'Real team seats are first-come-first-served, so a scheduled release gives every driver an equal shot at one.'));
-        var confirmFutureBtn = el('button', null, 'Confirm & Create');
-        confirmFutureBtn.className = 'rc-btn-primary rc-btn-sm'; confirmFutureBtn.type = 'button';
-        confirmFutureBtn.addEventListener('click', function () {
-          // The backend flips a Scheduled season to Registration by comparing
-          // against this same clock (see seasonDetails.releaseAtUtc in
-          // finishWizard) -- a blank or already-past pick would either never
-          // fire or fire immediately, neither of which is what "Create a
-          // Future Season" promises, so it's caught here before the call.
-          var releaseAt = state.releaseDateTime ? new Date(state.releaseDateTime) : null;
-          if (!releaseAt || isNaN(releaseAt.getTime()) || releaseAt.getTime() <= Date.now()) {
-            showToast('Pick a release date/time in the future first.', 'error');
-            return;
-          }
-          state.releaseMode = 'scheduled';
-          finishWizard(confirmFutureBtn);
-        });
-        futurePanel.appendChild(confirmFutureBtn);
-        createWrap.appendChild(futurePanel);
-
-        function openFuturePanel() {
-          futurePanel.style.display = 'block';
-          createNowBtn.disabled = true;
-          futureBtn.disabled = true;
-        }
-        function closeFuturePanel() {
-          futurePanel.style.display = 'none';
-          createNowBtn.disabled = false;
-          futureBtn.disabled = false;
-        }
-        futureBtn.addEventListener('click', openFuturePanel);
-        closeFutureBtn.addEventListener('click', closeFuturePanel);
-        rightGroup.appendChild(createWrap);
+        rightGroup.appendChild(createNowBtn);
 
         footerBar.appendChild(rightGroup);
       } else {
         footerBar.style.alignItems = 'center';
 
-        var saveBtnNorm = el('button', null, state.__editSeasonId ? 'Cancel' : 'Save & Close');
+        // Save-draft removed here too (2026-09-19) -- same plain Cancel as
+        // the last step now, for both create and edit.
+        var saveBtnNorm = el('button', null, 'Cancel');
         saveBtnNorm.className = 'rc-btn-secondary rc-btn-sm'; saveBtnNorm.type = 'button';
-        saveBtnNorm.addEventListener('click', function () { saveWizardDraft(state); modal.close(); });
+        saveBtnNorm.addEventListener('click', function () { modal.close(); });
         footerBar.appendChild(saveBtnNorm);
 
         var navOuter = el('div');
@@ -6425,8 +6353,7 @@
 
     // finishWizard stays on the wizard's own review step while it saves,
     // rather than blanking the popup out for a spinner (2026-09-19,
-    // Matt's call) -- the triggering button (createNowBtn or
-    // confirmFutureBtn, whichever was actually clicked) goes gray and
+    // Matt's call) -- the triggering button (createNowBtn) goes gray and
     // reads "SAVING SEASON...", same free-from-.rc-btn-primary:disabled
     // pattern the League News popup already uses, and every other footer
     // button is disabled alongside it so nothing else in the wizard can
@@ -6446,11 +6373,8 @@
     // while Apps Script kept running and finished the write anyway. Two
     // fixes: a longer timeoutMs budget for just this call
     // (RC_FETCH_TIMEOUT_MS_LONG, see js/api.js), and a timeout-specific
-    // error message below that says what actually might have happened
-    // instead of the old, actively wrong "your draft is untouched."
+    // error message below that says what actually might have happened.
     function finishWizard(triggerBtn) {
-      saveWizardDraft(state);
-
       var footerButtons = Array.prototype.slice.call(footerBar.querySelectorAll('button'));
       footerButtons.forEach(function (b) { b.disabled = true; });
       var originalLabel = triggerBtn.textContent;
@@ -6476,7 +6400,6 @@
         }
       }).then(function (data) {
         if (data && data.success) {
-          clearWizardDraft();
           showToast(data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'), 'success');
           // Every lazy section is stale now (a new season ripples well
           // beyond just Season Tools), same cache-clear rcReloadAfterSave
@@ -6489,14 +6412,14 @@
           modal.close();
         } else {
           restoreButtons();
-          showToast((data && data.message) || 'Something went wrong talking to the server. Your draft is untouched, so it\'s safe to try again.', 'error');
+          showToast((data && data.message) || 'Something went wrong talking to the server. Nothing was saved, so it\'s safe to try again.', 'error');
         }
       }).catch(function (err) {
         restoreButtons();
         if (err && err.message === 'RC_FETCH_TIMEOUT') {
           showToast('This is taking longer than expected. Apps Script may still be finishing the write -- check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
         } else {
-          showToast('Could not reach the server -- check your connection and try again. Your draft is untouched.', 'error');
+          showToast('Could not reach the server -- check your connection and try again. Nothing was saved.', 'error');
         }
       });
     }
@@ -6738,12 +6661,13 @@
       fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getTracks', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getCars', { token: token }).catch(function () { return { success: false }; }),
-      // Members + Seasons -- added 2026-09-18 to back the Data Management
-      // panel's counts line and season status line (see
-      // renderAdminSectionBody). Same "wait on everything together" gate
-      // the rest of this fetch already uses.
-      fetchApi('adminListDrivers', { token: token }).catch(function () { return { success: false }; }),
-      fetchApi('adminListSeasons', { token: token }).catch(function () { return { success: false }; })
+      // Members -- added 2026-09-18 to back the Data Management panel's
+      // counts line (see renderAdminSectionBody). Same "wait on everything
+      // together" gate the rest of this fetch already uses. The matching
+      // Seasons fetch that used to sit here was removed 2026-09-19 along
+      // with the panel's season status line (Matt's call: Data Management
+      // only shows Members/Tracks/Cars counts now).
+      fetchApi('adminListDrivers', { token: token }).catch(function () { return { success: false }; })
     ]).then(function (results) {
       // The admin could have navigated to a different page while this was
       // still in flight -- #rc-section-admin would be gone (or hidden
@@ -6758,12 +6682,10 @@
       var tracksData = results[1];
       var carsData = results[2];
       var driversData = results[3];
-      var seasonsData = results[4];
       renderAdminSectionBody(section, token, pendingData && pendingData.success ? (pendingData.pending || []) : [], {
         memberCount: driversData && driversData.success ? (driversData.drivers || []).length : null,
         trackCount: tracksData && tracksData.success ? (tracksData.tracks || []).length : null,
-        carCount: carsData && carsData.success ? (carsData.cars || []).length : null,
-        seasons: seasonsData && seasonsData.success ? (seasonsData.seasons || []) : null
+        carCount: carsData && carsData.success ? (carsData.cars || []).length : null
       });
     });
   }
@@ -6812,14 +6734,15 @@
 
     panel.appendChild(row);
 
-    // Counts line + season status line -- added 2026-09-18 underneath the
-    // button row so the panel shows a quick at-a-glance snapshot without
-    // having to open any of the popups above. Counts line: how many
-    // Members/Tracks/Cars records exist. Season status line: which season
-    // (if any) is currently in play and its status pill, same badge
-    // component the League Management Season Tools list uses
-    // (_rcSeasonStatusBadge) so the color/label read identically in both
-    // places.
+    // Counts line -- added 2026-09-18 underneath the button row so the
+    // panel shows a quick at-a-glance snapshot without having to open any
+    // of the popups above: how many Members/Tracks/Cars records exist.
+    // The season status line that used to sit under this (which season is
+    // currently in play) was removed 2026-09-19 (Matt's call: "remove the
+    // season information from the DATA MANAGEMENT CONTAINER, only keep the
+    // total cars, members and tracks information listed") -- season status
+    // already lives on the League Tools page's own Seasons panel, right
+    // next to Create a Season/End Season.
     var summaryWrap = el('div', 'rc-dm-summary');
 
     var countsParts = [];
@@ -6829,27 +6752,6 @@
     if (countsParts.length) {
       summaryWrap.appendChild(el('div', 'rc-dm-summary-line', escapeHtml(countsParts.join(' · '))));
     }
-
-    var seasonLine = el('div', 'rc-dm-summary-line rc-dm-summary-season');
-    // "Current" season -- not necessarily the only season on file, just
-    // the one worth surfacing here: prefer whichever is actually underway
-    // (Active), then Registration, then Scheduled, then Draft, skipping
-    // anything already Completed. Ties (e.g. two Scheduled seasons) take
-    // the first one the API returned.
-    var STATUS_PRIORITY = ['Active', 'Registration', 'Scheduled', 'Draft'];
-    var currentSeason = null;
-    if (dmSummary.seasons && dmSummary.seasons.length) {
-      for (var i = 0; i < STATUS_PRIORITY.length && !currentSeason; i++) {
-        currentSeason = dmSummary.seasons.filter(function (s) { return s.status === STATUS_PRIORITY[i]; })[0] || null;
-      }
-    }
-    if (currentSeason) {
-      seasonLine.appendChild(document.createTextNode((currentSeason.name || currentSeason.seasonId) + ' — '));
-      seasonLine.appendChild(_rcSeasonStatusBadge(currentSeason.status));
-    } else {
-      seasonLine.textContent = 'No season currently underway.';
-    }
-    summaryWrap.appendChild(seasonLine);
 
     panel.appendChild(summaryWrap);
     section.appendChild(panel);
