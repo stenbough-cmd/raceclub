@@ -1049,13 +1049,15 @@
     card.appendChild(body);
 
     // status, not role -- Role is set to 'Driver' at registration time
-    // and never actually reads 'Prospect' (Prospect is a Status concept,
-    // PendingApproval/PendingVerification, not a Role -- see Auth.gs).
-    // Fixed 2026-09-13 alongside letting Prospects log in at all (Matt's
-    // call: verified-but-not-yet-approved accounts can reach the
-    // dashboard now, they just can't register for a season yet).
+    // and never actually reads 'Prospect' (Prospect isn't a Status or a
+    // Role at all -- it's just "no seat in the currently-open-to-
+    // registration season," computed on the fly; see Auth.gs's
+    // VALID_ROLES header comment). This check now really only catches an
+    // account still on PendingVerification (hasn't clicked the email
+    // link yet) or a Rejected/Disabled one -- there's no more approval
+    // step in between (2026-09-19, Matt's call).
     if (profile.status !== 'Active') {
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Registration opens once your account is approved.'));
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Verify your email to unlock registration.'));
       return card;
     }
 
@@ -1287,13 +1289,15 @@
     }
 
     // status, not role -- Role is set to 'Driver' at registration time
-    // and never actually reads 'Prospect' (Prospect is a Status concept,
-    // PendingApproval/PendingVerification, not a Role -- see Auth.gs).
-    // Fixed 2026-09-13 alongside letting Prospects log in at all (Matt's
-    // call: verified-but-not-yet-approved accounts can reach the
-    // dashboard now, they just can't register for a season yet).
+    // and never actually reads 'Prospect' (Prospect isn't a Status or a
+    // Role at all -- it's just "no seat in the currently-open-to-
+    // registration season," computed on the fly; see Auth.gs's
+    // VALID_ROLES header comment). This check now really only catches an
+    // account still on PendingVerification (hasn't clicked the email
+    // link yet) or a Rejected/Disabled one -- there's no more approval
+    // step in between (2026-09-19, Matt's call).
     if (profile.status !== 'Active') {
-      body.appendChild(el('p', 'rc-cs-empty', 'Available once your account is approved.'));
+      body.appendChild(el('p', 'rc-cs-empty', 'Available once your email is verified.'));
       return card;
     }
 
@@ -6644,116 +6648,6 @@
   }
 
   // ---------------------------------------------------------------------
-  // PENDING APPROVAL -- standalone card above Data Management on the Admin
-  // page (2026-09-13, Matt's call), listing every Prospect account
-  // (Status PendingApproval, not yet a Role) with Approve/Deny/Edit right
-  // there, no popup to open first. Deliberately a plain, self-contained
-  // rewrite of buildDriversPanel's own Prospect group rather than a call
-  // into it -- that function's Approve/Deny closures are wired to the
-  // Members popup's own `reload` (a full re-fetch-and-rebuild of that
-  // popup), which doesn't exist here; this panel manages its own local
-  // re-render instead (removeRow, plus an empty-state swap once the last
-  // row is gone). Same fetchApi actions (adminApproveAccount/
-  // adminRejectAccount) and instant-optimistic-then-toast-on-failure
-  // pattern as everywhere else on this page.
-  // ---------------------------------------------------------------------
-  // Takes already-fetched `pending` rows rather than fetching its own
-  // (2026-09-13 follow-up, Matt's call: "don't display the admin page
-  // until all data is loaded") -- renderAdminSection below now fetches
-  // Pending Approval alongside Tracks/Cars/Sponsors up front, behind one
-  // shared page-level spinner, instead of this card popping in a beat
-  // later behind its own separate one.
-  function buildPendingApprovalPanel(pending, token) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'Pending Approval'));
-    var body = el('div');
-    panel.appendChild(body);
-
-    function showEmptyIfNoRowsLeft() {
-      if (!body.querySelector('.rc-group-row')) {
-        body.innerHTML = '';
-        body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
-      }
-    }
-
-    if (!pending || !pending.length) {
-      body.appendChild(el('p', 'rc-cs-empty', 'No accounts waiting on approval right now.'));
-      return panel;
-    }
-    pending.slice().sort(function (a, b) {
-      return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
-    }).forEach(function (person) {
-      var row = el('div', 'rc-group-row');
-      var info = el('div', 'rc-dm-row-info');
-      info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-      row.appendChild(info);
-
-      var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
-
-      // Same sitewide button rule as buildDriversPanel's own Approve/
-      // Deny (2026-09-13, Matt's call): both write straight to the sheet
-      // the instant they're clicked, so both get the save-style red
-      // button rather than the row's usual gray.
-      var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
-      approveBtn.type = 'button';
-      approveBtn.addEventListener('click', function () {
-        var nextSibling = row.nextSibling, parent = row.parentNode;
-        if (parent) parent.removeChild(row);
-        fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-          if (data && data.success) {
-            showEmptyIfNoRowsLeft();
-          } else {
-            if (parent) parent.insertBefore(row, nextSibling);
-            showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
-          }
-        }).catch(function () {
-          if (parent) parent.insertBefore(row, nextSibling);
-          showToast('Could not reach the server -- account not approved.', 'error');
-        });
-      });
-
-      var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
-      denyBtn.type = 'button';
-      denyBtn.addEventListener('click', function () {
-        var nextSibling = row.nextSibling, parent = row.parentNode;
-        if (parent) parent.removeChild(row);
-        fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-          if (data && data.success) {
-            showEmptyIfNoRowsLeft();
-          } else {
-            if (parent) parent.insertBefore(row, nextSibling);
-            showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
-          }
-        }).catch(function () {
-          if (parent) parent.insertBefore(row, nextSibling);
-          showToast('Could not reach the server -- account not denied.', 'error');
-        });
-      });
-
-      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-      editBtn.type = 'button';
-      // Reopens as a normal edit popup -- reload here just re-labels the
-      // row's text if the admin changes the display name, same as any
-      // other Edit button; it doesn't need to touch this panel's
-      // Approve/Deny wiring at all.
-      editBtn.addEventListener('click', function () {
-        openEditDriverModal(person, token, function () {
-          info.innerHTML = '';
-          info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-        });
-      });
-
-      btnGroup.appendChild(approveBtn);
-      btnGroup.appendChild(denyBtn);
-      btnGroup.appendChild(editBtn);
-      row.appendChild(btnGroup);
-      body.appendChild(row);
-    });
-
-    return panel;
-  }
-
-  // ---------------------------------------------------------------------
   // DATA MANAGEMENT PAGE -- a League-Management-style container (h2 + one
   // rc-panel labeled "Data Management") with a row of buttons: Members / Tracks
   // / Cars / Sponsors. Each button opens its own popup (openAdminListModal
@@ -6769,16 +6663,17 @@
   // Management's standalone sidebar button is gone; this exact content
   // (Members/Tracks/Cars/Sponsors) now lives under Admin instead, still
   // Admin-only (Matt's call: "admins can only access this ADMIN section").
-  // Waits on Pending Approval + Tracks + Cars + Sponsors ALL together
-  // before anything on the page renders (2026-09-13, Matt's call: "don't
-  // display the admin page until all data is loaded, including the
-  // pending members, track list, car list, sponsor list") -- previously
-  // the button row/Seasons panel rendered instantly while Pending
-  // Approval alone popped in a beat later behind its own separate
-  // spinner. One shared page-level spinner now covers the whole wait;
-  // Tracks/Cars/Sponsors' own popups (openTracksModal etc.) still fetch
-  // their own copy when clicked, same as before -- this earlier fetch is
-  // purely a display gate, not a cache handed into those popups.
+  // Waits on Tracks + Cars + Members ALL together before anything on the
+  // page renders (2026-09-13, Matt's call: "don't display the admin page
+  // until all data is loaded") -- one shared page-level spinner covers
+  // the whole wait; Tracks/Cars/Sponsors' own popups (openTracksModal
+  // etc.) still fetch their own copy when clicked, same as before -- this
+  // earlier fetch is purely a display gate, not a cache handed into those
+  // popups. The Pending Approval card that used to sit above Data
+  // Management here is gone (2026-09-19, Matt's call: no more admin-
+  // approval queue -- see the VALID_ROLES header comment in Auth.gs) --
+  // Prospects show up in the Members popup instead, same as every other
+  // account.
   function renderAdminSection(token) {
     var section = document.getElementById('rc-section-admin');
     if (!section) return;
@@ -6794,7 +6689,6 @@
     section.appendChild(buildPageSpinner('Loading admin tools...'));
 
     Promise.all([
-      fetchApi('adminListPendingAccounts', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getTracks', { token: token }).catch(function () { return { success: false }; }),
       fetchApi('getCars', { token: token }).catch(function () { return { success: false }; }),
       // Members -- added 2026-09-18 to back the Data Management panel's
@@ -6814,11 +6708,10 @@
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
 
-      var pendingData = results[0];
-      var tracksData = results[1];
-      var carsData = results[2];
-      var driversData = results[3];
-      renderAdminSectionBody(section, token, pendingData && pendingData.success ? (pendingData.pending || []) : [], {
+      var tracksData = results[0];
+      var carsData = results[1];
+      var driversData = results[2];
+      renderAdminSectionBody(section, token, {
         memberCount: driversData && driversData.success ? (driversData.drivers || []).length : null,
         trackCount: tracksData && tracksData.success ? (tracksData.tracks || []).length : null,
         carCount: carsData && carsData.success ? (carsData.cars || []).length : null
@@ -6828,12 +6721,8 @@
 
   // The actual Admin page content, split out from renderAdminSection
   // above so that function's only job is "wait for everything, then call
-  // this" -- pendingRows is already-fetched data (see
-  // buildPendingApprovalPanel's own comment for why it stopped fetching
-  // its own copy).
-  function renderAdminSectionBody(section, token, pendingRows, dmSummary) {
-    section.appendChild(buildPendingApprovalPanel(pendingRows, token));
-
+  // this".
+  function renderAdminSectionBody(section, token, dmSummary) {
     dmSummary = dmSummary || {};
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
@@ -7294,19 +7183,16 @@
   }
 
   function openMembersModal(token) {
+    // Single fetch now (2026-09-19) -- adminListDrivers itself returns a
+    // per-row hasSeat flag (whether that account has a Registrations row
+    // in the season currently open to registration), which buildDriversPanel
+    // uses to bucket Prospect apart from Driver. The separate Pending
+    // Approval fetch/panel is gone entirely -- see Auth.gs's VALID_ROLES
+    // header comment.
     openAdminListModal('Members', 'Loading members…', function () {
-      return Promise.all([
-        fetchApi('adminListDrivers', { token: token }),
-        fetchApi('adminListPendingAccounts', { token: token })
-      ]);
-    }, function (results, reload) {
-      var driversData = results[0], pendingData = results[1];
-      return buildDriversPanel(
-        driversData && driversData.success ? driversData.drivers : [],
-        pendingData && pendingData.success ? pendingData.pending : [],
-        token,
-        reload
-      );
+      return fetchApi('adminListDrivers', { token: token });
+    }, function (driversData, reload) {
+      return buildDriversPanel(driversData && driversData.success ? driversData.drivers : [], token, reload);
     }, { label: 'Add Driver', onClick: function (reload) { openAddDriverModal(token, reload); } });
   }
 
@@ -7882,16 +7768,9 @@
     });
   }
 
-  // Alphabetical by DisplayName, one row per driver, Edit button on each
-  // opening openEditDriverModal(). A separate "Pending Approval" group
-  // sits on top when there's anyone waiting -- these are Prospects
-  // (Status PendingApproval, not yet a Role at all), so they're not part
-  // of the main list below; Approve promotes Status straight to Active
-  // (adminApproveAccount), Deny sets it to Rejected (adminRejectAccount).
-  // Both call `reload` (the Members popup's own refresh, from
-  // openAdminListModal) afterward, plus the sidebar dot/header bell, so
-  // nothing here goes stale. No panel heading here -- this renders inside
-  // the Members popup, whose modal title already says "Members".
+  // Alphabetical by DisplayName, one row per member, Edit button on each
+  // opening openEditDriverModal(). No panel heading here -- this renders
+  // inside the Members popup, whose modal title already says "Members".
   // ---------------------------------------------------------------------
   // SHARED GROUPED-LIST BUILDER (2026-09-13, Matt's call: "I want lists to
   // appear the same way on the website... function nearly the same...
@@ -7971,42 +7850,49 @@
   }
 
   // Members list -- reorganized 2026-08-30 (Matt's call) into one list
-  // grouped by Role, same black-pill-plus-indented-rows pattern as the
-  // Seasons list's year grouping and the Tracks list's Region grouping
-  // (.rc-group-head/.rc-group-row). Prospect (pending accounts -- not a
-  // real Role, see Auth.gs) is its own top group so it reads alongside
-  // the real roles instead of living in a separate box above them.
-  // Groups always render in the documented access-hierarchy order --
-  // Prospect, Driver, Steward, Organizer, Admin -- low to high, regardless
-  // of which ones happen to have members right now; alphabetical by
-  // display name within each group. Prospect rows get Approve/Deny
-  // alongside Edit (added 2026-08-30 -- previously Edit wasn't offered
-  // for a pending account at all); every other row just gets Edit.
-  function buildDriversPanel(drivers, pending, token, reload) {
-    // Prospects don't carry a real Role (see Auth.gs) -- tagged here so
-    // groupKey below can bucket them separately without a second data
-    // source threaded through buildGroupedAdminList itself.
-    var items = (pending || []).map(function (p) {
-      p._isProspect = true;
-      return p;
-    }).concat(drivers || []);
-    var ROLE_ORDER = ['Prospect', 'Driver', 'Steward', 'Organizer', 'Admin'];
+  // grouped by Role, same pill-plus-indented-rows pattern as the Seasons
+  // list's year grouping and the Tracks list's Region grouping
+  // (.rc-group-head/.rc-group-row). Reworked 2026-09-19 (Matt's call) now
+  // that Prospect is a computed state -- "no seat in the season currently
+  // open to registration" -- rather than a pending-approval queue: Prospect
+  // is back to being the LOWEST group (Admin, Organizer, Steward, Driver,
+  // Prospect, top to bottom -- the reverse of this list's old low-to-high
+  // order, since there's no more separate approval queue pulling it to the
+  // top), sourced from the same adminListDrivers rows as everyone else via
+  // each row's hasSeat flag (see Auth.gs) rather than a second endpoint.
+  // Alphabetical by display name within each group. There's no more
+  // Approve/Deny here -- a Prospect can already use the site (see the
+  // VALID_ROLES header comment in Auth.gs) -- every row just gets Edit.
+  function buildDriversPanel(drivers, token, reload) {
+    var ROLE_ORDER = ['Admin', 'Organizer', 'Steward', 'Driver', 'Prospect'];
+    // Role-to-pill-color map (2026-09-19, Matt's call: "gold, silver,
+    // bronze and then graphite for prospect and driver") -- see the
+    // .rc-badge-role-* rules in style.css for the actual colors.
+    var ROLE_PILL_CLASS = {
+      Admin: 'rc-badge-role-admin',
+      Organizer: 'rc-badge-role-organizer',
+      Steward: 'rc-badge-role-steward',
+      Driver: 'rc-badge-role-driver',
+      Prospect: 'rc-badge-role-prospect'
+    };
 
-    return buildGroupedAdminList(items, {
+    return buildGroupedAdminList(drivers || [], {
       emptyMessage: 'No members yet.',
       // A Role not in the canonical list (shouldn't happen, but data can
       // drift) still shows -- bucketed under Driver rather than silently
       // dropped, same "don't lose the row" instinct as _rcClassBadge uses
-      // for cars.
-      groupKey: function (d) { return d._isProspect ? 'Prospect' : (ROLE_ORDER.indexOf(d.Role) !== -1 ? d.Role : 'Driver'); },
+      // for cars. hasSeat wins over Role for the Prospect bucket: any
+      // account without a seat in the currently-open-to-registration
+      // season reads as Prospect regardless of Role, per Matt's
+      // definition ("someone without a current seat in a season").
+      groupKey: function (d) { return d.hasSeat ? (ROLE_ORDER.indexOf(d.Role) !== -1 ? d.Role : 'Driver') : 'Prospect'; },
       canonicalOrder: ROLE_ORDER,
       buildGroupHeader: function (role) {
         var head = el('div', 'rc-group-head');
-        head.appendChild(el('span', 'rc-badge-chip rc-badge-group', role.toUpperCase()));
+        head.appendChild(el('span', 'rc-badge-chip ' + (ROLE_PILL_CLASS[role] || 'rc-badge-role-driver'), role.toUpperCase()));
         return head;
       },
       buildBody: function (role, people, group) {
-        var isPending = role === 'Prospect';
         people.slice().sort(function (a, b) {
           return (a.DisplayName || a.Username || '').localeCompare(b.DisplayName || b.Username || '');
         }).forEach(function (person) {
@@ -8016,61 +7902,6 @@
           row.appendChild(info);
 
           var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
-
-          if (isPending) {
-            // Approve/Deny both write straight to the sheet the instant
-            // they're clicked (no confirm step), so per the sitewide button
-            // rule (2026-09-13, Matt's call: gray outline/text unless a
-            // button saves to a sheet, then solid red) both get the
-            // save-style red button rather than the row's usual gray --
-            // dropped the old green/red text-only treatment that used to
-            // distinguish them, since that was a status-pill borrow, not
-            // this site's actual save/non-save convention.
-            var approveBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Approve');
-            approveBtn.type = 'button';
-            approveBtn.addEventListener('click', function () {
-              // Instant, no wait on the server (2026-09-03, Matt's call:
-              // "all the admin/data management functions work the same" as
-              // the rest of the site). The row drops out of Pending Approval
-              // the instant Approve is clicked; the actual promotion happens
-              // silently in the background. A failure puts the row back and
-              // explains why via toast, since it was never actually approved.
-              var nextSibling = row.nextSibling, parent = row.parentNode;
-              if (parent) parent.removeChild(row);
-              fetchApi('adminApproveAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-                if (data && data.success) {
-                  if (reload) reload();
-                } else {
-                  if (parent) parent.insertBefore(row, nextSibling);
-                  showToast((data && data.message) || 'Could not approve this account -- restored.', 'error');
-                }
-              }).catch(function () {
-                if (parent) parent.insertBefore(row, nextSibling);
-                showToast('Could not reach the server -- account not approved.', 'error');
-              });
-            });
-            var denyBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Deny');
-            denyBtn.type = 'button';
-            denyBtn.addEventListener('click', function () {
-              // Same instant pattern as Approve above.
-              var nextSibling = row.nextSibling, parent = row.parentNode;
-              if (parent) parent.removeChild(row);
-              fetchApi('adminRejectAccount', { method: 'POST', token: token, body: { profileId: person.ProfileID } }).then(function (data) {
-                if (data && data.success) {
-                  if (reload) reload();
-                } else {
-                  if (parent) parent.insertBefore(row, nextSibling);
-                  showToast((data && data.message) || 'Could not deny this account -- restored.', 'error');
-                }
-              }).catch(function () {
-                if (parent) parent.insertBefore(row, nextSibling);
-                showToast('Could not reach the server -- account not denied.', 'error');
-              });
-            });
-            btnGroup.appendChild(approveBtn);
-            btnGroup.appendChild(denyBtn);
-          }
-
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
           editBtn.addEventListener('click', function () { openEditDriverModal(person, token, reload); });
@@ -8252,8 +8083,9 @@
     var role = document.createElement('select');
     // Cumulative access hierarchy, lowest to highest (see
     // race-club-v03-system-map.html, Section 0): Driver < Steward <
-    // Organizer < Admin. Prospect isn't in this list -- it's a Status
-    // (PendingVerification/PendingApproval), not a Role; see Auth.gs.
+    // Organizer < Admin. Prospect isn't in this list -- it's not a Role
+    // at all, just "no seat in the currently-open-to-registration season"
+    // (computed on the fly); see Auth.gs's VALID_ROLES header comment.
     ['Driver', 'Steward', 'Organizer', 'Admin'].forEach(function (r) {
       var opt = document.createElement('option'); opt.value = r; opt.textContent = r;
       if (driver.Role === r) opt.selected = true;
@@ -8400,7 +8232,8 @@
       },
       buildGroupHeader: function (region) {
         var head = el('div', 'rc-group-head');
-        head.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(region.toUpperCase())));
+        // Graphite, not black (2026-09-19, Matt's call).
+        head.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(region.toUpperCase())));
         return head;
       },
       buildBody: function (region, venuesInRegion, regionGroup) {
@@ -8733,7 +8566,8 @@
         seasonKeys.forEach(function (season) {
           var seasonHead = el('div', 'rc-dm-season-head');
           seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
-          seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(season)));
+          // Graphite, not black (2026-09-19, Matt's call).
+          seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(season)));
           group.appendChild(seasonHead);
 
           bySeason[season].forEach(function (c) {

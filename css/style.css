@@ -63,6 +63,22 @@
   --rc-tier-high: #9333ea;
   --rc-tier-elite: #c9a227;
 
+  /* Members list role pills (added 2026-09-19, Matt's call: "the catagory
+     pills to go from gold, silver, bronze and then graphite for prospect
+     and driver") -- Admin/Organizer/Steward get a medal-tier color each,
+     Driver and Prospect share the same graphite (both are "just a
+     participant," not a staff tier). --rc-tier-silver/--rc-tier-bronze are
+     new medal tones (distinct from --rc-silver above, which is a light
+     border/disabled-state gray, not a pill fill); Admin reuses the
+     existing --rc-gold rather than a fourth new token. --rc-graphite is
+     also reused wherever a Data Management pill previously read plain
+     black (see .rc-badge-graphite below) -- a dark neutral one step
+     lighter than --rc-carbon so those pills read as deliberately styled
+     rather than a leftover placeholder color. */
+  --rc-tier-silver: #9AA5AD;
+  --rc-tier-bronze: #93582F;
+  --rc-graphite: #3A3F45;
+
   /* Semantic bonus/penalty/status colors (named 2026-09-13, sitewide review
      fix) -- these five hex values were previously hand-typed at 29 separate
      call sites across the file (--rc-positive alone at 15 of them), so a
@@ -448,6 +464,22 @@ p { margin: 0 0 0.75em; }
    and the Tracks list's Region grouping -- one shared "grouping" badge
    instead of near-identical copies per list. */
 .rc-badge-group { background: var(--rc-carbon); }
+/* Members list role pills (2026-09-19) -- see the --rc-tier-silver/
+   --rc-tier-bronze/--rc-graphite token comment above for the color
+   mapping. Admin/Organizer/Steward each get their own medal tone;
+   Driver and Prospect intentionally share .rc-badge-graphite. */
+.rc-badge-role-admin { background: var(--rc-gold); }
+.rc-badge-role-organizer { background: var(--rc-tier-silver); }
+.rc-badge-role-steward { background: var(--rc-tier-bronze); }
+.rc-badge-role-driver, .rc-badge-role-prospect { background: var(--rc-graphite); }
+/* Graphite grouping badge (2026-09-19, Matt's call: "make the track
+   location pills graphite instead of black and the car year pills
+   graphite instead of black") -- same shape as .rc-badge-group, just a
+   lighter dark-neutral fill. Used only where Matt asked for it (Tracks
+   popup's Region pill, Cars popup's Season pill); every other
+   .rc-badge-group use (Members list -- see the role classes above --
+   Seasons list's year pill, etc.) is unaffected. */
+.rc-badge-graphite { background: var(--rc-graphite); }
 /* Sponsor risk-tier badges (Data Management's Sponsors popup, and the
    Sponsors page's own full-catalog list) -- Safe/Balanced/Risky (renamed
    2026-08-31 from Safe/Balanced/Aggressive, Matt's call -- only
