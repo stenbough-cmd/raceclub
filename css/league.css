@@ -269,10 +269,13 @@ body.rc-league-page {
   color: var(--rcl-ink-dim);
 }
 /* "Season N / Name" (2026-09-19, Matt's ask: color the separator and the
-   name distinctly) -- "Season N" itself stays the line's base ink-dim
-   color, the "/" reads in the brand accent, and the season name reads
-   bright white against it. Built as spans in js/league.js's
-   _rclRenderHero rather than one plain text string. */
+   name distinctly) -- the "/" reads in the brand accent and the season
+   name reads bright white against it. Built as spans in js/league.js's
+   _rclRenderHero rather than one plain text string.
+   "Season N" itself switched from the line's base ink-dim color to gold
+   (2026-09-19 follow-up, Matt's ask) -- same accent .rcl-cal-status-
+   unofficial/.rcl-ticker-item-tag already use elsewhere on this page. */
+.rcl-hero-season-num { color: #e0b64c; }
 .rcl-hero-season-sep { color: var(--rc-red); }
 .rcl-hero-season-name { color: var(--rcl-ink); }
 .rcl-hero-sub { margin-top: 12px; font-size: 15px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }

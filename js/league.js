@@ -1067,14 +1067,17 @@ function _rclRenderHero(hub) {
   // Eyebrow is static "Race Club" (set directly in league.html) --
   // nothing to fill in here anymore.
   // "Season N / Name" -- the "/" reads in the brand red, the season name
-  // itself in bright white, "Season N" stays the line's base dim color
-  // (2026-09-19, Matt's ask). Built as real spans rather than one text
-  // string so each piece can carry its own color.
+  // itself in bright white, "Season N" now reads gold (2026-09-19 follow-
+  // up, Matt's ask -- was the line's base dim color before). Built as
+  // real spans rather than one text string so each piece can carry its
+  // own color.
   var seasonEl = document.getElementById('rcl-hero-season');
   if (seasonEl) {
     seasonEl.innerHTML = '';
     if (hub.hasSeason && hub.seasonNumber) {
-      seasonEl.appendChild(document.createTextNode('Season ' + hub.seasonNumber));
+      var numSpan = _rclEl('span', 'rcl-hero-season-num');
+      numSpan.textContent = 'Season ' + hub.seasonNumber;
+      seasonEl.appendChild(numSpan);
       if (hub.seasonName) {
         var sep = _rclEl('span', 'rcl-hero-season-sep');
         sep.textContent = ' / ';
