@@ -457,7 +457,7 @@ function renderHeaderPending() {
   if (!mount) return;
   mount.className = 'rc-fixed-header';
   mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
-      '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
+      '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
     '</a><nav class="rc-header-nav"></nav>';
 }
 
@@ -480,7 +480,7 @@ function renderHeader(opts) {
 
   var html = '';
   html += '<a class="rc-header-logo-link" href="index.html">' +
-            '<img class="rc-header-logo" src="assets/race-club-header-logo.png" alt="Race Club">' +
+            '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
   html += '<nav class="rc-header-nav">';
   if (token) {
