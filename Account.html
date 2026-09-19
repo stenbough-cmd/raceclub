@@ -4096,16 +4096,17 @@
     var wrap = el('div', 'rc-cal-season-details');
     wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Format'));
 
-    var grid = el('div', 'rc-cal-format-list');
-    grid.appendChild(formatDetailTile('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
-    if (details.frequency) grid.appendChild(formatDetailTile('Race Frequency', details.frequency));
-    grid.appendChild(formatDetailTile('Drop Weeks', String(details.dropWeeks || 0)));
-    if (details.trackLimitsPreset) grid.appendChild(formatDetailTile('Track Limits', details.trackLimitsPreset));
-    // "Qualifying Type," not "Qualifying" -- that plain label is reserved
-    // for the qualifying session LENGTH tile below (Matt's rename ask,
-    // 2026-09-19); this one is visibility (Public/Private), a different
-    // fact about qualifying entirely.
-    grid.appendChild(formatDetailTile('Qualifying Type', details.privateQualifying === 'Yes' ? 'Private' : 'Public'));
+    // Two locked rows (2026-09-19, Matt's call) -- each its own
+    // non-wrapping .rc-cal-format-list-locked row so its pills always
+    // stay together on one line instead of the whole panel wrapping as
+    // one pool. Top row: the general season settings. Second row: every
+    // pill that "deals with time" (Practice/Qualifying/Sprint/Medium/
+    // Long), grouped together for exactly that reason.
+    var settingsRow = el('div', 'rc-cal-format-list rc-cal-format-list-locked');
+    settingsRow.appendChild(formatDetailTile('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
+    if (details.frequency) settingsRow.appendChild(formatDetailTile('Race Frequency', details.frequency));
+    settingsRow.appendChild(formatDetailTile('Drop Weeks', String(details.dropWeeks || 0)));
+    if (details.trackLimitsPreset) settingsRow.appendChild(formatDetailTile('Track Limits', details.trackLimitsPreset));
 
     // Fuel/Tire Wear/Setups -- season-wide (Seasons.SeasonDetails.
     // raceSettings), same source the individual race cards below used to
@@ -4117,26 +4118,32 @@
     // '2x'/'3x' already carry their own "x" and 'Off'/'Realistic' aren't
     // multiplied values at all.
     var raceSettings = details.raceSettings || {};
-    if (raceSettings.fuelMultiplier) grid.appendChild(formatDetailTile('Fuel', raceSettings.fuelMultiplier));
-    if (raceSettings.tireWearMultiplier) grid.appendChild(formatDetailTile('Tire Wear', raceSettings.tireWearMultiplier));
-    if (raceSettings.setupRules) grid.appendChild(formatDetailTile('Setups', raceSettings.setupRules));
-    if (raceSettings.practiceLengthMin) grid.appendChild(formatDetailTile('Practice', raceSettings.practiceLengthMin + ' min'));
-    if (raceSettings.qualifyLengthMin) grid.appendChild(formatDetailTile('Qualifying', raceSettings.qualifyLengthMin + ' min'));
+    if (raceSettings.fuelMultiplier) settingsRow.appendChild(formatDetailTile('Fuel', raceSettings.fuelMultiplier));
+    if (raceSettings.tireWearMultiplier) settingsRow.appendChild(formatDetailTile('Tire Wear', raceSettings.tireWearMultiplier));
+    if (raceSettings.setupRules) settingsRow.appendChild(formatDetailTile('Setups', raceSettings.setupRules));
+    wrap.appendChild(settingsRow);
 
-    // Race formats -- one tile per tier that actually has a points table
-    // set up (Sprint/Medium/Long). The tile's own value stays just the
-    // duration so it's no wider than any other tile in this grid; the
-    // full points list (which can run long -- P1 25 · P2 18 · ...) sits
-    // in a hover tooltip instead, same info, none of the extra width.
+    // Time row -- Practice, Qualifying (now carrying its own Qualifying
+    // Type -- Public/Private -- right in the value, "n min, Public"/
+    // "n min, Private", since that standalone Qualifying Type tile in the
+    // settings row above is gone), then Sprint/Medium/Long Race, each
+    // still just its duration with the full points list in a hover
+    // tooltip (see formatDetailTile above).
+    var timeRow = el('div', 'rc-cal-format-list rc-cal-format-list-locked');
+    if (raceSettings.practiceLengthMin) timeRow.appendChild(formatDetailTile('Practice', raceSettings.practiceLengthMin + ' min'));
+    if (raceSettings.qualifyLengthMin) {
+      var qualVisibility = details.privateQualifying === 'Yes' ? 'Private' : 'Public';
+      timeRow.appendChild(formatDetailTile('Qualifying', raceSettings.qualifyLengthMin + ' min, ' + qualVisibility));
+    }
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
       var pointsList = formatPointsList(table.points);
-      grid.appendChild(formatDetailTile(tier, (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : null));
+      timeRow.appendChild(formatDetailTile(tier + ' Race', (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : null));
     });
+    if (timeRow.children.length) wrap.appendChild(timeRow);
 
-    wrap.appendChild(grid);
     return wrap;
   }
 
