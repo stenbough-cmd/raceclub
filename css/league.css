@@ -372,6 +372,18 @@ body.rc-league-page {
    before the grid drops to fewer columns, so it still reads fine with
    just one or two classes and degrades to a single column on narrow
    screens without a separate media query. */
+/* "Unofficial Results" note (2026-09-19 follow-up) -- sits above the class
+   columns, same gold accent as .rcl-cal-status-unofficial so the cue reads
+   consistently between the Leaderboard and the Calendar. */
+.rcl-standings-unofficial-note {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #e0b64c;
+  margin-bottom: 16px;
+}
 .rcl-standings-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
 /* Gap above already spaces columns/rows in the grid -- the old stacked-
    layout margin would only unevenly pad whichever class happens to start
@@ -408,6 +420,12 @@ body.rc-league-page {
   border-bottom: 1px solid var(--rcl-line);
 }
 .rcl-standings-row:last-child { border-bottom: none; }
+/* No rank number/points column before any race has been run (2026-09-19
+   follow-up, Matt's call: "there shouldn't be a ranked list -- just the
+   graphic container, no number, and no points") -- collapses the grid
+   down to the identity block's own single column instead of leaving the
+   40px/auto slots blank on either side. */
+.rcl-standings-row-noresults { grid-template-columns: 1fr; }
 /* Position numbers now sit inside a solid-color container, same idea as
    the Calendar container's own round-number bar (2026-09-19, Matt's call:
    "the container behind each ranked number to be solid in color and
@@ -712,6 +730,13 @@ body.rc-league-page {
 }
 .rcl-cal-status-up { color: var(--rc-red); }
 .rcl-cal-status-complete { color: var(--rcl-ink-dim); }
+/* UNOFFICIAL/OFFICIAL RESULTS (2026-09-19 follow-up) -- unofficial reuses
+   the same gold accent .rcl-cal-row-special's own text already uses
+   elsewhere in this file, so "not final yet" reads as an amber/caution
+   note rather than inventing a new hue; official settles back to the
+   same calm, done-with-this tone COMPLETE always used. */
+.rcl-cal-status-unofficial { color: #e0b64c; }
+.rcl-cal-status-official { color: var(--rcl-ink-dim); }
 .rcl-cal-row-bye { opacity: 0.7; }
 .rcl-cal-row-bye .rcl-cal-round { background: var(--rcl-line-bright); font-size: 13px; }
 .rcl-cal-row-bye .rcl-cal-track { font-weight: 600; color: var(--rcl-ink-dim); }

@@ -375,6 +375,26 @@ function _rclRenderStandings(hub) {
     return;
   }
 
+  // Before any race has actually been run, there's nothing to rank yet
+  // (2026-09-19 follow-up, Matt's call: "if there hasn't been a race
+  // posted yet, there shouldn't be a ranked list -- just the graphic
+  // container, no number, and no points") -- same hasResults gate the
+  // ticker already uses (roundsCompleted > 0), so a season that's only in
+  // driver-registration limbo shows a plain roster instead of a fake
+  // "1st place" for whoever happens to sort first at 0 points apiece.
+  var hasResults = (hub.roundsCompleted || 0) > 0;
+
+  // "Unofficial Results" note (2026-09-19 follow-up, Matt's clarification:
+  // standings should still update the moment results are imported -- that
+  // already happens server-side -- but need a visual cue that they aren't
+  // official until an organizer finalizes them) -- hub.hasUnofficialResults
+  // is true the moment ANY completed round hasn't been finalized yet
+  // (see handleGetLeagueHub in Website.gs), since the season total is a
+  // sum across every round.
+  if (hasResults && hub.hasUnofficialResults) {
+    body.appendChild(_rclEl('div', 'rcl-standings-unofficial-note', 'Unofficial Results -- pending organizer finalization'));
+  }
+
   // One column per class (2026-09-19, Matt's call) -- .rcl-standings-
   // columns is the grid wrapper (css/league.css), auto-fitting however
   // many classes the season actually has.
@@ -393,8 +413,14 @@ function _rclRenderStandings(hub) {
       // gold/silver/bronze already reads as rank on its own.
       var POS_METAL_CLASS = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
       standings.forEach(function (row, idx) {
-        var rowEl = _rclEl('div', 'rcl-standings-row' + (POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
-        rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
+        // No rank number/metal color and no points column at all while
+        // hasResults is false -- just the identity block (logo, name,
+        // flag, car number, team), same "graphic container" every row
+        // already has, with nothing implying a 1st/2nd/3rd that doesn't
+        // exist yet. .rcl-standings-row-noresults drops the grid down to
+        // a single identity-only column (css/league.css).
+        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults ? (POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : '') : ' rcl-standings-row-noresults'));
+        if (hasResults) rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
 
         // Identity block, all on one line now (2026-09-19 follow-up,
         // Matt's call: "reduce the size of the manufacturer logo, place
@@ -442,13 +468,15 @@ function _rclRenderStandings(hub) {
         identity.appendChild(nameRow);
         rowEl.appendChild(identity);
 
-        var ptsCol = _rclEl('div', 'rcl-standings-pts');
-        ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
-        if (idx !== 0) {
-          var gap = '-' + (leaderPts - row.championshipPoints) + ' PTS';
-          ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-gap', gap));
+        if (hasResults) {
+          var ptsCol = _rclEl('div', 'rcl-standings-pts');
+          ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
+          if (idx !== 0) {
+            var gap = '-' + (leaderPts - row.championshipPoints) + ' PTS';
+            ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-gap', gap));
+          }
+          rowEl.appendChild(ptsCol);
         }
-        rowEl.appendChild(ptsCol);
         wrap.appendChild(rowEl);
       });
     }
@@ -567,7 +595,25 @@ function _rclRenderCalendar(hub) {
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
     topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(entry.eventName || 'Race') + '</strong>'));
-    var statusText = idx === nextIdx ? 'UP NEXT' : (entry.finished ? (entry.hasResults ? 'COMPLETE' : 'AWAITING RESULTS') : 'UPCOMING');
+    // COMPLETE split into UNOFFICIAL/OFFICIAL RESULTS (2026-09-19 follow-
+    // up, Matt's ask: "once results are imported, the calendar can flip
+    // to unofficial results with places and points, and once an organizer
+    // finalizes it, it goes to official results") -- same resultsFinalized
+    // field Account.html's driver-facing Calendar already shows this way
+    // (see its "Results Posted" / "Results Posted and Finalized" labels),
+    // now public here too.
+    var statusText;
+    if (idx === nextIdx) {
+      statusText = 'UP NEXT';
+    } else if (!entry.finished) {
+      statusText = 'UPCOMING';
+    } else if (!entry.hasResults) {
+      statusText = 'AWAITING RESULTS';
+    } else if (entry.resultsFinalized) {
+      statusText = 'OFFICIAL RESULTS';
+    } else {
+      statusText = 'UNOFFICIAL RESULTS';
+    }
     topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusText.split(' ')[0].toLowerCase(), statusText));
     rowBody.appendChild(topLine);
 
