@@ -1300,21 +1300,11 @@
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
       var carLine = data.carModel || '';
       if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
-      // Class pill row (2026-09-09, Matt's report: "make sure the class and
-      // tier are at the same vertical height") -- the tier pill this row
-      // used to also carry was removed entirely 2026-09-19 (car Tier
-      // classification doesn't matter anymore, and the class itself is now
-      // shown as the compact abbreviated pill in the card's top-right
-      // corner instead -- see setCornerNumber above). This full-name class
-      // pill stays here as the one on the body of the card.
-      if (data.carClass) {
-        var pillRow = el('div', 'rc-cs-pill-row');
-        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
-        var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
-        pill.style.background = 'var(' + colorVar + ')';
-        pillRow.appendChild(pill);
-        textCol.appendChild(pillRow);
-      }
+      // Full-name class pill (e.g. "Hypercar") under the car model removed
+      // entirely 2026-09-19 (Matt's call: "remove hypercar from below car
+      // in current seat card") -- the abbreviated, colored class pill in
+      // the card's top-right corner (setCornerNumber/_rcClassAbbrevPill,
+      // above) already says the same thing, so this was pure duplication.
       row.appendChild(textCol);
       body.appendChild(row);
 
@@ -1481,7 +1471,8 @@
     // Date/time as a plain line above the event title, not a pill
     // (2026-08-31, Matt's call: "move the date out of a pill and put it
     // above the event title") -- was one of the .rc-cal-stats chips below
-    // the title; that row now only carries Weather and Race Length Tier.
+    // the title; that row now carries Weather, Race Length, In-Game Race
+    // Start, and the server password.
     info.appendChild(el('div', 'rc-nextrace-date', escapeHtml(formatRaceDateTime(data.startUtc, driverTz))));
     var nameWrap = el('div', 'rc-nextrace-name');
     // Just the event name now -- "Round n" moved to the card's top-right
@@ -1512,13 +1503,21 @@
     // Weather pill (2026-08-31, Matt's call) -- same chip the Calendar
     // page's own race cards use (weatherIcon() + "N% Rain · N°C").
     stats.appendChild(calStat(weatherIcon(data), (data.chanceOfRain || 0) + '% Rain' + (data.temperatureC !== null && data.temperatureC !== undefined ? ' · ' + data.temperatureC + '°C' : ''), 'Weather'));
-    if (data.raceLengthTier) stats.appendChild(calStat(ICON_CLOCK, data.raceLengthTier, 'Race length tier'));
-    // In-Game Race Start, as its own gray pill next to Race Length Tier
+    // Race length in minutes (2026-09-19, replaces the Sprint/Medium/Long
+    // tier label -- Matt's call: "instead of labeling race length with
+    // sprint medium or long, display length in mins").
+    if (data.raceLengthMinutes) stats.appendChild(calStat(ICON_CLOCK, data.raceLengthMinutes + ' min', 'Race length'));
+    // In-Game Race Start, as its own gray pill next to Race Length
     // (2026-09-01, Matt's call) -- replaces the earlier flag-icon line
     // version, and drops Practice/Qualifying entirely (Calendar's own
     // race cards still show all three -- just this card that trims down
     // to Race Start only).
     if (data.igRaceStart) stats.appendChild(calStat(ICON_FLAG, 'In-Game ' + data.igRaceStart, 'In-game race start time'));
+    // Server password pill (added 2026-09-19, Matt's ask: "add password
+    // pill to next race in account") -- the password a driver needs to
+    // actually join the server, same round-override-or-season-default
+    // value handleGetNextRace resolves server-side.
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
@@ -3793,22 +3792,36 @@
   // whole League Management section (see renderLeagueManagementSection)
   // rather than patching just this panel in place -- keeps "nothing shows
   // until it's loaded" true after a mutation too, not just on first load.
-  // `showCreateButton` -- Create a Season (and its Resume/Clear Draft
-  // controls) only renders when true. Moved to the Admin page only
-  // (2026-09-08, Matt's call: "only an admin can create a season") --
-  // League Management passes false so this panel there is just the
-  // read-only-ish season list with its per-row Edit/Races controls.
+  // `showCreateButton` -- Create a Season / End Season (and Resume/Clear
+  // Draft) only render when true, i.e. only for an Admin viewer (see the
+  // renderLeagueManagementSection call site below). Admin-only, same rule
+  // as everywhere else on this page (2026-09-19, Matt's call: "CREATE
+  // SEASON and END SEASON... only appear to admins" -- moved here from
+  // the Admin > Data Management panel, right-aligned "just below" the
+  // Seasons title, same shape as the Add Track/Add Car button that sits
+  // right above the list in those Data Management popups).
   function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, showCreateButton) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
     if (showCreateButton) {
-      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
       var hasDraft = !!loadWizardDraft();
       var createBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
       createBtn.type = 'button';
       createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
       row.appendChild(createBtn);
+
+      // End Season -- moved here from the Admin > Data Management row
+      // (2026-09-19, same "Create/End Season live with the season list
+      // they act on" reasoning) -- no single season already in hand here
+      // any more than Data Management had, so this still opens the
+      // season-picker popup first (openEndSeasonModal), chaining into the
+      // same typed "END SEASON" confirmation before anything happens.
+      var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
+      endSeasonBtn.type = 'button';
+      endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
+      row.appendChild(endSeasonBtn);
 
       // The standalone Edit Season button is gone (2026-08-30) -- editing
       // now happens per-row in the season list below, which can point at
@@ -3896,7 +3909,7 @@
 
         section.innerHTML = '';
         section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-        section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, false));
+        section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
         section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }));
       });
     }).catch(function () {
@@ -4107,8 +4120,11 @@
       // Prize Pool stat removed entirely 2026-09-18 -- Matt's call: Special
       // Events are just fun races now, no money/prize payouts. See
       // season-1-mvp-scope.md.
-    } else if (entry.raceLengthTier) {
-      stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthTier, 'Race length tier'));
+    } else if (entry.raceLengthMinutes) {
+      // Minutes, not the Sprint/Medium/Long tier label (2026-09-19,
+      // Matt's call: "instead of labeling race length with sprint medium
+      // or long, display length in mins").
+      stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length'));
     }
     // Fuel/tire wear are season-wide settings (Seasons.SeasonDetails.
     // raceSettings), not per-round -- shown on every card next to length
@@ -4416,7 +4432,7 @@
         (race.overallFastestLapDriver + (race.overallFastestLapTime ? ' (' + race.overallFastestLapTime + ')' : '')) : ''),
       resultsStatBlock('Finishers', race.totalFinishers),
       resultsStatBlock('Race Laps', race.totalLaps || race.mostLapsCompleted),
-      resultsStatBlock('Race Length', race.raceLengthTier),
+      resultsStatBlock('Race Length', race.raceLengthMinutes ? (race.raceLengthMinutes + ' min') : ''),
       resultsStatBlock('Track Length', race.trackLengthMeters ? (Math.round(race.trackLengthMeters) + ' m') : ''),
       resultsStatBlock('Weather', race.weather),
       resultsStatBlock('Chance of Rain', race.chanceOfRain ? (race.chanceOfRain + '%') : ''),
@@ -6806,54 +6822,11 @@
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
 
-    // Create a Season -- moved into this row, and the standalone "Seasons"
-    // container removed entirely (2026-09-14, Matt's call: "Move Create a
-    // Season to the Data Management container and delete the SEASONS
-    // container"). Stays red/primary and sits first, ahead of every other
-    // button here, with its own vertical divider (rc-btn-row-vdivider,
-    // style.css) marking it off from the rest -- Matt's explicit ask,
-    // since it's the one button here that actually creates something new
-    // rather than opening an editor popup. End Season now sits right next
-    // to it, before that same divider (2026-09-14 follow-up, Matt's call:
-    // "Move END SEASON to the right of CREATE SEASON") -- the two season-
-    // lifecycle actions together, everything else (Clear Season Draft,
-    // Members/Tracks/Cars/Sponsors/Economy) on the other side.
-    var hasDraft = !!loadWizardDraft();
-    var createSeasonBtn = el('button', 'rc-btn-primary rc-btn-sm', hasDraft ? 'Resume Season Draft' : 'Create a Season');
-    createSeasonBtn.type = 'button';
-    createSeasonBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
-    row.appendChild(createSeasonBtn);
-
-    // End Season -- moved here from League Management (2026-09-09, Matt's
-    // call), then from its own now-deleted Seasons panel into this row
-    // (2026-09-14), then right next to Create a Season within this same
-    // row (2026-09-14 follow-up). This page has no single season already
-    // in hand the way each League Management row did, so the button opens
-    // the season-picker popup first (openEndSeasonModal), which chains
-    // into the same typed "END SEASON" confirmation before anything
-    // actually happens server-side.
-    var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
-    endSeasonBtn.type = 'button';
-    // Plain gray, not red -- opens the season-picker/confirm chain, doesn't
-    // end the season by itself.
-    endSeasonBtn.addEventListener('click', function () {
-      openEndSeasonModal(token, function () { renderAdminSection(token); });
-    });
-    row.appendChild(endSeasonBtn);
-
-    row.appendChild(el('div', 'rc-btn-row-vdivider'));
-
-    if (hasDraft) {
-      var clearSeasonDraftBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Clear Season Draft');
-      clearSeasonDraftBtn.type = 'button';
-      clearSeasonDraftBtn.addEventListener('click', function () {
-        clearWizardDraft();
-        showToast('Season draft cleared.', 'success');
-        renderAdminSection(token);
-      });
-      row.appendChild(clearSeasonDraftBtn);
-    }
-
+    // Create a Season / End Season / Clear Season Draft moved to the
+    // League Tools page's Seasons container (2026-09-19, Matt's call:
+    // "move the CREATE SEASON and END SEASON buttons... to the SEASONS
+    // container and they only appear to admins") -- see buildSeasonsPanel
+    // above. This row is just Members/Tracks/Cars now.
     var membersBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Members');
     membersBtn.type = 'button';
     membersBtn.addEventListener('click', function () { openMembersModal(token); });

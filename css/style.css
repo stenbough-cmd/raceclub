@@ -268,21 +268,6 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
-/* Vertical separator for a row of buttons (2026-09-14, added for the
-   Admin page's Data Management row: "separate the Create a Season
-   button from the rest with a vertical gray line" -- Create a Season
-   sits first, this divider right after it, then every other button).
-   A plain 1px gray rule, not a bordered/padded element -- align-self:
-   stretch makes it match whatever height the row's own buttons are
-   rendering at (the row is a flex container), rather than a fixed
-   height that could mismatch a future button size change. */
-.rc-btn-row-vdivider {
-  align-self: stretch;
-  width: 1px;
-  background: var(--rc-silver);
-  margin: 0 4px;
-}
-
 /* Data Management panel summary -- counts line (Members/Tracks/Cars) +
    season status line, sitting under the button row (2026-09-18, Matt's
    call: give this panel a quick at-a-glance snapshot). Small, muted,
@@ -2165,15 +2150,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    treatment. */
 .rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
-/* Wraps the class + tier pills together (2026-09-09, Matt's report: "make
-   sure the class and tier are at the same vertical height") -- the 9px
-   top spacing that used to live on .rc-cs-class-pill alone (so only the
-   class pill dropped down from the car model line above, not the tier
-   pill next to it) now lives here, on the row both pills share, and
-   align-items: center squares up their baselines regardless of the two
-   pills' own differing line-heights. */
-.rc-cs-pill-row { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
-.rc-cs-class-pill { display: inline-block; padding: 3px 10px; border-radius: 4px; color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 0.03em; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
@@ -4436,9 +4412,8 @@ body.rc-modal-scroll-locked {
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .rc-cal-classes-label { font-size: 12px; color: var(--rc-steel); margin-right: 2px; }
-/* Same shape as .rc-cs-class-pill (Current Seat card) -- rounded
-   rectangle, not an oval pill (Matt's call: every class badge on the
-   site uses this one shape). */
+/* Rounded rectangle, not an oval pill (Matt's call: every class badge on
+   the site uses this one shape). */
 .rc-cal-class-pill {
   display: inline-block;
   padding: 3px 10px;
