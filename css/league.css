@@ -81,9 +81,11 @@ body.rc-league-page {
   align-items: center;
   height: 100%;
   width: max-content;
-  /* Scroll speed bumped up (2026-09-19, Matt's ask: "make the scrolling
-     speed a little faster") -- shorter duration over the same distance. */
-  animation: rcl-ticker-scroll 26s linear infinite;
+  /* Scroll speed bumped up again (2026-09-19 follow-up, Matt: "uncomfortably
+     slow... increase the speed of the ticker to what it was") -- shorter
+     duration over the same distance. Keep in sync with mainDurationSec in
+     js/league.js. */
+  animation: rcl-ticker-scroll 16s linear infinite;
 }
 .rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
 /* Back to the original plain 0%/-50% loop (2026-09-19 follow-up -- the
@@ -96,9 +98,13 @@ body.rc-league-page {
    back on the identical second run -- this rule alone is exactly what
    ran before ANY "roll in" work started, and is only ever used after
    the one-time intro below has already finished. */
+/* Track is now built from 3 concatenated copies of the item list (was 2,
+   2026-09-19 follow-up, Matt: "make the amount of repeats more than 2x at a
+   time") -- the loop only needs to travel one run's width, i.e. -100/3%,
+   to stay seamless. Keep this in sync with RUN_COUNT in js/league.js. */
 @keyframes rcl-ticker-scroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to { transform: translateX(-33.3333%); }
 }
 /* One-time intro (2026-09-19 follow-up) -- js/league.js runs this once
    per page load, immediately followed (via animation-delay, not

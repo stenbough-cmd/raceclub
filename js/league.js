@@ -238,10 +238,10 @@ function _rclRenderTicker(hub) {
   // is identical and both carry the same trailing dot, the seam where the
   // second run picks back up right after the first reads as "...item •
   // item..." the same way a real news ticker separates its loop point,
-  // rather than the two runs just butting up against each other. Kept
-  // INSIDE buildRun (not appended once between the two calls below) so
-  // the two halves stay exactly equal-width, which is what makes the
-  // translateX(-50%) loop seamless in the first place.
+  // rather than the runs just butting up against each other. Kept INSIDE
+  // buildRun (not appended once after the loop below) so every run stays
+  // exactly equal-width, which is what makes the translateX loop seamless
+  // in the first place.
   function buildRun() {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
@@ -254,9 +254,14 @@ function _rclRenderTicker(hub) {
     return frag;
   }
 
+  var RUN_COUNT = 3; // number of concatenated copies of the item list -- see the
+  // animation comment above; must stay in sync with the -33.333% end value on
+  // rcl-ticker-scroll in css/league.css (translateX moves exactly one run's
+  // width per loop, i.e. -100/RUN_COUNT %)
   track.innerHTML = '';
-  track.appendChild(buildRun());
-  track.appendChild(buildRun()); // duplicate run -- see the animation comment above
+  for (var runIdx = 0; runIdx < RUN_COUNT; runIdx++) {
+    track.appendChild(buildRun());
+  }
 
   // Roll in from off-screen right ONCE on first paint, then hand off to
   // the normal seamless infinite loop (2026-09-19 follow-up, Matt's
@@ -273,11 +278,10 @@ function _rclRenderTicker(hub) {
   // property, since a plain keyframe can't express "one viewport-width
   // further right than a plain reset"), immediately followed (via
   // animation-delay, not overlapping it) by the ORIGINAL always-worked
-  // infinite 0%/-50% loop starting fresh from exactly where the intro
-  // left off. Intro duration is derived from one run's own width so it
-  // travels at the same px/sec speed as the main loop, instead of a
-  // fixed duration that would look faster or slower depending on how
-  // much content is actually in the ticker.
+  // infinite loop starting fresh from exactly where the intro left off.
+  // The intro runs at a short, fixed duration (see introDurationSec
+  // below) rather than one derived from the main loop's speed -- see
+  // that comment for why.
   //
   // Skipped entirely under prefers-reduced-motion -- setting this inline
   // would otherwise override that media query's own `animation: none`
@@ -291,10 +295,12 @@ function _rclRenderTicker(hub) {
   requestAnimationFrame(function () {
     var viewport = track.parentElement;
     if (!viewport) return;
-    var oneRunWidth = track.scrollWidth / 2;
-    var mainDurationSec = 26; // matches rcl-ticker-scroll's own duration in css/league.css
-    var pxPerSecond = oneRunWidth > 0 ? (oneRunWidth / mainDurationSec) : 0;
-    var introDurationSec = pxPerSecond > 0 ? (viewport.clientWidth / pxPerSecond) : 0;
+    var mainDurationSec = 16; // matches rcl-ticker-scroll's own duration in css/league.css
+    // The intro is just a quick "slide the strip on screen" reveal, so it runs
+    // at a fixed pace regardless of viewport width -- deriving it proportionally
+    // from the main loop's (slow, by design) px/sec rate made the very first
+    // roll-in sluggish on wide screens.
+    var introDurationSec = 1.1;
     track.style.setProperty('--rcl-ticker-start', viewport.clientWidth + 'px');
     // Restart cleanly (a plain property/animation-shorthand change alone
     // doesn't rewind an already-running animation) -- toggle animation
@@ -395,8 +401,10 @@ function _rclRenderStandings(hub) {
 
         var ptsCol = _rclEl('div', 'rcl-standings-pts');
         ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
-        var gap = idx === 0 ? 'LEADER' : ('-' + (leaderPts - row.championshipPoints) + ' PTS');
-        ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-gap', gap));
+        if (idx !== 0) {
+          var gap = '-' + (leaderPts - row.championshipPoints) + ' PTS';
+          ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-gap', gap));
+        }
         rowEl.appendChild(ptsCol);
         wrap.appendChild(rowEl);
       });
