@@ -2263,14 +2263,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    in the stats row. */
 .rc-nextrace-date { font-size: 12px; font-weight: 700; color: var(--rc-steel); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .rc-nextrace-name { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; color: var(--rc-carbon); text-transform: uppercase; }
-/* Moved closer to the event title above it (2026-08-31, Matt's call:
-   "move the track name up more towards the event name") -- 2px instead
-   of 6px. font-size/color now match .rc-cal-track exactly (13px, steel)
-   -- same call: the track name/layout should read the same on this card
-   as it does on the Calendar page (see .rc-cal-track's <strong>/
-   .rc-cal-layout split, reused here in nextRaceCard). */
-.rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
-.rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
+/* .rc-nextrace-track removed entirely 2026-09-19 (Matt's call: "remove the
+   tracks from being shown within each") -- the track name/layout line and
+   its .rc-nextrace-track-img aside are both gone from nextRaceCard now. */
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;
@@ -2286,11 +2281,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
 }
 .rc-nextrace-pill-gold { background: var(--rc-gold); }
-/* Nudged up a few px from true vertical-center (2026-08-31, Matt's call)
-   so it sits closer to the event title at the top of .rc-nextrace-info,
-   instead of centering against the taller stat-row/pill content below the
-   title. */
-.rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; margin-top: -10px; }
 
 /* Finances card + Reputation card (2026-08-31: split apart from the
    original combined "Finances & Reputation" card -- Finances shares the
@@ -4561,92 +4551,38 @@ body.rc-modal-scroll-locked {
   padding: 16px 18px;
   width: 100%;
 }
-/* Round number bar, left edge of the card (2026-09-09, Matt's call:
-   "instead of a giant number, take the gray border from the top of each
-   race container, make it a lot taller vertically, and insert the round
-   number inside that border in white font") -- this replaces BOTH the
-   old giant faded number AND the old horizontal top accent strip in one
-   move. It IS that same gray accent, just turned from a short strip
-   along the top into a full-height bar down the card's left edge, with
-   the round number set in white inside it. Negative margins bleed it
-   out to the card's own edges (.rc-cal-race has 16px/18px padding);
-   .rc-cal-race's overflow:hidden clips it to match the card's own
-   rounded corners. Special Events/byes never render this element at all
-   (see raceCard()) -- they keep their own separate gold top accent
-   instead (.rc-cal-race-special::before, unchanged). */
-.rc-cal-round-number {
-  flex: none;
-  align-self: stretch;
-  width: 56px;
-  margin: -16px 0 -16px -18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--rc-silver);
-  font-family: var(--rc-font-heading);
-  font-size: 26px;
-  line-height: 1;
-  font-weight: 900;
-  color: #fff;
-  user-select: none;
-}
-/* Special Events get a bit more of the same gold the star icon already
-   uses (Matt's call: "stick out a little better") -- a gold-tinted
-   border plus the same diagonal "finish flag" accent shape the Dashboard
-   cards use, just gold instead of red (and gold instead of the gray every
-   other race card now gets). */
-.rc-cal-race-special { border-color: var(--rc-gold); }
-.rc-cal-race-special::before {
+/* Round-number bar removed entirely 2026-09-19 (Matt's call: "get rid of
+   the giant numbers with the gray left border backgrounds") -- the round
+   number now lives in the "ROUND N:" title prefix instead (raceCard's
+   nameWrap). */
+/* Every round card now gets the same diagonal "finish flag" top accent
+   Special Events already had, just in gray instead of gold (2026-09-19,
+   Matt's call: "make the round event containers styled similar to the
+   special event except make them the gray color") -- .rc-cal-race-special
+   below overrides only the color, same pattern the border already used. */
+.rc-cal-race::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 40%;
   height: 4px;
-  background: var(--rc-gold);
+  background: var(--rc-silver);
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
+/* Special Events get a bit more of the same gold the star icon already
+   uses (Matt's call: "stick out a little better") -- a gold-tinted
+   border, and the shared ::before accent above just reads gold here
+   instead of gray. */
+.rc-cal-race-special { border-color: var(--rc-gold); }
+.rc-cal-race-special::before { background: var(--rc-gold); }
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
-/* Track image, right side of every race/special-event card -- Matt's
-   call: assets/images/tracks/{TrackID}.png, in a fixed 100x100 box (2026-08-30,
-   reduced from 150px), object-fit:contain to keep the image's own aspect
-   ratio while object-position centers it inside that box both ways --
-   a wide (horizontal) layout and a tall (vertical) one land centered in
-   the same box instead of hugging a corner. align-self:center centers
-   the whole box vertically against the round-number/details next to it,
-   rather than pinning it to the top of a taller card. A round with no
-   image uploaded yet (404) hides itself silently via the onerror handler
-   in raceCard() -- no broken-image icon. */
-.rc-cal-track-img {
-  flex: none;
-  align-self: center;
-  width: 100px;
-  height: 100px;
-  object-fit: contain;
-  object-position: center center;
-  border-radius: 6px;
-}
-/* Track image drops to its own row below the round-number+text side on
-   narrow/mobile widths, instead of squeezing into the same row as
-   everything else (2026-09-09, Matt's call: "if the browser is too
-   narrow, don't force everything onto the same row... let the track
-   image fall to the next row below the info so it's not overlapping").
-   .rc-cal-track-img is flex:none (never shrinks below its fixed 100px
-   box) and .rc-cal-race-body's own min-width:0 lets it shrink all the
-   way down to nothing, so below this width there just isn't room for
-   the round-number bar, the image, AND readable text all on one line --
-   flex-wrap alone would just as easily wrap the round-number bar away
-   from the body it belongs next to, so the real fix is giving the body
-   a real min-width here: the wrapping algorithm decides line breaks
-   using each item's hypothetical (pre-shrink) size, so a body that's
-   guaranteed at least 220px keeps it paired with the round-number bar
-   on the first line every time, leaving the image as the one thing that
-   doesn't fit and wraps to its own line below (centered there via the
-   classic flex auto-margin trick, since it's alone on that line). */
+/* .rc-cal-track-img removed entirely 2026-09-19 (Matt's call: "remove the
+   tracks from being shown within each") -- race cards no longer show a
+   track image aside; .rc-cal-race-body is the whole card's content now. */
 @media (max-width: 560px) {
   .rc-cal-race { flex-wrap: wrap; }
   .rc-cal-race-body { min-width: 220px; }
-  .rc-cal-track-img { margin: 12px auto 0; }
 }
 
 /* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
@@ -4682,19 +4618,25 @@ body.rc-modal-scroll-locked {
    just "Race 0N". */
 .rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); }
 
-/* Light divider under the track name/layout line (2026-08-30, Matt's
-   call), separating it from the date/time row below it -- same offwhite
-   weight used elsewhere on the site for a subtle row divider (e.g.
-   .rc-dm-subrow-edit's border-top). Back to running the full card width
-   (2026-08-31, Matt's call: "back to the original length") -- the
-   2026-08-30 "shrink to fit the text" treatment is reverted; plain
-   block-level width again instead of inline-block/fit-content. */
-.rc-cal-track { display: block; font-size: 13px; color: var(--rc-steel); margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
-/* Layout name -- sits right next to the track name (Matt's call), same
-   line, visually secondary (regular weight, steel color) so the track
-   name itself stays the strongest thing in the row. */
-.rc-cal-layout { color: var(--rc-steel); font-weight: 400; }
+/* .rc-cal-track/.rc-cal-layout removed entirely 2026-09-19 (Matt's call:
+   "remove the tracks from being shown within each") -- see .rc-cal-mini-
+   stats below, the small pill row that took over this row's spot. */
+
+/* Small pill row where the track name/layout line used to sit (2026-09-19,
+   Matt's call: "next to the race track and layout, add a smaller race
+   length pill and a weather pill" -- track itself removed for now, so
+   these pills took over that same row). Deliberately smaller than the
+   regular .rc-cal-stat chips below (.rc-cal-mini-stat) so this doesn't
+   just become the old bottom stats row moved up a few lines. Keeps the
+   same light divider the track line used to have, separating it from the
+   date/time row below. */
+.rc-cal-mini-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-cal-mini-stat {
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 4px;
+}
+.rc-cal-mini-stat svg { width: 12px; height: 12px; }
 
 .rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
 .rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
@@ -4876,43 +4818,17 @@ body.rc-modal-scroll-locked {
    the card shell, the header layout, the big season-number badge, and
    the registration-status pill below are new. */
 .rc-career-list { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
-.rc-career-card {
-  border: 1px solid var(--rc-silver);
-  border-radius: 10px;
-  background: var(--rc-white);
-  box-shadow: 0 8px 24px rgba(15, 17, 21, 0.08);
-  overflow: hidden;
-}
-/* Header band -- carbon background, same "this is the marquee bit" treatment
-   as a driver's own name plate. The big season number reads like a car
-   number/jersey number, reinforcing the "card," not "row," feeling. */
-.rc-career-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 18px 22px;
-  background: var(--rc-carbon);
-  color: var(--rc-white);
-}
-.rc-career-card-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.rc-career-season-num {
-  flex: none;
-  width: 46px;
-  height: 46px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--rc-font-heading);
-  font-size: 19px;
-  font-weight: 800;
-}
-.rc-career-card-title h3 { margin: 0; font-family: var(--rc-font-heading); font-size: 18px; }
-.rc-career-card-dates { font-size: 12px; color: rgba(255, 255, 255, 0.65); margin-top: 2px; }
+/* Card shell now comes entirely from "rc-panel rc-dash-card" (2026-09-19,
+   Matt's call: "the CAREER page looks different than the rest of the
+   pages... make it look like the same styling as every other page") --
+   the checkered corner, red top accent, white background and drop shadow
+   are all shared with Calendar/Results/every other featured panel now;
+   .rc-career-card itself adds no shell rules of its own any more. Season
+   name/number use the standard .rc-dash-card-header-row/-header-title/
+   -corner-figure classes (see buildCareerCard) instead of the old
+   bespoke carbon header band + "jersey number" badge. */
+.rc-career-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 16px; }
+.rc-career-card-dates { font-size: 12px; color: var(--rc-steel); }
 .rc-career-card-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 /* Registration-status pill -- same chip shape as .rc-badge-status-*,
    colored per the site's established Probation(yellow)/Suspended-or-
@@ -4925,11 +4841,13 @@ body.rc-modal-scroll-locked {
 /* Hero row -- the handful of numbers that matter most at a glance
    (standing, points, wins, podiums), reusing the Wager page's own
    .rc-cs-stat tile so it reads as the same "important numbers" language
-   sitewide rather than a one-off. */
-.rc-career-hero { display: flex; gap: 16px; flex-wrap: wrap; padding: 18px 22px; border-bottom: 1px solid var(--rc-silver); background: var(--rc-offwhite); }
+   sitewide rather than a one-off. Negative side margins bleed it out to
+   the panel's own edges, canceling .rc-panel's 20px padding, so it still
+   reads as an inset strip the way it did against the old card shell. */
+.rc-career-hero { display: flex; gap: 16px; flex-wrap: wrap; padding: 18px 20px; margin: 0 -20px 20px; border-top: 1px solid var(--rc-offwhite); border-bottom: 1px solid var(--rc-offwhite); background: var(--rc-offwhite); }
 .rc-career-hero .rc-cs-stat { flex: 1 1 110px; }
 
-.rc-career-card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 20px; }
+.rc-career-card-body { display: flex; flex-direction: column; gap: 20px; }
 .rc-career-group-title { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); margin: 0 0 10px; }
 .rc-career-stat-grid { display: flex; gap: 14px; flex-wrap: wrap; }
 .rc-career-stat-grid .rc-cs-stat { flex: 1 1 90px; }

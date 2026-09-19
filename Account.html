@@ -1499,14 +1499,9 @@
     if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     info.appendChild(nameWrap);
 
-    // Same track-name/layout text treatment as the Calendar page's own
-    // .rc-cal-track (bold track name, layout trailing in lighter steel
-    // text with an em dash) -- 2026-08-31, Matt's call: read the same way
-    // in both places instead of this card's own plain, unbolded line.
-    var trackLine = el('div', 'rc-nextrace-track');
-    trackLine.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
-      (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
-    info.appendChild(trackLine);
+    // Track name/layout line removed entirely (2026-09-19, Matt's call:
+    // "remove the tracks from being shown within each. I am removing this
+    // design choice for now and may add it back later somehow").
 
     var stats = el('div', 'rc-cal-stats');
     // Weather pill (2026-08-31, Matt's call) -- same chip the Calendar
@@ -1540,17 +1535,9 @@
     }
     body.appendChild(info);
 
-    // Silently omitted if the track has no image on disk -- same onerror
-    // pattern used everywhere else on the site (Matt: "if one doesn't
-    // exist let it silently not show anything").
-    if (data.trackId) {
-      var trackImg = document.createElement('img');
-      trackImg.className = 'rc-nextrace-track-img';
-      trackImg.src = trackImageSrc(data.trackId);
-      trackImg.alt = data.track || '';
-      trackImg.onerror = function () { trackImg.style.display = 'none'; };
-      body.appendChild(trackImg);
-    }
+    // Track image removed entirely (2026-09-19, Matt's call -- see the
+    // track-line removal comment above; may come back in some other form
+    // later).
 
     card.appendChild(body);
 
@@ -1606,23 +1593,31 @@
   // rather than one long stat list, so the card reads as a handful of
   // digestible chunks instead of a wall of numbers.
   function buildCareerCard(s, token) {
-    var card = el('div', 'rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
+    // "rc-panel rc-dash-card" (2026-09-19, Matt's call: "the CAREER page
+    // looks different than the rest of the pages -- make it look like the
+    // same styling as every other page we made on account") -- drops the
+    // card's old bespoke dark-carbon header band/jersey-number badge shell
+    // for the same checkered-corner/red-underline chrome Calendar/Results/
+    // Finances/every other featured panel on the site already uses.
+    var card = el('div', 'rc-panel rc-dash-card rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
 
-    // --- Header: season number/name, date range, status pills ---------
-    var head = el('div', 'rc-career-card-head');
-    var title = el('div', 'rc-career-card-title');
-    title.appendChild(el('div', 'rc-career-season-num', escapeHtml(seasonNumberLabel(s.seasonId) || '?')));
-    var titleText = el('div');
-    titleText.appendChild(el('h3', null, escapeHtml(s.seasonName || s.seasonId)));
+    // --- Header: season name + number (standard header-row/corner-figure
+    // treatment, same as Next Race's "ROUND N OF total"), then a plain
+    // meta line underneath for the date range and status pills. ---------
+    var head = el('div', 'rc-dash-card-header-row');
+    head.appendChild(el('h3', 'rc-dash-card-header-title', escapeHtml(s.seasonName || s.seasonId)));
+    var seasonNumLabel = seasonNumberLabel(s.seasonId);
+    if (seasonNumLabel) head.appendChild(el('div', 'rc-dash-card-corner-figure', 'SEASON ' + seasonNumLabel));
+    card.appendChild(head);
+
+    var metaRow = el('div', 'rc-career-card-meta');
     var dateRange = (s.startDate || s.endDate)
       ? [s.startDate, s.endDate].filter(Boolean).map(function (d) {
         var dt = new Date(d);
         return isNaN(dt.getTime()) ? d : dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
       }).join(' - ')
       : 'No races run yet';
-    titleText.appendChild(el('div', 'rc-career-card-dates', escapeHtml(dateRange)));
-    title.appendChild(titleText);
-    head.appendChild(title);
+    metaRow.appendChild(el('span', 'rc-career-card-dates', escapeHtml(dateRange)));
 
     var badges = el('div', 'rc-career-card-badges');
     badges.appendChild(_rcSeasonStatusBadge(s.seasonStatus));
@@ -1634,8 +1629,8 @@
       var regKey = String(s.registrationStatus).toLowerCase();
       badges.appendChild(el('span', 'rc-badge-chip rc-badge-regstatus-' + regKey, escapeHtml(s.registrationStatus)));
     }
-    head.appendChild(badges);
-    card.appendChild(head);
+    metaRow.appendChild(badges);
+    card.appendChild(metaRow);
 
     if (!s.statsKnown) {
       var body0 = el('div', 'rc-career-card-body');
@@ -4024,6 +4019,21 @@
     stats.appendChild(calStat(ICON_FLAG, (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'), 'Worst results dropped from the standings'));
     if (details.trackLimitsPreset) stats.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits', 'Track limits enforcement preset'));
     stats.appendChild(calStat(ICON_FLAG, details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying', 'Qualifying session visibility'));
+    // Fuel/Tire Wear/Setups moved here from every individual race card
+    // (2026-09-19, Matt's call: "move tire wear, fuel and setups to the
+    // top row of season details on this page since they don't change from
+    // race to race") -- these are season-wide (Seasons.SeasonDetails.
+    // raceSettings), same source raceCard used to read them from below.
+    var raceSettingsForCore = details.raceSettings || {};
+    if (raceSettingsForCore.fuelMultiplier) {
+      stats.appendChild(calStat(ICON_FUEL, raceSettingsForCore.fuelMultiplier + ' Fuel', 'Fuel consumption multiplier (season-wide)'));
+    }
+    if (raceSettingsForCore.tireWearMultiplier) {
+      stats.appendChild(calStat(ICON_TIRE, raceSettingsForCore.tireWearMultiplier + ' Tire Wear', 'Tire wear rate multiplier (season-wide)'));
+    }
+    if (raceSettingsForCore.setupRules) {
+      stats.appendChild(calStat(ICON_SETTINGS, raceSettingsForCore.setupRules + ' Setups', 'Whether car setups are locked (Fixed) or free to change (Open), season-wide'));
+    }
     wrap.appendChild(stats);
 
     var tierStats = el('div', 'rc-cal-stats');
@@ -4076,32 +4086,48 @@
       (entry.finished ? ' rc-cal-finished' : '') +
       (isSpecial ? ' rc-cal-race-special' : ''));
 
-    // Round number bar, left edge of the card (2026-09-09, Matt's call) --
-    // a full-height gray bar with the round number in white, replacing
-    // the old giant faded number. Special Events and bye weeks don't
-    // consume a round number, so they don't get this column at all --
-    // their body/image start flush left.
-    if (!isSpecial && entry.roundNum) {
-      card.appendChild(el('div', 'rc-cal-round-number', String(entry.roundNum)));
-    }
+    // Round-number bar removed entirely (2026-09-19, Matt's call: "get rid
+    // of the giant numbers with the gray left border backgrounds") -- the
+    // round number now lives in the "ROUND N:" title prefix below instead
+    // (see nameWrap). Every round/special-event card now also gets the
+    // same diagonal "finish flag" top accent (.rc-cal-race::before below),
+    // gray for a normal round and gold for a Special Event, so the two
+    // read as one family instead of only Special Events getting an accent.
 
-    // Everything except the track image lives in this column -- .rc-cal-race
-    // is a flex row (round number + card body + track image aside) so the
-    // image can sit to the right at a fixed max size regardless of how
-    // tall the text side gets.
+    // No track image aside anymore (2026-09-19, Matt's call: "remove the
+    // tracks from being shown within each... I am removing this design
+    // choice for now and may add it back later somehow") -- .rc-cal-race-
+    // body is just the whole card's content column now, nothing sits
+    // beside it.
     var body = el('div', 'rc-cal-race-body');
 
     var head = el('div', 'rc-cal-race-head');
     var nameWrap = el('div', 'rc-cal-race-name');
-    nameWrap.appendChild(document.createTextNode(entry.eventName || (isSpecial ? 'Special Event' : ('Round ' + entry.roundNum))));
+    // "ROUND N:"/"SPECIAL EVENT:" prefix on every title (2026-09-19, Matt's
+    // call) -- replaces the removed round-number bar as the way a driver
+    // tells which round a card is at a glance. A round with no custom
+    // event name still gets a title now ("ROUND N" alone) instead of the
+    // old fallback text living outside a prefix system.
+    var titlePrefix = isSpecial ? 'SPECIAL EVENT' : ('ROUND ' + entry.roundNum);
+    var titleText = entry.eventName ? (titlePrefix + ': ' + entry.eventName) : titlePrefix;
+    nameWrap.appendChild(document.createTextNode(titleText));
     if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     head.appendChild(nameWrap);
     body.appendChild(head);
 
-    var trackLine = el('div', 'rc-cal-track');
-    trackLine.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
-      (entry.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(entry.layout) + '</span>' : '');
-    body.appendChild(trackLine);
+    // Small pill row where the track line used to sit (2026-09-19, Matt's
+    // call: "next to the race track and layout, add a smaller race length
+    // pill and a weather pill" -- track itself is being removed for now,
+    // so these two small pills take over that row instead). Deliberately
+    // smaller than the old .rc-cal-stats chips (.rc-cal-mini-stat) so this
+    // row doesn't just become the same bottom stats row moved upward.
+    var miniStats = el('div', 'rc-cal-mini-stats');
+    if (!isSpecial && entry.raceLengthMinutes) {
+      miniStats.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length', 'rc-cal-mini-stat'));
+    }
+    miniStats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
+    if (entry.passwordOverride) miniStats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride, 'rc-cal-mini-stat'));
+    body.appendChild(miniStats);
 
     var datetime = el('div', 'rc-cal-datetime');
     var dtSpan = el('span', null, ICON_CLOCK + '<span>' + escapeHtml(formatRaceDateTime(entry.startUtc, driverTz)) + '</span>');
@@ -4122,54 +4148,17 @@
     }
     body.appendChild(datetime);
 
-    var stats = el('div', 'rc-cal-stats');
-    stats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
-    if (entry.passwordOverride) stats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
-    if (isSpecial) {
-      // Prize Pool stat removed entirely 2026-09-18 -- Matt's call: Special
-      // Events are just fun races now, no money/prize payouts. See
-      // season-1-mvp-scope.md.
-    } else if (entry.raceLengthMinutes) {
-      // Minutes, not the Sprint/Medium/Long tier label (2026-09-19,
-      // Matt's call: "instead of labeling race length with sprint medium
-      // or long, display length in mins").
-      stats.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length'));
-    }
-    // Fuel/tire wear are season-wide settings (Seasons.SeasonDetails.
-    // raceSettings), not per-round -- shown on every card next to length
-    // (Matt's call) rather than only in the Season Settings panel above.
-    if (raceSettings && raceSettings.fuelMultiplier) {
-      stats.appendChild(calStat(ICON_FUEL, raceSettings.fuelMultiplier + ' Fuel', 'Fuel consumption multiplier (season-wide)'));
-    }
-    if (raceSettings && raceSettings.tireWearMultiplier) {
-      stats.appendChild(calStat(ICON_TIRE, raceSettings.tireWearMultiplier + ' Tire Wear', 'Tire wear rate multiplier (season-wide)'));
-    }
-    // Setup Rules pill (2026-09-19, Matt's call: "put the FIXED or OPEN
-    // setup pills with each race's container") -- season-wide like Fuel/
-    // Tire Wear above (raceSettings.setupRules, set once in the wizard's
-    // Race Settings step), shown on every race card rather than only once
-    // in the Season Settings summary.
-    if (raceSettings && raceSettings.setupRules) {
-      stats.appendChild(calStat(ICON_SETTINGS, raceSettings.setupRules + ' Setups', 'Whether car setups are locked (Fixed) or free to change (Open), season-wide'));
-    }
-    body.appendChild(stats);
+    // Bottom .rc-cal-stats row removed entirely (2026-09-19, Matt's call:
+    // "remove the larger ones from the bottom of each container so the
+    // only pills should be next to the tracks in calendar") -- Weather/
+    // Race Length moved up into the new miniStats row above; Fuel/Tire
+    // Wear/Setups moved into Season Settings' top row (they're season-wide
+    // and don't change race to race -- see seasonDetailsPanel).
 
     card.appendChild(body);
 
-    // Track image, right side of the card -- assets/images/tracks/{TrackID}.png,
-    // capped at 250px either dimension via CSS (object-fit:contain keeps
-    // the image's own aspect ratio inside that box). Special Events have
-    // no TrackID (they pick a track by name only, not a Tracks row), so
-    // there's nothing to build a URL from -- same "silently no image"
-    // outcome as a round whose track image just hasn't been uploaded yet.
-    if (entry.trackId) {
-      var trackImg = document.createElement('img');
-      trackImg.className = 'rc-cal-track-img';
-      trackImg.src = trackImageSrc(entry.trackId);
-      trackImg.alt = entry.track || '';
-      trackImg.onerror = function () { trackImg.style.display = 'none'; };
-      card.appendChild(trackImg);
-    }
+    // Track image removed entirely (2026-09-19, Matt's call -- see the
+    // miniStats comment above; may come back in some other form later).
 
     // Gray semi-transparent overlay + large bold "EVENT COMPLETED" label
     // once a round/special event's start time has passed (Matt's call) --

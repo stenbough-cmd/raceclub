@@ -352,27 +352,38 @@ body.rc-league-page {
   border-bottom: 1px solid var(--rcl-line);
 }
 .rcl-standings-row:last-child { border-bottom: none; }
-/* Position numbers styled like the Calendar's round-number bar (2026-09-19,
-   Matt's ask: "give the numbers the same style treatment as the calendar
-   numbers... Make 1st gold, 2nd silver, and 3rd bronze and the rest can be
-   a titanium metal color") -- same heading font/weight/tabular-nums the
-   round bar uses, sized down to fit inline in a standings row instead of
-   its own 56px block. Metal color is a per-row modifier class
-   (.rcl-standings-row-p1/p2/p3) added in js/league.js by finish position,
-   not by championship-lead like the old .rcl-standings-row-lead rule
-   (removed -- gold/silver/bronze already communicates rank, a separate red
-   "lead" tint on top of that read as a duplicate/competing signal). */
+/* Position numbers now sit inside a solid-color container, same idea as
+   the Calendar container's own round-number bar (2026-09-19, Matt's call:
+   "the container behind each ranked number to be solid in color and
+   slightly rounded on the top left corner -- the list should look similar
+   to the CALENDAR container on that page, only with different colors") --
+   .rcl-standings-pos bleeds to fill the row's own top/bottom padding via
+   negative margin (same trick the Calendar round-number bar used) so it
+   reads as a filled block down the row's left edge, rounded only at the
+   top-left corner like .rcl-cal-round. Metal color is a per-row modifier
+   class (.rcl-standings-row-p1/p2/p3) added in js/league.js by finish
+   position -- gold/silver/bronze backgrounds for the podium, titanium gray
+   for everyone else, dark text throughout instead of colored text on a
+   plain background. */
 .rcl-standings-pos {
+  align-self: stretch;
+  margin: -10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d7d9dd 0%, #9a9ea6 100%);
   font-family: var(--rc-font-heading);
   font-size: 18px;
   font-weight: 900;
-  color: var(--rcl-titanium, #8b8f96);
-  text-align: center;
+  line-height: 1;
+  color: #1c1d20;
   font-variant-numeric: tabular-nums;
+  user-select: none;
+  border-top-left-radius: 8px;
 }
-.rcl-standings-row-p1 .rcl-standings-pos { color: #e8c04a; }
-.rcl-standings-row-p2 .rcl-standings-pos { color: #c7cad0; }
-.rcl-standings-row-p3 .rcl-standings-pos { color: #c98a4f; }
+.rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
+.rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
 .rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); }
 .rcl-standings-team { font-size: 12.5px; color: var(--rcl-ink-faint); margin-top: 1px; }
 .rcl-standings-pts { text-align: right; }
