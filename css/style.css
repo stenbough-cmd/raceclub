@@ -2755,6 +2755,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-row-dnf td { color: var(--rc-red); }
 .rc-results-row-dnf .rc-results-td-pos { color: var(--rc-red); }
 .rc-results-td-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); }
+
+/* Results/Career per-race "your own race" summary + full session detail
+   (2026-09-19) -- reuses .rc-results-stat-strip for the summary grid
+   (same look as the race-wide conditions strip above it) and adds three
+   new pieces: one .rc-results-session container per Practice/Qualify/
+   Race session that has laps or events for this driver, a laps table
+   (same .rc-results-table shape, just denser given the column count),
+   and a plain-line RaceEvents list underneath it. */
+.rc-results-you-summary { margin-bottom: 4px; }
+.rc-results-you-summary .rc-results-stat-strip { border-top: none; }
+.rc-results-sessions { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.rc-results-session { border-top: 1px solid var(--rc-offwhite); padding-top: 12px; }
+.rc-results-session-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
+.rc-results-laps-table th, .rc-results-laps-table td { font-size: 11.5px; padding: 5px 8px; }
+.rc-results-events-list { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+.rc-results-event-line { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-results-event-line:last-child { border-bottom: none; }
+.rc-results-event-lap { flex: none; min-width: 52px; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+.rc-results-event-text { color: var(--rc-carbon); }
+
+/* Career page's lazy-loaded past-season race detail (2026-09-19) -- the
+   toggle button reuses the standard .rc-btn-secondary.rc-btn-sm shape;
+   this just governs the expand/collapse container underneath it. */
+.rc-career-races-body { margin-top: 10px; }
+.rc-career-races-body .rc-results-round-list { gap: 14px; }
+
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
    name+car#, two-column shape (team name dropped, 2026-09-07) the whole

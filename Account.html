@@ -1574,7 +1574,7 @@
         }
 
         var list = el('div', 'rc-career-list');
-        result.seasons.forEach(function (s) { list.appendChild(buildCareerCard(s)); });
+        result.seasons.forEach(function (s) { list.appendChild(buildCareerCard(s, token)); });
         section.appendChild(list);
       });
   }
@@ -1584,7 +1584,7 @@
   // about), then groups everything else into small labeled clusters
   // rather than one long stat list, so the card reads as a handful of
   // digestible chunks instead of a wall of numbers.
-  function buildCareerCard(s) {
+  function buildCareerCard(s, token) {
     var card = el('div', 'rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
 
     // --- Header: season number/name, date range, status pills ---------
@@ -1685,6 +1685,62 @@
         discGroup.appendChild(line);
       });
       body.appendChild(discGroup);
+    }
+
+    // --- Races (2026-09-19) -- full per-race lap+event detail, one
+    // container per race, for PAST seasons only -- Matt's split: the
+    // Results page already covers the CURRENT season in full, so a
+    // driver's currently-underway season just points them there instead
+    // of duplicating the same fetch here. Lazy-loaded on click
+    // (handleGetCareerSeasonRaceDetail, DataCache.gs) so a driver with
+    // many seasons of history doesn't pay for every one of them on the
+    // Career page's initial load -- only the season actually expanded
+    // ever fetches its races.
+    if (s.seasonStatus === 'Registration') {
+      var currentNote = el('div');
+      currentNote.appendChild(el('div', 'rc-career-group-title', 'Races'));
+      currentNote.appendChild(el('p', 'rc-career-empty-note', 'This season is still underway -- full race-by-race detail is on the Results page.'));
+      body.appendChild(currentNote);
+    } else {
+      var racesGroup = el('div');
+      racesGroup.appendChild(el('div', 'rc-career-group-title', 'Races'));
+      var racesBody = el('div', 'rc-career-races-body');
+      racesBody.style.display = 'none';
+      var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'View Race Details');
+      toggleBtn.type = 'button';
+      var racesLoaded = false;
+      toggleBtn.addEventListener('click', function () {
+        if (racesBody.style.display === 'block') {
+          racesBody.style.display = 'none';
+          toggleBtn.textContent = 'View Race Details';
+          return;
+        }
+        racesBody.style.display = 'block';
+        toggleBtn.textContent = 'Hide Race Details';
+        if (racesLoaded) return;
+        racesLoaded = true;
+        racesBody.appendChild(buildSpinner('Loading races...'));
+        fetchApi('getCareerSeasonRaceDetail', { token: token, seasonId: s.seasonId }).then(function (result) {
+          racesBody.innerHTML = '';
+          if (!result || !result.success || !result.rounds || !result.rounds.length) {
+            racesBody.appendChild(el('p', 'rc-career-empty-note', 'No race results recorded for this season.'));
+            return;
+          }
+          var list = el('div', 'rc-results-round-list');
+          result.rounds.slice().sort(function (a, b) {
+            var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
+            var bt = b.startUtc ? new Date(b.startUtc).getTime() : 0;
+            return bt - at;
+          }).forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
+          racesBody.appendChild(list);
+        }).catch(function () {
+          racesBody.innerHTML = '';
+          racesBody.appendChild(el('p', 'rc-career-empty-note', 'Could not load races right now.'));
+        });
+      });
+      racesGroup.appendChild(toggleBtn);
+      racesGroup.appendChild(racesBody);
+      body.appendChild(racesGroup);
     }
 
     card.appendChild(body);
@@ -4219,6 +4275,131 @@
     return !!row && /DNF|DSQ|Disqualif/i.test(row.finishStatus || '');
   }
 
+  // Your own race summary -- position/grid/laps/best lap/total time/
+  // points/pit stops/incidents-track limits-penalties, plus the pole/
+  // fastest-lap/most-laps-led/clean-race callouts. Replaces the old
+  // per-class all-drivers table entirely (2026-09-19, Matt's call: "the
+  // RESULTS link ... should only show the player's results ... we don't
+  // need a leaderboard or extra fluff in there").
+  function resultsYourSummary(you) {
+    var wrap = el('div', 'rc-results-you-summary');
+    if (!you) {
+      wrap.appendChild(el('p', 'rc-hint', 'No result recorded for you in this race.'));
+      return wrap;
+    }
+    var grid = el('div', 'rc-results-stat-strip');
+    [
+      resultsStatBlock('Finish', you.position ? ('P' + you.position + (you.classPosition ? ' (Class P' + you.classPosition + ')' : '')) : (you.finishStatus || 'Not Classified')),
+      resultsStatBlock('Grid', you.gridPos ? ('P' + you.gridPos + (you.classGridPos ? ' (Class P' + you.classGridPos + ')' : '')) : ''),
+      resultsStatBlock('Laps', you.laps),
+      resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatTotalTime_(parseFloat(you.bestLapTime)) : ''),
+      resultsStatBlock('Total Time', (you.finishTimeSeconds !== null && you.finishTimeSeconds !== undefined) ? _rcFormatTotalTime_(you.finishTimeSeconds) : ''),
+      resultsStatBlock('Points', you.points === null ? '' : you.points),
+      resultsStatBlock('Pit Stops', you.pitstops),
+      resultsStatBlock('Incidents / Track Limits / Penalties', (you.incidentsCount || 0) + ' / ' + (you.trackLimitsCount || 0) + ' / ' + (you.penaltiesCount || 0)),
+      resultsStatBlock('DNF Reason', you.dnfReason)
+    ].forEach(function (block) { if (block) grid.appendChild(block); });
+    wrap.appendChild(grid);
+
+    var badgeBits = [];
+    if (you.wonPole) badgeBits.push('Pole');
+    if (you.wonFastestLap) badgeBits.push('Fastest Lap');
+    if (you.wonMostLapsLed) badgeBits.push('Most Laps Led');
+    if (you.isCleanRace) badgeBits.push('Clean Race');
+    if (badgeBits.length) wrap.appendChild(el('p', 'rc-hint', badgeBits.join(' · ')));
+    return wrap;
+  }
+
+  // One line of readable text per RaceEvents row, keyed off EventType --
+  // matches the exact Detail shapes Ingestion.gs writes (see that file's
+  // EventType comment). Falls back to just the raw event type name for
+  // anything unrecognized rather than hiding the row.
+  function _rcFormatEventLine_(evt) {
+    var d = evt.detail || {};
+    switch (evt.eventType) {
+      case 'Incident':
+        return 'Incident' + (d.ContactWith ? ' -- contact with ' + d.ContactWith : '') + (d.SeverityValue ? ' (severity ' + d.SeverityValue + ')' : '');
+      case 'TrackLimit':
+        return 'Track Limit' + (d.Outcome ? ' -- ' + d.Outcome : '') + (d.CurrentPoints !== undefined ? ' (points: ' + d.CurrentPoints + ')' : '');
+      case 'SimPenaltyIssued':
+        return 'Penalty Issued' + (d.PenaltyType ? ' -- ' + d.PenaltyType : '') + (d.Reason ? ' (' + d.Reason + ')' : '') +
+          (d.TimeSeconds ? ', ' + d.TimeSeconds + 's' : '') + (d.LapsPenalty ? ', ' + d.LapsPenalty + ' lap(s)' : '');
+      case 'SimPenaltyServed':
+        return 'Penalty Served' + (d.PenaltyType ? ' -- ' + d.PenaltyType : '');
+      case 'Sector':
+        return d.Kind === 'BestSector' ? ('Best Sector ' + (d.SectorIndex || '') + (d.Class ? ' (' + d.Class + ')' : '')) : 'Suspension Damage';
+      default:
+        return evt.eventType || 'Event';
+    }
+  }
+
+  // Full unfiltered lap-by-lap + RaceEvents breakdown, one container per
+  // session this driver actually has laps/events for (Practice/Qualify/
+  // Race, whichever the round's own Sessions rows cover) -- "everything
+  // the XML captured for this driver, unfiltered" (Matt's call).
+  // Horizontally scrollable on its own container, same as every other
+  // wide table on this page, so a narrow screen never forces the whole
+  // page to scroll sideways.
+  function resultsSessionsDetail(sessions) {
+    var wrap = el('div', 'rc-results-sessions');
+    (sessions || []).forEach(function (session) {
+      if ((!session.laps || !session.laps.length) && (!session.events || !session.events.length)) return;
+
+      var sessionPanel = el('div', 'rc-results-session');
+      var label = (session.sessionType || 'Session') + (session.trackVenue ? ' · ' + session.trackVenue : '');
+      sessionPanel.appendChild(el('div', 'rc-results-session-title', escapeHtml(label)));
+
+      if (session.laps && session.laps.length) {
+        var scrollWrap = el('div', 'rc-results-table-wrap');
+        var table = document.createElement('table');
+        table.className = 'rc-results-table rc-results-laps-table';
+        var thead = document.createElement('thead');
+        var headRow = document.createElement('tr');
+        ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Fuel Used', 'VE', 'VE Used', 'Tire FL', 'Tire FR', 'Tire RL', 'Tire RR', 'Compound F', 'Compound R'].forEach(function (h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        session.laps.forEach(function (l) {
+          var tr = document.createElement('tr');
+          function td(v) {
+            var c = document.createElement('td');
+            c.textContent = (v === null || v === undefined || v === '') ? '—' : String(v);
+            tr.appendChild(c);
+          }
+          td(l.lapNum); td(l.positionAtLap);
+          td(l.lapTime); td(l.sector1); td(l.sector2); td(l.sector3);
+          td(l.topSpeed); td(l.fuel); td(l.fuelUsed); td(l.ve); td(l.veUsed);
+          td(l.tireWearFL); td(l.tireWearFR); td(l.tireWearRL); td(l.tireWearRR);
+          td(l.frontCompound || [l.compoundFL, l.compoundFR].filter(Boolean).join('/'));
+          td(l.rearCompound || [l.compoundRL, l.compoundRR].filter(Boolean).join('/'));
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        scrollWrap.appendChild(table);
+        sessionPanel.appendChild(scrollWrap);
+      }
+
+      if (session.events && session.events.length) {
+        var eventsList = el('div', 'rc-results-events-list');
+        session.events.forEach(function (evt) {
+          var line = el('div', 'rc-results-event-line');
+          line.appendChild(el('span', 'rc-results-event-lap', evt.lapNum ? ('Lap ' + evt.lapNum) : (evt.elapsedTime || '')));
+          line.appendChild(el('span', 'rc-results-event-text', escapeHtml(_rcFormatEventLine_(evt))));
+          eventsList.appendChild(line);
+        });
+        sessionPanel.appendChild(eventsList);
+      }
+
+      wrap.appendChild(sessionPanel);
+    });
+    return wrap;
+  }
+
   function resultsRoundPanel(race) {
     var you = race.you;
     var panel = el('div', 'rc-results-round');
@@ -4253,212 +4434,11 @@
     ].forEach(function (block) { if (block) statStrip.appendChild(block); });
     if (statStrip.childNodes.length) panel.appendChild(statStrip);
 
-    // Bank balance line removed (2026-09-09, Matt's call) -- just the
-    // Not Classified headline now, when there's no finishing position to
-    // show; the per-class table below already covers the money side of
-    // the round.
-    if (you && !you.position) {
-      var yourRace = el('div', 'rc-recent-results-yours');
-      yourRace.appendChild(el('div', 'rc-recent-results-yours-headline', escapeHtml(you.finishStatus || 'Not Classified')));
-      panel.appendChild(yourRace);
-    }
-
-    // Full per-class breakdown, one comprehensive table per class instead
-    // of the Dashboard card's compact position/name/logo rows -- every
-    // column DriverResults/SeasonHistory can supply for that finisher
-    // (2026-09-07, Matt's call). Horizontally scrollable on its own
-    // container so a narrow screen never forces the whole page to scroll
-    // sideways.
-    (race.classes || []).forEach(function (cls) {
-      var classPanel = el('div', 'rc-results-class');
-      var classHead = el('div', 'rc-results-class-head');
-      classHead.appendChild(_rcClassBadge(cls.className));
-      // Winner/Fastest Lap summary line removed from next to the class
-      // pill (2026-09-09, Matt's call) -- both are already visible in the
-      // per-class table below (P1 row, and the FL badge next to whoever
-      // set it), so this was a redundant repeat of the same two facts.
-      classPanel.appendChild(classHead);
-
-      var scrollWrap = el('div', 'rc-results-table-wrap');
-      var table = document.createElement('table');
-      table.className = 'rc-results-table';
-      var thead = document.createElement('thead');
-      var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Grid', 'Laps', 'Best Lap', 'Total Time', 'Pts', 'Inc/TL/Pen'].forEach(function (h) {
-        var th = document.createElement('th');
-        th.textContent = h;
-        headRow.appendChild(th);
-      });
-      thead.appendChild(headRow);
-      table.appendChild(thead);
-
-      var tbody = document.createElement('tbody');
-      (cls.standings || []).forEach(function (r) {
-        var isYou = you && r.profileId === you.profileId;
-        var isDnf = _rcIsDnfRow_(r);
-        var tr = document.createElement('tr');
-        // DNF/DSQ rows highlighted red instead of a text Status column
-        // (2026-09-09, Matt's call: "instead of STATUS, mark DNF by
-        // highlighting them in red") -- isYou still wins if a driver's own
-        // row also happens to be a DNF, since "this is you" is the more
-        // useful thing to flag at a glance than "this car didn't finish."
-        if (isYou) tr.className = 'rc-results-row-you';
-        else if (isDnf) tr.className = 'rc-results-row-dnf';
-
-        var posTd = document.createElement('td');
-        posTd.className = 'rc-results-td-pos';
-        posTd.textContent = 'P' + (r.classPosition || r.position || '?');
-        tr.appendChild(posTd);
-
-        var driverTd = document.createElement('td');
-        var driverCell = el('span', 'rc-recent-results-driver');
-        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
-        if (r.manufacturer && typeof manufacturerLogoSrc === 'function') {
-          var mlogo = document.createElement('img');
-          mlogo.className = 'rc-recent-results-mfr-logo';
-          mlogo.src = manufacturerLogoSrc(r.manufacturer);
-          mlogo.alt = r.manufacturer;
-          mlogo.onerror = function () { this.style.display = 'none'; };
-          driverCell.appendChild(mlogo);
-        }
-        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
-        var badgeBits = [];
-        if (r.wonPole) badgeBits.push('P');
-        if (r.wonFastestLap) badgeBits.push('FL');
-        if (r.wonMostLapsLed) badgeBits.push('MLL');
-        if (badgeBits.length) driverCell.appendChild(el('span', 'rc-hint', ' ' + badgeBits.join('/')));
-        driverTd.appendChild(driverCell);
-        tr.appendChild(driverTd);
-
-        function plainTd(text) {
-          var td = document.createElement('td');
-          td.textContent = (text === null || text === undefined || text === '') ? '—' : String(text);
-          tr.appendChild(td);
-          return td;
-        }
-        plainTd(r.classGridPos || r.gridPos || '');
-        plainTd(r.laps || '');
-        // Pit column removed (2026-09-09, Matt's call).
-        // Purple font for whoever set the class's fastest lap (2026-09-09,
-        // Matt's call: "make the fastest lap guy purple font") -- same
-        // purple-for-fastest-lap convention real motorsport timing
-        // screens use. Formatted through the same _rcFormatTotalTime_
-        // helper as the Total Time column (2026-09-09, Matt's call: "make
-        // the fastest lap formatted the same as the total time") -- the
-        // backend/XML source (BestLapTime) is always a raw decimal-seconds
-        // string like "83.4508", never pre-formatted, confirmed against a
-        // real race XML sample.
-        var bestLapSeconds = r.bestLapTime ? parseFloat(r.bestLapTime) : null;
-        var bestLapTd = plainTd((bestLapSeconds !== null && !isNaN(bestLapSeconds)) ? _rcFormatTotalTime_(bestLapSeconds) : '');
-        if (r.wonFastestLap) bestLapTd.style.color = '#9b30d9';
-        plainTd(_rcFormatTotalTime_(r.finishTimeSeconds));
-        plainTd(r.points === null ? '' : r.points);
-        var incBits = [r.incidentsCount || 0, r.trackLimitsCount || 0, r.penaltiesCount || 0];
-        // Clean-race column dropped in favor of blue font right on the
-        // incidents/track-limits/penalties cell itself (2026-09-09, Matt's
-        // call: "make clean racers blue font and remove the clean column")
-        // -- a clean race already means these three numbers are all zero,
-        // so coloring the cell says the same thing the old Yes/No column
-        // did without needing a column of its own.
-        var incTd = plainTd(incBits.join(' / '));
-        if (r.isCleanRace === true) incTd.style.color = '#2f6fed';
-
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      scrollWrap.appendChild(table);
-      classPanel.appendChild(scrollWrap);
-      panel.appendChild(classPanel);
-    });
-
-    return panel;
-  }
-
-  // Season-cumulative standings container (2026-09-08, Matt's call: the
-  // FIRST container in the Results page, above every individual race --
-  // "just a couple columns for points" next to name/team/manufacturer,
-  // same per-class grouping every other container on this page uses, just
-  // a much shorter table than a single race's full breakdown).
-  // `myClass` (2026-09-09, Matt's call: rename to LEADERBOARD, and "make
-  // sure this LEADERBOARD container contains only the driver's class, no
-  // other classes... there will be a public page eventually that will
-  // contain all of the classes") -- when known (derived from any round
-  // this driver actually raced this season, see renderResultsSection),
-  // every class but that one is filtered out here so this container is
-  // one driver's own competitive picture, not the whole grid. Falls back
-  // to showing every class if this driver hasn't raced a round yet this
-  // season (no way to know which one is theirs) rather than showing
-  // nothing.
-  function seasonStandingsPanel(standings, myClass) {
-    var panel = el('div', 'rc-results-round rc-results-season-standings');
-    panel.appendChild(el('h3', 'rc-results-round-title', 'Leaderboard'));
-
-    var visibleStandings = myClass ? (standings || []).filter(function (cls) { return cls.className === myClass; }) : (standings || []);
-
-    // Drop-weeks note (2026-09-08, Matt's call): standings rank on Raw
-    // Points (every completed round, nothing dropped) until there are
-    // dropWeeks-or-fewer rounds left to run, then switch to ranking on
-    // Championship Points (each driver's own worst dropWeeks round(s)
-    // excluded). Both columns always show -- before the switch they're
-    // identical, since dropsEligible=false means nothing was actually
-    // dropped yet.
-    var dropsEligible = visibleStandings.length ? !!visibleStandings[0].dropsEligible : false;
-    panel.appendChild(el('p', 'rc-hint', dropsEligible
-      ? 'Standings are ranked by Championship Points -- each driver\'s worst round(s) this season are dropped.'
-      : 'Standings are ranked by Raw Points for now -- Championship Points (with drop weeks applied) take over once the season is close enough to the end for dropping to make sense.'));
-    // Scoping note removed (2026-09-09, Matt's call) -- the class pill
-    // right above each table already makes clear which class this is.
-
-    visibleStandings.forEach(function (cls) {
-      var classHead = el('div', 'rc-results-class-head');
-      classHead.appendChild(_rcClassBadge(cls.className));
-      panel.appendChild(classHead);
-
-      var scrollWrap = el('div', 'rc-results-table-wrap');
-      var table = document.createElement('table');
-      table.className = 'rc-results-table';
-      var thead = document.createElement('thead');
-      var headRow = document.createElement('tr');
-      ['Pos', 'Driver', 'Team', 'Manufacturer', 'Raw Points', 'Championship Points'].forEach(function (h) {
-        var th = document.createElement('th');
-        th.textContent = h;
-        headRow.appendChild(th);
-      });
-      thead.appendChild(headRow);
-      table.appendChild(thead);
-
-      var tbody = document.createElement('tbody');
-      (cls.standings || []).forEach(function (r, idx) {
-        var tr = document.createElement('tr');
-        var posTd = document.createElement('td');
-        posTd.className = 'rc-results-td-pos';
-        posTd.textContent = 'P' + (idx + 1);
-        tr.appendChild(posTd);
-
-        var driverTd = document.createElement('td');
-        var driverCell = el('span', 'rc-recent-results-driver');
-        driverCell.appendChild(document.createTextNode(r.name || 'Unknown'));
-        if (r.carNumber) driverCell.appendChild(el('span', 'rc-recent-results-carnum', '#' + escapeHtml(r.carNumber)));
-        driverTd.appendChild(driverCell);
-        tr.appendChild(driverTd);
-
-        function plainTd(text) {
-          var td = document.createElement('td');
-          td.textContent = (text === null || text === undefined || text === '') ? '—' : String(text);
-          tr.appendChild(td);
-          return td;
-        }
-        plainTd(r.teamName || '');
-        plainTd(r.manufacturer || '');
-        plainTd(r.rawPoints);
-        plainTd(r.championshipPoints);
-
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      scrollWrap.appendChild(table);
-      panel.appendChild(scrollWrap);
-    });
+    // Your own line, then the full lap-by-lap + event breakdown -- this
+    // container is only ever about this driver's own race now (2026-09-19
+    // rewrite, Matt's call).
+    panel.appendChild(resultsYourSummary(you));
+    panel.appendChild(resultsSessionsDetail(race.sessions));
 
     return panel;
   }
@@ -4501,18 +4481,10 @@
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
       panel.appendChild(head);
 
-      // Leaderboard -- always first, above every individual race (Matt's
-      // call), whether or not any races have posted results yet. myClass
-      // (2026-09-09) is derived from any round this driver actually raced
-      // this season -- the Leaderboard panel uses it to show only their
-      // own class.
-      var myClass = null;
-      (res.rounds || []).some(function (r) {
-        if (r.you && r.you.carClass) { myClass = r.you.carClass; return true; }
-        return false;
-      });
-      panel.appendChild(seasonStandingsPanel(res.standings, myClass));
-
+      // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a
+      // League Hub page now so we don't need a leaderboard or extra fluff
+      // in there") -- the public League Hub carries the whole-field
+      // standings table now; this page is purely this driver's own races.
       var rounds = (res.rounds || []).slice().sort(function (a, b) {
         var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
         var bt = b.startUtc ? new Date(b.startUtc).getTime() : 0;
