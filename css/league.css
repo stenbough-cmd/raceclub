@@ -86,9 +86,18 @@ body.rc-league-page {
   animation: rcl-ticker-scroll 26s linear infinite;
 }
 .rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
+/* Start/end are real pixel values set by js/league.js (_rclRenderTicker),
+   measured once the two runs are actually laid out -- --rcl-ticker-start
+   is the viewport's own width (so the track starts fully off-screen past
+   the right edge and rolls in, instead of just appearing already in
+   place at translateX(0)) and --rcl-ticker-end is exactly one run's
+   width (so the loop still lands cleanly on the second, identical run --
+   same 50% point as before, just expressed in px instead of a percentage
+   of the track's own total width). The 0/-50% fallbacks only matter for
+   the split second before that first requestAnimationFrame runs. */
 @keyframes rcl-ticker-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translateX(var(--rcl-ticker-start, 0)); }
+  to { transform: translateX(var(--rcl-ticker-end, -50%)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .rcl-ticker-track { animation: none; }

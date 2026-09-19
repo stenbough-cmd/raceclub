@@ -257,6 +257,37 @@ function _rclRenderTicker(hub) {
   track.innerHTML = '';
   track.appendChild(buildRun());
   track.appendChild(buildRun()); // duplicate run -- see the animation comment above
+
+  // Roll in from off-screen right on first paint, instead of the content
+  // just appearing already in place (2026-09-19, Matt's catch: "the text
+  // doesn't come from the right side like it's scrolling in but instead
+  // appears once there is enough room... can we have it roll in like it
+  // rolls out"). The CSS animation used to always start at
+  // translateX(0) -- the track's own left edge flush with the viewport's
+  // left edge -- so whatever fit in the viewport at that exact width was
+  // already fully visible on the very first frame; only content further
+  // right in the (very wide) track ever looked like it scrolled in. Both
+  // the starting offset (viewport width, so the track starts fully
+  // hidden past the right edge) and the loop point (exactly one run's
+  // width, so the seamless dot-separated loop still works) are measured
+  // in real pixels here and handed to the keyframes as CSS custom
+  // properties -- a plain 0%/-50% pair can't express "start one full
+  // viewport-width further right than a plain reset would."
+  // requestAnimationFrame, not immediate -- scrollWidth needs the two
+  // freshly-appended runs to have actually been laid out first.
+  requestAnimationFrame(function () {
+    var viewport = track.parentElement;
+    if (!viewport) return;
+    var oneRunWidth = track.scrollWidth / 2;
+    track.style.setProperty('--rcl-ticker-start', viewport.clientWidth + 'px');
+    track.style.setProperty('--rcl-ticker-end', '-' + oneRunWidth + 'px');
+    // Restart the animation cleanly from the new starting property (a
+    // plain property change doesn't rewind an already-running animation
+    // on its own) -- toggle animation off, force a reflow, then back on.
+    track.style.animation = 'none';
+    void track.offsetWidth;
+    track.style.animation = '';
+  });
 }
 
 // ---------------------------------------------------------------------
