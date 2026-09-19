@@ -424,6 +424,33 @@ body.rc-league-page {
   border-bottom: 2px solid var(--rc-red);
   background: var(--rcl-bg-raised-2);
 }
+/* League News panel header banner (added 2026-09-19, Matt's ask) -- same
+   layering technique as .rcl-hero::before above (banner image on its own
+   ::before, behind the title text): position:relative + overflow:hidden
+   on the header itself so the banner is clipped to this one header bar
+   rather than spilling into the panel body below or past the panel's
+   own rounded corners; the image sits on ::before at z-index:0, and
+   .rcl-panel-title gets its own explicit stacking (position:relative,
+   z-index:1) so it stays readable on top of it. Scoped to
+   .rcl-panel-head-news specifically (see league.html) so Recent Results'
+   identical-looking header, right next to this one, is unaffected.
+   90% opacity per Matt's ask -- noticeably more present than the main
+   hero's own 0.28 banner opacity, since this is a much smaller, busier
+   area where a faint image would just disappear. */
+.rcl-panel-head-news { position: relative; overflow: hidden; }
+.rcl-panel-head-news::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/images/news_banner.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.9;
+  z-index: 0;
+  pointer-events: none;
+}
+.rcl-panel-head-news .rcl-panel-title { position: relative; z-index: 1; }
 .rcl-panel-title {
   /* Bumped to match .rc-dash-card-title's own size (2026-09-19, Matt's
      ask: "Increase the container header sizes in the LEAGUE HUB up one
