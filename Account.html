@@ -3733,7 +3733,10 @@
 
     years.forEach(function (year) {
       var yearHead = el('div', 'rc-group-head');
-      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-group', escapeHtml(year)));
+      // Graphite, not black (2026-09-19, Matt's call: "make the year pills
+      // graphite along with the season year pills" -- said while adding
+      // the News list's own year pills, applies here too).
+      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
       wrap.appendChild(yearHead);
       byYear[year].forEach(function (s) {
         wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId));
@@ -4047,6 +4050,11 @@
     var classKeys = Object.keys(classes || {}).filter(function (k) { return classes[k]; });
     if (!classKeys.length) return null;
     var classesRow = el('div', 'rc-cal-classes');
+    // MULTICLASS/SINGLE CLASS pill (2026-09-19, Matt's call) -- sits
+    // before the class pills themselves, outline style so it reads as a
+    // label about the row rather than one more class in it. See
+    // .rc-cal-format-pill, css/style.css.
+    classesRow.appendChild(el('span', 'rc-cal-format-pill', classKeys.length > 1 ? 'Multiclass' : 'Single Class'));
     classKeys.forEach(function (k) {
       var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
       var pill = el('span', 'rc-cal-class-pill', escapeHtml(_rcClassPillLabel(k)));
@@ -4056,78 +4064,59 @@
     return classesRow;
   }
 
-  // Season-wide settings panel -- server password, race day/frequency,
-  // drop weeks, track limits, qualifying privacy, and the per-tier
-  // (Sprint/Medium/Long) duration + points-list chips. Class pills used to
-  // live here too -- moved to the season header row instead, 2026-09-19
-  // (see buildClassPillsRow above). Every field here comes straight off
-  // handleGetSeasonCalendar's seasonDetails subset (a trimmed copy of
-  // Seasons.SeasonDetails).
+  // One label/value row for the Season Format list below.
+  function formatDetailRow(label, value) {
+    var row = el('div', 'rc-cal-format-row');
+    row.appendChild(el('span', 'rc-cal-format-label', label));
+    row.appendChild(el('span', 'rc-cal-format-value', value));
+    return row;
+  }
+
+  // Season-wide format panel -- renamed from "Season Settings" to "Season
+  // Format" (2026-09-19, Matt's call), and rebuilt from a row of pill
+  // chips into a plain, comprehensive label/value list ("gives all the
+  // information of the league without using the pills") -- every field
+  // that used to be a .rc-cal-stat chip here is now its own row instead,
+  // plus the server password is now shown outright rather than only on
+  // hover, since the point of this list is to be the one place a driver
+  // can read every season-wide detail at a glance. Class pills stay out
+  // of this panel entirely (moved to the season header row, 2026-09-19 --
+  // see buildClassPillsRow above); the race list below still shows
+  // per-round specifics (dates, weather, track).
   function seasonDetailsPanel(details) {
     var wrap = el('div', 'rc-cal-season-details');
-    wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Settings'));
+    wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Format'));
 
-    // Class pills moved out of this panel entirely (2026-09-19, Matt's
-    // call: "move the class pills to the top right of the container,
-    // similar to how some cards on the dash have text or pills in the
-    // right corner") -- see buildClassPillsRow below, now built into the
-    // season header row instead (renderCalendarSection).
+    var list = el('div', 'rc-cal-format-list');
+    list.appendChild(formatDetailRow('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
+    if (details.frequency) list.appendChild(formatDetailRow('Race Frequency', details.frequency));
+    list.appendChild(formatDetailRow('Drop Weeks', (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's')));
+    if (details.trackLimitsPreset) list.appendChild(formatDetailRow('Track Limits', details.trackLimitsPreset));
+    list.appendChild(formatDetailRow('Qualifying Visibility', details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying'));
 
-    var stats = el('div', 'rc-cal-stats');
-    if (details.defaultPassword) {
-      stats.appendChild(calStat(ICON_UNLOCK, 'Password Set', 'Server password: ' + details.defaultPassword));
-    } else {
-      stats.appendChild(calStat(ICON_UNLOCK, 'No Password', 'Server has no default password.'));
-    }
-    if (details.frequency) stats.appendChild(calStat(ICON_CLOCK, details.frequency, 'Race frequency'));
-    stats.appendChild(calStat(ICON_FLAG, (details.dropWeeks || 0) + ' Drop Week' + (details.dropWeeks === 1 ? '' : 's'), 'Worst results dropped from the standings'));
-    if (details.trackLimitsPreset) stats.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset + ' Track Limits', 'Track limits enforcement preset'));
-    stats.appendChild(calStat(ICON_FLAG, details.privateQualifying === 'Yes' ? 'Private Qualifying' : 'Public Qualifying', 'Qualifying session visibility'));
-    // Fuel/Tire Wear/Setups moved here from every individual race card
-    // (2026-09-19, Matt's call: "move tire wear, fuel and setups to the
-    // top row of season details on this page since they don't change from
-    // race to race") -- these are season-wide (Seasons.SeasonDetails.
-    // raceSettings), same source raceCard used to read them from below.
-    var raceSettingsForCore = details.raceSettings || {};
-    if (raceSettingsForCore.fuelMultiplier) {
-      stats.appendChild(calStat(ICON_FUEL, raceSettingsForCore.fuelMultiplier + ' Fuel', 'Fuel consumption multiplier (season-wide)'));
-    }
-    if (raceSettingsForCore.tireWearMultiplier) {
-      stats.appendChild(calStat(ICON_TIRE, raceSettingsForCore.tireWearMultiplier + ' Tire Wear', 'Tire wear rate multiplier (season-wide)'));
-    }
-    if (raceSettingsForCore.setupRules) {
-      stats.appendChild(calStat(ICON_SETTINGS, raceSettingsForCore.setupRules + ' Setups', 'Whether car setups are locked (Fixed) or free to change (Open), season-wide'));
-    }
-    wrap.appendChild(stats);
+    // Fuel/Tire Wear/Setups -- season-wide (Seasons.SeasonDetails.
+    // raceSettings), same source the individual race cards below used to
+    // read them from before they moved up here (2026-09-19).
+    var raceSettings = details.raceSettings || {};
+    if (raceSettings.fuelMultiplier) list.appendChild(formatDetailRow('Fuel Consumption', raceSettings.fuelMultiplier + '× multiplier'));
+    if (raceSettings.tireWearMultiplier) list.appendChild(formatDetailRow('Tire Wear', raceSettings.tireWearMultiplier + '× multiplier'));
+    if (raceSettings.setupRules) list.appendChild(formatDetailRow('Car Setups', raceSettings.setupRules));
+    if (raceSettings.practiceLengthMin) list.appendChild(formatDetailRow('Practice Length', raceSettings.practiceLengthMin + ' min'));
+    if (raceSettings.qualifyLengthMin) list.appendChild(formatDetailRow('Qualifying Length', raceSettings.qualifyLengthMin + ' min'));
 
-    var tierStats = el('div', 'rc-cal-stats');
-    // Practice/Qualifying session LENGTH -- season-wide (seasonDetails.
-    // raceSettings.practiceLengthMin/qualifyLengthMin, set once in the
-    // wizard's Race Settings step). Sits BEFORE the Sprint/Medium/Long
-    // race-length chips below, same row (Matt's call, 2026-08-30) -- NOT
-    // the per-round in-game start times, which stay on each race card in
-    // the list below.
-    var raceSettingsForLengths = details.raceSettings || {};
-    if (raceSettingsForLengths.practiceLengthMin) {
-      tierStats.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettingsForLengths.practiceLengthMin + ' min', 'Practice session length (season-wide)'));
-    }
-    if (raceSettingsForLengths.qualifyLengthMin) {
-      // rc-cal-stat-gap-after -- extra breathing room between this chip and
-      // the Sprint/Medium/Long race-length chips that follow (2026-08-30,
-      // Matt's call: "add a larger space between QUALIFY and SPRINT
-      // length"), marking the boundary between the season-wide
-      // Practice/Qualifying lengths and the per-tier race lengths without
-      // widening every gap in the row via .rc-cal-stats' own gap.
-      tierStats.appendChild(calStat(ICON_CLOCK, 'Qualifying · ' + raceSettingsForLengths.qualifyLengthMin + ' min', 'Qualifying session length (season-wide)', 'rc-cal-stat-gap-after'));
-    }
+    // Race formats -- one row per tier that actually has a points table
+    // set up (Sprint/Medium/Long), duration + full points list together
+    // rather than split across two separate chips the way the old pill
+    // row had it.
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
-      tierStats.appendChild(calStat(ICON_CLOCK, tier + ' · ' + (table.duration || 0) + ' min', formatPointsList(table.points)));
+      var pointsList = formatPointsList(table.points);
+      list.appendChild(formatDetailRow(tier + ' Race Format', (table.duration || 0) + ' min' + (pointsList ? ' · ' + pointsList : '')));
     });
-    if (tierStats.children.length) wrap.appendChild(tierStats);
 
+    wrap.appendChild(list);
     return wrap;
   }
 
@@ -7319,51 +7308,82 @@
     return counter;
   }
 
+  // Reworked 2026-09-19 (Matt's call) to match the Seasons panel's own
+  // shape (see buildSeasonsPanel above) instead of its previous one-off
+  // header-row layout: title (red-underlined) -> a button row BELOW that
+  // border, holding New Post -> the post history in its own gray-bordered
+  // box underneath, grouped into graphite year pills (most recent year,
+  // and most recent post within a year, first) -- same
+  // .rc-badge-graphite treatment the Seasons list's own year pills use
+  // now, so the two lists read as one consistent pattern.
   function buildLeagueNewsPanel(newsRows, token, reload) {
     var panel = el('div', 'rc-panel rc-dash-card');
-    var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'League News'));
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'League News'));
+
+    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
     var newPostBtn = el('button', 'rc-btn-primary rc-btn-sm', 'New Post');
     newPostBtn.type = 'button';
     newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
-    headerRow.appendChild(newPostBtn);
-    panel.appendChild(headerRow);
+    row.appendChild(newPostBtn);
+    panel.appendChild(row);
 
-    // Faint divider between the New Post button and the post history --
-    // just a plain silver hairline, not a new named rule (Matt: "seperated
-    // by a faint gray line").
-    panel.appendChild(el('hr', 'border:none;border-top:1px solid var(--rc-silver);margin:0 0 12px;'));
+    var listBox = el('div', 'rc-panel');
+    listBox.appendChild(buildLeagueNewsListFragment(newsRows, token, reload));
+    panel.appendChild(listBox);
 
+    return panel;
+  }
+
+  function buildLeagueNewsListFragment(newsRows, token, reload) {
+    var wrap = el('div');
     var sorted = (newsRows || []).slice().sort(function (a, b) {
       return String(b.PublishedAt).localeCompare(String(a.PublishedAt));
     });
     if (!sorted.length) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No news posts yet.'));
-      return panel;
+      wrap.appendChild(el('div', 'rc-dm-empty', 'No news posts yet.'));
+      return wrap;
     }
+
+    var byYear = {};
+    var years = [];
     sorted.forEach(function (n) {
-      var isActive = _rcRowActive(n);
-      var row = el('div', 'rc-dm-row');
-      var textCol = el('div', null);
-      var titleLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-      titleLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(n.Title || '(untitled)')));
-      if (!isActive) {
-        titleLine.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'INACTIVE'));
-      }
-      textCol.appendChild(titleLine);
-      var metaParts = [];
-      if (n.AuthorName) metaParts.push('By ' + n.AuthorName);
-      var dateLabel = n.PublishedAt ? formatDateLabel(String(n.PublishedAt).slice(0, 10)) : '';
-      if (dateLabel) metaParts.push(dateLabel);
-      textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'No date')));
-      row.appendChild(textCol);
-      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-      editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditNewsPostModal(n, token, reload); });
-      row.appendChild(editBtn);
-      panel.appendChild(row);
+      var year = n.PublishedAt ? String(n.PublishedAt).slice(0, 4) : 'Undated';
+      if (!byYear[year]) { byYear[year] = []; years.push(year); }
+      byYear[year].push(n);
     });
-    return panel;
+    // sorted is already most-recent-first, so years is naturally already
+    // in that order too (first post's year appended first) -- "Undated"
+    // (a post somehow missing PublishedAt) would only ever land last
+    // anyway since it sorts to the bottom of the string comparison above.
+
+    years.forEach(function (year) {
+      var yearHead = el('div', 'rc-group-head');
+      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
+      wrap.appendChild(yearHead);
+      byYear[year].forEach(function (n) {
+        var isActive = _rcRowActive(n);
+        var postRow = el('div', 'rc-group-row');
+        var textCol = el('div', null);
+        var titleLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+        titleLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(n.Title || '(untitled)')));
+        if (!isActive) {
+          titleLine.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', 'INACTIVE'));
+        }
+        textCol.appendChild(titleLine);
+        var metaParts = [];
+        if (n.AuthorName) metaParts.push('By ' + n.AuthorName);
+        var dateLabel = n.PublishedAt ? formatDateLabel(String(n.PublishedAt).slice(0, 10)) : '';
+        if (dateLabel) metaParts.push(dateLabel);
+        textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'No date')));
+        postRow.appendChild(textCol);
+        var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+        editBtn.type = 'button';
+        editBtn.addEventListener('click', function () { openEditNewsPostModal(n, token, reload); });
+        postRow.appendChild(editBtn);
+        wrap.appendChild(postRow);
+      });
+    });
+    return wrap;
   }
 
   function openNewsPostModal(token, reload) {
@@ -8100,6 +8120,17 @@
     form.appendChild(saveBtn);
     body.appendChild(form);
 
+    // Reset Password (added 2026-09-19, Matt's ask: "give the admin the
+    // ability to reset any users password"). Gray opener per the sitewide
+    // button rule -- this button itself only opens the confirm dialog, it
+    // doesn't write anything; the confirm dialog's own commit button is
+    // what's actually red (see openConfirmModal below).
+    var resetPwWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
+    var resetPwBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Reset Password');
+    resetPwBtn.type = 'button';
+    resetPwWrap.appendChild(resetPwBtn);
+    body.appendChild(resetPwWrap);
+
     var isActive = driver.Status !== 'Disabled';
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
     var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
@@ -8188,6 +8219,93 @@
         })
         .catch(function () {
           showToast('Could not reach the server -- account status not changed.', 'error');
+        });
+    }
+
+    // Reset Password -- unlike Save Changes/Disable above, this one waits
+    // on the server rather than closing instantly: the whole point is to
+    // show the one-time temporary password the server generates, which
+    // only ever comes back in this one response (same "shown once, never
+    // recoverable again" constraint as openAddDriverModal's own
+    // confirmation screen, which this reuses the shape of).
+    resetPwBtn.addEventListener('click', function () {
+      openConfirmModal(
+        'Reset Password',
+        'Reset ' + (driver.DisplayName || driver.Username || driver.ProfileID) + '\'s password? Every device they\'re currently logged in on will be signed out, and they\'ll need the new temporary password to log back in.',
+        'Reset Password',
+        doResetPassword_
+      );
+    });
+
+    function doResetPassword_() {
+      resetPwBtn.disabled = true;
+      resetPwBtn.textContent = 'Resetting...';
+      fetchApi('adminResetPassword', { method: 'POST', token: token, body: { profileId: driver.ProfileID } })
+        .then(function (data) {
+          if (!data.success) {
+            resetPwBtn.disabled = false;
+            resetPwBtn.textContent = 'Reset Password';
+            showToast(data.message || 'Could not reset this password -- try again.', 'error');
+            return;
+          }
+          // Refreshes the Members list sitting underneath (nothing visible
+          // there actually changes from a reset, but every other write on
+          // this popup does this too, so this stays consistent with them).
+          if (reload) reload();
+
+          var tempPassword = data.tempPassword;
+          var driverName = driver.DisplayName || driver.Username || 'this driver';
+
+          // Swap the whole modal body for a one-time confirmation screen --
+          // same pattern as Add Driver's own confirmation swap above.
+          body.innerHTML = '';
+          body.appendChild(el('div', 'rc-message rc-ok', 'Password reset.'));
+          var credWrap = el('div', 'margin-top:14px;');
+          credWrap.appendChild(el('label', 'margin-top:0;', 'Username'));
+          credWrap.appendChild(el('div', 'rc-dm-row-label', escapeHtml(driver.Username || '')));
+          credWrap.appendChild(el('label', null, 'Temporary Password'));
+          var pwEl = el('div', 'rc-dm-row-label', escapeHtml(tempPassword));
+          pwEl.style.userSelect = 'all';
+          pwEl.style.fontFamily = 'monospace';
+          credWrap.appendChild(pwEl);
+          body.appendChild(credWrap);
+          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(driverName) + ', or email it to them directly below.'));
+
+          // Email Password To Driver -- fires immediately on click (no
+          // further step), so it gets the save-style red button per the
+          // sitewide button rule, same as Approve/Deny elsewhere on this
+          // page. Sends the EXACT tempPassword shown above, not a freshly
+          // generated one, so what's on screen and what's emailed always
+          // match.
+          if (driver.Email) {
+            var emailBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Email Password To Driver');
+            emailBtn.type = 'button';
+            emailBtn.style.marginTop = '14px';
+            emailBtn.addEventListener('click', function () {
+              emailBtn.disabled = true;
+              emailBtn.textContent = 'Sending...';
+              fetchApi('adminSendPasswordEmail', {
+                method: 'POST', token: token,
+                body: { profileId: driver.ProfileID, tempPassword: tempPassword }
+              }).then(function (emailData) {
+                emailBtn.disabled = false;
+                emailBtn.textContent = 'Email Password To Driver';
+                showToast(emailData.message || (emailData.success ? 'Emailed.' : 'Could not send the email.'), emailData.success ? 'success' : 'error');
+              }).catch(function () {
+                emailBtn.disabled = false;
+                emailBtn.textContent = 'Email Password To Driver';
+                showToast('Could not reach the server -- email not sent.', 'error');
+              });
+            });
+            body.appendChild(emailBtn);
+          } else {
+            body.appendChild(el('div', 'rc-hint', 'No email on file for this account -- the password can\'t be emailed automatically.'));
+          }
+        })
+        .catch(function () {
+          resetPwBtn.disabled = false;
+          resetPwBtn.textContent = 'Reset Password';
+          showToast('Could not reach the server -- password not reset.', 'error');
         });
     }
   }

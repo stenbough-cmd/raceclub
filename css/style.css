@@ -472,13 +472,13 @@ p { margin: 0 0 0.75em; }
 .rc-badge-role-organizer { background: var(--rc-tier-silver); }
 .rc-badge-role-steward { background: var(--rc-tier-bronze); }
 .rc-badge-role-driver, .rc-badge-role-prospect { background: var(--rc-graphite); }
-/* Graphite grouping badge (2026-09-19, Matt's call: "make the track
-   location pills graphite instead of black and the car year pills
-   graphite instead of black") -- same shape as .rc-badge-group, just a
-   lighter dark-neutral fill. Used only where Matt asked for it (Tracks
-   popup's Region pill, Cars popup's Season pill); every other
-   .rc-badge-group use (Members list -- see the role classes above --
-   Seasons list's year pill, etc.) is unaffected. */
+/* Graphite grouping badge (2026-09-19, Matt's call: originally "make the
+   track location pills graphite instead of black and the car year pills
+   graphite instead of black" -- Tracks popup's Region pill, Cars popup's
+   Season pill -- then extended the same day to the League Tools Seasons
+   list's own year pill and the new News panel's year pills too, "make
+   the year pills graphite along with the season year pills"). Same shape
+   as .rc-badge-group, just a lighter dark-neutral fill. */
 .rc-badge-graphite { background: var(--rc-graphite); }
 /* Sponsor risk-tier badges (Data Management's Sponsors popup, and the
    Sponsors page's own full-catalog list) -- Safe/Balanced/Risky (renamed
@@ -4540,6 +4540,18 @@ body.rc-modal-scroll-locked {
    already separates the header from this block. */
 .rc-cal-season-details { margin-top: 16px; }
 .rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
+/* Season Format list (renamed from "Season Settings," rebuilt from a row
+   of pill chips into a plain label/value list, 2026-09-19, Matt's call:
+   "gives all the information of the league without using the pills that
+   are currently there") -- one row per detail, label left (small, steel,
+   uppercase, same treatment as .rc-results-stat-label) and value right
+   (carbon, semibold), a faint divider between rows so a long list still
+   reads as organized rather than a wall of text. */
+.rc-cal-format-list { display: flex; flex-direction: column; }
+.rc-cal-format-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-cal-format-row:last-child { border-bottom: none; }
+.rc-cal-format-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); flex: 0 0 auto; }
+.rc-cal-format-value { font-size: 13.5px; font-weight: 600; color: var(--rc-carbon); text-align: right; }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 /* Rounded rectangle, not an oval pill (Matt's call: every class badge on
@@ -4553,6 +4565,25 @@ body.rc-modal-scroll-locked {
   color: var(--rc-white);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+/* MULTICLASS/SINGLE CLASS pill (added 2026-09-19, Matt's call: "add a
+   black border pill the same size as the class pills... put the pill
+   before the class pills") -- an outline treatment, not a solid fill
+   (that's what the colored class pills already do), so it reads as a
+   label about the pills that follow rather than one more of them.
+   Padding trimmed 1px per side vs. .rc-cal-class-pill to net out to the
+   same rendered size once its own 1px border is added on top. */
+.rc-cal-format-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--rc-carbon);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rc-carbon);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: transparent;
 }
 
 .rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
