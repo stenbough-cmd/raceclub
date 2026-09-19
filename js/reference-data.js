@@ -345,7 +345,15 @@ var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-l
 // number (Matt's ask: "a hypercar would have a red rectangle, rounded
 // edges with HY in it"). Same color tokens as CAR_CLASS_BADGE_COLOR_VAR
 // above, just a shorter label for the tighter space next to a car number.
-var CAR_CLASS_ABBREV = { LMGT3: 'GT3', LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
+// LMGT3 stays spelled out in full here (2026-09-19 correction, Matt's
+// call: "Make sure class pills are saying LMGT3 and not just GT3
+// throughout the site") -- it was the one class this map actually
+// shortened rather than abbreviated to a genuinely different short form
+// (LMP3->P3, LMP2->P2 read unambiguously as their own class; "GT3" alone
+// reads as a different real-world class entirely, not shorthand for
+// LMGT3), so it's excluded from the abbreviation and just passes through
+// via _rcClassAbbrevPill's own key fallback below.
+var CAR_CLASS_ABBREV = { LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 
 // Manufacturer logo file convention -- assets/manufacturers/{slug}.png
 // (2026-09-19, Matt's call: keep manufacturer logos in their own

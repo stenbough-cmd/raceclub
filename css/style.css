@@ -1593,14 +1593,71 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    `.rc-tooltip` on specificity and always wins regardless of source
    order. */
 .rc-rep-bar-track .rc-rep-bar-marker { position: absolute; top: -3px; width: 3px; height: 18px; background: #000; border-radius: 2px; transform: translateX(-1.5px); box-shadow: 0 0 0 1px #fff; cursor: default; }
-/* Each class's pick row -- cost range sits between the class badge/floor
-   text and the Choose button (Matt's ask: "to the right of the classes
-   pills"). Dimmed as a whole (not just the button) when the driver
-   doesn't qualify on reputation and/or money, same visual language as a
-   taken team card (.rc-team-card-taken). */
-.rc-class-pick-row { padding: 12px 0; border-bottom: 1px solid var(--rc-silver); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; transition: opacity 0.15s ease; }
-.rc-class-pick-row-dim { opacity: 0.45; }
-.rc-class-cost-range { text-align: right; min-width: 130px; }
+/* Choose Your Class screen -- colored buttons, one per class, always all
+   four regardless of whether this season fields cars in them (2026-09-19,
+   Matt's redesign: "colored buttons to choose... Green for LMGT3, Purple
+   for LMP3, Blue for LMP2 and Red for HY. Leave all the buttons up
+   regardless if there is that class or not and just gray them out with a
+   circle and line through it on hover"). Replaces the old plain list
+   (.rc-class-pick-row/-row-dim, removed). Each button's accent color comes
+   from the --rc-class-pick-color custom property set inline per button in
+   JS (buildRegistrationModal's renderClassScreenBody), pulled from the
+   same CAR_CLASS_BADGE_COLOR_VAR tokens every other class pill on the site
+   already uses -- LMGT3/LMP3/LMP2/Hypercar already resolve to green/
+   purple/blue/red respectively, so no new color tokens were needed. */
+.rc-class-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+.rc-class-pick-btn {
+  position: relative;
+  overflow: hidden;
+  background: var(--rc-class-pick-color);
+  border: none;
+  border-radius: 10px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.rc-class-pick-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22); }
+.rc-class-pick-btn-content { position: relative; z-index: 1; }
+.rc-class-pick-btn-name {
+  font-family: var(--rc-font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+}
+.rc-class-pick-btn-seats { margin-top: 6px; font-size: 12px; color: rgba(255, 255, 255, 0.85); }
+/* Locked (not offered this season, or every seat already taken) -- the
+   button stays visible and its color stays underneath, just desaturated
+   and dimmed, rather than disappearing from the grid entirely. */
+.rc-class-pick-btn-locked { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+/* Circle-slash lock icon -- hidden by default, fades in centered over the
+   button only while hovering a locked one (2026-09-19, Matt's exact ask).
+   A dark scrim behind the icon keeps it legible against every class's
+   underlying color once desaturated. */
+.rc-class-pick-btn-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.rc-class-pick-btn-locked:hover .rc-class-pick-btn-lock { opacity: 1; }
+.rc-class-pick-totals {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rc-silver);
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rc-steel);
+}
 /* Season Registration Fee (fixed, same for every team) sits above Team
    Buy-In (the part that actually varies by team) -- Matt's ask. */
 .rc-class-cost-season { font-size: 13px; color: var(--rc-carbon); font-weight: 600; }
@@ -1891,14 +1948,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    declared later in the file) rather than needing !important. */
 .rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
 /* Explicit hover (2026-09-19, Matt's call: "make a hover effect on the
-   button to continue") -- .rc-btn-secondary's own :hover only nudges the
-   background from white to off-white, which barely reads against this
-   button's already-white default fill; this adds a small lift + shadow
-   on top of a slightly deeper shade so hovering the one interactive
-   element on the reveal beat is unmistakable. Wins on cascade order
-   alone (equal specificity, declared after .rc-btn-secondary above). */
+   button to continue") -- adds a small lift + shadow on top of a slightly
+   deeper shade so hovering the one interactive element on the reveal beat
+   is unmistakable. Wins on cascade order alone (equal specificity,
+   declared after .rc-btn-primary/.rc-btn-secondary above).
+   Background switched from --rc-silver to --rc-red-dark (2026-09-19,
+   same day as the button itself moving from .rc-btn-secondary to
+   .rc-btn-primary per Matt's "make the CONTINUE button red" call) --
+   --rc-silver was tuned for the old gray/white button and would have
+   flashed the red button gray on hover instead of darkening it. */
 .rc-signing-continue:hover {
-  background: var(--rc-silver);
+  background: var(--rc-red-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }

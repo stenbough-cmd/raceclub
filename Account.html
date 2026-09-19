@@ -1878,46 +1878,79 @@
       });
     }
 
+    // Circle-slash "not available" icon shown only on hover of a disabled
+    // class button (2026-09-19, Matt's ask: "gray them out with a circle
+    // and line through it on hover") -- same stroke convention as the
+    // site's other inline icons (see the race-club-ui-consistency skill),
+    // just white so it reads against the darkened overlay behind it.
+    var RC_CLASS_LOCK_ICON = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>';
+
+    // Redesigned 2026-09-19 (Matt's call): colored buttons instead of a
+    // plain list -- Green LMGT3, Purple LMP3, Blue LMP2, Red Hypercar
+    // (reusing CAR_CLASS_BADGE_COLOR_VAR's existing tokens, which already
+    // happen to be exactly those colors -- see reference-data.js). ALL
+    // FOUR classes always render, whether or not this season actually
+    // fields cars in them -- a class with no cars set up, or with every
+    // seat already taken, just grays out and shows the circle-slash lock
+    // icon on hover instead of disappearing from the row. A totals line
+    // below the grid shows the overall open/total seat count across every
+    // class in the season.
     function renderClassScreenBody(allTeams) {
       var body = modal.body;
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:10px;',
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;',
         'Pick the class you’ll compete in this season. You’ll choose a specific car/team next.'));
 
       var classesPresent = [];
       allTeams.forEach(function (t) { if (t.carClass && classesPresent.indexOf(t.carClass) === -1) classesPresent.push(t.carClass); });
-      var classOrder = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : classesPresent;
-      var classes = classOrder.filter(function (c) { return classesPresent.indexOf(c) !== -1; });
+      // Always the full ladder, in order -- not filtered down to only the
+      // classes this season happens to field (that filtering used to
+      // decide which rows even existed; now it only decides which button
+      // is clickable).
+      var classes = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : classesPresent;
 
-      if (!classes.length) {
-        body.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for this season yet.'));
-        return;
-      }
+      var grid = el('div', 'rc-class-pick-grid');
+      var totalOpen = 0;
+      var totalSeats = 0;
 
       classes.forEach(function (cls) {
+        var present = classesPresent.indexOf(cls) !== -1;
         var teamsInClass = allTeams.filter(function (t) { return t.carClass === cls; });
         var openTeams = teamsInClass.filter(function (t) { return !t.taken; });
-        var row = el('div', 'rc-class-pick-row');
-        var label = el('div', null);
-        var badge = buildClassBadge(cls);
-        label.appendChild(badge);
-        // Buy-in cost range pill removed (V1 scope cut) -- teams no longer
-        // carry a BuyInCost from the backend.
-        // Inset 10px from the badge/pill above it (2026-08-30, Matt's
-        // call) rather than flush with their left edge.
-        label.appendChild(el('div', 'color:var(--rc-steel);font-size:12px;margin-top:4px;padding-left:10px;',
-          openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open'));
-        row.appendChild(label);
+        totalOpen += openTeams.length;
+        totalSeats += teamsInClass.length;
 
-        var pickBtn = el('button', null, openTeams.length ? 'Choose' : 'Full');
-        pickBtn.type = 'button';
-        pickBtn.className = 'rc-btn-secondary rc-btn-sm';
-        pickBtn.disabled = !openTeams.length;
-        row.appendChild(pickBtn);
-        if (!openTeams.length) row.classList.add('rc-class-pick-row-dim');
+        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
+        var canPick = present && openTeams.length > 0;
 
-        pickBtn.addEventListener('click', function () { showTeamScreen(cls); });
-        body.appendChild(row);
+        var btn = el('button', 'rc-class-pick-btn' + (canPick ? '' : ' rc-class-pick-btn-locked'));
+        btn.type = 'button';
+        btn.style.setProperty('--rc-class-pick-color', 'var(' + colorVar + ')');
+        btn.disabled = !canPick;
+
+        var content = el('div', 'rc-class-pick-btn-content');
+        content.appendChild(el('div', 'rc-class-pick-btn-name', escapeHtml(_rcClassPillLabel(cls))));
+        var seatsLabel = present
+          ? (openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open')
+          : 'Not offered this season';
+        content.appendChild(el('div', 'rc-class-pick-btn-seats', escapeHtml(seatsLabel)));
+        btn.appendChild(content);
+
+        var lock = el('div', 'rc-class-pick-btn-lock', RC_CLASS_LOCK_ICON);
+        btn.appendChild(lock);
+
+        if (canPick) btn.addEventListener('click', function () { showTeamScreen(cls); });
+        grid.appendChild(btn);
       });
+
+      body.appendChild(grid);
+
+      // Totals line (2026-09-19, Matt's ask: "add totals below the
+      // classes of how many seats are available") -- sums every class the
+      // season actually fields, not the always-four button grid above.
+      body.appendChild(el('div', 'rc-class-pick-totals',
+        totalSeats
+          ? (totalOpen + ' of ' + totalSeats + ' total seat' + (totalSeats === 1 ? '' : 's') + ' open this season')
+          : 'No cars are set up for this season yet.'));
     }
 
     function showTeamScreen(carClass) {
@@ -2364,12 +2397,14 @@
       var btnRow = el('div', 'rc-signing-reveal-btn-row');
       btnRow.style.opacity = '0';
 
-      // Gray, not red (2026-09-13 fix) -- this click only advances to the
-      // next reveal screen (advanceToContract); the actual write already
-      // happened a moment earlier at "Join This Team." Per the site's
-      // button-color rule, color means "this click saves," not "this
-      // screen follows a save."
-      var continueBtn = el('button', 'rc-btn-secondary rc-signing-continue', 'Continue');
+      // Red (2026-09-19, Matt's explicit call: "Make the CONTINUE button
+      // red on the CONGRATULATIONS screen after picking a team") --
+      // deliberately overrides the site's usual gray-vs-red button rule
+      // (color normally means "this click saves," not "this screen
+      // follows a save") for this one moment specifically, since it's the
+      // celebratory reveal screen and Matt wants it to read as a bigger,
+      // more energetic call to action than a plain gray Continue.
+      var continueBtn = el('button', 'rc-btn-primary rc-signing-continue', 'Continue');
       continueBtn.type = 'button';
       continueBtn.addEventListener('click', advanceToContract);
       btnRow.appendChild(continueBtn);
