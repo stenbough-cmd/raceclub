@@ -98,13 +98,14 @@ body.rc-league-page {
    back on the identical second run -- this rule alone is exactly what
    ran before ANY "roll in" work started, and is only ever used after
    the one-time intro below has already finished. */
-/* Track is now built from 3 concatenated copies of the item list (was 2,
-   2026-09-19 follow-up, Matt: "make the amount of repeats more than 2x at a
-   time") -- the loop only needs to travel one run's width, i.e. -100/3%,
-   to stay seamless. Keep this in sync with RUN_COUNT in js/league.js. */
+/* Back to 2 concatenated copies of the item list (2026-09-19 follow-up,
+   Matt: with season dates + next race now in the ticker, "I think the
+   ticker will only ever need to display two at a time... not 3") -- the
+   loop only needs to travel one run's width, i.e. -50%, to stay seamless.
+   Keep this in sync with RUN_COUNT in js/league.js. */
 @keyframes rcl-ticker-scroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-33.3333%); }
+  to { transform: translateX(-50%); }
 }
 /* One-time intro (2026-09-19 follow-up) -- js/league.js runs this once
    per page load, immediately followed (via animation-delay, not
@@ -136,12 +137,16 @@ body.rc-league-page {
   white-space: nowrap;
   border-right: 1px solid var(--rcl-line);
 }
+/* Matches the item's own body-copy font instead of a distinct bold/red
+   treatment (2026-09-19 follow-up, Matt: "make the red category labels
+   just a regular font... I want the text to look the same as it scrolls")
+   -- the trailing colon (added in the tag text itself, js/league.js) is
+   what now marks where the label ends. */
 .rcl-ticker-item-tag {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: var(--rc-red);
+  font-family: var(--rc-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rcl-ink);
 }
 .rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 /* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated

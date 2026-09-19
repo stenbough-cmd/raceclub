@@ -182,7 +182,22 @@ function _rclBuildTickerItems(hub) {
 
   if (!hasResults) {
     if (hub.seasonNumber) {
-      items.push({ tag: 'SEASON', text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') });
+      // Season dates appended after the name (2026-09-19 follow-up, Matt's
+      // ask) -- same start/end fields and _rclFormatDate() the "This
+      // Season" snapshot stat above already uses.
+      var seasonDates = '';
+      if (hub.seasonStartUtc && hub.seasonEndUtc) {
+        var seasonStartLabel = _rclFormatDate(hub.seasonStartUtc);
+        var seasonEndLabel = _rclFormatDate(hub.seasonEndUtc);
+        if (seasonStartLabel && seasonEndLabel) {
+          seasonDates = seasonStartLabel + (seasonEndLabel !== seasonStartLabel ? (' - ' + seasonEndLabel) : '');
+        }
+      }
+      items.push({
+        tag: 'SEASON',
+        text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') +
+          (seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : '')
+      });
     }
     (hub.standings || []).forEach(function (cls) {
       var standings = cls.standings || [];
@@ -190,6 +205,25 @@ function _rclBuildTickerItems(hub) {
       var names = standings.map(function (row) { return row.name; }).filter(Boolean).join(', ');
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: _rclEscapeHtml(names) });
     });
+
+    // Next race, shown after the driver lists (2026-09-19 follow-up,
+    // Matt's ask) -- same "first non-bye, unfinished" pick the Calendar
+    // section's own "UP NEXT" pill uses (see _rclRenderCalendar above).
+    var nextEntry = null;
+    (hub.calendar || []).forEach(function (entry) {
+      if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
+    });
+    if (nextEntry) {
+      var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ' -- ' + nextEntry.layout : '')) : '';
+      var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
+      items.push({
+        tag: 'NEXT RACE',
+        text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
+          (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : '') +
+          (nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : '')
+      });
+    }
+
     return items;
   }
 
@@ -246,7 +280,12 @@ function _rclRenderTicker(hub) {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
       var el = _rclEl('div', 'rcl-ticker-item');
-      el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.tag));
+      // Tag now matches the rest of the line's font (2026-09-19 follow-up,
+      // Matt: "make the red category labels just a regular font... I want
+      // the text to look the same as it scrolls") -- a plain colon marks
+      // where the label ends and the data starts instead of a color/weight
+      // change. See .rcl-ticker-item-tag in css/league.css.
+      el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.tag + ':'));
       el.appendChild(document.createTextNode(item.text));
       frag.appendChild(el);
     });
@@ -254,8 +293,12 @@ function _rclRenderTicker(hub) {
     return frag;
   }
 
-  var RUN_COUNT = 3; // number of concatenated copies of the item list -- see the
-  // animation comment above; must stay in sync with the -33.333% end value on
+  // Back to 2 runs (2026-09-19 follow-up, Matt: with season dates + next
+  // race now added to the no-results ticker content, "I think the ticker
+  // will only ever need to display two at a time to make sure there
+  // aren't gaps -- not 3").
+  var RUN_COUNT = 2; // number of concatenated copies of the item list -- see the
+  // animation comment above; must stay in sync with the -50% end value on
   // rcl-ticker-scroll in css/league.css (translateX moves exactly one run's
   // width per loop, i.e. -100/RUN_COUNT %)
   track.innerHTML = '';
