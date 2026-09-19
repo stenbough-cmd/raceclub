@@ -4120,27 +4120,36 @@
     nameWrap.appendChild(document.createTextNode(titleText));
     if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
     head.appendChild(nameWrap);
+    // Length + Weather pills, top-right of the title row (2026-09-19,
+    // Matt's call: "move the length and weather to the top right of each
+    // container, on the same row as the event title, but on the right
+    // side") -- .rc-cal-race-head is already a space-between flex row
+    // (nameWrap on the left), so appending these here puts them at the
+    // right edge for free.
+    var headPills = el('div', 'rc-cal-mini-stats');
+    if (!isSpecial && entry.raceLengthMinutes) {
+      headPills.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length', 'rc-cal-mini-stat'));
+    }
+    headPills.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
+    head.appendChild(headPills);
     body.appendChild(head);
 
-    // Track name/layout are back (2026-09-19 follow-up, Matt's catch:
-    // "I don't want the track names gone! There was a misunderstanding.
-    // I want the tracks and layouts there just how they were. What I
-    // don't want is the track images" -- only the track IMAGE was ever
-    // meant to go, not the text). Small length/weather pills sit next to
-    // it on the same row (Matt's original ask), in .rc-cal-track-row.
+    // Track name/layout (2026-09-19 follow-up, Matt's catch: "I don't
+    // want the track names gone... what I don't want is the track
+    // images" -- only the track IMAGE was ever meant to go). Password
+    // Override, when a round has one, stays down here next to the track
+    // rather than moving up with Length/Weather (2026-09-19 -- Matt's
+    // ask only named those two for the header row).
     var trackRow = el('div', 'rc-cal-track-row');
     var trackText = el('div', 'rc-cal-track');
     trackText.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
       (entry.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(entry.layout) + '</span>' : '');
     trackRow.appendChild(trackText);
-
-    var miniStats = el('div', 'rc-cal-mini-stats');
-    if (!isSpecial && entry.raceLengthMinutes) {
-      miniStats.appendChild(calStat(ICON_CLOCK, entry.raceLengthMinutes + ' min', 'Race length', 'rc-cal-mini-stat'));
+    if (entry.passwordOverride) {
+      var pwStats = el('div', 'rc-cal-mini-stats');
+      pwStats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride, 'rc-cal-mini-stat'));
+      trackRow.appendChild(pwStats);
     }
-    miniStats.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
-    if (entry.passwordOverride) miniStats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride, 'rc-cal-mini-stat'));
-    trackRow.appendChild(miniStats);
     body.appendChild(trackRow);
 
     var datetime = el('div', 'rc-cal-datetime');
