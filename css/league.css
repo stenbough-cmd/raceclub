@@ -515,13 +515,15 @@ body.rc-league-page {
   border-radius: 2px;
   border: 1px solid var(--rcl-line-bright);
 }
-/* Car number -- same size as the name (Matt's call), brand-red so it
-   reads as its own distinct fact on the line rather than blending into
-   the team name text next to it. */
+/* Car number -- same size as the name (Matt's call). Bold white (was
+   brand-red, 2026-09-19 follow-up, Matt: "the number on the leaderboard
+   should be bold white not red") -- same tone as the driver name right
+   next to it, with the 800 weight (already bold) now what sets it apart
+   on the line instead of a color change. */
 .rcl-standings-carnum {
   font-size: 14.5px;
   font-weight: 800;
-  color: var(--rc-red);
+  color: var(--rcl-ink);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
