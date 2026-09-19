@@ -5,9 +5,12 @@
   the shared site header, a season hero band (season number + name,
   "League Hub" title, and two stat strips built from real data -- This
   Season and League Format), then Recent Results + League News side by
-  side, then Leaderboard + Points Tables side by side (50/50, 2026-09-19),
+  side, then Leaderboard full width (one column per class, 2026-09-19),
   then Calendar full width. No separate Drivers section (removed
-  2026-09-19 -- the Leaderboard already lists every driver per class).
+  2026-09-19 -- the Leaderboard already lists every driver per class). No
+  separate Points Tables panel either (also removed 2026-09-19) -- it's a
+  "View Points Tables" link at the bottom of the Leaderboard panel that
+  opens the same tables in a popup instead (js/league.js).
   Public, no login required -- same "usable with no token at all"
   convention as index.html and its getGridTeaser call (see js/league.js ->
   getLeagueHub, Website.gs).
@@ -90,24 +93,20 @@
 
   </div>
 
-  <!-- LEADERBOARD + POINTS -- side by side, 50/50 (2026-09-19, Matt's call:
-       "make LEADERBOARD and POINTS TABLES 50/50 in the same row"). Own grid
-       class (.rcl-grid-even) rather than reusing .rcl-grid, which is the
-       2fr/1fr Recent Results/League News split above -- these two panels
-       are equal-weight, not primary/secondary. -->
-  <div class="rcl-grid-even rcl-row-full">
+  <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
+       "I don't want points tables listed in the league hub anymore... make
+       the LEADERBOARD container contain a column for every class... and
+       make it full width again"). Points Tables is no longer its own panel
+       here -- it's now a link at the bottom of this panel that opens it in
+       a popup (see #rcl-standings-points-link / _rclOpenPointsModal,
+       js/league.js), reusing the same tier-table markup that used to live
+       in the now-removed panel below this one. -->
+  <div class="rcl-row-full">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
         <div class="rcl-panel-title">Leaderboard</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
-    </section>
-
-    <section class="rcl-panel">
-      <div class="rcl-panel-head">
-        <div class="rcl-panel-title">Points Tables</div>
-      </div>
-      <div class="rcl-panel-body" id="rcl-points-body"></div>
     </section>
   </div>
 

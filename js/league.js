@@ -203,16 +203,27 @@ function _rclRenderTicker(hub) {
 // ---------------------------------------------------------------------
 // LEADERBOARD (standings)
 // ---------------------------------------------------------------------
+// Holds the full fetched hub so the "View Points Tables" link's popup
+// (opened well after this render finishes) can build its tables without
+// a second server round trip -- same pattern _rclNewsList already uses
+// for the story popup.
+var _rclHubForPoints = null;
+
 function _rclRenderStandings(hub) {
   var body = document.getElementById('rcl-standings-body');
   if (!body) return;
   body.innerHTML = '';
+  _rclHubForPoints = hub;
 
   if (!hub.hasSeason || !hub.standings || !hub.standings.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Standings fill in once a season is underway.'));
     return;
   }
 
+  // One column per class (2026-09-19, Matt's call) -- .rcl-standings-
+  // columns is the grid wrapper (css/league.css), auto-fitting however
+  // many classes the season actually has.
+  var columns = _rclEl('div', 'rcl-standings-columns');
   hub.standings.forEach(function (cls) {
     var wrap = _rclEl('div', 'rcl-standings-class');
     wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
@@ -236,8 +247,18 @@ function _rclRenderStandings(hub) {
         wrap.appendChild(rowEl);
       });
     }
-    body.appendChild(wrap);
+    columns.appendChild(wrap);
   });
+  body.appendChild(columns);
+
+  // "View Points Tables" link (2026-09-19, Matt's call: Points Tables is
+  // no longer its own panel -- see _rclOpenPointsModal below).
+  var linkRow = _rclEl('div', 'rcl-standings-points-row');
+  var link = _rclEl('button', 'rcl-standings-points-link', 'View Points Tables');
+  link.type = 'button';
+  link.addEventListener('click', function () { _rclOpenPointsModal(_rclHubForPoints); });
+  linkRow.appendChild(link);
+  body.appendChild(linkRow);
 }
 
 // ---------------------------------------------------------------------
@@ -386,22 +407,19 @@ function _rclRenderCalendar(hub) {
 
 // ---------------------------------------------------------------------
 // POINTS -- race-length-tier point tables + bonus points (added
-// 2026-09-19). Straight passthrough of Seasons.SeasonDetails.
-// pointsTables/bonusPoints (same shape the Season Creation Wizard writes
-// and handleGetSeasonCalendar already hands a logged-in driver), just
-// public here. Table order follows the tiers as they come back from the
-// server object (Sprint/Medium/Long, the only tiers the wizard creates)
-// rather than a hardcoded list, so a renamed or added tier still shows up
-// without a frontend change.
+// 2026-09-19, moved into a popup off the Leaderboard panel same day --
+// see _rclOpenPointsModal below). Straight passthrough of Seasons.
+// SeasonDetails.pointsTables/bonusPoints (same shape the Season Creation
+// Wizard writes and handleGetSeasonCalendar already hands a logged-in
+// driver), just public here. Table order follows the tiers as they come
+// back from the server object (Sprint/Medium/Long, the only tiers the
+// wizard creates) rather than a hardcoded list, so a renamed or added
+// tier still shows up without a frontend change.
 // ---------------------------------------------------------------------
-function _rclRenderPoints(hub) {
-  var body = document.getElementById('rcl-points-body');
-  if (!body) return;
-  body.innerHTML = '';
-
-  var tables = hub.pointsTables || {};
+function _rclBuildPointsBody(hub, body) {
+  var tables = (hub && hub.pointsTables) || {};
   var tierNames = Object.keys(tables);
-  if (!hub.hasSeason || !tierNames.length) {
+  if (!hub || !hub.hasSeason || !tierNames.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Points tables fill in once a season is underway.'));
     return;
   }
@@ -457,6 +475,34 @@ function _rclRenderPoints(hub) {
     body.appendChild(_rclEl('div', 'rcl-points-bonus-row',
       '<div class="rcl-points-bonus-chip">No bonus points are awarded this season.</div>'));
   }
+}
+
+// Opens the points tables in a popup, same .rcl-modal-overlay/dialog shell
+// the story popup uses (styled to match a .rcl-panel exactly, 2026-09-19)
+// -- reachable from the "View Points Tables" link at the bottom of the
+// Leaderboard panel (_rclRenderStandings above).
+function _rclOpenPointsModal(hub) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Points Tables'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+  var body = _rclEl('div', 'rcl-modal-body');
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  _rclBuildPointsBody(hub, body);
+
+  // Same "closable only via the X button" posture as the news story
+  // popup -- no backdrop click, no Escape key.
+  function close() { document.body.removeChild(overlay); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
 }
 
 // Drivers section removed 2026-09-19 (Matt's call: "drivers can be seen
@@ -790,7 +836,11 @@ function _rclRenderHero(hub) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderPoints, _rclRenderCalendar, _rclRenderNews];
+  // _rclRenderPoints removed from this list (2026-09-19) -- points tables
+  // are no longer rendered into the page directly; _rclRenderStandings
+  // stashes the fetched hub (_rclHubForPoints) so the "View Points
+  // Tables" link can build the popup on demand instead.
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderNews];
   fetchApi('getLeagueHub', {}).then(function (hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
