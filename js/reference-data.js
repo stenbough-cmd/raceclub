@@ -377,6 +377,22 @@ function trackImageSrc(trackId) {
   return 'assets/images/tracks/' + String(trackId || '') + '.png';
 }
 
+// Flat (non-emoji) country flag image convention -- assets/flags/{iso2}.svg,
+// keyed by the lowercase ISO 3166-1 alpha-2 code looked up from
+// COUNTRY_CODES (2026-09-19, League Hub Leaderboard redesign, Matt's ask:
+// "a flat flag (not emoji) of the driver's home country"). Deliberately NOT
+// flagEmoji() above -- that one builds a Unicode emoji flag, which is
+// explicitly what Matt does not want here. Admin uploads the actual SVG
+// files by hand, same manual-upload convention as manufacturerLogoSrc()/
+// trackImageSrc() above; callers should always set an onerror handler to
+// hide the <img> gracefully if that country's file hasn't been uploaded
+// yet, or if countryName doesn't match anything in COUNTRY_CODES.
+function countryFlagSrc(countryName) {
+  var code = COUNTRY_CODES[countryName || ''] || '';
+  if (!code) return '';
+  return 'assets/flags/' + code.toLowerCase() + '.svg';
+}
+
 // Same slugging convention as manufacturerLogoSrc() above, pointed at
 // assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
 // Not currently called from anywhere client-side (the server auto-writes

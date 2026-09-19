@@ -33,6 +33,7 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
+<script src="js/reference-data.js"></script>
 </head>
 <body class="rc-league-page">
 
@@ -55,18 +56,13 @@
     <div class="rcl-hero-eyebrow">Race Club</div>
     <h1 class="rcl-hero-title">League Hub</h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
-    <!-- Season snapshot + League Format stat strips (added 2026-09-19,
-         replacing the old single pipe-separated sentence -- Matt's call:
-         "find a better way to display this... boring to look at"). Both
-         built by _rclRenderHero/_rclRenderHeroStats in js/league.js;
-         rcl-hero-sub is the plain-text fallback for "no season" only. -->
+    <!-- Season snapshot + League Format stats moved into the "View Season
+         Details" popup (2026-09-19, Matt's call) -- opened from a link at
+         the bottom of the Calendar panel, built by _rclOpenSeasonDetailsModal
+         in js/league.js. rcl-hero-sub is the plain-text fallback for
+         "no season" only; the stat-strip groups that used to sit here were
+         removed. -->
     <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
-    <div class="rcl-hero-stats-group" id="rcl-hero-snapshot-group" style="display:none;">
-      <div class="rcl-hero-stats-row" id="rcl-hero-snapshot"></div>
-    </div>
-    <div class="rcl-hero-stats-group" id="rcl-hero-format-group" style="display:none;">
-      <div class="rcl-hero-stats-row" id="rcl-hero-format"></div>
-    </div>
   </div>
 </section>
 

@@ -145,6 +145,29 @@ var _RCL_ICON_GAMEPAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="n
 function _rclBuildTickerItems(hub) {
   var items = [];
 
+  // Branches on whether any results have actually been posted yet
+  // (2026-09-19, Matt's ask: "When there are no results to post and a
+  // season is new, make the highlights show the season number, season
+  // name, and driver list for each class. Once results are posted, that's
+  // when it specifically shows race results, gains, losses, and details
+  // like that.") -- a brand-new season has a `standings` roster (drivers
+  // registered into each class) but zero completed rounds, so the old
+  // "POINTS LEAD" framing read as meaningless (everyone's tied at 0).
+  var hasResults = (hub.roundsCompleted || 0) > 0;
+
+  if (!hasResults) {
+    if (hub.seasonNumber) {
+      items.push({ tag: 'SEASON', text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') });
+    }
+    (hub.standings || []).forEach(function (cls) {
+      var standings = cls.standings || [];
+      if (!standings.length) return;
+      var names = standings.map(function (row) { return row.name; }).filter(Boolean).join(', ');
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: _rclEscapeHtml(names) });
+    });
+    return items;
+  }
+
   if (hub.lastRace) {
     var r = hub.lastRace;
     if (r.overallWinner) {
@@ -232,13 +255,56 @@ function _rclRenderStandings(hub) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
     } else {
       var leaderPts = standings[0].championshipPoints;
+      // Metal-color modifier by finish position (2026-09-19, Matt's call:
+      // "Make 1st gold, 2nd silver, and 3rd bronze and the rest can be a
+      // titanium metal color") -- replaces the old red "lead" tint, since
+      // gold/silver/bronze already reads as rank on its own.
+      var POS_METAL_CLASS = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
       standings.forEach(function (row, idx) {
-        var rowEl = _rclEl('div', 'rcl-standings-row' + (idx === 0 ? ' rcl-standings-row-lead' : ''));
+        var rowEl = _rclEl('div', 'rcl-standings-row' + (POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
         rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
-        var nameCol = _rclEl('div');
-        nameCol.appendChild(_rclEl('div', 'rcl-standings-name', _rclEscapeHtml(row.name)));
+
+        // Identity block: manufacturer logo, then name/team text, then a
+        // country flag next to the driver's name (2026-09-19, Matt's ask:
+        // "Add a manufacturer logo before the driver's name / team...
+        // add a flat flag of the driver's home country after their
+        // name"). Both are optional images that hide themselves via
+        // onerror if the asset hasn't been uploaded yet, or if
+        // reference-data.js's helpers aren't available for some reason.
+        var identity = _rclEl('div', 'rcl-standings-identity');
+        var logoSlot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
+        if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
+          var logoImg = document.createElement('img');
+          logoImg.className = 'rcl-standings-mfr-logo';
+          logoImg.src = manufacturerLogoSrc(row.manufacturer);
+          logoImg.alt = '';
+          logoImg.onerror = function () { logoSlot.style.display = 'none'; };
+          logoSlot.appendChild(logoImg);
+        } else {
+          logoSlot.style.display = 'none';
+        }
+        identity.appendChild(logoSlot);
+
+        var nameCol = _rclEl('div', 'rcl-standings-identity-text');
+        var nameRow = _rclEl('div', 'rcl-standings-name-row');
+        nameRow.appendChild(_rclEl('span', 'rcl-standings-name', _rclEscapeHtml(row.name)));
+        if (row.country && typeof countryFlagSrc === 'function') {
+          var flagSrc = countryFlagSrc(row.country);
+          if (flagSrc) {
+            var flagImg = document.createElement('img');
+            flagImg.className = 'rcl-standings-flag';
+            flagImg.src = flagSrc;
+            flagImg.alt = '';
+            flagImg.title = row.country;
+            flagImg.onerror = function () { flagImg.style.display = 'none'; };
+            nameRow.appendChild(flagImg);
+          }
+        }
+        nameCol.appendChild(nameRow);
         nameCol.appendChild(_rclEl('div', 'rcl-standings-team', _rclEscapeHtml(row.teamName || '')));
-        rowEl.appendChild(nameCol);
+        identity.appendChild(nameCol);
+        rowEl.appendChild(identity);
+
         var ptsCol = _rclEl('div', 'rcl-standings-pts');
         ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
         var gap = idx === 0 ? 'LEADER' : ('-' + (leaderPts - row.championshipPoints) + ' PTS');
@@ -403,6 +469,19 @@ function _rclRenderCalendar(hub) {
     row.appendChild(rowBody);
     body.appendChild(row);
   });
+
+  // "View Season Details" link (2026-09-19, Matt's call: season details
+  // move out of the hero band into a popup opened from here instead --
+  // see _rclOpenSeasonDetailsModal below). Closes over the local `hub`
+  // param directly since this function already has it, same pattern as
+  // the Leaderboard's "View Points Tables" link uses _rclHubForPoints for
+  // (that one needs a stashed global since it's a different function).
+  var detailsRow = _rclEl('div', 'rcl-cal-details-row');
+  var detailsLink = _rclEl('button', 'rcl-cal-details-link', 'View Season Details');
+  detailsLink.type = 'button';
+  detailsLink.addEventListener('click', function () { _rclOpenSeasonDetailsModal(hub); });
+  detailsRow.appendChild(detailsLink);
+  body.appendChild(detailsRow);
 }
 
 // ---------------------------------------------------------------------
@@ -778,17 +857,10 @@ function _rclBuildFormatStats(hub) {
   return stats;
 }
 
-function _rclRenderStatsRow(containerId, stats) {
-  var row = document.getElementById(containerId);
-  if (!row) return;
-  row.innerHTML = '';
-  stats.forEach(function (s) {
-    var tile = _rclEl('div', 'rcl-hero-stat');
-    tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
-    tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-    row.appendChild(tile);
-  });
-}
+// _rclRenderStatsRow removed 2026-09-19 -- its two call sites both moved
+// into _rclOpenSeasonDetailsModal below, which builds the stat tiles
+// inline (into the popup's own body element) instead of a getElementById-
+// targeted hero container.
 
 function _rclRenderHero(hub) {
   // Eyebrow is static "Race Club" (set directly in league.html) --
@@ -813,26 +885,82 @@ function _rclRenderHero(hub) {
     }
   }
 
+  // Snapshot/format stat strips moved out of the hero band entirely
+  // (2026-09-19, Matt's call: "Instead of the season details at the top
+  // of the league hub, make it show up in a container themed popup when
+  // VIEW SEASON DETAILS link at the bottom of the calendar is clicked")
+  // -- see _rclOpenSeasonDetailsModal below, opened from
+  // _rclRenderCalendar instead. rcl-hero-sub stays as the plain-text
+  // "no season" fallback only.
   var subEl = document.getElementById('rcl-hero-sub');
-  var snapshotGroup = document.getElementById('rcl-hero-snapshot-group');
-  var formatGroup = document.getElementById('rcl-hero-format-group');
 
   if (!hub.hasSeason) {
     if (subEl) { subEl.textContent = 'No season is currently underway. Check back once the next one opens.'; subEl.style.display = ''; }
-    if (snapshotGroup) snapshotGroup.style.display = 'none';
-    if (formatGroup) formatGroup.style.display = 'none';
     return;
   }
 
   if (subEl) subEl.style.display = 'none';
+}
+
+// Opens the season snapshot + league format stats (previously rendered
+// straight into the hero band) in a popup instead, same .rcl-modal-*
+// shell the news story and points tables popups use -- reachable from the
+// "View Season Details" link at the bottom of the Calendar panel
+// (_rclRenderCalendar above).
+function _rclOpenSeasonDetailsModal(hub) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body');
 
   var snapshotStats = _rclBuildSnapshotStats(hub);
-  if (snapshotGroup) snapshotGroup.style.display = snapshotStats.length ? '' : 'none';
-  _rclRenderStatsRow('rcl-hero-snapshot', snapshotStats);
+  if (snapshotStats.length) {
+    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
+    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
+    var snapshotRow = _rclEl('div', 'rcl-hero-stats-row');
+    snapshotStats.forEach(function (s) {
+      var tile = _rclEl('div', 'rcl-hero-stat');
+      tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
+      tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
+      snapshotRow.appendChild(tile);
+    });
+    snapshotGroup.appendChild(snapshotRow);
+    body.appendChild(snapshotGroup);
+  }
 
   var formatStats = _rclBuildFormatStats(hub);
-  if (formatGroup) formatGroup.style.display = formatStats.length ? '' : 'none';
-  _rclRenderStatsRow('rcl-hero-format', formatStats);
+  if (formatStats.length) {
+    var formatGroup = _rclEl('div', 'rcl-hero-stats-group');
+    formatGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'League Format'));
+    var formatRow = _rclEl('div', 'rcl-hero-stats-row');
+    formatStats.forEach(function (s) {
+      var tile = _rclEl('div', 'rcl-hero-stat');
+      tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
+      tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
+      formatRow.appendChild(tile);
+    });
+    formatGroup.appendChild(formatRow);
+    body.appendChild(formatGroup);
+  }
+
+  if (!snapshotStats.length && !formatStats.length) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
+  }
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  function close() { document.body.removeChild(overlay); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
 }
 
 document.addEventListener('DOMContentLoaded', function () {

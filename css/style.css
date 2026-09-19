@@ -433,6 +433,13 @@ p { margin: 0 0 0.75em; }
 .rc-badge-lmp3 { background: var(--rc-class-lmp3); }
 .rc-badge-lmp2 { background: var(--rc-class-lmp2); }
 .rc-badge-hypercar { background: var(--rc-class-hypercar); }
+/* Bigger type, tighter horizontal padding for every class pill specifically
+   (2026-09-19, Matt's call: "increase the size of the font inside the
+   class pills/reduce the padding so it takes up more room in the pill" --
+   site-wide, wherever a class pill shows) -- scoped to just these four
+   class-color classes so it never touches .rc-badge-chip's other uses
+   (status/tier/race pills, etc.), which stay their original size. */
+.rc-badge-lmgt3, .rc-badge-lmp3, .rc-badge-lmp2, .rc-badge-hypercar { font-size: 13px; padding: 3px 8px; }
 /* Neutral "grouping label" badge -- black rounded rectangle, same chip
    shape as the class badges above but always carbon/white regardless of
    the category inside it, since it's a structural grouping label, not a
@@ -484,7 +491,12 @@ p { margin: 0 0 0.75em; }
    .rc-badge-chip (the class classes -lmgt3/-lmp3/-lmp2/-hypercar layer on
    top exactly as before), just tighter padding/font-size for the shorter
    abbreviated label (HY/GT3/P3/P2) sitting inline next to header text. */
-.rc-badge-chip-abbrev { padding: 2px 7px; font-size: 10px; margin-right: 6px; }
+/* Font bumped, padding trimmed same as the other class pills above
+   (2026-09-19, Matt's call) -- still visibly smaller than a full class
+   pill since it's inline with header text, just less cramped than before.
+   margin-right dropped (2026-09-19) -- the corner-figure flex row it sits
+   in now provides that gap itself (see .rc-dash-card-corner-figure). */
+.rc-badge-chip-abbrev { padding: 2px 6px; font-size: 12px; }
 /* "Buy-in range" pill on the Choose Your Class screen -- sits directly
    next to the class badge instead of the exact cost living in its own
    centered column. Light gray outline, not a filled chip (2026-08-30,
@@ -1986,7 +1998,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    text sitting on the same baseline -- since neither is lowercase/has
    descenders, that baseline IS each one's visual bottom edge, so the two
    stay flush along the bottom. */
-.rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+/* Own flex row (2026-09-19, Matt's call: "move the class pill up more so
+   it is vertically centered with the # in CURRENT SEAT") -- the pill
+   (small font, its own line-height) and the "#n" text used to just sit
+   inline together, whose default baseline alignment left the pill sitting
+   a little low against the number. align-items: center here lines the two
+   up by their actual vertical centers instead. */
+.rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 
 /* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
    checkered-flag corner that fades toward the card's center, a red
@@ -4394,10 +4412,19 @@ body.rc-modal-scroll-locked {
 /* border, radius) rather than inventing a new card style.               */
 /* -------------------------------------------------------------------- */
 .rc-cal-season { }
-.rc-cal-season-head { margin-bottom: 16px; }
-/* Same red underline as .rc-dash-card-title (Matt's call: every section
-   header on the site reads the same way) instead of a bare heading. */
-.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
+/* Now a flex row (2026-09-19, Matt's call: "move the class pills to the
+   top right of the container, similar to how some cards on the dash have
+   text or pills in the right corner") -- same shape as a Dashboard card's
+   own .rc-dash-card-header-row, title on the left, corner content (class
+   pills here) on the right. The red underline moved here from the title
+   itself, so it spans the whole row including the pills, not just the
+   text. */
+.rc-cal-season-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
+.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
+/* Overrides .rc-cal-classes' own margin-top (below) -- that spacing is for
+   when the pills sit under something; inline in the header row, they need
+   none. */
+.rc-cal-season-head .rc-cal-classes { margin-top: 0; }
 
 /* Season-wide settings block (server password, classes, points tables,
    drop weeks, race day/frequency, track limits, private qualifying) --
@@ -4416,9 +4443,9 @@ body.rc-modal-scroll-locked {
    the site uses this one shape). */
 .rc-cal-class-pill {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--rc-white);
   text-transform: uppercase;

@@ -1135,17 +1135,14 @@
       joinedStat.appendChild(el('div', 'rc-regstatus-stat-value', escapeHtml(joinedDate)));
       footer.appendChild(joinedStat);
 
-      // Class shown as a colored pill (2026-09-19, Matt's ask: "use
-      // colored pills for the class") rather than plain text -- same
-      // _rcClassBadge treatment/colors used everywhere else on the site.
+      // Class shown as plain text again (2026-09-19, Matt's call: "remove
+      // the pill class design from the REGISTRATION STATUS card and leave
+      // the class as text") -- reverts the 2026-09-19 pill treatment above;
+      // every other stat on this footer (Registered On, etc.) is plain
+      // text too, so this now matches its own row instead of standing out.
       var classStat = el('div', 'rc-regstatus-stat');
       classStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Class'));
-      var classValue = el('div', 'rc-regstatus-stat-value');
-      if (reg.carClass) {
-        classValue.appendChild(_rcClassBadge(reg.carClass));
-      } else {
-        classValue.textContent = '—';
-      }
+      var classValue = el('div', 'rc-regstatus-stat-value', escapeHtml(reg.carClass || '—'));
       classStat.appendChild(classValue);
       footer.appendChild(classStat);
 
@@ -1857,7 +1854,7 @@
     }
     function buildClassBadge(cls) {
       var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
-      var badge = el('span', 'rc-badge-chip', escapeHtml(cls));
+      var badge = el('span', 'rc-badge-chip', escapeHtml(_rcClassPillLabel(cls)));
       badge.style.background = 'var(' + colorVar + ')';
       return badge;
     }
@@ -3937,29 +3934,41 @@
     return (points || []).map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
   }
 
+  // Class pills row -- built once, reused wherever a season's classes need
+  // to show as a row of pills. Moved into the Calendar page's own season
+  // header (2026-09-19, top-right corner, same treatment as a Dashboard
+  // card's corner figure) rather than living inside Season Settings.
+  // Returns null when the season has no classes selected, so callers can
+  // skip appending it.
+  function buildClassPillsRow(classes) {
+    var classKeys = Object.keys(classes || {}).filter(function (k) { return classes[k]; });
+    if (!classKeys.length) return null;
+    var classesRow = el('div', 'rc-cal-classes');
+    classKeys.forEach(function (k) {
+      var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
+      var pill = el('span', 'rc-cal-class-pill', escapeHtml(_rcClassPillLabel(k)));
+      pill.style.background = 'var(' + colorVar + ')';
+      classesRow.appendChild(pill);
+    });
+    return classesRow;
+  }
+
   // Season-wide settings panel -- server password, race day/frequency,
-  // drop weeks, track limits, qualifying privacy, class pills, and the
-  // per-tier (Sprint/Medium/Long) duration + points-list chips. Every
-  // field here comes straight off handleGetSeasonCalendar's seasonDetails
-  // subset (a trimmed copy of Seasons.SeasonDetails).
+  // drop weeks, track limits, qualifying privacy, and the per-tier
+  // (Sprint/Medium/Long) duration + points-list chips. Class pills used to
+  // live here too -- moved to the season header row instead, 2026-09-19
+  // (see buildClassPillsRow above). Every field here comes straight off
+  // handleGetSeasonCalendar's seasonDetails subset (a trimmed copy of
+  // Seasons.SeasonDetails).
   function seasonDetailsPanel(details) {
     var wrap = el('div', 'rc-cal-season-details');
     wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Settings'));
 
-    var classKeys = Object.keys(details.classes || {}).filter(function (k) { return details.classes[k]; });
-    if (classKeys.length) {
-      var classesRow = el('div', 'rc-cal-classes');
-      // "Classes:" label removed (2026-09-19, Matt's call: "remove
-      // Classes: label in calendar view and just have the class pills")
-      // -- the pills themselves already say what they are.
-      classKeys.forEach(function (k) {
-        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
-        var pill = el('span', 'rc-cal-class-pill', escapeHtml(k));
-        pill.style.background = 'var(' + colorVar + ')';
-        classesRow.appendChild(pill);
-      });
-      wrap.appendChild(classesRow);
-    }
+    // Class pills moved out of this panel entirely (2026-09-19, Matt's
+    // call: "move the class pills to the top right of the container,
+    // similar to how some cards on the dash have text or pills in the
+    // right corner") -- see buildClassPillsRow below, now built into the
+    // season header row instead (renderCalendarSection).
 
     var stats = el('div', 'rc-cal-stats');
     if (details.defaultPassword) {
@@ -4184,6 +4193,13 @@
       // "Season N: <name>" -- see seasonNumberLabel() above.
       var seasonNumLabel = seasonNumberLabel(res.seasonId);
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + res.seasonName));
+      // Class pills, top-right of the header (2026-09-19, Matt's call:
+      // "move the class pills to the top right of the container, similar
+      // to how some cards on the dash have text or pills in the right
+      // corner") -- same corner-figure idea as Current Seat's car number/
+      // Next Race's round number, just a row of pills instead of text.
+      var classPillsRow = buildClassPillsRow((res.seasonDetails || {}).classes);
+      if (classPillsRow) head.appendChild(classPillsRow);
       panel.appendChild(head);
 
       panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}));
@@ -8484,6 +8500,19 @@
     });
   }
 
+  // Pill display label for a class (2026-09-19, Matt's call: "Make the
+  // HYPERCAR display HY in ALL instances where it's a pill class
+  // description") -- every other class name (LMGT3/LMP3/LMP2) is already
+  // short enough to read fine inside a pill; Hypercar is the one outlier,
+  // so it's the only one abbreviated here. Not the same thing as
+  // CAR_CLASS_ABBREV (reference-data.js), which abbreviates every class
+  // for the Current Seat corner pill specifically -- this is used by every
+  // OTHER class pill on the site (the full class badge, the Calendar page's
+  // class pills, the Choose Your Class modal title pill).
+  function _rcClassPillLabel(cls) {
+    return cls === 'Hypercar' ? 'HY' : cls;
+  }
+
   // Class badge -- LMGT3/LMP3/LMP2/Hypercar get their canonical colors
   // (same CSS vars CAR_CLASS_BADGE_COLOR_VAR points at); any other class
   // name still shows, just uncolored, rather than being silently dropped.
@@ -8491,7 +8520,7 @@
     var key = String(cls || '').trim();
     var map = { LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
     var colorClass = map[key] || '';
-    return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(key || 'Unclassified'));
+    return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(_rcClassPillLabel(key) || 'Unclassified'));
   }
 
   // Compact, abbreviated class pill (2026-09-19) -- same rounded-rectangle
