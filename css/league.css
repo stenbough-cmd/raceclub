@@ -265,10 +265,6 @@ body.rc-league-page {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  /* +15% brightness (2026-09-19, Matt's ask) -- filter applies to this
-     layer only (its own ::before box), not the text sitting above it at
-     z-index:1, so brightening the image doesn't wash out the title. */
-  filter: brightness(1.15);
   opacity: 0.28;
   z-index: 0;
   pointer-events: none;
