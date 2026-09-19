@@ -4337,6 +4337,11 @@
 
       panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}));
 
+      // Faint gray divider between Season Format and the race list below
+      // (2026-09-19, Matt's ask) -- same plain silver hairline treatment
+      // used elsewhere on the page (e.g. the News panel's own divider).
+      panel.appendChild(el('hr', 'border:none;border-top:1px solid var(--rc-silver);margin:18px 0 0;'));
+
       var list = el('div', 'rc-cal-race-list');
       var raceSettings = (res.seasonDetails || {}).raceSettings || {};
       (res.races || []).forEach(function (entry) { list.appendChild(raceCard(entry, driverTz, raceSettings)); });
