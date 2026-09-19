@@ -387,26 +387,19 @@ body.rc-league-page {
   align-items: center;
   gap: 10px;
 }
-/* Taller, less-angled hash mark (2026-09-19, Matt's call: "make the red
-   hash marks in each container taller with the same thickness and width
-   so that there is less of an angle on the hash mark") -- width and the
-   30%-of-width horizontal skew both stay put, only height grows (12px ->
-   22px). The clip-path's skew is a percentage of WIDTH, not height, so a
-   taller box spreads that same horizontal offset over more vertical
-   distance -- the diagonal edge reads noticeably closer to vertical
-   without touching thickness or width at all. Width nudged back up
-   slightly (2026-09-19 follow-up, Matt: "increase the width... ever
-   slightly to add a little extra lean") -- same skew percentage, so a
-   touch more width brings back a touch more angle, without undoing the
-   height change above. Bumped again to 16px (2026-09-19, second follow-
-   up, Matt: "increase the width... to 16px for a little extra lean"). */
+/* Angled clip-path hash mark replaced with three literal red backslashes
+   (2026-09-19, Matt's call: "instead of a style hash, just add 3 red
+   backslashes in front of the container headers -- that will make
+   everything feel cohesive instead of trying to make it work together")
+   -- plain text now instead of a shaped block, so it reads as a
+   typographic mark rather than a separate graphic element. Each
+   backslash in the CSS string below is written as two characters (\\)
+   -- that's how CSS content strings escape a literal backslash. */
 .rcl-panel-title::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 22px;
-  background: var(--rc-red);
-  clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
+  content: "\\\\\\";
+  color: var(--rc-red);
+  font-weight: 800;
+  line-height: 1;
 }
 .rcl-panel-meta { font-size: 12px; color: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
 .rcl-panel-body { padding: 18px; }
@@ -1038,16 +1031,13 @@ body.rc-league-page {
   align-items: center;
   gap: 10px;
 }
-/* Same taller/less-angled treatment as .rcl-panel-title::before above
-   (2026-09-19, Matt's call -- "in each container", popups included), same
-   width bump for a touch more lean, now 16px (2026-09-19 follow-ups). */
+/* Same three-backslash treatment as .rcl-panel-title::before above
+   (2026-09-19, Matt's call -- "in each container", popups included). */
 .rcl-modal-title::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 22px;
-  background: var(--rc-red);
-  clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
+  content: "\\\\\\";
+  color: var(--rc-red);
+  font-weight: 800;
+  line-height: 1;
 }
 .rcl-modal-close {
   flex: none;
