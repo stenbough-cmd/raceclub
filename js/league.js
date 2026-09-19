@@ -29,6 +29,31 @@ function _rclEscapeHtml(str) {
   return d.innerHTML;
 }
 
+// Background-scroll lock for every popup on this page (2026-09-19, Matt's
+// call: "anytime there is a popup ANYWHERE on the website -- I should not
+// be able to scroll in the background when a popup is active") -- same
+// iOS-Safari-safe pattern Account.html's own showModal() already uses
+// (position:fixed instead of plain overflow:hidden, which doesn't
+// reliably stop touch scrolling; the scroll position is remembered so it
+// can be restored without a jump on close), reusing that exact same
+// .rc-modal-scroll-locked class/CSS rule (css/style.css) rather than a
+// page-specific copy -- league.html already loads style.css alongside
+// css/league.css (see the file header comment), so no new CSS is needed
+// here at all. league.js is otherwise self-contained from Account.html
+// (no shared JS include), so this is its own small copy of the JS side
+// of that pattern only.
+var _rclScrollLockY = 0;
+function _rclLockBodyScroll() {
+  _rclScrollLockY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = '-' + _rclScrollLockY + 'px';
+  document.body.classList.add('rc-modal-scroll-locked');
+}
+function _rclUnlockBodyScroll() {
+  document.body.classList.remove('rc-modal-scroll-locked');
+  document.body.style.top = '';
+  window.scrollTo(0, _rclScrollLockY);
+}
+
 // Same large circle-slash "no data" icon the rest of the site uses
 // (Account.html's buildEmptyStatePanel), recolored for this page's dark
 // background via .rcl-empty-state-icon rather than duplicating the SVG
@@ -448,17 +473,19 @@ function _rclRenderCalendar(hub) {
       (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');
-    // Time + length grouped into one light-gray pill (2026-09-19, Matt's
-    // asks across two turns: pair the time with the length, then "say the
-    // minutes" instead of the tier name and "put the timezone behind the
-    // race time" -- both handled inside _rclFormatDateTime/
-    // _rclEntryLengthMinutes above).
+    // Time + length -- now the same gray outline pill as In-Game/Weather
+    // below (2026-09-19, Matt's call: "make the date time and length pill
+    // less prominent. It overshadows the rest of the race details by a
+    // lot") -- was the one solid light-fill chip in this row, which read
+    // much louder against the dark page than the plain track/event text
+    // next to it. The `true` third arg is the same outline switch In-
+    // Game/Weather already use (see _rclChip above).
     var timeTierParts = [];
     if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
     if (lengthMin) timeTierParts.push(lengthMin + ' Min');
     if (timeTierParts.length) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · ')));
+      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · '), true));
     }
     // In-game time: spelled out ("In-Game"), race time only -- practice/
     // qualify in-game times dropped from this line (2026-09-19, Matt's
@@ -589,10 +616,11 @@ function _rclOpenPointsModal(hub) {
 
   // Same "closable only via the X button" posture as the news story
   // popup -- no backdrop click, no Escape key.
-  function close() { document.body.removeChild(overlay); }
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
   closeBtn.addEventListener('click', close);
 
   document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // Drivers section removed 2026-09-19 (Matt's call: "drivers can be seen
@@ -785,10 +813,12 @@ function _rclOpenStoryModal(startIndex) {
   // posture Account.html's own generic modal already uses.
   function close() {
     document.body.removeChild(overlay);
+    _rclUnlockBodyScroll();
   }
   closeBtn.addEventListener('click', close);
 
   document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // ---------------------------------------------------------------------
@@ -968,10 +998,11 @@ function _rclOpenSeasonDetailsModal(hub) {
   dialog.appendChild(body);
   overlay.appendChild(dialog);
 
-  function close() { document.body.removeChild(overlay); }
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
   closeBtn.addEventListener('click', close);
 
   document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 document.addEventListener('DOMContentLoaded', function () {

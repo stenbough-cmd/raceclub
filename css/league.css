@@ -222,25 +222,32 @@ body.rc-league-page {
   color: var(--rc-red);
   margin-bottom: 10px;
 }
-.rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Smaller, center-aligned bubbles (2026-09-19, Matt's call, in the Season
+   Details popup: "reduce the size of the details bubbles so they don't
+   take up so much space and center align the values in each bubble") --
+   smaller padding/min-width and a smaller value font than the original
+   size, which was sized for the old hero-band placement, not a compact
+   popup body. */
 .rcl-hero-stat {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--rcl-line-bright);
   border-radius: 6px;
-  padding: 8px 14px;
-  min-width: 92px;
+  padding: 6px 10px;
+  min-width: 74px;
+  text-align: center;
 }
 .rcl-hero-stat-value {
   font-family: var(--rc-font-heading);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--rcl-ink);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 .rcl-hero-stat-label {
-  margin-top: 3px;
-  font-size: 11.5px;
+  margin-top: 2px;
+  font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -302,11 +309,19 @@ body.rc-league-page {
   align-items: center;
   gap: 10px;
 }
+/* Taller, less-angled hash mark (2026-09-19, Matt's call: "make the red
+   hash marks in each container taller with the same thickness and width
+   so that there is less of an angle on the hash mark") -- width and the
+   30%-of-width horizontal skew both stay put, only height grows (12px ->
+   22px). The clip-path's skew is a percentage of WIDTH, not height, so a
+   taller box spreads that same horizontal offset over more vertical
+   distance -- the diagonal edge reads noticeably closer to vertical
+   without touching thickness or width at all. */
 .rcl-panel-title::before {
   content: '';
   display: inline-block;
   width: 12px;
-  height: 12px;
+  height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
 }
@@ -502,7 +517,11 @@ body.rc-league-page {
   border-bottom: 1px solid var(--rcl-line);
   overflow: hidden;
 }
-.rcl-cal-row:last-child { border-bottom: none; }
+/* Last row KEEPS its bottom border now (2026-09-19, Matt's call: "remove
+   the line above VIEW SEASON DETAILS... the line at the bottom edge of
+   the last race will suffice") -- that border now doubles as the
+   separator above the details link below, instead of the link growing
+   its own extra border-top/line underneath a removed one. */
 /* Next-race highlight -- softened from a red wash to a barely-there light
    gray (2026-09-19, Matt's call: "the highlighting slightly lighter gray
    instead of a red highlight") -- UP NEXT still reads red via
@@ -638,7 +657,12 @@ body.rc-league-page {
    (2026-09-19, Matt's call: season details move out of the hero band into
    a popup opened from here) -- same shape as the Leaderboard's own "View
    Points Tables" link below its content. */
-.rcl-cal-details-row { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rcl-line); text-align: center; }
+/* No own border-top any more (2026-09-19) -- the last race row's own
+   bottom border (now kept, see .rcl-cal-row above) is the one line
+   between the schedule and this link; margin-top just gives the link
+   breathing room below that existing line instead of drawing a second
+   one of its own. */
+.rcl-cal-details-row { margin-top: 16px; text-align: center; }
 .rcl-cal-details-link {
   background: none;
   border: none;
@@ -821,6 +845,22 @@ body.rc-league-page {
   max-height: calc(100vh - 80px);
   overflow-y: auto;
   padding: 0 28px 24px;
+  /* Vertical centering (2026-09-19, Matt's call: "the popup also
+     populates very high on the website... make it vertically centered" --
+     applies to every popup on this page, they all share this class).
+     Auto top/bottom margins on a flex item (the overlay above is
+     display:flex) compute equal space above/below when the dialog is
+     shorter than the viewport -- true centering -- and collapse to 0
+     once it's taller than the viewport, so it still starts flush at the
+     top and scrolls normally in that case. That's the same "Load More
+     News" growth case the overlay's own align-items:flex-start comment
+     above is about; auto-margin centering here gets both behaviors at
+     once without the flexbox align-items:center-plus-overflow clipping
+     bug some browsers have when a centered flex item overflows its
+     scrollable container (that clipping bug is exactly why the overlay
+     itself stays flex-start rather than switching to align-items:
+     center). */
+  margin: auto 0;
 }
 /* Same raised-2 background + red underline as .rcl-panel-head, so the
    popup's own header reads as the exact same header treatment as every
@@ -852,11 +892,13 @@ body.rc-league-page {
   align-items: center;
   gap: 10px;
 }
+/* Same taller/less-angled treatment as .rcl-panel-title::before above
+   (2026-09-19, Matt's call -- "in each container", popups included). */
 .rcl-modal-title::before {
   content: '';
   display: inline-block;
   width: 12px;
-  height: 12px;
+  height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
 }
