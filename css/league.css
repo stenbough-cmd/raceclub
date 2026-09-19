@@ -265,7 +265,7 @@ body.rc-league-page {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  opacity: 0.28;
+  opacity: 0.4;
   z-index: 0;
   pointer-events: none;
 }
@@ -442,7 +442,7 @@ body.rc-league-page {
    identical-looking header, right next to this one, is unaffected.
    50% opacity (2026-09-19, dimmed down from the original 90% ask -- Matt's
    follow-up call: "dim the league news background to 50%") -- still more
-   present than the main hero's own 0.28 banner opacity, since this is a
+   present than the main hero's own 0.4 banner opacity, since this is a
    much smaller, busier area where a faint image would just disappear, but
    not competing with the "League News" title text sitting on top of it. */
 .rcl-panel-head-news { position: relative; overflow: hidden; }
