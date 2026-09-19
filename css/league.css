@@ -86,18 +86,32 @@ body.rc-league-page {
   animation: rcl-ticker-scroll 26s linear infinite;
 }
 .rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
-/* Start/end are real pixel values set by js/league.js (_rclRenderTicker),
-   measured once the two runs are actually laid out -- --rcl-ticker-start
-   is the viewport's own width (so the track starts fully off-screen past
-   the right edge and rolls in, instead of just appearing already in
-   place at translateX(0)) and --rcl-ticker-end is exactly one run's
-   width (so the loop still lands cleanly on the second, identical run --
-   same 50% point as before, just expressed in px instead of a percentage
-   of the track's own total width). The 0/-50% fallbacks only matter for
-   the split second before that first requestAnimationFrame runs. */
+/* Back to the original plain 0%/-50% loop (2026-09-19 follow-up -- the
+   version of this rule that instead read from --rcl-ticker-start/-end
+   custom properties made the "roll in from off-screen" behavior repeat
+   on every single loop, not just the first time, which is what caused
+   "only shows 2 entries and starts over" -- see the long comment in
+   js/league.js's _rclRenderTicker). -50% (one full run's width, since
+   both duplicate runs are equal) is what makes the loop land seamlessly
+   back on the identical second run -- this rule alone is exactly what
+   ran before ANY "roll in" work started, and is only ever used after
+   the one-time intro below has already finished. */
 @keyframes rcl-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+/* One-time intro (2026-09-19 follow-up) -- js/league.js runs this once
+   per page load, immediately followed (via animation-delay, not
+   overlapping) by the loop above starting fresh from translateX(0),
+   exactly where this leaves off. --rcl-ticker-start is a real pixel
+   value (the ticker viewport's own width) set by JS right before this
+   runs, so the track starts fully hidden past the right edge and rolls
+   in -- a plain keyframe can't express "one viewport-width further right
+   than a plain reset" without that measured value. The 0 fallback only
+   matters for the split second before JS sets the real one. */
+@keyframes rcl-ticker-intro {
   from { transform: translateX(var(--rcl-ticker-start, 0)); }
-  to { transform: translateX(var(--rcl-ticker-end, -50%)); }
+  to { transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .rcl-ticker-track { animation: none; }

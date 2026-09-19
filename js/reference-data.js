@@ -385,20 +385,28 @@ function trackImageSrc(trackId) {
   return 'assets/images/tracks/' + String(trackId || '') + '.png';
 }
 
-// Flat (non-emoji) country flag image convention -- assets/flags/{iso2}.svg,
-// keyed by the lowercase ISO 3166-1 alpha-2 code looked up from
-// COUNTRY_CODES (2026-09-19, League Hub Leaderboard redesign, Matt's ask:
-// "a flat flag (not emoji) of the driver's home country"). Deliberately NOT
+// Flat (non-emoji) country flag image -- flagcdn.com, keyed by the
+// lowercase ISO 3166-1 alpha-2 code looked up from COUNTRY_CODES
+// (2026-09-19, League Hub Leaderboard redesign, Matt's ask: "a flat flag
+// (not emoji) of the driver's home country"). Deliberately NOT
 // flagEmoji() above -- that one builds a Unicode emoji flag, which is
-// explicitly what Matt does not want here. Admin uploads the actual SVG
-// files by hand, same manual-upload convention as manufacturerLogoSrc()/
-// trackImageSrc() above; callers should always set an onerror handler to
-// hide the <img> gracefully if that country's file hasn't been uploaded
-// yet, or if countryName doesn't match anything in COUNTRY_CODES.
+// explicitly what Matt does not want here.
+//
+// Points at flagcdn.com (2026-09-19 follow-up -- was assets/flags/{code}.svg,
+// a manual-upload convention like manufacturerLogoSrc()/trackImageSrc()
+// above, but Matt never actually wanted to have to supply flag images one
+// country at a time; he was expecting something that "just worked" the
+// way a universal flag set would). flagcdn.com is a free, no-signup,
+// no-API-key public CDN built exactly for hot-linking flat SVG flags by
+// ISO code -- every country in COUNTRY_CODES already has an entry there,
+// so this needs no assets of Race Club's own and no further setup.
+// Callers should still always set an onerror handler to hide the <img>
+// gracefully (e.g. if countryName doesn't match anything in
+// COUNTRY_CODES, or the CDN is unreachable).
 function countryFlagSrc(countryName) {
   var code = COUNTRY_CODES[countryName || ''] || '';
   if (!code) return '';
-  return 'assets/flags/' + code.toLowerCase() + '.svg';
+  return 'https://flagcdn.com/' + code.toLowerCase() + '.svg';
 }
 
 // Same slugging convention as manufacturerLogoSrc() above, pointed at

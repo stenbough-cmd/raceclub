@@ -258,35 +258,51 @@ function _rclRenderTicker(hub) {
   track.appendChild(buildRun());
   track.appendChild(buildRun()); // duplicate run -- see the animation comment above
 
-  // Roll in from off-screen right on first paint, instead of the content
-  // just appearing already in place (2026-09-19, Matt's catch: "the text
-  // doesn't come from the right side like it's scrolling in but instead
-  // appears once there is enough room... can we have it roll in like it
-  // rolls out"). The CSS animation used to always start at
-  // translateX(0) -- the track's own left edge flush with the viewport's
-  // left edge -- so whatever fit in the viewport at that exact width was
-  // already fully visible on the very first frame; only content further
-  // right in the (very wide) track ever looked like it scrolled in. Both
-  // the starting offset (viewport width, so the track starts fully
-  // hidden past the right edge) and the loop point (exactly one run's
-  // width, so the seamless dot-separated loop still works) are measured
-  // in real pixels here and handed to the keyframes as CSS custom
-  // properties -- a plain 0%/-50% pair can't express "start one full
-  // viewport-width further right than a plain reset would."
+  // Roll in from off-screen right ONCE on first paint, then hand off to
+  // the normal seamless infinite loop (2026-09-19 follow-up, Matt's
+  // catch: "the ticker only shows a maximum of 2 entries and right as
+  // the second entry makes it to the left side... it all disappears and
+  // starts over" -- the earlier fix for the original "text just appears,
+  // doesn't roll in" report used a single infinite keyframe whose OWN
+  // `from` was off-screen-right, which meant it restarted off-screen on
+  // *every* loop, not just the first -- the ticker never reached the
+  // seamless part at all, just an endless one-item-at-a-time intro).
+  //
+  // Two separate animations avoid that: a one-shot "intro" (measured
+  // off-screen start -> translateX(0), via a JS-measured CSS custom
+  // property, since a plain keyframe can't express "one viewport-width
+  // further right than a plain reset"), immediately followed (via
+  // animation-delay, not overlapping it) by the ORIGINAL always-worked
+  // infinite 0%/-50% loop starting fresh from exactly where the intro
+  // left off. Intro duration is derived from one run's own width so it
+  // travels at the same px/sec speed as the main loop, instead of a
+  // fixed duration that would look faster or slower depending on how
+  // much content is actually in the ticker.
+  //
+  // Skipped entirely under prefers-reduced-motion -- setting this inline
+  // would otherwise override that media query's own `animation: none`
+  // (an inline style always beats an external stylesheet rule), silently
+  // reintroducing motion for someone who asked not to see it.
+  var reduceMotion = (typeof window.matchMedia === 'function') && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+
   // requestAnimationFrame, not immediate -- scrollWidth needs the two
   // freshly-appended runs to have actually been laid out first.
   requestAnimationFrame(function () {
     var viewport = track.parentElement;
     if (!viewport) return;
     var oneRunWidth = track.scrollWidth / 2;
+    var mainDurationSec = 26; // matches rcl-ticker-scroll's own duration in css/league.css
+    var pxPerSecond = oneRunWidth > 0 ? (oneRunWidth / mainDurationSec) : 0;
+    var introDurationSec = pxPerSecond > 0 ? (viewport.clientWidth / pxPerSecond) : 0;
     track.style.setProperty('--rcl-ticker-start', viewport.clientWidth + 'px');
-    track.style.setProperty('--rcl-ticker-end', '-' + oneRunWidth + 'px');
-    // Restart the animation cleanly from the new starting property (a
-    // plain property change doesn't rewind an already-running animation
-    // on its own) -- toggle animation off, force a reflow, then back on.
+    // Restart cleanly (a plain property/animation-shorthand change alone
+    // doesn't rewind an already-running animation) -- toggle animation
+    // off, force a reflow, then set the real intro+loop pair.
     track.style.animation = 'none';
     void track.offsetWidth;
-    track.style.animation = '';
+    track.style.animation = 'rcl-ticker-intro ' + introDurationSec.toFixed(2) + 's linear forwards, ' +
+      'rcl-ticker-scroll ' + mainDurationSec + 's linear ' + introDurationSec.toFixed(2) + 's infinite';
   });
 }
 
