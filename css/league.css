@@ -56,8 +56,17 @@ body.rc-league-page {
    (see _rclLockBodyScroll/_rclUnlockBodyScroll in js/league.js). */
 .rcl-page-loader {
   position: fixed;
-  inset: 0;
-  z-index: 9999;
+  /* Starts BELOW the shared fixed header (2026-09-19 follow-up, Matt:
+     "don't dim the header part, only the league hub page below should
+     be dimmed") -- 70px matches .rc-fixed-header's own height
+     (style.css) and body.rc-league-page's own padding-top for it, so
+     this lines up exactly with where the header's bottom edge sits,
+     leaving it fully visible and undimmed above. */
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -71,6 +80,15 @@ body.rc-league-page {
    (var(--rc-steel)) -- this overlay is dark, so it needs its own color
    here rather than inheriting an unreadable dark-gray-on-black. */
 .rcl-page-loader .rc-loading-text { color: var(--rcl-ink-dim); }
+/* .rc-startlights (style.css) is a light off-white pill by default, built
+   for the site's white pages -- mid-gray here instead (2026-09-19 follow-
+   up, Matt's ask), sitting between the near-black overlay behind it and
+   the white/red lights themselves, so the light bar still reads as a
+   physical frame instead of a bright cutout against the dark page. */
+.rcl-page-loader .rc-startlights {
+  background: var(--rcl-line-bright);
+  border-color: var(--rcl-line);
+}
 @media (prefers-reduced-motion: reduce) {
   /* Freeze on a single lit state instead of animating through the full
      "lights out" sequence -- still reads as "loading," no motion. */
