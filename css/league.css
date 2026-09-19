@@ -400,14 +400,16 @@ body.rc-league-page {
   color: var(--rc-red);
   font-weight: 800;
   /* Slightly larger than the 20px title text (2026-09-19 follow-up,
-     Matt's ask), but still vertically centered with it -- .rcl-panel-
-     title is display:flex/align-items:center, so each flex item
-     (the ::before content and the title text) is centered by its own
-     box height rather than by text baseline, and line-height: 1 keeps
-     that box tight to the glyph instead of adding extra space around
-     the larger font-size that would throw the centering off. */
+     Matt's ask). flexbox's align-items:center only centers each item's
+     LAYOUT BOX, not where the "/" glyph actually sits inside its own
+     font metrics -- most fonts draw a slash biased toward the bottom of
+     its em box, so at a bigger size than the title text next to it, it
+     visually reads as sitting low even though the boxes line up (Matt's
+     catch, same day). A small relative nudge up corrects for that. */
   font-size: 24px;
   line-height: 1;
+  position: relative;
+  top: -2px;
 }
 .rcl-panel-meta { font-size: 12px; color: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
 .rcl-panel-body { padding: 18px; }
@@ -1044,13 +1046,16 @@ body.rc-league-page {
 }
 /* Same three-forward-slash treatment as .rcl-panel-title::before above
    (2026-09-19, Matt's call -- "in each container", popups included),
-   including the same slightly-larger, still-centered size (follow-up). */
+   including the same slightly-larger size and glyph-centering nudge
+   (follow-ups). */
 .rcl-modal-title::before {
   content: "///";
   color: var(--rc-red);
   font-weight: 800;
   font-size: 24px;
   line-height: 1;
+  position: relative;
+  top: -2px;
 }
 .rcl-modal-close {
   flex: none;
