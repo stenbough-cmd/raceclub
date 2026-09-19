@@ -413,14 +413,16 @@ function _rclRenderStandings(hub) {
       // gold/silver/bronze already reads as rank on its own.
       var POS_METAL_CLASS = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
       standings.forEach(function (row, idx) {
-        // No rank number/metal color and no points column at all while
-        // hasResults is false -- just the identity block (logo, name,
-        // flag, car number, team), same "graphic container" every row
-        // already has, with nothing implying a 1st/2nd/3rd that doesn't
-        // exist yet. .rcl-standings-row-noresults drops the grid down to
-        // a single identity-only column (css/league.css).
-        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults ? (POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : '') : ' rcl-standings-row-noresults'));
-        if (hasResults) rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
+        // No points column while hasResults is false, but the position
+        // container itself STAYS (2026-09-19 follow-up, Matt's
+        // clarification: "still show the same number containers, just
+        // without the numbers and keeping the same width but using the
+        // titanium colored backgrounds") -- empty text, no p1/p2/p3 metal
+        // class (so it falls back to .rcl-standings-pos's own default
+        // titanium gradient, the same one non-podium rows already use),
+        // same 40px slot and grid-template-columns as a normal row.
+        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults && POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
+        rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', hasResults ? String(idx + 1) : ''));
 
         // Identity block, all on one line now (2026-09-19 follow-up,
         // Matt's call: "reduce the size of the manufacturer logo, place

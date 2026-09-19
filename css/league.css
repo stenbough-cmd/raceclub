@@ -466,12 +466,14 @@ body.rc-league-page {
   border-bottom: 1px solid var(--rcl-line);
 }
 .rcl-standings-row:last-child { border-bottom: none; }
-/* No rank number/points column before any race has been run (2026-09-19
-   follow-up, Matt's call: "there shouldn't be a ranked list -- just the
-   graphic container, no number, and no points") -- collapses the grid
-   down to the identity block's own single column instead of leaving the
-   40px/auto slots blank on either side. */
-.rcl-standings-row-noresults { grid-template-columns: 1fr; }
+/* No rank NUMBER and no points column before any race has been run
+   (2026-09-19 follow-up, Matt's call, then clarified: "still show the
+   same number containers, just without the numbers and keeping the same
+   width but using the titanium colored backgrounds") -- the grid stays
+   the normal 40px/1fr/auto three columns; js/league.js just leaves the
+   .rcl-standings-pos container's text empty and skips the p1/p2/p3 metal
+   class, so it falls back to the plain titanium gradient below. Nothing
+   CSS-side to add for that -- see .rcl-standings-pos's own comment. */
 /* Position numbers now sit inside a solid-color container, same idea as
    the Calendar container's own round-number bar (2026-09-19, Matt's call:
    "the container behind each ranked number to be solid in color and
