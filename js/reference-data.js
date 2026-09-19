@@ -346,19 +346,20 @@ var PROTEST_WINDOW_HOURS = 48;
 // anywhere else a class needs the same consistent color.
 var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
 
-// Manufacturer logo file convention -- assets/images/manufacturers/{slug}.png,
-// same folder structure as the site's existing assets/avatars/ (see
-// avatarImageSrc() in Account.html/profile.html), keyed by manufacturer
-// name instead of by driver, since the same manufacturer (e.g. "Ford")
-// logo is reused across every car/team that drives one. Admin uploads the
-// actual image files by hand (not built/seeded here) using this exact
-// naming -- lowercase, spaces/punctuation collapsed to a single hyphen,
-// e.g. "Aston Martin" -> "aston-martin.png". Callers should always set an
-// onerror handler to hide the <img> gracefully if that file hasn't been
-// uploaded yet (see currentSeatBlock() in Account.html).
+// Manufacturer logo file convention -- assets/manufacturers/{slug}.png
+// (2026-09-19, Matt's call: keep manufacturer logos in their own
+// top-level assets/manufacturers/ folder, not nested under assets/images/)
+// -- keyed by manufacturer name instead of by driver, since the same
+// manufacturer (e.g. "Ford") logo is reused across every car/team that
+// drives one. Admin uploads the actual image files by hand (not built/
+// seeded here) using this exact naming -- lowercase, spaces/punctuation
+// collapsed to a single hyphen, e.g. "Aston Martin" -> "aston-martin.png".
+// Callers should always set an onerror handler to hide the <img>
+// gracefully if that file hasn't been uploaded yet (see
+// currentSeatBlock() in Account.html).
 function manufacturerLogoSrc(manufacturerName) {
   var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/images/manufacturers/' + slug + '.png';
+  return 'assets/manufacturers/' + slug + '.png';
 }
 
 // sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
