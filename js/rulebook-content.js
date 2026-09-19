@@ -50,7 +50,7 @@ var RULEBOOK_SECTIONS = [
     html: '<h4>2.1 Registering For a Season</h4>' +
       '<p>When a season is open for registration, the Dashboard’s Registration Status card shows REGISTER FOR [SEASON NAME]. Clicking it opens the registration popup:</p>' +
       '<ol><li>Choose a class. If only one class is currently open, this step is skipped automatically.</li>' +
-      '<li>Choose a car. Each car shows its Tier.</li>' +
+      '<li>Choose a car. Cars are listed by car number, lowest to highest.</li>' +
       '<li>Click Join This Team. This locks the seat in immediately and cannot be undone.</li></ol>' +
       '<p>Joining a team plays a short signing sequence, then holds on a congratulations screen until Continue is clicked. Continue reloads the page and returns to the Dashboard with the new team reflected everywhere.</p>' +
       '<div class="rc-rulebook-callout"><strong>Registering:</strong><ul>' +
@@ -133,15 +133,8 @@ var RULEBOOK_SECTIONS = [
   { id: 'points-standings', num: '7', title: 'Points & Standings', draft: true },
   {
     id: 'car-class-selection', num: '8', title: 'Car & Class Selection',
-    html: '<p>Signing up for a season starts with one screen: <strong>Choose Your Team</strong>. Every team on offer belongs to the class you picked, and each one shows you everything you need to know before you commit: the car and manufacturer, a short description of what racing for that team is like, and its Tier.</p>' +
-      '<h4>8.1 Tiers</h4>' +
-      '<p>Every car sits in one of four Tiers, shown as a colored pill right on its card so you can tell them apart at a glance:</p>' +
-      '<table><tr><td><strong>Tier</strong></td><td><strong>Color</strong></td><td><strong>What it means</strong></td></tr>' +
-      '<tr><td>Low</td><td>Gray</td><td>The most accessible seats -- a backmarker car.</td></tr>' +
-      '<tr><td>Mid</td><td>Blue</td><td>A step up in competitiveness.</td></tr>' +
-      '<tr><td>High</td><td>Purple</td><td>A genuinely strong, front-running car.</td></tr>' +
-      '<tr><td>Elite</td><td>Gold</td><td>The single strongest seat in the class, one per class, hand-picked by the league each season.</td></tr></table>' +
-      '<p>Whatever team you join, it locks in immediately and can\'t be undone once you confirm, so read the description and the Tier before you commit.</p>'
+    html: '<p>Signing up for a season starts with one screen: <strong>Choose Your Team</strong>. Every team on offer belongs to the class you picked, and each one shows you everything you need to know before you commit: the car and manufacturer, and a short description of what racing for that team is like. Cars are listed by car number, lowest to highest.</p>' +
+      '<p>Whatever team you join, it locks in immediately and can\'t be undone once you confirm, so read the description before you commit.</p>'
   },
   { id: 'conduct-discipline', num: '9', title: 'Conduct & Discipline (Off-Track)', draft: true },
   { id: 'appeals', num: '10', title: 'Appeals', draft: true },

@@ -155,12 +155,12 @@ var CAR_CLASS_LIST = ['LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 // every driver shares regardless of car -- see
 // v0.3-Economy-Reputation-Design.md).
 //
-// Elite (added 2026-08-30) is deliberately NOT in this list -- it's not a
-// standing property a car is assigned in Car Management. It's a one-per-
-// class, one-per-season pick made in the Season Creation Wizard (one
-// specific team out of that class's whole roster), so it lives in
-// CAR_OBJECTIVE_CATALOG.Elite below but never in CAR_TIER_LIST itself.
-var CAR_TIER_LIST = ['Low', 'Mid', 'High'];
+// CAR_TIER_LIST and the Elite Tier season-creation picker were removed
+// entirely 2026-09-19 (Matt's call: car Tier classification doesn't matter
+// anymore -- only Class does, and tier information should never surface
+// anywhere on the site). Cars.Tier/Teams.Tier are now archived columns in
+// the backend (see Core.gs's TAB_SCHEMAS), untouched but never read or
+// written going forward.
 
 // 6 objectives per tier (Low/Mid/High), matched to that tier's difficulty
 // (Low = things a backmarker car can realistically pull off in a season;
@@ -237,12 +237,6 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Pole-to-Win Twice': 'Qualifies P1 in class and wins from it, at least twice this season.',
   'Win Season Championship': 'Wins the class championship.'
 };
-
-// Car Objective Tier badge colors -- CSS variable names (defined in
-// css/style.css), same pattern as CAR_CLASS_BADGE_COLOR_VAR below. Follows
-// the usual gaming rarity convention: gray (common) -> blue (rare) ->
-// purple (epic), with gold reserved for Elite specifically.
-var CAR_TIER_BADGE_COLOR_VAR = { Low: '--rc-tier-low', Mid: '--rc-tier-mid', High: '--rc-tier-high', Elite: '--rc-tier-elite' };
 
 // Reputation floor required to join each class -- LOCKED per Matt's call
 // (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
@@ -345,6 +339,13 @@ var PROTEST_WINDOW_HOURS = 48;
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.
 var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
+
+// Short abbreviated label per class (2026-09-19) -- for the compact class
+// pill on the Dashboard's Current Seat card, placed right before the car
+// number (Matt's ask: "a hypercar would have a red rectangle, rounded
+// edges with HY in it"). Same color tokens as CAR_CLASS_BADGE_COLOR_VAR
+// above, just a shorter label for the tighter space next to a car number.
+var CAR_CLASS_ABBREV = { LMGT3: 'GT3', LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 
 // Manufacturer logo file convention -- assets/manufacturers/{slug}.png
 // (2026-09-19, Matt's call: keep manufacturer logos in their own

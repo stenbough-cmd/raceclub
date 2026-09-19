@@ -1127,15 +1127,25 @@
 
       var footer = el('div', 'rc-regstatus-footer');
       var joinedDate = reg.joinedAt ? formatDateLabel(String(reg.joinedAt).slice(0, 10)) : '—';
-      [
-        ['Registered On', joinedDate],
-        ['Class', reg.carClass || '—']
-      ].forEach(function (pair) {
-        var stat = el('div', 'rc-regstatus-stat');
-        stat.appendChild(el('div', 'rc-regstatus-stat-label', pair[0]));
-        stat.appendChild(el('div', 'rc-regstatus-stat-value', escapeHtml(pair[1])));
-        footer.appendChild(stat);
-      });
+      var joinedStat = el('div', 'rc-regstatus-stat');
+      joinedStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Registered On'));
+      joinedStat.appendChild(el('div', 'rc-regstatus-stat-value', escapeHtml(joinedDate)));
+      footer.appendChild(joinedStat);
+
+      // Class shown as a colored pill (2026-09-19, Matt's ask: "use
+      // colored pills for the class") rather than plain text -- same
+      // _rcClassBadge treatment/colors used everywhere else on the site.
+      var classStat = el('div', 'rc-regstatus-stat');
+      classStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Class'));
+      var classValue = el('div', 'rc-regstatus-stat-value');
+      if (reg.carClass) {
+        classValue.appendChild(_rcClassBadge(reg.carClass));
+      } else {
+        classValue.textContent = '—';
+      }
+      classStat.appendChild(classValue);
+      footer.appendChild(classStat);
+
       body.appendChild(footer);
     }
 
@@ -1224,11 +1234,18 @@
     // Adds/replaces/removes the car-number figure in the header row --
     // called from every render path below so it's never stale (e.g. still
     // showing a car number after switching to the "not on a team" empty
-    // state).
-    function setCornerNumber(text) {
+    // state). carClass (added 2026-09-19, Matt's ask: "put a class pill
+    // before the number of the car") prepends a small colored, abbreviated
+    // class pill (HY/GT3/P3/P2) right before the "#n" text, reusing the
+    // same class color tokens as everywhere else on the site.
+    function setCornerNumber(text, carClass) {
       var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
       if (existing) existing.remove();
-      if (text) headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', text));
+      if (!text) return;
+      var figure = el('div', 'rc-dash-card-corner-figure');
+      if (carClass) figure.appendChild(_rcClassAbbrevPill(carClass));
+      figure.appendChild(document.createTextNode(text));
+      headerRow.appendChild(figure);
     }
 
     // status, not role -- Role is set to 'Driver' at registration time
@@ -1256,7 +1273,7 @@
       // line below, which also drops the manufacturer name entirely
       // (Matt's call, same request) -- the manufacturer logo image
       // still shows, just not its name spelled out in text too.
-      setCornerNumber('#' + (data.carNumber || '?'));
+      setCornerNumber('#' + (data.carNumber || '?'), data.carClass);
 
       var row = el('div', 'rc-cs-row');
 
@@ -1283,26 +1300,19 @@
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
       var carLine = data.carModel || '';
       if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
-      // Class pill + tier pill now share one flex row (2026-09-09, Matt's
-      // report: "make sure the class and tier are at the same vertical
-      // height") -- they used to just be two sibling inline-block spans in
-      // textCol, and .rc-cs-class-pill's own margin-top: 9px (there to
-      // space the pill row down from the car model line above it) applied
-      // ONLY to the class pill, not the tier pill next to it, so the tier
-      // pill sat 9px higher than the class pill it was supposed to be
-      // level with. Moving that spacing onto this wrapping row instead --
-      // and centering both pills' baselines against each other with
-      // align-items: center, since .rc-cs-class-pill and the tier pill
-      // (.rc-badge-chip) don't share a line-height -- fixes both at once.
-      if (data.carClass || data.carTier) {
+      // Class pill row (2026-09-09, Matt's report: "make sure the class and
+      // tier are at the same vertical height") -- the tier pill this row
+      // used to also carry was removed entirely 2026-09-19 (car Tier
+      // classification doesn't matter anymore, and the class itself is now
+      // shown as the compact abbreviated pill in the card's top-right
+      // corner instead -- see setCornerNumber above). This full-name class
+      // pill stays here as the one on the body of the card.
+      if (data.carClass) {
         var pillRow = el('div', 'rc-cs-pill-row');
-        if (data.carClass) {
-          var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
-          var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
-          pill.style.background = 'var(' + colorVar + ')';
-          pillRow.appendChild(pill);
-        }
-        if (data.carTier) pillRow.appendChild(_rcCarTierBadge(data.carTier));
+        var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[data.carClass]) ? CAR_CLASS_BADGE_COLOR_VAR[data.carClass] : '--rc-steel';
+        var pill = el('span', 'rc-cs-class-pill', escapeHtml(data.carClass));
+        pill.style.background = 'var(' + colorVar + ')';
+        pillRow.appendChild(pill);
         textCol.appendChild(pillRow);
       }
       row.appendChild(textCol);
@@ -1943,9 +1953,9 @@
   //     picks them later, any time before the season starts, from the
   //     Sponsors page (renderSponsorsSection below), which the Dashboard
   //     Sponsors card links straight to until they've picked at least one.
-  //   - Team cards show this car's assigned Tier + Car Objective (name +
-  //     bonus payout) instead of the old bonus/penalty perk chips -- the
-  //     actual ECO-era incentive attached to a seat.
+  //   - Team cards no longer show a Tier chip (removed entirely 2026-09-19,
+  //     car Tier classification doesn't matter anymore) or a Car Objective
+  //     chip (removed earlier, V1 scope cut) -- just team identity now.
   // ---------------------------------------------------------------------
 
   function buildRegistrationModal(profile, token, activeSeasonData, onDone) {
@@ -2050,16 +2060,13 @@
         contentSlot.innerHTML = '';
         if (!data.success) { contentSlot.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load teams.')); return; }
         if (!data.teams || !data.teams.length) { contentSlot.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for ' + escapeHtml(carClass) + ' yet.')); return; }
-        // Elite always sorts to the top (Matt's call: "Elite tier put the
-        // car at the top"); everything else keeps the order the server
-        // sent it in -- buy-in cost sorting removed (V1 scope cut), teams
-        // no longer carry a BuyInCost from the backend.
-        var sorted = data.teams.slice().sort(function (a, b) {
-          if (a.tier === 'Elite' && b.tier !== 'Elite') return -1;
-          if (b.tier === 'Elite' && a.tier !== 'Elite') return 1;
-          return 0;
-        });
-        sorted.forEach(function (team) { contentSlot.appendChild(buildTeamCard(team, carClass)); });
+        // Elite-sorts-to-top and buy-in cost sorting both removed
+        // (2026-09-19 and V1 scope cut respectively) -- teams no longer
+        // carry a Tier or a BuyInCost from the backend, so this list is
+        // simply arranged by car number, lowest to highest (Matt's
+        // explicit ask), which handleGetAvailableTeams (DataCache.gs)
+        // already sorts server-side. No client-side re-sort needed.
+        data.teams.forEach(function (team) { contentSlot.appendChild(buildTeamCard(team, carClass)); });
       }).catch(function () {
         contentSlot.innerHTML = '';
         contentSlot.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));
@@ -2067,14 +2074,14 @@
     }
 
     // Reuses the pre-rebuild team card's exact CSS classes (.rc-team-card,
-    // .rc-team-logo-box, .rc-team-perks/-perk-chip, .rc-team-card-footer
-    // -- all still in style.css, never removed) so this looks like the
-    // card Matt originally signed off on. What's shown inside it is new:
-    // Tier + Car Objective (this car's actual ECO-era incentive) instead
-    // of the old bonus/penalty perks, and one flat Buy-In cost instead of
-    // a Season Registration Fee + Team Buy-In breakdown.
+    // .rc-team-logo-box, .rc-team-card-footer -- all still in style.css,
+    // never removed) so this looks like the card Matt originally signed
+    // off on. The Tier chip this card used to show was removed entirely
+    // 2026-09-19 (Matt's call: car Tier classification doesn't matter
+    // anymore) -- the Season Objective chip was already removed earlier
+    // (V1 scope cut), so this card no longer has a perks row at all.
     function buildTeamCard(team, carClass) {
-      var card = el('div', 'rc-team-card' + (team.taken ? ' rc-team-card-taken' : '') + (team.tier === 'Elite' ? ' rc-team-card-elite' : ''));
+      var card = el('div', 'rc-team-card' + (team.taken ? ' rc-team-card-taken' : ''));
 
       var head = el('div', 'rc-team-card-head');
       var identity = el('div', 'rc-team-card-identity');
@@ -2105,33 +2112,16 @@
       card.appendChild(head);
 
       // Team description (Cars.TeamDesc) -- lives between the header and
-      // the Tier/Objective perks below, in gray body text (Matt's call,
-      // 2026-08-30). Skipped entirely if the car has no description set.
+      // the footer below, in gray body text (Matt's call, 2026-08-30).
+      // Skipped entirely if the car has no description set.
       if (team.teamDesc) {
         card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:8px 0;', escapeHtml(team.teamDesc)));
       }
 
-      // Tier chip colored per-Tier (2026-08-30, Matt's call: "the colors
-      // we discussed") -- same Low/Mid/High/Elite palette as the Data
-      // Management Cars popup's tier pill (.rc-badge-cartier-*) and the
-      // Current Seat dashboard card, just tinted light here instead of a
-      // solid fill, matching this page's existing green/red perk-chip
-      // style. 25% width against the objective chip's 75% (Matt's call) --
-      // the objective is the more decision-relevant of the two, so it gets
-      // the bulk of the row.
-      var perks = el('div', 'rc-team-perks');
-      var tierKey = team.tier || 'Mid';
-      var tierColorClass = {
-        Low: 'rc-team-perk-tier-low', Mid: 'rc-team-perk-tier-mid',
-        High: 'rc-team-perk-tier-high', Elite: 'rc-team-perk-tier-elite'
-      }[tierKey] || 'rc-team-perk-tier-mid';
-      var tierChip = el('div', 'rc-team-perk-chip rc-team-perk-tier ' + tierColorClass);
-      tierChip.appendChild(el('span', 'rc-team-perk-icon', '▲'));
-      tierChip.appendChild(el('span', null, '<strong>' + escapeHtml(tierKey) + ' Tier</strong> Team'));
-      perks.appendChild(tierChip);
-      // Season Objective chip removed (V1 scope cut) -- teams no longer
-      // carry objectiveName/objectiveBonus from the backend.
-      card.appendChild(perks);
+      // Tier chip removed entirely 2026-09-19 (Matt's call: car Tier
+      // classification doesn't matter anymore) -- the Season Objective
+      // chip this row used to sit alongside was already removed earlier
+      // (V1 scope cut), so there's no perks row left on this card at all.
 
       var footer = el('div', 'rc-team-card-footer');
       if (team.taken) {
@@ -2512,10 +2502,10 @@
 
     // Continue on the congratulations screen goes straight to the reload
     // now (Matt's call, 2026-09-01) -- no contract-recap modal in between.
-    // Team identity, seat cost, tier, and Car Objective bonus are all
-    // already visible on the dashboard the reload lands back on (Current
-    // Seat, Registration Status), and sponsors are no longer picked at
-    // signing time, so that recap card had nothing left to add.
+    // Team identity is already visible on the dashboard the reload lands
+    // back on (Current Seat, Registration Status), and sponsors are no
+    // longer picked at signing time, so that recap card had nothing left
+    // to add.
     //
     // The registration modal (Choose Your Class/Team) itself was never
     // actually closed -- see the "SIGNING SEQUENCE" comment above: it's
@@ -3450,7 +3440,7 @@
   // once there's something to point it at.
   // ---------------------------------------------------------------------
   // Status pill for the Season Tools list (added 2026-08-30) -- same chip
-  // shape/pattern as _rcClassBadge/_rcCarTierBadge, colored per status so
+  // shape/pattern as _rcClassBadge, colored per status so
   // Draft/Scheduled/Registration/Active/Completed read apart from each
   // other in a flat list. Falls back to Draft's color for a blank/unknown
   // status, same "old rows never break" convention as everywhere else a
@@ -5196,14 +5186,10 @@
       // Economy step removed entirely (V1 scope cut, 2026-09-18) -- Wager
       // Stake Cap/Max, per-Tier seat cost averages, and objective bonus
       // multipliers all no longer exist (Wager and Car Objective economy
-      // are gone). Elite Tier is now purely a car-selection concept, no
-      // dollar multiplier attached -- see eliteByClass below.
-      // Elite (added 2026-08-30) -- one hand-picked CarID per selected
-      // class, chosen in the Elite Tier section. Keyed by class
-      // name; a class with no entry (or '') simply has no Elite seat this
-      // season. Never touches Car Management's Tier field -- see Cars.Tier
-      // and Teams.Tier's schema comments in 1_Core.gs.
-      eliteByClass: {},
+      // are gone). The Elite Tier picker (eliteByClass) that used to sit
+      // here was removed entirely 2026-09-19 -- Matt's call: car Tier
+      // classification doesn't matter anymore, so there's no more Elite
+      // seat to hand-pick at season creation.
       races: [] // resized to numRaces by syncRaceCount() when Race Events opens
     };
   }
@@ -5454,17 +5440,17 @@
       'Track Limits Preset', trackLimitsSelect
     ));
 
-    // Classes/Economy/Objectives/Elite Tier are locked PERMANENTLY the
-    // moment a season is edited at all -- not just once the first round has
-    // raced (Matt's call, 2026-09-02). state.__editSeasonId is only set
-    // when editing an existing season (never on Create Season), so a brand
-    // new season stays fully open here; every field below tagged
+    // Classes/Economy/Objectives are locked PERMANENTLY the moment a
+    // season is edited at all -- not just once the first round has raced
+    // (Matt's call, 2026-09-02). state.__editSeasonId is only set when
+    // editing an existing season (never on Create Season), so a brand new
+    // season stays fully open here; every field below tagged
     // .rc-wiz-locked-in-edit gets disabled up front via editSeasonLock,
     // independent of and in addition to the time-based state.__locked pass
     // further down this function.
     var editSeasonLock = !!state.__editSeasonId;
     if (editSeasonLock) {
-      var classLockNote = el('div', 'rc-hint', 'Car Class(es) and Elite Tier are locked once a season is created -- they can no longer be changed here.');
+      var classLockNote = el('div', 'rc-hint', 'Car Class(es) are locked once a season is created -- they can no longer be changed here.');
       classLockNote.style.marginBottom = '8px';
       container.appendChild(classLockNote);
     }
@@ -5472,16 +5458,12 @@
     container.appendChild(wizSubhead('Car Class(es)'));
     var classesWrap = el('div');
     var classesGroupEntry;
-    // Also refreshes the Economy step's Elite Tier dropdowns (see
-    // renderEliteWrap below, in the Economy-building code further down
-    // this same function) -- both live in one long function that only
-    // gets rebuilt from scratch on step navigation, so a class checkbox
-    // or season radio change needs to explicitly poke anything elsewhere
-    // on the page that depends on state.classes/classSeasons, rather than
-    // relying on a DOM rebuild that isn't coming.
+    // The Elite Tier dropdowns this used to also refresh (renderEliteWrap)
+    // were removed entirely 2026-09-19 -- car Tier classification doesn't
+    // matter anymore, so there's no more Elite seat picker to keep in sync
+    // with the class checkboxes.
     function recheckClassesGroup() {
       if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid();
-      if (typeof renderEliteWrap === 'function') renderEliteWrap();
     }
     function availableSeasonsForClass(cls) {
       var seasons = {};
@@ -5632,68 +5614,10 @@
 
     // Economy step (Wager Stake Cap/Max, per-Tier seat cost averages,
     // Objectives multiplier) removed entirely (V1 scope cut, 2026-09-18)
-    // -- Wager and Car Objective economy no longer exist. Elite Tier below
-    // is now purely a car-selection concept, no dollar multiplier
-    // attached.
-
-    // Elite Tier (added 2026-08-30) -- one hand-picked car per selected
-    // class, never a Car Management Tier value. Built from WIZARD_CARS
-    // (already fetched fresh every time the wizard opens), filtered to
-    // each class's own Season pick from the Format step -- the same
-    // Class+Season match handleCreateSeason itself uses to decide which
-    // cars are eligible this season.
-    //
-    // renderEliteWrap() (2026-08-30 fix) is its own named function, not a
-    // one-shot build, because this whole page only gets rebuilt from
-    // scratch when the wizard navigates AWAY from and back to this step
-    // (see renderStep()) -- ticking a class checkbox or picking a season
-    // radio up in Format never re-runs renderWizardSeasonDetailsPage, so
-    // without this the dropdowns below stayed frozen at whatever
-    // state.classes/classSeasons were the moment the step first rendered
-    // (usually nothing checked yet, hence "no cars showing up"). Both the
-    // class checkbox's onChange and the season radio's change handler up
-    // in the Format section above call recheckClassesGroup(), which now
-    // also calls this -- so the dropdowns refresh live as soon as either
-    // control changes, no full step re-navigation required.
-    container.appendChild(wizSubhead('Elite Tier'));
-    container.appendChild(el('div', 'rc-hint', 'Pick one car per class to be this season\'s Elite entry. Leave a class set to "No Elite Seat" to skip it entirely.'));
-    var eliteWrap = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;');
-    container.appendChild(eliteWrap);
-    function renderEliteWrap() {
-      eliteWrap.innerHTML = '';
-      var selectedClassesForElite = Object.keys(state.classes || {}).filter(function (c) { return state.classes[c]; });
-      selectedClassesForElite.forEach(function (cls) {
-        var seasonForClass = state.classSeasons[cls];
-        var carsInClass = WIZARD_CARS.filter(function (c) { return c.Class === cls && String(c.Season) === String(seasonForClass); });
-        var options = ['No Elite Seat'].concat(carsInClass.map(function (c) { return (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : ''); }));
-        var carIdByLabel = {};
-        carsInClass.forEach(function (c) { carIdByLabel[(c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '')] = c.CarID; });
-        var currentCarId = state.eliteByClass[cls] || '';
-        var currentLabel = 'No Elite Seat';
-        carsInClass.forEach(function (c) {
-          if (c.CarID === currentCarId) currentLabel = (c.TeamName || c.CarID) + (c.CarNumber ? ' #' + c.CarNumber : '');
-        });
-        // A previously-picked car that's no longer eligible for this
-        // class (e.g. the season radio just changed out from under it)
-        // silently reverts to "No Elite Seat" rather than leaving state
-        // pointed at a CarID nothing on screen still shows as selected.
-        if (currentCarId && currentLabel === 'No Elite Seat') state.eliteByClass[cls] = '';
-        var select = wizSelect(options, currentLabel, function (v) {
-          state.eliteByClass[cls] = (v === 'No Elite Seat') ? '' : (carIdByLabel[v] || '');
-        });
-        select.classList.add('rc-wiz-locked-in-edit');
-        if (editSeasonLock) { select.disabled = true; select.classList.add('rc-field-locked'); }
-        var col = el('div', 'flex:1;min-width:220px;');
-        col.appendChild(wizField(cls + ' Elite Team', select));
-        eliteWrap.appendChild(col);
-      });
-      if (!selectedClassesForElite.length) {
-        eliteWrap.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'Pick at least one class in the Format step first.'));
-      }
-    }
-    renderEliteWrap();
-    // Elite Tier Objective Multiplier field removed (V1 scope cut,
-    // 2026-09-18) -- Elite is now purely a car-selection concept.
+    // -- Wager and Car Objective economy no longer exist. The Elite Tier
+    // picker that used to sit here (one hand-picked car per class) was
+    // removed entirely 2026-09-19 -- Matt's call: car Tier classification
+    // doesn't matter anymore, so there's no more Elite seat to hand-pick.
 
     // Locked season (Matt's call, 2026-09-02): once the season's first
     // round date/time has passed, the ENTIRE season freezes down to just
@@ -5703,8 +5627,8 @@
     // check through each individual field. Inserted at the very top so it
     // reads first, before the fields it explains. This is separate from
     // (and stricter than) editSeasonLock above, which only ever freezes
-    // Car Class(es) and Elite Tier and applies from the moment a season is
-    // first edited, time-locked or not.
+    // Car Class(es) and applies from the moment a season is first edited,
+    // time-locked or not.
     if (state.__locked) {
       var lockNote = el('div', 'rc-panel', '');
       lockNote.style.cssText = 'border-color:var(--rc-red);background:#fdf2f2;margin-bottom:16px;';
@@ -6079,19 +6003,9 @@
     settingsPanel.appendChild(previewLine('Practice / Qualifying Length', state.raceSettings.practiceLengthMin + ' min / ' + state.raceSettings.qualifyLengthMin + ' min'));
     container.appendChild(settingsPanel);
 
-    var econPanel = el('div', 'rc-panel'); econPanel.style.marginTop = '12px';
-    econPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Elite Tier'));
-    var eliteClassEntries = Object.keys(state.eliteByClass || {}).filter(function (c) { return state.eliteByClass[c]; });
-    if (eliteClassEntries.length) {
-      econPanel.appendChild(previewLine('Elite Seats',
-        eliteClassEntries.map(function (c) {
-          var car = WIZARD_CARS.filter(function (w) { return w.CarID === state.eliteByClass[c]; })[0];
-          return c + ': ' + (car ? (car.TeamName || car.CarID) : state.eliteByClass[c]);
-        }).join(' · ')));
-    } else {
-      econPanel.appendChild(previewLine('Elite Seats', 'None selected'));
-    }
-    container.appendChild(econPanel);
+    // The review panel's "Elite Tier" / Elite Seats summary was removed
+    // entirely 2026-09-19 -- the Elite Tier picker itself is gone (car
+    // Tier classification doesn't matter anymore).
 
     var racesPanel = el('div', 'rc-panel'); racesPanel.style.marginTop = '12px';
     racesPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Events (' + state.races.length + ')'));
@@ -6146,8 +6060,9 @@
     merged.bonusPoints = Object.assign({}, base.bonusPoints, saved.bonusPoints || {});
     merged.raceSettings = Object.assign({}, base.raceSettings, saved.raceSettings || {});
     // economy merges removed (V1 scope cut, 2026-09-18) -- the wizard no
-    // longer has an economy sub-object.
-    merged.eliteByClass = Object.assign({}, base.eliteByClass, saved.eliteByClass || {});
+    // longer has an economy sub-object. eliteByClass merge removed
+    // 2026-09-19 -- the Elite Tier picker itself is gone (car Tier
+    // classification doesn't matter anymore).
     merged.pointsTables = saved.pointsTables || base.pointsTables;
     return merged;
   }
@@ -6159,7 +6074,7 @@
   // seasonDetails). state.__editSeasonId and state.__locked drive every
   // edit-specific branch elsewhere. __editSeasonId alone (editSeasonLock,
   // in renderWizardSeasonDetailsPage) permanently freezes Car Class(es)
-  // and Elite Tier from the moment a season is edited at all.
+  // from the moment a season is edited at all.
   // __locked (2026-09-02: now time-based -- whether the season's first
   // round date/time has passed, not whether Sessions data exists) is the
   // stricter, later-arriving freeze covering everything else: the Season
@@ -6177,8 +6092,9 @@
     merged.bonusPoints = Object.assign({}, base.bonusPoints, details.bonusPoints || {});
     merged.raceSettings = Object.assign({}, base.raceSettings, details.raceSettings || {});
     // economy merges removed (V1 scope cut, 2026-09-18) -- the wizard no
-    // longer has an economy sub-object.
-    merged.eliteByClass = Object.assign({}, base.eliteByClass, details.eliteByClass || {});
+    // longer has an economy sub-object. eliteByClass merge removed
+    // 2026-09-19 -- the Elite Tier picker itself is gone (car Tier
+    // classification doesn't matter anymore).
     merged.pointsTables = details.pointsTables || base.pointsTables;
     merged.byeWeeks = details.byeWeeks || 0;
     merged.byeWeekDates = details.byeWeekDates || [];
@@ -6525,8 +6441,7 @@
         pointsTables: state.pointsTables,
         seasonStartDate: state.seasonStartDate,
         seasonStartTime: state.seasonStartTime,
-        raceSettings: state.raceSettings,
-        eliteByClass: state.eliteByClass
+        raceSettings: state.raceSettings
       };
 
       return { racesPayload: racesPayload, seasonDetails: seasonDetails };
@@ -7762,7 +7677,7 @@
 
     // Region (added 2026-08-30) -- venue-level, groups the Tracks list; a
     // free-text field since there's no fixed region list yet (unlike
-    // Class/Tier, which draw from a governed set in reference-data.js).
+    // Class, which draws from a governed set in reference-data.js).
     // Optional -- left blank groups the venue under "Unassigned".
     form.appendChild(el('label', null, 'Region (optional)'));
     var region = el('input'); region.type = 'text'; region.placeholder = 'e.g. Europe, North America';
@@ -7845,20 +7760,10 @@
     var teamName = el('input'); teamName.type = 'text';
     form.appendChild(teamName);
 
-    // Tier (Car Objectives system) -- Low/Mid/High, ONE ladder across every
-    // class (not per-class), set by hand rather than computed. Drives the
-    // seat cost/objective bonus this car gets whenever it's next included
-    // in a Create Season -- see CAR_TIER_LIST's comment in js/reference-
-    // data.js for the full mechanic. Defaults to Mid.
-    form.appendChild(el('label', null, 'Tier'));
-    var carTier = document.createElement('select');
-    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (t) {
-      var opt = document.createElement('option'); opt.value = t; opt.textContent = t + ' Tier';
-      if (t === 'Mid') opt.selected = true;
-      carTier.appendChild(opt);
-    });
-    form.appendChild(carTier);
-    form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- same ladder across every class, not per-class.'));
+    // Tier field removed entirely 2026-09-19 -- Matt's call: car Tier
+    // classification doesn't matter anymore. Cars.Tier is now an archived
+    // column in the backend (see Core.gs's TAB_SCHEMAS), untouched but
+    // never read or written going forward.
 
     form.appendChild(el('label', null, 'Team Description'));
     var teamDesc = document.createElement('textarea');
@@ -7897,7 +7802,6 @@
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
           TeamName: teamName.value.trim(),
-          Tier: carTier.value,
           TeamDesc: teamDesc.value.trim()
         }
       })
@@ -7929,13 +7833,13 @@
   // appear the same way on the website... function nearly the same...
   // don't want the user to feel like they're learning a new function every
   // time they visit a new page"). Every Data Management list (Drivers/
-  // Tracks/Cars/Sponsors) groups its rows under a canonically-ordered set
-  // of group headers (Role, Region, Class, Tier), falls back to
-  // alphabetical for any group key the reference data doesn't already
-  // know about, and shows one shared empty-state message when there's
-  // nothing at all -- each of the four used to duplicate this exact
-  // "bucket by key, order the buckets, render a header, don't lose an
-  // unrecognized key" loop with its own slightly different variable
+  // Tracks/Cars) groups its rows under a canonically-ordered set of group
+  // headers (Role, Region, Season), falls back to alphabetical for any
+  // group key the reference data doesn't already know about, and shows one
+  // shared empty-state message when there's nothing at all -- each list
+  // used to duplicate this exact "bucket by key, order the buckets, render
+  // a header, don't lose an unrecognized key" loop with its own slightly
+  // different variable
   // names. This is that loop, written once. What's genuinely different
   // per entity -- a Sponsor row carries a logo, a Track's group nests a
   // venue row under each of which sit its own layout sub-rows, a Car's
@@ -8697,6 +8601,20 @@
     return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(key || 'Unclassified'));
   }
 
+  // Compact, abbreviated class pill (2026-09-19) -- same rounded-rectangle
+  // colored treatment as _rcClassBadge above, just a short label (HY/GT3/
+  // P3/P2, from CAR_CLASS_ABBREV in reference-data.js) for the Dashboard's
+  // Current Seat card corner figure, where it sits directly in front of
+  // the car number (Matt's ask: "a hypercar would have a red rectangle,
+  // rounded edges with HY in it").
+  function _rcClassAbbrevPill(cls) {
+    var key = String(cls || '').trim();
+    var map = { LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+    var colorClass = map[key] || '';
+    var label = (typeof CAR_CLASS_ABBREV !== 'undefined' && CAR_CLASS_ABBREV[key]) ? CAR_CLASS_ABBREV[key] : key;
+    return el('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : ''), escapeHtml(label || '?'));
+  }
+
   // Grouped by Class (fixed order: LMGT3 -> LMP3 -> LMP2 -> Hypercar, per
   // CAR_CLASS_LIST -- the same canonical order used everywhere else on the
   // site a class list appears), then by Season within each class (most
@@ -8763,13 +8681,14 @@
             logoCol.appendChild(logo);
             info.appendChild(logoCol);
 
-            // Two-line text column, left-justified: Team Name (black, primary)
-            // with the tier pill on the same line, Manufacturer + Car Model
-            // below it in a lighter color (Matt's call).
+            // Two-line text column, left-justified: Team Name (black, primary),
+            // Manufacturer + Car Model below it in a lighter color (Matt's
+            // call). The tier pill this line used to also carry was removed
+            // entirely 2026-09-19 -- car Tier classification doesn't matter
+            // anymore.
             var textCol = el('div', null);
             var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
             nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
-            nameLine.appendChild(_rcCarTierBadge(c.Tier));
             textCol.appendChild(nameLine);
             var subParts = [];
             if (c.CarNumber) subParts.push('#' + c.CarNumber);
@@ -8827,22 +8746,10 @@
     var teamName = el('input'); teamName.type = 'text'; teamName.value = car.TeamName || '';
     form.appendChild(teamName);
 
-    // Tier (Car Objectives system) -- editable anytime, but it's only ever
-    // READ at Create Season, so changing it here never disturbs a season
-    // that's already running (see Cars.Tier's schema comment in
-    // 1_Core.gs). PreviousTier is shown read-only just below -- whatever
-    // Tier was set to right before the last change, so Matt can see where
-    // a car came from without a full history log.
-    form.appendChild(el('label', null, 'Tier'));
-    var carTier = document.createElement('select');
-    (typeof CAR_TIER_LIST !== 'undefined' ? CAR_TIER_LIST : ['Low', 'Mid', 'High']).forEach(function (t) {
-      var opt = document.createElement('option'); opt.value = t; opt.textContent = t + ' Tier';
-      if ((car.Tier || 'Mid') === t) opt.selected = true;
-      carTier.appendChild(opt);
-    });
-    form.appendChild(carTier);
-    form.appendChild(el('div', 'rc-hint', 'Groups this car for the Car Objectives system -- takes effect starting with the next season created, never the one already running.' +
-      (car.PreviousTier ? ' Previously: ' + escapeHtml(car.PreviousTier) + ' Tier.' : '')));
+    // Tier and PreviousTier fields removed entirely 2026-09-19 -- Matt's
+    // call: car Tier classification doesn't matter anymore. Cars.Tier/
+    // PreviousTier are now archived columns in the backend (see Core.gs's
+    // TAB_SCHEMAS), untouched but never read or written going forward.
 
     form.appendChild(el('label', null, 'Team Description'));
     var teamDesc = document.createElement('textarea');
@@ -8886,7 +8793,6 @@
           CarModel: carModel.value.trim(),
           CarNumber: carNumber.value.trim(),
           TeamName: teamName.value.trim(),
-          Tier: carTier.value,
           TeamDesc: teamDesc.value.trim()
         }
       })
@@ -8962,21 +8868,12 @@
     return select;
   }
 
-  // Car Objectives tier pill -- Low/Mid/High. Deliberately the SAME
-  // neutral gray-bordered/gray-text treatment for all three (Matt's call)
-  // rather than a colored chip like the class/sponsor-risk badges -- this
-  // is a grouping label, not a status to draw the eye to. Smaller than the
-  // standard .rc-badge-chip too (see .rc-badge-cartier in style.css).
-  // Colored per tier (gray/blue/purple/gold) using CAR_TIER_BADGE_COLOR_VAR
-  // (js/reference-data.js) -- shared by Car Management's list, the Current
-  // Seat dashboard card, and the Choose Your Team screen, so all three
-  // read the same tier the same way.
-  function _rcCarTierBadge(tier) {
-    var key = String(tier || 'Mid').trim();
-    var classMap = { Low: 'rc-badge-cartier-low', Mid: 'rc-badge-cartier-mid', High: 'rc-badge-cartier-high', Elite: 'rc-badge-cartier-elite' };
-    var colorClass = classMap[key] || 'rc-badge-cartier-mid';
-    return el('span', 'rc-badge-chip rc-badge-cartier ' + colorClass, escapeHtml(key) + ' Tier');
-  }
+  // _rcCarTierBadge (the Car Objectives Low/Mid/High/Elite tier pill) was
+  // removed entirely 2026-09-19 -- Matt's call: car Tier classification
+  // doesn't matter anymore, and tier information should never surface on
+  // the dashboard, Car Management's list, or the Choose Your Team screen.
+  // The new compact abbreviated class pill (_rcClassAbbrevPill, above)
+  // replaces it on the Current Seat card.
 
   // ---------------------------------------------------------------------
   // TOP-LEVEL RENDER

@@ -484,33 +484,21 @@ p { margin: 0 0 0.75em; }
 .rc-badge-race-scheduled { background: var(--rc-positive); }
 .rc-badge-race-noresults { background: var(--rc-red); }
 .rc-badge-race-posted { background: var(--rc-steel); }
-/* Car Objective Tier pill (Data Management's Cars popup, the Choose Your
-   Team screen, the dashboard's Current Seat card, and the signing
-   sequence's contract recap) -- colored per tier (gray/blue/purple/gold).
-   Outline style, transparent background, colored text (2026-08-30, Matt's
-   call: "ALL the tiers listed on the website" should have "a outline of
-   gray, blue and purple with the same color text inside. Transparent
-   background") -- same shape/size as the class pills (.rc-badge-chip's own
-   padding/font-size, no override) rather than the smaller chip this used
-   to be, so class and tier pills sitting side by side (e.g. the contract
-   recap) read as one matched pair, not two different sizes. */
-.rc-badge-cartier {
-  background: none;
-  font-weight: 700;
-  /* .rc-badge-chip's own padding (3px 10px) is sized for a borderless
-     fill; this pill adds a 1.5px border on top of that, which (even under
-     the sitewide box-sizing: border-box) makes an auto-sized inline chip
-     render 3px taller/wider than the borderless class pill next to it
-     since nothing here constrains an explicit width/height for border-box
-     to shrink into (Matt's call, 2026-08-30: "the tier pill looks slightly
-     larger than the class pill, fix that too"). Padding trimmed by exactly
-     the border width on each side so the two pills' outer boxes match. */
-  padding: 1.5px 8.5px;
-}
-.rc-badge-cartier-low { border: 1.5px solid var(--rc-tier-low); color: var(--rc-tier-low); }
-.rc-badge-cartier-mid { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
-.rc-badge-cartier-high { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
-.rc-badge-cartier-elite { border: 1.5px solid var(--rc-tier-elite); color: var(--rc-tier-elite); }
+/* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
+   color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
+   classification doesn't matter anymore, and tier information should
+   never surface on the dashboard, Choose Your Team screen, or anywhere
+   else on the site. The --rc-tier-low/-mid/-high/-elite color tokens
+   themselves are kept -- they're general-purpose tokens reused elsewhere
+   (Season status pills, Recent Results pills), not car-tier-specific. */
+/* Compact abbreviated class pill (.rc-badge-chip-abbrev, added
+   2026-09-19) -- the Dashboard's Current Seat card corner figure, sitting
+   right before the "#n" car number (Matt's ask: "put a class pill before
+   the number of the car"). Same colored rounded-rectangle treatment as
+   .rc-badge-chip (the class classes -lmgt3/-lmp3/-lmp2/-hypercar layer on
+   top exactly as before), just tighter padding/font-size for the shorter
+   abbreviated label (HY/GT3/P3/P2) sitting inline next to header text. */
+.rc-badge-chip-abbrev { padding: 2px 7px; font-size: 10px; margin-right: 6px; }
 /* "Buy-in range" pill on the Choose Your Class screen -- sits directly
    next to the class badge instead of the exact cost living in its own
    centered column. Light gray outline, not a filled chip (2026-08-30,
@@ -522,23 +510,21 @@ p { margin: 0 0 0.75em; }
    Results page's "Your Race" chip row) -- 2026-09-08, Matt's call: give
    every pill its own outline color instead of the old mix of solid green/
    red/black fills so they read apart at a glance. Same outline shape/sizing
-   trick .rc-badge-cartier already uses (transparent fill, border+text in
-   one color, padding trimmed by the border width). Bright green/red reuse
-   the exact colors the Sponsors comparison table already uses for bonus/
-   penalty (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative"
-   means the same color everywhere on the site. Clean Race and Fastest Lap
-   reuse the existing tier-mid (blue) / tier-high (purple) tokens so they
-   match the Car Objective tier pills' palette rather than inventing new
-   colors that happen to look similar. Pole keeps the existing gold
-   tier-elite color; Most Laps Led gets its own amber now that Fastest Lap
-   has moved off gold. Points/Qualifying/Laps/Pit Stops are informational
-   counts, not a win or a loss, so they get a neutral steel outline --
-   Points is the one exception, reusing the positive green since scoring
-   points is always a good outcome. */
+   trick as a transparent-fill, colored-border pill (padding trimmed by the
+   border width). Bright green/red reuse the exact colors the Sponsors
+   comparison table already uses for bonus/penalty
+   (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative" means the
+   same color everywhere on the site. Clean Race and Fastest Lap reuse the
+   tier-mid (blue) / tier-high (purple) color tokens for a distinct palette.
+   Pole keeps the existing gold tier-elite color; Most Laps Led gets its own
+   amber now that Fastest Lap has moved off gold. Points/Qualifying/Laps/Pit
+   Stops are informational counts, not a win or a loss, so they get a
+   neutral steel outline -- Points is the one exception, reusing the
+   positive green since scoring points is always a good outcome. */
 .rc-badge-result {
   background: none;
   font-weight: 700;
-  padding: 1.5px 8.5px; /* trimmed by the 1.5px border, same as .rc-badge-cartier */
+  padding: 1.5px 8.5px; /* trimmed by the 1.5px border */
 }
 .rc-badge-result-positive { border: 1.5px solid var(--rc-positive-bright); color: var(--rc-positive-bright); }
 .rc-badge-result-negative { border: 1.5px solid var(--rc-negative); color: var(--rc-negative); }
@@ -551,12 +537,10 @@ p { margin: 0 0 0.75em; }
    since it already carries its own meaning (sponsor name + payout) and
    doesn't need color-coding by positive/negative on top of that. */
 .rc-badge-result-sponsor { background: var(--rc-silver); color: var(--rc-carbon); }
-/* Elite team card on the Choose Your Team screen -- a muted gold border to
-   set it apart from the Low/Mid/High cards around it. */
-.rc-team-card-elite {
-  border-color: var(--rc-tier-elite);
-  box-shadow: 0 0 0 1px var(--rc-tier-elite);
-}
+/* .rc-team-card-elite (the Choose Your Team screen's gold-bordered Elite
+   card) removed entirely 2026-09-19 -- the Elite Tier picker itself was
+   removed from the Season Creation Wizard, so no team is ever marked Elite
+   anymore. See season-1-mvp-scope.md-adjacent note in DataCache.gs. */
 /* Manufacturer logo column in the Cars popup -- same fixed-width, centered
    treatment as .rc-dm-sponsor-logo-col below, so the text column's left
    edge lands in the same place row to row regardless of a given
@@ -1708,31 +1692,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-team-perk-bonus { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
 .rc-team-perk-penalty { background: var(--rc-negative-bg); border-color: #f4c2bd; color: var(--rc-negative); }
 .rc-team-perk-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
-/* Tier chip / objective chip width split (2026-08-30, Matt's call) --
-   overrides .rc-team-perk-chip's default 1-1-220px equal-growth basis so
-   the two chips in a Choose Your Team card's .rc-team-perks row split
-   25/75 instead of roughly 50/50, while still wrapping to their own line
-   on a narrow viewport via the min-widths below. Ratio-based (flex-basis
-   0%, grow 1:3) rather than literal 25%/75% bases -- two bases summing to
-   exactly 100% plus the row's own 10px gap would occasionally overflow by
-   that 10px and force an unwanted wrap (Matt's call: "make sure the
-   objective pill is NEXT to the tier"); a 1:3 grow ratio splits whatever
-   space is actually left after the gap, so they always share one line
-   down to their min-widths. */
-.rc-team-perk-tier { flex: 1 1 0%; min-width: 130px; }
-.rc-team-perk-objective { flex: 3 1 0%; min-width: 220px; }
-/* Tier chip colors -- transparent background, colored outline + matching
-   text (2026-08-30, Matt's call: "ALL the tiers listed on the website" get
-   "an outline of gray, blue and purple with the same color text inside,
-   transparent background"), using the same canonical --rc-tier-* colors as
-   the small .rc-badge-cartier-* pill everywhere else. Keeps this chip's
-   own bigger size/shape/icon/"Team" wording (Matt's call: this one stays
-   its own bigger chip, just recolored) -- only the fill/border/text colors
-   changed, not the box. */
-.rc-team-perk-tier-low { background: transparent; border-color: var(--rc-tier-low); color: var(--rc-tier-low); }
-.rc-team-perk-tier-mid { background: transparent; border-color: var(--rc-tier-mid); color: var(--rc-tier-mid); }
-.rc-team-perk-tier-high { background: transparent; border-color: var(--rc-tier-high); color: var(--rc-tier-high); }
-.rc-team-perk-tier-elite { background: transparent; border-color: var(--rc-tier-elite); color: var(--rc-tier-elite); }
 .rc-team-card-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
 /* Join button anchored bottom-right of the card (Matt's call), not just
    left-aligned wherever it happened to fall in document flow. */
