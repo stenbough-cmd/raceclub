@@ -37,6 +37,26 @@
 </head>
 <body class="rc-league-page">
 
+<!-- Full-page loading overlay (2026-09-19, Matt's ask: "a loading
+     animation in the center of the page... with the page behind very
+     very dim until it loads and then displays the page") -- sits on top
+     of everything, including the header, until js/league.js's initial
+     getLeagueHub fetch resolves, then fades out and removes itself.
+     Reuses the same branded "starting grid lights" indicator every other
+     page's loading state already uses (.rc-startlights/.rc-startlight,
+     css/style.css, already loaded here) instead of inventing a new
+     spinner style for just this page. -->
+<div class="rcl-page-loader" id="rcl-page-loader">
+  <div class="rc-startlights">
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+  </div>
+  <div class="rc-loading-text">Loading League Hub...</div>
+</div>
+
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 

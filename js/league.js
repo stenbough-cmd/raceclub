@@ -1163,7 +1163,27 @@ function _rclOpenSeasonDetailsModal(hub) {
   _rclLockBodyScroll();
 }
 
+// Full-page loading overlay (2026-09-19, Matt's ask: "a loading animation
+// in the center of the page... with the page behind very very dim until
+// it loads and then displays the page") -- markup/CSS live in league.html
+// and css/league.css; this just locks body scroll while it's up (same
+// .rc-modal-scroll-locked pattern every popup on this page already uses)
+// and fades + removes it once the initial fetch below resolves, success
+// or failure either way, so a fetch error still reveals the page's own
+// "No Data To Display" states instead of leaving the overlay up forever.
+function _rclHidePageLoader() {
+  var loader = document.getElementById('rcl-page-loader');
+  if (!loader) return;
+  loader.classList.add('rcl-page-loader-hidden');
+  _rclUnlockBodyScroll();
+  setTimeout(function () {
+    if (loader.parentNode) loader.parentNode.removeChild(loader);
+  }, 450); // matches the 0.4s CSS transition, plus a hair of slack
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+  if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
+
   // _rclRenderPoints removed from this list (2026-09-19) -- points tables
   // are no longer rendered into the page directly; _rclRenderStandings
   // stashes the fetched hub (_rclHubForPoints) so the "View Points
@@ -1174,14 +1194,17 @@ document.addEventListener('DOMContentLoaded', function () {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
       _rclRenderHero({ hasSeason: false });
+      _rclHidePageLoader();
       return;
     }
     _rclRenderHero(hub);
     _rclRenderTicker(hub);
     RENDERERS.forEach(function (fn) { fn(hub); });
+    _rclHidePageLoader();
   }).catch(function () {
     _rclRenderTicker({ lastRace: null, standings: [] });
     RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
     _rclRenderHero({ hasSeason: false });
+    _rclHidePageLoader();
   });
 });

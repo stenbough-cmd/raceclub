@@ -44,6 +44,44 @@ body.rc-league-page {
   padding-top: 70px; /* clears the shared fixed header, same convention as .rc-shell/.rc-auth-page */
 }
 
+/* Full-page loading overlay (2026-09-19, Matt's ask: "a loading animation
+   in the center of the page... with the page behind very very dim until
+   it loads") -- fixed, covers the whole viewport including the header,
+   near-opaque rather than fully solid so the page reads as "very dim"
+   underneath instead of hidden outright. Faded out (opacity + pointer-
+   events) and then removed by js/league.js once the initial getLeagueHub
+   fetch resolves, success or failure either way. Markup lives in
+   league.html; body scroll is locked while this is up via the same
+   .rc-modal-scroll-locked class every popup on the site already uses
+   (see _rclLockBodyScroll/_rclUnlockBodyScroll in js/league.js). */
+.rcl-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(10, 10, 11, 0.94);
+  transition: opacity 0.4s ease;
+}
+.rcl-page-loader-hidden { opacity: 0; pointer-events: none; }
+/* .rc-loading-text (style.css) is tuned for the site's light theme
+   (var(--rc-steel)) -- this overlay is dark, so it needs its own color
+   here rather than inheriting an unreadable dark-gray-on-black. */
+.rcl-page-loader .rc-loading-text { color: var(--rcl-ink-dim); }
+@media (prefers-reduced-motion: reduce) {
+  /* Freeze on a single lit state instead of animating through the full
+     "lights out" sequence -- still reads as "loading," no motion. */
+  .rcl-page-loader .rc-startlight {
+    animation: none;
+    background: var(--rc-red);
+    border-color: var(--rc-red);
+    box-shadow: 0 0 7.5px 1.5px var(--rc-red);
+  }
+}
+
 /* -------------------------------------------------------------------- */
 /* Ticker -- scrolling strip, right under the fixed header              */
 /* -------------------------------------------------------------------- */
@@ -357,11 +395,12 @@ body.rc-league-page {
    slightly (2026-09-19 follow-up, Matt: "increase the width... ever
    slightly to add a little extra lean") -- same skew percentage, so a
    touch more width brings back a touch more angle, without undoing the
-   height change above.  */
+   height change above. Bumped again to 16px (2026-09-19, second follow-
+   up, Matt: "increase the width... to 16px for a little extra lean"). */
 .rcl-panel-title::before {
   content: '';
   display: inline-block;
-  width: 14px;
+  width: 16px;
   height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
@@ -996,11 +1035,11 @@ body.rc-league-page {
 }
 /* Same taller/less-angled treatment as .rcl-panel-title::before above
    (2026-09-19, Matt's call -- "in each container", popups included), same
-   slight width bump for a touch more lean (2026-09-19 follow-up). */
+   width bump for a touch more lean, now 16px (2026-09-19 follow-ups). */
 .rcl-modal-title::before {
   content: '';
   display: inline-block;
-  width: 14px;
+  width: 16px;
   height: 22px;
   background: var(--rc-red);
   clip-path: polygon(30% 0, 100% 0, 70% 100%, 0 100%);
