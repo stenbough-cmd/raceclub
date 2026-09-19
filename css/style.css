@@ -4544,16 +4544,23 @@ body.rc-modal-scroll-locked {
    call: "gives all the information of the league without using the
    pills that are currently there"). First built as one row per detail,
    which Matt caught the same day as "takes up an enormous amount of
-   space" -- reworked into a wrapping grid of small tiles instead (same
-   shape as .rc-cs-stat, the Current Seat card's own stat tiles, just
-   left-aligned and denser): several tiles share a row, so the same
-   information collapses from ~13 stacked lines down to 2-3 rows of
-   tiles, well under a third of the old list's height. A tile with a
+   space" -- reworked into a wrapping grid of small tiles (several share
+   a row, so ~13 details collapse from stacked lines down to 2-3 rows,
+   well under a third of the old list's height), then finished as actual
+   gray-bordered rounded-rectangle pills (same-day follow-up: "adding
+   gray bordered, rounded rectangle pills to hold each information and
+   centering the value in the pill would clean it up further... make the
+   space in between each pill the same for the section and the padding
+   the same within the pill") -- one uniform `gap` (equal horizontally
+   and vertically, not the wider-between-columns-than-rows spacing the
+   plain-tile version had) and one uniform `padding` (all four sides
+   equal, not the tighter-vertical/looser-horizontal padding a text
+   block would use) are both what "the same" means here. A tile with a
    longer detail (the Sprint/Medium/Long points lists) carries it in a
-   hover tooltip via withTooltip rather than widening the tile. */
-.rc-cal-format-list { display: flex; flex-wrap: wrap; gap: 14px 22px; }
-.rc-cal-format-tile { flex: 1 1 108px; min-width: 92px; }
-.rc-cal-format-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 3px; }
+   hover tooltip via withTooltip rather than widening the pill. */
+.rc-cal-format-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.rc-cal-format-tile { flex: 1 1 108px; min-width: 92px; padding: 12px; border: 1px solid var(--rc-silver); border-radius: 8px; text-align: center; }
+.rc-cal-format-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 4px; }
 .rc-cal-format-value { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }

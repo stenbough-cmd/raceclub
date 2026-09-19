@@ -4101,7 +4101,11 @@
     if (details.frequency) grid.appendChild(formatDetailTile('Race Frequency', details.frequency));
     grid.appendChild(formatDetailTile('Drop Weeks', String(details.dropWeeks || 0)));
     if (details.trackLimitsPreset) grid.appendChild(formatDetailTile('Track Limits', details.trackLimitsPreset));
-    grid.appendChild(formatDetailTile('Qualifying', details.privateQualifying === 'Yes' ? 'Private' : 'Public'));
+    // "Qualifying Type," not "Qualifying" -- that plain label is reserved
+    // for the qualifying session LENGTH tile below (Matt's rename ask,
+    // 2026-09-19); this one is visibility (Public/Private), a different
+    // fact about qualifying entirely.
+    grid.appendChild(formatDetailTile('Qualifying Type', details.privateQualifying === 'Yes' ? 'Private' : 'Public'));
 
     // Fuel/Tire Wear/Setups -- season-wide (Seasons.SeasonDetails.
     // raceSettings), same source the individual race cards below used to
@@ -4117,7 +4121,7 @@
     if (raceSettings.tireWearMultiplier) grid.appendChild(formatDetailTile('Tire Wear', raceSettings.tireWearMultiplier));
     if (raceSettings.setupRules) grid.appendChild(formatDetailTile('Setups', raceSettings.setupRules));
     if (raceSettings.practiceLengthMin) grid.appendChild(formatDetailTile('Practice', raceSettings.practiceLengthMin + ' min'));
-    if (raceSettings.qualifyLengthMin) grid.appendChild(formatDetailTile('Qualifying Length', raceSettings.qualifyLengthMin + ' min'));
+    if (raceSettings.qualifyLengthMin) grid.appendChild(formatDetailTile('Qualifying', raceSettings.qualifyLengthMin + ' min'));
 
     // Race formats -- one tile per tier that actually has a points table
     // set up (Sprint/Medium/Long). The tile's own value stays just the
