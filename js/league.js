@@ -110,8 +110,8 @@ function _rclWeatherIcon(entry) {
 // meta row and the Points Tables tier duration (2026-09-19, Matt's ask:
 // "use icons when possible for maximum aesthetics"). `text` is inserted
 // as a real text node, never HTML, so nothing here needs escaping.
-function _rclChip(iconSvg, text) {
-  var chip = _rclEl('span', 'rcl-chip-light');
+function _rclChip(iconSvg, text, outline) {
+  var chip = _rclEl('span', 'rcl-chip-light' + (outline ? ' rcl-chip-outline' : ''));
   var iconSpan = _rclEl('span', 'rcl-chip-icon');
   iconSpan.innerHTML = iconSvg;
   chip.appendChild(iconSpan);
@@ -365,15 +365,17 @@ function _rclRenderCalendar(hub) {
     // In-game time: spelled out ("In-Game"), race time only -- practice/
     // qualify in-game times dropped from this line (2026-09-19, Matt's
     // ask: "spell out In-game and only put the race time for in-game").
+    // In-Game and Weather are both gray outline pills, not solid
+    // (2026-09-19, Matt's call) -- the `true` third arg to _rclChip.
     if (entry.igRaceStart) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_GAMEPAD, 'In-Game ' + _rclFormat12h(entry.igRaceStart)));
+      metaRow.appendChild(_rclChip(_RCL_ICON_GAMEPAD, 'In-Game ' + _rclFormat12h(entry.igRaceStart), true));
     }
     // Weather + chance of precipitation (2026-09-19, Matt's ask), same
     // "N% Rain" convention and 5-tier icon Account.html's own Calendar
     // page already uses for this (weatherIcon() + "N% Rain") -- only
     // shows once a weather value has actually been set for this entry.
     if (entry.weather) {
-      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain'));
+      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain', true));
     }
     rowBody.appendChild(metaRow);
 

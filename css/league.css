@@ -380,19 +380,30 @@ body.rc-league-page {
   overflow: hidden;
 }
 .rcl-cal-row:last-child { border-bottom: none; }
-.rcl-cal-row-next { background: rgba(198, 30, 30, 0.08); }
+/* Next-race highlight -- softened from a red wash to a barely-there light
+   gray (2026-09-19, Matt's call: "the highlighting slightly lighter gray
+   instead of a red highlight") -- UP NEXT still reads red via
+   .rcl-cal-status-up, so the row is still identifiable at a glance, just
+   without the whole row glowing red. */
+.rcl-cal-row-next { background: rgba(255, 255, 255, 0.05); }
+/* Round-number bar -- silver metallic instead of solid brand red
+   (2026-09-19, Matt's call: "make the Round backgrounds silver") -- same
+   diagonal metallic-gradient treatment .rcl-cal-round-special already
+   uses for gold, just in a neutral silver tone, so a normal points round
+   reads as a deliberately different metal from a special event's gold
+   rather than the page's one loud red accent. */
 .rcl-cal-round {
   flex: none;
   width: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--rc-red);
+  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
   font-family: var(--rc-font-heading);
   font-size: 22px;
   font-weight: 900;
   line-height: 1;
-  color: var(--rc-white);
+  color: #1c1d20;
   text-align: center;
   user-select: none;
   /* Slight curve on just the top-left corner (2026-09-19, Matt's ask) --
@@ -415,6 +426,12 @@ body.rc-league-page {
 }
 .rcl-cal-row-special .rcl-cal-event { color: #e0b64c; }
 .rcl-cal-row-special .rcl-cal-track { color: #b99a4f; }
+/* Layout (the "-- <layout>" suffix on the track line) gets the same gold
+   treatment on a special event (2026-09-19, Matt's ask: "make the track
+   -- layout for the special event gold") -- .rcl-cal-layout has its own
+   explicit color rule below, which would otherwise win over the inherited
+   .rcl-cal-track gold above, so this needs its own override. */
+.rcl-cal-row-special .rcl-cal-layout { color: #d4b656; }
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Event name / track name swapped emphasis (2026-09-19, Matt's follow-up
@@ -468,6 +485,18 @@ body.rc-league-page {
 }
 .rcl-chip-icon { display: flex; flex: none; line-height: 1; }
 .rcl-chip-icon svg { display: block; width: 13px; height: 13px; }
+/* Outline variant -- gray outline, no fill (2026-09-19, Matt's call: "for
+   in-game race times and weather, make them gray outline pills instead of
+   solid pills") -- same shape/sizing as .rcl-chip-light, just transparent
+   with a border instead of the solid light-gray fill, so In-Game/Weather
+   read as a lighter-weight secondary fact next to the solid date/length
+   pill. Text/icon pick up the page's own dim ink color since there's no
+   light fill to contrast against anymore. */
+.rcl-chip-outline {
+  background: transparent;
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink-dim);
+}
 .rcl-cal-status {
   font-family: var(--rc-font-heading);
   font-size: 10px;
