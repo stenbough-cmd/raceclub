@@ -36,6 +36,11 @@
   --rc-white: #FFFFFF;
   --rc-offwhite: #F5F5F3;
   --rc-silver: #D8DDE1;
+  /* One step darker than --rc-silver (2026-09-20, Matt's ask: "make the
+     gray border around the individual rounds slightly darker gray") --
+     for a border that needs a bit more definition than the standard
+     --rc-silver hairline without jumping all the way to --rc-steel. */
+  --rc-silver-dark: #BEC6CD;
   --rc-steel: #536575;
   --rc-carbon: #171717;
   --rc-red: #F21B0C;
@@ -4687,8 +4692,10 @@ body.rc-modal-scroll-locked {
      a gray border similar to the size of the gold special event border")
      -- .rc-cal-race-special below only overrides the color, not the
      width, so a normal and a special card now read as the same weight of
-     border, just a different color. */
-  border: 2px solid var(--rc-silver);
+     border, just a different color. --rc-silver-dark (2026-09-20, Matt's
+     follow-up call to darken it slightly) instead of the standard
+     --rc-silver every other hairline border on the site uses. */
+  border: 2px solid var(--rc-silver-dark);
   border-radius: 8px;
   background: var(--rc-white);
   padding: 16px 18px;

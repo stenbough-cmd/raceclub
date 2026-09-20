@@ -4202,6 +4202,17 @@
     // (nameWrap on the left), so appending these here puts them at the
     // right edge for free.
     var headPills = el('div', 'rc-cal-mini-stats');
+    // IRL start time pill (2026-09-20, Matt's ask: "make the IRL start
+    // time a pill that sits to the left of race length pill in the right
+    // corner") -- same formatRaceDateTime text the full date/time row
+    // further down the card already shows (that row stays, since it also
+    // carries the in-game Practice/Qualifying/Race Start times, which
+    // this corner pill doesn't try to duplicate), just surfaced here too
+    // as the first of the top-right pills so it's visible without
+    // scanning the whole card. Calendar icon (not the clock the length
+    // pill uses right after it) so the two don't look identical at a
+    // glance.
+    headPills.appendChild(calStat(ICON_CALENDAR, formatRaceDateTime(entry.startUtc, driverTz), 'IRL Start Time', 'rc-cal-mini-stat'));
     // Tier + minutes together now (2026-09-19 follow-up, Matt's ask: "have
     // it say the full tier and time like it does for season in each
     // individual container") -- same "Tier · N min" format the Season
