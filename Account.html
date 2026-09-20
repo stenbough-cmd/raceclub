@@ -1614,8 +1614,12 @@
     // with a gold border so it stands out") -- .rc-cal-stat itself stays
     // untouched (shared by Calendar's own race cards and every other
     // pill on this card), this is a scoped modifier class via calStat's
-    // own extraClass param, only ever applied here.
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password', 'rc-nextrace-password-gold'));
+    // own extraClass param, only ever applied here. "SERVER PASSWORD"
+    // label prefixed onto the pill text itself (2026-09-21, Matt's
+    // follow-up ask) -- the tooltip alone ("Server password") wasn't
+    // enough context on a pill that's otherwise just a bare string of
+    // characters.
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, 'SERVER PASSWORD ' + data.password, 'Server password', 'rc-nextrace-password-gold'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
@@ -4163,9 +4167,12 @@
     // gold metallic flair that you used for the next race card") -- only
     // when a password is actually set; otherwise a plain muted pill so
     // "no password yet" doesn't get the same eye-catching gold treatment
-    // as a real one.
+    // as a real one. "SERVER PASSWORD" prefixed onto the pill text itself
+    // (2026-09-21, Matt's follow-up ask), same as the Next Race card's
+    // own password pill -- skipped on the "None Set" fallback text, which
+    // already says what it is without the label.
     var row1 = el('div', 'rc-cal-format-list');
-    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword || 'None Set', 'Server Password',
+    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword ? ('SERVER PASSWORD ' + details.defaultPassword) : 'None Set', 'Server Password',
       'rc-cal-mini-stat' + (details.defaultPassword ? ' rc-nextrace-password-gold' : '')));
     wrap.appendChild(row1);
 
@@ -4207,25 +4214,30 @@
     if (raceSettings.setupRules) row3.appendChild(calStat(ICON_SETTINGS, raceSettings.setupRules, 'Setups', 'rc-cal-mini-stat'));
     if (row3.children.length) wrap.appendChild(row3);
 
-    // Row 4: session lengths -- Practice, Qualifying (still carrying its
-    // own Qualifying Type -- Public/Private -- right in the pill text,
-    // "n min, Public"/"n min, Private"), then Sprint/Medium/Long Race
-    // length-tier pills, each still just its duration with the full
+    // Row 4: session lengths -- Practice and Qualifying now spell out
+    // their own label in the pill text (2026-09-21, Matt's follow-up ask:
+    // "add Practice to the pill, add Qualify to the pill") instead of
+    // being a bare duration -- Qualifying still carries its own
+    // Qualifying Type -- Public/Private -- right after, "Qualify · n min,
+    // Public"/"Qualify · n min, Private". Sprint/Medium/Long now read
+    // "SPRINT RACE"/"MEDIUM RACE"/"LONG RACE" (uppercase, matching
+    // Matt's exact wording) followed by the duration, instead of the
+    // bare tier name -- each still just its duration with the full
     // points list in a hover tooltip (Matt: "length tier pills, on hover
     // a points table displays") -- unchanged behavior, calStat's own
     // tooltip param, just a pill now instead of a tile.
     var row4 = el('div', 'rc-cal-format-list');
-    if (raceSettings.practiceLengthMin) row4.appendChild(calStat(ICON_CLOCK, raceSettings.practiceLengthMin + ' min', 'Practice Length', 'rc-cal-mini-stat'));
+    if (raceSettings.practiceLengthMin) row4.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettings.practiceLengthMin + ' min', 'Practice Length', 'rc-cal-mini-stat'));
     if (raceSettings.qualifyLengthMin) {
       var qualVisibility = details.privateQualifying === 'Yes' ? 'Private' : 'Public';
-      row4.appendChild(calStat(ICON_STOPWATCH, raceSettings.qualifyLengthMin + ' min, ' + qualVisibility, 'Qualifying Length & Type', 'rc-cal-mini-stat'));
+      row4.appendChild(calStat(ICON_STOPWATCH, 'Qualify · ' + raceSettings.qualifyLengthMin + ' min, ' + qualVisibility, 'Qualifying Length & Type', 'rc-cal-mini-stat'));
     }
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
       var pointsList = formatPointsList(table.points);
-      row4.appendChild(calStat(ICON_CLOCK, tier + ' · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
+      row4.appendChild(calStat(ICON_CLOCK, tier.toUpperCase() + ' RACE · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
     });
     if (row4.children.length) wrap.appendChild(row4);
 

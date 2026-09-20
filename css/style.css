@@ -2375,23 +2375,34 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
 }
 .rc-nextrace-pill-gold { background: var(--rc-gold); }
-/* Server password pill, NEXT RACE dashboard card only (2026-09-21, Matt's
-   ask: "make the server password pill in the NEXT RACE dashboard
-   container metallic gold with a gold border so it stands out") -- a
-   scoped modifier on the shared .rc-cal-stat chip (via calStat's own
-   extraClass param, Account.html), so every other .rc-cal-stat pill on
-   this card and elsewhere (Calendar's own race cards, Season Format,
-   etc.) is untouched. "Metallic" via a diagonal light/dark gold gradient
-   rather than a flat fill, with --rc-gold as the border so it still
-   reads as part of the same gold family as the Special Event pill above. */
-.rc-nextrace-password-gold {
+/* Server password pill, NEXT RACE dashboard card + Season Format panel
+   (2026-09-21, Matt's ask: "make the server password pill in the NEXT
+   RACE dashboard container metallic gold with a gold border so it stands
+   out", reused for Season Format's own password pill same day) -- a
+   scoped modifier on the shared .rc-cal-stat/.rc-cal-mini-stat chip (via
+   calStat's own extraClass param, Account.html), so every other pill on
+   these cards and elsewhere (Calendar's own race cards, etc.) is
+   untouched. "Metallic" via a diagonal light/dark gold gradient rather
+   than a flat fill, with --rc-gold as the border so it still reads as
+   part of the same gold family as the Special Event pill above.
+   Compound-selected as .rc-cal-stat.rc-nextrace-password-gold (2026-09-21
+   fix, Matt's catch: "the pills for the next race password and the
+   calendar password were never changed to a yellow/gold color") --
+   .rc-cal-stat's own background/border/color/svg-color rules sit LATER
+   in this file (its shared base is defined once, far below every one-off
+   modifier), and a single-class selector loses a same-specificity tie to
+   whichever rule comes last in source order, so the base chip's offwhite
+   fill was silently winning over this gold override the whole time.
+   Compounding onto .rc-cal-stat bumps this rule's specificity above the
+   base rule's regardless of where either sits in the file. */
+.rc-cal-stat.rc-nextrace-password-gold {
   background: linear-gradient(135deg, #f7dd8f 0%, #d4a933 28%, #8a6410 52%, #e8c464 76%, #fbe7a6 100%);
   border: 1px solid var(--rc-gold);
   color: #3f2c00;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
-.rc-nextrace-password-gold svg { color: #5c3f00; }
+.rc-cal-stat.rc-nextrace-password-gold svg { color: #5c3f00; }
 
 /* Finances card + Reputation card (2026-08-31: split apart from the
    original combined "Finances & Reputation" card -- Finances shares the
