@@ -995,3 +995,89 @@ function escapeHtmlHeader_(str) {
   d.textContent = str || '';
   return d.innerHTML;
 }
+
+// ---------------------------------------------------------------------
+// SITEWIDE FOOTER LEGAL DISCLAIMER (added 2026-09-20, Matt's ask) -- every
+// page's .rc-site-footer now ends with a "Legal Disclaimer" link that
+// opens the full disclaimer text in a popup. Lives here (not Account.html)
+// since header.js is the one script every page already loads, including
+// the ones that never load Account.html's own showModal (index, login,
+// register, reset-password, verify, league). Builds the exact same
+// .rc-modal-backdrop/.rc-modal/.rc-modal-head/.rc-modal-body markup
+// Account.html's showModal uses (see style.css) by hand with
+// document.createElement, since this file has no el()/escapeHtml helper
+// of its own and doesn't need one just for this. Same "closable only via
+// the X button" lockdown convention as every other modal on the site
+// (2026-08-30 rule) -- no backdrop-click or Escape close, even though
+// this one's read-only and low-stakes, just for one consistent modal
+// behavior sitewide.
+function rcOpenLegalModal() {
+  var backdrop = document.createElement('div');
+  backdrop.className = 'rc-modal-backdrop';
+  var modal = document.createElement('div');
+  modal.className = 'rc-modal rc-modal-wide';
+  var head = document.createElement('div');
+  head.className = 'rc-modal-head';
+  var title = document.createElement('h3');
+  title.style.margin = '0';
+  title.style.fontSize = '16px';
+  title.textContent = 'Legal Disclaimer';
+  head.appendChild(title);
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'rc-modal-close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.innerHTML = '&times;';
+  head.appendChild(closeBtn);
+  var body = document.createElement('div');
+  body.className = 'rc-modal-body rc-legal-text';
+  // Static, trusted, hand-authored content (Matt's own legal.txt) -- no
+  // escaping needed, this never includes any user-supplied data.
+  body.innerHTML =
+    '<p class="rc-legal-updated">Last Updated: September 2026</p>' +
+    '<h4>Independent Community</h4>' +
+    '<p>Race Club Online is an independent community-operated sim racing league and informational platform. Race Club Online is not affiliated with, endorsed by, sponsored by, or otherwise associated with any game developer, game publisher, motorsport organization, racing series, vehicle manufacturer, race circuit operator, trademark owner, or governing body unless explicitly stated otherwise.</p>' +
+    '<h4>Trademarks and Intellectual Property</h4>' +
+    '<p>All trademarks, service marks, trade names, logos, vehicle names, team names, circuit names, series names, and other intellectual property displayed on this website are the property of their respective owners.</p>' +
+    '<p>Any such references are used solely for identification, informational, educational, commentary, statistical, historical, or community-related purposes. The use of these marks does not imply any affiliation, sponsorship, endorsement, approval, or partnership with Race Club Online.</p>' +
+    '<h4>Le Mans Ultimate</h4>' +
+    '<p>Race Club Online may reference the Le Mans Ultimate racing simulation, its content, events, vehicles, classes, and tracks for purposes related to league organization, competition, statistics, and community discussion.</p>' +
+    '<p>Race Club Online is an independent community and is not affiliated with, endorsed by, sponsored by, or otherwise associated with Le Mans Ultimate, Studio 397, Motorsport Games, the Automobile Club de l’Ouest (ACO), FIA World Endurance Championship (WEC), or any related organizations.</p>' +
+    '<h4>Vehicle Manufacturers and Racing Circuits</h4>' +
+    '<p>References to real-world vehicle manufacturers, race circuits, racing series, and motorsport organizations are provided solely to identify content used within league competition and statistical reporting.</p>' +
+    '<p>All manufacturer logos, vehicle names, circuit names, and related trademarks remain the property of their respective owners.</p>' +
+    '<h4>Statistics and Competition Data</h4>' +
+    '<p>Race Club Online collects, processes, and displays race results, standings, statistics, driver rankings, and historical data derived from community-organized events. While reasonable efforts are made to ensure accuracy, Race Club Online makes no guarantees regarding the completeness, accuracy, or availability of any data presented on the site.</p>' +
+    '<h4>No Commercial Relationship</h4>' +
+    '<p>Participation in Race Club Online does not create any relationship with any game developer, publisher, manufacturer, sanctioning body, or trademark owner referenced on the website.</p>' +
+    '<h4>Content Removal Requests</h4>' +
+    '<p>Race Club Online respects the intellectual property rights of others. If you are a rights holder and believe that any content displayed on this website infringes upon your intellectual property rights or creates confusion regarding ownership, affiliation, or endorsement, please contact us and we will promptly review the request.</p>' +
+    '<h4>Limitation of Liability</h4>' +
+    '<p>Race Club Online is provided on an "as-is" and "as-available" basis. By using this website, users acknowledge that participation in online leagues, competitions, rankings, and community activities is voluntary. Race Club Online and its operators shall not be liable for any damages, losses, disputes, or inconveniences arising from the use of this website or participation in league activities.</p>';
+  modal.appendChild(head);
+  modal.appendChild(body);
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  var scrollYBeforeModal = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = '-' + scrollYBeforeModal + 'px';
+  document.body.classList.add('rc-modal-scroll-locked');
+
+  function close() {
+    backdrop.remove();
+    document.body.classList.remove('rc-modal-scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, scrollYBeforeModal);
+  }
+  closeBtn.addEventListener('click', close);
+}
+
+// Called once from a small inline <script> right after each page's own
+// <footer class="rc-site-footer"> markup (same explicit-call convention
+// renderHeader() itself uses) -- wires the footer's "Legal Disclaimer"
+// link to open the modal above. A no-op if the link isn't on the page for
+// some reason, so this is always safe to call.
+function rcWireFooterLegalLink() {
+  var link = document.getElementById('rc-footer-legal-link');
+  if (link) link.addEventListener('click', function (evt) { evt.preventDefault(); rcOpenLegalModal(); });
+}

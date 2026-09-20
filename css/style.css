@@ -3907,6 +3907,37 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-steel);
   border-top: 1px solid var(--rc-silver);
 }
+/* Footer "Legal Disclaimer" link (added 2026-09-20) -- a plain button
+   styled as inline text so it sits naturally in the footer's copyright
+   sentence rather than reading as a separate nav element; underlined red
+   like the site's other text links (.rc-social-chip) so it's still
+   obviously clickable against the muted footer text around it. */
+.rc-footer-legal-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--rc-red);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rc-footer-legal-link:hover { color: var(--rc-red-dark); }
+/* Legal disclaimer modal body typography (added 2026-09-20) -- the modal
+   shell itself (.rc-modal/.rc-modal-head/.rc-modal-body) is the same
+   generic one every popup on the site uses; this just styles the
+   section headings/paragraphs of the disclaimer text sitting inside it. */
+.rc-legal-text h4 {
+  margin: 18px 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rc-carbon);
+}
+.rc-legal-text h4:first-of-type { margin-top: 0; }
+.rc-legal-text p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--rc-steel); }
+.rc-legal-updated { font-size: 11px; color: var(--rc-steel); margin: 0 0 14px; font-style: italic; }
 
 /* -------------------------------------------------------------------- */
 /* Generic modal (Manage Users' Edit action) — centered card over a      */
