@@ -4399,32 +4399,40 @@
     // Track image removed entirely (2026-09-19, Matt's call -- see the
     // miniStats comment above; may come back in some other form later).
 
-    // Gray semi-transparent overlay + large bold "EVENT COMPLETED" label
-    // once a round/special event's start time has passed (Matt's call) --
-    // covers the whole card rather than the old faded-background + small
-    // pill treatment. 2026-09-07: the label itself now says whether
-    // results have actually been imported yet for a real Round (isSpecial
-    // and bye entries have no RoundID to check against, so they only ever
-    // get the plain label) -- hasResults comes straight off the same
-    // entries _rcBuildActiveSeasonCalendar_ builds for League Management's
-    // per-race Add Results/Delete buttons, so this can never disagree with
-    // what an Admin sees there. 2026-09-08: a third state -- once results
-    // are posted AND the round has been finalized (League Management's
-    // Finalize button, adminFinalizeRound/resultsFinalized -- same field
-    // the round entry already carries), the label says so explicitly
-    // rather than staying at the generic "Results Posted" forever.
+    // Faded card + small corner badge(s) once a round/special event's
+    // start time has passed (2026-09-21 redesign, Matt's ask: "make the
+    // race faded out with a COMPLETED notification" -- replaces the old
+    // full-card dark-scrim overlay with giant "EVENT COMPLETED" text,
+    // which hid the whole card's details rather than just dimming them).
+    // .rc-cal-finished (already on `card` itself, see its class list
+    // above) fades .rc-cal-race-body via CSS -- these badges are appended
+    // as siblings of body, outside the faded element, so the notification
+    // itself stays fully legible against the dimmed card around it.
+    // 2026-09-07: whether results have actually been imported yet for a
+    // real Round (isSpecial and bye entries have no RoundID to check
+    // against, so they only ever get the plain "Completed" badge) --
+    // hasResults comes straight off the same entries
+    // _rcBuildActiveSeasonCalendar_ builds for League Management's
+    // per-race Add Results/Delete buttons, so this can never disagree
+    // with what an Admin sees there. 2026-09-08: a second badge -- once
+    // results are posted AND the round has been finalized (League
+    // Management's Finalize button, adminFinalizeRound/resultsFinalized
+    // -- same field the round entry already carries), it says so
+    // explicitly ("Official Results Posted") rather than staying at
+    // "Preliminary Results Posted" forever. Renamed from "No Results
+    // Posted Yet"/"Results Posted"/"Results Posted and Finalized" to
+    // "Completed"/"Preliminary Results Posted"/"Official Results Posted"
+    // 2026-09-21, matching league.html's own public calendar wording
+    // exactly (see _rclRenderCalendar, js/league.js).
     if (entry.finished) {
-      var completedLabel = 'Event Completed';
-      if (!isSpecial) {
-        if (!entry.hasResults) {
-          completedLabel += ' (No Results Posted Yet)';
-        } else if (entry.resultsFinalized) {
-          completedLabel += ' (Results Posted and Finalized)';
-        } else {
-          completedLabel += ' (Results Posted)';
-        }
+      var completedBadges = el('div', 'rc-cal-completed-badges');
+      completedBadges.appendChild(el('span', 'rc-cal-completed-badge', 'Completed'));
+      if (!isSpecial && entry.hasResults) {
+        var resultsBadgeText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
+        var resultsBadgeClass = 'rc-cal-completed-badge' + (entry.resultsFinalized ? ' rc-cal-completed-badge-official' : ' rc-cal-completed-badge-preliminary');
+        completedBadges.appendChild(el('span', resultsBadgeClass, resultsBadgeText));
       }
-      card.appendChild(el('div', 'rc-cal-completed-overlay', completedLabel));
+      card.appendChild(completedBadges);
     }
 
     return card;

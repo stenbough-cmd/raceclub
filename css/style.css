@@ -4846,14 +4846,15 @@ body.rc-modal-scroll-locked {
   font-size: 13px;
   font-weight: 600;
   text-align: center;
-  text-transform: uppercase; /* "BYE WEEK" (2026-08-30, Matt's call) -- markup text stays normal-case, same pattern as .rc-cal-completed-overlay's "Event Completed" */
+  text-transform: uppercase; /* "BYE WEEK" (2026-08-30, Matt's call) -- markup text stays normal-case, same pattern as .rc-cal-completed-badge's "Completed" */
   background: var(--rc-offwhite);
 }
 .rc-cal-bye-date { font-size: 11px; font-weight: 400; text-transform: none; } /* the date stays normal-case even though .rc-cal-bye above it is all-caps */
 
 /* Flex row -- .rc-cal-race-body (everything but the image) grows to fill
    the space, .rc-cal-track-img sits fixed-size on the right. position:
-   relative so .rc-cal-completed-overlay below can cover the whole card. */
+   relative so .rc-cal-completed-badges below can pin to the card's own
+   top-right corner. */
 .rc-cal-race {
   position: relative;
   display: flex;
@@ -4908,27 +4909,49 @@ body.rc-modal-scroll-locked {
   .rc-cal-race-body { min-width: 220px; }
 }
 
-/* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
-   covering the whole card once its start time has passed (Matt's call --
-   replaces the old faded-background + small "Completed" pill treatment).
-   text-transform:uppercase does the all-caps so the markup itself can
-   stay normal-case ("Event Completed") for accessibility/copy-paste. */
-.rc-cal-completed-overlay {
+/* Faded card + small corner badge(s), once a round/special event's start
+   time has passed (2026-09-21 redesign, Matt's ask: "have the race faded
+   out with a COMPLETED notification" -- replaces the old full-card dark-
+   scrim overlay with giant "EVENT COMPLETED" text, further back the old
+   faded-background + small "Completed" pill treatment before that). Only
+   .rc-cal-race-body dims -- the badges below are siblings of body, so
+   they stay fully legible against the dimmed card around them. Same
+   "grayscale + reduced opacity" language the site's other locked/
+   disabled states already use (.rc-protest-btn-locked). */
+.rc-cal-race.rc-cal-finished .rc-cal-race-body { opacity: 0.6; filter: grayscale(0.35); }
+.rc-cal-completed-badges {
   position: absolute;
-  inset: 0;
+  top: 14px;
+  right: 16px;
+  z-index: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(30, 32, 36, 0.62);
-  color: var(--rc-white);
-  font-family: var(--rc-font-heading);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-align: center;
-  padding: 0 20px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
+.rc-cal-completed-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  background: var(--rc-graphite);
+  white-space: nowrap;
+}
+/* Preliminary reuses --rc-warning (the same amber "not final yet" tone
+   the site's probation/pending-review states use elsewhere); Official
+   reuses --rc-positive (the same "done, settled" green Active/Done
+   statuses use) -- same semantic-color mapping league.html's own public
+   calendar badges use for these two states (see .rcl-cal-status-
+   preliminary/-official, css/league.css), just as a solid pill fill
+   here instead of colored text on a dark page. */
+.rc-cal-completed-badge-preliminary { background: var(--rc-warning); }
+.rc-cal-completed-badge-official { background: var(--rc-positive); }
 
 .rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Same size/weight/case treatment as "REGISTERED FOR <season name>" and

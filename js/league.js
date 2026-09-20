@@ -156,8 +156,18 @@ var _RCL_ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 var _RCL_ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
 // Game controller -- no equivalent in Account.html's icon set (its
 // in-game times are plain text there), drawn fresh in the same style for
-// the Calendar's new "In-Game" chip.
+// the Calendar's original "In-Game" chip. Superseded by _RCL_ICON_FLAG
+// below (2026-09-21, Matt's ask: "make the in-game pill show a flag for
+// the icon") but left defined in case anything else on this page still
+// wants a gamepad glyph later.
 var _RCL_ICON_GAMEPAD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="10" rx="5"></rect><line x1="7" y1="11" x2="7" y2="15"></line><line x1="5" y1="13" x2="9" y2="13"></line><circle cx="16" cy="11" r="1"></circle><circle cx="18" cy="14" r="1"></circle></svg>';
+// Checkered/race flag -- same glyph as Account.html's own ICON_FLAG
+// (its in-game race start chip already uses this), duplicated here since
+// league.html doesn't load Account.html (see the file header comment
+// above). 2026-09-21, Matt's ask: "make the in-game pill show a flag for
+// the icon" -- replaces the gamepad glyph above on the Calendar's
+// In-Game chip.
+var _RCL_ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
 
 // ---------------------------------------------------------------------
 // TICKER
@@ -669,7 +679,13 @@ function _rclRenderCalendar(hub) {
     // start, and weather -- all public-safe fields handleGetLeagueHub now
     // sends (see its own comment in Website.gs).
     var isSpecial = entry.kind === 'special';
-    var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : '') + (isSpecial ? ' rcl-cal-row-special' : ''));
+    // rcl-cal-row-finished (2026-09-21, Matt's ask: "make both calendars
+    // have the race faded out with a COMPLETED notification") -- fades
+    // the round bar/event/track/meta chips once a round's start time has
+    // passed (see .rcl-cal-row-finished in css/league.css), while the
+    // status badge itself (appended below) stays at full opacity so the
+    // COMPLETED/results notification stays legible against the faded row.
+    var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : '') + (isSpecial ? ' rcl-cal-row-special' : '') + (entry.finished ? ' rcl-cal-row-finished' : ''));
     var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : '');
     // Special-event rounds get a gold accent instead of the standard
     // brand red (2026-09-19, Matt's ask, refined same day to also color
@@ -682,26 +698,29 @@ function _rclRenderCalendar(hub) {
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
     topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(entry.eventName || 'Race') + '</strong>'));
-    // COMPLETE split into UNOFFICIAL/OFFICIAL RESULTS (2026-09-19 follow-
-    // up, Matt's ask: "once results are imported, the calendar can flip
-    // to unofficial results with places and points, and once an organizer
-    // finalizes it, it goes to official results") -- same resultsFinalized
-    // field Account.html's driver-facing Calendar already shows this way
-    // (see its "Results Posted" / "Results Posted and Finalized" labels),
-    // now public here too.
-    var statusText;
+    // COMPLETED, with a results phrase appended once there's something to
+    // report (2026-09-21 rewrite, Matt's ask: "have the race faded out
+    // with a COMPLETED notification, if it hasn't been finalized yet,
+    // have it also say PRELIMINARY RESULTS POSTED and if it's finalized
+    // OFFICIAL RESULTS POSTED" -- was "AWAITING RESULTS"/"UNOFFICIAL
+    // RESULTS"/"OFFICIAL RESULTS" on their own, 2026-09-19). Same
+    // resultsFinalized field Account.html's driver-facing Calendar
+    // already reads this way (see its own "Completed"/"Preliminary
+    // Results Posted"/"Official Results Posted" badges, raceCard()), now
+    // public here too.
+    var statusText, statusClass;
     if (idx === nextIdx) {
-      statusText = 'UP NEXT';
+      statusText = 'UP NEXT'; statusClass = 'up';
     } else if (!entry.finished) {
-      statusText = 'UPCOMING';
+      statusText = 'UPCOMING'; statusClass = 'upcoming';
     } else if (!entry.hasResults) {
-      statusText = 'AWAITING RESULTS';
+      statusText = 'COMPLETED'; statusClass = 'complete';
     } else if (entry.resultsFinalized) {
-      statusText = 'OFFICIAL RESULTS';
+      statusText = 'COMPLETED · OFFICIAL RESULTS POSTED'; statusClass = 'official';
     } else {
-      statusText = 'UNOFFICIAL RESULTS';
+      statusText = 'COMPLETED · PRELIMINARY RESULTS POSTED'; statusClass = 'preliminary';
     }
-    topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusText.split(' ')[0].toLowerCase(), statusText));
+    topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusClass, statusText));
     rowBody.appendChild(topLine);
 
     rowBody.appendChild(_rclEl('div', 'rcl-cal-track',
@@ -723,13 +742,16 @@ function _rclRenderCalendar(hub) {
     if (timeTierParts.length) {
       metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · '), true));
     }
-    // In-game time: spelled out ("In-Game"), race time only -- practice/
+    // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
+    // 2026-09-21, Matt's follow-up ask), race time only -- practice/
     // qualify in-game times dropped from this line (2026-09-19, Matt's
     // ask: "spell out In-game and only put the race time for in-game").
-    // In-Game and Weather are both gray outline pills, not solid
-    // (2026-09-19, Matt's call) -- the `true` third arg to _rclChip.
+    // Flag icon (2026-09-21, Matt's ask), not the gamepad glyph this
+    // chip used before -- see _RCL_ICON_FLAG above. In-Game and Weather
+    // are both gray outline pills, not solid (2026-09-19, Matt's call)
+    // -- the `true` third arg to _rclChip.
     if (entry.igRaceStart) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_GAMEPAD, 'In-Game ' + _rclFormat12h(entry.igRaceStart), true));
+      metaRow.appendChild(_rclChip(_RCL_ICON_FLAG, 'In-Game Event Time ' + _rclFormat12h(entry.igRaceStart), true));
     }
     // Weather + chance of precipitation (2026-09-19, Matt's ask), same
     // "N% Rain" convention and 5-tier icon Account.html's own Calendar

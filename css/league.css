@@ -935,13 +935,28 @@ body.rc-league-page {
 }
 .rcl-cal-status-up { color: var(--rc-red); }
 .rcl-cal-status-complete { color: var(--rcl-ink-dim); }
-/* UNOFFICIAL/OFFICIAL RESULTS (2026-09-19 follow-up) -- unofficial reuses
-   the same gold accent .rcl-cal-row-special's own text already uses
-   elsewhere in this file, so "not final yet" reads as an amber/caution
-   note rather than inventing a new hue; official settles back to the
-   same calm, done-with-this tone COMPLETE always used. */
-.rcl-cal-status-unofficial { color: #e0b64c; }
+/* PRELIMINARY/OFFICIAL RESULTS POSTED (2026-09-19 follow-up, renamed
+   2026-09-21 from UNOFFICIAL/OFFICIAL RESULTS -- Matt's ask: "COMPLETED
+   notification... PRELIMINARY RESULTS POSTED... OFFICIAL RESULTS
+   POSTED") -- preliminary reuses the same gold accent .rcl-cal-row-
+   special's own text already uses elsewhere in this file, so "not final
+   yet" reads as an amber/caution note rather than inventing a new hue;
+   official settles back to the same calm, done-with-this tone COMPLETE
+   always used. */
+.rcl-cal-status-preliminary { color: #e0b64c; }
 .rcl-cal-status-official { color: var(--rcl-ink-dim); }
+/* Faded row once a round's start time has passed (2026-09-21, Matt's
+   ask: "have the race faded out with a COMPLETED notification") --
+   dims the round bar/event/track/meta chips, but deliberately NOT
+   .rcl-cal-status (the notification itself, appended alongside .rcl-cal-
+   event inside .rcl-cal-row-top), so the COMPLETED/results phrase stays
+   fully legible against the faded-out row around it. */
+.rcl-cal-row-finished .rcl-cal-round,
+.rcl-cal-row-finished .rcl-cal-event,
+.rcl-cal-row-finished .rcl-cal-track,
+.rcl-cal-row-finished .rcl-cal-meta {
+  opacity: 0.5;
+}
 .rcl-cal-row-bye { opacity: 0.7; }
 .rcl-cal-row-bye .rcl-cal-round { background: var(--rcl-line-bright); font-size: 13px; }
 .rcl-cal-row-bye .rcl-cal-track { font-weight: 600; color: var(--rcl-ink-dim); }
