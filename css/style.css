@@ -73,19 +73,26 @@
 
   /* Members list role pills (added 2026-09-19, Matt's call: "the catagory
      pills to go from gold, silver, bronze and then graphite for prospect
-     and driver") -- Admin/Organizer/Steward get a medal-tier color each,
-     Driver and Prospect share the same graphite (both are "just a
-     participant," not a staff tier). --rc-tier-silver/--rc-tier-bronze are
-     new medal tones (distinct from --rc-silver above, which is a light
-     border/disabled-state gray, not a pill fill); Admin reuses the
-     existing --rc-gold rather than a fourth new token. --rc-graphite is
-     also reused wherever a Data Management pill previously read plain
-     black (see .rc-badge-graphite below) -- a dark neutral one step
-     lighter than --rc-carbon so those pills read as deliberately styled
-     rather than a leftover placeholder color. */
+     and driver"; recolored 2026-09-21, Matt's exact hex list -- Admin/
+     Organizer/Steward now each get their own named tone instead of
+     reusing the gold/silver/bronze medal tokens, and Prospect splits off
+     from Driver into its own plain gray so the two no longer share a
+     color). --rc-role-admin/--rc-role-organizer/--rc-role-steward are
+     Matt's exact hex values, brightest (Admin) down to a dark rust
+     (Steward). --rc-graphite (Driver) is a dark near-black neutral, one
+     step lighter than --rc-carbon; --rc-role-prospect (Prospect) is a
+     separate, lighter blue-gray so Prospect reads as visibly "not staff,
+     not yet a full driver" rather than identical to Driver.
+     --rc-tier-silver/--rc-tier-bronze remain in use elsewhere (Data
+     Management pills, etc. -- see .rc-badge-graphite below) even though
+     the Members list role pills no longer read from them. */
   --rc-tier-silver: #9AA5AD;
   --rc-tier-bronze: #93582F;
   --rc-graphite: #3A3F45;
+  --rc-role-admin: #f1c40f;
+  --rc-role-organizer: #c27c0e;
+  --rc-role-steward: #a84300;
+  --rc-role-prospect: #7d8791;
 
   /* Semantic bonus/penalty/status colors (named 2026-09-13, sitewide review
      fix) -- these five hex values were previously hand-typed at 29 separate
@@ -478,10 +485,15 @@ p { margin: 0 0 0.75em; }
    --rc-tier-bronze/--rc-graphite token comment above for the color
    mapping. Admin/Organizer/Steward each get their own medal tone;
    Driver and Prospect intentionally share .rc-badge-graphite. */
-.rc-badge-role-admin { background: var(--rc-gold); }
-.rc-badge-role-organizer { background: var(--rc-tier-silver); }
-.rc-badge-role-steward { background: var(--rc-tier-bronze); }
-.rc-badge-role-driver, .rc-badge-role-prospect { background: var(--rc-graphite); }
+/* Admin's fill (#f1c40f) is bright enough that .rc-badge-chip's default
+   white text (readable on every other role's darker fill) fails contrast
+   -- carbon text keeps this one pill legible without touching the shared
+   base rule. */
+.rc-badge-role-admin { background: var(--rc-role-admin); color: var(--rc-carbon); }
+.rc-badge-role-organizer { background: var(--rc-role-organizer); }
+.rc-badge-role-steward { background: var(--rc-role-steward); }
+.rc-badge-role-driver { background: var(--rc-graphite); }
+.rc-badge-role-prospect { background: var(--rc-role-prospect); }
 /* Graphite grouping badge (2026-09-19, Matt's call: originally "make the
    track location pills graphite instead of black and the car year pills
    graphite instead of black" -- Tracks popup's Region pill, Cars popup's
@@ -3109,11 +3121,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.03em;
   color: var(--rc-carbon);
 }
+/* Role pill (2026-09-21, Matt's call: "add a pill to the avatar section,
+   below the name, with the correct pill for the profile") -- was plain
+   text; now the same .rc-badge-role-* colored chip the Admin section's
+   Members list uses (see header.js's RC_HEADER_ROLE_PILL_CLASS_ and the
+   .rc-badge-role-* rules above), just scaled down to fit this compact
+   header stack. align-self keeps the pill from stretching to the name's
+   full width in the column flex layout; margin-top gives it a hair of
+   breathing room under the name above it. */
 .rc-header-account-role {
-  font-family: var(--rc-font-body);
-  font-size: 11.5px;
-  font-weight: 400;
-  color: var(--rc-steel);
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 9.5px;
+  padding: 1px 7px;
 }
 .rc-header-account-menu {
   position: absolute;

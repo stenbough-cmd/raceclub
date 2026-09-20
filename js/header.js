@@ -244,6 +244,22 @@ function _rcHeaderInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// Same Admin/Organizer/Steward/Driver/Prospect -> .rc-badge-role-* mapping
+// as Account.html's own ROLE_PILL_CLASS (Admin section's Members list),
+// duplicated here rather than shared since header.js and Account.html are
+// separate script scopes on separate pages -- see the .rc-badge-role-*
+// rules in style.css for the actual colors. Used to turn the header
+// avatar cluster's plain role text (2026-09-21, Matt's call: "add a pill
+// to the avatar section, below the name, with the correct pill for the
+// profile") into the same colored pill the Admin section uses.
+var RC_HEADER_ROLE_PILL_CLASS_ = {
+  Admin: 'rc-badge-role-admin',
+  Organizer: 'rc-badge-role-organizer',
+  Steward: 'rc-badge-role-steward',
+  Driver: 'rc-badge-role-driver',
+  Prospect: 'rc-badge-role-prospect'
+};
+
 // The bell's notification badge -- shown, with the actual unread count as
 // its text, whenever there's at least one unacknowledged notification
 // (2026-09-01, Matt's call: "make the bubble larger and add a notification
@@ -582,7 +598,7 @@ function renderHeader(opts) {
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +
               '<span class="rc-header-account-text">' +
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
-                '<span class="rc-header-account-role">' + escapeHtmlHeader_(role) + '</span>' +
+                '<span class="rc-badge-chip rc-header-account-role ' + (RC_HEADER_ROLE_PILL_CLASS_[role] || 'rc-badge-role-driver') + '">' + escapeHtmlHeader_(role) + '</span>' +
               '</span>' +
               // 16x16 (2026-09-13 fix, sitewide review) -- was 14x14, the one
               // outlier against the 16x16 standard every other small nav/menu
