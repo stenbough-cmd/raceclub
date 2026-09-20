@@ -547,7 +547,14 @@ function _rclRenderStandings(hub) {
 // to match a .rcl-panel exactly.
 function _rclOpenDriversModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  // rcl-modal-dialog-wide (2026-09-21, Matt's ask: "increase the width of
+  // the drivers list popup") -- a scoped modifier on the shared dialog
+  // shell (see .rcl-modal-dialog-wide, league.css) rather than widening
+  // .rcl-modal-dialog itself, since News/Points Table/Season Details all
+  // share that base class and were never asked to get wider too. The
+  // full driver roster (identity block + car/team columns) is the widest
+  // content any of these modals shows, so it's the one that benefits.
+  var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide');
   var head = _rclEl('div', 'rcl-modal-head');
   head.appendChild(_rclEl('div', 'rcl-modal-title', 'Drivers'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');

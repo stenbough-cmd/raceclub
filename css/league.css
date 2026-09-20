@@ -730,8 +730,13 @@ body.rc-league-page {
    of them living in their own panel on the page. Same shape as the
    "Load More News" divider treatment (top border + centered), same red
    uppercase link type as .rcl-news-continue, just its own rule since it
-   sits directly in the panel body rather than the news modal. */
-.rcl-standings-points-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); text-align: center; }
+   sits directly in the panel body rather than the news modal. Flex +
+   gap (2026-09-21 fix, Matt's catch: "add a space between the view
+   drivers list and the view points table") -- the two link buttons were
+   appended back to back with no separator between them, and plain
+   text-align:center doesn't add any space of its own between adjacent
+   inline-block buttons, so they sat flush against each other. */
+.rcl-standings-points-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); display: flex; justify-content: center; align-items: center; gap: 28px; }
 .rcl-standings-points-link {
   background: none;
   border: none;
@@ -1193,6 +1198,14 @@ body.rc-league-page {
      center). */
   margin: auto 0;
 }
+/* Wider dialog, Drivers popup only (2026-09-21, Matt's ask: "increase
+   the width of the drivers list popup") -- a scoped modifier added
+   alongside .rcl-modal-dialog (see _rclOpenDriversModal, league.js)
+   rather than raising the shared class's own max-width, since News/
+   Points Table/Season Details all use that same base class and don't
+   need the extra room the driver roster's wider identity/car/team
+   columns benefit from. */
+.rcl-modal-dialog-wide { max-width: 1080px; }
 /* Same raised-2 background + red underline as .rcl-panel-head, so the
    popup's own header reads as the exact same header treatment as every
    panel on the page, not a slightly different one-off. */
