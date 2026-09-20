@@ -4690,14 +4690,18 @@
   }
 
   // =======================================================================
-  // PROTESTS (2026-09-08) -- the driver-facing Protest page. A submission
-  // form (round -> lap/driver options populate from that round's own data,
-  // infraction type, an optional 200-word description) above this driver's
-  // own protest history (every one they've filed, newest first, with its
-  // Pending/Upheld/Denied outcome). Filing a ruling on someone else's
-  // protest happens from League Management's EDIT popup instead (Admin/
+  // PROTESTS (2026-09-08; redesigned 2026-09-20, Matt's call: "Make it
+  // look identical to the other pages on the list" -- one Season N: Name
+  // container, same chrome as Calendar/Results/Career). The inline form
+  // and the old "last 10 + Show full history popup" list are both gone --
+  // FILE PROTEST now opens a popup (openFileProtestModal), and the full
+  // history renders inline, grouped by season, right in this one
+  // container (Matt: "The SEASON n: SEASON NAME will be the only
+  // container on the page"). Filing a ruling on someone else's protest
+  // still happens from League Management's EDIT popup instead (Admin/
   // Organizer/Steward only) -- this page is purely "file one of your own,
-  // see what happened to the ones you filed."
+  // view/edit/delete the ones you filed, see what happened to the ones
+  // filed against you."
   function renderProtestsSection(token) {
     var section = document.getElementById('rc-section-protests');
     if (!section) return;
@@ -4705,9 +4709,12 @@
     section.appendChild(buildPageSpinner('Loading your protests...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
+    // full:1 (was limit:10) -- the redesigned page shows the WHOLE
+    // multi-season history inline (grouped by season pill) instead of a
+    // 10-row preview + a separate "Show full history" popup.
     return Promise.all([
       fetchApi('getProtestFilingOptions', { token: token }),
-      fetchApi('getMyProtests', { token: token, params: { limit: '10' } })
+      fetchApi('getMyProtests', { token: token, params: { full: '1' } })
     ]).then(function (results) {
       var filing = results[0], mine = results[1];
       section.innerHTML = '';
@@ -4730,8 +4737,7 @@
         return;
       }
 
-      section.appendChild(buildProtestFormPanel(token, filing.rounds || [], filing.myProfileId, function () { renderProtestsSection(token); }));
-      section.appendChild(buildMyProtestsHistoryPanel(token, mine && mine.success ? (mine.protests || []) : [], (mine && mine.totalCount) || 0, function () { renderProtestsSection(token); }));
+      section.appendChild(buildProtestPagePanel(token, filing, mine && mine.success ? (mine.protests || []) : []));
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
@@ -4739,119 +4745,281 @@
     });
   }
 
-  // 2026-09-08 rewrite (Matt's call): Race + Lap Number + Infraction Type
-  // on one row, then three "Driver Involved" boxes on the row below --
-  // box 1 always defaults to whoever's filing (so a driver naming no one
-  // else, e.g. a self-report, still has a valid, non-blank box 1), boxes
-  // 2/3 default to an unset "Choose Driver" placeholder and are entirely
-  // optional. Only box 1 is ever required, and since it's always
-  // pre-filled that's automatic -- nothing here can actually block a
-  // submission over it. Same 3-equal-column .rc-wiz-field-row-3 grid for
-  // both rows (style.css).
-  function buildProtestFormPanel(token, rounds, myProfileId, onSubmitted) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'File a Protest'));
+  // The page's one container (2026-09-20 redesign) -- "Season N: Name" +
+  // class pills header (same rc-cal-season-head treatment Calendar/
+  // Results/Career already use), FILE PROTEST button right-aligned below
+  // the header's own red rule, then a bordered, season-grouped history of
+  // every protest this driver filed or was named in.
+  function buildProtestPagePanel(token, filing, protests) {
+    var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
+    var head = el('div', 'rc-cal-season-head');
+    var seasonNumLabel = seasonNumberLabel(filing.seasonId);
+    head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(filing.seasonName || '')));
+    var classPillsRow = buildClassPillsRow((filing.seasonDetails || {}).classes);
+    if (classPillsRow) head.appendChild(classPillsRow);
+    panel.appendChild(head);
 
-    if (!rounds.length) {
-      panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 48-hour filing window has closed for all of them.'));
-      return panel;
+    // "Below the red line to the right, there should be a button that
+    // says FILE PROTEST" -- gray, not red (house rule: a button that only
+    // OPENS a popup stays gray, even though what it opens ends in a
+    // save -- see the race-club-ui-consistency skill's button-color
+    // section). Disabled with a tooltip, same as before, when there's
+    // genuinely nothing open to protest right now.
+    var actionRow = el('div', 'rc-protest-action-row');
+    var hasOpenRounds = (filing.rounds || []).length > 0;
+    var fileBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'File Protest');
+    fileBtn.type = 'button';
+    fileBtn.disabled = !hasOpenRounds;
+    if (hasOpenRounds) {
+      fileBtn.addEventListener('click', function () {
+        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { renderProtestsSection(token); });
+      });
+    } else {
+      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 48-hour filing window has closed for all of them.');
+    }
+    actionRow.appendChild(fileBtn);
+    panel.appendChild(actionRow);
+
+    var historyBox = el('div', 'rc-protest-history-box');
+    if (!protests.length) {
+      historyBox.appendChild(el('div', 'rc-dm-empty', 'No protests filed by or against you yet.'));
+    } else {
+      // Grouped by season (each season's own graphite pill, protests
+      // inset below it with an L-line tree glyph -- Matt's ask), newest
+      // season first. Same "└" tree-glyph + graphite-pill convention the
+      // Data Management Cars panel already uses to group cars by season
+      // under a class (see buildCarsPanel above) -- not a new pattern.
+      var bySeason = {}, seasonOrder = [];
+      protests.forEach(function (p) {
+        var sid = p.seasonId || 'unknown';
+        if (!bySeason[sid]) { bySeason[sid] = []; seasonOrder.push(sid); }
+        bySeason[sid].push(p);
+      });
+      seasonOrder.sort(function (a, b) { return String(b).localeCompare(String(a)); });
+      seasonOrder.forEach(function (sid) {
+        historyBox.appendChild(buildProtestSeasonGroup(sid, bySeason[sid], token));
+      });
+    }
+    panel.appendChild(historyBox);
+
+    return panel;
+  }
+
+  // One season's graphite "SEASON N" pill plus its own protest rows,
+  // inset below it. A protest THIS driver filed and then deleted (soft-
+  // deleted via the existing withdrawProtest action, Status: Withdrawn --
+  // see buildProtestActionBtn/openDeleteProtestConfirm below) is filtered
+  // out of the filer's own view entirely, matching "delete" as the user
+  // experiences it, while the underlying row stays on the sheet (the
+  // site's standing never-hard-delete policy) and still shows normally to
+  // anyone it was filed AGAINST.
+  function buildProtestSeasonGroup(seasonId, protests, token) {
+    var group = el('div', 'rc-protest-season-group');
+    var seasonHead = el('div', 'rc-dm-season-head');
+    seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
+    var seasonNumLabel = seasonNumberLabel(seasonId);
+    seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'SEASON ' + (seasonNumLabel || '?')));
+    group.appendChild(seasonHead);
+
+    protests.filter(function (p) { return !(p.isMine && p.status === 'Withdrawn'); })
+      .forEach(function (p) { group.appendChild(buildProtestHistoryItem(p, token)); });
+
+    return group;
+  }
+
+  // Circle-slash "not available" icon shown only on hover of a locked
+  // Edit/Delete button (2026-09-20, Matt's exact ask: "gray out the
+  // buttons and put a circle with a line through it on hover") -- same
+  // convention (and near-identical SVG) as RC_CLASS_LOCK_ICON in
+  // buildRegistrationModal's Choose Your Class screen, just sized for
+  // these small row buttons instead of the big class-pick tiles.
+  var RC_PROTEST_LOCK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>';
+
+  // One protest row, inset under its season's graphite pill. Edit/Delete
+  // only ever show for a protest THIS driver filed (p.isMine) -- gray and
+  // disabled, with the hover lock icon, once the round's results are
+  // finalized (Matt: "Once a race's results have been finalized and made
+  // official, the user cannot delete or edit the protest") OR once a
+  // Steward/Organizer/Admin has already ruled on it (same "a ruled
+  // protest is a matter of record" rule the old Withdraw button already
+  // enforced -- Upheld/Denied stop being Pending, which this same
+  // canModify check already covers).
+  function buildProtestHistoryItem(p, token) {
+    var row = el('div', 'rc-dm-subrow-edit');
+    var info = el('div', null);
+    info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel) + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
+    info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
+    row.appendChild(info);
+
+    var right = el('div', 'display:flex;align-items:center;gap:10px;');
+    right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
+
+    if (p.isMine) {
+      var canModify = p.status === 'Pending' && !p.resultsFinalized;
+      right.appendChild(buildProtestActionBtn('Edit', canModify,
+        'Results for this round are finalized -- this protest can no longer be edited.',
+        function () { openEditProtestModal(token, p, function () { renderProtestsSection(token); }); }));
+      right.appendChild(buildProtestActionBtn('Delete', canModify,
+        'Results for this round are finalized -- this protest can no longer be deleted.',
+        function () { openDeleteProtestConfirm(token, p, function () { renderProtestsSection(token); }); }));
     }
 
-    var roundSelect = document.createElement('select');
-    rounds.forEach(function (r) {
-      roundSelect.appendChild(new Option('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''), r.roundId));
+    row.appendChild(right);
+    return row;
+  }
+
+  function buildProtestActionBtn(label, enabled, lockedTooltip, onClick) {
+    var btn = el('button', 'rc-btn-row rc-btn-secondary' + (enabled ? '' : ' rc-protest-btn-locked'), label);
+    btn.type = 'button';
+    if (enabled) {
+      btn.addEventListener('click', onClick);
+    } else {
+      btn.disabled = true;
+      btn.appendChild(el('span', 'rc-protest-btn-lock', RC_PROTEST_LOCK_ICON));
+      withTooltip(btn, lockedTooltip);
+    }
+    return btn;
+  }
+
+  function openDeleteProtestConfirm(token, p, onDeleted) {
+    var who = (p.involvedNames || []).slice(1).join(', ');
+    openConfirmModal('Delete Protest', 'Delete this protest' + (who ? (' against ' + who) : '') +
+      '? It\'s removed from your own history -- the round it was filed against keeps its own record.', 'Delete', function () {
+      // Reuses the existing withdrawProtest action (Status -> Withdrawn)
+      // rather than a true hard delete -- see buildProtestSeasonGroup's
+      // comment above for why that still reads as "deleted" to the driver
+      // who filed it.
+      fetchApi('withdrawProtest', { method: 'POST', token: token, body: { protestId: p.protestId } }).then(function (data) {
+        if (!data || !data.success) {
+          showToast((data && data.message) || 'Could not delete that protest.', 'error');
+          return;
+        }
+        showToast('Protest deleted.', 'success');
+        if (typeof onDeleted === 'function') onDeleted();
+      }).catch(function () { showToast('Could not reach the server.', 'error'); });
     });
+  }
+
+  // Shared field builder for both the File and Edit popups -- lap number,
+  // up to 3 "Driver Involved" boxes (box 1 always defaults to whoever's
+  // filing; it's display-only, never submitted -- the server already
+  // knows who's filing from the auth token), infraction type, and an
+  // optional 200-word description. `initial` (optional) prefills every
+  // field from an existing protest, for Edit.
+  function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial) {
+    initial = initial || {};
 
     var lapSelect = document.createElement('select');
-    var infractionSelect = document.createElement('select');
-    PROTEST_INFRACTION_TYPES.forEach(function (t) { infractionSelect.appendChild(new Option(t, t)); });
-
-    // Race/Lap row (2026-09-09, Matt's call: "make race dropdown box 50%
-    // width and make lap number 25% width") -- reuses the same 4-column
-    // .rc-wiz-field-row grid the Wager form's Opponent/Race/Condition/Stake
-    // row already uses (see buildWagerForm above), with each field wrapper
-    // claiming its own span (2 = half, 1 = quarter) rather than the fixed
-    // 3-equal-column .rc-wiz-field-row-3 this row used before. The row's
-    // 4th column is left unclaimed on purpose -- 50% + 25% is all the
-    // width these two fields need.
-    var raceFieldWrap = wizField('Race', roundSelect, null);
-    raceFieldWrap.style.gridColumn = 'span 2';
+    laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
     var lapFieldWrap = wizField('Lap Number', lapSelect, null);
-    lapFieldWrap.style.gridColumn = 'span 1';
-    var topRow = el('div', 'rc-wiz-field-row');
-    topRow.appendChild(raceFieldWrap);
-    topRow.appendChild(lapFieldWrap);
-    panel.appendChild(topRow);
+    container.appendChild(lapFieldWrap);
 
     var driver1Select = document.createElement('select');
     var driver2Select = document.createElement('select');
     var driver3Select = document.createElement('select');
+    driver2Select.appendChild(new Option('Choose Driver', ''));
+    driver3Select.appendChild(new Option('Choose Driver', ''));
+    driverRoster.forEach(function (d) {
+      var label = d.name + (d.carNumber ? (' (#' + d.carNumber + ')') : '');
+      driver1Select.appendChild(new Option(label, d.profileId));
+      driver2Select.appendChild(new Option(label, d.profileId));
+      driver3Select.appendChild(new Option(label, d.profileId));
+    });
+    if (myProfileId && driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
+      driver1Select.value = myProfileId;
+    }
 
     var driversRow = el('div', 'rc-wiz-field-row-3');
     driversRow.appendChild(wizField('Driver Involved 1', driver1Select, null));
     driversRow.appendChild(wizField('Driver Involved 2', driver2Select, null));
     driversRow.appendChild(wizField('Driver Involved 3', driver3Select, null));
-    panel.appendChild(driversRow);
+    container.appendChild(driversRow);
 
-    // Infraction Type, moved to its own third row at 50% width (2026-09-09,
-    // Matt's call: "Move infraction type box to the 3rd row and make it
-    // 50% width") -- was in the Race/Lap row above, now on its own line.
+    var infractionSelect = document.createElement('select');
+    PROTEST_INFRACTION_TYPES.forEach(function (t) { infractionSelect.appendChild(new Option(t, t)); });
     var infractionFieldWrap = wizField('Infraction Type', infractionSelect, null);
     infractionFieldWrap.style.gridColumn = 'span 2';
     var infractionRow = el('div', 'rc-wiz-field-row');
     infractionRow.appendChild(infractionFieldWrap);
-    panel.appendChild(infractionRow);
-
-    function populateForRound(roundId) {
-      var round = rounds.filter(function (r) { return r.roundId === roundId; })[0];
-      lapSelect.innerHTML = '';
-      driver1Select.innerHTML = '';
-      driver2Select.innerHTML = '';
-      driver3Select.innerHTML = '';
-      if (!round) return;
-      round.laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
-
-      driver2Select.appendChild(new Option('Choose Driver', ''));
-      driver3Select.appendChild(new Option('Choose Driver', ''));
-      round.driverRoster.forEach(function (d) {
-        var label = d.name + (d.carNumber ? (' (#' + d.carNumber + ')') : '');
-        driver1Select.appendChild(new Option(label, d.profileId));
-        driver2Select.appendChild(new Option(label, d.profileId));
-        driver3Select.appendChild(new Option(label, d.profileId));
-      });
-      // Box 1 defaults to whoever's filing -- falls back to the first
-      // roster entry only in the unlikely case the filer's own result
-      // somehow isn't in this round's roster.
-      if (myProfileId && round.driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
-        driver1Select.value = myProfileId;
-      }
-    }
-    populateForRound(rounds[0].roundId);
-    roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
+    container.appendChild(infractionRow);
 
     var descBox = document.createElement('textarea');
     descBox.rows = 4;
     descBox.maxLength = 2000;
     var descWrap = wizField('Description', descBox, null);
     descWrap.appendChild(el('div', 'rc-hint', '(Optional, 200 words or fewer)'));
-    panel.appendChild(descWrap);
+    container.appendChild(descWrap);
+
+    // Prefill AFTER every <option> exists (a select's .value only takes
+    // if a matching <option> is already there).
+    if (initial.lapNumber !== undefined && initial.lapNumber !== null) lapSelect.value = String(initial.lapNumber);
+    if (initial.infractionType) infractionSelect.value = initial.infractionType;
+    if (initial.against) driver2Select.value = initial.against;
+    if (initial.against2) driver3Select.value = initial.against2;
+    if (initial.description) descBox.value = initial.description;
+
+    return {
+      lapSelect: lapSelect, infractionSelect: infractionSelect,
+      driver1Select: driver1Select, driver2Select: driver2Select, driver3Select: driver3Select,
+      descBox: descBox
+    };
+  }
+
+  // FILE PROTEST popup (2026-09-20 redesign -- was an inline panel,
+  // buildProtestFormPanel, now removed). Round stays a live dropdown here
+  // (only Edit fixes the round, since a filed protest can't move to a
+  // different race) -- same round -> lap/driver repopulation this always
+  // had, just now inside a modal.
+  function openFileProtestModal(token, rounds, myProfileId, onSubmitted) {
+    var body = el('div');
+
+    var roundSelect = document.createElement('select');
+    rounds.forEach(function (r) {
+      roundSelect.appendChild(new Option('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''), r.roundId));
+    });
+    body.appendChild(wizField('Race', roundSelect, null));
+
+    var fieldsContainer = el('div');
+    body.appendChild(fieldsContainer);
+
+    var fields = null;
+    function populateForRound(roundId) {
+      var round = rounds.filter(function (r) { return r.roundId === roundId; })[0];
+      fieldsContainer.innerHTML = '';
+      fields = null;
+      if (!round) return;
+      fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {});
+    }
+    populateForRound(rounds[0].roundId);
+    roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
 
     var resultBox = el('div', 'rc-message');
-    panel.appendChild(resultBox);
+    body.appendChild(resultBox);
 
+    var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
     var submitBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Submit Protest');
     submitBtn.type = 'button';
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(submitBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal('File Protest', { bodyEl: body, wide: true });
+    cancelBtn.addEventListener('click', modal.close);
+
     submitBtn.addEventListener('click', function () {
-      var words = descBox.value.trim().length ? descBox.value.trim().split(/\s+/).length : 0;
+      if (!fields) return;
+      var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
       if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
       submitBtn.disabled = true;
       resultBox.className = 'rc-message';
       resultBox.textContent = '';
       fetchApi('submitProtest', {
         method: 'POST', token: token, body: {
-          roundId: roundSelect.value, infractionType: infractionSelect.value,
-          lapNumber: lapSelect.value, againstProfileId: driver2Select.value,
-          against2ProfileId: driver3Select.value, description: descBox.value.trim()
+          roundId: roundSelect.value, infractionType: fields.infractionSelect.value,
+          lapNumber: fields.lapSelect.value, againstProfileId: fields.driver2Select.value,
+          against2ProfileId: fields.driver3Select.value, description: fields.descBox.value.trim()
         }
       }).then(function (data) {
         submitBtn.disabled = false;
@@ -4862,6 +5030,7 @@
           return;
         }
         showToast('Protest submitted.', 'success');
+        modal.close(true);
         if (typeof onSubmitted === 'function') onSubmitted();
       }).catch(function () {
         submitBtn.disabled = false;
@@ -4869,132 +5038,91 @@
         resultBox.textContent = 'Could not reach the server.';
       });
     });
-    panel.appendChild(submitBtn);
 
-    return panel;
-  }
-
-  // PROTESTS history (2026-09-08 rewrite, Matt's call: rename from "Your
-  // Protests" since it now also carries protests filed AGAINST this
-  // driver, not just ones they filed themselves -- last 10 either way,
-  // newest first, with a "Show full history" popup once there's more,
-  // same convention as the Finances page's Transaction Ledger
-  // (buildLedgerPanel/openFullLedgerModal above). Only a protest THIS
-  // driver filed, and still Pending, gets a Withdraw button.
-  function buildProtestHistoryRow(p, token, onChanged) {
-    var row = el('div', 'rc-dm-row');
-    var info = el('div', null);
-    info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel) + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
-    info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
-    row.appendChild(info);
-
-    var right = el('div', 'display:flex;align-items:center;gap:10px;');
-    right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
-    if (p.isMine && p.status === 'Pending') {
-      var withdrawBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Withdraw');
-      withdrawBtn.type = 'button';
-      withdrawBtn.style.cssText = 'width:auto;padding:4px 12px;';
-      withdrawBtn.addEventListener('click', function () {
-        withdrawBtn.disabled = true;
-        withdrawBtn.textContent = 'Withdrawing...';
-        fetchApi('withdrawProtest', { method: 'POST', token: token, body: { protestId: p.protestId } }).then(function (data) {
-          if (!data || !data.success) {
-            showToast((data && data.message) || 'Could not withdraw that protest.', 'error');
-            withdrawBtn.disabled = false;
-            withdrawBtn.textContent = 'Withdraw';
-            return;
-          }
-          showToast('Protest withdrawn.', 'success');
-          if (typeof onChanged === 'function') onChanged();
-        }).catch(function () {
-          showToast('Could not reach the server.', 'error');
-          withdrawBtn.disabled = false;
-          withdrawBtn.textContent = 'Withdraw';
-        });
-      });
-      right.appendChild(withdrawBtn);
-    }
-    row.appendChild(right);
-    return row;
-  }
-
-  function openFullProtestHistoryModal(token, entries) {
-    var listEl = el('div');
-    var pagerEl = el('div', 'rc-ledger-pager');
-    var body = el('div');
-    body.appendChild(listEl);
-    body.appendChild(pagerEl);
-
-    var modal = showModal('Full Protest History', { bodyEl: body, wide: true });
-
-    var page = 0;
-
-    // A withdraw inside the popup re-fetches the full list fresh (so the
-    // withdrawn protest's new status shows immediately) and also quietly
-    // refreshes the page underneath, same "everything stays in sync"
-    // pattern the League Management EDIT popup uses.
-    function reload() {
-      fetchApi('getMyProtests', { token: token, params: { full: '1' } }).then(function (data) {
-        entries = (data && data.success) ? (data.protests || []) : [];
-        renderPage();
-      });
-      renderProtestsSection(token);
-    }
-
-    function renderPage() {
-      var totalPages = Math.max(1, Math.ceil(entries.length / RC_LEDGER_PAGE_SIZE));
-      if (page > totalPages - 1) page = totalPages - 1;
-      listEl.innerHTML = '';
-      var start = page * RC_LEDGER_PAGE_SIZE;
-      entries.slice(start, start + RC_LEDGER_PAGE_SIZE).forEach(function (p) {
-        listEl.appendChild(buildProtestHistoryRow(p, token, reload));
-      });
-
-      pagerEl.innerHTML = '';
-      var prevBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Previous');
-      prevBtn.type = 'button';
-      prevBtn.disabled = page === 0;
-      prevBtn.addEventListener('click', function () { page--; renderPage(); });
-
-      var pageLabel = el('span', 'rc-hint', 'Page ' + (page + 1) + ' of ' + totalPages);
-
-      var nextBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Next');
-      nextBtn.type = 'button';
-      nextBtn.disabled = page >= totalPages - 1;
-      nextBtn.addEventListener('click', function () { page++; renderPage(); });
-
-      pagerEl.appendChild(prevBtn);
-      pagerEl.appendChild(pageLabel);
-      pagerEl.appendChild(nextBtn);
-    }
-    renderPage();
     return modal;
   }
 
-  var RC_PROTEST_PREVIEW_COUNT = 10;
+  // EDIT popup (new, 2026-09-20) -- round is fixed (shown as plain text,
+  // not a dropdown; a filed protest can't move to a different race), lap/
+  // driver/infraction/description are all editable. Loads its own lap
+  // count + driver roster via getProtestEditOptions (Protests.gs) rather
+  // than reusing getProtestFilingOptions's round list, since editing must
+  // stay possible after that list's 48-hour filing window has closed --
+  // right up until the round's results are finalized or a ruling lands,
+  // same gate buildProtestHistoryItem's canModify check already applies
+  // before this ever gets a chance to open.
+  function openEditProtestModal(token, p, onSaved) {
+    var body = el('div');
+    body.appendChild(buildSpinner('Loading protest details...'));
+    var modal = showModal('Edit Protest', { bodyEl: body, wide: true });
 
-  function buildMyProtestsHistoryPanel(token, protests, totalCount, onChanged) {
-    var panel = el('div', 'rc-panel rc-dash-card rc-protest-history-panel');
-    panel.style.cssText = 'margin-top:16px;';
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
-    if (!protests.length) {
-      panel.appendChild(el('div', 'rc-dm-empty', 'No protests filed by or against you yet.'));
-      return panel;
-    }
-    protests.forEach(function (p) { panel.appendChild(buildProtestHistoryRow(p, token, onChanged)); });
+    fetchApi('getProtestEditOptions', { token: token, params: { protestId: p.protestId } }).then(function (data) {
+      body.innerHTML = '';
+      if (!data || !data.success) {
+        body.appendChild(el('p', 'color:var(--rc-red);', (data && data.message) || 'Could not load this protest.'));
+        return;
+      }
+      if (!data.canEdit) {
+        body.appendChild(el('p', 'color:var(--rc-red);', 'This protest can no longer be edited.'));
+        return;
+      }
 
-    if (totalCount > RC_PROTEST_PREVIEW_COUNT) {
-      var fullHistoryBtn = el('button', 'rc-link-btn rc-dash-card-link', '← Show full history');
-      fullHistoryBtn.type = 'button';
-      fullHistoryBtn.addEventListener('click', function () {
-        fetchApi('getMyProtests', { token: token, params: { full: '1' } }).then(function (data) {
-          openFullProtestHistoryModal(token, (data && data.success) ? (data.protests || []) : []);
-        }).catch(function () { showToast('Could not load your full protest history.', 'error'); });
+      body.appendChild(el('div', 'rc-hint', 'Race: ' + escapeHtml(data.roundLabel || p.roundLabel)));
+
+      var fieldsContainer = el('div');
+      body.appendChild(fieldsContainer);
+      var fields = buildProtestFormFields(fieldsContainer, data.laps || [], data.driverRoster || [], data.myProfileId, {
+        lapNumber: p.lapNumber, infractionType: p.infractionType,
+        against: p.againstProfileId, against2: p.against2ProfileId, description: p.description
       });
-      panel.appendChild(fullHistoryBtn);
-    }
 
-    return panel;
+      var resultBox = el('div', 'rc-message');
+      body.appendChild(resultBox);
+
+      var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+      var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+      cancelBtn.type = 'button';
+      cancelBtn.addEventListener('click', modal.close);
+      var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Changes');
+      saveBtn.type = 'button';
+      saveBtn.addEventListener('click', function () {
+        var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
+        if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
+        saveBtn.disabled = true;
+        resultBox.className = 'rc-message';
+        resultBox.textContent = '';
+        fetchApi('editProtest', {
+          method: 'POST', token: token, body: {
+            protestId: p.protestId, infractionType: fields.infractionSelect.value,
+            lapNumber: fields.lapSelect.value, againstProfileId: fields.driver2Select.value,
+            against2ProfileId: fields.driver3Select.value, description: fields.descBox.value.trim()
+          }
+        }).then(function (data2) {
+          saveBtn.disabled = false;
+          if (!data2.success) {
+            resultBox.className = 'rc-message rc-error';
+            resultBox.textContent = data2.message || 'Could not save that protest.';
+            showToast(data2.message || 'Could not save that protest.', 'error');
+            return;
+          }
+          showToast('Protest updated.', 'success');
+          modal.close(true);
+          if (typeof onSaved === 'function') onSaved();
+        }).catch(function () {
+          saveBtn.disabled = false;
+          resultBox.className = 'rc-message rc-error';
+          resultBox.textContent = 'Could not reach the server.';
+        });
+      });
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(saveBtn);
+      body.appendChild(btnRow);
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
+
+    return modal;
   }
 
   function _rcProtestStatusBadge(status, penaltyTier) {

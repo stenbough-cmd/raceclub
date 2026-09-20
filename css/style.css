@@ -2512,21 +2512,51 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    pages that otherwise keep the red rc-dash-card convention (2026-09-09,
    Matt's call: "make wager history, protests, all sponsors, bonus and
    penalty triggers containers the same gray style border and lines as
-   transaction ledger") -- Wager History (Wager page), the Protests-page
-   protest history list, All Sponsors and Bonus & Penalty Triggers
-   (Sponsors page) each get their own class here rather than a section-
-   wide rule like Finances gets, since every OTHER card on these same
-   pages (File a Protest, the Wager trading card, Sponsor Goals, etc.)
+   transaction ledger") -- Wager History (Wager page), All Sponsors and
+   Bonus & Penalty Triggers (Sponsors page) each get their own class here
+   rather than a section-wide rule like Finances gets, since every OTHER
+   card on these same pages (the Wager trading card, Sponsor Goals, etc.)
    is meant to stay red. Higher specificity than the plain .rc-dash-card-
-   title/::before rules further up, so no !important needed. */
+   title/::before rules further up, so no !important needed.
+   .rc-protest-history-panel removed from this list (2026-09-20, Protests
+   page redesign) -- the page is one single red rc-dash-card container
+   now, no separate gray history card. */
 .rc-wager-history-panel .rc-dash-card-title,
-.rc-protest-history-panel .rc-dash-card-title,
 .rc-sponsor-table-panel .rc-dash-card-title,
 .rc-trigger-glossary-panel .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
 .rc-wager-history-panel.rc-dash-card::before,
-.rc-protest-history-panel.rc-dash-card::before,
 .rc-sponsor-table-panel.rc-dash-card::before,
 .rc-trigger-glossary-panel.rc-dash-card::before { background: var(--rc-silver); }
+
+/* Protests page redesign (2026-09-20, Matt's ask: "Make it look
+   identical to the other pages on the list" -- one Season N: Name
+   container, FILE PROTEST button below the header's red rule, a bordered
+   season-grouped history below that). See buildProtestPagePanel/
+   buildProtestSeasonGroup/buildProtestHistoryItem, Account.html. */
+.rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
+.rc-protest-season-group { padding: 10px 0; }
+.rc-protest-season-group + .rc-protest-season-group { border-top: 1px solid var(--rc-offwhite); }
+/* Locked Edit/Delete buttons -- grayscale + a circle-slash icon that
+   fades in on hover (Matt's exact ask: "gray out the buttons and put a
+   circle with a line through it on hover"), same mechanic as
+   .rc-class-pick-btn-locked/.rc-class-pick-btn-lock above, just sized for
+   these small .rc-btn-row buttons instead of the big class-pick tiles. */
+.rc-protest-btn-locked { position: relative; filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
+.rc-protest-btn-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.rc-protest-btn-locked:hover .rc-protest-btn-lock { opacity: 1; }
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
