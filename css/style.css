@@ -4747,22 +4747,8 @@ body.rc-modal-scroll-locked {
    block would use) are both what "the same" means here. A tile with a
    longer detail (the Sprint/Medium/Long points lists) carries it in a
    hover tooltip via withTooltip rather than widening the pill. */
-.rc-cal-format-list { display: flex; flex-wrap: wrap; gap: 12px; }
-.rc-cal-format-list + .rc-cal-format-list { margin-top: 12px; }
-/* Locked row (2026-09-19, Matt's call: "lock these in the same row...
-   lock the top row together like we locked the time pills together in
-   one row") -- the settings row and the Practice/Qualifying/Sprint/
-   Medium/Long "time" row are now two separate rows, each locked with
-   nowrap so its own pills always stay together on one line instead of
-   spilling into a second row the way the single shared wrapping grid
-   used to let them. Pills shrink (flex-shrink, no min-width floor) to
-   fit rather than wrap; overflow-x:auto is the fallback on a narrow
-   enough viewport that they can't shrink any further. */
-.rc-cal-format-list-locked { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-.rc-cal-format-list-locked .rc-cal-format-tile { flex: 1 1 108px; min-width: 0; }
-.rc-cal-format-tile { flex: 1 1 108px; min-width: 92px; padding: 12px; border: 1px solid var(--rc-silver); border-radius: 8px; text-align: center; }
-.rc-cal-format-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 4px; }
-.rc-cal-format-value { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
+.rc-cal-format-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rc-cal-format-list + .rc-cal-format-list { margin-top: 10px; }
 
 .rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 /* Rounded rectangle, not an oval pill (Matt's call: every class badge on

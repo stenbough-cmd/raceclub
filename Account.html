@@ -431,6 +431,23 @@
   // ruling/oversight" rather than reusing the Protests caution triangle.
   var ICON_STEWARDING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
 
+  // Season Format pill icons (2026-09-21, Season Format redesign --
+  // seasonDetailsPanel below) -- one clear symbol per concept, same 24
+  // viewBox/1.8 stroke-width/round cap-join convention as every other
+  // ICON_* here.
+  // Repeat arrows -- Race Frequency ("Weekly"/"Bi-Weekly").
+  var ICON_REPEAT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1 21 6l-4 3.9"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 21.9 3 18l4-3.9"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
+  // Drop Weeks -- a card being taken off the bottom of a stack, "your
+  // worst round(s) get dropped."
+  var ICON_DROPWEEKS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="9" rx="1.5"></rect><path d="M8 17h8"></path><path d="M12 13v8"></path><path d="M9 18.5 12 21.5 15 18.5"></path></svg>';
+  // Bye Weeks -- a calendar square with a slash through it, "a week with
+  // no race."
+  var ICON_BYEWEEKS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="7" y1="20" x2="17" y2="13"></line></svg>';
+  // Qualifying -- a stopwatch (distinct silhouette from ICON_CLOCK's plain
+  // wall-clock face, via the top button/crown) so Practice and Qualifying
+  // don't read as the identical icon next to each other.
+  var ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
+
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
   // below since they're permission-gated rather than always shown.
@@ -4106,85 +4123,111 @@
     return classesRow;
   }
 
-  // One compact label/value tile for the Season Format grid below --
-  // reworked 2026-09-19 (Matt's catch: the one-row-per-detail list "takes
-  // up an enormous amount of space") from a stacked list into a wrapping
-  // grid of small tiles, same shape as the Current Seat card's own
-  // Position/Points/Podiums stat tiles (.rc-cs-stat) just left-aligned and
-  // denser -- several tiles share a row instead of each detail claiming a
-  // full-width line, which is what actually cuts the height down (a wide
-  // list wrapping into 3-5 tiles per row instead of one detail per row).
-  // tooltip (optional) keeps a longer detail (the full points list) out
-  // of the tile's own visible text so the tile stays a fixed, compact
-  // size -- same "value visible, detail on hover" split the original
-  // .rc-cal-stat chips used before this panel became a plain list.
-  function formatDetailTile(label, value, tooltip) {
-    var tile = el('div', 'rc-cal-format-tile');
-    tile.appendChild(el('div', 'rc-cal-format-label', label));
-    tile.appendChild(el('div', 'rc-cal-format-value', escapeHtml(value)));
-    if (tooltip) withTooltip(tile, tooltip);
-    return tile;
+  // Compact "MMM D, YYYY" date, no weekday/time -- for the Season Format
+  // panel's Start/Stop pill below, where formatRaceDateTime's fuller
+  // weekday+time format would be too long for a small mini-stat pill.
+  function formatShortDate(iso, tz) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      var opts = { month: 'short', day: 'numeric', year: 'numeric' };
+      if (tz) opts.timeZone = tz;
+      return d.toLocaleString('en-US', opts);
+    } catch (err) { return ''; }
   }
 
   // Season-wide format panel -- renamed from "Season Settings" to "Season
-  // Format" (2026-09-19, Matt's call), rebuilt from a row of pill chips
-  // into a dense wrapping grid of tiles ("gives all the information of
-  // the league without using the pills" + "take up less than 1/3 of its
-  // current height" -- see formatDetailTile above for how). Class pills
-  // stay out of this panel entirely (moved to the season header row,
-  // 2026-09-19 -- see buildClassPillsRow above); the race list below
-  // still shows per-round specifics (dates, weather, track).
-  function seasonDetailsPanel(details) {
+  // Format" (2026-09-19), rebuilt again 2026-09-21 (Matt's call: "I still
+  // hate the way the season format is displayed... I would rather see the
+  // pills be smaller, the size of the ones inside each race container,
+  // with an icon") from the label/value tile grid back to small icon
+  // pills -- same calStat() + .rc-cal-mini-stat combo every race card
+  // below already uses for its own Length/Weather/IRL-time pills, so this
+  // panel now visually matches the cards under it instead of using its
+  // own separate tile component. Four fixed rows, per Matt's exact
+  // layout: Password alone up top (gold, see below), then general season
+  // shape, then race-rules multipliers, then session lengths -- each row
+  // is its own .rc-cal-format-list flex row (wraps on narrow viewports
+  // rather than locking to one non-wrapping line, since these pills are
+  // small enough that wrapping reads fine, unlike the old wider tiles).
+  // Class pills stay out of this panel entirely (moved to the season
+  // header row, 2026-09-19 -- see buildClassPillsRow above); the race
+  // list below still shows per-round specifics (dates, weather, track).
+  function seasonDetailsPanel(details, races, driverTz) {
     var wrap = el('div', 'rc-cal-season-details');
     wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Format'));
+    var raceSettings = details.raceSettings || {};
 
-    // Two locked rows (2026-09-19, Matt's call) -- each its own
-    // non-wrapping .rc-cal-format-list-locked row so its pills always
-    // stay together on one line instead of the whole panel wrapping as
-    // one pool. Top row: the general season settings. Second row: every
-    // pill that "deals with time" (Practice/Qualifying/Sprint/Medium/
-    // Long), grouped together for exactly that reason.
-    var settingsRow = el('div', 'rc-cal-format-list rc-cal-format-list-locked');
-    settingsRow.appendChild(formatDetailTile('Server Password', details.defaultPassword ? details.defaultPassword : 'None set'));
-    if (details.frequency) settingsRow.appendChild(formatDetailTile('Race Frequency', details.frequency));
-    settingsRow.appendChild(formatDetailTile('Drop Weeks', String(details.dropWeeks || 0)));
-    if (details.trackLimitsPreset) settingsRow.appendChild(formatDetailTile('Track Limits', details.trackLimitsPreset));
+    // Row 1: Server Password alone, in the same metallic-gold treatment
+    // as the Next Race dashboard card's own password pill (Matt: "in the
+    // gold metallic flair that you used for the next race card") -- only
+    // when a password is actually set; otherwise a plain muted pill so
+    // "no password yet" doesn't get the same eye-catching gold treatment
+    // as a real one.
+    var row1 = el('div', 'rc-cal-format-list');
+    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword || 'None Set', 'Server Password',
+      'rc-cal-mini-stat' + (details.defaultPassword ? ' rc-nextrace-password-gold' : '')));
+    wrap.appendChild(row1);
 
-    // Fuel/Tire Wear/Setups -- season-wide (Seasons.SeasonDetails.
-    // raceSettings), same source the individual race cards below used to
-    // read them from before they moved up here (2026-09-19). These are
-    // preset LABELS ('Off'/'Realistic'/'2x'/'3x' -- see
+    // Row 2: season shape -- Start/Stop dates, Race Frequency, Drop
+    // Weeks and Bye Weeks (both "if applicable," i.e. only when the
+    // season actually uses them -- previously Drop Weeks always showed,
+    // even at 0, and Bye Weeks never showed here at all). Start/Stop is
+    // derived from the earliest/latest ROUND (not bye/special) startUtc
+    // in this season's own race list -- same "round kind + has a
+    // startUtc" filter league.js's public league.html uses for the same
+    // figure, so the two pages can never disagree about season bounds.
+    var row2 = el('div', 'rc-cal-format-list');
+    var roundDates = (races || [])
+      .filter(function (r) { return r.kind === 'round' && r.startUtc; })
+      .map(function (r) { return r.startUtc; })
+      .sort();
+    if (roundDates.length) {
+      var startEndText = formatShortDate(roundDates[0], driverTz) + ' – ' + formatShortDate(roundDates[roundDates.length - 1], driverTz);
+      row2.appendChild(calStat(ICON_CALENDAR, startEndText, 'Season Start – End', 'rc-cal-mini-stat'));
+    }
+    if (details.frequency) row2.appendChild(calStat(ICON_REPEAT, details.frequency, 'Race Frequency', 'rc-cal-mini-stat'));
+    if (details.dropWeeks) row2.appendChild(calStat(ICON_DROPWEEKS, details.dropWeeks + (details.dropWeeks === 1 ? ' Drop Week' : ' Drop Weeks'), 'Drop Weeks', 'rc-cal-mini-stat'));
+    if (details.byeWeeks) row2.appendChild(calStat(ICON_BYEWEEKS, details.byeWeeks + (details.byeWeeks === 1 ? ' Bye Week' : ' Bye Weeks'), 'Bye Weeks', 'rc-cal-mini-stat'));
+    if (row2.children.length) wrap.appendChild(row2);
+
+    // Row 3: race-rules multipliers -- Track Limits, Fuel, Tire Wear,
+    // Setups. Fuel/Tire Wear/Setups are season-wide (Seasons.SeasonDetails.
+    // raceSettings), same source the individual race cards below read them
+    // from. These are preset LABELS ('Off'/'Realistic'/'2x'/'3x' -- see
     // RACE_SETTINGS_MULTIPLIER_OPTIONS), not raw numbers, so they're shown
     // as-is -- appending a literal "×" here (2026-09-19 bug, Matt's catch)
     // is what produced "Realisticx multiplier" for the 'Realistic' preset;
     // '2x'/'3x' already carry their own "x" and 'Off'/'Realistic' aren't
     // multiplied values at all.
-    var raceSettings = details.raceSettings || {};
-    if (raceSettings.fuelMultiplier) settingsRow.appendChild(formatDetailTile('Fuel', raceSettings.fuelMultiplier));
-    if (raceSettings.tireWearMultiplier) settingsRow.appendChild(formatDetailTile('Tire Wear', raceSettings.tireWearMultiplier));
-    if (raceSettings.setupRules) settingsRow.appendChild(formatDetailTile('Setups', raceSettings.setupRules));
-    wrap.appendChild(settingsRow);
+    var row3 = el('div', 'rc-cal-format-list');
+    if (details.trackLimitsPreset) row3.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset, 'Track Limits', 'rc-cal-mini-stat'));
+    if (raceSettings.fuelMultiplier) row3.appendChild(calStat(ICON_FUEL, raceSettings.fuelMultiplier, 'Fuel', 'rc-cal-mini-stat'));
+    if (raceSettings.tireWearMultiplier) row3.appendChild(calStat(ICON_TIRE, raceSettings.tireWearMultiplier, 'Tire Wear', 'rc-cal-mini-stat'));
+    if (raceSettings.setupRules) row3.appendChild(calStat(ICON_SETTINGS, raceSettings.setupRules, 'Setups', 'rc-cal-mini-stat'));
+    if (row3.children.length) wrap.appendChild(row3);
 
-    // Time row -- Practice, Qualifying (now carrying its own Qualifying
-    // Type -- Public/Private -- right in the value, "n min, Public"/
-    // "n min, Private", since that standalone Qualifying Type tile in the
-    // settings row above is gone), then Sprint/Medium/Long Race, each
-    // still just its duration with the full points list in a hover
-    // tooltip (see formatDetailTile above).
-    var timeRow = el('div', 'rc-cal-format-list rc-cal-format-list-locked');
-    if (raceSettings.practiceLengthMin) timeRow.appendChild(formatDetailTile('Practice', raceSettings.practiceLengthMin + ' min'));
+    // Row 4: session lengths -- Practice, Qualifying (still carrying its
+    // own Qualifying Type -- Public/Private -- right in the pill text,
+    // "n min, Public"/"n min, Private"), then Sprint/Medium/Long Race
+    // length-tier pills, each still just its duration with the full
+    // points list in a hover tooltip (Matt: "length tier pills, on hover
+    // a points table displays") -- unchanged behavior, calStat's own
+    // tooltip param, just a pill now instead of a tile.
+    var row4 = el('div', 'rc-cal-format-list');
+    if (raceSettings.practiceLengthMin) row4.appendChild(calStat(ICON_CLOCK, raceSettings.practiceLengthMin + ' min', 'Practice Length', 'rc-cal-mini-stat'));
     if (raceSettings.qualifyLengthMin) {
       var qualVisibility = details.privateQualifying === 'Yes' ? 'Private' : 'Public';
-      timeRow.appendChild(formatDetailTile('Qualifying', raceSettings.qualifyLengthMin + ' min, ' + qualVisibility));
+      row4.appendChild(calStat(ICON_STOPWATCH, raceSettings.qualifyLengthMin + ' min, ' + qualVisibility, 'Qualifying Length & Type', 'rc-cal-mini-stat'));
     }
     var tiers = ['Sprint', 'Medium', 'Long'];
     tiers.forEach(function (tier) {
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
       var pointsList = formatPointsList(table.points);
-      timeRow.appendChild(formatDetailTile(tier + ' Race', (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : null));
+      row4.appendChild(calStat(ICON_CLOCK, tier + ' · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
     });
-    if (timeRow.children.length) wrap.appendChild(timeRow);
+    if (row4.children.length) wrap.appendChild(row4);
 
     return wrap;
   }
@@ -4395,7 +4438,7 @@
       if (classPillsRow) head.appendChild(classPillsRow);
       panel.appendChild(head);
 
-      panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}));
+      panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}, res.races, driverTz));
 
       // Faint gray divider between Season Format and the race list below
       // (2026-09-19, Matt's ask) -- same plain silver hairline treatment
