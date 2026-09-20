@@ -2334,6 +2334,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Same size/color treatment .rc-cal-track always used. */
 .rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
 .rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
+/* Track/layout + in-game race start time on one row (2026-09-20, Matt's
+   ask: "make the in game time text and place it next to the race track
+   to the right with a flag") -- same space-between wrap Calendar's own
+   .rc-cal-track-row uses, just without that row's bottom divider (this
+   card has no stack of races below it to separate from). */
+.rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 2px; }
+.rc-nextrace-track-row .rc-nextrace-track { margin-top: 0; }
+.rc-nextrace-igtime { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--rc-carbon); }
+.rc-nextrace-igtime svg { color: var(--rc-steel); flex-shrink: 0; width: 14px; height: 14px; }
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;

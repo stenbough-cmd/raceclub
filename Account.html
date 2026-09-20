@@ -1552,33 +1552,45 @@
     // don't want is the track images" -- only the track IMAGE below was
     // ever meant to go). Same treatment as the Calendar's own .rc-cal-
     // track (bold track name, layout trailing in lighter steel text).
-    var trackLine = el('div', 'rc-nextrace-track');
-    trackLine.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
+    // Now a flex row (2026-09-20, Matt's ask: "make the in game time text
+    // and place it next to the race track to the right with a flag" +
+    // "remove the In-Game pill below it") -- track/layout stays left,
+    // the in-game race start time (with its flag icon) moves here to the
+    // right instead of living as its own pill in the stats row below.
+    var trackLine = el('div', 'rc-nextrace-track-row');
+    var trackText = el('div', 'rc-nextrace-track');
+    trackText.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
       (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
+    trackLine.appendChild(trackText);
+    if (data.igRaceStart) {
+      var igSpan = el('span', 'rc-nextrace-igtime', ICON_FLAG + '<span>In-Game ' + escapeHtml(data.igRaceStart) + '</span>');
+      trackLine.appendChild(igSpan);
+    }
     info.appendChild(trackLine);
 
     var stats = el('div', 'rc-cal-stats');
+    // Race length pill now comes first, ahead of Weather (2026-09-20,
+    // Matt's ask: "move the race length pill to the left of the weather
+    // pill, then the password pill will follow it"), and spells out the
+    // tier before the minutes -- same lengthLabel pattern
+    // renderCalendarSection's own race cards use (entry.raceLengthTier +
+    // ' · ' + entry.raceLengthMinutes + ' min'), so this card matches the
+    // Calendar page's own Season Format wording instead of minutes alone.
+    if (data.raceLengthMinutes) {
+      var nextRaceLengthLabel = data.raceLengthTier ? (data.raceLengthTier + ' · ' + data.raceLengthMinutes + ' min') : (data.raceLengthMinutes + ' min');
+      stats.appendChild(calStat(ICON_CLOCK, nextRaceLengthLabel, 'Race length'));
+    }
     // Weather pill (2026-08-31, Matt's call) -- same chip the Calendar
     // page's own race cards use (weatherIcon() + "N% Rain · N°C").
     stats.appendChild(calStat(weatherIcon(data), (data.chanceOfRain || 0) + '% Rain' + (data.temperatureC !== null && data.temperatureC !== undefined ? ' · ' + data.temperatureC + '°C' : ''), 'Weather'));
-    // Race length in minutes (2026-09-19, replaces the Sprint/Medium/Long
-    // tier label -- Matt's call: "instead of labeling race length with
-    // sprint medium or long, display length in mins").
-    if (data.raceLengthMinutes) stats.appendChild(calStat(ICON_CLOCK, data.raceLengthMinutes + ' min', 'Race length'));
-    // In-Game Race Start, as its own gray pill next to Race Length
-    // (2026-09-01, Matt's call) -- replaces the earlier flag-icon line
-    // version, and drops Practice/Qualifying entirely (Calendar's own
-    // race cards still show all three -- just this card that trims down
-    // to Race Start only).
-    if (data.igRaceStart) stats.appendChild(calStat(ICON_FLAG, 'In-Game ' + data.igRaceStart, 'In-game race start time'));
-    // Server password pill (added 2026-09-19, Matt's ask: "add password
-    // pill to next race in account") -- the password a driver needs to
-    // actually join the server, same round-override-or-season-default
-    // value handleGetNextRace resolves server-side. Shows "Password Set"
-    // rather than the password itself, revealed on hover via the tooltip
-    // (2026-09-19 follow-up, Matt's call) -- same pattern the Calendar
-    // page's own season-details password stat already uses.
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, 'Password Set', 'Server password: ' + data.password));
+    // Server password pill, now spelling out the password itself
+    // (2026-09-20, Matt's ask: "instead of 'PASSWORD SET' pill, write out
+    // the password so it's visible") -- replaces the generic "Password
+    // Set" label + hover-to-reveal tooltip with the literal password
+    // text, same "just show it" treatment Season Format's own password
+    // tile already uses (seasonDetailsPanel above). Still last in the
+    // row, following Length/Weather per Matt's reorder ask above.
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
