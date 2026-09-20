@@ -3658,15 +3658,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    that row of teams belongs to... don't move the cards in any further to
    fit this label in, force the label to the left of the 1st card"). Sits
    just inside .rc-landing-inner's own 24px side padding via a negative
-   left offset -- absolutely positioned (out of flow) and spanning the
-   whole group's height (top:0/bottom:0) so it reads centered against
-   however many wrapped rows that class's cards take up at the current
-   viewport width, same as it would whether that's one row or several. */
+   left offset -- absolutely positioned (out of flow) so it never
+   consumes grid space.
+   2026-09-20 follow-up (Matt's catch): originally one label spanned the
+   whole group's height (top:0/bottom:0), so a class wrapping into 2+ rows
+   only got ONE label, centered against the group as a whole rather than
+   either row. Now layoutClassLabels_ (index.html) measures each actual
+   visual row and appends one label per row, setting top/height inline in
+   px to match that row exactly -- so every row a class wraps into gets
+   its own label, vertically centered against that row's own cards. No
+   default top/bottom here any more; JS always sets both before a label is
+   ever appended. */
 .rc-grid-teaser-class-label {
   position: absolute;
   left: -22px;
-  top: 0;
-  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3922,11 +3927,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    column breakpoints (same pattern as .rc-details-row elsewhere in this
    file) keep all 4 cards evenly sized at every width, rather than
    auto-fit/minmax's fractional-fit math leaving an odd one out. */
-.rc-tier-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
-@media (max-width: 900px) {
+/* 5 columns now (2026-09-20, LMGTE card added) -- was repeat(4, 1fr) with
+   900px/560px breakpoints; added a 1024px breakpoint to drop to 3 columns
+   before 5 get too cramped, otherwise unchanged. */
+.rc-tier-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 28px; }
+@media (max-width: 1024px) {
+  .rc-tier-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
   .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 560px) {
+@media (max-width: 420px) {
   .rc-tier-row { grid-template-columns: 1fr; }
 }
 .rc-tier-card {
@@ -3956,6 +3967,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+/* LMGTE (2026-09-20) -- matches --rc-class-lmgte (#e0791b), the same
+   orange used for this class's pill everywhere else on the site. */
+.rc-tier-orange { background: linear-gradient(160deg, #e0791b, #a8570f); }
+.rc-tier-orange .rc-tier-difficulty { color: #ffdcb0; }
 .rc-tier-bronze { background: linear-gradient(160deg, #a05a2c, #7c4420); }
 .rc-tier-bronze .rc-tier-difficulty { color: #f0c9a3; }
 .rc-tier-platinum { background: linear-gradient(160deg, #7d92a3, #4f6373); }
@@ -3991,8 +4006,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* Renamed from .rc-landing-footer -- this now runs on every page (Matt's
    call), not just index.html where it started, so "landing" stopped being
-   an accurate name. Styling itself is unchanged. */
+   an accurate name.
+   2026-09-20, Matt's ask: "the copyright at the bottom to not span the
+   whole width of the website but instead go as wide as the meet the grid
+   cards." Was full-bleed (no max-width, just 24px side padding) -- now
+   capped at the same 960px max-width/centering .rc-landing-inner uses for
+   every landing-page section including Meet The Grid, so the footer's
+   border-top and text line up with those sections' own width instead of
+   stretching edge-to-edge on wide viewports. */
 .rc-site-footer {
+  max-width: 960px;
+  margin: 0 auto;
   text-align: center;
   padding: 22px 24px;
   font-size: 12px;

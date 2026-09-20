@@ -358,11 +358,20 @@
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Ladder</div>
       <h2>Class Tiers</h2>
-      <p class="rc-landing-tagline">Race Club runs a four-tier class ladder from LMGT3 up to Hypercar. Every class is open the moment the league puts it on the schedule: no money gate, no experience checklist.</p>
+      <p class="rc-landing-tagline">Race Club runs a five-tier class ladder from LMGTE up to Hypercar. Every class is open the moment the league puts it on the schedule: no money gate, no experience checklist.</p>
       <div class="rc-tier-row">
+        <!-- LMGTE (added 2026-09-20) -- the rookie tier below LMGT3, per
+             Matt's ask. Same rc-tier-card treatment as the other four,
+             its own orange gradient matching --rc-class-lmgte (the pill
+             color used everywhere else on the site for this class). -->
+        <div class="rc-card rc-tier-card rc-tier-orange">
+          <h3>LMGTE</h3>
+          <p>The entry point to Race Club. The most forgiving cars on the grid, built for a driver's very first race.</p>
+          <div class="rc-tier-difficulty">Rookie</div>
+        </div>
         <div class="rc-card rc-tier-card rc-tier-bronze">
           <h3>LMGT3</h3>
-          <p>Where every career begins. Accessible, competitive, and the proving ground for everything above it.</p>
+          <p>The next step up from LMGTE. Still accessible, more competitive, and the proving ground for everything above it.</p>
           <div class="rc-tier-difficulty">Rookie</div>
         </div>
         <div class="rc-card rc-tier-card rc-tier-platinum">
@@ -538,22 +547,19 @@
     // to the left of it (2026-09-20, Matt's ask: "to the left of each row,
     // please have a 90 degree ccw label of which class that row of teams
     // belongs to... don't move the cards in any further to fit this label
-    // in, force the label to the left of the 1st card"). The label is
-    // absolutely positioned (see .rc-grid-teaser-class-label, css/
-    // style.css) so it never consumes grid space -- the row's own cards
-    // sit exactly where they would without a label at all, whether that
-    // class's cards wrap into one row or several at the current viewport
-    // width. cardEls is an array of already-built .rc-grid-teaser-card
-    // elements (from buildCard_), not raw data, so this same helper serves
-    // both the live grid and the no-season static sample below.
+    // in, force the label to the left of the 1st card"). The label itself
+    // is built by layoutClassLabels_ below, not here -- how many rows a
+    // class's cards actually wrap into depends on the live container width
+    // (CSS auto-fill), which isn't known until the browser has laid the
+    // cards out, so this just builds the group + its row of cards; the
+    // label(s) get measured and placed in a follow-up pass. cardEls is an
+    // array of already-built .rc-grid-teaser-card elements (from
+    // buildCard_), not raw data, so this same helper serves both the live
+    // grid and the no-season static sample below.
     function buildClassGroup_(className, cardEls) {
       var group = document.createElement('div');
       group.className = 'rc-grid-teaser-class-group';
-
-      var label = document.createElement('div');
-      label.className = 'rc-grid-teaser-class-label';
-      label.textContent = className;
-      group.appendChild(label);
+      group.dataset.class = className;
 
       var row = document.createElement('div');
       row.className = 'rc-grid-teaser-row';
@@ -562,6 +568,74 @@
 
       return group;
     }
+
+    // Places one rotated class-name label per ACTUAL visual row a class's
+    // cards wrap into (2026-09-20 follow-up, Matt's catch: "the class ...
+    // should be on every row that there are cards" and "the class text
+    // needs to be vertically centered with the cards in each row" -- the
+    // original build put one label spanning the whole class-group's
+    // height, so a class that wrapped into 2+ rows only showed its label
+    // once, centered against the group as a whole rather than against
+    // either row). Each .rc-grid-teaser-card in a class's row shares a
+    // manufacturer-logo/text layout with fixed dimensions (no async image
+    // reflow -- see .rc-grid-teaser-logo's explicit width/height, css/
+    // style.css), so cards finish laying out synchronously and their
+    // offsetTop can be read right after insertion: cards landing at the
+    // same offsetTop are on the same visual row. group has
+    // position:relative (css/style.css) and row has no position of its
+    // own, so card.offsetTop is already relative to the group -- the same
+    // frame of reference the label's own absolute top/height use, so a
+    // label's top/height line up exactly with the row of cards it labels.
+    // Re-run after every render and (debounced) on resize, since auto-fill
+    // can wrap a class into a different number of rows at a different
+    // viewport width.
+    function layoutClassLabels_() {
+      var groups = rowEl.querySelectorAll('.rc-grid-teaser-class-group');
+      groups.forEach(function (group) {
+        var className = group.dataset.class;
+        var row = group.querySelector('.rc-grid-teaser-row');
+        if (!row) return;
+
+        // Clear any labels from a previous layout pass before re-measuring.
+        var oldLabels = group.querySelectorAll('.rc-grid-teaser-class-label');
+        oldLabels.forEach(function (l) { l.remove(); });
+
+        var cards = Array.prototype.slice.call(row.children);
+        if (!cards.length) return;
+
+        // Cluster cards into visual rows by offsetTop -- cards within 2px
+        // of the same top are treated as the same row (guards against
+        // subpixel rounding differences between cards on one row).
+        var rows = [];
+        cards.forEach(function (card) {
+          var top = card.offsetTop;
+          var last = rows[rows.length - 1];
+          if (last && Math.abs(last.top - top) < 2) {
+            last.bottom = Math.max(last.bottom, top + card.offsetHeight);
+          } else {
+            rows.push({ top: top, bottom: top + card.offsetHeight });
+          }
+        });
+
+        rows.forEach(function (r) {
+          var label = document.createElement('div');
+          label.className = 'rc-grid-teaser-class-label';
+          label.textContent = className;
+          label.style.top = r.top + 'px';
+          label.style.height = (r.bottom - r.top) + 'px';
+          group.appendChild(label);
+        });
+      });
+    }
+
+    // Debounced resize handler -- a class's row count (and therefore how
+    // many labels it needs, and where each one sits) can change whenever
+    // the viewport width changes the auto-fill column count.
+    var labelResizeTimer_ = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(labelResizeTimer_);
+      labelResizeTimer_ = setTimeout(layoutClassLabels_, 120);
+    });
 
     function showFallback_(message) {
       taglineEl.textContent = message;
@@ -697,6 +771,7 @@
         return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc);
       });
       rowEl.appendChild(buildClassGroup_(chosenClass, pickCards));
+      layoutClassLabels_();
       footnoteEl.textContent = '';
 
       // Two nested rAFs: the first lets the browser commit the cards'
@@ -749,6 +824,7 @@
         });
         rowEl.appendChild(buildClassGroup_(cls, cardEls));
       });
+      layoutClassLabels_();
 
       // Footnote sentence removed (2026-09-08, Matt's call) -- footnoteEl
       // stays declared/cleared in showFallback_ in case a future pass wants
