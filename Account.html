@@ -1592,7 +1592,13 @@
     // text, same "just show it" treatment Season Format's own password
     // tile already uses (seasonDetailsPanel above). Still last in the
     // row, following Length/Weather per Matt's reorder ask above.
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password'));
+    // Metallic gold treatment (2026-09-21, Matt's ask: "make the server
+    // password pill in the NEXT RACE dashboard container metallic gold
+    // with a gold border so it stands out") -- .rc-cal-stat itself stays
+    // untouched (shared by Calendar's own race cards and every other
+    // pill on this card), this is a scoped modifier class via calStat's
+    // own extraClass param, only ever applied here.
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password', 'rc-nextrace-password-gold'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special

@@ -657,8 +657,17 @@ function _rclRenderCalendar(hub) {
     // "N% Rain" convention and 5-tier icon Account.html's own Calendar
     // page already uses for this (weatherIcon() + "N% Rain") -- only
     // shows once a weather value has actually been set for this entry.
+    // Temperature appended after the rain chance (2026-09-21, Matt's ask:
+    // "add temperature info after the rain chance on the calendar") --
+    // same "N% Rain · N°C" convention Account.html's own Calendar already
+    // uses (see its calStat(weatherIcon(...), ...) call), only shown when
+    // Website.gs's getLeagueHub actually sent a temperature for this round.
     if (entry.weather) {
-      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain', true));
+      var weatherText = (entry.chanceOfRain || 0) + '% Rain';
+      if (entry.temperatureC !== null && entry.temperatureC !== undefined) {
+        weatherText += ' · ' + entry.temperatureC + '°C';
+      }
+      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), weatherText, true));
     }
     rowBody.appendChild(metaRow);
 

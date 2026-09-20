@@ -1235,16 +1235,6 @@ body.rc-league-page {
 .rcl-empty-state-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink-dim); }
 .rcl-empty-state-subtitle { margin-top: 6px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 
-/* Footer -- stays the site's standard light look (2026-09-19, Matt's
-   call), NOT the dark page theme it would otherwise inherit from
-   body.rc-league-page's own background/color. Same idea as the header
-   already staying light on this page -- only the content between the two
-   goes dark. */
-body.rc-league-page .rc-site-footer {
-  background: var(--rc-white);
-  color: var(--rc-steel);
-}
-
 @media (max-width: 560px) {
   .rcl-hero { padding: 34px 20px 42px; }
   .rcl-main { padding: 26px 16px 60px; }
