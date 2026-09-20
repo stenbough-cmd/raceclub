@@ -4006,22 +4006,28 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* Renamed from .rc-landing-footer -- this now runs on every page (Matt's
    call), not just index.html where it started, so "landing" stopped being
-   an accurate name.
-   2026-09-20, Matt's ask: "the copyright at the bottom to not span the
-   whole width of the website but instead go as wide as the meet the grid
-   cards." Was full-bleed (no max-width, just 24px side padding) -- now
-   capped at the same 960px max-width/centering .rc-landing-inner uses for
-   every landing-page section including Meet The Grid, so the footer's
-   border-top and text line up with those sections' own width instead of
-   stretching edge-to-edge on wide viewports. */
+   an accurate name. The footer BAR itself (background + border-top) still
+   spans the full page width -- only the text inside is narrowed, via
+   .rc-site-footer-inner below. */
 .rc-site-footer {
-  max-width: 960px;
-  margin: 0 auto;
   text-align: center;
   padding: 22px 24px;
   font-size: 12px;
   color: var(--rc-steel);
   border-top: 1px solid var(--rc-silver);
+}
+/* 2026-09-20, Matt's ask: "the copyright at the bottom to not span the
+   whole width of the website but instead go as wide as the meet the grid
+   cards" -- and his follow-up catches: the footer BAR should still run
+   full width, only the note itself should narrow (so .rc-site-footer
+   above stays full-bleed, this inner wrapper is what's capped), and the
+   note should actually be as wide as league.html's Standings container
+   (.rcl-main, 1180px), not the 960px .rc-landing-inner width it started
+   at -- so this wrapper's max-width now matches .rcl-main instead. Added
+   around each page's footer text/button (see index.html etc.). */
+.rc-site-footer-inner {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 /* Footer "Legal Disclaimer" link (added 2026-09-20) -- a plain button
    styled as inline text so it sits naturally in the footer's copyright
