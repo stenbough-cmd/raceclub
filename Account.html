@@ -1188,6 +1188,18 @@
       classStat.appendChild(classValue);
       footer.appendChild(classStat);
 
+      // Manufacturer stat, right of Class (2026-09-20, Matt's ask: "add
+      // manufacturer to the bottom stats to the right of CLASS and spell
+      // out the manufacturer (FORD, PORSCHE, FERRARI, etc)") -- reg.manufacturer
+      // already comes back from handleGetActiveSeason (DataCache.gs), no
+      // backend change needed. Uppercased here rather than trusting the
+      // sheet's own casing, same plain-text stat treatment as Class.
+      var mfrStat = el('div', 'rc-regstatus-stat');
+      mfrStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Manufacturer'));
+      var mfrValue = el('div', 'rc-regstatus-stat-value', escapeHtml(reg.manufacturer ? reg.manufacturer.toUpperCase() : '—'));
+      mfrStat.appendChild(mfrValue);
+      footer.appendChild(mfrStat);
+
       body.appendChild(footer);
     }
 
