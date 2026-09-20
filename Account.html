@@ -1571,21 +1571,37 @@
     // don't want is the track images" -- only the track IMAGE below was
     // ever meant to go). Same treatment as the Calendar's own .rc-cal-
     // track (bold track name, layout trailing in lighter steel text).
-    // Now a flex row (2026-09-20, Matt's ask: "make the in game time text
-    // and place it next to the race track to the right with a flag" +
-    // "remove the In-Game pill below it") -- track/layout stays left,
-    // the in-game race start time (with its flag icon) moves here to the
-    // right instead of living as its own pill in the stats row below.
+    // Card restructured (2026-09-21, Matt's ask: "make the dashboard NEXT
+    // RACE look similar to the calendar container with a line below the
+    // race track and the in game time (practice and qualify) below
+    // that") -- the in-game time no longer sits inline next to the track
+    // (that was a 2026-09-20 layout, now superseded); track/layout is
+    // its own plain line again, with the in-game time as its own line
+    // below it, matching Calendar's own .rc-cal-track + .rc-cal-datetime
+    // stack exactly (see raceCard() below).
     var trackLine = el('div', 'rc-nextrace-track-row');
     var trackText = el('div', 'rc-nextrace-track');
     trackText.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
       (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
     trackLine.appendChild(trackText);
-    if (data.igRaceStart) {
-      var igSpan = el('span', 'rc-nextrace-igtime', ICON_FLAG + '<span>In-Game ' + escapeHtml(data.igRaceStart) + '</span>');
-      trackLine.appendChild(igSpan);
-    }
     info.appendChild(trackLine);
+
+    // In-game time line, below the track row -- same shape Calendar's own
+    // race cards use (.rc-cal-datetime + Race Start with Practice/
+    // Qualifying trailing in muted gray text), now that this card carries
+    // Practice/Qualifying too, not just Race Start (data.igPracticeStart/
+    // data.igQualifyStart already come through handleGetNextRace, just
+    // unused here before this pass).
+    if (data.igRaceStart) {
+      var igExtras = [];
+      if (data.igPracticeStart) igExtras.push('Practice ' + escapeHtml(data.igPracticeStart));
+      if (data.igQualifyStart) igExtras.push('Qualifying ' + escapeHtml(data.igQualifyStart));
+      var igText = 'In-Game Race Start ' + escapeHtml(data.igRaceStart);
+      if (igExtras.length) igText += ' <span class="rc-cal-igtimes-extra">(' + igExtras.join(' &middot; ') + ')</span>';
+      var igLine = el('div', 'rc-cal-datetime');
+      igLine.appendChild(el('span', null, ICON_FLAG + '<span>' + igText + '</span>'));
+      info.appendChild(igLine);
+    }
 
     var stats = el('div', 'rc-cal-stats');
     // Race length pill now comes first, ahead of Weather (2026-09-20,
@@ -1614,13 +1630,12 @@
     // with a gold border so it stands out") -- .rc-cal-stat itself stays
     // untouched (shared by Calendar's own race cards and every other
     // pill on this card), this is a scoped modifier class via calStat's
-    // own extraClass param, only ever applied here. "PASSWORD" label
-    // prefixed onto the pill text itself (2026-09-21, Matt's follow-up
-    // ask -- the tooltip alone ("Server password") wasn't enough context
-    // on a pill that's otherwise just a bare string of characters;
-    // shortened from "SERVER PASSWORD" to just "PASSWORD" the same day,
-    // Matt's call).
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, 'PASSWORD ' + data.password, 'Server password', 'rc-nextrace-password-gold'));
+    // own extraClass param, only ever applied here. Briefly carried a
+    // "SERVER PASSWORD"/"PASSWORD" label prefix (2026-09-21) -- dropped
+    // again the same day (Matt's call: "get rid of PASSWORD from both
+    // pills") now that the gold styling + lock icon + "Server password"
+    // tooltip already say what it is without spelling it out in the text.
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password', 'rc-nextrace-password-gold'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
@@ -4168,13 +4183,12 @@
     // gold metallic flair that you used for the next race card") -- only
     // when a password is actually set; otherwise a plain muted pill so
     // "no password yet" doesn't get the same eye-catching gold treatment
-    // as a real one. "PASSWORD" prefixed onto the pill text itself
-    // (2026-09-21, Matt's follow-up ask, shortened from "SERVER PASSWORD"
-    // the same day), same as the Next Race card's own password pill --
-    // skipped on the "None Set" fallback text, which already says what
-    // it is without the label.
+    // as a real one. Briefly carried a "PASSWORD" label prefix
+    // (2026-09-21), dropped the same day (Matt's call: "get rid of
+    // PASSWORD from both pills") -- just the bare password text now,
+    // same as the Next Race card's own password pill.
     var row1 = el('div', 'rc-cal-format-list');
-    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword ? ('PASSWORD ' + details.defaultPassword) : 'None Set', 'Server Password',
+    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword || 'None Set', 'Server Password',
       'rc-cal-mini-stat' + (details.defaultPassword ? ' rc-nextrace-password-gold' : '')));
     wrap.appendChild(row1);
 
@@ -4222,12 +4236,13 @@
     // being a bare duration -- Qualifying still carries its own
     // Qualifying Type -- Public/Private -- right after, "Qualify · n min,
     // Public"/"Qualify · n min, Private". Sprint/Medium/Long now read
-    // "SPRINT RACE"/"MEDIUM RACE"/"LONG RACE" (uppercase, matching
-    // Matt's exact wording) followed by the duration, instead of the
-    // bare tier name -- each still just its duration with the full
-    // points list in a hover tooltip (Matt: "length tier pills, on hover
-    // a points table displays") -- unchanged behavior, calStat's own
-    // tooltip param, just a pill now instead of a tile.
+    // "Sprint Race"/"Medium Race"/"Long Race" (title case -- was ALL
+    // CAPS briefly, Matt's same-day follow-up: "not all caps") followed
+    // by the duration, instead of the bare tier name -- each still just
+    // its duration with the full points list in a hover tooltip (Matt:
+    // "length tier pills, on hover a points table displays") --
+    // unchanged behavior, calStat's own tooltip param, just a pill now
+    // instead of a tile.
     var row4 = el('div', 'rc-cal-format-list');
     if (raceSettings.practiceLengthMin) row4.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettings.practiceLengthMin + ' min', 'Practice Length', 'rc-cal-mini-stat'));
     if (raceSettings.qualifyLengthMin) {
@@ -4239,7 +4254,7 @@
       var table = (details.pointsTables || {})[tier];
       if (!table) return;
       var pointsList = formatPointsList(table.points);
-      row4.appendChild(calStat(ICON_CLOCK, tier.toUpperCase() + ' RACE · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
+      row4.appendChild(calStat(ICON_CLOCK, tier + ' Race · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
     });
     if (row4.children.length) wrap.appendChild(row4);
 
@@ -4346,9 +4361,13 @@
     }
     body.appendChild(trackRow);
 
+    // Plain IRL date/time text line removed (2026-09-21, Matt's call:
+    // "remove the race time on the calendar page that's at the bottom of
+    // each race container because it's already a pill on the top right")
+    // -- it duplicated the IRL Start Time pill headPills already shows
+    // top-right of the card (see ICON_CALENDAR calStat above). This line
+    // now carries only the in-game time info, nothing IRL.
     var datetime = el('div', 'rc-cal-datetime');
-    var dtSpan = el('span', null, ICON_CLOCK + '<span>' + escapeHtml(formatRaceDateTime(entry.startUtc, driverTz)) + '</span>');
-    datetime.appendChild(dtSpan);
     // In-Game Race Start, Practice, and Qualifying all live on this one
     // line now (Matt's call, 2026-08-30 -- Practice/Qualifying used to get
     // their own row below) -- Practice/Qualifying trail the Race Start
@@ -4363,7 +4382,10 @@
       var igSpan = el('span', null, ICON_FLAG + '<span>' + igText + '</span>');
       datetime.appendChild(igSpan);
     }
-    body.appendChild(datetime);
+    // Only appended when it actually has the in-game line in it (guards
+    // against a bare empty-but-margined div for a round with no in-game
+    // times set yet, now that the plain IRL text line above is gone).
+    if (datetime.children.length) body.appendChild(datetime);
 
     // Bottom .rc-cal-stats row removed entirely (2026-09-19, Matt's call:
     // "remove the larger ones from the bottom of each container so the

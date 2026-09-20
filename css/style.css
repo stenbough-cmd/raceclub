@@ -2351,15 +2351,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Same size/color treatment .rc-cal-track always used. */
 .rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
 .rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
-/* Track/layout + in-game race start time on one row (2026-09-20, Matt's
-   ask: "make the in game time text and place it next to the race track
-   to the right with a flag") -- same space-between wrap Calendar's own
-   .rc-cal-track-row uses, just without that row's bottom divider (this
-   card has no stack of races below it to separate from). */
+/* Track/layout row (2026-09-20: briefly carried the in-game race start
+   time inline to the right, on this same space-between wrap Calendar's
+   own .rc-cal-track-row uses; 2026-09-21, Matt's ask: "make the dashboard
+   NEXT RACE look similar to the calendar container with a line below the
+   race track and the in game time... below that" -- the in-game time
+   moved to its own line below instead, via the shared .rc-cal-datetime
+   class Calendar's own race cards already use, so no dedicated
+   .rc-nextrace-igtime rule is needed here anymore). justify-content:
+   space-between is now vestigial (this row only ever holds the track
+   text) but harmless -- left as-is rather than churn it for no visual
+   change. */
 .rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 2px; }
 .rc-nextrace-track-row .rc-nextrace-track { margin-top: 0; }
-.rc-nextrace-igtime { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--rc-carbon); }
-.rc-nextrace-igtime svg { color: var(--rc-steel); flex-shrink: 0; width: 14px; height: 14px; }
+.rc-nextrace-info .rc-cal-datetime { margin-top: 2px; }
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;
