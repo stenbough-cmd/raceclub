@@ -437,7 +437,14 @@
       <h2>Meet The Grid</h2>
       <p class="rc-landing-tagline" id="rc-grid-tagline"></p>
 
-      <div class="rc-grid-teaser-row" id="rc-grid-teaser-row"></div>
+      <!-- Renamed from a single flat grid to a column of per-class groups
+           (2026-09-20, Matt's ask: "to the left of each row, please have
+           a 90 degree ccw label of which class that row of teams belongs
+           to") -- each group gets its own .rc-grid-teaser-row grid (so a
+           class's own cards start a fresh row instead of interleaving
+           with the next class) plus a rotated .rc-grid-teaser-class-label
+           built in JS (buildClassGroup_ below). -->
+      <div class="rc-grid-teaser-groups" id="rc-grid-teaser-groups"></div>
 
       <p class="rc-grid-teaser-footnote" id="rc-grid-teaser-footnote"></p>
     </div>
@@ -447,7 +454,7 @@
   (function () {
     var section = document.getElementById('rc-grid-section');
     var taglineEl = document.getElementById('rc-grid-tagline');
-    var rowEl = document.getElementById('rc-grid-teaser-row');
+    var rowEl = document.getElementById('rc-grid-teaser-groups');
     var footnoteEl = document.getElementById('rc-grid-teaser-footnote');
     var started = false;
 
@@ -525,6 +532,35 @@
       card.appendChild(line);
 
       return card;
+    }
+
+    // One class's own row of cards, with a rotated class-name label forced
+    // to the left of it (2026-09-20, Matt's ask: "to the left of each row,
+    // please have a 90 degree ccw label of which class that row of teams
+    // belongs to... don't move the cards in any further to fit this label
+    // in, force the label to the left of the 1st card"). The label is
+    // absolutely positioned (see .rc-grid-teaser-class-label, css/
+    // style.css) so it never consumes grid space -- the row's own cards
+    // sit exactly where they would without a label at all, whether that
+    // class's cards wrap into one row or several at the current viewport
+    // width. cardEls is an array of already-built .rc-grid-teaser-card
+    // elements (from buildCard_), not raw data, so this same helper serves
+    // both the live grid and the no-season static sample below.
+    function buildClassGroup_(className, cardEls) {
+      var group = document.createElement('div');
+      group.className = 'rc-grid-teaser-class-group';
+
+      var label = document.createElement('div');
+      label.className = 'rc-grid-teaser-class-label';
+      label.textContent = className;
+      group.appendChild(label);
+
+      var row = document.createElement('div');
+      row.className = 'rc-grid-teaser-row';
+      cardEls.forEach(function (card) { row.appendChild(card); });
+      group.appendChild(row);
+
+      return group;
     }
 
     function showFallback_(message) {
@@ -657,9 +693,10 @@
         chosenClass + ' class.';
 
       rowEl.innerHTML = '';
-      picks.forEach(function (entry) {
-        rowEl.appendChild(buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc));
+      var pickCards = picks.map(function (entry) {
+        return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc);
       });
+      rowEl.appendChild(buildClassGroup_(chosenClass, pickCards));
       footnoteEl.textContent = '';
 
       // Two nested rAFs: the first lets the browser commit the cards'
@@ -693,8 +730,24 @@
       taglineEl.textContent = tagline;
 
       rowEl.innerHTML = '';
+      // Group into one row per class, each with its own rotated label
+      // (2026-09-20, Matt's ask -- see buildClassGroup_ above). data.teams
+      // already arrives grouped contiguously by class (handleGetGridTeaser,
+      // Website.gs, concatenates each of data.activeClasses' own shuffled
+      // pool in turn) -- this just splits that single array back into per-
+      // class buckets, preserving the order classes first appear in.
+      var classOrder = [];
+      var teamsByClass = {};
       data.teams.forEach(function (team) {
-        rowEl.appendChild(buildCard_(team.teamName, team.manufacturer, team.carModel, team.carNumber, team.bio));
+        var cls = team.carClass || 'Unclassified';
+        if (!teamsByClass[cls]) { teamsByClass[cls] = []; classOrder.push(cls); }
+        teamsByClass[cls].push(team);
+      });
+      classOrder.forEach(function (cls) {
+        var cardEls = teamsByClass[cls].map(function (team) {
+          return buildCard_(team.teamName, team.manufacturer, team.carModel, team.carNumber, team.bio);
+        });
+        rowEl.appendChild(buildClassGroup_(cls, cardEls));
       });
 
       // Footnote sentence removed (2026-09-08, Matt's call) -- footnoteEl

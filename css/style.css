@@ -3610,11 +3610,46 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* with a team name elsewhere on the site), a thin red rule underneath   */
 /* standing in for a start/finish line, then the hype line.             */
 /* -------------------------------------------------------------------- */
+/* One column of per-class groups (2026-09-20) -- was a single flat
+   .rc-grid-teaser-row grid holding every team mixed together; split into
+   one group per class so each class's own cards start a fresh row (see
+   buildClassGroup_, index.html) and a rotated class label can sit next
+   to it. margin-top (was on .rc-grid-teaser-row itself) moved up here. */
+.rc-grid-teaser-groups { display: flex; flex-direction: column; gap: 36px; margin-top: 32px; }
+.rc-grid-teaser-class-group { position: relative; }
 .rc-grid-teaser-row {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
-  margin-top: 32px;
+}
+/* Rotated class-name label, forced to the left of its row without
+   consuming any of the row's own grid space (2026-09-20, Matt's ask: "to
+   the left of each row, please have a 90 degree ccw label of which class
+   that row of teams belongs to... don't move the cards in any further to
+   fit this label in, force the label to the left of the 1st card"). Sits
+   just inside .rc-landing-inner's own 24px side padding via a negative
+   left offset -- absolutely positioned (out of flow) and spanning the
+   whole group's height (top:0/bottom:0) so it reads centered against
+   however many wrapped rows that class's cards take up at the current
+   viewport width, same as it would whether that's one row or several. */
+.rc-grid-teaser-class-label {
+  position: absolute;
+  left: -22px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-silver-dark);
+  white-space: nowrap;
+  pointer-events: none;
 }
 .rc-grid-teaser-card {
   background: var(--rc-white);
