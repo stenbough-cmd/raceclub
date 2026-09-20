@@ -1614,12 +1614,13 @@
     // with a gold border so it stands out") -- .rc-cal-stat itself stays
     // untouched (shared by Calendar's own race cards and every other
     // pill on this card), this is a scoped modifier class via calStat's
-    // own extraClass param, only ever applied here. "SERVER PASSWORD"
-    // label prefixed onto the pill text itself (2026-09-21, Matt's
-    // follow-up ask) -- the tooltip alone ("Server password") wasn't
-    // enough context on a pill that's otherwise just a bare string of
-    // characters.
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, 'SERVER PASSWORD ' + data.password, 'Server password', 'rc-nextrace-password-gold'));
+    // own extraClass param, only ever applied here. "PASSWORD" label
+    // prefixed onto the pill text itself (2026-09-21, Matt's follow-up
+    // ask -- the tooltip alone ("Server password") wasn't enough context
+    // on a pill that's otherwise just a bare string of characters;
+    // shortened from "SERVER PASSWORD" to just "PASSWORD" the same day,
+    // Matt's call).
+    if (data.password) stats.appendChild(calStat(ICON_LOCK, 'PASSWORD ' + data.password, 'Server password', 'rc-nextrace-password-gold'));
     info.appendChild(stats);
 
     // Round X of Y pill removed (2026-09-01, Matt's call) -- Special
@@ -4167,12 +4168,13 @@
     // gold metallic flair that you used for the next race card") -- only
     // when a password is actually set; otherwise a plain muted pill so
     // "no password yet" doesn't get the same eye-catching gold treatment
-    // as a real one. "SERVER PASSWORD" prefixed onto the pill text itself
-    // (2026-09-21, Matt's follow-up ask), same as the Next Race card's
-    // own password pill -- skipped on the "None Set" fallback text, which
-    // already says what it is without the label.
+    // as a real one. "PASSWORD" prefixed onto the pill text itself
+    // (2026-09-21, Matt's follow-up ask, shortened from "SERVER PASSWORD"
+    // the same day), same as the Next Race card's own password pill --
+    // skipped on the "None Set" fallback text, which already says what
+    // it is without the label.
     var row1 = el('div', 'rc-cal-format-list');
-    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword ? ('SERVER PASSWORD ' + details.defaultPassword) : 'None Set', 'Server Password',
+    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword ? ('PASSWORD ' + details.defaultPassword) : 'None Set', 'Server Password',
       'rc-cal-mini-stat' + (details.defaultPassword ? ' rc-nextrace-password-gold' : '')));
     wrap.appendChild(row1);
 

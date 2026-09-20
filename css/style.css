@@ -2394,9 +2394,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    whichever rule comes last in source order, so the base chip's offwhite
    fill was silently winning over this gold override the whole time.
    Compounding onto .rc-cal-stat bumps this rule's specificity above the
-   base rule's regardless of where either sits in the file. */
+   base rule's regardless of where either sits in the file.
+   Dark stop lightened (2026-09-21, Matt's catch: "the dark part of the
+   gold gradient background makes it hard to see the text") -- the old
+   52% stop (#8a6410, a dark brown-gold) sat close enough to the pill's
+   own dark brown text color (#3f2c00 below) that the text nearly
+   disappeared into it at that point in the gradient. Swapped for a
+   mid-tone gold (matching --rc-tier-elite) instead of a second dark
+   stop, so the gradient still shimmers light-to-mid-to-light but never
+   dips dark enough to fight the text. */
 .rc-cal-stat.rc-nextrace-password-gold {
-  background: linear-gradient(135deg, #f7dd8f 0%, #d4a933 28%, #8a6410 52%, #e8c464 76%, #fbe7a6 100%);
+  background: linear-gradient(135deg, #f7dd8f 0%, #e0c168 28%, #c9a227 52%, #e8c464 76%, #fbe7a6 100%);
   border: 1px solid var(--rc-gold);
   color: #3f2c00;
   font-weight: 700;
