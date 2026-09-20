@@ -986,6 +986,40 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rcl-ink);
 }
+/* Tier name + duration merged into one pill (2026-09-21, Matt's ask:
+   "extend a border around the length tier coming off of the time pill so
+   it looks like one pill, half of it rounded bordered and half of it the
+   time in mins") -- only used when a tier actually has a duration (see
+   _rclBuildPointsBody, js/league.js); the plain .rcl-points-tier-name
+   above stays as-is for anything without an adjacent chip (e.g. the
+   "Bonus Points" label). The wrapper owns the ONE border/radius/overflow-
+   clip for both halves; the label half gets its own light fill + a right
+   border as the seam, and the chip half (.rcl-chip-light, reused as-is)
+   has its own border/radius stripped so it reads as the pill's other
+   half instead of a second, separate pill sitting flush against the
+   first.  */
+.rcl-points-tier-pill {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #b6b8bd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.rcl-points-tier-pill-label {
+  display: flex;
+  align-items: center;
+  background: #d9dadd;
+  color: #1c1d20;
+  padding: 3px 10px;
+  font-family: var(--rc-font-heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-right: 1px solid #b6b8bd;
+  white-space: nowrap;
+}
+.rcl-points-tier-pill .rcl-chip-light { border: none; border-radius: 0; }
 .rcl-points-table { display: flex; flex-wrap: wrap; gap: 8px; }
 .rcl-points-pos {
   background: var(--rcl-bg-raised-2);
@@ -1001,10 +1035,14 @@ body.rc-league-page {
 .rcl-points-pos-wide { min-width: 96px; }
 .rcl-points-pos-num { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
 .rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-/* Bonus points' own value reads in the brand accent (2026-09-19) --
-   distinguishes "+1 bonus" from a tier table's plain championship points,
-   the same way the old text version did with a red <strong>. */
-.rcl-points-pos-val-accent { color: var(--rc-red); }
+/* Bonus points' own value -- was the brand red accent (2026-09-19),
+   changed to plain white (2026-09-21, Matt's ask: "make the bonus points
+   numbers white not red") -- same var(--rcl-ink) every other
+   .rcl-points-pos-val already uses, so this class is now redundant with
+   the base rule but kept (rather than removed from the js/league.js
+   markup) in case a future pass wants bonus rows visually distinct
+   again. */
+.rcl-points-pos-val-accent { color: var(--rcl-ink); }
 /* Bonus Points row (renamed from "Bonus Points This Season", 2026-09-19)
    now mirrors a tier block's own structure exactly -- label, then a
    .rcl-points-table of position-style boxes underneath -- instead of a

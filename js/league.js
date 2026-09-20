@@ -371,55 +371,34 @@ function _rclRenderTicker(hub) {
 // for the story popup.
 var _rclHubForPoints = null;
 
-function _rclRenderStandings(hub) {
-  var body = document.getElementById('rcl-standings-body');
-  if (!body) return;
-  body.innerHTML = '';
-  _rclHubForPoints = hub;
-
-  if (!hub.hasSeason || !hub.standings || !hub.standings.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Standings fill in once a season is underway.'));
-    return;
-  }
-
-  // Before any race has actually been run, there's nothing to rank yet
-  // (2026-09-19 follow-up, Matt's call: "if there hasn't been a race
-  // posted yet, there shouldn't be a ranked list -- just the graphic
-  // container, no number, and no points") -- same hasResults gate the
-  // ticker already uses (roundsCompleted > 0), so a season that's only in
-  // driver-registration limbo shows a plain roster instead of a fake
-  // "1st place" for whoever happens to sort first at 0 points apiece.
-  var hasResults = (hub.roundsCompleted || 0) > 0;
-
-  // "Unofficial Results" note (2026-09-19 follow-up, Matt's clarification:
-  // standings should still update the moment results are imported -- that
-  // already happens server-side -- but need a visual cue that they aren't
-  // official until an organizer finalizes them) -- hub.hasUnofficialResults
-  // is true the moment ANY completed round hasn't been finalized yet
-  // (see handleGetLeagueHub in Website.gs), since the season total is a
-  // sum across every round.
-  if (hasResults && hub.hasUnofficialResults) {
-    body.appendChild(_rclEl('div', 'rcl-standings-unofficial-note', 'Unofficial Results -- pending organizer finalization'));
-  }
-
+// Builds the whole "one column per class" grid -- shared by the ranked
+// Standings panel (hasResults true, real points) and the Drivers popup
+// below (hasResults always false, a plain roster) -- 2026-09-21 refactor,
+// pulled out of _rclRenderStandings so both places render an identical
+// row for identical data instead of two copies of this markup drifting
+// apart over time. hasResults being false renders exactly what the
+// Standings panel used to show itself before its first race was scored
+// (empty position slot, no points column) -- see the per-arg comments
+// below for why each piece looks the way it does.
+function _rclBuildStandingsColumns_(standings, hasResults) {
   // One column per class (2026-09-19, Matt's call) -- .rcl-standings-
   // columns is the grid wrapper (css/league.css), auto-fitting however
   // many classes the season actually has.
   var columns = _rclEl('div', 'rcl-standings-columns');
-  hub.standings.forEach(function (cls) {
+  standings.forEach(function (cls) {
     var wrap = _rclEl('div', 'rcl-standings-class');
     wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
-    var standings = cls.standings || [];
-    if (!standings.length) {
+    var clsStandings = cls.standings || [];
+    if (!clsStandings.length) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
     } else {
-      var leaderPts = standings[0].championshipPoints;
+      var leaderPts = clsStandings[0].championshipPoints;
       // Metal-color modifier by finish position (2026-09-19, Matt's call:
       // "Make 1st gold, 2nd silver, and 3rd bronze and the rest can be a
       // titanium metal color") -- replaces the old red "lead" tint, since
       // gold/silver/bronze already reads as rank on its own.
       var POS_METAL_CLASS = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
-      standings.forEach(function (row, idx) {
+      clsStandings.forEach(function (row, idx) {
         // No points column while hasResults is false, but the position
         // container itself STAYS (2026-09-19 follow-up, Matt's
         // clarification: "still show the same number containers, just
@@ -427,7 +406,9 @@ function _rclRenderStandings(hub) {
         // titanium colored backgrounds") -- empty text, no p1/p2/p3 metal
         // class (so it falls back to .rcl-standings-pos's own default
         // titanium gradient, the same one non-podium rows already use),
-        // same 40px slot and grid-template-columns as a normal row.
+        // same 40px slot and grid-template-columns as a normal row. This
+        // is also exactly the mode the Drivers popup always renders in
+        // (2026-09-21) -- a driver roster, not a ranking.
         var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults && POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
         rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', hasResults ? String(idx + 1) : ''));
 
@@ -491,16 +472,106 @@ function _rclRenderStandings(hub) {
     }
     columns.appendChild(wrap);
   });
-  body.appendChild(columns);
+  return columns;
+}
 
-  // "View Points Tables" link (2026-09-19, Matt's call: Points Tables is
-  // no longer its own panel -- see _rclOpenPointsModal below).
-  var linkRow = _rclEl('div', 'rcl-standings-points-row');
-  var link = _rclEl('button', 'rcl-standings-points-link', 'View Points Tables');
-  link.type = 'button';
-  link.addEventListener('click', function () { _rclOpenPointsModal(_rclHubForPoints); });
-  linkRow.appendChild(link);
-  body.appendChild(linkRow);
+function _rclRenderStandings(hub) {
+  var body = document.getElementById('rcl-standings-body');
+  if (!body) return;
+  body.innerHTML = '';
+  _rclHubForPoints = hub;
+
+  var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
+  // Before any race has actually been run, there's nothing to rank yet
+  // (2026-09-19 follow-up, Matt's call: "if there hasn't been a race
+  // posted yet, there shouldn't be a ranked list -- just the graphic
+  // container, no number, and no points") -- same hasResults gate the
+  // ticker already uses (roundsCompleted > 0).
+  // 2026-09-21 follow-up (Matt's catch): that pre-results state used to
+  // show the plain driver roster right here, which meant a driver could
+  // ONLY ever be found by scrolling this panel. Roster browsing moved out
+  // to its own "View All Drivers" popup (_rclOpenDriversModal below,
+  // reachable anytime a season has registrations), and CURRENT STANDINGS
+  // itself now shows the same circle-slash "no data" empty state RECENT
+  // RESULTS uses whenever there's nothing ranked to show yet -- Standings
+  // is purely about ranked results now, not a roster fallback.
+  var hasResults = (hub.roundsCompleted || 0) > 0;
+
+  if (!hasStandings || !hasResults) {
+    var emptyMsg = !hasStandings
+      ? 'Standings fill in once a season is underway.'
+      : 'Standings fill in once a race has been scored.';
+    body.appendChild(_rclEmptyState('No Data To Display', emptyMsg));
+  } else {
+    // "Unofficial Results" note (2026-09-19 follow-up, Matt's
+    // clarification: standings should still update the moment results
+    // are imported -- that already happens server-side -- but need a
+    // visual cue that they aren't official until an organizer finalizes
+    // them) -- hub.hasUnofficialResults is true the moment ANY completed
+    // round hasn't been finalized yet (see handleGetLeagueHub in
+    // Website.gs), since the season total is a sum across every round.
+    if (hub.hasUnofficialResults) {
+      body.appendChild(_rclEl('div', 'rcl-standings-unofficial-note', 'Unofficial Results -- pending organizer finalization'));
+    }
+    body.appendChild(_rclBuildStandingsColumns_(hub.standings, true));
+  }
+
+  // "View Points Tables" / "View All Drivers" links (2026-09-19 /
+  // 2026-09-21) -- shown whenever the season actually has registered
+  // drivers to show, whether or not any race has been scored yet, so the
+  // Drivers popup stays reachable even during the empty-state above.
+  if (hasStandings) {
+    var linkRow = _rclEl('div', 'rcl-standings-points-row');
+    var pointsLink = _rclEl('button', 'rcl-standings-points-link', 'View Points Tables');
+    pointsLink.type = 'button';
+    pointsLink.addEventListener('click', function () { _rclOpenPointsModal(_rclHubForPoints); });
+    linkRow.appendChild(pointsLink);
+    // "View All Drivers" (2026-09-21, Matt's ask: "a link next to the
+    // points tables link... that opens up a drivers list popup") -- same
+    // link styling, second in the row.
+    var driversLink = _rclEl('button', 'rcl-standings-points-link', 'View All Drivers');
+    driversLink.type = 'button';
+    driversLink.addEventListener('click', function () { _rclOpenDriversModal(_rclHubForPoints); });
+    linkRow.appendChild(driversLink);
+    body.appendChild(linkRow);
+  }
+}
+
+// Drivers popup (2026-09-21, Matt's ask): a season's full roster, always
+// in the same "no rank, no points" mode the Standings panel itself shows
+// before its first race is scored (see _rclBuildStandingsColumns_ above)
+// -- reachable any time a season has registrations, not gated on results
+// existing, so a driver isn't ONLY ever discoverable through the ranked
+// Standings list. Same .rcl-modal-overlay/dialog shell every other League
+// Hub popup uses (_rclOpenPointsModal/_rclOpenSeasonDetailsModal), styled
+// to match a .rcl-panel exactly.
+function _rclOpenDriversModal(hub) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Drivers'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body');
+  if (!hub || !hub.hasSeason || !hub.standings || !hub.standings.length) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Drivers fill in once a season is underway.'));
+  } else {
+    body.appendChild(_rclBuildStandingsColumns_(hub.standings, false));
+  }
+  dialog.appendChild(body);
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
+  function close() {
+    overlay.remove();
+    _rclUnlockBodyScroll();
+  }
+  closeBtn.addEventListener('click', close);
 }
 
 // ---------------------------------------------------------------------
@@ -714,11 +785,23 @@ function _rclBuildPointsBody(hub, body) {
     if (!points.length) return;
     var wrap = _rclEl('div', 'rcl-points-tier');
     var head = _rclEl('div', 'rcl-points-tier-head');
-    head.appendChild(_rclEl('div', 'rcl-points-tier-name', _rclEscapeHtml(tierName)));
     // Duration as a .rcl-chip-light pill with a clock icon (2026-09-19,
     // Matt's ask: "make the tier length and time more aesthetic") --
-    // same shared chip the Calendar's own time+length pill uses.
-    if (tier.duration) head.appendChild(_rclChip(_RCL_ICON_CLOCK, tier.duration + ' Min'));
+    // same shared chip the Calendar's own time+length pill uses. Merged
+    // with the tier name into one two-halved pill (2026-09-21, Matt's
+    // ask: "extend a border around the length tier coming off of the
+    // time pill so it looks like one pill, half of it rounded bordered
+    // and half of it the time in mins") via .rcl-points-tier-pill (css/
+    // league.css) -- only when there's actually a duration to pair it
+    // with; a tier with no duration falls back to the plain text label.
+    if (tier.duration) {
+      var tierPill = _rclEl('div', 'rcl-points-tier-pill');
+      tierPill.appendChild(_rclEl('div', 'rcl-points-tier-pill-label', _rclEscapeHtml(tierName)));
+      tierPill.appendChild(_rclChip(_RCL_ICON_CLOCK, tier.duration + ' Min'));
+      head.appendChild(tierPill);
+    } else {
+      head.appendChild(_rclEl('div', 'rcl-points-tier-name', _rclEscapeHtml(tierName)));
+    }
     wrap.appendChild(head);
     var table = _rclEl('div', 'rcl-points-table');
     points.forEach(function (val, idx) {
