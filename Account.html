@@ -1655,6 +1655,14 @@
     var seasonNumLabel = seasonNumberLabel(s.seasonId);
     var titleText = (seasonNumLabel ? ('Season ' + seasonNumLabel + ': ') : '') + (s.seasonName || s.seasonId);
     head.appendChild(el('h3', 'rc-dash-card-header-title', escapeHtml(titleText)));
+    // Class pills, top-right of the header (2026-09-20, Matt's ask: "add
+    // the pills in the top right like CALENDAR page has describing the
+    // classes for the season") -- same buildClassPillsRow helper Calendar
+    // and Results use, fed from this season's own whole-field classes map
+    // (see handleGetMyCareerHistory's base.classes, DataCache.gs), not
+    // this driver's own single `class` (shown lower in the card).
+    var careerClassPillsRow = buildClassPillsRow(s.classes);
+    if (careerClassPillsRow) head.appendChild(careerClassPillsRow);
     card.appendChild(head);
 
     var metaRow = el('div', 'rc-career-card-meta');
@@ -4623,6 +4631,12 @@
       var head = el('div', 'rc-cal-season-head');
       var seasonNumLabel = seasonNumberLabel(res.seasonId);
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
+      // Class pills, top-right of the header (2026-09-20, Matt's ask: "add
+      // the pills in the top right like CALENDAR page has describing the
+      // classes for the season") -- same treatment, same helper, as
+      // renderCalendarSection's own head.appendChild(classPillsRow) below.
+      var resultsClassPillsRow = buildClassPillsRow((res.seasonDetails || {}).classes);
+      if (resultsClassPillsRow) head.appendChild(resultsClassPillsRow);
       panel.appendChild(head);
 
       // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a

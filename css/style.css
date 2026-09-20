@@ -2122,6 +2122,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    a little low against the number. align-items: center here lines the two
    up by their actual vertical centers instead. */
 .rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+/* Career card's class pills row (2026-09-20) -- buildClassPillsRow's own
+   .rc-cal-classes has a 10px margin-top meant for sitting under something
+   (its original home, Season Format); inline in this header row it needs
+   none. align-self: center overrides the row's own align-items: baseline
+   (above, tuned for the corner-figure's TEXT baseline) so the pills line
+   up on their vertical center against the title instead of sitting low,
+   same fix as .rc-cal-season-head's own align-items: center override. */
+.rc-dash-card-header-row .rc-cal-classes { margin-top: 0; align-self: center; }
 
 /* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
    checkered-flag corner that fades toward the card's center, a red
