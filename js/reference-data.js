@@ -140,7 +140,13 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // order the ladder is meant to read in everywhere on the site (class
 // picker, wizard checkboxes/inputs, admin Cars class dropdown, etc.) --
 // LMP3 is the very next step up from GT3, not LMP2.
-var CAR_CLASS_LIST = ['LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
+// LMGTE added 2026-09-20 (Matt's ask: "I also added a LMGTE class of car
+// data to the sheets. This is a rookie class of cars below LMGT3") --
+// slotted in FIRST, below LMGT3 on the ladder, since it's the entry-level
+// class every other class sits above. Mirrored in DataCache.gs's own
+// CAR_CLASS_CANONICAL_ORDER_ -- keep both in sync if this order ever
+// changes again.
+var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
 // CAR OBJECTIVES SYSTEM (added 2026-08-29, reworked 2026-08-30) -- a
 // second, independent bonus layer alongside Sponsors, bound to a car for
@@ -252,7 +258,10 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
 // Rulebook.md Section 9/10 and the v0.3 design doc for the full mechanic,
 // including Class Placement Requests -- the driver-initiated, admin-
 // approved exception for a class a driver doesn't yet qualify for.
-var CAR_CLASS_REPUTATION_FLOOR = { LMGT3: 0, LMP3: 300, LMP2: 400, Hypercar: 600 };
+// LMGTE (2026-09-20) sits below LMGT3 on the ladder, so it gets the same
+// no-floor/open treatment LMGT3 already has -- neither requires proven
+// reputation to join.
+var CAR_CLASS_REPUTATION_FLOOR = { LMGTE: 0, LMGT3: 0, LMP3: 300, LMP2: 400, Hypercar: 600 };
 
 // Class Placement Request denial reasons -- admin-curated, fixed list
 // (same pattern as the Sponsor/Vanity catalogs: preconfigured options,
@@ -338,7 +347,10 @@ var PROTEST_WINDOW_HOURS = 48;
 // CSS variable (defined in css/style.css) holding each class's badge
 // color -- shared by the driver profile's Current Seat number badge and
 // anywhere else a class needs the same consistent color.
-var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
+// LMGTE (2026-09-20, Matt's ask: "the pill color is orange") added --
+// --rc-class-lmgte is defined alongside the other three class-color
+// tokens in css/style.css's :root.
+var CAR_CLASS_BADGE_COLOR_VAR = { LMGTE: '--rc-class-lmgte', LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
 
 // Short abbreviated label per class (2026-09-19) -- for the compact class
 // pill on the Dashboard's Current Seat card, placed right before the car
@@ -352,7 +364,9 @@ var CAR_CLASS_BADGE_COLOR_VAR = { LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-l
 // (LMP3->P3, LMP2->P2 read unambiguously as their own class; "GT3" alone
 // reads as a different real-world class entirely, not shorthand for
 // LMGT3), so it's excluded from the abbreviation and just passes through
-// via _rcClassAbbrevPill's own key fallback below.
+// via _rcClassAbbrevPill's own key fallback below. LMGTE (2026-09-20)
+// gets the same treatment for the same reason -- "GTE" alone reads as
+// the real-world Le Mans GTE class, not shorthand for LMGTE.
 var CAR_CLASS_ABBREV = { LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 
 // Manufacturer logo file convention -- assets/manufacturers/{slug}.png

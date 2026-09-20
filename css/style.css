@@ -52,7 +52,10 @@
      a consistent color. LMGT3 reuses --rc-ok (already green); Hypercar
      reuses --rc-red (already red); LMP3/LMP2 are new, matching the
      purple/blue already used for "working value" badges in the v0.3
-     system map doc, so the palette stays consistent across the project. */
+     system map doc, so the palette stays consistent across the project.
+     LMGTE (2026-09-20, Matt's ask: "the pill color is orange") -- a new
+     rookie class below LMGT3 on the ladder, gets its own orange token. */
+  --rc-class-lmgte: #e0791b;
   --rc-class-lmgt3: var(--rc-ok);
   --rc-class-lmp3: #6b3fa0;
   --rc-class-lmp2: #2b6cb0;
@@ -450,6 +453,7 @@ p { margin: 0 0 0.75em; }
   color: var(--rc-white);
   line-height: 1.6;
 }
+.rc-badge-lmgte { background: var(--rc-class-lmgte); }
 .rc-badge-lmgt3 { background: var(--rc-class-lmgt3); }
 .rc-badge-lmp3 { background: var(--rc-class-lmp3); }
 .rc-badge-lmp2 { background: var(--rc-class-lmp2); }
@@ -457,10 +461,11 @@ p { margin: 0 0 0.75em; }
 /* Bigger type, tighter horizontal padding for every class pill specifically
    (2026-09-19, Matt's call: "increase the size of the font inside the
    class pills/reduce the padding so it takes up more room in the pill" --
-   site-wide, wherever a class pill shows) -- scoped to just these four
-   class-color classes so it never touches .rc-badge-chip's other uses
-   (status/tier/race pills, etc.), which stay their original size. */
-.rc-badge-lmgt3, .rc-badge-lmp3, .rc-badge-lmp2, .rc-badge-hypercar { font-size: 13px; padding: 3px 8px; }
+   site-wide, wherever a class pill shows) -- scoped to just these five
+   class-color classes (LMGTE added 2026-09-20) so it never touches
+   .rc-badge-chip's other uses (status/tier/race pills, etc.), which stay
+   their original size. */
+.rc-badge-lmgte, .rc-badge-lmgt3, .rc-badge-lmp3, .rc-badge-lmp2, .rc-badge-hypercar { font-size: 13px; padding: 3px 8px; }
 /* Neutral "grouping label" badge -- black rounded rectangle, same chip
    shape as the class badges above but always carbon/white regardless of
    the category inside it, since it's a structural grouping label, not a

@@ -8714,12 +8714,13 @@
     return cls === 'Hypercar' ? 'HY' : cls;
   }
 
-  // Class badge -- LMGT3/LMP3/LMP2/Hypercar get their canonical colors
-  // (same CSS vars CAR_CLASS_BADGE_COLOR_VAR points at); any other class
-  // name still shows, just uncolored, rather than being silently dropped.
+  // Class badge -- LMGTE/LMGT3/LMP3/LMP2/Hypercar get their canonical
+  // colors (same CSS vars CAR_CLASS_BADGE_COLOR_VAR points at); any other
+  // class name still shows, just uncolored, rather than being silently
+  // dropped. LMGTE (2026-09-20, orange) added below LMGT3 on the ladder.
   function _rcClassBadge(cls) {
     var key = String(cls || '').trim();
-    var map = { LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+    var map = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
     var colorClass = map[key] || '';
     return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(_rcClassPillLabel(key) || 'Unclassified'));
   }
@@ -8732,7 +8733,7 @@
   // rounded edges with HY in it").
   function _rcClassAbbrevPill(cls) {
     var key = String(cls || '').trim();
-    var map = { LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+    var map = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
     var colorClass = map[key] || '';
     var label = (typeof CAR_CLASS_ABBREV !== 'undefined' && CAR_CLASS_ABBREV[key]) ? CAR_CLASS_ABBREV[key] : key;
     return el('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : ''), escapeHtml(label || '?'));
