@@ -137,11 +137,10 @@ body.rc-league-page {
   align-items: center;
   height: 100%;
   width: max-content;
-  /* Scroll speed bumped up again (2026-09-19 follow-up, Matt: "uncomfortably
-     slow... increase the speed of the ticker to what it was") -- shorter
-     duration over the same distance. Keep in sync with mainDurationSec in
+  /* Slowed slightly (2026-09-20, Matt's ask) from the 16s it was bumped
+     back up to previously. Keep in sync with mainDurationSec in
      js/league.js. */
-  animation: rcl-ticker-scroll 16s linear infinite;
+  animation: rcl-ticker-scroll 19s linear infinite;
 }
 .rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
 /* Back to the original plain 0%/-50% loop (2026-09-19 follow-up -- the
@@ -302,6 +301,10 @@ body.rc-league-page {
   line-height: 1.02;
   color: var(--rcl-ink);
   margin: 0;
+  /* Same subtle drop shadow as .rcl-panel-title (2026-09-20) -- this
+     title sits directly on top of the hero banner image too, so it
+     benefits the same way. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
@@ -478,6 +481,17 @@ body.rc-league-page {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* Subtle dark drop shadow (2026-09-20, Matt's ask: "cast a subtle dark
+     drop shadow around the text to help pronounce it more as a header")
+     -- small offset, soft blur, low opacity so it reads as a bit of depth
+     lifting the header text off the panel background rather than a heavy
+     outline. Every panel header on the page shares this one class,
+     including the ones sitting directly on top of a banner image (League
+     News, the hero) where it also helps the text stay legible against
+     whatever's behind it. Popup titles (.rcl-modal-title) are a separate
+     rule and intentionally NOT touched here -- this is about the
+     page's own container headers, not every popup on top of it. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* Angled clip-path hash mark replaced with a literal red forward slash
    (2026-09-19, Matt's call: "instead of a style hash, just add 3 red
@@ -565,10 +579,26 @@ body.rc-league-page {
      line in the same pass (see .rcl-standings-name-row below) is most of
      what makes this height cut work without feeling cramped; this was
      10px before. */
-  padding: 4px 0;
-  border-bottom: 1px solid var(--rcl-line);
+  padding: 4px 6px;
+  /* Gray border-bottom removed (2026-09-20, Matt's call: "remove the gray
+     border in between containers and keep the gap there so it shows a
+     black space in between") -- margin-bottom in its place keeps the same
+     visual gap, now just the panel's own near-black background
+     (--rcl-bg-raised) showing through instead of a line. Zebra striping
+     below (nth-child(even)) is the new way to tell rows apart row to row
+     instead of the border. Horizontal padding added (was 0) so the
+     striped background has a little breathing room on both edges instead
+     of butting flush against the panel's own 18px padding. */
+  margin-bottom: 3px;
+  border-radius: 4px;
 }
-.rcl-standings-row:last-child { border-bottom: none; }
+.rcl-standings-row:last-child { margin-bottom: 0; }
+/* Alternating row background (2026-09-20, Matt's ask: "alternate rows
+   with black and a very subtle lighter background to help read which
+   driver has which points") -- odd rows stay transparent (the panel's
+   own near-black background shows through); even rows get a faint
+   lighter fill, one shade up the dark palette (--rcl-bg-raised-2). */
+.rcl-standings-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
 /* No rank NUMBER and no points column before any race has been run
    (2026-09-19 follow-up, Matt's call, then clarified: "still show the
    same number containers, just without the numbers and keeping the same
@@ -595,9 +625,13 @@ body.rc-league-page {
    background itself is dark instead of light. */
 .rcl-standings-pos {
   align-self: stretch;
-  /* Matches .rcl-standings-row's own padding above (2026-09-19 follow-up
-     -- was -10px 0 when the row's padding was 10px). */
-  margin: -4px 0;
+  /* Matches .rcl-standings-row's own padding above -- bleeds up/down/left
+     to the row's true edges (only left, not right, since this is the
+     first grid column) so the colored badge still reads as a filled bar
+     down the row's left edge now that the row has horizontal padding
+     (2026-09-20, added for the new zebra-stripe background's breathing
+     room -- see .rcl-standings-row). */
+  margin: -4px 0 -4px -6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -640,6 +674,13 @@ body.rc-league-page {
    logo and a narrow-but-tall one both still look like they belong to the
    same compact row height. */
 .rcl-standings-identity { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* align-self: center added explicitly on both children (2026-09-20,
+   Matt's ask: "make sure the manufacturer logos are vertically centered
+   with the text next to it") -- belt-and-suspenders alongside identity's
+   own align-items:center above, so the logo slot's fixed 40x24 box stays
+   centered against .rcl-standings-name-row's own height even if that row
+   wraps to two lines (a long team name on a narrow column) rather than
+   sitting flush to the top of whichever sibling happens to be tallest. */
 .rcl-standings-mfr-logo-slot {
   flex: none;
   width: 40px;
@@ -647,6 +688,7 @@ body.rc-league-page {
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
 }
 .rcl-standings-mfr-logo {
   max-width: 40px;
@@ -660,7 +702,7 @@ body.rc-league-page {
    up) -- flex-wrap so a long team name still degrades gracefully on a
    narrow viewport instead of overflowing the panel, rather than a hard
    nowrap+ellipsis truncation. */
-.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; }
+.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; align-self: center; }
 .rcl-standings-flag {
   flex: none;
   width: 16px;

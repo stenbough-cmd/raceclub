@@ -202,8 +202,14 @@ function _rclBuildTickerItems(hub) {
     (hub.standings || []).forEach(function (cls) {
       var standings = cls.standings || [];
       if (!standings.length) return;
-      var names = standings.map(function (row) { return row.name; }).filter(Boolean).join(', ');
-      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: _rclEscapeHtml(names) });
+      // Car number appended after each name (2026-09-20, Matt's ask) --
+      // "#n" straight after the name, same shorthand the Leaderboard
+      // panel's own row markup already uses (.rcl-standings-carnum).
+      var names = standings.map(function (row) {
+        if (!row.name) return null;
+        return _rclEscapeHtml(row.name) + (row.carNumber ? ' #' + _rclEscapeHtml(row.carNumber) : '');
+      }).filter(Boolean).join(', ');
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: names });
     });
 
     // Next race, shown after the driver lists (2026-09-19 follow-up,
@@ -248,7 +254,8 @@ function _rclBuildTickerItems(hub) {
     var leader = standings[0];
     var second = standings[1];
     var gapText = second ? ('+' + (leader.championshipPoints - second.championshipPoints) + ' PTS') : 'UNCONTESTED';
-    items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' POINTS LEAD', text: _rclEscapeHtml(leader.name) + ' (' + gapText + ')' });
+    var leaderCarNum = leader.carNumber ? ' #' + _rclEscapeHtml(leader.carNumber) : '';
+    items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' POINTS LEAD', text: _rclEscapeHtml(leader.name) + leaderCarNum + ' (' + gapText + ')' });
   });
 
   return items;
@@ -338,7 +345,7 @@ function _rclRenderTicker(hub) {
   requestAnimationFrame(function () {
     var viewport = track.parentElement;
     if (!viewport) return;
-    var mainDurationSec = 16; // matches rcl-ticker-scroll's own duration in css/league.css
+    var mainDurationSec = 19; // matches rcl-ticker-scroll's own duration in css/league.css -- slowed slightly from 16 (2026-09-20, Matt's ask)
     // The intro is just a quick "slide the strip on screen" reveal, so it runs
     // at a fixed pace regardless of viewport width -- deriving it proportionally
     // from the main loop's (slow, by design) px/sec rate made the very first
