@@ -93,7 +93,15 @@ function _rcEPShowModal(title, opts) {
   var isDark = document.body.classList.contains('rc-league-page');
 
   var backdrop = document.createElement('div');
-  backdrop.className = isDark ? 'rcl-modal-overlay' : 'rc-modal-backdrop';
+  // rcl-modal-overlay-over-nav (2026-09-21, Matt's ask: "only when EDIT
+  // PROFILE and FEEDBACK popups are visible on the league page, dim the
+  // navbar with the main league page... keep the other popups how they
+  // are") -- sits above .rc-fixed-header (css/style.css, z-index:1000)
+  // instead of below it, so the navbar dims along with the rest of the
+  // page. Every popup built with this shared shell (Edit Profile, Change
+  // Avatar, and the brief loading state before either) gets this, since
+  // they're all the same "Edit Profile" flow.
+  backdrop.className = isDark ? 'rcl-modal-overlay rcl-modal-overlay-over-nav' : 'rc-modal-backdrop';
   var modal = document.createElement('div');
   modal.className = isDark
     ? ('rcl-modal-dialog' + (opts.wide ? '' : ' rcl-modal-dialog-narrow'))

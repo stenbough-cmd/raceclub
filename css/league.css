@@ -1177,6 +1177,18 @@ body.rc-league-page {
   overflow-y: auto;
   z-index: 500;
 }
+/* Dims the navbar along with the rest of the page (2026-09-21, Matt's ask:
+   "only when EDIT PROFILE and FEEDBACK popups are visible on the league
+   page, dim the navbar with the main league page... keep the other
+   popups how they are") -- .rc-fixed-header (css/style.css) is
+   z-index:1000, above this overlay's own default 500, so every other
+   league.html popup (News, Points Table, Drivers, Season Details, Legal
+   Disclaimer) already leaves the navbar sitting bright on top,
+   undimmed. Edit Profile (js/edit-profile.js) and Feedback
+   (_rcOpenFeedbackModal, js/header.js) add this modifier instead, so
+   their overlay -- and the popup card itself, which stacks inside it --
+   render above the navbar and dim it too. */
+.rcl-modal-overlay-over-nav { z-index: 1001; }
 /* Dialog now matches a .rcl-panel's own shell exactly (2026-09-19, Matt's
    ask: "the league news [story] popup should look like the same style as
    the league news container") -- same border color/weight and radius as
