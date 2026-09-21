@@ -1351,6 +1351,30 @@ body.rc-league-page {
 .rcl-modal-dialog .rc-panel h3 {
   color: var(--rcl-ink);
 }
+/* Same dark-theme override for the "Loading your profile..." state
+   (2026-09-21, Matt's ask: "should have a dark background, not white, to
+   blend in with the popup") -- .rc-inline-spinner-wrap (style.css) is a
+   solid white card by default, built for popups on the light shell (the
+   Season Wizard, Data Management), so it needs a scoped dark version here
+   too, same pattern as .rc-panel above. Border/shadow already dropped
+   inside any .rc-modal-body via style.css's own .rc-modal-body
+   .rc-inline-spinner-wrap rule -- that selector doesn't match this dark
+   shell's .rcl-modal-body class, so both are repeated here. .rc-startlights
+   and .rc-loading-text get the same treatment .rcl-page-loader already
+   gives them above, so the loading state matches whether it's the full
+   page loader or this in-modal one. */
+.rcl-modal-dialog .rc-inline-spinner-wrap {
+  background: var(--rcl-bg-raised-2);
+  border: none;
+  box-shadow: none;
+}
+.rcl-modal-dialog .rc-startlights {
+  background: var(--rcl-line-bright);
+  border-color: var(--rcl-line);
+}
+.rcl-modal-dialog .rc-loading-text {
+  color: var(--rcl-ink-dim);
+}
 /* Full-width red submit button, dark theme -- same solid-red/uppercase
    treatment as .rcl-modal-loadmore-btn above, just full width so it reads
    as a form's primary action the same way .rc-btn-primary does on the
