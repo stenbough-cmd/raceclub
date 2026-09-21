@@ -140,6 +140,16 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
+<!-- reference-data.js + edit-profile.js (added 2026-09-21) -- let the
+     header's Edit Profile menu item open its popup in place on this page
+     instead of navigating to Account.html first. See
+     _rcOpenEditProfileFromHeader (js/header.js) and js/edit-profile.js's
+     own file header comment. reference-data.js supplies the country/
+     timezone lists the Edit Profile form needs (already loaded on
+     Account.html/league.html/register.html for the same reason; index.html
+     never needed it before this). -->
+<script src="js/reference-data.js"></script>
+<script src="js/edit-profile.js"></script>
 </head>
 <body>
 

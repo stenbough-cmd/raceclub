@@ -287,13 +287,20 @@ function updateHeaderNotifDot(count) {
 // navigating to an Account.html section). window.rcOpenEditProfileModal
 // is the bridge Account.html sets once its own profile/token are loaded
 // (see buildFullProfileUI there); call it directly when present -- no
-// navigation, the modal just opens in place. When it's not there (any
-// other page, or Account.html mid-load), stash a flag and navigate;
-// Account.html checks that flag once its own load finishes and opens the
-// modal itself.
+// navigation, the modal just opens in place. On index.html/league.html
+// (2026-09-21, Matt's ask: "make it so that the popup appears on the
+// index or league page, with league styling") window.rcOpenEditProfileModal
+// doesn't exist, but window.rcOpenEditProfileModalInPlace does -- see
+// js/edit-profile.js, loaded on those two pages -- which builds the same
+// popup itself, themed to match. Only login.html/register.html/
+// verify.html/reset-password.html (none of which ever show the account
+// dropdown at all -- no token means no dropdown, see renderHeader above)
+// still fall through to the old navigate-to-Account.html path.
 function _rcOpenEditProfileFromHeader() {
   if (typeof window.rcOpenEditProfileModal === 'function') {
     window.rcOpenEditProfileModal();
+  } else if (typeof window.rcOpenEditProfileModalInPlace === 'function') {
+    window.rcOpenEditProfileModalInPlace();
   } else {
     sessionStorage.setItem('raceclub_open_edit_profile', '1');
     window.location.href = 'Account.html';
@@ -1143,7 +1150,13 @@ function _rcOpenFeedbackModal() {
   var backdrop = document.createElement('div');
   backdrop.className = isDark ? 'rcl-modal-overlay' : 'rc-modal-backdrop';
   var modal = document.createElement('div');
-  modal.className = isDark ? 'rcl-modal-dialog' : 'rc-modal';
+  // rcl-modal-dialog-narrow (2026-09-21, Matt's catch: "make the league
+  // page feedback popup the same width as the account page's feedback
+  // popup") -- the dark shell's plain .rcl-modal-dialog defaults to 820px
+  // (News/Points Table's own width), while the light .rc-modal this
+  // branch uses is 460px; the narrow modifier (css/league.css) brings the
+  // dark side down to match.
+  modal.className = isDark ? 'rcl-modal-dialog rcl-modal-dialog-narrow' : 'rc-modal';
   var head = document.createElement('div');
   head.className = isDark ? 'rcl-modal-head' : 'rc-modal-head';
   var title = document.createElement(isDark ? 'div' : 'h3');
@@ -1185,11 +1198,12 @@ function _rcOpenFeedbackModal() {
   body.appendChild(categorySelect);
 
   var nameLabel = document.createElement('label');
-  nameLabel.textContent = 'Name (optional)';
+  nameLabel.textContent = 'Name';
   body.appendChild(nameLabel);
   var nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.maxLength = 120;
+  nameInput.required = true;
   body.appendChild(nameInput);
 
   var emailLabel = document.createElement('label');
@@ -1257,6 +1271,13 @@ function _rcOpenFeedbackModal() {
   submitBtn.addEventListener('click', function () {
     var message = messageInput.value.trim();
     errorMsg.style.display = 'none';
+    // Name required, email optional (2026-09-21, Matt's ask) -- was both
+    // optional.
+    if (!nameInput.value.trim()) {
+      errorMsg.textContent = 'Enter your name before sending.';
+      errorMsg.style.display = 'block';
+      return;
+    }
     if (!message) {
       errorMsg.textContent = 'Enter a message before sending.';
       errorMsg.style.display = 'block';

@@ -1221,6 +1221,13 @@ body.rc-league-page {
    need the extra room the driver roster's wider identity/car/team
    columns benefit from. */
 .rcl-modal-dialog-wide { max-width: 1080px; }
+/* Narrower dialog (2026-09-21, added for the Feedback and Edit Profile/
+   Change Avatar popups) -- matches Account.html's own plain (non -wide)
+   .rc-modal exactly (460px), so those popups are the same width whether
+   they're opened from Account.html (light) or league.html (dark). See
+   _rcOpenFeedbackModal (js/header.js) and _rcEPShowModal
+   (js/edit-profile.js). */
+.rcl-modal-dialog-narrow { max-width: 460px; }
 /* Same raised-2 background + red underline as .rcl-panel-head, so the
    popup's own header reads as the exact same header treatment as every
    panel on the page, not a slightly different one-off. */
@@ -1313,6 +1320,24 @@ body.rc-league-page {
 .rcl-modal-dialog select:focus,
 .rcl-modal-dialog textarea:focus {
   border-color: var(--rc-red);
+}
+/* Same dark-theme override, extended for the Edit Profile popup
+   (js/edit-profile.js, added 2026-09-21 alongside this popup's own
+   in-place-on-league.html support): .rc-check-row's label (the email-
+   notifications checkbox) sets an explicit --rc-carbon color of its own
+   that the bare `label` override above doesn't reach, and .rc-panel (the
+   Change Password box) is a plain white card everywhere else on the site
+   -- both need a scoped dark version here or they'd render light-on-dark
+   inside this shell. */
+.rcl-modal-dialog .rc-check-row label {
+  color: var(--rcl-ink-dim);
+}
+.rcl-modal-dialog .rc-panel {
+  background: var(--rcl-bg-raised-2);
+  border-color: var(--rcl-line-bright);
+}
+.rcl-modal-dialog .rc-panel h3 {
+  color: var(--rcl-ink);
 }
 /* Full-width red submit button, dark theme -- same solid-red/uppercase
    treatment as .rcl-modal-loadmore-btn above, just full width so it reads
