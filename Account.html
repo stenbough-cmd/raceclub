@@ -2398,13 +2398,17 @@
   // Which full-viewport welcome image plays, keyed off the car class the
   // driver just signed into (Matt, 2026-09-18): GT3 seats get
   // gt_welcome.jpg, LMP2 and LMP3 get prototype_welcome.jpg, and
-  // Hypercars get hypercar_welcome.jpg. CAR_CLASS_LIST (js/reference-
-  // data.js) is the source of truth for the exact string values carClass
-  // holds ('LMGT3', 'LMP3', 'LMP2', 'Hypercar'); prototype_welcome.jpg is
-  // also the fallback for anything unrecognized rather than leaving the
-  // beat with no image at all.
+  // Hypercars get hypercar_welcome.jpg. LMGTE added 2026-09-21 (Matt's
+  // ask: "make sure the GTE CONGRATULATIONS image uses the gt_welcome
+  // image, the same as LMGT3 uses") -- LMGTE sits directly below LMGT3 on
+  // the class ladder (see CAR_CLASS_LIST, js/reference-data.js) and shares
+  // its welcome image rather than getting its own or falling through to
+  // the prototype default. CAR_CLASS_LIST is the source of truth for the
+  // exact string values carClass holds ('LMGTE', 'LMGT3', 'LMP3', 'LMP2',
+  // 'Hypercar'); prototype_welcome.jpg is still the fallback for anything
+  // unrecognized rather than leaving the beat with no image at all.
   function rcSigningWelcomeImageSrc_(carClass) {
-    if (carClass === 'LMGT3') return 'assets/images/gt_welcome.jpg';
+    if (carClass === 'LMGTE' || carClass === 'LMGT3') return 'assets/images/gt_welcome.jpg';
     if (carClass === 'Hypercar') return 'assets/images/hypercar_welcome.jpg';
     return 'assets/images/prototype_welcome.jpg';
   }
