@@ -614,19 +614,25 @@ function renderHeader(opts) {
             // Protests/Career, a divider, League Hub, then whichever of
             // Admin/League Tools/Stewarding this role actually unlocks
             // (same cumulative Driver<Steward<Organizer<Admin hierarchy
-            // Account.html's own nav gating uses), a divider, Help/Edit
-            // Profile, a divider, Logout. Every section link uses the
+            // Account.html's own nav gating uses), a divider, Edit Profile/
+            // Help/Feedback, a divider, Logout. Reordered 2026-09-21 (Matt's
+            // ask) -- was Help/Edit Profile/divider/Logout with no Feedback
+            // item; same reorder applied to Account.html's own sidebar (see
+            // buildSidebarNav there). Every section link uses the
             // Account.html#<id> hash + data-rc-section pattern the
             // notification bell's own links already established -- see
             // the click wiring below, which reuses that exact "call
             // window.rcNavigateToSection in place if it's there (we're
             // already on Account.html), otherwise let the href really
-            // navigate there" bridge.
+            // navigate there" bridge. Edit Profile and Feedback are both
+            // popups, not sections -- see _rcOpenEditProfileFromHeader()/
+            // _rcOpenFeedbackModal() below, wired further down.
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
-              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
+              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">Feedback</button>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
@@ -731,6 +737,15 @@ function renderHeader(opts) {
     document.getElementById('rc-header-menu-editprofile').addEventListener('click', function () {
       closeAccountMenu();
       _rcOpenEditProfileFromHeader();
+    });
+
+    // Feedback -- unlike Edit Profile, opens in place on whatever page the
+    // user is already on, no navigation involved (2026-09-21, Matt's ask:
+    // "does not have to open the popup on the account page"). See
+    // _rcOpenFeedbackModal() below.
+    document.getElementById('rc-header-menu-feedback').addEventListener('click', function () {
+      closeAccountMenu();
+      _rcOpenFeedbackModal();
     });
 
     // Same fire-and-forget logout pattern as Account.html's sidebar Log
@@ -1096,4 +1111,208 @@ function rcOpenLegalModal() {
 function rcWireFooterLegalLink() {
   var link = document.getElementById('rc-footer-legal-link');
   if (link) link.addEventListener('click', function (evt) { evt.preventDefault(); rcOpenLegalModal(); });
+}
+
+// Feedback categories -- must match FEEDBACK_CATEGORIES_ in Website.gs
+// exactly (a category the backend doesn't recognize just falls back to
+// "Other" there, so this isn't load-bearing, but keeping them in sync
+// means the email Matt gets always shows the category the driver actually
+// picked).
+var _RC_FEEDBACK_CATEGORIES_ = ['Bug Report', 'Feature Request', 'Rulebook / Rules Question', 'Account or Login Issue', 'General Feedback', 'Other'];
+var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
+
+// Feedback popup (2026-09-21, Matt's ask) -- unlike Edit Profile
+// (_rcOpenEditProfileFromHeader above, which navigates to Account.html and
+// delegates to its own modal system), this is fully self-contained here so
+// it opens IN PLACE on whatever page the user is already on, no navigation
+// ("does not have to open the popup on the account page" -- Matt's own
+// clarification). Branches on document.body.classList.contains
+// ('rc-league-page') to build either the light .rc-modal-* shell (every
+// page except league.html) or the dark .rcl-modal-* shell (league.html),
+// reusing each page's own already-existing modal CSS rather than inventing
+// a third "universal" shell -- deliberately NOT the same pattern
+// rcOpenLegalModal() above uses, since that one never got dark theming and
+// still renders light even on league.html (a known gap this doesn't
+// repeat). Same "closable only via the X button" lockdown as every other
+// modal on the site, and the same manual document.createElement approach
+// as rcOpenLegalModal() (this file has no el()/escapeHtml helper of its
+// own).
+function _rcOpenFeedbackModal() {
+  var isDark = document.body.classList.contains('rc-league-page');
+
+  var backdrop = document.createElement('div');
+  backdrop.className = isDark ? 'rcl-modal-overlay' : 'rc-modal-backdrop';
+  var modal = document.createElement('div');
+  modal.className = isDark ? 'rcl-modal-dialog' : 'rc-modal';
+  var head = document.createElement('div');
+  head.className = isDark ? 'rcl-modal-head' : 'rc-modal-head';
+  var title = document.createElement(isDark ? 'div' : 'h3');
+  if (isDark) {
+    title.className = 'rcl-modal-title';
+  } else {
+    title.style.margin = '0';
+    title.style.fontSize = '16px';
+  }
+  title.textContent = 'Feedback';
+  head.appendChild(title);
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = isDark ? 'rcl-modal-close' : 'rc-modal-close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.innerHTML = '&times;';
+  head.appendChild(closeBtn);
+  var body = document.createElement('div');
+  body.className = isDark ? 'rcl-modal-body' : 'rc-modal-body';
+
+  var introP = document.createElement('p');
+  introP.style.marginTop = '0';
+  introP.style.fontSize = '13px';
+  introP.style.color = isDark ? 'var(--rcl-ink-dim)' : 'var(--rc-steel)';
+  introP.textContent = 'Spotted a bug, have an idea, or just want to tell us something? Send it straight to the Race Club team.';
+  body.appendChild(introP);
+
+  var categoryLabel = document.createElement('label');
+  categoryLabel.style.marginTop = '0';
+  categoryLabel.textContent = 'Feedback Type';
+  body.appendChild(categoryLabel);
+  var categorySelect = document.createElement('select');
+  _RC_FEEDBACK_CATEGORIES_.forEach(function (cat) {
+    var opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    categorySelect.appendChild(opt);
+  });
+  body.appendChild(categorySelect);
+
+  var nameLabel = document.createElement('label');
+  nameLabel.textContent = 'Name (optional)';
+  body.appendChild(nameLabel);
+  var nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.maxLength = 120;
+  body.appendChild(nameInput);
+
+  var emailLabel = document.createElement('label');
+  emailLabel.textContent = 'Email (optional)';
+  body.appendChild(emailLabel);
+  var emailInput = document.createElement('input');
+  emailInput.type = 'email';
+  emailInput.maxLength = 180;
+  body.appendChild(emailInput);
+
+  var messageLabel = document.createElement('label');
+  messageLabel.textContent = 'Message';
+  body.appendChild(messageLabel);
+  var messageInput = document.createElement('textarea');
+  messageInput.rows = 5;
+  messageInput.maxLength = _RC_FEEDBACK_MESSAGE_MAX_;
+  body.appendChild(messageInput);
+
+  // Live character counter -- same "cap + count down" convention as
+  // Protests' 200-word description limit elsewhere on the site.
+  var charCount = document.createElement('div');
+  charCount.style.fontSize = '11px';
+  charCount.style.marginTop = '4px';
+  charCount.style.textAlign = 'right';
+  charCount.style.color = isDark ? 'var(--rcl-ink-faint)' : 'var(--rc-steel)';
+  charCount.textContent = _RC_FEEDBACK_MESSAGE_MAX_ + ' characters remaining';
+  body.appendChild(charCount);
+  messageInput.addEventListener('input', function () {
+    charCount.textContent = (_RC_FEEDBACK_MESSAGE_MAX_ - messageInput.value.length) + ' characters remaining';
+  });
+
+  var errorMsg = document.createElement('div');
+  errorMsg.style.display = 'none';
+  errorMsg.style.marginTop = '10px';
+  errorMsg.style.fontSize = '12.5px';
+  errorMsg.style.color = 'var(--rc-red)';
+  body.appendChild(errorMsg);
+
+  // Fires a write (sends the email) on click -- red/solid, same "gray
+  // unless it saves" rule every button on the site follows.
+  var submitBtn = document.createElement('button');
+  submitBtn.type = 'button';
+  submitBtn.className = isDark ? 'rcl-feedback-submit-btn' : 'rc-btn-primary';
+  submitBtn.style.marginTop = '18px';
+  submitBtn.textContent = 'Send Feedback';
+  body.appendChild(submitBtn);
+
+  modal.appendChild(head);
+  modal.appendChild(body);
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  var scrollYBeforeModal = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = '-' + scrollYBeforeModal + 'px';
+  document.body.classList.add('rc-modal-scroll-locked');
+
+  function close() {
+    backdrop.remove();
+    document.body.classList.remove('rc-modal-scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, scrollYBeforeModal);
+  }
+  closeBtn.addEventListener('click', close);
+
+  submitBtn.addEventListener('click', function () {
+    var message = messageInput.value.trim();
+    errorMsg.style.display = 'none';
+    if (!message) {
+      errorMsg.textContent = 'Enter a message before sending.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    if (message.length > _RC_FEEDBACK_MESSAGE_MAX_) {
+      errorMsg.textContent = 'Message is too long -- keep it under ' + _RC_FEEDBACK_MESSAGE_MAX_ + ' characters.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    fetchApi('submitFeedback', {
+      method: 'POST',
+      body: {
+        category: categorySelect.value,
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        message: message,
+        pageUrl: window.location.href
+      }
+    }).then(function (result) {
+      if (!result || !result.success) throw new Error((result && result.message) || 'Send failed');
+      // Swap the body's contents in place for a confirmation view -- no
+      // navigation, no reload (2026-09-21, Matt's ask: "a verification
+      // shows up and the person can close the verification and return to
+      // the page they were on"). Closing just removes the backdrop, same
+      // close() as the form view above, so the driver lands back on
+      // whatever page/section they were already looking at.
+      body.innerHTML = '';
+      var confirmTitle = document.createElement('p');
+      confirmTitle.style.margin = '4px 0 4px';
+      confirmTitle.style.fontSize = '15px';
+      confirmTitle.style.fontWeight = '700';
+      confirmTitle.style.textAlign = 'center';
+      confirmTitle.style.color = isDark ? 'var(--rcl-ink)' : 'var(--rc-carbon)';
+      confirmTitle.textContent = 'Thanks, your feedback was sent.';
+      body.appendChild(confirmTitle);
+      var confirmSub = document.createElement('p');
+      confirmSub.style.margin = '0 0 18px';
+      confirmSub.style.fontSize = '13px';
+      confirmSub.style.textAlign = 'center';
+      confirmSub.style.color = isDark ? 'var(--rcl-ink-dim)' : 'var(--rc-steel)';
+      confirmSub.textContent = 'The Race Club team will take a look.';
+      body.appendChild(confirmSub);
+      var closeConfirmBtn = document.createElement('button');
+      closeConfirmBtn.type = 'button';
+      closeConfirmBtn.className = isDark ? 'rcl-feedback-submit-btn' : 'rc-btn-primary';
+      closeConfirmBtn.textContent = 'Close';
+      closeConfirmBtn.addEventListener('click', close);
+      body.appendChild(closeConfirmBtn);
+    }).catch(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Feedback';
+      errorMsg.textContent = 'Could not send feedback -- try again.';
+      errorMsg.style.display = 'block';
+    });
+  });
 }

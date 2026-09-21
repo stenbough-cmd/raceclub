@@ -1291,6 +1291,51 @@ body.rc-league-page {
 }
 .rcl-modal-loadmore-btn:hover { background: var(--rc-red-dark); }
 
+/* Dark-theme override for the site's global (unscoped) label/input/select/
+   textarea rules in css/style.css (2026-09-21, added for the new Feedback
+   popup, _rcOpenFeedbackModal in js/header.js -- that global rule renders
+   with a white background/light text, which would otherwise leak straight
+   through into any form built inside a .rcl-modal-dialog on this page).
+   Scoped broadly to the dialog, not just the Feedback form, so any future
+   form dropped into a league.html popup gets the same dark styling for
+   free. */
+.rcl-modal-dialog label {
+  color: var(--rcl-ink-dim);
+}
+.rcl-modal-dialog input,
+.rcl-modal-dialog select,
+.rcl-modal-dialog textarea {
+  background: var(--rcl-bg);
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink);
+}
+.rcl-modal-dialog input:focus,
+.rcl-modal-dialog select:focus,
+.rcl-modal-dialog textarea:focus {
+  border-color: var(--rc-red);
+}
+/* Full-width red submit button, dark theme -- same solid-red/uppercase
+   treatment as .rcl-modal-loadmore-btn above, just full width so it reads
+   as a form's primary action the same way .rc-btn-primary does on the
+   light shell. */
+.rcl-feedback-submit-btn {
+  display: block;
+  width: 100%;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  background: var(--rc-red);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+.rcl-feedback-submit-btn:hover { background: var(--rc-red-dark); }
+.rcl-feedback-submit-btn:disabled { opacity: 0.6; cursor: default; }
+
 /* -------------------------------------------------------------------- */
 /* Empty state -- same large circle-slash icon the rest of the site     */
 /* uses for "no data," just recolored for the dark ground.               */

@@ -2362,9 +2362,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    space-between is now vestigial (this row only ever holds the track
    text) but harmless -- left as-is rather than churn it for no visual
    change. */
-.rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 2px; }
+/* Faint gray divider below the track row (2026-09-21 follow-up, Matt's
+   catch: "there should be a faint gray line below the track and then
+   below the line should be the in-game start time data" -- same
+   border-bottom/padding-bottom pairing Calendar's own .rc-cal-track-row
+   already uses to separate its track line from the datetime row below
+   it, just not yet applied to this card). */
+.rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
 .rc-nextrace-track-row .rc-nextrace-track { margin-top: 0; }
-.rc-nextrace-info .rc-cal-datetime { margin-top: 2px; }
+.rc-nextrace-info .rc-cal-datetime { margin-top: 8px; }
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;
@@ -4098,6 +4104,22 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-site-footer-inner {
   max-width: 1180px;
   margin: 0 auto;
+}
+/* Split into two stacked lines (2026-09-21, Matt's ask: "'Copyright Race
+   Club 2026. All rights reserved.' and 'Created and developed with the
+   help of Claude AI.' to be put back together and placed on the next
+   line under the larger legal text") -- previously all three sentences
+   ran together in one paragraph with the copyright line first; now the
+   non-affiliation disclaimer (.rc-site-footer-legal, with the Legal
+   Disclaimer button inline at its end) is its own line, and the
+   copyright + Claude-credit sentences sit reunited on the line below it
+   (.rc-site-footer-copyright), slightly dimmer since it's the least
+   load-bearing line of the three. */
+.rc-site-footer-legal {
+  margin-bottom: 6px;
+}
+.rc-site-footer-copyright {
+  opacity: 0.75;
 }
 /* Footer "Legal Disclaimer" link (added 2026-09-20) -- a plain button
    styled as inline text so it sits naturally in the footer's copyright
