@@ -1584,14 +1584,22 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 0;
   border: 2px solid transparent;
   border-radius: 8px;
-  background: var(--rc-offwhite);
+  /* Gray, not off-white (2026-09-21, Matt's ask: "gray outline around the
+     avatars instead of white") -- the preset avatar art is circular on a
+     transparent background, so this cell's own fill shows through as a
+     ring around each one; --rc-offwhite (#F5F5F3) read as white against
+     the page, --rc-silver (#D8DDE1) is a clear step darker/grayer. */
+  background: var(--rc-silver);
   cursor: pointer;
   overflow: hidden;
   line-height: 0;
   transition: border-color 0.15s ease;
 }
 .rc-avatar-picker-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-.rc-avatar-picker-item:hover { border-color: var(--rc-silver); }
+/* --rc-steel, not --rc-silver -- now that the cell's own fill is
+   --rc-silver (above), a --rc-silver border would blend invisibly into it
+   and the hover state would lose its ring entirely. */
+.rc-avatar-picker-item:hover { border-color: var(--rc-steel); }
 .rc-avatar-picker-item-selected,
 .rc-avatar-picker-item-selected:hover { border-color: var(--rc-red); }
 .rc-details-wrap { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
