@@ -3992,8 +3992,19 @@
         r.protests.forEach(function (p) {
           var row = el('div', 'rc-panel');
           row.style.cssText = 'margin-top:10px;';
-          row.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || []).join(', '))));
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + ' -- Lap ' + escapeHtml(String(p.lapNumber || '')) + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
+          var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || []).join(', '))));
+          // Auto-detected registration mismatches (2026-09-21) ride the
+          // exact same Pending -> Upheld/Denied flow as a driver-filed
+          // protest -- this badge is the only thing that tells them apart
+          // at a glance, same neutral/graphite treatment as every other
+          // "grouping label, not a status" badge on the site (see
+          // .rc-badge-graphite, style.css).
+          if (p.isAutoFlagged) {
+            labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
+          }
+          row.appendChild(labelRow);
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (' -- Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
           var outcome = el('div', 'rc-hint');
           outcome.style.cssText = 'margin-top:6px;';
           outcome.textContent = p.status === 'Pending'
@@ -4624,12 +4635,17 @@
   }
 
   // Full unfiltered lap-by-lap + RaceEvents breakdown, one container per
-  // session this driver actually has laps/events for (Practice/Qualify/
-  // Race, whichever the round's own Sessions rows cover) -- "everything
-  // the XML captured for this driver, unfiltered" (Matt's call).
-  // Horizontally scrollable on its own container, same as every other
-  // wide table on this page, so a narrow screen never forces the whole
-  // page to scroll sideways.
+  // session this driver actually has laps/events for (Qualify/Race,
+  // whichever the round's own Sessions rows cover -- Practice was removed
+  // from ingestion entirely 2026-09-21, see Ingestion.gs) -- "everything
+  // the XML captured for this driver, unfiltered" (Matt's call). This is
+  // also where sim-issued/served penalties already show up per session
+  // (SimPenaltyIssued/SimPenaltyServed, via _rcFormatEventLine_ above) --
+  // informational only, never actionable from here; nothing on this page
+  // lets anyone rule on one, since the Rulebook treats these as automatic
+  // and final. Horizontally scrollable on its own container, same as every
+  // other wide table on this page, so a narrow screen never forces the
+  // whole page to scroll sideways.
   function resultsSessionsDetail(sessions) {
     var wrap = el('div', 'rc-results-sessions');
     (sessions || []).forEach(function (session) {
@@ -4961,7 +4977,17 @@
   function buildProtestHistoryItem(p, token) {
     var row = el('div', 'rc-dm-subrow-edit');
     var info = el('div', null);
-    info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel) + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
+    var infoLabel = el('div', 'rc-dm-row-label');
+    infoLabel.appendChild(document.createTextNode(p.roundLabel + ' -- ' + (p.involvedNames || []).join(', ')));
+    // Same auto-flag badge as Stewarding/League Tools -- a driver seeing a
+    // registration mismatch flagged against their own name in their own
+    // history should know right away it wasn't filed by another driver.
+    if (p.isAutoFlagged) {
+      var autoBadge = el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged');
+      autoBadge.style.cssText = 'margin-left:8px;';
+      infoLabel.appendChild(autoBadge);
+    }
+    info.appendChild(infoLabel);
     info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
     row.appendChild(info);
 
@@ -7394,8 +7420,16 @@
         data.protests.forEach(function (p) {
           var row = el('div', 'rc-panel');
           row.style.cssText = 'margin-bottom:10px;';
-          row.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || [p.filerName]).join(', '))));
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + ' -- Lap ' + escapeHtml(String(p.lapNumber || '')) + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
+          var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || [p.filerName]).join(', '))));
+          // Same auto-flag badge as the Stewarding page (see that page's own
+          // comment) -- a steward ruling from here needs the same "this one
+          // wasn't filed by a driver" context.
+          if (p.isAutoFlagged) {
+            labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
+          }
+          row.appendChild(labelRow);
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (' -- Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
 
           if (p.status === 'Pending') {
             if (resultsFinalized) {
