@@ -4105,22 +4105,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   max-width: 1180px;
   margin: 0 auto;
 }
-/* Split into two stacked lines (2026-09-21, Matt's ask: "'Copyright Race
-   Club 2026. All rights reserved.' and 'Created and developed with the
-   help of Claude AI.' to be put back together and placed on the next
-   line under the larger legal text") -- previously all three sentences
-   ran together in one paragraph with the copyright line first; now the
-   non-affiliation disclaimer (.rc-site-footer-legal, with the Legal
-   Disclaimer button inline at its end) is its own line, and the
-   copyright + Claude-credit sentences sit reunited on the line below it
-   (.rc-site-footer-copyright), slightly dimmer since it's the least
-   load-bearing line of the three. */
-.rc-site-footer-legal {
-  margin-bottom: 6px;
-}
-.rc-site-footer-copyright {
-  opacity: 0.75;
-}
+/* .rc-site-footer-legal split out from the old single-paragraph footer
+   2026-09-21 (originally paired with a .rc-site-footer-copyright line
+   below it -- "Copyright Race Club 2026..." / "Created and developed with
+   the help of Claude AI." -- which Matt asked removed from every footer
+   the same day, so this is now the footer's only line). Kept as its own
+   class rather than folded back into .rc-site-footer-inner in case a
+   second line comes back later. */
 /* Footer "Legal Disclaimer" link (added 2026-09-20) -- a plain button
    styled as inline text so it sits naturally in the footer's copyright
    sentence rather than reading as a separate nav element; underlined red
