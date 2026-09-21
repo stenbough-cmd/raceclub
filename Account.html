@@ -8366,7 +8366,35 @@
           pwEl.style.fontFamily = 'monospace';
           credWrap.appendChild(pwEl);
           body.appendChild(credWrap);
-          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(firstName.value.trim()) + '. They can also set their own password anytime via Forgot Password on the login page, using ' + escapeHtml(email.value.trim()) + '.'));
+          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(firstName.value.trim()) + ', or email it to them directly below. They can also set their own password anytime via Forgot Password on the login page, using ' + escapeHtml(email.value.trim()) + '.'));
+
+          // Email Password To Driver (2026-09-21, Matt's ask) -- same
+          // button/action as the Reset Password confirmation screen below
+          // (doResetPassword_'s own emailBtn), sending this exact
+          // tempPassword via adminSendPasswordEmail so what's on screen
+          // and what's emailed always match. Fires immediately on click,
+          // so it's the save-style red button per the sitewide button
+          // rule, same as that other call site.
+          var addDriverEmailBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Email Password To Driver');
+          addDriverEmailBtn.type = 'button';
+          addDriverEmailBtn.style.marginTop = '14px';
+          addDriverEmailBtn.addEventListener('click', function () {
+            addDriverEmailBtn.disabled = true;
+            addDriverEmailBtn.textContent = 'Sending...';
+            fetchApi('adminSendPasswordEmail', {
+              method: 'POST', token: token,
+              body: { profileId: data.profileId, tempPassword: data.tempPassword }
+            }).then(function (emailData) {
+              addDriverEmailBtn.disabled = false;
+              addDriverEmailBtn.textContent = 'Email Password To Driver';
+              showToast(emailData.message || (emailData.success ? 'Emailed.' : 'Could not send the email.'), emailData.success ? 'success' : 'error');
+            }).catch(function () {
+              addDriverEmailBtn.disabled = false;
+              addDriverEmailBtn.textContent = 'Email Password To Driver';
+              showToast('Could not reach the server -- email not sent.', 'error');
+            });
+          });
+          body.appendChild(addDriverEmailBtn);
         })
         .catch(function (err) {
           saveBtn.disabled = false;
@@ -8751,62 +8779,50 @@
   function openEditTrackModal(venueName, rows, token, reload) {
     var body = el('div');
 
+    // Track Name + Region now share one form with one combined submit
+    // button, "Save Changes" (2026-09-21, Matt's ask: "instead of 'SAVE
+    // NAME' and 'SAVE REGION' buttons on the edit track, can you make one
+    // all-encompassing button at the bottom" -- was two separate fields
+    // each with their own Save button/call; button text then changed from
+    // "Update Track" to "Save Changes" per Matt's immediate follow-up,
+    // matching openEditCarModal's own submit button below). One click
+    // saves whichever of the two actually changed (adminUpdateTrackName
+    // and/or adminUpdateTrackRegion, both venue-level so they apply to
+    // every row sharing this TrackName at once), or just closes the popup
+    // if neither did.
     var form = el('form');
     form.appendChild(el('label', 'margin-top:0;', 'Track Name'));
     var nameInput = el('input'); nameInput.type = 'text'; nameInput.value = venueName; nameInput.required = true;
     form.appendChild(nameInput);
-    var saveNameBtn = el('button', null, 'Save Name');
-    saveNameBtn.type = 'submit';
-    saveNameBtn.className = 'rc-btn-primary';
-    saveNameBtn.style.marginTop = '14px';
-    form.appendChild(saveNameBtn);
-    body.appendChild(form);
 
-    // Region (added 2026-08-30) -- its own field + Save button, separate
-    // from the Track Name form above (same "one save button per concern"
-    // split the deactivate-vs-edit-fields pattern already uses elsewhere
-    // in Data Management), venue-level so it applies to every row sharing
-    // this TrackName at once via adminUpdateTrackRegion.
-    var regionWrap = el('div', 'margin-top:16px;');
-    regionWrap.appendChild(el('label', 'margin-top:0;', 'Region'));
+    form.appendChild(el('label', null, 'Region'));
     var regionInput = el('input'); regionInput.type = 'text';
     regionInput.value = (rows[0] && rows[0].Region) || '';
     regionInput.placeholder = 'e.g. Europe, North America';
-    regionWrap.appendChild(regionInput);
-    var saveRegionBtn = el('button', 'rc-btn-primary', 'Save Region');
-    saveRegionBtn.type = 'button';
-    saveRegionBtn.style.marginTop = '10px';
-    regionWrap.appendChild(saveRegionBtn);
-    body.appendChild(regionWrap);
+    form.appendChild(regionInput);
 
-    saveRegionBtn.addEventListener('click', function () {
-      // Instant, no wait on the server (2026-09-03, Matt's call: "all
-      // the admin/data management functions work the same" as the rest
-      // of the site). rows[] updates and the modal stays open on this
-      // same screen right away; the actual write happens silently in
-      // the background. A failure puts the previous region back into
-      // the field and explains why via toast.
-      var newRegion = regionInput.value.trim();
-      var previousRegion = (rows[0] && rows[0].Region) || '';
-      rows.forEach(function (r) { r.Region = newRegion; });
-      fetchApi('adminUpdateTrackRegion', {
-        method: 'POST', token: token,
-        body: { trackName: venueName, region: newRegion }
-      })
-        .then(function (data) {
-          if (!data.success) {
-            rows.forEach(function (r) { r.Region = previousRegion; });
-            regionInput.value = previousRegion;
-            showToast(data.message || 'Could not update this track\'s region -- reverted.', 'error');
-            return;
-          }
-        })
-        .catch(function () {
-          rows.forEach(function (r) { r.Region = previousRegion; });
-          regionInput.value = previousRegion;
-          showToast('Could not reach the server -- region change reverted.', 'error');
-        });
-    });
+    var updateTrackBtn = el('button', null, 'Save Changes');
+    updateTrackBtn.type = 'submit';
+    updateTrackBtn.className = 'rc-btn-primary';
+    updateTrackBtn.style.marginTop = '14px';
+    form.appendChild(updateTrackBtn);
+    body.appendChild(form);
+
+    // Deactivate/Reactivate Track (2026-09-21, Matt's ask: "make a
+    // DEACTIVATE track button (similar to the cars popup edit screen)")
+    // -- venue-level, same status-section-below-the-form shape as
+    // openEditCarModal's own toggle below, but touches every row sharing
+    // this TrackName at once (adminSetTrackActive, new) rather than a
+    // single row's Active flag the way Cars' one-row-per-car
+    // adminSetCarActive does. "Active" for the venue as a whole is true
+    // if ANY of its layouts currently are -- matches the outer Tracks
+    // list's own activeLayouts filter just above this function.
+    var isActive = rows.some(_rcRowActive);
+    var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
+    var toggleTrackBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Deactivate This Track' : 'Reactivate This Track');
+    toggleTrackBtn.type = 'button';
+    statusWrap.appendChild(toggleTrackBtn);
+    body.appendChild(statusWrap);
 
     body.appendChild(el('h3', 'margin:22px 0 0;font-size:14px;', 'Layouts'));
     var listWrap = el('div', 'rc-dm-layout-list');
@@ -8860,7 +8876,10 @@
 
     var addRow = el('div', 'rc-dm-add-row');
     var addInput = el('input'); addInput.type = 'text'; addInput.placeholder = 'New layout name';
-    var addBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Add Layout');
+    // Gray, matching the Edit buttons' own .rc-btn-secondary color
+    // (2026-09-21, Matt's ask: "make the 'ADD LAYOUT' button a gray color
+    // like how the edit buttons are style") -- was red/primary.
+    var addBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Add Layout');
     addBtn.type = 'button';
     addRow.appendChild(addInput);
     addRow.appendChild(addBtn);
@@ -8911,36 +8930,90 @@
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
       var newName = nameInput.value.trim();
+      var newRegion = regionInput.value.trim();
+      var previousRegion = (rows[0] && rows[0].Region) || '';
       if (!newName) {
         showToast('Track name is required.', 'error');
         return;
       }
-      if (newName === venueName) {
+      var nameChanged = newName !== venueName;
+      var regionChanged = newRegion !== previousRegion;
+      if (!nameChanged && !regionChanged) {
         modalHandle.close();
         return;
       }
       // Instant, no wait on the server (2026-09-03, Matt's call: "all the
       // admin/data management functions work the same" as the rest of
-      // the site). The popup closes the moment Save Name is submitted;
-      // the actual rename happens silently in the background. A failure
-      // can't un-close an already-closed modal, so it just says so via
-      // toast -- the admin can reopen Edit Track and try again.
+      // the site). The popup closes the moment Save Changes is
+      // submitted; whichever of the name/region actually changed saves
+      // silently in the background (both fire together when both
+      // changed -- each targets rows by the OLD TrackName and touches a
+      // different column, so there's no ordering issue running them at
+      // once). A failure can't un-close an already-closed modal, so it
+      // just says so via toast -- the admin can reopen Edit Track and
+      // try again.
       modalHandle.close();
-      fetchApi('adminUpdateTrackName', {
-        method: 'POST', token: token,
-        body: { oldName: venueName, newName: newName }
-      })
-        .then(function (data) {
-          if (!data.success) {
-            showToast(data.message || 'Could not rename this track -- reopen Edit Track and try again.', 'error');
+      var tasks = [];
+      if (regionChanged) {
+        tasks.push(fetchApi('adminUpdateTrackRegion', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, region: newRegion }
+        }));
+      }
+      if (nameChanged) {
+        tasks.push(fetchApi('adminUpdateTrackName', {
+          method: 'POST', token: token,
+          body: { oldName: venueName, newName: newName }
+        }));
+      }
+      Promise.all(tasks)
+        .then(function (results) {
+          var allOk = results.every(function (r) { return r && r.success; });
+          if (!allOk) {
+            showToast('Could not save all changes -- reopen Edit Track and try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- track not renamed.', 'error');
+          showToast('Could not reach the server -- changes not saved.', 'error');
         });
     });
+
+    toggleTrackBtn.addEventListener('click', function () {
+      // Same confirm-before-deactivate pattern as openEditCarModal's own
+      // toggle -- only the deactivate direction needs a second look
+      // (Reactivate undoes it, so it fires immediately).
+      if (!isActive) {
+        doToggleTrackActive_();
+        return;
+      }
+      openConfirmModal(
+        'Deactivate Track',
+        'Deactivate "' + venueName + '"? All ' + rows.length + ' of its layout' + (rows.length === 1 ? '' : 's') + ' will no longer be available for a race to use.',
+        'Deactivate This Track',
+        doToggleTrackActive_
+      );
+    });
+
+    function doToggleTrackActive_() {
+      // Same instant pattern as Save Changes above.
+      modalHandle.close();
+      fetchApi('adminSetTrackActive', {
+        method: 'POST', token: token,
+        body: { trackName: venueName, active: isActive ? 'Inactive' : 'Active' }
+      })
+        .then(function (data) {
+          if (!data.success) {
+            showToast(data.message || 'Could not update this track -- reopen Edit Track and try again.', 'error');
+            return;
+          }
+          if (reload) reload(); else rcReloadAfterSave();
+        })
+        .catch(function () {
+          showToast('Could not reach the server -- track not updated.', 'error');
+        });
+    }
   }
 
   // Pill display label for a class (2026-09-19, Matt's call: "Make the
