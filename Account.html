@@ -7440,6 +7440,25 @@
               lockedHint.textContent = 'This round is finalized -- Un-Finalize above to rule on this protest.';
               row.appendChild(lockedHint);
             } else {
+              // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
+              // Entry are the only two infraction types with a Rulebook-
+              // mandated standard tier (SUGGESTED_TIER_BY_INFRACTION in
+              // reference-data.js, mirrored server-side by
+              // SUGGESTED_TIER_BY_INFRACTION_ in Protests.gs). Shown up
+              // front so the ruling steward knows before they even open the
+              // dropdown; the override-explanation field below only appears
+              // once they actually pick something other than this tier.
+              var suggestedTier = p.suggestedTier || null;
+              if (suggestedTier) {
+                var suggestedTierInfo = penaltyTierByNumber(suggestedTier);
+                var suggestedHint = el('div', 'rc-hint');
+                suggestedHint.style.cssText = 'margin-top:8px;';
+                suggestedHint.textContent = 'Standard tier for ' + p.infractionType + ': ' +
+                  (suggestedTierInfo ? suggestedTierInfo.label : ('Tier ' + suggestedTier)) +
+                  '. Ruling at a different tier requires a written explanation.';
+                row.appendChild(suggestedHint);
+              }
+
               var controlRow = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;');
               var select = document.createElement('select');
               select.appendChild(new Option('Choose a ruling...', ''));
@@ -7449,12 +7468,48 @@
 
               var applyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Apply Ruling');
               applyBtn.type = 'button';
+              controlRow.appendChild(applyBtn);
+              row.appendChild(controlRow);
+
+              // Override-explanation field -- only relevant when this
+              // infraction has a standard tier at all, so it stays hidden
+              // entirely for every other infraction type. Toggled by the
+              // select's own change handler below.
+              var overrideWrap = null;
+              var overrideBox = null;
+              if (suggestedTier) {
+                overrideWrap = el('div');
+                overrideWrap.style.cssText = 'margin-top:8px;display:none;';
+                overrideBox = document.createElement('textarea');
+                overrideBox.rows = 3;
+                overrideBox.maxLength = 2000;
+                overrideBox.placeholder = 'Explain why this ruling deviates from the standard tier...';
+                overrideWrap.appendChild(overrideBox);
+                row.appendChild(overrideWrap);
+              }
+
+              function currentIsOverride_() {
+                if (!suggestedTier || select.value.indexOf('uphold:') !== 0) return false;
+                return Number(select.value.split(':')[1]) !== suggestedTier;
+              }
+
+              select.addEventListener('change', function () {
+                if (!overrideWrap) return;
+                overrideWrap.style.display = currentIsOverride_() ? '' : 'none';
+              });
+
               applyBtn.addEventListener('click', function () {
                 if (!select.value) { showToast('Choose a ruling first.', 'error'); return; }
                 var decision = select.value === 'deny' ? 'Denied' : 'Upheld';
                 var tier = select.value.indexOf('uphold:') === 0 ? Number(select.value.split(':')[1]) : null;
+                var isOverride = currentIsOverride_();
+                var overrideExplanation = overrideBox ? overrideBox.value.trim() : '';
+                if (isOverride && !overrideExplanation) {
+                  showToast('This ruling deviates from the standard tier -- add a written explanation first.', 'error');
+                  return;
+                }
                 applyBtn.disabled = true;
-                fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: { protestId: p.protestId, decision: decision, penaltyTier: tier } })
+                fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: { protestId: p.protestId, decision: decision, penaltyTier: tier, overrideExplanation: overrideExplanation } })
                   .then(function (result) {
                     applyBtn.disabled = false;
                     if (!result.success) {
@@ -7469,8 +7524,6 @@
                     showToast('Could not reach the server.', 'error');
                   });
               });
-              controlRow.appendChild(applyBtn);
-              row.appendChild(controlRow);
             }
           } else {
             var outcome = el('div', 'rc-hint', 'margin-top:8px;');
