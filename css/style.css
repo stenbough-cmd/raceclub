@@ -1810,7 +1810,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   align-items: center;
   gap: 14px;
   margin-bottom: 16px;
-  padding-bottom: 14px;
+  /* A bit more breathing room above and below the row (2026-09-23, Matt's
+     ask) -- was padding-bottom only; padding-top added so the row isn't
+     crowded up against the sticky CHOOSE YOUR TEAM header above it. */
+  padding-top: 10px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--rc-silver);
 }
 .rc-team-manu-filter-all {
