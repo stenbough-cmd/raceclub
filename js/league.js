@@ -1097,6 +1097,38 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     bodyEl.appendChild(clsWrap);
   });
 
+  // Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask: "a
+  // lap-by-lap race report to post under the ALL RESULTS standings").
+  // Built once at import time from the XML's own lap/event data
+  // (_rcBuildRaceReportForSession_, Ingestion.gs) and just rendered here,
+  // grouped by lap number for readability. Empty for a round imported
+  // before this feature existed (blank RaceReportJson), or for a Qualify-
+  // only round -- either way, the section is simply skipped rather than
+  // showing an empty state, since "no report" isn't something to flag the
+  // same way "no penalties" is.
+  var report = result.raceReport || [];
+  if (report.length) {
+    var reportSection = _rclEl('div', 'rcl-report-section');
+    reportSection.appendChild(_rclEl('div', 'rcl-race-class-name', 'Race Report'));
+    var byLap = {};
+    var lapOrder = [];
+    report.forEach(function (entry) {
+      if (!byLap[entry.lapNum]) { byLap[entry.lapNum] = []; lapOrder.push(entry.lapNum); }
+      byLap[entry.lapNum].push(entry.text);
+    });
+    lapOrder.forEach(function (lapNum) {
+      var lapRow = _rclEl('div', 'rcl-report-lap');
+      lapRow.appendChild(_rclEl('div', 'rcl-report-lap-num', 'Lap ' + lapNum));
+      var textWrap = _rclEl('div', 'rcl-report-lap-text');
+      byLap[lapNum].forEach(function (text) {
+        textWrap.appendChild(_rclEl('p', 'rcl-report-line', _rclEscapeHtml(text)));
+      });
+      lapRow.appendChild(textWrap);
+      reportSection.appendChild(lapRow);
+    });
+    bodyEl.appendChild(reportSection);
+  }
+
   // Penalties Assessed -- this round's Adjustments, resolved to driver
   // names. This is the one and only place a round's penalties render on
   // the League Hub (Matt's placement call, see this section's header

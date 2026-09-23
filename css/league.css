@@ -1007,6 +1007,34 @@ body.rc-league-page {
   padding: 8px 10px;
 }
 .rcl-allresults-select:focus { border-color: var(--rc-red); }
+/* Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask). Lap
+   number as a small fixed-width label on the left (matches the visual
+   weight of a lap counter, not a ranking, so it deliberately does NOT
+   reuse .rcl-standings-pos), narrative sentences to its right -- one
+   <p> per driver highlight that landed on that lap, since more than one
+   driver's story can share a lap. */
+.rcl-report-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+.rcl-report-lap {
+  display: flex;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-report-lap:last-child { border-bottom: none; }
+.rcl-report-lap-num {
+  flex: none;
+  width: 62px;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+  padding-top: 2px;
+}
+.rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
+.rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
+.rcl-report-line:last-child { margin-bottom: 0; }
 .rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
 .rcl-penalty-row {
   display: flex;
