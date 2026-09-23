@@ -3832,11 +3832,17 @@
   //   - red, empty circle: one of Qualify/Race imported, the other pending
   //   - yellow, empty circle: both imported, not yet finalized (validated)
   //   - green, checkmark circle: finalized (official)
-  //   - red, empty circle (2026-09-23 follow-up): locked -- an earlier
-  //     round isn't finalized yet, so nothing can be imported here at all
-  // Returns null (no line at all) only when the round is unlocked with
-  // nothing imported yet -- the (visible, enabled) Import Results button
-  // already makes that state obvious on its own.
+  //   - red, empty circle (2026-09-23 follow-up, corrected same day --
+  //     Matt's catch: "it's appearing on the wrong round... it should be
+  //     appearing on the round where imports can happen"): the round is
+  //     UNLOCKED (imports are allowed here right now) but nothing has
+  //     been imported yet -- this is the note that replaces the old
+  //     "the visible Import Results button already makes that obvious"
+  //     no-note behavior.
+  // A LOCKED round (an earlier round isn't finalized yet) gets no note at
+  // all -- its Import Results/Delete Results buttons are hidden with
+  // nothing else said about it; the note above is reserved for the one
+  // round that's actually actionable right now.
   function buildRoundStatusLine(r, locked) {
     var state;
     if (r.resultsFinalized) {
@@ -3848,12 +3854,7 @@
         tone: 'red', icon: ICON_CIRCLE_EMPTY,
         text: r.hasRaceResults ? 'Race results imported, qualifying results pending.' : 'Qualifying results imported, race results pending.'
       };
-    } else if (locked) {
-      // Import Results/Delete Results are hidden entirely for a locked
-      // round (2026-09-23, Matt's ask: "I don't want to see IMPORT
-      // RESULTS or DELETE buttons at all on races that results can't be
-      // uploaded to yet"), so this note is the only thing telling the
-      // organizer why nothing's here yet.
+    } else if (!locked) {
       state = { tone: 'red', icon: ICON_CIRCLE_EMPTY, text: 'Qualifying and race results not yet imported.' };
     } else {
       return null;
