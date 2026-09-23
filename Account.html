@@ -6781,10 +6781,19 @@
     // needs to know which existing Rounds row each entry corresponds to
     // (see handleUpdateSeason's locked-mode matching, DataCache.gs).
     function buildSeasonWizardPayload(includeRoundIds) {
+      // When a race/special event is left without its own custom Event
+      // Name, fall back to the season's own name rather than a generic
+      // "Round N"/"Special Event N" label (Matt's ask, 2026-09-23) -- so
+      // e.g. Rounds 1-4 of a season nobody bothered to name individual
+      // events for all just show that season's name in the Event Name
+      // spot, same as any round that WAS given its own name shows that
+      // instead. Falls back to 'Round N'/'Special Event N' only in the
+      // edge case where the season itself has no name yet either.
+      var seasonNameFallback = (state.seasonName && state.seasonName.trim()) ? state.seasonName.trim() : '';
       var raceDates = computeRaceDates(state);
       var racesPayload = state.races.map(function (race, idx) {
         var entry = {
-          eventName: (race.eventName && race.eventName.trim()) ? race.eventName.trim() : ('Round ' + (idx + 1)),
+          eventName: (race.eventName && race.eventName.trim()) ? race.eventName.trim() : (seasonNameFallback || ('Round ' + (idx + 1))),
           trackId: resolveTrackId(race.track, race.layout),
           roundNumber: idx + 1,
           date: raceDates[idx] || '',
@@ -6842,7 +6851,7 @@
         specialEventsCount: state.specialEventsCount,
         specialEvents: state.specialEvents.map(function (evt, idx) {
           return Object.assign({}, evt, {
-            eventName: (evt.eventName && evt.eventName.trim()) ? evt.eventName.trim() : ('Special Event ' + (idx + 1)),
+            eventName: (evt.eventName && evt.eventName.trim()) ? evt.eventName.trim() : (seasonNameFallback || ('Special Event ' + (idx + 1))),
             startUtc: localDateTimeToUtcIso(evt.date, evt.startTime)
           });
         }),
