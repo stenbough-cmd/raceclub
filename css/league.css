@@ -212,6 +212,40 @@ body.rc-league-page {
   font-weight: 600;
   color: #e0b64c;
 }
+/* Driver-list ticker entries (2026-09-23, Matt's ask: a driver-heavy
+   line "feels like a wall of text" -- add a manufacturer logo in front
+   of each name, take some weight off the name, keep the number weight
+   the same as it is). Built by buildDriverEntry (js/league.js), used for
+   both the pre-results "N DRIVERS" items and the in-season "N TOP 5"
+   items. .rcl-ticker-driver-list is the one flex child that holds every
+   driver entry + the ", " separators for one ticker item, so the item's
+   own 8px gap (see .rcl-ticker-item) only ever applies between the tag/
+   prefix text and this whole group, not between every individual name. */
+.rcl-ticker-driver-list {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.rcl-ticker-driver-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rcl-ticker-driver-logo {
+  flex: none;
+  display: block;
+  height: 14px;
+  width: auto;
+  max-width: 22px;
+  object-fit: contain;
+}
+/* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
+   name is now the quieter part of each entry. */
+.rcl-ticker-driver-name { font-weight: 500; }
+/* Same weight the whole line used to render at before this split
+   (Matt's explicit "keep the number weight the same as it is") -- stays
+   the loudest part of each driver entry. */
+.rcl-ticker-driver-num { font-weight: 600; }
 .rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 /* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated
    line") -- closes out each run before it repeats, so the ticker reads as
@@ -582,19 +616,26 @@ body.rc-league-page {
    for each class, so this pill can never show a color that disagrees
    with them. The var(--rcl-line-bright) here is only the fallback for
    an unrecognized class name; every real class always sets its own
-   background inline. */
+   background inline.
+   Shape matches Account.html's own .rc-badge-chip class pill exactly
+   (2026-09-23 follow-up, Matt's catch: "they aren't completely rounded
+   on the side, they're more rectangle with a soft radius in the
+   corners") -- same 5px radius and font sizing/padding as the class
+   badges there (style.css's .rc-badge-lmgte/.rc-badge-hypercar/etc.),
+   not the fully-rounded pill shape this used before. */
 .rcl-standings-class-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 14px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 5px;
   background: var(--rcl-line-bright);
   font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--rc-white);
+  line-height: 1.6;
   margin-bottom: 12px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }

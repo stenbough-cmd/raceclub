@@ -247,19 +247,24 @@ function _rclBuildTickerItems(hub) {
     });
   }
 
+  // Driver rows (both branches below) are kept as STRUCTURED data --
+  // {name, carNumber, manufacturer} -- rather than one pre-joined string
+  // (2026-09-23 rewrite, Matt's ask: "add the manufacturer logo in front
+  // of each driver name, take some weight off the driver name and keep
+  // the number weight the same"). _rclRenderTicker's buildRun() is what
+  // actually turns each row into a logo image + differently-weighted
+  // name/number spans -- see driverRows there. Escaping is left to that
+  // render step (real text nodes, not innerHTML), not done here.
   if (!hasResults) {
     var classLists = _rclSortByTickerClassOrder_(hub.standings || [], function (cls) { return cls.className; });
     classLists.forEach(function (cls) {
       var standings = cls.standings || [];
       if (!standings.length) return;
-      // Car number appended after each name (2026-09-20, Matt's ask) --
-      // "#n" straight after the name, same shorthand the Leaderboard
-      // panel's own row markup already uses (.rcl-standings-carnum).
-      var names = standings.map(function (row) {
-        if (!row.name) return null;
-        return _rclEscapeHtml(row.name) + (row.carNumber ? ' #' + _rclEscapeHtml(row.carNumber) : '');
-      }).filter(Boolean).join(', ');
-      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: names });
+      var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer };
+      });
+      if (!rows.length) return;
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', driverRows: rows });
     });
     return items;
   }
@@ -272,16 +277,16 @@ function _rclBuildTickerItems(hub) {
   // itself only has room to show 3 (see handleGetLeagueHub, Website.gs).
   var lastRace = hub.tickerLastRace;
   if (lastRace) {
-    var raceLabel = _rclEscapeHtml(lastRace.eventName || 'Race') + (lastRace.roundNum ? (' (Round ' + lastRace.roundNum + ')') : '');
+    var raceLabel = (lastRace.eventName || 'Race') + (lastRace.roundNum ? (' (Round ' + lastRace.roundNum + ')') : '');
     var resultClasses = _rclSortByTickerClassOrder_(lastRace.classes || [], function (cls) { return cls.className; });
     resultClasses.forEach(function (cls) {
       var standings = (cls.standings || []).slice(0, 5);
       if (!standings.length) return;
-      var names = standings.map(function (row) {
-        if (!row.name) return null;
-        return _rclEscapeHtml(row.name) + (row.carNumber ? ' #' + _rclEscapeHtml(row.carNumber) : '');
-      }).filter(Boolean).join(', ');
-      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5', text: raceLabel + ': ' + names });
+      var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer };
+      });
+      if (!rows.length) return;
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5', prefixText: raceLabel + ': ', driverRows: rows });
     });
   }
 
@@ -310,6 +315,39 @@ function _rclRenderTicker(hub) {
   // buildRun (not appended once after the loop below) so every run stays
   // exactly equal-width, which is what makes the translateX loop seamless
   // in the first place.
+  // Renders one driver's {name, carNumber, manufacturer} as a small inline
+  // group -- manufacturer logo (2026-09-23, Matt's ask: "add the
+  // manufacturer logo in front of each driver name" -- a driver-heavy
+  // ticker line read as "a wall of text" without one) + the name itself
+  // (lighter weight now, see .rcl-ticker-driver-name in css/league.css)
+  // + the car number (kept at the SAME weight the whole line used to be,
+  // per Matt's explicit "keep the number weight the same as it is" --
+  // it's what a viewer actually scans the ticker for, so it stays the
+  // loudest part of each entry now that the name around it is quieter).
+  // Same onerror-hide convention as every other manufacturer logo on the
+  // site (e.g. _rclBuildStandingsColumns_ above) for a car whose logo
+  // asset hasn't been uploaded yet.
+  function buildDriverEntry(row) {
+    var entry = _rclEl('span', 'rcl-ticker-driver-entry');
+    if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.className = 'rcl-ticker-driver-logo';
+      logo.src = manufacturerLogoSrc(row.manufacturer);
+      logo.alt = '';
+      logo.onerror = function () { logo.style.display = 'none'; };
+      entry.appendChild(logo);
+    }
+    var nameSpan = _rclEl('span', 'rcl-ticker-driver-name');
+    nameSpan.textContent = row.name;
+    entry.appendChild(nameSpan);
+    if (row.carNumber) {
+      var numSpan = _rclEl('span', 'rcl-ticker-driver-num');
+      numSpan.textContent = ' #' + row.carNumber;
+      entry.appendChild(numSpan);
+    }
+    return entry;
+  }
+
   function buildRun() {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
@@ -320,7 +358,21 @@ function _rclRenderTicker(hub) {
       // where the label ends and the data starts instead of a color/weight
       // change. See .rcl-ticker-item-tag in css/league.css.
       el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.tag + ':'));
-      el.appendChild(document.createTextNode(item.text));
+      if (item.driverRows) {
+        // Driver-list items (2026-09-23 rewrite) -- structured rows
+        // instead of one joined string, so each name gets its own logo +
+        // differently-weighted spans (see buildDriverEntry above) rather
+        // than reading as a flat wall of text.
+        if (item.prefixText) el.appendChild(document.createTextNode(item.prefixText));
+        var list = _rclEl('span', 'rcl-ticker-driver-list');
+        item.driverRows.forEach(function (row, idx) {
+          if (idx > 0) list.appendChild(document.createTextNode(', '));
+          list.appendChild(buildDriverEntry(row));
+        });
+        el.appendChild(list);
+      } else {
+        el.appendChild(document.createTextNode(item.text));
+      }
       frag.appendChild(el);
     });
     frag.appendChild(_rclEl('div', 'rcl-ticker-loop-dot', '&bull;'));
