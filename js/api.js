@@ -77,6 +77,24 @@ var RC_FETCH_RETRY_DELAYS_MS = [700, 2500];
 // codebase is a pure read, so retrying one is always safe: worst case, it
 // re-reads data that hasn't changed. A POST is never blindly retried here.
 
+// Retry-storm risk (2026-09-23, Matt's report: doGet executions kept
+// piling up in the Apps Script log continuously while just sitting on the
+// Dashboard, not clicking anything). Because "Execute as: Me" serializes
+// EVERY visitor's request through one shared queue, a 20s client-side
+// timeout can fire simply because a request sat in that queue behind
+// other traffic, not because anything is actually stuck -- the abandoned
+// attempt keeps running server-side (see the "Execute as: Me" comments
+// elsewhere in this codebase) while the retry above adds a second request
+// to the very queue that caused the delay. For a one-off user action
+// that's still the right trade (see the 2026-09-14 report above). For a
+// SILENT, UNPROMPTED BACKGROUND POLL -- today, only the header's 45s
+// notification check (see _rcRefreshNotifications/header.js) -- it's pure
+// downside: a missed tick is invisible to the driver (the next poll 45s
+// later picks up whatever changed) but every retried tick compounds the
+// exact congestion that made it slow in the first place. That poll now
+// passes options.noRetry (see fetchApi's own doc comment below) to opt out
+// of this whole retry path.
+
 function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
   // AbortController -- not supported on truly ancient browsers, but every
   // browser this site otherwise targets has it; fetchApi already assumes a
@@ -129,7 +147,17 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
  *                   pass RC_FETCH_TIMEOUT_MS_LONG for a heavy multi-row
  *                   write (createSeason/updateSeason). Leave unset for the
  *                   normal 20s budget.
+ *   options.noRetry: GET only -- skips the automatic retry-on-timeout below
+ *                   entirely (single attempt, same as a POST). For a
+ *                   silent background poll (the header's 45s notification
+ *                   check is the one caller of this today) a missed tick
+ *                   costs nothing -- another one fires 45s later anyway --
+ *                   so retrying under load only adds a second competing
+ *                   request to an already-congested queue instead of
+ *                   helping (2026-09-23, see the retry-storm comment above
+ *                   RC_FETCH_RETRY_DELAYS_MS).
  *
+
  * IMPORTANT: POST requests use Content-Type: text/plain;charset=utf-8, NOT
  * application/json. Apps Script Web Apps can't handle a CORS preflight
  * (OPTIONS) request, which application/json would trigger. text/plain
@@ -177,6 +205,7 @@ function fetchApi(action, options) {
   }
 
   if (method === 'POST') return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
+  if (options.noRetry) return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
 
   var attempt = function (retriesLeft) {
     return _rcFetchOnce_(url, fetchOpts, options.timeoutMs).catch(function (err) {

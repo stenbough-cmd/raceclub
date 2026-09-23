@@ -366,7 +366,12 @@ function _rcAckNotif(id) {
 // empty for a logged-out call.
 function _rcFetchSeasonNotifications(token, cached) {
   if (!cached) return Promise.resolve({ active: [], history: [] });
-  return fetchApi('getNotifications', { token: token })
+  // noRetry (2026-09-23, see the retry-storm comment on RC_FETCH_RETRY_DELAYS_MS
+  // in js/api.js) -- this same call also runs unattended every 45s from
+  // the header's own poll timer, so a slow tick just resolving quietly on
+  // the NEXT tick beats piling a retry onto the same queue that's already
+  // running behind.
+  return fetchApi('getNotifications', { token: token, noRetry: true })
     .then(function (data) {
       if (!data || !data.success) return { active: [], history: [] };
       var active = (data.active || []).map(function (n) {
