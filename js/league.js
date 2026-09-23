@@ -244,7 +244,7 @@ function _rclBuildTickerItems(hub) {
     if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
   });
   if (nextEntry) {
-    var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ' -- ' + nextEntry.layout : '')) : '';
+    var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ': ' + nextEntry.layout : '')) : '';
     var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
     items.push({
       tag: 'NEXT RACE',
@@ -762,7 +762,7 @@ function _rclRenderResults(hub) {
     s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
     return s;
   }
-  headline.appendChild(stat('Event', (r.eventName || '') + (r.track ? ' -- ' + r.track : '')));
+  headline.appendChild(stat('Event', (r.eventName || '') + (r.track ? ': ' + r.track : '')));
   headline.appendChild(stat('Winner', r.overallWinner, true));
   headline.appendChild(stat('Pole', r.overallPoleSitter));
   headline.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
@@ -851,7 +851,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
     return s;
   }
-  headline.appendChild(stat('Event', (result.eventName || '') + (result.track ? ' -- ' + result.track : '')));
+  headline.appendChild(stat('Event', (result.eventName || '') + (result.track ? ': ' + result.track : '')));
   headline.appendChild(stat('Winner', result.overallWinner, true));
   headline.appendChild(stat('Pole', result.overallPoleSitter));
   headline.appendChild(stat('Fastest Lap', result.overallFastestLapDriver ? (result.overallFastestLapDriver + (result.overallFastestLapTime ? ' (' + result.overallFastestLapTime + ')' : '')) : ''));
@@ -896,8 +896,8 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var name = (p.against && namesByProfileId[p.against]) || 'Unknown Driver';
       row.appendChild(_rclEl('div', 'rcl-penalty-name', _rclEscapeHtml(name)));
       var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
-      var tierLabel = tierInfo ? tierInfo.label.replace(/^Tier \d+ -- /, '') : ('Tier ' + (p.penaltyTier || '?'));
-      var detailText = (p.infractionType || 'Infraction') + ' -- ' + tierLabel +
+      var tierLabel = tierInfo ? tierInfo.label.replace(/^Tier \d+: /, '') : ('Tier ' + (p.penaltyTier || '?'));
+      var detailText = (p.infractionType || 'Infraction') + ': ' + tierLabel +
         ' (' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
       row.appendChild(_rclEl('div', 'rcl-penalty-detail', _rclEscapeHtml(detailText)));
       penSection.appendChild(row);
@@ -928,7 +928,7 @@ function _rclOpenAllResultsModal(hub) {
   rounds.forEach(function (r) {
     var opt = document.createElement('option');
     opt.value = r.roundId;
-    var label = (r.roundNum ? 'R' + r.roundNum + ' -- ' : '') + (r.eventName || r.track || r.roundId);
+    var label = (r.roundNum ? 'R' + r.roundNum + ': ' : '') + (r.eventName || r.track || r.roundId);
     if (r.startUtc) label += ' (' + _rclFormatDate(r.startUtc) + ')';
     opt.textContent = label;
     select.appendChild(opt);

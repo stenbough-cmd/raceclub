@@ -98,7 +98,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Account · Race Club</title>
+<title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -1860,7 +1860,7 @@
         var when = h.at ? new Date(h.at) : null;
         var whenStr = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : '';
         var line = el('div', 'rc-career-incident',
-          escapeHtml(h.status || '') + (h.reason ? ' -- ' + escapeHtml(h.reason) : ''));
+          escapeHtml(h.status || '') + (h.reason ? ': ' + escapeHtml(h.reason) : ''));
         if (whenStr) line.appendChild(el('span', 'rc-career-incident-date', whenStr));
         discGroup.appendChild(line);
       });
@@ -1963,7 +1963,7 @@
       protests.forEach(function (p) {
         var row = el('div', 'rc-dm-row');
         var info = el('div', null);
-        info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel || '') + ' -- ' + escapeHtml((p.involvedNames || []).join(', '))));
+        info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel || '') + ': ' + escapeHtml((p.involvedNames || []).join(', '))));
         if (p.infractionType) info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType)));
         row.appendChild(info);
         row.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
@@ -3850,8 +3850,11 @@
     } else if (r.hasResults) {
       state = { tone: 'yellow', icon: ICON_CIRCLE_EMPTY, text: 'Results uploaded, awaiting validation.' };
     } else if (r.hasAnySessionImported) {
+      // Yellow, not red (2026-09-23, Matt's ask) -- a partial import isn't
+      // a problem to flag in alarm-red, it's just "in progress," the same
+      // caution tone the "awaiting validation" state below already uses.
       state = {
-        tone: 'red', icon: ICON_CIRCLE_EMPTY,
+        tone: 'yellow', icon: ICON_CIRCLE_EMPTY,
         text: r.hasRaceResults ? 'Race results imported, qualifying results pending.' : 'Qualifying results imported, race results pending.'
       };
     } else if (!locked) {
@@ -4181,7 +4184,7 @@
 
         var headerRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;');
         var titleWrap = el('div');
-        var titleText = (r.seasonName ? r.seasonName + ' -- ' : '') + (r.eventName || ('Round ' + r.roundNumber));
+        var titleText = (r.seasonName ? r.seasonName + ': ' : '') + (r.eventName || ('Round ' + r.roundNumber));
         titleWrap.appendChild(el('h3', 'rc-dash-card-title', escapeHtml(titleText)));
         var metaParts = [];
         if (r.track) metaParts.push(r.track);
@@ -4214,12 +4217,12 @@
             labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
           }
           row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (' -- Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (': Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
           var outcome = el('div', 'rc-hint');
           outcome.style.cssText = 'margin-top:6px;';
           outcome.textContent = p.status === 'Pending'
             ? 'Pending review'
-            : p.status + (p.status === 'Upheld' ? (' -- Tier ' + p.penaltyTier) : '') + (p.reviewedByName ? (' -- ruled by ' + p.reviewedByName) : '');
+            : p.status + (p.status === 'Upheld' ? (': Tier ' + p.penaltyTier) : '') + (p.reviewedByName ? (', ruled by ' + p.reviewedByName) : '');
           row.appendChild(outcome);
           panel.appendChild(row);
         });
@@ -4844,14 +4847,14 @@
     var d = evt.detail || {};
     switch (evt.eventType) {
       case 'Incident':
-        return 'Incident' + (d.ContactWith ? ' -- contact with ' + d.ContactWith : '') + (d.SeverityValue ? ' (severity ' + d.SeverityValue + ')' : '');
+        return 'Incident' + (d.ContactWith ? ': contact with ' + d.ContactWith : '') + (d.SeverityValue ? ' (severity ' + d.SeverityValue + ')' : '');
       case 'TrackLimit':
-        return 'Track Limit' + (d.Outcome ? ' -- ' + d.Outcome : '') + (d.CurrentPoints !== undefined ? ' (points: ' + d.CurrentPoints + ')' : '');
+        return 'Track Limit' + (d.Outcome ? ': ' + d.Outcome : '') + (d.CurrentPoints !== undefined ? ' (points: ' + d.CurrentPoints + ')' : '');
       case 'SimPenaltyIssued':
-        return 'Penalty Issued' + (d.PenaltyType ? ' -- ' + d.PenaltyType : '') + (d.Reason ? ' (' + d.Reason + ')' : '') +
+        return 'Penalty Issued' + (d.PenaltyType ? ': ' + d.PenaltyType : '') + (d.Reason ? ' (' + d.Reason + ')' : '') +
           (d.TimeSeconds ? ', ' + d.TimeSeconds + 's' : '') + (d.LapsPenalty ? ', ' + d.LapsPenalty + ' lap(s)' : '');
       case 'SimPenaltyServed':
-        return 'Penalty Served' + (d.PenaltyType ? ' -- ' + d.PenaltyType : '');
+        return 'Penalty Served' + (d.PenaltyType ? ': ' + d.PenaltyType : '');
       case 'Sector':
         return d.Kind === 'BestSector' ? ('Best Sector ' + (d.SectorIndex || '') + (d.Class ? ' (' + d.Class + ')' : '')) : 'Suspension Damage';
       default:
@@ -5510,7 +5513,7 @@
 
   function _rcProtestStatusBadge(status, penaltyTier) {
     var cls = status === 'Upheld' ? 'rc-badge-race-posted' : (status === 'Denied' ? 'rc-badge-chip' : (status === 'Withdrawn' ? 'rc-badge-chip' : 'rc-badge-race-scheduled'));
-    var label = status === 'Upheld' ? ('Upheld -- Tier ' + penaltyTier) : status;
+    var label = status === 'Upheld' ? ('Upheld: Tier ' + penaltyTier) : status;
     return el('span', 'rc-badge-chip ' + cls, label);
   }
 
@@ -7452,7 +7455,7 @@
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
 
-    var modal = showModal('Import Results -- ' + roundLabel, { wide: true });
+    var modal = showModal('Import Results: ' + roundLabel, { wide: true });
 
     var fileInput = el('input');
     fileInput.type = 'file';
@@ -7504,15 +7507,35 @@
           '&filename=' + encodeURIComponent(file.name) +
           '&roundId=' + encodeURIComponent(roundId);
 
-        fetch(url, {
+        // Routed through _rcFetchOnce_ (js/api.js), not a bare fetch()
+        // (2026-09-23 fix, Matt's report: "it ran for about 30ish seconds
+        // then threw an error that it couldn't connect to the server. But
+        // all the info ended up on the sheet like it should have.") -- a
+        // bare fetch() has no timeout at all, so that ~30s failure wasn't
+        // this code giving up on purpose, it was Google's own infra or the
+        // network dropping the still-open connection out from under it
+        // while Apps Script kept executing to completion server-side
+        // (exactly the ambiguous-POST-outcome case fetchApi's own header
+        // comment describes). Every other heavy write on the site
+        // (createSeason/updateSeason, adminCreateNews/adminUpdateNews)
+        // already goes through fetchApi's RC_FETCH_TIMEOUT_MS_LONG budget
+        // for this same reason; this one used a raw fetch() only because it
+        // sends a raw XML body, not a JSON one, which fetchApi always
+        // JSON.stringifies. _rcFetchOnce_ is the lower-level helper
+        // fetchApi itself is built on -- it takes fetchOpts as-is (no
+        // JSON-encoding), so it works here without changing fetchApi's own
+        // contract, while still getting the same explicit 45s
+        // timeout/abort every other heavy POST gets instead of an
+        // indefinite bare fetch.
+        _rcFetchOnce_(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: xmlText
-        }).then(function (res) { return res.json(); }).then(function (data) {
+        }, RC_FETCH_TIMEOUT_MS_LONG).then(function (data) {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
           if (data && data.success) {
-            var msg = 'Imported ' + data.sessionId + ' -- ' + data.driversImported + ' driver(s), ' +
+            var msg = 'Imported ' + data.sessionId + ': ' + data.driversImported + ' driver(s), ' +
               data.lapsImported + ' lap row(s), ' + data.raceEventsImported + ' race event(s).';
             if (data.unmatchedDriverNames && data.unmatchedDriverNames.length) {
               msg += ' Unmatched driver names (no ProfileID yet): ' + data.unmatchedDriverNames.join(', ') + '.';
@@ -7525,7 +7548,7 @@
         }).catch(function () {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
-          showToast('Could not reach the server -- file not imported.', 'error');
+          showToast('This is taking longer than expected. Apps Script may still be finishing the import -- check League Tools before trying again so you don\'t import the same file twice.', 'error');
         });
       };
       reader.readAsText(file);
@@ -7577,7 +7600,7 @@
               if (data && data.success) {
                 var s = data.summary || {};
                 resultBox.className = 'rc-message rc-ok';
-                resultBox.textContent = 'Erased ' + roundLabel + ' -- ' + s.sessionsRemoved + ' session(s), ' +
+                resultBox.textContent = 'Erased ' + roundLabel + ': ' + s.sessionsRemoved + ' session(s), ' +
                   s.driverResultsRemoved + ' driver result(s), ' + s.lapsRemoved + ' lap row(s), ' +
                   s.raceEventsRemoved + ' race event(s), ' + s.seasonHistoryRemoved + ' Season History row(s).';
                 showToast('Round ingestion data erased.', 'success');
@@ -7610,7 +7633,7 @@
   function openRoundViewModal(token, opts) {
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
-    var modal = showModal('Results -- ' + roundLabel, { wide: true });
+    var modal = showModal('Results: ' + roundLabel, { wide: true });
     modal.body.appendChild(buildSpinner('Loading results...'));
 
     fetchApi('adminGetRoundResultDetail', { token: token, params: { roundId: roundId } }).then(function (data) {
@@ -7648,7 +7671,7 @@
         var list = el('div', null);
         data.penaltiesAssessed.forEach(function (p) {
           var line = el('div', 'rc-dm-row');
-          line.appendChild(el('div', null, escapeHtml(p.againstName) + ' -- ' + escapeHtml(p.infractionType) + ' -- Tier ' + p.penaltyTier));
+          line.appendChild(el('div', null, escapeHtml(p.againstName) + ': ' + escapeHtml(p.infractionType) + ': Tier ' + p.penaltyTier));
           list.appendChild(line);
         });
         modal.body.appendChild(list);
@@ -7683,7 +7706,7 @@
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
     var resultsFinalized = !!opts.resultsFinalized;
-    var modal = showModal('Edit & Finalize -- ' + roundLabel, { wide: true });
+    var modal = showModal('Edit & Finalize: ' + roundLabel, { wide: true });
 
     function render() {
       modal.body.innerHTML = '';
@@ -7746,7 +7769,7 @@
             labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
           }
           row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (' -- Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (' -- "' + escapeHtml(p.description) + '"') : '')));
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (': Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
 
           if (p.status === 'Pending') {
             if (resultsFinalized) {
@@ -7842,8 +7865,8 @@
             }
           } else {
             var outcome = el('div', 'rc-hint', 'margin-top:8px;');
-            outcome.textContent = p.status + (p.status === 'Upheld' ? (' -- Tier ' + p.penaltyTier) : '') +
-              (p.reviewedByName ? (' -- ruled by ' + p.reviewedByName) : '');
+            outcome.textContent = p.status + (p.status === 'Upheld' ? (': Tier ' + p.penaltyTier) : '') +
+              (p.reviewedByName ? (', ruled by ' + p.reviewedByName) : '');
             row.appendChild(outcome);
           }
 

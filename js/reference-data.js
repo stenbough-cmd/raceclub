@@ -320,14 +320,21 @@ var PROTEST_INFRACTION_TYPES = [
 // Tier 1 (Warning) and Tier 7 (Suspension) never produce an Adjustments
 // row -- Tier 1 is logged only, and Tier 7 is enforced via a Registrations
 // status change instead (see _rcSetRegistrationStatus_ in Protests.gs).
+// Tier labels use ": " not " -- " (2026-09-23, Matt's ask: "get rid of all
+// the -- between things... I like colons" -- applies to every "Label --
+// Value" style separator sitewide, this one included since it's what
+// PENALTY_TIERS' own .label renders directly into the Steward ruling
+// dropdown and suggested-tier text). See _rclDescribePenaltyEffect_/the
+// tierLabel regex in league.js, which strips this same "Tier N: " prefix
+// back off -- kept in sync with this format.
 var PENALTY_TIERS = [
-  { tier: 1, label: 'Tier 1 -- Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
-  { tier: 2, label: 'Tier 2 -- Time Penalty (5s)', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
-  { tier: 3, label: 'Tier 3 -- Time Penalty (10s)', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
-  { tier: 4, label: 'Tier 4 -- Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
-  { tier: 5, label: 'Tier 5 -- Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
-  { tier: 6, label: 'Tier 6 -- Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
-  { tier: 7, label: 'Tier 7 -- Suspension', effect: 'Sits out one or more future rounds (requires a prior Tier 6)', effectType: null, effectSeconds: 0 }
+  { tier: 1, label: 'Tier 1: Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
+  { tier: 2, label: 'Tier 2: Time Penalty (5s)', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
+  { tier: 3, label: 'Tier 3: Time Penalty (10s)', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
+  { tier: 4, label: 'Tier 4: Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
+  { tier: 5, label: 'Tier 5: Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
+  { tier: 6, label: 'Tier 6: Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
+  { tier: 7, label: 'Tier 7: Suspension', effect: 'Sits out one or more future rounds (requires a prior Tier 6)', effectType: null, effectSeconds: 0 }
 ];
 
 function penaltyTierByNumber(tierNum) {
