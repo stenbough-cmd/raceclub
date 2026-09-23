@@ -576,13 +576,14 @@ p { margin: 0 0 0.75em; }
    border width). Bright green/red reuse the exact colors the Sponsors
    comparison table already uses for bonus/penalty
    (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative" means the
-   same color everywhere on the site. Clean Race and Fastest Lap reuse the
-   tier-mid (blue) / tier-high (purple) color tokens for a distinct palette.
-   Pole keeps the existing gold tier-elite color; Most Laps Led gets its own
-   amber now that Fastest Lap has moved off gold. Points/Qualifying/Laps/Pit
-   Stops are informational counts, not a win or a loss, so they get a
-   neutral steel outline -- Points is the one exception, reusing the
-   positive green since scoring points is always a good outcome. */
+   same color everywhere on the site. Fastest Lap reuses the tier-high
+   (purple) color token for a distinct look. Pole keeps the existing gold
+   tier-elite color; Most Laps Led gets its own amber now that Fastest Lap
+   has moved off gold. Points/Qualifying/Laps/Pit Stops are informational
+   counts, not a win or a loss, so they get a neutral steel outline --
+   Points is the one exception, reusing the positive green since scoring
+   points is always a good outcome. (.rc-badge-result-clean removed
+   2026-09-23 -- Clean Race system removed sitewide, Matt's ask.) */
 .rc-badge-result {
   background: none;
   font-weight: 700;
@@ -590,7 +591,6 @@ p { margin: 0 0 0.75em; }
 }
 .rc-badge-result-positive { border: 1.5px solid var(--rc-positive-bright); color: var(--rc-positive-bright); }
 .rc-badge-result-negative { border: 1.5px solid var(--rc-negative); color: var(--rc-negative); }
-.rc-badge-result-clean { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
 .rc-badge-result-fastestlap { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
 .rc-badge-result-mostlapsled { border: 1.5px solid #d97706; color: #d97706; }
 .rc-badge-result-neutral { border: 1.5px solid var(--rc-steel); color: var(--rc-steel); }

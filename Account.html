@@ -1812,7 +1812,6 @@
     raceGrid.appendChild(buildCareerStat(s.racesStarted || 0, 'Started'));
     raceGrid.appendChild(buildCareerStat(s.poles || 0, 'Poles'));
     raceGrid.appendChild(buildCareerStat(s.fastestLaps || 0, 'Fastest Laps'));
-    raceGrid.appendChild(buildCareerStat(s.cleanRaces || 0, 'Clean Races'));
     raceGrid.appendChild(buildCareerStat(s.dnfs || 0, 'DNFs'));
     raceGrid.appendChild(buildCareerStat((s.avgFinish != null) ? s.avgFinish.toFixed(1) : '--', 'Avg. Finish'));
     raceGroup.appendChild(raceGrid);
@@ -2031,10 +2030,10 @@
     var RC_CLASS_LOCK_ICON = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>';
 
     // Redesigned 2026-09-19 (Matt's call): colored buttons instead of a
-    // plain list -- Green LMGT3, Purple LMP3, Blue LMP2, Red Hypercar
-    // (reusing CAR_CLASS_BADGE_COLOR_VAR's existing tokens, which already
-    // happen to be exactly those colors -- see reference-data.js). ALL
-    // FOUR classes always render, whether or not this season actually
+    // plain list -- Orange LMGTE, Green LMGT3, Purple LMP3, Blue LMP2, Red
+    // Hypercar (reusing CAR_CLASS_BADGE_COLOR_VAR's existing tokens, which
+    // already happen to be exactly those colors -- see reference-data.js).
+    // ALL FIVE classes always render, whether or not this season actually
     // fields cars in them -- a class with no cars set up, or with every
     // seat already taken, just grays out and shows the circle-slash lock
     // icon on hover instead of disappearing from the row. A totals line
@@ -4582,7 +4581,7 @@
 
   // Your own race summary -- position/grid/laps/best lap/total time/
   // points/pit stops/incidents-track limits-penalties, plus the pole/
-  // fastest-lap/most-laps-led/clean-race callouts. Replaces the old
+  // fastest-lap/most-laps-led callouts. Replaces the old
   // per-class all-drivers table entirely (2026-09-19, Matt's call: "the
   // RESULTS link ... should only show the player's results ... we don't
   // need a leaderboard or extra fluff in there").
@@ -4610,7 +4609,6 @@
     if (you.wonPole) badgeBits.push('Pole');
     if (you.wonFastestLap) badgeBits.push('Fastest Lap');
     if (you.wonMostLapsLed) badgeBits.push('Most Laps Led');
-    if (you.isCleanRace) badgeBits.push('Clean Race');
     if (badgeBits.length) wrap.appendChild(el('p', 'rc-hint', badgeBits.join(' · ')));
     return wrap;
   }
@@ -5621,8 +5619,8 @@
       // anything but blank/'now' any more.
       releaseMode: 'now',
       releaseDateTime: '',
-      classes: { LMGT3: true, LMP2: false, LMP3: false, Hypercar: false },
-      classSeasons: { LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
+      classes: { LMGTE: false, LMGT3: true, LMP2: false, LMP3: false, Hypercar: false },
+      classSeasons: { LMGTE: '', LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
       frequency: 'Weekly',
       byeWeeks: 0,
       byeWeekDates: [],
@@ -9092,8 +9090,8 @@
     return el('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : ''), escapeHtml(label || '?'));
   }
 
-  // Grouped by Class (fixed order: LMGT3 -> LMP3 -> LMP2 -> Hypercar, per
-  // CAR_CLASS_LIST -- the same canonical order used everywhere else on the
+  // Grouped by Class (fixed order: LMGTE -> LMGT3 -> LMP3 -> LMP2 ->
+  // Hypercar, per CAR_CLASS_LIST -- the same canonical order used everywhere else on the
   // site a class list appears), then by Season within each class (most
   // recent first, black badge per Matt's call), then one row per car --
   // manufacturer logo, then details, then its own Edit button. A class

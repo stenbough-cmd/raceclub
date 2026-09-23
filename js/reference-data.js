@@ -183,12 +183,16 @@ var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 // display are NOT built yet -- this catalog exists so objective NAMES can
 // be assigned at Create Season now, with the scoring logic to follow as
 // its own pass (Matt's call).
+//
+// 'Half-Season Clean' (Low) and 'Clean Season' (Mid) removed 2026-09-23
+// (Matt's ask: remove all Clean Race language/bonus -- the Clean Race
+// system is gone from the site entirely, so no objective can reference
+// it anymore).
 var CAR_OBJECTIVE_CATALOG = {
   Low: [
     'Season Finisher',       // completes every scheduled round this season
     'Podium Once',           // finishes on the podium (class P1-P3) at least once
     'Points Every Round',    // scores championship points in every round finished
-    'Half-Season Clean',     // at least half of this season's rounds graded Clean Race
     'Top-10 Regular',        // finishes P10 or better in class at least 3 times
     'Regular Attendee'       // attends at least 75% of this season's scheduled rounds
   ],
@@ -196,7 +200,6 @@ var CAR_OBJECTIVE_CATALOG = {
     'Multiple Podiums',      // finishes on the podium at least 3 times this season
     'Above The Median',      // finishes the season above the class's median points total
     'Consistent Top Five',   // finishes P5 or better in class at least 4 times
-    'Clean Season',          // every round this season graded Clean Race
     'Front-Row Twice',       // qualifies P1 or P2 in class at least twice this season
     'Charger'                // qualifies P10 or better and gains at least 5 positions from grid to finish, at least once this season
   ],
@@ -226,13 +229,11 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Season Finisher': 'Completes every scheduled round this season.',
   'Podium Once': 'Finishes on the podium (class P1-P3) at least once.',
   'Points Every Round': 'Scores championship points in every round finished.',
-  'Half-Season Clean': 'At least half of this season\'s rounds graded Clean Race.',
   'Top-10 Regular': 'Finishes P10 or better in class at least 3 times.',
   'Regular Attendee': 'Attends at least 75% of this season\'s scheduled rounds.',
   'Multiple Podiums': 'Finishes on the podium at least 3 times this season.',
   'Above The Median': 'Finishes the season above the class\'s median points total.',
   'Consistent Top Five': 'Finishes P5 or better in class at least 4 times.',
-  'Clean Season': 'Every round this season graded Clean Race.',
   'Front-Row Twice': 'Qualifies P1 or P2 in class at least twice this season.',
   'Charger': 'Qualifies P10 or better and gains at least 5 positions from grid to finish, at least once this season.',
   'Championship Podium': 'Finishes the season in the top 3 of class standings.',
@@ -309,20 +310,24 @@ var PROTEST_INFRACTION_TYPES = [
 
 // Race Club Rulebook.md Section 5.1 Penalty Tiers, mirrored here as data so
 // the EDIT popup's penalty-tier dropdown and its resulting time-penalty/
-// fine effect can never drift from the published rulebook text. `effect` is
-// the plain-language consequence shown next to the tier in the dropdown;
-// `fine` is the working-value League Prize Pool fine amount for that tier
-// (v0.3-Economy-Reputation-Design.md's "$100-$360 Steward Fine Amounts,
-// tiered to severity" -- Tier 1 (Warning) intentionally carries no fine,
-// matching the Rulebook's "logged only, no time or position impact").
+// disqualification effect can never drift from the published rulebook
+// text. `effect` is the plain-language consequence shown next to the tier
+// in the dropdown; `effectType`/`effectSeconds` mirror Protests.gs's
+// PENALTY_TIER_EFFECTS_ exactly -- these are what actually get written to
+// the Adjustments tab once a protest is ruled on, replacing the old
+// per-tier monetary `fine` field (removed 2026-09-23, Matt's ask: remove
+// all "fines"/monetary language since there's no monetary system).
+// Tier 1 (Warning) and Tier 7 (Suspension) never produce an Adjustments
+// row -- Tier 1 is logged only, and Tier 7 is enforced via a Registrations
+// status change instead (see _rcSetRegistrationStatus_ in Protests.gs).
 var PENALTY_TIERS = [
-  { tier: 1, label: 'Tier 1 -- Warning', effect: 'Logged only, no time or position impact', fine: 0 },
-  { tier: 2, label: 'Tier 2 -- Time Penalty (5s)', effect: '+5s added to final race time', fine: 100 },
-  { tier: 3, label: 'Tier 3 -- Time Penalty (10s)', effect: '+10s added to final race time', fine: 150 },
-  { tier: 4, label: 'Tier 4 -- Drive-Through Equivalent', effect: '+20s added to final race time', fine: 220 },
-  { tier: 5, label: 'Tier 5 -- Stop-and-Go Equivalent', effect: '+40s added to final race time', fine: 290 },
-  { tier: 6, label: 'Tier 6 -- Disqualification', effect: 'Removed from session results', fine: 360 },
-  { tier: 7, label: 'Tier 7 -- Suspension', effect: 'Sits out one or more future rounds (requires a prior Tier 6)', fine: 360 }
+  { tier: 1, label: 'Tier 1 -- Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
+  { tier: 2, label: 'Tier 2 -- Time Penalty (5s)', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
+  { tier: 3, label: 'Tier 3 -- Time Penalty (10s)', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
+  { tier: 4, label: 'Tier 4 -- Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
+  { tier: 5, label: 'Tier 5 -- Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
+  { tier: 6, label: 'Tier 6 -- Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
+  { tier: 7, label: 'Tier 7 -- Suspension', effect: 'Sits out one or more future rounds (requires a prior Tier 6)', effectType: null, effectSeconds: 0 }
 ];
 
 function penaltyTierByNumber(tierNum) {
@@ -332,6 +337,19 @@ function penaltyTierByNumber(tierNum) {
   }
   return null;
 }
+
+// Mirrors Protests.gs's SUGGESTED_TIER_BY_INFRACTION_ -- the standard
+// ruling tier the Rulebook assigns to an infraction type, for UI use (a
+// hint next to the penalty-tier dropdown, and the basis for the
+// "ruling at a different tier requires a written explanation" prompt).
+// Added 2026-09-23 alongside the standardized-ruling backend work. Only
+// the two auto-flagged registration-mismatch infraction types carry a
+// fixed standard tier -- driver-filed infractions (contact, unsafe
+// rejoin, etc.) are judged case by case and have no entry here.
+var SUGGESTED_TIER_BY_INFRACTION = {
+  'Wrong-Class Entry': 6,
+  'Wrong-Team/Car Entry': 6
+};
 
 // How long after a round's results are imported a driver can still file a
 // protest for it (Matt's rule: "48 hours ... after that, they can no longer

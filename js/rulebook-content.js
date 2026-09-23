@@ -42,7 +42,7 @@ var RULEBOOK_SECTIONS = [
       '<div class="rc-rulebook-callout"><strong>Race format:</strong><ul>' +
       '<li>Races range from 40 to 80 minutes</li>' +
       '<li>Points scale with race length and round prestige</li>' +
-      '<li>Clean race and fastest lap bonuses are tracked automatically each session</li>' +
+      '<li>Pole, fastest lap, and most-laps-led bonuses are tracked automatically each session</li>' +
       '</ul></div>'
   },
   {
@@ -97,7 +97,7 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<div class="rc-rulebook-callout"><strong>Partially active right now.</strong> Drivers can file a protest, and the Steward Board can rule on it and assign a tier below -- that part is live. What isn’t live yet: the time-penalty/grid/points effects a tier implies aren’t automatically applied to results or standings, so a ruling is currently a recorded judgment, not something that moves your finishing position on its own. Tier 7 (Suspension) is the exception -- it is enforced automatically. There is no monetary fine of any kind.</div>' +
+    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board rules on it and assigns a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward -- a ruling isn’t just a recorded judgment, it moves the finishing position and points on its own. Tier 7 (Suspension) is enforced automatically as well. Two infraction types -- Wrong-Class Entry and Wrong-Team/Car Entry -- carry a standard Tier 6 ruling under this Rulebook; ruling one of those at a different tier requires the steward to write a short explanation for the deviation. There is no monetary fine of any kind.</div>' +
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
@@ -117,7 +117,8 @@ var RULEBOOK_SECTIONS = [
       '<p><strong>Procedural</strong></p><ul><li>Ignoring blue flags when being lapped</li></ul>' +
       '<p class="rc-hint"><em>Note: jump starts and formation lap conduct are automatically detected and enforced by LMU, no organizer/steward action required (see Section 4). These automatic calls are final and not subject to review.</em></p>' +
       '<p><strong>Conduct</strong></p><ul><li>Deliberate retaliation after an incident</li><li>Post-incident unsportsmanlike behavior (chat, voice comms)</li></ul>' +
-      '<p><strong>Eligibility</strong></p><ul><li>Wrong-class entry: a driver who signs up for and races in a class they aren’t eligible for is disqualified from that race and removed from the session (kicked); this is a Tier 6 (Disqualification) matter, not a graduated penalty.</li></ul>' +
+      '<p><strong>Eligibility</strong></p><ul><li>Wrong-class entry: a driver who signs up for and races in a class they aren’t eligible for is disqualified from that race and removed from the session (kicked); this is a Tier 6 (Disqualification) matter, not a graduated penalty.</li>' +
+      '<li>Wrong-team/car entry: a driver who races a car or team seat other than the one they registered for is disqualified from that race and removed from the session (kicked); this is also a Tier 6 (Disqualification) matter, not a graduated penalty.</li></ul>' +
       '<h4>5.3 Example Incidents by Tier</h4>' +
       '<p>For context, these are illustrative examples, not an exhaustive list. Stewards retain discretion to adjust based on circumstances.</p>' +
       '<table><tr><td><strong>Tier</strong></td><td><strong>Example Incident</strong></td></tr>' +
@@ -126,7 +127,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td>3, 10s</td><td>Contact causing another driver to spin or lose a position; ignoring a blue flag long enough to hold up a lapping car</td></tr>' +
       '<tr><td>4, Drive-Through Equiv. (+20s)</td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
       '<tr><td>5, Stop-and-Go Equiv. (+40s)</td><td>Deliberate or reckless contact</td></tr>' +
-      '<tr><td>6, Disqualification</td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class entry (driver removed from session)</td></tr>' +
+      '<tr><td>6, Disqualification</td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
       '<tr><td>7, Suspension</td><td>Repeated Tier 4/5 offenses within a season following a prior disqualification; serious conduct violations off-track</td></tr></table>'
   },
   { id: 'race-control', num: '6', title: 'Race Control Procedures', draft: true },
