@@ -1907,7 +1907,16 @@
         if (racesLoaded) return;
         racesLoaded = true;
         racesBody.appendChild(buildSpinner('Loading races...'));
-        fetchApi('getCareerSeasonRaceDetail', { token: token, seasonId: s.seasonId }).then(function (result) {
+        // BUG FIX (2026-09-23 audit): seasonId was passed as a bare
+        // options field instead of inside options.params -- fetchApi only
+        // ever serializes options.token and keys under options.params
+        // into the URL, so this seasonId was silently dropped from every
+        // request and the server fell back to whatever seasonId (or lack
+        // of one) e.parameter.seasonId happened to be, which could show
+        // the wrong season's races (or none at all) once a driver has
+        // more than one past season. Every other call in this file gets
+        // this right already -- this was the one exception.
+        fetchApi('getCareerSeasonRaceDetail', { token: token, params: { seasonId: s.seasonId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (result) {
           racesBody.innerHTML = '';
           if (!result || !result.success || !result.rounds || !result.rounds.length) {
             racesBody.appendChild(el('p', 'rc-career-empty-note', 'No race results recorded for this season.'));
@@ -4180,7 +4189,7 @@
     section.innerHTML = '';
     section.appendChild(buildPageSpinner('Loading protests...'));
 
-    return fetchApi('getStewardingFeed', { token: token }).then(function (data) {
+    return fetchApi('getStewardingFeed', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Stewarding'));
 
@@ -4984,7 +4993,7 @@
     section.appendChild(buildPageSpinner('Loading your results...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
-    return fetchApi('getSeasonResults', { token: token }).then(function (res) {
+    return fetchApi('getSeasonResults', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
       section.innerHTML = '';
 
       if (!res || !res.success) {
@@ -7639,9 +7648,16 @@
     var modal = showModal('Results: ' + roundLabel, { wide: true });
     modal.body.appendChild(buildSpinner('Loading results...'));
 
-    fetchApi('adminGetRoundResultDetail', { token: token, params: { roundId: roundId } }).then(function (data) {
+    fetchApi('adminGetRoundResultDetail', { token: token, params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
       modal.body.innerHTML = '';
-      if (!data.success || !data.race) {
+      // BUG FIX (2026-09-23 audit): was `!data.success` alone, which
+      // throws if data ever comes back null/undefined -- every other
+      // handler in this file guards with `!data ||` first. An exception
+      // thrown inside a fulfilled .then() here is NOT caught by the
+      // .catch() below (that only catches network/timeout failures), so
+      // this used to leave the modal's spinner stuck forever instead of
+      // showing the "Could not reach the server" fallback.
+      if (!data || !data.success || !data.race) {
         modal.body.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load results for this round.'));
         return;
       }
@@ -7714,7 +7730,7 @@
     function render() {
       modal.body.innerHTML = '';
       modal.body.appendChild(buildSpinner('Loading protests...'));
-      fetchApi('adminGetRoundProtests', { token: token, params: { roundId: roundId } }).then(function (data) {
+      fetchApi('adminGetRoundProtests', { token: token, params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
         modal.body.innerHTML = '';
 
         // Finalize bar -- always shown first, regardless of how many

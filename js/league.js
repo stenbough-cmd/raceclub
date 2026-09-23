@@ -944,7 +944,13 @@ function _rclOpenAllResultsModal(hub) {
   function loadRound(roundId) {
     resultsWrap.innerHTML = '';
     resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'Loading...'));
-    fetchApi('getPublicRoundResults', { roundId: roundId }).then(function (res) {
+    // BUG FIX (2026-09-23 audit): roundId was passed as a bare options
+    // field instead of inside options.params, so fetchApi never actually
+    // put it on the URL -- the server always saw a missing roundId and
+    // returned MISSING_ROUND_ID, meaning "View All Results" on
+    // league.html could never actually show a round's results. Same
+    // class of bug as the getCareerSeasonRaceDetail fix in Account.html.
+    fetchApi('getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
       _rclBuildAllResultsBody_((res && res.success) ? res.result : null, resultsWrap);
     }).catch(function () {
       _rclBuildAllResultsBody_(null, resultsWrap);
@@ -1653,7 +1659,16 @@ document.addEventListener('DOMContentLoaded', function () {
   // stashes the fetched hub (_rclHubForPoints) so the "View Points
   // Tables" link can build the popup on demand instead.
   var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderNews];
-  fetchApi('getLeagueHub', {}).then(function (hub) {
+  // BUG FIX (2026-09-23 audit -- Matt's report: league.html times out and
+  // shows no season after a long wait). This call had no timeoutMs
+  // override at all, so it used the 20s default meant for small dashboard
+  // reads even though the League Hub payload scales with the whole
+  // season's standings/results/news. Combined with the League Hub cache
+  // fix in Website.gs (_rcRefreshLeagueHubCache_ no longer silently
+  // stops caching once the payload crosses 100KB), a cache MISS here can
+  // still take a real full rebuild -- give it the same long budget every
+  // other heavy read on the site uses.
+  fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
