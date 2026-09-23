@@ -1123,6 +1123,9 @@
       var text = el('div');
       var fullSeasonNum = seasonNumberLabel(data.seasonId);
       var fullSeasonLabel = fullSeasonNum ? ('SEASON ' + fullSeasonNum) : 'SEASON';
+      // Season name appended after the number (2026-09-23, Matt's ask --
+      // same "SEASON N: <name>" shape renderRegistered already uses below).
+      if (data.seasonName) fullSeasonLabel += ': ' + data.seasonName;
       text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', escapeHtml(fullSeasonLabel) + ' FULL'));
       text.appendChild(el('div', 'rc-regstatus-sub', 'Every seat is taken -- check back if a spot opens up.'));
       row.appendChild(text);
@@ -1136,6 +1139,9 @@
       var text = el('div');
       var openSeasonNum = seasonNumberLabel(data.seasonId);
       var openSeasonLabel = openSeasonNum ? ('SEASON ' + openSeasonNum) : 'SEASON';
+      // Season name appended after the number (2026-09-23, Matt's ask --
+      // same "SEASON N: <name>" shape renderRegistered already uses below).
+      if (data.seasonName) openSeasonLabel += ': ' + data.seasonName;
       text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml(openSeasonLabel)));
       // Seats-remaining count (2026-09-07) -- only shown once it's
       // gotten low enough to matter (Matt's call is about the "no more
