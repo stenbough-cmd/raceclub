@@ -362,11 +362,18 @@ function _rclRenderTicker(hub) {
         // Driver-list items (2026-09-23 rewrite) -- structured rows
         // instead of one joined string, so each name gets its own logo +
         // differently-weighted spans (see buildDriverEntry above) rather
-        // than reading as a flat wall of text.
+        // than reading as a flat wall of text. Separator between entries
+        // is 5 non-breaking spaces, not a comma (2026-09-23 follow-up,
+        // Matt's ask) -- same format for BOTH the pre-results roster and
+        // the in-season "TOP 5" results list, since both go through this
+        // one driverRows path. Plain U+0020 spaces collapse to one in
+        // HTML, so this uses   (non-breaking space) x5 to actually
+        // render as a wide gap instead of silently becoming a single
+        // space.
         if (item.prefixText) el.appendChild(document.createTextNode(item.prefixText));
         var list = _rclEl('span', 'rcl-ticker-driver-list');
         item.driverRows.forEach(function (row, idx) {
-          if (idx > 0) list.appendChild(document.createTextNode(', '));
+          if (idx > 0) list.appendChild(document.createTextNode('     '));
           list.appendChild(buildDriverEntry(row));
         });
         el.appendChild(list);
