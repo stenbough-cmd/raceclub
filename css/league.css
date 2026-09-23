@@ -759,113 +759,59 @@ body.rc-league-page {
 .rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
 .rcl-race-headline-value { font-size: 15px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
 .rcl-race-headline-value-accent { color: var(--rc-red); }
-/* .rcl-race-class/.rcl-race-row* (the old single-column per-class list)
-   removed 2026-09-21 -- Recent Results was redesigned to the same
-   one-column-per-class grid Standings uses (.rcl-standings-columns/
-   .rcl-standings-class, reused as-is), with its own compact row component
-   (.rcl-results-row, below) instead. See _rclBuildResultsColumns_,
-   js/league.js. */
-
-/* Abbreviated Recent Results row (2026-09-21, Matt's ask: "I want the
-   list to look like the CURRENT STANDINGS design except each row should
-   end up being around 1/2 the height of the CURRENT STANDINGS rows") --
-   deliberately its own class, not a modifier on .rcl-standings-row, since
-   this row has no rank badge column (Standings' 40px/1fr/auto grid
-   collapses to a plain 1fr/auto here) and a narrower field set (no team
-   name, this race's own points instead of season-cumulative). Every size
-   below is roughly half its .rcl-standings-row equivalent -- half the
-   padding, half the logo slot, ~80% of the font sizes (text can't shrink
-   linearly with padding and stay legible) -- which nets out to about half
-   the total row height in practice. Same zebra striping and no-border
-   convention as Standings (nth-child(even), no border-bottom) so the two
-   panels read as the same design language at a glance, just denser here. */
-.rcl-results-row {
+.rcl-race-class + .rcl-race-class { margin-top: 18px; }
+.rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
+.rcl-race-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 26px 1fr auto;
   gap: 10px;
-  align-items: center;
-  padding: 2px 6px;
-  margin-bottom: 1px;
-  border-radius: 4px;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--rcl-line);
 }
-.rcl-results-row:last-child { margin-bottom: 0; }
-.rcl-results-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
-.rcl-results-identity { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.rcl-results-mfr-logo-slot {
-  flex: none;
-  width: 26px;
-  height: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: center;
-}
-.rcl-results-mfr-logo { max-width: 26px; max-height: 15px; width: auto; height: auto; object-fit: contain; display: block; }
-.rcl-results-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; min-width: 0; align-self: center; }
-.rcl-results-name { font-size: 11.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; }
-.rcl-results-flag {
-  flex: none;
-  width: 13px;
-  height: 10px;
-  object-fit: cover;
-  border-radius: 2px;
+.rcl-race-row:last-child { border-bottom: none; }
+.rcl-race-row-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rcl-ink-faint); }
+.rcl-race-row-name { color: var(--rcl-ink); font-weight: 600; }
+.rcl-race-row-num { color: var(--rcl-ink-faint); font-size: 12.5px; }
+.rcl-race-row-time { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+/* -------------------------------------------------------------------- */
+/* All Results popup (added 2026-09-23) -- round selector + full,        */
+/* uncapped per-class results + Penalties Assessed. Reuses the exact     */
+/* .rcl-race-headline/.rcl-race-class/.rcl-race-row classes above so the */
+/* full results table matches the abbreviated Recent Results panel's own */
+/* look exactly -- only the round-select row and the penalties list below */
+/* are new. This is the ONLY place on the League Hub a round's penalties  */
+/* render (Matt's placement call: the popup, not inline in Recent          */
+/* Results) -- see _rclOpenAllResultsModal/_rclBuildAllResultsBody_,       */
+/* js/league.js.                                                          */
+/* -------------------------------------------------------------------- */
+.rcl-allresults-select-row { margin-bottom: 18px; }
+.rcl-allresults-select {
+  width: 100%;
+  background: var(--rcl-bg);
   border: 1px solid var(--rcl-line-bright);
-}
-.rcl-results-carnum { font-size: 11.5px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rcl-results-pts { text-align: right; }
-.rcl-results-pts-num { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-
-/* "View All Results" link -- same shape as Standings' "View Points
-   Tables"/"View All Drivers" row (.rcl-standings-points-row/-link above),
-   duplicated rather than reused directly since it sits in a different
-   panel and the two are free to diverge later without dragging each other
-   along. */
-.rcl-results-viewall-row { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rcl-line); display: flex; justify-content: center; }
-.rcl-results-viewall-link {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  cursor: pointer;
-}
-.rcl-results-viewall-link:hover { text-decoration: underline; }
-
-/* All Results popup (2026-09-21) -- round-select dropdown at 1/2 the
-   dialog's width (Matt's explicit ask), full uncapped classification
-   table underneath. See _rclOpenAllResultsModal/_rclBuildFullResultDetail_,
-   js/league.js. */
-.rcl-results-select-row { margin-bottom: 20px; }
-.rcl-results-select { width: 50%; min-width: 260px; }
-.rcl-results-full-class + .rcl-results-full-class { margin-top: 22px; }
-.rcl-results-full-table-wrap { overflow-x: auto; }
-.rcl-results-full-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.rcl-results-full-table th {
-  text-align: left;
-  font-family: var(--rc-font-heading);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-faint);
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--rcl-line);
-  white-space: nowrap;
-}
-.rcl-results-full-table td {
-  padding: 7px 10px;
+  border-radius: 5px;
   color: var(--rcl-ink);
-  border-bottom: 1px solid var(--rcl-line);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  font-family: var(--rc-font-body);
+  font-size: 14px;
+  padding: 8px 10px;
 }
-.rcl-results-full-table tr:nth-child(even) { background: var(--rcl-bg-raised-2); }
-.rcl-results-full-table tr:last-child td { border-bottom: none; }
-.rcl-results-full-pts { text-align: right; font-weight: 800; }
+.rcl-allresults-select:focus { border-color: var(--rc-red); }
+.rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+.rcl-penalty-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-penalty-row:last-child { border-bottom: none; }
+.rcl-penalty-name { color: var(--rcl-ink); font-weight: 700; }
+.rcl-penalty-detail { color: var(--rcl-ink-dim); }
 
 /* -------------------------------------------------------------------- */
 /* Calendar -- full season schedule (added 2026-09-19). Replaces the old */
@@ -1322,7 +1268,9 @@ body.rc-league-page {
    rather than raising the shared class's own max-width, since News/
    Points Table/Season Details all use that same base class and don't
    need the extra room the driver roster's wider identity/car/team
-   columns benefit from. */
+   columns benefit from. Also reused, unmodified, by the "All Results"
+   popup (2026-09-23) -- a full per-class results table plus the
+   penalties list is the same "widest content on the page" case. */
 .rcl-modal-dialog-wide { max-width: 1080px; }
 /* Narrower dialog (2026-09-21, added for the Feedback and Edit Profile/
    Change Avatar popups) -- matches Account.html's own plain (non -wide)

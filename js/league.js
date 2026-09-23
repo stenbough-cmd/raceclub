@@ -594,21 +594,17 @@ function _rclOpenDriversModal(hub) {
 // ---------------------------------------------------------------------
 // RECENT RESULTS (last completed race)
 // ---------------------------------------------------------------------
-
-// Holds the full fetched hub so the "View All Results" link's popup
-// (opened well after this render finishes) can read hub.resultsRounds
-// without a second server round trip -- same _rclHubForPoints pattern
-// _rclRenderStandings already uses.
-var _rclHubForResults = null;
-
 function _rclRenderResults(hub) {
   var body = document.getElementById('rcl-results-body');
   if (!body) return;
   body.innerHTML = '';
-  _rclHubForResults = hub;
 
   if (!hub.hasSeason || !hub.lastRace) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a race has been run.'));
+    // "View All Results" (2026-09-23) still gets a chance to appear even
+    // when the abbreviated lastRace panel has nothing to show -- see the
+    // shared block at the end of this function.
+    _rclAppendViewAllResultsLink_(body, hub);
     return;
   }
 
@@ -626,108 +622,148 @@ function _rclRenderResults(hub) {
   headline.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
   body.appendChild(headline);
 
-  // Abbreviated list (2026-09-21 redesign, Matt's ask) -- same one-
-  // column-per-class layout and visual language as CURRENT STANDINGS
-  // (_rclBuildStandingsColumns_ above), at roughly half that panel's row
-  // height (see .rcl-results-row's own comment in league.css). Deliberately
-  // NOT the same builder function -- Standings shows season-cumulative
-  // championshipPoints and a rank badge; this shows this ONE race's own
-  // points (row.points, from SeasonHistory.RecentResults -- see
-  // buildDriverRow_, DataCache.gs) and drops the rank badge and team name
-  // entirely, per Matt's explicit field list: "manufacturer logo, driver
-  // name, flag, number and points only". hub.lastRace is already capped at
-  // top-5-per-class/3-classes server-side (_rcBuildRoundResultData_ call in
-  // handleGetLeagueHub, Website.gs) so no client-side slicing is needed here.
-  body.appendChild(_rclBuildResultsColumns_(r.classes || []));
+  (r.classes || []).forEach(function (cls) {
+    var clsWrap = _rclEl('div', 'rcl-race-class');
+    clsWrap.appendChild(_rclEl('div', 'rcl-race-class-name', _rclEscapeHtml(cls.className || 'Class')));
+    (cls.standings || []).forEach(function (row) {
+      var rowEl = _rclEl('div', 'rcl-race-row');
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pos', String(row.classPosition || row.position || '')));
+      var nameCol = _rclEl('div');
+      nameCol.appendChild(_rclEl('span', 'rcl-race-row-name', _rclEscapeHtml(row.name)));
+      if (row.carNumber) nameCol.appendChild(_rclEl('span', 'rcl-race-row-num', ' #' + _rclEscapeHtml(row.carNumber)));
+      rowEl.appendChild(nameCol);
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-time', _rclEscapeHtml(row.bestLapTime || '')));
+      clsWrap.appendChild(rowEl);
+    });
+    body.appendChild(clsWrap);
+  });
 
-  // "View All Results" link (2026-09-21, Matt's ask) -- opens the full,
-  // uncapped result set for any completed round this season in a popup,
-  // same link-row treatment as Standings' "View Points Tables"/"View All
-  // Drivers" row. Only shown once there's at least one round to pick from.
-  if (hub.resultsRounds && hub.resultsRounds.length) {
-    var linkRow = _rclEl('div', 'rcl-results-viewall-row');
-    var viewAllLink = _rclEl('button', 'rcl-results-viewall-link', 'View All Results');
-    viewAllLink.type = 'button';
-    viewAllLink.addEventListener('click', function () { _rclOpenAllResultsModal(_rclHubForResults); });
-    linkRow.appendChild(viewAllLink);
-    body.appendChild(linkRow);
-  }
+  // "View All Results" (2026-09-23, Matt's ask) -- opens the full,
+  // uncapped results for any completed round in a popup, WITH that
+  // round's penalties list. Penalties are deliberately NOT rendered here
+  // inline at the bottom of Recent Results -- Matt's explicit placement
+  // call -- they only ever show inside that popup (_rclOpenAllResultsModal
+  // below), which is what this link opens.
+  _rclAppendViewAllResultsLink_(body, hub);
 }
 
-// Builds the abbreviated Recent Results columns -- one column per class,
-// same grid wrapper class Standings uses (auto-fit minmax) so both panels'
-// columns line up the same way at any viewport width, just a different row
-// component inside (.rcl-results-row, not .rcl-standings-row). No rank
-// badge (Matt's field list didn't include position, and the compact row
-// height doesn't have room for one anyway) -- list order IS the ranking,
-// same as the server already sorted classStandings by ClassPosition.
-function _rclBuildResultsColumns_(classes) {
-  var columns = _rclEl('div', 'rcl-standings-columns');
-  classes.forEach(function (cls) {
-    var wrap = _rclEl('div', 'rcl-standings-class');
-    wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
-    var rows = cls.standings || [];
-    if (!rows.length) {
-      wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No results yet in this class.'));
-    } else {
-      rows.forEach(function (row) {
-        var rowEl = _rclEl('div', 'rcl-results-row');
-
-        var identity = _rclEl('div', 'rcl-results-identity');
-        var logoSlot = _rclEl('div', 'rcl-results-mfr-logo-slot');
-        if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
-          var logoImg = document.createElement('img');
-          logoImg.className = 'rcl-results-mfr-logo';
-          logoImg.src = manufacturerLogoSrc(row.manufacturer);
-          logoImg.alt = '';
-          logoImg.onerror = function () { logoSlot.style.display = 'none'; };
-          logoSlot.appendChild(logoImg);
-        } else {
-          logoSlot.style.display = 'none';
-        }
-        identity.appendChild(logoSlot);
-
-        var nameRow = _rclEl('div', 'rcl-results-name-row');
-        nameRow.appendChild(_rclEl('span', 'rcl-results-name', _rclEscapeHtml(row.name)));
-        if (row.country && typeof countryFlagSrc === 'function') {
-          var flagSrc = countryFlagSrc(row.country);
-          if (flagSrc) {
-            var flagImg = document.createElement('img');
-            flagImg.className = 'rcl-results-flag';
-            flagImg.src = flagSrc;
-            flagImg.alt = '';
-            flagImg.title = row.country;
-            flagImg.onerror = function () { flagImg.style.display = 'none'; };
-            nameRow.appendChild(flagImg);
-          }
-        }
-        if (row.carNumber) nameRow.appendChild(_rclEl('span', 'rcl-results-carnum', '#' + _rclEscapeHtml(row.carNumber)));
-        identity.appendChild(nameRow);
-        rowEl.appendChild(identity);
-
-        var ptsCol = _rclEl('div', 'rcl-results-pts');
-        ptsCol.appendChild(_rclEl('div', 'rcl-results-pts-num', (row.points === null || row.points === undefined) ? '--' : String(row.points)));
-        rowEl.appendChild(ptsCol);
-
-        wrap.appendChild(rowEl);
-      });
-    }
-    columns.appendChild(wrap);
-  });
-  return columns;
+// Shared by both branches of _rclRenderResults above (the normal render
+// and its "no lastRace yet" empty-state fallback) so the link still shows
+// up whenever the season actually has any completed rounds on record,
+// even in the rare case the abbreviated lastRace payload itself came back
+// empty for some reason.
+function _rclAppendViewAllResultsLink_(body, hub) {
+  if (!hub.resultsRounds || !hub.resultsRounds.length) return;
+  var linkRow = _rclEl('div', 'rcl-cal-details-row');
+  var link = _rclEl('button', 'rcl-cal-details-link', 'View All Results');
+  link.type = 'button';
+  link.addEventListener('click', function () { _rclOpenAllResultsModal(hub); });
+  linkRow.appendChild(link);
+  body.appendChild(linkRow);
 }
 
 // ---------------------------------------------------------------------
-// VIEW ALL RESULTS popup (2026-09-21, Matt's ask) -- a round-select
-// dropdown (half the dialog's width, per Matt's explicit ask) at the top,
-// full uncapped result data for whichever round is selected underneath.
-// Same .rcl-modal-overlay/dialog-wide shell the Drivers popup uses ("the
-// popup should be similar width as the driver list popup") -- see
-// _rclOpenDriversModal above. Defaults to the most recent round
-// (hub.resultsRounds is already sorted most-recent-first, see
-// handleGetLeagueHub, Website.gs) so there's something to look at the
-// instant the popup opens, before the driver touches the dropdown.
+// ALL RESULTS POPUP (added 2026-09-23) -- the FULL, uncapped result set
+// for any completed round in the current season, picked from a dropdown
+// (hub.resultsRounds, most recent first), plus that round's "Penalties
+// Assessed" list. This is where a round's penalties actually show up on
+// the League Hub -- Matt's explicit placement call was "in the View All
+// Results popup on the Recent Results container, not the bottom of the
+// Recent Results container" -- so unlike everything else in Recent
+// Results (which is the abbreviated top-5-per-class/3-class hub.lastRace
+// payload), this popup always fetches the specific round's full data
+// fresh from handleGetPublicRoundResults (Website.gs) rather than reusing
+// the already-fetched hub.
+// ---------------------------------------------------------------------
+
+// Tier effect text for one penalty entry -- effectType/effectSeconds come
+// straight off the Adjustments row this penalty was built from (see
+// _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs). Tier 1/7
+// never produce a penalty row in the first place (see PENALTY_TIER_EFFECTS_,
+// Protests.gs / PENALTY_TIERS, reference-data.js), so this only ever needs
+// to describe a Time or DSQ effect.
+function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
+  if (effectType === 'Time') return '+' + (Number(effectSeconds) || 0) + 's';
+  if (effectType === 'DSQ') return 'Disqualified';
+  return 'Logged';
+}
+
+// Renders one round's full result data (from handleGetPublicRoundResults)
+// into `bodyEl` -- the popup's own content area, rebuilt fresh every time
+// the round dropdown changes.
+function _rclBuildAllResultsBody_(result, bodyEl) {
+  bodyEl.innerHTML = '';
+  if (!result) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
+    return;
+  }
+
+  var headline = _rclEl('div', 'rcl-race-headline');
+  function stat(label, value, accent) {
+    var s = _rclEl('div', 'rcl-race-headline-stat');
+    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
+    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
+    return s;
+  }
+  headline.appendChild(stat('Event', (result.eventName || '') + (result.track ? ' -- ' + result.track : '')));
+  headline.appendChild(stat('Winner', result.overallWinner, true));
+  headline.appendChild(stat('Pole', result.overallPoleSitter));
+  headline.appendChild(stat('Fastest Lap', result.overallFastestLapDriver ? (result.overallFastestLapDriver + (result.overallFastestLapTime ? ' (' + result.overallFastestLapTime + ')' : '')) : ''));
+  bodyEl.appendChild(headline);
+
+  // profileId -> display name, built off this round's own full standings
+  // -- penalties (below) only carry a profileId (see the `against` field
+  // on _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs), so this
+  // is how the popup resolves a name to show next to each one.
+  var namesByProfileId = {};
+  (result.classes || []).forEach(function (cls) {
+    var clsWrap = _rclEl('div', 'rcl-race-class');
+    var countLabel = cls.className ? (cls.className + (cls.totalInClass ? ' (' + cls.totalInClass + ')' : '')) : 'Class';
+    clsWrap.appendChild(_rclEl('div', 'rcl-race-class-name', _rclEscapeHtml(countLabel)));
+    (cls.standings || []).forEach(function (row) {
+      if (row.profileId) namesByProfileId[row.profileId] = row.name;
+      var rowEl = _rclEl('div', 'rcl-race-row');
+      var posText = row.disqualified ? 'DSQ' : String(row.classPosition || row.position || '');
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pos', posText));
+      var nameCol = _rclEl('div');
+      nameCol.appendChild(_rclEl('span', 'rcl-race-row-name', _rclEscapeHtml(row.name)));
+      if (row.carNumber) nameCol.appendChild(_rclEl('span', 'rcl-race-row-num', ' #' + _rclEscapeHtml(row.carNumber)));
+      rowEl.appendChild(nameCol);
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-time', _rclEscapeHtml(row.bestLapTime || '')));
+      clsWrap.appendChild(rowEl);
+    });
+    bodyEl.appendChild(clsWrap);
+  });
+
+  // Penalties Assessed -- this round's Adjustments, resolved to driver
+  // names. This is the one and only place a round's penalties render on
+  // the League Hub (Matt's placement call, see this section's header
+  // comment above).
+  var penSection = _rclEl('div', 'rcl-penalties-section');
+  penSection.appendChild(_rclEl('div', 'rcl-race-class-name', 'Penalties Assessed'));
+  var penalties = result.penalties || [];
+  if (!penalties.length) {
+    penSection.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No penalties were assessed for this round.'));
+  } else {
+    penalties.forEach(function (p) {
+      var row = _rclEl('div', 'rcl-penalty-row');
+      var name = (p.against && namesByProfileId[p.against]) || 'Unknown Driver';
+      row.appendChild(_rclEl('div', 'rcl-penalty-name', _rclEscapeHtml(name)));
+      var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
+      var tierLabel = tierInfo ? tierInfo.label.replace(/^Tier \d+ -- /, '') : ('Tier ' + (p.penaltyTier || '?'));
+      var detailText = (p.infractionType || 'Infraction') + ' -- ' + tierLabel +
+        ' (' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
+      row.appendChild(_rclEl('div', 'rcl-penalty-detail', _rclEscapeHtml(detailText)));
+      penSection.appendChild(row);
+    });
+  }
+  bodyEl.appendChild(penSection);
+}
+
 function _rclOpenAllResultsModal(hub) {
+  var rounds = hub.resultsRounds || [];
+  if (!rounds.length) return;
+
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide');
   var head = _rclEl('div', 'rcl-modal-head');
@@ -739,126 +775,49 @@ function _rclOpenAllResultsModal(hub) {
   dialog.appendChild(head);
 
   var body = _rclEl('div', 'rcl-modal-body');
-  var rounds = (hub && hub.resultsRounds) || [];
 
-  if (!rounds.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a race has been run.'));
-  } else {
-    // Half the dialog's width (Matt's explicit ask) -- .rcl-results-select-
-    // row is a flex row so the select doesn't stretch to fill it (see
-    // league.css); the row itself, not the <select>, is what gets the
-    // 50% rule, so the select's own auto width still centers/aligns
-    // however the browser renders a <select> naturally.
-    var selectRow = _rclEl('div', 'rcl-results-select-row');
-    var select = document.createElement('select');
-    select.className = 'rcl-results-select';
-    rounds.forEach(function (rnd) {
-      var label = (rnd.roundNum ? ('R' + rnd.roundNum + ' -- ') : '') + (rnd.eventName || 'Race') +
-        (rnd.track ? ' (' + rnd.track + ')' : '') + (rnd.startUtc ? ' -- ' + _rclFormatDate(rnd.startUtc) : '');
-      select.appendChild(new Option(label, rnd.roundId));
-    });
-    selectRow.appendChild(select);
-    body.appendChild(selectRow);
+  var selectRow = _rclEl('div', 'rcl-allresults-select-row');
+  var select = document.createElement('select');
+  select.className = 'rcl-allresults-select';
+  rounds.forEach(function (r) {
+    var opt = document.createElement('option');
+    opt.value = r.roundId;
+    var label = (r.roundNum ? 'R' + r.roundNum + ' -- ' : '') + (r.eventName || r.track || r.roundId);
+    if (r.startUtc) label += ' (' + _rclFormatDate(r.startUtc) + ')';
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+  selectRow.appendChild(select);
+  body.appendChild(selectRow);
 
-    var resultsWrap = _rclEl('div', 'rcl-results-detail-wrap');
-    body.appendChild(resultsWrap);
-
-    function loadRound(roundId) {
-      resultsWrap.innerHTML = '';
-      resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'Loading results...'));
-      fetchApi('getPublicRoundResults', { params: { roundId: roundId } }).then(function (data) {
-        resultsWrap.innerHTML = '';
-        if (!data || !data.success || !data.result) {
-          resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', (data && data.message) || 'Could not load results for that round.'));
-          return;
-        }
-        resultsWrap.appendChild(_rclBuildFullResultDetail_(data.result));
-      }).catch(function () {
-        resultsWrap.innerHTML = '';
-        resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'Could not reach the server.'));
-      });
-    }
-
-    select.addEventListener('change', function () { loadRound(select.value); });
-    loadRound(rounds[0].roundId); // most recent, since resultsRounds is sorted that way
-  }
-
+  var resultsWrap = _rclEl('div', 'rcl-allresults-body');
+  body.appendChild(resultsWrap);
   dialog.appendChild(body);
   overlay.appendChild(dialog);
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
+
+  function loadRound(roundId) {
+    resultsWrap.innerHTML = '';
+    resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'Loading...'));
+    fetchApi('getPublicRoundResults', { roundId: roundId }).then(function (res) {
+      _rclBuildAllResultsBody_((res && res.success) ? res.result : null, resultsWrap);
+    }).catch(function () {
+      _rclBuildAllResultsBody_(null, resultsWrap);
+    });
+  }
+
+  select.addEventListener('change', function () { loadRound(select.value); });
+  loadRound(rounds[0].roundId);
+
+  // Closable ONLY via the X button -- same posture every other popup on
+  // this page uses.
   function close() {
-    overlay.remove();
+    document.body.removeChild(overlay);
     _rclUnlockBodyScroll();
   }
   closeBtn.addEventListener('click', close);
-}
 
-// Full, uncapped classification table for one round -- one table per
-// class, every finisher (not the top-5/3-class abbreviated version the
-// panel itself shows). Pos/Driver/Team/Laps/Best Lap/Status/Points --
-// "full result data from that race" per Matt's ask, same underlying row
-// shape (buildDriverRow_, DataCache.gs) the driver-facing Results page
-// already uses, just laid out as a plain table here since this is a
-// read-only public popup, not an interactive per-driver breakdown.
-function _rclBuildFullResultDetail_(r) {
-  var wrap = _rclEl('div', 'rcl-results-full');
-
-  var headline = _rclEl('div', 'rcl-race-headline');
-  function stat(label, value, accent) {
-    var s = _rclEl('div', 'rcl-race-headline-stat');
-    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
-    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
-    return s;
-  }
-  headline.appendChild(stat('Event', (r.eventName || '') + (r.track ? ' -- ' + r.track : '')));
-  headline.appendChild(stat('Winner', r.overallWinner, true));
-  headline.appendChild(stat('Pole', r.overallPoleSitter));
-  headline.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
-  wrap.appendChild(headline);
-
-  (r.classes || []).forEach(function (cls) {
-    var clsWrap = _rclEl('div', 'rcl-results-full-class');
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
-
-    var scrollWrap = _rclEl('div', 'rcl-results-full-table-wrap');
-    var table = document.createElement('table');
-    table.className = 'rcl-results-full-table';
-    var thead = document.createElement('thead');
-    var headRow = document.createElement('tr');
-    ['Pos', 'Driver', 'Team', 'Laps', 'Best Lap', 'Status', 'Points'].forEach(function (h) {
-      var th = document.createElement('th');
-      th.textContent = h;
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement('tbody');
-    (cls.standings || []).forEach(function (row) {
-      var tr = document.createElement('tr');
-      function td(text, cls2) {
-        var c = document.createElement('td');
-        if (cls2) c.className = cls2;
-        c.textContent = (text === null || text === undefined || text === '') ? '--' : String(text);
-        tr.appendChild(c);
-      }
-      td(row.classPosition || row.position);
-      td((row.name || '') + (row.carNumber ? ' #' + row.carNumber : ''));
-      td(row.teamName);
-      td(row.laps);
-      td(row.bestLapTime);
-      td(row.finishStatus === 'Finished Normally' ? 'Finished' : (row.finishStatus || '--'));
-      td((row.points === null || row.points === undefined) ? '--' : row.points, 'rcl-results-full-pts');
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    scrollWrap.appendChild(table);
-    clsWrap.appendChild(scrollWrap);
-    wrap.appendChild(clsWrap);
-  });
-
-  return wrap;
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // ---------------------------------------------------------------------
