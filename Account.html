@@ -4505,6 +4505,14 @@
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'The calendar fills in once a season is open.'));
         return;
       }
+      // Not registered for the active season -- nothing to show (Matt's
+      // rule, 2026-09-23: only registered drivers see the current
+      // season's schedule here). Same empty-state treatment, different
+      // copy from the "no season at all" case above.
+      if (!res.registered) {
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its calendar.'));
+        return;
+      }
 
       var driverTz = '';
       try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
@@ -4782,6 +4790,15 @@
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'Results fill in once a season is underway.'));
         return;
       }
+      // Not registered for the active season -- nothing to show (Matt's
+      // rule, 2026-09-23: only registered drivers see the current
+      // season's results here). Full career history still lives on the
+      // Career page, which isn't gated this way.
+      if (!res.registered) {
+        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its results.'));
+        return;
+      }
 
       section.appendChild(el('h2', 'margin-top:0;', 'Results'));
 
@@ -4877,6 +4894,15 @@
       // Results already gate on.
       if (!filing.hasSeason) {
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
+        return;
+      }
+      // Not registered for the active season -- nothing to show (Matt's
+      // rule, 2026-09-23: only registered drivers see the Protests page,
+      // and only the current season's protest history, not a driver's
+      // full multi-season past). Same "registered" signal Calendar/
+      // Results gate on.
+      if (!filing.registered) {
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to use the Protests page.'));
         return;
       }
 
