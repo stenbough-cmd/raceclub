@@ -3829,6 +3829,16 @@
     var metaParts = [];
     if (!isSpecial && r.track) metaParts.push(r.track);
     if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
+    // Partial-import note (2026-09-23, Matt's ask: "we need to build logic
+    // so it knows that 1/2 race results are uploaded") -- plain muted text
+    // in the same hint line, not a pill, only when exactly one of Qualify/
+    // Race has been imported for this round. Both in, or neither in, needs
+    // no extra note -- the button row below already makes that state clear
+    // (Import Results enabled/disabled, View/Edit & Finalize present or
+    // not).
+    if (!isSpecial && r.hasAnySessionImported && !r.hasResults) {
+      metaParts.push(r.hasRaceResults ? 'Race imported, qualifying pending' : 'Qualifying imported, race pending');
+    }
     textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'Date/time not set')));
 
     info.appendChild(textCol);
@@ -3844,9 +3854,14 @@
       var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
       addBtn.type = 'button';
       if (r.hasResults) {
-        // Grayed out once this round already has results (2026-09-07,
-        // Matt's call) -- makes it obvious at a glance that this round is
-        // done; Delete first (right next to it) to re-import.
+        // Grayed out once BOTH Qualify and Race are in for this round
+        // (2026-09-07, Matt's call; scope fixed 2026-09-23 -- r.hasResults
+        // now means both session types are present, not just one -- see
+        // hasResults' own comment in Seasons.gs) -- makes it obvious at a
+        // glance that this round is fully done; Delete first (right next
+        // to it) to re-import. Still ENABLED after only one of the two
+        // files has been imported, so Matt can import the other one
+        // through this same button.
         addBtn.disabled = true;
         addBtn.title = 'Results already imported for this round. Delete them first to re-import.';
         addBtn.style.cssText = 'opacity:0.5;';
@@ -3882,7 +3897,15 @@
 
       var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
       delBtn.type = 'button';
-      if (r.hasResults) {
+      // Gated on hasAnySessionImported, not hasResults (2026-09-23 fix) --
+      // a round with only ONE of Qualify/Race imported still has real data
+      // sitting on the Sessions/DriverResults/Laps tabs that Matt needs to
+      // be able to erase and redo, same as a fully-imported round. Both
+      // Delete's own target (_rcEraseRoundIngestion_, Results.gs) and the
+      // Erase Round Ingestion popup already wipe every session type for a
+      // round in one shot, so this was always safe to allow -- it just
+      // used to be wrongly gated on the "both types in" flag instead.
+      if (r.hasAnySessionImported) {
         // Plain gray, not red -- opens the erase popup, doesn't erase by
         // itself (see the Delete Season comment above for why).
         delBtn.addEventListener('click', function () {
