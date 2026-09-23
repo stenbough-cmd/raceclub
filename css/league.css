@@ -232,23 +232,32 @@ body.rc-league-page {
 .rcl-ticker-driver-entry {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  /* 8px (was 4px), 2026-09-23 Matt's ask: "one more space between the
+     driver name and manufacturer logo" -- this is the gap between EVERY
+     child (logo/name/number), which is what actually separates the logo
+     from the name that follows it. */
+  gap: 8px;
 }
 .rcl-ticker-driver-logo {
   flex: none;
   display: block;
-  height: 14px;
+  /* Bumped a little (was 14px/22px), 2026-09-23 Matt's ask: "increase the
+     max height and width of the logos... so they can be seen easier". */
+  height: 17px;
   width: auto;
-  max-width: 22px;
+  max-width: 27px;
   object-fit: contain;
 }
 /* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
    name is now the quieter part of each entry. */
 .rcl-ticker-driver-name { font-weight: 500; }
-/* Same weight the whole line used to render at before this split
+/* Weight is the same the whole line used to render at before this split
    (Matt's explicit "keep the number weight the same as it is") -- stays
-   the loudest part of each driver entry. */
-.rcl-ticker-driver-num { font-weight: 600; }
+   the heaviest part of each driver entry. Color changed to light gray
+   2026-09-23 (Matt's ask: "make the numbers behind the driver names a
+   light gray") -- same --rcl-ink-dim token every other muted label on
+   this page already uses, rather than inventing a new gray. */
+.rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink-dim); }
 /* Season dates, lighter than the SEASON item's own base 600 weight
    (2026-09-23, Matt's ask: "make the season dates a reduced weight
    compared to the season name") -- same 500 weight as
