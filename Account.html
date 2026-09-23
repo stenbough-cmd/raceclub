@@ -2075,7 +2075,14 @@
         var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
         var canPick = present && openTeams.length > 0;
 
-        var btn = el('button', 'rc-class-pick-btn' + (canPick ? '' : ' rc-class-pick-btn-locked'));
+        // .rc-class-pick-btn-inactive (2026-09-23, Matt's ask) is a
+        // further-dimmed modifier ON TOP of the shared locked look, only
+        // for a class the season never fielded any cars in at all (!present)
+        // -- distinct from a class that's present but has every seat
+        // taken, which stays at the normal locked opacity. Lets a driver
+        // tell "no seats left" from "not part of this season" apart at a
+        // glance instead of both reading identically gray.
+        var btn = el('button', 'rc-class-pick-btn' + (canPick ? '' : ' rc-class-pick-btn-locked') + (present ? '' : ' rc-class-pick-btn-inactive'));
         btn.type = 'button';
         btn.style.setProperty('--rc-class-pick-color', 'var(' + colorVar + ')');
         btn.disabled = !canPick;
@@ -2122,6 +2129,60 @@
       loadTeamsInto(contentSlot, carClass);
     }
 
+    // Manufacturer filter row (2026-09-23, Matt's ask) -- a bold "ALL"
+    // label plus one logo per distinct manufacturer fielding a car in
+    // this class, spread evenly across the popup's full width. Clicking
+    // a logo (or ALL) dims every other entry in the row and calls
+    // onSelect with that manufacturer (or null for ALL) so the caller can
+    // filter the team list below. Returns the row element plus a reset()
+    // the caller can use if the team list is ever reloaded (e.g. a future
+    // retry) without rebuilding the row from scratch.
+    function buildManufacturerFilterRow(teams, onSelect) {
+      var manufacturers = [];
+      teams.forEach(function (t) {
+        if (t.manufacturer && manufacturers.indexOf(t.manufacturer) === -1) manufacturers.push(t.manufacturer);
+      });
+
+      var row = el('div', 'rc-team-manu-filter-row');
+      var allBtn = el('button', 'rc-team-manu-filter-all', 'ALL');
+      allBtn.type = 'button';
+      row.appendChild(allBtn);
+
+      var entries = [{ manu: null, btn: allBtn }];
+
+      manufacturers.forEach(function (manu) {
+        var logoBtn = el('button', 'rc-team-manu-filter-logo');
+        logoBtn.type = 'button';
+        logoBtn.title = manu;
+        if (typeof manufacturerLogoSrc === 'function') {
+          var img = document.createElement('img');
+          img.src = manufacturerLogoSrc(manu);
+          img.alt = manu;
+          img.onerror = function () { logoBtn.style.display = 'none'; };
+          logoBtn.appendChild(img);
+        }
+        row.appendChild(logoBtn);
+        entries.push({ manu: manu, btn: logoBtn });
+      });
+
+      function setActive(selectedManu) {
+        // null (ALL) means no filter -- leave the whole row at full
+        // opacity rather than dimming everything but ALL itself, so ALL
+        // reads as a true reset, not just another selected option.
+        entries.forEach(function (entry) {
+          var shouldDim = selectedManu !== null && entry.manu !== selectedManu;
+          entry.btn.classList.toggle('rc-team-manu-filter-dim', shouldDim);
+        });
+        onSelect(selectedManu);
+      }
+
+      entries.forEach(function (entry) {
+        entry.btn.addEventListener('click', function () { setActive(entry.manu); });
+      });
+
+      return row;
+    }
+
     function loadTeamsInto(contentSlot, carClass) {
       contentSlot.innerHTML = '';
       contentSlot.appendChild(buildSpinner('Loading ' + carClass + ' teams...'));
@@ -2129,13 +2190,36 @@
         contentSlot.innerHTML = '';
         if (!data.success) { contentSlot.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load teams.')); return; }
         if (!data.teams || !data.teams.length) { contentSlot.appendChild(el('p', 'color:var(--rc-steel);', 'No cars are set up for ' + escapeHtml(carClass) + ' yet.')); return; }
+
+        var teams = data.teams;
+        var listSlot = el('div');
+
         // Elite-sorts-to-top and buy-in cost sorting both removed
         // (2026-09-19 and V1 scope cut respectively) -- teams no longer
         // carry a Tier or a BuyInCost from the backend, so this list is
         // simply arranged by car number, lowest to highest (Matt's
         // explicit ask), which handleGetAvailableTeams (DataCache.gs)
         // already sorts server-side. No client-side re-sort needed.
-        data.teams.forEach(function (team) { contentSlot.appendChild(buildTeamCard(team, carClass)); });
+        function renderList(manuFilter) {
+          listSlot.innerHTML = '';
+          var filtered = manuFilter ? teams.filter(function (t) { return t.manufacturer === manuFilter; }) : teams;
+          if (!filtered.length) {
+            listSlot.appendChild(el('p', 'color:var(--rc-steel);', 'No ' + escapeHtml(manuFilter) + ' teams in ' + escapeHtml(carClass) + '.'));
+            return;
+          }
+          filtered.forEach(function (team) { listSlot.appendChild(buildTeamCard(team, carClass)); });
+        }
+
+        // Only worth showing the filter row once there's actually more
+        // than one manufacturer to filter between.
+        var manufacturerCount = [];
+        teams.forEach(function (t) { if (t.manufacturer && manufacturerCount.indexOf(t.manufacturer) === -1) manufacturerCount.push(t.manufacturer); });
+        if (manufacturerCount.length > 1) {
+          contentSlot.appendChild(buildManufacturerFilterRow(teams, renderList));
+        }
+
+        contentSlot.appendChild(listSlot);
+        renderList(null);
       }).catch(function () {
         contentSlot.innerHTML = '';
         contentSlot.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server. Try again in a moment.'));

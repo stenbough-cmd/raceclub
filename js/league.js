@@ -1192,7 +1192,7 @@ function _rclRenderNews(hub) {
   _rclNewsList = hub.news || [];
 
   if (!_rclNewsList.length) {
-    body.appendChild(_rclEmptyState('No News Yet', 'League news and race recaps will show up here.'));
+    body.appendChild(_rclEmptyState('No News Yet', 'League news will show up here.'));
     return;
   }
 

@@ -1736,6 +1736,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-class-pick-btn-locked .rc-class-pick-btn-name,
 .rc-class-pick-btn-locked .rc-class-pick-btn-seats { color: var(--rc-steel); }
+/* A class that isn't offered THIS season at all (vs. one that's offered
+   but every seat is currently taken) -- both share the same locked base
+   above, but a never-in-season class reads even more washed out so a
+   driver can tell "no seats left" from "not part of this season" at a
+   glance (2026-09-23, Matt's ask). Opacity on the whole button (not just
+   its text) so the button itself visually recedes, not just its label. */
+.rc-class-pick-btn-inactive { opacity: 0.5; }
 /* Circle-slash lock icon -- hidden by default, fades in centered over the
    button only while hovering a locked one (2026-09-19, Matt's exact ask).
    A dark scrim behind the icon keeps it legible against every class's
@@ -1787,6 +1794,53 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
 }
 .rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* Manufacturer filter row (2026-09-23, Matt's ask) -- sits above the team
+   card list, one bold "ALL" label at the left plus a manufacturer logo
+   for every distinct manufacturer fielding a car in this class, spread
+   evenly edge-to-edge (flex:1 on each logo button, so the row always
+   stretches the full popup width whether there are 2 manufacturers or
+   8). Logo height is 36px -- about 2/3 of the 55px logo box the team
+   cards below use (Matt's exact spec) -- so this row reads as a lighter,
+   secondary strip above the real cards. Clicking a logo (or ALL) marks
+   it .rc-team-manu-filter-selected and dims (.rc-team-manu-filter-dim)
+   every other entry in the row; see buildManufacturerFilterRow() in
+   Account.html. */
+.rc-team-manu-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-team-manu-filter-all {
+  flex: none;
+  font-family: var(--rc-font-heading);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--rc-carbon);
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.rc-team-manu-filter-logo {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.rc-team-manu-filter-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.rc-team-manu-filter-dim { opacity: 0.28; }
 /* Team name + car number: 20px/700 (2026-09-23, Matt's exact spec) --
    was briefly 26px/800 earlier the same day, before that; originally
    17px/700. Car model line below it: 14px (Matt's spec), up from
@@ -4212,6 +4266,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-bottom: 1px solid var(--rc-silver);
   position: sticky;
   top: 0;
+  /* z-index (2026-09-23, Matt's catch: "when scrolling up, I shouldn't
+     see the list behind the CHOOSE YOUR TEAM header. It should be
+     opaque.") -- this was already sticky with a solid white background,
+     but with no z-index a sticky element has no stacking priority over
+     later-in-DOM body content once it's pinned mid-scroll, so a card/row
+     that scrolls up underneath it could paint on top instead of behind
+     it. A plain z-index above the body's own stacking level fixes it for
+     every popup on the site, not just this one. */
+  z-index: 5;
   background: var(--rc-white);
   border-radius: 10px 10px 0 0;
 }
