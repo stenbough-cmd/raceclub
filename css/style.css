@@ -2426,11 +2426,27 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    sized directly rather than cropped to fit a fixed box. */
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
 .rc-cs-logo { max-width: 118px; max-height: 50px; object-fit: contain; }
-/* Matches .rc-regstatus-headline exactly (Matt's call: same size/weight
-   as "REGISTERED FOR <season name>") rather than its own bigger/bolder
-   treatment. */
-.rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
+/* Grows to fill the row so .rc-cs-carnum (below) lands pinned to the
+   card's right edge instead of sitting right after the team name text
+   (2026-09-23, Matt's ask: move the car number out of the header corner
+   and into this row, right-justified). */
+.rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
+/* Matches .rc-regstatus-headline's weight/letter-spacing/uppercase
+   treatment, just sized up slightly (2026-09-23, Matt's ask: "increase
+   the size of the team name slightly" -- was an exact match at 15px). */
+.rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
+/* Car number, moved out of the header corner and into this row
+   (2026-09-23, Matt's ask: "Move car # to the right of the team name and
+   car... right justified and as tall as the logo is, in the same font
+   color as it currently is, but maybe some more weight to it") -- the
+   class pill stays behind in .rc-dash-card-corner-figure up in the
+   header. height:50px/flex centering matches .rc-cs-logo-wrap's own box
+   so the figure reads as tall as the logo; color carried over unchanged
+   from the old .rc-dash-card-corner-figure treatment, weight bumped from
+   700 to 800 since it's now a much bigger standalone figure than it was
+   sharing the header row with a title. */
+.rc-cs-carnum { flex: none; height: 50px; display: flex; align-items: center; justify-content: flex-end; font-family: var(--rc-font-heading); font-size: 34px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }

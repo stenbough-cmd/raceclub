@@ -1345,20 +1345,21 @@
     var body = el('div', 'rc-cs-body');
     card.appendChild(body);
 
-    // Adds/replaces/removes the car-number figure in the header row --
+    // Adds/replaces/removes the class-pill figure in the header row --
     // called from every render path below so it's never stale (e.g. still
-    // showing a car number after switching to the "not on a team" empty
-    // state). carClass (added 2026-09-19, Matt's ask: "put a class pill
-    // before the number of the car") prepends a small colored, abbreviated
-    // class pill (HY/GT3/P3/P2) right before the "#n" text, reusing the
-    // same class color tokens as everywhere else on the site.
-    function setCornerNumber(text, carClass) {
+    // showing a pill after switching to the "not on a team" empty state).
+    // The car number itself moved out of here and into the row alongside
+    // the team name (2026-09-23, Matt's ask) -- see the .rc-cs-carnum
+    // element built in renderSeat below; this corner spot is class-pill
+    // only now (added 2026-09-19, Matt's ask: "put a class pill before
+    // the number of the car" -- the pill stayed in the corner even once
+    // the number it used to sit in front of moved elsewhere).
+    function setCornerPill(carClass) {
       var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
       if (existing) existing.remove();
-      if (!text) return;
+      if (!carClass) return;
       var figure = el('div', 'rc-dash-card-corner-figure');
-      if (carClass) figure.appendChild(_rcClassAbbrevPill(carClass));
-      figure.appendChild(document.createTextNode(text));
+      figure.appendChild(_rcClassAbbrevPill(carClass));
       headerRow.appendChild(figure);
     }
 
@@ -1378,18 +1379,17 @@
     function renderEmpty(message) {
       body.innerHTML = '';
       body.appendChild(el('p', 'rc-cs-empty', message));
-      setCornerNumber('');
+      setCornerPill('');
     }
 
     function renderSeat(data) {
       body.innerHTML = '';
 
-      // Car number, top-right corner of the card header (2026-09-01,
-      // Matt's call) -- replaces the old "#n Manufacturer Model" text
-      // line below, which also drops the manufacturer name entirely
-      // (Matt's call, same request) -- the manufacturer logo image
-      // still shows, just not its name spelled out in text too.
-      setCornerNumber('#' + (data.carNumber || '?'), data.carClass);
+      // Class pill, top-right corner of the card header (2026-09-01,
+      // Matt's call, revised 2026-09-23 -- the car number that used to
+      // sit right after this pill now lives in the row instead, as
+      // .rc-cs-carnum below).
+      setCornerPill(data.carClass);
 
       var row = el('div', 'rc-cs-row');
 
@@ -1412,16 +1412,23 @@
         row.appendChild(logoWrap);
       }
 
-      var textCol = el('div');
+      var textCol = el('div', 'rc-cs-textcol');
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
       var carLine = data.carModel || '';
       if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
       // Full-name class pill (e.g. "Hypercar") under the car model removed
       // entirely 2026-09-19 (Matt's call: "remove hypercar from below car
       // in current seat card") -- the abbreviated, colored class pill in
-      // the card's top-right corner (setCornerNumber/_rcClassAbbrevPill,
+      // the card's top-right corner (setCornerPill/_rcClassAbbrevPill,
       // above) already says the same thing, so this was pure duplication.
       row.appendChild(textCol);
+
+      // Car number, moved out of the header corner and into this row,
+      // right-justified (2026-09-23, Matt's ask). .rc-cs-textcol's own
+      // flex:1 above is what pushes this all the way to the card's right
+      // edge; .rc-cs-carnum sizes its box to match .rc-cs-logo-wrap's
+      // height so the figure reads as tall as the manufacturer logo.
+      row.appendChild(el('div', 'rc-cs-carnum', '#' + (data.carNumber || '?')));
       body.appendChild(row);
 
       var stats = el('div', 'rc-cs-stats');
@@ -2889,7 +2896,15 @@
     input.addEventListener('input', function () {
       var matches = input.value === requiredPhrase;
       confirmBtn.disabled = !matches;
-      confirmBtn.style.cssText = matches ? 'background:var(--rc-red);opacity:1;' : 'opacity:0.5;';
+      // color + border explicitly set here too, not just background
+      // (2026-09-23, Matt's report: "the button goes red and the text
+      // stays gray... make the text go to white so I can see ERASE on
+      // the button") -- .rc-btn-secondary's own CSS sets color:
+      // var(--rc-steel) and a gray border, and background alone doesn't
+      // beat that, so the label read as gray-on-red. Matching
+      // .rc-btn-primary's actual look (white text, no border) now that
+      // this is effectively armed as a save-style red button.
+      confirmBtn.style.cssText = matches ? 'background:var(--rc-red);color:var(--rc-white);border:1px solid var(--rc-red);opacity:1;' : 'opacity:0.5;';
     });
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(confirmBtn);
@@ -7578,7 +7593,17 @@
           resultBox.className = 'rc-message';
           resultBox.textContent = '';
 
-          fetchApi('adminEraseRoundIngestion', { method: 'POST', token: token, body: { roundId: roundId } })
+          // Long timeout budget (2026-09-23, Matt's report: "could not
+          // reach the server" right after erasing, even though the data
+          // was actually gone by every account) -- same root cause and
+          // same fix as Import XML/createSeason/updateSeason's own
+          // timeoutMs override (see RC_FETCH_TIMEOUT_MS_LONG in js/api.js):
+          // this deletes across Sessions/DriverResults/Laps/RaceEvents/
+          // SeasonHistory in one pass, which can genuinely take longer
+          // than the default 20s budget, and the client aborting doesn't
+          // stop Apps Script from finishing the deletes server-side -- so
+          // a slow-but-successful erase was surfacing as a false failure.
+          fetchApi('adminEraseRoundIngestion', { method: 'POST', token: token, body: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG })
             .then(function (data) {
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
@@ -7600,8 +7625,8 @@
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
               resultBox.className = 'rc-message rc-error';
-              resultBox.textContent = 'Could not reach the server.';
-              showToast('Could not reach the server -- nothing was erased.', 'error');
+              resultBox.textContent = 'This is taking longer than expected -- Apps Script may still be finishing the erase. Check League Tools before trying again so you don\'t erase twice.';
+              showToast('This is taking longer than expected -- check League Tools before trying again.', 'error');
             });
         }
       );
