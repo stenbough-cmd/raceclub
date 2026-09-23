@@ -172,44 +172,84 @@ var _RCL_ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 // ---------------------------------------------------------------------
 // TICKER
 // ---------------------------------------------------------------------
-// Builds the scrolling item list from lastRace + standings only (no next-
-// race or news items in the ticker -- Matt's explicit call: results and
-// standings movement, nothing else scrolling up there). Rendered twice
-// back-to-back in the DOM so the CSS animation (translateX(-50%)) loops
-// seamlessly -- see .rcl-ticker-track in css/league.css.
+// Ticker-only class order (2026-09-23, Matt's ask: "driver list starting
+// with hypercar, then LMP2, LMP3, LMGT3 and LMGTE in that order" -- same
+// order for the in-season top-5-per-class results). Deliberately the
+// REVERSE of the site's usual CAR_CLASS_LIST/CAR_CLASS_CANONICAL_ORDER_
+// ladder (LMGTE up to Hypercar, used everywhere else -- class picker,
+// standings, results pages) -- this is a presentation order for the
+// ticker specifically, top class leads, nothing else on the site follows
+// it, so it's kept local here rather than touching that shared constant.
+var _RCL_TICKER_CLASS_ORDER_ = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
+function _rclSortByTickerClassOrder_(list, classNameOf) {
+  return list.slice().sort(function (a, b) {
+    var ai = _RCL_TICKER_CLASS_ORDER_.indexOf(classNameOf(a));
+    var bi = _RCL_TICKER_CLASS_ORDER_.indexOf(classNameOf(b));
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+
+// Builds the scrolling item list from season/calendar/standings/
+// tickerLastRace. Rendered twice back-to-back in the DOM so the CSS
+// animation (translateX(-50%)) loops seamlessly -- see .rcl-ticker-track
+// in css/league.css.
+//
+// Same "Season" + "Next Race" framing whether or not the season has any
+// results yet (2026-09-23 rewrite, Matt's ask: "I want the same format
+// except instead of a driver list, I want the top 5 from the recent
+// results") -- only the per-class rows underneath differ: a plain driver
+// roster before any race has been run, or that class's top 5 from the
+// most recently posted race once results exist. Both class-row sections
+// use the ticker's own Hypercar-to-LMGTE order above, not the site's
+// usual LMGTE-to-Hypercar ladder. Penalties are deliberately never
+// included here (Matt's rule) -- they only ever show in the full Results
+// popup (_rclOpenAllResultsModal).
 function _rclBuildTickerItems(hub) {
   var items = [];
-
-  // Branches on whether any results have actually been posted yet
-  // (2026-09-19, Matt's ask: "When there are no results to post and a
-  // season is new, make the highlights show the season number, season
-  // name, and driver list for each class. Once results are posted, that's
-  // when it specifically shows race results, gains, losses, and details
-  // like that.") -- a brand-new season has a `standings` roster (drivers
-  // registered into each class) but zero completed rounds, so the old
-  // "POINTS LEAD" framing read as meaningless (everyone's tied at 0).
   var hasResults = (hub.roundsCompleted || 0) > 0;
 
-  if (!hasResults) {
-    if (hub.seasonNumber) {
-      // Season dates appended after the name (2026-09-19 follow-up, Matt's
-      // ask) -- same start/end fields and _rclFormatDate() the "This
-      // Season" snapshot stat above already uses.
-      var seasonDates = '';
-      if (hub.seasonStartUtc && hub.seasonEndUtc) {
-        var seasonStartLabel = _rclFormatDate(hub.seasonStartUtc);
-        var seasonEndLabel = _rclFormatDate(hub.seasonEndUtc);
-        if (seasonStartLabel && seasonEndLabel) {
-          seasonDates = seasonStartLabel + (seasonEndLabel !== seasonStartLabel ? (' - ' + seasonEndLabel) : '');
-        }
+  if (hub.seasonNumber) {
+    // Season dates appended after the name (2026-09-19 follow-up, Matt's
+    // ask) -- same start/end fields and _rclFormatDate() the "This
+    // Season" snapshot stat above already uses.
+    var seasonDates = '';
+    if (hub.seasonStartUtc && hub.seasonEndUtc) {
+      var seasonStartLabel = _rclFormatDate(hub.seasonStartUtc);
+      var seasonEndLabel = _rclFormatDate(hub.seasonEndUtc);
+      if (seasonStartLabel && seasonEndLabel) {
+        seasonDates = seasonStartLabel + (seasonEndLabel !== seasonStartLabel ? (' - ' + seasonEndLabel) : '');
       }
-      items.push({
-        tag: 'SEASON',
-        text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') +
-          (seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : '')
-      });
     }
-    (hub.standings || []).forEach(function (cls) {
+    items.push({
+      tag: 'SEASON',
+      text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') +
+        (seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : '')
+    });
+  }
+
+  // Next race -- same "first non-bye, unfinished" pick the Calendar
+  // section's own "UP NEXT" pill uses (see _rclRenderCalendar above).
+  var nextEntry = null;
+  (hub.calendar || []).forEach(function (entry) {
+    if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
+  });
+  if (nextEntry) {
+    var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ' -- ' + nextEntry.layout : '')) : '';
+    var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
+    items.push({
+      tag: 'NEXT RACE',
+      text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
+        (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : '') +
+        (nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : '')
+    });
+  }
+
+  if (!hasResults) {
+    var classLists = _rclSortByTickerClassOrder_(hub.standings || [], function (cls) { return cls.className; });
+    classLists.forEach(function (cls) {
       var standings = cls.standings || [];
       if (!standings.length) return;
       // Car number appended after each name (2026-09-20, Matt's ask) --
@@ -221,52 +261,29 @@ function _rclBuildTickerItems(hub) {
       }).filter(Boolean).join(', ');
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', text: names });
     });
-
-    // Next race, shown after the driver lists (2026-09-19 follow-up,
-    // Matt's ask) -- same "first non-bye, unfinished" pick the Calendar
-    // section's own "UP NEXT" pill uses (see _rclRenderCalendar above).
-    var nextEntry = null;
-    (hub.calendar || []).forEach(function (entry) {
-      if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
-    });
-    if (nextEntry) {
-      var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ' -- ' + nextEntry.layout : '')) : '';
-      var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
-      items.push({
-        tag: 'NEXT RACE',
-        text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
-          (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : '') +
-          (nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : '')
-      });
-    }
-
     return items;
   }
 
-  if (hub.lastRace) {
-    var r = hub.lastRace;
-    if (r.overallWinner) {
-      items.push({ tag: 'RACE WINNER', text: _rclEscapeHtml(r.overallWinner) + ' takes ' + _rclEscapeHtml(r.eventName || 'the race') });
-    }
-    (r.classes || []).forEach(function (cls) {
-      if (cls.classWinner) {
-        items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' WINNER', text: _rclEscapeHtml(cls.classWinner) });
-      }
+  // In-season: top 5 from the most recently posted race, per class, in
+  // the ticker's Hypercar-to-LMGTE order -- hub.tickerLastRace is the
+  // SAME round as hub.lastRace (the abbreviated Recent Results panel's
+  // own data) but capped per-class only, not per-class-COUNT, so every
+  // class the round actually has shows here even though Recent Results
+  // itself only has room to show 3 (see handleGetLeagueHub, Website.gs).
+  var lastRace = hub.tickerLastRace;
+  if (lastRace) {
+    var raceLabel = _rclEscapeHtml(lastRace.eventName || 'Race') + (lastRace.roundNum ? (' (Round ' + lastRace.roundNum + ')') : '');
+    var resultClasses = _rclSortByTickerClassOrder_(lastRace.classes || [], function (cls) { return cls.className; });
+    resultClasses.forEach(function (cls) {
+      var standings = (cls.standings || []).slice(0, 5);
+      if (!standings.length) return;
+      var names = standings.map(function (row) {
+        if (!row.name) return null;
+        return _rclEscapeHtml(row.name) + (row.carNumber ? ' #' + _rclEscapeHtml(row.carNumber) : '');
+      }).filter(Boolean).join(', ');
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5', text: raceLabel + ': ' + names });
     });
-    if (r.overallFastestLapDriver) {
-      items.push({ tag: 'FASTEST LAP', text: _rclEscapeHtml(r.overallFastestLapDriver) + (r.overallFastestLapTime ? ' -- ' + _rclEscapeHtml(r.overallFastestLapTime) : '') });
-    }
   }
-
-  (hub.standings || []).forEach(function (cls) {
-    var standings = cls.standings || [];
-    if (!standings.length) return;
-    var leader = standings[0];
-    var second = standings[1];
-    var gapText = second ? ('+' + (leader.championshipPoints - second.championshipPoints) + ' PTS') : 'UNCONTESTED';
-    var leaderCarNum = leader.carNumber ? ' #' + _rclEscapeHtml(leader.carNumber) : '';
-    items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' POINTS LEAD', text: _rclEscapeHtml(leader.name) + leaderCarNum + ' (' + gapText + ')' });
-  });
 
   return items;
 }
