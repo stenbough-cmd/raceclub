@@ -7376,13 +7376,16 @@
     var fileInput = el('input');
     fileInput.type = 'file';
     fileInput.accept = '.xml';
-    // Label/note simplified 2026-09-23 (Matt's ask): "LMU Result File" --
-    // not "Race Results XML File" -- since this same field also takes
-    // Qualify results, not just Race. Note text trimmed to just the one
-    // fact that matters (which round this import is tied to); the rest
-    // of what used to be explanatory text here is redundant with the
-    // popup's own title ("Import Results -- <round>") right above it.
-    modal.body.appendChild(wizField('LMU Result File', fileInput, 'This import is tied to ' + roundLabel + '.'));
+    // Label removed entirely 2026-09-23 (Matt's ask) -- the popup's own
+    // title ("Import Results -- <round>") already says what this is, so a
+    // field label above the file picker was redundant. Note text says
+    // which round this import is tied to plus which file types are
+    // accepted (built via wizField's own pieces rather than the helper
+    // itself, since wizField always renders a label element).
+    var fileFieldWrap = el('div', 'rc-wiz-field');
+    fileFieldWrap.appendChild(fileInput);
+    fileFieldWrap.appendChild(el('div', 'rc-hint', 'This import is tied to ' + roundLabel + '. Qualifying and race result .xml files only.'));
+    modal.body.appendChild(fileFieldWrap);
 
     // No in-popup result/error message box (2026-09-23, Matt's ask: "I
     // don't want an error message populating in the popup. We have toast
