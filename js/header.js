@@ -140,8 +140,13 @@
   box. Lives here (not its own file) since every page already loads this
   script. `type` is 'success' | 'error' | 'info' (default 'info'), just
   changes the toast's left-edge accent color. Multiple toasts stack,
-  newest at the bottom, each auto-dismisses after `durationMs` (default
-  4200ms) or on its own close (x) click. See the .rc-toast* rules in
+  newest at the bottom, each auto-dismisses after `durationMs` or on its
+  own close (x) click. DURATION (2026-09-23, Matt's ask): an explicit
+  `durationMs` argument always wins; when the caller leaves it out, the
+  default now depends on `type` -- 7000ms for 'error' (Matt: give a bad
+  result more time to actually be read), 5000ms for 'success' (a
+  confirmation), 4200ms for 'info' (unchanged, the original one-size
+  default from before this pass). See the .rc-toast* rules in
   style.css. NOTE: a message that comes bundled with its own follow-up
   action -- login.html's "Resend verification email" button,
   register.html's EMAIL_TAKEN "Log in with that account" panel -- keeps
@@ -165,10 +170,17 @@ function _rcEnsureToastContainer() {
   return c;
 }
 
+// Default duration by type (2026-09-23, Matt's ask) -- used only when a
+// caller doesn't pass its own durationMs. Error toasts get the longest
+// window since a failure is the one result worth still being readable a
+// few seconds later; success/confirmation toasts get a touch longer than
+// the old one-size default too; info keeps exactly what it always was.
+var RC_TOAST_DEFAULT_DURATION_MS_ = { error: 7000, success: 5000, info: 4200 };
+
 function showToast(message, type, durationMs) {
   if (!message) return;
   type = (type === 'success' || type === 'error') ? type : 'info';
-  durationMs = durationMs || 4200;
+  durationMs = durationMs || RC_TOAST_DEFAULT_DURATION_MS_[type];
 
   var container = _rcEnsureToastContainer();
   var toast = document.createElement('div');

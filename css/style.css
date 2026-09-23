@@ -512,24 +512,18 @@ p { margin: 0 0 0.75em; }
 .rc-badge-tier-balanced { background: var(--rc-balanced); }
 .rc-badge-tier-risky { background: var(--rc-orange); }
 /* Season status pill (League Management's Season Tools list, added
-   2026-08-30) -- same chip shape, colored so Draft/Scheduled/Registration/
+   2026-08-30) -- originally colored so Draft/Scheduled/Registration/
    Active/Completed read apart from each other at a glance in a flat list
-   of seasons. Registration reuses the same green as Sponsors' Safe tier
-   (both mean "open/in your favor"); Active reuses the site's red (racing
-   is actually underway right now); Completed is steel, muted like an
-   archived record. */
+   of seasons. RETIRED as of 2026-09-23 (Matt's call: "I don't like how it
+   says REGISTRATION... I'd rather not see it" -- see .rc-badge-status-
+   neutral below, which replaced this whole per-status color system with
+   one plain LIVE/END pill). The four rules below are kept, unused, only
+   because .rc-badge-status-completed is still a real dependency (the
+   "Finalized" chip, buildSeasonRaceRow/renderStewardingSection) -- do not
+   delete that one; the other three (-draft/-scheduled/-registration) have
+   no remaining callers and are safe to remove outright in a future pass. */
 .rc-badge-status-draft { background: var(--rc-tier-low); }
 .rc-badge-status-scheduled { background: var(--rc-balanced); }
-/* Registration status pill (2026-09-19, Matt's call: "Registration pills
-   that show up on the site should be a dashed green border with an empty
-   fill") -- every other status pill is a solid filled chip, but
-   Registration specifically reads as "open, come join" rather than a
-   settled state, so it gets an outline treatment instead: transparent
-   background, dashed green border, green text. Overrides .rc-badge-chip's
-   white-on-color default (background/border/color all set here) rather
-   than adding a new modifier class, so any existing "Registration" pill
-   markup (Season Tools list, League Hub, wherever else Season status
-   renders) picks this up automatically. */
 .rc-badge-status-registration { background: transparent; border: 1.5px dashed var(--rc-positive); color: var(--rc-positive); padding: 1.5px 8.5px; }
 .rc-badge-status-active { background: var(--rc-red); }
 .rc-badge-status-completed { background: var(--rc-steel); }
@@ -541,6 +535,21 @@ p { margin: 0 0 0.75em; }
 .rc-badge-race-scheduled { background: var(--rc-positive); }
 .rc-badge-race-noresults { background: var(--rc-red); }
 .rc-badge-race-posted { background: var(--rc-steel); }
+/* Quiet/neutral status pill (2026-09-23, Matt's ask: League Tools' season
+   status pill and the per-race Scheduled/no-results-yet pills were too
+   bold/attention-grabbing -- "the colors too bold... should blend into
+   the page more"). Light gray fill, steel text -- same unobtrusive
+   treatment the button system's "gray unless it saves" rule already uses
+   sitewide. Two class names on purpose, both sharing this one look:
+   -status-neutral is the season-level LIVE/END pill (_rcSeasonStatusBadge,
+   Account.html), -race-quiet is the per-race Scheduled/no-results-yet
+   pill inside a season's expanded Races list (buildSeasonRaceRow).
+   Deliberately NOT applied to the pre-existing .rc-badge-race-scheduled/
+   .rc-badge-race-noresults classes above -- those two are also reused
+   verbatim by Stewarding's "N Pending" badge and the Protests status
+   pills, which Matt did not ask to change. */
+.rc-badge-status-neutral,
+.rc-badge-race-quiet { background: var(--rc-silver); color: var(--rc-steel); }
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should

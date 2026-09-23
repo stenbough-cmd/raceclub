@@ -3621,20 +3621,20 @@
   // it just says so; wiring it up is future work, same shape as Create
   // once there's something to point it at.
   // ---------------------------------------------------------------------
-  // Status pill for the Season Tools list (added 2026-08-30) -- same chip
-  // shape/pattern as _rcClassBadge, colored per status so
-  // Draft/Scheduled/Registration/Active/Completed read apart from each
-  // other in a flat list. Falls back to Draft's color for a blank/unknown
-  // status, same "old rows never break" convention as everywhere else a
-  // status column can be empty.
+  // Status pill for the Season Tools list (added 2026-08-30, redesigned
+  // 2026-09-23). Used to color-code Draft/Scheduled/Registration/Active/
+  // Completed apart from each other, but Matt found that unclear in
+  // practice ("I don't like how it says REGISTRATION... I'm not sure
+  // what this is supposed to let the organizer or admin know"). What
+  // actually matters at a glance is simpler -- is this season still the
+  // current one, or has it wrapped up -- so this now shows a single
+  // light-gray, unobtrusive pill: LIVE for anything short of Completed
+  // (Draft/Registration/Active all read as "still going"), END once a
+  // season is Completed. Same .rc-badge-status-neutral treatment either
+  // way (see its comment in style.css) -- only the text changes.
   function _rcSeasonStatusBadge(status) {
-    var key = status || 'Draft';
-    var classMap = {
-      Draft: 'rc-badge-status-draft', Scheduled: 'rc-badge-status-scheduled',
-      Registration: 'rc-badge-status-registration', Active: 'rc-badge-status-active',
-      Completed: 'rc-badge-status-completed'
-    };
-    return el('span', 'rc-badge-chip ' + (classMap[key] || 'rc-badge-status-draft'), escapeHtml(key));
+    var isLive = status !== 'Completed';
+    return el('span', 'rc-badge-chip rc-badge-status-neutral', isLive ? 'LIVE' : 'END');
   }
 
   // One row for a single season -- own row builder (2026-08-30) so it can
@@ -3816,15 +3816,21 @@
     var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
     nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(title)));
 
+    // Scheduled and no-results-yet were solid green/red (2026-09-23,
+    // Matt's ask: "too bold and attention grabbing... should blend into
+    // the page more") -- switched to the same quiet light-gray pill as
+    // the season status badge above (.rc-badge-race-quiet, style.css).
+    // Results-Posted/Finalized are untouched -- not what Matt flagged,
+    // and already the muted steel treatment.
     var statusText, statusClass;
     if (!r.finished) {
-      statusText = 'Scheduled'; statusClass = 'rc-badge-race-scheduled';
+      statusText = 'Scheduled'; statusClass = 'rc-badge-race-quiet';
     } else if (isSpecial) {
       statusText = 'Completed'; statusClass = 'rc-badge-race-posted';
     } else if (r.hasResults) {
       statusText = 'Completed -- Results Posted'; statusClass = 'rc-badge-race-posted';
     } else {
-      statusText = 'Completed -- No Results Posted Yet'; statusClass = 'rc-badge-race-noresults';
+      statusText = 'Completed -- No Results Posted Yet'; statusClass = 'rc-badge-race-quiet';
     }
     nameLine.appendChild(el('span', 'rc-badge-chip ' + statusClass, statusText));
     // Finalized chip (2026-09-19) -- the old Finalize/Un-Finalize button's
@@ -7317,6 +7323,43 @@
   // always JSON.stringifies its POST body, but handleImportXml reads the
   // raw XML straight off e.postData.contents, so the body here has to be
   // the file's own text, untouched.
+  // Quick client-side sniff for which session type a file's <RaceResults>
+  // root actually contains -- 'R'/'Q'/'P'/null -- mirroring the exact
+  // logic Ingestion.gs's own findSessionElement uses server-side (first
+  // direct child of <RaceResults> whose tag is Race/Qualify/Practice
+  // optionally followed by digits). Added 2026-09-23 (Matt's report: a
+  // Practice file took ~20 seconds to come back "Could not reach the
+  // server" instead of being rejected right away) -- this runs entirely
+  // in the browser, before any fetch, so an obvious Practice file never
+  // has to make the round trip to Apps Script at all. Best-effort: if
+  // anything here throws (an unexpected file shape, browser XML parser
+  // quirks XmlService doesn't share), it just returns null and the normal
+  // upload/server-side validation path takes over exactly as before.
+  function _rcSniffSessionCode(xmlText) {
+    try {
+      // Same DOCTYPE strip as Ingestion.gs's stripDoctype -- LMU's
+      // internal <!ENTITY> subset can trip up a strict XML parser even
+      // though nothing here reads it.
+      var cleaned = xmlText.replace(/<!DOCTYPE[\s\S]*?]>/i, '');
+      var doc = new DOMParser().parseFromString(cleaned, 'text/xml');
+      if (doc.getElementsByTagName('parsererror').length) return null;
+      var root = doc.documentElement;
+      if (!root) return null;
+      var raceResults = (root.tagName === 'RaceResults') ? root : root.getElementsByTagName('RaceResults')[0];
+      if (!raceResults) return null;
+      var children = raceResults.children || [];
+      for (var i = 0; i < children.length; i++) {
+        var name = children[i].tagName;
+        if (/^Race\d*$/.test(name)) return 'R';
+        if (/^Qualify\d*$/.test(name)) return 'Q';
+        if (/^Practice\d*$/.test(name)) return 'P';
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
+
   function openImportXmlModal(token, opts) {
     opts = opts || {};
     var roundId = opts.roundId || '';
@@ -7327,11 +7370,18 @@
     var fileInput = el('input');
     fileInput.type = 'file';
     fileInput.accept = '.xml';
-    modal.body.appendChild(wizField('Race Results XML File', fileInput, 'The results file LMU writes after a session -- select it from wherever it saved on your computer. This import is tied to ' + roundLabel + '.'));
+    // Label/note simplified 2026-09-23 (Matt's ask): "LMU Result File" --
+    // not "Race Results XML File" -- since this same field also takes
+    // Qualify results, not just Race. Note text trimmed to just the one
+    // fact that matters (which round this import is tied to); the rest
+    // of what used to be explanatory text here is redundant with the
+    // popup's own title ("Import Results -- <round>") right above it.
+    modal.body.appendChild(wizField('LMU Result File', fileInput, 'This import is tied to ' + roundLabel + '.'));
 
-    var resultBox = el('div', 'rc-message');
-    modal.body.appendChild(resultBox);
-
+    // No in-popup result/error message box (2026-09-23, Matt's ask: "I
+    // don't want an error message populating in the popup. We have toast
+    // notifications for that.") -- every outcome (success, a rejected
+    // file, a server error) now goes through showToast only.
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
     var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Import');
     importBtn.type = 'button';
@@ -7341,12 +7391,24 @@
 
       importBtn.disabled = true;
       importBtn.textContent = 'Importing…';
-      resultBox.className = 'rc-message';
-      resultBox.textContent = '';
 
       var reader = new FileReader();
       reader.onload = function () {
         var xmlText = reader.result;
+
+        // Reject an obvious Practice file immediately, client-side, no
+        // network round trip (2026-09-23, Matt's ask -- see
+        // _rcSniffSessionCode's own comment above). The server still has
+        // its own PRACTICE_NOT_SUPPORTED check (Ingestion.gs) as the real
+        // source of truth -- this is purely a fast-fail shortcut for the
+        // common case, not a replacement for it.
+        if (_rcSniffSessionCode(xmlText) === 'P') {
+          importBtn.disabled = false;
+          importBtn.textContent = 'Import';
+          showToast('Practice session imports aren\'t supported -- only Qualify and Race results are imported.', 'error');
+          return;
+        }
+
         var url = API_BASE_URL + '?action=importXml' +
           '&token=' + encodeURIComponent(token) +
           '&filename=' + encodeURIComponent(file.name) +
@@ -7365,20 +7427,14 @@
             if (data.unmatchedDriverNames && data.unmatchedDriverNames.length) {
               msg += ' Unmatched driver names (no ProfileID yet): ' + data.unmatchedDriverNames.join(', ') + '.';
             }
-            resultBox.className = 'rc-message rc-ok';
-            resultBox.textContent = msg;
-            showToast('Import complete.', 'success');
+            showToast(msg, 'success');
             rcReloadAfterSave();
           } else {
-            resultBox.className = 'rc-message rc-error';
-            resultBox.textContent = (data && data.message) || 'Import failed.';
             showToast((data && data.message) || 'Could not import that file.', 'error');
           }
         }).catch(function () {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
-          resultBox.className = 'rc-message rc-error';
-          resultBox.textContent = 'Could not reach the server.';
           showToast('Could not reach the server -- file not imported.', 'error');
         });
       };
