@@ -453,6 +453,14 @@
   // wall-clock face, via the top button/crown) so Practice and Qualifying
   // don't read as the identical icon next to each other.
   var ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
+  // Round status line icons (2026-09-23, Matt's ask for a red/yellow/green
+  // import-status indicator in League Tools) -- a plain empty ring for the
+  // "not there yet" states (partial import, awaiting validation) and the
+  // same ring with a checkmark once results are finalized. Colored via
+  // currentColor/CSS on the wrapping element (see .rc-round-status-* in
+  // style.css), same convention as every other ICON_* here.
+  var ICON_CIRCLE_EMPTY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>';
+  var ICON_CIRCLE_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.3 12.3l2.6 2.6 4.8-5.4"></path></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -3803,11 +3811,52 @@
       box.appendChild(el('div', 'rc-dm-empty', 'No races scheduled for this season yet.'));
       return box;
     }
-    real.forEach(function (r) { box.appendChild(buildSeasonRaceRow(r, token, reload)); });
+    // Sequential import gating (2026-09-23, Matt's ask: "I shouldn't be
+    // able to import results for race 2 if race 1 doesn't even have final
+    // results posted") -- only the earliest round that isn't finalized yet
+    // gets working Import Results/Delete Results buttons; every round
+    // after it stays locked until every round before it is finalized, so
+    // results can never land out of order. Special Events have no
+    // RoundID/results at all, so they're skipped when folding this --
+    // they never block or get blocked by it.
+    var priorFinalized = true;
+    real.forEach(function (r) {
+      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized));
+      if (r.kind !== 'special') priorFinalized = priorFinalized && !!r.resultsFinalized;
+    });
     return box;
   }
 
-  function buildSeasonRaceRow(r, token, reload) {
+  // Round status line (2026-09-23, Matt's ask) -- one colored circle-icon
+  // line summarizing exactly where a round's results stand:
+  //   - red, empty circle: one of Qualify/Race imported, the other pending
+  //   - yellow, empty circle: both imported, not yet finalized (validated)
+  //   - green, checkmark circle: finalized (official)
+  // Returns null (no line at all) once neither session has been imported
+  // yet -- the button row already makes that state obvious.
+  function buildRoundStatusLine(r) {
+    var state;
+    if (r.resultsFinalized) {
+      state = { tone: 'green', icon: ICON_CIRCLE_CHECK, text: 'Results have been validated.' };
+    } else if (r.hasResults) {
+      state = { tone: 'yellow', icon: ICON_CIRCLE_EMPTY, text: 'Results uploaded, awaiting validation.' };
+    } else if (r.hasAnySessionImported) {
+      state = {
+        tone: 'red', icon: ICON_CIRCLE_EMPTY,
+        text: r.hasRaceResults ? 'Race imported, qualifying pending.' : 'Qualifying imported, race pending.'
+      };
+    } else {
+      return null;
+    }
+    var line = el('div', 'rc-round-status rc-round-status-' + state.tone);
+    var iconSpan = el('span', 'rc-round-status-icon');
+    iconSpan.innerHTML = state.icon;
+    line.appendChild(iconSpan);
+    line.appendChild(el('span', null, state.text));
+    return line;
+  }
+
+  function buildSeasonRaceRow(r, token, reload, priorFinalized) {
     var row = el('div', 'rc-group-row');
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
@@ -3829,22 +3878,26 @@
     var metaParts = [];
     if (!isSpecial && r.track) metaParts.push(r.track);
     if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
-    // Partial-import note (2026-09-23, Matt's ask: "we need to build logic
-    // so it knows that 1/2 race results are uploaded") -- plain muted text
-    // in the same hint line, not a pill, only when exactly one of Qualify/
-    // Race has been imported for this round. Both in, or neither in, needs
-    // no extra note -- the button row below already makes that state clear
-    // (Import Results enabled/disabled, View/Edit & Finalize present or
-    // not).
-    if (!isSpecial && r.hasAnySessionImported && !r.hasResults) {
-      metaParts.push(r.hasRaceResults ? 'Race imported, qualifying pending' : 'Qualifying imported, race pending');
-    }
     textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'Date/time not set')));
+
+    // Colored circle-icon status line replaces the old plain-text partial-
+    // import note (2026-09-23, Matt's ask -- see buildRoundStatusLine).
+    if (!isSpecial) {
+      var statusLine = buildRoundStatusLine(r);
+      if (statusLine) textCol.appendChild(statusLine);
+    }
 
     info.appendChild(textCol);
     row.appendChild(info);
 
     var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+
+    // Sequential gating (2026-09-23, Matt's ask) -- true once every real
+    // round before this one in the season has been finalized. Only then
+    // are this round's Import Results/Delete Results buttons live; a
+    // round waiting on an earlier one stays locked regardless of its own
+    // import state.
+    var locked = !isSpecial && !priorFinalized;
 
     if (!isSpecial && r.roundId) {
       // No round picker in either popup below -- the click that opened
@@ -3853,7 +3906,11 @@
       // straight to the upload/erase form.
       var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
       addBtn.type = 'button';
-      if (r.hasResults) {
+      if (locked) {
+        addBtn.disabled = true;
+        addBtn.title = 'Finalize the previous round\'s results before importing this one.';
+        addBtn.style.cssText = 'opacity:0.5;';
+      } else if (r.hasResults) {
         // Grayed out once BOTH Qualify and Race are in for this round
         // (2026-09-07, Matt's call; scope fixed 2026-09-23 -- r.hasResults
         // now means both session types are present, not just one -- see
@@ -3887,7 +3944,11 @@
         viewBtn.addEventListener('click', function () { openRoundViewModal(token, { roundId: r.roundId, roundLabel: roundLabel }); });
         btnGroup.appendChild(viewBtn);
 
-        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit & Finalize');
+        // Label becomes "Review" once the round is finalized (2026-09-23,
+        // Matt's ask) -- same popup, same Un-Finalize-lives-inside-it
+        // behavior, just no longer framed as an editing/finalizing action
+        // once results are already official.
+        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', r.resultsFinalized ? 'Review' : 'Edit & Finalize');
         editFinalizeBtn.type = 'button';
         editFinalizeBtn.addEventListener('click', function () {
           openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
@@ -3895,7 +3956,7 @@
         btnGroup.appendChild(editFinalizeBtn);
       }
 
-      var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
+      var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete Results');
       delBtn.type = 'button';
       // Gated on hasAnySessionImported, not hasResults (2026-09-23 fix) --
       // a round with only ONE of Qualify/Race imported still has real data
@@ -3905,7 +3966,15 @@
       // Erase Round Ingestion popup already wipe every session type for a
       // round in one shot, so this was always safe to allow -- it just
       // used to be wrongly gated on the "both types in" flag instead.
-      if (r.hasAnySessionImported) {
+      // Also locked by the same sequential-gating rule as Import Results
+      // (2026-09-23) -- a round waiting on an earlier one to finalize has
+      // nothing of its own to delete yet in practice, but this keeps the
+      // rule airtight either way.
+      if (locked) {
+        delBtn.disabled = true;
+        delBtn.title = 'Finalize the previous round\'s results first.';
+        delBtn.style.cssText = 'opacity:0.5;';
+      } else if (r.hasAnySessionImported) {
         // Plain gray, not red -- opens the erase popup, doesn't erase by
         // itself (see the Delete Season comment above for why).
         delBtn.addEventListener('click', function () {

@@ -550,6 +550,19 @@ p { margin: 0 0 0.75em; }
    pills, which Matt did not ask to change. */
 .rc-badge-status-neutral,
 .rc-badge-race-quiet { background: var(--rc-silver); color: var(--rc-steel); }
+/* League Tools round status line (2026-09-23, Matt's ask) -- a small
+   circle-icon + colored text line under a race row's date/track hint,
+   replacing the old plain-gray partial-import note. Red = one of
+   Qualify/Race imported, the other pending. Yellow = both imported, not
+   yet finalized. Green = finalized/official. Icon color always matches
+   the text color (currentColor on the inline ICON_CIRCLE_EMPTY/
+   ICON_CIRCLE_CHECK svg). */
+.rc-round-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; margin-top: 4px; }
+.rc-round-status-icon { display: flex; flex: none; }
+.rc-round-status-icon svg { display: block; }
+.rc-round-status-red { color: var(--rc-negative); }
+.rc-round-status-yellow { color: var(--rc-warning); }
+.rc-round-status-green { color: var(--rc-positive); }
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should
