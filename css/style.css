@@ -1775,17 +1775,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    dimensions are known -- the actual sizing (so a long/wide logo like
    McLaren/Mercedes-AMG and a tall/narrow one like Ferrari read at the same
    visual weight, not the wide one going tiny) is done in JS by area, once
-   each logo loads. See sizeLogoByArea() in Account.html. */
+   each logo loads. See sizeLogoByArea() in Account.html.
+   Sized up 25px taller / 50px wider (2026-09-23, Matt's ask: "increase
+   the height by 25 and the width by 50px") from the original 60x44. */
 .rc-team-logo-box {
-  width: 60px;
-  height: 44px;
+  width: 110px;
+  height: 69px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.rc-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; }
+/* Team name + car number, much larger (2026-09-23, Matt's ask) -- was
+   17px/700, same treatment .rc-cal-season-title uses for its own
+   headline-weight text, one step down in size to leave room for the
+   bigger logo alongside it. */
+.rc-team-name { font-family: var(--rc-font-heading); font-size: 26px; font-weight: 800; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; }
 .rc-team-subtitle { font-size: 12.5px; color: var(--rc-steel); margin-top: 2px; }
 /* Total cost -- bumped up to read as the headline number it actually is,
    not a caption (Matt's call: "increase the total cost in the top right

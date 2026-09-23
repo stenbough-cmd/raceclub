@@ -2159,8 +2159,12 @@
       identity.appendChild(logoBox);
       var nameCol = el('div');
       nameCol.appendChild(el('div', 'rc-team-name', escapeHtml((team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : ''))));
-      if (team.manufacturer || team.carModel) {
-        nameCol.appendChild(el('div', 'rc-team-subtitle', escapeHtml([team.manufacturer, team.carModel].filter(Boolean).join(' '))));
+      // Just the car model underneath now, not "Manufacturer Model"
+      // (Matt's ask, 2026-09-23) -- the manufacturer already reads off
+      // its own logo right next to the name, so repeating it in text
+      // here was redundant.
+      if (team.carModel) {
+        nameCol.appendChild(el('div', 'rc-team-subtitle', escapeHtml(team.carModel)));
       }
       identity.appendChild(nameCol);
       head.appendChild(identity);
