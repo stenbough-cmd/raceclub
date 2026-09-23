@@ -1687,14 +1687,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    same CAR_CLASS_BADGE_COLOR_VAR tokens every other class pill on the site
    already uses -- LMGT3/LMP3/LMP2/Hypercar already resolve to green/
    purple/blue/red respectively, so no new color tokens were needed. */
-.rc-class-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+/* Sized down (2026-09-23, Matt's ask: "reduce size of Choose Your Class
+   buttons") -- smaller min column width, tighter gap/padding, smaller
+   type, while keeping the same colored-button shape/hover treatment. */
+.rc-class-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; }
 .rc-class-pick-btn {
   position: relative;
   overflow: hidden;
   background: var(--rc-class-pick-color);
   border: none;
-  border-radius: 10px;
-  padding: 20px 14px;
+  border-radius: 8px;
+  padding: 13px 10px;
   cursor: pointer;
   text-align: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -1703,17 +1706,36 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-class-pick-btn-content { position: relative; z-index: 1; }
 .rc-class-pick-btn-name {
   font-family: var(--rc-font-heading);
-  font-size: 18px;
+  font-size: 14.5px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--rc-white);
 }
-.rc-class-pick-btn-seats { margin-top: 6px; font-size: 12px; color: rgba(255, 255, 255, 0.85); }
-/* Locked (not offered this season, or every seat already taken) -- the
-   button stays visible and its color stays underneath, just desaturated
-   and dimmed, rather than disappearing from the grid entirely. */
-.rc-class-pick-btn-locked { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+.rc-class-pick-btn-seats { margin-top: 4px; font-size: 10.5px; color: rgba(255, 255, 255, 0.85); }
+/* Locked (not offered this season, or every seat already taken) -- every
+   locked button now renders in the SAME flat, neutral appearance
+   (2026-09-23, Matt's ask: "make the inactive buttons all the same color
+   and a little more 'inactive' appearing instead of just gray") rather
+   than a grayscale/dimmed version of that class's own accent color --
+   the old `filter: grayscale(1)` meant Hypercar's locked red and LMP2's
+   locked blue still came out as two different shades of gray, which read
+   as "duller," not "disabled." This drops --rc-class-pick-color entirely
+   for this state in favor of the same flat offwhite/silver/steel
+   treatment every other disabled control on the site uses
+   (.rc-field-locked, .rc-btn-secondary:disabled) -- a locked class now
+   reads unmistakably as not clickable, and every locked button matches
+   every other one regardless of which class it is. The two-class
+   selector here (specificity 0,2,0) beats the single-class
+   `.rc-class-pick-btn` background rule above regardless of source
+   order, so no `!important` is needed. */
+.rc-class-pick-btn-locked {
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  cursor: not-allowed;
+}
+.rc-class-pick-btn-locked .rc-class-pick-btn-name,
+.rc-class-pick-btn-locked .rc-class-pick-btn-seats { color: var(--rc-steel); }
 /* Circle-slash lock icon -- hidden by default, fades in centered over the
    button only while hovering a locked one (2026-09-19, Matt's exact ask).
    A dark scrim behind the icon keeps it legible against every class's

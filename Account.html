@@ -2035,10 +2035,13 @@
     // already happen to be exactly those colors -- see reference-data.js).
     // ALL FIVE classes always render, whether or not this season actually
     // fields cars in them -- a class with no cars set up, or with every
-    // seat already taken, just grays out and shows the circle-slash lock
-    // icon on hover instead of disappearing from the row. A totals line
-    // below the grid shows the overall open/total seat count across every
-    // class in the season.
+    // seat already taken, just locks (flat neutral appearance, see
+    // .rc-class-pick-btn-locked in style.css -- same treatment for every
+    // locked class, not a dimmed version of that class's own color) and
+    // shows the circle-slash lock icon on hover instead of disappearing
+    // from the row. A class not offered this season shows "Inactive"
+    // rather than a seat count. A totals line below the grid shows the
+    // overall open/total seat count across every class in the season.
     function renderClassScreenBody(allTeams) {
       var body = modal.body;
       body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;',
@@ -2075,7 +2078,7 @@
         content.appendChild(el('div', 'rc-class-pick-btn-name', escapeHtml(_rcClassPillLabel(cls))));
         var seatsLabel = present
           ? (openTeams.length + ' of ' + teamsInClass.length + ' seat' + (teamsInClass.length === 1 ? '' : 's') + ' open')
-          : 'Not offered this season';
+          : 'Inactive';
         content.appendChild(el('div', 'rc-class-pick-btn-seats', escapeHtml(seatsLabel)));
         btn.appendChild(content);
 
