@@ -4251,7 +4251,17 @@
     // appearing before the list underneath them is ready.
     section.appendChild(buildPageSpinner('Loading league tools...'));
 
-    fetchApi('adminListSeasons', { token: token }).then(function (data) {
+    // Consolidated into ONE server round trip (2026-09-23, perf fix --
+    // Matt's report: League Tools was firing N+2 separate HTTP calls
+    // (adminListSeasons + one adminGetSeasonRaces PER season + adminListNews),
+    // and since Apps Script serializes same-user requests, these queued up
+    // sequentially instead of running in parallel -- that's what produced
+    // both the long page load and the burst of doGet executions Matt saw
+    // in the Apps Script Executions log. adminListSeasonsWithRaces
+    // (Seasons.gs) reads every needed tab exactly once server-side and
+    // returns seasons + racesBySeasonId + news together in one response,
+    // the same consolidation pattern getDashboardData already uses.
+    fetchApi('adminListSeasonsWithRaces', { token: token }).then(function (data) {
       if (!data.success) {
         section.innerHTML = '';
         section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
@@ -4259,38 +4269,13 @@
         return;
       }
       var seasons = data.seasons || [];
-      // Every season's races load NOW, all in parallel, alongside the
-      // season list itself (2026-09-07, Matt's call: "don't make me load
-      // the races for the season AFTER the page has already loaded... have
-      // everything loaded so I can click and it instantly pulls up the
-      // races below") -- so by the time a row's Races toggle is actually
-      // clicked, there's no fetch left to do, just showing/hiding DOM
-      // that's already built. A season whose races call fails gets an
-      // empty array rather than blocking the rest of the page.
-      var racesPromise = Promise.all(seasons.map(function (s) {
-        return fetchApi('adminGetSeasonRaces', { token: token, params: { seasonId: s.seasonId } })
-          .then(function (r) { return (r && r.success) ? (r.races || []) : []; })
-          .catch(function () { return []; });
-      }));
-      // League News loads alongside the season/races data (2026-09-18) so
-      // the whole League Tools page is ready in one pass, same "load it
-      // all up front" rule the races-per-season fetch above already
-      // follows.
-      var newsPromise = fetchApi('adminListNews', { token: token })
-        .then(function (r) { return (r && r.success) ? (r.news || []) : []; })
-        .catch(function () { return []; });
+      var racesBySeasonId = data.racesBySeasonId || {};
+      var newsRows = data.news || [];
 
-      Promise.all([racesPromise, newsPromise]).then(function (results) {
-        var racesPerSeason = results[0];
-        var newsRows = results[1];
-        var racesBySeasonId = {};
-        seasons.forEach(function (s, i) { racesBySeasonId[s.seasonId] = racesPerSeason[i]; });
-
-        section.innerHTML = '';
-        section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-        section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
-        section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }));
-      });
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
+      section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
+      section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }));
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
