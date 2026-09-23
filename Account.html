@@ -4435,40 +4435,48 @@
     // Track image removed entirely (2026-09-19, Matt's call -- see the
     // miniStats comment above; may come back in some other form later).
 
-    // Faded card + small corner badge(s) once a round/special event's
-    // start time has passed (2026-09-21 redesign, Matt's ask: "make the
-    // race faded out with a COMPLETED notification" -- replaces the old
-    // full-card dark-scrim overlay with giant "EVENT COMPLETED" text,
-    // which hid the whole card's details rather than just dimming them).
-    // .rc-cal-finished (already on `card` itself, see its class list
-    // above) fades .rc-cal-race-body via CSS -- these badges are appended
-    // as siblings of body, outside the faded element, so the notification
-    // itself stays fully legible against the dimmed card around it.
+    // Whole-container dim + centered "COMPLETED" overlay, once a round/
+    // special event's start time has passed (2026-09-23 redesign, Matt's
+    // ask: "dim the whole race container and show COMPLETED in large
+    // text in the middle" -- the third pass at this treatment: a faded
+    // background + small pill (original), then a full-card dark scrim
+    // with giant centered text (2026-09-early), then small corner badges
+    // over a dimmed body only (2026-09-21). This returns to a full-card
+    // centered treatment, but keeps the 2026-09-21 pass's clearer wording
+    // rather than reverting the copy too). .rc-cal-finished (already on
+    // `card` itself) dims -- the overlay is a sibling of body/head, sits
+    // on top via z-index over the ENTIRE card (not just the body column),
+    // so every part of the container reads as dimmed at a glance.
     // 2026-09-07: whether results have actually been imported yet for a
     // real Round (isSpecial and bye entries have no RoundID to check
-    // against, so they only ever get the plain "Completed" badge) --
-    // hasResults comes straight off the same entries
+    // against, so they only ever get the plain "Completed" title, no
+    // results line) -- hasResults comes straight off the same entries
     // _rcBuildActiveSeasonCalendar_ builds for League Management's
     // per-race Add Results/Delete buttons, so this can never disagree
-    // with what an Admin sees there. 2026-09-08: a second badge -- once
-    // results are posted AND the round has been finalized (League
-    // Management's Finalize button, adminFinalizeRound/resultsFinalized
-    // -- same field the round entry already carries), it says so
-    // explicitly ("Official Results Posted") rather than staying at
-    // "Preliminary Results Posted" forever. Renamed from "No Results
-    // Posted Yet"/"Results Posted"/"Results Posted and Finalized" to
-    // "Completed"/"Preliminary Results Posted"/"Official Results Posted"
-    // 2026-09-21, matching league.html's own public calendar wording
-    // exactly (see _rclRenderCalendar, js/league.js).
+    // with what an Admin sees there. A second line -- "Unofficial Results
+    // Posted" or "Official Results Posted" (Matt's exact wording,
+    // 2026-09-23; "Official" once the round has been finalized via League
+    // Management's Finalize button, adminFinalizeRound/resultsFinalized),
+    // or "No Results Posted Yet" (Matt's same-day follow-up) when the
+    // round's start time has passed but nothing's been imported for it
+    // yet. Special events never get this line -- they have no RoundID to
+    // check results against in the first place (see the comment above),
+    // so there's nothing meaningful to report either way.
     if (entry.finished) {
-      var completedBadges = el('div', 'rc-cal-completed-badges');
-      completedBadges.appendChild(el('span', 'rc-cal-completed-badge', 'Completed'));
-      if (!isSpecial && entry.hasResults) {
-        var resultsBadgeText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
-        var resultsBadgeClass = 'rc-cal-completed-badge' + (entry.resultsFinalized ? ' rc-cal-completed-badge-official' : ' rc-cal-completed-badge-preliminary');
-        completedBadges.appendChild(el('span', resultsBadgeClass, resultsBadgeText));
+      var completedOverlay = el('div', 'rc-cal-completed-overlay');
+      completedOverlay.appendChild(el('div', 'rc-cal-completed-overlay-title', 'Completed'));
+      if (!isSpecial) {
+        var resultsLineText, resultsLineModifier;
+        if (entry.hasResults) {
+          resultsLineText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
+          resultsLineModifier = entry.resultsFinalized ? 'official' : 'unofficial';
+        } else {
+          resultsLineText = 'No Results Posted Yet';
+          resultsLineModifier = 'none';
+        }
+        completedOverlay.appendChild(el('div', 'rc-cal-completed-overlay-sub rc-cal-completed-overlay-sub-' + resultsLineModifier, resultsLineText));
       }
-      card.appendChild(completedBadges);
+      card.appendChild(completedOverlay);
     }
 
     return card;

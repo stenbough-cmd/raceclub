@@ -4952,33 +4952,56 @@ body.rc-modal-scroll-locked {
   .rc-cal-race-body { min-width: 220px; }
 }
 
-/* Faded card + small corner badge(s), once a round/special event's start
-   time has passed (2026-09-21 redesign, Matt's ask: "have the race faded
-   out with a COMPLETED notification" -- replaces the old full-card dark-
-   scrim overlay with giant "EVENT COMPLETED" text, further back the old
-   faded-background + small "Completed" pill treatment before that). Only
-   .rc-cal-race-body dims -- the badges below are siblings of body, so
-   they stay fully legible against the dimmed card around them. Same
-   "grayscale + reduced opacity" language the site's other locked/
-   disabled states already use (.rc-protest-btn-locked). */
-.rc-cal-race.rc-cal-finished .rc-cal-race-body { opacity: 0.6; filter: grayscale(0.35); }
-.rc-cal-completed-badges {
+/* Whole-container dim + centered "COMPLETED" overlay, once a round/
+   special event's start time has passed (2026-09-23 redesign, Matt's
+   ask: "dim the whole race container and show COMPLETED in large text
+   in the middle... under it it can say Unofficial Results Posted or
+   Official Results Posted" -- and a same-day follow-up: "or have it say
+   NO RESULTS POSTED YET if nothing uploaded"). Third pass at this
+   treatment: a faded background + small "Completed" pill (original),
+   then a full-card dark scrim with giant centered text, then small
+   corner badges over a dimmed body only (2026-09-21). This returns to a
+   full-card centered treatment. .rc-cal-race-body (which wraps the
+   card's entire visible content -- head/track/datetime, see raceCard())
+   dims via grayscale + reduced opacity, same language the site's other
+   locked/disabled states use (.rc-protest-btn-locked); the overlay is a
+   separate, absolutely-positioned sibling covering the WHOLE card
+   (position:relative + overflow:hidden on .rc-cal-race already clips it
+   to the card's own rounded corners), so its text sits above the dimmed
+   content at full legibility. */
+.rc-cal-race.rc-cal-finished .rc-cal-race-body { opacity: 0.35; filter: grayscale(0.5); }
+.rc-cal-completed-overlay {
   position: absolute;
-  top: 14px;
-  right: 16px;
-  z-index: 1;
+  inset: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  text-align: center;
+  /* Approximates --rc-offwhite at high opacity rather than referencing
+     the token directly -- an alpha channel on a hex custom property
+     needs color-mix()/relative-color syntax, more than this needs. */
+  background: rgba(245, 245, 243, 0.85);
+  pointer-events: none;
 }
-.rc-cal-completed-badge {
+.rc-cal-completed-overlay-title {
+  font-family: var(--rc-font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-carbon);
+}
+.rc-cal-completed-overlay-sub {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
   border-radius: 5px;
   font-family: var(--rc-font-heading);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4986,15 +5009,15 @@ body.rc-modal-scroll-locked {
   background: var(--rc-graphite);
   white-space: nowrap;
 }
-/* Preliminary reuses --rc-warning (the same amber "not final yet" tone
-   the site's probation/pending-review states use elsewhere); Official
-   reuses --rc-positive (the same "done, settled" green Active/Done
-   statuses use) -- same semantic-color mapping league.html's own public
-   calendar badges use for these two states (see .rcl-cal-status-
-   preliminary/-official, css/league.css), just as a solid pill fill
-   here instead of colored text on a dark page. */
-.rc-cal-completed-badge-preliminary { background: var(--rc-warning); }
-.rc-cal-completed-badge-official { background: var(--rc-positive); }
+/* Unofficial reuses --rc-warning (the same amber "not final yet" tone the
+   site's probation/pending-review states use elsewhere); Official reuses
+   --rc-positive (the same "done, settled" green Active/Done statuses
+   use) -- same semantic-color mapping league.html's own public calendar
+   badges use for these two states (see .rcl-cal-status-preliminary/-
+   official, css/league.css). "No Results Posted Yet" stays the neutral
+   graphite default above -- nothing to signal good/bad yet. */
+.rc-cal-completed-overlay-sub-unofficial { background: var(--rc-warning); }
+.rc-cal-completed-overlay-sub-official { background: var(--rc-positive); }
 
 .rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
