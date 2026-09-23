@@ -432,7 +432,11 @@ function _rclRenderTicker(hub) {
           // _rclBuildTickerItems; the pre-results roster has no
           // finishing order so it never sets showRank.
           if (item.showRank) {
-            list.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idx + 1) + ' '));
+            // 2 spaces between the rank and the manufacturer logo
+            // (2026-09-23, Matt's ask), not just the 1 the trailing space
+            // in the rank text used to give it.
+            list.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idx + 1)));
+            list.appendChild(document.createTextNode('  '));
           }
           list.appendChild(buildDriverEntry(row));
         });
@@ -645,6 +649,18 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
     if (!clsStandings.length) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
     } else {
+      // Column labels, same exact style as Recent Results/View All Results
+      // (2026-09-23, Matt's ask: "Make a catagory labels in the same
+      // exact style for the CURRENT LEADERBOARD") -- only when hasResults
+      // is true (the Drivers roster popup has no ranking/points to label).
+      // Same 40px/1fr/auto grid .rcl-standings-row already uses.
+      if (hasResults) {
+        var standingsHeadRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-3');
+        standingsHeadRow.appendChild(_rclEl('div', null, 'Pos'));
+        standingsHeadRow.appendChild(_rclEl('div', null, 'Driver'));
+        standingsHeadRow.appendChild(_rclEl('div', null, 'Pts'));
+        wrap.appendChild(standingsHeadRow);
+      }
       // Metal-color modifier by finish position (2026-09-19, Matt's call:
       // "Make 1st gold, 2nd silver, and 3rd bronze and the rest can be a
       // titanium metal color") -- replaces the old red "lead" tint, since
@@ -1035,12 +1051,13 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     // Current Standings both use.
     clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
 
-    // Divider + 9 column labels, no background fill (2026-09-23, Matt's
-    // exact spec: "POS, DRIVER, LAPS, TOTAL TIME, GAP, INTERVAL, AVG
-    // (KM/H), BEST LAP, ON with no background fill" -- replaces the old
-    // graphite-filled 5-column header). Same grid as the data rows below
-    // it so every label lines up with its column.
-    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-9');
+    // Column labels, divider line BELOW them (2026-09-23 follow-up,
+    // Matt's ask: "move the line BELOW the catagory labels" -- was above)
+    // -- POS, DRIVER, LAPS, TOTAL TIME, GAP, INTERVAL, AVG (KM/H), BEST
+    // LAP. ON removed entirely (2026-09-23 follow-up, Matt's ask). Same
+    // grid as the data rows below it so every label lines up with its
+    // column.
+    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
     headRow.appendChild(_rclEl('div', null, 'Pos'));
     headRow.appendChild(_rclEl('div', null, 'Driver'));
     headRow.appendChild(_rclEl('div', null, 'Laps'));
@@ -1049,7 +1066,6 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     headRow.appendChild(_rclEl('div', null, 'Interval'));
     headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
     headRow.appendChild(_rclEl('div', null, 'Best Lap'));
-    headRow.appendChild(_rclEl('div', null, 'On'));
     clsWrap.appendChild(headRow);
 
     var standings = cls.standings || [];
@@ -1067,7 +1083,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var aheadFinishSeconds = idx > 0 ? standings[idx - 1].finishTimeSeconds : null;
       // Pos badge + driver identity, identical markup to Current Standings
       // (2026-09-23, Matt's ask), same metal coloring by finish position.
-      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-9' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : undefined));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
@@ -1076,7 +1092,6 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadFinishSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclEscapeHtml(row.bestLapTime || '--')));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-on', row.bestLapNum ? String(row.bestLapNum) : '--'));
       clsWrap.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);

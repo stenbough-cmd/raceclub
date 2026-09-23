@@ -767,13 +767,20 @@ body.rc-league-page {
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
 .rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
 .rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
-.rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; }
+/* flex: 0 1 auto + min-width (2026-09-23) -- the name can shrink and
+   ellipsize as a last resort, but only after .rcl-standings-team (below)
+   has already shrunk as far as it can, since flex-shrink gives priority
+   to whichever sibling has more room to give (flex:1) first. */
+.rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 24px; }
 /* Same font-size as the driver name now (2026-09-19 follow-up, Matt's
    call: "place the team after it... all of this in the same size font
    as the driver name") -- was its own smaller line below the name; a
    lighter weight/color is still what tells it apart from the bold name
-   next to it on the same line. */
-.rcl-standings-team { font-size: 14.5px; font-weight: 500; color: var(--rcl-ink-faint); white-space: nowrap; }
+   next to it on the same line. flex: 1 1 30px (2026-09-23) -- the team
+   name is the first thing to shrink and ellipsize when a row is tight,
+   so a long team name can never push the row (or the driver name) onto
+   a second line (Matt's ask). */
+.rcl-standings-team { font-size: 14.5px; font-weight: 500; color: var(--rcl-ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 30px; min-width: 0; }
 .rcl-standings-pts { text-align: right; }
 .rcl-standings-pts-num {
   font-family: var(--rc-font-heading);
@@ -822,10 +829,13 @@ body.rc-league-page {
   display: block;
 }
 /* Name/flag/car-number/team, all in this one row now (2026-09-19 follow-
-   up) -- flex-wrap so a long team name still degrades gracefully on a
-   narrow viewport instead of overflowing the panel, rather than a hard
-   nowrap+ellipsis truncation. */
-.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; align-self: center; }
+   up). Changed from flex-wrap to a hard single line (2026-09-23, Matt's
+   ask: "I don't want driver names or team names being sent to the next
+   row") -- team name is the one allowed to truncate with an ellipsis
+   when the row is tight (.rcl-standings-team below), since it's the
+   least critical piece of identity; name/flag/car-number stay fully
+   visible and fixed-size. */
+.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px 8px; min-width: 0; align-self: center; overflow: hidden; }
 .rcl-standings-flag {
   flex: none;
   width: 16px;
@@ -845,6 +855,7 @@ body.rc-league-page {
   color: var(--rcl-ink);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  flex: none;
 }
 /* DNF/DSQ bold name (2026-09-23, Matt's ask: "Make sure DNFs are
    displayed on leaderboard in bold letters") -- .rcl-standings-name is
@@ -915,8 +926,16 @@ body.rc-league-page {
    just inside a wider grid for View All Results' extra data columns.
    This also gets the "make the standings numbers much larger" ask for
    free -- .rcl-standings-pos is already the big 18px/900-weight badge. */
+/* Driver column is the widest column everywhere, and every other column
+   is a modest fixed width so it never competes with it (2026-09-23,
+   Matt's ask: "make the width of the driver column the largest and make
+   all other columns respect that width"). Pos stays 40px in every grid
+   (matches .rcl-standings-pos's own badge width) so the badge lines up
+   identically across Current Standings/Recent Results/View All Results. */
 .rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
-.rcl-race-grid-9 { grid-template-columns: 40px 1.5fr 50px 118px 78px 78px 84px 92px 40px; }
+/* ON column removed entirely (2026-09-23 follow-up, Matt's ask) -- 8
+   columns now, driver bumped from 1.5fr to 2fr with that freed space. */
+.rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 78px 78px 84px 92px; }
 .rcl-race-row {
   display: grid;
   gap: 12px;
@@ -933,26 +952,25 @@ body.rc-league-page {
 .rcl-race-row-gap,
 .rcl-race-row-interval,
 .rcl-race-row-avg,
-.rcl-race-row-bestlap,
-.rcl-race-row-on {
+.rcl-race-row-bestlap {
   color: var(--rcl-ink-dim);
   font-variant-numeric: tabular-nums;
   font-size: 13px;
   text-align: right;
 }
-/* Divider line above the top row, category labels above THAT, no
-   background fill (2026-09-23, Matt's ask, both Recent Results -- "add a
-   line above the top row and add catagory headers. POS, DRIVER, and PTS"
-   -- and View All Results -- "line above the top row, and above that...
-   with no background fill"). Same grid columns as the data rows below it
-   so every label lines up with its column exactly. */
+/* Category labels, divider line BELOW them (2026-09-23 follow-up, Matt's
+   ask: "move the line BELOW the catagory labels" -- was above), no
+   background fill. Shared by Current Standings, Recent Results and View
+   All Results (_rclBuildStandingsColumns_/_rclRenderResults/
+   _rclBuildAllResultsBody_, js/league.js) -- same grid columns as the
+   data rows below each one so every label lines up with its column. */
 .rcl-race-col-head {
   display: grid;
   gap: 12px;
-  align-items: center;
-  padding: 10px 6px 6px;
-  margin-top: 6px;
-  border-top: 1px solid var(--rcl-line-bright);
+  align-items: end;
+  padding: 6px 6px 8px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--rcl-line-bright);
   font-family: var(--rc-font-heading);
   font-size: 10.5px;
   font-weight: 800;
