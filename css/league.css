@@ -451,11 +451,26 @@ body.rc-league-page {
 .rcl-main { max-width: 1180px; margin: 0 auto; padding: 36px 32px 80px; }
 /* League News 1/3, Recent Results 2/3 (2026-09-20, Matt's call -- was
    News 2fr / Results 1fr, the opposite ratio, until this swap). */
-.rcl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 28px; align-items: start; }
+/* align-items changed from start to stretch (2026-09-23, Matt's ask:
+   "make both containers the same height. So if RECENT RESULTS has more
+   data... have LEAGUE NEWS container stretch all the way to make it the
+   same height") -- grid's default row behavior already stretches items
+   to the row's tallest cell; align-items:start was what opted News/
+   Results OUT of that, sizing each to its own content instead. This
+   grid only ever holds these two panels (Leaderboard/Calendar below are
+   .rcl-row-full, a separate full-width block, not part of this grid),
+   so the change is scoped to exactly the pair Matt meant. */
+.rcl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 28px; align-items: stretch; }
 @media (max-width: 900px) {
   .rcl-grid { grid-template-columns: 1fr; }
 }
-.rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+/* height: 100% + the .rcl-panel/.rcl-panel-body flex rules below turn the
+   grid's own equal-height row (from align-items:stretch above) into an
+   actual stretched panel background, not just an empty gap under the
+   shorter column's content. */
+.rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; height: 100%; }
+.rcl-col > .rcl-panel { flex: 1 1 auto; display: flex; flex-direction: column; }
+.rcl-col > .rcl-panel > .rcl-panel-body { flex: 1 1 auto; }
 /* Full-width rows below the two-column grid (Leaderboard/Calendar, added
    2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 28px; }
@@ -617,49 +632,30 @@ body.rc-league-page {
    a new row. */
 .rcl-standings-columns .rcl-standings-class + .rcl-standings-class { margin-top: 0; }
 .rcl-standings-class + .rcl-standings-class { margin-top: 22px; }
-.rcl-standings-class-name {
+/* .rcl-standings-class-name / .rcl-standings-class-pill rules removed
+   2026-09-23 -- both replaced by the one shared .rcl-standings-class-
+   header graphite bar below (Matt's ask, see js/league.js's
+   _rclBuildStandingsColumns_ comment). Kept out entirely rather than
+   left unused, since neither is referenced from js/league.js anymore. */
+/* Graphite header bar (2026-09-23, Matt's ask) -- full-width, centered,
+   solid graphite background above each class column, reading "<CLASS>
+   LEADERBOARD" on the ranked Standings panel or "<CLASS> DRIVERS" on the
+   Drivers roster popup (see js/league.js). Same graphite gradient
+   .rcl-standings-pos already uses for non-podium position badges
+   elsewhere on this page, so "graphite" reads as one consistent surface
+   sitewide rather than a new color introduced just for this bar. */
+.rcl-standings-class-header {
+  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
+  color: var(--rcl-ink);
   font-family: var(--rc-font-heading);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--rcl-ink-dim);
-  padding-bottom: 8px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--rcl-line);
-}
-/* Driver list class pill (2026-09-23, Matt's ask: "at the top, use the
-   designated class color and create a class pill for each class
-   column") -- Drivers popup only (_rclOpenDriversModal, hasResults
-   false), replacing the plain .rcl-standings-class-name label above.
-   Background color is set inline per class in js/league.js, pulled from
-   CAR_CLASS_BADGE_COLOR_VAR's --rc-class-* tokens (style.css) -- the
-   same colors the class picker/badges elsewhere on the site already use
-   for each class, so this pill can never show a color that disagrees
-   with them. The var(--rcl-line-bright) here is only the fallback for
-   an unrecognized class name; every real class always sets its own
-   background inline.
-   Shape matches Account.html's own .rc-badge-chip class pill exactly
-   (2026-09-23 follow-up, Matt's catch: "they aren't completely rounded
-   on the side, they're more rectangle with a soft radius in the
-   corners") -- same 5px radius and font sizing/padding as the class
-   badges there (style.css's .rc-badge-lmgte/.rc-badge-hypercar/etc.),
-   not the fully-rounded pill shape this used before. */
-.rcl-standings-class-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  border-radius: 5px;
-  background: var(--rcl-line-bright);
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-  line-height: 1.6;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 6px;
   margin-bottom: 12px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .rcl-standings-row {
   display: grid;
@@ -749,10 +745,15 @@ body.rc-league-page {
    left edge instead. Single grid column now that there's no pos/points
    box to reserve room for -- just the identity block, indented past the
    line. */
+/* Left accent line removed (2026-09-23, Matt's ask: "in the driver list,
+   remove the left border from each row") -- the .rcl-standings-class-
+   header graphite bar above each column now already marks the section,
+   so the per-row line was redundant. Single grid column and left padding
+   both stay (no pos/points box to reserve room for), just without the
+   border. */
 .rcl-standings-row-simple {
   grid-template-columns: 1fr;
   padding-left: 12px;
-  border-left: 3px solid var(--rcl-line-bright);
   border-radius: 0;
 }
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
@@ -866,11 +867,20 @@ body.rc-league-page {
 /* -------------------------------------------------------------------- */
 /* Last race results                                                    */
 /* -------------------------------------------------------------------- */
-.rcl-race-headline { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+/* Event on its own line, Winner/Pole/Fastest Lap together on the row
+   underneath (2026-09-23, Matt's ask) -- .rcl-race-headline is now a
+   column of .rcl-race-headline-row strips, each one the flex-wrap row
+   the whole headline used to be. */
+.rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+.rcl-race-headline-row { display: flex; flex-wrap: wrap; gap: 22px; }
 .rcl-race-headline-stat { min-width: 120px; }
 .rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
 .rcl-race-headline-value { font-size: 15px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
-.rcl-race-headline-value-accent { color: var(--rc-red); }
+/* Gold, not red (2026-09-23, Matt's ask: "make the winner a gold color
+   font" -- same gold used for the Standings panel's "preliminary" status
+   note, .rcl-standings-status-preliminary, so this page has one gold
+   consistently rather than two different golds). */
+.rcl-race-headline-value-accent { color: #e0b64c; }
 .rcl-race-class + .rcl-race-class { margin-top: 18px; }
 .rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
 .rcl-race-row {
@@ -887,6 +897,50 @@ body.rc-league-page {
 .rcl-race-row-name { color: var(--rcl-ink); font-weight: 600; }
 .rcl-race-row-num { color: var(--rcl-ink-faint); font-size: 12.5px; }
 .rcl-race-row-time { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 13px; }
+/* Points column (2026-09-23, Matt's ask: Recent Results' table shows
+   "the top 5 drivers and how many points they gained from the race"
+   instead of best lap time). */
+.rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+.rcl-race-row-interval { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+/* Full 5-column result row -- View All Results popup only (2026-09-23,
+   Matt's ask for Best Lap/Interval/Points columns there). Pos/Driver
+   share the same widths as .rcl-race-row above; Best Lap/Interval/Points
+   get their own fixed-ish auto columns so all three line up under their
+   graphite header labels. */
+.rcl-race-row-full {
+  display: grid;
+  grid-template-columns: 26px 1fr 84px 74px 60px;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-race-row-full:last-child { border-bottom: none; }
+.rcl-race-row-full > div:nth-child(3),
+.rcl-race-row-full > div:nth-child(4),
+.rcl-race-row-full > div:nth-child(5) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* Graphite column-header row (2026-09-23, Matt's ask: "The header for
+   each results table should follow what we've talked about before,
+   graphite background, etc.") -- same graphite surface as
+   .rcl-standings-class-header, just laid out as column labels instead of
+   one centered line. */
+.rcl-race-row-full-head {
+  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
+  border-bottom: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+}
 
 /* -------------------------------------------------------------------- */
 /* All Results popup (added 2026-09-23) -- round selector + full,        */

@@ -246,11 +246,17 @@ function _rclBuildTickerItems(hub) {
   if (nextEntry) {
     var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ': ' + nextEntry.layout : '')) : '';
     var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
+    // Split into text/datesText (2026-09-23, Matt's ask: "the date after
+    // the next race... should be gray like the season duration date is")
+    // -- same nameText/datesText structured pattern the SEASON item above
+    // already uses, so buildRun() below can give the date its own
+    // lighter-weight .rcl-ticker-season-dates span instead of it being
+    // plain text baked into the rest of the line.
     items.push({
       tag: 'NEXT RACE',
       text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
-        (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : '') +
-        (nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : '')
+        (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : ''),
+      datesText: nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : ''
     });
   }
 
@@ -293,7 +299,11 @@ function _rclBuildTickerItems(hub) {
         return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer };
       });
       if (!rows.length) return;
-      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5', prefixText: raceLabel + ': ', driverRows: rows });
+      // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
+      // place before drivers in the ticker") -- ranked TOP 5 rows only;
+      // the pre-results roster list above has no finishing order to show,
+      // so it's left without a rank prefix.
+      items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5', prefixText: raceLabel + ': ', driverRows: rows, showRank: true });
     });
   }
 
@@ -393,7 +403,14 @@ function _rclRenderTicker(hub) {
           el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.datesText));
         }
       } else {
+        // NEXT RACE (and anything else with a plain text + optional date)
+        // -- same gray/lighter treatment as SEASON's own date span
+        // (2026-09-23, Matt's ask: "any date that's listed in the ticker
+        // should be gray like the season duration date is").
         el.appendChild(document.createTextNode(item.text));
+        if (item.datesText) {
+          el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.datesText));
+        }
       }
       frag.appendChild(el);
     });
@@ -503,25 +520,17 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
   var columns = _rclEl('div', 'rcl-standings-columns');
   standings.forEach(function (cls) {
     var wrap = _rclEl('div', 'rcl-standings-class');
-    // Driver list (hasResults false -- this is the ONLY caller that ever
-    // passes false, see _rclOpenDriversModal below) gets a colored class
-    // pill instead of the plain text label the ranked Standings panel
-    // uses (2026-09-23, Matt's ask: "at the top, use the designated
-    // class color and create a class pill for each class column") --
-    // color comes from CAR_CLASS_BADGE_COLOR_VAR (reference-data.js), the
-    // same per-class CSS variable tokens (--rc-class-hypercar, etc.,
-    // defined in style.css) every other class badge on the site already
-    // pulls from, so this can never show a color that disagrees with the
-    // class picker/car badges elsewhere. Falls back to a plain neutral
-    // pill if the class name isn't one of the five known ones.
-    if (!hasResults) {
-      var pill = _rclEl('div', 'rcl-standings-class-pill', _rclEscapeHtml(cls.className || 'Class'));
-      var pillColorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined') ? CAR_CLASS_BADGE_COLOR_VAR[cls.className] : null;
-      if (pillColorVar) pill.style.background = 'var(' + pillColorVar + ')';
-      wrap.appendChild(pill);
-    } else {
-      wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
-    }
+    // Graphite header bar (2026-09-23, Matt's ask: "instead of it just
+    // having the class name off to the top left of the columns, add an
+    // additional row with a graphite background that has <CLASS>
+    // LEADERBOARD centered above each column" -- and for the Drivers
+    // roster popup, "<CLASS> DRIVERS" the same way) -- replaces both the
+    // plain top-left text label the ranked Standings panel used to show
+    // AND the colored class pill the Drivers popup used to show, with
+    // one consistent full-width centered header (.rcl-standings-class-
+    // header, css/league.css) whose text differs by which view this is.
+    var headerText = (cls.className || 'CLASS').toUpperCase() + (hasResults ? ' LEADERBOARD' : ' DRIVERS');
+    wrap.appendChild(_rclEl('div', 'rcl-standings-class-header', headerText));
     var clsStandings = cls.standings || [];
     if (!clsStandings.length) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
@@ -740,6 +749,34 @@ function _rclOpenDriversModal(hub) {
 // ---------------------------------------------------------------------
 // RECENT RESULTS (last completed race)
 // ---------------------------------------------------------------------
+// Shared headline builder (2026-09-23, pulled out of _rclRenderResults and
+// _rclBuildAllResultsBody_, which used to each build an identical copy of
+// this) -- Event on its own line, Winner/Pole/Fastest Lap together on the
+// row underneath (Matt's ask: "The Event should be on one line, Winner
+// Pole and Fastest Lap should be on the next row"). Winner uses the
+// accent color, now gold (.rcl-race-headline-value-accent, css/league.css
+// -- was red) per Matt's ask, here and in the View All Results popup
+// below, which reuses this same builder so the two can never drift apart.
+function _rclBuildRaceHeadline_(r) {
+  var headline = _rclEl('div', 'rcl-race-headline');
+  function stat(label, value, accent) {
+    var s = _rclEl('div', 'rcl-race-headline-stat');
+    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
+    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
+    return s;
+  }
+  var eventRow = _rclEl('div', 'rcl-race-headline-row');
+  eventRow.appendChild(stat('Event', (r.eventName || '') + (r.track ? ': ' + r.track : '')));
+  headline.appendChild(eventRow);
+
+  var detailRow = _rclEl('div', 'rcl-race-headline-row');
+  detailRow.appendChild(stat('Winner', r.overallWinner, true));
+  detailRow.appendChild(stat('Pole', r.overallPoleSitter));
+  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
+  headline.appendChild(detailRow);
+  return headline;
+}
+
 function _rclRenderResults(hub) {
   var body = document.getElementById('rcl-results-body');
   if (!body) return;
@@ -755,30 +792,32 @@ function _rclRenderResults(hub) {
   }
 
   var r = hub.lastRace;
-  var headline = _rclEl('div', 'rcl-race-headline');
-  function stat(label, value, accent) {
-    var s = _rclEl('div', 'rcl-race-headline-stat');
-    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
-    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
-    return s;
-  }
-  headline.appendChild(stat('Event', (r.eventName || '') + (r.track ? ': ' + r.track : '')));
-  headline.appendChild(stat('Winner', r.overallWinner, true));
-  headline.appendChild(stat('Pole', r.overallPoleSitter));
-  headline.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
-  body.appendChild(headline);
+  body.appendChild(_rclBuildRaceHeadline_(r));
 
+  // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
+  // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule:
+  // "the displayed order of results always needs to be Hypercar, LMP2,
+  // LMP3, LMGT3 and then LMGTE").
   (r.classes || []).forEach(function (cls) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
-    clsWrap.appendChild(_rclEl('div', 'rcl-race-class-name', _rclEscapeHtml(cls.className || 'Class')));
-    (cls.standings || []).forEach(function (row) {
+    // Graphite "<CLASS> STANDINGS" header (2026-09-23, Matt's ask) -- same
+    // shared graphite bar the Current Standings panel uses (see
+    // .rcl-standings-class-header, css/league.css), just different text.
+    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
+    // Top 5 + points gained this race (2026-09-23, Matt's ask: "The
+    // standings tables should have the top 5 drivers and how many points
+    // they gained from the race" -- was best lap time). hub.lastRace is
+    // already capped to 5 per class server-side (see
+    // _rcBuildLeagueHubPayload_, Website.gs), but slice defensively here
+    // too in case that ever changes.
+    (cls.standings || []).slice(0, 5).forEach(function (row) {
       var rowEl = _rclEl('div', 'rcl-race-row');
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pos', String(row.classPosition || row.position || '')));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pos', row.disqualified ? 'DSQ' : String(row.classPosition || row.position || '')));
       var nameCol = _rclEl('div');
       nameCol.appendChild(_rclEl('span', 'rcl-race-row-name', _rclEscapeHtml(row.name)));
       if (row.carNumber) nameCol.appendChild(_rclEl('span', 'rcl-race-row-num', ' #' + _rclEscapeHtml(row.carNumber)));
       rowEl.appendChild(nameCol);
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-time', _rclEscapeHtml(row.bestLapTime || '')));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? (row.points + ' PTS') : '--'));
       clsWrap.appendChild(rowEl);
     });
     body.appendChild(clsWrap);
@@ -834,6 +873,20 @@ function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
   return 'Logged';
 }
 
+// Gap-to-class-leader, for the View All Results table's INTERVAL column
+// (2026-09-23, Matt's ask: "The categories I'd like to see are 'BEST LAP'
+// 'INTERVAL' and 'POINTS'"). leaderFinishSeconds is the class's own P1
+// row's finishTimeSeconds (standings arrive sorted by adjusted class
+// position, so index 0 is always the class leader) -- a DSQ'd driver or
+// one missing a finish time shows a dash/DSQ instead of a bogus gap.
+function _rclFormatInterval_(row, leaderFinishSeconds) {
+  if (row.disqualified) return 'DSQ';
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || leaderFinishSeconds === null || leaderFinishSeconds === undefined) return '--';
+  var gap = row.finishTimeSeconds - leaderFinishSeconds;
+  if (gap <= 0) return 'Leader';
+  return '+' + gap.toFixed(3);
+}
+
 // Renders one round's full result data (from handleGetPublicRoundResults)
 // into `bodyEl` -- the popup's own content area, rebuilt fresh every time
 // the round dropdown changes.
@@ -844,38 +897,56 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     return;
   }
 
-  var headline = _rclEl('div', 'rcl-race-headline');
-  function stat(label, value, accent) {
-    var s = _rclEl('div', 'rcl-race-headline-stat');
-    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
-    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
-    return s;
-  }
-  headline.appendChild(stat('Event', (result.eventName || '') + (result.track ? ': ' + result.track : '')));
-  headline.appendChild(stat('Winner', result.overallWinner, true));
-  headline.appendChild(stat('Pole', result.overallPoleSitter));
-  headline.appendChild(stat('Fastest Lap', result.overallFastestLapDriver ? (result.overallFastestLapDriver + (result.overallFastestLapTime ? ' (' + result.overallFastestLapTime + ')' : '')) : ''));
-  bodyEl.appendChild(headline);
+  bodyEl.appendChild(_rclBuildRaceHeadline_(result));
 
   // profileId -> display name, built off this round's own full standings
   // -- penalties (below) only carry a profileId (see the `against` field
   // on _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs), so this
   // is how the popup resolves a name to show next to each one.
   var namesByProfileId = {};
+  // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
+  // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule).
   (result.classes || []).forEach(function (cls) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
     var countLabel = cls.className ? (cls.className + (cls.totalInClass ? ' (' + cls.totalInClass + ')' : '')) : 'Class';
-    clsWrap.appendChild(_rclEl('div', 'rcl-race-class-name', _rclEscapeHtml(countLabel)));
-    (cls.standings || []).forEach(function (row) {
+    // Graphite "<CLASS> STANDINGS" header (2026-09-23, Matt's ask) --
+    // same shared bar Recent Results and Current Standings both use.
+    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', countLabel.toUpperCase() + ' STANDINGS'));
+
+    // Column header row (2026-09-23, Matt's ask: "The categories I'd like
+    // to see are 'BEST LAP' 'INTERVAL' and 'POINTS' in the VIEW ALL
+    // RESULTS page. The header for each results table should follow what
+    // we've talked about before, graphite background, etc.") -- same
+    // graphite surface as the class bar above it, laid out as real column
+    // labels over the 5-column row grid below (.rcl-race-row-full,
+    // css/league.css).
+    var headRow = _rclEl('div', 'rcl-race-row-full rcl-race-row-full-head');
+    headRow.appendChild(_rclEl('div', null, 'Pos'));
+    headRow.appendChild(_rclEl('div', null, 'Driver'));
+    headRow.appendChild(_rclEl('div', null, 'Best Lap'));
+    headRow.appendChild(_rclEl('div', null, 'Interval'));
+    headRow.appendChild(_rclEl('div', null, 'Points'));
+    clsWrap.appendChild(headRow);
+
+    var standings = cls.standings || [];
+    // Class leader's finish time -- standings arrive sorted by adjusted
+    // class position, so index 0 is always P1 (or the first non-DSQ'd
+    // entry in practice; _rcRecomputeStandingsCacheFromRound_ already
+    // sorts DSQ'd drivers to the back, Results.gs).
+    var leaderFinishSeconds = standings.length ? standings[0].finishTimeSeconds : null;
+
+    standings.forEach(function (row) {
       if (row.profileId) namesByProfileId[row.profileId] = row.name;
-      var rowEl = _rclEl('div', 'rcl-race-row');
+      var rowEl = _rclEl('div', 'rcl-race-row-full');
       var posText = row.disqualified ? 'DSQ' : String(row.classPosition || row.position || '');
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pos', posText));
       var nameCol = _rclEl('div');
       nameCol.appendChild(_rclEl('span', 'rcl-race-row-name', _rclEscapeHtml(row.name)));
       if (row.carNumber) nameCol.appendChild(_rclEl('span', 'rcl-race-row-num', ' #' + _rclEscapeHtml(row.carNumber)));
       rowEl.appendChild(nameCol);
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-time', _rclEscapeHtml(row.bestLapTime || '')));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-time', _rclEscapeHtml(row.bestLapTime || '--')));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatInterval_(row, leaderFinishSeconds)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);
@@ -928,7 +999,10 @@ function _rclOpenAllResultsModal(hub) {
   rounds.forEach(function (r) {
     var opt = document.createElement('option');
     opt.value = r.roundId;
-    var label = (r.roundNum ? 'R' + r.roundNum + ': ' : '') + (r.eventName || r.track || r.roundId);
+    // "<R#> <Event Name>:<Race Track> (Date)" (2026-09-23, Matt's ask for
+    // the exact dropdown format).
+    var label = (r.roundNum ? 'R' + r.roundNum + ' ' : '') + (r.eventName || r.roundId);
+    if (r.track) label += ':' + r.track;
     if (r.startUtc) label += ' (' + _rclFormatDate(r.startUtc) + ')';
     opt.textContent = label;
     select.appendChild(opt);

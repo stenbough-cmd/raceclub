@@ -3713,6 +3713,10 @@
     if (s.locked) {
       var recomputeBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Recompute Season');
       recomputeBtn.type = 'button';
+      // Tooltip added 2026-09-23 (Matt's ask) -- explains what this
+      // actually does before someone clicks it, since "Recompute Season"
+      // alone doesn't say why you'd ever need it.
+      withTooltip(recomputeBtn, 'Re-runs standings for every completed round in order -- use this after correcting an earlier round\'s results or a protest ruling, so later rounds and Season Standings reflect the fix.');
       recomputeBtn.addEventListener('click', function () {
         recomputeBtn.disabled = true;
         fetchApi('adminRecomputeSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
@@ -3972,26 +3976,21 @@
         btnGroup.appendChild(addBtn);
       }
 
-      // VIEW / EDIT & FINALIZE (2026-09-19, Matt's call: "the correct way
-      // to handle the edit and finalize buttons are to combine them" --
-      // replaces the old separate Finalize and Edit buttons) -- only
-      // meaningful once a round actually has results. Sits between Import
-      // Results and Delete, per Matt's spec: "IMPORT RESULTS | VIEW EDIT &
-      // FINALIZE | DELETE". Always enabled, whether or not the round is
-      // already finalized -- Un-Finalize now lives inside that same popup
-      // (openRoundEditFinalizeModal above) instead of a separate disabled/
+      // REVIEW (2026-09-19, Matt's call: "the correct way to handle the
+      // edit and finalize buttons are to combine them" -- replaces the old
+      // separate Finalize and Edit buttons; renamed from "Edit & Finalize"
+      // to always read "Review" 2026-09-23, Matt's ask, and the separate
+      // VIEW button removed the same day -- Matt's ask: "remove the VIEW
+      // button and function/popup and change the EDIT & FINALIZE button to
+      // REVIEW" -- this one popup already shows the round's results AND
+      // lets an admin/organizer finalize/un-finalize it, so the read-only
+      // View popup was pure duplication). Only meaningful once a round
+      // actually has results. Always enabled, whether or not the round is
+      // already finalized -- Un-Finalize lives inside the popup itself
+      // (openRoundEditFinalizeModal) instead of a separate disabled/
       // enabled button pair out here.
       if (r.hasResults) {
-        var viewBtn = el('button', 'rc-btn-secondary rc-btn-row', 'View');
-        viewBtn.type = 'button';
-        viewBtn.addEventListener('click', function () { openRoundViewModal(token, { roundId: r.roundId, roundLabel: roundLabel }); });
-        btnGroup.appendChild(viewBtn);
-
-        // Label becomes "Review" once the round is finalized (2026-09-23,
-        // Matt's ask) -- same popup, same Un-Finalize-lives-inside-it
-        // behavior, just no longer framed as an editing/finalizing action
-        // once results are already official.
-        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', r.resultsFinalized ? 'Review' : 'Edit & Finalize');
+        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Review');
         editFinalizeBtn.type = 'button';
         editFinalizeBtn.addEventListener('click', function () {
           openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
@@ -7637,69 +7636,15 @@
     modal.body.appendChild(btnRow);
   }
 
-  // VIEW (2026-09-08) -- League Management round row. Recent results for
-  // that round, full finishing order per class, plus a "Penalties Assessed"
-  // list underneath sourced from every Upheld protest for the round (see
-  // handleAdminGetRoundResultDetail, DataCache.gs). Read-only -- ruling on
-  // a protest happens from the EDIT popup instead.
-  function openRoundViewModal(token, opts) {
-    var roundId = opts.roundId || '';
-    var roundLabel = opts.roundLabel || roundId;
-    var modal = showModal('Results: ' + roundLabel, { wide: true });
-    modal.body.appendChild(buildSpinner('Loading results...'));
-
-    fetchApi('adminGetRoundResultDetail', { token: token, params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
-      modal.body.innerHTML = '';
-      // BUG FIX (2026-09-23 audit): was `!data.success` alone, which
-      // throws if data ever comes back null/undefined -- every other
-      // handler in this file guards with `!data ||` first. An exception
-      // thrown inside a fulfilled .then() here is NOT caught by the
-      // .catch() below (that only catches network/timeout failures), so
-      // this used to leave the modal's spinner stuck forever instead of
-      // showing the "Could not reach the server" fallback.
-      if (!data || !data.success || !data.race) {
-        modal.body.appendChild(el('p', 'color:var(--rc-red);', data.message || 'Could not load results for this round.'));
-        return;
-      }
-      var race = data.race;
-      (race.classes || []).forEach(function (cls) {
-        modal.body.appendChild(el('h4', 'margin-bottom:6px;', escapeHtml(cls.className || '')));
-        var wrap = el('div', 'rc-results-table-wrap');
-        var table = document.createElement('table');
-        table.className = 'rc-results-table';
-        var thead = el('tr', null);
-        ['Pos', 'Driver', 'Team', 'Pts', 'Status'].forEach(function (h) { thead.appendChild(el('th', null, h)); });
-        table.appendChild(thead);
-        (cls.standings || []).forEach(function (row) {
-          var tr = el('tr', null);
-          tr.appendChild(el('td', null, String(row.classPosition || row.position || '')));
-          tr.appendChild(el('td', null, escapeHtml(row.name || '')));
-          tr.appendChild(el('td', null, escapeHtml(row.teamName || '')));
-          tr.appendChild(el('td', null, String(row.points || 0)));
-          tr.appendChild(el('td', null, escapeHtml(row.finishStatus || '')));
-          table.appendChild(tr);
-        });
-        wrap.appendChild(table);
-        modal.body.appendChild(wrap);
-      });
-
-      modal.body.appendChild(el('h4', 'margin-top:18px;margin-bottom:6px;', 'Penalties Assessed'));
-      if (!data.penaltiesAssessed || !data.penaltiesAssessed.length) {
-        modal.body.appendChild(el('div', 'rc-hint', 'No upheld protests for this round.'));
-      } else {
-        var list = el('div', null);
-        data.penaltiesAssessed.forEach(function (p) {
-          var line = el('div', 'rc-dm-row');
-          line.appendChild(el('div', null, escapeHtml(p.againstName) + ': ' + escapeHtml(p.infractionType) + ': Tier ' + p.penaltyTier));
-          list.appendChild(line);
-        });
-        modal.body.appendChild(list);
-      }
-    }).catch(function () {
-      modal.body.innerHTML = '';
-      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
-    });
-  }
+  // openRoundViewModal removed entirely (2026-09-23, Matt's ask: "remove
+  // the VIEW button and function/popup") -- the REVIEW button
+  // (openRoundEditFinalizeModal, formerly the combined "Edit & Finalize"
+  // popup) already shows a round's results and lets an admin/organizer
+  // finalize/un-finalize it, so this read-only duplicate was removed
+  // along with its button. adminGetRoundResultDetail (Results.gs) is
+  // untouched server-side -- nothing else on the site called it, but
+  // it's a harmless, no-longer-used GET handler, not worth ripping out
+  // for its own sake.
 
   // EDIT (2026-09-08) -- League Management round row's protest-ruling popup.
   // Lists every protest filed for this round; a Pending one gets a penalty-
