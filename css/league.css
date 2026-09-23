@@ -258,6 +258,14 @@ body.rc-league-page {
    light gray") -- same --rcl-ink-dim token every other muted label on
    this page already uses, rather than inventing a new gray. */
 .rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink-dim); }
+/* TOP 5 prefix split (2026-09-23, Matt's ask: "Round n EventName: track",
+   round/event bold, track normal weight) -- bold is heavier than the
+   item's own base 600 (.rcl-ticker-item), dim is lighter. */
+.rcl-ticker-prefix-bold { font-weight: 800; color: var(--rcl-ink); }
+.rcl-ticker-prefix-dim { font-weight: 400; color: var(--rcl-ink); }
+/* Ordinal rank prefix on TOP 5 rows (2026-09-23, Matt's ask: "1st, 2nd,
+   3rd, 4th and 5th before the names in bold white"). */
+.rcl-ticker-driver-rank { font-weight: 800; color: var(--rc-white); }
 /* Season dates, lighter than the SEASON item's own base 600 weight
    (2026-09-23, Matt's ask: "make the season dates a reduced weight
    compared to the season name") -- same 500 weight as
@@ -838,6 +846,13 @@ body.rc-league-page {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* DNF/DSQ bold name (2026-09-23, Matt's ask: "Make sure DNFs are
+   displayed on leaderboard in bold letters") -- .rcl-standings-name is
+   already 700 weight; this bumps to the heaviest weight in the type
+   ramp so a DNF/DSQ row's name is unmistakably distinct from a normal
+   finisher's at a glance, on Recent Results and View All Results alike
+   (see _rclIsDnf_/_rclBuildDriverIdentity_, js/league.js). */
+.rcl-standings-name-dnf { font-weight: 900; }
 /* "View Points Tables" link at the bottom of the Leaderboard panel
    (2026-09-19, Matt's call) -- opens the points tables in a popup instead
    of them living in their own panel on the page. Same shape as the
@@ -870,10 +885,15 @@ body.rc-league-page {
 /* Event on its own line, Winner/Pole/Fastest Lap together on the row
    underneath (2026-09-23, Matt's ask) -- .rcl-race-headline is now a
    column of .rcl-race-headline-row strips, each one the flex-wrap row
-   the whole headline used to be. */
+   the whole headline used to be. Winner/Pole/Fastest Lap spread evenly
+   across the row, 33% each (2026-09-23 follow-up, Matt's ask: "Spread
+   the Winner, Pole and Fastest laps evenly across the header, 33% each")
+   -- flex:1 on each stat with wrap turned off does this; the Event row
+   above still uses the same two classes and just ends up as one full-
+   width "column", which is harmless. */
 .rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
-.rcl-race-headline-row { display: flex; flex-wrap: wrap; gap: 22px; }
-.rcl-race-headline-stat { min-width: 120px; }
+.rcl-race-headline-row { display: flex; gap: 22px; }
+.rcl-race-headline-stat { flex: 1 1 0; min-width: 0; }
 .rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
 .rcl-race-headline-value { font-size: 15px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
 /* Gold, not red (2026-09-23, Matt's ask: "make the winner a gold color
@@ -883,64 +903,64 @@ body.rc-league-page {
 .rcl-race-headline-value-accent { color: #e0b64c; }
 .rcl-race-class + .rcl-race-class { margin-top: 18px; }
 .rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
+
+/* Recent Results / View All Results rows (rewritten 2026-09-23, Matt's
+   ask: "Make the weight and color of all the drivers in RECENT RESULTS
+   the same as color and weight as the CURRENT STANDINGS list" / "Make
+   the driver styling and format in the [View All Results] list look
+   identical to the CURRENT STANDINGS list") -- both now reuse the exact
+   .rcl-standings-pos position badge and .rcl-standings-identity driver
+   block Current Standings uses (built by the shared
+   _rclBuildPosBadge_/_rclBuildDriverIdentity_ helpers, js/league.js),
+   just inside a wider grid for View All Results' extra data columns.
+   This also gets the "make the standings numbers much larger" ask for
+   free -- .rcl-standings-pos is already the big 18px/900-weight badge. */
+.rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
+.rcl-race-grid-9 { grid-template-columns: 40px 1.5fr 50px 118px 78px 78px 84px 92px 40px; }
 .rcl-race-row {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
-  gap: 10px;
-  align-items: baseline;
-  padding: 6px 0;
-  font-size: 14px;
-  border-bottom: 1px solid var(--rcl-line);
-}
-.rcl-race-row:last-child { border-bottom: none; }
-.rcl-race-row-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rcl-ink-faint); }
-.rcl-race-row-name { color: var(--rcl-ink); font-weight: 600; }
-.rcl-race-row-num { color: var(--rcl-ink-faint); font-size: 12.5px; }
-.rcl-race-row-time { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 13px; }
-/* Points column (2026-09-23, Matt's ask: Recent Results' table shows
-   "the top 5 drivers and how many points they gained from the race"
-   instead of best lap time). */
-.rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
-.rcl-race-row-interval { color: var(--rcl-ink-dim); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
-/* Full 5-column result row -- View All Results popup only (2026-09-23,
-   Matt's ask for Best Lap/Interval/Points columns there). Pos/Driver
-   share the same widths as .rcl-race-row above; Best Lap/Interval/Points
-   get their own fixed-ish auto columns so all three line up under their
-   graphite header labels. */
-.rcl-race-row-full {
-  display: grid;
-  grid-template-columns: 26px 1fr 84px 74px 60px;
-  gap: 10px;
-  align-items: baseline;
-  padding: 6px 0;
-  font-size: 14px;
-  border-bottom: 1px solid var(--rcl-line);
-}
-.rcl-race-row-full:last-child { border-bottom: none; }
-.rcl-race-row-full > div:nth-child(3),
-.rcl-race-row-full > div:nth-child(4),
-.rcl-race-row-full > div:nth-child(5) {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-/* Graphite column-header row (2026-09-23, Matt's ask: "The header for
-   each results table should follow what we've talked about before,
-   graphite background, etc.") -- same graphite surface as
-   .rcl-standings-class-header, just laid out as column labels instead of
-   one centered line. */
-.rcl-race-row-full-head {
-  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
-  border-bottom: none;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 6px;
+  margin-bottom: 3px;
   border-radius: 4px;
-  padding: 6px 8px;
-  margin-bottom: 4px;
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rcl-ink);
+  font-size: 14px;
 }
+.rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
+.rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
+.rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+.rcl-race-row-num,
+.rcl-race-row-gap,
+.rcl-race-row-interval,
+.rcl-race-row-avg,
+.rcl-race-row-bestlap,
+.rcl-race-row-on {
+  color: var(--rcl-ink-dim);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  text-align: right;
+}
+/* Divider line above the top row, category labels above THAT, no
+   background fill (2026-09-23, Matt's ask, both Recent Results -- "add a
+   line above the top row and add catagory headers. POS, DRIVER, and PTS"
+   -- and View All Results -- "line above the top row, and above that...
+   with no background fill"). Same grid columns as the data rows below it
+   so every label lines up with its column exactly. */
+.rcl-race-col-head {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 6px 6px;
+  margin-top: 6px;
+  border-top: 1px solid var(--rcl-line-bright);
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+.rcl-race-col-head > div:not(:first-child):not(:nth-child(2)) { text-align: right; }
 
 /* -------------------------------------------------------------------- */
 /* All Results popup (added 2026-09-23) -- round selector + full,        */
@@ -953,9 +973,13 @@ body.rc-league-page {
 /* Results) -- see _rclOpenAllResultsModal/_rclBuildAllResultsBody_,       */
 /* js/league.js.                                                          */
 /* -------------------------------------------------------------------- */
+/* Half width (2026-09-23, Matt's mid-turn ask: "make the round dropdown
+   box 1/2 the width"). */
 .rcl-allresults-select-row { margin-bottom: 18px; }
 .rcl-allresults-select {
-  width: 100%;
+  width: 50%;
+  min-width: 220px;
+  max-width: 100%;
   background: var(--rcl-bg);
   border: 1px solid var(--rcl-line-bright);
   border-radius: 5px;
@@ -1314,9 +1338,10 @@ body.rc-league-page {
   font-style: italic;
 }
 .rcl-news-editnote { margin-top: 10px; font-size: 12.5px; font-style: italic; color: var(--rcl-ink-faint); }
-/* Clamped preview -- fills the card down to about 2 lines short of the
-   box, per Matt's ask; the "Continue reading..." link right below sits
-   in that remaining space rather than pixel-measuring the exact cutoff. */
+/* Clamped preview (raised from 6 to 14 lines, 2026-09-23, Matt's ask:
+   "make more available on preview on the main league page before
+   CONTINUE READING shows up") -- the "Continue reading..." link right
+   below still sits directly under whatever the clamp cuts off. */
 .rcl-news-current-body {
   margin-top: 10px;
   font-size: 14px;
@@ -1324,7 +1349,7 @@ body.rc-league-page {
   color: var(--rcl-ink-dim);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 6;
+  -webkit-line-clamp: 14;
   overflow: hidden;
 }
 .rcl-news-current-body strong { color: var(--rcl-ink); }
