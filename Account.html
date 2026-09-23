@@ -6270,7 +6270,16 @@
         });
         layoutSelect.value = race.layout;
       });
+      // Both boxes override the wizard's blanket "max-width:50%" select
+      // rule (.rc-wizard-content select, style.css) back to 100% of their
+      // OWN column -- each already only gets 1fr (half the row) from
+      // fieldPairRow's grid, so without this override Layout (missing the
+      // override before 2026-09-23) rendered at 50% of its already-half
+      // column, i.e. a quarter of the full row, while Track (which did
+      // have the override) filled its whole half -- a lopsided, not
+      // side-by-side-at-50%, pair. Matt's fix: both fill their column.
       trackSelect.style.maxWidth = '100%';
+      layoutSelect.style.maxWidth = '100%';
       card.appendChild(fieldPairRow('Track', trackSelect, 'Layout / Configuration', layoutSelect));
 
       var weatherSelect = wizSelect(WIZARD_WEATHER_LIST, race.weather, function (v) {
@@ -6370,7 +6379,10 @@
           });
           evtLayoutSelect.value = evt.layout;
         });
+        // Same override as the Race Events Track/Layout pair above --
+        // both need to fill their own 1fr column for a true 50/50 pair.
         evtTrackSelect.style.maxWidth = '100%';
+        evtLayoutSelect.style.maxWidth = '100%';
         card.appendChild(fieldPairRow('Track', evtTrackSelect, 'Layout / Configuration', evtLayoutSelect));
 
         var evtLengthInput = wizNumberInput(evt.raceLengthMinutes, function (v) { evt.raceLengthMinutes = v; }, { min: 5, step: 5 });
