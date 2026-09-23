@@ -5379,9 +5379,10 @@
     populateForRound(rounds[0].roundId);
     roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
 
-    var resultBox = el('div', 'rc-message');
-    body.appendChild(resultBox);
-
+    // No in-popup result banner (2026-09-23, Matt's call -- see the
+    // race-club-ui-consistency skill's writeup) -- outcomes go through
+    // showToast only; the form just stays open with the button reset on
+    // failure so the driver can fix and resubmit.
     var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
     var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
     cancelBtn.type = 'button';
@@ -5399,8 +5400,6 @@
       var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
       if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
       submitBtn.disabled = true;
-      resultBox.className = 'rc-message';
-      resultBox.textContent = '';
       fetchApi('submitProtest', {
         method: 'POST', token: token, body: {
           roundId: roundSelect.value, infractionType: fields.infractionSelect.value,
@@ -5410,8 +5409,6 @@
       }).then(function (data) {
         submitBtn.disabled = false;
         if (!data.success) {
-          resultBox.className = 'rc-message rc-error';
-          resultBox.textContent = data.message || 'Could not submit that protest.';
           showToast(data.message || 'Could not submit that protest.', 'error');
           return;
         }
@@ -5420,8 +5417,7 @@
         if (typeof onSubmitted === 'function') onSubmitted();
       }).catch(function () {
         submitBtn.disabled = false;
-        resultBox.className = 'rc-message rc-error';
-        resultBox.textContent = 'Could not reach the server.';
+        showToast('Could not reach the server -- protest not submitted.', 'error');
       });
     });
 
@@ -5462,9 +5458,9 @@
         against: p.againstProfileId, against2: p.against2ProfileId, description: p.description
       });
 
-      var resultBox = el('div', 'rc-message');
-      body.appendChild(resultBox);
-
+      // No in-popup result banner (2026-09-23, Matt's call -- see the
+      // race-club-ui-consistency skill's writeup) -- outcomes go through
+      // showToast only.
       var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
       var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
       cancelBtn.type = 'button';
@@ -5475,8 +5471,6 @@
         var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
         if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
         saveBtn.disabled = true;
-        resultBox.className = 'rc-message';
-        resultBox.textContent = '';
         fetchApi('editProtest', {
           method: 'POST', token: token, body: {
             protestId: p.protestId, infractionType: fields.infractionSelect.value,
@@ -5486,8 +5480,6 @@
         }).then(function (data2) {
           saveBtn.disabled = false;
           if (!data2.success) {
-            resultBox.className = 'rc-message rc-error';
-            resultBox.textContent = data2.message || 'Could not save that protest.';
             showToast(data2.message || 'Could not save that protest.', 'error');
             return;
           }
@@ -5496,8 +5488,7 @@
           if (typeof onSaved === 'function') onSaved();
         }).catch(function () {
           saveBtn.disabled = false;
-          resultBox.className = 'rc-message rc-error';
-          resultBox.textContent = 'Could not reach the server.';
+          showToast('Could not reach the server -- protest not saved.', 'error');
         });
       });
       btnRow.appendChild(cancelBtn);
@@ -7574,9 +7565,14 @@
     var modal = showModal('Erase Round Ingestion Data', { wide: true });
     modal.body.appendChild(el('div', 'rc-hint', 'Every imported Session/Driver Result/Lap/Race Event and Season History row for ' + escapeHtml(roundLabel) + ' is deleted. The Season, its Rounds, and every driver’s registration/seat are left alone.'));
 
-    var resultBox = el('div', 'rc-message');
-    modal.body.appendChild(resultBox);
-
+    // No in-popup result banner (2026-09-23, Matt's call: "we literally
+    // made a toast notification system for all notifications, so why
+    // would we need notifications inside a popup" -- every success/error
+    // outcome sitewide goes through showToast only now; see the
+    // race-club-ui-consistency skill's own writeup of this rule). The
+    // modal just closes itself on success (rcReloadAfterSave() below
+    // already navigates away) or stays open with the erase button reset
+    // on failure so the admin can retry without reopening anything.
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
     var eraseBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Erase');
     eraseBtn.type = 'button';
@@ -7590,8 +7586,6 @@
         function () {
           eraseBtn.disabled = true;
           eraseBtn.textContent = 'Erasing…';
-          resultBox.className = 'rc-message';
-          resultBox.textContent = '';
 
           // Long timeout budget (2026-09-23, Matt's report: "could not
           // reach the server" right after erasing, even though the data
@@ -7609,23 +7603,22 @@
               eraseBtn.textContent = 'Erase';
               if (data && data.success) {
                 var s = data.summary || {};
-                resultBox.className = 'rc-message rc-ok';
-                resultBox.textContent = 'Erased ' + roundLabel + ': ' + s.sessionsRemoved + ' session(s), ' +
+                // Full breakdown now lives in the toast itself (it used to
+                // also render as a permanent line inside the popup) --
+                // same "the toast carries the detail" pattern Import XML's
+                // own success toast already uses.
+                showToast('Erased ' + roundLabel + ': ' + s.sessionsRemoved + ' session(s), ' +
                   s.driverResultsRemoved + ' driver result(s), ' + s.lapsRemoved + ' lap row(s), ' +
-                  s.raceEventsRemoved + ' race event(s), ' + s.seasonHistoryRemoved + ' Season History row(s).';
-                showToast('Round ingestion data erased.', 'success');
+                  s.raceEventsRemoved + ' race event(s), ' + s.seasonHistoryRemoved + ' Season History row(s).', 'success');
+                modal.close(true);
                 rcReloadAfterSave();
               } else {
-                resultBox.className = 'rc-message rc-error';
-                resultBox.textContent = (data && data.message) || 'Could not erase that round\'s data.';
                 showToast((data && data.message) || 'Could not erase that round\'s data.', 'error');
               }
             })
             .catch(function () {
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
-              resultBox.className = 'rc-message rc-error';
-              resultBox.textContent = 'This is taking longer than expected -- Apps Script may still be finishing the erase. Check League Tools before trying again so you don\'t erase twice.';
               showToast('This is taking longer than expected -- check League Tools before trying again.', 'error');
             });
         }
