@@ -525,7 +525,6 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
     if (!clsStandings.length) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
     } else {
-      var leaderPts = clsStandings[0].championshipPoints;
       // Metal-color modifier by finish position (2026-09-19, Matt's call:
       // "Make 1st gold, 2nd silver, and 3rd bronze and the rest can be a
       // titanium metal color") -- replaces the old red "lead" tint, since
@@ -603,12 +602,15 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
         rowEl.appendChild(identity);
 
         if (hasResults) {
+          // Points total only, no "-N PTS" gap-to-leader line underneath
+          // (2026-09-23, Matt's ask: "I'd rather the total points ONLY be
+          // posted on the current standings... this will allow the rows
+          // to be the same height as P1") -- P1 never had a gap line (idx
+          // === 0 skipped it), so every other row's extra line was what
+          // made them taller than P1's row. Dropping it entirely makes
+          // every row in the grid the same height.
           var ptsCol = _rclEl('div', 'rcl-standings-pts');
           ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
-          if (idx !== 0) {
-            var gap = '-' + (leaderPts - row.championshipPoints) + ' PTS';
-            ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-gap', gap));
-          }
           rowEl.appendChild(ptsCol);
         }
         wrap.appendChild(rowEl);
@@ -647,15 +649,24 @@ function _rclRenderStandings(hub) {
       : 'Standings fill in once a race has been scored.';
     body.appendChild(_rclEmptyState('No Data To Display', emptyMsg));
   } else {
-    // "Unofficial Results" note (2026-09-19 follow-up, Matt's
-    // clarification: standings should still update the moment results
-    // are imported -- that already happens server-side -- but need a
-    // visual cue that they aren't official until an organizer finalizes
-    // them) -- hub.hasUnofficialResults is true the moment ANY completed
-    // round hasn't been finalized yet (see handleGetLeagueHub in
-    // Website.gs), since the season total is a sum across every round.
+    // Standings status note (2026-09-19 follow-up, Matt's clarification:
+    // standings should still update the moment results are imported --
+    // that already happens server-side -- but need a visual cue for
+    // whether they're official yet). Renamed 2026-09-23 (Matt's ask) from
+    // "Unofficial Results -- pending organizer finalization" to
+    // "Preliminary Results Pending League Review", matching the same
+    // Preliminary/Official Results wording the Calendar's own round status
+    // already uses (.rcl-cal-status-preliminary/-official). Also now shows
+    // an "Official Results" note once every completed round IS finalized,
+    // rather than showing nothing at all in that case -- hub.
+    // hasUnofficialResults is true the moment ANY completed round hasn't
+    // been finalized yet (see handleGetLeagueHub in Website.gs), since the
+    // season total is a sum across every round, so its absence (with
+    // results present) means everything backing the total is official.
     if (hub.hasUnofficialResults) {
-      body.appendChild(_rclEl('div', 'rcl-standings-unofficial-note', 'Unofficial Results -- pending organizer finalization'));
+      body.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary', 'Preliminary Results Pending League Review'));
+    } else {
+      body.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-official', 'Official Results'));
     }
     body.appendChild(_rclBuildStandingsColumns_(hub.standings, true));
   }

@@ -586,18 +586,22 @@ body.rc-league-page {
    before the grid drops to fewer columns, so it still reads fine with
    just one or two classes and degrades to a single column on narrow
    screens without a separate media query. */
-/* "Unofficial Results" note (2026-09-19 follow-up) -- sits above the class
-   columns, same gold accent as .rcl-cal-status-unofficial so the cue reads
-   consistently between the Leaderboard and the Calendar. */
-.rcl-standings-unofficial-note {
+/* Standings status note (2026-09-19 follow-up, renamed/extended 2026-09-23
+   -- Matt's ask: "PRELIMINARY RESULTS PENDING LEAGUE REVIEW"/"OFFICIAL
+   RESULTS") -- sits above the class columns. Same preliminary (gold) /
+   official (calm dim ink) color pairing .rcl-cal-status-preliminary/
+   -official already use on the Calendar, so the cue reads consistently
+   sitewide rather than inventing a second color language here. */
+.rcl-standings-status-note {
   font-family: var(--rc-font-heading);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #e0b64c;
   margin-bottom: 16px;
 }
+.rcl-standings-status-preliminary { color: #e0b64c; }
+.rcl-standings-status-official { color: var(--rcl-ink-dim); }
 .rcl-standings-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
 /* Gap above already spaces columns/rows in the grid -- the old stacked-
    layout margin would only unevenly pad whichever class happens to start
@@ -760,6 +764,10 @@ body.rc-league-page {
   color: var(--rcl-ink);
   font-variant-numeric: tabular-nums;
 }
+/* .rcl-standings-pts-gap rule kept but unused as of 2026-09-23 -- the
+   "-N PTS" gap-to-leader line under each row's point total was removed
+   (see _rclBuildStandingsColumns_ in league.js) so every row is the same
+   height as P1's. */
 .rcl-standings-pts-gap { font-size: 11.5px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
 /* Driver identity block -- manufacturer logo, then everything else
    (name, flag, car number, team) on one single line (2026-09-19 follow-
