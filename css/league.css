@@ -137,9 +137,15 @@ body.rc-league-page {
   align-items: center;
   height: 100%;
   width: max-content;
-  /* Slowed slightly (2026-09-20, Matt's ask) from the 16s it was bumped
-     back up to previously. Keep in sync with mainDurationSec in
-     js/league.js. */
+  /* This starting duration is only ever seen for a split second before
+     js/league.js overrides it inline with a per-load, content-aware
+     value (2026-09-23, Matt's catch: a fixed duration made the ticker
+     visibly race by on a content-heavy day -- see the long comment on
+     mainDurationSec in _rclRenderTicker, js/league.js, for why speed is
+     now derived from the track's actual measured width instead of a
+     flat number here). Kept as a reasonable fallback only for the rare
+     case JS hasn't run yet (or prefers-reduced-motion, which disables
+     motion entirely below anyway). */
   animation: rcl-ticker-scroll 19s linear infinite;
 }
 .rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
@@ -566,6 +572,32 @@ body.rc-league-page {
   margin-bottom: 4px;
   border-bottom: 1px solid var(--rcl-line);
 }
+/* Driver list class pill (2026-09-23, Matt's ask: "at the top, use the
+   designated class color and create a class pill for each class
+   column") -- Drivers popup only (_rclOpenDriversModal, hasResults
+   false), replacing the plain .rcl-standings-class-name label above.
+   Background color is set inline per class in js/league.js, pulled from
+   CAR_CLASS_BADGE_COLOR_VAR's --rc-class-* tokens (style.css) -- the
+   same colors the class picker/badges elsewhere on the site already use
+   for each class, so this pill can never show a color that disagrees
+   with them. The var(--rcl-line-bright) here is only the fallback for
+   an unrecognized class name; every real class always sets its own
+   background inline. */
+.rcl-standings-class-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--rcl-line-bright);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  margin-bottom: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
 .rcl-standings-row {
   display: grid;
   /* Wider position column (2026-09-19) -- the position number now gets
@@ -646,6 +678,19 @@ body.rc-league-page {
   font-variant-numeric: tabular-nums;
   user-select: none;
   border-top-left-radius: 8px;
+}
+/* Driver list rows (2026-09-23, Matt's ask: "add a simple left line to
+   each row instead of the larger 'number container'") -- Drivers popup
+   only (hasResults false, see js/league.js), replacing the big colored
+   .rcl-standings-pos badge with a thin plain accent line down the row's
+   left edge instead. Single grid column now that there's no pos/points
+   box to reserve room for -- just the identity block, indented past the
+   line. */
+.rcl-standings-row-simple {
+  grid-template-columns: 1fr;
+  padding-left: 12px;
+  border-left: 3px solid var(--rcl-line-bright);
+  border-radius: 0;
 }
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
 .rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }

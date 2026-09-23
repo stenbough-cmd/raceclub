@@ -372,7 +372,22 @@ function _rclRenderTicker(hub) {
   requestAnimationFrame(function () {
     var viewport = track.parentElement;
     if (!viewport) return;
-    var mainDurationSec = 19; // matches rcl-ticker-scroll's own duration in css/league.css -- slowed slightly from 16 (2026-09-20, Matt's ask)
+    // Constant scroll SPEED, not constant duration (2026-09-23, Matt's
+    // catch: "the ticker speed is crazy fast... not sure if the speed is
+    // in relation to how much is written so the speed is scaled"). It
+    // was -- the old code fixed this duration at a flat 19s no matter how
+    // wide the track actually was, so a content-heavy day (more classes/
+    // standings rows in the item list) had to cover much more ground in
+    // that same 19s and visibly raced by, while a short ticker crawled.
+    // Duration is now derived from the real measured width of one run
+    // (track.scrollWidth covers both concatenated runs, see RUN_COUNT
+    // above, so divide by it to get one run's width) against a fixed
+    // px/sec rate, so the strip always moves at the same visual pace no
+    // matter how much text it's carrying.
+    var PX_PER_SEC = 70; // tuned to read as a steady, easy-to-follow news-ticker crawl
+    var MIN_DURATION_SEC = 12; // floor so a very short ticker (e.g. no results yet) doesn't zip past
+    var runWidth = track.scrollWidth / RUN_COUNT;
+    var mainDurationSec = Math.max(runWidth / PX_PER_SEC, MIN_DURATION_SEC);
     // The intro is just a quick "slide the strip on screen" reveal, so it runs
     // at a fixed pace regardless of viewport width -- deriving it proportionally
     // from the main loop's (slow, by design) px/sec rate made the very first
@@ -385,7 +400,7 @@ function _rclRenderTicker(hub) {
     track.style.animation = 'none';
     void track.offsetWidth;
     track.style.animation = 'rcl-ticker-intro ' + introDurationSec.toFixed(2) + 's linear forwards, ' +
-      'rcl-ticker-scroll ' + mainDurationSec + 's linear ' + introDurationSec.toFixed(2) + 's infinite';
+      'rcl-ticker-scroll ' + mainDurationSec.toFixed(2) + 's linear ' + introDurationSec.toFixed(2) + 's infinite';
   });
 }
 
@@ -414,7 +429,25 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
   var columns = _rclEl('div', 'rcl-standings-columns');
   standings.forEach(function (cls) {
     var wrap = _rclEl('div', 'rcl-standings-class');
-    wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
+    // Driver list (hasResults false -- this is the ONLY caller that ever
+    // passes false, see _rclOpenDriversModal below) gets a colored class
+    // pill instead of the plain text label the ranked Standings panel
+    // uses (2026-09-23, Matt's ask: "at the top, use the designated
+    // class color and create a class pill for each class column") --
+    // color comes from CAR_CLASS_BADGE_COLOR_VAR (reference-data.js), the
+    // same per-class CSS variable tokens (--rc-class-hypercar, etc.,
+    // defined in style.css) every other class badge on the site already
+    // pulls from, so this can never show a color that disagrees with the
+    // class picker/car badges elsewhere. Falls back to a plain neutral
+    // pill if the class name isn't one of the five known ones.
+    if (!hasResults) {
+      var pill = _rclEl('div', 'rcl-standings-class-pill', _rclEscapeHtml(cls.className || 'Class'));
+      var pillColorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined') ? CAR_CLASS_BADGE_COLOR_VAR[cls.className] : null;
+      if (pillColorVar) pill.style.background = 'var(' + pillColorVar + ')';
+      wrap.appendChild(pill);
+    } else {
+      wrap.appendChild(_rclEl('div', 'rcl-standings-class-name', _rclEscapeHtml(cls.className || 'Class')));
+    }
     var clsStandings = cls.standings || [];
     if (!clsStandings.length) {
       wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
@@ -436,8 +469,19 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
         // same 40px slot and grid-template-columns as a normal row. This
         // is also exactly the mode the Drivers popup always renders in
         // (2026-09-21) -- a driver roster, not a ranking.
-        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults && POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : ''));
-        rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', hasResults ? String(idx + 1) : ''));
+        // Driver list rows (hasResults false) drop the big colored number
+        // container entirely in favor of a simple left line (2026-09-23,
+        // Matt's ask: "add a simple left line to each row instead of the
+        // larger 'number container'") -- there's no rank to show in this
+        // roster view anyway (see the empty-text version this used to
+        // render), so the badge-sized box was pure visual weight with
+        // nothing in it. .rcl-standings-row-simple (css/league.css)
+        // swaps the row's grid to a single column and adds the thin
+        // accent line in its place.
+        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults && POS_METAL_CLASS[idx] ? ' ' + POS_METAL_CLASS[idx] : '') + (!hasResults ? ' rcl-standings-row-simple' : ''));
+        if (hasResults) {
+          rowEl.appendChild(_rclEl('div', 'rcl-standings-pos', String(idx + 1)));
+        }
 
         // Identity block, all on one line now (2026-09-19 follow-up,
         // Matt's call: "reduce the size of the manufacturer logo, place
