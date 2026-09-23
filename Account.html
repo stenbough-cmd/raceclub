@@ -3649,10 +3649,13 @@
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
 
+    // Status pill removed entirely from this row (2026-09-23, Matt's ask:
+    // "get rid of the pills next to the season and races in league
+    // tools. They don't offer anything and make it feel cluttered") --
+    // _rcSeasonStatusBadge itself is untouched, still used by the Career
+    // page's own season cards.
     var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
     nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(s.name || s.seasonId)));
-    var statusBadge = _rcSeasonStatusBadge(s.status);
-    nameLine.appendChild(statusBadge);
     textCol.appendChild(nameLine);
 
     var metaParts = [];
@@ -3813,34 +3816,14 @@
     var title = isSpecial ? (r.eventName || 'Special Event') : ('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''));
     var roundLabel = 'Round ' + r.roundNumber + (r.track ? ': ' + r.track : '');
 
+    // Status pill AND the Finalized chip removed entirely from this row
+    // (2026-09-23, Matt's ask: "get rid of the pills next to the season
+    // and races in league tools. They don't offer anything and make it
+    // feel cluttered"). r.finished/r.hasResults/r.resultsFinalized still
+    // drive the button logic below exactly as before -- only the visible
+    // pills are gone.
     var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
     nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(title)));
-
-    // Scheduled and no-results-yet were solid green/red (2026-09-23,
-    // Matt's ask: "too bold and attention grabbing... should blend into
-    // the page more") -- switched to the same quiet light-gray pill as
-    // the season status badge above (.rc-badge-race-quiet, style.css).
-    // Results-Posted/Finalized are untouched -- not what Matt flagged,
-    // and already the muted steel treatment.
-    var statusText, statusClass;
-    if (!r.finished) {
-      statusText = 'Scheduled'; statusClass = 'rc-badge-race-quiet';
-    } else if (isSpecial) {
-      statusText = 'Completed'; statusClass = 'rc-badge-race-posted';
-    } else if (r.hasResults) {
-      statusText = 'Completed -- Results Posted'; statusClass = 'rc-badge-race-posted';
-    } else {
-      statusText = 'Completed -- No Results Posted Yet'; statusClass = 'rc-badge-race-quiet';
-    }
-    nameLine.appendChild(el('span', 'rc-badge-chip ' + statusClass, statusText));
-    // Finalized chip (2026-09-19) -- the old Finalize/Un-Finalize button's
-    // label used to be the only way to see a round's finalized status at a
-    // glance; now that it's folded into the Edit & Finalize popup, this
-    // row needs its own indicator so that status is still visible without
-    // opening it.
-    if (r.hasResults && r.resultsFinalized) {
-      nameLine.appendChild(el('span', 'rc-badge-chip rc-badge-status-completed', 'Finalized'));
-    }
     textCol.appendChild(nameLine);
 
     var metaParts = [];
