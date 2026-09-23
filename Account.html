@@ -3832,9 +3832,12 @@
   //   - red, empty circle: one of Qualify/Race imported, the other pending
   //   - yellow, empty circle: both imported, not yet finalized (validated)
   //   - green, checkmark circle: finalized (official)
-  // Returns null (no line at all) once neither session has been imported
-  // yet -- the button row already makes that state obvious.
-  function buildRoundStatusLine(r) {
+  //   - red, empty circle (2026-09-23 follow-up): locked -- an earlier
+  //     round isn't finalized yet, so nothing can be imported here at all
+  // Returns null (no line at all) only when the round is unlocked with
+  // nothing imported yet -- the (visible, enabled) Import Results button
+  // already makes that state obvious on its own.
+  function buildRoundStatusLine(r, locked) {
     var state;
     if (r.resultsFinalized) {
       state = { tone: 'green', icon: ICON_CIRCLE_CHECK, text: 'Results have been validated.' };
@@ -3845,6 +3848,13 @@
         tone: 'red', icon: ICON_CIRCLE_EMPTY,
         text: r.hasRaceResults ? 'Race results imported, qualifying results pending.' : 'Qualifying results imported, race results pending.'
       };
+    } else if (locked) {
+      // Import Results/Delete Results are hidden entirely for a locked
+      // round (2026-09-23, Matt's ask: "I don't want to see IMPORT
+      // RESULTS or DELETE buttons at all on races that results can't be
+      // uploaded to yet"), so this note is the only thing telling the
+      // organizer why nothing's here yet.
+      state = { tone: 'red', icon: ICON_CIRCLE_EMPTY, text: 'Qualifying and race results not yet imported.' };
     } else {
       return null;
     }
@@ -3875,6 +3885,13 @@
     nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(title)));
     textCol.appendChild(nameLine);
 
+    // Sequential gating (2026-09-23, Matt's ask) -- true once every real
+    // round before this one in the season has been finalized. Only then
+    // does this round's Import Results/Delete Results row show up at all;
+    // a round waiting on an earlier one stays locked regardless of its
+    // own import state.
+    var locked = !isSpecial && !priorFinalized;
+
     var metaParts = [];
     if (!isSpecial && r.track) metaParts.push(r.track);
     if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
@@ -3883,7 +3900,7 @@
     // Colored circle-icon status line replaces the old plain-text partial-
     // import note (2026-09-23, Matt's ask -- see buildRoundStatusLine).
     if (!isSpecial) {
-      var statusLine = buildRoundStatusLine(r);
+      var statusLine = buildRoundStatusLine(r, locked);
       if (statusLine) textCol.appendChild(statusLine);
     }
 
@@ -3892,42 +3909,40 @@
 
     var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
-    // Sequential gating (2026-09-23, Matt's ask) -- true once every real
-    // round before this one in the season has been finalized. Only then
-    // are this round's Import Results/Delete Results buttons live; a
-    // round waiting on an earlier one stays locked regardless of its own
-    // import state.
-    var locked = !isSpecial && !priorFinalized;
-
     if (!isSpecial && r.roundId) {
       // No round picker in either popup below -- the click that opened
       // this row already knows exactly which round it's for (Matt's
       // call), so openImportXmlModal/openEraseRoundIngestionModal go
       // straight to the upload/erase form.
-      var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
-      addBtn.type = 'button';
-      if (locked) {
-        addBtn.disabled = true;
-        addBtn.title = 'Finalize the previous round\'s results before importing this one.';
-        addBtn.style.cssText = 'opacity:0.5;';
-      } else if (r.hasResults) {
-        // Grayed out once BOTH Qualify and Race are in for this round
-        // (2026-09-07, Matt's call; scope fixed 2026-09-23 -- r.hasResults
-        // now means both session types are present, not just one -- see
-        // hasResults' own comment in Seasons.gs) -- makes it obvious at a
-        // glance that this round is fully done; Delete first (right next
-        // to it) to re-import. Still ENABLED after only one of the two
-        // files has been imported, so Matt can import the other one
-        // through this same button.
-        addBtn.disabled = true;
-        addBtn.title = 'Results already imported for this round. Delete them first to re-import.';
-        addBtn.style.cssText = 'opacity:0.5;';
-      } else {
-        addBtn.addEventListener('click', function () {
-          openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel });
-        });
+      //
+      // Import Results/Delete Results are left out of the button row
+      // entirely while locked (2026-09-23, Matt's ask: "I don't want to
+      // see IMPORT RESULTS or DELETE buttons at all on races that
+      // results can't be uploaded to yet") -- previously they still
+      // rendered, just grayed out/disabled. The red status line above
+      // (buildRoundStatusLine) is what now tells the organizer why.
+      if (!locked) {
+        var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
+        addBtn.type = 'button';
+        if (r.hasResults) {
+          // Grayed out once BOTH Qualify and Race are in for this round
+          // (2026-09-07, Matt's call; scope fixed 2026-09-23 -- r.hasResults
+          // now means both session types are present, not just one -- see
+          // hasResults' own comment in Seasons.gs) -- makes it obvious at a
+          // glance that this round is fully done; Delete first (right next
+          // to it) to re-import. Still ENABLED after only one of the two
+          // files has been imported, so Matt can import the other one
+          // through this same button.
+          addBtn.disabled = true;
+          addBtn.title = 'Results already imported for this round. Delete them first to re-import.';
+          addBtn.style.cssText = 'opacity:0.5;';
+        } else {
+          addBtn.addEventListener('click', function () {
+            openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+          });
+        }
+        btnGroup.appendChild(addBtn);
       }
-      btnGroup.appendChild(addBtn);
 
       // VIEW / EDIT & FINALIZE (2026-09-19, Matt's call: "the correct way
       // to handle the edit and finalize buttons are to combine them" --
@@ -3956,36 +3971,32 @@
         btnGroup.appendChild(editFinalizeBtn);
       }
 
-      var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete Results');
-      delBtn.type = 'button';
-      // Gated on hasAnySessionImported, not hasResults (2026-09-23 fix) --
-      // a round with only ONE of Qualify/Race imported still has real data
-      // sitting on the Sessions/DriverResults/Laps tabs that Matt needs to
-      // be able to erase and redo, same as a fully-imported round. Both
-      // Delete's own target (_rcEraseRoundIngestion_, Results.gs) and the
-      // Erase Round Ingestion popup already wipe every session type for a
-      // round in one shot, so this was always safe to allow -- it just
-      // used to be wrongly gated on the "both types in" flag instead.
-      // Also locked by the same sequential-gating rule as Import Results
-      // (2026-09-23) -- a round waiting on an earlier one to finalize has
-      // nothing of its own to delete yet in practice, but this keeps the
-      // rule airtight either way.
-      if (locked) {
-        delBtn.disabled = true;
-        delBtn.title = 'Finalize the previous round\'s results first.';
-        delBtn.style.cssText = 'opacity:0.5;';
-      } else if (r.hasAnySessionImported) {
-        // Plain gray, not red -- opens the erase popup, doesn't erase by
-        // itself (see the Delete Season comment above for why).
-        delBtn.addEventListener('click', function () {
-          openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
-        });
-      } else {
-        delBtn.disabled = true;
-        delBtn.title = 'No results imported yet for this round.';
-        delBtn.style.cssText = 'opacity:0.5;';
+      // Left out of the row entirely while locked, same as Import Results
+      // above (2026-09-23, Matt's ask).
+      if (!locked) {
+        var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete Results');
+        delBtn.type = 'button';
+        // Gated on hasAnySessionImported, not hasResults (2026-09-23 fix) --
+        // a round with only ONE of Qualify/Race imported still has real data
+        // sitting on the Sessions/DriverResults/Laps tabs that Matt needs to
+        // be able to erase and redo, same as a fully-imported round. Both
+        // Delete's own target (_rcEraseRoundIngestion_, Results.gs) and the
+        // Erase Round Ingestion popup already wipe every session type for a
+        // round in one shot, so this was always safe to allow -- it just
+        // used to be wrongly gated on the "both types in" flag instead.
+        if (r.hasAnySessionImported) {
+          // Plain gray, not red -- opens the erase popup, doesn't erase by
+          // itself (see the Delete Season comment above for why).
+          delBtn.addEventListener('click', function () {
+            openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+          });
+        } else {
+          delBtn.disabled = true;
+          delBtn.title = 'No results imported yet for this round.';
+          delBtn.style.cssText = 'opacity:0.5;';
+        }
+        btnGroup.appendChild(delBtn);
       }
-      btnGroup.appendChild(delBtn);
     }
 
     row.appendChild(btnGroup);
