@@ -804,6 +804,16 @@
       });
     }
     return {
+      // combinedPromise (2026-09-23, perf/reliability fix, Matt's "Could
+      // not reach the server" report) -- exposes the raw getDashboardData
+      // response itself, not just a per-card slice of it. The bootstrap
+      // below reads currentDashboardData().profile off this instead of
+      // firing its own separate getProfile call, so page load now only
+      // ever needs ONE server round trip for both session confirmation
+      // and every dashboard card's data, instead of two competing for
+      // the same Apps Script execution queue (see the bootstrap comment
+      // at the bottom of this file for the full story).
+      combinedPromise: combined,
       activeSeasonPromise: slice('activeSeason'),
       currentSeatPromise: slice('currentSeat'),
       nextRacePromise: slice('nextRace'),
@@ -9831,9 +9841,6 @@
   // separately, same as it always has.
   var dashboardData = fetchDashboardData(token);
 
-  // See the stagger comment below, at the getProfile call this gates.
-  var RC_PROFILE_FETCH_STAGGER_MS = 150;
-
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
   var freshProfile = null;
@@ -9847,54 +9854,57 @@
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile.profile, token, dashboardData);
   } else {
-    // Staggered by RC_PROFILE_FETCH_STAGGER_MS behind the dashboard fetch
-    // above, rather than fired in the very same breath (2026-09-14 fix,
-    // part of the same "dashboard sometimes never loads" report). These
-    // two used to hit the Apps Script Web App at the exact same instant on
-    // every page load; since Apps Script queues same-user requests instead
-    // of truly running them in parallel (see the long comment above
-    // fetchDashboardData), sending them simultaneously just meant they
-    // fought over the same queue slot right out of the gate. A short delay
-    // is enough to let the heavier 8-lookup dashboard call actually get
-    // queued first, without meaningfully lengthening the wait for either
-    // one -- this is a small head start, not a "wait for the dashboard to
-    // fully finish" sequencing.
-    new Promise(function (resolve) { setTimeout(resolve, RC_PROFILE_FETCH_STAGGER_MS); })
-      .then(function () { return fetchApi('getProfile', { token: token }); })
-      .then(function (data) {
-        if (!data.success) {
-          // Token confirmed invalid/expired by the server (2026-09-18,
-          // Matt's call) -- no more silently yanking the driver away to
-          // login.html mid-read. clearToken() still actually logs them
-          // out locally, and the header swaps from its optimistic
-          // (possibly stale) logged-in avatar to a plain logged-out
-          // state, but the page itself stays put and explains what
-          // happened via showSessionExpiredLock() instead of vanishing.
-          clearToken();
-          renderHeader({ forceLoggedOut: true });
-          document.getElementById('rc-loading').style.display = 'none';
-          showSessionExpiredLock();
-          return;
-        }
-        setProfileCache(data.profile); // keeps the header avatar current on every other page too
-        renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
+    // Reads the session/profile confirmation straight off the SAME
+    // getDashboardData response every dashboard card already waits on,
+    // instead of firing a second, separate getProfile call (2026-09-23
+    // fix, Matt's report: "Could not reach the server" during page load,
+    // confirmed to be happening because the deployment runs "Execute as:
+    // Me" -- every visitor's requests share ONE Apps Script execution
+    // queue, not just this driver's own tabs). The old code fired
+    // getDashboardData immediately, then getProfile staggered 150ms
+    // behind it, so the two would compete for a spot in that shared
+    // queue; getProfile's own client-side timeout clock starts counting
+    // the moment it's DISPATCHED, not when it actually starts executing
+    // server-side, so if it sat queued behind the heavier dashboard call
+    // long enough, its entire retry budget could burn out before it ever
+    // ran -- that's exactly what produced the error message below. Now
+    // there is only ever ONE server round trip on page load; see the
+    // `profile` slice added to handleGetDashboardData (Results.gs) and
+    // combinedPromise on fetchDashboardData above.
+    dashboardData.combinedPromise.then(function (data) {
+      // A reached-but-unauthenticated response (data.success is false,
+      // e.g. NOT_AUTHENTICATED) or a profile slice that itself failed
+      // (data.profile.success false -- see _rcDashSlice_'s catch-and-wrap
+      // in Results.gs) both mean the same thing getProfile's old
+      // !data.success branch meant: the server was reached, but this
+      // token isn't valid. Same session-expired handling either way
+      // (2026-09-18, Matt's call) -- no silent yank to login.html.
+      var profileResult = data && data.success ? data.profile : null;
+      if (!profileResult || !profileResult.success) {
+        clearToken();
+        renderHeader({ forceLoggedOut: true });
         document.getElementById('rc-loading').style.display = 'none';
-        document.getElementById('rc-profile-root').style.display = 'block';
-        renderProfile(data.profile, token, dashboardData);
-      })
-      .catch(function () {
-        // Couldn't even REACH the server -- unlike the branch above, this
-        // says nothing about whether the token itself is still good (see
-        // the long-standing comment on renderHeader's opts.forceLoggedOut
-        // in js/header.js), so the header is deliberately left exactly as
-        // it was optimistically painted on page load instead of being
-        // forced to a logged-out state over what might just be a dropped
-        // connection.
-        document.getElementById('rc-loading').style.display = 'none';
-        var err = document.getElementById('rc-error');
-        err.style.display = 'block';
-        err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
-      });
+        showSessionExpiredLock();
+        return;
+      }
+      setProfileCache(profileResult.profile); // keeps the header avatar current on every other page too
+      renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
+      document.getElementById('rc-loading').style.display = 'none';
+      document.getElementById('rc-profile-root').style.display = 'block';
+      renderProfile(profileResult.profile, token, dashboardData);
+    }).catch(function () {
+      // Couldn't even REACH the server -- unlike the branch above, this
+      // says nothing about whether the token itself is still good (see
+      // the long-standing comment on renderHeader's opts.forceLoggedOut
+      // in js/header.js), so the header is deliberately left exactly as
+      // it was optimistically painted on page load instead of being
+      // forced to a logged-out state over what might just be a dropped
+      // connection.
+      document.getElementById('rc-loading').style.display = 'none';
+      var err = document.getElementById('rc-error');
+      err.style.display = 'block';
+      err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+    });
   }
 })();
 </script>
