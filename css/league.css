@@ -196,7 +196,10 @@ body.rc-league-page {
   font-weight: 600;
   color: var(--rcl-ink);
   white-space: nowrap;
-  border-right: 1px solid var(--rcl-line);
+  /* Vertical divider between items removed (2026-09-23, Matt's ask) --
+     the loop-seam dot (.rcl-ticker-loop-dot, below) plus each item's own
+     gold tag/colon already read as clear item boundaries without a
+     literal rule line down the ticker. */
 }
 /* Same font/weight as the item's own body copy (2026-09-19 follow-up,
    Matt: "make the red category labels just a regular font... I want the
@@ -246,6 +249,12 @@ body.rc-league-page {
    (Matt's explicit "keep the number weight the same as it is") -- stays
    the loudest part of each driver entry. */
 .rcl-ticker-driver-num { font-weight: 600; }
+/* Season dates, lighter than the SEASON item's own base 600 weight
+   (2026-09-23, Matt's ask: "make the season dates a reduced weight
+   compared to the season name") -- same 500 weight as
+   .rcl-ticker-driver-name, keeping the dates as the quieter half of the
+   line the way the driver number/name pairing already reads. */
+.rcl-ticker-season-dates { font-weight: 500; color: var(--rcl-ink-dim); }
 .rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 /* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated
    line") -- closes out each run before it repeats, so the ticker reads as
@@ -1296,7 +1305,18 @@ body.rc-league-page {
      ever running past the bottom of the page. */
   align-items: flex-start;
   justify-content: center;
-  padding: 40px 20px;
+  /* Top padding cleared to sit below the fixed navbar (2026-09-23 fix,
+     Matt's catch: the Drivers popup -- the tallest dialog on this page --
+     was opening with its top edge under the overlay's old flat 40px
+     padding, which is LESS than .rc-fixed-header's own 70px height
+     (style.css). The overlay itself is z-index:500, well under the
+     navbar's z-index:1000, so any dialog reaching that high renders
+     partly behind/under the navbar and reads as "cut off." 86px = 70px
+     navbar + a 16px gap, so even a dialog tall enough to hit its own
+     max-height ceiling (below) never starts above the navbar. Bottom
+     stays 24px -- kept in sync with .rcl-modal-dialog's max-height calc
+     right below. */
+  padding: 86px 20px 24px;
   overflow-y: auto;
   z-index: 500;
 }
@@ -1324,11 +1344,13 @@ body.rc-league-page {
   border-radius: 8px;
   max-width: 820px;
   width: 100%;
-  /* Capped to fit inside the overlay's own 40px top/bottom padding, so
-     the dialog always sits fully inside the page and scrolls its own
-     content internally once it hits this ceiling, instead of pushing
-     the overlay taller than the viewport. */
-  max-height: calc(100vh - 80px);
+  /* Capped to fit inside the overlay's own top/bottom padding (86px +
+     24px = 110px, kept in sync with .rcl-modal-overlay above), so the
+     dialog always sits fully inside the page -- clear of the fixed
+     navbar at the top -- and scrolls its own content internally once it
+     hits this ceiling, instead of pushing the overlay taller than the
+     viewport. */
+  max-height: calc(100vh - 110px);
   overflow-y: auto;
   padding: 0 28px 24px;
   /* Vertical centering (2026-09-19, Matt's call: "the popup also

@@ -223,10 +223,17 @@ function _rclBuildTickerItems(hub) {
         seasonDates = seasonStartLabel + (seasonEndLabel !== seasonStartLabel ? (' - ' + seasonEndLabel) : '');
       }
     }
+    // Split into nameText/datesText (2026-09-23, Matt's ask: "make the
+    // season dates a reduced weight compared to the season name") rather
+    // than one joined string -- lets buildRun() below give the dates
+    // span its own lighter weight (.rcl-ticker-season-dates,
+    // css/league.css) while the season number/name stays at the item's
+    // normal weight. See the driverRows items just below for the same
+    // "structured data in, differently-weighted spans out" pattern.
     items.push({
       tag: 'SEASON',
-      text: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : '') +
-        (seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : '')
+      nameText: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : ''),
+      datesText: seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : ''
     });
   }
 
@@ -377,6 +384,13 @@ function _rclRenderTicker(hub) {
           list.appendChild(buildDriverEntry(row));
         });
         el.appendChild(list);
+      } else if (item.nameText !== undefined) {
+        // SEASON item (2026-09-23) -- name at the line's normal weight,
+        // dates in their own lighter span right after it.
+        el.appendChild(document.createTextNode(item.nameText));
+        if (item.datesText) {
+          el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.datesText));
+        }
       } else {
         el.appendChild(document.createTextNode(item.text));
       }
