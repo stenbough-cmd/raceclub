@@ -5007,7 +5007,13 @@ body.rc-modal-scroll-locked {
   left: 0;
   width: 40%;
   height: 4px;
-  background: var(--rc-silver);
+  /* Matches the card's own full border color (--rc-silver-dark, set on
+     .rc-cal-race above) rather than the lighter --rc-silver it used
+     before (2026-09-23, Matt's call: "make the top 1/2 border design...
+     the same gray color as the full line border around each race
+     container") -- the accent bar and the border it sits on now read as
+     one consistent gray. */
+  background: var(--rc-silver-dark);
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
 /* Special Events get a bit more of the same gold the star icon already
@@ -5072,7 +5078,13 @@ body.rc-modal-scroll-locked {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rc-carbon);
+  /* Lighter gray (2026-09-23, Matt's call: "make the COMPLETED and
+     RESULTS notifications on the dashboard calendar a lighter gray
+     font") -- was --rc-carbon (near-black), which read too heavy/dark
+     against the near-white scrim. --rc-steel is the site's standard
+     muted-label gray, same token .rc-cal-completed-overlay-sub below
+     already used. */
+  color: var(--rc-steel);
   text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
 }
 .rc-cal-completed-overlay-sub {
@@ -5085,18 +5097,15 @@ body.rc-modal-scroll-locked {
   text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
   white-space: nowrap;
 }
-/* Unofficial (now labeled "Preliminary") reuses --rc-warning (the same
-   amber "not final yet" tone the site's probation/pending-review states
-   use elsewhere); Official reuses --rc-positive (the same "done,
-   settled" green Active/Done statuses use) -- same semantic-color
-   mapping league.html's own public calendar badges use for these two
-   states (see .rcl-cal-status-preliminary/-official, css/league.css).
-   Used at full strength here (not lightened, unlike the dark-scrim pass
-   earlier today) since they now sit on a near-white scrim. "No Results
-   Posted Yet" stays the neutral --rc-steel default above -- nothing to
-   signal good/bad yet. */
-.rc-cal-completed-overlay-sub-unofficial { color: var(--rc-warning); }
-.rc-cal-completed-overlay-sub-official { color: var(--rc-positive); }
+/* Preliminary/Official results sub-line now stays the same lighter gray
+   as everything else in this overlay (2026-09-23, same pass as the title
+   above) rather than the amber/green semantic tint it used briefly --
+   Matt's ask covered "RESULTS notifications" broadly, not just the
+   neutral "No Results Posted Yet" state, so all three read as one
+   consistent gray now. The amber/green semantic-color mapping (still
+   used elsewhere, e.g. league.html's public calendar badges,
+   .rcl-cal-status-preliminary/-official) was intentionally dropped here
+   only. */
 
 .rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
