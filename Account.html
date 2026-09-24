@@ -1139,6 +1139,21 @@
     var body = el('div', 'rc-regstatus-body');
     card.appendChild(body);
 
+    // "View Season Format" link (2026-09-24, Matt's ask) -- opens the same
+    // season-snapshot + league-format popup league.html's own "View Season
+    // Details" link opens (_rclOpenSeasonDetailsModal, league.js), just
+    // themed with the account page's own white/red modal chrome instead of
+    // league.html's dark hero styling. Lives outside `body` (appended once,
+    // here, not inside any render* function above) so it survives every
+    // repaint those functions do to `body.innerHTML` on refreshStatus().
+    // Same "← Label" bottom-left link shape Next Race's "View full season"
+    // and Protest's "Go to Protests" cards already use (.rc-link-btn
+    // .rc-dash-card-link).
+    var formatBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View season format');
+    formatBtn.type = 'button';
+    formatBtn.addEventListener('click', function () { openSeasonFormatModal(); });
+    card.appendChild(formatBtn);
+
     // status, not role -- Role is set to 'Driver' at registration time
     // and never actually reads 'Prospect' (Prospect isn't a Status or a
     // Role at all -- it's just "no seat in the currently-open-to-
@@ -1368,6 +1383,101 @@
 
     renderFromData(initialData);
     return card;
+  }
+
+  // "This Season"/"League Format" stat groups for the Season Format popup
+  // below -- ported straight from league.js's own _rclBuildSnapshotStats/
+  // _rclBuildFormatStats (same field order, same conditions for showing a
+  // given tile), just re-expressed as {value,label} pairs this file's own
+  // buildCareerStat() tile builder already knows how to render, instead of
+  // league.js's .rcl-hero-stat markup. Keep these in sync with their
+  // league.js originals if that popup's fields ever change -- there was no
+  // clean way to share the actual functions across the two separate
+  // <script> files.
+  function _rcBuildSeasonSnapshotStats_(hub) {
+    var row1 = [], row2 = [];
+    if (hub.seasonStartUtc && hub.seasonEndUtc) {
+      var startLabel = formatDateLabel(String(hub.seasonStartUtc).slice(0, 10));
+      var endLabel = formatDateLabel(String(hub.seasonEndUtc).slice(0, 10));
+      if (startLabel && endLabel) {
+        row1.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
+      }
+    }
+    var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
+    if (classNames.length) {
+      row1.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
+    }
+    if (hub.totalRounds) {
+      row1.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
+    }
+    (hub.standings || []).forEach(function (cls) {
+      var count = (cls.standings || []).length;
+      if (count) row2.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
+    });
+    if (hub.dropWeeks) row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
+    if (hub.byeWeeks) row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
+    if (hub.frequency) row2.push({ value: hub.frequency, label: 'Frequency' });
+    return row1.concat(row2);
+  }
+
+  function _rcBuildSeasonFormatStats_(hub) {
+    var rs = hub.raceSettings || {};
+    var row1 = [], row2 = [];
+    if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
+    if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
+    row1.push({ value: 'Varies', label: 'Race Time' });
+    if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
+    if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
+    if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
+    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
+    if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
+    if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
+    if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
+    return row1.concat(row2);
+  }
+
+  // "View Season Format" popup (2026-09-24, Matt's ask: identical to
+  // league.html's "View Season Details" popup, just in the account page's
+  // own white/red modal chrome instead of that page's dark hero styling).
+  // Reads the exact same public, cached getLeagueHub payload league.js's
+  // popup reads from -- action=getLeagueHub needs no token and is normally
+  // a pure CacheService hit (see handleGetLeagueHub, Website.gs), so this
+  // is a cheap on-click fetch, not something worth folding into the
+  // Dashboard's own combined getDashboardData call for a popup most
+  // drivers will never open.
+  function openSeasonFormatModal() {
+    var modal = showModal('Season Format');
+    modal.body.appendChild(buildSpinner('Loading season format...'));
+    fetchApi('getLeagueHub', {}).then(function (hub) {
+      modal.body.innerHTML = '';
+      if (!hub || !hub.success || !hub.hasSeason) {
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
+        return;
+      }
+      var snapshotStats = _rcBuildSeasonSnapshotStats_(hub);
+      var formatStats = _rcBuildSeasonFormatStats_(hub);
+      if (!snapshotStats.length && !formatStats.length) {
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once they are set.'));
+        return;
+      }
+      if (snapshotStats.length) {
+        modal.body.appendChild(el('div', 'rc-career-group-title', 'This Season'));
+        var snapshotGrid = el('div', 'rc-career-stat-grid');
+        snapshotStats.forEach(function (s) { snapshotGrid.appendChild(buildCareerStat(s.value, s.label)); });
+        modal.body.appendChild(snapshotGrid);
+      }
+      if (formatStats.length) {
+        var formatTitle = el('div', 'rc-career-group-title', 'League Format');
+        formatTitle.style.marginTop = snapshotStats.length ? '20px' : '0';
+        modal.body.appendChild(formatTitle);
+        var formatGrid = el('div', 'rc-career-stat-grid');
+        formatStats.forEach(function (s) { formatGrid.appendChild(buildCareerStat(s.value, s.label)); });
+        modal.body.appendChild(formatGrid);
+      }
+    }).catch(function () {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
   }
 
   // Manufacturer logo left, team/car identity + class pill next to it,
@@ -4872,13 +4982,11 @@
       if (classPillsRow) head.appendChild(classPillsRow);
       panel.appendChild(head);
 
-      // Faint gray divider between the season header and the race list
-      // below (2026-09-19, Matt's ask) -- same plain silver hairline
-      // treatment used elsewhere on the page (e.g. the News panel's own
-      // divider). Used to also sit under the "Season Format" panel; that
-      // panel is gone (2026-09-24, Matt's ask) but the divider still earns
-      // its place separating the header from the list.
-      panel.appendChild(el('hr', 'border:none;border-top:1px solid var(--rc-silver);margin:18px 0 0;'));
+      // The gray divider that used to sit here (between the header's own
+      // red rule and the race list) is gone (2026-09-24, Matt's ask) --
+      // the red rule under the season title is divider enough; the race
+      // list now starts right after it, same spacing .rc-cal-race-list's
+      // own margin-top already provides.
 
       var list = el('div', 'rc-cal-race-list');
       var raceSettings = (res.seasonDetails || {}).raceSettings || {};
