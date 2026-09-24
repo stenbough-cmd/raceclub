@@ -480,14 +480,11 @@ var _rcNotifController = null;
 // Live bell polling (added 2026-08-30, Matt's call: "push the update to
 // the bell without a refresh of the page") -- re-fetches both notification
 // types on an interval so a new approval request or a newly-opened season
-// shows up (dot + list) while the driver just sits on the page, instead of
-// only ever refreshing on the next full page load/navigation. One shared
-// timer, cleared and restarted every time renderHeader() rebuilds the
-// logged-in bell (it's called more than once per page -- see the header
-// comment above) so re-renders never stack up duplicate timers, and
-// cleared outright when the header renders logged-out.
-var _rcNotifPollTimer = null;
-var RC_NOTIF_POLL_MS = 45000;
+// Background poll timer REMOVED (2026-09-24, Matt's call) -- see the
+// removal note at this file's setInterval call site (search
+// "Background poll REMOVED") for the full story. Notifications are
+// on-demand only now: one fetch on page load plus explicit refresh
+// triggers (dismiss, join team, opening the bell).
 
 // Dedupe window (2026-09-24, Matt's report: "why does one visit to the
 // dashboard fire so many calls to Apps Script") -- renderHeader() runs
@@ -1157,11 +1154,16 @@ function renderHeader(opts) {
       _rcRefreshNotifications();
     }
 
-    if (_rcNotifPollTimer) clearInterval(_rcNotifPollTimer);
-    _rcNotifPollTimer = setInterval(_rcRefreshNotifications, RC_NOTIF_POLL_MS);
+    // Background poll REMOVED (2026-09-24, Matt's call, as part of "get
+    // rid of the bloat" pass) -- this used to setInterval a getNotifications
+    // fetch every 45s for as long as any tab was open, forever, from every
+    // driver, whether or not they ever opened the bell. Notifications are
+    // on-demand now: this one fetch on page load, plus whatever
+    // _rcNotifController.refresh() triggers explicitly (dismiss, join
+    // team, opening the bell -- see its call sites). No timer, so nothing
+    // to clear here anymore either.
   } else {
     _rcNotifController = null;
-    if (_rcNotifPollTimer) { clearInterval(_rcNotifPollTimer); _rcNotifPollTimer = null; }
   }
 }
 
