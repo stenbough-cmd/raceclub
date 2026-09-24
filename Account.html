@@ -5349,14 +5349,13 @@
       });
   }
 
-  // Shared field builder for both the File and Edit popups -- Lap Number
-  // (paired 50/50 with the caller's Race field when raceFieldWrap is
-  // passed, File only -- see item 6/7), up to 3 "Driver Involved" boxes
-  // (box 1 always defaults to whoever's filing; it's display-only, never
-  // submitted -- the server already knows who's filing from the auth
-  // token), infraction type, and an optional 200-word description.
-  // `initial` (optional) prefills every field from an existing protest,
-  // for Edit.
+  // Shared field builder for both the File and Edit popups. Includes Lap
+  // Number (paired 50/50 with the caller's Race field when raceFieldWrap
+  // is passed, File only, see item 6/7), up to 3 "Driver Involved" boxes
+  // (box 1 is always the filer, fixed and disabled; boxes 2 and 3 offer
+  // everyone else on the grid, filer excluded, 2026-09-24 styling pass),
+  // infraction type, and an optional 200-word description. `initial`
+  // (optional) prefills every field from an existing protest, for Edit.
   function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial, raceFieldWrap) {
     initial = initial || {};
 
@@ -5379,17 +5378,29 @@
       container.appendChild(lapFieldWrap);
     }
 
+    // Box 1 is always the filer, and it's fixed -- not a choice (2026-09-24,
+    // Matt's ask: "the first drop down box has to be the driver filing the
+    // protest"). It's disabled and only ever holds that one option; its
+    // value was already never submitted (see the two fetchApi calls below,
+    // which only ever read driver2Select/driver3Select), so this just makes
+    // the display match what was already true functionally.
     var driver1Select = document.createElement('select');
+    driver1Select.disabled = true;
+    var me = driverRoster.filter(function (d) { return d.profileId === myProfileId; })[0];
+    driver1Select.appendChild(new Option(me ? me.name : 'You', myProfileId || ''));
+
+    // Boxes 2 and 3 are "anyone else on the grid" -- the filer is already
+    // named in box 1, so they're excluded from these two lists entirely
+    // (2026-09-24, Matt's ask: "the next two boxes can be anyone else on
+    // the grid except the driver filing the protest because they're
+    // already chosen for box one").
+    var otherDrivers = driverRoster.filter(function (d) { return d.profileId !== myProfileId; });
     var driver2Select = document.createElement('select');
     var driver3Select = document.createElement('select');
     driver2Select.appendChild(new Option('Choose Driver', ''));
     driver3Select.appendChild(new Option('Choose Driver', ''));
-    _rcAppendGroupedDriverOptions_(driver1Select, driverRoster);
-    _rcAppendGroupedDriverOptions_(driver2Select, driverRoster);
-    _rcAppendGroupedDriverOptions_(driver3Select, driverRoster);
-    if (myProfileId && driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
-      driver1Select.value = myProfileId;
-    }
+    _rcAppendGroupedDriverOptions_(driver2Select, otherDrivers);
+    _rcAppendGroupedDriverOptions_(driver3Select, otherDrivers);
 
     var driversRow = el('div', 'rc-wiz-field-row-3');
     driversRow.appendChild(wizField('Driver Involved 1', driver1Select, null));
