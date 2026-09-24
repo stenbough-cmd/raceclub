@@ -407,6 +407,21 @@
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
+  // Radiation trefoil (2026-09-24, Matt's ask, for Delete Season's final
+  // "point of no return" confirmation -- see openDeleteSeasonModal) --
+  // the site's one deliberately filled, non-nav icon, used exactly once,
+  // for the one action severe enough to earn it. Three wedges, each a
+  // 60deg arc from radius 3.2 to 10.8 around center (12,12), rotated
+  // 120deg apart. Sized much larger than every other ICON_* here (44px,
+  // vs the usual 16-18px) since it's a standalone visual marker in a
+  // modal body, not an inline row icon.
+  var ICON_RADIATION_SEVERE_ = '<svg width="44" height="44" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="12" cy="12" r="11.3" fill="none" stroke="#e0483c" stroke-width="1"></circle>' +
+    '<path d="M14.8,10.4 L21.4,6.6 A10.8,10.8 0 0,1 21.4,17.4 L14.8,13.6 A3.2,3.2 0 0,0 14.8,10.4 Z" fill="#e0483c"></path>' +
+    '<path d="M14.8,10.4 L21.4,6.6 A10.8,10.8 0 0,1 21.4,17.4 L14.8,13.6 A3.2,3.2 0 0,0 14.8,10.4 Z" fill="#e0483c" transform="rotate(120 12 12)"></path>' +
+    '<path d="M14.8,10.4 L21.4,6.6 A10.8,10.8 0 0,1 21.4,17.4 L14.8,13.6 A3.2,3.2 0 0,0 14.8,10.4 Z" fill="#e0483c" transform="rotate(240 12 12)"></path>' +
+    '<circle cx="12" cy="12" r="2.6" fill="#e0483c"></circle>' +
+    '</svg>';
   var ICON_DATAMGMT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>';
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
   var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
@@ -2943,8 +2958,20 @@
   // spreadsheet's own eraseAllSeasonDataPrompt, just as a proper popup
   // instead of a browser prompt() since this is reachable from the
   // website, not just the Apps Script menu.
-  function openTypeToConfirmModal(title, message, requiredPhrase, confirmLabel, onConfirm) {
+  function openTypeToConfirmModal(title, message, requiredPhrase, confirmLabel, onConfirm, opts) {
+    opts = opts || {};
     var body = el('div');
+    // opts.iconHtml (2026-09-24, added for Delete Season's final
+    // confirmation -- see openDeleteSeasonModal) -- an optional raw HTML
+    // string (an inline SVG, in practice) shown centered above the
+    // message, for the rare action severe enough to earn its own visual
+    // marker on top of the typed phrase. Every other call site leaves
+    // this unset and gets the exact same plain popup as before.
+    if (opts.iconHtml) {
+      var iconWrap = el('div', 'display:flex;justify-content:center;margin-bottom:10px;');
+      iconWrap.innerHTML = opts.iconHtml;
+      body.appendChild(iconWrap);
+    }
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
     body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Type ' + requiredPhrase + ' below to continue.'));
     var input = document.createElement('input');
@@ -3062,6 +3089,107 @@
             }).catch(function () {
               showToast('Could not reach the server -- season not ended.', 'error');
             });
+          }
+        );
+      });
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(continueBtn);
+      body.appendChild(btnRow);
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
+  }
+
+  // DELETE SEASON (2026-09-24, Matt's ask) -- the real "undo" End Season
+  // never was: instead of just flipping Status to Completed and leaving
+  // every row behind (openEndSeasonModal/handleAdminArchiveSeason above),
+  // this permanently erases every trace of a season -- its rounds,
+  // registrations, imported results (Sessions/DriverResults/Laps/
+  // RaceEvents), protests/adjustments, season history/standings cache
+  // rows, and notifications -- then rebuilds the League Hub/Grid Teaser
+  // caches so the site falls back to whatever season (or no season) comes
+  // next. See handleAdminDeleteSeason/_rcDeleteSeasonCascade_ (Seasons.gs)
+  // for exactly what gets removed.
+  //
+  // Only offered for a season that HASN'T been ended with the End Season
+  // button yet (Matt's own rule: "any seasons that have ENDED by the
+  // admin clicking the END SEASON button cannot be deleted -- it's only
+  // for seasons which haven't started or started but haven't ended") --
+  // i.e. status !== 'Completed', the exact opposite direction from the
+  // old handleAdminDeleteSeason's time-based refusal, which used to block
+  // deleting any season whose first round had already started (raced or
+  // not) and only ever allowed deleting an untouched, never-raced one.
+  //
+  // Picker, then TWO separate typed confirmations in sequence (Matt's
+  // explicit ask: "verification popups... requiring the user to verify
+  // both by typing out a word") -- not the picker-then-one-confirm shape
+  // End Season above uses. Each openTypeToConfirmModal call chains into
+  // the next from inside its own onConfirm, same skipOnClose(true)
+  // pattern as the picker->confirm handoff below.
+  function openDeleteSeasonModal(token, reload) {
+    var body = el('div');
+    body.appendChild(buildSpinner('Loading seasons...'));
+    var modal = showModal('Delete Season', { bodyEl: body });
+
+    fetchApi('adminListSeasons', { token: token }).then(function (data) {
+      body.innerHTML = '';
+      if (!data.success) {
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
+        return;
+      }
+      var eligible = (data.seasons || []).filter(function (s) { return s.status !== 'Completed'; });
+      if (!eligible.length) {
+        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to delete -- once a season has been ended with End Season, it can no longer be deleted.'));
+        return;
+      }
+
+      body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', 'Choose which season to permanently delete.'));
+      var select = document.createElement('select');
+      eligible.forEach(function (s) { select.appendChild(new Option(s.name || s.seasonId, s.seasonId)); });
+      body.appendChild(wizField('Season', select, null));
+
+      var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+      var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+      cancelBtn.type = 'button';
+      cancelBtn.addEventListener('click', modal.close);
+      var continueBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Continue');
+      continueBtn.type = 'button';
+      continueBtn.addEventListener('click', function () {
+        var chosenId = select.value;
+        var chosen = eligible.filter(function (s) { return s.seasonId === chosenId; })[0];
+        var chosenName = chosen ? (chosen.name || chosenId) : chosenId;
+        // skipOnClose (true) -- the first confirm popup opens right
+        // behind this one.
+        modal.close(true);
+
+        openTypeToConfirmModal(
+          'Delete Season',
+          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, protest, and notification tied to this season. This cannot be undone.',
+          'DELETE SEASON',
+          'Continue',
+          function () {
+            openTypeToConfirmModal(
+              'Confirm Permanent Deletion',
+              'This is the final step. There is no backup and no way to recover "' + chosenName + '" once this runs -- everything tied to it is gone for good.',
+              'PERMANENTLY DELETE',
+              'Delete Season Forever',
+              function () {
+                fetchApi('adminDeleteSeason', {
+                  method: 'POST', token: token, body: { seasonId: chosenId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG
+                }).then(function (data2) {
+                  if (!data2.success) {
+                    showToast(data2.message || 'Could not delete this season.', 'error');
+                    return;
+                  }
+                  showToast('Season "' + chosenName + '" and everything tied to it has been permanently deleted.', 'success');
+                  if (typeof reload === 'function') reload();
+                }).catch(function () {
+                  showToast('Could not reach the server -- season not deleted.', 'error');
+                });
+              },
+              { iconHtml: ICON_RADIATION_SEVERE_ }
+            );
           }
         );
       });
@@ -4197,6 +4325,11 @@
         createBtn.disabled = true;
         withTooltip(createBtn, 'End the current season before creating a new one.');
       } else {
+        // Purpose tooltip (2026-09-24, Matt's ask: tooltips on hover for
+        // Create/End/Delete Season) -- only reachable here, in the
+        // clickable branch; the disabled branches above already carry
+        // their own more useful "why this is grayed out" tooltip instead.
+        withTooltip(createBtn, 'Start a brand-new season -- opens registration and lets drivers pick a team right away.');
         createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
       }
       row.appendChild(createBtn);
@@ -4213,9 +4346,28 @@
         endSeasonBtn.disabled = true;
         withTooltip(endSeasonBtn, 'Only Admins can end a season.');
       } else {
+        withTooltip(endSeasonBtn, 'Mark a season complete. Every round, result, and stat stays on record -- nothing is deleted.');
         endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
       }
       row.appendChild(endSeasonBtn);
+
+      // DELETE SEASON (2026-09-24, Matt's ask) -- lives in this same row,
+      // Admin-only like Create/End Season above. Always clickable for an
+      // Admin, same as End Season -- eligibility (status !== 'Completed',
+      // see openDeleteSeasonModal/handleAdminDeleteSeason) is decided
+      // inside the season-picker popup itself, not gated here, so a
+      // season that's ineligible just doesn't show up in that popup's
+      // list rather than disabling this button outright.
+      var deleteSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Delete Season');
+      deleteSeasonBtn.type = 'button';
+      if (!isAdmin) {
+        deleteSeasonBtn.disabled = true;
+        withTooltip(deleteSeasonBtn, 'Only Admins can delete a season.');
+      } else {
+        withTooltip(deleteSeasonBtn, 'Permanently erase a season that hasn\'t ended yet -- every round, result, and registration tied to it, gone for good.');
+        deleteSeasonBtn.addEventListener('click', function () { openDeleteSeasonModal(token, reload); });
+      }
+      row.appendChild(deleteSeasonBtn);
 
       // The standalone Edit Season button is gone (2026-08-30) -- editing
       // now happens per-row in the season list below, which can point at
