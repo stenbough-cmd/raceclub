@@ -58,6 +58,16 @@ var RC_FETCH_TIMEOUT_MS = 20000;
 // default above.
 var RC_FETCH_TIMEOUT_MS_LONG = 45000;
 
+// Import XML's own budget, longer still (2026-09-24, Matt's ask) -- a race
+// results file is the single heaviest write on the site (thousands of Lap
+// rows, plus the race report build on top of that), so it gets its own
+// timeout rather than sharing RC_FETCH_TIMEOUT_MS_LONG above with the
+// merely-heavy writes (createSeason/updateSeason, adminCreateNews/
+// adminUpdateNews). Only openImportXmlModal's own _rcFetchOnce_ call
+// (Account.html) uses this -- bumping it doesn't touch how long any other
+// action waits before giving up.
+var RC_FETCH_TIMEOUT_MS_IMPORT = 60000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom

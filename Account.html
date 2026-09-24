@@ -7520,7 +7520,11 @@
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
 
-    var modal = showModal('Import Results: ' + roundLabel, { wide: true });
+    // Title is just "Import Results" (2026-09-24, Matt's ask) -- the round
+    // it's tied to is already stated in the hint text right under the file
+    // picker below ("This import is tied to " + roundLabel + "..."), so
+    // repeating it in the modal title too was redundant.
+    var modal = showModal('Import Results', { wide: true });
 
     // Close (X) disabled for the duration of the actual import (2026-09-24,
     // Matt's ask: "the user has to wait until it's finished importing") --
@@ -7604,20 +7608,23 @@
         // (exactly the ambiguous-POST-outcome case fetchApi's own header
         // comment describes). Every other heavy write on the site
         // (createSeason/updateSeason, adminCreateNews/adminUpdateNews)
-        // already goes through fetchApi's RC_FETCH_TIMEOUT_MS_LONG budget
-        // for this same reason; this one used a raw fetch() only because it
-        // sends a raw XML body, not a JSON one, which fetchApi always
+        // goes through fetchApi's RC_FETCH_TIMEOUT_MS_LONG budget for this
+        // same reason; this one used a raw fetch() only because it sends a
+        // raw XML body, not a JSON one, which fetchApi always
         // JSON.stringifies. _rcFetchOnce_ is the lower-level helper
         // fetchApi itself is built on -- it takes fetchOpts as-is (no
         // JSON-encoding), so it works here without changing fetchApi's own
-        // contract, while still getting the same explicit 45s
-        // timeout/abort every other heavy POST gets instead of an
-        // indefinite bare fetch.
+        // contract. Gets its OWN, longer timeout/abort budget than every
+        // other heavy POST (RC_FETCH_TIMEOUT_MS_IMPORT, 60s, js/api.js --
+        // bumped from 45s 2026-09-24, Matt's ask) rather than sharing
+        // RC_FETCH_TIMEOUT_MS_LONG with them, since a results import is the
+        // single heaviest write on the site (thousands of Lap rows, plus
+        // the race report build on top).
         _rcFetchOnce_(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: xmlText
-        }, RC_FETCH_TIMEOUT_MS_LONG).then(function (data) {
+        }, RC_FETCH_TIMEOUT_MS_IMPORT).then(function (data) {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
           setImportInProgress(false);
