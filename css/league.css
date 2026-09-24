@@ -1043,12 +1043,10 @@ body.rc-league-page {
 .rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
 .rcl-report-line:last-child { margin-bottom: 0; }
-/* Driver name color-coding (2026-09-24, Matt's ask: "make all the names
-   on the list white except for the records where someone hits a wall or
-   track object"). league.js only applies this class when the line has no
-   wall-contact clause -- a wall-hit line's name is left unclassed and
-   falls through to .rcl-report-line's default dim-gray, matching the
-   deemphasized wall clause itself. */
+/* Driver name color (2026-09-24, Matt's ask -- an earlier version left a
+   wall-hit line's name gray to read as deemphasized, but Matt's follow-up
+   was explicit: "make all names white, even when in the middle of a
+   contact report with another driver"). Always applied now, every line. */
 .rcl-report-name { color: var(--rcl-ink); }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
@@ -1059,8 +1057,8 @@ body.rc-league-page {
 .rcl-report-clause-car { color: var(--rcl-report-collision); font-weight: 700; } /* car-to-car collision: yellow */
 .rcl-report-clause-damage { color: var(--rcl-report-damage); font-weight: 700; } /* damage reported: bold orange */
 .rcl-report-clause-pit { color: var(--rc-red); font-weight: 700; } /* pits: bold red, the site's one accent */
-.rcl-report-clause-gain { color: var(--rcl-report-gain); font-weight: 700; } /* position gained: green */
-.rcl-report-clause-loss { color: var(--rc-red); font-weight: 700; } /* position lost: red */
+.rcl-report-clause-gain { color: var(--rcl-report-gain); font-weight: 700; } /* position gained: bold green */
+.rcl-report-clause-loss { color: var(--rc-red); } /* position lost: red, NOT bold (2026-09-24, Matt's ask -- gains stay bold, losses don't) */
 .rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
 .rcl-penalty-row {
   display: flex;

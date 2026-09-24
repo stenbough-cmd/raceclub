@@ -1169,13 +1169,14 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
           // own span so wall/car/damage/pit/position clauses can be
           // colored independently of the rest of the line.
           //
-          // Driver names render white by default (Matt's ask), EXCEPT on
-          // a line where the driver hit a wall/track object -- that stays
-          // the line's default dim-gray so the whole "minor" line reads
-          // as deemphasized, matching the wall clause's own gray.
-          var hitWall = entry.clauses.some(function (c) { return c.kind === 'wall'; });
+          // Driver names always render white (2026-09-24, Matt's follow-up
+          // ask: "make all names white, even when in the middle of a
+          // contact report with another driver" -- an earlier version kept
+          // a wall-hit line's name gray to read as deemphasized, but that
+          // made names inconsistent line to line, which read worse than it
+          // helped).
           var nameEl = document.createElement('span');
-          if (!hitWall) nameEl.className = 'rcl-report-name';
+          nameEl.className = 'rcl-report-name';
           nameEl.textContent = entry.name;
           lineEl.appendChild(nameEl);
           var allClauses = entry.positionClause ? entry.clauses.concat([entry.positionClause]) : entry.clauses;

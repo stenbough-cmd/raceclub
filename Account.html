@@ -7456,6 +7456,23 @@
 
     var modal = showModal('Import Results: ' + roundLabel, { wide: true });
 
+    // Close (X) disabled for the duration of the actual import (2026-09-24,
+    // Matt's ask: "the user has to wait until it's finished importing") --
+    // an XML import is a real server-side write already in flight by the
+    // time the toast/catch below fires (Ingestion.gs's importSessionXML has
+    // already started writing Sessions/DriverResults/Laps/RaceEvents rows),
+    // so closing partway through wouldn't actually cancel anything, it
+    // would just hide whether it succeeded. The X still works normally
+    // before Import is clicked (choosing/changing the file) and is
+    // re-enabled the moment the request settles, success or failure either
+    // way, so a failed import can still be closed and retried.
+    var importCloseBtn = modal.el.querySelector('.rc-modal-close');
+    function setImportInProgress(inProgress) {
+      if (!importCloseBtn) return;
+      importCloseBtn.disabled = inProgress;
+      importCloseBtn.style.visibility = inProgress ? 'hidden' : '';
+    }
+
     var fileInput = el('input');
     fileInput.type = 'file';
     fileInput.accept = '.xml';
@@ -7501,6 +7518,10 @@
           return;
         }
 
+        // The real server-side write starts now (Ingestion.gs's
+        // importSessionXML) -- lock the X until it settles.
+        setImportInProgress(true);
+
         var url = API_BASE_URL + '?action=importXml' +
           '&token=' + encodeURIComponent(token) +
           '&filename=' + encodeURIComponent(file.name) +
@@ -7533,6 +7554,7 @@
         }, RC_FETCH_TIMEOUT_MS_LONG).then(function (data) {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
+          setImportInProgress(false);
           if (data && data.success) {
             var msg = 'Imported ' + data.sessionId + ': ' + data.driversImported + ' driver(s), ' +
               data.lapsImported + ' lap row(s), ' + data.raceEventsImported + ' race event(s).';
@@ -7547,6 +7569,13 @@
         }).catch(function () {
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
+          // Re-enabled here too, even though the message itself says the
+          // import may still be running server-side -- there's no signal
+          // left to wait on at this point (the connection itself dropped),
+          // so leaving the X locked forever would trap the admin in the
+          // popup with no way out. They're told to go check League Tools
+          // before retrying, which requires being able to close this.
+          setImportInProgress(false);
           showToast('This is taking longer than expected. Apps Script may still be finishing the import -- check League Tools before trying again so you don\'t import the same file twice.', 'error');
         });
       };
