@@ -1434,15 +1434,24 @@ function _rclRenderCalendar(hub) {
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
-    // "<event name>: <track name>" as one combined primary line
-    // (2026-09-24, Matt's ask) -- was just the event name, with the track
-    // (plus layout) as its own separate line underneath (see the removed
-    // .rcl-cal-track line below); that line's now folded into this one so
-    // the track doesn't repeat itself, layout suffix included exactly as
-    // it read on the old track line.
-    var eventTrackLabel = (entry.eventName || 'Race') + ': ' + (entry.track || '(no track)');
-    topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(eventTrackLabel) + '</strong>' +
-      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
+    // "<event name> at <track name>: <layout>" as one combined primary
+    // line, three independently-styled pieces (2026-09-24, Matt's ask,
+    // replacing the earlier "<event name>: <track name>" version from
+    // earlier the same day) -- event name bold and white, track name
+    // normal weight but still white, layout normal weight but gray. On a
+    // special event the whole line (all three pieces, plus the plain " at
+    // "/": " connector text) reads one uniform gold instead, via
+    // .rcl-cal-row-special overriding each span's color below -- see
+    // css/league.css.
+    var eventLine = _rclEl('div', 'rcl-cal-event');
+    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-name', _rclEscapeHtml(entry.eventName || 'Race')));
+    eventLine.appendChild(document.createTextNode(' at '));
+    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-track', _rclEscapeHtml(entry.track || '(no track)')));
+    if (entry.layout) {
+      eventLine.appendChild(document.createTextNode(': '));
+      eventLine.appendChild(_rclEl('span', 'rcl-cal-event-layout', _rclEscapeHtml(entry.layout)));
+    }
+    topLine.appendChild(eventLine);
     // COMPLETED, with a results phrase appended once there's something to
     // report (2026-09-21 rewrite, Matt's ask: "have the race faded out
     // with a COMPLETED notification, if it hasn't been finalized yet,
@@ -1590,10 +1599,14 @@ function _rclBuildPointsBody(hub, body) {
   if (bonusChips.length) {
     var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
     // "Bonus Points" (shortened from "Bonus Points This Season",
-    // 2026-09-19, Matt's ask). Same type style as a tier name above
-    // (.rcl-points-tier-name) -- .rcl-points-bonus-label carries this
-    // row's own layout (margin-bottom) -- see css/league.css.
-    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-points-tier-name', 'Bonus Points'));
+    // 2026-09-19, Matt's ask). Now the same gray-pill treatment as the
+    // Season Details popup's own group headers (.rcl-pill-label,
+    // 2026-09-24, Matt's ask: "make the BONUS POINTS catagory the same
+    // style pill") -- was the plain uppercase text style a tier name
+    // without a duration uses (.rcl-points-tier-name); that class stays
+    // as-is for tier names elsewhere. .rcl-points-bonus-label still
+    // carries this row's own layout (margin-bottom) -- see css/league.css.
+    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-pill-label', 'Bonus Points'));
     // Each bonus category now renders as a .rcl-points-pos box, same
     // shape as a tier table's P1/P2/etc. boxes, inside its own
     // .rcl-points-table -- mirrors a tier block's head+table structure
@@ -1862,69 +1875,100 @@ function _rclOpenStoryModal(startIndex) {
 // itself stays the static "League Hub" (set directly in league.html);
 // the eyebrow above it carries "Race Club".
 // ---------------------------------------------------------------------
+// Rebuilt into two FIXED rows (2026-09-24, Matt's ask, replacing the
+// earlier single flowing row that just listed whatever fields happened to
+// be non-empty) -- row1 is always Season Dates/Classes/Rounds Completed,
+// in that order; row2 is each class's own driver count, then Drop
+// Race(s)/Bye Week(s)/Frequency. A field with nothing to show (e.g. no
+// dropWeeks set) is simply skipped, but the ORDER within each row never
+// changes -- unlike before, this no longer folds a missing field's slot
+// over to fill from the other row.
 function _rclBuildSnapshotStats(hub) {
-  var stats = [];
+  var row1 = [];
+  var row2 = [];
 
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
     var endLabel = _rclFormatDate(hub.seasonEndUtc);
     if (startLabel && endLabel) {
-      stats.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
+      row1.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
     }
   }
 
-  // Which car classes are running this season (added 2026-09-19,
-  // Matt's ask: "add which cars are participating" between the season
-  // dates and race-count stats) -- pulled from hub.standings, the same
-  // per-class list the Leaderboard section below already uses, so this
-  // can never name a class that isn't actually fielding cars.
+  // Which car classes are running this season -- pulled from hub.standings,
+  // the same per-class list the Leaderboard section below already uses, so
+  // this can never name a class that isn't actually fielding cars.
   var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
   if (classNames.length) {
-    stats.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
+    row1.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
   }
 
   if (hub.totalRounds) {
-    stats.push({ value: String(hub.totalRounds), label: hub.totalRounds === 1 ? 'Race' : 'Races' });
+    row1.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
   }
 
+  // Per-class driver counts open row2 -- one bubble per class fielding
+  // cars this season ("<Class> Drivers"), however many that is.
   (hub.standings || []).forEach(function (cls) {
     var count = (cls.standings || []).length;
-    if (count) stats.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
+    if (count) row2.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
   });
 
   if (hub.dropWeeks) {
-    stats.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
+    row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
   }
 
-  if (hub.totalRounds) {
-    stats.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
+  if (hub.byeWeeks) {
+    row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
   }
 
-  return stats;
+  if (hub.frequency) {
+    row2.push({ value: hub.frequency, label: 'Frequency' });
+  }
+
+  return { row1: row1, row2: row2 };
 }
 
-// League Format -- season-wide race rules, not season-specific results
-// (added 2026-09-19, Matt's ask: "add information about the league like
-// tires allowed each event, practice length, qualifying length, etc.").
+// League Format -- season-wide race rules, not season-specific results.
 // Multiplier fields ('Off'/'Realistic'/'2x'/'3x', see
 // RACE_SETTINGS_MULTIPLIER_OPTIONS in Account.html) are shown as-is --
 // same labels the wizard itself uses, so this page can never say
 // something different from what the admin actually picked.
+//
+// Also rebuilt into two fixed rows (2026-09-24, Matt's ask): row1 is
+// always Practice/Qualify/Race Time, in that order -- Race Time is a
+// STATIC "Varies" bubble (race length actually varies by round/tier, see
+// hub.pointsTables' own per-tier durations in the separate Points Tables
+// popup), always shown, not conditioned on any data field. row2 is Setup
+// Rules/Track Limit/Pts/Tires Per Race/Pit Stop Rule/Fuel Consumption/Tire
+// Wear, in that order. "Track Limit" (hub.trackLimitsPreset -- Strict/
+// Relaxed/Default) and "Pts" (rs.trackLimitPoints -- how many track-limit
+// points are allowed before a penalty) are two DIFFERENT fields, not a
+// duplicate -- one is the ruleset name, the other is that ruleset's point
+// threshold.
 function _rclBuildFormatStats(hub) {
   var rs = hub.raceSettings || {};
-  var stats = [];
-  if (rs.tireCount) stats.push({ value: String(rs.tireCount), label: 'Tires Per Event' });
-  // "Practice"/"Qualifying" (dropped "Length", 2026-09-19, Matt's ask) --
-  // the value itself already reads as a duration ("30 min"), so the word
-  // was redundant on the label.
-  if (rs.practiceLengthMin) stats.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
-  if (rs.qualifyLengthMin) stats.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualifying' });
-  if (rs.setupRules) stats.push({ value: rs.setupRules, label: 'Setup Rules' });
-  if (rs.pitStopReq) stats.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
-  if (rs.fuelMultiplier) stats.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
-  if (rs.tireWearMultiplier) stats.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
-  if (rs.trackLimitPoints) stats.push({ value: String(rs.trackLimitPoints), label: 'Track Limit Pts' });
-  return stats;
+  var row1 = [];
+  if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
+  if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
+  // Race Time -- static "Varies" bubble, always shown (2026-09-24, Matt's
+  // ask), unlike every other bubble here which is conditioned on actual
+  // data. Race length genuinely does vary by round/tier (see
+  // hub.pointsTables' own per-tier durations in the separate Points
+  // Tables popup), so there's no single number to show here -- this just
+  // says so plainly.
+  row1.push({ value: 'Varies', label: 'Race Time' });
+
+  var row2 = [];
+  if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
+  if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
+  if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
+  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
+  if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
+  if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
+  if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
+
+  return { row1: row1, row2: row2 };
 }
 
 // _rclRenderStatsRow removed 2026-09-19 -- its two call sites both moved
@@ -1993,37 +2037,46 @@ function _rclOpenSeasonDetailsModal(hub) {
 
   var body = _rclEl('div', 'rcl-modal-body');
 
-  var snapshotStats = _rclBuildSnapshotStats(hub);
-  if (snapshotStats.length) {
-    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
-    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
-    var snapshotRow = _rclEl('div', 'rcl-hero-stats-row');
-    snapshotStats.forEach(function (s) {
+  // Builds one .rcl-hero-stats-row of tiles -- shared by both groups'
+  // row1/row2 below instead of duplicating this loop four times.
+  function buildStatsRow(stats) {
+    var row = _rclEl('div', 'rcl-hero-stats-row');
+    stats.forEach(function (s) {
       var tile = _rclEl('div', 'rcl-hero-stat');
       tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
       tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-      snapshotRow.appendChild(tile);
+      row.appendChild(tile);
     });
-    snapshotGroup.appendChild(snapshotRow);
+    return row;
+  }
+
+  // Two explicit rows per group now (2026-09-24, Matt's ask), rather than
+  // one flowing row that wrapped wherever the browser felt like -- see
+  // _rclBuildSnapshotStats/_rclBuildFormatStats above for the fixed
+  // per-row field order. A group with nothing in EITHER row is skipped
+  // entirely, same as before; a group with something in only one row
+  // still renders just that one.
+  var snapshot = _rclBuildSnapshotStats(hub);
+  var hasSnapshot = snapshot.row1.length || snapshot.row2.length;
+  if (hasSnapshot) {
+    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
+    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
+    if (snapshot.row1.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row1));
+    if (snapshot.row2.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row2));
     body.appendChild(snapshotGroup);
   }
 
-  var formatStats = _rclBuildFormatStats(hub);
-  if (formatStats.length) {
+  var format = _rclBuildFormatStats(hub);
+  var hasFormat = format.row1.length || format.row2.length;
+  if (hasFormat) {
     var formatGroup = _rclEl('div', 'rcl-hero-stats-group');
     formatGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'League Format'));
-    var formatRow = _rclEl('div', 'rcl-hero-stats-row');
-    formatStats.forEach(function (s) {
-      var tile = _rclEl('div', 'rcl-hero-stat');
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-      formatRow.appendChild(tile);
-    });
-    formatGroup.appendChild(formatRow);
+    if (format.row1.length) formatGroup.appendChild(buildStatsRow(format.row1));
+    if (format.row2.length) formatGroup.appendChild(buildStatsRow(format.row2));
     body.appendChild(formatGroup);
   }
 
-  if (!snapshotStats.length && !formatStats.length) {
+  if (!hasSnapshot && !hasFormat) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
   }
 
