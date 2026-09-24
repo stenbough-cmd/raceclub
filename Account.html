@@ -5211,11 +5211,14 @@
     // full:1 (was limit:10) -- the redesigned page shows the WHOLE
     // multi-season history inline (grouped by season pill) instead of a
     // 10-row preview + a separate "Show full history" popup.
-    return Promise.all([
-      fetchApi('getProtestFilingOptions', { token: token }),
-      fetchApi('getMyProtests', { token: token, params: { full: '1' } })
-    ]).then(function (results) {
-      var filing = results[0], mine = results[1];
+    //
+    // One combined getProtestsPageData call (2026-09-24, Matt's "batch
+    // them altogether" efficiency pass) instead of two separate fetchApi
+    // round trips -- see handleGetProtestsPageData in Protests.gs. The
+    // two underlying actions (getProtestFilingOptions, getMyProtests)
+    // still exist and are still used elsewhere unchanged.
+    return fetchApi('getProtestsPageData', { token: token }).then(function (combined) {
+      var filing = combined && combined.filing, mine = combined && combined.mine;
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
       // Both the lede paragraph and the "How to use this page" box that
@@ -7418,17 +7421,15 @@
     // Wager/etc. already do.
     section.appendChild(buildPageSpinner('Loading admin tools...'));
 
-    Promise.all([
-      fetchApi('getTracks', { token: token }).catch(function () { return { success: false }; }),
-      fetchApi('getCars', { token: token }).catch(function () { return { success: false }; }),
-      // Members -- added 2026-09-18 to back the Data Management panel's
-      // counts line (see renderAdminSectionBody). Same "wait on everything
-      // together" gate the rest of this fetch already uses. The matching
-      // Seasons fetch that used to sit here was removed 2026-09-19 along
-      // with the panel's season status line (Matt's call: Data Management
-      // only shows Members/Tracks/Cars counts now).
-      fetchApi('adminListDrivers', { token: token }).catch(function () { return { success: false }; })
-    ]).then(function (results) {
+    // One combined getAdminSummary call (2026-09-24, Matt's "batch them
+    // altogether" efficiency pass) instead of three separate fetchApi
+    // round trips -- see handleGetAdminSummary in Website.gs. The three
+    // underlying actions (getTracks, getCars, adminListDrivers) still
+    // exist and are still used independently elsewhere (openTracksModal,
+    // openCarsModal, openMembersModal, season-wizard pickers).
+    fetchApi('getAdminSummary', { token: token }).catch(function () {
+      return { success: false, tracks: { success: false }, cars: { success: false }, drivers: { success: false } };
+    }).then(function (result) {
       // The admin could have navigated to a different page while this was
       // still in flight -- #rc-section-admin would be gone (or hidden
       // and about to be replaced) by the time this resolves, same "don't
@@ -7438,9 +7439,14 @@
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
 
-      var tracksData = results[0];
-      var carsData = results[1];
-      var driversData = results[2];
+      var tracksData = result && result.tracks;
+      var carsData = result && result.cars;
+      // Members -- added 2026-09-18 to back the Data Management panel's
+      // counts line (see renderAdminSectionBody). The matching Seasons
+      // fetch that used to sit here was removed 2026-09-19 along with the
+      // panel's season status line (Matt's call: Data Management only
+      // shows Members/Tracks/Cars counts now).
+      var driversData = result && result.drivers;
       renderAdminSectionBody(section, token, {
         memberCount: driversData && driversData.success ? (driversData.drivers || []).length : null,
         trackCount: tracksData && tracksData.success ? (tracksData.tracks || []).length : null,
