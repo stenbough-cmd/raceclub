@@ -251,10 +251,12 @@ body.rc-league-page {
   flex: none;
   display: block;
   /* Bumped a little (was 14px/22px), 2026-09-23 Matt's ask: "increase the
-     max height and width of the logos... so they can be seen easier". */
+     max height and width of the logos... so they can be seen easier".
+     +5px more (was 27px), 2026-09-24 Matt's ask: "add 5 more pixels max
+     width for manufacturer logos in TICKER scroll". */
   height: 17px;
   width: auto;
-  max-width: 27px;
+  max-width: 32px;
   object-fit: contain;
 }
 /* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
@@ -852,7 +854,14 @@ body.rc-league-page {
    sitting flush to the top of whichever sibling happens to be tallest. */
 .rcl-standings-mfr-logo-slot {
   flex: none;
-  width: 40px;
+  /* +10px (2026-09-24, Matt's ask: "add 10 more pixels to max width for
+     manufacturer logos" on Recent Results/View All Results/Current
+     Standings/the Drivers roster popup -- all four share this one
+     identity block via _rclBuildDriverIdentity_, so one change here
+     covers all of them). Slot width kept matched to the logo's own
+     max-width right below so a wide logo has room to actually reach it
+     without overflowing into the name text next to it. */
+  width: 50px;
   height: 24px;
   display: flex;
   align-items: center;
@@ -860,7 +869,7 @@ body.rc-league-page {
   align-self: center;
 }
 .rcl-standings-mfr-logo {
-  max-width: 40px;
+  max-width: 50px;
   max-height: 24px;
   width: auto;
   height: auto;
@@ -1074,11 +1083,15 @@ body.rc-league-page {
 .rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
 .rcl-report-line:last-child { margin-bottom: 0; }
-/* Driver name color (2026-09-24, Matt's ask -- an earlier version left a
+/* Driver name (2026-09-24, Matt's ask -- an earlier version left a
    wall-hit line's name gray to read as deemphasized, but Matt's follow-up
    was explicit: "make all names white, even when in the middle of a
-   contact report with another driver"). Always applied now, every line. */
-.rcl-report-name { color: var(--rcl-ink); }
+   contact report with another driver"). Always applied now, every line.
+   Bumped to bold white (2026-09-24, follow-up ask: "make all names BOLD
+   white") -- was var(--rcl-ink), a near-white #f2f2f0 at normal weight;
+   now literal #fff + font-weight 700 so the name reads as the clear
+   anchor of each line regardless of theme-token tweaks elsewhere. */
+.rcl-report-name { color: #fff; font-weight: 700; }
 /* Class pill + timestamp prefix (2026-09-24, Matt's ask: "put class pill
    information... in front of the records" plus "timestamp information
    for the event"). .rc-badge-chip/.rc-badge-chip-abbrev and the per-
@@ -1086,8 +1099,17 @@ body.rc-league-page {
    on this page too (see the file header comment) -- .rcl-report-pill just
    adds the spacing this inline context needs that the shared class
    doesn't assume. Timestamp is plain muted text, tabular-nums so a
-   column of them lines up digit-for-digit. */
-.rcl-report-pill { margin-right: 6px; vertical-align: 1px; }
+   column of them lines up digit-for-digit.
+   Fixed width + centered (2026-09-24, Matt's report: everything after the
+   pill "moves in and out" line to line because a 2-letter "HY" pill and a
+   5-letter "LMGT3"/"LMGTE" pill render at different natural widths under
+   .rc-badge-chip-abbrev's fixed padding -- .rc-badge-chip is display:
+   inline-flex already (style.css), so a fixed width + justify-content
+   here is enough to turn it into one consistent-width column without
+   touching the shared badge classes other pages also use. 46px fits
+   "LMGT3"/"LMGTE" (the longest labels) with room to spare; "HY"/"LMP2"/
+   "LMP3" just center within the same box. */
+.rcl-report-pill { width: 46px; justify-content: center; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
