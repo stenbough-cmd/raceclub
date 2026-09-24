@@ -299,15 +299,10 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
-/* Data Management panel summary -- counts line (Members/Tracks/Cars),
-   sitting under the button row (2026-09-18, Matt's call: give this panel
-   a quick at-a-glance snapshot). Small, muted, deliberately quieter than
-   the buttons above it -- this is context, not another action. The
-   season status line that used to sit here too (.rc-dm-summary-season)
-   was removed 2026-09-19 along with the season data it showed -- season
-   status lives on the League Tools page's own Seasons panel now. */
-.rc-dm-summary { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rc-offwhite); display: flex; flex-direction: column; gap: 6px; }
-.rc-dm-summary-line { font-size: 12.5px; color: var(--rc-steel); }
+/* Data Management panel's counts line (.rc-dm-summary/-line) removed
+   2026-09-24 (Matt's call: "get rid of the member n, cars n and tracks n
+   from the data management container... so the page only loads the
+   buttons") -- the panel is just the Members/Tracks/Cars button row now. */
 
 /* Wizard Next/Back only ("Make the Next and Back buttons slightly less
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
@@ -2741,35 +2736,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-sponsor-table-panel.rc-dash-card::before,
 .rc-trigger-glossary-panel.rc-dash-card::before { background: var(--rc-silver); }
 
-/* Protests page redesign (2026-09-20, Matt's ask: "Make it look
-   identical to the other pages on the list" -- one Season N: Name
-   container, FILE PROTEST button below the header's red rule, a bordered
-   season-grouped history below that). See buildProtestPagePanel/
-   buildProtestSeasonGroup/buildProtestHistoryItem, Account.html. */
+/* Protests popup (2026-09-20 page redesign, then converted to a popup and
+   simplified further 2026-09-24, Matt's ask: "remove the container within
+   the popups" -- the old "Season N: Name" panel wrapper is gone; FILE
+   PROTEST sits right below the popup's own red header line, then a
+   bordered season-grouped history below that). See
+   buildProtestPopupBody/buildProtestSeasonGroup/buildProtestHistoryItem,
+   Account.html. The old locked/grayed-out Edit/Delete button treatment
+   (.rc-protest-btn-locked/-lock) is gone too, 2026-09-24 -- Edit/Withdraw
+   simply don't render any more once a protest is no longer modifiable,
+   instead of showing disabled with a hover lock icon. */
 .rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
 .rc-protest-season-group { padding: 10px 0; }
 .rc-protest-season-group + .rc-protest-season-group { border-top: 1px solid var(--rc-offwhite); }
-/* Locked Edit/Delete buttons -- grayscale + a circle-slash icon that
-   fades in on hover (Matt's exact ask: "gray out the buttons and put a
-   circle with a line through it on hover"), same mechanic as
-   .rc-class-pick-btn-locked/.rc-class-pick-btn-lock above, just sized for
-   these small .rc-btn-row buttons instead of the big class-pick tiles. */
-.rc-protest-btn-locked { position: relative; filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
-.rc-protest-btn-lock {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-.rc-protest-btn-locked:hover .rc-protest-btn-lock { opacity: 1; }
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
@@ -5107,181 +5087,141 @@ body.rc-modal-scroll-locked {
 }
 .rc-cal-bye-date { font-size: 11px; font-weight: 400; text-transform: none; } /* the date stays normal-case even though .rc-cal-bye above it is all-caps */
 
-/* Flex row -- .rc-cal-race-body (everything but the image) grows to fill
-   the space, .rc-cal-track-img sits fixed-size on the right. position:
-   relative so .rc-cal-completed-badges below can pin to the card's own
-   top-right corner. */
+/* Race row -- redesigned 2026-09-24 (Matt's ask: "make the race calendar
+   layout look identical to the league.html calendar race layout, ...
+   keep the same colors as the current account calendar but I want the
+   font and layout and text weight to all match the league page"). Same
+   flex "round-number bar + body" shape league.html's own .rcl-cal-row
+   uses (see css/league.css), just in Account's own light-page tokens
+   (--rc-carbon/--rc-steel/--rc-red/--rc-silver-dark/--rc-white/--rc-gold)
+   instead of league's dark theme. position: relative so nothing needs to
+   pin to a corner overlay any more -- the old full-card dimmed
+   "Completed" overlay is gone, replaced by fading the row's own content
+   (see .rc-cal-finished below), same as league.html's own
+   .rcl-cal-row-finished. */
 .rc-cal-race {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: stretch;
+  gap: 0;
   overflow: hidden;
   /* 2px, not 1px (2026-08-30, Matt's call: "make each race container have
-     a gray border similar to the size of the gold special event border")
-     -- .rc-cal-race-special below only overrides the color, not the
-     width, so a normal and a special card now read as the same weight of
-     border, just a different color. --rc-silver-dark (2026-09-20, Matt's
-     follow-up call to darken it slightly) instead of the standard
-     --rc-silver every other hairline border on the site uses. */
+     a gray border similar to the size of the gold special event border").
+     --rc-silver-dark (2026-09-20, Matt's follow-up call to darken it
+     slightly) instead of the standard --rc-silver every other hairline
+     border on the site uses. */
   border: 2px solid var(--rc-silver-dark);
   border-radius: 8px;
   background: var(--rc-white);
-  padding: 16px 18px;
   width: 100%;
 }
-/* Round-number bar removed entirely 2026-09-19 (Matt's call: "get rid of
-   the giant numbers with the gray left border backgrounds") -- the round
-   number now lives in the "ROUND N:" title prefix instead (raceCard's
-   nameWrap). */
-/* Every round card now gets the same diagonal "finish flag" top accent
-   Special Events already had, just in gray instead of gold (2026-09-19,
-   Matt's call: "make the round event containers styled similar to the
-   special event except make them the gray color") -- .rc-cal-race-special
-   below overrides only the color, same pattern the border already used. */
-.rc-cal-race::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40%;
-  height: 4px;
-  /* Matches the card's own full border color (--rc-silver-dark, set on
-     .rc-cal-race above) rather than the lighter --rc-silver it used
-     before (2026-09-23, Matt's call: "make the top 1/2 border design...
-     the same gray color as the full line border around each race
-     container") -- the accent bar and the border it sits on now read as
-     one consistent gray. */
-  background: var(--rc-silver-dark);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-}
-/* Special Events get a bit more of the same gold the star icon already
-   uses (Matt's call: "stick out a little better") -- a gold-tinted
-   border, and the shared ::before accent above just reads gold here
-   instead of gray. */
+/* UP NEXT row highlight -- a barely-there tint instead of league.html's
+   translucent-white wash (which only reads against a dark background),
+   same "identify it at a glance without the whole row shouting" intent. */
+.rc-cal-race-next { background: var(--rc-offwhite); }
+/* Special Events get a gold-tinted border (Matt's call: "stick out a
+   little better") -- the round bar below reads gold too. */
 .rc-cal-race-special { border-color: var(--rc-gold); }
-.rc-cal-race-special::before { background: var(--rc-gold); }
-.rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
-/* .rc-cal-track-img removed entirely 2026-09-19 (Matt's call: "remove the
-   tracks from being shown within each") -- race cards no longer show a
-   track image aside; .rc-cal-race-body is the whole card's content now. */
+
+/* Round-number bar -- back (2026-09-24) after being folded into a
+   "ROUND N:" title prefix on 2026-09-19; same silver metallic gradient
+   league.html's .rcl-cal-round uses for a normal round, gold for a
+   Special Event, so the two read as different metals at a glance. */
+.rc-cal-round-bar {
+  flex: none;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  color: #1c1d20;
+  text-align: center;
+  user-select: none;
+}
+.rc-cal-round-bar-special {
+  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
+  color: #241b04;
+}
+
+.rc-cal-race-body { flex: 1 1 auto; min-width: 0; padding: 14px 16px; }
 @media (max-width: 560px) {
   .rc-cal-race { flex-wrap: wrap; }
   .rc-cal-race-body { min-width: 220px; }
 }
 
-/* Whole-container dim + centered "COMPLETED" overlay, once a round/
-   special event's start time has passed (2026-09-23 redesign, Matt's
-   ask: "dim the whole race container and show COMPLETED in large text
-   in the middle... under it it can say Unofficial Results Posted or
-   Official Results Posted" -- and a same-day follow-up: "or have it say
-   NO RESULTS POSTED YET if nothing uploaded"). Fifth pass at this
-   treatment: a faded background + small "Completed" pill (original),
-   then a full-card dark scrim with giant centered text, then small
-   corner badges over a dimmed body only (2026-09-21), then a full-card
-   centered overlay on a near-opaque light scrim with a pill subheading,
-   then a darker see-through scrim with plain light text (both earlier
-   today). Matt's latest ask made the scrim white and even more
-   see-through, so text flips back to dark (var(--rc-carbon)/--rc-steel)
-   with a soft white halo (text-shadow) for legibility over whatever
-   dimmed card content sits underneath. .rc-cal-race-body (which wraps
-   the card's entire visible content -- head/track/datetime, see
-   raceCard()) dims via grayscale + reduced opacity, same language the
-   site's other locked/disabled states use (.rc-protest-btn-locked); the
-   overlay is a separate, absolutely-positioned sibling covering the
-   WHOLE card (position:relative + overflow:hidden on .rc-cal-race
-   already clips it to the card's own rounded corners), so its text sits
-   above the dimmed content. */
-.rc-cal-race.rc-cal-finished .rc-cal-race-body { opacity: 0.35; filter: grayscale(0.5); }
-.rc-cal-completed-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 12px;
-  text-align: center;
-  /* Approximates --rc-white at low opacity rather than referencing the
-     token directly -- an alpha channel on a hex custom property needs
-     color-mix()/relative-color syntax, more than this needs. Kept low
-     so the dimmed card content underneath stays clearly visible. */
-  background: rgba(255, 255, 255, 0.22);
-  pointer-events: none;
+.rc-cal-race-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* Combined "<event> at <track>: <layout>" line, same three-piece shape
+   league.html's own .rcl-cal-event uses -- event name bold, track normal
+   weight, layout normal weight but dimmer, all in Account's own ink
+   colors instead of league's white/gray. */
+.rc-cal-race-event { font-size: 15px; }
+.rc-cal-race-event-name { font-weight: 800; color: var(--rc-carbon); }
+.rc-cal-race-event-track { font-weight: 500; color: var(--rc-carbon); }
+.rc-cal-race-event-layout { font-weight: 500; color: var(--rc-steel); }
+.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); margin-left: 6px; }
+/* Special Events read one uniform gold across the whole event line, same
+   as league.html's .rcl-cal-row-special treatment. */
+.rc-cal-race-special .rc-cal-race-event,
+.rc-cal-race-special .rc-cal-race-event-name,
+.rc-cal-race-special .rc-cal-race-event-track,
+.rc-cal-race-special .rc-cal-race-event-layout {
+  color: var(--rc-gold);
 }
-.rc-cal-completed-overlay-title {
+
+/* Status word, upper-right of the row -- UP NEXT/SCHEDULED/COMPLETED
+   (Matt's exact wording), same font-heading/uppercase/letter-spacing
+   treatment as league.html's .rcl-cal-status. The results-posted note
+   stacks BELOW it as its own line (Matt's ask) rather than league's one
+   combined "COMPLETED · OFFICIAL RESULTS POSTED" string. */
+.rc-cal-race-status-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; text-align: right; }
+.rc-cal-race-status {
   font-family: var(--rc-font-heading);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  /* Lighter gray (2026-09-23, Matt's call: "make the COMPLETED and
-     RESULTS notifications on the dashboard calendar a lighter gray
-     font") -- was --rc-carbon (near-black), which read too heavy/dark
-     against the near-white scrim. --rc-steel is the site's standard
-     muted-label gray, same token .rc-cal-completed-overlay-sub below
-     already used. */
-  color: var(--rc-steel);
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
-}
-.rc-cal-completed-overlay-sub {
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--rc-steel);
-  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
   white-space: nowrap;
+  color: var(--rc-steel);
 }
-/* Preliminary/Official results sub-line now stays the same lighter gray
-   as everything else in this overlay (2026-09-23, same pass as the title
-   above) rather than the amber/green semantic tint it used briefly --
-   Matt's ask covered "RESULTS notifications" broadly, not just the
-   neutral "No Results Posted Yet" state, so all three read as one
-   consistent gray now. The amber/green semantic-color mapping (still
-   used elsewhere, e.g. league.html's public calendar badges,
-   .rcl-cal-status-preliminary/-official) was intentionally dropped here
-   only. */
-
-.rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-/* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
-   the Current Seat team name (Matt's call: every event name on the site
-   reads at the same weight) instead of its own bigger/lighter/lowercase
-   style. */
-.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rc-carbon); }
-/* Star marks a special/named event (Matt: "any special events have a
-   star next to the race name") -- normal rounds have no star, no name,
-   just "Race 0N". */
-.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); }
-
-/* Track name/layout are BACK (2026-09-19 follow-up, Matt's catch: "I
-   don't want the track names gone! There was a misunderstanding. I want
-   the tracks and layouts there just how they were. What I don't want is
-   the track images" -- the earlier same-day removal of the whole track
-   line was a misread of "remove the tracks" as covering the text too,
-   not just the image). .rc-cal-track-row wraps the track/layout text
-   together with the small length/weather pills on one row -- "next to
-   the race track and layout, add a smaller race length pill and a
-   weather pill" reads literally now that the track text exists again.
-   Keeps the light divider under this row, same as it always had. */
-.rc-cal-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-cal-track { font-size: 13px; color: var(--rc-steel); }
-.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
-.rc-cal-layout { color: var(--rc-steel); font-weight: 400; }
-/* Small pills next to the track/layout text (2026-09-19, Matt's ask) --
-   deliberately smaller than the regular .rc-cal-stat chips below (.rc-cal-
-   mini-stat) so this doesn't just become the bottom stats row moved up. */
-.rc-cal-mini-stats { display: flex; flex-wrap: wrap; gap: 6px; }
-.rc-cal-mini-stat {
-  padding: 2px 8px;
-  font-size: 11px;
-  gap: 4px;
+.rc-cal-race-status-up { color: var(--rc-red); }
+.rc-cal-race-status-note {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--rc-steel);
 }
-.rc-cal-mini-stat svg { width: 12px; height: 12px; }
+/* Preliminary reuses the site's one gold accent so "not final yet" reads
+   as an amber/caution note, same convention league.html's own
+   .rcl-cal-status-preliminary uses. */
+.rc-cal-race-status-note-preliminary { color: var(--rc-gold); }
+
+/* Faded row once a round's start time has passed (2026-09-24, matching
+   league.html's .rcl-cal-row-finished) -- dims the round bar/event/meta/
+   in-game line, but deliberately NOT the status word or its results note,
+   so the COMPLETED/results phrase stays fully legible against the row. */
+.rc-cal-race.rc-cal-finished .rc-cal-round-bar,
+.rc-cal-race.rc-cal-finished .rc-cal-race-event,
+.rc-cal-race.rc-cal-finished .rc-cal-race-meta,
+.rc-cal-race.rc-cal-finished .rc-cal-race-igextra {
+  opacity: 0.5;
+}
+
+/* Meta chip row -- date/time+length, In-Game Event Time, Weather, and
+   (when set) Password Override, reusing the site's shared .rc-cal-stat
+   chip (below) same as every other pill row on the site. */
+.rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
+
+/* Practice/Qualifying in-game times -- Account-only info league.html's
+   public calendar never shows, kept as its own quiet line under the meta
+   chips. */
+.rc-cal-race-igextra { font-size: 12px; color: var(--rc-steel); margin-top: 8px; }
+
 
 .rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
 .rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
