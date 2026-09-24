@@ -421,13 +421,43 @@ body.rc-league-page {
    runs -- stay visually separate. */
 .rcl-hero-stats-group { margin-top: 22px; }
 .rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 20px; }
+/* Standalone gray "pill" label -- same look as a Points Tables tier's own
+   pill half (.rcl-points-tier-pill-label further below), just with a full
+   border/radius on every side since nothing is fused against it here.
+   Added 2026-09-24, Matt's ask: keep the Season Details group headers
+   (This Season/League Format) and the Points Tables' own Bonus Points
+   label (see .rcl-points-bonus-label below) all reading as one
+   consistent gray-pill treatment sitewide, rather than each having its
+   own one-off look -- was plain red uppercase text here, and plain white
+   uppercase text (.rcl-points-tier-name) for Bonus Points. */
+.rcl-pill-label {
+  display: inline-flex;
+  align-items: center;
+  background: #d9dadd;
+  color: #1c1d20;
+  border: 1px solid #b6b8bd;
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-family: var(--rc-font-heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .rcl-hero-stats-label {
+  display: inline-flex;
+  align-items: center;
+  background: #d9dadd;
+  color: #1c1d20;
+  border: 1px solid #b6b8bd;
+  border-radius: 5px;
+  padding: 3px 10px;
   font-family: var(--rc-font-heading);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--rc-red);
   margin-bottom: 10px;
 }
 .rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1044,11 +1074,15 @@ body.rc-league-page {
 .rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
 .rcl-report-line:last-child { margin-bottom: 0; }
-/* Driver name color (2026-09-24, Matt's ask -- an earlier version left a
+/* Driver name (2026-09-24, Matt's ask -- an earlier version left a
    wall-hit line's name gray to read as deemphasized, but Matt's follow-up
    was explicit: "make all names white, even when in the middle of a
-   contact report with another driver"). Always applied now, every line. */
-.rcl-report-name { color: var(--rcl-ink); }
+   contact report with another driver"). Always applied now, every line.
+   Bumped to bold white (2026-09-24, follow-up ask: "make all names BOLD
+   white") -- was var(--rcl-ink), a near-white #f2f2f0 at normal weight;
+   now literal #fff + font-weight 700 so the name reads as the clear
+   anchor of each line regardless of theme-token tweaks elsewhere. */
+.rcl-report-name { color: #fff; font-weight: 700; }
 /* Class pill + timestamp prefix (2026-09-24, Matt's ask: "put class pill
    information... in front of the records" plus "timestamp information
    for the event"). .rc-badge-chip/.rc-badge-chip-abbrev and the per-
@@ -1056,8 +1090,17 @@ body.rc-league-page {
    on this page too (see the file header comment) -- .rcl-report-pill just
    adds the spacing this inline context needs that the shared class
    doesn't assume. Timestamp is plain muted text, tabular-nums so a
-   column of them lines up digit-for-digit. */
-.rcl-report-pill { margin-right: 6px; vertical-align: 1px; }
+   column of them lines up digit-for-digit.
+   Fixed width + centered (2026-09-24, Matt's report: everything after the
+   pill "moves in and out" line to line because a 2-letter "HY" pill and a
+   5-letter "LMGT3"/"LMGTE" pill render at different natural widths under
+   .rc-badge-chip-abbrev's fixed padding -- .rc-badge-chip is display:
+   inline-flex already (style.css), so a fixed width + justify-content
+   here is enough to turn it into one consistent-width column without
+   touching the shared badge classes other pages also use. 46px fits
+   "LMGT3"/"LMGTE" (the longest labels) with room to spare; "HY"/"LMP2"/
+   "LMP3" just center within the same box. */
+.rcl-report-pill { width: 46px; justify-content: center; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
@@ -1161,26 +1204,36 @@ body.rc-league-page {
   background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
   color: #241b04;
 }
-.rcl-cal-row-special .rcl-cal-event { color: #e0b64c; }
-.rcl-cal-row-special .rcl-cal-track { color: #b99a4f; }
-/* Layout (the "-- <layout>" suffix on the track line) gets the same gold
-   treatment on a special event (2026-09-19, Matt's ask: "make the track
-   -- layout for the special event gold") -- .rcl-cal-layout has its own
-   explicit color rule below, which would otherwise win over the inherited
-   .rcl-cal-track gold above, so this needs its own override. */
-.rcl-cal-row-special .rcl-cal-layout { color: #d4b656; }
+/* One combined "<event name> at <track name>: <layout>" line (2026-09-24,
+   Matt's ask), three independently-styled pieces inside .rcl-cal-event --
+   .rcl-cal-event-name bold and white/ink, .rcl-cal-event-track normal
+   weight but still white/ink, .rcl-cal-event-layout normal weight but
+   gray/dim. On a special event the whole line reads one uniform gold
+   (#e0b64c) instead -- the plain " at "/": " connector text inherits it
+   from .rcl-cal-event's own color below, and each span gets its own
+   explicit override since an explicit color always wins over an inherited
+   one. Was three separate two-tone gold rules (bright event, dimmer
+   track, dimmer-still layout) before this pass -- Matt's ask now is one
+   flat gold across all three, matching the round bar's own single gold
+   gradient rather than a graduated scheme.
+   Round-number bar (.rcl-cal-round-special above) already reads gold. */
+.rcl-cal-row-special .rcl-cal-event,
+.rcl-cal-row-special .rcl-cal-event-name,
+.rcl-cal-row-special .rcl-cal-event-track,
+.rcl-cal-row-special .rcl-cal-event-layout {
+  color: #e0b64c;
+}
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-/* Event name / track name swapped emphasis (2026-09-19, Matt's follow-up
-   call: "move the event to above the track name") -- .rcl-cal-event is
-   now the bold PRIMARY line at the top of the row (was track), .rcl-cal-
-   track is now the lighter SECONDARY line underneath it (was event). The
-   class names stay put (still literally "the event line"/"the track
-   line") -- only which one reads as bold/primary changed, so this is a
-   property swap between the two rules, not a rename. */
-.rcl-cal-event { font-size: 16.5px; font-weight: 800; color: var(--rcl-ink); }
+.rcl-cal-event { font-size: 16.5px; }
+.rcl-cal-event-name { font-weight: 800; color: var(--rcl-ink); }
+.rcl-cal-event-track { font-weight: 500; color: var(--rcl-ink); }
+.rcl-cal-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
+/* .rcl-cal-track still backs the Bye row's plain "Bye Week" line below
+   (_rclRenderCalendar, js/league.js) -- unrelated to the race-row event
+   line above, which no longer uses this class at all (2026-09-24, see the
+   .rcl-cal-event-* rules above). */
 .rcl-cal-track { font-size: 13.5px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
-.rcl-cal-layout { font-weight: 600; color: var(--rcl-ink-faint); }
 /* Vertically centers every meta chip against its siblings (2026-09-19,
    Matt's ask: "vertically align the pill text with the rest of the race
    details next to it") -- without this, the padded pill chips (taller,
