@@ -489,6 +489,26 @@ var _rcNotifController = null;
 var _rcNotifPollTimer = null;
 var RC_NOTIF_POLL_MS = 45000;
 
+// Dedupe window (2026-09-24, Matt's report: "why does one visit to the
+// dashboard fire so many calls to Apps Script") -- renderHeader() runs
+// TWICE on a normal page load (once blind at the very top of the page, off
+// whatever profile is already cached locally, so the header paints
+// instantly; again once the real profile/session comes back confirmed --
+// see Account.html's bootstrap). Every renderHeader() call re-runs this
+// whole notification bell setup, including one immediate
+// _rcRefreshNotifications() fetch -- so a single page visit was silently
+// firing getNotifications TWICE against the shared Apps Script queue, back
+// to back, for no reason: the second call almost always lands within a
+// second or two of the first, long before anything could have changed
+// server-side. This tracks when the bell last actually fetched and skips
+// the immediate refetch if it was very recent, while still letting a
+// GENUINELY later renderHeader() call (a slow bootstrap, a real page
+// navigation) fetch fresh data, and never touching the 45s poll tick or
+// _rcNotifController.refresh()'s own forced refreshes (those always call
+// _rcRefreshNotifications() directly, not through this gate).
+var _rcLastNotifFetchAt = 0;
+var RC_NOTIF_DEDUPE_WINDOW_MS = 4000;
+
 // Click-outside/Escape listener leak fix (2026-09-13, sitewide review) --
 // renderHeader() runs more than once per page (same reason the poll timer
 // above needs the clear-then-restart dance), and every run used to attach
@@ -1111,6 +1131,11 @@ function renderHeader(opts) {
       // No more admin-approval-queue fetch here (2026-09-19, Matt's call).
       // Sponsor notifications were dropped earlier, 2026-09-17 -- V1 scope
       // cut, Sponsorship system out of the site. See season-1-mvp-scope.md.
+      // Stamped here (not just at the call site below) so the dedupe
+      // window covers every path that actually fetches -- the 45s poll
+      // tick and _rcNotifController.refresh()'s forced refreshes included --
+      // not just the one bootstrap call site that reads it.
+      _rcLastNotifFetchAt = Date.now();
       return _rcFetchSeasonNotifications(token, cached).then(function (season) {
         season = season || { active: [], history: [] };
         currentNotifications = season.active;
@@ -1124,7 +1149,13 @@ function renderHeader(opts) {
       });
     }
 
-    _rcRefreshNotifications();
+    // See RC_NOTIF_DEDUPE_WINDOW_MS above -- skips this one immediate
+    // fetch if renderHeader() (and so this same bootstrap fetch) just ran
+    // moments ago, so a normal page load's two renderHeader() calls don't
+    // silently turn into two getNotifications round trips.
+    if (Date.now() - _rcLastNotifFetchAt > RC_NOTIF_DEDUPE_WINDOW_MS) {
+      _rcRefreshNotifications();
+    }
 
     if (_rcNotifPollTimer) clearInterval(_rcNotifPollTimer);
     _rcNotifPollTimer = setInterval(_rcRefreshNotifications, RC_NOTIF_POLL_MS);
