@@ -981,18 +981,33 @@ function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
 // class position, so index 0 is always the class leader and index i-1 is
 // always the car ahead of index i. A DSQ'd driver or one missing a finish
 // time shows a dash/DSQ instead of a bogus gap.
-function _rclFormatGap_(row, leaderFinishSeconds) {
+// A car that's one or more laps down has a SHORTER raw finishTimeSeconds
+// than the leader (its FinishTime is stamped when the checkered flag falls
+// for everyone, after fewer laps of running than the leader put in), so
+// naively subtracting finish times made a lapped car's "gap" negative and
+// the "gap <= 0" check below then displayed it as "Leader" (2026-09-24,
+// Matt's bug report -- confirmed the fix by checking each row's own `laps`
+// count rather than trusting the raw time delta). Real timing towers show
+// "+N Lap(s)" instead of a time gap once lap counts differ -- comparing
+// elapsed time across different lap counts isn't meaningful -- so that
+// takes priority over the time-based gap whenever the compared car is
+// behind on laps.
+function _rclFormatGap_(row, leaderRow) {
   if (row.disqualified) return 'DSQ';
-  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || leaderFinishSeconds === null || leaderFinishSeconds === undefined) return '--';
-  var gap = row.finishTimeSeconds - leaderFinishSeconds;
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !leaderRow || leaderRow.finishTimeSeconds === null || leaderRow.finishTimeSeconds === undefined) return '--';
+  var lapsDown = (leaderRow.laps || 0) - (row.laps || 0);
+  if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
+  var gap = row.finishTimeSeconds - leaderRow.finishTimeSeconds;
   if (gap <= 0) return 'Leader';
   return '+' + gap.toFixed(3);
 }
 
-function _rclFormatIntervalToAhead_(row, aheadFinishSeconds) {
+function _rclFormatIntervalToAhead_(row, aheadRow) {
   if (row.disqualified) return 'DSQ';
-  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || aheadFinishSeconds === null || aheadFinishSeconds === undefined) return '--';
-  var gap = row.finishTimeSeconds - aheadFinishSeconds;
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !aheadRow || aheadRow.finishTimeSeconds === null || aheadRow.finishTimeSeconds === undefined) return '--';
+  var lapsDown = (aheadRow.laps || 0) - (row.laps || 0);
+  if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
+  var gap = row.finishTimeSeconds - aheadRow.finishTimeSeconds;
   if (gap <= 0) return 'Leader';
   return '+' + gap.toFixed(3);
 }
@@ -1075,12 +1090,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     // non-DSQ'd entry in practice; _rcRecomputeStandingsCacheFromRound_
     // already sorts DSQ'd drivers to the back, Results.gs) and index i-1
     // is always the car ahead of index i.
-    var leaderFinishSeconds = standings.length ? standings[0].finishTimeSeconds : null;
+    var leaderRow = standings.length ? standings[0] : null;
 
     standings.forEach(function (row, idx) {
       if (row.profileId) namesByProfileId[row.profileId] = row.name;
       var dnf = _rclIsDnf_(row);
-      var aheadFinishSeconds = idx > 0 ? standings[idx - 1].finishTimeSeconds : null;
+      var aheadRow = idx > 0 ? standings[idx - 1] : null;
       // Pos badge + driver identity, identical markup to Current Standings
       // (2026-09-23, Matt's ask), same metal coloring by finish position.
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
@@ -1088,8 +1103,8 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderFinishSeconds)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadFinishSeconds)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclEscapeHtml(row.bestLapTime || '--')));
       clsWrap.appendChild(rowEl);
@@ -1117,10 +1132,16 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       byLap[entry.lapNum].push(entry);
     });
     // Clause kind -> the CSS class that colors it (2026-09-24, Matt's
-    // ask). Kinds not listed here (pit, penalty, position) stay the
-    // line's default dim-gray on purpose -- only wall contact, car
-    // contact and damage get called out in color.
-    var CLAUSE_CLASS = { wall: 'rcl-report-clause-wall', car: 'rcl-report-clause-car', damage: 'rcl-report-clause-damage' };
+    // ask). "penalty" stays the line's default dim-gray on purpose --
+    // everything else called out gets its own color.
+    var CLAUSE_CLASS = {
+      wall: 'rcl-report-clause-wall',
+      car: 'rcl-report-clause-car',
+      damage: 'rcl-report-clause-damage',
+      pit: 'rcl-report-clause-pit',
+      position_gain: 'rcl-report-clause-gain',
+      position_loss: 'rcl-report-clause-loss'
+    };
     lapOrder.forEach(function (lapNum) {
       var lapRow = _rclEl('div', 'rcl-report-lap');
       lapRow.appendChild(_rclEl('div', 'rcl-report-lap-num', 'Lap ' + lapNum));
@@ -1129,9 +1150,18 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
         var lineEl = _rclEl('p', 'rcl-report-line');
         if (entry.clauses) {
           // Structured entry (2026-09-24+) -- render each clause as its
-          // own span so wall/car/damage clauses can be colored
-          // independently of the driver name and the rest of the line.
-          lineEl.appendChild(document.createTextNode(entry.name));
+          // own span so wall/car/damage/pit/position clauses can be
+          // colored independently of the rest of the line.
+          //
+          // Driver names render white by default (Matt's ask), EXCEPT on
+          // a line where the driver hit a wall/track object -- that stays
+          // the line's default dim-gray so the whole "minor" line reads
+          // as deemphasized, matching the wall clause's own gray.
+          var hitWall = entry.clauses.some(function (c) { return c.kind === 'wall'; });
+          var nameEl = document.createElement('span');
+          if (!hitWall) nameEl.className = 'rcl-report-name';
+          nameEl.textContent = entry.name;
+          lineEl.appendChild(nameEl);
           var allClauses = entry.positionClause ? entry.clauses.concat([entry.positionClause]) : entry.clauses;
           allClauses.forEach(function (clause, i) {
             lineEl.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
