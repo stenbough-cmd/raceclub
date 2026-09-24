@@ -1312,6 +1312,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-align: left;
 }
 .rc-nav-item svg { flex: none; }
+/* Discord's own PNG logo used as this nav item's icon (2026-09-24, Matt's
+   ask), sized to match every other 16x16 nav icon on the site -- see
+   .rc-nav-item svg above; object-fit: contain keeps a non-square source
+   PNG from stretching to fill that box. */
+.rc-nav-item img { flex: none; width: 16px; height: 16px; object-fit: contain; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
 /* Admin/League Tools/Stewarding now always render in the sidebar instead
@@ -1323,28 +1328,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    suppressed so it doesn't look clickable. See Account.html's
    setNavAccess() for what applies/removes it. */
 .rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* "Follow Us" row -- Discord/YouTube (2026-09-24, Matt's ask), sitting in
-   the sidebar's own dark chrome between Feedback and the Log Out divider.
-   Icons only (no nav-item label row -- these leave the site, not a
-   section switch), centered under the same 12px side padding every other
-   nav row uses. */
-.rc-nav-social-row { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 6px 12px 2px; }
-.rc-nav-social-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  transition: transform 0.12s ease, background 0.12s ease;
-}
-.rc-nav-social-icon:hover { background: #262626; transform: translateY(-1px); }
-.rc-nav-social-icon svg { flex: none; }
-/* YouTube placeholder (no channel live yet) -- dimmed, no hover lift, not
-   a real link (see buildSocialLinksRow, Account.html). */
-.rc-nav-social-disabled { opacity: 0.4; cursor: not-allowed; }
-.rc-nav-social-disabled:hover { background: none; transform: none; }
 .rc-nav-item:disabled:hover { background: none; color: #cfd4d8; }
 .rc-main {
   flex: 1;
@@ -3472,8 +3455,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    same 360px-to-1600px range as everything else on this component. */
 .rc-hero-badge {
   position: absolute;
-  bottom: clamp(14px, 11.68px + 0.65vw, 22px);
-  right: clamp(14px, 11.68px + 0.65vw, 22px);
+  /* Shifted up 35px and left 35px (2026-09-24, Matt's ask) -- same clamp
+     slope as before, just every number in it (min/preferred-constant/max)
+     bumped by 35 so the badge moves by exactly 35px at every viewport
+     width instead of only at one breakpoint. */
+  bottom: clamp(49px, 46.68px + 0.65vw, 57px);
+  right: clamp(49px, 46.68px + 0.65vw, 57px);
   height: clamp(38px, 33.94px + 1.13vw, 52px);
   width: auto;
   z-index: 2;
@@ -3625,6 +3612,27 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background: var(--rc-offwhite);
 }
 .rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
+
+/* Discord community CTA strip (2026-09-24, Matt's ask) -- sits between
+   "What Is Race Club" and the "Why Race Club" section, a dark full-width
+   band so it reads as its own moment rather than another paragraph. */
+.rc-discord-cta { background: var(--rc-carbon); padding: 28px 24px; text-align: center; }
+.rc-discord-cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--rc-white);
+  text-decoration: none;
+  font-family: var(--rc-font-heading);
+  font-size: 17px;
+  font-weight: 700;
+}
+.rc-discord-cta-link:hover { color: var(--rc-gold); }
+.rc-discord-cta-link:hover .rc-discord-cta-logo { transform: scale(1.06); }
+.rc-discord-cta-logo { height: 32px; width: auto; flex: none; transition: transform 0.12s ease; }
+@media (max-width: 560px) {
+  .rc-discord-cta-link { flex-direction: column; gap: 10px; font-size: 15px; }
+}
 .rc-landing-inner h2 { font-size: 26px; }
 .rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }
 
@@ -3846,6 +3854,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-needs-icon svg { width: 20px; height: 20px; }
 .rc-needs-body h3 { font-size: 15px; letter-spacing: 0.03em; color: var(--rc-white); }
 .rc-needs-body p { font-size: 13.5px; color: rgba(255, 255, 255, 0.65); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
+/* "our Discord server" inline link (2026-09-24, Matt's ask) -- the site's
+   one red accent against this section's dim body text, same underline-
+   on-hover convention as the rest of the site's text links. */
+.rc-needs-body p a { color: var(--rc-red); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.12s ease; }
+.rc-needs-body p a:hover { text-decoration-color: var(--rc-red); }
 @media (max-width: 860px) {
   .rc-needs-list { grid-template-columns: 1fr; }
   .rc-needs-item { border-left: none !important; }
@@ -4158,6 +4171,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    .rcl-modal-dialog, so the Season Format popup opens to the same width
    whether it's reached from Account.html or League Hub. */
 .rc-modal-wide { max-width: 820px; }
+/* Calendar popup only, 50px wider than the shared .rc-modal-wide (Matt's
+   ask, 2026-09-24) -- see openCalendarModal, which adds this class
+   alongside wide:true rather than changing .rc-modal-wide itself. */
+.rc-modal-calendar-wide { max-width: 870px; }
 
 /* Accent header variant -- opt-in via showModal(title, {accentHead:true}).
    Used by popups whose content reads as a full account-page "page" of its
@@ -4937,7 +4954,10 @@ body.rc-modal-scroll-locked {
    league.html's own .rcl-cal-event uses -- event name bold, track normal
    weight, layout normal weight but dimmer, all in Account's own ink
    colors instead of league's white/gray. */
-.rc-cal-race-event { font-size: 15px; }
+/* Bumped from 15px (2026-09-24, Matt's ask: "increase the size of the
+   event/track/layout name by a little to make it more pronounced"),
+   same proportional bump as league.html's own .rcl-cal-event. */
+.rc-cal-race-event { font-size: 16.5px; }
 .rc-cal-race-event-name { font-weight: 800; color: var(--rc-carbon); }
 .rc-cal-race-event-track { font-weight: 500; color: var(--rc-carbon); }
 .rc-cal-race-event-layout { font-weight: 500; color: var(--rc-steel); }

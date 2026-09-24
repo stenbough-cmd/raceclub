@@ -431,17 +431,6 @@
   // the in-app notification system it described no longer exists.
   var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
 
-  // Discord/YouTube nav icons (added 2026-09-24, Matt's ask -- a "Follow
-  // Us" row between Feedback and Log Out, in place of the removed
-  // notification system, ahead of a future Discord bot integration).
-  // Filled brand marks, not this file's usual 16x16 stroke-only line-icon
-  // convention -- a simplified in-house approximation of each platform's
-  // logo (no way to pull the exact official SVG from this environment's
-  // network sandbox); swap the innerHTML here for the real brand asset any
-  // time Matt hands one over.
-  var ICON_DISCORD = '<svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="7" fill="#5865F2"></rect><path d="M7 8.6c1.2-.9 2.7-1.4 5-1.4s3.8.5 5 1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none"></path><ellipse cx="9" cy="13.2" rx="2.1" ry="2.6" fill="#fff"></ellipse><ellipse cx="15" cy="13.2" rx="2.1" ry="2.6" fill="#fff"></ellipse></svg>';
-  var ICON_YOUTUBE = '<svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="4.5" width="22" height="15" rx="5" fill="#FF0000"></rect><path d="M10 8.5v7l6.5-3.5z" fill="#fff"></path></svg>';
-
   // Restored from the pre-v0.5 archive (commit ab231e0) for the Calendar
   // page -- weather/session/setup chip icons, none of which the current
   // icon set had a use for until now.
@@ -638,33 +627,24 @@
     }
   }
 
-  // "Follow Us" row -- Discord (live) + YouTube (placeholder, no channel
-  // yet) -- see buildSidebarNav's own call site below for why this sits
-  // where it does. Real <a> tags (not nav buttons -- these leave the
-  // site), target="_blank" + rel="noopener noreferrer" so the site tab
-  // stays put.
-  function buildSocialLinksRow() {
-    var row = el('div', 'rc-nav-social-row');
-    var discordLink = document.createElement('a');
-    discordLink.href = 'https://discord.gg/UxWgwDwc9U';
-    discordLink.target = '_blank';
-    discordLink.rel = 'noopener noreferrer';
-    discordLink.className = 'rc-nav-social-icon rc-nav-social-discord';
-    discordLink.setAttribute('aria-label', 'Join our Discord');
-    discordLink.innerHTML = ICON_DISCORD;
-    withTooltip(discordLink, 'Join our Discord');
-    row.appendChild(discordLink);
-
-    // YouTube channel doesn't exist yet (Matt, 2026-09-24) -- a disabled
-    // placeholder icon rather than a link to nowhere, swap in a real
-    // href + drop the -disabled class/tooltip once the channel launches.
-    var ytIcon = el('span', 'rc-nav-social-icon rc-nav-social-youtube rc-nav-social-disabled');
-    ytIcon.setAttribute('aria-label', 'YouTube -- coming soon');
-    ytIcon.innerHTML = ICON_YOUTUBE;
-    withTooltip(ytIcon, 'YouTube -- coming soon');
-    row.appendChild(ytIcon);
-
-    return row;
+  // Discord nav link (redone 2026-09-24, Matt's ask: "I want it to look
+  // like the same size as the other icons in the black sidebar, with the
+  // link being DISCORD so that it looks like it belongs with the links on
+  // the side") -- replaces the earlier icon-row version with a real
+  // .rc-nav-item, same markup shape as makeNavButton() above just built
+  // as an <a> (leaves the site) instead of a <button> (switches section).
+  // Uses Matt's own discord_logo.png asset, sized to match this file's
+  // 16x16 icon convention (see .rc-nav-item img, style.css). The YouTube
+  // placeholder from the first pass is gone -- Matt only asked for
+  // Discord in the sidebar this time.
+  function buildDiscordNavLink() {
+    var link = document.createElement('a');
+    link.className = 'rc-nav-item';
+    link.href = 'https://discord.gg/UxWgwDwc9U';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Discord</span>';
+    return link;
   }
 
   // Order: the 10 general section links, a divider, Admin/Data
@@ -773,13 +753,10 @@
     // js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js"> tag in <head>), not an in-page section.
     nav.appendChild(makeNavButton('feedback', 'Feedback', ICON_FEEDBACK, 'rc-nav-feedback', false, function () { _rcOpenFeedbackModal(); }));
-    // "Follow Us" row (added 2026-09-24, Matt's ask, sitting right where
-    // the in-app notification bell used to live before it was removed the
-    // same day) -- Discord + YouTube, opening in a new tab so a driver
-    // never loses their place on the site. YouTube has no channel yet, so
-    // its icon is a disabled placeholder with a tooltip until Matt has a
-    // real link to wire in (see buildSocialLinksRow below).
-    nav.appendChild(buildSocialLinksRow());
+    // Discord link, right under Feedback (2026-09-24, Matt's ask), opening
+    // in a new tab so a driver never loses their place on the site -- see
+    // buildDiscordNavLink above.
+    nav.appendChild(buildDiscordNavLink());
     nav.appendChild(navDivider());
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
   }
@@ -4773,6 +4750,11 @@
   // old standalone Calendar page rendered.
   function openCalendarModal(token) {
     var modal = showModal('Calendar', { wide: true, accentHead: true });
+    // 50px wider than every other wide popup (2026-09-24, Matt's ask) --
+    // .rc-modal-wide's own 820px is shared with Season Details/Current
+    // Seat Info/Protests, so this bumps just the Calendar popup's own
+    // instance rather than every wide popup on the site.
+    modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading your calendar...'));
 
     fetchApi('getSeasonCalendar', { token: token }).then(function (res) {

@@ -1246,7 +1246,9 @@ body.rc-league-page {
    (2026-09-24, Matt's ask), not a pill. Sits above .rcl-cal-row-top. */
 .rcl-cal-datetime { font-size: 12px; font-weight: 600; color: var(--rcl-ink-dim); margin-bottom: 3px; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.rcl-cal-event { font-size: 16.5px; }
+/* Bumped from 16.5px (2026-09-24, Matt's ask: "increase the size of the
+   event/track/layout name by a little to make it more pronounced"). */
+.rcl-cal-event { font-size: 18px; }
 .rcl-cal-event-name { font-weight: 800; color: var(--rcl-ink); }
 .rcl-cal-event-track { font-weight: 500; color: var(--rcl-ink); }
 .rcl-cal-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
