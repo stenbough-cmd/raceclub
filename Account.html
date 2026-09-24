@@ -2091,8 +2091,6 @@
     // overall open/total seat count across every class in the season.
     function renderClassScreenBody(allTeams) {
       var body = modal.body;
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;',
-        'Pick the class you’ll compete in this season. You’ll choose a specific car/team next.'));
 
       var classesPresent = [];
       allTeams.forEach(function (t) { if (t.carClass && classesPresent.indexOf(t.carClass) === -1) classesPresent.push(t.carClass); });
@@ -2101,6 +2099,27 @@
       // decide which rows even existed; now it only decides which button
       // is clickable).
       var classes = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : classesPresent;
+
+      // Intro copy now names the actual class(es) this season fields
+      // instead of a generic "pick a class" line (2026-09-24, Matt's ask)
+      // -- built off classesPresent so it always matches the buttons below,
+      // in ladder order (classes.filter keeps CAR_CLASS_LIST's ordering
+      // rather than allTeams' insertion order). A single-class season reads
+      // "This season features Hypercar." A multiclass season lists all of
+      // them ("...features LMP2 and Hypercar." / "...features LMP3, LMP2,
+      // and Hypercar." for 3+, oxford comma to match the site's other
+      // joined lists).
+      var presentInOrder = classes.filter(function (c) { return classesPresent.indexOf(c) !== -1; });
+      var classesLabel;
+      if (presentInOrder.length <= 1) {
+        classesLabel = presentInOrder[0] || 'no classes yet';
+      } else if (presentInOrder.length === 2) {
+        classesLabel = presentInOrder[0] + ' and ' + presentInOrder[1];
+      } else {
+        classesLabel = presentInOrder.slice(0, -1).join(', ') + ', and ' + presentInOrder[presentInOrder.length - 1];
+      }
+      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin-bottom:14px;',
+        'This season features ' + classesLabel + '. Pick the class you’ll compete in this season.'));
 
       var grid = el('div', 'rc-class-pick-grid');
       var totalOpen = 0;
@@ -2330,7 +2349,18 @@
 
       var footer = el('div', 'rc-team-card-footer');
       if (team.taken) {
-        footer.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;', 'This seat is already taken.'));
+        // Dead/disabled version of the same Join button (2026-09-24,
+        // Matt's ask) instead of a plain gray text line -- reuses
+        // .rc-btn-primary so it's still the same size/shape/position a
+        // driver expects a team card's action button to be in, just
+        // grayed and dimmed via the existing :disabled rule in style.css
+        // (background var(--rc-silver), text var(--rc-steel)) rather than
+        // a one-off style here.
+        var takenBtn = el('button', null, 'THIS SEAT IS TAKEN');
+        takenBtn.type = 'button';
+        takenBtn.className = 'rc-btn-primary';
+        takenBtn.disabled = true;
+        footer.appendChild(takenBtn);
       } else {
         var joinBtn = el('button', null, 'Join This Team');
         joinBtn.type = 'button';

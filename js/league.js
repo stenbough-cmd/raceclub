@@ -45,6 +45,42 @@ function _rclEscapeHtml(str) {
   return d.innerHTML;
 }
 
+// Class pill (2026-09-24) -- same rounded-rectangle, white-on-color chip
+// every other class badge on the site uses (.rc-badge-chip + its color
+// class, style.css, which league.html already loads alongside
+// css/league.css -- see the file header comment above), just built by
+// hand here since Account.html's shared _rcClassAbbrevPill helper isn't
+// in scope on this page. Label matches _rcClassPillLabel's convention
+// (Account.html): Hypercar -> "HY", every other class name shown as-is
+// (LMGT3/LMGTE/LMP2/LMP3 are all already short enough to read fine in a
+// pill) -- Matt's own list for this ask was exactly those five labels.
+var RCL_CLASS_PILL_COLOR_ = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+function _rclClassPill_(cls) {
+  var key = String(cls || '').trim();
+  var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
+  var label = key === 'Hypercar' ? 'HY' : key;
+  var pill = document.createElement('span');
+  pill.className = 'rc-badge-chip rc-badge-chip-abbrev rcl-report-pill' + (colorClass ? ' ' + colorClass : '');
+  pill.textContent = label || '?';
+  return pill;
+}
+
+// mm:ss (or h:mm:ss past the hour mark) for a race report event's
+// elapsed-time stamp (2026-09-24, Matt's ask) -- races run anywhere from
+// a sprint to several hours, so the hour digit only shows once it's
+// actually needed rather than padding every timestamp with a leading
+// "0:".
+function _rclFormatEventTime_(seconds) {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '';
+  var total = Math.max(0, Math.floor(seconds));
+  var h = Math.floor(total / 3600);
+  var m = Math.floor((total % 3600) / 60);
+  var s = total % 60;
+  var ss = s < 10 ? '0' + s : String(s);
+  if (h > 0) return h + ':' + (m < 10 ? '0' + m : String(m)) + ':' + ss;
+  return m + ':' + ss;
+}
+
 // Background-scroll lock for every popup on this page (2026-09-19, Matt's
 // call: "anytime there is a popup ANYWHERE on the website -- I should not
 // be able to scroll in the background when a popup is active") -- same
@@ -417,14 +453,15 @@ function _rclRenderTicker(hub) {
         // instead of one joined string, so each name gets its own logo +
         // differently-weighted spans (see buildDriverEntry above) rather
         // than reading as a flat wall of text. Separator between entries
-        // is 7 non-breaking spaces (2026-09-23, was 5 -- Matt's ask for
-        // "2 more spaces in between driver[s]"), not a comma (2026-09-23
-        // follow-up, Matt's ask) -- same format for BOTH the pre-results
-        // roster and the in-season "TOP 5" results list, since both go
-        // through this one driverRows path. Plain U+0020 spaces collapse
-        // to one in HTML, so this uses   (non-breaking space) x7 to
-        // actually render as a wide gap instead of silently becoming a
-        // single space.
+        // is 10 non-breaking spaces (2026-09-24, was 7 -- Matt's ask for
+        // "3 more spaces in between all drivers"; before that, 5, see the
+        // 2026-09-23 history above), not a comma (2026-09-23 follow-up,
+        // Matt's ask) -- same format for BOTH the pre-results roster and
+        // the in-season "TOP 5" results list, since both go through this
+        // one driverRows path. Plain U+0020 spaces collapse to one in
+        // HTML, so this uses   (non-breaking space) x10 to actually
+        // render as a wide gap instead of silently becoming a single
+        // space.
         // Bold round/event name + normal-weight track (2026-09-23,
         // Matt's ask: "the round and event name should remain bolded
         // while the track name should be normal weight"), THEN 5
@@ -441,7 +478,7 @@ function _rclRenderTicker(hub) {
         }
         var list = _rclEl('span', 'rcl-ticker-driver-list');
         item.driverRows.forEach(function (row, idx) {
-          if (idx > 0) list.appendChild(document.createTextNode('       '));
+          if (idx > 0) list.appendChild(document.createTextNode('          '));
           // Bold white rank prefix (2026-09-23, Matt's ask: "Please
           // put 1st, 2nd, 3rd, 4th and 5th before the names in bold
           // white") -- ranked TOP 5 rows only (item.showRank), see
@@ -930,7 +967,10 @@ function _rclRenderResults(hub) {
       // come along for free from _rclBuildPosBadge_/_rclBuildDriverIdentity_.
       var dnf = _rclIsDnf_(row);
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-3' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : undefined));
+      // Same DSQ-over-DNF precedence as the All Results popup (2026-09-24,
+      // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
+      // a small field.
+      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
@@ -1114,8 +1154,13 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var aheadRow = idx > 0 ? standings[idx - 1] : null;
       // Pos badge + driver identity, identical markup to Current Standings
       // (2026-09-23, Matt's ask), same metal coloring by finish position.
+      // DSQ still wins over DNF when both are true (a disqualified driver
+      // shows DSQ, not DNF) -- otherwise a driver who didn't finish shows
+      // DNF in the position slot instead of a numeric finish position
+      // that never actually happened (2026-09-24, Matt's ask: "make sure
+      // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : undefined));
+      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
@@ -1156,7 +1201,9 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       damage: 'rcl-report-clause-damage',
       pit: 'rcl-report-clause-pit',
       position_gain: 'rcl-report-clause-gain',
-      position_loss: 'rcl-report-clause-loss'
+      position_loss: 'rcl-report-clause-loss',
+      retirement: 'rcl-report-clause-retirement',
+      fastest_lap: 'rcl-report-clause-fastest'
     };
     lapOrder.forEach(function (lapNum) {
       var lapRow = _rclEl('div', 'rcl-report-lap');
@@ -1175,6 +1222,19 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
           // a wall-hit line's name gray to read as deemphasized, but that
           // made names inconsistent line to line, which read worse than it
           // helped).
+          // Class pill (2026-09-24, Matt's ask: "put class pill
+          // information HY, LMGT3, LMGTE, LMP2 and LMP3 in front of the
+          // records") -- same colored-chip convention as every other class
+          // pill on the site (rc-badge-chip + its color class, style.css),
+          // just built by hand here since only Account.html/index.html
+          // have the shared _rcClassAbbrevPill helper in scope.
+          if (entry.carClass) lineEl.appendChild(_rclClassPill_(entry.carClass));
+          // Timestamp (2026-09-24, Matt's ask: "give timestamp information
+          // for the event") -- the earliest underlying event's elapsed
+          // race time, mm:ss (or h:mm:ss past the hour mark).
+          if (entry.et !== null && entry.et !== undefined) {
+            lineEl.appendChild(_rclEl('span', 'rcl-report-timestamp', _rclFormatEventTime_(entry.et)));
+          }
           var nameEl = document.createElement('span');
           nameEl.className = 'rcl-report-name';
           nameEl.textContent = entry.name;
@@ -1374,7 +1434,15 @@ function _rclRenderCalendar(hub) {
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     var topLine = _rclEl('div', 'rcl-cal-row-top');
-    topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(entry.eventName || 'Race') + '</strong>'));
+    // "<event name>: <track name>" as one combined primary line
+    // (2026-09-24, Matt's ask) -- was just the event name, with the track
+    // (plus layout) as its own separate line underneath (see the removed
+    // .rcl-cal-track line below); that line's now folded into this one so
+    // the track doesn't repeat itself, layout suffix included exactly as
+    // it read on the old track line.
+    var eventTrackLabel = (entry.eventName || 'Race') + ': ' + (entry.track || '(no track)');
+    topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(eventTrackLabel) + '</strong>' +
+      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
     // COMPLETED, with a results phrase appended once there's something to
     // report (2026-09-21 rewrite, Matt's ask: "have the race faded out
     // with a COMPLETED notification, if it hasn't been finalized yet,
@@ -1399,10 +1467,6 @@ function _rclRenderCalendar(hub) {
     }
     topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusClass, statusText));
     rowBody.appendChild(topLine);
-
-    rowBody.appendChild(_rclEl('div', 'rcl-cal-track',
-      _rclEscapeHtml(entry.track || '(no track)') +
-      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');
     // Time + length -- now the same gray outline pill as In-Game/Weather
