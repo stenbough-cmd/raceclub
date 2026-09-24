@@ -7932,7 +7932,27 @@
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
     var resultsFinalized = !!opts.resultsFinalized;
-    var modal = showModal('Edit & Finalize: ' + roundLabel, { wide: true });
+    // Title simplified to just "Review & Finalize" (2026-09-24, Matt's
+    // ask) -- was "Edit & Finalize: <round label>"; the round is already
+    // named on the League Tools row this popup was opened from, same
+    // reasoning as the Import Results modal's own title simplification.
+    var modal = showModal('Review & Finalize', { wide: true });
+
+    // Close-button dimming while a Finalize/Un-Finalize write is in
+    // flight (2026-09-24, Matt's ask: "a dimmed X button in the corner
+    // that says the same thing as the import popup") -- same pattern as
+    // openImportXmlModal's setImportInProgress (this file), just closing
+    // over this modal's own X instead. Captured once, outside render(),
+    // since render() rebuilds the Finalize button (and its click handler)
+    // fresh every time but the modal chrome itself never changes.
+    var reviewCloseBtn = modal.el.querySelector('.rc-modal-close');
+    function setFinalizeInProgress(inProgress) {
+      if (!reviewCloseBtn) return;
+      reviewCloseBtn.disabled = inProgress;
+      reviewCloseBtn.style.opacity = inProgress ? '0.35' : '';
+      reviewCloseBtn.style.cursor = inProgress ? 'not-allowed' : '';
+      reviewCloseBtn.title = inProgress ? 'Cannot close while finalizing' : '';
+    }
 
     function render() {
       modal.body.innerHTML = '';
@@ -7950,16 +7970,36 @@
         var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
         finalizeBtn.type = 'button';
         finalizeBtn.addEventListener('click', function () {
+          var goingToFinalize = !resultsFinalized;
           var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
           var confirmMsg = resultsFinalized
             ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
             : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed -- these are the most current, correct results for this round.';
+          // Restores the button's normal label/color -- shared by both the
+          // failure and timeout paths below, since render() (which would
+          // otherwise rebuild this button fresh) only runs on success.
+          function restoreFinalizeBtn() {
+            finalizeBtn.className = resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
+            finalizeBtn.textContent = resultsFinalized ? 'Un-Finalize' : 'Finalize';
+          }
           openConfirmModal(resultsFinalized ? 'Un-Finalize Results' : 'Finalize Results', confirmMsg, resultsFinalized ? 'Un-Finalize' : 'Finalize', function () {
             finalizeBtn.disabled = true;
+            // In-progress state (2026-09-24, Matt's ask: "make the
+            // FINALIZE button go gray and say FINALIZING...") -- forced
+            // gray/secondary regardless of direction, so it always reads
+            // as "busy" rather than staying red mid-Finalize. The X
+            // button dims with a matching tooltip via
+            // setFinalizeInProgress, same convention as the Import
+            // Results modal's close button.
+            finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
+            finalizeBtn.textContent = goingToFinalize ? 'FINALIZING...' : 'UN-FINALIZING...';
+            setFinalizeInProgress(true);
             fetchApi(action, { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
+              setFinalizeInProgress(false);
               finalizeBtn.disabled = false;
               if (!result.success) {
                 showToast(result.message || 'Could not update this round.', 'error');
+                restoreFinalizeBtn();
                 return;
               }
               resultsFinalized = !resultsFinalized;
@@ -7967,7 +8007,9 @@
               render();
               if (typeof outerReload === 'function') outerReload();
             }).catch(function () {
+              setFinalizeInProgress(false);
               finalizeBtn.disabled = false;
+              restoreFinalizeBtn();
               showToast('Could not reach the server.', 'error');
             });
           });
