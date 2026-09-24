@@ -471,14 +471,12 @@
   // wall-clock face, via the top button/crown) so Practice and Qualifying
   // don't read as the identical icon next to each other.
   var ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
-  // Round status line icons (2026-09-23, Matt's ask for a red/yellow/green
-  // import-status indicator in League Tools) -- a plain empty ring for the
-  // "not there yet" states (partial import, awaiting validation) and the
-  // same ring with a checkmark once results are finalized. Colored via
-  // currentColor/CSS on the wrapping element (see .rc-round-status-* in
-  // style.css), same convention as every other ICON_* here.
-  var ICON_CIRCLE_EMPTY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>';
-  var ICON_CIRCLE_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.3 12.3l2.6 2.6 4.8-5.4"></path></svg>';
+  // Round status line icons (ICON_CIRCLE_EMPTY/ICON_CIRCLE_CHECK, a plain
+  // empty ring and a ring-with-checkmark, 2026-09-23) removed 2026-09-24,
+  // item 8 -- buildRoundStatusLine now reuses the Dashboard Protest
+  // card's own RC_PROTEST_RULED_ICON + .rc-protest-dash-icon/-pending/
+  // -ruled classes instead, so this spot's open-circle-to-filled-
+  // checkmark treatment is guaranteed to match that one exactly.
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -643,7 +641,7 @@
     link.href = 'https://discord.gg/UxWgwDwc9U';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Discord</span>';
+    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Join Discord</span>';
     return link;
   }
 
@@ -2030,11 +2028,29 @@
     body.appendChild(line);
 
     if (isRuled) {
-      // Same "Upheld: Tier N"/"Denied"/"Withdrawn" vocabulary
-      // _rcProtestStatusBadge already uses elsewhere on the site, just as
-      // a plain lighter-colored line instead of a chip here.
-      var outcomeText = p.status === 'Upheld' ? ('Upheld -- Tier ' + p.penaltyTier + ' penalty') : p.status;
+      // 2026-09-24 redesign, item 6: the outcome line now names WHO the
+      // penalty landed on, not just the tier, so it reads as a complete
+      // sentence on its own rather than needing the line above for
+      // context. Denied/Withdrawn stay simple since there's no penalty or
+      // target to name. Styled identically to the "(pending decision)"
+      // note below (light gray italic, .rc-protest-dash-outcome) so
+      // pending and ruled rows read as one consistent family.
+      var outcomeText;
+      if (p.status === 'Upheld') {
+        var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
+        outcomeText = 'Upheld -- Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
+      } else if (p.status === 'Denied') {
+        outcomeText = 'Protest denied.';
+      } else {
+        outcomeText = 'Protest withdrawn.';
+      }
       body.appendChild(el('div', 'rc-protest-dash-outcome', escapeHtml(outcomeText)));
+    } else {
+      // "(pending decision)" note (2026-09-24, item 6) -- a still-open
+      // protest gets the same light-gray-italic treatment as the ruled
+      // outcome line above, just with placeholder wording since there's
+      // no ruling yet to describe.
+      body.appendChild(el('div', 'rc-protest-dash-pending', '(pending decision)'));
     }
     row.appendChild(body);
     return row;
@@ -4044,46 +4060,49 @@
     return box;
   }
 
-  // Round status line (2026-09-23, Matt's ask) -- one colored circle-icon
-  // line summarizing exactly where a round's results stand:
-  //   - red, empty circle: one of Qualify/Race imported, the other pending
-  //   - yellow, empty circle: both imported, not yet finalized (validated)
-  //   - green, checkmark circle: finalized (official)
-  //   - red, empty circle (2026-09-23 follow-up, corrected same day --
-  //     Matt's catch: "it's appearing on the wrong round... it should be
-  //     appearing on the round where imports can happen"): the round is
-  //     UNLOCKED (imports are allowed here right now) but nothing has
-  //     been imported yet -- this is the note that replaces the old
-  //     "the visible Import Results button already makes that obvious"
-  //     no-note behavior.
+  // Round status line (2026-09-23, Matt's ask; recolored/rewritten
+  // 2026-09-24, item 8) -- one line summarizing exactly where a round's
+  // results stand, in a fixed 4-stage sequence:
+  //   1. Awaiting results.
+  //   2. Qualifying results uploaded, awaiting race results.
+  //   3. Results uploaded, awaiting review.
+  //   4. Results reviewed and finalized. Official results posted.
+  // No more per-stage color coding (was red/yellow/green,
+  // .rc-round-status-red/-yellow/-green, removed) -- the text is always
+  // light gray and italic (.rc-round-status-text), and the icon is always
+  // an open gray circle except on stage 4, where it fills solid gray with
+  // a white checkmark. That's the exact same open-circle/checkmark-circle
+  // pattern (and the exact same .rc-protest-dash-icon/-pending/-ruled
+  // classes plus RC_PROTEST_RULED_ICON) the Dashboard's Protest card
+  // already uses, reused here directly rather than duplicated so the two
+  // stay visually identical automatically.
   // A LOCKED round (an earlier round isn't finalized yet) gets no note at
   // all -- its Import Results/Delete Results buttons are hidden with
   // nothing else said about it; the note above is reserved for the one
   // round that's actually actionable right now.
   function buildRoundStatusLine(r, locked) {
-    var state;
-    if (r.resultsFinalized) {
-      state = { tone: 'green', icon: ICON_CIRCLE_CHECK, text: 'Results have been validated.' };
+    var isFinal = !!r.resultsFinalized;
+    var text;
+    if (isFinal) {
+      text = 'Results reviewed and finalized. Official results posted.';
     } else if (r.hasResults) {
-      state = { tone: 'yellow', icon: ICON_CIRCLE_EMPTY, text: 'Results uploaded, awaiting validation.' };
+      text = 'Results uploaded, awaiting review.';
     } else if (r.hasAnySessionImported) {
-      // Yellow, not red (2026-09-23, Matt's ask) -- a partial import isn't
-      // a problem to flag in alarm-red, it's just "in progress," the same
-      // caution tone the "awaiting validation" state below already uses.
-      state = {
-        tone: 'yellow', icon: ICON_CIRCLE_EMPTY,
-        text: r.hasRaceResults ? 'Race results imported, qualifying results pending.' : 'Qualifying results imported, race results pending.'
-      };
+      // The 4-stage sequence names only the Qualifying-then-Race order;
+      // this mirrors that same wording for the reverse order (a race
+      // session imported before qualifying), a case the original design
+      // already handled separately -- judgment call, item 8.
+      text = r.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.';
     } else if (!locked) {
-      state = { tone: 'red', icon: ICON_CIRCLE_EMPTY, text: 'Qualifying and race results not yet imported.' };
+      text = 'Awaiting results.';
     } else {
       return null;
     }
-    var line = el('div', 'rc-round-status rc-round-status-' + state.tone);
-    var iconSpan = el('span', 'rc-round-status-icon');
-    iconSpan.innerHTML = state.icon;
-    line.appendChild(iconSpan);
-    line.appendChild(el('span', null, state.text));
+    var line = el('div', 'rc-round-status');
+    var icon = el('span', 'rc-protest-dash-icon' + (isFinal ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+    if (isFinal) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    line.appendChild(icon);
+    line.appendChild(el('span', 'rc-round-status-text', text));
     return line;
   }
 
@@ -5157,7 +5176,7 @@
         return;
       }
 
-      buildProtestPopupBody(modal.body, token, filing, mine && mine.success ? (mine.protests || []) : []);
+      buildProtestPopupBody(modal, token, filing, mine && mine.success ? (mine.protests || []) : []);
     }).catch(function () {
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
@@ -5172,7 +5191,8 @@
   // (.rc-protest-action-row already does that), then a bordered container
   // (.rc-protest-history-box) with every protest this driver filed or was
   // named in, newest season first.
-  function buildProtestPopupBody(container, token, filing, protests) {
+  function buildProtestPopupBody(modal, token, filing, protests) {
+    var container = modal.body;
     // "Below the red line to the right, there should be a button that
     // says FILE PROTEST" -- gray, not red (house rule: a button that only
     // OPENS a popup stays gray, even though what it opens ends in a
@@ -5181,12 +5201,26 @@
     // genuinely nothing open to protest right now.
     var actionRow = el('div', 'rc-protest-action-row');
     var hasOpenRounds = (filing.rounds || []).length > 0;
-    var fileBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'File Protest');
+    // Red/primary (2026-09-24, Matt's explicit override of the site's own
+    // "gray unless it saves" button rule for this one button).
+    var fileBtn = el('button', 'rc-btn-primary rc-btn-sm', 'File Protest');
     fileBtn.type = 'button';
     fileBtn.disabled = !hasOpenRounds;
     if (hasOpenRounds) {
       fileBtn.addEventListener('click', function () {
-        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { rcReloadAfterSave(); });
+        // Close this Protests popup immediately rather than leaving it
+        // open underneath the File Protest modal (2026-09-24 fix, item 5).
+        modal.close();
+        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () {
+          // Land back on the Dashboard explicitly on a successful submit,
+          // not wherever rcReloadAfterSave()'s generic rcActiveSectionId
+          // logic would otherwise decide -- this popup is only ever
+          // reached from the Dashboard's own Protest card, so a stale
+          // Protests popup should never come back after a save
+          // (2026-09-24 fix, item 5).
+          rcActiveSectionId = 'dashboard';
+          rcReloadAfterSave();
+        });
       });
     } else {
       withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
@@ -5195,92 +5229,60 @@
     container.appendChild(actionRow);
 
     var historyBox = el('div', 'rc-protest-history-box');
-    if (!protests.length) {
+    // A protest THIS driver filed and then withdrew (via the existing
+    // withdrawProtest action, Status: Withdrawn -- see
+    // openWithdrawProtestConfirm below) is filtered out of the filer's
+    // own view entirely, matching "withdrawn" as the user experiences it,
+    // while the underlying row stays on the sheet (the site's standing
+    // never-hard-delete policy) and still shows normally to anyone it was
+    // filed AGAINST.
+    var visible = protests.filter(function (p) { return !(p.isMine && p.status === 'Withdrawn'); });
+    if (!visible.length) {
       historyBox.appendChild(el('div', 'rc-dm-empty', 'No protests filed by or against you yet.'));
     } else {
-      // Grouped by season (each season's own graphite pill, protests
-      // inset below it with an L-line tree glyph -- Matt's ask), newest
-      // season first. Same "└" tree-glyph + graphite-pill convention the
-      // Data Management Cars panel already uses to group cars by season
-      // under a class (see buildCarsPanel above) -- not a new pattern.
-      var bySeason = {}, seasonOrder = [];
-      protests.forEach(function (p) {
-        var sid = p.seasonId || 'unknown';
-        if (!bySeason[sid]) { bySeason[sid] = []; seasonOrder.push(sid); }
-        bySeason[sid].push(p);
-      });
-      seasonOrder.sort(function (a, b) { return String(b).localeCompare(String(a)); });
-      seasonOrder.forEach(function (sid) {
-        historyBox.appendChild(buildProtestSeasonGroup(sid, bySeason[sid], token));
-      });
+      // Redesigned 2026-09-24 (item 6) to look EXACTLY like the
+      // Dashboard's own Protest card -- same open-circle/checkmark rows
+      // (buildDashProtestItem), no more season grouping or the green
+      // status-badge pill (_rcProtestStatusBadge, removed). Newest first
+      // (the backend, handleGetMyProtests, already returns it sorted that
+      // way), capped to the most recent 10 -- oldest silently drops off,
+      // no "load more"/pagination.
+      var list = el('div', 'rc-protest-dash-list');
+      visible.slice(0, 10).forEach(function (p) { list.appendChild(buildProtestPopupHistoryItem(p, token)); });
+      historyBox.appendChild(list);
     }
     container.appendChild(historyBox);
   }
 
-  // One season's graphite "SEASON N" pill plus its own protest rows,
-  // inset below it. A protest THIS driver filed and then withdrew (via
-  // the existing withdrawProtest action, Status: Withdrawn -- see
-  // openWithdrawProtestConfirm below) is filtered out of the filer's own
-  // view entirely, matching "withdrawn" as the user experiences it, while
-  // the underlying row stays on the sheet (the
-  // site's standing never-hard-delete policy) and still shows normally to
-  // anyone it was filed AGAINST.
-  function buildProtestSeasonGroup(seasonId, protests, token) {
-    var group = el('div', 'rc-protest-season-group');
-    var seasonHead = el('div', 'rc-dm-season-head');
-    seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
-    var seasonNumLabel = seasonNumberLabel(seasonId);
-    seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'SEASON ' + (seasonNumLabel || '?')));
-    group.appendChild(seasonHead);
-
-    protests.filter(function (p) { return !(p.isMine && p.status === 'Withdrawn'); })
-      .forEach(function (p) { group.appendChild(buildProtestHistoryItem(p, token)); });
-
-    return group;
-  }
-
-  // One protest row, inset under its season's graphite pill. Edit/
-  // Withdraw only ever show for a protest THIS driver filed (p.isMine),
-  // and only while it's still Pending and the round's results aren't
-  // finalized yet (Matt, 2026-09-24 redesign: "if it hasn't been ruled on
-  // yet, the driver can WITHDRAW it with a button... If a protest has
-  // already been ruled, the WITHDRAW button is gone" -- simplified from
-  // the old grayed-out-with-a-lock-icon treatment to simply not rendering
-  // the buttons at all once they no longer apply, same "gone" language).
-  function buildProtestHistoryItem(p, token) {
-    var row = el('div', 'rc-dm-subrow-edit');
-    var info = el('div', null);
-    var infoLabel = el('div', 'rc-dm-row-label');
-    infoLabel.appendChild(document.createTextNode(p.roundLabel + ' -- ' + (p.involvedNames || []).join(', ')));
-    // Same auto-flag badge as Stewarding/League Tools -- a driver seeing a
-    // registration mismatch flagged against their own name in their own
-    // history should know right away it wasn't filed by another driver.
-    if (p.isAutoFlagged) {
-      var autoBadge = el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged');
-      autoBadge.style.cssText = 'margin-left:8px;';
-      infoLabel.appendChild(autoBadge);
-    }
-    info.appendChild(infoLabel);
-    info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
-    row.appendChild(info);
-
-    var right = el('div', 'display:flex;align-items:center;gap:10px;');
-    right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
-
+  // One protest row in the Protests popup's history list -- the exact
+  // same row buildDashProtestItem builds for the Dashboard card, with
+  // Edit/Withdraw appended on the right for a protest THIS driver filed
+  // (p.isMine), only while it's still Pending and the round's results
+  // aren't finalized yet (Matt, 2026-09-24 redesign: "if it hasn't been
+  // ruled on yet, the driver can WITHDRAW it with a button... If a
+  // protest has already been ruled, the WITHDRAW button is gone").
+  function buildProtestPopupHistoryItem(p, token) {
+    var row = buildDashProtestItem(p);
     var canModify = p.isMine && p.status === 'Pending' && !p.resultsFinalized;
     if (canModify) {
+      var actions = el('div', 'rc-protest-popup-item-actions');
       var editBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Edit');
       editBtn.type = 'button';
       editBtn.addEventListener('click', function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); });
-      right.appendChild(editBtn);
+      actions.appendChild(editBtn);
 
-      var withdrawBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Withdraw');
+      // Withdraw fires an immediate save with no further step in between
+      // (house color rule: "gray unless it saves") -- .rc-btn-primary
+      // combined with .rc-btn-sm/.rc-btn-row per the
+      // race-club-ui-consistency skill's guidance, rather than a one-off
+      // red row modifier.
+      var withdrawBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Withdraw');
       withdrawBtn.type = 'button';
       withdrawBtn.addEventListener('click', function () { openWithdrawProtestConfirm(token, p, function () { rcReloadAfterSave(); }); });
-      right.appendChild(withdrawBtn);
-    }
+      actions.appendChild(withdrawBtn);
 
-    row.appendChild(right);
+      row.appendChild(actions);
+    }
     return row;
   }
 
@@ -5299,31 +5301,88 @@
     });
   }
 
-  // Shared field builder for both the File and Edit popups -- lap number,
-  // up to 3 "Driver Involved" boxes (box 1 always defaults to whoever's
-  // filing; it's display-only, never submitted -- the server already
-  // knows who's filing from the auth token), infraction type, and an
-  // optional 200-word description. `initial` (optional) prefills every
-  // field from an existing protest, for Edit.
-  function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial) {
+  // Groups the "Driver Involved" options by car class -- LMGTE -> LMGT3 ->
+  // LMP3 -> LMP2 -> Hypercar, per CAR_CLASS_LIST (reference-data.js), the
+  // same canonical class order used everywhere else on the site -- via
+  // <optgroup>, with each driver labeled "Name (#carNumber) CLASSABBREV"
+  // (CAR_CLASS_ABBREV, reference-data.js) (2026-09-24, item 6).
+  // driverRoster comes off DriverResults through Protests.gs
+  // (handleGetProtestFilingOptions/handleGetProtestEditOptions), which now
+  // hands back carClass alongside carNumber/teamName. Still falls back to
+  // one flat list (no groups, car number only) if carClass is ever missing
+  // (e.g. a pre-existing round's DriverResults rows with no class on file)
+  // instead of breaking.
+  function _rcAppendGroupedDriverOptions_(selectEl, driverRoster) {
+    function optionLabel(d) {
+      var bits = [d.name];
+      if (d.carNumber) bits.push('(#' + d.carNumber + ')');
+      if (d.carClass) {
+        bits.push((typeof CAR_CLASS_ABBREV !== 'undefined' && CAR_CLASS_ABBREV[d.carClass]) ? CAR_CLASS_ABBREV[d.carClass] : d.carClass);
+      }
+      return bits.join(' ');
+    }
+
+    var hasClassData = driverRoster.some(function (d) { return !!d.carClass; });
+    if (!hasClassData) {
+      driverRoster.forEach(function (d) { selectEl.appendChild(new Option(optionLabel(d), d.profileId)); });
+      return;
+    }
+
+    var canonicalOrder = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : [];
+    var byClass = {}, classesSeen = [];
+    driverRoster.forEach(function (d) {
+      var cls = d.carClass || 'Unknown';
+      if (!byClass[cls]) { byClass[cls] = []; classesSeen.push(cls); }
+      byClass[cls].push(d);
+    });
+    canonicalOrder.filter(function (c) { return byClass.hasOwnProperty(c); })
+      .concat(classesSeen.filter(function (c) { return canonicalOrder.indexOf(c) === -1; }))
+      .forEach(function (cls) {
+        var group = document.createElement('optgroup');
+        group.label = cls;
+        byClass[cls].forEach(function (d) { group.appendChild(new Option(optionLabel(d), d.profileId)); });
+        selectEl.appendChild(group);
+      });
+  }
+
+  // Shared field builder for both the File and Edit popups -- Lap Number
+  // (paired 50/50 with the caller's Race field when raceFieldWrap is
+  // passed, File only -- see item 6/7), up to 3 "Driver Involved" boxes
+  // (box 1 always defaults to whoever's filing; it's display-only, never
+  // submitted -- the server already knows who's filing from the auth
+  // token), infraction type, and an optional 200-word description.
+  // `initial` (optional) prefills every field from an existing protest,
+  // for Edit.
+  function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial, raceFieldWrap) {
     initial = initial || {};
 
     var lapSelect = document.createElement('select');
     laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
     var lapFieldWrap = wizField('Lap Number', lapSelect, null);
-    container.appendChild(lapFieldWrap);
+    if (raceFieldWrap) {
+      // Race + Lap Number side by side, 50/50 (2026-09-24, item 6) --
+      // reuses the same .rc-wiz-field-pair split wizFieldPairRow's own
+      // two columns use; built by hand here since the Race field's own
+      // wrap (with its <select> already wired up by the caller,
+      // openFileProtestModal) exists before this runs. Edit's form has no
+      // Race field (the round is fixed there), so it keeps the old
+      // full-width Lap Number row.
+      var raceLapRow = el('div', 'rc-wiz-field-pair');
+      raceLapRow.appendChild(raceFieldWrap);
+      raceLapRow.appendChild(lapFieldWrap);
+      container.appendChild(raceLapRow);
+    } else {
+      container.appendChild(lapFieldWrap);
+    }
 
     var driver1Select = document.createElement('select');
     var driver2Select = document.createElement('select');
     var driver3Select = document.createElement('select');
     driver2Select.appendChild(new Option('Choose Driver', ''));
     driver3Select.appendChild(new Option('Choose Driver', ''));
-    driverRoster.forEach(function (d) {
-      var label = d.name + (d.carNumber ? (' (#' + d.carNumber + ')') : '');
-      driver1Select.appendChild(new Option(label, d.profileId));
-      driver2Select.appendChild(new Option(label, d.profileId));
-      driver3Select.appendChild(new Option(label, d.profileId));
-    });
+    _rcAppendGroupedDriverOptions_(driver1Select, driverRoster);
+    _rcAppendGroupedDriverOptions_(driver2Select, driverRoster);
+    _rcAppendGroupedDriverOptions_(driver3Select, driverRoster);
     if (myProfileId && driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
       driver1Select.value = myProfileId;
     }
@@ -5376,7 +5435,6 @@
     rounds.forEach(function (r) {
       roundSelect.appendChild(new Option('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''), r.roundId));
     });
-    body.appendChild(wizField('Race', roundSelect, null));
 
     var fieldsContainer = el('div');
     body.appendChild(fieldsContainer);
@@ -5387,7 +5445,13 @@
       fieldsContainer.innerHTML = '';
       fields = null;
       if (!round) return;
-      fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {});
+      // Race + Lap Number side by side, each half width (2026-09-24, item
+      // 6) -- the Race field (roundSelect, built once above so its
+      // selected value survives a repopulate) is handed in here so
+      // buildProtestFormFields can pair it with the Lap Number field it
+      // already builds, instead of Race sitting in its own full-width row
+      // above this container like before.
+      fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {}, wizField('Race', roundSelect, null));
     }
     populateForRound(rounds[0].roundId);
     roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
@@ -5513,12 +5577,6 @@
     });
 
     return modal;
-  }
-
-  function _rcProtestStatusBadge(status, penaltyTier) {
-    var cls = status === 'Upheld' ? 'rc-badge-race-posted' : (status === 'Denied' ? 'rc-badge-chip' : (status === 'Withdrawn' ? 'rc-badge-chip' : 'rc-badge-race-scheduled'));
-    var label = status === 'Upheld' ? ('Upheld: Tier ' + penaltyTier) : status;
-    return el('span', 'rc-badge-chip ' + cls, label);
   }
 
   // =======================================================================
@@ -7505,8 +7563,9 @@
         // fetchApi itself is built on -- it takes fetchOpts as-is (no
         // JSON-encoding), so it works here without changing fetchApi's own
         // contract. Gets its OWN, longer timeout/abort budget than every
-        // other heavy POST (RC_FETCH_TIMEOUT_MS_IMPORT, 60s, js/api.js --
-        // bumped from 45s 2026-09-24, Matt's ask) rather than sharing
+        // other heavy POST (RC_FETCH_TIMEOUT_MS_IMPORT, 120s, js/api.js --
+        // bumped from 45s to 60s then to 120s, both 2026-09-24, Matt's
+        // asks) rather than sharing
         // RC_FETCH_TIMEOUT_MS_LONG with them, since a results import is the
         // single heaviest write on the site (thousands of Lap rows, plus
         // the race report build on top).
@@ -7639,6 +7698,65 @@
   // for its own sake.
 
   // EDIT (2026-09-08) -- League Management round row's protest-ruling popup.
+  // Suggested tier RANGES for the driver-filed infraction types
+  // (PROTEST_INFRACTION_TYPES, reference-data.js) -- unlike
+  // SUGGESTED_TIER_BY_INFRACTION (reference-data.js/Protests.gs), which
+  // fixes ONE tier for the two auto-flagged registration-mismatch types
+  // and is enforced with a written-explanation gate on deviation, these
+  // five driver-filed types are explicitly "judged case by case" per that
+  // file's own comment -- there is no rulebook-mandated single tier for
+  // any of them. This table is new, 2026-09-24 (item 7), authored here as
+  // a starting-point guide for the Penalty Standards popup so rulings
+  // stay roughly consistent steward to steward; it's advisory only (shown
+  // in the popup, never read by any ruling logic) and a steward can rule
+  // outside a listed range when the incident calls for it. Matt should
+  // treat these ranges themselves as a first draft to review/adjust, not
+  // settled Rulebook text.
+  var PROTEST_TYPICAL_TIER_RANGE = {
+    'Intentional Wrecking': 'Tier 5-6 (Stop-and-Go Equivalent to Disqualification)',
+    'Unsafe Rejoin': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
+    'Avoidable Contact (Other Driver)': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
+    'Avoidable Contact (Self Report)': 'Tier 1-3 (Warning to Time Penalty -- see the self-reporting note below)',
+    'Unsportsmanlike Behavior': 'Tier 3-6 (Time Penalty to Disqualification, depending on severity)'
+  };
+
+  // Reference popup (2026-09-24, item 7) explaining what each penalty
+  // tier means and giving a standardized ruling schedule, so a steward's
+  // rulings don't drift ad hoc from one round to the next. Reuses
+  // PENALTY_TIERS/SUGGESTED_TIER_BY_INFRACTION (reference-data.js) as its
+  // data source directly, rather than re-describing them, so this popup
+  // can never say something different from what the ruling dropdown
+  // itself offers. Terminology ("infraction type", "steward", "tier")
+  // matches the Help section's own Protests guide entry
+  // (HELP_GUIDE_ITEMS) so the two never drift apart in wording.
+  function openPenaltyStandardsModal() {
+    var body = el('div');
+    body.appendChild(el('p', 'rc-hint', 'A standardized starting point for protest rulings, so penalties stay consistent steward to steward. Use judgment -- these are guidelines, not a formula, and a ruling can land outside a listed range when the incident calls for it.'));
+
+    body.appendChild(el('h4', null, 'Penalty Tiers'));
+    PENALTY_TIERS.forEach(function (t) {
+      body.appendChild(el('div', 'rc-hint', t.label + ' (' + t.effect + ')'));
+    });
+
+    body.appendChild(el('h4', 'margin-top:16px;', 'Standard Ruling For Auto-Flagged Infractions'));
+    body.appendChild(el('p', 'rc-hint', 'These are auto-flagged by the system (a registration mismatch, not driver-filed) and always carry a fixed standard tier -- ruling at a different tier requires a written explanation.'));
+    Object.keys(SUGGESTED_TIER_BY_INFRACTION).forEach(function (infraction) {
+      var tierInfo = penaltyTierByNumber(SUGGESTED_TIER_BY_INFRACTION[infraction]);
+      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (tierInfo ? (tierInfo.label + ' (' + tierInfo.effect + ')') : ('Tier ' + SUGGESTED_TIER_BY_INFRACTION[infraction]))));
+    });
+
+    body.appendChild(el('h4', 'margin-top:16px;', 'Typical Ruling Range For Driver-Filed Infractions'));
+    body.appendChild(el('p', 'rc-hint', 'These are judged case by case, with no fixed tier -- but absent unusual circumstances, a ruling should land in this range:'));
+    PROTEST_INFRACTION_TYPES.forEach(function (infraction) {
+      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (PROTEST_TYPICAL_TIER_RANGE[infraction] || 'No standard range -- steward discretion.')));
+    });
+
+    body.appendChild(el('h4', 'margin-top:16px;', 'Self-Reported Infractions'));
+    body.appendChild(el('p', 'rc-hint', 'A driver who self-reports an infraction (filed as "Avoidable Contact (Self Report)") should receive a reduced penalty tier compared to the same infraction reported by someone else -- this rewards coming forward on your own. It\'s a policy note for the ruling steward to apply, not something the site enforces automatically.'));
+
+    showModal('Penalty Standards', { bodyEl: body, wide: true });
+  }
+
   // Lists every protest filed for this round; a Pending one gets a penalty-
   // tier dropdown (or Deny) and an Apply button, an already-ruled one shows
   // its outcome read-only. Disabled entirely on the frontend once the round
@@ -7692,13 +7810,21 @@
 
         // Finalize bar -- always shown first, regardless of how many
         // protests there are, so it's never scrolled past or missed.
+        // Every protest on this round needs a ruling before Finalize can
+        // be clicked (2026-09-24, item 7) -- Un-Finalize is never gated
+        // this way, only the forward Finalize direction.
+        var hasUnruledProtests = !!(data.success && data.protests && data.protests.some(function (p) { return p.status === 'Pending'; }));
         var finalizeBar = el('div', 'rc-panel');
         finalizeBar.style.cssText = 'margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
         finalizeBar.appendChild(el('div', 'rc-hint', escapeHtml(resultsFinalized
           ? 'This round is finalized -- no further penalties will be assessed.'
-          : 'Not finalized yet -- protest rulings can still be applied below.')));
+          : (hasUnruledProtests ? 'Every protest on this round needs a ruling before it can be finalized.' : 'Not finalized yet -- protest rulings can still be applied below.'))));
         var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
         finalizeBtn.type = 'button';
+        if (!resultsFinalized && hasUnruledProtests) {
+          finalizeBtn.disabled = true;
+          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling -- apply a ruling to every protest below before finalizing.');
+        }
         finalizeBtn.addEventListener('click', function () {
           var goingToFinalize = !resultsFinalized;
           var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
@@ -7759,7 +7885,18 @@
           var row = el('div', 'rc-panel');
           row.style.cssText = 'margin-bottom:10px;';
           var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || [p.filerName]).join(', '))));
+          // Human-context intro sentence (2026-09-24, item 7) -- names the
+          // actual filer and accused instead of the old flat comma-joined
+          // name list, same "Filed a protest against <name>" naming
+          // pattern the Dashboard's own protest card (buildDashProtestItem)
+          // already uses, so the wording matches across the site. Falls
+          // back to the auto-flagged phrasing when there's no human filer
+          // (a registration-mismatch protest has no FilerProfileID).
+          var against = (p.involvedNames || []).slice(1).join(' and ');
+          var introText = p.isAutoFlagged
+            ? ('Auto-flagged against ' + (against || 'a driver') + '.')
+            : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.');
+          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml(introText)));
           // Same auto-flag badge as the Stewarding page (see that page's own
           // comment) -- a steward ruling from here needs the same "this one
           // wasn't filed by a driver" context.
@@ -7796,16 +7933,47 @@
               }
 
               var controlRow = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;');
+              // 3/4 width (2026-09-24, item 7) -- .rc-ruling-select.
               var select = document.createElement('select');
+              select.className = 'rc-ruling-select';
               select.appendChild(new Option('Choose a ruling...', ''));
               select.appendChild(new Option('Deny', 'deny'));
+              // "Deny, duplicate protest" (2026-09-24, item 7) -- placed
+              // immediately after plain Deny so it reads as a variant of
+              // it. A native <select> can't truly nest options, so this is
+              // the closest a flat option list gets to "nested under Deny."
+              select.appendChild(new Option('Deny -- duplicate protest', 'deny_duplicate'));
               PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
               controlRow.appendChild(select);
+
+              // Gray "Penalty Standards" opener (2026-09-24, item 7) --
+              // only OPENS a reference popup, no save, so it stays gray
+              // per the site's button-color rule even though what it
+              // documents feeds into a ruling that does save.
+              var standardsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Penalty Standards');
+              standardsBtn.type = 'button';
+              standardsBtn.addEventListener('click', function () { openPenaltyStandardsModal(); });
+              controlRow.appendChild(standardsBtn);
 
               var applyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Apply Ruling');
               applyBtn.type = 'button';
               controlRow.appendChild(applyBtn);
               row.appendChild(controlRow);
+
+              // Optional free-text narrative (2026-09-24, item 7) -- lets
+              // the steward explain their decision in their own words,
+              // separate from the standard-tier override-explanation box
+              // below (which is conditional and only ever covers WHY a
+              // ruling deviates from a fixed standard tier). This one is
+              // always available and always optional.
+              var narrativeWrap = el('div');
+              narrativeWrap.style.cssText = 'margin-top:8px;';
+              var narrativeBox = document.createElement('textarea');
+              narrativeBox.rows = 3;
+              narrativeBox.maxLength = 2000;
+              narrativeBox.placeholder = 'Optional -- explain the reasoning behind this ruling...';
+              narrativeWrap.appendChild(narrativeBox);
+              row.appendChild(narrativeWrap);
 
               // Override-explanation field -- only relevant when this
               // infraction has a standard tier at all, so it stays hidden
@@ -7836,7 +8004,11 @@
 
               applyBtn.addEventListener('click', function () {
                 if (!select.value) { showToast('Choose a ruling first.', 'error'); return; }
-                var decision = select.value === 'deny' ? 'Denied' : 'Upheld';
+                // "deny_duplicate" is still a Denied ruling underneath --
+                // the distinct option value only exists so the narrative/
+                // audit trail can tell a plain Deny apart from a
+                // duplicate-protest Deny (2026-09-24, item 7).
+                var decision = (select.value === 'deny' || select.value === 'deny_duplicate') ? 'Denied' : 'Upheld';
                 var tier = select.value.indexOf('uphold:') === 0 ? Number(select.value.split(':')[1]) : null;
                 var isOverride = currentIsOverride_();
                 var overrideExplanation = overrideBox ? overrideBox.value.trim() : '';
@@ -7845,7 +8017,17 @@
                   return;
                 }
                 applyBtn.disabled = true;
-                fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: { protestId: p.protestId, decision: decision, penaltyTier: tier, overrideExplanation: overrideExplanation } })
+                fetchApi('adminRuleOnProtest', {
+                  method: 'POST', token: token, body: {
+                    protestId: p.protestId, decision: decision, penaltyTier: tier, overrideExplanation: overrideExplanation,
+                    isDuplicate: select.value === 'deny_duplicate',
+                    // rulingNarrative/isDuplicate (2026-09-24, item 7) --
+                    // handleAdminRuleOnProtest (Protests.gs) now reads both
+                    // and stores them on the Protests row (RulingNarrative/
+                    // IsDuplicate columns, Core.gs schema).
+                    rulingNarrative: narrativeBox.value.trim()
+                  }
+                })
                   .then(function (result) {
                     applyBtn.disabled = false;
                     if (!result.success) {

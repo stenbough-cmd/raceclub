@@ -453,14 +453,15 @@ function _rclRenderTicker(hub) {
         // instead of one joined string, so each name gets its own logo +
         // differently-weighted spans (see buildDriverEntry above) rather
         // than reading as a flat wall of text. Separator between entries
-        // is 7 non-breaking spaces (2026-09-23, was 5 -- Matt's ask for
-        // "2 more spaces in between driver[s]"), not a comma (2026-09-23
-        // follow-up, Matt's ask) -- same format for BOTH the pre-results
-        // roster and the in-season "TOP 5" results list, since both go
-        // through this one driverRows path. Plain U+0020 spaces collapse
-        // to one in HTML, so this uses   (non-breaking space) x7 to
-        // actually render as a wide gap instead of silently becoming a
-        // single space.
+        // is 10 non-breaking spaces (2026-09-24, was 7 -- Matt's ask for
+        // "3 more spaces in between all drivers"; before that, 5, see the
+        // 2026-09-23 history above), not a comma (2026-09-23 follow-up,
+        // Matt's ask) -- same format for BOTH the pre-results roster and
+        // the in-season "TOP 5" results list, since both go through this
+        // one driverRows path. Plain U+0020 spaces collapse to one in
+        // HTML, so this uses   (non-breaking space) x10 to actually
+        // render as a wide gap instead of silently becoming a single
+        // space.
         // Bold round/event name + normal-weight track (2026-09-23,
         // Matt's ask: "the round and event name should remain bolded
         // while the track name should be normal weight"), THEN 5
@@ -477,7 +478,7 @@ function _rclRenderTicker(hub) {
         }
         var list = _rclEl('span', 'rcl-ticker-driver-list');
         item.driverRows.forEach(function (row, idx) {
-          if (idx > 0) list.appendChild(document.createTextNode('       '));
+          if (idx > 0) list.appendChild(document.createTextNode('          '));
           // Bold white rank prefix (2026-09-23, Matt's ask: "Please
           // put 1st, 2nd, 3rd, 4th and 5th before the names in bold
           // white") -- ranked TOP 5 rows only (item.showRank), see
@@ -642,9 +643,12 @@ function _rclIsDnf_(row) {
   return !!(row && (row.disqualified || /dnf/i.test(row.finishStatus || '')));
 }
 
-// logo, name (bold if DNF/DSQ), country flag, car number, team -- one
-// identical identity block wherever a driver row appears on this page.
-function _rclBuildDriverIdentity_(row, dnf) {
+// logo, name, country flag, car number, team -- one identical identity
+// block wherever a driver row appears on this page. No longer takes a
+// `dnf` flag (2026-09-24, Matt's ask to drop the bold DNF/DSQ name
+// treatment) -- see _rclIsDnf_/the position badge for how DNF/DSQ still
+// shows on a row.
+function _rclBuildDriverIdentity_(row) {
   var identity = _rclEl('div', 'rcl-standings-identity');
   var logoSlot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -660,7 +664,12 @@ function _rclBuildDriverIdentity_(row, dnf) {
   identity.appendChild(logoSlot);
 
   var nameRow = _rclEl('div', 'rcl-standings-name-row');
-  nameRow.appendChild(_rclEl('span', 'rcl-standings-name' + (dnf ? ' rcl-standings-name-dnf' : ''), _rclEscapeHtml(row.name)));
+  // No extra-bold DNF/DSQ name any more (2026-09-24, Matt's ask: "do not
+  // BOLD the name of anyone who DNF's, leave it the same weight as all
+  // the rest in the list") -- the position badge already shows DNF/DSQ
+  // in the finish-position slot (_rclBuildPosBadge_), so the name itself
+  // no longer needs its own bold treatment to flag it.
+  nameRow.appendChild(_rclEl('span', 'rcl-standings-name', _rclEscapeHtml(row.name)));
   if (row.country && typeof countryFlagSrc === 'function') {
     var flagSrc = countryFlagSrc(row.country);
     if (flagSrc) {
@@ -748,7 +757,7 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
         if (hasResults) {
           rowEl.appendChild(_rclBuildPosBadge_(idx));
         }
-        rowEl.appendChild(_rclBuildDriverIdentity_(row, false));
+        rowEl.appendChild(_rclBuildDriverIdentity_(row));
 
         if (hasResults) {
           // Points total only, no "-N PTS" gap-to-leader line underneath
@@ -911,7 +920,7 @@ function _rclBuildRaceHeadline_(r) {
   var detailRow = _rclEl('div', 'rcl-race-headline-row');
   detailRow.appendChild(stat('Winner', r.overallWinner, true));
   detailRow.appendChild(stat('Pole', r.overallPoleSitter));
-  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
+  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + _rclFormatLapTime_(r.overallFastestLapTime) + ')' : '')) : ''));
   headline.appendChild(detailRow);
   return headline;
 }
@@ -970,7 +979,7 @@ function _rclRenderResults(hub) {
       // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
       // a small field.
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
@@ -1083,6 +1092,27 @@ function _rclFormatTotalTime_(seconds) {
   return h + ':' + pad(m, 2) + ':' + pad(s, 2) + '.' + pad(ms, 3);
 }
 
+// Fastest/best lap time, m:ss.xxx (2026-09-24, Matt's ask: "make the
+// fastest laps in the recent results container and the view all results
+// display like this m:ss:xxx instead of the xx.xxxx" -- BestLapTime comes
+// off the XML import, and out of Results.gs, as a raw decimal-seconds
+// string like "92.3456"; this is the standard motorsport lap-time
+// notation for it). No hour component -- unlike _rclFormatTotalTime_
+// above (a full race time), a single lap is never going to run an hour.
+// A non-numeric value (already-formatted or genuinely missing) falls
+// back to '--' rather than showing "NaN:NaN.NaN".
+function _rclFormatLapTime_(raw) {
+  var totalSeconds = Number(raw);
+  if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '--';
+  var totalMs = Math.round(totalSeconds * 1000);
+  var ms = totalMs % 1000;
+  var totalSec = Math.floor(totalMs / 1000);
+  var s = totalSec % 60;
+  var m = Math.floor(totalSec / 60);
+  function pad(n, len) { var str = String(n); while (str.length < len) str = '0' + str; return str; }
+  return m + ':' + pad(s, 2) + '.' + pad(ms, 3);
+}
+
 // AVG (KM/H) -- not a stored field, derived from trackLengthMeters (on the
 // round result payload, Results.gs) times laps completed, over finish time
 // (2026-09-23, Matt's ask). A DSQ'd/DNF driver with no usable finish time
@@ -1160,13 +1190,13 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclEscapeHtml(row.bestLapTime || '--')));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
       clsWrap.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);
@@ -1382,6 +1412,12 @@ function _rclRenderCalendar(hub) {
   if (!body) return;
   body.innerHTML = '';
 
+  // Panel title becomes "SEASON <n> CALENDAR" once a season number is
+  // known (2026-09-24, Matt's ask), falling back to the plain "Calendar"
+  // the markup ships with (league.html) when there's no active season.
+  var calendarTitleEl = document.getElementById('rcl-calendar-title');
+  if (calendarTitleEl) calendarTitleEl.textContent = hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Calendar') : 'Calendar';
+
   if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'The season schedule shows up here once it is built.'));
     return;
@@ -1432,8 +1468,33 @@ function _rclRenderCalendar(hub) {
     row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
+    // Day/date/time the race starts -- plain text above the event title
+    // (2026-09-24, Matt's ask: "move the day, date and time the race
+    // starts above the event title, remove it from a pill so it's just
+    // text"), not a pill any more. The time pill below now carries only
+    // the length (prefixed with the tier name).
+    if (entry.startUtc) {
+      rowBody.appendChild(_rclEl('div', 'rcl-cal-datetime', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
+    }
     var topLine = _rclEl('div', 'rcl-cal-row-top');
-    topLine.appendChild(_rclEl('div', 'rcl-cal-event', '<strong>' + _rclEscapeHtml(entry.eventName || 'Race') + '</strong>'));
+    // "<event name> at <track name>: <layout>" as one combined primary
+    // line, three independently-styled pieces (2026-09-24, Matt's ask,
+    // replacing the earlier "<event name>: <track name>" version from
+    // earlier the same day) -- event name bold and white, track name
+    // normal weight but still white, layout normal weight but gray. On a
+    // special event the whole line (all three pieces, plus the plain " at
+    // "/": " connector text) reads one uniform gold instead, via
+    // .rcl-cal-row-special overriding each span's color below -- see
+    // css/league.css.
+    var eventLine = _rclEl('div', 'rcl-cal-event');
+    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-name', _rclEscapeHtml(entry.eventName || 'Race')));
+    eventLine.appendChild(document.createTextNode(' at '));
+    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-track', _rclEscapeHtml(entry.track || '(no track)')));
+    if (entry.layout) {
+      eventLine.appendChild(document.createTextNode(': '));
+      eventLine.appendChild(_rclEl('span', 'rcl-cal-event-layout', _rclEscapeHtml(entry.layout)));
+    }
+    topLine.appendChild(eventLine);
     // COMPLETED, with a results phrase appended once there's something to
     // report (2026-09-21 rewrite, Matt's ask: "have the race faded out
     // with a COMPLETED notification, if it hasn't been finalized yet,
@@ -1459,24 +1520,18 @@ function _rclRenderCalendar(hub) {
     topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusClass, statusText));
     rowBody.appendChild(topLine);
 
-    rowBody.appendChild(_rclEl('div', 'rcl-cal-track',
-      _rclEscapeHtml(entry.track || '(no track)') +
-      (entry.layout ? ' <span class="rcl-cal-layout">-- ' + _rclEscapeHtml(entry.layout) + '</span>' : '')));
-
     var metaRow = _rclEl('div', 'rcl-cal-meta');
-    // Time + length -- now the same gray outline pill as In-Game/Weather
-    // below (2026-09-19, Matt's call: "make the date time and length pill
-    // less prominent. It overshadows the rest of the race details by a
-    // lot") -- was the one solid light-fill chip in this row, which read
-    // much louder against the dark page than the plain track/event text
-    // next to it. The `true` third arg is the same outline switch In-
-    // Game/Weather already use (see _rclChip above).
-    var timeTierParts = [];
-    if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
+    // Length pill -- same gray outline pill as In-Game/Weather below
+    // (2026-09-19, Matt's call: "make the date time and length pill less
+    // prominent"). Race start date/time moved out of this pill entirely
+    // (2026-09-24, see the plain-text .rcl-cal-datetime line above) --
+    // this chip now leads with the tier name instead, e.g. "SPRINT 20
+    // mins" (Matt's exact example). The `true` third arg is the same
+    // outline switch In-Game/Weather already use (see _rclChip above).
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
-    if (lengthMin) timeTierParts.push(lengthMin + ' Min');
-    if (timeTierParts.length) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · '), true));
+    if (lengthMin) {
+      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier.toUpperCase() + ' ') : '';
+      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, tierPrefix + lengthMin + ' mins', true));
     }
     // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
     // 2026-09-21, Matt's follow-up ask), race time only -- practice/
@@ -1585,10 +1640,14 @@ function _rclBuildPointsBody(hub, body) {
   if (bonusChips.length) {
     var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
     // "Bonus Points" (shortened from "Bonus Points This Season",
-    // 2026-09-19, Matt's ask). Same type style as a tier name above
-    // (.rcl-points-tier-name) -- .rcl-points-bonus-label carries this
-    // row's own layout (margin-bottom) -- see css/league.css.
-    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-points-tier-name', 'Bonus Points'));
+    // 2026-09-19, Matt's ask). Now the same gray-pill treatment as the
+    // Season Details popup's own group headers (.rcl-pill-label,
+    // 2026-09-24, Matt's ask: "make the BONUS POINTS catagory the same
+    // style pill") -- was the plain uppercase text style a tier name
+    // without a duration uses (.rcl-points-tier-name); that class stays
+    // as-is for tier names elsewhere. .rcl-points-bonus-label still
+    // carries this row's own layout (margin-bottom) -- see css/league.css.
+    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-pill-label', 'Bonus Points'));
     // Each bonus category now renders as a .rcl-points-pos box, same
     // shape as a tier table's P1/P2/etc. boxes, inside its own
     // .rcl-points-table -- mirrors a tier block's head+table structure
@@ -1857,69 +1916,107 @@ function _rclOpenStoryModal(startIndex) {
 // itself stays the static "League Hub" (set directly in league.html);
 // the eyebrow above it carries "Race Club".
 // ---------------------------------------------------------------------
+// Rebuilt into two FIXED rows (2026-09-24, Matt's ask, replacing the
+// earlier single flowing row that just listed whatever fields happened to
+// be non-empty) -- row1 is always Season Dates/Classes/Rounds Completed,
+// in that order; row2 is each class's own driver count, then Drop
+// Race(s)/Bye Week(s)/Frequency. A field with nothing to show (e.g. no
+// dropWeeks set) is simply skipped, but the ORDER within each row never
+// changes -- unlike before, this no longer folds a missing field's slot
+// over to fill from the other row.
 function _rclBuildSnapshotStats(hub) {
-  var stats = [];
+  var row1 = [];
+  var row2 = [];
 
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
     var endLabel = _rclFormatDate(hub.seasonEndUtc);
     if (startLabel && endLabel) {
-      stats.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
+      row1.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
     }
   }
 
-  // Which car classes are running this season (added 2026-09-19,
-  // Matt's ask: "add which cars are participating" between the season
-  // dates and race-count stats) -- pulled from hub.standings, the same
-  // per-class list the Leaderboard section below already uses, so this
-  // can never name a class that isn't actually fielding cars.
+  // Which car classes are running this season -- pulled from hub.standings,
+  // the same per-class list the Leaderboard section below already uses, so
+  // this can never name a class that isn't actually fielding cars.
   var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
   if (classNames.length) {
-    stats.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
+    row1.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
   }
 
   if (hub.totalRounds) {
-    stats.push({ value: String(hub.totalRounds), label: hub.totalRounds === 1 ? 'Race' : 'Races' });
+    row1.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
   }
 
+  // Per-class driver counts open row2 -- one bubble per class fielding
+  // cars this season ("<Class> Drivers"), however many that is.
   (hub.standings || []).forEach(function (cls) {
     var count = (cls.standings || []).length;
-    if (count) stats.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
+    if (count) row2.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
   });
 
   if (hub.dropWeeks) {
-    stats.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
+    row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
   }
 
-  if (hub.totalRounds) {
-    stats.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
+  if (hub.byeWeeks) {
+    row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
   }
 
-  return stats;
+  if (hub.frequency) {
+    row2.push({ value: hub.frequency, label: 'Frequency' });
+  }
+
+  return { row1: row1, row2: row2 };
 }
 
-// League Format -- season-wide race rules, not season-specific results
-// (added 2026-09-19, Matt's ask: "add information about the league like
-// tires allowed each event, practice length, qualifying length, etc.").
+// League Format -- season-wide race rules, not season-specific results.
 // Multiplier fields ('Off'/'Realistic'/'2x'/'3x', see
 // RACE_SETTINGS_MULTIPLIER_OPTIONS in Account.html) are shown as-is --
 // same labels the wizard itself uses, so this page can never say
 // something different from what the admin actually picked.
+//
+// Also rebuilt into two fixed rows (2026-09-24, Matt's ask): row1 is
+// always Practice/Qualify/Race Time, in that order -- Race Time is a
+// STATIC "Varies" bubble (race length actually varies by round/tier, see
+// hub.pointsTables' own per-tier durations in the separate Points Tables
+// popup), always shown, not conditioned on any data field. row2 is Setup
+// Rules/Track Limit/Pts/Tires Per Race/Pit Stop Rule/Fuel Consumption/Tire
+// Wear, in that order. "Track Limit" (hub.trackLimitsPreset -- Strict/
+// Relaxed/Default) and "Pts" (rs.trackLimitPoints -- how many track-limit
+// points are allowed before a penalty) are two DIFFERENT fields, not a
+// duplicate -- one is the ruleset name, the other is that ruleset's point
+// threshold.
 function _rclBuildFormatStats(hub) {
   var rs = hub.raceSettings || {};
-  var stats = [];
-  if (rs.tireCount) stats.push({ value: String(rs.tireCount), label: 'Tires Per Event' });
-  // "Practice"/"Qualifying" (dropped "Length", 2026-09-19, Matt's ask) --
-  // the value itself already reads as a duration ("30 min"), so the word
-  // was redundant on the label.
-  if (rs.practiceLengthMin) stats.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
-  if (rs.qualifyLengthMin) stats.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualifying' });
-  if (rs.setupRules) stats.push({ value: rs.setupRules, label: 'Setup Rules' });
-  if (rs.pitStopReq) stats.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
-  if (rs.fuelMultiplier) stats.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
-  if (rs.tireWearMultiplier) stats.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
-  if (rs.trackLimitPoints) stats.push({ value: String(rs.trackLimitPoints), label: 'Track Limit Pts' });
-  return stats;
+  var row1 = [];
+  if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
+  if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
+  // Qualify Type (added 2026-09-24, Matt's ask: "add a bubble Qualify
+  // Type (private or public) in between Qualify and Race Length") --
+  // hub.privateQualifying is the season's raw 'Yes'/'No' field (see
+  // handleGetLeagueHub, Website.gs), shown here as Private/Public.
+  if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
+  // Race Length -- static "Varies" bubble, always shown (2026-09-24,
+  // Matt's ask), unlike every other bubble here which is conditioned on
+  // actual data. Race length genuinely does vary by round/tier (see
+  // hub.pointsTables' own per-tier durations in the separate Points
+  // Tables popup), so there's no single number to show here -- this just
+  // says so plainly. Renamed from "Race Time" to "Race Length" (2026-09-24,
+  // Matt's ask).
+  row1.push({ value: 'Varies', label: 'Race Length' });
+
+  var row2 = [];
+  if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
+  if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
+  if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
+  // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
+  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
+  if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
+  if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
+  if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
+
+  return { row1: row1, row2: row2 };
 }
 
 // _rclRenderStatsRow removed 2026-09-19 -- its two call sites both moved
@@ -1979,7 +2076,9 @@ function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
+  // "SEASON <n> DETAILS" once the season number is known (2026-09-24,
+  // Matt's ask -- matches Account.html's own popup title).
+  head.appendChild(_rclEl('div', 'rcl-modal-title', hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -1988,37 +2087,46 @@ function _rclOpenSeasonDetailsModal(hub) {
 
   var body = _rclEl('div', 'rcl-modal-body');
 
-  var snapshotStats = _rclBuildSnapshotStats(hub);
-  if (snapshotStats.length) {
-    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
-    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
-    var snapshotRow = _rclEl('div', 'rcl-hero-stats-row');
-    snapshotStats.forEach(function (s) {
+  // Builds one .rcl-hero-stats-row of tiles -- shared by both groups'
+  // row1/row2 below instead of duplicating this loop four times.
+  function buildStatsRow(stats) {
+    var row = _rclEl('div', 'rcl-hero-stats-row');
+    stats.forEach(function (s) {
       var tile = _rclEl('div', 'rcl-hero-stat');
       tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
       tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-      snapshotRow.appendChild(tile);
+      row.appendChild(tile);
     });
-    snapshotGroup.appendChild(snapshotRow);
+    return row;
+  }
+
+  // Two explicit rows per group now (2026-09-24, Matt's ask), rather than
+  // one flowing row that wrapped wherever the browser felt like -- see
+  // _rclBuildSnapshotStats/_rclBuildFormatStats above for the fixed
+  // per-row field order. A group with nothing in EITHER row is skipped
+  // entirely, same as before; a group with something in only one row
+  // still renders just that one.
+  var snapshot = _rclBuildSnapshotStats(hub);
+  var hasSnapshot = snapshot.row1.length || snapshot.row2.length;
+  if (hasSnapshot) {
+    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
+    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
+    if (snapshot.row1.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row1));
+    if (snapshot.row2.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row2));
     body.appendChild(snapshotGroup);
   }
 
-  var formatStats = _rclBuildFormatStats(hub);
-  if (formatStats.length) {
+  var format = _rclBuildFormatStats(hub);
+  var hasFormat = format.row1.length || format.row2.length;
+  if (hasFormat) {
     var formatGroup = _rclEl('div', 'rcl-hero-stats-group');
     formatGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'League Format'));
-    var formatRow = _rclEl('div', 'rcl-hero-stats-row');
-    formatStats.forEach(function (s) {
-      var tile = _rclEl('div', 'rcl-hero-stat');
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-      formatRow.appendChild(tile);
-    });
-    formatGroup.appendChild(formatRow);
+    if (format.row1.length) formatGroup.appendChild(buildStatsRow(format.row1));
+    if (format.row2.length) formatGroup.appendChild(buildStatsRow(format.row2));
     body.appendChild(formatGroup);
   }
 
-  if (!snapshotStats.length && !formatStats.length) {
+  if (!hasSnapshot && !hasFormat) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
   }
 
