@@ -7536,11 +7536,19 @@
     // before Import is clicked (choosing/changing the file) and is
     // re-enabled the moment the request settles, success or failure either
     // way, so a failed import can still be closed and retried.
+    //
+    // Dimmed rather than hidden (2026-09-24, Matt's ask) -- it stays in
+    // place instead of the modal header shifting, with a "not-allowed"
+    // cursor (the circle-with-a-line-through-it icon browsers show
+    // natively for that cursor value, no custom icon needed) and a title
+    // tooltip explaining why it won't respond to a click.
     var importCloseBtn = modal.el.querySelector('.rc-modal-close');
     function setImportInProgress(inProgress) {
       if (!importCloseBtn) return;
       importCloseBtn.disabled = inProgress;
-      importCloseBtn.style.visibility = inProgress ? 'hidden' : '';
+      importCloseBtn.style.opacity = inProgress ? '0.35' : '';
+      importCloseBtn.style.cursor = inProgress ? 'not-allowed' : '';
+      importCloseBtn.title = inProgress ? 'Cannot close while importing' : '';
     }
 
     var fileInput = el('input');
