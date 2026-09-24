@@ -332,8 +332,10 @@ var RC_NOTIF_ACK_KEY = 'raceclub_acknowledged_notifs';
 // above -- 'season' is seasonId-keyed, everything else here is
 // notificationId-keyed. Kept as one list so a future kind only needs to be
 // added in this one place. 'results_preliminary'/'results_official' and
-// 'round_underway'/'season_ended' all added 2026-09-24.
-var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official', 'round_underway', 'season_ended'];
+// 'season_ended' added 2026-09-24. 'round_underway' (and the trigger system
+// that powered it) removed the same day -- Matt's call: the notification
+// system had gotten more complex than the site needed.
+var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official', 'season_ended'];
 
 function _rcGetAckedNotifIds() {
   try {
@@ -413,19 +415,6 @@ function _rcFetchSeasonNotifications(token, cached) {
             message: n.message,
             dateStamp: _rcFormatNotifDate(n.createdAt),
             section: 'results', linkLabel: 'View Results'
-          };
-        }
-        if (n.kind === 'round_underway') {
-          // "Round N at Track is underway!" (2026-09-24) -- fires once a
-          // round's real-world scheduled start time passes (see
-          // checkRoundStartNotifications, Notifications.gs). Links to the
-          // Protests page, where the 24-hour filing window this message
-          // itself announces actually lives.
-          return {
-            id: 'round_underway-' + n.notificationId, notificationId: n.notificationId, kind: 'round_underway',
-            message: n.message,
-            dateStamp: _rcFormatNotifDate(n.createdAt),
-            section: 'protests', linkLabel: 'File a Protest'
           };
         }
         if (n.kind === 'season_ended') {
@@ -1034,8 +1023,8 @@ function renderHeader(opts) {
       // 'welcome' swept in alongside 'upgrade' (2026-09-19) -- both are
       // targeted, notificationId-keyed rows dismissed the exact same way
       // server-side (see handleDismissNotifications, DataCache.gs).
-      // 'results_preliminary'/'results_official'/'round_underway'/
-      // 'season_ended' (2026-09-24) all join the same bucket -- also
+      // 'results_preliminary'/'results_official'/'season_ended'
+      // (2026-09-24) all join the same bucket -- also
       // notificationId-keyed, also dismissed on close. Derived from the
       // shared _RC_NOTIF_DISMISS_KINDS_ list (minus 'season', which is
       // seasonId-keyed and handled separately above) so a future kind only
