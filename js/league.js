@@ -23,6 +23,22 @@ function _rclEl(tag, className, html) {
   return e;
 }
 
+// Standard "starting grid lights" loading state (2026-09-24) -- same
+// .rc-inline-spinner-wrap > .rc-startlights (5x .rc-startlight) +
+// .rc-loading-text markup as the full-page loader (league.html's
+// #rcl-page-loader) and the Edit Profile popup's loading state
+// (rcOpenEditProfileModalInPlace, edit-profile.js), factored out here so
+// any other in-modal loading state on this page can reuse it instead of
+// rebuilding the same five nodes by hand.
+function _rclBuildInlineSpinner_(message) {
+  var wrap = _rclEl('div', 'rc-inline-spinner-wrap');
+  var lightsRow = _rclEl('div', 'rc-startlights');
+  for (var i = 0; i < 5; i++) lightsRow.appendChild(_rclEl('span', 'rc-startlight'));
+  wrap.appendChild(lightsRow);
+  wrap.appendChild(_rclEl('div', 'rc-loading-text', message));
+  return wrap;
+}
+
 function _rclEscapeHtml(str) {
   var d = document.createElement('div');
   d.textContent = str == null ? '' : String(str);
@@ -1258,7 +1274,15 @@ function _rclOpenAllResultsModal(hub) {
 
   function loadRound(roundId) {
     resultsWrap.innerHTML = '';
-    resultsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'Loading...'));
+    // Standard site loading animation (2026-09-24, Matt's ask) -- the same
+    // "starting grid lights" markup as the full-page loader
+    // (.rcl-page-loader in league.html) and the Edit Profile popup on this
+    // same page (rcOpenEditProfileModalInPlace, edit-profile.js), not the
+    // plain "Loading..." text this popup used before. .rcl-modal-dialog's
+    // own dark-theme override of .rc-inline-spinner-wrap/.rc-startlights/
+    // .rc-loading-text (league.css) already covers this markup, so no new
+    // CSS is needed here.
+    resultsWrap.appendChild(_rclBuildInlineSpinner_('Loading round results...'));
     // BUG FIX (2026-09-23 audit): roundId was passed as a bare options
     // field instead of inside options.params, so fetchApi never actually
     // put it on the URL -- the server always saw a missing roundId and
