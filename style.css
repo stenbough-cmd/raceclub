@@ -559,8 +559,15 @@ p { margin: 0 0 0.75em; }
 .rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
 /* League Tools protest ruling dropdown (openRoundEditFinalizeModal,
    Account.html) -- 3/4 width, 2026-09-24 item 7, so the "Penalty
-   Standards" opener button fits on the same row beside it. */
-.rc-ruling-select { width: 75%; }
+   Standards" opener button fits on the same row beside it. flex-basis
+   (not just width) so it holds its 75% share in the row's flex layout
+   regardless of the select's own content width. */
+.rc-ruling-select { flex: 0 0 75%; width: 75%; }
+/* Penalty Standards opener next to the ruling select (2026-09-24 styling
+   pass) -- fills the remaining 1/4 of the row and stretches to the
+   select's 44px height via the row's align-items:stretch, rather than
+   sitting at .rc-btn-row's normal short inline-action height. */
+.rc-ruling-standards-btn { flex: 1 1 auto; min-width: 0; }
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should
@@ -2439,6 +2446,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    buildDashProtestItem in Account.html. */
 .rc-protest-dash-list { display: flex; flex-direction: column; gap: 14px; }
 .rc-protest-dash-item { display: flex; align-items: flex-start; gap: 10px; }
+/* Divider between rows when a list has more than one protest (2026-09-24
+   styling pass, Matt's ask). Only fires on the 2nd+ item, so a single-
+   protest card/list never grows an orphan rule. */
+.rc-protest-dash-list .rc-protest-dash-item + .rc-protest-dash-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; }
 .rc-protest-dash-icon { flex: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 .rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
 .rc-protest-dash-icon-ruled { background: var(--rc-steel); }
@@ -2446,15 +2457,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
 /* Ruled outcome line and the "(pending decision)" note (2026-09-24, item
-   6) styled identically -- light gray, italic -- so a pending row and a
-   ruled row read as one consistent family in the Dashboard Protest card
-   and the redesigned Protests popup list alike. */
-.rc-protest-dash-outcome { margin-top: 3px; font-size: 12px; color: var(--rc-steel); font-style: italic; }
-.rc-protest-dash-pending { margin-top: 3px; font-size: 12px; color: var(--rc-steel); font-style: italic; }
+   6; resized 2026-09-24 styling pass to match the 13px protest text
+   above it, Matt's ask -- was 12px) styled identically: light gray,
+   italic, same size as the rest of the card's text -- so a pending row
+   and a ruled row read as one consistent family in the Dashboard
+   Protest card and the redesigned Protests popup list alike. */
+.rc-protest-dash-outcome { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
+.rc-protest-dash-pending { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
 /* Edit/Withdraw actions appended to a Protests-popup history row
    (buildProtestPopupHistoryItem, Account.html) -- sits to the right of
-   the row's icon+text body, top-aligned with it (2026-09-24, item 6). */
-.rc-protest-popup-item-actions { display: flex; gap: 8px; flex: none; margin-left: auto; }
+   the row's icon+text body, right-justified and top-aligned with the
+   date/first line (2026-09-24, item 6; confirmed placement 2026-09-24
+   styling pass). */
+.rc-protest-popup-item-actions { display: flex; flex-wrap: nowrap; gap: 8px; flex: none; margin-left: auto; align-self: flex-start; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }

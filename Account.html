@@ -2017,15 +2017,19 @@
     var body = el('div', 'rc-protest-dash-item-body');
     var dateStr = p.submittedAt ? formatShortDate(p.submittedAt) : '';
     var against = (p.involvedNames || []).slice(1).join(' and ');
-    var whereBit = (p.roundNumber ? (' in Round ' + escapeHtml(String(p.roundNumber))) : '') +
-      (p.trackName ? (' at ' + escapeHtml(p.trackName)) : '');
-    var sentence = p.isMine
-      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + ' for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.')
-      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.');
 
-    var line = el('div', 'rc-protest-dash-line');
-    line.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + sentence;
-    body.appendChild(line);
+    // Three-line layout (2026-09-24, styling pass): date + who on line 1,
+    // the infraction type alone on line 2, then the pending/ruled status
+    // line (below) -- replaces the old single run-on sentence that also
+    // buried the infraction type and round/track inside it.
+    var whoLine = el('div', 'rc-protest-dash-line');
+    var whoText = p.isMine
+      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
+      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.');
+    whoLine.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + whoText;
+    body.appendChild(whoLine);
+
+    body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType || 'Infraction not specified')));
 
     if (isRuled) {
       // 2026-09-24 redesign, item 6: the outcome line now names WHO the
@@ -2038,7 +2042,7 @@
       var outcomeText;
       if (p.status === 'Upheld') {
         var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
-        outcomeText = 'Upheld -- Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
+        outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
       } else if (p.status === 'Denied') {
         outcomeText = 'Protest denied.';
       } else {
@@ -5271,12 +5275,12 @@
       editBtn.addEventListener('click', function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); });
       actions.appendChild(editBtn);
 
-      // Withdraw fires an immediate save with no further step in between
-      // (house color rule: "gray unless it saves") -- .rc-btn-primary
-      // combined with .rc-btn-sm/.rc-btn-row per the
-      // race-club-ui-consistency skill's guidance, rather than a one-off
-      // red row modifier.
-      var withdrawBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Withdraw');
+      // Withdraw is styled identically to Edit (2026-09-24 styling pass,
+      // Matt's ask: "the withdraw button needs to be the same style as
+      // the edit button") -- a deliberate one-off exception to the
+      // house "gray unless it saves" color rule, same kind of explicit
+      // override as the red File Protest button elsewhere in this file.
+      var withdrawBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Withdraw');
       withdrawBtn.type = 'button';
       withdrawBtn.addEventListener('click', function () { openWithdrawProtestConfirm(token, p, function () { rcReloadAfterSave(); }); });
       actions.appendChild(withdrawBtn);
@@ -7716,7 +7720,7 @@
     'Intentional Wrecking': 'Tier 5-6 (Stop-and-Go Equivalent to Disqualification)',
     'Unsafe Rejoin': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
     'Avoidable Contact (Other Driver)': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
-    'Avoidable Contact (Self Report)': 'Tier 1-3 (Warning to Time Penalty -- see the self-reporting note below)',
+    'Avoidable Contact (Self Report)': 'Tier 1-3 (Warning to Time Penalty; see the self-reporting note below)',
     'Unsportsmanlike Behavior': 'Tier 3-6 (Time Penalty to Disqualification, depending on severity)'
   };
 
@@ -7731,7 +7735,7 @@
   // (HELP_GUIDE_ITEMS) so the two never drift apart in wording.
   function openPenaltyStandardsModal() {
     var body = el('div');
-    body.appendChild(el('p', 'rc-hint', 'A standardized starting point for protest rulings, so penalties stay consistent steward to steward. Use judgment -- these are guidelines, not a formula, and a ruling can land outside a listed range when the incident calls for it.'));
+    body.appendChild(el('p', 'rc-hint', 'A standardized starting point for protest rulings, so penalties stay consistent steward to steward. Use judgment: these are guidelines, not a formula, and a ruling can land outside a listed range when the incident calls for it.'));
 
     body.appendChild(el('h4', null, 'Penalty Tiers'));
     PENALTY_TIERS.forEach(function (t) {
@@ -7739,20 +7743,20 @@
     });
 
     body.appendChild(el('h4', 'margin-top:16px;', 'Standard Ruling For Auto-Flagged Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are auto-flagged by the system (a registration mismatch, not driver-filed) and always carry a fixed standard tier -- ruling at a different tier requires a written explanation.'));
+    body.appendChild(el('p', 'rc-hint', 'These are auto-flagged by the system (a registration mismatch, not driver-filed) and always carry a fixed standard tier. Ruling at a different tier requires a written explanation.'));
     Object.keys(SUGGESTED_TIER_BY_INFRACTION).forEach(function (infraction) {
       var tierInfo = penaltyTierByNumber(SUGGESTED_TIER_BY_INFRACTION[infraction]);
       body.appendChild(el('div', 'rc-hint', infraction + ': ' + (tierInfo ? (tierInfo.label + ' (' + tierInfo.effect + ')') : ('Tier ' + SUGGESTED_TIER_BY_INFRACTION[infraction]))));
     });
 
     body.appendChild(el('h4', 'margin-top:16px;', 'Typical Ruling Range For Driver-Filed Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are judged case by case, with no fixed tier -- but absent unusual circumstances, a ruling should land in this range:'));
+    body.appendChild(el('p', 'rc-hint', 'These are judged case by case, with no fixed tier, but absent unusual circumstances a ruling should land in this range:'));
     PROTEST_INFRACTION_TYPES.forEach(function (infraction) {
-      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (PROTEST_TYPICAL_TIER_RANGE[infraction] || 'No standard range -- steward discretion.')));
+      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (PROTEST_TYPICAL_TIER_RANGE[infraction] || 'No standard range; steward discretion.')));
     });
 
     body.appendChild(el('h4', 'margin-top:16px;', 'Self-Reported Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'A driver who self-reports an infraction (filed as "Avoidable Contact (Self Report)") should receive a reduced penalty tier compared to the same infraction reported by someone else -- this rewards coming forward on your own. It\'s a policy note for the ruling steward to apply, not something the site enforces automatically.'));
+    body.appendChild(el('p', 'rc-hint', 'A driver who self-reports an infraction (filed as "Avoidable Contact (Self Report)") should receive a reduced penalty tier compared to the same infraction reported by someone else. This rewards coming forward on your own. It\'s a policy note for the ruling steward to apply, not something the site enforces automatically.'));
 
     showModal('Penalty Standards', { bodyEl: body, wide: true });
   }
@@ -7817,20 +7821,20 @@
         var finalizeBar = el('div', 'rc-panel');
         finalizeBar.style.cssText = 'margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
         finalizeBar.appendChild(el('div', 'rc-hint', escapeHtml(resultsFinalized
-          ? 'This round is finalized -- no further penalties will be assessed.'
-          : (hasUnruledProtests ? 'Every protest on this round needs a ruling before it can be finalized.' : 'Not finalized yet -- protest rulings can still be applied below.'))));
+          ? 'This round is finalized. No further penalties will be assessed.'
+          : (hasUnruledProtests ? 'Every protest on this round needs a ruling before it can be finalized.' : 'Not finalized yet. Protest rulings can still be applied below.'))));
         var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
         finalizeBtn.type = 'button';
         if (!resultsFinalized && hasUnruledProtests) {
           finalizeBtn.disabled = true;
-          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling -- apply a ruling to every protest below before finalizing.');
+          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest below before finalizing.');
         }
         finalizeBtn.addEventListener('click', function () {
           var goingToFinalize = !resultsFinalized;
           var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
           var confirmMsg = resultsFinalized
             ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
-            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed -- these are the most current, correct results for this round.';
+            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
           // Restores the button's normal label/color -- shared by both the
           // failure and timeout paths below, since render() (which would
           // otherwise rebuild this button fresh) only runs on success.
@@ -7910,7 +7914,7 @@
             if (resultsFinalized) {
               var lockedHint = el('div', 'rc-hint');
               lockedHint.style.cssText = 'margin-top:8px;';
-              lockedHint.textContent = 'This round is finalized -- Un-Finalize above to rule on this protest.';
+              lockedHint.textContent = 'This round is finalized. Un-Finalize above to rule on this protest.';
               row.appendChild(lockedHint);
             } else {
               // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
@@ -7932,33 +7936,44 @@
                 row.appendChild(suggestedHint);
               }
 
-              var controlRow = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;');
+              // Ruling row (2026-09-24 styling pass): the select and the
+              // Penalty Standards opener share one row, select fixed at
+              // 3/4 width (.rc-ruling-select) with the button filling the
+              // remaining 1/4 -- no wrap, so they can never split onto
+              // separate lines the way the old single flex-wrap row did.
+              // align-items:stretch makes the button match the select's
+              // 44px height (Matt's ask: "slightly taller to match the
+              // size of the dropdown box").
+              var controlRow = el('div', 'display:flex;gap:8px;align-items:stretch;margin-top:8px;flex-wrap:nowrap;');
               // 3/4 width (2026-09-24, item 7) -- .rc-ruling-select.
               var select = document.createElement('select');
               select.className = 'rc-ruling-select';
               select.appendChild(new Option('Choose a ruling...', ''));
               select.appendChild(new Option('Deny', 'deny'));
-              // "Deny, duplicate protest" (2026-09-24, item 7) -- placed
+              // "Deny (duplicate protest)" (2026-09-24, item 7) -- placed
               // immediately after plain Deny so it reads as a variant of
               // it. A native <select> can't truly nest options, so this is
               // the closest a flat option list gets to "nested under Deny."
-              select.appendChild(new Option('Deny -- duplicate protest', 'deny_duplicate'));
+              select.appendChild(new Option('Deny (duplicate protest)', 'deny_duplicate'));
               PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
               controlRow.appendChild(select);
 
               // Gray "Penalty Standards" opener (2026-09-24, item 7) --
               // only OPENS a reference popup, no save, so it stays gray
               // per the site's button-color rule even though what it
-              // documents feeds into a ruling that does save.
-              var standardsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Penalty Standards');
+              // documents feeds into a ruling that does save. Fills the
+              // remaining 1/4 of the row next to the select.
+              var standardsBtn = el('button', 'rc-btn-secondary rc-ruling-standards-btn', 'Penalty Standards');
               standardsBtn.type = 'button';
               standardsBtn.addEventListener('click', function () { openPenaltyStandardsModal(); });
               controlRow.appendChild(standardsBtn);
+              row.appendChild(controlRow);
 
+              var applyRow = el('div', 'display:flex;margin-top:8px;');
               var applyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Apply Ruling');
               applyBtn.type = 'button';
-              controlRow.appendChild(applyBtn);
-              row.appendChild(controlRow);
+              applyRow.appendChild(applyBtn);
+              row.appendChild(applyRow);
 
               // Optional free-text narrative (2026-09-24, item 7) -- lets
               // the steward explain their decision in their own words,
@@ -7971,7 +7986,7 @@
               var narrativeBox = document.createElement('textarea');
               narrativeBox.rows = 3;
               narrativeBox.maxLength = 2000;
-              narrativeBox.placeholder = 'Optional -- explain the reasoning behind this ruling...';
+              narrativeBox.placeholder = 'Optional ruling justification...';
               narrativeWrap.appendChild(narrativeBox);
               row.appendChild(narrativeWrap);
 
