@@ -38,6 +38,13 @@ body.rc-league-page {
      already reads off them, with no per-rule changes needed. */
   --rcl-ink-dim: #b4b7bd;
   --rcl-ink-faint: #7d8088;
+  /* Race Report clause colors (2026-09-24, Matt's ask: color-code the
+     report so it's easier to scan) -- damage/collision aren't in the
+     shared --rc-red brand accent, so they get their own two tokens here
+     rather than borrowing a color that means something else on this
+     page. */
+  --rcl-report-damage: #f5923b;
+  --rcl-report-collision: #e8c547;
 
   background: var(--rcl-bg);
   color: var(--rcl-ink);
@@ -1029,12 +1036,21 @@ body.rc-league-page {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--rcl-ink-faint);
+  color: var(--rcl-ink); /* white (2026-09-24, Matt's ask) -- was --rcl-ink-faint */
   padding-top: 2px;
 }
 .rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
 .rcl-report-line:last-child { margin-bottom: 0; }
+/* Clause color-coding within a report line (2026-09-24, Matt's ask).
+   The driver name and position-change/pit/penalty clauses stay the
+   line's default dim-gray -- only the three clause types Matt called
+   out get their own color, so the highlights (damage, contact) pop
+   against everything else instead of the whole line turning into a
+   rainbow. */
+.rcl-report-clause-wall { color: var(--rcl-ink-dim); } /* explicit gray, same token as the line default -- Matt: "keep contact with immovable gray" */
+.rcl-report-clause-car { color: var(--rcl-report-collision); font-weight: 700; } /* car-to-car collision: yellow */
+.rcl-report-clause-damage { color: var(--rcl-report-damage); font-weight: 700; } /* damage reported: bold orange */
 .rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
 .rcl-penalty-row {
   display: flex;

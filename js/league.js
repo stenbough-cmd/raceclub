@@ -1114,14 +1114,48 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     var lapOrder = [];
     report.forEach(function (entry) {
       if (!byLap[entry.lapNum]) { byLap[entry.lapNum] = []; lapOrder.push(entry.lapNum); }
-      byLap[entry.lapNum].push(entry.text);
+      byLap[entry.lapNum].push(entry);
     });
+    // Clause kind -> the CSS class that colors it (2026-09-24, Matt's
+    // ask). Kinds not listed here (pit, penalty, position) stay the
+    // line's default dim-gray on purpose -- only wall contact, car
+    // contact and damage get called out in color.
+    var CLAUSE_CLASS = { wall: 'rcl-report-clause-wall', car: 'rcl-report-clause-car', damage: 'rcl-report-clause-damage' };
     lapOrder.forEach(function (lapNum) {
       var lapRow = _rclEl('div', 'rcl-report-lap');
       lapRow.appendChild(_rclEl('div', 'rcl-report-lap-num', 'Lap ' + lapNum));
       var textWrap = _rclEl('div', 'rcl-report-lap-text');
-      byLap[lapNum].forEach(function (text) {
-        textWrap.appendChild(_rclEl('p', 'rcl-report-line', _rclEscapeHtml(text)));
+      byLap[lapNum].forEach(function (entry) {
+        var lineEl = _rclEl('p', 'rcl-report-line');
+        if (entry.clauses) {
+          // Structured entry (2026-09-24+) -- render each clause as its
+          // own span so wall/car/damage clauses can be colored
+          // independently of the driver name and the rest of the line.
+          lineEl.appendChild(document.createTextNode(entry.name));
+          var allClauses = entry.positionClause ? entry.clauses.concat([entry.positionClause]) : entry.clauses;
+          allClauses.forEach(function (clause, i) {
+            lineEl.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
+            var cls = CLAUSE_CLASS[clause.kind];
+            if (cls) {
+              // Built by hand rather than via _rclEl -- that helper sets
+              // innerHTML, and clause.text (driver-supplied names can
+              // flow into it via "contact with X") must never be parsed
+              // as markup.
+              var span = document.createElement('span');
+              span.className = cls;
+              span.textContent = clause.text;
+              lineEl.appendChild(span);
+            } else {
+              lineEl.appendChild(document.createTextNode(clause.text));
+            }
+          });
+          lineEl.appendChild(document.createTextNode('.'));
+        } else {
+          // A round imported before clause tagging shipped -- entry only
+          // has a flat `text` string. Fall back to the old plain render.
+          lineEl.textContent = entry.text;
+        }
+        textWrap.appendChild(lineEl);
       });
       lapRow.appendChild(textWrap);
       reportSection.appendChild(lapRow);
