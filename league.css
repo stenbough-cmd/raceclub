@@ -1,0 +1,1741 @@
+/*
+  Race Club — css/league.css  (added 2026-09-18)
+
+  WHAT THIS FILE IS FOR
+  league.html is a deliberately different visual world from the rest of
+  the site: black background, light gray/steel accents, hard diagonal
+  edges -- an ESPN-style league hub, not another white rc-panel page. Site
+  convention (see the race-club-ui-consistency skill) is "never hardcode a
+  color or font, always pull from a token" -- but every --rc-* token in
+  style.css is tuned for the site's white/offwhite pages, so there's
+  nothing there to reuse for a black page. This file defines its OWN small
+  token set below, scoped under body.rc-league-page, and every rule in
+  this file pulls from those tokens, same discipline as the rest of the
+  site just with a second palette. Two things ARE still pulled straight
+  from the shared tokens on purpose: --rc-red/--rc-red-dark (the site's
+  one brand accent stays the same color everywhere) and
+  --rc-font-heading/--rc-font-body (typography stays one family sitewide;
+  this page leans on size/weight/letter-spacing for its more aggressive
+  feel, not a different typeface).
+
+  Loaded ONLY by league.html, alongside (after) the shared style.css --
+  the fixed header (js/header.js) and its light theme are untouched here;
+  only the page content below it goes dark. See league.html for the load
+  order and js/league.js for what renders into these classes.
+*/
+
+body.rc-league-page {
+  --rcl-bg: #0a0a0b;
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  /* Both nudged a little lighter (2026-09-19, Matt's ask: "make the dark
+     gray font just a little lighter") -- these two tokens carry most of
+     the page's secondary/tertiary text (meta lines, labels, chip text),
+     so a small bump here improves legibility across every section that
+     already reads off them, with no per-rule changes needed. */
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+  /* Race Report clause colors (2026-09-24, Matt's ask: color-code the
+     report so it's easier to scan) -- damage/collision aren't in the
+     shared --rc-red brand accent, so they get their own two tokens here
+     rather than borrowing a color that means something else on this
+     page. */
+  --rcl-report-damage: #f5923b;
+  --rcl-report-collision: #e8c547;
+  --rcl-report-gain: #4fbf72;
+
+  background: var(--rcl-bg);
+  color: var(--rcl-ink);
+  padding-top: 70px; /* clears the shared fixed header, same convention as .rc-shell/.rc-auth-page */
+}
+
+/* Full-page loading overlay (2026-09-19, Matt's ask: "a loading animation
+   in the center of the page... with the page behind very very dim until
+   it loads") -- fixed, covers the whole viewport including the header,
+   near-opaque rather than fully solid so the page reads as "very dim"
+   underneath instead of hidden outright. Faded out (opacity + pointer-
+   events) and then removed by js/league.js once the initial getLeagueHub
+   fetch resolves, success or failure either way. Markup lives in
+   league.html; body scroll is locked while this is up via the same
+   .rc-modal-scroll-locked class every popup on the site already uses
+   (see _rclLockBodyScroll/_rclUnlockBodyScroll in js/league.js). */
+.rcl-page-loader {
+  position: fixed;
+  /* Starts BELOW the shared fixed header (2026-09-19 follow-up, Matt:
+     "don't dim the header part, only the league hub page below should
+     be dimmed") -- 70px matches .rc-fixed-header's own height
+     (style.css) and body.rc-league-page's own padding-top for it, so
+     this lines up exactly with where the header's bottom edge sits,
+     leaving it fully visible and undimmed above. */
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(10, 10, 11, 0.94);
+  transition: opacity 0.4s ease;
+}
+.rcl-page-loader-hidden { opacity: 0; pointer-events: none; }
+/* .rc-loading-text (style.css) is tuned for the site's light theme
+   (var(--rc-steel)) -- this overlay is dark, so it needs its own color
+   here rather than inheriting an unreadable dark-gray-on-black. */
+.rcl-page-loader .rc-loading-text { color: var(--rcl-ink-dim); }
+/* .rc-startlights (style.css) is a light off-white pill by default, built
+   for the site's white pages -- mid-gray here instead (2026-09-19 follow-
+   up, Matt's ask), sitting between the near-black overlay behind it and
+   the white/red lights themselves, so the light bar still reads as a
+   physical frame instead of a bright cutout against the dark page. */
+.rcl-page-loader .rc-startlights {
+  background: var(--rcl-line-bright);
+  border-color: var(--rcl-line);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Freeze on a single lit state instead of animating through the full
+     "lights out" sequence -- still reads as "loading," no motion. */
+  .rcl-page-loader .rc-startlight {
+    animation: none;
+    background: var(--rc-red);
+    border-color: var(--rc-red);
+    box-shadow: 0 0 7.5px 1.5px var(--rc-red);
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* Ticker -- scrolling strip, right under the fixed header              */
+/* -------------------------------------------------------------------- */
+.rcl-ticker-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--rcl-bg-raised);
+  border-bottom: 2px solid var(--rc-red);
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+.rcl-ticker-label {
+  flex: none;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--rc-red);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Hard diagonal cut on the trailing edge -- the one recurring "angle"
+     motif this page uses everywhere a colored block meets a dark one. */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  padding-right: 28px;
+  z-index: 2;
+}
+.rcl-ticker-viewport { flex: 1 1 auto; overflow: hidden; height: 100%; position: relative; }
+.rcl-ticker-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: max-content;
+  /* This starting duration is only ever seen for a split second before
+     js/league.js overrides it inline with a per-load, content-aware
+     value (2026-09-23, Matt's catch: a fixed duration made the ticker
+     visibly race by on a content-heavy day -- see the long comment on
+     mainDurationSec in _rclRenderTicker, js/league.js, for why speed is
+     now derived from the track's actual measured width instead of a
+     flat number here). Kept as a reasonable fallback only for the rare
+     case JS hasn't run yet (or prefers-reduced-motion, which disables
+     motion entirely below anyway). */
+  animation: rcl-ticker-scroll 19s linear infinite;
+}
+.rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
+/* Back to the original plain 0%/-50% loop (2026-09-19 follow-up -- the
+   version of this rule that instead read from --rcl-ticker-start/-end
+   custom properties made the "roll in from off-screen" behavior repeat
+   on every single loop, not just the first time, which is what caused
+   "only shows 2 entries and starts over" -- see the long comment in
+   js/league.js's _rclRenderTicker). -50% (one full run's width, since
+   both duplicate runs are equal) is what makes the loop land seamlessly
+   back on the identical second run -- this rule alone is exactly what
+   ran before ANY "roll in" work started, and is only ever used after
+   the one-time intro below has already finished. */
+/* Back to 2 concatenated copies of the item list (2026-09-19 follow-up,
+   Matt: with season dates + next race now in the ticker, "I think the
+   ticker will only ever need to display two at a time... not 3") -- the
+   loop only needs to travel one run's width, i.e. -50%, to stay seamless.
+   Keep this in sync with RUN_COUNT in js/league.js. */
+@keyframes rcl-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+/* One-time intro (2026-09-19 follow-up) -- js/league.js runs this once
+   per page load, immediately followed (via animation-delay, not
+   overlapping) by the loop above starting fresh from translateX(0),
+   exactly where this leaves off. --rcl-ticker-start is a real pixel
+   value (the ticker viewport's own width) set by JS right before this
+   runs, so the track starts fully hidden past the right edge and rolls
+   in -- a plain keyframe can't express "one viewport-width further right
+   than a plain reset" without that measured value. The 0 fallback only
+   matters for the split second before JS sets the real one. */
+@keyframes rcl-ticker-intro {
+  from { transform: translateX(var(--rcl-ticker-start, 0)); }
+  to { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rcl-ticker-track { animation: none; }
+  .rcl-ticker-viewport { overflow-x: auto; }
+}
+.rcl-ticker-item {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  font-family: var(--rc-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rcl-ink);
+  white-space: nowrap;
+  /* Vertical divider between items removed (2026-09-23, Matt's ask) --
+     the loop-seam dot (.rcl-ticker-loop-dot, below) plus each item's own
+     gold tag/colon already read as clear item boundaries without a
+     literal rule line down the ticker. */
+}
+/* Same font/weight as the item's own body copy (2026-09-19 follow-up,
+   Matt: "make the red category labels just a regular font... I want the
+   text to look the same as it scrolls") -- the trailing colon (added in
+   the tag text itself, js/league.js) is what marks where the label ends.
+   Color switched to gold (2026-09-19, Matt's ask) -- the same accent
+   .rcl-cal-status-unofficial/.rcl-cal-row-special already use elsewhere
+   on this page, so the ticker picks up a second color instead of a brand
+   new one. */
+.rcl-ticker-item-tag {
+  font-family: var(--rc-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e0b64c;
+}
+/* Driver-list ticker entries (2026-09-23, Matt's ask: a driver-heavy
+   line "feels like a wall of text" -- add a manufacturer logo in front
+   of each name, take some weight off the name, keep the number weight
+   the same as it is). Built by buildDriverEntry (js/league.js), used for
+   both the pre-results "N DRIVERS" items and the in-season "N TOP 5"
+   items. .rcl-ticker-driver-list is the one flex child that holds every
+   driver entry + the ", " separators for one ticker item, so the item's
+   own 8px gap (see .rcl-ticker-item) only ever applies between the tag/
+   prefix text and this whole group, not between every individual name. */
+.rcl-ticker-driver-list {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.rcl-ticker-driver-entry {
+  display: inline-flex;
+  align-items: center;
+  /* 8px (was 4px), 2026-09-23 Matt's ask: "one more space between the
+     driver name and manufacturer logo" -- this is the gap between EVERY
+     child (logo/name/number), which is what actually separates the logo
+     from the name that follows it. */
+  gap: 8px;
+}
+.rcl-ticker-driver-logo {
+  flex: none;
+  display: block;
+  /* Bumped a little (was 14px/22px), 2026-09-23 Matt's ask: "increase the
+     max height and width of the logos... so they can be seen easier". */
+  height: 17px;
+  width: auto;
+  max-width: 27px;
+  object-fit: contain;
+}
+/* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
+   name is now the quieter part of each entry. */
+.rcl-ticker-driver-name { font-weight: 500; }
+/* Weight is the same the whole line used to render at before this split
+   (Matt's explicit "keep the number weight the same as it is") -- stays
+   the heaviest part of each driver entry. Color changed to light gray
+   2026-09-23 (Matt's ask: "make the numbers behind the driver names a
+   light gray") -- same --rcl-ink-dim token every other muted label on
+   this page already uses, rather than inventing a new gray. */
+.rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink-dim); }
+/* TOP 5 prefix split (2026-09-23, Matt's ask: "Round n EventName: track",
+   round/event bold, track normal weight) -- bold is heavier than the
+   item's own base 600 (.rcl-ticker-item), dim is lighter. */
+.rcl-ticker-prefix-bold { font-weight: 800; color: var(--rcl-ink); }
+.rcl-ticker-prefix-dim { font-weight: 400; color: var(--rcl-ink); }
+/* Ordinal rank prefix on TOP 5 rows (2026-09-23, Matt's ask: "1st, 2nd,
+   3rd, 4th and 5th before the names in bold white"). */
+.rcl-ticker-driver-rank { font-weight: 800; color: var(--rc-white); }
+/* Season dates, lighter than the SEASON item's own base 600 weight
+   (2026-09-23, Matt's ask: "make the season dates a reduced weight
+   compared to the season name") -- same 500 weight as
+   .rcl-ticker-driver-name, keeping the dates as the quieter half of the
+   line the way the driver number/name pairing already reads. */
+.rcl-ticker-season-dates { font-weight: 500; color: var(--rcl-ink-dim); }
+.rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
+/* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated
+   line") -- closes out each run before it repeats, so the ticker reads as
+   a continuous "...item • item..." at the point it loops back to the
+   start, the same way a real news ticker marks its repeat. No
+   border-right of its own (unlike .rcl-ticker-item) -- the dot itself is
+   the separator here, a second vertical line right next to it would be
+   redundant. */
+.rcl-ticker-loop-dot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--rc-red);
+}
+
+/* -------------------------------------------------------------------- */
+/* Hero band -- season name, hard angled bottom edge                    */
+/* -------------------------------------------------------------------- */
+.rcl-hero {
+  position: relative;
+  padding: 46px 32px 58px;
+  background: linear-gradient(135deg, var(--rcl-bg-raised) 0%, var(--rcl-bg) 70%);
+  border-bottom: 1px solid var(--rcl-line);
+  overflow: hidden;
+}
+/* Banner image layer (added 2026-09-19, Matt's ask) -- sits behind the
+   red angled accent (::after, below) and behind the text (.rcl-hero-inner,
+   z-index:1), but above the hero's own gradient background.
+   inset:0 sizes the layer to the hero's own box (.rcl-hero is already a
+   full-bleed section, so this reaches the window's edges without the
+   100vw/translateX viewport-anchoring trick this used to need).
+   background-size:cover (2026-09-19 fix -- was 100% auto, which force-
+   stretched the image's WIDTH to match the viewport regardless of the
+   image's own resolution, upscaling it well past its native size on a
+   wide window and reading as "super stretched and blown up"; cover scales
+   the image just enough to fill the box on both axes with its aspect
+   ratio intact, so it only ever crops, never distorts or upscales past
+   what actually fills the space) + background-position:center (crops
+   symmetrically top/bottom, so the header always shows the image's middle
+   section, not whatever the top-anchored crop happened to land on).
+   overflow:hidden on .rcl-hero crops whatever spills past the hero's own
+   height so the container never grows to match the banner's natural size.
+   A soft opacity keeps it a backdrop rather than competing with the
+   title/stat text sitting on top of it. */
+.rcl-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Relative to THIS file (css/league.css), not the page -- assets/images/
+     is a sibling of css/, not a child of it, same gotcha style.css's own
+     banner rules already have a comment for. */
+  background-image: url('../assets/images/league_banner.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+.rcl-hero::after {
+  /* Diagonal red bar bleeding off the right edge -- the page's one loud
+     brand mark, echoing the ticker label's angled cut. */
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -6%;
+  width: 220px;
+  height: 220%;
+  background: var(--rc-red);
+  opacity: 0.9;
+  transform: rotate(18deg);
+  z-index: 0;
+}
+.rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+.rcl-hero-eyebrow {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 10px;
+}
+.rcl-hero-title {
+  font-family: var(--rc-font-heading);
+  font-size: clamp(32px, 5.4vw, 56px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.02;
+  color: var(--rcl-ink);
+  margin: 0;
+  /* Same subtle drop shadow as .rcl-panel-title (2026-09-20) -- this
+     title sits directly on top of the hero banner image too, so it
+     benefits the same way. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+/* Season number line (added 2026-09-19) -- sits between the big title
+   and the season-context details, its own size step between the small
+   eyebrow above and the body-text sub-line below. */
+.rcl-hero-season {
+  margin-top: 10px;
+  font-family: var(--rc-font-heading);
+  /* Bumped up substantially (2026-09-19, Matt's explicit ask: "Make the
+     SEASON N / SEASON NAME under the LEAGUE HUB title larger in size") --
+     its own dedicated size step above the general "one level" bump the
+     rest of the League Hub text got, between the sub-line and the hero
+     title itself. */
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-dim);
+}
+/* "Season N / Name" (2026-09-19, Matt's ask: color the separator and the
+   name distinctly) -- the "/" reads in the brand accent and the season
+   name reads bright white against it. Built as spans in js/league.js's
+   _rclRenderHero rather than one plain text string.
+   "Season N" itself switched from the line's base ink-dim color to gold
+   (2026-09-19 follow-up, Matt's ask) -- same accent .rcl-cal-status-
+   unofficial/.rcl-ticker-item-tag already use elsewhere on this page. */
+.rcl-hero-season-num { color: #e0b64c; }
+.rcl-hero-season-sep { color: var(--rc-red); }
+.rcl-hero-season-name { color: var(--rcl-ink); }
+.rcl-hero-sub { margin-top: 12px; font-size: 15px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }
+
+/* Season snapshot / League Format stat strips (added 2026-09-19,
+   replacing the old single pipe-separated sentence -- "Date: ... |
+   Calendar: ... | Drop Races: ... | Rounds Completed: ..." read as boring
+   plain text; this reads as a real stat strip instead, same family as the
+   Recent Results headline stats (.rcl-race-headline-stat) just themed for
+   the hero's dark gradient background). Two groups (This Season / League
+   Format) rather than one long row so the two different kinds of
+   information -- what's happening this season vs. how the league always
+   runs -- stay visually separate. */
+.rcl-hero-stats-group { margin-top: 22px; }
+.rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 20px; }
+.rcl-hero-stats-label {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 10px;
+}
+.rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Smaller, center-aligned bubbles (2026-09-19, Matt's call, in the Season
+   Details popup: "reduce the size of the details bubbles so they don't
+   take up so much space and center align the values in each bubble") --
+   smaller padding/min-width and a smaller value font than the original
+   size, which was sized for the old hero-band placement, not a compact
+   popup body. */
+.rcl-hero-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 74px;
+  text-align: center;
+}
+.rcl-hero-stat-value {
+  font-family: var(--rc-font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.rcl-hero-stat-label {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+
+/* -------------------------------------------------------------------- */
+/* Layout                                                                */
+/* -------------------------------------------------------------------- */
+.rcl-main { max-width: 1180px; margin: 0 auto; padding: 36px 32px 80px; }
+/* League News 1/3, Recent Results 2/3 (2026-09-20, Matt's call -- was
+   News 2fr / Results 1fr, the opposite ratio, until this swap). */
+/* align-items changed from start to stretch (2026-09-23, Matt's ask:
+   "make both containers the same height. So if RECENT RESULTS has more
+   data... have LEAGUE NEWS container stretch all the way to make it the
+   same height") -- grid's default row behavior already stretches items
+   to the row's tallest cell; align-items:start was what opted News/
+   Results OUT of that, sizing each to its own content instead. This
+   grid only ever holds these two panels (Leaderboard/Calendar below are
+   .rcl-row-full, a separate full-width block, not part of this grid),
+   so the change is scoped to exactly the pair Matt meant. */
+.rcl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 28px; align-items: stretch; }
+@media (max-width: 900px) {
+  .rcl-grid { grid-template-columns: 1fr; }
+}
+/* height: 100% + the .rcl-panel/.rcl-panel-body flex rules below turn the
+   grid's own equal-height row (from align-items:stretch above) into an
+   actual stretched panel background, not just an empty gap under the
+   shorter column's content. */
+.rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; height: 100%; }
+.rcl-col > .rcl-panel { flex: 1 1 auto; display: flex; flex-direction: column; }
+.rcl-col > .rcl-panel > .rcl-panel-body { flex: 1 1 auto; }
+/* Full-width rows below the two-column grid (Leaderboard/Calendar, added
+   2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
+.rcl-row-full { margin-top: 28px; }
+/* .rcl-grid-even (Leaderboard/Points Tables 50/50 row) removed 2026-09-19
+   -- Points Tables is no longer its own panel; Leaderboard is full width
+   again with its own multi-column layout below (.rcl-standings-columns). */
+
+/* -------------------------------------------------------------------- */
+/* Section / card shell -- angled corner tab on every section header,   */
+/* the dark-page equivalent of .rc-dash-card's red-underline title.      */
+/* Rounded corners (2026-09-19, Matt's call) match the Dashboard cards'  */
+/* own radius (.rc-panel in style.css) -- overflow:hidden so the header  */
+/* strip's square top corners get clipped to match instead of poking     */
+/* out past the rounded card edge.                                       */
+/* -------------------------------------------------------------------- */
+.rcl-panel {
+  background: var(--rcl-bg-raised);
+  border: 1px solid var(--rcl-line);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  /* Tiniest bit of glow (2026-09-19, Matt's ask: "a little dimension...
+     nothing crazy obvious, just something subtle") -- a soft, wide,
+     very-low-opacity light halo plus a barely-there drop shadow for a
+     touch of lift, instead of any of this page's brand-red accent. Kept
+     deliberately faint so it reads as ambient depth, not a highlight. */
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.035), 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+.rcl-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--rc-red);
+  background: var(--rcl-bg-raised-2);
+}
+/* League News panel header banner (added 2026-09-19, Matt's ask) -- same
+   layering technique as .rcl-hero::before above (banner image on its own
+   ::before, behind the title text): position:relative + overflow:hidden
+   on the header itself so the banner is clipped to this one header bar
+   rather than spilling into the panel body below or past the panel's
+   own rounded corners; the image sits on ::before at z-index:0, and
+   .rcl-panel-title gets its own explicit stacking (position:relative,
+   z-index:1) so it stays readable on top of it. Scoped to
+   .rcl-panel-head-news specifically (see league.html) so Recent Results'
+   identical-looking header, right next to this one, is unaffected.
+   50% opacity (2026-09-19, dimmed down from the original 90% ask -- Matt's
+   follow-up call: "dim the league news background to 50%"; the main
+   hero's own banner opacity was raised to 0.5 in separate later passes,
+   so the two now happen to match, but each is tuned independently for
+   its own space) -- present enough that a faint image wouldn't just
+   disappear in this smaller, busier area, but not competing with the
+   "League News" title text sitting on top of it. */
+.rcl-panel-head-news { position: relative; overflow: hidden; }
+.rcl-panel-head-news::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Relative to THIS file (css/league.css), not the page -- see the
+     league_banner comment on .rcl-hero::before above for why this needs
+     the ../ prefix. Same bug was hiding this image too. */
+  background-image: url('../assets/images/news_banner.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+.rcl-panel-head-news .rcl-panel-title { position: relative; z-index: 1; }
+.rcl-panel-title {
+  /* Bumped to match .rc-dash-card-title's own size (2026-09-19, Matt's
+     ask: "Increase the container header sizes in the LEAGUE HUB up one
+     level -- make them the same size font as the dashboard card
+     headers") -- style.css's .rc-dash-card-title is 20px/800. */
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Subtle dark drop shadow (2026-09-20, Matt's ask: "cast a subtle dark
+     drop shadow around the text to help pronounce it more as a header")
+     -- small offset, soft blur, low opacity so it reads as a bit of depth
+     lifting the header text off the panel background rather than a heavy
+     outline. Every panel header on the page shares this one class,
+     including the ones sitting directly on top of a banner image (League
+     News, the hero) where it also helps the text stay legible against
+     whatever's behind it. Popup titles (.rcl-modal-title) are a separate
+     rule and intentionally NOT touched here -- this is about the
+     page's own container headers, not every popup on top of it. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+/* Angled clip-path hash mark replaced with a literal red forward slash
+   (2026-09-19, Matt's call: "instead of a style hash, just add 3 red
+   backslashes in front of the container headers", corrected same day:
+   "I meant FORWARD slashes... 3 FORWARD slashes not backwards", cut down
+   same day to one: "gives off 'DODGE' vibes... make it one forward
+   slash... to simplify", briefly doubled ("double up the slash... to
+   double the weight"), then back down to one again same day, with the
+   weight itself doing what the doubling was standing in for: "make the
+   red forward slash 1000 weight and make it only one forward slash (not
+   two)". Plain text instead of a shaped block, so it reads as a
+   typographic mark rather than a separate graphic element. Forward slash
+   needs no escaping in a CSS content string (unlike backslash, which
+   needed \\ per character in an earlier version of this rule). */
+.rcl-panel-title::before {
+  content: "/";
+  color: var(--rc-red);
+  font-weight: 1000;
+  /* Slightly larger than the 20px title text (2026-09-19 follow-up,
+     Matt's ask). flexbox's align-items:center only centers each item's
+     LAYOUT BOX, not where the "/" glyph actually sits inside its own
+     font metrics -- most fonts draw a slash biased toward the bottom of
+     its em box, so at a bigger size than the title text next to it, it
+     visually reads as sitting low even though the boxes line up (Matt's
+     catch, same day). A small relative nudge up corrects for that. */
+  font-size: 24px;
+  line-height: 1;
+  position: relative;
+  top: -2px;
+}
+.rcl-panel-meta { font-size: 12px; color: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
+.rcl-panel-body { padding: 18px; }
+
+/* -------------------------------------------------------------------- */
+/* Standings                                                             */
+/* -------------------------------------------------------------------- */
+/* One column per class (2026-09-19, Matt's call: "make the LEADERBOARD
+   container contain a column for every class there is in the season") --
+   auto-fit rather than a hardcoded column count, since the number of
+   classes varies season to season; each column gets at least 240px
+   before the grid drops to fewer columns, so it still reads fine with
+   just one or two classes and degrades to a single column on narrow
+   screens without a separate media query. */
+/* Standings status note (2026-09-19 follow-up, renamed/extended 2026-09-23
+   -- Matt's ask: "PRELIMINARY RESULTS PENDING LEAGUE REVIEW"/"OFFICIAL
+   RESULTS") -- sits above the class columns. Same preliminary (gold) /
+   official (calm dim ink) color pairing .rcl-cal-status-preliminary/
+   -official already use on the Calendar, so the cue reads consistently
+   sitewide rather than inventing a second color language here. */
+.rcl-standings-status-note {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.rcl-standings-status-preliminary { color: #e0b64c; }
+.rcl-standings-status-official { color: var(--rcl-ink-dim); }
+.rcl-standings-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
+/* Gap above already spaces columns/rows in the grid -- the old stacked-
+   layout margin would only unevenly pad whichever class happens to start
+   a new row. */
+.rcl-standings-columns .rcl-standings-class + .rcl-standings-class { margin-top: 0; }
+.rcl-standings-class + .rcl-standings-class { margin-top: 22px; }
+/* .rcl-standings-class-name / .rcl-standings-class-pill rules removed
+   2026-09-23 -- both replaced by the one shared .rcl-standings-class-
+   header graphite bar below (Matt's ask, see js/league.js's
+   _rclBuildStandingsColumns_ comment). Kept out entirely rather than
+   left unused, since neither is referenced from js/league.js anymore. */
+/* Graphite header bar (2026-09-23, Matt's ask) -- full-width, centered,
+   solid graphite background above each class column, reading "<CLASS>
+   LEADERBOARD" on the ranked Standings panel or "<CLASS> DRIVERS" on the
+   Drivers roster popup (see js/league.js). Same graphite gradient
+   .rcl-standings-pos already uses for non-podium position badges
+   elsewhere on this page, so "graphite" reads as one consistent surface
+   sitewide rather than a new color introduced just for this bar. */
+.rcl-standings-class-header {
+  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
+  color: var(--rcl-ink);
+  font-family: var(--rc-font-heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.rcl-standings-row {
+  display: grid;
+  /* Wider position column (2026-09-19) -- the position number now gets
+     the same big/bold style treatment as the Calendar's round numbers
+     (task below), so it needs more room than the old plain 30px slot. */
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  /* Minimal top/bottom padding (2026-09-19 follow-up, Matt's call:
+     "reduce the height of the leaderboard drivers individual entries...
+     minimal padding above and below or else the leaderboard list is
+     going to be super long") -- name/team/car-number collapsed onto one
+     line in the same pass (see .rcl-standings-name-row below) is most of
+     what makes this height cut work without feeling cramped; this was
+     10px before. */
+  padding: 4px 6px;
+  /* Gray border-bottom removed (2026-09-20, Matt's call: "remove the gray
+     border in between containers and keep the gap there so it shows a
+     black space in between") -- margin-bottom in its place keeps the same
+     visual gap, now just the panel's own near-black background
+     (--rcl-bg-raised) showing through instead of a line. Zebra striping
+     below (nth-child(even)) is the new way to tell rows apart row to row
+     instead of the border. Horizontal padding added (was 0) so the
+     striped background has a little breathing room on both edges instead
+     of butting flush against the panel's own 18px padding. */
+  margin-bottom: 3px;
+  border-radius: 4px;
+}
+.rcl-standings-row:last-child { margin-bottom: 0; }
+/* Alternating row background (2026-09-20, Matt's ask: "alternate rows
+   with black and a very subtle lighter background to help read which
+   driver has which points") -- odd rows stay transparent (the panel's
+   own near-black background shows through); even rows get a faint
+   lighter fill, one shade up the dark palette (--rcl-bg-raised-2). */
+.rcl-standings-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
+/* No rank NUMBER and no points column before any race has been run
+   (2026-09-19 follow-up, Matt's call, then clarified: "still show the
+   same number containers, just without the numbers and keeping the same
+   width but using the graphite colored backgrounds") -- the grid stays
+   the normal 40px/1fr/auto three columns; js/league.js just leaves the
+   .rcl-standings-pos container's text empty and skips the p1/p2/p3 metal
+   class, so it falls back to the plain graphite gradient below. Nothing
+   CSS-side to add for that -- see .rcl-standings-pos's own comment. */
+/* Position numbers now sit inside a solid-color container, same idea as
+   the Calendar container's own round-number bar (2026-09-19, Matt's call:
+   "the container behind each ranked number to be solid in color and
+   slightly rounded on the top left corner -- the list should look similar
+   to the CALENDAR container on that page, only with different colors") --
+   .rcl-standings-pos bleeds to fill the row's own top/bottom padding via
+   negative margin (same trick the Calendar round-number bar used) so it
+   reads as a filled block down the row's left edge, rounded only at the
+   top-left corner like .rcl-cal-round. Metal color is a per-row modifier
+   class (.rcl-standings-row-p1/p2/p3) added in js/league.js by finish
+   position -- gold/silver/bronze backgrounds for the podium, graphite
+   (was a lighter "titanium" silver, 2026-09-19 follow-up, Matt's call)
+   for everyone else (P4 and below, and every row before results exist),
+   pulled from this page's own dark palette tokens (--rcl-line-bright/
+   --rcl-line) rather than a new color, with light text now that the
+   background itself is dark instead of light. */
+.rcl-standings-pos {
+  align-self: stretch;
+  /* Matches .rcl-standings-row's own padding above -- bleeds up/down/left
+     to the row's true edges (only left, not right, since this is the
+     first grid column) so the colored badge still reads as a filled bar
+     down the row's left edge now that the row has horizontal padding
+     (2026-09-20, added for the new zebra-stripe background's breathing
+     room -- see .rcl-standings-row). */
+  margin: -4px 0 -4px -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
+  font-family: var(--rc-font-heading);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  border-top-left-radius: 8px;
+}
+/* Driver list rows (2026-09-23, Matt's ask: "add a simple left line to
+   each row instead of the larger 'number container'") -- Drivers popup
+   only (hasResults false, see js/league.js), replacing the big colored
+   .rcl-standings-pos badge with a thin plain accent line down the row's
+   left edge instead. Single grid column now that there's no pos/points
+   box to reserve room for -- just the identity block, indented past the
+   line. */
+/* Left accent line removed (2026-09-23, Matt's ask: "in the driver list,
+   remove the left border from each row") -- the .rcl-standings-class-
+   header graphite bar above each column now already marks the section,
+   so the per-row line was redundant. Single grid column and left padding
+   both stay (no pos/points box to reserve room for), just without the
+   border. */
+.rcl-standings-row-simple {
+  grid-template-columns: 1fr;
+  padding-left: 12px;
+  border-radius: 0;
+}
+.rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
+.rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
+/* flex: 0 1 auto + min-width (2026-09-23) -- the name can shrink and
+   ellipsize as a last resort, but only after .rcl-standings-team (below)
+   has already shrunk as far as it can, since flex-shrink gives priority
+   to whichever sibling has more room to give (flex:1) first. */
+.rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 24px; }
+/* Same font-size as the driver name now (2026-09-19 follow-up, Matt's
+   call: "place the team after it... all of this in the same size font
+   as the driver name") -- was its own smaller line below the name; a
+   lighter weight/color is still what tells it apart from the bold name
+   next to it on the same line. flex: 1 1 30px (2026-09-23) -- the team
+   name is the first thing to shrink and ellipsize when a row is tight,
+   so a long team name can never push the row (or the driver name) onto
+   a second line (Matt's ask). */
+.rcl-standings-team { font-size: 14.5px; font-weight: 500; color: var(--rcl-ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 30px; min-width: 0; }
+.rcl-standings-pts { text-align: right; }
+.rcl-standings-pts-num {
+  font-family: var(--rc-font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+}
+/* .rcl-standings-pts-gap rule kept but unused as of 2026-09-23 -- the
+   "-N PTS" gap-to-leader line under each row's point total was removed
+   (see _rclBuildStandingsColumns_ in league.js) so every row is the same
+   height as P1's. */
+.rcl-standings-pts-gap { font-size: 11.5px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+/* Driver identity block -- manufacturer logo, then everything else
+   (name, flag, car number, team) on one single line (2026-09-19 follow-
+   up, Matt's call: "reduce the size of the manufacturer logo, place it
+   next to the name, then show the nationality flag... team number...
+   team after it -- all of this on one line"). Logo box is a smaller
+   fixed slot (was 70x40) now that the row itself is much shorter -- the
+   image is capped to match and centered in the slot, so a wide-but-short
+   logo and a narrow-but-tall one both still look like they belong to the
+   same compact row height. */
+.rcl-standings-identity { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* align-self: center added explicitly on both children (2026-09-20,
+   Matt's ask: "make sure the manufacturer logos are vertically centered
+   with the text next to it") -- belt-and-suspenders alongside identity's
+   own align-items:center above, so the logo slot's fixed 40x24 box stays
+   centered against .rcl-standings-name-row's own height even if that row
+   wraps to two lines (a long team name on a narrow column) rather than
+   sitting flush to the top of whichever sibling happens to be tallest. */
+.rcl-standings-mfr-logo-slot {
+  flex: none;
+  width: 40px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+.rcl-standings-mfr-logo {
+  max-width: 40px;
+  max-height: 24px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+/* Name/flag/car-number/team, all in this one row now (2026-09-19 follow-
+   up). Changed from flex-wrap to a hard single line (2026-09-23, Matt's
+   ask: "I don't want driver names or team names being sent to the next
+   row") -- team name is the one allowed to truncate with an ellipsis
+   when the row is tight (.rcl-standings-team below), since it's the
+   least critical piece of identity; name/flag/car-number stay fully
+   visible and fixed-size. */
+.rcl-standings-name-row { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px 8px; min-width: 0; align-self: center; overflow: hidden; }
+.rcl-standings-flag {
+  flex: none;
+  width: 16px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid var(--rcl-line-bright);
+}
+/* Car number -- same size as the name (Matt's call). Bold white (was
+   brand-red, 2026-09-19 follow-up, Matt: "the number on the leaderboard
+   should be bold white not red") -- same tone as the driver name right
+   next to it, with the 800 weight (already bold) now what sets it apart
+   on the line instead of a color change. */
+.rcl-standings-carnum {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+/* DNF/DSQ bold name (2026-09-23, Matt's ask: "Make sure DNFs are
+   displayed on leaderboard in bold letters") -- .rcl-standings-name is
+   already 700 weight; this bumps to the heaviest weight in the type
+   ramp so a DNF/DSQ row's name is unmistakably distinct from a normal
+   finisher's at a glance, on Recent Results and View All Results alike
+   (see _rclIsDnf_/_rclBuildDriverIdentity_, js/league.js). */
+.rcl-standings-name-dnf { font-weight: 900; }
+/* "View Points Tables" link at the bottom of the Leaderboard panel
+   (2026-09-19, Matt's call) -- opens the points tables in a popup instead
+   of them living in their own panel on the page. Same shape as the
+   "Load More News" divider treatment (top border + centered), same red
+   uppercase link type as .rcl-news-continue, just its own rule since it
+   sits directly in the panel body rather than the news modal. Flex +
+   gap (2026-09-21 fix, Matt's catch: "add a space between the view
+   drivers list and the view points table") -- the two link buttons were
+   appended back to back with no separator between them, and plain
+   text-align:center doesn't add any space of its own between adjacent
+   inline-block buttons, so they sat flush against each other. */
+.rcl-standings-points-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); display: flex; justify-content: center; align-items: center; gap: 28px; }
+.rcl-standings-points-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  cursor: pointer;
+}
+.rcl-standings-points-link:hover { text-decoration: underline; }
+
+/* -------------------------------------------------------------------- */
+/* Last race results                                                    */
+/* -------------------------------------------------------------------- */
+/* Event on its own line, Winner/Pole/Fastest Lap together on the row
+   underneath (2026-09-23, Matt's ask) -- .rcl-race-headline is now a
+   column of .rcl-race-headline-row strips, each one the flex-wrap row
+   the whole headline used to be. Winner/Pole/Fastest Lap spread evenly
+   across the row, 33% each (2026-09-23 follow-up, Matt's ask: "Spread
+   the Winner, Pole and Fastest laps evenly across the header, 33% each")
+   -- flex:1 on each stat with wrap turned off does this; the Event row
+   above still uses the same two classes and just ends up as one full-
+   width "column", which is harmless. */
+.rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+.rcl-race-headline-row { display: flex; gap: 22px; }
+.rcl-race-headline-stat { flex: 1 1 0; min-width: 0; }
+.rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
+.rcl-race-headline-value { font-size: 15px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
+/* Gold, not red (2026-09-23, Matt's ask: "make the winner a gold color
+   font" -- same gold used for the Standings panel's "preliminary" status
+   note, .rcl-standings-status-preliminary, so this page has one gold
+   consistently rather than two different golds). */
+.rcl-race-headline-value-accent { color: #e0b64c; }
+.rcl-race-class + .rcl-race-class { margin-top: 18px; }
+.rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
+
+/* Recent Results / View All Results rows (rewritten 2026-09-23, Matt's
+   ask: "Make the weight and color of all the drivers in RECENT RESULTS
+   the same as color and weight as the CURRENT STANDINGS list" / "Make
+   the driver styling and format in the [View All Results] list look
+   identical to the CURRENT STANDINGS list") -- both now reuse the exact
+   .rcl-standings-pos position badge and .rcl-standings-identity driver
+   block Current Standings uses (built by the shared
+   _rclBuildPosBadge_/_rclBuildDriverIdentity_ helpers, js/league.js),
+   just inside a wider grid for View All Results' extra data columns.
+   This also gets the "make the standings numbers much larger" ask for
+   free -- .rcl-standings-pos is already the big 18px/900-weight badge. */
+/* Driver column is the widest column everywhere, and every other column
+   is a modest fixed width so it never competes with it (2026-09-23,
+   Matt's ask: "make the width of the driver column the largest and make
+   all other columns respect that width"). Pos stays 40px in every grid
+   (matches .rcl-standings-pos's own badge width) so the badge lines up
+   identically across Current Standings/Recent Results/View All Results. */
+.rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
+/* ON column removed entirely (2026-09-23 follow-up, Matt's ask) -- 8
+   columns now, driver bumped from 1.5fr to 2fr with that freed space. */
+.rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 78px 78px 84px 92px; }
+.rcl-race-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
+.rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
+.rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+.rcl-race-row-num,
+.rcl-race-row-gap,
+.rcl-race-row-interval,
+.rcl-race-row-avg,
+.rcl-race-row-bestlap {
+  color: var(--rcl-ink-dim);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  text-align: right;
+}
+/* Category labels, divider line BELOW them (2026-09-23 follow-up, Matt's
+   ask: "move the line BELOW the catagory labels" -- was above), no
+   background fill. Shared by Current Standings, Recent Results and View
+   All Results (_rclBuildStandingsColumns_/_rclRenderResults/
+   _rclBuildAllResultsBody_, js/league.js) -- same grid columns as the
+   data rows below each one so every label lines up with its column. */
+.rcl-race-col-head {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+  padding: 6px 6px 8px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--rcl-line-bright);
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+.rcl-race-col-head > div:not(:first-child):not(:nth-child(2)) { text-align: right; }
+
+/* -------------------------------------------------------------------- */
+/* All Results popup (added 2026-09-23) -- round selector + full,        */
+/* uncapped per-class results + Penalties Assessed. Reuses the exact     */
+/* .rcl-race-headline/.rcl-race-class/.rcl-race-row classes above so the */
+/* full results table matches the abbreviated Recent Results panel's own */
+/* look exactly -- only the round-select row and the penalties list below */
+/* are new. This is the ONLY place on the League Hub a round's penalties  */
+/* render (Matt's placement call: the popup, not inline in Recent          */
+/* Results) -- see _rclOpenAllResultsModal/_rclBuildAllResultsBody_,       */
+/* js/league.js.                                                          */
+/* -------------------------------------------------------------------- */
+/* Half width (2026-09-23, Matt's mid-turn ask: "make the round dropdown
+   box 1/2 the width"). */
+.rcl-allresults-select-row { margin-bottom: 18px; }
+.rcl-allresults-select {
+  width: 50%;
+  min-width: 220px;
+  max-width: 100%;
+  background: var(--rcl-bg);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 5px;
+  color: var(--rcl-ink);
+  font-family: var(--rc-font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.rcl-allresults-select:focus { border-color: var(--rc-red); }
+/* Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask). Lap
+   number as a small fixed-width label on the left (matches the visual
+   weight of a lap counter, not a ranking, so it deliberately does NOT
+   reuse .rcl-standings-pos), narrative sentences to its right -- one
+   <p> per driver highlight that landed on that lap, since more than one
+   driver's story can share a lap. */
+.rcl-report-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+.rcl-report-lap {
+  display: flex;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-report-lap:last-child { border-bottom: none; }
+.rcl-report-lap-num {
+  flex: none;
+  width: 62px;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rcl-ink); /* white (2026-09-24, Matt's ask) -- was --rcl-ink-faint */
+  padding-top: 2px;
+}
+.rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
+.rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
+.rcl-report-line:last-child { margin-bottom: 0; }
+/* Driver name color (2026-09-24, Matt's ask -- an earlier version left a
+   wall-hit line's name gray to read as deemphasized, but Matt's follow-up
+   was explicit: "make all names white, even when in the middle of a
+   contact report with another driver"). Always applied now, every line. */
+.rcl-report-name { color: var(--rcl-ink); }
+/* Class pill + timestamp prefix (2026-09-24, Matt's ask: "put class pill
+   information... in front of the records" plus "timestamp information
+   for the event"). .rc-badge-chip/.rc-badge-chip-abbrev and the per-
+   class color classes (.rc-badge-lmgt3 etc.) come from style.css, loaded
+   on this page too (see the file header comment) -- .rcl-report-pill just
+   adds the spacing this inline context needs that the shared class
+   doesn't assume. Timestamp is plain muted text, tabular-nums so a
+   column of them lines up digit-for-digit. */
+.rcl-report-pill { margin-right: 6px; vertical-align: 1px; }
+.rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
+/* Clause color-coding within a report line (2026-09-24, Matt's ask,
+   extended same day to cover pit/position too). "penalty" clauses stay
+   the line's default dim-gray -- everything else Matt called out gets
+   its own color so the highlights pop against the rest of the line
+   instead of it turning into a rainbow. */
+.rcl-report-clause-wall { color: var(--rcl-ink-dim); } /* explicit gray, same token as the line default -- Matt: "keep contact with immovable gray" */
+.rcl-report-clause-car { color: var(--rcl-report-collision); font-weight: 700; } /* car-to-car collision: yellow */
+.rcl-report-clause-damage { color: var(--rcl-report-damage); font-weight: 700; } /* damage reported: bold orange */
+.rcl-report-clause-pit { color: var(--rcl-report-damage); font-weight: 700; } /* pits: bold orange, same as damage reports (2026-09-24, Matt's ask) -- was bold red */
+.rcl-report-clause-gain { color: var(--rcl-report-gain); font-weight: 700; } /* position gained: bold green */
+.rcl-report-clause-loss { color: var(--rc-red); } /* position lost: red, NOT bold (2026-09-24, Matt's ask -- gains stay bold, losses don't) */
+.rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+.rcl-penalty-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-penalty-row:last-child { border-bottom: none; }
+.rcl-penalty-name { color: var(--rcl-ink); font-weight: 700; }
+.rcl-penalty-detail { color: var(--rcl-ink-dim); }
+
+/* -------------------------------------------------------------------- */
+/* Calendar -- full season schedule (added 2026-09-19). Replaces the old */
+/* standalone "Next Race" mini-card -- the UP NEXT pill on the schedule  */
+/* itself does that job now, no separate widget needed.                 */
+/* -------------------------------------------------------------------- */
+/* Redesigned 2026-09-19 (Matt's call): the round label (R1/R2/SP/BYE)
+   moves off the small centered text it used to be and into a full-height
+   bar down the row's left edge -- same "own the left side of the
+   container" move Account.html's driver-facing Calendar already makes
+   with .rc-cal-round-number, just in solid brand red with white text
+   here to match this page's one loud accent (the ticker label, the hero's
+   diagonal bar) rather than the light page's neutral gray. Track/event
+   name also swap emphasis here (Matt: "make the Track bolder... and the
+   event name less bold") -- Track is now the primary bold line, event
+   name the lighter secondary one underneath it.
+   .rcl-cal-row is now a flex row (bar + body), not a grid -- the body
+   itself stacks three lines: top (track + status), event name, then a
+   meta row of chips (date/time, length tier, in-game times). */
+.rcl-cal-row {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 0;
+  border-bottom: 1px solid var(--rcl-line);
+  overflow: hidden;
+}
+/* Last row KEEPS its bottom border now (2026-09-19, Matt's call: "remove
+   the line above VIEW SEASON DETAILS... the line at the bottom edge of
+   the last race will suffice") -- that border now doubles as the
+   separator above the details link below, instead of the link growing
+   its own extra border-top/line underneath a removed one. */
+/* Next-race highlight -- softened from a red wash to a barely-there light
+   gray (2026-09-19, Matt's call: "the highlighting slightly lighter gray
+   instead of a red highlight") -- UP NEXT still reads red via
+   .rcl-cal-status-up, so the row is still identifiable at a glance, just
+   without the whole row glowing red. */
+.rcl-cal-row-next { background: rgba(255, 255, 255, 0.05); }
+/* Round-number bar -- silver metallic instead of solid brand red
+   (2026-09-19, Matt's call: "make the Round backgrounds silver") -- same
+   diagonal metallic-gradient treatment .rcl-cal-round-special already
+   uses for gold, just in a neutral silver tone, so a normal points round
+   reads as a deliberately different metal from a special event's gold
+   rather than the page's one loud red accent. */
+.rcl-cal-round {
+  flex: none;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  color: #1c1d20;
+  text-align: center;
+  user-select: none;
+  /* Slight curve on just the top-left corner (2026-09-19, Matt's ask) --
+     the row's other three corners stay square, matching the bar's flush
+     fit against the row's left/top/bottom edges; only the one corner
+     that isn't already pinned against .rcl-panel's own rounded shell
+     gets softened. */
+  border-top-left-radius: 8px;
+}
+/* Special-event rounds (SP) get a gold accent instead of the standard
+   brand red (2026-09-19, Matt's ask, refined same day from an earlier
+   platinum treatment to "gold accents including the event and track
+   names") -- a deliberately different metal-toned accent, now carried
+   through onto the row's own event/track text too, so a special round
+   reads as distinct from a normal points round at a glance, not just on
+   its round-number bar. Dark text on the bar since gold is light. */
+.rcl-cal-round-special {
+  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
+  color: #241b04;
+}
+.rcl-cal-row-special .rcl-cal-event { color: #e0b64c; }
+.rcl-cal-row-special .rcl-cal-track { color: #b99a4f; }
+/* Layout (the "-- <layout>" suffix on the track line) gets the same gold
+   treatment on a special event (2026-09-19, Matt's ask: "make the track
+   -- layout for the special event gold") -- .rcl-cal-layout has its own
+   explicit color rule below, which would otherwise win over the inherited
+   .rcl-cal-track gold above, so this needs its own override. */
+.rcl-cal-row-special .rcl-cal-layout { color: #d4b656; }
+.rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
+.rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* Event name / track name swapped emphasis (2026-09-19, Matt's follow-up
+   call: "move the event to above the track name") -- .rcl-cal-event is
+   now the bold PRIMARY line at the top of the row (was track), .rcl-cal-
+   track is now the lighter SECONDARY line underneath it (was event). The
+   class names stay put (still literally "the event line"/"the track
+   line") -- only which one reads as bold/primary changed, so this is a
+   property swap between the two rules, not a rename. */
+.rcl-cal-event { font-size: 16.5px; font-weight: 800; color: var(--rcl-ink); }
+.rcl-cal-track { font-size: 13.5px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
+.rcl-cal-layout { font-weight: 600; color: var(--rcl-ink-faint); }
+/* Vertically centers every meta chip against its siblings (2026-09-19,
+   Matt's ask: "vertically align the pill text with the rest of the race
+   details next to it") -- without this, the padded pill chips (taller,
+   own box) and the site's default stretch alignment left them looking
+   offset from each other on the same row. */
+.rcl-cal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+.rcl-cal-meta-item {
+  font-size: 12.5px;
+  color: var(--rcl-ink-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rcl-cal-meta-item-label { color: var(--rcl-ink-faint); font-weight: 600; }
+/* Shared light chip -- date/time+length, in-game time, and weather all
+   use this one shape now (2026-09-19, Matt's asks across two turns: "put
+   the time next to the length tier in a light gray pill with a slightly
+   darker border", then "make the pills more rectangular" and "use icons
+   when possible for maximum aesthetics") -- a literal light-gray pill
+   (not this dark page's usual translucent-white chip treatment) so each
+   fact reads as a deliberate little tag against the dark row, with dark
+   text/icons for contrast on the light fill. Small 5px radius rather than
+   the fully round 999px this used to be -- "more rectangular" per Matt's
+   ask, while still being a pill and not a hard square. Reused as-is for
+   the Points Tables tier duration chip below (see .rcl-points-tier-head).
+   */
+.rcl-chip-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #d9dadd;
+  border: 1px solid #b6b8bd;
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1c1d20;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rcl-chip-icon { display: flex; flex: none; line-height: 1; }
+.rcl-chip-icon svg { display: block; width: 14px; height: 14px; }
+/* Outline variant -- gray outline, no fill (2026-09-19, Matt's call: "for
+   in-game race times and weather, make them gray outline pills instead of
+   solid pills") -- same shape/sizing as .rcl-chip-light, just transparent
+   with a border instead of the solid light-gray fill, so In-Game/Weather
+   read as a lighter-weight secondary fact next to the solid date/length
+   pill. Text/icon pick up the page's own dim ink color since there's no
+   light fill to contrast against anymore. */
+.rcl-chip-outline {
+  background: transparent;
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink-dim);
+}
+.rcl-cal-status {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--rcl-ink-faint);
+}
+.rcl-cal-status-up { color: var(--rc-red); }
+.rcl-cal-status-complete { color: var(--rcl-ink-dim); }
+/* PRELIMINARY/OFFICIAL RESULTS POSTED (2026-09-19 follow-up, renamed
+   2026-09-21 from UNOFFICIAL/OFFICIAL RESULTS -- Matt's ask: "COMPLETED
+   notification... PRELIMINARY RESULTS POSTED... OFFICIAL RESULTS
+   POSTED") -- preliminary reuses the same gold accent .rcl-cal-row-
+   special's own text already uses elsewhere in this file, so "not final
+   yet" reads as an amber/caution note rather than inventing a new hue;
+   official settles back to the same calm, done-with-this tone COMPLETE
+   always used. */
+.rcl-cal-status-preliminary { color: #e0b64c; }
+.rcl-cal-status-official { color: var(--rcl-ink-dim); }
+/* Faded row once a round's start time has passed (2026-09-21, Matt's
+   ask: "have the race faded out with a COMPLETED notification") --
+   dims the round bar/event/track/meta chips, but deliberately NOT
+   .rcl-cal-status (the notification itself, appended alongside .rcl-cal-
+   event inside .rcl-cal-row-top), so the COMPLETED/results phrase stays
+   fully legible against the faded-out row around it. */
+.rcl-cal-row-finished .rcl-cal-round,
+.rcl-cal-row-finished .rcl-cal-event,
+.rcl-cal-row-finished .rcl-cal-track,
+.rcl-cal-row-finished .rcl-cal-meta {
+  opacity: 0.5;
+}
+.rcl-cal-row-bye { opacity: 0.7; }
+.rcl-cal-row-bye .rcl-cal-round { background: var(--rcl-line-bright); font-size: 13px; }
+.rcl-cal-row-bye .rcl-cal-track { font-weight: 600; color: var(--rcl-ink-dim); }
+/* "View Season Details" link at the bottom of the Calendar panel
+   (2026-09-19, Matt's call: season details move out of the hero band into
+   a popup opened from here) -- same shape as the Leaderboard's own "View
+   Points Tables" link below its content. */
+/* No own border-top any more (2026-09-19) -- the last race row's own
+   bottom border (now kept, see .rcl-cal-row above) is the one line
+   between the schedule and this link; margin-top just gives the link
+   breathing room below that existing line instead of drawing a second
+   one of its own. */
+.rcl-cal-details-row { margin-top: 16px; text-align: center; }
+.rcl-cal-details-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  cursor: pointer;
+}
+.rcl-cal-details-link:hover { text-decoration: underline; }
+
+/* -------------------------------------------------------------------- */
+/* Points -- race-length-tier tables + bonus points (added 2026-09-19).  */
+/* No longer its own panel on the page (removed 2026-09-19) -- these      */
+/* classes now render inside the "View Points Tables" popup opened from   */
+/* the Leaderboard panel instead (_rclOpenPointsModal, js/league.js);     */
+/* the markup/classes themselves are unchanged.                          */
+/* -------------------------------------------------------------------- */
+.rcl-points-tier + .rcl-points-tier { margin-top: 22px; }
+/* align-items: center (was baseline) -- the duration is now a padded
+   .rcl-chip-light pill instead of plain text, and baseline alignment
+   against a padded box no longer lines the two up the way it did for two
+   plain text runs (2026-09-19, Matt's ask: "make the tier length and time
+   more aesthetic"). */
+.rcl-points-tier-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.rcl-points-tier-name {
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+}
+/* Tier name + duration merged into one pill (2026-09-21, Matt's ask:
+   "extend a border around the length tier coming off of the time pill so
+   it looks like one pill, half of it rounded bordered and half of it the
+   time in mins") -- only used when a tier actually has a duration (see
+   _rclBuildPointsBody, js/league.js); the plain .rcl-points-tier-name
+   above stays as-is for anything without an adjacent chip (e.g. the
+   "Bonus Points" label). The wrapper owns the ONE border/radius/overflow-
+   clip for both halves; the label half gets its own light fill + a right
+   border as the seam, and the chip half (.rcl-chip-light, reused as-is)
+   has its own border/radius stripped so it reads as the pill's other
+   half instead of a second, separate pill sitting flush against the
+   first.  */
+.rcl-points-tier-pill {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #b6b8bd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.rcl-points-tier-pill-label {
+  display: flex;
+  align-items: center;
+  background: #d9dadd;
+  color: #1c1d20;
+  padding: 3px 10px;
+  font-family: var(--rc-font-heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-right: 1px solid #b6b8bd;
+  white-space: nowrap;
+}
+.rcl-points-tier-pill .rcl-chip-light { border: none; border-radius: 0; }
+.rcl-points-table { display: flex; flex-wrap: wrap; gap: 8px; }
+.rcl-points-pos {
+  background: var(--rcl-bg-raised-2);
+  border: 1px solid var(--rcl-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 46px;
+  text-align: center;
+}
+/* Wider variant for the Bonus Points row below (2026-09-19) -- "Pole
+   Position"/"Fastest Lap"/"Most Laps Led" need more room than a bare
+   position number like "P1". */
+.rcl-points-pos-wide { min-width: 96px; }
+.rcl-points-pos-num { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
+.rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
+/* Bonus points' own value -- was the brand red accent (2026-09-19),
+   changed to plain white (2026-09-21, Matt's ask: "make the bonus points
+   numbers white not red") -- same var(--rcl-ink) every other
+   .rcl-points-pos-val already uses, so this class is now redundant with
+   the base rule but kept (rather than removed from the js/league.js
+   markup) in case a future pass wants bonus rows visually distinct
+   again. */
+.rcl-points-pos-val-accent { color: var(--rcl-ink); }
+/* Bonus Points row (renamed from "Bonus Points This Season", 2026-09-19)
+   now mirrors a tier block's own structure exactly -- label, then a
+   .rcl-points-table of position-style boxes underneath -- instead of a
+   flat row of plain-text chips, so it reads as visually consistent with
+   the tier tables above it (Matt's ask: "style it more closely to the
+   tier points tables so it looks like it's consistent"). Block layout,
+   not flex, since its two children (label + table) already stack the way
+   a tier's head+table do. */
+.rcl-points-bonus-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+/* The actual type style comes from .rcl-points-tier-name, applied
+   alongside this class in js/league.js so "Bonus Points" reads exactly
+   like a tier name above it -- this rule only adds this row's own
+   spacing, matching .rcl-points-tier-head's margin-bottom exactly. */
+.rcl-points-bonus-label { margin-bottom: 10px; }
+/* Only used by the "no bonus points this season" fallback message now. */
+.rcl-points-bonus-chip { font-size: 13.5px; color: var(--rcl-ink-dim); }
+
+/* Drivers section removed 2026-09-19 (Matt's call: drivers are already
+   visible via the Leaderboard) -- .rcl-drivers-class/.rcl-drivers-grid/
+   .rcl-driver-card/.rcl-driver-name/.rcl-driver-meta rules removed. */
+
+/* -------------------------------------------------------------------- */
+/* News feed -- redesigned 2026-09-19. Only the most recent story shows */
+/* in full (clamped + "Continue reading..."); every older one is just a */
+/* clickable title. Both open the same read-story popup below.          */
+/* -------------------------------------------------------------------- */
+.rcl-news-item + .rcl-news-item { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rcl-line); }
+.rcl-news-hero { display: block; width: 100%; max-height: 220px; object-fit: cover; margin-bottom: 12px; border: 1px solid var(--rcl-line); }
+.rcl-news-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.01em; color: var(--rcl-ink); line-height: 1.25; }
+.rcl-news-meta { margin-top: 4px; font-size: 12px; color: var(--rcl-ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+.rcl-news-body { margin-top: 10px; font-size: 14px; line-height: 1.6; color: var(--rcl-ink-dim); }
+.rcl-news-body p { margin: 0 0 0.8em; }
+.rcl-news-body p:last-child { margin-bottom: 0; }
+.rcl-news-body strong { color: var(--rcl-ink); }
+/* Email link (2026-09-19, from the news editor's new "@" toolbar button)
+   -- brand red, underlined, so it reads as a deliberate link against the
+   page's dim body-text color rather than blending into the surrounding
+   sentence. */
+.rcl-news-link { color: var(--rc-red); text-decoration: underline; }
+.rcl-news-link:hover { color: var(--rc-red-dark); }
+.rcl-news-quote {
+  margin: 0 0 0.8em;
+  padding-left: 14px;
+  border-left: 2px solid var(--rc-red);
+  color: var(--rcl-ink-dim);
+  font-style: italic;
+}
+.rcl-news-editnote { margin-top: 10px; font-size: 12.5px; font-style: italic; color: var(--rcl-ink-faint); }
+/* Clamped preview (raised from 6 to 14 lines, 2026-09-23, Matt's ask:
+   "make more available on preview on the main league page before
+   CONTINUE READING shows up") -- the "Continue reading..." link right
+   below still sits directly under whatever the clamp cuts off. */
+.rcl-news-current-body {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--rcl-ink-dim);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 14;
+  overflow: hidden;
+}
+.rcl-news-current-body strong { color: var(--rcl-ink); }
+.rcl-news-continue {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  text-decoration: none;
+  cursor: pointer;
+}
+.rcl-news-continue:hover { text-decoration: underline; }
+.rcl-news-previous { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rcl-line); display: flex; flex-direction: column; gap: 8px; }
+.rcl-news-previous-head { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-bottom: 2px; }
+.rcl-news-previous-title {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rcl-ink-dim);
+  cursor: pointer;
+}
+.rcl-news-previous-title:hover { color: var(--rcl-ink); text-decoration: underline; }
+
+/* -------------------------------------------------------------------- */
+/* Read-story popup -- centered card over a dimmed backdrop, opened from */
+/* "Continue reading..." or any previous-story title.                   */
+/* -------------------------------------------------------------------- */
+.rcl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  /* flex-start, not center (2026-09-19, Matt's call) -- with
+     align-items: center, growing the dialog's content (e.g. pressing
+     LOAD MORE NEWS) pushes its TOP edge upward past the viewport as the
+     box re-centers around its new, taller height, and that edge is then
+     unreachable since the overlay only gains scroll room at the bottom.
+     Anchoring to the top instead means the dialog's top always sits a
+     fixed 40px below the viewport top, however tall it grows -- the
+     dialog's own max-height + overflow-y below is what keeps it from
+     ever running past the bottom of the page. */
+  align-items: flex-start;
+  justify-content: center;
+  /* Top padding cleared to sit below the fixed navbar (2026-09-23 fix,
+     Matt's catch: the Drivers popup -- the tallest dialog on this page --
+     was opening with its top edge under the overlay's old flat 40px
+     padding, which is LESS than .rc-fixed-header's own 70px height
+     (style.css). The overlay itself is z-index:500, well under the
+     navbar's z-index:1000, so any dialog reaching that high renders
+     partly behind/under the navbar and reads as "cut off." 86px = 70px
+     navbar + a 16px gap, so even a dialog tall enough to hit its own
+     max-height ceiling (below) never starts above the navbar. Bottom
+     stays 24px -- kept in sync with .rcl-modal-dialog's max-height calc
+     right below. */
+  padding: 86px 20px 24px;
+  overflow-y: auto;
+  z-index: 500;
+}
+/* Dims the navbar along with the rest of the page (2026-09-21, Matt's ask:
+   "only when EDIT PROFILE and FEEDBACK popups are visible on the league
+   page, dim the navbar with the main league page... keep the other
+   popups how they are") -- .rc-fixed-header (css/style.css) is
+   z-index:1000, above this overlay's own default 500, so every other
+   league.html popup (News, Points Table, Drivers, Season Details, Legal
+   Disclaimer) already leaves the navbar sitting bright on top,
+   undimmed. Edit Profile (js/edit-profile.js) and Feedback
+   (_rcOpenFeedbackModal, js/header.js) add this modifier instead, so
+   their overlay -- and the popup card itself, which stacks inside it --
+   render above the navbar and dim it too. */
+.rcl-modal-overlay-over-nav { z-index: 1001; }
+/* Dialog now matches a .rcl-panel's own shell exactly (2026-09-19, Matt's
+   ask: "the league news [story] popup should look like the same style as
+   the league news container") -- same border color/weight and radius as
+   every other card on the page, not the slightly-brighter one-off border
+   this used to have. */
+.rcl-modal-dialog {
+  position: relative;
+  background: var(--rcl-bg-raised);
+  border: 1px solid var(--rcl-line);
+  border-radius: 8px;
+  max-width: 820px;
+  width: 100%;
+  /* Capped to fit inside the overlay's own top/bottom padding (86px +
+     24px = 110px, kept in sync with .rcl-modal-overlay above), so the
+     dialog always sits fully inside the page -- clear of the fixed
+     navbar at the top -- and scrolls its own content internally once it
+     hits this ceiling, instead of pushing the overlay taller than the
+     viewport. */
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 0 28px 24px;
+  /* Vertical centering (2026-09-19, Matt's call: "the popup also
+     populates very high on the website... make it vertically centered" --
+     applies to every popup on this page, they all share this class).
+     Auto top/bottom margins on a flex item (the overlay above is
+     display:flex) compute equal space above/below when the dialog is
+     shorter than the viewport -- true centering -- and collapse to 0
+     once it's taller than the viewport, so it still starts flush at the
+     top and scrolls normally in that case. That's the same "Load More
+     News" growth case the overlay's own align-items:flex-start comment
+     above is about; auto-margin centering here gets both behaviors at
+     once without the flexbox align-items:center-plus-overflow clipping
+     bug some browsers have when a centered flex item overflows its
+     scrollable container (that clipping bug is exactly why the overlay
+     itself stays flex-start rather than switching to align-items:
+     center). */
+  margin: auto 0;
+}
+/* Wider dialog, Drivers popup only (2026-09-21, Matt's ask: "increase
+   the width of the drivers list popup") -- a scoped modifier added
+   alongside .rcl-modal-dialog (see _rclOpenDriversModal, league.js)
+   rather than raising the shared class's own max-width, since News/
+   Points Table/Season Details all use that same base class and don't
+   need the extra room the driver roster's wider identity/car/team
+   columns benefit from. Also reused, unmodified, by the "All Results"
+   popup (2026-09-23) -- a full per-class results table plus the
+   penalties list is the same "widest content on the page" case. */
+.rcl-modal-dialog-wide { max-width: 1080px; }
+/* Narrower dialog (2026-09-21, added for the Feedback and Edit Profile/
+   Change Avatar popups) -- matches Account.html's own plain (non -wide)
+   .rc-modal exactly (460px), so those popups are the same width whether
+   they're opened from Account.html (light) or league.html (dark). See
+   _rcOpenFeedbackModal (js/header.js) and _rcEPShowModal
+   (js/edit-profile.js). */
+.rcl-modal-dialog-narrow { max-width: 460px; }
+/* Same raised-2 background + red underline as .rcl-panel-head, so the
+   popup's own header reads as the exact same header treatment as every
+   panel on the page, not a slightly different one-off. */
+.rcl-modal-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -28px 20px;
+  padding: 20px 28px 16px;
+  background: var(--rcl-bg-raised-2);
+  border-bottom: 2px solid var(--rc-red);
+}
+/* Same angled red tab + type treatment as .rcl-panel-title (2026-09-19) --
+   display:flex/gap added so the ::before tab renders inline before the
+   text, exactly like a panel header's own title. */
+.rcl-modal-title {
+  /* Matches .rcl-panel-title's own bump (2026-09-19, task 6). */
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Same single-forward-slash treatment as .rcl-panel-title::before above
+   (2026-09-19, Matt's call -- "in each container", popups included),
+   including the same slightly-larger size, glyph-centering nudge
+   (follow-ups), and 1000-weight/single-slash final call. */
+.rcl-modal-title::before {
+  content: "/";
+  color: var(--rc-red);
+  font-weight: 1000;
+  font-size: 24px;
+  line-height: 1;
+  position: relative;
+  top: -2px;
+}
+.rcl-modal-close {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--rcl-ink-faint);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.rcl-modal-close:hover { color: var(--rcl-ink); }
+.rcl-modal-body .rcl-news-item + .rcl-news-item { margin-top: 24px; padding-top: 24px; }
+.rcl-modal-loadmore-wrap { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rcl-line); text-align: center; }
+.rcl-modal-loadmore-btn {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  background: var(--rc-red);
+  border: none;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+.rcl-modal-loadmore-btn:hover { background: var(--rc-red-dark); }
+
+/* Dark-theme override for the site's global (unscoped) label/input/select/
+   textarea rules in css/style.css (2026-09-21, added for the new Feedback
+   popup, _rcOpenFeedbackModal in js/header.js -- that global rule renders
+   with a white background/light text, which would otherwise leak straight
+   through into any form built inside a .rcl-modal-dialog on this page).
+   Scoped broadly to the dialog, not just the Feedback form, so any future
+   form dropped into a league.html popup gets the same dark styling for
+   free. */
+.rcl-modal-dialog label {
+  color: var(--rcl-ink-dim);
+}
+.rcl-modal-dialog input,
+.rcl-modal-dialog select,
+.rcl-modal-dialog textarea {
+  background: var(--rcl-bg);
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink);
+}
+.rcl-modal-dialog input:focus,
+.rcl-modal-dialog select:focus,
+.rcl-modal-dialog textarea:focus {
+  border-color: var(--rc-red);
+}
+/* Same dark-theme override, extended for the Edit Profile popup
+   (js/edit-profile.js, added 2026-09-21 alongside this popup's own
+   in-place-on-league.html support): .rc-check-row's label (the email-
+   notifications checkbox) sets an explicit --rc-carbon color of its own
+   that the bare `label` override above doesn't reach, and .rc-panel (the
+   Change Password box) is a plain white card everywhere else on the site
+   -- both need a scoped dark version here or they'd render light-on-dark
+   inside this shell. */
+.rcl-modal-dialog .rc-check-row label {
+  color: var(--rcl-ink-dim);
+}
+.rcl-modal-dialog .rc-panel {
+  background: var(--rcl-bg-raised-2);
+  border-color: var(--rcl-line-bright);
+}
+.rcl-modal-dialog .rc-panel h3 {
+  color: var(--rcl-ink);
+}
+/* Same dark-theme override for the "Loading your profile..." state
+   (2026-09-21, Matt's ask: first "should have a dark background, not
+   white, to blend in with the popup", then immediately "make the
+   background color of the loading on the edit profile within the league
+   page TRANSPARENT" -- so the card now shows the modal's own
+   .rcl-modal-dialog background through it instead of a second, separate
+   panel color) -- .rc-inline-spinner-wrap (style.css) is a solid white
+   card by default, built for popups on the light shell (the Season
+   Wizard, Data Management), so it needs a scoped dark version here too,
+   same pattern as .rc-panel above. Border/shadow already dropped inside
+   any .rc-modal-body via style.css's own .rc-modal-body
+   .rc-inline-spinner-wrap rule -- that selector doesn't match this dark
+   shell's .rcl-modal-body class, so both are repeated here. .rc-startlights
+   and .rc-loading-text get the same treatment .rcl-page-loader already
+   gives them above, so the loading state matches whether it's the full
+   page loader or this in-modal one. */
+.rcl-modal-dialog .rc-inline-spinner-wrap {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.rcl-modal-dialog .rc-startlights {
+  background: var(--rcl-line-bright);
+  border-color: var(--rcl-line);
+}
+.rcl-modal-dialog .rc-loading-text {
+  color: var(--rcl-ink-dim);
+}
+/* Full-width red submit button, dark theme -- same solid-red/uppercase
+   treatment as .rcl-modal-loadmore-btn above, just full width so it reads
+   as a form's primary action the same way .rc-btn-primary does on the
+   light shell. */
+.rcl-feedback-submit-btn {
+  display: block;
+  width: 100%;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  background: var(--rc-red);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+.rcl-feedback-submit-btn:hover { background: var(--rc-red-dark); }
+.rcl-feedback-submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* -------------------------------------------------------------------- */
+/* Empty state -- same large circle-slash icon the rest of the site     */
+/* uses for "no data," just recolored for the dark ground.               */
+/* -------------------------------------------------------------------- */
+.rcl-empty-state { text-align: center; padding: 40px 12px; }
+.rcl-empty-state-icon { color: var(--rcl-line-bright); margin: 0 auto 18px; }
+.rcl-empty-state-icon svg { width: 72px; height: 72px; }
+.rcl-empty-state-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink-dim); }
+.rcl-empty-state-subtitle { margin-top: 6px; font-size: 13.5px; color: var(--rcl-ink-faint); }
+
+@media (max-width: 560px) {
+  .rcl-hero { padding: 34px 20px 42px; }
+  .rcl-main { padding: 26px 16px 60px; }
+  .rcl-panel-body { padding: 14px; }
+}
