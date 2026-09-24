@@ -16,7 +16,7 @@
 
   WHAT'S KEPT, EXACTLY AS BEFORE:
   - The full sidebar nav: the same 10 primary items (Dashboard / Calendar
-    / Finances / Results / Career / Reputation / Objectives / Sponsors /
+    / Finances / Results / Reputation / Objectives / Sponsors /
     Hall of Fame / Settings) in the same order, plus the same
     permission-gated items (League Management, Admin, Data Management)
     and the same Help / Settings / Log Out row at the bottom, all with
@@ -167,10 +167,7 @@
 
     <div id="rc-profile-root" style="display:none;">
       <section id="rc-section-dashboard" class="rc-content-section"></section>
-      <section id="rc-section-calendar" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-results" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-career" class="rc-content-section" style="display:none;"></section>
-      <section id="rc-section-protests" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-stewarding" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
@@ -394,7 +391,6 @@
   var ICON_DASHBOARD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>';
   var ICON_CALENDAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
   var ICON_RESULTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="11"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="19" y1="20" x2="19" y2="14"></line></svg>';
-  var ICON_CAREER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
   var ICON_NAV_STAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
   // Disclosure triangle (2026-09-13, Matt's call: "use triangles to open
   // and close seasons" instead of a Show/Hide Races text button) -- a
@@ -487,19 +483,15 @@
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
   // below since they're permission-gated rather than always shown.
+  // Protests removed from this list (2026-09-24) -- filing/withdrawing is
+  // now a popup reached from the Dashboard's Protest card (see
+  // protestCard/openProtestModal), same move Calendar made the same day.
+  // Ruling on a protest still only happens from League Management's own
+  // EDIT popup (Admin/Organizer/Steward only, enforced server-side by
+  // handleAdminRuleOnProtest).
   var NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
-    { id: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
     { id: 'results', label: 'Results', icon: ICON_RESULTS },
-    // Protests (2026-09-08) -- moved into the main, ungated nav list from
-    // its old Steward-and-above-only spot next to Admin/League Management
-    // (see the removed protestsBtn block further down) -- filing a protest
-    // is something every Driver needs to do for themselves, not just
-    // Stewards reviewing them. Ruling on a protest still only happens from
-    // League Management's own EDIT popup (Admin/Organizer/Steward only,
-    // enforced server-side by handleAdminRuleOnProtest).
-    { id: 'protests', label: 'Protests', icon: ICON_PROTESTS },
-    { id: 'career', label: 'Career', icon: ICON_CAREER },
     { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
   ];
 
@@ -561,12 +553,9 @@
   // driver's now-current picks instead of showing whatever was cached in
   // the DOM before the save.
   var RC_LAZY_SECTION_RENDERERS = {
-    calendar: function (token) { renderCalendarSection(token); },
-    career: function (token) { renderCareerSection(token); },
     admin: function (token) { renderAdminSection(token); },
     league: function (token) { renderLeagueManagementSection(token); },
     results: function (token) { renderResultsSection(token); },
-    protests: function (token) { renderProtestsSection(token); },
     stewarding: function (token) { renderStewardingSection(token); }
   };
 
@@ -657,38 +646,19 @@
     }));
     nav.appendChild(navDivider());
     NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
-      // Calendar fetches fresh every time the link is clicked (same
-      // lazy-fetch-on-click pattern as Data/League Management) rather than
-      // being prefetched at login like the Dashboard cards -- it's not
-      // shown until the driver actually opens it.
-      if (item.id === 'calendar') {
-        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showLazySection('calendar', currentToken);
-        }));
-        return;
-      }
-      // Career (added 2026-09-13, real content -- renderCareerSection),
-      // same lazy-fetch-on-click pattern as Calendar above it. Finances,
-      // Wager and Sponsors nav items removed entirely (V1 scope cut,
-      // 2026-09-18) -- those systems (and Reputation/Hall of Fame, which
-      // were placeholder stubs) no longer exist.
-      if (item.id === 'career') {
-        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showLazySection('career', currentToken);
-        }));
-        return;
-      }
+      // Calendar, Protests, Finances, Wager, Sponsors and Career nav items
+      // removed entirely (V1 scope cut for Finances/Wager/Sponsors
+      // 2026-09-18; Calendar and Protests converted to Dashboard-card
+      // popups 2026-09-24, Career removed entirely the same day -- it will
+      // live on a future public driver profile instead) -- those systems
+      // (and Reputation/Hall of Fame, which were placeholder stubs) no
+      // longer exist here.
       // Results (added 2026-09-07, real content -- renderResultsSection),
-      // same lazy-fetch-on-click pattern as Calendar above it.
+      // still the one lazy-fetch-on-click nav section left besides Admin/
+      // League Tools/Stewarding below.
       if (item.id === 'results') {
         nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
           showLazySection('results', currentToken);
-        }));
-        return;
-      }
-      if (item.id === 'protests') {
-        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showLazySection('protests', currentToken);
         }));
         return;
       }
@@ -1948,272 +1918,94 @@
 
     card.appendChild(body);
 
-    // Link to the full Calendar page (2026-08-30, Matt's call) -- same
-    // "show the section, then fetch it" pair the Calendar nav button
-    // itself uses (see buildSidebarNav above), just reachable from this
-    // card too instead of only the sidebar.
+    // Link opens the Calendar popup (2026-09-24, Matt's call -- Calendar
+    // is no longer a standalone nav page) -- see openCalendarModal above.
     var viewSeasonBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View full season');
     viewSeasonBtn.type = 'button';
     viewSeasonBtn.addEventListener('click', function () {
-      showLazySection('calendar', currentToken);
+      openCalendarModal(currentToken);
     });
     card.appendChild(viewSeasonBtn);
 
     return card;
   }
 
-  // ---------------------------------------------------------------------
-  // CAREER PAGE (2026-09-13, Matt's spec: "a complete history of the
-  // driver's season by season record... kept in numerical order (newest
-  // season on top)... arrange them so it feels like you're looking at a
-  // CAREER CARD vs. a wall of data"). Backed by handleGetMyCareerHistory
-  // (DataCache.gs), which already returns everything pre-aggregated,
-  // newest season first -- this function only has to render it.
-  // ---------------------------------------------------------------------
-  function renderCareerSection(token) {
-    var section = document.getElementById('rc-section-career');
-    if (!section) return;
-    section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your career...'));
+  // CAREER PAGE removed entirely (2026-09-24, Matt's call: it never got
+  // real content beyond a prototype, and career stats will instead live
+  // on a future public driver profile page -- nothing from it was
+  // carried forward). The old renderCareerSection/buildCareerCard/
+  // buildCareerStat, backed by handleGetMyCareerHistory/
+  // handleGetCareerSeasonRaceDetail, lived here.
 
-    return fetchApi('getMyCareerHistory', { token: token }).catch(function () { return { success: false }; })
-      .then(function (result) {
-        section.innerHTML = '';
-        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-        // Explainer paragraph removed (2026-09-18, Matt's call) -- see
-        // renderHelpSection's Career entry instead.
+  // Filled-gray-circle-with-white-checkmark icon (2026-09-24) -- shown once
+  // a protest has been ruled on (Upheld/Denied) or withdrawn, next to its
+  // line in the Dashboard Protest card. The open-circle look for a still-
+  // Pending protest is plain CSS (a bordered circle, no icon needed) --
+  // see .rc-protest-dash-icon/-pending/-ruled in style.css.
+  var RC_PROTEST_RULED_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>';
 
-        if (!result || !result.success || !result.seasons || !result.seasons.length) {
-          section.appendChild(buildEmptyStatePanel('No Data To Display', 'Your first Career card appears here once you\'ve registered for a season.'));
-          return;
-        }
+  // One line item in the Dashboard Protest card (2026-09-24 redesign,
+  // Matt's exact spec: "(open gray circle) <date> Filed a protest against
+  // <name> for <incident reason> in Round <round n> at <track>. After a
+  // ruling, circle is filled in gray with a white checkmark and below it
+  // in a lighter color text will be the outcome with the steward's
+  // ruling. It will also display protests against you in the same
+  // fashion."). Symmetric wording: when this driver filed it (p.isMine),
+  // the sentence names who it was filed against; when it was filed
+  // against this driver instead, it names the filer and says "against
+  // you". roundNumber/trackName come from handleGetMyProtests' 2026-09-24
+  // addition (Protests.gs) -- previously only a combined roundLabel
+  // string was available, which didn't match this exact copy.
+  function buildDashProtestItem(p) {
+    // Withdrawn counts as "ruled" here (resolved, not still pending) even
+    // though no steward actually ruled on it -- there's nothing left to
+    // wait on, so it gets the same filled-checkmark treatment as Upheld/
+    // Denied rather than sitting open forever.
+    var isRuled = p.status === 'Upheld' || p.status === 'Denied' || p.status === 'Withdrawn';
 
-        var list = el('div', 'rc-career-list');
-        result.seasons.forEach(function (s) { list.appendChild(buildCareerCard(s, token)); });
-        section.appendChild(list);
-      });
-  }
+    var row = el('div', 'rc-protest-dash-item');
+    var icon = el('div', 'rc-protest-dash-icon' + (isRuled ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+    if (isRuled) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    row.appendChild(icon);
 
-  // One season's "career card." Keeps the numbers-first hero row up top
-  // (rank/points/wins/podiums -- the things a driver actually brags
-  // about), then groups everything else into small labeled clusters
-  // rather than one long stat list, so the card reads as a handful of
-  // digestible chunks instead of a wall of numbers.
-  function buildCareerCard(s, token) {
-    // "rc-panel rc-dash-card" (2026-09-19, Matt's call: "the CAREER page
-    // looks different than the rest of the pages -- make it look like the
-    // same styling as every other page we made on account") -- drops the
-    // card's old bespoke dark-carbon header band/jersey-number badge shell
-    // for the same checkered-corner/red-underline chrome Calendar/Results/
-    // Finances/every other featured panel on the site already uses.
-    var card = el('div', 'rc-panel rc-dash-card rc-career-card' + (s.statsKnown ? '' : ' rc-career-card-noStats'));
+    var body = el('div', 'rc-protest-dash-item-body');
+    var dateStr = p.submittedAt ? formatShortDate(p.submittedAt) : '';
+    var against = (p.involvedNames || []).slice(1).join(' and ');
+    var whereBit = (p.roundNumber ? (' in Round ' + escapeHtml(String(p.roundNumber))) : '') +
+      (p.trackName ? (' at ' + escapeHtml(p.trackName)) : '');
+    var sentence = p.isMine
+      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + ' for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.')
+      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.');
 
-    // --- Header: "SEASON N: <NAME>" in the title itself (2026-09-19
-    // follow-up, Matt's call: "make the title of the container say
-    // SEASON N: <SEASON NAME> like the other pages") -- same combined
-    // format the Calendar/Results season headers already use (see
-    // renderCalendarSection's own head.appendChild(el('h3', ...)) below),
-    // replacing the separate corner-figure treatment this card used
-    // instead. Plain meta line underneath for the date range and status
-    // pills. ---------------------------------------------------------
-    var head = el('div', 'rc-dash-card-header-row');
-    var seasonNumLabel = seasonNumberLabel(s.seasonId);
-    var titleText = (seasonNumLabel ? ('Season ' + seasonNumLabel + ': ') : '') + (s.seasonName || s.seasonId);
-    head.appendChild(el('h3', 'rc-dash-card-header-title', escapeHtml(titleText)));
-    // Class pills, top-right of the header (2026-09-20, Matt's ask: "add
-    // the pills in the top right like CALENDAR page has describing the
-    // classes for the season") -- same buildClassPillsRow helper Calendar
-    // and Results use, fed from this season's own whole-field classes map
-    // (see handleGetMyCareerHistory's base.classes, DataCache.gs), not
-    // this driver's own single `class` (shown lower in the card).
-    var careerClassPillsRow = buildClassPillsRow(s.classes);
-    if (careerClassPillsRow) head.appendChild(careerClassPillsRow);
-    card.appendChild(head);
+    var line = el('div', 'rc-protest-dash-line');
+    line.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + sentence;
+    body.appendChild(line);
 
-    var metaRow = el('div', 'rc-career-card-meta');
-    var dateRange = (s.startDate || s.endDate)
-      ? [s.startDate, s.endDate].filter(Boolean).map(function (d) {
-        var dt = new Date(d);
-        return isNaN(dt.getTime()) ? d : dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      }).join(' - ')
-      : 'No races run yet';
-    metaRow.appendChild(el('span', 'rc-career-card-dates', escapeHtml(dateRange)));
-
-    var badges = el('div', 'rc-career-card-badges');
-    badges.appendChild(_rcSeasonStatusBadge(s.seasonStatus));
-    // Registration-status pill -- only Probation/Suspended/Removed ever
-    // show here; a clean Active registration says nothing extra (same
-    // "only flag it when it's not fine" convention as the Dashboard's own
-    // Registration Status card, see .rc-regstatus-flag above).
-    if (s.registrationStatus && s.registrationStatus !== 'Active') {
-      var regKey = String(s.registrationStatus).toLowerCase();
-      badges.appendChild(el('span', 'rc-badge-chip rc-badge-regstatus-' + regKey, escapeHtml(s.registrationStatus)));
+    if (isRuled) {
+      // Same "Upheld: Tier N"/"Denied"/"Withdrawn" vocabulary
+      // _rcProtestStatusBadge already uses elsewhere on the site, just as
+      // a plain lighter-colored line instead of a chip here.
+      var outcomeText = p.status === 'Upheld' ? ('Upheld -- Tier ' + p.penaltyTier + ' penalty') : p.status;
+      body.appendChild(el('div', 'rc-protest-dash-outcome', escapeHtml(outcomeText)));
     }
-    metaRow.appendChild(badges);
-    card.appendChild(metaRow);
-
-    if (!s.statsKnown) {
-      var body0 = el('div', 'rc-career-card-body');
-      var teamLine = [s.teamName, [s.manufacturer, s.carModel].filter(Boolean).join(' '), s.class]
-        .filter(Boolean).join(' &middot; ');
-      if (teamLine) body0.appendChild(el('p', 'rc-career-line', teamLine));
-      body0.appendChild(el('p', 'rc-career-empty-note', 'No round results have been recorded for this season yet.'));
-      card.appendChild(body0);
-      return card;
-    }
-
-    // --- Hero row: the headline numbers -------------------------------
-    var hero = el('div', 'rc-career-hero');
-    hero.appendChild(buildCareerStat(
-      s.finalRank ? (ordinal(s.finalRank) + (s.finalRankOutOf ? ' / ' + s.finalRankOutOf : '')) : '--',
-      'Class Standing'));
-    hero.appendChild(buildCareerStat(Number(s.finalPoints || 0).toLocaleString(), 'Points'));
-    hero.appendChild(buildCareerStat(s.wins || 0, 'Wins'));
-    hero.appendChild(buildCareerStat(s.podiums || 0, 'Podiums'));
-    card.appendChild(hero);
-
-    var body = el('div', 'rc-career-card-body');
-
-    // --- Team & Car ------------------------------------------------------
-    var teamGroup = el('div');
-    teamGroup.appendChild(el('div', 'rc-career-group-title', 'Team &amp; Car'));
-    var carLine = [s.manufacturer, s.carModel].filter(Boolean).join(' ') + (s.carNumber ? ' #' + escapeHtml(s.carNumber) : '');
-    teamGroup.appendChild(el('p', 'rc-career-line',
-      '<strong>Team:</strong> ' + escapeHtml(s.teamName || '--') +
-      ' &nbsp; <strong>Car:</strong> ' + (carLine.trim() || '--') +
-      ' &nbsp; <strong>Class:</strong> ' + escapeHtml(s.class || '--')));
-    body.appendChild(teamGroup);
-
-    // --- Race Record ------------------------------------------------------
-    var raceGroup = el('div');
-    raceGroup.appendChild(el('div', 'rc-career-group-title', 'Race Record'));
-    var raceGrid = el('div', 'rc-career-stat-grid');
-    raceGrid.appendChild(buildCareerStat(s.racesStarted || 0, 'Started'));
-    raceGrid.appendChild(buildCareerStat(s.poles || 0, 'Poles'));
-    raceGrid.appendChild(buildCareerStat(s.fastestLaps || 0, 'Fastest Laps'));
-    raceGrid.appendChild(buildCareerStat(s.dnfs || 0, 'DNFs'));
-    raceGrid.appendChild(buildCareerStat((s.avgFinish != null) ? s.avgFinish.toFixed(1) : '--', 'Avg. Finish'));
-    raceGroup.appendChild(raceGrid);
-    body.appendChild(raceGroup);
-
-    // --- Discipline ------------------------------------------------------
-    // Finances/Sponsors/Car Objective/Wagers groups removed (V1 scope cut,
-    // 2026-09-18) -- the fields they read (seasonNetEarnings,
-    // seasonEndingBalance, largestWin, sponsorBonusTotal/PenaltyTotal,
-    // sponsors, objectiveName/objectiveBonus/objectiveMet, wagerWins/
-    // Losses/Earnings) no longer come back from handleGetMyCareerHistory.
-    var incidents = (s.statusHistory || []).slice().reverse();
-    if (incidents.length || s.penaltyCount) {
-      var discGroup = el('div');
-      discGroup.appendChild(el('div', 'rc-career-group-title', 'Discipline'));
-      if (s.penaltyCount) {
-        // Fines removed from Protests (V1 scope cut) -- only the upheld
-        // count is shown now, no dollar amount.
-        discGroup.appendChild(el('p', 'rc-career-line', '<strong>Upheld Protests:</strong> ' + s.penaltyCount));
-      }
-      incidents.forEach(function (h) {
-        var when = h.at ? new Date(h.at) : null;
-        var whenStr = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : '';
-        var line = el('div', 'rc-career-incident',
-          escapeHtml(h.status || '') + (h.reason ? ': ' + escapeHtml(h.reason) : ''));
-        if (whenStr) line.appendChild(el('span', 'rc-career-incident-date', whenStr));
-        discGroup.appendChild(line);
-      });
-      body.appendChild(discGroup);
-    }
-
-    // --- Races (2026-09-19) -- full per-race lap+event detail, one
-    // container per race, for PAST seasons only -- Matt's split: the
-    // Results page already covers the CURRENT season in full, so a
-    // driver's currently-underway season just points them there instead
-    // of duplicating the same fetch here. Lazy-loaded on click
-    // (handleGetCareerSeasonRaceDetail, DataCache.gs) so a driver with
-    // many seasons of history doesn't pay for every one of them on the
-    // Career page's initial load -- only the season actually expanded
-    // ever fetches its races.
-    if (s.seasonStatus === 'Registration') {
-      var currentNote = el('div');
-      currentNote.appendChild(el('div', 'rc-career-group-title', 'Races'));
-      currentNote.appendChild(el('p', 'rc-career-empty-note', 'This season is still underway -- full race-by-race detail is on the Results page.'));
-      body.appendChild(currentNote);
-    } else {
-      var racesGroup = el('div');
-      racesGroup.appendChild(el('div', 'rc-career-group-title', 'Races'));
-      var racesBody = el('div', 'rc-career-races-body');
-      racesBody.style.display = 'none';
-      var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'View Race Details');
-      toggleBtn.type = 'button';
-      var racesLoaded = false;
-      toggleBtn.addEventListener('click', function () {
-        if (racesBody.style.display === 'block') {
-          racesBody.style.display = 'none';
-          toggleBtn.textContent = 'View Race Details';
-          return;
-        }
-        racesBody.style.display = 'block';
-        toggleBtn.textContent = 'Hide Race Details';
-        if (racesLoaded) return;
-        racesLoaded = true;
-        racesBody.appendChild(buildSpinner('Loading races...'));
-        // BUG FIX (2026-09-23 audit): seasonId was passed as a bare
-        // options field instead of inside options.params -- fetchApi only
-        // ever serializes options.token and keys under options.params
-        // into the URL, so this seasonId was silently dropped from every
-        // request and the server fell back to whatever seasonId (or lack
-        // of one) e.parameter.seasonId happened to be, which could show
-        // the wrong season's races (or none at all) once a driver has
-        // more than one past season. Every other call in this file gets
-        // this right already -- this was the one exception.
-        fetchApi('getCareerSeasonRaceDetail', { token: token, params: { seasonId: s.seasonId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (result) {
-          racesBody.innerHTML = '';
-          if (!result || !result.success || !result.rounds || !result.rounds.length) {
-            racesBody.appendChild(el('p', 'rc-career-empty-note', 'No race results recorded for this season.'));
-            return;
-          }
-          var list = el('div', 'rc-results-round-list');
-          result.rounds.slice().sort(function (a, b) {
-            var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
-            var bt = b.startUtc ? new Date(b.startUtc).getTime() : 0;
-            return bt - at;
-          }).forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
-          racesBody.appendChild(list);
-        }).catch(function () {
-          racesBody.innerHTML = '';
-          racesBody.appendChild(el('p', 'rc-career-empty-note', 'Could not load races right now.'));
-        });
-      });
-      racesGroup.appendChild(toggleBtn);
-      racesGroup.appendChild(racesBody);
-      body.appendChild(racesGroup);
-    }
-
-    card.appendChild(body);
-    return card;
-  }
-
-  // Same tile shape as the Wager page's .rc-cs-stat -- reused rather than
-  // reinvented so every "important number in a box" on the site looks
-  // like the same component.
-  function buildCareerStat(value, label) {
-    var tile = el('div', 'rc-cs-stat');
-    tile.appendChild(el('div', 'rc-cs-stat-value', String(value)));
-    tile.appendChild(el('div', 'rc-cs-stat-label', escapeHtml(label)));
-    return tile;
+    row.appendChild(body);
+    return row;
   }
 
   // Protest -- Dashboard preview card (2026-09-08, Matt's call: "the
   // PROTEST card shows the last 3 PROTESTS that the driver submitted and
-  // whether they're Pending, Upheld or Denied... a link to the PROTEST
-  // page at the bottom left like the other cards"). Backed by
+  // whether they're Pending, Upheld or Denied"; redesigned 2026-09-24 into
+  // the open-circle/checkmark line-item look above). Backed by
   // action=getMyProtests with no `full`/`limit` param, which the server
   // already caps at the most recent 3 (see handleGetMyProtests,
   // Protests.gs) -- this card never re-slices the array itself, it just
-  // renders whatever comes back. That same endpoint now also includes
-  // protests filed AGAINST this driver, not just ones they filed (2026-
-  // 09-08 rewrite -- see the full Protests page for the "PROTESTS"
-  // history panel this mirrors). Reuses _rcProtestStatusBadge (defined
-  // below, alongside the full Protests page) for the exact same Pending/
-  // Upheld/Denied/Withdrawn chip look in both places.
+  // renders whatever comes back. That same endpoint also includes
+  // protests filed AGAINST this driver, not just ones they filed.
+  // The link at the bottom no longer goes to a standalone Protests page
+  // (2026-09-24, Matt's call: "remove the protest page... have it say
+  // '<- File or withdraw a protest'") -- it opens openProtestModal
+  // instead, which is the same FILE PROTEST popup/history the old page
+  // used, just reached from here.
   function protestCard(data) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
@@ -2224,22 +2016,14 @@
       card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
     } else {
       var list = el('div', 'rc-protest-dash-list');
-      protests.forEach(function (p) {
-        var row = el('div', 'rc-dm-row');
-        var info = el('div', null);
-        info.appendChild(el('div', 'rc-dm-row-label', escapeHtml(p.roundLabel || '') + ': ' + escapeHtml((p.involvedNames || []).join(', '))));
-        if (p.infractionType) info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType)));
-        row.appendChild(info);
-        row.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
-        list.appendChild(row);
-      });
+      protests.forEach(function (p) { list.appendChild(buildDashProtestItem(p)); });
       card.appendChild(list);
     }
 
-    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← Go to Protests');
+    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← File or withdraw a protest');
     protestLink.type = 'button';
     protestLink.addEventListener('click', function () {
-      showLazySection('protests', currentToken);
+      openProtestModal(currentToken);
     });
     card.appendChild(protestLink);
 
@@ -3880,13 +3664,11 @@
     { icon: ICON_DASHBOARD, title: 'Dashboard',
       body: 'Your homepage after logging in. Shows your Registration Status, your Current Seat once you have one, your next scheduled race, your most recent result, and your last few filed Protests.' },
     { icon: ICON_CALENDAR, title: 'Calendar',
-      body: 'The full season schedule, in order. Each race shows its date and time in your own timezone, the track, session details, and a weather forecast icon.' },
+      body: 'Open it with "← View full season" on your Next Race card. Shows the full season schedule, in order -- each race\'s date and time in your own timezone, the track, session details, and a weather forecast icon.' },
     { icon: ICON_RESULTS, title: 'Results',
       body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
-    { icon: ICON_CAREER, title: 'Career',
-      body: 'Your season by season record: every car, team, and result the league has on file for you, newest season first.' },
     { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+      body: 'Open it with "← File or withdraw a protest" on your Dashboard\'s Protest card. Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
     { icon: ICON_BELL, title: 'Notifications',
       body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
@@ -5021,27 +4803,28 @@
     return card;
   }
 
-  function renderCalendarSection(token) {
-    var section = document.getElementById('rc-section-calendar');
-    if (!section) return;
-    section.innerHTML = '';
-    // No "Calendar" heading while loading -- Matt's call: every full-
-    // section loading state should sit at the exact same vertical height
-    // as the initial #rc-loading screen, which has no heading above it
-    // either. The heading only appears once real content replaces this.
-    section.appendChild(buildPageSpinner('Loading your calendar...'));
+  // Calendar -- converted from a standalone nav section to a popup
+  // (2026-09-24, Matt's call: "instead of '<- View the full schedule'
+  // opening up another page, I'd like it to produce a popup like the team
+  // and season format does, and basically copy the style that we built on
+  // the calendar page and have it live as a popup"). Reached from the
+  // Dashboard's Next Race card ("<- View full season"); same wide/
+  // accent-header popup shell as Season Format/Current Seat Info/
+  // Protests, with the exact same season-header + race-list content the
+  // old standalone Calendar page rendered.
+  function openCalendarModal(token) {
+    var modal = showModal('Calendar', { wide: true, accentHead: true });
+    modal.body.appendChild(buildSpinner('Loading your calendar...'));
 
-    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
-    return fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
+    fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
+      modal.body.innerHTML = '';
 
       if (!res || !res.success) {
-        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
+        modal.body.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
         return;
       }
       if (!res.hasSeason) {
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'The calendar fills in once a season is open.'));
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'The calendar fills in once a season is open.'));
         return;
       }
       // Not registered for the active season -- nothing to show (Matt's
@@ -5049,46 +4832,31 @@
       // season's schedule here). Same empty-state treatment, different
       // copy from the "no season at all" case above.
       if (!res.registered) {
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its calendar.'));
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its calendar.'));
         return;
       }
 
       var driverTz = '';
       try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
 
-      // rc-dash-card gives the whole calendar container the same chrome as
-      // the Dashboard cards (Matt's call): the checkered corner, the red
-      // "finish flag" top accent, and a slightly heavier drop shadow.
-      var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
-      var head = el('div', 'rc-cal-season-head');
-      // "Season N: <name>" -- see seasonNumberLabel() above.
+      // "Season N: <name>" header + class pills, same treatment the old
+      // standalone Calendar page used (see seasonNumberLabel()/
+      // buildClassPillsRow above) -- no rc-dash-card/rc-panel chrome here
+      // since the modal shell already supplies the card-like frame.
       var seasonNumLabel = seasonNumberLabel(res.seasonId);
+      var head = el('div', 'rc-cal-season-head');
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + res.seasonName));
-      // Class pills, top-right of the header (2026-09-19, Matt's call:
-      // "move the class pills to the top right of the container, similar
-      // to how some cards on the dash have text or pills in the right
-      // corner") -- same corner-figure idea as Current Seat's car number/
-      // Next Race's round number, just a row of pills instead of text.
       var classPillsRow = buildClassPillsRow((res.seasonDetails || {}).classes);
       if (classPillsRow) head.appendChild(classPillsRow);
-      panel.appendChild(head);
-
-      // The gray divider that used to sit here (between the header's own
-      // red rule and the race list) is gone (2026-09-24, Matt's ask) --
-      // the red rule under the season title is divider enough; the race
-      // list now starts right after it, same spacing .rc-cal-race-list's
-      // own margin-top already provides.
+      modal.body.appendChild(head);
 
       var list = el('div', 'rc-cal-race-list');
       var raceSettings = (res.seasonDetails || {}).raceSettings || {};
       (res.races || []).forEach(function (entry) { list.appendChild(raceCard(entry, driverTz, raceSettings)); });
-      panel.appendChild(list);
-
-      section.appendChild(panel);
+      modal.body.appendChild(list);
     }).catch(function () {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Calendar'));
-      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
   }
 
@@ -5388,70 +5156,64 @@
   }
 
   // =======================================================================
-  // PROTESTS (2026-09-08; redesigned 2026-09-20, Matt's call: "Make it
-  // look identical to the other pages on the list" -- one Season N: Name
-  // container, same chrome as Calendar/Results/Career). The inline form
-  // and the old "last 10 + Show full history popup" list are both gone --
-  // FILE PROTEST now opens a popup (openFileProtestModal), and the full
-  // history renders inline, grouped by season, right in this one
-  // container (Matt: "The SEASON n: SEASON NAME will be the only
-  // container on the page"). Filing a ruling on someone else's protest
-  // still happens from League Management's EDIT popup instead (Admin/
-  // Organizer/Steward only) -- this page is purely "file one of your own,
-  // view/edit/delete the ones you filed, see what happened to the ones
-  // filed against you."
-  function renderProtestsSection(token) {
-    var section = document.getElementById('rc-section-protests');
-    if (!section) return;
-    section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your protests...'));
+  // PROTESTS (2026-09-08; redesigned 2026-09-20 into a standalone page,
+  // then converted to a Dashboard-card popup 2026-09-24, Matt's call:
+  // "remove the protest page and instead of '<- Go to protests', have it
+  // say '<- File or withdraw a protest'" -- opened from the Dashboard's
+  // Protest card via openProtestModal below, using the same wide/
+  // accent-header popup shell as Season Format/Current Seat Info/
+  // Calendar. Still one Season N: Name container inside it -- FILE
+  // PROTEST opens openFileProtestModal, and the full history renders
+  // inline, grouped by season, right in this one container (Matt: "The
+  // SEASON n: SEASON NAME will be the only container on the page").
+  // Filing a ruling on someone else's protest still happens from League
+  // Management's own EDIT popup instead (Admin/Organizer/Steward only) --
+  // this popup is purely "file one of your own, view/edit/withdraw the
+  // ones you filed, see what happened to the ones filed against you."
+  // -----------------------------------------------------------------------
+  function openProtestModal(token) {
+    var modal = showModal('Protests', { wide: true, accentHead: true });
+    modal.body.appendChild(buildSpinner('Loading your protests...'));
 
-    // `return`ed (2026-09-08), same reason as renderFinancesSection above.
-    // full:1 (was limit:10) -- the redesigned page shows the WHOLE
-    // multi-season history inline (grouped by season pill) instead of a
-    // 10-row preview + a separate "Show full history" popup.
+    // full:1 (was limit:10) -- the popup shows the WHOLE multi-season
+    // history inline (grouped by season pill) instead of a 10-row preview
+    // + a separate "Show full history" popup.
     //
     // One combined getProtestsPageData call (2026-09-24, Matt's "batch
     // them altogether" efficiency pass) instead of two separate fetchApi
     // round trips -- see handleGetProtestsPageData in Protests.gs. The
     // two underlying actions (getProtestFilingOptions, getMyProtests)
     // still exist and are still used elsewhere unchanged.
-    return fetchApi('getProtestsPageData', { token: token }).then(function (combined) {
+    fetchApi('getProtestsPageData', { token: token }).then(function (combined) {
       var filing = combined && combined.filing, mine = combined && combined.mine;
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
-      // Both the lede paragraph and the "How to use this page" box that
-      // used to sit here are gone (2026-09-18, Matt's call) -- see
-      // renderHelpSection's Protests entry instead.
+      modal.body.innerHTML = '';
 
       if (!filing || !filing.success) {
-        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the Protest page right now.'));
+        modal.body.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load your protests right now.'));
         return;
       }
-      // Same "no season" empty state as Calendar/Results/Career
-      // (2026-09-18, Matt's call: add Protests to that list) --
-      // handleGetProtestFilingOptions already returns hasSeason:false
-      // when there's no active season calendar, same signal Calendar and
-      // Results already gate on.
+      // Same "no season" empty state as Calendar/Results (2026-09-18,
+      // Matt's call: add Protests to that list) -- handleGetProtestFilingOptions
+      // already returns hasSeason:false when there's no active season
+      // calendar, same signal Calendar and Results already gate on.
       if (!filing.hasSeason) {
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
         return;
       }
       // Not registered for the active season -- nothing to show (Matt's
-      // rule, 2026-09-23: only registered drivers see the Protests page,
-      // and only the current season's protest history, not a driver's
-      // full multi-season past). Same "registered" signal Calendar/
-      // Results gate on.
+      // rule, 2026-09-23: only registered drivers see protests, and only
+      // the current season's protest history, not a driver's full
+      // multi-season past). Same "registered" signal Calendar/Results
+      // gate on.
       if (!filing.registered) {
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to use the Protests page.'));
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to file or withdraw a protest.'));
         return;
       }
 
-      section.appendChild(buildProtestPagePanel(token, filing, mine && mine.success ? (mine.protests || []) : []));
+      modal.body.appendChild(buildProtestPagePanel(token, filing, mine && mine.success ? (mine.protests || []) : []));
     }).catch(function () {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Protests'));
-      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not reach the server.'));
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
   }
 
@@ -5482,7 +5244,7 @@
     fileBtn.disabled = !hasOpenRounds;
     if (hasOpenRounds) {
       fileBtn.addEventListener('click', function () {
-        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { renderProtestsSection(token); });
+        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { rcReloadAfterSave(); });
       });
     } else {
       withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
@@ -5578,10 +5340,10 @@
       var canModify = p.status === 'Pending' && !p.resultsFinalized;
       right.appendChild(buildProtestActionBtn('Edit', canModify,
         'Results for this round are finalized -- this protest can no longer be edited.',
-        function () { openEditProtestModal(token, p, function () { renderProtestsSection(token); }); }));
+        function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); }));
       right.appendChild(buildProtestActionBtn('Delete', canModify,
         'Results for this round are finalized -- this protest can no longer be deleted.',
-        function () { openDeleteProtestConfirm(token, p, function () { renderProtestsSection(token); }); }));
+        function () { openDeleteProtestConfirm(token, p, function () { rcReloadAfterSave(); }); }));
     }
 
     row.appendChild(right);

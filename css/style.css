@@ -2455,6 +2455,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    sharing the header row with a title. */
 .rc-cs-carnum { flex: none; height: 50px; display: flex; align-items: center; justify-content: flex-end; font-family: var(--rc-font-heading); font-size: 34px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
+
+/* Dashboard Protest card line items (2026-09-24 redesign, Matt's spec: an
+   open gray circle for a still-Pending protest, filled gray with a white
+   checkmark once it's ruled/withdrawn, the sentence on one line, and a
+   lighter-colored outcome/ruling line below it once resolved). See
+   buildDashProtestItem in Account.html. */
+.rc-protest-dash-list { display: flex; flex-direction: column; gap: 14px; }
+.rc-protest-dash-item { display: flex; align-items: flex-start; gap: 10px; }
+.rc-protest-dash-icon { flex: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
+.rc-protest-dash-icon-ruled { background: var(--rc-steel); }
+.rc-protest-dash-item-body { flex: 1; min-width: 0; }
+.rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
+.rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
+.rc-protest-dash-outcome { margin-top: 3px; font-size: 12px; color: var(--rc-steel); }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
@@ -3111,12 +3126,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-event-line:last-child { border-bottom: none; }
 .rc-results-event-lap { flex: none; min-width: 52px; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-results-event-text { color: var(--rc-carbon); }
-
-/* Career page's lazy-loaded past-season race detail (2026-09-19) -- the
-   toggle button reuses the standard .rc-btn-secondary.rc-btn-sm shape;
-   this just governs the expand/collapse container underneath it. */
-.rc-career-races-body { margin-top: 10px; }
-.rc-career-races-body .rc-results-round-list { gap: 14px; }
 
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
@@ -5440,66 +5449,10 @@ body.rc-modal-scroll-locked {
 }
 .rc-rulebook-callout ul { margin: 6px 0 0; padding-left: 18px; }
 
-/* ---------------------------------------------------------------------
-   CAREER PAGE (2026-09-13) -- one "career card" per season a driver has
-   ever raced in, newest on top (see renderCareerSection/buildCareerCard,
-   Account.html; handleGetMyCareerHistory, DataCache.gs). Deliberately
-   built as a stat-card layout, not a data table -- Matt's call: "make it
-   aesthetically laid out... no one likes to feel like they're looking at
-   the matrix with 1s and 0s". Reuses existing site patterns everywhere
-   it can rather than inventing new ones: .rc-cs-stat/-label/-value (the
-   Wager page's stat-tile shape) for every stat tile here, .rc-badge-chip/
-   .rc-badge-status-* for the season status pill, .rc-badge-cartier for
-   the objective tier language, _rcTierBadge for sponsor tier chips. Only
-   the card shell, the header layout, the big season-number badge, and
-   the registration-status pill below are new. */
-.rc-career-list { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
-/* Card shell now comes entirely from "rc-panel rc-dash-card" (2026-09-19,
-   Matt's call: "the CAREER page looks different than the rest of the
-   pages... make it look like the same styling as every other page") --
-   the checkered corner, red top accent, white background and drop shadow
-   are all shared with Calendar/Results/every other featured panel now;
-   .rc-career-card itself adds no shell rules of its own any more. Season
-   name/number use the standard .rc-dash-card-header-row/-header-title/
-   -corner-figure classes (see buildCareerCard) instead of the old
-   bespoke carbon header band + "jersey number" badge. */
-.rc-career-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 16px; }
-.rc-career-card-dates { font-size: 12px; color: var(--rc-steel); }
-.rc-career-card-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-/* Registration-status pill -- same chip shape as .rc-badge-status-*,
-   colored per the site's established Probation(yellow)/Suspended-or-
-   Removed(red) convention (see .rc-regstatus-flag-* above); Active never
-   renders a pill here at all -- a clean season doesn't need to say so. */
-.rc-badge-regstatus-probation { background: var(--rc-warning-accent); color: var(--rc-carbon); }
-.rc-badge-regstatus-suspended { background: var(--rc-red); }
-.rc-badge-regstatus-removed { background: var(--rc-steel); }
-
-/* Hero row -- the handful of numbers that matter most at a glance
-   (standing, points, wins, podiums), reusing the Wager page's own
-   .rc-cs-stat tile so it reads as the same "important numbers" language
-   sitewide rather than a one-off. Negative side margins bleed it out to
-   the panel's own edges, canceling .rc-panel's 20px padding, so it still
-   reads as an inset strip the way it did against the old card shell. */
-.rc-career-hero { display: flex; gap: 16px; flex-wrap: wrap; padding: 18px 20px; margin: 0 -20px 20px; border-top: 1px solid var(--rc-offwhite); border-bottom: 1px solid var(--rc-offwhite); background: var(--rc-offwhite); }
-.rc-career-hero .rc-cs-stat { flex: 1 1 110px; }
-
-.rc-career-card-body { display: flex; flex-direction: column; gap: 20px; }
-.rc-career-group-title { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); margin: 0 0 10px; }
-.rc-career-stat-grid { display: flex; gap: 14px; flex-wrap: wrap; }
-.rc-career-stat-grid .rc-cs-stat { flex: 1 1 90px; }
-.rc-career-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.7; margin: 0; }
-.rc-career-line strong { color: var(--rc-steel); font-weight: 700; }
-.rc-career-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.rc-career-empty-note { color: var(--rc-steel); font-size: 12.5px; margin: 0; }
-/* Discipline group's incident lines -- red left rule, same "something
-   went wrong here" language as .rc-rulebook-callout's red accent above,
-   just smaller since this is one line per incident, not a full callout. */
-.rc-career-incident { font-size: 12.5px; color: var(--rc-carbon); padding: 6px 10px; border-left: 3px solid var(--rc-negative); background: var(--rc-negative-bg); border-radius: 3px; margin-bottom: 6px; }
-.rc-career-incident:last-child { margin-bottom: 0; }
-.rc-career-incident-date { color: var(--rc-steel); font-size: 11px; margin-left: 6px; }
-/* No-round-data card (a season joined but never raced) -- much shorter
-   than a full card, no hero row/stat groups since there's nothing to
-   show yet. */
-.rc-career-card-noStats .rc-career-card-body { padding-top: 16px; padding-bottom: 18px; }
+/* CAREER PAGE removed entirely (2026-09-24, Matt's call: it never got
+   real content beyond a prototype, and career stats will instead live on
+   a future public driver profile page). The old .rc-career-* rules
+   (card shell, hero row, stat groups, discipline incident lines, the
+   registration-status pill) lived here. */
 
 .rc-rulebook-draft-note { font-size: 13px; color: var(--rc-steel); font-style: italic; }

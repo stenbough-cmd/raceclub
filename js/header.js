@@ -20,13 +20,16 @@
   - Logged in: League Hub moves out of the top bar and into the account
     dropdown instead (top of the menu, above a divider) -- added
     2026-09-18, same day league.html shipped.
-  - The dropdown now mirrors Account.html's own sidebar order/gating in
-    full (2026-09-19): Dashboard, Calendar, Results, Protests, Career, a
+  - The dropdown mirrored Account.html's own sidebar order/gating in full
+    (2026-09-19): Dashboard, Calendar, Results, Protests, Career, a
     divider, League Hub, then whichever of Admin/League Tools/Stewarding
     this role unlocks, a divider, Help, Edit Profile, a divider, Logout.
-    See _rcBuildAccountMenuSectionLinks below and its click wiring in
-    renderHeader() for how each link switches sections in place on
-    Account.html itself but does a real navigation from anywhere else.
+    Calendar, Protests and Career were removed from this list (2026-09-24)
+    -- Calendar and Protests are now popups reached from Dashboard cards
+    instead of standalone sections, and Career was removed entirely. See
+    _rcBuildAccountMenuSectionLinks below and its click wiring in
+    renderHeader() for how each remaining link switches sections in place
+    on Account.html itself but does a real navigation from anywhere else.
   - Logged in: the avatar + name/role stack (First Last in caps, bold;
     role -- Prospect/Driver/Steward/Organizer/Admin -- underneath in a
     lighter weight and color) and the chevron are now ONE single clickable
@@ -235,9 +238,14 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // before this reorder).
   var html = '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
   html += '<hr class="rc-header-menu-divider">';
-  html += link('dashboard', 'Dashboard') + link('calendar', 'Calendar') + link('results', 'Results') +
-    link('protests', 'Protests') + link('career', 'Career');
-  // A second divider between Career and the permission-gated items --
+  // Calendar, Protests and Career removed from this dropdown (2026-09-24,
+  // Matt's call): Calendar and Protests are now popups reached from
+  // Dashboard cards rather than standalone sections (see Account.html's
+  // Next Race / Protest cards), and Career was removed entirely (it will
+  // live on a future public driver profile instead). Dashboard/Results
+  // are the only section links left here.
+  html += link('dashboard', 'Dashboard') + link('results', 'Results');
+  // A second divider between Results and the permission-gated items --
   // only when at least one of them actually shows for this role, so a
   // Driver/Steward-without-Organizer account never ends up with two
   // dividers back to back and nothing between them.
