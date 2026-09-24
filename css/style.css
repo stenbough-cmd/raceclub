@@ -3387,7 +3387,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-header-notif-clear:hover { color: var(--rc-red); }
 .rc-header-notif-clear[hidden] { display: none; }
-.rc-header-notif-list { max-height: 320px; overflow-y: auto; }
+/* Capped to ~3 rows visible at once (2026-09-24, Matt's ask), scrolling for
+   anything beyond that -- was max-height: 320px (roomy enough to show 4-5
+   rows uncapped, which is what prompted this). 204px ~= 3 * a typical
+   .rc-header-notif-item's rendered height (~68px: 24px vertical padding +
+   ~18px message line + ~2px gap + ~13px date line + 1px border). Applies to
+   the whole scroll region (active items AND the "Recently Opened" history
+   rows below them, since both live in this one list), not per-section. */
+.rc-header-notif-list { max-height: 204px; overflow-y: auto; }
 .rc-header-notif-empty {
   padding: 20px 14px;
   text-align: center;

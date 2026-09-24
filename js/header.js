@@ -280,24 +280,16 @@ var RC_HEADER_ROLE_PILL_CLASS_ = {
 // so the badge never has to stretch wide enough to look like a pill instead
 // of a circle.
 function updateHeaderNotifDot(count) {
-  count = count || 0;
   var dot = document.getElementById('rc-header-bell-dot');
-  if (dot) {
-    if (count > 0) {
-      dot.textContent = count > 9 ? '9+' : String(count);
-      dot.style.display = 'flex';
-    } else {
-      dot.textContent = '';
-      dot.style.display = 'none';
-    }
+  if (!dot) return;
+  count = count || 0;
+  if (count > 0) {
+    dot.textContent = count > 9 ? '9+' : String(count);
+    dot.style.display = 'flex';
+  } else {
+    dot.textContent = '';
+    dot.style.display = 'none';
   }
-  // Every call here is the best-known count at that moment (the initial
-  // cache-paint call included -- writing the same value back is harmless),
-  // so this is the one place that keeps the cache-then-verify cache (see
-  // setNotifCountCache/getNotifCountCache in js/auth.js) current, rather
-  // than sprinkling cache writes across every call site that mutates
-  // currentNotifications.
-  if (typeof setNotifCountCache === 'function') setNotifCountCache(count);
 }
 
 // Shared Edit Profile bridge (2026-09-19, pulled out of the account
@@ -696,17 +688,6 @@ function renderHeader(opts) {
 
   mount.innerHTML = html;
 
-  // Cache-then-verify bell paint (2026-09-24, Matt's ask) -- paints the
-  // unread dot INSTANTLY from the last-known count (see
-  // setNotifCountCache/getNotifCountCache in js/auth.js) before the real
-  // getNotifications call below even starts, so the dot doesn't visibly
-  // flip off-then-on on every full-page navigation. The real fetch result
-  // (in _rcRefreshNotifications further down) overwrites both the DOM and
-  // the cache once it resolves, correcting this guess either way.
-  if (token && typeof getNotifCountCache === 'function') {
-    updateHeaderNotifDot(getNotifCountCache());
-  }
-
   if (token) {
     var toggle = document.getElementById('rc-header-account-toggle');
     var menu = document.getElementById('rc-header-account-menu');
@@ -837,6 +818,35 @@ function renderHeader(opts) {
     // ---------------------------------------------------------------
     var currentNotifications = [];
     var currentNotifHistory = [];
+
+    // Keeps the notification cache (js/auth.js) in sync with whatever
+    // currentNotifications/currentNotifHistory actually are right now --
+    // called after every mutation (a real fetch resolving, a dismiss, a
+    // Clear) so the NEXT page load's instant cache-paint (right below)
+    // reflects the latest known state rather than replaying something
+    // already dismissed. See the cache's own comment in auth.js for why
+    // this exists (2026-09-24, Matt's ask -- caching just the unread count
+    // wasn't enough, since opening the bell before the real fetch resolved
+    // could still show "You're all caught up" under an already-lit dot).
+    function _rcPersistNotifCache_() {
+      if (typeof setNotifCache === 'function') setNotifCache(currentNotifications, currentNotifHistory);
+    }
+
+    // Cache-then-verify bell paint -- seeds this render's list from the
+    // last-known cache and paints both the dropdown contents and the dot
+    // INSTANTLY, before the real getNotifications call below even starts.
+    // _rcRefreshNotifications() then overwrites both the DOM and the cache
+    // once that call actually resolves, correcting this guess either way.
+    if (typeof getNotifCache === 'function') {
+      var seededCache = getNotifCache();
+      currentNotifications = seededCache.active;
+      currentNotifHistory = seededCache.history;
+    }
+    // _rcRenderNotifList and updateHeaderNotifDot are both function
+    // declarations further down this same scope -- fully hoisted, so
+    // calling them here (before their textual definition) is safe.
+    _rcRenderNotifList();
+    updateHeaderNotifDot(currentNotifications.length);
 
     function _rcRenderNotifList() {
       var listEl = document.getElementById('rc-header-notif-list');
@@ -1005,6 +1015,7 @@ function renderHeader(opts) {
       }));
       currentNotifHistory = clearHistory ? newHistory.slice(0, 5) : newHistory.concat(currentNotifHistory).slice(0, 5);
       updateHeaderNotifDot(currentNotifications.length);
+      _rcPersistNotifCache_();
       var body = { seasonIds: JSON.stringify(seasonIds), notificationIds: JSON.stringify(notificationIds) };
       if (clearHistory) body.clearHistory = '1';
       fetchApi('dismissNotifications', { method: 'POST', token: token, body: body })
@@ -1031,6 +1042,7 @@ function renderHeader(opts) {
       currentNotifHistory = [];
       _rcRenderNotifList();
       updateHeaderNotifDot(currentNotifications.length);
+      _rcPersistNotifCache_();
       _rcDismissShownSeasonNotifs(true);
       _rcRenderNotifList();
       updateHeaderNotifDot(currentNotifications.length);
@@ -1055,6 +1067,7 @@ function renderHeader(opts) {
         currentNotifHistory = [{ message: match.message.replace('is open for', 'opened for'), dateStamp: match.dateStamp }].concat(currentNotifHistory).slice(0, 5);
         _rcRenderNotifList();
         updateHeaderNotifDot(currentNotifications.length);
+        _rcPersistNotifCache_();
         fetchApi('dismissNotifications', { method: 'POST', token: token, body: { seasonIds: JSON.stringify([seasonId]) } })
           .catch(function () {});
       },
@@ -1075,10 +1088,11 @@ function renderHeader(opts) {
         currentNotifications = season.active;
         currentNotifHistory = season.history;
         _rcRenderNotifList();
-        // Also corrects the count cache with the real value (see
-        // updateHeaderNotifDot) -- overwrites the guess the bell was
-        // painted with right after mount.innerHTML above.
         updateHeaderNotifDot(currentNotifications.length);
+        // Corrects the cache with the real list/count (see
+        // _rcPersistNotifCache_) -- overwrites whatever guess the bell was
+        // seeded and painted with right after mount.innerHTML above.
+        _rcPersistNotifCache_();
       });
     }
 
