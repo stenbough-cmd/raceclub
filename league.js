@@ -966,7 +966,10 @@ function _rclRenderResults(hub) {
       // come along for free from _rclBuildPosBadge_/_rclBuildDriverIdentity_.
       var dnf = _rclIsDnf_(row);
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-3' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : undefined));
+      // Same DSQ-over-DNF precedence as the All Results popup (2026-09-24,
+      // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
+      // a small field.
+      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
@@ -1150,8 +1153,13 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var aheadRow = idx > 0 ? standings[idx - 1] : null;
       // Pos badge + driver identity, identical markup to Current Standings
       // (2026-09-23, Matt's ask), same metal coloring by finish position.
+      // DSQ still wins over DNF when both are true (a disqualified driver
+      // shows DSQ, not DNF) -- otherwise a driver who didn't finish shows
+      // DNF in the position slot instead of a numeric finish position
+      // that never actually happened (2026-09-24, Matt's ask: "make sure
+      // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : undefined));
+      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
