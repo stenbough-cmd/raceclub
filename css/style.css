@@ -4351,8 +4351,87 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Wider variant for content-heavy popups (currently just the Season
    Creation Wizard) -- the default 460px is right for a short form like
    Edit User, but far too narrow for a multi-page wizard with paired
-   fields and per-race cards. */
+   fields and per-race cards. Also used by the Season Format/Current Seat
+   Info popups (2026-09-24) -- same 820px as league.html's own (non-wide)
+   .rcl-modal-dialog, so the Season Format popup opens to the same width
+   whether it's reached from Account.html or League Hub. */
 .rc-modal-wide { max-width: 820px; }
+
+/* Accent header variant -- opt-in via showModal(title, {accentHead:true}).
+   Used by popups whose content reads as a full account-page "page" of its
+   own (Season Format, Current Seat Info) rather than a short form, so
+   their header matches the bold-uppercase / red-2px-underline treatment
+   every other Account.html card and panel title already uses
+   (.rc-dash-card-title, .rc-cal-season-head, etc.) instead of the plain
+   small-text / thin-gray-line default every short form popup (Edit
+   Profile, Add Track, ...) keeps unchanged. Compound-selected against
+   .rc-modal-head for specificity, so it reliably wins over that class's
+   own border-bottom regardless of source order. */
+.rc-modal-head.rc-modal-head-accent { border-bottom: 2px solid var(--rc-red); }
+.rc-modal-title-accent {
+  margin: 0;
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-carbon);
+}
+
+/* "Bubble" stat tiles for the Season Format/Current Seat Info popups
+   (2026-09-24) -- the account-styled equivalent of league.html's own
+   .rcl-hero-stat/-value/-label ("details bubbles," see league.css), which
+   the first pass of the Season Format popup missed entirely (it reused
+   the plain, borderless .rc-cs-stat tile instead). Same value-over-label,
+   centered, bordered-rounded-rectangle shape, just in the account page's
+   white/offwhite/steel tokens instead of league.html's dark-hero ones.
+   .rc-seasonfmt-group-label is the matching gray pill this popup's "This
+   Season"/"League Format" (or, on Current Seat Info, its own group
+   headers) group headers use -- same shape as league.html's own
+   .rcl-hero-stats-label/.rcl-pill-label pill. */
+.rc-seasonfmt-group { margin-top: 20px; }
+.rc-seasonfmt-group:first-child { margin-top: 0; }
+.rc-seasonfmt-group-label {
+  display: inline-flex;
+  align-items: center;
+  background: var(--rc-offwhite);
+  color: var(--rc-carbon);
+  border: 1px solid var(--rc-silver);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.rc-seasonfmt-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.rc-seasonfmt-stats-row + .rc-seasonfmt-stats-row { margin-top: 8px; }
+.rc-seasonfmt-stat {
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-width: 74px;
+  text-align: center;
+}
+.rc-seasonfmt-stat-value {
+  font-family: var(--rc-font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rc-carbon);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.rc-seasonfmt-stat-label {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rc-steel);
+}
 
 /* Body scroll lock while ANY popup (showModal(), Account.html) is open --
    same iOS-Safari-safe pattern as .rc-scroll-locked (position: fixed, not

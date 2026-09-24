@@ -1451,8 +1451,35 @@
   // is a cheap on-click fetch, not something worth folding into the
   // Dashboard's own combined getDashboardData call for a popup most
   // drivers will never open.
+  // One "bubble" stat group -- a gray pill label (.rc-seasonfmt-group-
+  // label) followed by a wrapping row of bordered value/label tiles
+  // (.rc-seasonfmt-stat), the account-styled equivalent of league.html's
+  // own .rcl-hero-stats-label + .rcl-hero-stat "details bubbles" (see
+  // style.css for the full comment). Shared by the Season Format popup
+  // below and the Current Seat Info popup further down (buildCurrentSeatCard
+  // area) so both popups' stat groups look identical.
+  function buildSeasonFmtStatGroup(label, stats) {
+    var group = el('div', 'rc-seasonfmt-group');
+    group.appendChild(el('div', 'rc-seasonfmt-group-label', escapeHtml(label)));
+    var row = el('div', 'rc-seasonfmt-stats-row');
+    stats.forEach(function (s) {
+      var tile = el('div', 'rc-seasonfmt-stat');
+      tile.appendChild(el('div', 'rc-seasonfmt-stat-value', escapeHtml(String(s.value))));
+      tile.appendChild(el('div', 'rc-seasonfmt-stat-label', escapeHtml(s.label)));
+      row.appendChild(tile);
+    });
+    group.appendChild(row);
+    return group;
+  }
+
+  // "View Season Format" popup -- identical in width (820px, same as
+  // league.html's own non-wide .rcl-modal-dialog) and header treatment
+  // (bold uppercase title, red 2px underline) to the rest of the account
+  // page's popups, and using the same bordered "bubble" stat tiles
+  // league.html's Season Details popup uses instead of the plain
+  // borderless tile this first shipped with (2026-09-24, Matt's catch).
   function openSeasonFormatModal() {
-    var modal = showModal('Season Format');
+    var modal = showModal('Season Format', { wide: true, accentHead: true });
     modal.body.appendChild(buildSpinner('Loading season format...'));
     fetchApi('getLeagueHub', {}).then(function (hub) {
       modal.body.innerHTML = '';
@@ -1466,20 +1493,65 @@
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once they are set.'));
         return;
       }
-      if (snapshotStats.length) {
-        modal.body.appendChild(el('div', 'rc-career-group-title', 'This Season'));
-        var snapshotGrid = el('div', 'rc-career-stat-grid');
-        snapshotStats.forEach(function (s) { snapshotGrid.appendChild(buildCareerStat(s.value, s.label)); });
-        modal.body.appendChild(snapshotGrid);
+      if (snapshotStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('This Season', snapshotStats));
+      if (formatStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('League Format', formatStats));
+    }).catch(function () {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
+  }
+
+  // Same team-card identity block (logo, team name + car number, car
+  // model, team description) the Choose Your Team screen's buildTeamCard
+  // shows during registration (see buildRegistrationModal above) -- just
+  // for the team/car this driver is actually seated in right now, with no
+  // Join button (there's nothing to join, they're already on it). Reuses
+  // that card's own .rc-team-card/-head/-identity/-name/-subtitle CSS
+  // wholesale rather than inventing a second copy of the same shape.
+  function buildSeatInfoPanel(data) {
+    var card = el('div', 'rc-team-card');
+    var head = el('div', 'rc-team-card-head');
+    var identity = el('div', 'rc-team-card-identity');
+    var logoBox = el('div', 'rc-team-logo-box');
+    if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.src = manufacturerLogoSrc(data.manufacturer);
+      logo.alt = data.manufacturer;
+      logo.onerror = function () { logoBox.style.display = 'none'; };
+      logoBox.appendChild(logo);
+    }
+    identity.appendChild(logoBox);
+    var nameCol = el('div');
+    nameCol.appendChild(el('div', 'rc-team-name', escapeHtml((data.teamName || 'Unnamed Team') + (data.carNumber ? ' #' + data.carNumber : ''))));
+    if (data.carModel) nameCol.appendChild(el('div', 'rc-team-subtitle', escapeHtml(data.carModel)));
+    identity.appendChild(nameCol);
+    head.appendChild(identity);
+    if (data.teamDesc) head.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--rc-offwhite);';
+    card.appendChild(head);
+    if (data.teamDesc) card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:8px 0 0;', escapeHtml(data.teamDesc)));
+    return card;
+  }
+
+  // "View Current Seat Info" popup -- same width/header treatment as the
+  // Season Format popup above (820px, bold uppercase title, red 2px
+  // underline), opened from Current Seat's own "← View current seat info"
+  // link (currentSeatCard). Backed by getMyCurrentSeatInfo
+  // (handleGetMyCurrentSeatInfo, Results.gs), a small dedicated action
+  // that resolves this driver's current Registrations/Teams/Cars rows the
+  // same way the "else" branch of handleGetMyCurrentSeat already does,
+  // just returning the fuller team-card field set (teamDesc in
+  // particular) that card's own StandingsCache-sourced stat display never
+  // needed.
+  function openCurrentSeatInfoModal(token) {
+    var modal = showModal('Current Seat Info', { wide: true, accentHead: true });
+    modal.body.appendChild(buildSpinner('Loading your seat info...'));
+    fetchApi('getMyCurrentSeatInfo', { token: token }).then(function (data) {
+      modal.body.innerHTML = '';
+      if (!data || !data.success || !data.hasSeat) {
+        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for a season to lock in a seat.'));
+        return;
       }
-      if (formatStats.length) {
-        var formatTitle = el('div', 'rc-career-group-title', 'League Format');
-        formatTitle.style.marginTop = snapshotStats.length ? '20px' : '0';
-        modal.body.appendChild(formatTitle);
-        var formatGrid = el('div', 'rc-career-stat-grid');
-        formatStats.forEach(function (s) { formatGrid.appendChild(buildCareerStat(s.value, s.label)); });
-        modal.body.appendChild(formatGrid);
-      }
+      modal.body.appendChild(buildSeatInfoPanel(data));
     }).catch(function () {
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
@@ -1511,6 +1583,20 @@
     card.appendChild(headerRow);
     var body = el('div', 'rc-cs-body');
     card.appendChild(body);
+
+    // "View current seat info" link (2026-09-24, Matt's ask) -- opens a
+    // popup with the same team-card fields the Choose Your Team screen
+    // shows during registration (logo, team name, car number, car model,
+    // team description), just for the team/car this driver is actually
+    // seated in right now. Same "← Label" bottom-left link shape and
+    // "loads identically to the Season Format popup" shell (same width,
+    // header, red line, loading lights) as Registration Status' own
+    // "View season format" link. Lives outside `body` (appended once,
+    // here) so it survives renderEmpty/renderSeat's repaints of body.
+    var seatInfoBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View current seat info');
+    seatInfoBtn.type = 'button';
+    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token); });
+    card.appendChild(seatInfoBtn);
 
     // Adds/replaces/removes the class-pill figure in the header row --
     // called from every render path below so it's never stale (e.g. still
@@ -2981,8 +3067,12 @@
     opts = opts || {};
     var backdrop = el('div', 'rc-modal-backdrop');
     var modal = el('div', 'rc-modal' + (opts.wide ? ' rc-modal-wide' : ''));
-    var head = el('div', 'rc-modal-head');
-    head.appendChild(el('h3', 'margin:0;font-size:16px;', escapeHtml(title)));
+    // accentHead (2026-09-24, Matt's ask) -- opt-in bold-uppercase title +
+    // red 2px underline, matching every other Account.html card/panel
+    // header, instead of the plain small-text/thin-gray-line default
+    // every short-form popup (Edit Profile, Add Track, ...) keeps.
+    var head = el('div', 'rc-modal-head' + (opts.accentHead ? ' rc-modal-head-accent' : ''));
+    head.appendChild(el('h3', opts.accentHead ? 'rc-modal-title-accent' : 'margin:0;font-size:16px;', escapeHtml(title)));
     var closeBtn = el('button', 'rc-modal-close', '&times;');
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Close');
