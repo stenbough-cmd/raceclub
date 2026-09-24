@@ -46,6 +46,7 @@ body.rc-league-page {
   --rcl-report-damage: #f5923b;
   --rcl-report-collision: #e8c547;
   --rcl-report-gain: #4fbf72;
+  --rcl-report-fastest: #b07ce8; /* fastest lap of the race: bold purple (2026-09-24, Matt's ask) */
 
   background: var(--rcl-bg);
   color: var(--rcl-ink);
@@ -1069,6 +1070,8 @@ body.rc-league-page {
 .rcl-report-clause-pit { color: var(--rcl-report-damage); font-weight: 700; } /* pits: bold orange, same as damage reports (2026-09-24, Matt's ask) -- was bold red */
 .rcl-report-clause-gain { color: var(--rcl-report-gain); font-weight: 700; } /* position gained: bold green */
 .rcl-report-clause-loss { color: var(--rc-red); } /* position lost: red, NOT bold (2026-09-24, Matt's ask -- gains stay bold, losses don't) */
+.rcl-report-clause-retirement { color: var(--rcl-ink); font-weight: 700; } /* retires from the race: bold white (2026-09-24, Matt's ask) */
+.rcl-report-clause-fastest { color: var(--rcl-report-fastest); font-weight: 700; } /* fastest lap of the race: bold purple (2026-09-24, Matt's ask) */
 .rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
 .rcl-penalty-row {
   display: flex;

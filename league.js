@@ -1192,7 +1192,9 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       damage: 'rcl-report-clause-damage',
       pit: 'rcl-report-clause-pit',
       position_gain: 'rcl-report-clause-gain',
-      position_loss: 'rcl-report-clause-loss'
+      position_loss: 'rcl-report-clause-loss',
+      retirement: 'rcl-report-clause-retirement',
+      fastest_lap: 'rcl-report-clause-fastest'
     };
     lapOrder.forEach(function (lapNum) {
       var lapRow = _rclEl('div', 'rcl-report-lap');
