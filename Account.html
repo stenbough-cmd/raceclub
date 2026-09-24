@@ -4625,110 +4625,15 @@
     } catch (err) { return ''; }
   }
 
-  // Season-wide format panel -- renamed from "Season Settings" to "Season
-  // Format" (2026-09-19), rebuilt again 2026-09-21 (Matt's call: "I still
-  // hate the way the season format is displayed... I would rather see the
-  // pills be smaller, the size of the ones inside each race container,
-  // with an icon") from the label/value tile grid back to small icon
-  // pills -- same calStat() + .rc-cal-mini-stat combo every race card
-  // below already uses for its own Length/Weather/IRL-time pills, so this
-  // panel now visually matches the cards under it instead of using its
-  // own separate tile component. Four fixed rows, per Matt's exact
-  // layout: Password alone up top (gold, see below), then general season
-  // shape, then race-rules multipliers, then session lengths -- each row
-  // is its own .rc-cal-format-list flex row (wraps on narrow viewports
-  // rather than locking to one non-wrapping line, since these pills are
-  // small enough that wrapping reads fine, unlike the old wider tiles).
-  // Class pills stay out of this panel entirely (moved to the season
-  // header row, 2026-09-19 -- see buildClassPillsRow above); the race
-  // list below still shows per-round specifics (dates, weather, track).
-  function seasonDetailsPanel(details, races, driverTz) {
-    var wrap = el('div', 'rc-cal-season-details');
-    wrap.appendChild(el('h4', 'rc-cal-season-details-title', 'Season Format'));
-    var raceSettings = details.raceSettings || {};
-
-    // Row 1: Server Password alone, in the same metallic-gold treatment
-    // as the Next Race dashboard card's own password pill (Matt: "in the
-    // gold metallic flair that you used for the next race card") -- only
-    // when a password is actually set; otherwise a plain muted pill so
-    // "no password yet" doesn't get the same eye-catching gold treatment
-    // as a real one. Briefly carried a "PASSWORD" label prefix
-    // (2026-09-21), dropped the same day (Matt's call: "get rid of
-    // PASSWORD from both pills") -- just the bare password text now,
-    // same as the Next Race card's own password pill.
-    var row1 = el('div', 'rc-cal-format-list');
-    row1.appendChild(calStat(ICON_LOCK, details.defaultPassword || 'None Set', 'Server Password',
-      'rc-cal-mini-stat' + (details.defaultPassword ? ' rc-nextrace-password-gold' : '')));
-    wrap.appendChild(row1);
-
-    // Row 2: season shape -- Start/Stop dates, Race Frequency, Drop
-    // Weeks and Bye Weeks (both "if applicable," i.e. only when the
-    // season actually uses them -- previously Drop Weeks always showed,
-    // even at 0, and Bye Weeks never showed here at all). Start/Stop is
-    // derived from the earliest/latest ROUND (not bye/special) startUtc
-    // in this season's own race list -- same "round kind + has a
-    // startUtc" filter league.js's public league.html uses for the same
-    // figure, so the two pages can never disagree about season bounds.
-    var row2 = el('div', 'rc-cal-format-list');
-    var roundDates = (races || [])
-      .filter(function (r) { return r.kind === 'round' && r.startUtc; })
-      .map(function (r) { return r.startUtc; })
-      .sort();
-    if (roundDates.length) {
-      var startEndText = formatShortDate(roundDates[0], driverTz) + ' – ' + formatShortDate(roundDates[roundDates.length - 1], driverTz);
-      row2.appendChild(calStat(ICON_CALENDAR, startEndText, 'Season Start – End', 'rc-cal-mini-stat'));
-    }
-    if (details.frequency) row2.appendChild(calStat(ICON_REPEAT, details.frequency, 'Race Frequency', 'rc-cal-mini-stat'));
-    if (details.dropWeeks) row2.appendChild(calStat(ICON_DROPWEEKS, details.dropWeeks + (details.dropWeeks === 1 ? ' Drop Week' : ' Drop Weeks'), 'Drop Weeks', 'rc-cal-mini-stat'));
-    if (details.byeWeeks) row2.appendChild(calStat(ICON_BYEWEEKS, details.byeWeeks + (details.byeWeeks === 1 ? ' Bye Week' : ' Bye Weeks'), 'Bye Weeks', 'rc-cal-mini-stat'));
-    if (row2.children.length) wrap.appendChild(row2);
-
-    // Row 3: race-rules multipliers -- Track Limits, Fuel, Tire Wear,
-    // Setups. Fuel/Tire Wear/Setups are season-wide (Seasons.SeasonDetails.
-    // raceSettings), same source the individual race cards below read them
-    // from. These are preset LABELS ('Off'/'Realistic'/'2x'/'3x' -- see
-    // RACE_SETTINGS_MULTIPLIER_OPTIONS), not raw numbers, so they're shown
-    // as-is -- appending a literal "×" here (2026-09-19 bug, Matt's catch)
-    // is what produced "Realisticx multiplier" for the 'Realistic' preset;
-    // '2x'/'3x' already carry their own "x" and 'Off'/'Realistic' aren't
-    // multiplied values at all.
-    var row3 = el('div', 'rc-cal-format-list');
-    if (details.trackLimitsPreset) row3.appendChild(calStat(ICON_TRACK, details.trackLimitsPreset, 'Track Limits', 'rc-cal-mini-stat'));
-    if (raceSettings.fuelMultiplier) row3.appendChild(calStat(ICON_FUEL, raceSettings.fuelMultiplier, 'Fuel', 'rc-cal-mini-stat'));
-    if (raceSettings.tireWearMultiplier) row3.appendChild(calStat(ICON_TIRE, raceSettings.tireWearMultiplier, 'Tire Wear', 'rc-cal-mini-stat'));
-    if (raceSettings.setupRules) row3.appendChild(calStat(ICON_SETTINGS, raceSettings.setupRules, 'Setups', 'rc-cal-mini-stat'));
-    if (row3.children.length) wrap.appendChild(row3);
-
-    // Row 4: session lengths -- Practice and Qualifying now spell out
-    // their own label in the pill text (2026-09-21, Matt's follow-up ask:
-    // "add Practice to the pill, add Qualify to the pill") instead of
-    // being a bare duration -- Qualifying still carries its own
-    // Qualifying Type -- Public/Private -- right after, "Qualify · n min,
-    // Public"/"Qualify · n min, Private". Sprint/Medium/Long now read
-    // "Sprint Race"/"Medium Race"/"Long Race" (title case -- was ALL
-    // CAPS briefly, Matt's same-day follow-up: "not all caps") followed
-    // by the duration, instead of the bare tier name -- each still just
-    // its duration with the full points list in a hover tooltip (Matt:
-    // "length tier pills, on hover a points table displays") --
-    // unchanged behavior, calStat's own tooltip param, just a pill now
-    // instead of a tile.
-    var row4 = el('div', 'rc-cal-format-list');
-    if (raceSettings.practiceLengthMin) row4.appendChild(calStat(ICON_CLOCK, 'Practice · ' + raceSettings.practiceLengthMin + ' min', 'Practice Length', 'rc-cal-mini-stat'));
-    if (raceSettings.qualifyLengthMin) {
-      var qualVisibility = details.privateQualifying === 'Yes' ? 'Private' : 'Public';
-      row4.appendChild(calStat(ICON_STOPWATCH, 'Qualify · ' + raceSettings.qualifyLengthMin + ' min, ' + qualVisibility, 'Qualifying Length & Type', 'rc-cal-mini-stat'));
-    }
-    var tiers = ['Sprint', 'Medium', 'Long'];
-    tiers.forEach(function (tier) {
-      var table = (details.pointsTables || {})[tier];
-      if (!table) return;
-      var pointsList = formatPointsList(table.points);
-      row4.appendChild(calStat(ICON_CLOCK, tier + ' Race · ' + (table.duration || 0) + ' min', pointsList ? 'Points: ' + pointsList : (tier + ' Race'), 'rc-cal-mini-stat'));
-    });
-    if (row4.children.length) wrap.appendChild(row4);
-
-    return wrap;
-  }
+  // seasonDetailsPanel (the "Season Format" panel -- password/season-shape/
+  // race-rules/session-length pill rows above the race list) removed
+  // entirely (2026-09-24, Matt's ask: "Remove the SEASON FORMAT and entire
+  // section from the calendar in the dashboard"). Its call site is gone
+  // from renderCalendarSection below; formatShortDate and the
+  // ICON_REPEAT/ICON_DROPWEEKS/ICON_BYEWEEKS/ICON_TRACK/ICON_FUEL/
+  // ICON_TIRE/ICON_STOPWATCH icon constants it alone used are left in
+  // place (harmless unused code) rather than hunted down, since nothing
+  // else in this file references them.
 
   // One race/special-event/bye card. `entry` is one item from
   // handleGetSeasonCalendar's merged `races` array (kind: 'round' |
@@ -4967,11 +4872,12 @@
       if (classPillsRow) head.appendChild(classPillsRow);
       panel.appendChild(head);
 
-      panel.appendChild(seasonDetailsPanel(res.seasonDetails || {}, res.races, driverTz));
-
-      // Faint gray divider between Season Format and the race list below
-      // (2026-09-19, Matt's ask) -- same plain silver hairline treatment
-      // used elsewhere on the page (e.g. the News panel's own divider).
+      // Faint gray divider between the season header and the race list
+      // below (2026-09-19, Matt's ask) -- same plain silver hairline
+      // treatment used elsewhere on the page (e.g. the News panel's own
+      // divider). Used to also sit under the "Season Format" panel; that
+      // panel is gone (2026-09-24, Matt's ask) but the divider still earns
+      // its place separating the header from the list.
       panel.appendChild(el('hr', 'border:none;border-top:1px solid var(--rc-silver);margin:18px 0 0;'));
 
       var list = el('div', 'rc-cal-race-list');
