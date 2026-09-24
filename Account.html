@@ -857,9 +857,8 @@
   // card waits on any other card, and nothing here waits on this
   // function's caller either. Registration Status and Current Seat are
   // handled by hand (not via the generic asyncDashCard helper) because
-  // they need to be built together: Registration Status' onRegistered
-  // callback needs a live handle to Current Seat's own rcRefresh, which
-  // only exists once currentSeatCard() has actually run.
+  // they need to be built together: Registration Status' own card is what
+  // triggers a post-registration rebuild via onRegistered below.
   //
   // Finances/Reputation/Sponsors/Season Objective cards removed entirely
   // (V1 scope cut, 2026-09-18) -- those systems no longer exist.
@@ -887,12 +886,13 @@
       // trace. Same fallback message as asyncDashCard's own fix above.
       try {
         var seatCard = currentSeatCard(profile, token, currentSeat);
-        var regCard = registrationStatusCard(profile, token, activeSeason, function () {
-          if (seatCard.rcRefresh) seatCard.rcRefresh();
-          if (onRegistered) onRegistered();
-        });
+        // No standalone Current Seat re-fetch here anymore (2026-09-24,
+        // Matt's ask to cut redundant post-registration calls) -- see
+        // registrationStatusCard's own onRegistered comment for the full
+        // reasoning. onRegistered (ultimately onRegisteredRebuild,
+        // renderDashboardSection) already rebuilds this whole card fresh.
+        var regCard = registrationStatusCard(profile, token, activeSeason, onRegistered);
         while (seatCard.firstChild) seatPlaceholder.appendChild(seatCard.firstChild);
-        if (seatCard.rcRefresh) seatPlaceholder.rcRefresh = seatCard.rcRefresh;
         while (regCard.firstChild) regPlaceholder.appendChild(regCard.firstChild);
       } catch (err) {
         if (window.console && console.error) console.error('Dashboard card failed to render:', err);
@@ -1223,8 +1223,14 @@
       row.appendChild(text);
       body.appendChild(row);
       row.addEventListener('click', function () {
+        // No refreshStatus() call here anymore (2026-09-24, Matt's ask to
+        // cut redundant post-registration calls) -- onRegistered() below
+        // is onRegisteredRebuild (renderDashboardSection), which already
+        // re-fetches this card's own data (among everything else) via one
+        // combined getDashboardData call and repaints this card from that.
+        // A standalone getActiveSeason call here would just be racing that
+        // rebuild for the same answer.
         buildRegistrationModal(profile, token, data, function () {
-          refreshStatus();
           if (onRegistered) onRegistered();
         });
       });
@@ -1605,18 +1611,13 @@
       body.appendChild(stats);
     }
 
-    // Quiet re-check after a registration completes (wired from
-    // renderDashboardSection into Registration Status's onRegistered
-    // callback) -- no spinner, current content stays put until the new
-    // data actually arrives, then swaps in one shot. Stashed directly on
-    // the card element since this function's only return value is the
-    // element itself.
-    card.rcRefresh = function () {
-      fetchApi('getMyCurrentSeat', { token: token }).then(function (data) {
-        if (!data || !data.success || !data.hasSeat) { renderEmpty('Not on a team yet -- register for a season to lock in a seat.'); return; }
-        renderSeat(data);
-      }).catch(function () { /* leave whatever was already shown */ });
-    };
+    // The standalone rcRefresh() this card used to expose (a quiet
+    // getMyCurrentSeat re-check wired into Registration Status's
+    // onRegistered callback) is gone (2026-09-24, Matt's ask to cut
+    // redundant post-registration calls) -- onRegisteredRebuild
+    // (renderDashboardSection) already rebuilds this whole card fresh via
+    // one combined getDashboardData call, so a second standalone fetch
+    // for the same data right before that rebuild lands was pure waste.
 
     if (!initialData || !initialData.success || !initialData.hasSeat) {
       renderEmpty('Not on a team yet -- register for a season to lock in a seat.');
