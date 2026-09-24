@@ -1107,7 +1107,20 @@
   // brief moment instead of being replaced by a loading state.
   function registrationStatusCard(profile, token, initialData, onRegistered) {
     var card = el('div', 'rc-panel rc-regstatus-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Registration Status'));
+    // Title + seat count share one flex row (2026-09-24, Matt's ask) --
+    // same .rc-dash-card-header-row/-header-title/-corner-figure treatment
+    // Next Race's "ROUND n OF total" already uses (see nextRaceCard
+    // below). seatsFigure itself starts hidden and is only ever filled in
+    // by renderFromData further down, once a response has actually
+    // confirmed there's an open season and how many seats it has -- there
+    // is nothing to show here before that first response lands, or when
+    // no season is open at all.
+    var headerRow = el('div', 'rc-dash-card-header-row');
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Registration Status'));
+    var seatsFigure = el('div', 'rc-dash-card-corner-figure');
+    seatsFigure.style.display = 'none';
+    headerRow.appendChild(seatsFigure);
+    card.appendChild(headerRow);
     var body = el('div', 'rc-regstatus-body');
     card.appendChild(body);
 
@@ -1294,6 +1307,22 @@
 
     var didRetryLoad = false;
     function renderFromData(data) {
+      // Seat count corner figure (2026-09-24, Matt's ask: "n/n SEATS" in
+      // the top-right corner, visible whenever a season is actually open,
+      // whether or not THIS driver is registered for it -- a gauge of how
+      // filled up the season is before signing up). Evaluated once here,
+      // ahead of every branch below, so it stays correct across a load
+      // error, unregistered, season-full, open-to-register, and already-
+      // registered alike, instead of being duplicated in each render*
+      // function. Hidden entirely rather than shown stale/half-known
+      // whenever there's no active season yet, or the fetch itself failed.
+      if (data && data.success && data.hasActiveSeason && typeof data.seatsTotal === 'number') {
+        seatsFigure.textContent = data.seatsTaken + '/' + data.seatsTotal + ' SEATS';
+        seatsFigure.style.display = '';
+      } else {
+        seatsFigure.style.display = 'none';
+      }
+
       if (!data || !data.success) {
         renderLoadError();
         // One silent, automatic retry (not a loop -- didRetryLoad only
