@@ -20,6 +20,7 @@
 
 var TOKEN_KEY = 'raceclub_token';
 var PROFILE_CACHE_KEY = 'raceclub_profile_cache';
+var NOTIF_COUNT_CACHE_KEY = 'raceclub_notif_count_cache';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -32,6 +33,39 @@ function setToken(token) {
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(PROFILE_CACHE_KEY);
+  localStorage.removeItem(NOTIF_COUNT_CACHE_KEY);
+}
+
+// ---------------------------------------------------------------------
+// NOTIFICATION-COUNT CACHE (added 2026-09-24, Matt's ask: "the bell
+// shouldn't flip on and off... once a notification bubble is up, it
+// should persist") -- same shape and purpose as the profile cache just
+// above, but for the bell's unread count specifically. header.js's
+// renderHeader() runs fresh on every full-page navigation (this is a
+// multi-page site, not a SPA), and the real unread count only comes back
+// once its own getNotifications call resolves -- without a cache, that
+// meant the dot was always hidden for a beat on every single page load,
+// then popped in, reading as "flipping on and off." Now renderHeader()
+// paints the dot from this cache INSTANTLY (before the API call even
+// starts), and the real fetch result overwrites it once it resolves --
+// same cache-then-verify shape getProfileCache/setProfileCache already
+// use for the avatar/name. Cleared on logout (clearToken above) so the
+// next login doesn't briefly show a stale count left over from a
+// previous driver on this same browser.
+function setNotifCountCache(count) {
+  try {
+    localStorage.setItem(NOTIF_COUNT_CACHE_KEY, JSON.stringify({ count: Number(count) || 0 }));
+  } catch (err) { /* storage full/unavailable -- bell just starts blank until the real fetch resolves */ }
+}
+
+function getNotifCountCache() {
+  try {
+    var raw = localStorage.getItem(NOTIF_COUNT_CACHE_KEY);
+    var parsed = raw ? JSON.parse(raw) : null;
+    return (parsed && typeof parsed.count === 'number') ? parsed.count : 0;
+  } catch (err) {
+    return 0;
+  }
 }
 
 // ---------------------------------------------------------------------

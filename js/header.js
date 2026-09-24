@@ -280,16 +280,24 @@ var RC_HEADER_ROLE_PILL_CLASS_ = {
 // so the badge never has to stretch wide enough to look like a pill instead
 // of a circle.
 function updateHeaderNotifDot(count) {
-  var dot = document.getElementById('rc-header-bell-dot');
-  if (!dot) return;
   count = count || 0;
-  if (count > 0) {
-    dot.textContent = count > 9 ? '9+' : String(count);
-    dot.style.display = 'flex';
-  } else {
-    dot.textContent = '';
-    dot.style.display = 'none';
+  var dot = document.getElementById('rc-header-bell-dot');
+  if (dot) {
+    if (count > 0) {
+      dot.textContent = count > 9 ? '9+' : String(count);
+      dot.style.display = 'flex';
+    } else {
+      dot.textContent = '';
+      dot.style.display = 'none';
+    }
   }
+  // Every call here is the best-known count at that moment (the initial
+  // cache-paint call included -- writing the same value back is harmless),
+  // so this is the one place that keeps the cache-then-verify cache (see
+  // setNotifCountCache/getNotifCountCache in js/auth.js) current, rather
+  // than sprinkling cache writes across every call site that mutates
+  // currentNotifications.
+  if (typeof setNotifCountCache === 'function') setNotifCountCache(count);
 }
 
 // Shared Edit Profile bridge (2026-09-19, pulled out of the account
@@ -326,6 +334,14 @@ function _rcOpenEditProfileFromHeader() {
 // acknowledged item stays acknowledged across reloads on THIS browser.
 // ---------------------------------------------------------------------
 var RC_NOTIF_ACK_KEY = 'raceclub_acknowledged_notifs';
+
+// Kinds dismissed server-side on bell-close (see _rcDismissShownSeasonNotifs/
+// _rcClearAllNotifications below) rather than via the client-side ack list
+// above -- 'season' is seasonId-keyed, everything else here is
+// notificationId-keyed. Kept as one list so a future kind only needs to be
+// added in this one place. 'results_preliminary'/'results_official' added
+// 2026-09-24.
+var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official'];
 
 function _rcGetAckedNotifIds() {
   try {
@@ -392,6 +408,19 @@ function _rcFetchSeasonNotifications(token, cached) {
             id: 'upgrade-' + n.notificationId, notificationId: n.notificationId, kind: 'upgrade',
             message: n.message,
             dateStamp: _rcFormatNotifDate(n.createdAt)
+          };
+        }
+        if (n.kind === 'results_preliminary' || n.kind === 'results_official') {
+          // Results-posted (2026-09-24) -- links to the Results section,
+          // same as any other "go look at this" item. n.message already
+          // comes fully formed off the server (createResultsNotification_
+          // in Notifications.gs), e.g. "Round 3: Sebring -- Preliminary
+          // Results Posted", so it's used as-is rather than rebuilt here.
+          return {
+            id: n.kind + '-' + n.notificationId, notificationId: n.notificationId, kind: n.kind,
+            message: n.message,
+            dateStamp: _rcFormatNotifDate(n.createdAt),
+            section: 'results', linkLabel: 'View Results'
           };
         }
         return {
@@ -666,6 +695,17 @@ function renderHeader(opts) {
   html += '</nav>';
 
   mount.innerHTML = html;
+
+  // Cache-then-verify bell paint (2026-09-24, Matt's ask) -- paints the
+  // unread dot INSTANTLY from the last-known count (see
+  // setNotifCountCache/getNotifCountCache in js/auth.js) before the real
+  // getNotifications call below even starts, so the dot doesn't visibly
+  // flip off-then-on on every full-page navigation. The real fetch result
+  // (in _rcRefreshNotifications further down) overwrites both the DOM and
+  // the cache once it resolves, correcting this guess either way.
+  if (token && typeof getNotifCountCache === 'function') {
+    updateHeaderNotifDot(getNotifCountCache());
+  }
 
   if (token) {
     var toggle = document.getElementById('rc-header-account-toggle');
@@ -949,11 +989,15 @@ function renderHeader(opts) {
       // 'welcome' swept in alongside 'upgrade' (2026-09-19) -- both are
       // targeted, notificationId-keyed rows dismissed the exact same way
       // server-side (see handleDismissNotifications, DataCache.gs).
-      var shownUpgrade = currentNotifications.filter(function (n) { return n.kind === 'upgrade' || n.kind === 'welcome'; });
+      // 'results_preliminary'/'results_official' (2026-09-24) join the
+      // same bucket -- also notificationId-keyed, also dismissed on close.
+      var shownUpgrade = currentNotifications.filter(function (n) {
+        return n.kind === 'upgrade' || n.kind === 'welcome' || n.kind === 'results_preliminary' || n.kind === 'results_official';
+      });
       if (!shownSeason.length && !shownUpgrade.length && !clearHistory) return;
       var seasonIds = shownSeason.map(function (n) { return n.seasonId; });
       var notificationIds = shownUpgrade.map(function (n) { return n.notificationId; });
-      currentNotifications = currentNotifications.filter(function (n) { return n.kind !== 'season' && n.kind !== 'upgrade' && n.kind !== 'welcome'; });
+      currentNotifications = currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) === -1; });
       var newHistory = shownSeason.map(function (n) {
         return { message: n.message.replace('is open for', 'opened for'), dateStamp: n.dateStamp };
       }).concat(shownUpgrade.map(function (n) {
@@ -981,9 +1025,9 @@ function renderHeader(opts) {
     // already-dismissed item with nothing newer to bump it off its 5-slot
     // cap was sitting there indefinitely with no way to get rid of it.
     function _rcClearAllNotifications() {
-      currentNotifications.filter(function (n) { return n.kind !== 'season' && n.kind !== 'upgrade' && n.kind !== 'welcome'; })
+      currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) === -1; })
         .forEach(function (n) { _rcAckNotif(n.id); });
-      currentNotifications = currentNotifications.filter(function (n) { return n.kind === 'season' || n.kind === 'upgrade' || n.kind === 'welcome'; });
+      currentNotifications = currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) !== -1; });
       currentNotifHistory = [];
       _rcRenderNotifList();
       updateHeaderNotifDot(currentNotifications.length);
@@ -1031,6 +1075,9 @@ function renderHeader(opts) {
         currentNotifications = season.active;
         currentNotifHistory = season.history;
         _rcRenderNotifList();
+        // Also corrects the count cache with the real value (see
+        // updateHeaderNotifDot) -- overwrites the guess the bell was
+        // painted with right after mount.innerHTML above.
         updateHeaderNotifDot(currentNotifications.length);
       });
     }
