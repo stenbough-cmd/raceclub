@@ -143,7 +143,14 @@
         <span class="rc-startlight"></span>
         <span class="rc-startlight"></span>
       </div>
-      <div class="rc-loading-text">Loading your dashboard&hellip;</div>
+      <!-- "Loading your account..." (2026-09-24, Matt's ask) -- this is the
+           page-level splash shown while Account.html verifies the session,
+           before ANY section (Dashboard or otherwise) has rendered, so
+           "account" describes it more accurately than "dashboard" -- the
+           Dashboard section's own lazy-load spinner (buildPageSpinner in
+           renderDashboardSection) is a separate element and keeps saying
+           "Loading your dashboard..." unchanged. -->
+      <div class="rc-loading-text">Loading your account&hellip;</div>
     </div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
 
@@ -3491,7 +3498,7 @@
     { icon: ICON_CAREER, title: 'Career',
       body: 'Your season by season record: every car, team, and result the league has on file for you, newest season first.' },
     { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 48 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+      body: 'Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
     { icon: ICON_BELL, title: 'Notifications',
       body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
@@ -5159,7 +5166,7 @@
         openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { renderProtestsSection(token); });
       });
     } else {
-      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 48-hour filing window has closed for all of them.');
+      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
     }
     actionRow.appendChild(fileBtn);
     panel.appendChild(actionRow);
@@ -5437,7 +5444,7 @@
   // driver/infraction/description are all editable. Loads its own lap
   // count + driver roster via getProtestEditOptions (Protests.gs) rather
   // than reusing getProtestFilingOptions's round list, since editing must
-  // stay possible after that list's 48-hour filing window has closed --
+  // stay possible after that list's 24-hour filing window has closed --
   // right up until the round's results are finalized or a ruling lands,
   // same gate buildProtestHistoryItem's canModify check already applies
   // before this ever gets a chance to open.

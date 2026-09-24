@@ -331,9 +331,9 @@ var RC_NOTIF_ACK_KEY = 'raceclub_acknowledged_notifs';
 // _rcClearAllNotifications below) rather than via the client-side ack list
 // above -- 'season' is seasonId-keyed, everything else here is
 // notificationId-keyed. Kept as one list so a future kind only needs to be
-// added in this one place. 'results_preliminary'/'results_official' added
-// 2026-09-24.
-var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official'];
+// added in this one place. 'results_preliminary'/'results_official' and
+// 'round_underway'/'season_ended' all added 2026-09-24.
+var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official', 'round_underway', 'season_ended'];
 
 function _rcGetAckedNotifIds() {
   try {
@@ -413,6 +413,33 @@ function _rcFetchSeasonNotifications(token, cached) {
             message: n.message,
             dateStamp: _rcFormatNotifDate(n.createdAt),
             section: 'results', linkLabel: 'View Results'
+          };
+        }
+        if (n.kind === 'round_underway') {
+          // "Round N at Track is underway!" (2026-09-24) -- fires once a
+          // round's real-world scheduled start time passes (see
+          // checkRoundStartNotifications, Notifications.gs). Links to the
+          // Protests page, where the 24-hour filing window this message
+          // itself announces actually lives.
+          return {
+            id: 'round_underway-' + n.notificationId, notificationId: n.notificationId, kind: 'round_underway',
+            message: n.message,
+            dateStamp: _rcFormatNotifDate(n.createdAt),
+            section: 'protests', linkLabel: 'File a Protest'
+          };
+        }
+        if (n.kind === 'season_ended') {
+          // "Season N: Name championship results are in!" (2026-09-24) --
+          // fires once End Season finishes clearing that season's other
+          // notifications (see handleAdminArchiveSeason, Seasons.gs).
+          // Links to the public League Hub page (league.html), not an
+          // Account.html section -- see the n.section === 'external'
+          // branch in _rcRenderNotifList below.
+          return {
+            id: 'season_ended-' + n.notificationId, notificationId: n.notificationId, kind: 'season_ended',
+            message: n.message,
+            dateStamp: _rcFormatNotifDate(n.createdAt),
+            section: 'external', href: 'league.html', linkLabel: 'League Hub'
           };
         }
         return {
@@ -929,6 +956,14 @@ function renderHeader(opts) {
                 closeNotifMenu();
                 _rcOpenEditProfileFromHeader();
               });
+            } else if (n.section === 'external' && n.href) {
+              // 'season_ended' (2026-09-24) -- links to a standalone page
+              // outside Account.html entirely (league.html), so this just
+              // navigates for real, no Account.html#section hash and no
+              // rcNavigateToSection bridge (there's no in-page section to
+              // switch to -- League Hub is its own page).
+              linkEl.href = n.href;
+              linkEl.addEventListener('click', function () { closeNotifMenu(); });
             } else {
               linkEl.href = 'Account.html#' + n.section;
               linkEl.addEventListener('click', function (evt) {
@@ -999,10 +1034,14 @@ function renderHeader(opts) {
       // 'welcome' swept in alongside 'upgrade' (2026-09-19) -- both are
       // targeted, notificationId-keyed rows dismissed the exact same way
       // server-side (see handleDismissNotifications, DataCache.gs).
-      // 'results_preliminary'/'results_official' (2026-09-24) join the
-      // same bucket -- also notificationId-keyed, also dismissed on close.
+      // 'results_preliminary'/'results_official'/'round_underway'/
+      // 'season_ended' (2026-09-24) all join the same bucket -- also
+      // notificationId-keyed, also dismissed on close. Derived from the
+      // shared _RC_NOTIF_DISMISS_KINDS_ list (minus 'season', which is
+      // seasonId-keyed and handled separately above) so a future kind only
+      // needs to be added in that one place.
       var shownUpgrade = currentNotifications.filter(function (n) {
-        return n.kind === 'upgrade' || n.kind === 'welcome' || n.kind === 'results_preliminary' || n.kind === 'results_official';
+        return n.kind !== 'season' && _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) !== -1;
       });
       if (!shownSeason.length && !shownUpgrade.length && !clearHistory) return;
       var seasonIds = shownSeason.map(function (n) { return n.seasonId; });

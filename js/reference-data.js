@@ -359,12 +359,15 @@ var SUGGESTED_TIER_BY_INFRACTION = {
 };
 
 // How long after a round's results are imported a driver can still file a
-// protest for it (Matt's rule: "48 hours ... after that, they can no longer
-// submit a protest for that race"). Measured against that Round's Sessions
-// row(s) ImportedAt, the same timestamp Ingestion.gs stamps on every
-// session it writes -- see protestWindowStillOpen()/its backend mirror in
-// DataCache.gs.
-var PROTEST_WINDOW_HOURS = 48;
+// protest for it -- shortened 48 -> 24 (2026-09-24, Matt's call: "no one
+// is going to submit a protest from a fun, casual league 2 days later.
+// Plus it lets me make the results official sooner"). Measured against
+// that Round's Sessions row(s) ImportedAt, the same timestamp Ingestion.gs
+// stamps on every session it writes -- see the real source of truth,
+// PROTEST_WINDOW_HOURS_ in Protests.gs (this copy isn't currently read by
+// anything client-side, kept only so this file's reference constants stay
+// in sync with the backend's).
+var PROTEST_WINDOW_HOURS = 24;
 
 // sponsorTermsTooltip() removed entirely 2026-09-17 -- V1 scope cut,
 // Sponsorship system out of the site. See season-1-mvp-scope.md.
