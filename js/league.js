@@ -1433,6 +1433,14 @@ function _rclRenderCalendar(hub) {
     row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
+    // Day/date/time the race starts -- plain text above the event title
+    // (2026-09-24, Matt's ask: "move the day, date and time the race
+    // starts above the event title, remove it from a pill so it's just
+    // text"), not a pill any more. The time pill below now carries only
+    // the length (prefixed with the tier name).
+    if (entry.startUtc) {
+      rowBody.appendChild(_rclEl('div', 'rcl-cal-datetime', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
+    }
     var topLine = _rclEl('div', 'rcl-cal-row-top');
     // "<event name> at <track name>: <layout>" as one combined primary
     // line, three independently-styled pieces (2026-09-24, Matt's ask,
@@ -1478,19 +1486,17 @@ function _rclRenderCalendar(hub) {
     rowBody.appendChild(topLine);
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');
-    // Time + length -- now the same gray outline pill as In-Game/Weather
-    // below (2026-09-19, Matt's call: "make the date time and length pill
-    // less prominent. It overshadows the rest of the race details by a
-    // lot") -- was the one solid light-fill chip in this row, which read
-    // much louder against the dark page than the plain track/event text
-    // next to it. The `true` third arg is the same outline switch In-
-    // Game/Weather already use (see _rclChip above).
-    var timeTierParts = [];
-    if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
+    // Length pill -- same gray outline pill as In-Game/Weather below
+    // (2026-09-19, Matt's call: "make the date time and length pill less
+    // prominent"). Race start date/time moved out of this pill entirely
+    // (2026-09-24, see the plain-text .rcl-cal-datetime line above) --
+    // this chip now leads with the tier name instead, e.g. "SPRINT 20
+    // mins" (Matt's exact example). The `true` third arg is the same
+    // outline switch In-Game/Weather already use (see _rclChip above).
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
-    if (lengthMin) timeTierParts.push(lengthMin + ' Min');
-    if (timeTierParts.length) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · '), true));
+    if (lengthMin) {
+      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier.toUpperCase() + ' ') : '';
+      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, tierPrefix + lengthMin + ' mins', true));
     }
     // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
     // 2026-09-21, Matt's follow-up ask), race time only -- practice/
@@ -1951,19 +1957,26 @@ function _rclBuildFormatStats(hub) {
   var row1 = [];
   if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
   if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-  // Race Time -- static "Varies" bubble, always shown (2026-09-24, Matt's
-  // ask), unlike every other bubble here which is conditioned on actual
-  // data. Race length genuinely does vary by round/tier (see
+  // Qualify Type (added 2026-09-24, Matt's ask: "add a bubble Qualify
+  // Type (private or public) in between Qualify and Race Length") --
+  // hub.privateQualifying is the season's raw 'Yes'/'No' field (see
+  // handleGetLeagueHub, Website.gs), shown here as Private/Public.
+  if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
+  // Race Length -- static "Varies" bubble, always shown (2026-09-24,
+  // Matt's ask), unlike every other bubble here which is conditioned on
+  // actual data. Race length genuinely does vary by round/tier (see
   // hub.pointsTables' own per-tier durations in the separate Points
   // Tables popup), so there's no single number to show here -- this just
-  // says so plainly.
-  row1.push({ value: 'Varies', label: 'Race Time' });
+  // says so plainly. Renamed from "Race Time" to "Race Length" (2026-09-24,
+  // Matt's ask).
+  row1.push({ value: 'Varies', label: 'Race Length' });
 
   var row2 = [];
   if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
   if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
   if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
+  // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
+  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
   if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
   if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
   if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });

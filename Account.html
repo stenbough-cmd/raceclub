@@ -1401,11 +1401,17 @@
     var row1 = [], row2 = [];
     if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
     if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-    row1.push({ value: 'Varies', label: 'Race Time' });
+    // Qualify Type (2026-09-24, Matt's ask), between Qualify and Race
+    // Length -- same hub.privateQualifying field league.js's own
+    // _rclBuildFormatStats reads.
+    if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
+    // "Race Length" (was "Race Time", 2026-09-24, Matt's ask).
+    row1.push({ value: 'Varies', label: 'Race Length' });
     if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
     if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
     if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
+    // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
+    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
     if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
     if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
     if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
@@ -1585,8 +1591,19 @@
       var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
       if (existing) existing.remove();
       if (!carClass) return;
-      var figure = el('div', 'rc-dash-card-corner-figure');
-      figure.appendChild(_rcClassAbbrevPill(carClass));
+      // rc-cs-corner-figure (2026-09-24, Matt's ask: "increase the size of
+      // the class pill in the CURRENT SEAT card and make it vertically
+      // centered with 'CURRENT SEAT' header") -- overrides the header
+      // row's default baseline alignment (shared with every other
+      // Dashboard card's own corner figure) for just this one, and the
+      // pill itself gets a size bump via .rc-cs-class-pill below, both
+      // scoped so Registration Status/Next Race's own corner figures and
+      // every other .rc-badge-chip-abbrev use on the site (e.g. league.js's
+      // report pill) are untouched.
+      var figure = el('div', 'rc-dash-card-corner-figure rc-cs-corner-figure');
+      var pill = _rcClassAbbrevPill(carClass);
+      pill.classList.add('rc-cs-class-pill');
+      figure.appendChild(pill);
       headerRow.appendChild(figure);
     }
 
@@ -4575,30 +4592,6 @@
     return (points || []).map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
   }
 
-  // Class pills row -- built once, reused wherever a season's classes need
-  // to show as a row of pills. Moved into the Calendar page's own season
-  // header (2026-09-19, top-right corner, same treatment as a Dashboard
-  // card's corner figure) rather than living inside Season Settings.
-  // Returns null when the season has no classes selected, so callers can
-  // skip appending it.
-  function buildClassPillsRow(classes) {
-    var classKeys = Object.keys(classes || {}).filter(function (k) { return classes[k]; });
-    if (!classKeys.length) return null;
-    var classesRow = el('div', 'rc-cal-classes');
-    // MULTICLASS/SINGLE CLASS pill (2026-09-19, Matt's call) -- sits
-    // before the class pills themselves, outline style so it reads as a
-    // label about the row rather than one more class in it. See
-    // .rc-cal-format-pill, css/style.css.
-    classesRow.appendChild(el('span', 'rc-cal-format-pill', classKeys.length > 1 ? 'Multiclass' : 'Single Class'));
-    classKeys.forEach(function (k) {
-      var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
-      var pill = el('span', 'rc-cal-class-pill', escapeHtml(_rcClassPillLabel(k)));
-      pill.style.background = 'var(' + colorVar + ')';
-      classesRow.appendChild(pill);
-    });
-    return classesRow;
-  }
-
   // Compact "MMM D, YYYY" date, no weekday/time -- for the Season Format
   // panel's Start/Stop pill below, where formatRaceDateTime's fuller
   // weekday+time format would be too long for a small mini-stat pill.
@@ -4673,6 +4666,15 @@
 
     var body = el('div', 'rc-cal-race-body');
 
+    // Day/date/time the race starts -- plain text above the event title
+    // (2026-09-24, Matt's ask: "move the day, date and time the race
+    // starts above the event title, remove it from a pill so it's just
+    // text"), not a pill any more. The meta row's own chip below now
+    // carries only race length (see timeTierParts further down).
+    if (entry.startUtc) {
+      body.appendChild(el('div', 'rc-cal-race-datetime', escapeHtml(formatRaceDateTime(entry.startUtc, driverTz))));
+    }
+
     var head = el('div', 'rc-cal-race-head');
     // "<event name> at <track name>: <layout>" as one combined line, same
     // three-piece shape league.html's own .rcl-cal-event uses (event name
@@ -4720,17 +4722,16 @@
     head.appendChild(statusWrap);
     body.appendChild(head);
 
-    // Meta chip row -- IRL date/time + length, In-Game Event Time,
-    // Weather, and (when set) a Password Override chip, same "one row of
-    // small pills under the headline" shape league.html's own .rcl-cal-
-    // meta row uses.
+    // Meta chip row -- race length, In-Game Event Time, Weather, and
+    // (when set) a Password Override chip, same "one row of small pills
+    // under the headline" shape league.html's own .rcl-cal-meta row uses.
+    // Race start date/time moved out of here (2026-09-24, see the plain-
+    // text line above) -- this chip now carries only the length/tier.
     var metaRow = el('div', 'rc-cal-race-meta');
-    var timeTierParts = [];
-    if (entry.startUtc) timeTierParts.push(formatRaceDateTime(entry.startUtc, driverTz));
     if (!isSpecial && entry.raceLengthMinutes) {
-      timeTierParts.push(entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min'));
+      var lengthText = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min');
+      metaRow.appendChild(calStat(ICON_CALENDAR, lengthText, 'Race length'));
     }
-    if (timeTierParts.length) metaRow.appendChild(calStat(ICON_CALENDAR, timeTierParts.join(' · '), 'Date, time and race length'));
     if (entry.igRaceStart) metaRow.appendChild(calStat(ICON_FLAG, 'In-Game Event Time ' + entry.igRaceStart, 'The in-game race start time'));
     metaRow.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
     if (entry.passwordOverride) {
@@ -4738,17 +4739,10 @@
     }
     body.appendChild(metaRow);
 
-    // Practice/Qualifying in-game times -- Account-only info (league.html's
-    // public calendar never shows these, only the race start time above)
-    // that a driver still needs, so it stays as its own line underneath
-    // the meta chips rather than being dropped for the sake of matching
-    // league.html exactly.
-    if (entry.igPracticeStart || entry.igQualifyStart) {
-      var igExtras = [];
-      if (entry.igPracticeStart) igExtras.push('Practice ' + escapeHtml(entry.igPracticeStart));
-      if (entry.igQualifyStart) igExtras.push('Qualifying ' + escapeHtml(entry.igQualifyStart));
-      body.appendChild(el('div', 'rc-cal-race-igextra', igExtras.join(' · ')));
-    }
+    // Practice/Qualifying in-game times removed (2026-09-24, Matt's ask:
+    // "remove the practice and qualify in-game time" from the Dashboard
+    // calendar popup) -- Account.html's raceCard no longer shows these at
+    // all.
 
     card.appendChild(body);
     return card;

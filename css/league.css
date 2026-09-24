@@ -450,9 +450,13 @@ body.rc-league-page {
 .rcl-hero-stats-label {
   display: inline-flex;
   align-items: center;
-  background: #d9dadd;
-  color: #1c1d20;
-  border: 1px solid #b6b8bd;
+  /* Graphite fill (2026-09-24, Matt's ask), matching Account.html's own
+     .rc-seasonfmt-group-label -- deliberately its own rule, not folded
+     into .rcl-pill-label (Bonus Points keeps the plain light-gray pill;
+     see the comment above .rcl-pill-label). */
+  background: var(--rc-graphite);
+  color: var(--rc-white);
+  border: 1px solid var(--rc-graphite);
   border-radius: 5px;
   padding: 3px 10px;
   font-family: var(--rc-font-heading);
@@ -463,6 +467,11 @@ body.rc-league-page {
   margin-bottom: 10px;
 }
 .rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Space between row1 and row2 within a group (2026-09-24, Matt's catch:
+   "add a space in between the bubbles on the 1st and 2nd row... they're
+   currently touching") -- same rule Account.html's own
+   .rc-seasonfmt-stats-row already carries; league.css was just missing it. */
+.rcl-hero-stats-row + .rcl-hero-stats-row { margin-top: 8px; }
 /* Smaller, center-aligned bubbles (2026-09-19, Matt's call, in the Season
    Details popup: "reduce the size of the details bubbles so they don't
    take up so much space and center align the values in each bubble") --
@@ -1233,6 +1242,9 @@ body.rc-league-page {
   color: #e0b64c;
 }
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
+/* Day/date/time the race starts -- plain text above the event title
+   (2026-09-24, Matt's ask), not a pill. Sits above .rcl-cal-row-top. */
+.rcl-cal-datetime { font-size: 12px; font-weight: 600; color: var(--rcl-ink-dim); margin-bottom: 3px; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .rcl-cal-event { font-size: 16.5px; }
 .rcl-cal-event-name { font-weight: 800; color: var(--rcl-ink); }
@@ -1324,6 +1336,7 @@ body.rc-league-page {
    event inside .rcl-cal-row-top), so the COMPLETED/results phrase stays
    fully legible against the faded-out row around it. */
 .rcl-cal-row-finished .rcl-cal-round,
+.rcl-cal-row-finished .rcl-cal-datetime,
 .rcl-cal-row-finished .rcl-cal-event,
 .rcl-cal-row-finished .rcl-cal-track,
 .rcl-cal-row-finished .rcl-cal-meta {

@@ -2257,14 +2257,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    a little low against the number. align-items: center here lines the two
    up by their actual vertical centers instead. */
 .rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-/* Career card's class pills row (2026-09-20) -- buildClassPillsRow's own
-   .rc-cal-classes has a 10px margin-top meant for sitting under something
-   (its original home, Season Format); inline in this header row it needs
-   none. align-self: center overrides the row's own align-items: baseline
-   (above, tuned for the corner-figure's TEXT baseline) so the pills line
-   up on their vertical center against the title instead of sitting low,
-   same fix as .rc-cal-season-head's own align-items: center override. */
-.rc-dash-card-header-row .rc-cal-classes { margin-top: 0; align-self: center; }
+/* Current Seat's class-pill corner figure only (2026-09-24, Matt's ask):
+   align-self: center overrides the header row's own align-items: baseline
+   (above) so the pill lines up on its vertical center against "CURRENT
+   SEAT" instead of sitting on the title's text baseline. The pill itself
+   is bumped up from .rc-badge-chip-abbrev's base 2px 6px/12px size --
+   scoped to this one class so league.js's own report pill (which also
+   uses .rc-badge-chip-abbrev) stays untouched. */
+.rc-cs-corner-figure { align-self: center; }
+.rc-cs-class-pill.rc-badge-chip-abbrev { padding: 4px 9px; font-size: 15px; }
 
 /* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
    checkered-flag corner that fades toward the card's center, a red
@@ -4383,9 +4384,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-seasonfmt-group-label {
   display: inline-flex;
   align-items: center;
-  background: var(--rc-offwhite);
-  color: var(--rc-carbon);
-  border: 1px solid var(--rc-silver);
+  /* Graphite fill (2026-09-24, Matt's ask) instead of the plain offwhite/
+     silver-bordered pill every other group label on the site uses -- same
+     dark-neutral token member badges use (--rc-graphite, see
+     .rc-badge-graphite), white text for contrast against it. */
+  background: var(--rc-graphite);
+  color: var(--rc-white);
+  border: 1px solid var(--rc-graphite);
   border-radius: 5px;
   padding: 3px 10px;
   font-family: var(--rc-font-heading);
@@ -4993,11 +4998,6 @@ body.rc-modal-scroll-locked {
    noticeably low against the title's own cap-height/line-box. */
 .rc-cal-season-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 .rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
-/* Overrides .rc-cal-classes' own margin-top (below) -- that spacing is for
-   when the pills sit under something; inline in the header row, they need
-   none. */
-.rc-cal-season-head .rc-cal-classes { margin-top: 0; }
-
 /* Season-wide settings block (server password, classes, points tables,
    drop weeks, race day/frequency, track limits, private qualifying) --
    sits below the season name, above the race list, per Matt's call.
@@ -5029,39 +5029,6 @@ body.rc-modal-scroll-locked {
    hover tooltip via withTooltip rather than widening the pill. */
 .rc-cal-format-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rc-cal-format-list + .rc-cal-format-list { margin-top: 10px; }
-
-.rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-/* Rounded rectangle, not an oval pill (Matt's call: every class badge on
-   the site uses this one shape). */
-.rc-cal-class-pill {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rc-white);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-/* MULTICLASS/SINGLE CLASS pill (added 2026-09-19, Matt's call: "add a
-   black border pill the same size as the class pills... put the pill
-   before the class pills") -- an outline treatment, not a solid fill
-   (that's what the colored class pills already do), so it reads as a
-   label about the pills that follow rather than one more of them.
-   Padding trimmed 1px per side vs. .rc-cal-class-pill to net out to the
-   same rendered size once its own 1px border is added on top. */
-.rc-cal-format-pill {
-  display: inline-block;
-  padding: 2px 7px;
-  border: 1px solid var(--rc-carbon);
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rc-carbon);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: transparent;
-}
 
 .rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
 
@@ -5206,21 +5173,20 @@ body.rc-modal-scroll-locked {
    in-game line, but deliberately NOT the status word or its results note,
    so the COMPLETED/results phrase stays fully legible against the row. */
 .rc-cal-race.rc-cal-finished .rc-cal-round-bar,
+.rc-cal-race.rc-cal-finished .rc-cal-race-datetime,
 .rc-cal-race.rc-cal-finished .rc-cal-race-event,
-.rc-cal-race.rc-cal-finished .rc-cal-race-meta,
-.rc-cal-race.rc-cal-finished .rc-cal-race-igextra {
+.rc-cal-race.rc-cal-finished .rc-cal-race-meta {
   opacity: 0.5;
 }
 
-/* Meta chip row -- date/time+length, In-Game Event Time, Weather, and
-   (when set) Password Override, reusing the site's shared .rc-cal-stat
-   chip (below) same as every other pill row on the site. */
-.rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
+/* Day/date/time the race starts -- plain text above the event title
+   (2026-09-24, Matt's ask), not a pill. Sits above .rc-cal-race-head. */
+.rc-cal-race-datetime { font-size: 12px; font-weight: 600; color: var(--rc-steel); margin-bottom: 4px; }
 
-/* Practice/Qualifying in-game times -- Account-only info league.html's
-   public calendar never shows, kept as its own quiet line under the meta
-   chips. */
-.rc-cal-race-igextra { font-size: 12px; color: var(--rc-steel); margin-top: 8px; }
+/* Meta chip row -- race length, In-Game Event Time, Weather, and (when
+   set) Password Override, reusing the site's shared .rc-cal-stat chip
+   (below) same as every other pill row on the site. */
+.rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
 
 
 .rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
