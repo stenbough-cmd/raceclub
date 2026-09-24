@@ -97,13 +97,16 @@ var RC_FETCH_RETRY_DELAYS_MS = [700, 2500];
 // elsewhere in this codebase) while the retry above adds a second request
 // to the very queue that caused the delay. For a one-off user action
 // that's still the right trade (see the 2026-09-14 report above). For a
-// SILENT, UNPROMPTED BACKGROUND POLL -- today, only the header's 45s
-// notification check (see _rcRefreshNotifications/header.js) -- it's pure
-// downside: a missed tick is invisible to the driver (the next poll 45s
-// later picks up whatever changed) but every retried tick compounds the
-// exact congestion that made it slow in the first place. That poll now
-// passes options.noRetry (see fetchApi's own doc comment below) to opt out
-// of this whole retry path.
+// SILENT, UNPROMPTED BACKGROUND POLL it's pure downside: a missed tick is
+// invisible to the driver (the next poll picks up whatever changed) but
+// every retried tick compounds the exact congestion that made it slow in
+// the first place. options.noRetry (see fetchApi's own doc comment below)
+// opts a caller out of this whole retry path -- the header's old 45s
+// notification-bell poll used to be the one caller of this; the bell
+// itself is gone (2026-09-24, Matt's call: eliminate the in-app
+// notification system entirely, moving to an external Discord bot), but
+// noRetry is left in place as general infrastructure for any future
+// silent background poll.
 
 function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
   // AbortController -- not supported on truly ancient browsers, but every
@@ -159,13 +162,16 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
  *                   normal 20s budget.
  *   options.noRetry: GET only -- skips the automatic retry-on-timeout below
  *                   entirely (single attempt, same as a POST). For a
- *                   silent background poll (the header's 45s notification
- *                   check is the one caller of this today) a missed tick
- *                   costs nothing -- another one fires 45s later anyway --
- *                   so retrying under load only adds a second competing
+ *                   silent background poll a missed tick costs nothing --
+ *                   another one fires on the next tick anyway -- so
+ *                   retrying under load only adds a second competing
  *                   request to an already-congested queue instead of
  *                   helping (2026-09-23, see the retry-storm comment above
- *                   RC_FETCH_RETRY_DELAYS_MS).
+ *                   RC_FETCH_RETRY_DELAYS_MS). No caller passes this today
+ *                   (the header's old 45s notification-bell poll was the
+ *                   one caller, removed 2026-09-24 along with the whole
+ *                   in-app notification system) -- left in place for the
+ *                   next silent background poll that needs it.
  *
 
  * IMPORTANT: POST requests use Content-Type: text/plain;charset=utf-8, NOT

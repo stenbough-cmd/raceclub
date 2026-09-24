@@ -83,20 +83,15 @@
   so the header falls back to the logged-out look rather than asserting a
   session it was never able to verify.
 
-  NOTIFICATION BELL: a standalone bell icon sits to the LEFT of the
-  avatar, with its own dropdown and its own Apple-style red dot --
-  deliberately separate from the avatar's own account-menu dropdown, so
-  "there's something to react to" and "here's your account menu" stay two
-  unrelated ideas. Every renderHeader() call fetches its own notifications
-  in the background. The admin "an account is waiting on your approval"
-  type that used to live here (sourced from adminListPendingAccounts,
-  client-side-acknowledged via localStorage) is gone entirely (2026-09-19,
-  Matt's call: no more admin-approval queue -- Members are grouped by role
-  via adminListDrivers' hasSeat flag instead, see Account.html). What's
-  left: 'season', 'upgrade', and 'welcome' ("Choose an avatar!", added
-  2026-09-19) -- all server-side, Notifications sheet-backed, see
-  NEW-SEASON NOTIFICATIONS below. The old sponsors notification type is
-  also gone (2026-09-17 V1 scope cut, Sponsorship system out of the site).
+  NOTIFICATION BELL / NEW-SEASON NOTIFICATIONS: the whole in-app
+  notification bell system (the standalone bell icon that used to sit to
+  the LEFT of the avatar, its dropdown, its red unread dot, the
+  season/upgrade/welcome/results/season-ended notification kinds, and the
+  server-side Notifications sheet + each driver's own NotificationState
+  backing it) was removed in full (2026-09-24, Matt's call: eliminate the
+  in-app notification system entirely, moving to an external Discord bot).
+  The avatar's own account-menu dropdown, described next, is unaffected --
+  it was always a separate control.
 
   ACCOUNT DROPDOWN STAYS RED WHILE OPEN (this pass): the avatar used to
   only turn red on :hover. Now .rc-header-account-toggle[aria-expanded]
@@ -108,33 +103,6 @@
   mouseenter/mouseleave across a set of elements and only fires its close
   callback once none of them are hovered, with a short delay so a normal
   mouse movement across the gap between button and menu doesn't trip it.
-  The bell dropdown behaves the same way (opens on click, auto-closes on
-  hover-off) -- both toggles are wired through the same helper.
-
-  NEW-SEASON NOTIFICATIONS (2026-08-30, Matt's ask): a notification type
-  backed by a real server-side Notifications sheet + each driver's own
-  NotificationState -- see handleGetNotifications/handleDismissNotifications
-  in DataCache.gs. Fires the moment a season actually becomes open for
-  registration; visible to Driver role and above (Prospects have nothing to
-  register for yet, same gate the Registration Status/Current Seat dashboard
-  cards already use). Each item shows a date stamp and has NO OK button --
-  it dismisses itself automatically once
-  the driver has actually seen it: closing the bell dropdown (not opening
-  it -- see below) dismisses every season notification that was showing,
-  moving it into that driver's own capped-at-5 history list (shown further
-  down the dropdown, muted, under a "Recently Opened" divider). Registering
-  for that season dismisses it the same way even if the bell was never
-  opened -- Account.html's registration flow calls the global
-  rcDismissSeasonNotification(seasonId) helper below on success, which
-  reaches into whatever bell state currently exists (or calls the API
-  directly if the header hasn't rendered yet).
-  Dismissal is deliberately wired to CLOSE, not the click that opens the
-  bell -- dismissing at open time would clear the list out from under the
-  driver while they're still reading it, since both happen in the same
-  render pass. Practically this is still "click the bell" from the
-  driver's side (open, read, close -- or click away, which closes it the
-  same way), just sequenced so the content doesn't disappear while it's on
-  screen.
 
   TOAST NOTIFICATIONS (new this pass): showToast(message, type, durationMs)
   is the one sitewide way any page shows a transient result/status message
@@ -280,31 +248,14 @@ var RC_HEADER_ROLE_PILL_CLASS_ = {
   Prospect: 'rc-badge-role-prospect'
 };
 
-// The bell's notification badge -- shown, with the actual unread count as
-// its text, whenever there's at least one unacknowledged notification
-// (2026-09-01, Matt's call: "make the bubble larger and add a notification
-// number to it" -- this used to just be a plain dot with no count, toggled
-// by a boolean). Accepts a number now; anything above 9 collapses to "9+"
-// so the badge never has to stretch wide enough to look like a pill instead
-// of a circle.
-function updateHeaderNotifDot(count) {
-  var dot = document.getElementById('rc-header-bell-dot');
-  if (!dot) return;
-  count = count || 0;
-  if (count > 0) {
-    dot.textContent = count > 9 ? '9+' : String(count);
-    dot.style.display = 'flex';
-  } else {
-    dot.textContent = '';
-    dot.style.display = 'none';
-  }
-}
+// updateHeaderNotifDot (the bell's unread-count badge) removed (2026-09-24,
+// Matt's call: eliminate the in-app notification bell system entirely,
+// moving to an external Discord bot).
 
 // Shared Edit Profile bridge (2026-09-19, pulled out of the account
-// dropdown's click handler so the "Choose an avatar!" notification link
-// -- see the 'welcome' kind in _rcFetchSeasonNotifications/
-// _rcRenderNotifList below -- can open the same modal instead of
-// navigating to an Account.html section). window.rcOpenEditProfileModal
+// dropdown's click handler so other callers can open the same modal
+// instead of navigating to an Account.html section).
+// window.rcOpenEditProfileModal
 // is the bridge Account.html sets once its own profile/token are loaded
 // (see buildFullProfileUI there); call it directly when present -- no
 // navigation, the modal just opens in place. On index.html/league.html
@@ -328,239 +279,32 @@ function _rcOpenEditProfileFromHeader() {
 }
 
 // ---------------------------------------------------------------------
-// NOTIFICATION BELL -- see the header comment above for the full
-// rationale. Acknowledgement is tracked client-side (no backend
-// notifications table exists yet), keyed by notification id, so an
-// acknowledged item stays acknowledged across reloads on THIS browser.
+// NOTIFICATION BELL -- the whole in-app notification bell system (bell
+// icon, dropdown, ack/dismiss tracking, the season/upgrade/welcome/
+// results/season-ended fetch below, and its supporting controller/cache
+// plumbing) was removed in full here (2026-09-24, Matt's call: eliminate
+// the in-app notification system entirely, moving to an external Discord
+// bot). What used to live in this section: RC_NOTIF_ACK_KEY,
+// _RC_NOTIF_DISMISS_KINDS_, _rcGetAckedNotifIds/_rcAckNotif,
+// _rcFetchSeasonNotifications/_rcFormatNotifDate, _rcNotifController,
+// the fetch dedupe window, and the globally-exposed
+// rcDismissSeasonNotification()/rcRefreshNotificationsNow() helpers
+// Account.html's registration flow used to call.
 // ---------------------------------------------------------------------
-var RC_NOTIF_ACK_KEY = 'raceclub_acknowledged_notifs';
-
-// Kinds dismissed server-side on bell-close (see _rcDismissShownSeasonNotifs/
-// _rcClearAllNotifications below) rather than via the client-side ack list
-// above -- 'season' is seasonId-keyed, everything else here is
-// notificationId-keyed. Kept as one list so a future kind only needs to be
-// added in this one place. 'results_preliminary'/'results_official' and
-// 'season_ended' added 2026-09-24. 'round_underway' (and the trigger system
-// that powered it) removed the same day -- Matt's call: the notification
-// system had gotten more complex than the site needed.
-var _RC_NOTIF_DISMISS_KINDS_ = ['season', 'upgrade', 'welcome', 'results_preliminary', 'results_official', 'season_ended'];
-
-function _rcGetAckedNotifIds() {
-  try {
-    var raw = localStorage.getItem(RC_NOTIF_ACK_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function _rcAckNotif(id) {
-  try {
-    var ids = _rcGetAckedNotifIds();
-    if (ids.indexOf(id) === -1) ids.push(id);
-    localStorage.setItem(RC_NOTIF_ACK_KEY, JSON.stringify(ids));
-  } catch (e) {
-    // localStorage unavailable/full -- acknowledgement just won't persist
-    // across reloads, not worth failing the click over.
-  }
-}
-
-// The admin "an account is waiting on your approval" notification (and
-// its _rcFetchNotifications helper) is gone entirely (2026-09-19, Matt's
-// call: no more admin-approval queue). "Choose your sponsors" (and its
-// _rcFetchSponsorNotifications helper) was removed earlier, 2026-09-17 --
-// V1 scope cut, the whole Sponsorship system is out of the site for now.
-// See season-1-mvp-scope.md.
-
-// New-season + account-upgrade notifications (added 2026-08-30). Backed by
-// a real Notifications sheet + each driver's own NotificationState, not
-// client-side acknowledgement -- see handleGetNotifications in
-// DataCache.gs. The season kind is Driver-and-above only (Prospects have
-// nothing to register for yet); the upgrade kind is NEVER gated on role
-// here, since an upgrade notification is exactly what tells a Prospect
-// they've just become a Driver -- so this whole fetch always runs for any
-// logged-in cached profile, not just non-Prospects. Returns
-// { active: [...], history: [...] }, already shaped for the bell UI; both
-// empty for a logged-out call.
-function _rcFetchSeasonNotifications(token, cached) {
-  if (!cached) return Promise.resolve({ active: [], history: [] });
-  // noRetry (2026-09-23, see the retry-storm comment on RC_FETCH_RETRY_DELAYS_MS
-  // in js/api.js) -- this same call also runs unattended every 45s from
-  // the header's own poll timer, so a slow tick just resolving quietly on
-  // the NEXT tick beats piling a retry onto the same queue that's already
-  // running behind.
-  return fetchApi('getNotifications', { token: token, noRetry: true })
-    .then(function (data) {
-      if (!data || !data.success) return { active: [], history: [] };
-      var active = (data.active || []).map(function (n) {
-        if (n.kind === 'welcome') {
-          // "Choose an avatar!" (2026-09-19) -- links straight to the Edit
-          // Profile modal via _rcOpenEditProfileFromHeader, not an
-          // Account.html section (see _rcRenderNotifList's click handler
-          // below, which special-cases section === 'editprofile').
-          return {
-            id: 'welcome-' + n.notificationId, notificationId: n.notificationId, kind: 'welcome',
-            message: n.message,
-            dateStamp: _rcFormatNotifDate(n.createdAt),
-            section: 'editprofile', linkLabel: 'Choose Avatar'
-          };
-        }
-        if (n.kind === 'upgrade') {
-          return {
-            id: 'upgrade-' + n.notificationId, notificationId: n.notificationId, kind: 'upgrade',
-            message: n.message,
-            dateStamp: _rcFormatNotifDate(n.createdAt)
-          };
-        }
-        if (n.kind === 'results_preliminary' || n.kind === 'results_official') {
-          // Results-posted (2026-09-24) -- links to the Results section,
-          // same as any other "go look at this" item. n.message already
-          // comes fully formed off the server (createResultsNotification_
-          // in Notifications.gs), e.g. "Round 3: Sebring -- Preliminary
-          // Results Posted", so it's used as-is rather than rebuilt here.
-          return {
-            id: n.kind + '-' + n.notificationId, notificationId: n.notificationId, kind: n.kind,
-            message: n.message,
-            dateStamp: _rcFormatNotifDate(n.createdAt),
-            section: 'results', linkLabel: 'View Results'
-          };
-        }
-        if (n.kind === 'season_ended') {
-          // "Season N: Name championship results are in!" (2026-09-24) --
-          // fires once End Season finishes clearing that season's other
-          // notifications (see handleAdminArchiveSeason, Seasons.gs).
-          // Links to the public League Hub page (league.html), not an
-          // Account.html section -- see the n.section === 'external'
-          // branch in _rcRenderNotifList below.
-          return {
-            id: 'season_ended-' + n.notificationId, notificationId: n.notificationId, kind: 'season_ended',
-            message: n.message,
-            dateStamp: _rcFormatNotifDate(n.createdAt),
-            section: 'external', href: 'league.html', linkLabel: 'League Hub'
-          };
-        }
-        return {
-          id: 'season-' + n.seasonId, seasonId: n.seasonId, kind: 'season',
-          message: 'Registration is open for ' + (n.seasonName || 'a new season') + '.',
-          dateStamp: _rcFormatNotifDate(n.createdAt),
-          section: 'dashboard', linkLabel: 'Register'
-        };
-      });
-      // History entries come back as the RAW stored shape (no kind field)
-      // -- {seasonId, seasonName, dismissedAt} for a season, or
-      // {notificationId, message, dismissedAt} for an upgrade -- see
-      // handleDismissNotifications in DataCache.gs. Tell them apart by
-      // which id field is present.
-      var history = (data.history || []).map(function (h) {
-        if (h.notificationId) {
-          return {
-            id: 'upgrade-history-' + h.notificationId + '-' + h.dismissedAt,
-            message: h.message,
-            dateStamp: _rcFormatNotifDate(h.dismissedAt)
-          };
-        }
-        return {
-          id: 'season-history-' + h.seasonId + '-' + h.dismissedAt,
-          message: 'Registration opened for ' + (h.seasonName || 'a season') + '.',
-          dateStamp: _rcFormatNotifDate(h.dismissedAt)
-        };
-      });
-      return { active: active, history: history };
-    })
-    .catch(function () { return { active: [], history: [] }; });
-}
-
-function _rcFormatNotifDate(iso) {
-  if (!iso) return '';
-  var d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-// Set each time renderHeader() actually builds the logged-in bell (null
-// otherwise, e.g. logged out) -- lets rcDismissSeasonNotification() below
-// reach into whatever bell state currently exists from OUTSIDE this file,
-// specifically so Account.html's registration flow can dismiss a season's
-// notification the instant a driver registers, even if they never opened
-// the bell at all.
-var _rcNotifController = null;
-
-// Live bell polling (added 2026-08-30, Matt's call: "push the update to
-// the bell without a refresh of the page") -- re-fetches both notification
-// types on an interval so a new approval request or a newly-opened season
-// Background poll timer REMOVED (2026-09-24, Matt's call) -- see the
-// removal note at this file's setInterval call site (search
-// "Background poll REMOVED") for the full story. Notifications are
-// on-demand only now: one fetch on page load plus explicit refresh
-// triggers (dismiss, join team, opening the bell).
-
-// Dedupe window (2026-09-24, Matt's report: "why does one visit to the
-// dashboard fire so many calls to Apps Script") -- renderHeader() runs
-// TWICE on a normal page load (once blind at the very top of the page, off
-// whatever profile is already cached locally, so the header paints
-// instantly; again once the real profile/session comes back confirmed --
-// see Account.html's bootstrap). Every renderHeader() call re-runs this
-// whole notification bell setup, including one immediate
-// _rcRefreshNotifications() fetch -- so a single page visit was silently
-// firing getNotifications TWICE against the shared Apps Script queue, back
-// to back, for no reason: the second call almost always lands within a
-// second or two of the first, long before anything could have changed
-// server-side. This tracks when the bell last actually fetched and skips
-// the immediate refetch if it was very recent, while still letting a
-// GENUINELY later renderHeader() call (a slow bootstrap, a real page
-// navigation) fetch fresh data, and never touching the 45s poll tick or
-// _rcNotifController.refresh()'s own forced refreshes (those always call
-// _rcRefreshNotifications() directly, not through this gate).
-var _rcLastNotifFetchAt = 0;
-var RC_NOTIF_DEDUPE_WINDOW_MS = 4000;
-
 // Click-outside/Escape listener leak fix (2026-09-13, sitewide review) --
-// renderHeader() runs more than once per page (same reason the poll timer
-// above needs the clear-then-restart dance), and every run used to attach
-// a FRESH document-level click and keydown listener via a fresh closure
-// over that run's own toggle/menu/bellToggle/notifMenu elements, with
-// nothing ever removing the previous run's pair. mount.innerHTML replaces
-// those elements each render, so the old listeners kept running forever
-// against now-detached nodes -- harmless individually (a `.contains()`
-// check against a disconnected element is just always false) but an
-// unbounded, ever-growing pair of document listeners for the life of the
-// tab, one more added every single header re-render. Same fix as the poll
-// timer: stash the current handler here, remove it before attaching the
-// next one.
+// renderHeader() runs more than once per page (same reason a poll timer
+// would have needed a clear-then-restart dance), and every run used to
+// attach a FRESH document-level click and keydown listener via a fresh
+// closure over that run's own toggle/menu elements, with nothing ever
+// removing the previous run's pair. mount.innerHTML replaces those
+// elements each render, so the old listeners kept running forever against
+// now-detached nodes -- harmless individually (a `.contains()` check
+// against a disconnected element is just always false) but an unbounded,
+// ever-growing pair of document listeners for the life of the tab, one
+// more added every single header re-render. Fix: stash the current
+// handler here, remove it before attaching the next one.
 var _rcHeaderOutsideClickHandler = null;
 var _rcHeaderEscapeHandler = null;
-
-// Called by Account.html once a registration actually succeeds (see
-// buildRegistrationModal's onDone) -- dismisses that season's notification
-// immediately, same as closing the bell after seeing it would. Falls back
-// to calling the API directly (fire-and-forget) if the header's bell
-// hasn't rendered this state yet, so the dismissal still reaches the
-// server either way.
-function rcDismissSeasonNotification(seasonId) {
-  if (!seasonId) return;
-  if (_rcNotifController && typeof _rcNotifController.dismissSeason === 'function') {
-    _rcNotifController.dismissSeason(seasonId);
-    return;
-  }
-  var token = (typeof getToken === 'function') ? getToken() : null;
-  if (token && typeof fetchApi === 'function') {
-    fetchApi('dismissNotifications', { method: 'POST', token: token, body: { seasonIds: JSON.stringify([seasonId]) } })
-      .catch(function () { /* fire-and-forget -- nothing on screen depends on this succeeding */ });
-  }
-}
-
-// Called by Account.html right after any action that should clear a
-// notification without the driver ever opening the bell (2026-09-01,
-// Matt's call: "automatically acknowledge any pending notification if any
-// relevant action is done without visiting the notification dropdown
-// first"). The sponsor-picking use case this was originally written for is
-// gone (2026-09-17 V1 scope cut), but other callers (e.g. right after
-// joinTeam) still use this to refresh the bell immediately instead of
-// waiting for the next 45s poll tick. A no-op if the bell hasn't rendered
-// this state yet (logged out, or this page has no header).
-function rcRefreshNotificationsNow() {
-  if (_rcNotifController && typeof _rcNotifController.refresh === 'function') _rcNotifController.refresh();
-}
 
 // Shared hover-away-closes helper: closeFn fires once the pointer has
 // left every element in `elements` for `delayMs` without re-entering any
@@ -633,35 +377,10 @@ function renderHeader(opts) {
     var initials = _rcHeaderInitials(displayName);
     var role = cached ? (cached.role || 'Driver') : 'Driver';
 
-    // Bell sits to the LEFT of the avatar cluster -- its own toggle
-    // button + dropdown, entirely separate from the account menu (see
-    // header comment above).
-    html += '<button type="button" class="rc-header-bell-toggle" id="rc-header-bell-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">' +
-              // The dot is now positioned against THIS inner wrapper
-              // (sized to match the 19x19 bell glyph), not the outer
-              // button -- the button's own 38x38 circular hit target is
-              // much bigger than the visible icon, so a dot positioned off
-              // the button's own corner used to land well outside the bell
-              // itself. Matt's call, 2026-08-30.
-              // Left at 19x19, not the site's usual 16x16 icon standard
-              // (2026-09-13 sitewide review flagged this as an inconsistency
-              // "where feasible" to fix -- this one isn't): .rc-header-bell-
-              // icon-wrap above is sized to match this exact 19x19, and the
-              // .rc-notif-dot's -10px/-8px offsets were tuned against that
-              // same size. Shrinking the svg without re-tuning both would
-              // pull the unread-count dot off the bell's corner again --
-              // the exact bug this whole wrapper was built to fix.
-              '<span class="rc-header-bell-icon-wrap">' +
-                '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>' +
-                '<span class="rc-notif-dot" id="rc-header-bell-dot" style="display:none;"></span>' +
-              '</span>' +
-            '</button>' +
-            '<div class="rc-header-notif-menu" id="rc-header-notif-menu" style="display:none;">' +
-              '<div class="rc-header-notif-head"><span>Notifications</span>' +
-                '<button type="button" class="rc-header-notif-clear" id="rc-header-notif-clear" hidden>Clear</button>' +
-              '</div>' +
-              '<div class="rc-header-notif-list" id="rc-header-notif-list"></div>' +
-            '</div>';
+    // Notification bell markup (toggle button + dropdown, previously sat
+    // to the LEFT of the avatar cluster here) removed in full (2026-09-24,
+    // Matt's call: eliminate the in-app notification system entirely,
+    // moving to an external Discord bot).
 
     // The whole avatar/name/role/chevron cluster is one clickable toggle
     // button -- clicking anywhere in it opens/closes the dropdown, which
@@ -705,8 +424,7 @@ function renderHeader(opts) {
             // ask) -- was Help/Edit Profile/divider/Logout with no Feedback
             // item; same reorder applied to Account.html's own sidebar (see
             // buildSidebarNav there). Every section link uses the
-            // Account.html#<id> hash + data-rc-section pattern the
-            // notification bell's own links already established -- see
+            // Account.html#<id> hash + data-rc-section pattern -- see
             // the click wiring below, which reuses that exact "call
             // window.rcNavigateToSection in place if it's there (we're
             // already on Account.html), otherwise let the href really
@@ -732,41 +450,19 @@ function renderHeader(opts) {
   if (token) {
     var toggle = document.getElementById('rc-header-account-toggle');
     var menu = document.getElementById('rc-header-account-menu');
-    var bellToggle = document.getElementById('rc-header-bell-toggle');
-    var notifMenu = document.getElementById('rc-header-notif-menu');
 
     function closeAccountMenu() {
       menu.style.display = 'none';
       toggle.setAttribute('aria-expanded', 'false');
     }
     function openAccountMenu() {
-      closeNotifMenu();
       menu.style.display = 'block';
       toggle.setAttribute('aria-expanded', 'true');
-    }
-    function closeNotifMenu() {
-      var wasOpen = notifMenu.style.display === 'block';
-      notifMenu.style.display = 'none';
-      bellToggle.setAttribute('aria-expanded', 'false');
-      // Dismiss on CLOSE, not open -- see the header comment's NEW-SEASON
-      // NOTIFICATIONS section for why. Only fires if the dropdown was
-      // actually open (an outside click while it's already shut is a
-      // no-op, same as before this pass).
-      if (wasOpen) _rcDismissShownSeasonNotifs();
-    }
-    function openNotifMenu() {
-      closeAccountMenu();
-      notifMenu.style.display = 'block';
-      bellToggle.setAttribute('aria-expanded', 'true');
     }
 
     toggle.addEventListener('click', function (evt) {
       evt.stopPropagation();
       if (menu.style.display === 'block') closeAccountMenu(); else openAccountMenu();
-    });
-    bellToggle.addEventListener('click', function (evt) {
-      evt.stopPropagation();
-      if (notifMenu.style.display === 'block') closeNotifMenu(); else openNotifMenu();
     });
     // Remove the previous render's document-level listeners before adding
     // this render's (2026-09-13 leak fix -- see _rcHeaderOutsideClickHandler
@@ -776,27 +472,22 @@ function renderHeader(opts) {
 
     _rcHeaderOutsideClickHandler = function (evt) {
       if (menu.style.display === 'block' && !menu.contains(evt.target) && !toggle.contains(evt.target)) closeAccountMenu();
-      if (notifMenu.style.display === 'block' && !notifMenu.contains(evt.target) && !bellToggle.contains(evt.target)) closeNotifMenu();
     };
     _rcHeaderEscapeHandler = function (evt) {
       if (evt.key !== 'Escape') return;
       if (menu.style.display === 'block') closeAccountMenu();
-      if (notifMenu.style.display === 'block') closeNotifMenu();
     };
     document.addEventListener('click', _rcHeaderOutsideClickHandler);
     document.addEventListener('keydown', _rcHeaderEscapeHandler);
 
-    // Both dropdowns also close the instant the pointer leaves BOTH their
-    // toggle button and their own menu, not just on an outside click --
-    // see the header comment above and _rcWireHoverAwayClose's own
-    // comment for why. Opening is still click-only for both; this only
-    // ever closes them early.
+    // The account dropdown also closes the instant the pointer leaves
+    // BOTH its toggle button and its own menu, not just on an outside
+    // click -- see _rcWireHoverAwayClose's own comment for why. Opening
+    // is still click-only; this only ever closes it early.
     _rcWireHoverAwayClose([toggle, menu], closeAccountMenu);
-    _rcWireHoverAwayClose([bellToggle, notifMenu], closeNotifMenu);
 
     // Section links (Dashboard..Stewarding/Help, added 2026-09-19) --
-    // same bridge pattern the notification bell's own links use just
-    // above: call window.rcNavigateToSection in place when it exists
+    // call window.rcNavigateToSection in place when it exists
     // (we're already on Account.html, so this just switches sections,
     // no reload), otherwise let the href do a real navigation to
     // Account.html#<section>, which that page's own load-time hash
@@ -844,334 +535,14 @@ function renderHeader(opts) {
     });
 
     // ---------------------------------------------------------------
-    // NOTIFICATION BELL -- fetched in the background on every render
-    // (see header comment above for why opts.skipNotifCheck is gone).
-    // currentNotifications/currentNotifHistory are closured so the
-    // dismiss-on-close flow (season/upgrade/welcome types, see
-    // closeNotifMenu above) can mutate and re-render them. Three
-    // notification kinds share this one list: 'season' (Driver+,
-    // server-side dismiss, added 2026-08-30), 'upgrade' (any account whose
-    // Status/Role just increased, server-side dismiss, also added
-    // 2026-08-30 -- see handleGetNotifications/createAccountUpgradeNotification_
-    // in DataCache.gs), and 'welcome' ("Choose an avatar!", server-side
-    // dismiss, added 2026-09-19 -- see createChooseAvatarNotification_ in
-    // DataCache.gs).
+    // NOTIFICATION BELL -- the whole fetch/render/dismiss block that used
+    // to live here (currentNotifications/currentNotifHistory,
+    // _rcRenderNotifList, _rcDismissShownSeasonNotifs,
+    // _rcClearAllNotifications, _rcRefreshNotifications, the notif cache
+    // seed/persist calls, and the fetch-dedupe check) was removed in full
+    // (2026-09-24, Matt's call: eliminate the in-app notification system
+    // entirely, moving to an external Discord bot).
     // ---------------------------------------------------------------
-    var currentNotifications = [];
-    var currentNotifHistory = [];
-
-    // Keeps the notification cache (js/auth.js) in sync with whatever
-    // currentNotifications/currentNotifHistory actually are right now --
-    // called after every mutation (a real fetch resolving, a dismiss, a
-    // Clear) so the NEXT page load's instant cache-paint (right below)
-    // reflects the latest known state rather than replaying something
-    // already dismissed. See the cache's own comment in auth.js for why
-    // this exists (2026-09-24, Matt's ask -- caching just the unread count
-    // wasn't enough, since opening the bell before the real fetch resolved
-    // could still show "You're all caught up" under an already-lit dot).
-    function _rcPersistNotifCache_() {
-      if (typeof setNotifCache === 'function') setNotifCache(currentNotifications, currentNotifHistory);
-    }
-
-    // Cache-then-verify bell paint -- seeds this render's list from the
-    // last-known cache and paints both the dropdown contents and the dot
-    // INSTANTLY, before the real getNotifications call below even starts.
-    // _rcRefreshNotifications() then overwrites both the DOM and the cache
-    // once that call actually resolves, correcting this guess either way.
-    if (typeof getNotifCache === 'function') {
-      var seededCache = getNotifCache();
-      currentNotifications = seededCache.active;
-      currentNotifHistory = seededCache.history;
-    }
-    // _rcRenderNotifList and updateHeaderNotifDot are both function
-    // declarations further down this same scope -- fully hoisted, so
-    // calling them here (before their textual definition) is safe.
-    _rcRenderNotifList();
-    updateHeaderNotifDot(currentNotifications.length);
-
-    function _rcRenderNotifList() {
-      var listEl = document.getElementById('rc-header-notif-list');
-      if (!listEl) return;
-      // Shown whenever there's anything to clear -- active items OR a
-      // lingering "Recently Opened" history entry (2026-09-02 fix: this used
-      // to only check currentNotifications, so once nothing was active the
-      // button vanished even though a stale history item was still sitting
-      // there with no way to get rid of it).
-      var clearBtn = document.getElementById('rc-header-notif-clear');
-      if (clearBtn) clearBtn.hidden = currentNotifications.length === 0 && currentNotifHistory.length === 0;
-      listEl.innerHTML = '';
-      if (currentNotifications.length === 0) {
-        var empty = document.createElement('div');
-        empty.className = 'rc-header-notif-empty';
-        empty.textContent = "You're all caught up.";
-        listEl.appendChild(empty);
-      } else {
-        currentNotifications.forEach(function (n) {
-          // fullRowLink (2026-09-02, Matt's call, sponsors specifically:
-          // "get rid of the CHOOSE SPONSORS button... make the whole
-          // message thing a link") -- the item itself becomes the <a>
-          // (its whole row is clickable, not just a chip inside it) when
-          // n.fullRowLink is set (currently just the sponsors kind, see
-          // _rcFetchSponsorNotifications above); everything else (pending
-          // approval's "Review", a future kind) keeps the separate
-          // trailing text link below, unchanged.
-          var item = document.createElement(n.fullRowLink ? 'a' : 'div');
-          item.className = 'rc-header-notif-item' + (n.fullRowLink ? ' rc-header-notif-item-link' : '');
-          if (n.fullRowLink) {
-            item.href = 'Account.html#' + n.section;
-            item.addEventListener('click', function (evt) {
-              if (typeof window.rcNavigateToSection === 'function') {
-                evt.preventDefault();
-                window.rcNavigateToSection(this.getAttribute('href').replace(/^Account\.html#/, ''));
-                closeNotifMenu();
-              }
-            });
-          }
-          var textCol = document.createElement('div');
-          textCol.className = 'rc-header-notif-text-col';
-          var text = document.createElement('span');
-          text.className = 'rc-header-notif-text';
-          text.textContent = n.message;
-          textCol.appendChild(text);
-          if (n.dateStamp) {
-            var date = document.createElement('span');
-            date.className = 'rc-header-notif-date';
-            date.textContent = n.dateStamp;
-            textCol.appendChild(date);
-          }
-          item.appendChild(textCol);
-          // A link straight to wherever this notification needs the driver
-          // to actually go, not an "OK" acknowledge button (2026-09-02,
-          // Matt's call: "it should be links listed for actions that need
-          // to happen... a link that takes the user directly to the page").
-          // Every kind that names something actionable sets n.section when
-          // it's built below (pending -> Admin, sponsors -> Sponsors,
-          // season -> Dashboard, where the Registration Status card lives);
-          // 'upgrade' is purely informational (an account/role change
-          // already happened, there's nothing left to go do) so it never
-          // gets one. Clicking just navigates -- it does NOT acknowledge/
-          // dismiss the notification itself, since visiting the page
-          // doesn't mean the underlying thing (an approval, a sponsor
-          // pick) actually got done; each kind still clears itself the
-          // same way it always has (pending/sponsors: naturally stops
-          // being generated once resolved, or Clear; season: dismissed
-          // when the dropdown closes).
-          if (n.section && !n.fullRowLink) {
-            var linkEl = document.createElement('a');
-            linkEl.className = 'rc-header-notif-link';
-            linkEl.textContent = n.linkLabel || 'Go';
-            if (n.section === 'editprofile') {
-              // 'welcome' kind ("Choose an avatar!") -- opens the Edit
-              // Profile modal directly via the shared bridge instead of
-              // navigating to an Account.html section (2026-09-19).
-              linkEl.href = 'Account.html';
-              linkEl.addEventListener('click', function (evt) {
-                evt.preventDefault();
-                closeNotifMenu();
-                _rcOpenEditProfileFromHeader();
-              });
-            } else if (n.section === 'external' && n.href) {
-              // 'season_ended' (2026-09-24) -- links to a standalone page
-              // outside Account.html entirely (league.html), so this just
-              // navigates for real, no Account.html#section hash and no
-              // rcNavigateToSection bridge (there's no in-page section to
-              // switch to -- League Hub is its own page).
-              linkEl.href = n.href;
-              linkEl.addEventListener('click', function () { closeNotifMenu(); });
-            } else {
-              linkEl.href = 'Account.html#' + n.section;
-              linkEl.addEventListener('click', function (evt) {
-                // window.rcNavigateToSection is the bridge Account.html sets
-                // once it's loaded (see buildFullProfileUI there) -- present
-                // means this IS Account.html already, so switch sections in
-                // place instead of letting the href fire a same-document
-                // hash change that showSection() would never find out about.
-                // Absent (any other page) just falls through to the href's
-                // real navigation.
-                if (typeof window.rcNavigateToSection === 'function') {
-                  evt.preventDefault();
-                  window.rcNavigateToSection(this.getAttribute('href').replace(/^Account\.html#/, ''));
-                  closeNotifMenu();
-                }
-              });
-            }
-            item.appendChild(linkEl);
-          }
-          listEl.appendChild(item);
-        });
-      }
-
-      // History (2026-08-30) -- up to 5 recently-dismissed season
-      // notifications, muted, underneath a divider. Nothing here is
-      // interactive; it's just a record of what already opened and was
-      // seen, same "leave the history up to 5" ask.
-      if (currentNotifHistory.length > 0) {
-        var histHead = document.createElement('div');
-        histHead.className = 'rc-header-notif-history-head';
-        histHead.textContent = 'Recently Opened';
-        listEl.appendChild(histHead);
-        currentNotifHistory.slice(0, 5).forEach(function (h) {
-          var histItem = document.createElement('div');
-          histItem.className = 'rc-header-notif-item rc-header-notif-history-item';
-          var histText = document.createElement('span');
-          histText.className = 'rc-header-notif-text';
-          histText.textContent = h.message;
-          histItem.appendChild(histText);
-          if (h.dateStamp) {
-            var histDate = document.createElement('span');
-            histDate.className = 'rc-header-notif-date';
-            histDate.textContent = h.dateStamp;
-            histItem.appendChild(histDate);
-          }
-          listEl.appendChild(histItem);
-        });
-      }
-    }
-
-    // Fires when the bell dropdown closes (see closeNotifMenu above) --
-    // moves every currently-showing season AND upgrade notification into
-    // history (capped at 5, newest first) and tells the server, so neither
-    // comes back as active next time this driver logs in or the header
-    // re-renders. No-op if there's nothing season/upgrade-typed currently
-    // active.
-    // clearHistory (2026-09-02, Matt's ask) -- optional, defaults to false
-    // for the normal dismiss-on-close path (a season/upgrade item just
-    // shown should still fall into "Recently Opened", same as always).
-    // Clear (see _rcClearAllNotifications below) passes true instead, so it
-    // wipes the ENTIRE stored history rather than just prepending to it --
-    // that's the only way a stale history item with nothing newer to push
-    // it off its 5-slot cap ever actually goes away. When true, this runs
-    // even with nothing currently active, since there's nothing to dismiss
-    // but still a history to clear.
-    function _rcDismissShownSeasonNotifs(clearHistory) {
-      var shownSeason = currentNotifications.filter(function (n) { return n.kind === 'season'; });
-      // 'welcome' swept in alongside 'upgrade' (2026-09-19) -- both are
-      // targeted, notificationId-keyed rows dismissed the exact same way
-      // server-side (see handleDismissNotifications, DataCache.gs).
-      // 'results_preliminary'/'results_official'/'season_ended'
-      // (2026-09-24) all join the same bucket -- also
-      // notificationId-keyed, also dismissed on close. Derived from the
-      // shared _RC_NOTIF_DISMISS_KINDS_ list (minus 'season', which is
-      // seasonId-keyed and handled separately above) so a future kind only
-      // needs to be added in that one place.
-      var shownUpgrade = currentNotifications.filter(function (n) {
-        return n.kind !== 'season' && _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) !== -1;
-      });
-      if (!shownSeason.length && !shownUpgrade.length && !clearHistory) return;
-      var seasonIds = shownSeason.map(function (n) { return n.seasonId; });
-      var notificationIds = shownUpgrade.map(function (n) { return n.notificationId; });
-      currentNotifications = currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) === -1; });
-      var newHistory = shownSeason.map(function (n) {
-        return { message: n.message.replace('is open for', 'opened for'), dateStamp: n.dateStamp };
-      }).concat(shownUpgrade.map(function (n) {
-        return { message: n.message, dateStamp: n.dateStamp };
-      }));
-      currentNotifHistory = clearHistory ? newHistory.slice(0, 5) : newHistory.concat(currentNotifHistory).slice(0, 5);
-      updateHeaderNotifDot(currentNotifications.length);
-      _rcPersistNotifCache_();
-      var body = { seasonIds: JSON.stringify(seasonIds), notificationIds: JSON.stringify(notificationIds) };
-      if (clearHistory) body.clearHistory = '1';
-      fetchApi('dismissNotifications', { method: 'POST', token: token, body: body })
-        .catch(function () { /* fire-and-forget -- already reflected on screen either way */ });
-    }
-
-    // "Clear" (2026-09-01, Matt's call) -- acknowledges/dismisses
-    // EVERYTHING currently showing at once, regardless of kind: the
-    // OK-ackable types (pending-approval, sponsors) get their ids written
-    // to the client-side ack list same as clicking each OK button by hand,
-    // and any season/upgrade items go through the exact same
-    // dismiss-and-move-to-history path _rcDismissShownSeasonNotifs already
-    // uses on close. Leaves the dropdown open (clearing isn't the same
-    // gesture as closing) so the driver sees the empty state right away.
-    //
-    // 2026-09-02 fix: also wipes "Recently Opened" history (pass true) --
-    // Clear is meant to actually empty the dropdown, and a stale
-    // already-dismissed item with nothing newer to bump it off its 5-slot
-    // cap was sitting there indefinitely with no way to get rid of it.
-    function _rcClearAllNotifications() {
-      currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) === -1; })
-        .forEach(function (n) { _rcAckNotif(n.id); });
-      currentNotifications = currentNotifications.filter(function (n) { return _RC_NOTIF_DISMISS_KINDS_.indexOf(n.kind) !== -1; });
-      currentNotifHistory = [];
-      _rcRenderNotifList();
-      updateHeaderNotifDot(currentNotifications.length);
-      _rcPersistNotifCache_();
-      _rcDismissShownSeasonNotifs(true);
-      _rcRenderNotifList();
-      updateHeaderNotifDot(currentNotifications.length);
-    }
-    var clearAllBtn = document.getElementById('rc-header-notif-clear');
-    if (clearAllBtn) clearAllBtn.addEventListener('click', function (evt) { evt.stopPropagation(); _rcClearAllNotifications(); });
-
-    // Exposes a way for code OUTSIDE this render (Account.html's
-    // registration/sponsor flows) to dismiss one season's notification, or
-    // force an immediate re-fetch of everything, even if the bell was
-    // never opened -- see rcDismissSeasonNotification() and
-    // rcRefreshNotificationsNow() above/below. The immediate refresh
-    // matters for the sponsors notification specifically: it's derived
-    // live off getMySponsors, so without an explicit nudge here it would
-    // otherwise only clear itself on the next 45s poll tick after a driver
-    // actually picks their sponsors.
-    _rcNotifController = {
-      dismissSeason: function (seasonId) {
-        var match = currentNotifications.filter(function (n) { return n.kind === 'season' && n.seasonId === seasonId; })[0];
-        if (!match) return; // already dismissed, or never showed for this driver
-        currentNotifications = currentNotifications.filter(function (n) { return n !== match; });
-        currentNotifHistory = [{ message: match.message.replace('is open for', 'opened for'), dateStamp: match.dateStamp }].concat(currentNotifHistory).slice(0, 5);
-        _rcRenderNotifList();
-        updateHeaderNotifDot(currentNotifications.length);
-        _rcPersistNotifCache_();
-        fetchApi('dismissNotifications', { method: 'POST', token: token, body: { seasonIds: JSON.stringify([seasonId]) } })
-          .catch(function () {});
-      },
-      refresh: function () { return _rcRefreshNotifications(); }
-    };
-
-    // Named so both the initial load AND the poll interval below call the
-    // exact same fetch-and-render path -- a poll tick is just this run
-    // again, nothing bespoke. Re-renders the list even if the dropdown is
-    // currently open (rare -- a driver rarely leaves it open 45+ seconds --
-    // and matches how a freshly-arrived item should just appear).
-    function _rcRefreshNotifications() {
-      // No more admin-approval-queue fetch here (2026-09-19, Matt's call).
-      // Sponsor notifications were dropped earlier, 2026-09-17 -- V1 scope
-      // cut, Sponsorship system out of the site. See season-1-mvp-scope.md.
-      // Stamped here (not just at the call site below) so the dedupe
-      // window covers every path that actually fetches -- the 45s poll
-      // tick and _rcNotifController.refresh()'s forced refreshes included --
-      // not just the one bootstrap call site that reads it.
-      _rcLastNotifFetchAt = Date.now();
-      return _rcFetchSeasonNotifications(token, cached).then(function (season) {
-        season = season || { active: [], history: [] };
-        currentNotifications = season.active;
-        currentNotifHistory = season.history;
-        _rcRenderNotifList();
-        updateHeaderNotifDot(currentNotifications.length);
-        // Corrects the cache with the real list/count (see
-        // _rcPersistNotifCache_) -- overwrites whatever guess the bell was
-        // seeded and painted with right after mount.innerHTML above.
-        _rcPersistNotifCache_();
-      });
-    }
-
-    // See RC_NOTIF_DEDUPE_WINDOW_MS above -- skips this one immediate
-    // fetch if renderHeader() (and so this same bootstrap fetch) just ran
-    // moments ago, so a normal page load's two renderHeader() calls don't
-    // silently turn into two getNotifications round trips.
-    if (Date.now() - _rcLastNotifFetchAt > RC_NOTIF_DEDUPE_WINDOW_MS) {
-      _rcRefreshNotifications();
-    }
-
-    // Background poll REMOVED (2026-09-24, Matt's call, as part of "get
-    // rid of the bloat" pass) -- this used to setInterval a getNotifications
-    // fetch every 45s for as long as any tab was open, forever, from every
-    // driver, whether or not they ever opened the bell. Notifications are
-    // on-demand now: this one fetch on page load, plus whatever
-    // _rcNotifController.refresh() triggers explicitly (dismiss, join
-    // team, opening the bell -- see its call sites). No timer, so nothing
-    // to clear here anymore either.
-  } else {
-    _rcNotifController = null;
   }
 }
 

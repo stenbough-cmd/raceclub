@@ -149,14 +149,9 @@
 
         <p class="rc-hint" style="margin-top:18px;text-align:left;">You will be designated as a <strong>Prospect</strong> until an admin or organizer approves your account. You will have instant access to your profile but won't be able to participate in events until you've been approved as a driver.</p>
 
-        <!-- Email-notification opt-in (2026-09-02, Matt's ask: "before
-             clicking the button to join", defaulted off/unchecked). Only
-             sent to the server as emailNotificationsOptIn: '1' when
-             checked -- handleRegister treats anything else as off. -->
-        <div class="rc-check-row">
-          <input id="rc-reg-email-notify" type="checkbox">
-          <label for="rc-reg-email-notify">Email me about things I might miss, like season starts and account updates.</label>
-        </div>
+        <!-- Email-notification opt-in checkbox removed (2026-09-24, Matt's
+             call: eliminate the in-app notification system entirely,
+             moving to an external Discord bot). -->
 
         <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
       </form>
@@ -304,7 +299,6 @@
     var location = document.getElementById('rc-reg-location').value;
     var timeZone = document.getElementById('rc-reg-timezone').value;
     var password = document.getElementById('rc-reg-password').value;
-    var emailNotificationsOptIn = document.getElementById('rc-reg-email-notify').checked;
 
     if (!username) {
       showToast('Please choose a username.', 'error');
@@ -334,8 +328,7 @@
       body: {
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
         email: email, location: location, timeZone: timeZone,
-        password: password,
-        emailNotificationsOptIn: emailNotificationsOptIn ? '1' : '0'
+        password: password
       }
     })
       .then(function (data) {

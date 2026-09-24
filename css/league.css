@@ -1736,15 +1736,13 @@ body.rc-league-page {
 }
 /* Same dark-theme override, extended for the Edit Profile popup
    (js/edit-profile.js, added 2026-09-21 alongside this popup's own
-   in-place-on-league.html support): .rc-check-row's label (the email-
-   notifications checkbox) sets an explicit --rc-carbon color of its own
-   that the bare `label` override above doesn't reach, and .rc-panel (the
-   Change Password box) is a plain white card everywhere else on the site
-   -- both need a scoped dark version here or they'd render light-on-dark
-   inside this shell. */
-.rcl-modal-dialog .rc-check-row label {
-  color: var(--rcl-ink-dim);
-}
+   in-place-on-league.html support): .rc-panel (the Change Password box)
+   is a plain white card everywhere else on the site -- it needs a scoped
+   dark version here or it'd render light-on-dark inside this shell. (The
+   .rc-check-row dark-theme override that used to sit here, for the
+   email-notifications checkbox, was removed 2026-09-24 alongside that
+   checkbox -- Matt's call: eliminate the in-app notification system
+   entirely, moving to an external Discord bot.) */
 .rcl-modal-dialog .rc-panel {
   background: var(--rcl-bg-raised-2);
   border-color: var(--rcl-line-bright);

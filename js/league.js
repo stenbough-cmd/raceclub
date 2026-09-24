@@ -1383,6 +1383,12 @@ function _rclRenderCalendar(hub) {
   if (!body) return;
   body.innerHTML = '';
 
+  // Panel title becomes "SEASON <n> CALENDAR" once a season number is
+  // known (2026-09-24, Matt's ask), falling back to the plain "Calendar"
+  // the markup ships with (league.html) when there's no active season.
+  var calendarTitleEl = document.getElementById('rcl-calendar-title');
+  if (calendarTitleEl) calendarTitleEl.textContent = hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Calendar') : 'Calendar';
+
   if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'The season schedule shows up here once it is built.'));
     return;
@@ -2041,7 +2047,9 @@ function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
+  // "SEASON <n> DETAILS" once the season number is known (2026-09-24,
+  // Matt's ask -- matches Account.html's own popup title).
+  head.appendChild(_rclEl('div', 'rcl-modal-title', hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');

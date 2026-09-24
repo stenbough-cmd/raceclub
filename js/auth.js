@@ -20,7 +20,6 @@
 
 var TOKEN_KEY = 'raceclub_token';
 var PROFILE_CACHE_KEY = 'raceclub_profile_cache';
-var NOTIF_CACHE_KEY = 'raceclub_notif_cache';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -33,52 +32,11 @@ function setToken(token) {
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(PROFILE_CACHE_KEY);
-  localStorage.removeItem(NOTIF_CACHE_KEY);
 }
 
-// ---------------------------------------------------------------------
-// NOTIFICATION CACHE (added 2026-09-24, Matt's ask: "the bell shouldn't
-// flip on and off... once a notification bubble is up, it should
-// persist" -- and a same-day follow-up: caching just the unread COUNT
-// wasn't enough, since the dot could be up while the dropdown itself,
-// opened before the real fetch resolves, showed "You're all caught up."
-// -- an empty bell under a lit-up bubble reads as broken). This caches
-// the driver's actual last-known notification list -- both the active
-// items and the "Recently Opened" history -- not just its length, same
-// shape _rcFetchSeasonNotifications already returns. header.js's
-// renderHeader() runs fresh on every full-page navigation (this is a
-// multi-page site, not a SPA), and the real list only comes back once
-// its own getNotifications call resolves; now renderHeader() seeds
-// currentNotifications/currentNotifHistory and paints both the dot AND
-// the dropdown's contents from this cache INSTANTLY, before that call
-// even starts, and the real fetch result overwrites both the cache and
-// the DOM once it resolves -- same cache-then-verify shape
-// getProfileCache/setProfileCache already use for the avatar/name.
-// Cleared on logout (clearToken above) so the next login doesn't briefly
-// show a stale list left over from a previous driver on this same
-// browser.
-function setNotifCache(active, history) {
-  try {
-    localStorage.setItem(NOTIF_CACHE_KEY, JSON.stringify({
-      active: Array.isArray(active) ? active : [],
-      history: Array.isArray(history) ? history : []
-    }));
-  } catch (err) { /* storage full/unavailable -- bell just starts blank until the real fetch resolves */ }
-}
-
-function getNotifCache() {
-  try {
-    var raw = localStorage.getItem(NOTIF_CACHE_KEY);
-    var parsed = raw ? JSON.parse(raw) : null;
-    if (!parsed || typeof parsed !== 'object') return { active: [], history: [] };
-    return {
-      active: Array.isArray(parsed.active) ? parsed.active : [],
-      history: Array.isArray(parsed.history) ? parsed.history : []
-    };
-  } catch (err) {
-    return { active: [], history: [] };
-  }
-}
+// Notification cache (setNotifCache/getNotifCache/NOTIF_CACHE_KEY) removed
+// in full (2026-09-24, Matt's call: eliminate the in-app notification bell
+// system entirely, moving to an external Discord bot).
 
 // ---------------------------------------------------------------------
 // LIGHTWEIGHT PROFILE CACHE — lets the shared header (js/header.js) show

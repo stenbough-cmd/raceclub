@@ -400,18 +400,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
   });
   form.appendChild(timeZone);
 
-  var emailNotifyRow = _rcEP_el('div', 'rc-check-row');
-  emailNotifyRow.style.marginTop = '16px';
-  var emailNotify = document.createElement('input');
-  emailNotify.type = 'checkbox';
-  emailNotify.id = 'rc-ep-email-notify';
-  emailNotify.checked = !!profile.emailNotificationsOptIn;
-  var emailNotifyLabel = document.createElement('label');
-  emailNotifyLabel.setAttribute('for', 'rc-ep-email-notify');
-  emailNotifyLabel.textContent = 'Email me about things I might miss, like season starts.';
-  emailNotifyRow.appendChild(emailNotify);
-  emailNotifyRow.appendChild(emailNotifyLabel);
-  form.appendChild(emailNotifyRow);
+  // Email-notification opt-in checkbox removed (2026-09-24, Matt's call:
+  // eliminate the in-app notification system entirely, moving to an
+  // external Discord bot).
 
   var saveBtn = _rcEP_el('button', null, 'Save Changes');
   saveBtn.type = 'submit';
@@ -448,8 +439,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
         suffix: suffix.value,
         email: email.value.trim(),
         location: location.value,
-        timeZone: timeZone.value,
-        emailNotificationsOptIn: emailNotify.checked ? '1' : '0'
+        timeZone: timeZone.value
       }
     })
       .then(function (data) {

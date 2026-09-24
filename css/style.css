@@ -1121,32 +1121,11 @@ input[type="checkbox"], input[type="radio"] {
 input[type="radio"] { border-radius: 50%; }
 textarea { resize: vertical; }
 
-/* Checkbox + label row (2026-09-02, email-notification opt-in checkbox --
-   register.html's "before clicking the button to join" checkbox, and the
-   matching one on the Edit Profile popup). A plain flex row rather than
-   reusing the <label>/<input> stacked pattern every other field on the
-   page uses -- a checkbox reads naturally sitting to the LEFT of its own
-   description, not stacked above a full-width box the way a text field's
-   label is. */
-.rc-check-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-}
-.rc-check-row input[type="checkbox"] { margin-top: 3px; flex: none; }
-.rc-check-row label {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 400;
-  color: var(--rc-carbon);
-  cursor: pointer;
-  /* Override the global `label` rule's uppercase/letter-spacing (2026-09-13,
-     Matt's ask) -- this is a sentence-style checkbox description, not a
-     field label, so it should read like normal text. */
-  text-transform: none;
-  letter-spacing: normal;
-}
+/* .rc-check-row (the email-notification opt-in checkbox's row style, on
+   register.html and the Edit Profile popup) removed 2026-09-24 alongside
+   the checkbox itself -- Matt's call: eliminate the in-app notification
+   system entirely, moving to an external Discord bot. Nothing else on
+   the site used this class. */
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--rc-red);
@@ -1344,6 +1323,28 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    suppressed so it doesn't look clickable. See Account.html's
    setNavAccess() for what applies/removes it. */
 .rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* "Follow Us" row -- Discord/YouTube (2026-09-24, Matt's ask), sitting in
+   the sidebar's own dark chrome between Feedback and the Log Out divider.
+   Icons only (no nav-item label row -- these leave the site, not a
+   section switch), centered under the same 12px side padding every other
+   nav row uses. */
+.rc-nav-social-row { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 6px 12px 2px; }
+.rc-nav-social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.rc-nav-social-icon:hover { background: #262626; transform: translateY(-1px); }
+.rc-nav-social-icon svg { flex: none; }
+/* YouTube placeholder (no channel live yet) -- dimmed, no hover lift, not
+   a real link (see buildSocialLinksRow, Account.html). */
+.rc-nav-social-disabled { opacity: 0.4; cursor: not-allowed; }
+.rc-nav-social-disabled:hover { background: none; transform: none; }
 .rc-nav-item:disabled:hover { background: none; color: #cfd4d8; }
 .rc-main {
   flex: 1;
@@ -3234,39 +3235,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    onerror just hides the <img> itself, same "silently fall back to
    initials" convention as Account.html's own buildAvatarCircle(). */
 .rc-header-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-/* Notification badge -- a red circle with a white ring, sitting against
-   .rc-header-bell-icon-wrap (sized to the bell glyph itself, see below)
-   rather than the bell button's own much-larger circular hit target, so it
-   actually lands on the bell's corner instead of floating out past it.
-   2026-09-01 (Matt's call: "make the bubble larger and add a notification
-   number to it") -- grown from a plain 13px dot to an 18px badge that
-   shows the actual unread count as text (see updateHeaderNotifDot in
-   header.js, which sets both .textContent and a min-width for double-digit
-   counts to still read as a circle/pill rather than a squeezed oval). */
-.rc-notif-dot {
-  position: absolute;
-  top: -10px;
-  right: -8px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 9px;
-  background: var(--rc-red);
-  border: 2px solid var(--rc-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--rc-font-heading);
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--rc-white);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-/* Sized to exactly the 19x19 bell SVG so .rc-notif-dot's top/right offsets
-   above are measured against the icon itself, not the button's 38x38
-   circular hit target (added 2026-08-30 alongside the dot repositioning). */
-.rc-header-bell-icon-wrap { position: relative; display: flex; width: 19px; height: 19px; }
+/* Notification bell CSS (.rc-notif-dot, .rc-header-bell-icon-wrap,
+   .rc-header-bell-toggle, .rc-header-notif-menu and everything else
+   .rc-header-notif-* below) removed in full (2026-09-24, Matt's call:
+   eliminate the in-app notification system entirely, moving to an
+   external Discord bot). */
 .rc-header-account-text {
   display: none; /* shown from ~480px up, see the media query below -- too cramped on a phone-width header otherwise */
   flex-direction: column;
@@ -3307,167 +3280,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 1001;
 }
 
-/* Notification bell -- sits to the left of the avatar toggle, same
-   circular hover-button footprint the old separate caret used to have. */
-.rc-header-bell-toggle {
-  position: relative;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: none;
-  border: none;
-  color: var(--rc-steel);
-  cursor: pointer;
-  padding: 0;
-}
-.rc-header-bell-toggle:hover,
-.rc-header-bell-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-carbon); }
-.rc-header-notif-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 60px; /* clears the avatar cluster to its right rather than overlapping it */
-  width: 320px;
-  max-width: calc(100vw - 32px);
-  background: var(--rc-white);
-  border: 1px solid var(--rc-silver);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
-  z-index: 1001;
-  overflow: hidden;
-}
-.rc-header-notif-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--rc-silver);
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rc-carbon);
-}
-/* "Clear" (2026-09-01, Matt's call: "add a clear option to clear the
-   list") -- sits in the top-right corner of the dropdown, same row as the
-   "Notifications" label. Acknowledges/dismisses everything currently
-   showing at once (see _rcClearAllNotifications in header.js); hidden
-   whenever there's nothing to clear (see header.js's _rcRenderNotifList,
-   which toggles this via [hidden]). Plain text-link treatment, not a
-   button -- it's a secondary, low-emphasis action next to the header
-   label, not a primary action competing with the OK buttons below it. */
-.rc-header-notif-clear {
-  flex: none;
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: var(--rc-font-body);
-  font-size: 11.5px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
-  color: var(--rc-steel);
-  cursor: pointer;
-  text-decoration: underline;
-}
-.rc-header-notif-clear:hover { color: var(--rc-red); }
-.rc-header-notif-clear[hidden] { display: none; }
-/* Capped to ~3 rows visible at once (2026-09-24, Matt's ask), scrolling for
-   anything beyond that -- was max-height: 320px (roomy enough to show 4-5
-   rows uncapped, which is what prompted this). 204px ~= 3 * a typical
-   .rc-header-notif-item's rendered height (~68px: 24px vertical padding +
-   ~18px message line + ~2px gap + ~13px date line + 1px border). Applies to
-   the whole scroll region (active items AND the "Recently Opened" history
-   rows below them, since both live in this one list), not per-section. */
-.rc-header-notif-list { max-height: 204px; overflow-y: auto; }
-.rc-header-notif-empty {
-  padding: 20px 14px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--rc-steel);
-}
-.rc-header-notif-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--rc-silver);
-}
-.rc-header-notif-item:last-child { border-bottom: none; }
-/* Whole-row link variant (2026-09-02, Matt's call, sponsors notification
-   specifically: "get rid of the CHOOSE SPONSORS button... make the whole
-   message thing a link") -- .rc-header-notif-item is a <div> normally;
-   when the item itself is an <a> (see header.js's fullRowLink), reset the
-   anchor defaults (underline, link color, inline display) back to plain
-   text, add a pointer cursor and a hover tint so it still reads as
-   clickable without looking like a button. */
-.rc-header-notif-item-link {
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-}
-.rc-header-notif-item-link:hover { background: var(--rc-offwhite); }
-.rc-header-notif-text {
-  flex: 1;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--rc-carbon);
-  text-align: left;
-}
-/* Replaces the old "OK" acknowledge button (2026-09-02, Matt's call: a
-   link straight to the page the notification is about, not just a way to
-   dismiss it). FIRST pass kept the old button's solid pill styling (dark
-   background, white text) even though the element itself was already an
-   <a> -- still read as a "physical button" sitting in the menu. REVISED
-   same day (Matt's call: "just make a linked text to the page") -- plain
-   underlined text in the site's own link-red, no background/border/
-   padding, same as any other inline link on the site (see the sitewide
-   `a`/`a:hover` rule up top). */
-.rc-header-notif-link {
-  flex: none;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--rc-red);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.rc-header-notif-link:hover { color: var(--rc-red-dark); }
-/* New-season notifications (2026-08-30) -- text + date stamp stacked in
-   their own column so the date sits under the message rather than
-   competing with it on one line; history entries below reuse
-   .rc-header-notif-item but muted, with no OK button (they're a read-only
-   record, see header.js's _rcDismissShownSeasonNotifs). */
-.rc-header-notif-text-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-}
-.rc-header-notif-text-col .rc-header-notif-text { flex: none; }
-.rc-header-notif-date {
-  font-size: 11px;
-  color: var(--rc-steel);
-}
-.rc-header-notif-history-head {
-  padding: 10px 14px 6px;
-  border-top: 1px solid var(--rc-silver);
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rc-steel);
-}
-.rc-header-notif-history-item { opacity: 0.65; }
-.rc-header-notif-history-item .rc-header-notif-text { color: var(--rc-steel); }
 .rc-header-menu-item {
   display: block;
   width: 100%;

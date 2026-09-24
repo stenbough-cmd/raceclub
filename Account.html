@@ -425,11 +425,22 @@
   // this file's icon convention (16x16, stroke-only) same as every other
   // sidebar glyph above.
   var ICON_FEEDBACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1-4.2A8 8 0 1 1 21 12Z"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>';
-  // Same glyph as the header's own notification bell (js/header.js) --
-  // duplicated here rather than shared, since that file runs in its own
-  // separate scope. Used by the Help page's page-by-page guide.
-  var ICON_BELL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+  // ICON_BELL (the header's old notification bell glyph, duplicated here
+  // for the Help page's page-by-page guide) removed 2026-09-24 alongside
+  // that guide's own Notifications entry -- see HELP_GUIDE_ITEMS below --
+  // the in-app notification system it described no longer exists.
   var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
+
+  // Discord/YouTube nav icons (added 2026-09-24, Matt's ask -- a "Follow
+  // Us" row between Feedback and Log Out, in place of the removed
+  // notification system, ahead of a future Discord bot integration).
+  // Filled brand marks, not this file's usual 16x16 stroke-only line-icon
+  // convention -- a simplified in-house approximation of each platform's
+  // logo (no way to pull the exact official SVG from this environment's
+  // network sandbox); swap the innerHTML here for the real brand asset any
+  // time Matt hands one over.
+  var ICON_DISCORD = '<svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="7" fill="#5865F2"></rect><path d="M7 8.6c1.2-.9 2.7-1.4 5-1.4s3.8.5 5 1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none"></path><ellipse cx="9" cy="13.2" rx="2.1" ry="2.6" fill="#fff"></ellipse><ellipse cx="15" cy="13.2" rx="2.1" ry="2.6" fill="#fff"></ellipse></svg>';
+  var ICON_YOUTUBE = '<svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="4.5" width="22" height="15" rx="5" fill="#FF0000"></rect><path d="M10 8.5v7l6.5-3.5z" fill="#fff"></path></svg>';
 
   // Restored from the pre-v0.5 archive (commit ab231e0) for the Calendar
   // page -- weather/session/setup chip icons, none of which the current
@@ -627,6 +638,35 @@
     }
   }
 
+  // "Follow Us" row -- Discord (live) + YouTube (placeholder, no channel
+  // yet) -- see buildSidebarNav's own call site below for why this sits
+  // where it does. Real <a> tags (not nav buttons -- these leave the
+  // site), target="_blank" + rel="noopener noreferrer" so the site tab
+  // stays put.
+  function buildSocialLinksRow() {
+    var row = el('div', 'rc-nav-social-row');
+    var discordLink = document.createElement('a');
+    discordLink.href = 'https://discord.gg/UxWgwDwc9U';
+    discordLink.target = '_blank';
+    discordLink.rel = 'noopener noreferrer';
+    discordLink.className = 'rc-nav-social-icon rc-nav-social-discord';
+    discordLink.setAttribute('aria-label', 'Join our Discord');
+    discordLink.innerHTML = ICON_DISCORD;
+    withTooltip(discordLink, 'Join our Discord');
+    row.appendChild(discordLink);
+
+    // YouTube channel doesn't exist yet (Matt, 2026-09-24) -- a disabled
+    // placeholder icon rather than a link to nowhere, swap in a real
+    // href + drop the -disabled class/tooltip once the channel launches.
+    var ytIcon = el('span', 'rc-nav-social-icon rc-nav-social-youtube rc-nav-social-disabled');
+    ytIcon.setAttribute('aria-label', 'YouTube -- coming soon');
+    ytIcon.innerHTML = ICON_YOUTUBE;
+    withTooltip(ytIcon, 'YouTube -- coming soon');
+    row.appendChild(ytIcon);
+
+    return row;
+  }
+
   // Order: the 10 general section links, a divider, Admin/Data
   // Management/League Management (only if this user's permissions unlock
   // them), a second divider, then Help, Settings, Log Out -- identical
@@ -733,6 +773,13 @@
     // js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js"> tag in <head>), not an in-page section.
     nav.appendChild(makeNavButton('feedback', 'Feedback', ICON_FEEDBACK, 'rc-nav-feedback', false, function () { _rcOpenFeedbackModal(); }));
+    // "Follow Us" row (added 2026-09-24, Matt's ask, sitting right where
+    // the in-app notification bell used to live before it was removed the
+    // same day) -- Discord + YouTube, opening in a new tab so a driver
+    // never loses their place on the site. YouTube has no channel yet, so
+    // its icon is a disabled placeholder with a tooltip until Matt has a
+    // real link to wire in (see buildSocialLinksRow below).
+    nav.appendChild(buildSocialLinksRow());
     nav.appendChild(navDivider());
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
   }
@@ -1467,6 +1514,9 @@
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
         return;
       }
+      // Title becomes "SEASON <n> DETAILS" once the season number is known
+      // (2026-09-24, Matt's ask -- matches league.html's own popup title).
+      _rcSetModalTitle(modal, hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details');
       var snapshotStats = _rcBuildSeasonSnapshotStats_(hub);
       var formatStats = _rcBuildSeasonFormatStats_(hub);
       if (!snapshotStats.length && !formatStats.length) {
@@ -2463,41 +2513,13 @@
 
       function finishRegistration() {
         showToast('You’re registered!', 'success');
-        // Dashboard rebuild fires first, immediately -- it's the thing the
-        // driver is actually looking at and waiting on.
+        // Dashboard rebuild -- it's the thing the driver is actually
+        // looking at and waiting on.
         rcReloadAfterSave();
-        // Notification bell refresh, staggered a beat behind it
-        // (2026-09-14 fix, Matt's report: "Could not reach the server"
-        // right after joining a team). This used to fire in the exact
-        // same breath as the dashboard reload: rcDismissSeasonNotification
-        // (1 call) plus rcRefreshNotificationsNow's own 3 concurrent
-        // fetches (see _rcRefreshNotifications, header.js) plus the
-        // dashboard rebuild's own call -- 5 near-simultaneous Apps Script
-        // requests from this one user, right on top of joinTeam's own
-        // heavy write (Registration/Team/Transaction rows, sponsor
-        // bookkeeping). Apps Script queues same-user requests rather than
-        // truly running them in parallel, so that pileup is exactly the
-        // kind of thing that produces a timed-out/failed request. None of
-        // this is as time-critical as the dashboard itself, so it's
-        // delayed just long enough to land after the dashboard's own
-        // request is already underway instead of racing it.
-        setTimeout(function () {
-          // Registering for a season dismisses its bell notification the
-          // same way closing the bell after seeing it would (Matt's call,
-          // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
-          if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
-          // Bug fix (2026-09-14, Matt's report: "no notification to
-          // choose sponsors in the bell after buying a seat"). The
-          // "Choose your sponsors" notification is derived live off
-          // getMySponsors (see _rcFetchSponsorNotifications, header.js)
-          // and only recomputed when the bell actually re-fetches --
-          // normally just the 45s poll tick, same gap chooseSponsors' own
-          // save already fixed itself (rcRefreshNotificationsNow below,
-          // mirroring that same call). Without forcing it here, a driver
-          // who checks the bell right after joining sees nothing yet,
-          // same as before this fix.
-          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
-        }, 1500);
+        // Notification-bell dismiss/refresh calls removed (2026-09-24,
+        // Matt's call: eliminate the in-app notification system entirely,
+        // moving to an external Discord bot) -- registration itself is
+        // otherwise unaffected.
       }
 
       openSigningSequence(team, carClass, function () {
@@ -2930,6 +2952,17 @@
     return { close: close, body: body, el: modal };
   }
 
+  // Updates an already-open showModal()'s title text in place -- used by
+  // popups whose real title (e.g. "SEASON 3 DETAILS"/"SEASON 3 CALENDAR")
+  // isn't known until the data fetch resolves, so the popup opens with a
+  // generic title and swaps it in once the season number is in hand.
+  // Only ever called on accentHead popups, so .rc-modal-title-accent is
+  // always present.
+  function _rcSetModalTitle(modal, text) {
+    var titleEl = modal.el.querySelector('.rc-modal-title-accent');
+    if (titleEl) titleEl.textContent = text;
+  }
+
   // Small reusable confirm popup for destructive actions (added 2026-08-30
   // for Season Tools' Delete button) -- built on showModal so it inherits
   // the same X-button-or-Cancel-only close rule. onConfirm runs when the
@@ -3112,10 +3145,10 @@
   // every row behind (openEndSeasonModal/handleAdminArchiveSeason above),
   // this permanently erases every trace of a season -- its rounds,
   // registrations, imported results (Sessions/DriverResults/Laps/
-  // RaceEvents), protests/adjustments, season history/standings cache
-  // rows, and notifications -- then rebuilds the League Hub/Grid Teaser
-  // caches so the site falls back to whatever season (or no season) comes
-  // next. See handleAdminDeleteSeason/_rcDeleteSeasonCascade_ (Seasons.gs)
+  // RaceEvents), protests/adjustments, and season history/standings
+  // cache rows -- then rebuilds the League Hub/Grid Teaser caches so the
+  // site falls back to whatever season (or no season) comes next.
+  // See handleAdminDeleteSeason/_rcDeleteSeasonCascade_ (Seasons.gs)
   // for exactly what gets removed.
   //
   // Only offered for a season that HASN'T been ended with the End Season
@@ -3171,7 +3204,7 @@
 
         openTypeToConfirmModal(
           'Delete Season',
-          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, protest, and notification tied to this season. This cannot be undone.',
+          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, and protest tied to this season. This cannot be undone.',
           'DELETE SEASON',
           'Continue',
           function () {
@@ -3583,25 +3616,9 @@
     });
     form.appendChild(timeZone);
 
-    // Email-notification opt-in (2026-09-02, Matt's ask: same checkbox as
-    // registration, now editable here too -- defaults off at signup,
-    // this is where a driver turns it on/off afterward). See
-    // rcSendPendingNotificationEmails (DataCache.gs) for what it actually
-    // gates: an automatic email for a notification still unread 24 hours
-    // after it was created (season starts, account upgrades, a pending
-    // wager awaiting a response).
-    var emailNotifyRow = el('div', 'rc-check-row');
-    emailNotifyRow.style.marginTop = '16px';
-    var emailNotify = document.createElement('input');
-    emailNotify.type = 'checkbox';
-    emailNotify.id = 'rc-editprofile-email-notify';
-    emailNotify.checked = !!profile.emailNotificationsOptIn;
-    var emailNotifyLabel = document.createElement('label');
-    emailNotifyLabel.setAttribute('for', 'rc-editprofile-email-notify');
-    emailNotifyLabel.textContent = 'Email me about things I might miss, like season starts.';
-    emailNotifyRow.appendChild(emailNotify);
-    emailNotifyRow.appendChild(emailNotifyLabel);
-    form.appendChild(emailNotifyRow);
+    // Email-notification opt-in checkbox removed (2026-09-24, Matt's
+    // call: eliminate the in-app notification system entirely, moving to
+    // an external Discord bot).
 
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
@@ -3651,8 +3668,7 @@
           suffix: suffix.value,
           email: email.value.trim(),
           location: location.value,
-          timeZone: timeZone.value,
-          emailNotificationsOptIn: emailNotify.checked ? '1' : '0'
+          timeZone: timeZone.value
         }
       })
         .then(function (data) {
@@ -3690,8 +3706,6 @@
       body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
     { icon: ICON_PROTESTS, title: 'Protests',
       body: 'Open it with "← File, withdraw and review protests" on your Dashboard\'s Protest card. Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
-    { icon: ICON_BELL, title: 'Notifications',
-      body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
       body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
     { icon: ICON_ADMIN, title: 'Admin and League Tools',
@@ -4783,6 +4797,12 @@
 
       var driverTz = '';
       try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
+
+      // Title becomes "SEASON <n> CALENDAR" once the season number is
+      // known (2026-09-24, Matt's ask -- matches league.html's own popup
+      // title).
+      var calSeasonNumLabel = seasonNumberLabel(res.seasonId);
+      _rcSetModalTitle(modal, calSeasonNumLabel ? ('Season ' + calSeasonNumLabel + ' Calendar') : 'Calendar');
 
       // No "Season N: Name" container any more (2026-09-24, Matt's call:
       // "Like the PROTESTS popup, remove the <season n> <season name>
@@ -9766,10 +9786,9 @@
     // path (a page where this bridge doesn't exist yet).
     window.rcOpenEditProfileModal = function () { openEditProfileModal(currentProfile, currentToken); };
 
-    // Same bridge pattern, for the header bell's notification links
-    // (2026-09-02, Matt's call: notifications should link straight to the
-    // page they're about, not just carry an OK button). A plain
-    // href="Account.html#admin" would only work correctly when clicked
+    // Same bridge pattern, for the header account dropdown's section
+    // links (2026-09-02). A plain href="Account.html#admin" would only
+    // work correctly when clicked
     // from a DIFFERENT page -- clicking it while already ON Account.html
     // is a same-document hash change (no reload), which showSection() is
     // never told about, so the visible section wouldn't actually switch.
@@ -10014,7 +10033,7 @@
   }
 
   if (freshProfile && freshProfile.success) {
-    renderHeader(); // header fetches its own notifications now -- see js/header.js
+    renderHeader();
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile.profile, token, dashboardData);
@@ -10053,7 +10072,7 @@
         return;
       }
       setProfileCache(profileResult.profile); // keeps the header avatar current on every other page too
-      renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
+      renderHeader(); // confirmed by the API -- safe to show as logged in
       document.getElementById('rc-loading').style.display = 'none';
       document.getElementById('rc-profile-root').style.display = 'block';
       renderProfile(profileResult.profile, token, dashboardData);
