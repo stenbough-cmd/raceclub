@@ -425,10 +425,10 @@
   // this file's icon convention (16x16, stroke-only) same as every other
   // sidebar glyph above.
   var ICON_FEEDBACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1-4.2A8 8 0 1 1 21 12Z"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>';
-  // ICON_BELL (the header's old notification bell glyph, duplicated here
-  // for the Help page's page-by-page guide) removed 2026-09-24 alongside
-  // that guide's own Notifications entry -- see HELP_GUIDE_ITEMS below --
-  // the in-app notification system it described no longer exists.
+  // Same glyph as the header's own notification bell (js/header.js) --
+  // duplicated here rather than shared, since that file runs in its own
+  // separate scope. Used by the Help page's page-by-page guide.
+  var ICON_BELL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
   var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
 
   // Restored from the pre-v0.5 archive (commit ab231e0) for the Calendar
@@ -471,12 +471,14 @@
   // wall-clock face, via the top button/crown) so Practice and Qualifying
   // don't read as the identical icon next to each other.
   var ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
-  // Round status line icons (ICON_CIRCLE_EMPTY/ICON_CIRCLE_CHECK, a plain
-  // empty ring and a ring-with-checkmark, 2026-09-23) removed 2026-09-24,
-  // item 8 -- buildRoundStatusLine now reuses the Dashboard Protest
-  // card's own RC_PROTEST_RULED_ICON + .rc-protest-dash-icon/-pending/
-  // -ruled classes instead, so this spot's open-circle-to-filled-
-  // checkmark treatment is guaranteed to match that one exactly.
+  // Round status line icons (2026-09-23, Matt's ask for a red/yellow/green
+  // import-status indicator in League Tools) -- a plain empty ring for the
+  // "not there yet" states (partial import, awaiting validation) and the
+  // same ring with a checkmark once results are finalized. Colored via
+  // currentColor/CSS on the wrapping element (see .rc-round-status-* in
+  // style.css), same convention as every other ICON_* here.
+  var ICON_CIRCLE_EMPTY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle></svg>';
+  var ICON_CIRCLE_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.3 12.3l2.6 2.6 4.8-5.4"></path></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management,
   // Admin, and Data Management are appended separately in buildSidebarNav
@@ -625,26 +627,6 @@
     }
   }
 
-  // Discord nav link (redone 2026-09-24, Matt's ask: "I want it to look
-  // like the same size as the other icons in the black sidebar, with the
-  // link being DISCORD so that it looks like it belongs with the links on
-  // the side") -- replaces the earlier icon-row version with a real
-  // .rc-nav-item, same markup shape as makeNavButton() above just built
-  // as an <a> (leaves the site) instead of a <button> (switches section).
-  // Uses Matt's own discord_logo.png asset, sized to match this file's
-  // 16x16 icon convention (see .rc-nav-item img, style.css). The YouTube
-  // placeholder from the first pass is gone -- Matt only asked for
-  // Discord in the sidebar this time.
-  function buildDiscordNavLink() {
-    var link = document.createElement('a');
-    link.className = 'rc-nav-item';
-    link.href = 'https://discord.gg/UxWgwDwc9U';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Join Discord</span>';
-    return link;
-  }
-
   // Order: the 10 general section links, a divider, Admin/Data
   // Management/League Management (only if this user's permissions unlock
   // them), a second divider, then Help, Settings, Log Out -- identical
@@ -751,10 +733,6 @@
     // js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js"> tag in <head>), not an in-page section.
     nav.appendChild(makeNavButton('feedback', 'Feedback', ICON_FEEDBACK, 'rc-nav-feedback', false, function () { _rcOpenFeedbackModal(); }));
-    // Discord link, right under Feedback (2026-09-24, Matt's ask), opening
-    // in a new tab so a driver never loses their place on the site -- see
-    // buildDiscordNavLink above.
-    nav.appendChild(buildDiscordNavLink());
     nav.appendChild(navDivider());
     nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
   }
@@ -1141,7 +1119,7 @@
     // Same "← Label" bottom-left link shape Next Race's "View full season"
     // and Protest's "Go to Protests" cards already use (.rc-link-btn
     // .rc-dash-card-link).
-    var formatBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View season details');
+    var formatBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View season format');
     formatBtn.type = 'button';
     formatBtn.addEventListener('click', function () { openSeasonFormatModal(); });
     card.appendChild(formatBtn);
@@ -1423,17 +1401,11 @@
     var row1 = [], row2 = [];
     if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
     if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-    // Qualify Type (2026-09-24, Matt's ask), between Qualify and Race
-    // Length -- same hub.privateQualifying field league.js's own
-    // _rclBuildFormatStats reads.
-    if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
-    // "Race Length" (was "Race Time", 2026-09-24, Matt's ask).
-    row1.push({ value: 'Varies', label: 'Race Length' });
+    row1.push({ value: 'Varies', label: 'Race Time' });
     if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
     if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
     if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-    // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
-    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
+    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
     if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
     if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
     if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
@@ -1470,28 +1442,21 @@
     return group;
   }
 
-  // "View Season Details" popup -- identical in width (820px, same as
+  // "View Season Format" popup -- identical in width (820px, same as
   // league.html's own non-wide .rcl-modal-dialog) and header treatment
   // (bold uppercase title, red 2px underline) to the rest of the account
   // page's popups, and using the same bordered "bubble" stat tiles
   // league.html's Season Details popup uses instead of the plain
   // borderless tile this first shipped with (2026-09-24, Matt's catch).
-  // Title and Registration Status card link both renamed from "Season
-  // Format" to "Season Details" (2026-09-24) -- the two stat groups
-  // inside are "This Season" and "Season Format" (rendered uppercase via
-  // .rc-seasonfmt-group-label's own CSS, same as league.html's).
   function openSeasonFormatModal() {
-    var modal = showModal('Season Details', { wide: true, accentHead: true });
-    modal.body.appendChild(buildSpinner('Loading season details...'));
+    var modal = showModal('Season Format', { wide: true, accentHead: true });
+    modal.body.appendChild(buildSpinner('Loading season format...'));
     fetchApi('getLeagueHub', {}).then(function (hub) {
       modal.body.innerHTML = '';
       if (!hub || !hub.success || !hub.hasSeason) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
         return;
       }
-      // Title becomes "SEASON <n> DETAILS" once the season number is known
-      // (2026-09-24, Matt's ask -- matches league.html's own popup title).
-      _rcSetModalTitle(modal, hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details');
       var snapshotStats = _rcBuildSeasonSnapshotStats_(hub);
       var formatStats = _rcBuildSeasonFormatStats_(hub);
       if (!snapshotStats.length && !formatStats.length) {
@@ -1499,7 +1464,7 @@
         return;
       }
       if (snapshotStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('This Season', snapshotStats));
-      if (formatStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('Season Format', formatStats));
+      if (formatStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('League Format', formatStats));
     }).catch(function () {
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
@@ -1616,19 +1581,8 @@
       var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
       if (existing) existing.remove();
       if (!carClass) return;
-      // rc-cs-corner-figure (2026-09-24, Matt's ask: "increase the size of
-      // the class pill in the CURRENT SEAT card and make it vertically
-      // centered with 'CURRENT SEAT' header") -- overrides the header
-      // row's default baseline alignment (shared with every other
-      // Dashboard card's own corner figure) for just this one, and the
-      // pill itself gets a size bump via .rc-cs-class-pill below, both
-      // scoped so Registration Status/Next Race's own corner figures and
-      // every other .rc-badge-chip-abbrev use on the site (e.g. league.js's
-      // report pill) are untouched.
-      var figure = el('div', 'rc-dash-card-corner-figure rc-cs-corner-figure');
-      var pill = _rcClassAbbrevPill(carClass);
-      pill.classList.add('rc-cs-class-pill');
-      figure.appendChild(pill);
+      var figure = el('div', 'rc-dash-card-corner-figure');
+      figure.appendChild(_rcClassAbbrevPill(carClass));
       headerRow.appendChild(figure);
     }
 
@@ -2017,44 +1971,22 @@
     var body = el('div', 'rc-protest-dash-item-body');
     var dateStr = p.submittedAt ? formatShortDate(p.submittedAt) : '';
     var against = (p.involvedNames || []).slice(1).join(' and ');
+    var whereBit = (p.roundNumber ? (' in Round ' + escapeHtml(String(p.roundNumber))) : '') +
+      (p.trackName ? (' at ' + escapeHtml(p.trackName)) : '');
+    var sentence = p.isMine
+      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + ' for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.')
+      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you for ' + escapeHtml(p.infractionType || 'an infraction') + whereBit + '.');
 
-    // Three-line layout (2026-09-24, styling pass): date + who on line 1,
-    // the infraction type alone on line 2, then the pending/ruled status
-    // line (below) -- replaces the old single run-on sentence that also
-    // buried the infraction type and round/track inside it.
-    var whoLine = el('div', 'rc-protest-dash-line');
-    var whoText = p.isMine
-      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
-      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.');
-    whoLine.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + whoText;
-    body.appendChild(whoLine);
-
-    body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType || 'Infraction not specified')));
+    var line = el('div', 'rc-protest-dash-line');
+    line.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + sentence;
+    body.appendChild(line);
 
     if (isRuled) {
-      // 2026-09-24 redesign, item 6: the outcome line now names WHO the
-      // penalty landed on, not just the tier, so it reads as a complete
-      // sentence on its own rather than needing the line above for
-      // context. Denied/Withdrawn stay simple since there's no penalty or
-      // target to name. Styled identically to the "(pending decision)"
-      // note below (light gray italic, .rc-protest-dash-outcome) so
-      // pending and ruled rows read as one consistent family.
-      var outcomeText;
-      if (p.status === 'Upheld') {
-        var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
-        outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
-      } else if (p.status === 'Denied') {
-        outcomeText = 'Protest denied.';
-      } else {
-        outcomeText = 'Protest withdrawn.';
-      }
+      // Same "Upheld: Tier N"/"Denied"/"Withdrawn" vocabulary
+      // _rcProtestStatusBadge already uses elsewhere on the site, just as
+      // a plain lighter-colored line instead of a chip here.
+      var outcomeText = p.status === 'Upheld' ? ('Upheld -- Tier ' + p.penaltyTier + ' penalty') : p.status;
       body.appendChild(el('div', 'rc-protest-dash-outcome', escapeHtml(outcomeText)));
-    } else {
-      // "(pending decision)" note (2026-09-24, item 6) -- a still-open
-      // protest gets the same light-gray-italic treatment as the ruled
-      // outcome line above, just with placeholder wording since there's
-      // no ruling yet to describe.
-      body.appendChild(el('div', 'rc-protest-dash-pending', '(pending decision)'));
     }
     row.appendChild(body);
     return row;
@@ -2088,7 +2020,7 @@
       card.appendChild(list);
     }
 
-    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← File, withdraw and review protests');
+    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← File or withdraw a protest');
     protestLink.type = 'button';
     protestLink.addEventListener('click', function () {
       openProtestModal(currentToken);
@@ -2510,13 +2442,41 @@
 
       function finishRegistration() {
         showToast('You’re registered!', 'success');
-        // Dashboard rebuild -- it's the thing the driver is actually
-        // looking at and waiting on.
+        // Dashboard rebuild fires first, immediately -- it's the thing the
+        // driver is actually looking at and waiting on.
         rcReloadAfterSave();
-        // Notification-bell dismiss/refresh calls removed (2026-09-24,
-        // Matt's call: eliminate the in-app notification system entirely,
-        // moving to an external Discord bot) -- registration itself is
-        // otherwise unaffected.
+        // Notification bell refresh, staggered a beat behind it
+        // (2026-09-14 fix, Matt's report: "Could not reach the server"
+        // right after joining a team). This used to fire in the exact
+        // same breath as the dashboard reload: rcDismissSeasonNotification
+        // (1 call) plus rcRefreshNotificationsNow's own 3 concurrent
+        // fetches (see _rcRefreshNotifications, header.js) plus the
+        // dashboard rebuild's own call -- 5 near-simultaneous Apps Script
+        // requests from this one user, right on top of joinTeam's own
+        // heavy write (Registration/Team/Transaction rows, sponsor
+        // bookkeeping). Apps Script queues same-user requests rather than
+        // truly running them in parallel, so that pileup is exactly the
+        // kind of thing that produces a timed-out/failed request. None of
+        // this is as time-critical as the dashboard itself, so it's
+        // delayed just long enough to land after the dashboard's own
+        // request is already underway instead of racing it.
+        setTimeout(function () {
+          // Registering for a season dismisses its bell notification the
+          // same way closing the bell after seeing it would (Matt's call,
+          // 2026-08-30) -- see rcDismissSeasonNotification in header.js.
+          if (typeof rcDismissSeasonNotification === 'function') rcDismissSeasonNotification(activeSeasonData.seasonId);
+          // Bug fix (2026-09-14, Matt's report: "no notification to
+          // choose sponsors in the bell after buying a seat"). The
+          // "Choose your sponsors" notification is derived live off
+          // getMySponsors (see _rcFetchSponsorNotifications, header.js)
+          // and only recomputed when the bell actually re-fetches --
+          // normally just the 45s poll tick, same gap chooseSponsors' own
+          // save already fixed itself (rcRefreshNotificationsNow below,
+          // mirroring that same call). Without forcing it here, a driver
+          // who checks the bell right after joining sees nothing yet,
+          // same as before this fix.
+          if (typeof rcRefreshNotificationsNow === 'function') rcRefreshNotificationsNow();
+        }, 1500);
       }
 
       openSigningSequence(team, carClass, function () {
@@ -2949,17 +2909,6 @@
     return { close: close, body: body, el: modal };
   }
 
-  // Updates an already-open showModal()'s title text in place -- used by
-  // popups whose real title (e.g. "SEASON 3 DETAILS"/"SEASON 3 CALENDAR")
-  // isn't known until the data fetch resolves, so the popup opens with a
-  // generic title and swaps it in once the season number is in hand.
-  // Only ever called on accentHead popups, so .rc-modal-title-accent is
-  // always present.
-  function _rcSetModalTitle(modal, text) {
-    var titleEl = modal.el.querySelector('.rc-modal-title-accent');
-    if (titleEl) titleEl.textContent = text;
-  }
-
   // Small reusable confirm popup for destructive actions (added 2026-08-30
   // for Season Tools' Delete button) -- built on showModal so it inherits
   // the same X-button-or-Cancel-only close rule. onConfirm runs when the
@@ -3142,10 +3091,10 @@
   // every row behind (openEndSeasonModal/handleAdminArchiveSeason above),
   // this permanently erases every trace of a season -- its rounds,
   // registrations, imported results (Sessions/DriverResults/Laps/
-  // RaceEvents), protests/adjustments, and season history/standings
-  // cache rows -- then rebuilds the League Hub/Grid Teaser caches so the
-  // site falls back to whatever season (or no season) comes next.
-  // See handleAdminDeleteSeason/_rcDeleteSeasonCascade_ (Seasons.gs)
+  // RaceEvents), protests/adjustments, season history/standings cache
+  // rows, and notifications -- then rebuilds the League Hub/Grid Teaser
+  // caches so the site falls back to whatever season (or no season) comes
+  // next. See handleAdminDeleteSeason/_rcDeleteSeasonCascade_ (Seasons.gs)
   // for exactly what gets removed.
   //
   // Only offered for a season that HASN'T been ended with the End Season
@@ -3201,7 +3150,7 @@
 
         openTypeToConfirmModal(
           'Delete Season',
-          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, and protest tied to this season. This cannot be undone.',
+          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, protest, and notification tied to this season. This cannot be undone.',
           'DELETE SEASON',
           'Continue',
           function () {
@@ -3613,9 +3562,25 @@
     });
     form.appendChild(timeZone);
 
-    // Email-notification opt-in checkbox removed (2026-09-24, Matt's
-    // call: eliminate the in-app notification system entirely, moving to
-    // an external Discord bot).
+    // Email-notification opt-in (2026-09-02, Matt's ask: same checkbox as
+    // registration, now editable here too -- defaults off at signup,
+    // this is where a driver turns it on/off afterward). See
+    // rcSendPendingNotificationEmails (DataCache.gs) for what it actually
+    // gates: an automatic email for a notification still unread 24 hours
+    // after it was created (season starts, account upgrades, a pending
+    // wager awaiting a response).
+    var emailNotifyRow = el('div', 'rc-check-row');
+    emailNotifyRow.style.marginTop = '16px';
+    var emailNotify = document.createElement('input');
+    emailNotify.type = 'checkbox';
+    emailNotify.id = 'rc-editprofile-email-notify';
+    emailNotify.checked = !!profile.emailNotificationsOptIn;
+    var emailNotifyLabel = document.createElement('label');
+    emailNotifyLabel.setAttribute('for', 'rc-editprofile-email-notify');
+    emailNotifyLabel.textContent = 'Email me about things I might miss, like season starts.';
+    emailNotifyRow.appendChild(emailNotify);
+    emailNotifyRow.appendChild(emailNotifyLabel);
+    form.appendChild(emailNotifyRow);
 
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
@@ -3665,7 +3630,8 @@
           suffix: suffix.value,
           email: email.value.trim(),
           location: location.value,
-          timeZone: timeZone.value
+          timeZone: timeZone.value,
+          emailNotificationsOptIn: emailNotify.checked ? '1' : '0'
         }
       })
         .then(function (data) {
@@ -3702,7 +3668,9 @@
     { icon: ICON_RESULTS, title: 'Results',
       body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
     { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'Open it with "← File, withdraw and review protests" on your Dashboard\'s Protest card. Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+      body: 'Open it with "← File or withdraw a protest" on your Dashboard\'s Protest card. Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+    { icon: ICON_BELL, title: 'Notifications',
+      body: 'The bell icon in the header shows anything new that needs your attention, including newly opened seasons. Dismissing one clears it for good.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
       body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
     { icon: ICON_ADMIN, title: 'Admin and League Tools',
@@ -4064,49 +4032,46 @@
     return box;
   }
 
-  // Round status line (2026-09-23, Matt's ask; recolored/rewritten
-  // 2026-09-24, item 8) -- one line summarizing exactly where a round's
-  // results stand, in a fixed 4-stage sequence:
-  //   1. Awaiting results.
-  //   2. Qualifying results uploaded, awaiting race results.
-  //   3. Results uploaded, awaiting review.
-  //   4. Results reviewed and finalized. Official results posted.
-  // No more per-stage color coding (was red/yellow/green,
-  // .rc-round-status-red/-yellow/-green, removed) -- the text is always
-  // light gray and italic (.rc-round-status-text), and the icon is always
-  // an open gray circle except on stage 4, where it fills solid gray with
-  // a white checkmark. That's the exact same open-circle/checkmark-circle
-  // pattern (and the exact same .rc-protest-dash-icon/-pending/-ruled
-  // classes plus RC_PROTEST_RULED_ICON) the Dashboard's Protest card
-  // already uses, reused here directly rather than duplicated so the two
-  // stay visually identical automatically.
+  // Round status line (2026-09-23, Matt's ask) -- one colored circle-icon
+  // line summarizing exactly where a round's results stand:
+  //   - red, empty circle: one of Qualify/Race imported, the other pending
+  //   - yellow, empty circle: both imported, not yet finalized (validated)
+  //   - green, checkmark circle: finalized (official)
+  //   - red, empty circle (2026-09-23 follow-up, corrected same day --
+  //     Matt's catch: "it's appearing on the wrong round... it should be
+  //     appearing on the round where imports can happen"): the round is
+  //     UNLOCKED (imports are allowed here right now) but nothing has
+  //     been imported yet -- this is the note that replaces the old
+  //     "the visible Import Results button already makes that obvious"
+  //     no-note behavior.
   // A LOCKED round (an earlier round isn't finalized yet) gets no note at
   // all -- its Import Results/Delete Results buttons are hidden with
   // nothing else said about it; the note above is reserved for the one
   // round that's actually actionable right now.
   function buildRoundStatusLine(r, locked) {
-    var isFinal = !!r.resultsFinalized;
-    var text;
-    if (isFinal) {
-      text = 'Results reviewed and finalized. Official results posted.';
+    var state;
+    if (r.resultsFinalized) {
+      state = { tone: 'green', icon: ICON_CIRCLE_CHECK, text: 'Results have been validated.' };
     } else if (r.hasResults) {
-      text = 'Results uploaded, awaiting review.';
+      state = { tone: 'yellow', icon: ICON_CIRCLE_EMPTY, text: 'Results uploaded, awaiting validation.' };
     } else if (r.hasAnySessionImported) {
-      // The 4-stage sequence names only the Qualifying-then-Race order;
-      // this mirrors that same wording for the reverse order (a race
-      // session imported before qualifying), a case the original design
-      // already handled separately -- judgment call, item 8.
-      text = r.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.';
+      // Yellow, not red (2026-09-23, Matt's ask) -- a partial import isn't
+      // a problem to flag in alarm-red, it's just "in progress," the same
+      // caution tone the "awaiting validation" state below already uses.
+      state = {
+        tone: 'yellow', icon: ICON_CIRCLE_EMPTY,
+        text: r.hasRaceResults ? 'Race results imported, qualifying results pending.' : 'Qualifying results imported, race results pending.'
+      };
     } else if (!locked) {
-      text = 'Awaiting results.';
+      state = { tone: 'red', icon: ICON_CIRCLE_EMPTY, text: 'Qualifying and race results not yet imported.' };
     } else {
       return null;
     }
-    var line = el('div', 'rc-round-status');
-    var icon = el('span', 'rc-protest-dash-icon' + (isFinal ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
-    if (isFinal) icon.innerHTML = RC_PROTEST_RULED_ICON;
-    line.appendChild(icon);
-    line.appendChild(el('span', 'rc-round-status-text', text));
+    var line = el('div', 'rc-round-status rc-round-status-' + state.tone);
+    var iconSpan = el('span', 'rc-round-status-icon');
+    iconSpan.innerHTML = state.icon;
+    line.appendChild(iconSpan);
+    line.appendChild(el('span', null, state.text));
     return line;
   }
 
@@ -4606,6 +4571,30 @@
     return (points || []).map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
   }
 
+  // Class pills row -- built once, reused wherever a season's classes need
+  // to show as a row of pills. Moved into the Calendar page's own season
+  // header (2026-09-19, top-right corner, same treatment as a Dashboard
+  // card's corner figure) rather than living inside Season Settings.
+  // Returns null when the season has no classes selected, so callers can
+  // skip appending it.
+  function buildClassPillsRow(classes) {
+    var classKeys = Object.keys(classes || {}).filter(function (k) { return classes[k]; });
+    if (!classKeys.length) return null;
+    var classesRow = el('div', 'rc-cal-classes');
+    // MULTICLASS/SINGLE CLASS pill (2026-09-19, Matt's call) -- sits
+    // before the class pills themselves, outline style so it reads as a
+    // label about the row rather than one more class in it. See
+    // .rc-cal-format-pill, css/style.css.
+    classesRow.appendChild(el('span', 'rc-cal-format-pill', classKeys.length > 1 ? 'Multiclass' : 'Single Class'));
+    classKeys.forEach(function (k) {
+      var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[k]) ? CAR_CLASS_BADGE_COLOR_VAR[k] : '--rc-steel';
+      var pill = el('span', 'rc-cal-class-pill', escapeHtml(_rcClassPillLabel(k)));
+      pill.style.background = 'var(' + colorVar + ')';
+      classesRow.appendChild(pill);
+    });
+    return classesRow;
+  }
+
   // Compact "MMM D, YYYY" date, no weekday/time -- for the Season Format
   // panel's Start/Stop pill below, where formatRaceDateTime's fuller
   // weekday+time format would be too long for a small mini-stat pill.
@@ -4636,33 +4625,7 @@
   // season-wide block (fuel/tire multipliers etc.) -- Matt's call: those
   // don't vary race to race, but show on every card anyway for quick
   // reference rather than making the driver flip back to Season Settings.
-  // isNext flags the first not-yet-finished round/special in the list
-  // (computed once by the caller, openCalendarModal, same "first
-  // unfinished entry" rule league.html's own _rclRenderCalendar uses for
-  // its UP NEXT pill).
-  //
-  // Redesigned 2026-09-24 (Matt's ask: "make the race calendar layout
-  // look identical to the league.html calendar race layout, including the
-  // UP NEXT, SCHEDULED, COMPLETED text on the upper right side... and
-  // have the notes on the status of the results posted below those status
-  // notes... keep the same colors as the current account calendar but
-  // font/layout/text weight match the league page"). Structure now
-  // mirrors league.html's _rclRenderCalendar/.rcl-cal-row exactly -- a
-  // round-number bar on the left (back after being folded into a "ROUND
-  // N:" title prefix on 2026-09-19), a combined "<event> at <track>:
-  // <layout>" line, and a status word (UP NEXT/SCHEDULED/COMPLETED, same
-  // wording league.html uses except SCHEDULED where league says
-  // UPCOMING, Matt's own pick for the account page) with the results note
-  // stacked BELOW it as its own line instead of league's single combined
-  // "COMPLETED · OFFICIAL RESULTS POSTED" string. All of it still in
-  // Account's own light-page color tokens (--rc-carbon/--rc-steel/
-  // --rc-red/--rc-silver/--rc-offwhite/--rc-gold), not league's dark
-  // theme -- only the font (--rc-font-heading), weights, letter-spacing
-  // and layout shape are ported over. The old full-card dimmed "Completed"
-  // overlay is gone -- replaced by the same lighter "fade the row, keep
-  // the status legible" treatment league.html's own .rcl-cal-row-finished
-  // uses.
-  function raceCard(entry, driverTz, raceSettings, isNext) {
+  function raceCard(entry, driverTz, raceSettings) {
     if (entry.kind === 'bye') {
       var byeCard = el('div', 'rc-cal-bye', 'Bye Week');
       byeCard.appendChild(el('span', 'rc-cal-bye-date', formatByeDate(entry.startUtc, driverTz)));
@@ -4672,93 +4635,171 @@
     var isSpecial = entry.kind === 'special';
     var card = el('div', 'rc-cal-race' +
       (entry.finished ? ' rc-cal-finished' : '') +
-      (isSpecial ? ' rc-cal-race-special' : '') +
-      (isNext ? ' rc-cal-race-next' : ''));
+      (isSpecial ? ' rc-cal-race-special' : ''));
 
-    var roundLabel = isSpecial ? 'SP' : ('R' + entry.roundNum);
-    card.appendChild(el('div', 'rc-cal-round-bar' + (isSpecial ? ' rc-cal-round-bar-special' : ''), escapeHtml(roundLabel)));
+    // Round-number bar removed entirely (2026-09-19, Matt's call: "get rid
+    // of the giant numbers with the gray left border backgrounds") -- the
+    // round number now lives in the "ROUND N:" title prefix below instead
+    // (see nameWrap). Every round/special-event card now also gets the
+    // same diagonal "finish flag" top accent (.rc-cal-race::before below),
+    // gray for a normal round and gold for a Special Event, so the two
+    // read as one family instead of only Special Events getting an accent.
 
+    // No track image aside anymore (2026-09-19, Matt's call: "remove the
+    // tracks from being shown within each... I am removing this design
+    // choice for now and may add it back later somehow") -- .rc-cal-race-
+    // body is just the whole card's content column now, nothing sits
+    // beside it.
     var body = el('div', 'rc-cal-race-body');
 
-    // Day/date/time the race starts -- plain text above the event title
-    // (2026-09-24, Matt's ask: "move the day, date and time the race
-    // starts above the event title, remove it from a pill so it's just
-    // text"), not a pill any more. The meta row's own chip below now
-    // carries only race length (see timeTierParts further down).
-    if (entry.startUtc) {
-      body.appendChild(el('div', 'rc-cal-race-datetime', escapeHtml(formatRaceDateTime(entry.startUtc, driverTz))));
-    }
-
     var head = el('div', 'rc-cal-race-head');
-    // "<event name> at <track name>: <layout>" as one combined line, same
-    // three-piece shape league.html's own .rcl-cal-event uses (event name
-    // bold, track normal weight, layout normal weight but dimmer) --
-    // replaces the old separate "ROUND N: <event>" title + standalone
-    // track/layout row below it.
-    var eventLine = el('div', 'rc-cal-race-event');
-    eventLine.appendChild(el('span', 'rc-cal-race-event-name', escapeHtml(entry.eventName || 'Race')));
-    eventLine.appendChild(document.createTextNode(' at '));
-    eventLine.appendChild(el('span', 'rc-cal-race-event-track', escapeHtml(entry.track || '(no track)')));
-    if (entry.layout) {
-      eventLine.appendChild(document.createTextNode(': '));
-      eventLine.appendChild(el('span', 'rc-cal-race-event-layout', escapeHtml(entry.layout)));
+    var nameWrap = el('div', 'rc-cal-race-name');
+    // "ROUND N:"/"SPECIAL EVENT:" prefix on every title (2026-09-19, Matt's
+    // call) -- replaces the removed round-number bar as the way a driver
+    // tells which round a card is at a glance. A round with no custom
+    // event name still gets a title now ("ROUND N" alone) instead of the
+    // old fallback text living outside a prefix system.
+    var titlePrefix = isSpecial ? 'SPECIAL EVENT' : ('ROUND ' + entry.roundNum);
+    var titleText = entry.eventName ? (titlePrefix + ': ' + entry.eventName) : titlePrefix;
+    nameWrap.appendChild(document.createTextNode(titleText));
+    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
+    head.appendChild(nameWrap);
+    // Length + Weather pills, top-right of the title row (2026-09-19,
+    // Matt's call: "move the length and weather to the top right of each
+    // container, on the same row as the event title, but on the right
+    // side") -- .rc-cal-race-head is already a space-between flex row
+    // (nameWrap on the left), so appending these here puts them at the
+    // right edge for free.
+    var headPills = el('div', 'rc-cal-mini-stats');
+    // IRL start time pill (2026-09-20, Matt's ask: "make the IRL start
+    // time a pill that sits to the left of race length pill in the right
+    // corner") -- same formatRaceDateTime text the full date/time row
+    // further down the card already shows (that row stays, since it also
+    // carries the in-game Practice/Qualifying/Race Start times, which
+    // this corner pill doesn't try to duplicate), just surfaced here too
+    // as the first of the top-right pills so it's visible without
+    // scanning the whole card. Calendar icon (not the clock the length
+    // pill uses right after it) so the two don't look identical at a
+    // glance.
+    headPills.appendChild(calStat(ICON_CALENDAR, formatRaceDateTime(entry.startUtc, driverTz), 'IRL Start Time', 'rc-cal-mini-stat'));
+    // Tier + minutes together now (2026-09-19 follow-up, Matt's ask: "have
+    // it say the full tier and time like it does for season in each
+    // individual container") -- same "Tier · N min" format the Season
+    // Settings panel's own per-tier chips already use (see tierStats
+    // above: tier + ' · ' + table.duration + ' min'). entry.raceLengthTier
+    // comes straight off handleGetSeasonCalendar's full entry objects
+    // (unlike league.html's public hub, this driver-facing call was never
+    // trimmed of it) -- was already there, just unused client-side since
+    // the 2026-09-19 "display length in mins" pass dropped the tier label
+    // entirely rather than pairing it with the minutes.
+    if (!isSpecial && entry.raceLengthMinutes) {
+      var lengthLabel = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min');
+      headPills.appendChild(calStat(ICON_CLOCK, lengthLabel, 'Race length', 'rc-cal-mini-stat'));
     }
-    if (isSpecial) eventLine.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
-    head.appendChild(eventLine);
-
-    // Status word, upper-right of the row (Matt's exact ask) -- UP NEXT
-    // for the first not-yet-finished entry, SCHEDULED for anything else
-    // still upcoming, COMPLETED once its start time has passed. The
-    // results-posted note renders as its own line right underneath it,
-    // only once the round has actually finished and it isn't a Special
-    // Event (Special Events have no RoundID to check results against).
-    var statusWrap = el('div', 'rc-cal-race-status-wrap');
-    var statusText, statusClass;
-    if (isNext) {
-      statusText = 'UP NEXT'; statusClass = 'up';
-    } else if (!entry.finished) {
-      statusText = 'SCHEDULED'; statusClass = 'scheduled';
-    } else {
-      statusText = 'COMPLETED'; statusClass = 'complete';
-    }
-    statusWrap.appendChild(el('div', 'rc-cal-race-status rc-cal-race-status-' + statusClass, statusText));
-    if (entry.finished && !isSpecial) {
-      var noteText, noteClass;
-      if (entry.hasResults) {
-        noteText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
-        noteClass = entry.resultsFinalized ? 'official' : 'preliminary';
-      } else {
-        noteText = 'No Results Posted Yet';
-        noteClass = 'none';
-      }
-      statusWrap.appendChild(el('div', 'rc-cal-race-status-note rc-cal-race-status-note-' + noteClass, noteText));
-    }
-    head.appendChild(statusWrap);
+    headPills.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather', 'rc-cal-mini-stat'));
+    head.appendChild(headPills);
     body.appendChild(head);
 
-    // Meta chip row -- race length, In-Game Event Time, Weather, and
-    // (when set) a Password Override chip, same "one row of small pills
-    // under the headline" shape league.html's own .rcl-cal-meta row uses.
-    // Race start date/time moved out of here (2026-09-24, see the plain-
-    // text line above) -- this chip now carries only the length/tier.
-    var metaRow = el('div', 'rc-cal-race-meta');
-    if (!isSpecial && entry.raceLengthMinutes) {
-      var lengthText = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min');
-      metaRow.appendChild(calStat(ICON_CALENDAR, lengthText, 'Race length'));
-    }
-    if (entry.igRaceStart) metaRow.appendChild(calStat(ICON_FLAG, 'In-Game Event Time ' + entry.igRaceStart, 'The in-game race start time'));
-    metaRow.appendChild(calStat(weatherIcon(entry), (entry.chanceOfRain || 0) + '% Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ' · ' + entry.temperatureC + '°C' : ''), 'Weather'));
+    // Track name/layout (2026-09-19 follow-up, Matt's catch: "I don't
+    // want the track names gone... what I don't want is the track
+    // images" -- only the track IMAGE was ever meant to go). Password
+    // Override, when a round has one, stays down here next to the track
+    // rather than moving up with Length/Weather (2026-09-19 -- Matt's
+    // ask only named those two for the header row).
+    var trackRow = el('div', 'rc-cal-track-row');
+    var trackText = el('div', 'rc-cal-track');
+    trackText.innerHTML = '<strong>' + escapeHtml(entry.track || '(no track)') + '</strong>' +
+      (entry.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(entry.layout) + '</span>' : '');
+    trackRow.appendChild(trackText);
     if (entry.passwordOverride) {
-      metaRow.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
+      var pwStats = el('div', 'rc-cal-mini-stats');
+      pwStats.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride, 'rc-cal-mini-stat'));
+      trackRow.appendChild(pwStats);
     }
-    body.appendChild(metaRow);
+    body.appendChild(trackRow);
 
-    // Practice/Qualifying in-game times removed (2026-09-24, Matt's ask:
-    // "remove the practice and qualify in-game time" from the Dashboard
-    // calendar popup) -- Account.html's raceCard no longer shows these at
-    // all.
+    // Plain IRL date/time text line removed (2026-09-21, Matt's call:
+    // "remove the race time on the calendar page that's at the bottom of
+    // each race container because it's already a pill on the top right")
+    // -- it duplicated the IRL Start Time pill headPills already shows
+    // top-right of the card (see ICON_CALENDAR calStat above). This line
+    // now carries only the in-game time info, nothing IRL.
+    var datetime = el('div', 'rc-cal-datetime');
+    // In-Game Race Start, Practice, and Qualifying all live on this one
+    // line now (Matt's call, 2026-08-30 -- Practice/Qualifying used to get
+    // their own row below) -- Practice/Qualifying trail the Race Start
+    // time in muted gray text so Race Start still reads as the primary
+    // figure at a glance.
+    if (entry.igRaceStart) {
+      var igExtras = [];
+      if (entry.igPracticeStart) igExtras.push('Practice ' + escapeHtml(entry.igPracticeStart));
+      if (entry.igQualifyStart) igExtras.push('Qualifying ' + escapeHtml(entry.igQualifyStart));
+      var igText = 'In-Game Race Start ' + escapeHtml(entry.igRaceStart);
+      if (igExtras.length) igText += ' <span class="rc-cal-igtimes-extra">(' + igExtras.join(' &middot; ') + ')</span>';
+      var igSpan = el('span', null, ICON_FLAG + '<span>' + igText + '</span>');
+      datetime.appendChild(igSpan);
+    }
+    // Only appended when it actually has the in-game line in it (guards
+    // against a bare empty-but-margined div for a round with no in-game
+    // times set yet, now that the plain IRL text line above is gone).
+    if (datetime.children.length) body.appendChild(datetime);
+
+    // Bottom .rc-cal-stats row removed entirely (2026-09-19, Matt's call:
+    // "remove the larger ones from the bottom of each container so the
+    // only pills should be next to the tracks in calendar") -- Weather/
+    // Race Length moved up into the new miniStats row above; Fuel/Tire
+    // Wear/Setups moved into Season Settings' top row (they're season-wide
+    // and don't change race to race -- see seasonDetailsPanel).
 
     card.appendChild(body);
+
+    // Track image removed entirely (2026-09-19, Matt's call -- see the
+    // miniStats comment above; may come back in some other form later).
+
+    // Whole-container dim + centered "COMPLETED" overlay, once a round/
+    // special event's start time has passed (2026-09-23 redesign, Matt's
+    // ask: "dim the whole race container and show COMPLETED in large
+    // text in the middle" -- the third pass at this treatment: a faded
+    // background + small pill (original), then a full-card dark scrim
+    // with giant centered text (2026-09-early), then small corner badges
+    // over a dimmed body only (2026-09-21). This returns to a full-card
+    // centered treatment, but keeps the 2026-09-21 pass's clearer wording
+    // rather than reverting the copy too). .rc-cal-finished (already on
+    // `card` itself) dims -- the overlay is a sibling of body/head, sits
+    // on top via z-index over the ENTIRE card (not just the body column),
+    // so every part of the container reads as dimmed at a glance.
+    // 2026-09-07: whether results have actually been imported yet for a
+    // real Round (isSpecial and bye entries have no RoundID to check
+    // against, so they only ever get the plain "Completed" title, no
+    // results line) -- hasResults comes straight off the same entries
+    // _rcBuildActiveSeasonCalendar_ builds for League Management's
+    // per-race Add Results/Delete buttons, so this can never disagree
+    // with what an Admin sees there. A second line -- "Unofficial Results
+    // Posted" or "Official Results Posted" (Matt's exact wording,
+    // 2026-09-23; "Official" once the round has been finalized via League
+    // Management's Finalize button, adminFinalizeRound/resultsFinalized),
+    // or "No Results Posted Yet" (Matt's same-day follow-up) when the
+    // round's start time has passed but nothing's been imported for it
+    // yet. Special events never get this line -- they have no RoundID to
+    // check results against in the first place (see the comment above),
+    // so there's nothing meaningful to report either way.
+    if (entry.finished) {
+      var completedOverlay = el('div', 'rc-cal-completed-overlay');
+      completedOverlay.appendChild(el('div', 'rc-cal-completed-overlay-title', 'Completed'));
+      if (!isSpecial) {
+        var resultsLineText, resultsLineModifier;
+        if (entry.hasResults) {
+          resultsLineText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
+          resultsLineModifier = entry.resultsFinalized ? 'official' : 'unofficial';
+        } else {
+          resultsLineText = 'No Results Posted Yet';
+          resultsLineModifier = 'none';
+        }
+        completedOverlay.appendChild(el('div', 'rc-cal-completed-overlay-sub rc-cal-completed-overlay-sub-' + resultsLineModifier, resultsLineText));
+      }
+      card.appendChild(completedOverlay);
+    }
+
     return card;
   }
 
@@ -4773,11 +4814,6 @@
   // old standalone Calendar page rendered.
   function openCalendarModal(token) {
     var modal = showModal('Calendar', { wide: true, accentHead: true });
-    // 50px wider than every other wide popup (2026-09-24, Matt's ask) --
-    // .rc-modal-wide's own 820px is shared with Season Details/Current
-    // Seat Info/Protests, so this bumps just the Calendar popup's own
-    // instance rather than every wide popup on the site.
-    modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading your calendar...'));
 
     fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
@@ -4803,30 +4839,20 @@
       var driverTz = '';
       try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
 
-      // Title becomes "SEASON <n> CALENDAR" once the season number is
-      // known (2026-09-24, Matt's ask -- matches league.html's own popup
-      // title).
-      var calSeasonNumLabel = seasonNumberLabel(res.seasonId);
-      _rcSetModalTitle(modal, calSeasonNumLabel ? ('Season ' + calSeasonNumLabel + ' Calendar') : 'Calendar');
-
-      // No "Season N: Name" container any more (2026-09-24, Matt's call:
-      // "Like the PROTESTS popup, remove the <season n> <season name>
-      // container and have everything sit within the popup below the red
-      // header line at the top") -- the race list renders directly under
-      // the modal's own red accent-header line, same move openProtestModal
-      // made.
-      var races = res.races || [];
-      // First not-yet-finished round/special gets the "UP NEXT" status
-      // (byes never do -- nothing to point a driver toward on a week off),
-      // same rule league.html's own _rclRenderCalendar uses.
-      var nextIdx = -1;
-      races.forEach(function (entry, idx) {
-        if (nextIdx === -1 && entry.kind !== 'bye' && !entry.finished) nextIdx = idx;
-      });
+      // "Season N: <name>" header + class pills, same treatment the old
+      // standalone Calendar page used (see seasonNumberLabel()/
+      // buildClassPillsRow above) -- no rc-dash-card/rc-panel chrome here
+      // since the modal shell already supplies the card-like frame.
+      var seasonNumLabel = seasonNumberLabel(res.seasonId);
+      var head = el('div', 'rc-cal-season-head');
+      head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + res.seasonName));
+      var classPillsRow = buildClassPillsRow((res.seasonDetails || {}).classes);
+      if (classPillsRow) head.appendChild(classPillsRow);
+      modal.body.appendChild(head);
 
       var list = el('div', 'rc-cal-race-list');
       var raceSettings = (res.seasonDetails || {}).raceSettings || {};
-      races.forEach(function (entry, idx) { list.appendChild(raceCard(entry, driverTz, raceSettings, idx === nextIdx)); });
+      (res.races || []).forEach(function (entry) { list.appendChild(raceCard(entry, driverTz, raceSettings)); });
       modal.body.appendChild(list);
     }).catch(function () {
       modal.body.innerHTML = '';
@@ -5095,8 +5121,12 @@
       var head = el('div', 'rc-cal-season-head');
       var seasonNumLabel = seasonNumberLabel(res.seasonId);
       head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
-      // Class pills removed from the top-right corner (2026-09-24, Matt's
-      // call) -- the header is just the season title now.
+      // Class pills, top-right of the header (2026-09-20, Matt's ask: "add
+      // the pills in the top right like CALENDAR page has describing the
+      // classes for the season") -- same treatment, same helper, as
+      // renderCalendarSection's own head.appendChild(classPillsRow) below.
+      var resultsClassPillsRow = buildClassPillsRow((res.seasonDetails || {}).classes);
+      if (resultsClassPillsRow) head.appendChild(resultsClassPillsRow);
       panel.appendChild(head);
 
       // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a
@@ -5180,23 +5210,27 @@
         return;
       }
 
-      buildProtestPopupBody(modal, token, filing, mine && mine.success ? (mine.protests || []) : []);
+      modal.body.appendChild(buildProtestPagePanel(token, filing, mine && mine.success ? (mine.protests || []) : []));
     }).catch(function () {
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
   }
 
-  // The popup's content (2026-09-24 redesign, Matt's call: "remove the
-  // container within the popups in the protests popup" -- the old
-  // "Season N: Name" panel wrapper is gone; FILE PROTEST and the history
-  // now sit directly under the modal's own red header line, same as
-  // Calendar). FILE PROTEST is right-aligned right below the header
-  // (.rc-protest-action-row already does that), then a bordered container
-  // (.rc-protest-history-box) with every protest this driver filed or was
-  // named in, newest season first.
-  function buildProtestPopupBody(modal, token, filing, protests) {
-    var container = modal.body;
+  // The page's one container (2026-09-20 redesign) -- "Season N: Name" +
+  // class pills header (same rc-cal-season-head treatment Calendar/
+  // Results/Career already use), FILE PROTEST button right-aligned below
+  // the header's own red rule, then a bordered, season-grouped history of
+  // every protest this driver filed or was named in.
+  function buildProtestPagePanel(token, filing, protests) {
+    var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
+    var head = el('div', 'rc-cal-season-head');
+    var seasonNumLabel = seasonNumberLabel(filing.seasonId);
+    head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(filing.seasonName || '')));
+    var classPillsRow = buildClassPillsRow((filing.seasonDetails || {}).classes);
+    if (classPillsRow) head.appendChild(classPillsRow);
+    panel.appendChild(head);
+
     // "Below the red line to the right, there should be a button that
     // says FILE PROTEST" -- gray, not red (house rule: a button that only
     // OPENS a popup stays gray, even though what it opens ends in a
@@ -5205,202 +5239,177 @@
     // genuinely nothing open to protest right now.
     var actionRow = el('div', 'rc-protest-action-row');
     var hasOpenRounds = (filing.rounds || []).length > 0;
-    // Red/primary (2026-09-24, Matt's explicit override of the site's own
-    // "gray unless it saves" button rule for this one button).
-    var fileBtn = el('button', 'rc-btn-primary rc-btn-sm', 'File Protest');
+    var fileBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'File Protest');
     fileBtn.type = 'button';
     fileBtn.disabled = !hasOpenRounds;
     if (hasOpenRounds) {
       fileBtn.addEventListener('click', function () {
-        // Close this Protests popup immediately rather than leaving it
-        // open underneath the File Protest modal (2026-09-24 fix, item 5).
-        modal.close();
-        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () {
-          // Land back on the Dashboard explicitly on a successful submit,
-          // not wherever rcReloadAfterSave()'s generic rcActiveSectionId
-          // logic would otherwise decide -- this popup is only ever
-          // reached from the Dashboard's own Protest card, so a stale
-          // Protests popup should never come back after a save
-          // (2026-09-24 fix, item 5).
-          rcActiveSectionId = 'dashboard';
-          rcReloadAfterSave();
-        });
+        openFileProtestModal(token, filing.rounds, filing.myProfileId, function () { rcReloadAfterSave(); });
       });
     } else {
       withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
     }
     actionRow.appendChild(fileBtn);
-    container.appendChild(actionRow);
+    panel.appendChild(actionRow);
 
     var historyBox = el('div', 'rc-protest-history-box');
-    // A protest THIS driver filed and then withdrew (via the existing
-    // withdrawProtest action, Status: Withdrawn -- see
-    // openWithdrawProtestConfirm below) is filtered out of the filer's
-    // own view entirely, matching "withdrawn" as the user experiences it,
-    // while the underlying row stays on the sheet (the site's standing
-    // never-hard-delete policy) and still shows normally to anyone it was
-    // filed AGAINST.
-    var visible = protests.filter(function (p) { return !(p.isMine && p.status === 'Withdrawn'); });
-    if (!visible.length) {
+    if (!protests.length) {
       historyBox.appendChild(el('div', 'rc-dm-empty', 'No protests filed by or against you yet.'));
     } else {
-      // Redesigned 2026-09-24 (item 6) to look EXACTLY like the
-      // Dashboard's own Protest card -- same open-circle/checkmark rows
-      // (buildDashProtestItem), no more season grouping or the green
-      // status-badge pill (_rcProtestStatusBadge, removed). Newest first
-      // (the backend, handleGetMyProtests, already returns it sorted that
-      // way), capped to the most recent 10 -- oldest silently drops off,
-      // no "load more"/pagination.
-      var list = el('div', 'rc-protest-dash-list');
-      visible.slice(0, 10).forEach(function (p) { list.appendChild(buildProtestPopupHistoryItem(p, token)); });
-      historyBox.appendChild(list);
+      // Grouped by season (each season's own graphite pill, protests
+      // inset below it with an L-line tree glyph -- Matt's ask), newest
+      // season first. Same "└" tree-glyph + graphite-pill convention the
+      // Data Management Cars panel already uses to group cars by season
+      // under a class (see buildCarsPanel above) -- not a new pattern.
+      var bySeason = {}, seasonOrder = [];
+      protests.forEach(function (p) {
+        var sid = p.seasonId || 'unknown';
+        if (!bySeason[sid]) { bySeason[sid] = []; seasonOrder.push(sid); }
+        bySeason[sid].push(p);
+      });
+      seasonOrder.sort(function (a, b) { return String(b).localeCompare(String(a)); });
+      seasonOrder.forEach(function (sid) {
+        historyBox.appendChild(buildProtestSeasonGroup(sid, bySeason[sid], token));
+      });
     }
-    container.appendChild(historyBox);
+    panel.appendChild(historyBox);
+
+    return panel;
   }
 
-  // One protest row in the Protests popup's history list -- the exact
-  // same row buildDashProtestItem builds for the Dashboard card, with
-  // Edit/Withdraw appended on the right for a protest THIS driver filed
-  // (p.isMine), only while it's still Pending and the round's results
-  // aren't finalized yet (Matt, 2026-09-24 redesign: "if it hasn't been
-  // ruled on yet, the driver can WITHDRAW it with a button... If a
-  // protest has already been ruled, the WITHDRAW button is gone").
-  function buildProtestPopupHistoryItem(p, token) {
-    var row = buildDashProtestItem(p);
-    var canModify = p.isMine && p.status === 'Pending' && !p.resultsFinalized;
-    if (canModify) {
-      var actions = el('div', 'rc-protest-popup-item-actions');
-      var editBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Edit');
-      editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); });
-      actions.appendChild(editBtn);
+  // One season's graphite "SEASON N" pill plus its own protest rows,
+  // inset below it. A protest THIS driver filed and then deleted (soft-
+  // deleted via the existing withdrawProtest action, Status: Withdrawn --
+  // see buildProtestActionBtn/openDeleteProtestConfirm below) is filtered
+  // out of the filer's own view entirely, matching "delete" as the user
+  // experiences it, while the underlying row stays on the sheet (the
+  // site's standing never-hard-delete policy) and still shows normally to
+  // anyone it was filed AGAINST.
+  function buildProtestSeasonGroup(seasonId, protests, token) {
+    var group = el('div', 'rc-protest-season-group');
+    var seasonHead = el('div', 'rc-dm-season-head');
+    seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
+    var seasonNumLabel = seasonNumberLabel(seasonId);
+    seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'SEASON ' + (seasonNumLabel || '?')));
+    group.appendChild(seasonHead);
 
-      // Withdraw is styled identically to Edit (2026-09-24 styling pass,
-      // Matt's ask: "the withdraw button needs to be the same style as
-      // the edit button") -- a deliberate one-off exception to the
-      // house "gray unless it saves" color rule, same kind of explicit
-      // override as the red File Protest button elsewhere in this file.
-      var withdrawBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Withdraw');
-      withdrawBtn.type = 'button';
-      withdrawBtn.addEventListener('click', function () { openWithdrawProtestConfirm(token, p, function () { rcReloadAfterSave(); }); });
-      actions.appendChild(withdrawBtn);
+    protests.filter(function (p) { return !(p.isMine && p.status === 'Withdrawn'); })
+      .forEach(function (p) { group.appendChild(buildProtestHistoryItem(p, token)); });
 
-      row.appendChild(actions);
+    return group;
+  }
+
+  // Circle-slash "not available" icon shown only on hover of a locked
+  // Edit/Delete button (2026-09-20, Matt's exact ask: "gray out the
+  // buttons and put a circle with a line through it on hover") -- same
+  // convention (and near-identical SVG) as RC_CLASS_LOCK_ICON in
+  // buildRegistrationModal's Choose Your Class screen, just sized for
+  // these small row buttons instead of the big class-pick tiles.
+  var RC_PROTEST_LOCK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>';
+
+  // One protest row, inset under its season's graphite pill. Edit/Delete
+  // only ever show for a protest THIS driver filed (p.isMine) -- gray and
+  // disabled, with the hover lock icon, once the round's results are
+  // finalized (Matt: "Once a race's results have been finalized and made
+  // official, the user cannot delete or edit the protest") OR once a
+  // Steward/Organizer/Admin has already ruled on it (same "a ruled
+  // protest is a matter of record" rule the old Withdraw button already
+  // enforced -- Upheld/Denied stop being Pending, which this same
+  // canModify check already covers).
+  function buildProtestHistoryItem(p, token) {
+    var row = el('div', 'rc-dm-subrow-edit');
+    var info = el('div', null);
+    var infoLabel = el('div', 'rc-dm-row-label');
+    infoLabel.appendChild(document.createTextNode(p.roundLabel + ' -- ' + (p.involvedNames || []).join(', ')));
+    // Same auto-flag badge as Stewarding/League Tools -- a driver seeing a
+    // registration mismatch flagged against their own name in their own
+    // history should know right away it wasn't filed by another driver.
+    if (p.isAutoFlagged) {
+      var autoBadge = el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged');
+      autoBadge.style.cssText = 'margin-left:8px;';
+      infoLabel.appendChild(autoBadge);
     }
+    info.appendChild(infoLabel);
+    info.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType || '')));
+    row.appendChild(info);
+
+    var right = el('div', 'display:flex;align-items:center;gap:10px;');
+    right.appendChild(_rcProtestStatusBadge(p.status, p.penaltyTier));
+
+    if (p.isMine) {
+      var canModify = p.status === 'Pending' && !p.resultsFinalized;
+      right.appendChild(buildProtestActionBtn('Edit', canModify,
+        'Results for this round are finalized -- this protest can no longer be edited.',
+        function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); }));
+      right.appendChild(buildProtestActionBtn('Delete', canModify,
+        'Results for this round are finalized -- this protest can no longer be deleted.',
+        function () { openDeleteProtestConfirm(token, p, function () { rcReloadAfterSave(); }); }));
+    }
+
+    row.appendChild(right);
     return row;
   }
 
-  function openWithdrawProtestConfirm(token, p, onWithdrawn) {
+  function buildProtestActionBtn(label, enabled, lockedTooltip, onClick) {
+    var btn = el('button', 'rc-btn-row rc-btn-secondary' + (enabled ? '' : ' rc-protest-btn-locked'), label);
+    btn.type = 'button';
+    if (enabled) {
+      btn.addEventListener('click', onClick);
+    } else {
+      btn.disabled = true;
+      btn.appendChild(el('span', 'rc-protest-btn-lock', RC_PROTEST_LOCK_ICON));
+      withTooltip(btn, lockedTooltip);
+    }
+    return btn;
+  }
+
+  function openDeleteProtestConfirm(token, p, onDeleted) {
     var who = (p.involvedNames || []).slice(1).join(', ');
-    openConfirmModal('Withdraw Protest', 'Withdraw this protest' + (who ? (' against ' + who) : '') +
-      '? It\'s removed from your own history -- the round it was filed against keeps its own record.', 'Withdraw', function () {
+    openConfirmModal('Delete Protest', 'Delete this protest' + (who ? (' against ' + who) : '') +
+      '? It\'s removed from your own history -- the round it was filed against keeps its own record.', 'Delete', function () {
+      // Reuses the existing withdrawProtest action (Status -> Withdrawn)
+      // rather than a true hard delete -- see buildProtestSeasonGroup's
+      // comment above for why that still reads as "deleted" to the driver
+      // who filed it.
       fetchApi('withdrawProtest', { method: 'POST', token: token, body: { protestId: p.protestId } }).then(function (data) {
         if (!data || !data.success) {
-          showToast((data && data.message) || 'Could not withdraw that protest.', 'error');
+          showToast((data && data.message) || 'Could not delete that protest.', 'error');
           return;
         }
-        showToast('Protest withdrawn.', 'success');
-        if (typeof onWithdrawn === 'function') onWithdrawn();
+        showToast('Protest deleted.', 'success');
+        if (typeof onDeleted === 'function') onDeleted();
       }).catch(function () { showToast('Could not reach the server.', 'error'); });
     });
   }
 
-  // Groups the "Driver Involved" options by car class -- LMGTE -> LMGT3 ->
-  // LMP3 -> LMP2 -> Hypercar, per CAR_CLASS_LIST (reference-data.js), the
-  // same canonical class order used everywhere else on the site -- via
-  // <optgroup>, with each driver labeled "Name (#carNumber) CLASSABBREV"
-  // (CAR_CLASS_ABBREV, reference-data.js) (2026-09-24, item 6).
-  // driverRoster comes off DriverResults through Protests.gs
-  // (handleGetProtestFilingOptions/handleGetProtestEditOptions), which now
-  // hands back carClass alongside carNumber/teamName. Still falls back to
-  // one flat list (no groups, car number only) if carClass is ever missing
-  // (e.g. a pre-existing round's DriverResults rows with no class on file)
-  // instead of breaking.
-  function _rcAppendGroupedDriverOptions_(selectEl, driverRoster) {
-    function optionLabel(d) {
-      var bits = [d.name];
-      if (d.carNumber) bits.push('(#' + d.carNumber + ')');
-      if (d.carClass) {
-        bits.push((typeof CAR_CLASS_ABBREV !== 'undefined' && CAR_CLASS_ABBREV[d.carClass]) ? CAR_CLASS_ABBREV[d.carClass] : d.carClass);
-      }
-      return bits.join(' ');
-    }
-
-    var hasClassData = driverRoster.some(function (d) { return !!d.carClass; });
-    if (!hasClassData) {
-      driverRoster.forEach(function (d) { selectEl.appendChild(new Option(optionLabel(d), d.profileId)); });
-      return;
-    }
-
-    var canonicalOrder = (typeof CAR_CLASS_LIST !== 'undefined') ? CAR_CLASS_LIST : [];
-    var byClass = {}, classesSeen = [];
-    driverRoster.forEach(function (d) {
-      var cls = d.carClass || 'Unknown';
-      if (!byClass[cls]) { byClass[cls] = []; classesSeen.push(cls); }
-      byClass[cls].push(d);
-    });
-    canonicalOrder.filter(function (c) { return byClass.hasOwnProperty(c); })
-      .concat(classesSeen.filter(function (c) { return canonicalOrder.indexOf(c) === -1; }))
-      .forEach(function (cls) {
-        var group = document.createElement('optgroup');
-        group.label = cls;
-        byClass[cls].forEach(function (d) { group.appendChild(new Option(optionLabel(d), d.profileId)); });
-        selectEl.appendChild(group);
-      });
-  }
-
-  // Shared field builder for both the File and Edit popups. Includes Lap
-  // Number (paired 50/50 with the caller's Race field when raceFieldWrap
-  // is passed, File only, see item 6/7), up to 3 "Driver Involved" boxes
-  // (box 1 is always the filer, fixed and disabled; boxes 2 and 3 offer
-  // everyone else on the grid, filer excluded, 2026-09-24 styling pass),
-  // infraction type, and an optional 200-word description. `initial`
-  // (optional) prefills every field from an existing protest, for Edit.
-  function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial, raceFieldWrap) {
+  // Shared field builder for both the File and Edit popups -- lap number,
+  // up to 3 "Driver Involved" boxes (box 1 always defaults to whoever's
+  // filing; it's display-only, never submitted -- the server already
+  // knows who's filing from the auth token), infraction type, and an
+  // optional 200-word description. `initial` (optional) prefills every
+  // field from an existing protest, for Edit.
+  function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial) {
     initial = initial || {};
 
     var lapSelect = document.createElement('select');
     laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
     var lapFieldWrap = wizField('Lap Number', lapSelect, null);
-    if (raceFieldWrap) {
-      // Race + Lap Number side by side, 50/50 (2026-09-24, item 6) --
-      // reuses the same .rc-wiz-field-pair split wizFieldPairRow's own
-      // two columns use; built by hand here since the Race field's own
-      // wrap (with its <select> already wired up by the caller,
-      // openFileProtestModal) exists before this runs. Edit's form has no
-      // Race field (the round is fixed there), so it keeps the old
-      // full-width Lap Number row.
-      var raceLapRow = el('div', 'rc-wiz-field-pair');
-      raceLapRow.appendChild(raceFieldWrap);
-      raceLapRow.appendChild(lapFieldWrap);
-      container.appendChild(raceLapRow);
-    } else {
-      container.appendChild(lapFieldWrap);
-    }
+    container.appendChild(lapFieldWrap);
 
-    // Box 1 is always the filer, and it's fixed -- not a choice (2026-09-24,
-    // Matt's ask: "the first drop down box has to be the driver filing the
-    // protest"). It's disabled and only ever holds that one option; its
-    // value was already never submitted (see the two fetchApi calls below,
-    // which only ever read driver2Select/driver3Select), so this just makes
-    // the display match what was already true functionally.
     var driver1Select = document.createElement('select');
-    driver1Select.disabled = true;
-    var me = driverRoster.filter(function (d) { return d.profileId === myProfileId; })[0];
-    driver1Select.appendChild(new Option(me ? me.name : 'You', myProfileId || ''));
-
-    // Boxes 2 and 3 are "anyone else on the grid" -- the filer is already
-    // named in box 1, so they're excluded from these two lists entirely
-    // (2026-09-24, Matt's ask: "the next two boxes can be anyone else on
-    // the grid except the driver filing the protest because they're
-    // already chosen for box one").
-    var otherDrivers = driverRoster.filter(function (d) { return d.profileId !== myProfileId; });
     var driver2Select = document.createElement('select');
     var driver3Select = document.createElement('select');
     driver2Select.appendChild(new Option('Choose Driver', ''));
     driver3Select.appendChild(new Option('Choose Driver', ''));
-    _rcAppendGroupedDriverOptions_(driver2Select, otherDrivers);
-    _rcAppendGroupedDriverOptions_(driver3Select, otherDrivers);
+    driverRoster.forEach(function (d) {
+      var label = d.name + (d.carNumber ? (' (#' + d.carNumber + ')') : '');
+      driver1Select.appendChild(new Option(label, d.profileId));
+      driver2Select.appendChild(new Option(label, d.profileId));
+      driver3Select.appendChild(new Option(label, d.profileId));
+    });
+    if (myProfileId && driverRoster.some(function (d) { return d.profileId === myProfileId; })) {
+      driver1Select.value = myProfileId;
+    }
 
     var driversRow = el('div', 'rc-wiz-field-row-3');
     driversRow.appendChild(wizField('Driver Involved 1', driver1Select, null));
@@ -5450,6 +5459,7 @@
     rounds.forEach(function (r) {
       roundSelect.appendChild(new Option('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''), r.roundId));
     });
+    body.appendChild(wizField('Race', roundSelect, null));
 
     var fieldsContainer = el('div');
     body.appendChild(fieldsContainer);
@@ -5460,13 +5470,7 @@
       fieldsContainer.innerHTML = '';
       fields = null;
       if (!round) return;
-      // Race + Lap Number side by side, each half width (2026-09-24, item
-      // 6) -- the Race field (roundSelect, built once above so its
-      // selected value survives a repopulate) is handed in here so
-      // buildProtestFormFields can pair it with the Lap Number field it
-      // already builds, instead of Race sitting in its own full-width row
-      // above this container like before.
-      fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {}, wizField('Race', roundSelect, null));
+      fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {});
     }
     populateForRound(rounds[0].roundId);
     roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
@@ -5592,6 +5596,12 @@
     });
 
     return modal;
+  }
+
+  function _rcProtestStatusBadge(status, penaltyTier) {
+    var cls = status === 'Upheld' ? 'rc-badge-race-posted' : (status === 'Denied' ? 'rc-badge-chip' : (status === 'Withdrawn' ? 'rc-badge-chip' : 'rc-badge-race-scheduled'));
+    var label = status === 'Upheld' ? ('Upheld: Tier ' + penaltyTier) : status;
+    return el('span', 'rc-badge-chip ' + cls, label);
   }
 
   // =======================================================================
@@ -7347,14 +7357,14 @@
   // Management's standalone sidebar button is gone; this exact content
   // (Members/Tracks/Cars/Sponsors) now lives under Admin instead, still
   // Admin-only (Matt's call: "admins can only access this ADMIN section").
-  // No fetch on load any more (2026-09-24, Matt's call: "get rid of the
-  // member n, cars n and tracks n from the data management container...
-  // so the page only loads the buttons") -- the Members/Tracks/Cars
-  // counts line that used to gate this page behind a combined
-  // getAdminSummary call (see its removal note, Website.gs) is gone, so
-  // there's nothing left to wait on; the page just renders its buttons
-  // immediately. The Pending Approval card that used to sit above Data
-  // Management here is gone too (2026-09-19, Matt's call: no more admin-
+  // Waits on Tracks + Cars + Members ALL together before anything on the
+  // page renders (2026-09-13, Matt's call: "don't display the admin page
+  // until all data is loaded") -- one shared page-level spinner covers
+  // the whole wait; Tracks/Cars/Sponsors' own popups (openTracksModal
+  // etc.) still fetch their own copy when clicked, same as before -- this
+  // earlier fetch is purely a display gate, not a cache handed into those
+  // popups. The Pending Approval card that used to sit above Data
+  // Management here is gone (2026-09-19, Matt's call: no more admin-
   // approval queue -- see the VALID_ROLES header comment in Auth.gs) --
   // Prospects show up in the Members popup instead, same as every other
   // account.
@@ -7362,14 +7372,55 @@
     var section = document.getElementById('rc-section-admin');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
-    renderAdminSectionBody(section, token);
+    // buildPageSpinner (not a bare buildSpinner + heading) -- same fixed
+    // 180px-from-top position every other lazy section's loading state
+    // uses (see .rc-inline-spinner-page, style.css). This used to render
+    // the "Admin" heading immediately and a bare, unpositioned spinner
+    // right under it, which sat noticeably higher than every other page's
+    // loading state (2026-09-13, Matt's catch) -- the heading now waits
+    // until the real content renders below, exactly like Finances/Career/
+    // Wager/etc. already do.
+    section.appendChild(buildPageSpinner('Loading admin tools...'));
+
+    // One combined getAdminSummary call (2026-09-24, Matt's "batch them
+    // altogether" efficiency pass) instead of three separate fetchApi
+    // round trips -- see handleGetAdminSummary in Website.gs. The three
+    // underlying actions (getTracks, getCars, adminListDrivers) still
+    // exist and are still used independently elsewhere (openTracksModal,
+    // openCarsModal, openMembersModal, season-wizard pickers).
+    fetchApi('getAdminSummary', { token: token }).catch(function () {
+      return { success: false, tracks: { success: false }, cars: { success: false }, drivers: { success: false } };
+    }).then(function (result) {
+      // The admin could have navigated to a different page while this was
+      // still in flight -- #rc-section-admin would be gone (or hidden
+      // and about to be replaced) by the time this resolves, same "don't
+      // paint into a stale section" guard the other lazy sections use.
+      var section = document.getElementById('rc-section-admin');
+      if (!section) return;
+      section.innerHTML = '';
+      section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
+
+      var tracksData = result && result.tracks;
+      var carsData = result && result.cars;
+      // Members -- added 2026-09-18 to back the Data Management panel's
+      // counts line (see renderAdminSectionBody). The matching Seasons
+      // fetch that used to sit here was removed 2026-09-19 along with the
+      // panel's season status line (Matt's call: Data Management only
+      // shows Members/Tracks/Cars counts now).
+      var driversData = result && result.drivers;
+      renderAdminSectionBody(section, token, {
+        memberCount: driversData && driversData.success ? (driversData.drivers || []).length : null,
+        trackCount: tracksData && tracksData.success ? (tracksData.tracks || []).length : null,
+        carCount: carsData && carsData.success ? (carsData.cars || []).length : null
+      });
+    });
   }
 
   // The actual Admin page content, split out from renderAdminSection
-  // above for symmetry with every other section's own render-vs-body
-  // split, even though there's no longer any async wait in between.
-  function renderAdminSectionBody(section, token) {
+  // above so that function's only job is "wait for everything, then call
+  // this".
+  function renderAdminSectionBody(section, token, dmSummary) {
+    dmSummary = dmSummary || {};
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
 
@@ -7401,11 +7452,30 @@
     // had. See buildLeagueNewsPanel/openNewsPostModal further down.
 
     // Sponsors and Economy admin buttons removed entirely (V1 scope cut,
-    // 2026-09-18) -- those systems no longer exist. Counts line (Members/
-    // Tracks/Cars totals) removed 2026-09-24 -- Matt's call, this panel is
-    // just the three buttons now.
+    // 2026-09-18) -- those systems no longer exist.
 
     panel.appendChild(row);
+
+    // Counts line -- added 2026-09-18 underneath the button row so the
+    // panel shows a quick at-a-glance snapshot without having to open any
+    // of the popups above: how many Members/Tracks/Cars records exist.
+    // The season status line that used to sit under this (which season is
+    // currently in play) was removed 2026-09-19 (Matt's call: "remove the
+    // season information from the DATA MANAGEMENT CONTAINER, only keep the
+    // total cars, members and tracks information listed") -- season status
+    // already lives on the League Tools page's own Seasons panel, right
+    // next to Create a Season/End Season.
+    var summaryWrap = el('div', 'rc-dm-summary');
+
+    var countsParts = [];
+    if (dmSummary.memberCount !== null) countsParts.push(dmSummary.memberCount + ' member' + (dmSummary.memberCount === 1 ? '' : 's'));
+    if (dmSummary.trackCount !== null) countsParts.push(dmSummary.trackCount + ' track' + (dmSummary.trackCount === 1 ? '' : 's'));
+    if (dmSummary.carCount !== null) countsParts.push(dmSummary.carCount + ' car' + (dmSummary.carCount === 1 ? '' : 's'));
+    if (countsParts.length) {
+      summaryWrap.appendChild(el('div', 'rc-dm-summary-line', escapeHtml(countsParts.join(' · '))));
+    }
+
+    panel.appendChild(summaryWrap);
     section.appendChild(panel);
   }
 
@@ -7578,9 +7648,8 @@
         // fetchApi itself is built on -- it takes fetchOpts as-is (no
         // JSON-encoding), so it works here without changing fetchApi's own
         // contract. Gets its OWN, longer timeout/abort budget than every
-        // other heavy POST (RC_FETCH_TIMEOUT_MS_IMPORT, 120s, js/api.js --
-        // bumped from 45s to 60s then to 120s, both 2026-09-24, Matt's
-        // asks) rather than sharing
+        // other heavy POST (RC_FETCH_TIMEOUT_MS_IMPORT, 60s, js/api.js --
+        // bumped from 45s 2026-09-24, Matt's ask) rather than sharing
         // RC_FETCH_TIMEOUT_MS_LONG with them, since a results import is the
         // single heaviest write on the site (thousands of Lap rows, plus
         // the race report build on top).
@@ -7713,65 +7782,6 @@
   // for its own sake.
 
   // EDIT (2026-09-08) -- League Management round row's protest-ruling popup.
-  // Suggested tier RANGES for the driver-filed infraction types
-  // (PROTEST_INFRACTION_TYPES, reference-data.js) -- unlike
-  // SUGGESTED_TIER_BY_INFRACTION (reference-data.js/Protests.gs), which
-  // fixes ONE tier for the two auto-flagged registration-mismatch types
-  // and is enforced with a written-explanation gate on deviation, these
-  // five driver-filed types are explicitly "judged case by case" per that
-  // file's own comment -- there is no rulebook-mandated single tier for
-  // any of them. This table is new, 2026-09-24 (item 7), authored here as
-  // a starting-point guide for the Penalty Standards popup so rulings
-  // stay roughly consistent steward to steward; it's advisory only (shown
-  // in the popup, never read by any ruling logic) and a steward can rule
-  // outside a listed range when the incident calls for it. Matt should
-  // treat these ranges themselves as a first draft to review/adjust, not
-  // settled Rulebook text.
-  var PROTEST_TYPICAL_TIER_RANGE = {
-    'Intentional Wrecking': 'Tier 5-6 (Stop-and-Go Equivalent to Disqualification)',
-    'Unsafe Rejoin': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
-    'Avoidable Contact (Other Driver)': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
-    'Avoidable Contact (Self Report)': 'Tier 1-3 (Warning to Time Penalty; see the self-reporting note below)',
-    'Unsportsmanlike Behavior': 'Tier 3-6 (Time Penalty to Disqualification, depending on severity)'
-  };
-
-  // Reference popup (2026-09-24, item 7) explaining what each penalty
-  // tier means and giving a standardized ruling schedule, so a steward's
-  // rulings don't drift ad hoc from one round to the next. Reuses
-  // PENALTY_TIERS/SUGGESTED_TIER_BY_INFRACTION (reference-data.js) as its
-  // data source directly, rather than re-describing them, so this popup
-  // can never say something different from what the ruling dropdown
-  // itself offers. Terminology ("infraction type", "steward", "tier")
-  // matches the Help section's own Protests guide entry
-  // (HELP_GUIDE_ITEMS) so the two never drift apart in wording.
-  function openPenaltyStandardsModal() {
-    var body = el('div');
-    body.appendChild(el('p', 'rc-hint', 'A standardized starting point for protest rulings, so penalties stay consistent steward to steward. Use judgment: these are guidelines, not a formula, and a ruling can land outside a listed range when the incident calls for it.'));
-
-    body.appendChild(el('h4', null, 'Penalty Tiers'));
-    PENALTY_TIERS.forEach(function (t) {
-      body.appendChild(el('div', 'rc-hint', t.label + ' (' + t.effect + ')'));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Standard Ruling For Auto-Flagged Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are auto-flagged by the system (a registration mismatch, not driver-filed) and always carry a fixed standard tier. Ruling at a different tier requires a written explanation.'));
-    Object.keys(SUGGESTED_TIER_BY_INFRACTION).forEach(function (infraction) {
-      var tierInfo = penaltyTierByNumber(SUGGESTED_TIER_BY_INFRACTION[infraction]);
-      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (tierInfo ? (tierInfo.label + ' (' + tierInfo.effect + ')') : ('Tier ' + SUGGESTED_TIER_BY_INFRACTION[infraction]))));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Typical Ruling Range For Driver-Filed Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are judged case by case, with no fixed tier, but absent unusual circumstances a ruling should land in this range:'));
-    PROTEST_INFRACTION_TYPES.forEach(function (infraction) {
-      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (PROTEST_TYPICAL_TIER_RANGE[infraction] || 'No standard range; steward discretion.')));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Self-Reported Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'A driver who self-reports an infraction (filed as "Avoidable Contact (Self Report)") should receive a reduced penalty tier compared to the same infraction reported by someone else. This rewards coming forward on your own. It\'s a policy note for the ruling steward to apply, not something the site enforces automatically.'));
-
-    showModal('Penalty Standards', { bodyEl: body, wide: true });
-  }
-
   // Lists every protest filed for this round; a Pending one gets a penalty-
   // tier dropdown (or Deny) and an Apply button, an already-ruled one shows
   // its outcome read-only. Disabled entirely on the frontend once the round
@@ -7825,27 +7835,19 @@
 
         // Finalize bar -- always shown first, regardless of how many
         // protests there are, so it's never scrolled past or missed.
-        // Every protest on this round needs a ruling before Finalize can
-        // be clicked (2026-09-24, item 7) -- Un-Finalize is never gated
-        // this way, only the forward Finalize direction.
-        var hasUnruledProtests = !!(data.success && data.protests && data.protests.some(function (p) { return p.status === 'Pending'; }));
         var finalizeBar = el('div', 'rc-panel');
         finalizeBar.style.cssText = 'margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
         finalizeBar.appendChild(el('div', 'rc-hint', escapeHtml(resultsFinalized
-          ? 'This round is finalized. No further penalties will be assessed.'
-          : (hasUnruledProtests ? 'Every protest on this round needs a ruling before it can be finalized.' : 'Not finalized yet. Protest rulings can still be applied below.'))));
+          ? 'This round is finalized -- no further penalties will be assessed.'
+          : 'Not finalized yet -- protest rulings can still be applied below.')));
         var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
         finalizeBtn.type = 'button';
-        if (!resultsFinalized && hasUnruledProtests) {
-          finalizeBtn.disabled = true;
-          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest below before finalizing.');
-        }
         finalizeBtn.addEventListener('click', function () {
           var goingToFinalize = !resultsFinalized;
           var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
           var confirmMsg = resultsFinalized
             ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
-            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
+            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed -- these are the most current, correct results for this round.';
           // Restores the button's normal label/color -- shared by both the
           // failure and timeout paths below, since render() (which would
           // otherwise rebuild this button fresh) only runs on success.
@@ -7896,36 +7898,11 @@
           modal.body.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
           return;
         }
-
-        // Rulable rows (2026-09-25, Matt's ask: "make one button at the
-        // bottom that says APPLY RULING(S) so they aren't on every
-        // individual ruling") -- each still-Pending, not-locked protest
-        // below pushes its own {p, select, narrativeBox, overrideBox,
-        // isOverride} entry here instead of getting its own Apply button;
-        // one shared button at the very end of render() walks this list
-        // and submits only the rows where a ruling was actually chosen.
-        // A row left on "Choose a ruling..." is simply skipped -- it
-        // stays Pending and shows up again, unchanged, the next time this
-        // round is opened (Matt: "any ruling that doesn't have a decision
-        // made is left over in the list to be ruled upon").
-        var rulableRows = [];
-
         data.protests.forEach(function (p) {
           var row = el('div', 'rc-panel');
           row.style.cssText = 'margin-bottom:10px;';
           var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          // Human-context intro sentence (2026-09-24, item 7) -- names the
-          // actual filer and accused instead of the old flat comma-joined
-          // name list, same "Filed a protest against <name>" naming
-          // pattern the Dashboard's own protest card (buildDashProtestItem)
-          // already uses, so the wording matches across the site. Falls
-          // back to the auto-flagged phrasing when there's no human filer
-          // (a registration-mismatch protest has no FilerProfileID).
-          var against = (p.involvedNames || []).slice(1).join(' and ');
-          var introText = p.isAutoFlagged
-            ? ('Auto-flagged against ' + (against || 'a driver') + '.')
-            : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.');
-          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml(introText)));
+          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || [p.filerName]).join(', '))));
           // Same auto-flag badge as the Stewarding page (see that page's own
           // comment) -- a steward ruling from here needs the same "this one
           // wasn't filed by a driver" context.
@@ -7939,7 +7916,7 @@
             if (resultsFinalized) {
               var lockedHint = el('div', 'rc-hint');
               lockedHint.style.cssText = 'margin-top:8px;';
-              lockedHint.textContent = 'This round is finalized. Un-Finalize above to rule on this protest.';
+              lockedHint.textContent = 'This round is finalized -- Un-Finalize above to rule on this protest.';
               row.appendChild(lockedHint);
             } else {
               // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
@@ -7961,52 +7938,17 @@
                 row.appendChild(suggestedHint);
               }
 
-              // Ruling row (2026-09-24 styling pass; select narrowed to
-              // 66% 2026-09-25, Matt's ask): the select and the Penalty
-              // Standards opener share one row, select fixed at 66% width
-              // (.rc-ruling-select) with the button filling the rest --
-              // no wrap, so they can never split onto separate lines the
-              // way the old single flex-wrap row did. align-items:stretch
-              // makes the button match the select's 44px height (Matt's
-              // ask: "slightly taller to match the size of the dropdown
-              // box").
-              var controlRow = el('div', 'display:flex;gap:8px;align-items:stretch;margin-top:8px;flex-wrap:nowrap;');
-              // 66% width (2026-09-25) -- .rc-ruling-select.
+              var controlRow = el('div', 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;');
               var select = document.createElement('select');
-              select.className = 'rc-ruling-select';
               select.appendChild(new Option('Choose a ruling...', ''));
               select.appendChild(new Option('Deny', 'deny'));
-              // "Deny (duplicate protest)" option removed 2026-09-25
-              // (Matt's ask) -- a plain "Deny" now covers every denial,
-              // duplicate or otherwise.
               PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
               controlRow.appendChild(select);
 
-              // Gray "Penalty Standards" opener (2026-09-24, item 7) --
-              // only OPENS a reference popup, no save, so it stays gray
-              // per the site's button-color rule even though what it
-              // documents feeds into a ruling that does save. Fills the
-              // remaining space next to the select.
-              var standardsBtn = el('button', 'rc-btn-secondary rc-ruling-standards-btn', 'Penalty Standards');
-              standardsBtn.type = 'button';
-              standardsBtn.addEventListener('click', function () { openPenaltyStandardsModal(); });
-              controlRow.appendChild(standardsBtn);
+              var applyBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Apply Ruling');
+              applyBtn.type = 'button';
+              controlRow.appendChild(applyBtn);
               row.appendChild(controlRow);
-
-              // Optional free-text narrative (2026-09-24, item 7) -- lets
-              // the steward explain their decision in their own words,
-              // separate from the standard-tier override-explanation box
-              // below (which is conditional and only ever covers WHY a
-              // ruling deviates from a fixed standard tier). This one is
-              // always available and always optional.
-              var narrativeWrap = el('div');
-              narrativeWrap.style.cssText = 'margin-top:8px;';
-              var narrativeBox = document.createElement('textarea');
-              narrativeBox.rows = 3;
-              narrativeBox.maxLength = 2000;
-              narrativeBox.placeholder = 'Optional ruling justification...';
-              narrativeWrap.appendChild(narrativeBox);
-              row.appendChild(narrativeWrap);
 
               // Override-explanation field -- only relevant when this
               // infraction has a standard tier at all, so it stays hidden
@@ -8035,12 +7977,31 @@
                 overrideWrap.style.display = currentIsOverride_() ? '' : 'none';
               });
 
-              // No per-row Apply button any more (2026-09-25, Matt's ask) --
-              // this row registers itself with the shared "APPLY RULING(S)"
-              // button built once after every protest row is rendered.
-              rulableRows.push({
-                protestId: p.protestId, select: select, narrativeBox: narrativeBox,
-                overrideBox: overrideBox, currentIsOverride: currentIsOverride_
+              applyBtn.addEventListener('click', function () {
+                if (!select.value) { showToast('Choose a ruling first.', 'error'); return; }
+                var decision = select.value === 'deny' ? 'Denied' : 'Upheld';
+                var tier = select.value.indexOf('uphold:') === 0 ? Number(select.value.split(':')[1]) : null;
+                var isOverride = currentIsOverride_();
+                var overrideExplanation = overrideBox ? overrideBox.value.trim() : '';
+                if (isOverride && !overrideExplanation) {
+                  showToast('This ruling deviates from the standard tier -- add a written explanation first.', 'error');
+                  return;
+                }
+                applyBtn.disabled = true;
+                fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: { protestId: p.protestId, decision: decision, penaltyTier: tier, overrideExplanation: overrideExplanation } })
+                  .then(function (result) {
+                    applyBtn.disabled = false;
+                    if (!result.success) {
+                      showToast(result.message || 'Could not save this ruling.', 'error');
+                      return;
+                    }
+                    showToast('Ruling saved.', 'success');
+                    render();
+                    if (typeof outerReload === 'function') outerReload();
+                  }).catch(function () {
+                    applyBtn.disabled = false;
+                    showToast('Could not reach the server.', 'error');
+                  });
               });
             }
           } else {
@@ -8052,64 +8013,6 @@
 
           modal.body.appendChild(row);
         });
-
-        // Shared "APPLY RULING(S)" button (2026-09-25, Matt's ask: "make
-        // one button at the bottom... so they aren't on every individual
-        // ruling") -- only appears when there's at least one still-open
-        // protest to rule on. Walks rulableRows, submits only the rows
-        // where the steward actually picked something other than "Choose
-        // a ruling..." (an untouched row is simply left alone -- it stays
-        // Pending and is still there, unchanged, next time this round is
-        // opened), validates each selected row's override-explanation
-        // requirement up front so a bad row never partially submits the
-        // batch, then fires all the valid writes together.
-        if (rulableRows.length) {
-          var applyAllRow = el('div', 'display:flex;justify-content:flex-end;margin-top:6px;');
-          var applyAllBtn = el('button', 'rc-btn-primary rc-btn-sm', 'APPLY RULING(S)');
-          applyAllBtn.type = 'button';
-          applyAllBtn.addEventListener('click', function () {
-            var toSubmit = [];
-            for (var i = 0; i < rulableRows.length; i++) {
-              var rr = rulableRows[i];
-              if (!rr.select.value) continue; // left un-ruled -- skip, stays Pending
-              var isOverride = rr.currentIsOverride();
-              var overrideExplanation = rr.overrideBox ? rr.overrideBox.value.trim() : '';
-              if (isOverride && !overrideExplanation) {
-                showToast('One of the rulings deviates from its standard tier and needs a written explanation before you can apply.', 'error');
-                return;
-              }
-              toSubmit.push({
-                protestId: rr.protestId,
-                decision: rr.select.value === 'deny' ? 'Denied' : 'Upheld',
-                penaltyTier: rr.select.value.indexOf('uphold:') === 0 ? Number(rr.select.value.split(':')[1]) : null,
-                overrideExplanation: overrideExplanation,
-                rulingNarrative: rr.narrativeBox.value.trim()
-              });
-            }
-            if (!toSubmit.length) { showToast('Choose a ruling for at least one protest first.', 'error'); return; }
-
-            applyAllBtn.disabled = true;
-            applyAllBtn.textContent = 'APPLYING...';
-            Promise.all(toSubmit.map(function (sub) {
-              return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub })
-                .catch(function () { return { success: false, error: 'NETWORK' }; });
-            })).then(function (results) {
-              var failed = results.filter(function (r) { return !r || !r.success; });
-              if (failed.length) {
-                var firstMessage = (failed[0] && failed[0].message) || 'Could not reach the server.';
-                showToast(failed.length === toSubmit.length
-                  ? firstMessage
-                  : (failed.length + ' of ' + toSubmit.length + ' ruling(s) could not be saved: ' + firstMessage), 'error');
-              } else {
-                showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
-              }
-              render();
-              if (typeof outerReload === 'function') outerReload();
-            });
-          });
-          applyAllRow.appendChild(applyAllBtn);
-          modal.body.appendChild(applyAllRow);
-        }
       }).catch(function () {
         modal.body.innerHTML = '';
         modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
@@ -10008,9 +9911,10 @@
     // path (a page where this bridge doesn't exist yet).
     window.rcOpenEditProfileModal = function () { openEditProfileModal(currentProfile, currentToken); };
 
-    // Same bridge pattern, for the header account dropdown's section
-    // links (2026-09-02). A plain href="Account.html#admin" would only
-    // work correctly when clicked
+    // Same bridge pattern, for the header bell's notification links
+    // (2026-09-02, Matt's call: notifications should link straight to the
+    // page they're about, not just carry an OK button). A plain
+    // href="Account.html#admin" would only work correctly when clicked
     // from a DIFFERENT page -- clicking it while already ON Account.html
     // is a same-document hash change (no reload), which showSection() is
     // never told about, so the visible section wouldn't actually switch.
@@ -10255,7 +10159,7 @@
   }
 
   if (freshProfile && freshProfile.success) {
-    renderHeader();
+    renderHeader(); // header fetches its own notifications now -- see js/header.js
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
     renderProfile(freshProfile.profile, token, dashboardData);
@@ -10294,7 +10198,7 @@
         return;
       }
       setProfileCache(profileResult.profile); // keeps the header avatar current on every other page too
-      renderHeader(); // confirmed by the API -- safe to show as logged in
+      renderHeader(); // confirmed by the API -- safe to show as logged in; fetches its own notifications now
       document.getElementById('rc-loading').style.display = 'none';
       document.getElementById('rc-profile-root').style.display = 'block';
       renderProfile(profileResult.profile, token, dashboardData);

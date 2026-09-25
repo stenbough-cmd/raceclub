@@ -251,12 +251,10 @@ body.rc-league-page {
   flex: none;
   display: block;
   /* Bumped a little (was 14px/22px), 2026-09-23 Matt's ask: "increase the
-     max height and width of the logos... so they can be seen easier".
-     +5px more (was 27px), 2026-09-24 Matt's ask: "add 5 more pixels max
-     width for manufacturer logos in TICKER scroll". */
+     max height and width of the logos... so they can be seen easier". */
   height: 17px;
   width: auto;
-  max-width: 32px;
+  max-width: 27px;
   object-fit: contain;
 }
 /* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
@@ -450,13 +448,9 @@ body.rc-league-page {
 .rcl-hero-stats-label {
   display: inline-flex;
   align-items: center;
-  /* Graphite fill (2026-09-24, Matt's ask), matching Account.html's own
-     .rc-seasonfmt-group-label -- deliberately its own rule, not folded
-     into .rcl-pill-label (Bonus Points keeps the plain light-gray pill;
-     see the comment above .rcl-pill-label). */
-  background: var(--rc-graphite);
-  color: var(--rc-white);
-  border: 1px solid var(--rc-graphite);
+  background: #d9dadd;
+  color: #1c1d20;
+  border: 1px solid #b6b8bd;
   border-radius: 5px;
   padding: 3px 10px;
   font-family: var(--rc-font-heading);
@@ -467,11 +461,6 @@ body.rc-league-page {
   margin-bottom: 10px;
 }
 .rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Space between row1 and row2 within a group (2026-09-24, Matt's catch:
-   "add a space in between the bubbles on the 1st and 2nd row... they're
-   currently touching") -- same rule Account.html's own
-   .rc-seasonfmt-stats-row already carries; league.css was just missing it. */
-.rcl-hero-stats-row + .rcl-hero-stats-row { margin-top: 8px; }
 /* Smaller, center-aligned bubbles (2026-09-19, Matt's call, in the Season
    Details popup: "reduce the size of the details bubbles so they don't
    take up so much space and center align the values in each bubble") --
@@ -863,14 +852,7 @@ body.rc-league-page {
    sitting flush to the top of whichever sibling happens to be tallest. */
 .rcl-standings-mfr-logo-slot {
   flex: none;
-  /* +10px (2026-09-24, Matt's ask: "add 10 more pixels to max width for
-     manufacturer logos" on Recent Results/View All Results/Current
-     Standings/the Drivers roster popup -- all four share this one
-     identity block via _rclBuildDriverIdentity_, so one change here
-     covers all of them). Slot width kept matched to the logo's own
-     max-width right below so a wide logo has room to actually reach it
-     without overflowing into the name text next to it. */
-  width: 50px;
+  width: 40px;
   height: 24px;
   display: flex;
   align-items: center;
@@ -878,7 +860,7 @@ body.rc-league-page {
   align-self: center;
 }
 .rcl-standings-mfr-logo {
-  max-width: 50px;
+  max-width: 40px;
   max-height: 24px;
   width: auto;
   height: auto;
@@ -914,6 +896,13 @@ body.rc-league-page {
   white-space: nowrap;
   flex: none;
 }
+/* DNF/DSQ bold name (2026-09-23, Matt's ask: "Make sure DNFs are
+   displayed on leaderboard in bold letters") -- .rcl-standings-name is
+   already 700 weight; this bumps to the heaviest weight in the type
+   ramp so a DNF/DSQ row's name is unmistakably distinct from a normal
+   finisher's at a glance, on Recent Results and View All Results alike
+   (see _rclIsDnf_/_rclBuildDriverIdentity_, js/league.js). */
+.rcl-standings-name-dnf { font-weight: 900; }
 /* "View Points Tables" link at the bottom of the Leaderboard panel
    (2026-09-19, Matt's call) -- opens the points tables in a popup instead
    of them living in their own panel on the page. Same shape as the
@@ -998,14 +987,6 @@ body.rc-league-page {
 .rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
 .rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
 .rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
-/* Total Time cell in the View All Results list, plus its optional
-   "+Ns" penalty badge (2026-09-25, Matt's ask) -- time and badge sit on
-   one line, right-aligned like every other numeric column here. The
-   badge reuses the site's one red accent (it's calling out a penalty)
-   and stays bold even against the already-bold time next to it, so it
-   reads as its own distinct callout rather than part of the time. */
-.rcl-race-row-totaltime { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
-.rcl-race-row-penalty-badge { color: var(--rc-red); font-weight: 800; font-variant-numeric: tabular-nums; }
 .rcl-race-row-num,
 .rcl-race-row-gap,
 .rcl-race-row-interval,
@@ -1093,15 +1074,11 @@ body.rc-league-page {
 .rcl-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rcl-report-line { margin: 0 0 4px; font-size: 13.5px; line-height: 1.5; color: var(--rcl-ink-dim); }
 .rcl-report-line:last-child { margin-bottom: 0; }
-/* Driver name (2026-09-24, Matt's ask -- an earlier version left a
+/* Driver name color (2026-09-24, Matt's ask -- an earlier version left a
    wall-hit line's name gray to read as deemphasized, but Matt's follow-up
    was explicit: "make all names white, even when in the middle of a
-   contact report with another driver"). Always applied now, every line.
-   Bumped to bold white (2026-09-24, follow-up ask: "make all names BOLD
-   white") -- was var(--rcl-ink), a near-white #f2f2f0 at normal weight;
-   now literal #fff + font-weight 700 so the name reads as the clear
-   anchor of each line regardless of theme-token tweaks elsewhere. */
-.rcl-report-name { color: #fff; font-weight: 700; }
+   contact report with another driver"). Always applied now, every line. */
+.rcl-report-name { color: var(--rcl-ink); }
 /* Class pill + timestamp prefix (2026-09-24, Matt's ask: "put class pill
    information... in front of the records" plus "timestamp information
    for the event"). .rc-badge-chip/.rc-badge-chip-abbrev and the per-
@@ -1109,17 +1086,8 @@ body.rc-league-page {
    on this page too (see the file header comment) -- .rcl-report-pill just
    adds the spacing this inline context needs that the shared class
    doesn't assume. Timestamp is plain muted text, tabular-nums so a
-   column of them lines up digit-for-digit.
-   Fixed width + centered (2026-09-24, Matt's report: everything after the
-   pill "moves in and out" line to line because a 2-letter "HY" pill and a
-   5-letter "LMGT3"/"LMGTE" pill render at different natural widths under
-   .rc-badge-chip-abbrev's fixed padding -- .rc-badge-chip is display:
-   inline-flex already (style.css), so a fixed width + justify-content
-   here is enough to turn it into one consistent-width column without
-   touching the shared badge classes other pages also use. 46px fits
-   "LMGT3"/"LMGTE" (the longest labels) with room to spare; "HY"/"LMP2"/
-   "LMP3" just center within the same box. */
-.rcl-report-pill { width: 46px; justify-content: center; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
+   column of them lines up digit-for-digit. */
+.rcl-report-pill { margin-right: 6px; vertical-align: 1px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
@@ -1243,13 +1211,8 @@ body.rc-league-page {
   color: #e0b64c;
 }
 .rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
-/* Day/date/time the race starts -- plain text above the event title
-   (2026-09-24, Matt's ask), not a pill. Sits above .rcl-cal-row-top. */
-.rcl-cal-datetime { font-size: 12px; font-weight: 600; color: var(--rcl-ink-dim); margin-bottom: 3px; }
 .rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-/* Bumped from 16.5px (2026-09-24, Matt's ask: "increase the size of the
-   event/track/layout name by a little to make it more pronounced"). */
-.rcl-cal-event { font-size: 18px; }
+.rcl-cal-event { font-size: 16.5px; }
 .rcl-cal-event-name { font-weight: 800; color: var(--rcl-ink); }
 .rcl-cal-event-track { font-weight: 500; color: var(--rcl-ink); }
 .rcl-cal-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
@@ -1339,7 +1302,6 @@ body.rc-league-page {
    event inside .rcl-cal-row-top), so the COMPLETED/results phrase stays
    fully legible against the faded-out row around it. */
 .rcl-cal-row-finished .rcl-cal-round,
-.rcl-cal-row-finished .rcl-cal-datetime,
 .rcl-cal-row-finished .rcl-cal-event,
 .rcl-cal-row-finished .rcl-cal-track,
 .rcl-cal-row-finished .rcl-cal-meta {
@@ -1739,13 +1701,15 @@ body.rc-league-page {
 }
 /* Same dark-theme override, extended for the Edit Profile popup
    (js/edit-profile.js, added 2026-09-21 alongside this popup's own
-   in-place-on-league.html support): .rc-panel (the Change Password box)
-   is a plain white card everywhere else on the site -- it needs a scoped
-   dark version here or it'd render light-on-dark inside this shell. (The
-   .rc-check-row dark-theme override that used to sit here, for the
-   email-notifications checkbox, was removed 2026-09-24 alongside that
-   checkbox -- Matt's call: eliminate the in-app notification system
-   entirely, moving to an external Discord bot.) */
+   in-place-on-league.html support): .rc-check-row's label (the email-
+   notifications checkbox) sets an explicit --rc-carbon color of its own
+   that the bare `label` override above doesn't reach, and .rc-panel (the
+   Change Password box) is a plain white card everywhere else on the site
+   -- both need a scoped dark version here or they'd render light-on-dark
+   inside this shell. */
+.rcl-modal-dialog .rc-check-row label {
+  color: var(--rcl-ink-dim);
+}
 .rcl-modal-dialog .rc-panel {
   background: var(--rcl-bg-raised-2);
   border-color: var(--rcl-line-bright);

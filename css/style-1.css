@@ -299,10 +299,15 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
-/* Data Management panel's counts line (.rc-dm-summary/-line) removed
-   2026-09-24 (Matt's call: "get rid of the member n, cars n and tracks n
-   from the data management container... so the page only loads the
-   buttons") -- the panel is just the Members/Tracks/Cars button row now. */
+/* Data Management panel summary -- counts line (Members/Tracks/Cars),
+   sitting under the button row (2026-09-18, Matt's call: give this panel
+   a quick at-a-glance snapshot). Small, muted, deliberately quieter than
+   the buttons above it -- this is context, not another action. The
+   season status line that used to sit here too (.rc-dm-summary-season)
+   was removed 2026-09-19 along with the season data it showed -- season
+   status lives on the League Tools page's own Seasons panel now. */
+.rc-dm-summary { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rc-offwhite); display: flex; flex-direction: column; gap: 6px; }
+.rc-dm-summary-line { font-size: 12.5px; color: var(--rc-steel); }
 
 /* Wizard Next/Back only ("Make the Next and Back buttons slightly less
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
@@ -545,29 +550,26 @@ p { margin: 0 0 0.75em; }
    pills, which Matt did not ask to change. */
 .rc-badge-status-neutral,
 .rc-badge-race-quiet { background: var(--rc-silver); color: var(--rc-steel); }
-/* League Tools round status line (2026-09-23, Matt's ask; recolored
-   2026-09-24, item 8) -- a small circle-icon + text line under a race
-   row's date/track hint, replacing the old plain-gray partial-import
-   note. No more per-stage red/yellow/green coding (those classes,
-   .rc-round-status-red/-yellow/-green, and the icon-color-matches-text
-   convention they drove, are removed) -- the text is always light gray
-   and italic (.rc-round-status-text), and the icon reuses the Dashboard
-   Protest card's own .rc-protest-dash-icon/-pending/-ruled classes
-   directly (open gray circle, filled gray with a white checkmark only
-   once finalized) instead of a separate icon here. */
-.rc-round-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
-/* League Tools protest ruling dropdown (openRoundEditFinalizeModal,
-   Account.html) -- 66% width (2026-09-25, was 75%, Matt's ask), so the
-   "Penalty Standards" opener button fits on the same row beside it.
-   flex-basis (not just width) so it holds its share in the row's flex
-   layout regardless of the select's own content width. */
-.rc-ruling-select { flex: 0 0 66%; width: 66%; }
-/* Penalty Standards opener next to the ruling select (2026-09-24 styling
-   pass) -- fills the remaining space and stretches to the select's 44px
-   height via the row's align-items:stretch, rather than sitting at
-   .rc-btn-row's normal short inline-action height. */
-.rc-ruling-standards-btn { flex: 1 1 auto; min-width: 0; }
+/* League Tools round status line (2026-09-23, Matt's ask) -- a small
+   circle-icon + colored text line under a race row's date/track hint,
+   replacing the old plain-gray partial-import note. Red = one of
+   Qualify/Race imported, the other pending. Yellow = both imported, not
+   yet finalized. Green = finalized/official. Icon color always matches
+   the text color (currentColor on the inline ICON_CIRCLE_EMPTY/
+   ICON_CIRCLE_CHECK svg). */
+.rc-round-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; margin-top: 4px; }
+.rc-round-status-icon { display: flex; flex: none; }
+.rc-round-status-icon svg { display: block; }
+.rc-round-status-red { color: var(--rc-negative); }
+/* Matches the Admin role pill's yellow exactly (2026-09-23, Matt's ask:
+   "Make the yellow for Results uploaded, awaiting validation. And for
+   when qualifying or race is uploaded, the same yellow as the admin
+   pill") -- was --rc-warning, a darker muted yellow-brown that didn't
+   match any other yellow on the site. --rc-role-admin (style.css) is
+   used here directly rather than a new duplicate token, so any future
+   change to the Admin pill's color stays in sync with this automatically. */
+.rc-round-status-yellow { color: var(--rc-role-admin); }
+.rc-round-status-green { color: var(--rc-positive); }
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should
@@ -1124,11 +1126,32 @@ input[type="checkbox"], input[type="radio"] {
 input[type="radio"] { border-radius: 50%; }
 textarea { resize: vertical; }
 
-/* .rc-check-row (the email-notification opt-in checkbox's row style, on
-   register.html and the Edit Profile popup) removed 2026-09-24 alongside
-   the checkbox itself -- Matt's call: eliminate the in-app notification
-   system entirely, moving to an external Discord bot. Nothing else on
-   the site used this class. */
+/* Checkbox + label row (2026-09-02, email-notification opt-in checkbox --
+   register.html's "before clicking the button to join" checkbox, and the
+   matching one on the Edit Profile popup). A plain flex row rather than
+   reusing the <label>/<input> stacked pattern every other field on the
+   page uses -- a checkbox reads naturally sitting to the LEFT of its own
+   description, not stacked above a full-width box the way a text field's
+   label is. */
+.rc-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rc-check-row input[type="checkbox"] { margin-top: 3px; flex: none; }
+.rc-check-row label {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--rc-carbon);
+  cursor: pointer;
+  /* Override the global `label` rule's uppercase/letter-spacing (2026-09-13,
+     Matt's ask) -- this is a sentence-style checkbox description, not a
+     field label, so it should read like normal text. */
+  text-transform: none;
+  letter-spacing: normal;
+}
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--rc-red);
@@ -1315,11 +1338,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-align: left;
 }
 .rc-nav-item svg { flex: none; }
-/* Discord's own PNG logo used as this nav item's icon (2026-09-24, Matt's
-   ask), sized to match every other 16x16 nav icon on the site -- see
-   .rc-nav-item svg above; object-fit: contain keeps a non-square source
-   PNG from stretching to fill that box. */
-.rc-nav-item img { flex: none; width: 16px; height: 16px; object-fit: contain; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
 /* Admin/League Tools/Stewarding now always render in the sidebar instead
@@ -2244,15 +2262,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    a little low against the number. align-items: center here lines the two
    up by their actual vertical centers instead. */
 .rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-/* Current Seat's class-pill corner figure only (2026-09-24, Matt's ask):
-   align-self: center overrides the header row's own align-items: baseline
-   (above) so the pill lines up on its vertical center against "CURRENT
-   SEAT" instead of sitting on the title's text baseline. The pill itself
-   is bumped up from .rc-badge-chip-abbrev's base 2px 6px/12px size --
-   scoped to this one class so league.js's own report pill (which also
-   uses .rc-badge-chip-abbrev) stays untouched. */
-.rc-cs-corner-figure { align-self: center; }
-.rc-cs-class-pill.rc-badge-chip-abbrev { padding: 4px 9px; font-size: 15px; }
+/* Career card's class pills row (2026-09-20) -- buildClassPillsRow's own
+   .rc-cal-classes has a 10px margin-top meant for sitting under something
+   (its original home, Season Format); inline in this header row it needs
+   none. align-self: center overrides the row's own align-items: baseline
+   (above, tuned for the corner-figure's TEXT baseline) so the pills line
+   up on their vertical center against the title instead of sitting low,
+   same fix as .rc-cal-season-head's own align-items: center override. */
+.rc-dash-card-header-row .rc-cal-classes { margin-top: 0; align-self: center; }
 
 /* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
    checkered-flag corner that fades toward the card's center, a red
@@ -2446,30 +2463,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    buildDashProtestItem in Account.html. */
 .rc-protest-dash-list { display: flex; flex-direction: column; gap: 14px; }
 .rc-protest-dash-item { display: flex; align-items: flex-start; gap: 10px; }
-/* Divider between rows when a list has more than one protest (2026-09-24
-   styling pass, Matt's ask). Only fires on the 2nd+ item, so a single-
-   protest card/list never grows an orphan rule. */
-.rc-protest-dash-list .rc-protest-dash-item + .rc-protest-dash-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; }
 .rc-protest-dash-icon { flex: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 .rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
 .rc-protest-dash-icon-ruled { background: var(--rc-steel); }
 .rc-protest-dash-item-body { flex: 1; min-width: 0; }
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
-/* Ruled outcome line and the "(pending decision)" note (2026-09-24, item
-   6; resized 2026-09-24 styling pass to match the 13px protest text
-   above it, Matt's ask -- was 12px) styled identically: light gray,
-   italic, same size as the rest of the card's text -- so a pending row
-   and a ruled row read as one consistent family in the Dashboard
-   Protest card and the redesigned Protests popup list alike. */
-.rc-protest-dash-outcome { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
-.rc-protest-dash-pending { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
-/* Edit/Withdraw actions appended to a Protests-popup history row
-   (buildProtestPopupHistoryItem, Account.html) -- sits to the right of
-   the row's icon+text body, right-justified and top-aligned with the
-   date/first line (2026-09-24, item 6; confirmed placement 2026-09-24
-   styling pass). */
-.rc-protest-popup-item-actions { display: flex; flex-wrap: nowrap; gap: 8px; flex: none; margin-left: auto; align-self: flex-start; }
+.rc-protest-dash-outcome { margin-top: 3px; font-size: 12px; color: var(--rc-steel); }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
@@ -2741,22 +2741,35 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-sponsor-table-panel.rc-dash-card::before,
 .rc-trigger-glossary-panel.rc-dash-card::before { background: var(--rc-silver); }
 
-/* Protests popup (2026-09-20 page redesign, then converted to a popup and
-   simplified further 2026-09-24, Matt's ask: "remove the container within
-   the popups" -- the old "Season N: Name" panel wrapper is gone; FILE
-   PROTEST sits right below the popup's own red header line, then a
-   bordered season-grouped history below that). See
-   buildProtestPopupBody/buildProtestSeasonGroup/buildProtestHistoryItem,
-   Account.html. The old locked/grayed-out Edit/Delete button treatment
-   (.rc-protest-btn-locked/-lock) is gone too, 2026-09-24 -- Edit/Withdraw
-   simply don't render any more once a protest is no longer modifiable,
-   instead of showing disabled with a hover lock icon. */
+/* Protests page redesign (2026-09-20, Matt's ask: "Make it look
+   identical to the other pages on the list" -- one Season N: Name
+   container, FILE PROTEST button below the header's red rule, a bordered
+   season-grouped history below that). See buildProtestPagePanel/
+   buildProtestSeasonGroup/buildProtestHistoryItem, Account.html. */
 .rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
-/* .rc-protest-season-group (the old per-season grouping pill/tree-line
-   wrapper) removed 2026-09-24, item 6 -- the popup's history list is now
-   one flat, newest-first list of Dashboard-style rows, no more season
-   grouping. */
+.rc-protest-season-group { padding: 10px 0; }
+.rc-protest-season-group + .rc-protest-season-group { border-top: 1px solid var(--rc-offwhite); }
+/* Locked Edit/Delete buttons -- grayscale + a circle-slash icon that
+   fades in on hover (Matt's exact ask: "gray out the buttons and put a
+   circle with a line through it on hover"), same mechanic as
+   .rc-class-pick-btn-locked/.rc-class-pick-btn-lock above, just sized for
+   these small .rc-btn-row buttons instead of the big class-pick tiles. */
+.rc-protest-btn-locked { position: relative; filter: grayscale(1); opacity: 0.55; cursor: not-allowed; }
+.rc-protest-btn-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.rc-protest-btn-locked:hover .rc-protest-btn-lock { opacity: 1; }
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
@@ -3240,11 +3253,39 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    onerror just hides the <img> itself, same "silently fall back to
    initials" convention as Account.html's own buildAvatarCircle(). */
 .rc-header-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-/* Notification bell CSS (.rc-notif-dot, .rc-header-bell-icon-wrap,
-   .rc-header-bell-toggle, .rc-header-notif-menu and everything else
-   .rc-header-notif-* below) removed in full (2026-09-24, Matt's call:
-   eliminate the in-app notification system entirely, moving to an
-   external Discord bot). */
+/* Notification badge -- a red circle with a white ring, sitting against
+   .rc-header-bell-icon-wrap (sized to the bell glyph itself, see below)
+   rather than the bell button's own much-larger circular hit target, so it
+   actually lands on the bell's corner instead of floating out past it.
+   2026-09-01 (Matt's call: "make the bubble larger and add a notification
+   number to it") -- grown from a plain 13px dot to an 18px badge that
+   shows the actual unread count as text (see updateHeaderNotifDot in
+   header.js, which sets both .textContent and a min-width for double-digit
+   counts to still read as a circle/pill rather than a squeezed oval). */
+.rc-notif-dot {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--rc-red);
+  border: 2px solid var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--rc-white);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* Sized to exactly the 19x19 bell SVG so .rc-notif-dot's top/right offsets
+   above are measured against the icon itself, not the button's 38x38
+   circular hit target (added 2026-08-30 alongside the dot repositioning). */
+.rc-header-bell-icon-wrap { position: relative; display: flex; width: 19px; height: 19px; }
 .rc-header-account-text {
   display: none; /* shown from ~480px up, see the media query below -- too cramped on a phone-width header otherwise */
   flex-direction: column;
@@ -3285,6 +3326,167 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 1001;
 }
 
+/* Notification bell -- sits to the left of the avatar toggle, same
+   circular hover-button footprint the old separate caret used to have. */
+.rc-header-bell-toggle {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--rc-steel);
+  cursor: pointer;
+  padding: 0;
+}
+.rc-header-bell-toggle:hover,
+.rc-header-bell-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-carbon); }
+.rc-header-notif-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 60px; /* clears the avatar cluster to its right rather than overlapping it */
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  z-index: 1001;
+  overflow: hidden;
+}
+.rc-header-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rc-silver);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-carbon);
+}
+/* "Clear" (2026-09-01, Matt's call: "add a clear option to clear the
+   list") -- sits in the top-right corner of the dropdown, same row as the
+   "Notifications" label. Acknowledges/dismisses everything currently
+   showing at once (see _rcClearAllNotifications in header.js); hidden
+   whenever there's nothing to clear (see header.js's _rcRenderNotifList,
+   which toggles this via [hidden]). Plain text-link treatment, not a
+   button -- it's a secondary, low-emphasis action next to the header
+   label, not a primary action competing with the OK buttons below it. */
+.rc-header-notif-clear {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--rc-steel);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.rc-header-notif-clear:hover { color: var(--rc-red); }
+.rc-header-notif-clear[hidden] { display: none; }
+/* Capped to ~3 rows visible at once (2026-09-24, Matt's ask), scrolling for
+   anything beyond that -- was max-height: 320px (roomy enough to show 4-5
+   rows uncapped, which is what prompted this). 204px ~= 3 * a typical
+   .rc-header-notif-item's rendered height (~68px: 24px vertical padding +
+   ~18px message line + ~2px gap + ~13px date line + 1px border). Applies to
+   the whole scroll region (active items AND the "Recently Opened" history
+   rows below them, since both live in this one list), not per-section. */
+.rc-header-notif-list { max-height: 204px; overflow-y: auto; }
+.rc-header-notif-empty {
+  padding: 20px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rc-steel);
+}
+.rc-header-notif-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-header-notif-item:last-child { border-bottom: none; }
+/* Whole-row link variant (2026-09-02, Matt's call, sponsors notification
+   specifically: "get rid of the CHOOSE SPONSORS button... make the whole
+   message thing a link") -- .rc-header-notif-item is a <div> normally;
+   when the item itself is an <a> (see header.js's fullRowLink), reset the
+   anchor defaults (underline, link color, inline display) back to plain
+   text, add a pointer cursor and a hover tint so it still reads as
+   clickable without looking like a button. */
+.rc-header-notif-item-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.rc-header-notif-item-link:hover { background: var(--rc-offwhite); }
+.rc-header-notif-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rc-carbon);
+  text-align: left;
+}
+/* Replaces the old "OK" acknowledge button (2026-09-02, Matt's call: a
+   link straight to the page the notification is about, not just a way to
+   dismiss it). FIRST pass kept the old button's solid pill styling (dark
+   background, white text) even though the element itself was already an
+   <a> -- still read as a "physical button" sitting in the menu. REVISED
+   same day (Matt's call: "just make a linked text to the page") -- plain
+   underlined text in the site's own link-red, no background/border/
+   padding, same as any other inline link on the site (see the sitewide
+   `a`/`a:hover` rule up top). */
+.rc-header-notif-link {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rc-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rc-header-notif-link:hover { color: var(--rc-red-dark); }
+/* New-season notifications (2026-08-30) -- text + date stamp stacked in
+   their own column so the date sits under the message rather than
+   competing with it on one line; history entries below reuse
+   .rc-header-notif-item but muted, with no OK button (they're a read-only
+   record, see header.js's _rcDismissShownSeasonNotifs). */
+.rc-header-notif-text-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.rc-header-notif-text-col .rc-header-notif-text { flex: none; }
+.rc-header-notif-date {
+  font-size: 11px;
+  color: var(--rc-steel);
+}
+.rc-header-notif-history-head {
+  padding: 10px 14px 6px;
+  border-top: 1px solid var(--rc-silver);
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-steel);
+}
+.rc-header-notif-history-item { opacity: 0.65; }
+.rc-header-notif-history-item .rc-header-notif-text { color: var(--rc-steel); }
 .rc-header-menu-item {
   display: block;
   width: 100%;
@@ -3477,12 +3679,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    same 360px-to-1600px range as everything else on this component. */
 .rc-hero-badge {
   position: absolute;
-  /* Shifted up 35px and left 35px (2026-09-24, Matt's ask) -- same clamp
-     slope as before, just every number in it (min/preferred-constant/max)
-     bumped by 35 so the badge moves by exactly 35px at every viewport
-     width instead of only at one breakpoint. */
-  bottom: clamp(49px, 46.68px + 0.65vw, 57px);
-  right: clamp(49px, 46.68px + 0.65vw, 57px);
+  bottom: clamp(14px, 11.68px + 0.65vw, 22px);
+  right: clamp(14px, 11.68px + 0.65vw, 22px);
   height: clamp(38px, 33.94px + 1.13vw, 52px);
   width: auto;
   z-index: 2;
@@ -3634,27 +3832,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background: var(--rc-offwhite);
 }
 .rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
-
-/* Discord community CTA strip (2026-09-24, Matt's ask) -- sits between
-   "What Is Race Club" and the "Why Race Club" section, a dark full-width
-   band so it reads as its own moment rather than another paragraph. */
-.rc-discord-cta { background: var(--rc-carbon); padding: 28px 24px; text-align: center; }
-.rc-discord-cta-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--rc-white);
-  text-decoration: none;
-  font-family: var(--rc-font-heading);
-  font-size: 17px;
-  font-weight: 700;
-}
-.rc-discord-cta-link:hover { color: var(--rc-gold); }
-.rc-discord-cta-link:hover .rc-discord-cta-logo { transform: scale(1.06); }
-.rc-discord-cta-logo { height: 32px; width: auto; flex: none; transition: transform 0.12s ease; }
-@media (max-width: 560px) {
-  .rc-discord-cta-link { flex-direction: column; gap: 10px; font-size: 15px; }
-}
 .rc-landing-inner h2 { font-size: 26px; }
 .rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }
 
@@ -3876,11 +4053,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-needs-icon svg { width: 20px; height: 20px; }
 .rc-needs-body h3 { font-size: 15px; letter-spacing: 0.03em; color: var(--rc-white); }
 .rc-needs-body p { font-size: 13.5px; color: rgba(255, 255, 255, 0.65); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
-/* "our Discord server" inline link (2026-09-24, Matt's ask) -- the site's
-   one red accent against this section's dim body text, same underline-
-   on-hover convention as the rest of the site's text links. */
-.rc-needs-body p a { color: var(--rc-red); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.12s ease; }
-.rc-needs-body p a:hover { text-decoration-color: var(--rc-red); }
 @media (max-width: 860px) {
   .rc-needs-list { grid-template-columns: 1fr; }
   .rc-needs-item { border-left: none !important; }
@@ -4193,10 +4365,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    .rcl-modal-dialog, so the Season Format popup opens to the same width
    whether it's reached from Account.html or League Hub. */
 .rc-modal-wide { max-width: 820px; }
-/* Calendar popup only, 50px wider than the shared .rc-modal-wide (Matt's
-   ask, 2026-09-24) -- see openCalendarModal, which adds this class
-   alongside wide:true rather than changing .rc-modal-wide itself. */
-.rc-modal-calendar-wide { max-width: 870px; }
 
 /* Accent header variant -- opt-in via showModal(title, {accentHead:true}).
    Used by popups whose content reads as a full account-page "page" of its
@@ -4235,13 +4403,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-seasonfmt-group-label {
   display: inline-flex;
   align-items: center;
-  /* Graphite fill (2026-09-24, Matt's ask) instead of the plain offwhite/
-     silver-bordered pill every other group label on the site uses -- same
-     dark-neutral token member badges use (--rc-graphite, see
-     .rc-badge-graphite), white text for contrast against it. */
-  background: var(--rc-graphite);
-  color: var(--rc-white);
-  border: 1px solid var(--rc-graphite);
+  background: var(--rc-offwhite);
+  color: var(--rc-carbon);
+  border: 1px solid var(--rc-silver);
   border-radius: 5px;
   padding: 3px 10px;
   font-family: var(--rc-font-heading);
@@ -4849,6 +5013,11 @@ body.rc-modal-scroll-locked {
    noticeably low against the title's own cap-height/line-box. */
 .rc-cal-season-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 .rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
+/* Overrides .rc-cal-classes' own margin-top (below) -- that spacing is for
+   when the pills sit under something; inline in the header row, they need
+   none. */
+.rc-cal-season-head .rc-cal-classes { margin-top: 0; }
+
 /* Season-wide settings block (server password, classes, points tables,
    drop weeks, race day/frequency, track limits, private qualifying) --
    sits below the season name, above the race list, per Matt's call.
@@ -4881,6 +5050,39 @@ body.rc-modal-scroll-locked {
 .rc-cal-format-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rc-cal-format-list + .rc-cal-format-list { margin-top: 10px; }
 
+.rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+/* Rounded rectangle, not an oval pill (Matt's call: every class badge on
+   the site uses this one shape). */
+.rc-cal-class-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rc-white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+/* MULTICLASS/SINGLE CLASS pill (added 2026-09-19, Matt's call: "add a
+   black border pill the same size as the class pills... put the pill
+   before the class pills") -- an outline treatment, not a solid fill
+   (that's what the colored class pills already do), so it reads as a
+   label about the pills that follow rather than one more of them.
+   Padding trimmed 1px per side vs. .rc-cal-class-pill to net out to the
+   same rendered size once its own 1px border is added on top. */
+.rc-cal-format-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--rc-carbon);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rc-carbon);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: transparent;
+}
+
 .rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
 
 /* Bye week -- deliberately close to empty (Matt's call: "keep bye weeks
@@ -4905,143 +5107,181 @@ body.rc-modal-scroll-locked {
 }
 .rc-cal-bye-date { font-size: 11px; font-weight: 400; text-transform: none; } /* the date stays normal-case even though .rc-cal-bye above it is all-caps */
 
-/* Race row -- redesigned 2026-09-24 (Matt's ask: "make the race calendar
-   layout look identical to the league.html calendar race layout, ...
-   keep the same colors as the current account calendar but I want the
-   font and layout and text weight to all match the league page"). Same
-   flex "round-number bar + body" shape league.html's own .rcl-cal-row
-   uses (see css/league.css), just in Account's own light-page tokens
-   (--rc-carbon/--rc-steel/--rc-red/--rc-silver-dark/--rc-white/--rc-gold)
-   instead of league's dark theme. position: relative so nothing needs to
-   pin to a corner overlay any more -- the old full-card dimmed
-   "Completed" overlay is gone, replaced by fading the row's own content
-   (see .rc-cal-finished below), same as league.html's own
-   .rcl-cal-row-finished. */
+/* Flex row -- .rc-cal-race-body (everything but the image) grows to fill
+   the space, .rc-cal-track-img sits fixed-size on the right. position:
+   relative so .rc-cal-completed-badges below can pin to the card's own
+   top-right corner. */
 .rc-cal-race {
   position: relative;
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   overflow: hidden;
   /* 2px, not 1px (2026-08-30, Matt's call: "make each race container have
-     a gray border similar to the size of the gold special event border").
-     --rc-silver-dark (2026-09-20, Matt's follow-up call to darken it
-     slightly) instead of the standard --rc-silver every other hairline
-     border on the site uses. */
+     a gray border similar to the size of the gold special event border")
+     -- .rc-cal-race-special below only overrides the color, not the
+     width, so a normal and a special card now read as the same weight of
+     border, just a different color. --rc-silver-dark (2026-09-20, Matt's
+     follow-up call to darken it slightly) instead of the standard
+     --rc-silver every other hairline border on the site uses. */
   border: 2px solid var(--rc-silver-dark);
   border-radius: 8px;
   background: var(--rc-white);
+  padding: 16px 18px;
   width: 100%;
 }
-/* UP NEXT row highlight -- a barely-there tint instead of league.html's
-   translucent-white wash (which only reads against a dark background),
-   same "identify it at a glance without the whole row shouting" intent. */
-.rc-cal-race-next { background: var(--rc-offwhite); }
-/* Special Events get a gold-tinted border (Matt's call: "stick out a
-   little better") -- the round bar below reads gold too. */
+/* Round-number bar removed entirely 2026-09-19 (Matt's call: "get rid of
+   the giant numbers with the gray left border backgrounds") -- the round
+   number now lives in the "ROUND N:" title prefix instead (raceCard's
+   nameWrap). */
+/* Every round card now gets the same diagonal "finish flag" top accent
+   Special Events already had, just in gray instead of gold (2026-09-19,
+   Matt's call: "make the round event containers styled similar to the
+   special event except make them the gray color") -- .rc-cal-race-special
+   below overrides only the color, same pattern the border already used. */
+.rc-cal-race::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 4px;
+  /* Matches the card's own full border color (--rc-silver-dark, set on
+     .rc-cal-race above) rather than the lighter --rc-silver it used
+     before (2026-09-23, Matt's call: "make the top 1/2 border design...
+     the same gray color as the full line border around each race
+     container") -- the accent bar and the border it sits on now read as
+     one consistent gray. */
+  background: var(--rc-silver-dark);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+/* Special Events get a bit more of the same gold the star icon already
+   uses (Matt's call: "stick out a little better") -- a gold-tinted
+   border, and the shared ::before accent above just reads gold here
+   instead of gray. */
 .rc-cal-race-special { border-color: var(--rc-gold); }
-
-/* Round-number bar -- back (2026-09-24) after being folded into a
-   "ROUND N:" title prefix on 2026-09-19; same silver metallic gradient
-   league.html's .rcl-cal-round uses for a normal round, gold for a
-   Special Event, so the two read as different metals at a glance. */
-.rc-cal-round-bar {
-  flex: none;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
-  font-family: var(--rc-font-heading);
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1;
-  color: #1c1d20;
-  text-align: center;
-  user-select: none;
-}
-.rc-cal-round-bar-special {
-  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
-  color: #241b04;
-}
-
-.rc-cal-race-body { flex: 1 1 auto; min-width: 0; padding: 14px 16px; }
+.rc-cal-race-special::before { background: var(--rc-gold); }
+.rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
+/* .rc-cal-track-img removed entirely 2026-09-19 (Matt's call: "remove the
+   tracks from being shown within each") -- race cards no longer show a
+   track image aside; .rc-cal-race-body is the whole card's content now. */
 @media (max-width: 560px) {
   .rc-cal-race { flex-wrap: wrap; }
   .rc-cal-race-body { min-width: 220px; }
 }
 
-.rc-cal-race-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-/* Combined "<event> at <track>: <layout>" line, same three-piece shape
-   league.html's own .rcl-cal-event uses -- event name bold, track normal
-   weight, layout normal weight but dimmer, all in Account's own ink
-   colors instead of league's white/gray. */
-/* Bumped from 15px (2026-09-24, Matt's ask: "increase the size of the
-   event/track/layout name by a little to make it more pronounced"),
-   same proportional bump as league.html's own .rcl-cal-event. */
-.rc-cal-race-event { font-size: 16.5px; }
-.rc-cal-race-event-name { font-weight: 800; color: var(--rc-carbon); }
-.rc-cal-race-event-track { font-weight: 500; color: var(--rc-carbon); }
-.rc-cal-race-event-layout { font-weight: 500; color: var(--rc-steel); }
-.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); margin-left: 6px; }
-/* Special Events read one uniform gold across the whole event line, same
-   as league.html's .rcl-cal-row-special treatment. */
-.rc-cal-race-special .rc-cal-race-event,
-.rc-cal-race-special .rc-cal-race-event-name,
-.rc-cal-race-special .rc-cal-race-event-track,
-.rc-cal-race-special .rc-cal-race-event-layout {
-  color: var(--rc-gold);
+/* Whole-container dim + centered "COMPLETED" overlay, once a round/
+   special event's start time has passed (2026-09-23 redesign, Matt's
+   ask: "dim the whole race container and show COMPLETED in large text
+   in the middle... under it it can say Unofficial Results Posted or
+   Official Results Posted" -- and a same-day follow-up: "or have it say
+   NO RESULTS POSTED YET if nothing uploaded"). Fifth pass at this
+   treatment: a faded background + small "Completed" pill (original),
+   then a full-card dark scrim with giant centered text, then small
+   corner badges over a dimmed body only (2026-09-21), then a full-card
+   centered overlay on a near-opaque light scrim with a pill subheading,
+   then a darker see-through scrim with plain light text (both earlier
+   today). Matt's latest ask made the scrim white and even more
+   see-through, so text flips back to dark (var(--rc-carbon)/--rc-steel)
+   with a soft white halo (text-shadow) for legibility over whatever
+   dimmed card content sits underneath. .rc-cal-race-body (which wraps
+   the card's entire visible content -- head/track/datetime, see
+   raceCard()) dims via grayscale + reduced opacity, same language the
+   site's other locked/disabled states use (.rc-protest-btn-locked); the
+   overlay is a separate, absolutely-positioned sibling covering the
+   WHOLE card (position:relative + overflow:hidden on .rc-cal-race
+   already clips it to the card's own rounded corners), so its text sits
+   above the dimmed content. */
+.rc-cal-race.rc-cal-finished .rc-cal-race-body { opacity: 0.35; filter: grayscale(0.5); }
+.rc-cal-completed-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px;
+  text-align: center;
+  /* Approximates --rc-white at low opacity rather than referencing the
+     token directly -- an alpha channel on a hex custom property needs
+     color-mix()/relative-color syntax, more than this needs. Kept low
+     so the dimmed card content underneath stays clearly visible. */
+  background: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
 }
-
-/* Status word, upper-right of the row -- UP NEXT/SCHEDULED/COMPLETED
-   (Matt's exact wording), same font-heading/uppercase/letter-spacing
-   treatment as league.html's .rcl-cal-status. The results-posted note
-   stacks BELOW it as its own line (Matt's ask) rather than league's one
-   combined "COMPLETED · OFFICIAL RESULTS POSTED" string. */
-.rc-cal-race-status-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; text-align: right; }
-.rc-cal-race-status {
+.rc-cal-completed-overlay-title {
   font-family: var(--rc-font-heading);
-  font-size: 11px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Lighter gray (2026-09-23, Matt's call: "make the COMPLETED and
+     RESULTS notifications on the dashboard calendar a lighter gray
+     font") -- was --rc-carbon (near-black), which read too heavy/dark
+     against the near-white scrim. --rc-steel is the site's standard
+     muted-label gray, same token .rc-cal-completed-overlay-sub below
+     already used. */
+  color: var(--rc-steel);
+  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
+}
+.rc-cal-completed-overlay-sub {
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  white-space: nowrap;
   color: var(--rc-steel);
-}
-.rc-cal-race-status-up { color: var(--rc-red); }
-.rc-cal-race-status-note {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
   white-space: nowrap;
-  color: var(--rc-steel);
 }
-/* Preliminary reuses the site's one gold accent so "not final yet" reads
-   as an amber/caution note, same convention league.html's own
-   .rcl-cal-status-preliminary uses. */
-.rc-cal-race-status-note-preliminary { color: var(--rc-gold); }
+/* Preliminary/Official results sub-line now stays the same lighter gray
+   as everything else in this overlay (2026-09-23, same pass as the title
+   above) rather than the amber/green semantic tint it used briefly --
+   Matt's ask covered "RESULTS notifications" broadly, not just the
+   neutral "No Results Posted Yet" state, so all three read as one
+   consistent gray now. The amber/green semantic-color mapping (still
+   used elsewhere, e.g. league.html's public calendar badges,
+   .rcl-cal-status-preliminary/-official) was intentionally dropped here
+   only. */
 
-/* Faded row once a round's start time has passed (2026-09-24, matching
-   league.html's .rcl-cal-row-finished) -- dims the round bar/event/meta/
-   in-game line, but deliberately NOT the status word or its results note,
-   so the COMPLETED/results phrase stays fully legible against the row. */
-.rc-cal-race.rc-cal-finished .rc-cal-round-bar,
-.rc-cal-race.rc-cal-finished .rc-cal-race-datetime,
-.rc-cal-race.rc-cal-finished .rc-cal-race-event,
-.rc-cal-race.rc-cal-finished .rc-cal-race-meta {
-  opacity: 0.5;
+.rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
+   the Current Seat team name (Matt's call: every event name on the site
+   reads at the same weight) instead of its own bigger/lighter/lowercase
+   style. */
+.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rc-carbon); }
+/* Star marks a special/named event (Matt: "any special events have a
+   star next to the race name") -- normal rounds have no star, no name,
+   just "Race 0N". */
+.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); }
+
+/* Track name/layout are BACK (2026-09-19 follow-up, Matt's catch: "I
+   don't want the track names gone! There was a misunderstanding. I want
+   the tracks and layouts there just how they were. What I don't want is
+   the track images" -- the earlier same-day removal of the whole track
+   line was a misread of "remove the tracks" as covering the text too,
+   not just the image). .rc-cal-track-row wraps the track/layout text
+   together with the small length/weather pills on one row -- "next to
+   the race track and layout, add a smaller race length pill and a
+   weather pill" reads literally now that the track text exists again.
+   Keeps the light divider under this row, same as it always had. */
+.rc-cal-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-cal-track { font-size: 13px; color: var(--rc-steel); }
+.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
+.rc-cal-layout { color: var(--rc-steel); font-weight: 400; }
+/* Small pills next to the track/layout text (2026-09-19, Matt's ask) --
+   deliberately smaller than the regular .rc-cal-stat chips below (.rc-cal-
+   mini-stat) so this doesn't just become the bottom stats row moved up. */
+.rc-cal-mini-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-cal-mini-stat {
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 4px;
 }
-
-/* Day/date/time the race starts -- plain text above the event title
-   (2026-09-24, Matt's ask), not a pill. Sits above .rc-cal-race-head. */
-.rc-cal-race-datetime { font-size: 12px; font-weight: 600; color: var(--rc-steel); margin-bottom: 4px; }
-
-/* Meta chip row -- race length, In-Game Event Time, Weather, and (when
-   set) Password Override, reusing the site's shared .rc-cal-stat chip
-   (below) same as every other pill row on the site. */
-.rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
-
+.rc-cal-mini-stat svg { width: 12px; height: 12px; }
 
 .rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
 .rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }

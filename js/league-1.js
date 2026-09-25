@@ -643,12 +643,9 @@ function _rclIsDnf_(row) {
   return !!(row && (row.disqualified || /dnf/i.test(row.finishStatus || '')));
 }
 
-// logo, name, country flag, car number, team -- one identical identity
-// block wherever a driver row appears on this page. No longer takes a
-// `dnf` flag (2026-09-24, Matt's ask to drop the bold DNF/DSQ name
-// treatment) -- see _rclIsDnf_/the position badge for how DNF/DSQ still
-// shows on a row.
-function _rclBuildDriverIdentity_(row) {
+// logo, name (bold if DNF/DSQ), country flag, car number, team -- one
+// identical identity block wherever a driver row appears on this page.
+function _rclBuildDriverIdentity_(row, dnf) {
   var identity = _rclEl('div', 'rcl-standings-identity');
   var logoSlot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
@@ -664,12 +661,7 @@ function _rclBuildDriverIdentity_(row) {
   identity.appendChild(logoSlot);
 
   var nameRow = _rclEl('div', 'rcl-standings-name-row');
-  // No extra-bold DNF/DSQ name any more (2026-09-24, Matt's ask: "do not
-  // BOLD the name of anyone who DNF's, leave it the same weight as all
-  // the rest in the list") -- the position badge already shows DNF/DSQ
-  // in the finish-position slot (_rclBuildPosBadge_), so the name itself
-  // no longer needs its own bold treatment to flag it.
-  nameRow.appendChild(_rclEl('span', 'rcl-standings-name', _rclEscapeHtml(row.name)));
+  nameRow.appendChild(_rclEl('span', 'rcl-standings-name' + (dnf ? ' rcl-standings-name-dnf' : ''), _rclEscapeHtml(row.name)));
   if (row.country && typeof countryFlagSrc === 'function') {
     var flagSrc = countryFlagSrc(row.country);
     if (flagSrc) {
@@ -757,7 +749,7 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
         if (hasResults) {
           rowEl.appendChild(_rclBuildPosBadge_(idx));
         }
-        rowEl.appendChild(_rclBuildDriverIdentity_(row));
+        rowEl.appendChild(_rclBuildDriverIdentity_(row, false));
 
         if (hasResults) {
           // Points total only, no "-N PTS" gap-to-leader line underneath
@@ -920,7 +912,7 @@ function _rclBuildRaceHeadline_(r) {
   var detailRow = _rclEl('div', 'rcl-race-headline-row');
   detailRow.appendChild(stat('Winner', r.overallWinner, true));
   detailRow.appendChild(stat('Pole', r.overallPoleSitter));
-  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + _rclFormatLapTime_(r.overallFastestLapTime) + ')' : '')) : ''));
+  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + r.overallFastestLapTime + ')' : '')) : ''));
   headline.appendChild(detailRow);
   return headline;
 }
@@ -979,7 +971,7 @@ function _rclRenderResults(hub) {
       // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
       // a small field.
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
@@ -1092,27 +1084,6 @@ function _rclFormatTotalTime_(seconds) {
   return h + ':' + pad(m, 2) + ':' + pad(s, 2) + '.' + pad(ms, 3);
 }
 
-// Fastest/best lap time, m:ss.xxx (2026-09-24, Matt's ask: "make the
-// fastest laps in the recent results container and the view all results
-// display like this m:ss:xxx instead of the xx.xxxx" -- BestLapTime comes
-// off the XML import, and out of Results.gs, as a raw decimal-seconds
-// string like "92.3456"; this is the standard motorsport lap-time
-// notation for it). No hour component -- unlike _rclFormatTotalTime_
-// above (a full race time), a single lap is never going to run an hour.
-// A non-numeric value (already-formatted or genuinely missing) falls
-// back to '--' rather than showing "NaN:NaN.NaN".
-function _rclFormatLapTime_(raw) {
-  var totalSeconds = Number(raw);
-  if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '--';
-  var totalMs = Math.round(totalSeconds * 1000);
-  var ms = totalMs % 1000;
-  var totalSec = Math.floor(totalMs / 1000);
-  var s = totalSec % 60;
-  var m = Math.floor(totalSec / 60);
-  function pad(n, len) { var str = String(n); while (str.length < len) str = '0' + str; return str; }
-  return m + ':' + pad(s, 2) + '.' + pad(ms, 3);
-}
-
 // AVG (KM/H) -- not a stored field, derived from trackLengthMeters (on the
 // round result payload, Results.gs) times laps completed, over finish time
 // (2026-09-23, Matt's ask). A DSQ'd/DNF driver with no usable finish time
@@ -1135,21 +1106,6 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   }
 
   bodyEl.appendChild(_rclBuildRaceHeadline_(result));
-
-  // profileId -> total Time-effect penalty seconds this round (2026-09-25,
-  // Matt's ask: "when there is a time penalty, there needs to be a bold
-  // +10s or +40s... next to the total time in the ALL RESULTS list on top
-  // of the penalty that's added to the bottom"). Same result.penalties
-  // array the "Penalties Assessed" section below already reads -- this
-  // just also indexes it by profileId so each standings row can show its
-  // own total alongside Total Time. Only Time-effect entries count here;
-  // a DSQ/Warning has no seconds to add and already shows via the DSQ
-  // position badge / a plain log entry respectively.
-  var timePenaltySecondsByProfileId = {};
-  (result.penalties || []).forEach(function (p) {
-    if (p.effectType !== 'Time' || !p.against) return;
-    timePenaltySecondsByProfileId[p.against] = (timePenaltySecondsByProfileId[p.against] || 0) + (Number(p.effectSeconds) || 0);
-  });
 
   // profileId -> display name, built off this round's own full standings
   // -- penalties (below) only carry a profileId (see the `against` field
@@ -1205,24 +1161,13 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
-      // Total Time cell, plus a bold "+Ns" badge right next to it when
-      // this driver picked up a Time-effect penalty this round
-      // (2026-09-25, Matt's ask) -- the badge is a call-out here, not a
-      // replacement for the "Penalties Assessed" list at the bottom of
-      // this same popup, which still has the full infraction/tier detail.
-      var totalTimeCell = _rclEl('div', 'rcl-race-row-num rcl-race-row-totaltime');
-      totalTimeCell.appendChild(_rclEl('span', null, _rclFormatTotalTime_(row.finishTimeSeconds)));
-      var timePenaltySeconds = row.profileId ? (timePenaltySecondsByProfileId[row.profileId] || 0) : 0;
-      if (timePenaltySeconds > 0) {
-        totalTimeCell.appendChild(_rclEl('span', 'rcl-race-row-penalty-badge', '+' + timePenaltySeconds + 's'));
-      }
-      rowEl.appendChild(totalTimeCell);
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclEscapeHtml(row.bestLapTime || '--')));
       clsWrap.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);
@@ -1438,12 +1383,6 @@ function _rclRenderCalendar(hub) {
   if (!body) return;
   body.innerHTML = '';
 
-  // Panel title becomes "SEASON <n> CALENDAR" once a season number is
-  // known (2026-09-24, Matt's ask), falling back to the plain "Calendar"
-  // the markup ships with (league.html) when there's no active season.
-  var calendarTitleEl = document.getElementById('rcl-calendar-title');
-  if (calendarTitleEl) calendarTitleEl.textContent = hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Calendar') : 'Calendar';
-
   if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'The season schedule shows up here once it is built.'));
     return;
@@ -1494,14 +1433,6 @@ function _rclRenderCalendar(hub) {
     row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
-    // Day/date/time the race starts -- plain text above the event title
-    // (2026-09-24, Matt's ask: "move the day, date and time the race
-    // starts above the event title, remove it from a pill so it's just
-    // text"), not a pill any more. The time pill below now carries only
-    // the length (prefixed with the tier name).
-    if (entry.startUtc) {
-      rowBody.appendChild(_rclEl('div', 'rcl-cal-datetime', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
-    }
     var topLine = _rclEl('div', 'rcl-cal-row-top');
     // "<event name> at <track name>: <layout>" as one combined primary
     // line, three independently-styled pieces (2026-09-24, Matt's ask,
@@ -1547,17 +1478,19 @@ function _rclRenderCalendar(hub) {
     rowBody.appendChild(topLine);
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');
-    // Length pill -- same gray outline pill as In-Game/Weather below
-    // (2026-09-19, Matt's call: "make the date time and length pill less
-    // prominent"). Race start date/time moved out of this pill entirely
-    // (2026-09-24, see the plain-text .rcl-cal-datetime line above) --
-    // this chip now leads with the tier name instead, e.g. "SPRINT 20
-    // mins" (Matt's exact example). The `true` third arg is the same
-    // outline switch In-Game/Weather already use (see _rclChip above).
+    // Time + length -- now the same gray outline pill as In-Game/Weather
+    // below (2026-09-19, Matt's call: "make the date time and length pill
+    // less prominent. It overshadows the rest of the race details by a
+    // lot") -- was the one solid light-fill chip in this row, which read
+    // much louder against the dark page than the plain track/event text
+    // next to it. The `true` third arg is the same outline switch In-
+    // Game/Weather already use (see _rclChip above).
+    var timeTierParts = [];
+    if (entry.startUtc) timeTierParts.push(_rclFormatDateTime(entry.startUtc));
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
-    if (lengthMin) {
-      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier.toUpperCase() + ' ') : '';
-      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, tierPrefix + lengthMin + ' mins', true));
+    if (lengthMin) timeTierParts.push(lengthMin + ' Min');
+    if (timeTierParts.length) {
+      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, timeTierParts.join(' · '), true));
     }
     // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
     // 2026-09-21, Matt's follow-up ask), race time only -- practice/
@@ -2018,26 +1951,19 @@ function _rclBuildFormatStats(hub) {
   var row1 = [];
   if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
   if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-  // Qualify Type (added 2026-09-24, Matt's ask: "add a bubble Qualify
-  // Type (private or public) in between Qualify and Race Length") --
-  // hub.privateQualifying is the season's raw 'Yes'/'No' field (see
-  // handleGetLeagueHub, Website.gs), shown here as Private/Public.
-  if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
-  // Race Length -- static "Varies" bubble, always shown (2026-09-24,
-  // Matt's ask), unlike every other bubble here which is conditioned on
-  // actual data. Race length genuinely does vary by round/tier (see
+  // Race Time -- static "Varies" bubble, always shown (2026-09-24, Matt's
+  // ask), unlike every other bubble here which is conditioned on actual
+  // data. Race length genuinely does vary by round/tier (see
   // hub.pointsTables' own per-tier durations in the separate Points
   // Tables popup), so there's no single number to show here -- this just
-  // says so plainly. Renamed from "Race Time" to "Race Length" (2026-09-24,
-  // Matt's ask).
-  row1.push({ value: 'Varies', label: 'Race Length' });
+  // says so plainly.
+  row1.push({ value: 'Varies', label: 'Race Time' });
 
   var row2 = [];
   if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
   if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
   if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-  // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
-  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
+  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires Per Race' });
   if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
   if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
   if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
@@ -2102,9 +2028,7 @@ function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  // "SEASON <n> DETAILS" once the season number is known (2026-09-24,
-  // Matt's ask -- matches Account.html's own popup title).
-  head.appendChild(_rclEl('div', 'rcl-modal-title', hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details'));
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
