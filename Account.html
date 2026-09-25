@@ -3895,8 +3895,16 @@
     // tools. They don't offer anything and make it feel cluttered") --
     // _rcSeasonStatusBadge itself is untouched, still used by the Career
     // page's own season cards.
+    // Label reformatted to "Season <n>: <Season Name>" (2026-09-25, Matt's
+    // ask) -- the same "Season N: <name>" shape already used on the
+    // Dashboard's registration status and the Calendar's season header
+    // (see seasonNumberLabel above), so League Tools' season list reads
+    // consistently with the rest of the site instead of showing the bare
+    // season name on its own with no number for context.
     var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-    nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(s.name || s.seasonId)));
+    var seasonRowNum = seasonNumberLabel(s.seasonId);
+    var seasonRowLabel = (seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : '');
+    nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(seasonRowLabel)));
     textCol.appendChild(nameLine);
 
     var metaParts = [];
@@ -4115,6 +4123,12 @@
     return line;
   }
 
+  // buildRoundStatusLine's "locked" param above -- as of 2026-09-25 -- is
+  // actually a combined suppress flag (sequential gating OR the race just
+  // hasn't happened yet); see the notYetRaced comment on buildSeasonRaceRow
+  // below. The function body itself is unchanged: passing true either way
+  // still means "say nothing, this round isn't actionable right now."
+
   function buildSeasonRaceRow(r, token, reload, priorFinalized) {
     var row = el('div', 'rc-group-row');
     var info = el('div', 'rc-dm-row-info');
@@ -4141,6 +4155,22 @@
     // own import state.
     var locked = !isSpecial && !priorFinalized;
 
+    // Not-yet-raced gating (2026-09-25, Matt's ask: "if a race hasn't
+    // passed on the calendar yet, don't populate the IMPORT RESULTS,
+    // DELETE RESULTS and 'Awaiting results' notifications") -- separate
+    // from the sequential lock above: a round can be next in line and
+    // still be a future date on the calendar, and there's nothing to
+    // import/delete/be-awaiting yet either way. Only suppresses when
+    // nothing has actually been imported for it -- if a round somehow
+    // already has session data on it (a corrected date after an import,
+    // an odd edit), Delete Results still needs to be reachable to fix it,
+    // so this never hides real data. A round with no startUtc set at all
+    // can't be judged as "hasn't passed yet" one way or the other, so it's
+    // left to the existing sequential-lock behavior instead of guessing.
+    var notYetRaced = !isSpecial && !!r.startUtc && !r.hasAnySessionImported &&
+      new Date(r.startUtc).getTime() > Date.now();
+    var suppressUnstarted = locked || notYetRaced;
+
     var metaParts = [];
     if (!isSpecial && r.track) metaParts.push(r.track);
     if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
@@ -4149,7 +4179,7 @@
     // Colored circle-icon status line replaces the old plain-text partial-
     // import note (2026-09-23, Matt's ask -- see buildRoundStatusLine).
     if (!isSpecial) {
-      var statusLine = buildRoundStatusLine(r, locked);
+      var statusLine = buildRoundStatusLine(r, suppressUnstarted);
       if (statusLine) textCol.appendChild(statusLine);
     }
 
@@ -4165,12 +4195,13 @@
       // straight to the upload/erase form.
       //
       // Import Results/Delete Results are left out of the button row
-      // entirely while locked (2026-09-23, Matt's ask: "I don't want to
-      // see IMPORT RESULTS or DELETE buttons at all on races that
-      // results can't be uploaded to yet") -- previously they still
-      // rendered, just grayed out/disabled. The red status line above
-      // (buildRoundStatusLine) is what now tells the organizer why.
-      if (!locked) {
+      // entirely while locked or not yet raced (2026-09-23, Matt's ask:
+      // "I don't want to see IMPORT RESULTS or DELETE buttons at all on
+      // races that results can't be uploaded to yet"; extended 2026-09-25
+      // to future-dated races -- previously they still rendered, just
+      // grayed out/disabled. The status line above (buildRoundStatusLine)
+      // is what now tells the organizer why.
+      if (!suppressUnstarted) {
         var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
         addBtn.type = 'button';
         if (r.hasResults) {
@@ -4215,9 +4246,13 @@
         btnGroup.appendChild(editFinalizeBtn);
       }
 
-      // Left out of the row entirely while locked, same as Import Results
-      // above (2026-09-23, Matt's ask).
-      if (!locked) {
+      // Left out of the row entirely while locked or not yet raced, same
+      // as Import Results above (2026-09-23, Matt's ask; extended
+      // 2026-09-25). Safe to gate on suppressUnstarted here too --
+      // notYetRaced is only ever true when hasAnySessionImported is
+      // false, and the branch below already disables this button in that
+      // exact case anyway.
+      if (!suppressUnstarted) {
         var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete Results');
         delBtn.type = 'button';
         // Gated on hasAnySessionImported, not hasResults (2026-09-23 fix) --
