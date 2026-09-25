@@ -36,11 +36,6 @@
   --rc-white: #FFFFFF;
   --rc-offwhite: #F5F5F3;
   --rc-silver: #D8DDE1;
-  /* One step darker than --rc-silver (2026-09-20, Matt's ask: "make the
-     gray border around the individual rounds slightly darker gray") --
-     for a border that needs a bit more definition than the standard
-     --rc-silver hairline without jumping all the way to --rc-steel. */
-  --rc-silver-dark: #BEC6CD;
   --rc-steel: #536575;
   --rc-carbon: #171717;
   --rc-red: #F21B0C;
@@ -52,10 +47,7 @@
      a consistent color. LMGT3 reuses --rc-ok (already green); Hypercar
      reuses --rc-red (already red); LMP3/LMP2 are new, matching the
      purple/blue already used for "working value" badges in the v0.3
-     system map doc, so the palette stays consistent across the project.
-     LMGTE (2026-09-20, Matt's ask: "the pill color is orange") -- a new
-     rookie class below LMGT3 on the ladder, gets its own orange token. */
-  --rc-class-lmgte: #e0791b;
+     system map doc, so the palette stays consistent across the project. */
   --rc-class-lmgt3: var(--rc-ok);
   --rc-class-lmp3: #6b3fa0;
   --rc-class-lmp2: #2b6cb0;
@@ -70,77 +62,6 @@
   --rc-tier-mid: #3b82f6;
   --rc-tier-high: #9333ea;
   --rc-tier-elite: #c9a227;
-
-  /* Members list role pills (added 2026-09-19, Matt's call: "the catagory
-     pills to go from gold, silver, bronze and then graphite for prospect
-     and driver"; recolored 2026-09-21, Matt's exact hex list -- Admin/
-     Organizer/Steward now each get their own named tone instead of
-     reusing the gold/silver/bronze medal tokens, and Prospect splits off
-     from Driver into its own plain gray so the two no longer share a
-     color). --rc-role-admin/--rc-role-organizer/--rc-role-steward are
-     Matt's exact hex values, brightest (Admin) down to a dark rust
-     (Steward). --rc-graphite (Driver) is a dark near-black neutral, one
-     step lighter than --rc-carbon; --rc-role-prospect (Prospect) is a
-     separate, lighter blue-gray so Prospect reads as visibly "not staff,
-     not yet a full driver" rather than identical to Driver.
-     --rc-tier-silver/--rc-tier-bronze remain in use elsewhere (Data
-     Management pills, etc. -- see .rc-badge-graphite below) even though
-     the Members list role pills no longer read from them. */
-  --rc-tier-silver: #9AA5AD;
-  --rc-tier-bronze: #93582F;
-  --rc-graphite: #3A3F45;
-  --rc-role-admin: #f1c40f;
-  --rc-role-organizer: #c27c0e;
-  --rc-role-steward: #a84300;
-  --rc-role-prospect: #7d8791;
-
-  /* Semantic bonus/penalty/status colors (named 2026-09-13, sitewide review
-     fix) -- these five hex values were previously hand-typed at 29 separate
-     call sites across the file (--rc-positive alone at 15 of them), so a
-     future "make the penalty red a bit darker" ask meant hunting down every
-     occurrence instead of editing one line. Named here as the semantic
-     concept they represent (not as a literal color name), matching how
-     --rc-red/--rc-ok already work above. Only colors that repeated 2+ times
-     were promoted -- a handful of true one-off hex values remain literal
-     rather than invent a token for a single call site.
-     --rc-positive: dark green -- Safe tier, bonus amounts, Active/Done
-     status, upward deltas.
-     --rc-positive-bright: a separate, more saturated green used only for
-     the Recent Results pill outline and the sponsor risk/reward swing bar
-     -- intentionally a different shade of "positive" than --rc-positive,
-     not a duplicate of it (see the Recent Results comment further down).
-     --rc-positive-bg/--rc-positive-border: the light-fill/border pair that
-     goes with --rc-positive wherever a badge/chip needs a tinted
-     background instead of a solid fill.
-     --rc-negative: the site's "penalty" red -- deliberately distinct from
-     --rc-red (which means "primary action" or "form error"), since a
-     sponsor penalty or a negative result isn't either of those.
-     --rc-negative-bg: the light-fill pairing for --rc-negative.
-     --rc-balanced: the Balanced sponsor tier's blue, reused for the
-     matching "Balanced"/"Scheduled" status meaning elsewhere.
-     --rc-gold: the site's one non-tier gold accent (special calendar
-     races, the gold stat pill) -- not the same token as --rc-tier-elite
-     above, which is a Car Objective Tier color with its own separate
-     meaning even though both happen to render as gold.
-     --rc-warning/--rc-warning-accent: probation/pending-review amber.
-     --rc-orange: the Risky sponsor tier's color (2026-09-13, Matt's call:
-     Risky should read as orange, not red -- red was already claimed
-     sitewide for "primary action"/"error"/penalty, so a Risky sponsor
-     badge sitting next to a penalty number in the same red was reading
-     as more alarming than intended). Reuses the exact value the
-     Reputation bar's own orange zone already uses (.rc-rep-bar-orange,
-     further down this file) rather than inventing a second orange. */
-  --rc-positive: #1f5c25;
-  --rc-positive-bright: #22c55e;
-  --rc-positive-bg: #eaf6ec;
-  --rc-positive-border: #bfe2c4;
-  --rc-negative: #ff3b30;
-  --rc-negative-bg: #fdecea;
-  --rc-balanced: #1a5276;
-  --rc-gold: #b8860b;
-  --rc-warning: #a3790a;
-  --rc-warning-accent: #eab308;
-  --rc-orange: #e8892b;
 
   --rc-font-heading: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rc-font-body: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -162,19 +83,10 @@ html, body {
      but if ANYTHING else on the page is even one pixel wider than the
      viewport, the browser grows the whole scrollable area to fit it,
      which then makes fixed left:0/right:0 elements span that WIDER area
-     instead of the visible screen. `clip`, not `hidden` (2026-09-13,
-     found while chasing Matt's report "the index bottom part doesn't
-     scroll over the banner"): `overflow-x: hidden` set on BOTH html and
-     body is a known browser quirk that silently disables `position:
-     sticky` for every descendant on the page -- the index.html hero
-     banner (.rc-hero) went from sticking under the header to just
-     scrolling away like a normal block, with no error or warning
-     anywhere. `clip` gives the exact same "nothing bleeds past the
-     screen edge" clipping behavior this rule was added for, without
-     that side effect. Confirmed by direct test: same page, same
-     scroll, .rc-hero's position went from drifting off-screen with
-     `hidden` to correctly pinned at top:72px with `clip`. */
-  overflow-x: clip;
+     instead of the visible screen. overflow-x:hidden here means even if
+     something does overflow, it gets clipped instead of dragging the
+     hero along with it. */
+  overflow-x: hidden;
   max-width: 100%;
 }
 
@@ -243,13 +155,6 @@ p { margin: 0 0 0.75em; }
 .rc-btn-primary:hover { background: var(--rc-red-dark); color: var(--rc-white); }
 .rc-btn-primary:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
 
-/* Sitewide button rule (2026-09-13, Matt's call): every button is this
-   gray outline/gray text style UNLESS it saves something to a sheet --
-   a save button is .rc-btn-primary instead (solid red, darkens on
-   hover). Don't hand-pick colors per button going forward; pick
-   .rc-btn-primary or .rc-btn-secondary by that one question. See the
-   race-club-ui-consistency skill for the full writeup and the audited
-   list of which existing buttons are which. */
 .rc-btn-secondary {
   padding: 8px 14px;
   font-family: var(--rc-font-heading);
@@ -260,7 +165,7 @@ p { margin: 0 0 0.75em; }
   border: 1px solid var(--rc-silver);
   border-radius: 4px;
   background: var(--rc-white);
-  color: var(--rc-steel);
+  color: var(--rc-carbon);
   cursor: pointer;
   text-decoration: none;
 }
@@ -299,11 +204,6 @@ p { margin: 0 0 0.75em; }
   text-align: center;
 }
 
-/* Data Management panel's counts line (.rc-dm-summary/-line) removed
-   2026-09-24 (Matt's call: "get rid of the member n, cars n and tracks n
-   from the data management container... so the page only loads the
-   buttons") -- the panel is just the Members/Tracks/Cars button row now. */
-
 /* Wizard Next/Back only ("Make the Next and Back buttons slightly less
    wide" -- Matt's call) -- narrower than the shared .rc-btn-sm min-width
    so Save & Close / Create Season / League Management's row stay put. */
@@ -326,11 +226,6 @@ p { margin: 0 0 0.75em; }
   font-size: 12px;
   min-width: 0;
 }
-
-/* .rc-btn-row-red (2026-09-13) was a one-off red outline modifier for
-   Recompute Season/Edit Season. Removed the same day it was added --
-   superseded by the sitewide rule below, where color is decided by
-   save-vs-not, not by which row a button happens to sit in. */
 
 .rc-link-btn {
   background: none;
@@ -359,34 +254,6 @@ p { margin: 0 0 0.75em; }
 }
 .rc-icon-btn:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
 .rc-icon-btn svg { display: block; }
-
-/* Small triangle/chevron disclosure toggle for expandable rows (League
-   Management's Races toggle, 2026-09-13, Matt's call: "use triangles to
-   open and close seasons") -- same border/background/hover treatment as
-   .rc-btn-secondary + .rc-btn-row so it sits in that same button row
-   without looking like a different kind of control, just icon-only and
-   square instead of a text pill. The chevron itself rotates on open
-   rather than swapping between two icons -- one element, one transition. */
-.rc-disclosure-btn {
-  flex: none;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--rc-silver);
-  border-radius: 4px;
-  background: var(--rc-white);
-  color: var(--rc-steel);
-  cursor: pointer;
-}
-.rc-disclosure-btn:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
-.rc-disclosure-btn svg { display: block; transition: transform 0.15s ease; }
-.rc-disclosure-btn.rc-disclosure-open svg { transform: rotate(180deg); }
-@media (prefers-reduced-motion: reduce) {
-  .rc-disclosure-btn svg { transition: none; }
-}
 
 /* -------------------------------------------------------------------- */
 /* Cards / panels */
@@ -455,19 +322,10 @@ p { margin: 0 0 0.75em; }
   color: var(--rc-white);
   line-height: 1.6;
 }
-.rc-badge-lmgte { background: var(--rc-class-lmgte); }
 .rc-badge-lmgt3 { background: var(--rc-class-lmgt3); }
 .rc-badge-lmp3 { background: var(--rc-class-lmp3); }
 .rc-badge-lmp2 { background: var(--rc-class-lmp2); }
 .rc-badge-hypercar { background: var(--rc-class-hypercar); }
-/* Bigger type, tighter horizontal padding for every class pill specifically
-   (2026-09-19, Matt's call: "increase the size of the font inside the
-   class pills/reduce the padding so it takes up more room in the pill" --
-   site-wide, wherever a class pill shows) -- scoped to just these five
-   class-color classes (LMGTE added 2026-09-20) so it never touches
-   .rc-badge-chip's other uses (status/tier/race pills, etc.), which stay
-   their original size. */
-.rc-badge-lmgte, .rc-badge-lmgt3, .rc-badge-lmp3, .rc-badge-lmp2, .rc-badge-hypercar { font-size: 13px; padding: 3px 8px; }
 /* Neutral "grouping label" badge -- black rounded rectangle, same chip
    shape as the class badges above but always carbon/white regardless of
    the category inside it, since it's a structural grouping label, not a
@@ -476,50 +334,25 @@ p { margin: 0 0 0.75em; }
    and the Tracks list's Region grouping -- one shared "grouping" badge
    instead of near-identical copies per list. */
 .rc-badge-group { background: var(--rc-carbon); }
-/* Members list role pills (2026-09-19) -- see the --rc-tier-silver/
-   --rc-tier-bronze/--rc-graphite token comment above for the color
-   mapping. Admin/Organizer/Steward each get their own medal tone;
-   Driver and Prospect intentionally share .rc-badge-graphite. */
-/* Admin's fill (#f1c40f) is bright enough that .rc-badge-chip's default
-   white text (readable on every other role's darker fill) fails contrast
-   -- carbon text keeps this one pill legible without touching the shared
-   base rule. */
-.rc-badge-role-admin { background: var(--rc-role-admin); color: var(--rc-carbon); }
-.rc-badge-role-organizer { background: var(--rc-role-organizer); }
-.rc-badge-role-steward { background: var(--rc-role-steward); }
-.rc-badge-role-driver { background: var(--rc-graphite); }
-.rc-badge-role-prospect { background: var(--rc-role-prospect); }
-/* Graphite grouping badge (2026-09-19, Matt's call: originally "make the
-   track location pills graphite instead of black and the car year pills
-   graphite instead of black" -- Tracks popup's Region pill, Cars popup's
-   Season pill -- then extended the same day to the League Tools Seasons
-   list's own year pill and the new News panel's year pills too, "make
-   the year pills graphite along with the season year pills"). Same shape
-   as .rc-badge-group, just a lighter dark-neutral fill. */
-.rc-badge-graphite { background: var(--rc-graphite); }
 /* Sponsor risk-tier badges (Data Management's Sponsors popup, and the
    Sponsors page's own full-catalog list) -- Safe/Balanced/Risky (renamed
    2026-08-31 from Safe/Balanced/Aggressive, Matt's call -- only
    Aggressive->Risky stuck; Safe stayed Safe), same chip shape as the
    class badges, colored by risk level (green -> steel blue -> red)
    rather than by class. */
-.rc-badge-tier-safe { background: var(--rc-positive); }
-.rc-badge-tier-balanced { background: var(--rc-balanced); }
-.rc-badge-tier-risky { background: var(--rc-orange); }
+.rc-badge-tier-safe { background: #1f5c25; }
+.rc-badge-tier-balanced { background: #1a5276; }
+.rc-badge-tier-risky { background: var(--rc-red); }
 /* Season status pill (League Management's Season Tools list, added
-   2026-08-30) -- originally colored so Draft/Scheduled/Registration/
+   2026-08-30) -- same chip shape, colored so Draft/Scheduled/Registration/
    Active/Completed read apart from each other at a glance in a flat list
-   of seasons. RETIRED as of 2026-09-23 (Matt's call: "I don't like how it
-   says REGISTRATION... I'd rather not see it" -- see .rc-badge-status-
-   neutral below, which replaced this whole per-status color system with
-   one plain LIVE/END pill). The four rules below are kept, unused, only
-   because .rc-badge-status-completed is still a real dependency (the
-   "Finalized" chip, buildSeasonRaceRow/renderStewardingSection) -- do not
-   delete that one; the other three (-draft/-scheduled/-registration) have
-   no remaining callers and are safe to remove outright in a future pass. */
+   of seasons. Registration reuses the same green as Sponsors' Safe tier
+   (both mean "open/in your favor"); Active reuses the site's red (racing
+   is actually underway right now); Completed is steel, muted like an
+   archived record. */
 .rc-badge-status-draft { background: var(--rc-tier-low); }
-.rc-badge-status-scheduled { background: var(--rc-balanced); }
-.rc-badge-status-registration { background: transparent; border: 1.5px dashed var(--rc-positive); color: var(--rc-positive); padding: 1.5px 8.5px; }
+.rc-badge-status-scheduled { background: #1a5276; }
+.rc-badge-status-registration { background: #1f5c25; }
 .rc-badge-status-active { background: var(--rc-red); }
 .rc-badge-status-completed { background: var(--rc-steel); }
 /* Per-race status pill (League Management's per-season Races list, added
@@ -527,67 +360,36 @@ p { margin: 0 0 0.75em; }
    reused for the same meaning: green = still ahead of it (Scheduled),
    red = something needs attention (Completed, no results posted yet),
    steel = fully settled (Completed, results posted). */
-.rc-badge-race-scheduled { background: var(--rc-positive); }
+.rc-badge-race-scheduled { background: #1f5c25; }
 .rc-badge-race-noresults { background: var(--rc-red); }
 .rc-badge-race-posted { background: var(--rc-steel); }
-/* Quiet/neutral status pill (2026-09-23, Matt's ask: League Tools' season
-   status pill and the per-race Scheduled/no-results-yet pills were too
-   bold/attention-grabbing -- "the colors too bold... should blend into
-   the page more"). Light gray fill, steel text -- same unobtrusive
-   treatment the button system's "gray unless it saves" rule already uses
-   sitewide. Two class names on purpose, both sharing this one look:
-   -status-neutral is the season-level LIVE/END pill (_rcSeasonStatusBadge,
-   Account.html), -race-quiet is the per-race Scheduled/no-results-yet
-   pill inside a season's expanded Races list (buildSeasonRaceRow).
-   Deliberately NOT applied to the pre-existing .rc-badge-race-scheduled/
-   .rc-badge-race-noresults classes above -- those two are also reused
-   verbatim by Stewarding's "N Pending" badge and the Protests status
-   pills, which Matt did not ask to change. */
-.rc-badge-status-neutral,
-.rc-badge-race-quiet { background: var(--rc-silver); color: var(--rc-steel); }
-/* League Tools round status line (2026-09-23, Matt's ask; recolored
-   2026-09-24, item 8) -- a small circle-icon + text line under a race
-   row's date/track hint, replacing the old plain-gray partial-import
-   note. No more per-stage red/yellow/green coding (those classes,
-   .rc-round-status-red/-yellow/-green, and the icon-color-matches-text
-   convention they drove, are removed) -- the text is always light gray
-   and italic (.rc-round-status-text), and the icon reuses the Dashboard
-   Protest card's own .rc-protest-dash-icon/-pending/-ruled classes
-   directly (open gray circle, filled gray with a white checkmark only
-   once finalized) instead of a separate icon here. */
-.rc-round-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
-/* League Tools protest ruling dropdown (openRoundEditFinalizeModal,
-   Account.html) -- 66% width (2026-09-25, was 75%, Matt's ask), so the
-   "Penalty Standards" opener button fits on the same row beside it.
-   flex-basis (not just width) so it holds its share in the row's flex
-   layout regardless of the select's own content width. */
-.rc-ruling-select { flex: 0 0 66%; width: 66%; }
-/* Penalty Standards opener next to the ruling select (2026-09-24 styling
-   pass) -- fills the remaining space and stretches to the select's 44px
-   height via the row's align-items:stretch, rather than sitting at
-   .rc-btn-row's normal short inline-action height. */
-.rc-ruling-standards-btn { flex: 1 1 auto; min-width: 0; }
-/* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
-   color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
-   classification doesn't matter anymore, and tier information should
-   never surface on the dashboard, Choose Your Team screen, or anywhere
-   else on the site. The --rc-tier-low/-mid/-high/-elite color tokens
-   themselves are kept -- they're general-purpose tokens reused elsewhere
-   (Season status pills, Recent Results pills), not car-tier-specific. */
-/* Compact abbreviated class pill (.rc-badge-chip-abbrev, added
-   2026-09-19) -- the Dashboard's Current Seat card corner figure, sitting
-   right before the "#n" car number (Matt's ask: "put a class pill before
-   the number of the car"). Same colored rounded-rectangle treatment as
-   .rc-badge-chip (the class classes -lmgt3/-lmp3/-lmp2/-hypercar layer on
-   top exactly as before), just tighter padding/font-size for the shorter
-   abbreviated label (HY/GT3/P3/P2) sitting inline next to header text. */
-/* Font bumped, padding trimmed same as the other class pills above
-   (2026-09-19, Matt's call) -- still visibly smaller than a full class
-   pill since it's inline with header text, just less cramped than before.
-   margin-right dropped (2026-09-19) -- the corner-figure flex row it sits
-   in now provides that gap itself (see .rc-dash-card-corner-figure). */
-.rc-badge-chip-abbrev { padding: 2px 6px; font-size: 12px; }
+/* Car Objective Tier pill (Data Management's Cars popup, the Choose Your
+   Team screen, the dashboard's Current Seat card, and the signing
+   sequence's contract recap) -- colored per tier (gray/blue/purple/gold).
+   Outline style, transparent background, colored text (2026-08-30, Matt's
+   call: "ALL the tiers listed on the website" should have "a outline of
+   gray, blue and purple with the same color text inside. Transparent
+   background") -- same shape/size as the class pills (.rc-badge-chip's own
+   padding/font-size, no override) rather than the smaller chip this used
+   to be, so class and tier pills sitting side by side (e.g. the contract
+   recap) read as one matched pair, not two different sizes. */
+.rc-badge-cartier {
+  background: none;
+  font-weight: 700;
+  /* .rc-badge-chip's own padding (3px 10px) is sized for a borderless
+     fill; this pill adds a 1.5px border on top of that, which (even under
+     the sitewide box-sizing: border-box) makes an auto-sized inline chip
+     render 3px taller/wider than the borderless class pill next to it
+     since nothing here constrains an explicit width/height for border-box
+     to shrink into (Matt's call, 2026-08-30: "the tier pill looks slightly
+     larger than the class pill, fix that too"). Padding trimmed by exactly
+     the border width on each side so the two pills' outer boxes match. */
+  padding: 1.5px 8.5px;
+}
+.rc-badge-cartier-low { border: 1.5px solid var(--rc-tier-low); color: var(--rc-tier-low); }
+.rc-badge-cartier-mid { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
+.rc-badge-cartier-high { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
+.rc-badge-cartier-elite { border: 1.5px solid var(--rc-tier-elite); color: var(--rc-tier-elite); }
 /* "Buy-in range" pill on the Choose Your Class screen -- sits directly
    next to the class badge instead of the exact cost living in its own
    centered column. Light gray outline, not a filled chip (2026-08-30,
@@ -599,25 +401,27 @@ p { margin: 0 0 0.75em; }
    Results page's "Your Race" chip row) -- 2026-09-08, Matt's call: give
    every pill its own outline color instead of the old mix of solid green/
    red/black fills so they read apart at a glance. Same outline shape/sizing
-   trick as a transparent-fill, colored-border pill (padding trimmed by the
-   border width). Bright green/red reuse the exact colors the Sponsors
-   comparison table already uses for bonus/penalty
-   (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative" means the
-   same color everywhere on the site. Fastest Lap reuses the tier-high
-   (purple) color token for a distinct look. Pole keeps the existing gold
+   trick .rc-badge-cartier already uses (transparent fill, border+text in
+   one color, padding trimmed by the border width). Bright green/red reuse
+   the exact colors the Sponsors comparison table already uses for bonus/
+   penalty (.rc-sponsor-swing-seg-bonus/-penalty) so "positive"/"negative"
+   means the same color everywhere on the site. Clean Race and Fastest Lap
+   reuse the existing tier-mid (blue) / tier-high (purple) tokens so they
+   match the Car Objective tier pills' palette rather than inventing new
+   colors that happen to look similar. Pole keeps the existing gold
    tier-elite color; Most Laps Led gets its own amber now that Fastest Lap
    has moved off gold. Points/Qualifying/Laps/Pit Stops are informational
    counts, not a win or a loss, so they get a neutral steel outline --
    Points is the one exception, reusing the positive green since scoring
-   points is always a good outcome. (.rc-badge-result-clean removed
-   2026-09-23 -- Clean Race system removed sitewide, Matt's ask.) */
+   points is always a good outcome. */
 .rc-badge-result {
   background: none;
   font-weight: 700;
-  padding: 1.5px 8.5px; /* trimmed by the 1.5px border */
+  padding: 1.5px 8.5px; /* trimmed by the 1.5px border, same as .rc-badge-cartier */
 }
-.rc-badge-result-positive { border: 1.5px solid var(--rc-positive-bright); color: var(--rc-positive-bright); }
-.rc-badge-result-negative { border: 1.5px solid var(--rc-negative); color: var(--rc-negative); }
+.rc-badge-result-positive { border: 1.5px solid #22c55e; color: #22c55e; }
+.rc-badge-result-negative { border: 1.5px solid #ff3b30; color: #ff3b30; }
+.rc-badge-result-clean { border: 1.5px solid var(--rc-tier-mid); color: var(--rc-tier-mid); }
 .rc-badge-result-fastestlap { border: 1.5px solid var(--rc-tier-high); color: var(--rc-tier-high); }
 .rc-badge-result-mostlapsled { border: 1.5px solid #d97706; color: #d97706; }
 .rc-badge-result-neutral { border: 1.5px solid var(--rc-steel); color: var(--rc-steel); }
@@ -626,10 +430,12 @@ p { margin: 0 0 0.75em; }
    since it already carries its own meaning (sponsor name + payout) and
    doesn't need color-coding by positive/negative on top of that. */
 .rc-badge-result-sponsor { background: var(--rc-silver); color: var(--rc-carbon); }
-/* .rc-team-card-elite (the Choose Your Team screen's gold-bordered Elite
-   card) removed entirely 2026-09-19 -- the Elite Tier picker itself was
-   removed from the Season Creation Wizard, so no team is ever marked Elite
-   anymore. See season-1-mvp-scope.md-adjacent note in DataCache.gs. */
+/* Elite team card on the Choose Your Team screen -- a muted gold border to
+   set it apart from the Low/Mid/High cards around it. */
+.rc-team-card-elite {
+  border-color: var(--rc-tier-elite);
+  box-shadow: 0 0 0 1px var(--rc-tier-elite);
+}
 /* Manufacturer logo column in the Cars popup -- same fixed-width, centered
    treatment as .rc-dm-sponsor-logo-col below, so the text column's left
    edge lands in the same place row to row regardless of a given
@@ -662,13 +468,7 @@ p { margin: 0 0 0.75em; }
    this fixed column, a plain inline <img> would push the text column
    left/right by however wide that one logo happened to be. */
 .rc-dm-sponsor-logo-col {
-  /* Back down to 100px (2026-09-13, Matt's third pass on this size --
-     100/40 was actually the very first value here, then 75/35, then
-     150/35, now settled back on 100/40) alongside .rc-dm-sponsor-logo's
-     own max-width below -- this column has to be at least as wide as
-     the logo's cap or a wide wordmark gets clipped against the column's
-     own fixed width regardless of what the image's max-width allows. */
-  width: 100px;
+  width: 120px;
   flex: none;
   display: flex;
   justify-content: center;
@@ -685,14 +485,6 @@ p { margin: 0 0 0.75em; }
 .rc-dm-sponsor-logo {
   width: auto;
   height: auto;
-  /* 100px wide / 40px tall (2026-09-13, Matt's final call on this pass --
-     100/40 -> 75/35 -> 150/35 -> back to 100/40). Only this list's
-     logo cap changed; the picker/table/chip sponsor logos elsewhere in
-     this file (rc-sponsor-pick-logo, rc-sponsor-table-logo,
-     rc-pick-chip-logo) each have their own already-documented sizing for
-     their own context and weren't touched. .rc-dm-sponsor-logo-col above
-     is narrowed to match, so the column never sits wider than the logo's
-     own cap. */
   max-width: 100px;
   max-height: 40px;
   object-fit: contain;
@@ -727,7 +519,7 @@ p { margin: 0 0 0.75em; }
 /* Selected state, registration/Choose Sponsors modal only -- a light
    green fill plus a green border (Matt's call, 2026-08-30 -- NOT red,
    since red reads as an error/warning color everywhere else on the site). */
-.rc-sponsor-pick-card-selected { border-color: var(--rc-ok); background: var(--rc-positive-bg); }
+.rc-sponsor-pick-card-selected { border-color: var(--rc-ok); background: #eaf6ec; }
 /* Read-only variant -- the Sponsors page's "your 3 sponsors" display, not
    a picker, so no hover/selection affordance. */
 .rc-sponsor-pick-card-readonly { cursor: default; }
@@ -749,17 +541,25 @@ p { margin: 0 0 0.75em; }
    Penalty red matches the Risk/Reward bar's penalty color (2026-09-01,
    Matt's call: keep every red penalty number the same red sitewide). */
 .rc-sponsor-pick-bonus { color: var(--rc-ok); }
-.rc-sponsor-pick-penalty { color: var(--rc-negative); }
+.rc-sponsor-pick-penalty { color: #ff3b30; }
 
 /* -------------------------------------------------------------------- */
 /* Sponsors page -- Comparison Table redesign (2026-09-01, Matt's call)  */
 /* -------------------------------------------------------------------- */
-/* .rc-sponsors-explainer and .rc-page-howto removed (2026-09-18) -- the
-   last page-header explainer paragraphs and "how to use this page" boxes
-   that used these (Career/Results/Protests) were all taken out per
-   Matt's call to remove page descriptions now that the Help section
-   covers this ground; nothing on the site references either class
-   anymore. */
+/* Explainer paragraph under the "Sponsors" page header -- the one piece
+   of the 3-mockup Direction 1 pitch Matt called out by name ("I
+   especially like the explanation at the top under the SPONSORS
+   header"). Sits above every panel on the page, same rc-hint-family gray
+   but slightly larger/roomier since it's carrying real explanatory copy,
+   not a one-line field hint. */
+.rc-sponsors-explainer { color: var(--rc-steel); font-size: 13px; line-height: 1.55; max-width: 760px; margin: 6px 0 20px; }
+/* Page how-to line (2026-09-07) -- sits directly under a page's own
+   .rc-sponsors-explainer summary (Sponsors/Wager so far), one level more
+   concrete: exactly which click does what, not just what the page is
+   for. Boxed and slightly tinted so it reads as reference material,
+   distinct from the plain-text explainer above it. */
+.rc-page-howto { color: var(--rc-carbon); font-size: 12.5px; line-height: 1.6; max-width: 760px; margin: -10px 0 20px; padding: 10px 14px; background: var(--rc-offwhite); border-left: 3px solid var(--rc-steel); border-radius: 4px; }
+.rc-page-howto strong { text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
 
 /* "Current Picks" -- a compact chip strip (2026-09-01, replacing the
    prior 3-column layout), always 3 slots wide. align-items: stretch (the
@@ -781,9 +581,9 @@ p { margin: 0 0 0.75em; }
 .rc-pick-chip-text { min-width: 0; }
 .rc-pick-chip-name { font-weight: 700; font-size: 13.5px; color: var(--rc-carbon); }
 .rc-pick-chip-tier { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; color: var(--rc-steel); }
-.rc-tier-text-safe { color: var(--rc-positive); }
-.rc-tier-text-balanced { color: var(--rc-balanced); }
-.rc-tier-text-risky { color: var(--rc-orange); }
+.rc-tier-text-safe { color: #1f5c25; }
+.rc-tier-text-balanced { color: #1a5276; }
+.rc-tier-text-risky { color: var(--rc-red); }
 /* Open Slot -- same dashed/muted/uppercase treatment as the Calendar
    page's Bye Week card (.rc-cal-bye), so an unfilled pick reads the same
    "nothing here on purpose" way a bye week does. */
@@ -820,13 +620,13 @@ p { margin: 0 0 0.75em; }
    "in play" for the next race reads as one quick-glance checklist. */
 .rc-sponsor-goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; margin-top: 14px; }
 .rc-sponsor-goals-col-head { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-sponsor-goals-col-head-bonus { color: var(--rc-positive); }
-.rc-sponsor-goals-col-head-penalty { color: var(--rc-negative); }
+.rc-sponsor-goals-col-head-bonus { color: #1f5c25; }
+.rc-sponsor-goals-col-head-penalty { color: #ff3b30; }
 .rc-sponsor-goal-row { display: flex; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--rc-offwhite); }
 .rc-sponsor-goal-row:last-child { border-bottom: none; }
 .rc-sponsor-goal-amt { flex: none; width: 62px; font-family: var(--rc-font-heading); font-size: 14px; font-weight: 700; }
-.rc-sponsor-goal-amt-bonus { color: var(--rc-positive); }
-.rc-sponsor-goal-amt-penalty { color: var(--rc-negative); }
+.rc-sponsor-goal-amt-bonus { color: #1f5c25; }
+.rc-sponsor-goal-amt-penalty { color: #ff3b30; }
 .rc-sponsor-goal-text { min-width: 0; }
 .rc-sponsor-goal-trigger { font-size: 12.5px; font-weight: 600; color: var(--rc-carbon); }
 .rc-sponsor-goal-sponsor { font-size: 11.5px; color: var(--rc-steel); margin-top: 1px; }
@@ -898,43 +698,17 @@ p { margin: 0 0 0.75em; }
   background: var(--rc-steel);
 }
 .rc-sponsor-table-sponsor { display: flex; align-items: center; gap: 10px; min-width: 0; }
-/* 100px wide / 40px tall (2026-09-13, Matt's third pass on this cap --
-   34x34 -> 150x35 -> 100x40 -- this "All Sponsors" table on the Sponsors
-   page is the other place drivers actually see a list of sponsor logos,
-   kept matching Data Management's own Sponsors list cap at every step).
-   .rc-pick-chip-logo (Current Picks strip, same page) deliberately keeps
-   its own smaller 46x46 cap -- that's a compact summary chip, not a
-   list row, and a 100px logo would still overrun its 190px-min-width
-   card.
-
-   width/height are now FIXED (2026-09-13, same-day follow-up -- was
-   max-width/max-height) rather than just capped: .rc-sponsor-table-sponsor
-   above has no fixed-width logo column the way the Data Management list's
-   .rc-dm-sponsor-logo-col does, just a flat `gap: 10px` between the <img>
-   and the name text -- so a narrow/square logo (rendered well under
-   100px by object-fit: contain) let the name start closer than a wide
-   wordmark's name did, and the whole list read as uneven going down the
-   page. Fixing width/height turns object-fit: contain into a real
-   letterbox: every logo now sits centered inside the SAME 100x40 box
-   regardless of its own aspect ratio, so the gap to the name (and the
-   name's own start position) is identical on every row. */
-.rc-sponsor-table-logo { width: 100px; height: 40px; object-fit: contain; flex: none; }
+.rc-sponsor-table-logo { max-width: 34px; max-height: 34px; object-fit: contain; flex: none; }
 .rc-sponsor-table-name { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-sponsor-table-amt { font-family: var(--rc-font-heading); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
-/* Bright green (2026-09-13, Matt's call: "same color green as the green
-   bar to the right") -- matches .rc-sponsor-swing-seg-bonus's own bright
-   green further down, which sits in the same row as this dollar amount.
-   Was --rc-positive (the darker green used elsewhere for bonus text),
-   which no longer matched once the swing bar switched to the brighter
-   --rc-positive-bright shade. */
-.rc-sponsor-table-amt-bonus { color: var(--rc-positive-bright); }
-.rc-sponsor-table-amt-penalty { color: var(--rc-negative); }
+.rc-sponsor-table-amt-bonus { color: #1f5c25; }
+.rc-sponsor-table-amt-penalty { color: #ff3b30; }
 .rc-sponsor-table-trigger { font-size: 11.5px; color: var(--rc-steel); margin-top: 2px; }
 .rc-sponsor-swing { display: flex; flex-direction: column; gap: 3px; width: 100%; }
 .rc-sponsor-swing-row { display: flex; align-items: stretch; gap: 1px; height: 10px; width: 100%; }
 .rc-sponsor-swing-seg { flex: 1; height: 100%; border-radius: 1px; min-width: 1px; }
-.rc-sponsor-swing-seg-bonus { background: var(--rc-positive-bright); }
-.rc-sponsor-swing-seg-penalty { background: var(--rc-negative); }
+.rc-sponsor-swing-seg-bonus { background: #22c55e; }
+.rc-sponsor-swing-seg-penalty { background: #ff3b30; }
 .rc-sponsor-swing-seg-empty { background: #e2e2e2; }
 .rc-sponsor-swing-scale { position: relative; display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--rc-steel); }
 .rc-sponsor-swing-scale-label { font-variant-numeric: tabular-nums; }
@@ -963,13 +737,13 @@ p { margin: 0 0 0.75em; }
 .rc-trigger-glossary-group + .rc-trigger-glossary-group { margin-top: 8px; }
 .rc-trigger-glossary-group-head { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 0 8px; border-top: 1px solid var(--rc-offwhite); }
 .rc-trigger-glossary-group:first-child .rc-trigger-glossary-group-head { border-top: none; padding-top: 0; }
-.rc-trigger-glossary-group-head-bonus { color: var(--rc-positive); }
-.rc-trigger-glossary-group-head-penalty { color: var(--rc-negative); }
+.rc-trigger-glossary-group-head-bonus { color: #1f5c25; }
+.rc-trigger-glossary-group-head-penalty { color: #ff3b30; }
 .rc-trigger-glossary-row { display: grid; grid-template-columns: 200px 1fr; gap: 18px; padding: 9px 0; align-items: baseline; }
 .rc-trigger-glossary-row + .rc-trigger-glossary-row { border-top: 1px solid var(--rc-offwhite); }
 .rc-trigger-glossary-name { font-weight: 700; font-size: 13px; }
-.rc-trigger-glossary-name-bonus { color: var(--rc-positive); }
-.rc-trigger-glossary-name-penalty { color: var(--rc-negative); }
+.rc-trigger-glossary-name-bonus { color: #1f5c25; }
+.rc-trigger-glossary-name-penalty { color: #ff3b30; }
 .rc-trigger-glossary-desc { font-size: 12.5px; color: var(--rc-steel); line-height: 1.5; }
 @media (max-width: 700px) {
   .rc-trigger-glossary-row { grid-template-columns: 1fr; gap: 3px; }
@@ -990,14 +764,7 @@ p { margin: 0 0 0.75em; }
    already uses between car rows, instead of the darker silver default
    above (which stays as-is for Cars' Class head / Sponsors' Tier head,
    where the heavier line is still the right weight). */
-/* 20px left inset (2026-09-13, Matt's call: "move all the tracks in
-   slightly compared to the location pills") -- matches the indent every
-   other list on this page already gives its rows relative to its own
-   group-head pill (.rc-group-row's own padding-left: 20px, used by the
-   Members list under this exact same .rc-group-head component). Track
-   venue rows were the one list still sitting flush with their Region
-   pill instead of inset under it. */
-.rc-dm-row-light { padding-left: 20px; border-bottom-color: var(--rc-offwhite); }
+.rc-dm-row-light { border-bottom-color: var(--rc-offwhite); }
 .rc-dm-row-label { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 600; color: var(--rc-carbon); }
 /* Sub-rows (a track's layouts, a class's seasons, a season's cars) --
    indented and prefixed with a tree glyph rather than a bullet, so the
@@ -1037,26 +804,6 @@ p { margin: 0 0 0.75em; }
    badge itself (.rc-badge-group) now rather than on this wrapper. */
 .rc-dm-season-head { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px 20px; }
 .rc-dm-group { margin-bottom: 4px; }
-/* Suppresses .rc-dm-row's default border-bottom for a group header that
-   shouldn't carry one -- currently the Cars list's Class badge head and
-   the Tracks list's venue name row (2026-09-19, Matt's call). */
-.rc-dm-row-noborder { border-bottom: none; }
-/* Tracks list: the faded divider now sits BETWEEN tracks rather than
-   between a track's name and its layout rows (2026-09-19, Matt's call).
-   Adjacent-sibling rule so the first venue in a region never gets a
-   leading line, matching how .rc-dm-row:last-child already avoids a
-   trailing one elsewhere on this page. */
-.rc-dm-venue-group + .rc-dm-venue-group {
-  border-top: 1px solid var(--rc-offwhite);
-  margin-top: 4px;
-  padding-top: 8px;
-}
-/* Cars list: no divider line directly under a season/year head -- only
-   the .rc-dm-subrow-edit's own border-top was creating it, landing right
-   below .rc-dm-season-head since that row is always the first car in the
-   season group (2026-09-19, Matt's call). Later cars within the same
-   season keep their divider as normal. */
-.rc-dm-season-head + .rc-dm-subrow-edit { border-top: none; }
 .rc-dm-empty { padding: 14px 0; font-size: 13px; color: var(--rc-steel); }
 
 /* Layout list inside the Track edit popup (openEditTrackModal) -- each
@@ -1083,7 +830,7 @@ p { margin: 0 0 0.75em; }
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-.rc-dm-status-pill-active { background: var(--rc-positive-bg); color: var(--rc-positive); }
+.rc-dm-status-pill-active { background: #eaf6ec; color: #1f5c25; }
 .rc-dm-status-pill-inactive { background: var(--rc-offwhite); color: var(--rc-steel); }
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
@@ -1124,11 +871,27 @@ input[type="checkbox"], input[type="radio"] {
 input[type="radio"] { border-radius: 50%; }
 textarea { resize: vertical; }
 
-/* .rc-check-row (the email-notification opt-in checkbox's row style, on
-   register.html and the Edit Profile popup) removed 2026-09-24 alongside
-   the checkbox itself -- Matt's call: eliminate the in-app notification
-   system entirely, moving to an external Discord bot. Nothing else on
-   the site used this class. */
+/* Checkbox + label row (2026-09-02, email-notification opt-in checkbox --
+   register.html's "before clicking the button to join" checkbox, and the
+   matching one on the Edit Profile popup). A plain flex row rather than
+   reusing the <label>/<input> stacked pattern every other field on the
+   page uses -- a checkbox reads naturally sitting to the LEFT of its own
+   description, not stacked above a full-width box the way a text field's
+   label is. */
+.rc-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rc-check-row input[type="checkbox"] { margin-top: 3px; flex: none; }
+.rc-check-row label {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--rc-carbon);
+  cursor: pointer;
+}
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--rc-red);
@@ -1315,23 +1078,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-align: left;
 }
 .rc-nav-item svg { flex: none; }
-/* Discord's own PNG logo used as this nav item's icon (2026-09-24, Matt's
-   ask), sized to match every other 16x16 nav icon on the site -- see
-   .rc-nav-item svg above; object-fit: contain keeps a non-square source
-   PNG from stretching to fill that box. */
-.rc-nav-item img { flex: none; width: 16px; height: 16px; object-fit: contain; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
-/* Admin/League Tools/Stewarding now always render in the sidebar instead
-   of being hidden from a role that can't use them (2026-09-19, Matt's
-   call: "I want all buttons to be visible in the LEAGUE TOOLS... and only
-   show disabled if they cannot be used... drivers can see the admin/
-   league tools/stewarding section in the sidebar but the links are
-   disabled") -- this is that disabled state: dimmed, no pointer, hover
-   suppressed so it doesn't look clickable. See Account.html's
-   setNavAccess() for what applies/removes it. */
-.rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
-.rc-nav-item:disabled:hover { background: none; color: #cfd4d8; }
 .rc-main {
   flex: 1;
   min-width: 0;
@@ -1449,7 +1197,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-badge-pill-red { background: var(--rc-red); }
 .rc-badge-pill-gray { background: var(--rc-steel); }
 .rc-badge-pill-green { background: var(--rc-ok); }
-.rc-badge-pill-yellow { background: var(--rc-gold); color: var(--rc-white); }
+.rc-badge-pill-yellow { background: #b8860b; color: var(--rc-white); }
 
 @media (max-width: 900px) {
   .rc-avatar-col { position: static; left: auto; width: auto; flex-direction: row; margin-bottom: 12px; }
@@ -1595,22 +1343,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 0;
   border: 2px solid transparent;
   border-radius: 8px;
-  /* Gray, not off-white (2026-09-21, Matt's ask: "gray outline around the
-     avatars instead of white") -- the preset avatar art is circular on a
-     transparent background, so this cell's own fill shows through as a
-     ring around each one; --rc-offwhite (#F5F5F3) read as white against
-     the page, --rc-silver (#D8DDE1) is a clear step darker/grayer. */
-  background: var(--rc-silver);
+  background: var(--rc-offwhite);
   cursor: pointer;
   overflow: hidden;
   line-height: 0;
   transition: border-color 0.15s ease;
 }
 .rc-avatar-picker-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-/* --rc-steel, not --rc-silver -- now that the cell's own fill is
-   --rc-silver (above), a --rc-silver border would blend invisibly into it
-   and the hover state would lose its ring entirely. */
-.rc-avatar-picker-item:hover { border-color: var(--rc-steel); }
+.rc-avatar-picker-item:hover { border-color: var(--rc-silver); }
 .rc-avatar-picker-item-selected,
 .rc-avatar-picker-item-selected:hover { border-color: var(--rc-red); }
 .rc-details-wrap { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
@@ -1621,16 +1361,36 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Current Seat -- driver profile hero card, replaces the old Time Zone/
    Birthday/Contact row.
    Bug fix (2026-08-21, Matt's call): dropped the manufacturer logo image
-   and the colored car-number pill badge in favor of one plain-text header
-   line -- see .rc-seat-text-header below and the matching
-   .rc-team-details-header used by the Dashboard's Team Details widget.
-   Dead rule cleanup (2026-09-13, sitewide review): .rc-seat-logo/
-   .rc-seat-row/.rc-seat-team/.rc-seat-number (the old logo+pill markup
-   this replaced) were left in place "in case a future spot wants the
-   same look back," but a year+ later nothing in Account.html, the other
-   pages, or the .gs templates references any of the four -- removed for
-   real this time. */
+   and the colored car-number pill badge (.rc-seat-logo/.rc-seat-row/
+   .rc-seat-team/.rc-seat-number, all now unused -- left in place rather
+   than deleted in case a future spot wants the same look back) in favor
+   of one plain-text header line -- see .rc-seat-text-header below and
+   the matching .rc-team-details-header used by the Dashboard's Team
+   Details widget. */
+/* Sizes bumped up (2026-08-21, Matt's ask) -- the logo increased by more
+   than the text (28px -> 44px, +57%, vs. 15px -> 19px, +27%) so it reads
+   as the more prominent of the two, per Matt's explicit "increase the
+   logo a little more than the car and team" call. sizeLogoByArea() reads
+   .rc-seat-logo's own CSS box size at runtime, so bumping this width/
+   height here is the only change needed for it to fill proportionally
+   more space too. */
 .rc-seat-text-header { font-size: 19px; font-weight: 700; color: var(--rc-carbon); font-family: var(--rc-font-heading); margin-top: 4px; }
+.rc-seat-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.rc-seat-logo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+.rc-seat-team { font-size: 14px; color: var(--rc-carbon); font-family: var(--rc-font-body); }
+.rc-seat-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 7px;
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-weight: 700;
+  font-size: 13px;
+}
 .rc-team-details-header { font-size: 15px; font-weight: 700; color: var(--rc-carbon); font-family: var(--rc-font-heading); }
 .rc-accomplishments { margin-top: 14px; }
 .rc-accomplishments h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-steel); text-transform: uppercase; }
@@ -1686,100 +1446,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    `.rc-tooltip` on specificity and always wins regardless of source
    order. */
 .rc-rep-bar-track .rc-rep-bar-marker { position: absolute; top: -3px; width: 3px; height: 18px; background: #000; border-radius: 2px; transform: translateX(-1.5px); box-shadow: 0 0 0 1px #fff; cursor: default; }
-/* Choose Your Class screen -- colored buttons, one per class, always all
-   four regardless of whether this season fields cars in them (2026-09-19,
-   Matt's redesign: "colored buttons to choose... Green for LMGT3, Purple
-   for LMP3, Blue for LMP2 and Red for HY. Leave all the buttons up
-   regardless if there is that class or not and just gray them out with a
-   circle and line through it on hover"). Replaces the old plain list
-   (.rc-class-pick-row/-row-dim, removed). Each button's accent color comes
-   from the --rc-class-pick-color custom property set inline per button in
-   JS (buildRegistrationModal's renderClassScreenBody), pulled from the
-   same CAR_CLASS_BADGE_COLOR_VAR tokens every other class pill on the site
-   already uses -- LMGT3/LMP3/LMP2/Hypercar already resolve to green/
-   purple/blue/red respectively, so no new color tokens were needed. */
-/* Sized down (2026-09-23, Matt's ask: "reduce size of Choose Your Class
-   buttons") -- smaller min column width, tighter gap/padding, smaller
-   type, while keeping the same colored-button shape/hover treatment. */
-.rc-class-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; }
-.rc-class-pick-btn {
-  position: relative;
-  overflow: hidden;
-  background: var(--rc-class-pick-color);
-  border: none;
-  border-radius: 8px;
-  padding: 13px 10px;
-  cursor: pointer;
-  text-align: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.rc-class-pick-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22); }
-.rc-class-pick-btn-content { position: relative; z-index: 1; }
-.rc-class-pick-btn-name {
-  font-family: var(--rc-font-heading);
-  font-size: 14.5px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-}
-.rc-class-pick-btn-seats { margin-top: 4px; font-size: 10.5px; color: rgba(255, 255, 255, 0.85); }
-/* Locked (not offered this season, or every seat already taken) -- every
-   locked button now renders in the SAME flat, neutral appearance
-   (2026-09-23, Matt's ask: "make the inactive buttons all the same color
-   and a little more 'inactive' appearing instead of just gray") rather
-   than a grayscale/dimmed version of that class's own accent color --
-   the old `filter: grayscale(1)` meant Hypercar's locked red and LMP2's
-   locked blue still came out as two different shades of gray, which read
-   as "duller," not "disabled." This drops --rc-class-pick-color entirely
-   for this state in favor of the same flat offwhite/silver/steel
-   treatment every other disabled control on the site uses
-   (.rc-field-locked, .rc-btn-secondary:disabled) -- a locked class now
-   reads unmistakably as not clickable, and every locked button matches
-   every other one regardless of which class it is. The two-class
-   selector here (specificity 0,2,0) beats the single-class
-   `.rc-class-pick-btn` background rule above regardless of source
-   order, so no `!important` is needed. */
-.rc-class-pick-btn-locked {
-  background: var(--rc-offwhite);
-  border: 1px solid var(--rc-silver);
-  cursor: not-allowed;
-}
-.rc-class-pick-btn-locked .rc-class-pick-btn-name,
-.rc-class-pick-btn-locked .rc-class-pick-btn-seats { color: var(--rc-steel); }
-/* A class that isn't offered THIS season at all (vs. one that's offered
-   but every seat is currently taken) -- both share the same locked base
-   above, but a never-in-season class reads even more washed out so a
-   driver can tell "no seats left" from "not part of this season" at a
-   glance (2026-09-23, Matt's ask). Opacity on the whole button (not just
-   its text) so the button itself visually recedes, not just its label. */
-.rc-class-pick-btn-inactive { opacity: 0.5; }
-/* Circle-slash lock icon -- hidden by default, fades in centered over the
-   button only while hovering a locked one (2026-09-19, Matt's exact ask).
-   A dark scrim behind the icon keeps it legible against every class's
-   underlying color once desaturated. */
-.rc-class-pick-btn-lock {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-.rc-class-pick-btn-locked:hover .rc-class-pick-btn-lock { opacity: 1; }
-.rc-class-pick-totals {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--rc-silver);
-  text-align: center;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--rc-steel);
-}
+/* Each class's pick row -- cost range sits between the class badge/floor
+   text and the Choose button (Matt's ask: "to the right of the classes
+   pills"). Dimmed as a whole (not just the button) when the driver
+   doesn't qualify on reputation and/or money, same visual language as a
+   taken team card (.rc-team-card-taken). */
+.rc-class-pick-row { padding: 12px 0; border-bottom: 1px solid var(--rc-silver); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; transition: opacity 0.15s ease; }
+.rc-class-pick-row-dim { opacity: 0.45; }
+.rc-class-cost-range { text-align: right; min-width: 130px; }
 /* Season Registration Fee (fixed, same for every team) sits above Team
    Buy-In (the part that actually varies by team) -- Matt's ask. */
 .rc-class-cost-season { font-size: 13px; color: var(--rc-carbon); font-weight: 600; }
@@ -1793,75 +1467,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    dimensions are known -- the actual sizing (so a long/wide logo like
    McLaren/Mercedes-AMG and a tall/narrow one like Ferrari read at the same
    visual weight, not the wide one going tiny) is done in JS by area, once
-   each logo loads. See sizeLogoByArea() in Account.html.
-   90x55 (2026-09-23, Matt's exact spec) -- was briefly 110x69 earlier the
-   same day, before that; originally 60x44. */
+   each logo loads. See sizeLogoByArea() in Account.html. */
 .rc-team-logo-box {
-  width: 90px;
-  height: 55px;
+  width: 60px;
+  height: 44px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-/* Manufacturer filter row (2026-09-23, Matt's ask) -- sits above the team
-   card list, one bold "ALL" label at the left plus a manufacturer logo
-   for every distinct manufacturer fielding a car in this class, spread
-   evenly edge-to-edge (flex:1 on each logo button, so the row always
-   stretches the full popup width whether there are 2 manufacturers or
-   8). Logo height is 36px -- about 2/3 of the 55px logo box the team
-   cards below use (Matt's exact spec) -- so this row reads as a lighter,
-   secondary strip above the real cards. Clicking a logo (or ALL) marks
-   it .rc-team-manu-filter-selected and dims (.rc-team-manu-filter-dim)
-   every other entry in the row; see buildManufacturerFilterRow() in
-   Account.html. */
-.rc-team-manu-filter-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-  /* A bit more breathing room above and below the row (2026-09-23, Matt's
-     ask) -- was padding-bottom only; padding-top added so the row isn't
-     crowded up against the sticky CHOOSE YOUR TEAM header above it. */
-  padding-top: 10px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--rc-silver);
-}
-.rc-team-manu-filter-all {
-  flex: none;
-  font-family: var(--rc-font-heading);
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  color: var(--rc-carbon);
-  background: none;
-  border: none;
-  padding: 4px 0;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.rc-team-manu-filter-logo {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.rc-team-manu-filter-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.rc-team-manu-filter-dim { opacity: 0.28; }
-/* Team name + car number: 20px/700 (2026-09-23, Matt's exact spec) --
-   was briefly 26px/800 earlier the same day, before that; originally
-   17px/700. Car model line below it: 14px (Matt's spec), up from
-   12.5px. */
-.rc-team-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; }
-.rc-team-subtitle { font-size: 14px; color: var(--rc-steel); margin-top: 2px; }
+.rc-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; }
+.rc-team-subtitle { font-size: 12.5px; color: var(--rc-steel); margin-top: 2px; }
 /* Total cost -- bumped up to read as the headline number it actually is,
    not a caption (Matt's call: "increase the total cost in the top right
    corner"). */
@@ -1923,9 +1540,34 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   flex: 1 1 220px;
 }
 .rc-team-perk-chip strong { font-family: var(--rc-font-heading); font-weight: 700; }
-.rc-team-perk-bonus { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
-.rc-team-perk-penalty { background: var(--rc-negative-bg); border-color: #f4c2bd; color: var(--rc-negative); }
+.rc-team-perk-bonus { background: #eaf6ec; border-color: #bfe2c4; color: #1f5c25; }
+.rc-team-perk-penalty { background: #fdecea; border-color: #f4c2bd; color: #ff3b30; }
 .rc-team-perk-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
+/* Tier chip / objective chip width split (2026-08-30, Matt's call) --
+   overrides .rc-team-perk-chip's default 1-1-220px equal-growth basis so
+   the two chips in a Choose Your Team card's .rc-team-perks row split
+   25/75 instead of roughly 50/50, while still wrapping to their own line
+   on a narrow viewport via the min-widths below. Ratio-based (flex-basis
+   0%, grow 1:3) rather than literal 25%/75% bases -- two bases summing to
+   exactly 100% plus the row's own 10px gap would occasionally overflow by
+   that 10px and force an unwanted wrap (Matt's call: "make sure the
+   objective pill is NEXT to the tier"); a 1:3 grow ratio splits whatever
+   space is actually left after the gap, so they always share one line
+   down to their min-widths. */
+.rc-team-perk-tier { flex: 1 1 0%; min-width: 130px; }
+.rc-team-perk-objective { flex: 3 1 0%; min-width: 220px; }
+/* Tier chip colors -- transparent background, colored outline + matching
+   text (2026-08-30, Matt's call: "ALL the tiers listed on the website" get
+   "an outline of gray, blue and purple with the same color text inside,
+   transparent background"), using the same canonical --rc-tier-* colors as
+   the small .rc-badge-cartier-* pill everywhere else. Keeps this chip's
+   own bigger size/shape/icon/"Team" wording (Matt's call: this one stays
+   its own bigger chip, just recolored) -- only the fill/border/text colors
+   changed, not the box. */
+.rc-team-perk-tier-low { background: transparent; border-color: var(--rc-tier-low); color: var(--rc-tier-low); }
+.rc-team-perk-tier-mid { background: transparent; border-color: var(--rc-tier-mid); color: var(--rc-tier-mid); }
+.rc-team-perk-tier-high { background: transparent; border-color: var(--rc-tier-high); color: var(--rc-tier-high); }
+.rc-team-perk-tier-elite { background: transparent; border-color: var(--rc-tier-elite); color: var(--rc-tier-elite); }
 .rc-team-card-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
 /* Join button anchored bottom-right of the card (Matt's call), not just
    left-aligned wherever it happened to fall in document flow. */
@@ -1933,17 +1575,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* -------------------------------------------------------------------- */
 /* SIGNING SEQUENCE (2026-08-30, Matt's call: "I want this to feel       */
-/* EPIC"; reworked 2026-09-18 -- video swapped for a full-viewport class */
-/* welcome image) -- the cinematic overlay played after locking in a     */
-/* team, before the recap settles into a normal .rc-modal. See           */
-/* openSigningSequence() and showSigningContractModal() in Account.html  */
-/* for the full sequence. One dark stage that fluidly resizes between    */
-/* its two beats (suspense card -> full-viewport welcome image) via a    */
-/* single width/height/padding/border-radius transition, rather than     */
+/* EPIC") -- the cinematic overlay played after locking in a team, before */
+/* the recap settles into a normal .rc-modal. See openSigningSequence()   */
+/* and showSigningContractModal() in Account.html for the full sequence. */
+/* One dark stage that fluidly resizes between its three beats           */
+/* (suspense card -> 16:9 film box -> full-viewport reveal) via a single */
+/* width/height/padding/border-radius transition, rather than three      */
 /* separately-styled elements swapped in and out. z-index 5000 sits      */
 /* above .rc-modal-backdrop's 2000 -- the registration modal underneath  */
 /* is left open, just visually covered, until this overlay tears itself  */
-/* down once Continue is clicked.                                        */
+/* down at the end of the REVEAL beat.                                   */
 /* -------------------------------------------------------------------- */
 .rc-signing-overlay {
   position: fixed;
@@ -1966,41 +1607,49 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1), height 0.55s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.4s ease, border-radius 0.4s ease;
 }
-/* Beat 1 -- small suspense card while the welcome image preloads. */
+/* Beat 1 -- small suspense card while the video preloads. */
 .rc-signing-stage-suspense { width: min(90vw, 420px); padding: 44px 32px; }
-/* Beat 2 -- grows to fill the entire viewport for the class's welcome
-   image (2026-09-18, Matt: "an image that I want displayed across the
-   entire website"). position:fixed + inset:0 takes it out of the
-   .rc-signing-overlay flex box's normal centering/padding entirely, so
-   it reaches every edge regardless of the overlay's own 24px padding --
-   the width/height transition inherited from .rc-signing-stage still
-   animates the grow from the small suspense card up to fullscreen. */
-.rc-signing-stage-welcome {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
+/* Beat 2 -- grows to the video's own native size (1280x720, 16:9),
+   capped so it never overflows a short viewport. object-fit:cover on
+   the video itself (below) fills this box edge-to-edge since the ratio
+   already matches -- no letterboxing. */
+/* Bug fix (2026-08-30, Matt: "the top and bottom of the video are being
+   cut off... use 1280x720 ratio") -- width:min(94vw,1280px) paired with a
+   separate max-height:80vh let the box's actual height get clamped below
+   what the 16:9 aspect-ratio would have made it, on a short viewport,
+   without the WIDTH shrinking to match -- the box silently became wider
+   than 16:9, and object-fit:cover cropped the video's top and bottom to
+   fill that mismatched shape. The third min() term below folds the
+   height cap directly into the width itself (142.22vh = 80vh * 16/9), so
+   whichever of the three constraints binds, the box's width and height
+   always resolve to an exact 16:9 pair -- there's no longer a height cap
+   that isn't equally a width cap. object-fit is also switched to contain
+   as a second, independent guarantee: even if a future edit reintroduces
+   a mismatched box, contain letterboxes on the existing black background
+   instead of ever cropping the frame. */
+.rc-signing-stage-film {
+  width: min(94vw, 1280px, 142.22vh);
+  aspect-ratio: 16 / 9;
   padding: 0;
-  border-radius: 0;
+  border-radius: 10px;
   overflow: hidden;
   background: #000;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65);
 }
-/* Race Club wordmark as the actual logo file now (2026-09-18, Matt:
-   "Instead of it saying RACE CLUB... I want Race Club (Full, Black).png
-   to show"), replacing the old letter-spaced text label. Two sizes: a
-   small one for the SUSPENSE card, a larger one above the reveal
-   content once the class image dims. Sized by width with height:auto so
-   the logo's own aspect ratio is preserved either way. No background
-   "backing" card behind it (2026-09-19, Matt's catch: it was showing as
-   a stray white/offwhite pill sitting over the welcome photo) -- the
-   PNG itself is already a white + red wordmark on a transparent
-   background, not black ink, so it's already legible straight over the
-   near-black overlay / dimmed welcome image with nothing behind it. */
-.rc-signing-wordmark-img {
-  width: 140px;
-  height: auto;
+/* Beat 3 -- collapses back down for the full-viewport "CONGRATULATIONS"
+   moment; still centered on the same dark backdrop, not truly edge-to-
+   edge, so the reveal reads as a moment ON the stage rather than a
+   totally different screen. */
+.rc-signing-stage-reveal { width: min(92vw, 720px); padding: 20px; }
+.rc-signing-wordmark {
+  font-family: var(--rc-font-heading);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  font-size: 13px;
+  color: var(--rc-silver);
+  text-transform: uppercase;
 }
-.rc-signing-wordmark-img-lg { width: 200px; margin-bottom: -4px; }
+.rc-signing-wordmark-lg { font-size: 15px; margin-bottom: -6px; }
 .rc-signing-message {
   font-size: 14px;
   color: var(--rc-offwhite);
@@ -2008,49 +1657,49 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.02em;
   transition: opacity 0.18s ease;
 }
-/* The class welcome image itself -- edge-to-edge cover, fading in from
-   fully transparent, then dimming to half brightness once the reveal
-   content appears on top of it (Matt: "It fades in, stays up for 3
-   seconds, then dims to half brightness. That's when the congratulations
-   message displays"). Both the opacity fade-in and the brightness dim
-   are plain CSS transitions -- the JS in openSigningSequence just toggles
-   the two modifier classes below at the right moments. */
-.rc-signing-welcome-img {
+.rc-signing-video-wrap { position: relative; width: 100%; height: 100%; }
+/* The <video> lives in the DOM from the moment the overlay opens (see
+   Account.html's openSigningSequence) so the browser actually starts
+   fetching it -- some browsers never load a detached element's data at
+   all. Kept off-screen and inert rather than display:none (a display:none
+   video can also get its loading paused by some browsers) while it's
+   still just preloading, then re-classed to .rc-signing-video once moved
+   into the visible film stage. */
+.rc-signing-video-preload { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
+.rc-signing-video { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Icon-only circular control, bottom-left (2026-08-30, Matt: moved off
+   top-right and switched from a labeled pill + emoji speakers to "a
+   standard speaker icon" -- see rcVolumeIconSvg_() in Account.html for the
+   plain line-icon SVG). Bottom-left keeps it clear of the "Continue"
+   button, which fades in bottom-CENTER once the video ends. A couple of
+   attention-pulses still play when it first appears so it isn't missed. */
+.rc-signing-unmute {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  opacity: 0;
-  filter: brightness(1);
-  transition: opacity 0.9s ease, filter 1.1s ease;
-}
-.rc-signing-welcome-img-visible { opacity: 1; }
-.rc-signing-welcome-img-dim { filter: brightness(0.5); }
-/* Reveal content layered on top of the dimmed welcome image, filling the
-   same full-viewport stage and centered within it -- not a separate
-   collapsed card the way the old video REVEAL beat was, since the
-   welcome image itself is already the full-viewport backdrop. Starts
-   invisible and fades in together with the image's dim transition. */
-.rc-signing-welcome-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+  bottom: 16px;
+  left: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 22px;
-  text-align: center;
-  padding: 24px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(10, 10, 10, 0.65);
+  color: var(--rc-white);
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 1.1s ease;
+  transition: opacity 0.3s ease, background 0.2s ease;
 }
-.rc-signing-welcome-overlay-visible { opacity: 1; }
+.rc-signing-unmute:hover { background: rgba(10, 10, 10, 0.85); }
+.rc-signing-unmute-icon { display: flex; line-height: 1; }
+.rc-signing-unmute-visible { opacity: 1; animation: rc-signing-unmute-pulse 1.6s ease-out 2; }
+@keyframes rc-signing-unmute-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
+  70% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .rc-signing-welcome-img { transition: none; }
-  .rc-signing-welcome-overlay { transition: none; }
+  .rc-signing-unmute-visible { animation: none; }
 }
 .rc-signing-congrats {
   font-family: var(--rc-font-heading);
@@ -2091,24 +1740,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-align: right;
   font-size: 12.5px;
   font-style: italic;
-  /* Full white, not the old 50%-opacity dim gray (2026-09-19, Matt's
-     call: "make the team principal font white") -- was faint enough
-     against the dark reveal stage to read as an afterthought; the "Team
-     Principal" attribution should read clearly. */
-  color: var(--rc-white);
+  color: rgba(255, 255, 255, 0.5);
 }
 /* Inverted to a white pill (2026-08-30, Matt's call) -- was a dark,
    near-transparent panel with white text; now a solid white background
    with the team name in black (see .rc-signing-reveal-team below), a
-   deliberate bright beat against the dark reveal stage. Dropped to 90%
-   opacity (2026-09-19, Matt's call) -- still reads as the same bright
-   white pill, just with the faintest hint of the dimmed image showing
-   through instead of a flat opaque card. */
+   deliberate bright beat against the dark reveal stage. */
 .rc-signing-reveal-identity {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--rc-white);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   padding: 14px 20px;
@@ -2117,36 +1759,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-signing-reveal-logo { width: 56px; height: 40px; object-fit: contain; }
 /* Bumped from 18px (2026-08-30, Matt: "make the team name and number
    larger") -- this element already includes the car number appended to
-   the team name (see openSigningSequence's dimAndReveal), so enlarging
+   the team name (see openSigningSequence's advanceToReveal), so enlarging
    it covers both at once. Color flipped to black (2026-08-30) to match
    the pill's inverted white background above. */
 .rc-signing-reveal-team { font-family: var(--rc-font-heading); font-weight: 800; font-size: 26px; color: var(--rc-carbon); }
 /* Overrides .rc-btn-primary's default width:100% -- full-width would
-   stretch oddly on the reveal overlay; this button sizes to its own
-   label instead. Wins on cascade order alone (equal specificity,
-   declared later in the file) rather than needing !important. */
-.rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
-/* Explicit hover (2026-09-19, Matt's call: "make a hover effect on the
-   button to continue") -- adds a small lift + shadow on top of a slightly
-   deeper shade so hovering the one interactive element on the reveal beat
-   is unmistakable. Wins on cascade order alone (equal specificity,
-   declared after .rc-btn-primary/.rc-btn-secondary above).
-   Background switched from --rc-silver to --rc-red-dark (2026-09-19,
-   same day as the button itself moving from .rc-btn-secondary to
-   .rc-btn-primary per Matt's "make the CONTINUE button red" call) --
-   --rc-silver was tuned for the old gray/white button and would have
-   flashed the red button gray on hover instead of darkening it. */
-.rc-signing-continue:hover {
-  background: var(--rc-red-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-}
-/* Row holding the reveal beat's Continue button (2026-09-18: the video-
-   era "Replay Video" button that used to sit alongside it is gone --
-   there's no video to replay any more -- so this is now a one-button
-   row, kept as its own flex row rather than folded back into
-   .rc-signing-continue so the fade-in timing/opacity toggle in
-   openSigningSequence's dimAndReveal doesn't need to change). */
+   stretch oddly across the reveal beat's 720px-wide stage; this button
+   should size to its own label instead. Wins on cascade order alone
+   (equal specificity, declared later in the file) rather than needing
+   !important. */
+/* margin-top: 0 (2026-08-30 fix) -- .rc-btn-primary's base margin-top:20px
+   was still winning here (only left/right padding were overridden below),
+   and that top margin sat INSIDE this row's own flex box, shifting
+   continueBtn's margin box down relative to the borderless replayBtn
+   sitting beside it (align-items:center centers the margin box, not just
+   the border box) -- the actual cause of "replay and continue still look
+   like they're at different heights" even after the box-shadow/padding
+   fix above made their own boxes pixel-identical. .rc-signing-reveal-btn-row
+   already supplies its own margin-top for spacing from the content above,
+   so this button never needed one of its own. */
+.rc-signing-continue { width: auto; padding-left: 30px; padding-right: 30px; margin-top: 0; transition: opacity 0.4s ease; }
+/* Row holding the reveal beat's Replay/Continue pair -- replaces the
+   single centered .rc-signing-continue that used to sit alone here.
+   transition: opacity 0.4s ease matches the old single-button fade-in
+   timing (JS still fades this whole row in via style.opacity). */
 .rc-signing-reveal-btn-row {
   display: flex;
   align-items: center;
@@ -2155,6 +1791,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   margin-top: 6px;
   transition: opacity 0.4s ease;
 }
+/* .rc-signing-reveal-btn-row already centers/gaps this; .rc-btn-secondary
+   is naturally width:auto (unlike .rc-btn-primary), so this only needs to
+   match .rc-signing-continue's dark-stage treatment -- pale outline/text
+   since the default secondary button (white bg, carbon text) would be
+   invisible against the reveal stage's near-black background.
+   .rc-btn-secondary's own padding/font-size (8px 14px, 12px) are smaller
+   than .rc-btn-primary's (12px, 14px) -- matched here so the two buttons
+   are the same height. border: none + an inset box-shadow standing in for
+   the pale outline is the actual fix, not just the padding match: even
+   with matching padding, .rc-btn-secondary's own 1px border still added
+   2px of total height on top of .rc-btn-primary's borderless box (an
+   intrinsically-sized box with no explicit height isn't shrunk by
+   box-sizing: border-box the way a fixed-size box would be) -- a
+   box-shadow paints inside the box without adding to its size, so this is
+   the one border-style that can never reintroduce that mismatch
+   (2026-08-30, Matt: "replay video and continue are on different
+   heights"). */
+.rc-signing-replay {
+  padding: 12px 22px;
+  font-size: 14px;
+  background: transparent;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  color: var(--rc-white);
+}
+.rc-signing-replay:hover { background: rgba(255, 255, 255, 0.08); }
 @keyframes rc-signing-pop {
   0% { opacity: 0; transform: scale(0.85) translateY(10px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -2237,22 +1899,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    text sitting on the same baseline -- since neither is lowercase/has
    descenders, that baseline IS each one's visual bottom edge, so the two
    stay flush along the bottom. */
-/* Own flex row (2026-09-19, Matt's call: "move the class pill up more so
-   it is vertically centered with the # in CURRENT SEAT") -- the pill
-   (small font, its own line-height) and the "#n" text used to just sit
-   inline together, whose default baseline alignment left the pill sitting
-   a little low against the number. align-items: center here lines the two
-   up by their actual vertical centers instead. */
-.rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-/* Current Seat's class-pill corner figure only (2026-09-24, Matt's ask):
-   align-self: center overrides the header row's own align-items: baseline
-   (above) so the pill lines up on its vertical center against "CURRENT
-   SEAT" instead of sitting on the title's text baseline. The pill itself
-   is bumped up from .rc-badge-chip-abbrev's base 2px 6px/12px size --
-   scoped to this one class so league.js's own report pill (which also
-   uses .rc-badge-chip-abbrev) stays untouched. */
-.rc-cs-corner-figure { align-self: center; }
-.rc-cs-class-pill.rc-badge-chip-abbrev { padding: 4px 9px; font-size: 15px; }
+.rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 
 /* Shared Dashboard card chrome (Matt's call, 2026-08-29): a faint
    checkered-flag corner that fades toward the card's center, a red
@@ -2330,17 +1977,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    but the "+" character's own glyph metrics sit it slightly low/left of
    true center. padding-bottom pushes the centered content up; padding-left
    pushes it right. */
-.rc-regstatus-icon-open { color: var(--rc-warning); border-color: #e8b93a; background: #fdf6e3; padding-bottom: 2px; padding-left: 1px; }
-.rc-regstatus-icon-done { color: var(--rc-positive); border-color: var(--rc-positive-border); background: var(--rc-positive-bg); }
+.rc-regstatus-icon-open { color: #a3790a; border-color: #e8b93a; background: #fdf6e3; padding-bottom: 2px; padding-left: 1px; }
+.rc-regstatus-icon-done { color: #1f5c25; border-color: #bfe2c4; background: #eaf6ec; }
 .rc-regstatus-headline { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
 .rc-regstatus-headline-none { color: var(--rc-steel); }
-.rc-regstatus-headline-open { color: var(--rc-warning); }
-.rc-regstatus-headline-done { color: var(--rc-positive); }
+.rc-regstatus-headline-open { color: #a3790a; }
+.rc-regstatus-headline-done { color: #1f5c25; }
 .rc-regstatus-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; }
-/* .rc-regstatus-memo removed 2026-09-19 follow-up -- the roster-lock memo
-   now REPLACES the "Your registration is complete." .rc-regstatus-sub
-   line entirely (Matt's call) instead of sitting below it as its own
-   italicized line, so it just uses the plain .rc-regstatus-sub style. */
 /* padding-top back to the same 14px every other card's divider row uses
    (2026-09-01, Matt's call: "move up the date and class to the same
    level as the other cards' categories, don't change anything with the
@@ -2368,12 +2011,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 */
 .rc-regstatus-flag { display: flex; align-items: flex-start; gap: 12px; margin-top: 4px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; }
 .rc-regstatus-flag-probation { background: #fef9e7; }
-.rc-regstatus-flag-suspended { background: var(--rc-negative-bg); }
+.rc-regstatus-flag-suspended { background: #fdecea; }
 .rc-regstatus-flag-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; }
-.rc-regstatus-flag-dot-probation { background: var(--rc-warning-accent); }
+.rc-regstatus-flag-dot-probation { background: #eab308; }
 .rc-regstatus-flag-dot-suspended { background: var(--rc-red); }
 .rc-regstatus-flag-label { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.rc-regstatus-flag-label-probation { color: var(--rc-warning); }
+.rc-regstatus-flag-label-probation { color: #a3790a; }
 .rc-regstatus-flag-label-suspended { color: var(--rc-red); }
 .rc-regstatus-flag-reason { font-size: 12.5px; color: var(--rc-carbon); margin-top: 3px; line-height: 1.4; }
 
@@ -2388,8 +2031,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-status-history-row:nth-child(2) { opacity: 0.65; }
 .rc-status-history-row:nth-child(3) { opacity: 0.35; }
 .rc-status-history-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; }
-.rc-status-history-dot-active { background: var(--rc-positive); }
-.rc-status-history-dot-probation { background: var(--rc-warning-accent); }
+.rc-status-history-dot-active { background: #1f5c25; }
+.rc-status-history-dot-probation { background: #eab308; }
 .rc-status-history-dot-suspended { background: var(--rc-red); }
 .rc-status-history-label { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
 .rc-status-history-reason { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
@@ -2416,60 +2059,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    sized directly rather than cropped to fit a fixed box. */
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
 .rc-cs-logo { max-width: 118px; max-height: 50px; object-fit: contain; }
-/* Grows to fill the row so .rc-cs-carnum (below) lands pinned to the
-   card's right edge instead of sitting right after the team name text
-   (2026-09-23, Matt's ask: move the car number out of the header corner
-   and into this row, right-justified). */
-.rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
-/* Matches .rc-regstatus-headline's weight/letter-spacing/uppercase
-   treatment, just sized up slightly (2026-09-23, Matt's ask: "increase
-   the size of the team name slightly" -- was an exact match at 15px). */
-.rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
+/* Matches .rc-regstatus-headline exactly (Matt's call: same size/weight
+   as "REGISTERED FOR <season name>") rather than its own bigger/bolder
+   treatment. */
+.rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
-/* Car number, moved out of the header corner and into this row
-   (2026-09-23, Matt's ask: "Move car # to the right of the team name and
-   car... right justified and as tall as the logo is, in the same font
-   color as it currently is, but maybe some more weight to it") -- the
-   class pill stays behind in .rc-dash-card-corner-figure up in the
-   header. height:50px/flex centering matches .rc-cs-logo-wrap's own box
-   so the figure reads as tall as the logo; color carried over unchanged
-   from the old .rc-dash-card-corner-figure treatment, weight bumped from
-   700 to 800 since it's now a much bigger standalone figure than it was
-   sharing the header row with a title. */
-.rc-cs-carnum { flex: none; height: 50px; display: flex; align-items: center; justify-content: flex-end; font-family: var(--rc-font-heading); font-size: 34px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+/* Wraps the class + tier pills together (2026-09-09, Matt's report: "make
+   sure the class and tier are at the same vertical height") -- the 9px
+   top spacing that used to live on .rc-cs-class-pill alone (so only the
+   class pill dropped down from the car model line above, not the tier
+   pill next to it) now lives here, on the row both pills share, and
+   align-items: center squares up their baselines regardless of the two
+   pills' own differing line-heights. */
+.rc-cs-pill-row { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
+.rc-cs-class-pill { display: inline-block; padding: 3px 10px; border-radius: 4px; color: #fff; font-weight: 700; font-size: 11px; letter-spacing: 0.03em; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
-
-/* Dashboard Protest card line items (2026-09-24 redesign, Matt's spec: an
-   open gray circle for a still-Pending protest, filled gray with a white
-   checkmark once it's ruled/withdrawn, the sentence on one line, and a
-   lighter-colored outcome/ruling line below it once resolved). See
-   buildDashProtestItem in Account.html. */
-.rc-protest-dash-list { display: flex; flex-direction: column; gap: 14px; }
-.rc-protest-dash-item { display: flex; align-items: flex-start; gap: 10px; }
-/* Divider between rows when a list has more than one protest (2026-09-24
-   styling pass, Matt's ask). Only fires on the 2nd+ item, so a single-
-   protest card/list never grows an orphan rule. */
-.rc-protest-dash-list .rc-protest-dash-item + .rc-protest-dash-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; }
-.rc-protest-dash-icon { flex: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
-.rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
-.rc-protest-dash-icon-ruled { background: var(--rc-steel); }
-.rc-protest-dash-item-body { flex: 1; min-width: 0; }
-.rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
-.rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
-/* Ruled outcome line and the "(pending decision)" note (2026-09-24, item
-   6; resized 2026-09-24 styling pass to match the 13px protest text
-   above it, Matt's ask -- was 12px) styled identically: light gray,
-   italic, same size as the rest of the card's text -- so a pending row
-   and a ruled row read as one consistent family in the Dashboard
-   Protest card and the redesigned Protests popup list alike. */
-.rc-protest-dash-outcome { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
-.rc-protest-dash-pending { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
-/* Edit/Withdraw actions appended to a Protests-popup history row
-   (buildProtestPopupHistoryItem, Account.html) -- sits to the right of
-   the row's icon+text body, right-justified and top-aligned with the
-   date/first line (2026-09-24, item 6; confirmed placement 2026-09-24
-   styling pass). */
-.rc-protest-popup-item-actions { display: flex; flex-wrap: nowrap; gap: 8px; flex: none; margin-left: auto; align-self: flex-start; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
@@ -2499,32 +2103,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    in the stats row. */
 .rc-nextrace-date { font-size: 12px; font-weight: 700; color: var(--rc-steel); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
 .rc-nextrace-name { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; color: var(--rc-carbon); text-transform: uppercase; }
-/* .rc-nextrace-track is back (2026-09-19 follow-up, Matt's catch: "I
-   don't want the track names gone... what I don't want is the track
-   images" -- only .rc-nextrace-track-img, the image, stays removed).
-   Same size/color treatment .rc-cal-track always used. */
+/* Moved closer to the event title above it (2026-08-31, Matt's call:
+   "move the track name up more towards the event name") -- 2px instead
+   of 6px. font-size/color now match .rc-cal-track exactly (13px, steel)
+   -- same call: the track name/layout should read the same on this card
+   as it does on the Calendar page (see .rc-cal-track's <strong>/
+   .rc-cal-layout split, reused here in nextRaceCard). */
 .rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
 .rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
-/* Track/layout row (2026-09-20: briefly carried the in-game race start
-   time inline to the right, on this same space-between wrap Calendar's
-   own .rc-cal-track-row uses; 2026-09-21, Matt's ask: "make the dashboard
-   NEXT RACE look similar to the calendar container with a line below the
-   race track and the in game time... below that" -- the in-game time
-   moved to its own line below instead, via the shared .rc-cal-datetime
-   class Calendar's own race cards already use, so no dedicated
-   .rc-nextrace-igtime rule is needed here anymore). justify-content:
-   space-between is now vestigial (this row only ever holds the track
-   text) but harmless -- left as-is rather than churn it for no visual
-   change. */
-/* Faint gray divider below the track row (2026-09-21 follow-up, Matt's
-   catch: "there should be a faint gray line below the track and then
-   below the line should be the in-game start time data" -- same
-   border-bottom/padding-bottom pairing Calendar's own .rc-cal-track-row
-   already uses to separate its track line from the datetime row below
-   it, just not yet applied to this card). */
-.rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-nextrace-track-row .rc-nextrace-track { margin-top: 0; }
-.rc-nextrace-info .rc-cal-datetime { margin-top: 8px; }
 .rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 .rc-nextrace-pill {
   display: inline-block;
@@ -2539,43 +2125,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
-.rc-nextrace-pill-gold { background: var(--rc-gold); }
-/* Server password pill, NEXT RACE dashboard card + Season Format panel
-   (2026-09-21, Matt's ask: "make the server password pill in the NEXT
-   RACE dashboard container metallic gold with a gold border so it stands
-   out", reused for Season Format's own password pill same day) -- a
-   scoped modifier on the shared .rc-cal-stat/.rc-cal-mini-stat chip (via
-   calStat's own extraClass param, Account.html), so every other pill on
-   these cards and elsewhere (Calendar's own race cards, etc.) is
-   untouched. "Metallic" via a diagonal light/dark gold gradient rather
-   than a flat fill, with --rc-gold as the border so it still reads as
-   part of the same gold family as the Special Event pill above.
-   Compound-selected as .rc-cal-stat.rc-nextrace-password-gold (2026-09-21
-   fix, Matt's catch: "the pills for the next race password and the
-   calendar password were never changed to a yellow/gold color") --
-   .rc-cal-stat's own background/border/color/svg-color rules sit LATER
-   in this file (its shared base is defined once, far below every one-off
-   modifier), and a single-class selector loses a same-specificity tie to
-   whichever rule comes last in source order, so the base chip's offwhite
-   fill was silently winning over this gold override the whole time.
-   Compounding onto .rc-cal-stat bumps this rule's specificity above the
-   base rule's regardless of where either sits in the file.
-   Dark stop lightened (2026-09-21, Matt's catch: "the dark part of the
-   gold gradient background makes it hard to see the text") -- the old
-   52% stop (#8a6410, a dark brown-gold) sat close enough to the pill's
-   own dark brown text color (#3f2c00 below) that the text nearly
-   disappeared into it at that point in the gradient. Swapped for a
-   mid-tone gold (matching --rc-tier-elite) instead of a second dark
-   stop, so the gradient still shimmers light-to-mid-to-light but never
-   dips dark enough to fight the text. */
-.rc-cal-stat.rc-nextrace-password-gold {
-  background: linear-gradient(135deg, #f7dd8f 0%, #e0c168 28%, #c9a227 52%, #e8c464 76%, #fbe7a6 100%);
-  border: 1px solid var(--rc-gold);
-  color: #3f2c00;
-  font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-.rc-cal-stat.rc-nextrace-password-gold svg { color: #5c3f00; }
+.rc-nextrace-pill-gold { background: #b8860b; }
+/* Nudged up a few px from true vertical-center (2026-08-31, Matt's call)
+   so it sits closer to the event title at the top of .rc-nextrace-info,
+   instead of centering against the taller stat-row/pill content below the
+   title. */
+.rc-nextrace-track-img { flex: none; max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 6px; margin-top: -10px; }
 
 /* Finances card + Reputation card (2026-08-31: split apart from the
    original combined "Finances & Reputation" card -- Finances shares the
@@ -2620,7 +2175,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    a competing headline figure. */
 .rc-finrep-frozen-inline { font-size: 13px; font-weight: 600; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-finrep-delta { display: block; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; padding-bottom: 10px; }
-.rc-finrep-delta-up { color: var(--rc-positive); }
+.rc-finrep-delta-up { color: #1f5c25; }
 .rc-finrep-delta-down { color: var(--rc-red); }
 /* Bottom category row -- Finances: Frozen Balance/Bank Rank/Largest Win;
    Reputation: League Rank/Percentile. Same size/weight/border-top-divider
@@ -2725,38 +2280,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    pages that otherwise keep the red rc-dash-card convention (2026-09-09,
    Matt's call: "make wager history, protests, all sponsors, bonus and
    penalty triggers containers the same gray style border and lines as
-   transaction ledger") -- Wager History (Wager page), All Sponsors and
-   Bonus & Penalty Triggers (Sponsors page) each get their own class here
-   rather than a section-wide rule like Finances gets, since every OTHER
-   card on these same pages (the Wager trading card, Sponsor Goals, etc.)
+   transaction ledger") -- Wager History (Wager page), the Protests-page
+   protest history list, All Sponsors and Bonus & Penalty Triggers
+   (Sponsors page) each get their own class here rather than a section-
+   wide rule like Finances gets, since every OTHER card on these same
+   pages (File a Protest, the Wager trading card, Sponsor Goals, etc.)
    is meant to stay red. Higher specificity than the plain .rc-dash-card-
-   title/::before rules further up, so no !important needed.
-   .rc-protest-history-panel removed from this list (2026-09-20, Protests
-   page redesign) -- the page is one single red rc-dash-card container
-   now, no separate gray history card. */
+   title/::before rules further up, so no !important needed. */
 .rc-wager-history-panel .rc-dash-card-title,
+.rc-protest-history-panel .rc-dash-card-title,
 .rc-sponsor-table-panel .rc-dash-card-title,
 .rc-trigger-glossary-panel .rc-dash-card-title { border-bottom-color: var(--rc-silver); }
 .rc-wager-history-panel.rc-dash-card::before,
+.rc-protest-history-panel.rc-dash-card::before,
 .rc-sponsor-table-panel.rc-dash-card::before,
 .rc-trigger-glossary-panel.rc-dash-card::before { background: var(--rc-silver); }
-
-/* Protests popup (2026-09-20 page redesign, then converted to a popup and
-   simplified further 2026-09-24, Matt's ask: "remove the container within
-   the popups" -- the old "Season N: Name" panel wrapper is gone; FILE
-   PROTEST sits right below the popup's own red header line, then a
-   bordered season-grouped history below that). See
-   buildProtestPopupBody/buildProtestSeasonGroup/buildProtestHistoryItem,
-   Account.html. The old locked/grayed-out Edit/Delete button treatment
-   (.rc-protest-btn-locked/-lock) is gone too, 2026-09-24 -- Edit/Withdraw
-   simply don't render any more once a protest is no longer modifiable,
-   instead of showing disabled with a hover lock icon. */
-.rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
-.rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
-/* .rc-protest-season-group (the old per-season grouping pill/tree-line
-   wrapper) removed 2026-09-24, item 6 -- the popup's history list is now
-   one flat, newest-first list of Dashboard-style rows, no more season
-   grouping. */
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)
@@ -3077,6 +2615,56 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 2px; }
 .rc-results-stat-value { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 700; color: var(--rc-carbon); white-space: nowrap; }
 
+/* Race recap article (2026-09-09, Matt's call: "put quotes around it with
+   a different motorsports mag editor underneath") -- a pull-quote
+   treatment standing in for the old pill/chip row: a large opening quote
+   mark, italic article copy, red left-border accent (this site's own
+   checkered-flag/red-accent language, same family as .rc-dash-card's
+   corner flourish), byline in small-caps steel below. */
+.rc-recap { margin-bottom: 14px; }
+/* Left border + quote mark + text switched from red to gray (2026-09-09,
+   Matt's call: "make the left red border in the quote gray, and a slight
+   shade darker than the background. Make the quote text the same color")
+   -- background stays var(--rc-offwhite) (#F5F5F3); var(--rc-steel)
+   (#536575) is the darker-gray accent/muted-text token already used
+   elsewhere on the site (e.g. .rc-hint), which reads clearly darker than
+   the offwhite box while staying legible for the paragraph text itself. */
+.rc-recap-quote {
+  position: relative;
+  margin: 0;
+  padding: 14px 20px 14px 26px;
+  border-left: 3px solid var(--rc-steel);
+  background: var(--rc-offwhite);
+  border-radius: 0 8px 8px 0;
+}
+.rc-recap-quote::before {
+  content: '\201C';
+  position: absolute;
+  top: -6px;
+  left: 8px;
+  font-size: 42px;
+  line-height: 1;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--rc-steel);
+  opacity: 0.35;
+}
+.rc-recap-para {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--rc-steel);
+}
+/* rc-recap-byline removed (2026-09-09, Matt's call: "remove... the
+   person who supposedly quoted the saying") -- the recap is one plain
+   pull-quote paragraph now, no reporter/mag attribution underneath it,
+   and no second .rc-recap-para exists anymore either (driver + field
+   copy are joined into a single paragraph in buildRaceRecapBlock, since
+   two one-sentence paragraphs back to back read as an obvious template
+   seam). */
+
 .rc-results-class { margin-top: 16px; }
 .rc-results-class-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 
@@ -3094,26 +2682,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-row-dnf td { color: var(--rc-red); }
 .rc-results-row-dnf .rc-results-td-pos { color: var(--rc-red); }
 .rc-results-td-pos { font-family: var(--rc-font-heading); font-weight: 800; color: var(--rc-steel); }
-
-/* Results/Career per-race "your own race" summary + full session detail
-   (2026-09-19) -- reuses .rc-results-stat-strip for the summary grid
-   (same look as the race-wide conditions strip above it) and adds three
-   new pieces: one .rc-results-session container per Practice/Qualify/
-   Race session that has laps or events for this driver, a laps table
-   (same .rc-results-table shape, just denser given the column count),
-   and a plain-line RaceEvents list underneath it. */
-.rc-results-you-summary { margin-bottom: 4px; }
-.rc-results-you-summary .rc-results-stat-strip { border-top: none; }
-.rc-results-sessions { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
-.rc-results-session { border-top: 1px solid var(--rc-offwhite); padding-top: 12px; }
-.rc-results-session-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
-.rc-results-laps-table th, .rc-results-laps-table td { font-size: 11.5px; padding: 5px 8px; }
-.rc-results-events-list { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
-.rc-results-event-line { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-results-event-line:last-child { border-bottom: none; }
-.rc-results-event-lap { flex: none; min-width: 52px; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-.rc-results-event-text { color: var(--rc-carbon); }
-
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
    name+car#, two-column shape (team name dropped, 2026-09-07) the whole
@@ -3159,9 +2727,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-fixed-header {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 70px;
-  min-height: 70px;
-  max-height: 70px;
+  height: 72px;
   background: var(--rc-white);
   border-bottom: 1px solid var(--rc-silver);
   display: flex;
@@ -3240,11 +2806,39 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    onerror just hides the <img> itself, same "silently fall back to
    initials" convention as Account.html's own buildAvatarCircle(). */
 .rc-header-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-/* Notification bell CSS (.rc-notif-dot, .rc-header-bell-icon-wrap,
-   .rc-header-bell-toggle, .rc-header-notif-menu and everything else
-   .rc-header-notif-* below) removed in full (2026-09-24, Matt's call:
-   eliminate the in-app notification system entirely, moving to an
-   external Discord bot). */
+/* Notification badge -- a red circle with a white ring, sitting against
+   .rc-header-bell-icon-wrap (sized to the bell glyph itself, see below)
+   rather than the bell button's own much-larger circular hit target, so it
+   actually lands on the bell's corner instead of floating out past it.
+   2026-09-01 (Matt's call: "make the bubble larger and add a notification
+   number to it") -- grown from a plain 13px dot to an 18px badge that
+   shows the actual unread count as text (see updateHeaderNotifDot in
+   header.js, which sets both .textContent and a min-width for double-digit
+   counts to still read as a circle/pill rather than a squeezed oval). */
+.rc-notif-dot {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--rc-red);
+  border: 2px solid var(--rc-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--rc-font-heading);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--rc-white);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* Sized to exactly the 19x19 bell SVG so .rc-notif-dot's top/right offsets
+   above are measured against the icon itself, not the button's 38x38
+   circular hit target (added 2026-08-30 alongside the dot repositioning). */
+.rc-header-bell-icon-wrap { position: relative; display: flex; width: 19px; height: 19px; }
 .rc-header-account-text {
   display: none; /* shown from ~480px up, see the media query below -- too cramped on a phone-width header otherwise */
   flex-direction: column;
@@ -3258,19 +2852,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.03em;
   color: var(--rc-carbon);
 }
-/* Role pill (2026-09-21, Matt's call: "add a pill to the avatar section,
-   below the name, with the correct pill for the profile") -- was plain
-   text; now the same .rc-badge-role-* colored chip the Admin section's
-   Members list uses (see header.js's RC_HEADER_ROLE_PILL_CLASS_ and the
-   .rc-badge-role-* rules above), just scaled down to fit this compact
-   header stack. align-self keeps the pill from stretching to the name's
-   full width in the column flex layout; margin-top gives it a hair of
-   breathing room under the name above it. */
 .rc-header-account-role {
-  align-self: flex-start;
-  margin-top: 2px;
-  font-size: 9.5px;
-  padding: 1px 7px;
+  font-family: var(--rc-font-body);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--rc-steel);
 }
 .rc-header-account-menu {
   position: absolute;
@@ -3285,6 +2871,160 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   z-index: 1001;
 }
 
+/* Notification bell -- sits to the left of the avatar toggle, same
+   circular hover-button footprint the old separate caret used to have. */
+.rc-header-bell-toggle {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--rc-steel);
+  cursor: pointer;
+  padding: 0;
+}
+.rc-header-bell-toggle:hover,
+.rc-header-bell-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-carbon); }
+.rc-header-notif-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 60px; /* clears the avatar cluster to its right rather than overlapping it */
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  z-index: 1001;
+  overflow: hidden;
+}
+.rc-header-notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rc-silver);
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-carbon);
+}
+/* "Clear" (2026-09-01, Matt's call: "add a clear option to clear the
+   list") -- sits in the top-right corner of the dropdown, same row as the
+   "Notifications" label. Acknowledges/dismisses everything currently
+   showing at once (see _rcClearAllNotifications in header.js); hidden
+   whenever there's nothing to clear (see header.js's _rcRenderNotifList,
+   which toggles this via [hidden]). Plain text-link treatment, not a
+   button -- it's a secondary, low-emphasis action next to the header
+   label, not a primary action competing with the OK buttons below it. */
+.rc-header-notif-clear {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--rc-font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--rc-steel);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.rc-header-notif-clear:hover { color: var(--rc-red); }
+.rc-header-notif-clear[hidden] { display: none; }
+.rc-header-notif-list { max-height: 320px; overflow-y: auto; }
+.rc-header-notif-empty {
+  padding: 20px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rc-steel);
+}
+.rc-header-notif-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rc-silver);
+}
+.rc-header-notif-item:last-child { border-bottom: none; }
+/* Whole-row link variant (2026-09-02, Matt's call, sponsors notification
+   specifically: "get rid of the CHOOSE SPONSORS button... make the whole
+   message thing a link") -- .rc-header-notif-item is a <div> normally;
+   when the item itself is an <a> (see header.js's fullRowLink), reset the
+   anchor defaults (underline, link color, inline display) back to plain
+   text, add a pointer cursor and a hover tint so it still reads as
+   clickable without looking like a button. */
+.rc-header-notif-item-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.rc-header-notif-item-link:hover { background: var(--rc-offwhite); }
+.rc-header-notif-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rc-carbon);
+  text-align: left;
+}
+/* Replaces the old "OK" acknowledge button (2026-09-02, Matt's call: a
+   link straight to the page the notification is about, not just a way to
+   dismiss it). FIRST pass kept the old button's solid pill styling (dark
+   background, white text) even though the element itself was already an
+   <a> -- still read as a "physical button" sitting in the menu. REVISED
+   same day (Matt's call: "just make a linked text to the page") -- plain
+   underlined text in the site's own link-red, no background/border/
+   padding, same as any other inline link on the site (see the sitewide
+   `a`/`a:hover` rule up top). */
+.rc-header-notif-link {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rc-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rc-header-notif-link:hover { color: var(--rc-red-dark); }
+/* New-season notifications (2026-08-30) -- text + date stamp stacked in
+   their own column so the date sits under the message rather than
+   competing with it on one line; history entries below reuse
+   .rc-header-notif-item but muted, with no OK button (they're a read-only
+   record, see header.js's _rcDismissShownSeasonNotifs). */
+.rc-header-notif-text-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.rc-header-notif-text-col .rc-header-notif-text { flex: none; }
+.rc-header-notif-date {
+  font-size: 11px;
+  color: var(--rc-steel);
+}
+.rc-header-notif-history-head {
+  padding: 10px 14px 6px;
+  border-top: 1px solid var(--rc-silver);
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rc-steel);
+}
+.rc-header-notif-history-item { opacity: 0.65; }
+.rc-header-notif-history-item .rc-header-notif-text { color: var(--rc-steel); }
 .rc-header-menu-item {
   display: block;
   width: 100%;
@@ -3303,27 +3043,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-decoration: none;
 }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
-/* Divider between menu items (added 2026-09-18 for the League Hub /
-   Dashboard+Edit Profile / Logout grouping) -- light theme equivalent of
-   Account.html's dark-sidebar .rc-nav-divider. */
-.rc-header-menu-divider { border: none; border-top: 1px solid var(--rc-silver); margin: 6px 4px; }
 
 @media (min-width: 480px) {
   .rc-header-account-text { display: flex; }
 }
 
 /* Pages other than index.html sit below the fixed header. */
-.rc-auth-page { padding-top: 70px; }
-.rc-shell { padding-top: 70px; }
-.rc-topbar { margin-top: 70px; }
+.rc-auth-page { padding-top: 72px; }
+.rc-shell { padding-top: 72px; }
+.rc-topbar { margin-top: 72px; }
 /* THE ACTUAL BUG BEHIND THE PERSISTENT MOBILE GAP: the earlier mobile
    override (".rc-shell { padding-top: 0; }" in the @media block above)
    has the exact same specificity as the unconditional rule directly
    above this comment -- and since THIS one comes later in the file, it
    was winning on mobile too, silently cancelling that override back to
-   70px (formerly 72px) the whole time. Repeating the override here,
-   after the rule it needs to beat, guarantees it's actually the last
-   matching declaration so it wins for real. */
+   72px the whole time. Repeating the override here, after the rule it
+   needs to beat, guarantees it's actually the last matching declaration
+   so it wins for real. */
 @media (max-width: 768px) {
   .rc-shell { padding-top: 0; }
 }
@@ -3389,45 +3125,51 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 
 /* -------------------------------------------------------------------- */
-/* index.html — hero banner                                             */
+/* index.html — hero banner + scroll-cover effect                       */
 /*                                                                       */
-/* No longer `position: fixed` (2026-09-13, Matt's follow-up call: "the  */
-/* image should not be sticky anywhere... I want it to scale when the   */
-/* user shrinks the window"). The hero is sized by `aspect-ratio`        */
-/* instead of viewport height, so it scales proportionally with the      */
-/* window's WIDTH and never has to fill the screen top-to-bottom.        */
-/*                                                                       */
-/* `position: sticky` (2026-09-13, Matt's later follow-up call: "can we  */
-/* still stick the banner to the top of the webpage and have the bottom  */
-/* part scroll over top of it?") -- different from the old `fixed` setup */
-/* in one key way: `fixed` forces the element's SIZE to be computed      */
-/* from the viewport (which is why it needed `height: calc(100vh -      */
-/* 72px)` and a matching spacer div to fake scroll distance). `sticky`   */
-/* keeps the element's normal, in-flow size -- still driven by its own   */
-/* `aspect-ratio` below, so the width-based scaling still works -- and   */
-/* just pins it to `top: 72px` (right under the fixed header) once the   */
-/* page scrolls that far, while the space it would have occupied stays   */
-/* reserved in the document. That reserved space is exactly what lets    */
-/* .rc-hero-content (opaque background, higher z-index, right after it   */
-/* in the HTML) scroll up and visually cover the pinned banner once the   */
-/* user has scrolled roughly the banner's own height -- no spacer needed  */
-/* this time, sticky's reserved space does that job on its own.          */
-/* `margin-top: 70px` still clears the fixed header for the banner's      */
-/* normal (not-yet-stuck) position; `top: 70px` is what it sticks to      */
-/* once scrolled -- same 70px both times since that's the header's own    */
-/* height either way (locked at 70px, 2026-09-18). */
+/* The hero image is `position: fixed`, pinned just under the header,   */
+/* and a same-height spacer sits in the normal document flow above it   */
+/* so the page has real scroll distance. Because the hero is fixed it   */
+/* never moves; what makes it look "covered" is that the very next      */
+/* element after the spacer (.rc-hero-content) is a normal in-flow,     */
+/* opaque, higher-z-index block, so as the page scrolls that block      */
+/* slides up and passes directly over the fixed hero, hiding it. This   */
+/* is the reliable version of the effect: plain `position: sticky` on   */
+/* the hero with a lower z-index than its sibling does NOT reliably     */
+/* produce a "covered" look in every browser, because a sticky element  */
+/* and its following sibling don't automatically form the stacking      */
+/* relationship needed — you can end up with the sticky banner stuck    */
+/* under the header the whole time with nothing ever drawing over it,   */
+/* depending on how their stacking contexts resolve. Fixed + spacer     */
+/* sidesteps that entirely: it's plain document flow + z-index, no      */
+/* dependence on sticky's positioning quirks.                           */
+/* -------------------------------------------------------------------- */
+/* height is given twice on purpose: the plain `vh` value first as a
+   fallback for browsers that don't understand `dvh`, then `dvh` (dynamic
+   viewport height) right after so browsers that DO support it use that
+   instead -- CSS keeps whichever declaration is last and valid. This
+   matters specifically on mobile: `100vh` there is measured as if the
+   browser's address bar is always hidden, which it usually isn't, so the
+   spacer/hero end up taller than what's actually on screen and the
+   "anchored right under the header, page catches up to it on scroll"
+   effect drifts out of sync as the address bar shows/hides during
+   scrolling. `dvh` tracks the REAL visible viewport continuously, which
+   keeps the hero properly pinned directly under the header with no drift. */
+.rc-hero-spacer {
+  height: 100vh;
+  height: 100dvh;
+}
 .rc-hero {
-  position: sticky;
-  top: 70px;
-  margin-top: 70px;
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
   width: 100%;
-  /* banner.jpg's own pixel ratio (2:1 landscape) -- sizing the box off   */
-  /* the image's real proportions, rather than a fixed height, is what   */
-  /* lets it scale cleanly at any window width instead of ever being     */
-  /* stretched or letterboxed. */
-  aspect-ratio: 2 / 1;
+  max-width: 100vw;
+  height: calc(100vh - 72px);
+  height: calc(100dvh - 72px);
   z-index: 1;
-  background-image: url('../assets/images/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/images/ is a sibling of css/, not a child of it */
+  background-image: url('../assets/banner.jpg'); /* relative to THIS file (css/style.css), not the page -- assets/ is a sibling of css/, not a child of it */
   background-size: cover;
   /* left center, not plain center (2026-09-08, Matt's report: "the text on
      the left side keeps getting cut off when it gets pushed beyond the
@@ -3444,175 +3186,75 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background-repeat: no-repeat;
   background-color: var(--rc-carbon);
 }
-/* Portrait-swap image REMOVED (2026-09-13, Matt's follow-up call: "we can
-   get rid of the index page using a different banner for portrait mode
-   now that we have a scaling horizontal banner with text that also
-   scales"). This used to swap in a dedicated banner-portrait.jpg below
-   an aspect-ratio: 2/3 window threshold, back when the hero was sized
-   off the VIEWPORT (needing a differently-cropped image once the window
-   got too tall-and-narrow for the landscape crop to read well). Now that
-   .rc-hero is sized off its own aspect-ratio (2:1) and scales smoothly
-   with the window's WIDTH -- and the overlay text scales right along
-   with it -- the single landscape banner.jpg holds up at every window
-   shape on its own, so the second image and the swap rule are no longer
-   needed. banner-portrait.jpg itself was left alone in assets/images/ in case
-   it's wanted again later; only the CSS rule that referenced it is
-   gone. */
+/* A dedicated portrait-shaped image takes over from the standard
+   landscape one once the window's own SHAPE actually calls for it --
+   not a fixed pixel number in either dimension alone. History of how
+   this rule got here, all 2026-09-08, Matt's session:
+     1. Started as `max-width: 700px` (his report: "when the browser
+        window width shrinks, the banner extends beyond the browser
+        window... I want the width to scale down until it's at the point
+        where a vertical banner is more appropriate"), tightened to 550px
+        then 400px on follow-up asks for it to trigger later.
+     2. That was briefly OR'd with `(orientation: portrait)` too (fires
+        once a window is taller than it is wide) -- pulled back out when
+        Matt reported it "still flipping at 760px": with his browser
+        window around 760px tall, narrowing WIDTH below 760 alone made
+        the window taller-than-wide, tripping orientation regardless of
+        the max-width number, so the swap point was really "however tall
+        your window happens to be," not the pixel value he kept asking
+        for.
+     3. Pure width alone (just `max-width: 400px`, no orientation) was
+        tried next -- Matt didn't want this either ("I don't want it
+        driven by width alone... I want it to make sense"): a fixed
+        width ignores height completely, so a short-but-wide window could
+        cross under 400px and switch to portrait despite having plenty of
+        room, while a very tall narrow-ish window could stay on the
+        landscape crop too long.
+     4. Landed here: `aspect-ratio`, which is a genuine width-VS-height
+        comparison, not either dimension in isolation -- it reacts
+        correctly no matter how tall or short the window is. The
+        threshold itself, `max-aspect-ratio: 2/3`, is deliberately NOT
+        "as soon as the window stops being wide" (e.g. 1/1, square) --
+        Matt's follow-up call: "the banner isn't made for a square
+        orientation, just portrait, so it looks odd" when it flipped too
+        early. 2/3 is banner-portrait.jpg's OWN pixel ratio (1024x1536) --
+        the swap only happens once the window's box is at least that
+        portrait-shaped itself, so the image is never asked to fill a box
+        meaningfully squarer than the photo it's built for. Below that
+        point the landscape banner.jpg (2:1) stays put and just keeps
+        cropping tighter off the right (see the left-anchored
+        background-position on the plain .rc-hero rule above) --
+        genuinely square-ish windows now stay on the landscape crop
+        rather than switching to a portrait image that doesn't fit that
+        shape either. */
+@media (max-aspect-ratio: 2/3) {
+  /* background-position overridden to `left top` here (2026-09-08, Matt's
+     follow-up: "make the top stick to the top of the window when changing
+     size") -- same reasoning as the left-anchored crop above, just for
+     the vertical image's own top edge instead. The plain .rc-hero rule's
+     `left center` is vertically centered, which is right for the wide
+     landscape photo but wrong here: as the WINDOW'S HEIGHT changes (the
+     axis that actually varies once you're in this portrait image), a
+     vertically-centered `cover` crop trims off the top and bottom evenly,
+     so the top of the portrait photo drifts down out of frame the same
+     amount the bottom does. Anchoring to `top` instead keeps the top of
+     the image (and whatever's framed up there) pinned to the top of the
+     window at every height, with all the cropping coming off the bottom. */
+  .rc-hero { background-image: url('../assets/banner-portrait.jpg'); background-position: left top; }
+}
 /* Small watermark badge, bottom-right corner of the hero. .rc-hero is
-   `position: sticky`, which is itself a positioning context (same as
-   `relative` would be), so this can sit absolute against it directly
-   with no extra wrapper needed.
-
-   Fluid now, same clamp() approach as the hero text (2026-09-13, Matt's
-   follow-up call: "make the Race Club logo in the bottom right also
-   scale with the image but make it scale towards the bottom right of
-   the image so it stays locked into that part of the banner") -- was a
-   flat 52px with a single 600px-breakpoint jump to 38px. `bottom`/
-   `right` are themselves fluid too, not just `height`: shrinking a
-   bottom/right-anchored element by height ALONE (leaving bottom/right
-   fixed) would already look reasonably anchored, but scaling its inset
-   from the corner down in step with its own size is what actually
-   reads as "the badge scales toward that corner" rather than just
-   "the badge gets smaller while floating at a fixed distance from it" --
-   same 360px-to-1600px range as everything else on this component. */
+   `position: fixed`, which is itself a positioning context, so this can
+   sit absolute against it directly with no extra wrapper needed. */
 .rc-hero-badge {
   position: absolute;
-  /* Shifted up 35px and left 35px (2026-09-24, Matt's ask) -- same clamp
-     slope as before, just every number in it (min/preferred-constant/max)
-     bumped by 35 so the badge moves by exactly 35px at every viewport
-     width instead of only at one breakpoint. */
-  bottom: clamp(49px, 46.68px + 0.65vw, 57px);
-  right: clamp(49px, 46.68px + 0.65vw, 57px);
-  height: clamp(38px, 33.94px + 1.13vw, 52px);
+  bottom: 22px;
+  right: 22px;
+  height: 52px;
   width: auto;
   z-index: 2;
 }
-/* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
-   tagline, middle-left over the hero photo (2026-09-13, Matt's call).
-   Needs no extra positioning wrapper: .rc-hero is already `position:
-   sticky`, which is itself a positioning context, same reason
-   .rc-hero-badge above can sit `position: absolute` directly against it.
-   Font treatment matches every h1-h4 and .rc-eyebrow on the site --
-   var(--rc-font-heading), uppercase, bold -- rather than a one-off font,
-   per Matt's call to keep this matching the rest of the site's type
-   instead of introducing a second display face. */
-.rc-hero-text {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  /* Above dead-center (2026-09-13, Matt's follow-up call) -- stacked onto
-     the same translateY that centers the block, rather than a separate
-     top offset, so it stays exactly centered-then-shifted at every
-     viewport height. The offset itself is now fluid too (2026-09-13,
-     Matt's later follow-up: "make sure the text is scaling from the
-     same vertical point between all text fields so it scales at the
-     same point and looks the same when shrunk") -- 20px at 360px wide,
-     50px at 1600px and up, same 360-1600 range as every other clamp()
-     on this component. Before this it was a flat 50px at every width,
-     which on a short, shrunk block reads as a much bigger jump above
-     center than the same 50px does on a tall, full-size block -- that
-     mismatch was what made the block's vertical anchor point drift as
-     the window resized. */
-  transform: translateY(calc(-50% - clamp(20px, 11.29px + 2.42vw, 50px)));
-  z-index: 2;
-  /* Fluid instead of two fixed breakpoints (2026-09-13, Matt's follow-up
-     call: "make it scale smoothly as the window collapses") -- clamp()
-     between a 360px phone and a 1600px desktop, a straight linear ramp
-     in between, no jump at any particular width. Shifted 25px closer to
-     the edge (2026-09-13, second follow-up: "reduce the padding to the
-     left side... by 25px"), then another 10px (2026-09-13, third
-     follow-up: "move all text over to the left 10px") -- 125px at
-     1600px and up (was 160px originally), same slope throughout, just
-     moved closer to the window edge at every width each time.
-     Floor raised to 30px, not 0px (2026-09-13, Matt's follow-up calls:
-     first "keep the padding on the left side of the image so the text
-     doesn't shrink past the edge and get cut off", then "have it bottom
-     out at 10px padding on the left side instead") -- .rc-hero-title-shift
-     below pulls YOUR CAREER and the subtitle a further FIXED 20px left
-     of whatever this padding-left computes to, so once this hit its old
-     0px floor below ~640px wide, those two lines were landing at -20px
-     -- past the hero's own left edge and clipped off-screen. A 30px
-     floor here (20px of shift + Matt's requested 10px of breathing
-     room) guarantees that shifted position never goes below 10px,
-     whatever the window width. This affects EVERY line in .rc-hero-text
-     equally (YOUR CAREER, YOUR LEGACY, and the subtitle all share this
-     one padding-left); .rc-hero-title-shift below is the separate,
-     additional offset that pulls just two of those three lines further
-     left still. */
-  padding-left: clamp(30px, -50.48px + 10.97vw, 125px);
-  max-width: 100%;
-}
-.rc-hero-title {
-  font-family: var(--rc-font-heading);
-  /* Same fluid approach as padding-left above: 24px at 360px wide, 80px
-     at 1600px and up. */
-  font-size: clamp(24px, 7.74px + 4.52vw, 80px);
-  font-weight: 800;
-  font-style: italic;
-  line-height: 0.92;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-  margin: 0;
-}
-/* Left-justified (2026-09-13, Matt's follow-up call) -- YOUR CAREER and
-   YOUR LEGACY both sit flush against .rc-hero-text's own left padding
-   now, replacing the earlier staggered "CAREER offset inward" treatment. */
-.rc-hero-title-accent { color: var(--rc-red); }
-/* Shifted 20px left of the shared padding-left (2026-09-13, Matt's
-   follow-up call: "move the YOUR CAREER and subtitle to the left 20px.
-   Leave YOUR LEGACY where it's at") -- applied to just the first title
-   line and the subtitle, not .rc-hero-title as a whole, so YOUR LEGACY
-   stays flush with .rc-hero-text's own padding-left while these two
-   pull 20px further toward the window edge. A fixed px offset (not a
-   clamp()) since Matt asked for a flat 20px, not a value that scales
-   with viewport width like the padding-left/font-size clamps above. */
-.rc-hero-title-shift {
-  margin-left: -20px;
-}
-.rc-hero-subtitle {
-  font-family: var(--rc-font-heading);
-  /* Widened again (2026-09-13, Matt's follow-up call: "the subtitle...
-     still isn't changing size like the heading text above it") -- the
-     previous 18px-to-25px range only shrank by 28% end to end, next to
-     invisible compared to the title's dramatic 24px-to-80px swing (a
-     70% shrink), so it looked static by comparison even though it WAS
-     technically scaling. Now matches the title's own shrink RATIO
-     (min is 30% of max on both): 8px at 360px wide, 25px at 1600px and
-     up, so the subtitle visibly scales in step with the title instead
-     of barely moving next to it. */
-  font-size: clamp(8px, 3.06px + 1.37vw, 25px);
-  /* Thin, not bold (2026-09-13, Matt's follow-up call) -- contrasts
-     against the bold 800-weight title lines above it. */
-  font-weight: 300;
-  font-style: italic;
-  /* Widened from 0.1em (2026-09-13, Matt's follow-up call: "add a little
-     extra spacing between all the letters in the subtitle"). */
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-  /* Fluid now too, same reason as the block's own vertical offset above
-     (2026-09-13, Matt's follow-up: "scaling from the same vertical
-     point... looks the same when shrunk") -- 12px at 360px wide, 24px
-     at 1600px and up. Was a flat 24px at every width, which meant the
-     gap between YOUR LEGACY and the subtitle stayed full-size even as
-     the text around it shrank, throwing off the block's proportions at
-     narrow widths. */
-  margin-top: clamp(12px, 8.52px + 0.97vw, 24px);
-}
-/* Red underline spanning just "RACE - EARN - PROGRESS" (2026-09-13,
-   Matt's follow-up call) -- stops short of " - BE REMEMBERED", which
-   stays plain white text with no line under it. border-bottom instead
-   of text-decoration so the line's thickness/color/gap-from-text are
-   all controllable independently of the italic subtitle font. Both the
-   thickness and the gap are now fluid too (2026-09-13, Matt's follow-up
-   call: "make sure the subtitle and line also scales with the window
-   size change") -- same 360px-to-1600px clamp() range as the rest of
-   the hero text, so the line doesn't stay a fixed pixel weight while
-   the subtitle text it sits under shrinks and grows around it. */
-.rc-hero-subtitle-underline {
-  border-bottom: clamp(1px, 0.71px + 0.08vw, 2px) solid var(--rc-red);
-  padding-bottom: clamp(2px, 1.42px + 0.16vw, 4px);
+@media (max-width: 600px) {
+  .rc-hero-badge { height: 38px; bottom: 14px; right: 14px; }
 }
 /* Was var(--rc-white), the same pure white as .rc-card/.rc-panel/
    .rc-highlight-card sit on top of -- since .rc-site-footer (like every
@@ -3634,27 +3276,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   background: var(--rc-offwhite);
 }
 .rc-landing-inner { max-width: 960px; margin: 0 auto; padding: 56px 24px; }
-
-/* Discord community CTA strip (2026-09-24, Matt's ask) -- sits between
-   "What Is Race Club" and the "Why Race Club" section, a dark full-width
-   band so it reads as its own moment rather than another paragraph. */
-.rc-discord-cta { background: var(--rc-carbon); padding: 28px 24px; text-align: center; }
-.rc-discord-cta-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--rc-white);
-  text-decoration: none;
-  font-family: var(--rc-font-heading);
-  font-size: 17px;
-  font-weight: 700;
-}
-.rc-discord-cta-link:hover { color: var(--rc-gold); }
-.rc-discord-cta-link:hover .rc-discord-cta-logo { transform: scale(1.06); }
-.rc-discord-cta-logo { height: 32px; width: auto; flex: none; transition: transform 0.12s ease; }
-@media (max-width: 560px) {
-  .rc-discord-cta-link { flex-direction: column; gap: 10px; font-size: 15px; }
-}
 .rc-landing-inner h2 { font-size: 26px; }
 .rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }
 
@@ -3677,59 +3298,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* -------------------------------------------------------------------- */
 /* "Meet The Grid" teaser (2026-09-01) -- real Season 1 team cards, see  */
 /* index.html's own comment above the section for the full rationale.   */
-/* Restored to this exact original rule set on 2026-09-13 (Matt's call,  */
-/* after two reworks that didn't match what he actually wanted). Its own */
-/* look, not a reuse of .rc-highlight-card, per Matt's ask that the      */
-/* content read as "unique" -- a manufacturer logo + team identity       */
-/* header (mirroring how Current Seat/team-select already pair a logo   */
-/* with a team name elsewhere on the site), a thin red rule underneath   */
-/* standing in for a start/finish line, then the hype line.             */
+/* Deliberately its own look, not a reuse of .rc-highlight-card, per     */
+/* Matt's ask that the content read as "unique" -- a manufacturer logo + */
+/* team identity header (mirroring how Current Seat/team-select already */
+/* pair a logo with a team name elsewhere on the site), a thin red rule  */
+/* underneath standing in for a start/finish line, then the hype line.  */
 /* -------------------------------------------------------------------- */
-/* One column of per-class groups (2026-09-20) -- was a single flat
-   .rc-grid-teaser-row grid holding every team mixed together; split into
-   one group per class so each class's own cards start a fresh row (see
-   buildClassGroup_, index.html) and a rotated class label can sit next
-   to it. margin-top (was on .rc-grid-teaser-row itself) moved up here. */
-.rc-grid-teaser-groups { display: flex; flex-direction: column; gap: 36px; margin-top: 32px; }
-.rc-grid-teaser-class-group { position: relative; }
 .rc-grid-teaser-row {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
-}
-/* Rotated class-name label, forced to the left of its row without
-   consuming any of the row's own grid space (2026-09-20, Matt's ask: "to
-   the left of each row, please have a 90 degree ccw label of which class
-   that row of teams belongs to... don't move the cards in any further to
-   fit this label in, force the label to the left of the 1st card"). Sits
-   just inside .rc-landing-inner's own 24px side padding via a negative
-   left offset -- absolutely positioned (out of flow) so it never
-   consumes grid space.
-   2026-09-20 follow-up (Matt's catch): originally one label spanned the
-   whole group's height (top:0/bottom:0), so a class wrapping into 2+ rows
-   only got ONE label, centered against the group as a whole rather than
-   either row. Now layoutClassLabels_ (index.html) measures each actual
-   visual row and appends one label per row, setting top/height inline in
-   px to match that row exactly -- so every row a class wraps into gets
-   its own label, vertically centered against that row's own cards. No
-   default top/bottom here any more; JS always sets both before a label is
-   ever appended. */
-.rc-grid-teaser-class-label {
-  position: absolute;
-  left: -22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-silver-dark);
-  white-space: nowrap;
-  pointer-events: none;
+  margin-top: 32px;
 }
 .rc-grid-teaser-card {
   background: var(--rc-white);
@@ -3836,94 +3415,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-highlight-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
 
 /* -------------------------------------------------------------------- */
-/* "What You'll Need" (2026-09-18) -- full-bleed dark band, deliberately */
-/* not another row of white icon-top cards like "Why Race Club" right   */
-/* above it. Plain icon-left list with hairline dividers instead of     */
-/* boxed/shadowed cards, and an outlined (not filled) icon treatment --*/
-/* the composition itself reads as different, not just the color.      */
-/* -------------------------------------------------------------------- */
-.rc-needs-section {
-  background: var(--rc-carbon);
-}
-.rc-needs-section h2 { color: var(--rc-white); }
-.rc-needs-section .rc-landing-tagline { color: rgba(255, 255, 255, 0.7); }
-.rc-needs-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 32px;
-}
-.rc-needs-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 28px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-.rc-needs-item + .rc-needs-item { border-left: 1px solid rgba(255, 255, 255, 0.12); }
-.rc-needs-icon {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1.5px solid var(--rc-red);
-  color: var(--rc-red);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rc-needs-icon svg { width: 20px; height: 20px; }
-.rc-needs-body h3 { font-size: 15px; letter-spacing: 0.03em; color: var(--rc-white); }
-.rc-needs-body p { font-size: 13.5px; color: rgba(255, 255, 255, 0.65); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
-/* "our Discord server" inline link (2026-09-24, Matt's ask) -- the site's
-   one red accent against this section's dim body text, same underline-
-   on-hover convention as the rest of the site's text links. */
-.rc-needs-body p a { color: var(--rc-red); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.12s ease; }
-.rc-needs-body p a:hover { text-decoration-color: var(--rc-red); }
-@media (max-width: 860px) {
-  .rc-needs-list { grid-template-columns: 1fr; }
-  .rc-needs-item { border-left: none !important; }
-  .rc-needs-item + .rc-needs-item { border-top: 1px solid rgba(255, 255, 255, 0.12); }
-}
-
-/* -------------------------------------------------------------------- */
-/* "How It Works" steps (2026-09-13, then reworked same day per Matt's  */
-/* "no containers, just circles with numbers" call) -- deliberately NOT */
-/* a card component: no background, border, or shadow. Just a numbered  */
-/* red circle, a headline, and one line underneath, open against the    */
-/* page itself. Reads as a sequence rather than another set of claim    */
-/* cards, and visually distinct from "Why Race Club"/"What You'll Need" */
-/* right above and below it. 4/2/1 column breakpoints match the same    */
-/* pattern .rc-tier-row and .rc-details-row already use elsewhere.      */
-/* -------------------------------------------------------------------- */
-.rc-steps-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 32px; }
-@media (max-width: 900px) {
-  .rc-steps-row { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 560px) {
-  .rc-steps-row { grid-template-columns: 1fr; }
-}
-.rc-step-card { text-align: center; }
-.rc-step-number {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--rc-red);
-  color: var(--rc-white);
-  font-family: var(--rc-font-heading);
-  font-weight: 800;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-}
-.rc-step-card h3 { font-size: 15px; letter-spacing: 0.03em; }
-.rc-step-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
-
-/* -------------------------------------------------------------------- */
-/* Mid-page banner (assets/images/banner-highlights.jpg)                       */
+/* Mid-page banner (assets/banner-highlights.jpg)                       */
 /*                                                                       */
 /* Plain full-bleed image in normal document flow -- NOT the top hero's */
 /* fixed/spacer scroll-cover trick. It's meant to be scrolled past like */
@@ -3937,7 +3429,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   width: 100%;
   min-height: 340px;
   height: 46vh;
-  background-image: url('../assets/images/banner-highlights.jpg');
+  background-image: url('../assets/banner-highlights.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -3977,17 +3469,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    column breakpoints (same pattern as .rc-details-row elsewhere in this
    file) keep all 4 cards evenly sized at every width, rather than
    auto-fit/minmax's fractional-fit math leaving an odd one out. */
-/* 5 columns now (2026-09-20, LMGTE card added) -- was repeat(4, 1fr) with
-   900px/560px breakpoints; added a 1024px breakpoint to drop to 3 columns
-   before 5 get too cramped, otherwise unchanged. */
-.rc-tier-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 28px; }
-@media (max-width: 1024px) {
-  .rc-tier-row { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 640px) {
+.rc-tier-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
+@media (max-width: 900px) {
   .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 420px) {
+@media (max-width: 560px) {
   .rc-tier-row { grid-template-columns: 1fr; }
 }
 .rc-tier-card {
@@ -4001,34 +3487,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-tier-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(23, 23, 23, 0.24); }
 .rc-tier-card h3 { font-size: 17px; color: var(--rc-white); }
-.rc-tier-card p { font-size: 13px; color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
-/* Difficulty label (2026-09-13) -- replaces the old "Season 1"/"Future
-   Season" .rc-tier-label plus the .rc-tier-gate money-gate footer, now
-   that the page no longer gates classes by affordability. One label per
-   card instead of two, so it just takes over the old gate's footer
-   position/border-top treatment, colored to match each tier's accent. */
-.rc-tier-difficulty {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+.rc-tier-label {
   font-family: var(--rc-font-heading);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.rc-tier-card p { font-size: 13px; color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
+.rc-tier-gate {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase;
 }
-/* LMGTE (2026-09-20) -- matches --rc-class-lmgte (#e0791b), the same
-   orange used for this class's pill everywhere else on the site. */
-.rc-tier-orange { background: linear-gradient(160deg, #e0791b, #a8570f); }
-.rc-tier-orange .rc-tier-difficulty { color: #ffdcb0; }
 .rc-tier-bronze { background: linear-gradient(160deg, #a05a2c, #7c4420); }
-.rc-tier-bronze .rc-tier-difficulty { color: #f0c9a3; }
+.rc-tier-bronze .rc-tier-label { color: #f0c9a3; }
 .rc-tier-platinum { background: linear-gradient(160deg, #7d92a3, #4f6373); }
-.rc-tier-platinum .rc-tier-difficulty { color: #e3ebf0; }
+.rc-tier-platinum .rc-tier-label { color: #e3ebf0; }
 .rc-tier-silver { background: linear-gradient(160deg, #536575, #313d47); }
-.rc-tier-silver .rc-tier-difficulty { color: #d8dde1; }
+.rc-tier-silver .rc-tier-label { color: #d8dde1; }
 .rc-tier-gold { background: linear-gradient(160deg, #1f1f1f, #000000); }
-.rc-tier-gold .rc-tier-difficulty { color: #e6c15c; }
+.rc-tier-gold .rc-tier-label { color: #e6c15c; }
 
 /* -------------------------------------------------------------------- */
 /* Closing CTA band — dark bookend to the mid-banner/tier cards above   */
@@ -4056,76 +3540,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* Renamed from .rc-landing-footer -- this now runs on every page (Matt's
    call), not just index.html where it started, so "landing" stopped being
-   an accurate name. The footer BAR itself (background + border-top) still
-   spans the full page width -- only the text inside is narrowed, via
-   .rc-site-footer-inner below.
-   background: var(--rc-white) added 2026-09-21 (Matt's ask: "make the
-   foot background the same background color as the navbar background...
-   I think it's white") -- previously unset here, so the footer just
-   showed through body's own var(--rc-offwhite), reading slightly gray
-   against the pure-white .rc-fixed-header up top. league.css's old
-   body.rc-league-page .rc-site-footer override (which forced white just
-   on that one page, since its body is dark) is now redundant and has
-   been removed -- this is the sitewide default every page gets. */
+   an accurate name. Styling itself is unchanged. */
 .rc-site-footer {
-  background: var(--rc-white);
   text-align: center;
   padding: 22px 24px;
   font-size: 12px;
   color: var(--rc-steel);
   border-top: 1px solid var(--rc-silver);
 }
-/* 2026-09-20, Matt's ask: "the copyright at the bottom to not span the
-   whole width of the website but instead go as wide as the meet the grid
-   cards" -- and his follow-up catches: the footer BAR should still run
-   full width, only the note itself should narrow (so .rc-site-footer
-   above stays full-bleed, this inner wrapper is what's capped), and the
-   note should actually be as wide as league.html's Standings container
-   (.rcl-main, 1180px), not the 960px .rc-landing-inner width it started
-   at -- so this wrapper's max-width now matches .rcl-main instead. Added
-   around each page's footer text/button (see index.html etc.). */
-.rc-site-footer-inner {
-  max-width: 1180px;
-  margin: 0 auto;
-}
-/* .rc-site-footer-legal split out from the old single-paragraph footer
-   2026-09-21 (originally paired with a .rc-site-footer-copyright line
-   below it -- "Copyright Race Club 2026..." / "Created and developed with
-   the help of Claude AI." -- which Matt asked removed from every footer
-   the same day, so this is now the footer's only line). Kept as its own
-   class rather than folded back into .rc-site-footer-inner in case a
-   second line comes back later. */
-/* Footer "Legal Disclaimer" link (added 2026-09-20) -- a plain button
-   styled as inline text so it sits naturally in the footer's copyright
-   sentence rather than reading as a separate nav element; underlined red
-   like the site's other text links (.rc-social-chip) so it's still
-   obviously clickable against the muted footer text around it. */
-.rc-footer-legal-link {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-left: 4px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--rc-red);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.rc-footer-legal-link:hover { color: var(--rc-red-dark); }
-/* Legal disclaimer modal body typography (added 2026-09-20) -- the modal
-   shell itself (.rc-modal/.rc-modal-head/.rc-modal-body) is the same
-   generic one every popup on the site uses; this just styles the
-   section headings/paragraphs of the disclaimer text sitting inside it. */
-.rc-legal-text h4 {
-  margin: 18px 0 6px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--rc-carbon);
-}
-.rc-legal-text h4:first-of-type { margin-top: 0; }
-.rc-legal-text p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--rc-steel); }
-.rc-legal-updated { font-size: 11px; color: var(--rc-steel); margin: 0 0 14px; font-style: italic; }
 
 /* -------------------------------------------------------------------- */
 /* Generic modal (Manage Users' Edit action) — centered card over a      */
@@ -4159,15 +3581,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-bottom: 1px solid var(--rc-silver);
   position: sticky;
   top: 0;
-  /* z-index (2026-09-23, Matt's catch: "when scrolling up, I shouldn't
-     see the list behind the CHOOSE YOUR TEAM header. It should be
-     opaque.") -- this was already sticky with a solid white background,
-     but with no z-index a sticky element has no stacking priority over
-     later-in-DOM body content once it's pinned mid-scroll, so a card/row
-     that scrolls up underneath it could paint on top instead of behind
-     it. A plain z-index above the body's own stacking level fixes it for
-     every popup on the site, not just this one. */
-  z-index: 5;
   background: var(--rc-white);
   border-radius: 10px 10px 0 0;
 }
@@ -4188,95 +3601,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Wider variant for content-heavy popups (currently just the Season
    Creation Wizard) -- the default 460px is right for a short form like
    Edit User, but far too narrow for a multi-page wizard with paired
-   fields and per-race cards. Also used by the Season Format/Current Seat
-   Info popups (2026-09-24) -- same 820px as league.html's own (non-wide)
-   .rcl-modal-dialog, so the Season Format popup opens to the same width
-   whether it's reached from Account.html or League Hub. */
+   fields and per-race cards. */
 .rc-modal-wide { max-width: 820px; }
-/* Calendar popup only, 50px wider than the shared .rc-modal-wide (Matt's
-   ask, 2026-09-24) -- see openCalendarModal, which adds this class
-   alongside wide:true rather than changing .rc-modal-wide itself. */
-.rc-modal-calendar-wide { max-width: 870px; }
-
-/* Accent header variant -- opt-in via showModal(title, {accentHead:true}).
-   Used by popups whose content reads as a full account-page "page" of its
-   own (Season Format, Current Seat Info) rather than a short form, so
-   their header matches the bold-uppercase / red-2px-underline treatment
-   every other Account.html card and panel title already uses
-   (.rc-dash-card-title, .rc-cal-season-head, etc.) instead of the plain
-   small-text / thin-gray-line default every short form popup (Edit
-   Profile, Add Track, ...) keeps unchanged. Compound-selected against
-   .rc-modal-head for specificity, so it reliably wins over that class's
-   own border-bottom regardless of source order. */
-.rc-modal-head.rc-modal-head-accent { border-bottom: 2px solid var(--rc-red); }
-.rc-modal-title-accent {
-  margin: 0;
-  font-family: var(--rc-font-heading);
-  font-size: 20px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rc-carbon);
-}
-
-/* "Bubble" stat tiles for the Season Format/Current Seat Info popups
-   (2026-09-24) -- the account-styled equivalent of league.html's own
-   .rcl-hero-stat/-value/-label ("details bubbles," see league.css), which
-   the first pass of the Season Format popup missed entirely (it reused
-   the plain, borderless .rc-cs-stat tile instead). Same value-over-label,
-   centered, bordered-rounded-rectangle shape, just in the account page's
-   white/offwhite/steel tokens instead of league.html's dark-hero ones.
-   .rc-seasonfmt-group-label is the matching gray pill this popup's "This
-   Season"/"League Format" (or, on Current Seat Info, its own group
-   headers) group headers use -- same shape as league.html's own
-   .rcl-hero-stats-label/.rcl-pill-label pill. */
-.rc-seasonfmt-group { margin-top: 20px; }
-.rc-seasonfmt-group:first-child { margin-top: 0; }
-.rc-seasonfmt-group-label {
-  display: inline-flex;
-  align-items: center;
-  /* Graphite fill (2026-09-24, Matt's ask) instead of the plain offwhite/
-     silver-bordered pill every other group label on the site uses -- same
-     dark-neutral token member badges use (--rc-graphite, see
-     .rc-badge-graphite), white text for contrast against it. */
-  background: var(--rc-graphite);
-  color: var(--rc-white);
-  border: 1px solid var(--rc-graphite);
-  border-radius: 5px;
-  padding: 3px 10px;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-.rc-seasonfmt-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.rc-seasonfmt-stats-row + .rc-seasonfmt-stats-row { margin-top: 8px; }
-.rc-seasonfmt-stat {
-  background: var(--rc-offwhite);
-  border: 1px solid var(--rc-silver);
-  border-radius: 6px;
-  padding: 6px 10px;
-  min-width: 74px;
-  text-align: center;
-}
-.rc-seasonfmt-stat-value {
-  font-family: var(--rc-font-heading);
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--rc-carbon);
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.rc-seasonfmt-stat-label {
-  margin-top: 2px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rc-steel);
-}
 
 /* Body scroll lock while ANY popup (showModal(), Account.html) is open --
    same iOS-Safari-safe pattern as .rc-scroll-locked (position: fixed, not
@@ -4380,6 +3706,12 @@ body.rc-modal-scroll-locked {
 .rc-wiz-field-row-3 .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
 @media (max-width: 640px) {
   .rc-wiz-field-row-3 { grid-template-columns: 1fr; }
+}
+/* Special event bonus category payouts -- two columns of label+box pairs
+   instead of one long stacked column (Matt's call). */
+.rc-bonus-payout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+@media (max-width: 640px) {
+  .rc-bonus-payout-grid { grid-template-columns: 1fr; }
 }
 .rc-wizard-subhead {
   font-family: var(--rc-font-heading);
@@ -4723,43 +4055,9 @@ body.rc-modal-scroll-locked {
 .rc-placeholder-panel { text-align: center; padding: 90px 20px; }
 .rc-placeholder-panel p { margin-top: 10px; }
 
-/* Whole-page "nothing to show" empty state (2026-09-18) -- replaces the
-   old bordered .rc-panel + heading + sentence Calendar/Results/Career
-   used to show for "no season"/"nothing on file." Big icon, a shade
-   darker than the page's own off-white background, no box around it --
-   reads as an intentional state, not another wall of text. */
-.rc-empty-state { text-align: center; padding: 90px 20px; }
-.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 26px; }
-.rc-empty-state-icon svg { width: 160px; height: 160px; }
-.rc-empty-state-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; color: var(--rc-steel); letter-spacing: 0.02em; }
-.rc-empty-state-subtitle { font-size: 13px; color: var(--rc-steel); opacity: 0.75; margin-top: 8px; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
-
 /* Forced password-change lock screen (mustChangePassword) */
 .rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
 .rc-forced-password-wrap > p { color: var(--rc-steel); margin-bottom: 14px; }
-
-/* Session-expired lock screen (2026-09-18) -- shown in place of the
-   dashboard when the background token check comes back invalid, now
-   that the header paints optimistically instead of waiting for that
-   check first. Same shape as the password-change lock above (one
-   centered panel, sidebar/topbar hidden) but with its own icon-circle +
-   heading treatment since this is a dead end, not a form to fill out. */
-.rc-session-locked-wrap { max-width: 380px; margin: 90px auto; text-align: center; }
-.rc-session-locked-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--rc-offwhite);
-  color: var(--rc-steel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-}
-.rc-session-locked-icon svg { width: 26px; height: 26px; }
-.rc-session-locked-wrap h2 { font-size: 19px; }
-.rc-session-locked-wrap p { color: var(--rc-steel); margin-top: 8px; margin-bottom: 22px; line-height: 1.55; }
-.rc-session-locked-wrap .rc-btn-primary { display: inline-block; text-decoration: none; }
 
 /* -------------------------------------------------------------------- */
 /* THEMED TOOLTIP -- generic, sitewide hover bubble. Add class          */
@@ -4836,19 +4134,11 @@ body.rc-modal-scroll-locked {
 /* border, radius) rather than inventing a new card style.               */
 /* -------------------------------------------------------------------- */
 .rc-cal-season { }
-/* Now a flex row (2026-09-19, Matt's call: "move the class pills to the
-   top right of the container, similar to how some cards on the dash have
-   text or pills in the right corner") -- same shape as a Dashboard card's
-   own .rc-dash-card-header-row, title on the left, corner content (class
-   pills here) on the right. The red underline moved here from the title
-   itself, so it spans the whole row including the pills, not just the
-   text. */
-/* align-items: center, not baseline (2026-09-19, Matt's call: "make the
-   class pills vertically centered with the header") -- baseline aligned
-   the pill row to the h3 title's text baseline, which sat the pills
-   noticeably low against the title's own cap-height/line-box. */
-.rc-cal-season-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
-.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
+.rc-cal-season-head { margin-bottom: 16px; }
+/* Same red underline as .rc-dash-card-title (Matt's call: every section
+   header on the site reads the same way) instead of a bare heading. */
+.rc-cal-season-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
+
 /* Season-wide settings block (server password, classes, points tables,
    drop weeks, race day/frequency, track limits, private qualifying) --
    sits below the season name, above the race list, per Matt's call.
@@ -4860,26 +4150,22 @@ body.rc-modal-scroll-locked {
    already separates the header from this block. */
 .rc-cal-season-details { margin-top: 16px; }
 .rc-cal-season-details-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); margin: 0 0 10px; }
-/* Season Format grid (renamed from "Season Settings," 2026-09-19, Matt's
-   call: "gives all the information of the league without using the
-   pills that are currently there"). First built as one row per detail,
-   which Matt caught the same day as "takes up an enormous amount of
-   space" -- reworked into a wrapping grid of small tiles (several share
-   a row, so ~13 details collapse from stacked lines down to 2-3 rows,
-   well under a third of the old list's height), then finished as actual
-   gray-bordered rounded-rectangle pills (same-day follow-up: "adding
-   gray bordered, rounded rectangle pills to hold each information and
-   centering the value in the pill would clean it up further... make the
-   space in between each pill the same for the section and the padding
-   the same within the pill") -- one uniform `gap` (equal horizontally
-   and vertically, not the wider-between-columns-than-rows spacing the
-   plain-tile version had) and one uniform `padding` (all four sides
-   equal, not the tighter-vertical/looser-horizontal padding a text
-   block would use) are both what "the same" means here. A tile with a
-   longer detail (the Sprint/Medium/Long points lists) carries it in a
-   hover tooltip via withTooltip rather than widening the pill. */
-.rc-cal-format-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.rc-cal-format-list + .rc-cal-format-list { margin-top: 10px; }
+
+.rc-cal-classes { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.rc-cal-classes-label { font-size: 12px; color: var(--rc-steel); margin-right: 2px; }
+/* Same shape as .rc-cs-class-pill (Current Seat card) -- rounded
+   rectangle, not an oval pill (Matt's call: every class badge on the
+   site uses this one shape). */
+.rc-cal-class-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rc-white);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 
 .rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
 
@@ -4900,148 +4186,166 @@ body.rc-modal-scroll-locked {
   font-size: 13px;
   font-weight: 600;
   text-align: center;
-  text-transform: uppercase; /* "BYE WEEK" (2026-08-30, Matt's call) -- markup text stays normal-case, same pattern as .rc-cal-completed-badge's "Completed" */
+  text-transform: uppercase; /* "BYE WEEK" (2026-08-30, Matt's call) -- markup text stays normal-case, same pattern as .rc-cal-completed-overlay's "Event Completed" */
   background: var(--rc-offwhite);
 }
 .rc-cal-bye-date { font-size: 11px; font-weight: 400; text-transform: none; } /* the date stays normal-case even though .rc-cal-bye above it is all-caps */
 
-/* Race row -- redesigned 2026-09-24 (Matt's ask: "make the race calendar
-   layout look identical to the league.html calendar race layout, ...
-   keep the same colors as the current account calendar but I want the
-   font and layout and text weight to all match the league page"). Same
-   flex "round-number bar + body" shape league.html's own .rcl-cal-row
-   uses (see css/league.css), just in Account's own light-page tokens
-   (--rc-carbon/--rc-steel/--rc-red/--rc-silver-dark/--rc-white/--rc-gold)
-   instead of league's dark theme. position: relative so nothing needs to
-   pin to a corner overlay any more -- the old full-card dimmed
-   "Completed" overlay is gone, replaced by fading the row's own content
-   (see .rc-cal-finished below), same as league.html's own
-   .rcl-cal-row-finished. */
+/* Flex row -- .rc-cal-race-body (everything but the image) grows to fill
+   the space, .rc-cal-track-img sits fixed-size on the right. position:
+   relative so .rc-cal-completed-overlay below can cover the whole card. */
 .rc-cal-race {
   position: relative;
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   overflow: hidden;
   /* 2px, not 1px (2026-08-30, Matt's call: "make each race container have
-     a gray border similar to the size of the gold special event border").
-     --rc-silver-dark (2026-09-20, Matt's follow-up call to darken it
-     slightly) instead of the standard --rc-silver every other hairline
-     border on the site uses. */
-  border: 2px solid var(--rc-silver-dark);
+     a gray border similar to the size of the gold special event border")
+     -- .rc-cal-race-special below only overrides the color, not the
+     width, so a normal and a special card now read as the same weight of
+     border, just a different color. */
+  border: 2px solid var(--rc-silver);
   border-radius: 8px;
   background: var(--rc-white);
+  padding: 16px 18px;
   width: 100%;
 }
-/* UP NEXT row highlight -- a barely-there tint instead of league.html's
-   translucent-white wash (which only reads against a dark background),
-   same "identify it at a glance without the whole row shouting" intent. */
-.rc-cal-race-next { background: var(--rc-offwhite); }
-/* Special Events get a gold-tinted border (Matt's call: "stick out a
-   little better") -- the round bar below reads gold too. */
-.rc-cal-race-special { border-color: var(--rc-gold); }
-
-/* Round-number bar -- back (2026-09-24) after being folded into a
-   "ROUND N:" title prefix on 2026-09-19; same silver metallic gradient
-   league.html's .rcl-cal-round uses for a normal round, gold for a
-   Special Event, so the two read as different metals at a glance. */
-.rc-cal-round-bar {
+/* Round number bar, left edge of the card (2026-09-09, Matt's call:
+   "instead of a giant number, take the gray border from the top of each
+   race container, make it a lot taller vertically, and insert the round
+   number inside that border in white font") -- this replaces BOTH the
+   old giant faded number AND the old horizontal top accent strip in one
+   move. It IS that same gray accent, just turned from a short strip
+   along the top into a full-height bar down the card's left edge, with
+   the round number set in white inside it. Negative margins bleed it
+   out to the card's own edges (.rc-cal-race has 16px/18px padding);
+   .rc-cal-race's overflow:hidden clips it to match the card's own
+   rounded corners. Special Events/byes never render this element at all
+   (see raceCard()) -- they keep their own separate gold top accent
+   instead (.rc-cal-race-special::before, unchanged). */
+.rc-cal-round-number {
   flex: none;
+  align-self: stretch;
   width: 56px;
+  margin: -16px 0 -16px -18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
+  background: var(--rc-silver);
   font-family: var(--rc-font-heading);
-  font-size: 22px;
-  font-weight: 900;
+  font-size: 26px;
   line-height: 1;
-  color: #1c1d20;
-  text-align: center;
+  font-weight: 900;
+  color: #fff;
   user-select: none;
 }
-.rc-cal-round-bar-special {
-  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
-  color: #241b04;
+/* Special Events get a bit more of the same gold the star icon already
+   uses (Matt's call: "stick out a little better") -- a gold-tinted
+   border plus the same diagonal "finish flag" accent shape the Dashboard
+   cards use, just gold instead of red (and gold instead of the gray every
+   other race card now gets). */
+.rc-cal-race-special { border-color: #b8860b; }
+.rc-cal-race-special::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 4px;
+  background: #b8860b;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
-
-.rc-cal-race-body { flex: 1 1 auto; min-width: 0; padding: 14px 16px; }
+.rc-cal-race-body { flex: 1 1 auto; min-width: 0; }
+/* Track image, right side of every race/special-event card -- Matt's
+   call: assets/tracks/{TrackID}.png, in a fixed 100x100 box (2026-08-30,
+   reduced from 150px), object-fit:contain to keep the image's own aspect
+   ratio while object-position centers it inside that box both ways --
+   a wide (horizontal) layout and a tall (vertical) one land centered in
+   the same box instead of hugging a corner. align-self:center centers
+   the whole box vertically against the round-number/details next to it,
+   rather than pinning it to the top of a taller card. A round with no
+   image uploaded yet (404) hides itself silently via the onerror handler
+   in raceCard() -- no broken-image icon. */
+.rc-cal-track-img {
+  flex: none;
+  align-self: center;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  object-position: center center;
+  border-radius: 6px;
+}
+/* Track image drops to its own row below the round-number+text side on
+   narrow/mobile widths, instead of squeezing into the same row as
+   everything else (2026-09-09, Matt's call: "if the browser is too
+   narrow, don't force everything onto the same row... let the track
+   image fall to the next row below the info so it's not overlapping").
+   .rc-cal-track-img is flex:none (never shrinks below its fixed 100px
+   box) and .rc-cal-race-body's own min-width:0 lets it shrink all the
+   way down to nothing, so below this width there just isn't room for
+   the round-number bar, the image, AND readable text all on one line --
+   flex-wrap alone would just as easily wrap the round-number bar away
+   from the body it belongs next to, so the real fix is giving the body
+   a real min-width here: the wrapping algorithm decides line breaks
+   using each item's hypothetical (pre-shrink) size, so a body that's
+   guaranteed at least 220px keeps it paired with the round-number bar
+   on the first line every time, leaving the image as the one thing that
+   doesn't fit and wraps to its own line below (centered there via the
+   classic flex auto-margin trick, since it's alone on that line). */
 @media (max-width: 560px) {
   .rc-cal-race { flex-wrap: wrap; }
   .rc-cal-race-body { min-width: 220px; }
+  .rc-cal-track-img { margin: 12px auto 0; }
 }
 
-.rc-cal-race-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-/* Combined "<event> at <track>: <layout>" line, same three-piece shape
-   league.html's own .rcl-cal-event uses -- event name bold, track normal
-   weight, layout normal weight but dimmer, all in Account's own ink
-   colors instead of league's white/gray. */
-/* Bumped from 15px (2026-09-24, Matt's ask: "increase the size of the
-   event/track/layout name by a little to make it more pronounced"),
-   same proportional bump as league.html's own .rcl-cal-event. */
-.rc-cal-race-event { font-size: 16.5px; }
-.rc-cal-race-event-name { font-weight: 800; color: var(--rc-carbon); }
-.rc-cal-race-event-track { font-weight: 500; color: var(--rc-carbon); }
-.rc-cal-race-event-layout { font-weight: 500; color: var(--rc-steel); }
-.rc-cal-race-star { display: inline-flex; align-items: center; color: var(--rc-gold); margin-left: 6px; }
-/* Special Events read one uniform gold across the whole event line, same
-   as league.html's .rcl-cal-row-special treatment. */
-.rc-cal-race-special .rc-cal-race-event,
-.rc-cal-race-special .rc-cal-race-event-name,
-.rc-cal-race-special .rc-cal-race-event-track,
-.rc-cal-race-special .rc-cal-race-event-layout {
-  color: var(--rc-gold);
-}
-
-/* Status word, upper-right of the row -- UP NEXT/SCHEDULED/COMPLETED
-   (Matt's exact wording), same font-heading/uppercase/letter-spacing
-   treatment as league.html's .rcl-cal-status. The results-posted note
-   stacks BELOW it as its own line (Matt's ask) rather than league's one
-   combined "COMPLETED · OFFICIAL RESULTS POSTED" string. */
-.rc-cal-race-status-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; text-align: right; }
-.rc-cal-race-status {
+/* Gray semi-transparent overlay + large bold "EVENT COMPLETED" label,
+   covering the whole card once its start time has passed (Matt's call --
+   replaces the old faded-background + small "Completed" pill treatment).
+   text-transform:uppercase does the all-caps so the markup itself can
+   stay normal-case ("Event Completed") for accessibility/copy-paste. */
+.rc-cal-completed-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 32, 36, 0.62);
+  color: var(--rc-white);
   font-family: var(--rc-font-heading);
-  font-size: 11px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--rc-steel);
-}
-.rc-cal-race-status-up { color: var(--rc-red); }
-.rc-cal-race-status-note {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--rc-steel);
-}
-/* Preliminary reuses the site's one gold accent so "not final yet" reads
-   as an amber/caution note, same convention league.html's own
-   .rcl-cal-status-preliminary uses. */
-.rc-cal-race-status-note-preliminary { color: var(--rc-gold); }
-
-/* Faded row once a round's start time has passed (2026-09-24, matching
-   league.html's .rcl-cal-row-finished) -- dims the round bar/event/meta/
-   in-game line, but deliberately NOT the status word or its results note,
-   so the COMPLETED/results phrase stays fully legible against the row. */
-.rc-cal-race.rc-cal-finished .rc-cal-round-bar,
-.rc-cal-race.rc-cal-finished .rc-cal-race-datetime,
-.rc-cal-race.rc-cal-finished .rc-cal-race-event,
-.rc-cal-race.rc-cal-finished .rc-cal-race-meta {
-  opacity: 0.5;
+  text-align: center;
+  padding: 0 20px;
 }
 
-/* Day/date/time the race starts -- plain text above the event title
-   (2026-09-24, Matt's ask), not a pill. Sits above .rc-cal-race-head. */
-.rc-cal-race-datetime { font-size: 12px; font-weight: 600; color: var(--rc-steel); margin-bottom: 4px; }
+.rc-cal-race-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* Same size/weight/case treatment as "REGISTERED FOR <season name>" and
+   the Current Seat team name (Matt's call: every event name on the site
+   reads at the same weight) instead of its own bigger/lighter/lowercase
+   style. */
+.rc-cal-race-name { display: flex; align-items: center; gap: 6px; font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rc-carbon); }
+/* Star marks a special/named event (Matt: "any special events have a
+   star next to the race name") -- normal rounds have no star, no name,
+   just "Race 0N". */
+.rc-cal-race-star { display: inline-flex; align-items: center; color: #b8860b; }
 
-/* Meta chip row -- race length, In-Game Event Time, Weather, and (when
-   set) Password Override, reusing the site's shared .rc-cal-stat chip
-   (below) same as every other pill row on the site. */
-.rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
-
+/* Light divider under the track name/layout line (2026-08-30, Matt's
+   call), separating it from the date/time row below it -- same offwhite
+   weight used elsewhere on the site for a subtle row divider (e.g.
+   .rc-dm-subrow-edit's border-top). Back to running the full card width
+   (2026-08-31, Matt's call: "back to the original length") -- the
+   2026-08-30 "shrink to fit the text" treatment is reverted; plain
+   block-level width again instead of inline-block/fit-content. */
+.rc-cal-track { display: block; font-size: 13px; color: var(--rc-steel); margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-cal-track strong { color: var(--rc-carbon); font-weight: 600; }
+/* Layout name -- sits right next to the track name (Matt's call), same
+   line, visually secondary (regular weight, steel color) so the track
+   name itself stays the strongest thing in the row. */
+.rc-cal-layout { color: var(--rc-steel); font-weight: 400; }
 
 .rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
 .rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
@@ -5070,6 +4374,11 @@ body.rc-modal-scroll-locked {
   color: var(--rc-carbon);
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
+/* Special Event's Prize Pool chip -- same gold as the star icon, more of
+   it (Matt's call), so the money chip itself reads as special too instead
+   of blending into the same gray chip as every other stat. */
+.rc-cal-stat-gold { background: rgba(184, 134, 11, 0.1); border-color: #b8860b; color: #8a6508; }
+.rc-cal-stat-gold svg { color: #b8860b; }
 /* Extra breathing room after the Qualifying-length chip, before the
    Sprint/Medium/Long race-length chips in Season Settings (2026-08-30,
    Matt's call) -- marks that boundary without widening .rc-cal-stats' own
@@ -5077,114 +4386,56 @@ body.rc-modal-scroll-locked {
 .rc-cal-stat-gap-after { margin-right: 22px; }
 
 /* -------------------------------------------------------------------- */
-/* Account.html's Help section (renderHelpSection()) -- redesigned        */
-/* 2026-09-18 (Matt's call: "make the styling of the containers           */
-/* consistent with the rest of the website account pages... add icons    */
-/* for sections that show icons on the page... more human-friendly, not  */
-/* a container of boring text"). Every panel now uses "rc-panel rc-dash- */
-/* card" + "rc-dash-card-title", the same featured-panel chrome (red     */
-/* underline, checkered corner) Calendar/Results/League Management/      */
-/* Admin already use, instead of a plain unstyled box. This briefly      */
-/* lived as its own page (help.html) so the Rulebook would have room to  */
-/* grow, but that page dropped the sidebar/nav chrome entirely -- Matt's */
-/* call to fold it back into Account.html as an ordinary section        */
-/* instead, same shell as every other link. ".rc-rulebook-section"'s     */
-/* scroll-margin-top (76px) happens to already clear the site's 70px     */
-/* fixed header with a little room to spare.                             */
+/* Account.html's Help section (renderHelpSection()) -- two stacked      */
+/* .rc-panel containers, Website Help then Rules and Regulations (the    */
+/* Rulebook). This briefly lived as its own page (help.html) so the      */
+/* Rulebook would have room to grow, but that page dropped the sidebar/  */
+/* nav chrome entirely -- Matt's call to fold it back into Account.html  */
+/* as an ordinary section instead, same shell as every other link.       */
+/* ".rc-rulebook-*" below was originally written for a Rulebook POPUP    */
+/* that never actually got wired up -- .rc-rulebook-section's            */
+/* scroll-margin-top (76px) happens to already clear the site's 72px     */
+/* fixed header almost exactly, which is why it's untouched here even    */
+/* though the popup it was tuned for never shipped.                      */
 /* -------------------------------------------------------------------- */
 .rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
-
-/* "About Race Club" -- Matt's personal note (2026-09-18), not a product
-   description. Slightly roomier line-height than the rest of Help since
-   it's meant to read like a written note, not reference material; the
-   last (placeholder-disclosure) paragraph is italic and a touch muted so
-   it reads as an aside once real copy replaces the rest. */
-.rc-about-blurb p { font-size: 13.5px; color: var(--rc-carbon); line-height: 1.65; margin: 0 0 14px; }
-.rc-about-blurb p:last-child { margin-bottom: 0; color: var(--rc-steel); }
-/* Signature image slot -- hidden entirely via the <img>'s own onerror
-   until assets/images/signature.png actually exists (Account.html), so this
-   never shows a broken-image icon in the meantime. */
-.rc-about-signature { margin-top: 18px; }
-.rc-about-signature img { max-height: 56px; display: block; }
-
-/* "Need Help?" -- icon-led contact rows, same shape as index.html's
-   "What You'll Need" list, instead of a plain bulleted <ul>. */
-.rc-help-contact-list { display: flex; flex-direction: column; gap: 14px; }
-.rc-help-contact-row { display: flex; align-items: center; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
-.rc-help-contact-icon {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1.5px solid var(--rc-red);
-  color: var(--rc-red);
+.rc-help-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--rc-carbon); }
+/* Page-by-page how-to content (2026-09-09) -- reuses the Rulebook's own
+   h4/p/ul sizing so the two panels read as one visual family, but without
+   .rc-rulebook-section's top border/margin between entries: this reads as
+   one continuous walkthrough, not a chain of numbered sections. */
+.rc-help-content { margin-top: 18px; }
+.rc-help-content h4 { font-family: var(--rc-font-heading); font-size: 14px; color: var(--rc-carbon); margin: 18px 0 6px; }
+.rc-help-content h4:first-child { margin-top: 0; }
+.rc-help-content p, .rc-help-content li { font-size: 13px; color: var(--rc-carbon); line-height: 1.6; }
+.rc-help-content p { margin: 0 0 10px; }
+.rc-help-content ul { margin: 6px 0 12px; padding-left: 20px; }
+.rc-rulebook-index {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rc-help-contact-icon svg { width: 15px; height: 15px; }
-
-/* "How To Use This Site" -- one icon card per page, replacing the old
-   stacked h4/p walkthrough. Lighter treatment than .rc-highlight-card
-   (offwhite fill, no shadow/hover-lift) since these already sit inside a
-   featured rc-dash-card panel -- a shadowed card inside a shadowed card
-   would read as heavy, not polished. */
-.rc-help-guide-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin-top: 4px;
-}
-.rc-help-guide-card {
-  background: var(--rc-offwhite);
-  border: 1px solid var(--rc-silver);
-  border-radius: 8px;
-  padding: 16px;
-}
-.rc-help-guide-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: linear-gradient(160deg, var(--rc-carbon), #2c2c2c);
-  color: var(--rc-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-.rc-help-guide-icon svg { width: 17px; height: 17px; }
-.rc-help-guide-card h4 { font-family: var(--rc-font-heading); font-size: 13.5px; color: var(--rc-carbon); margin: 0 0 6px; letter-spacing: 0.02em; }
-.rc-help-guide-card p { font-size: 12.5px; color: var(--rc-steel); line-height: 1.55; margin: 0; }
-
-/* Rulebook "Jump To A Section" quick-nav (2026-09-18, replaces the old
-   single-column .rc-rulebook-index list) -- a wider chip grid so more of
-   the table of contents is visible at once, sitting right under the
-   intro note instead of blending into it. */
-.rc-rulebook-nav {
+  flex-direction: column;
+  gap: 3px;
   padding: 16px;
   border: 1px solid var(--rc-silver);
   border-radius: 8px;
   background: var(--rc-offwhite);
   margin-bottom: 24px;
 }
-.rc-rulebook-nav-title { font-family: var(--rc-font-heading); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rc-steel); margin-bottom: 10px; }
-.rc-rulebook-nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
 /* Categories shown in red (Matt's call: "categories in the HELP menu
    should be red to distinguish them") -- each link gets real padding and
    a rounded hit area instead of sitting flush against its neighbors, so
-   the grid reads as a set of distinct chips, not one cramped block of
+   the list reads as a set of distinct rows, not one cramped block of
    text. Draft (not-yet-written) sections stay muted steel so the two
    states stay easy to tell apart at a glance. */
-.rc-rulebook-nav-link {
+.rc-rulebook-index a {
   font-size: 13px;
   color: var(--rc-red);
   text-decoration: none;
   padding: 7px 10px;
   border-radius: 5px;
 }
-.rc-rulebook-nav-link:hover { color: var(--rc-red-dark); background: var(--rc-white); }
-.rc-rulebook-nav-link.rc-rulebook-draft { color: var(--rc-steel); }
-.rc-rulebook-nav-link.rc-rulebook-draft:hover { color: var(--rc-carbon); background: var(--rc-white); }
+.rc-rulebook-index a:hover { color: var(--rc-red-dark); background: var(--rc-white); }
+.rc-rulebook-index a.rc-rulebook-draft { color: var(--rc-steel); }
+.rc-rulebook-index a.rc-rulebook-draft:hover { color: var(--rc-carbon); background: var(--rc-white); }
 
 /* scroll-margin-top clears the modal's sticky header (see .rc-modal-head)
    -- without it, jumping here from the index puts the section heading
@@ -5208,11 +4459,5 @@ body.rc-modal-scroll-locked {
   color: var(--rc-steel);
 }
 .rc-rulebook-callout ul { margin: 6px 0 0; padding-left: 18px; }
-
-/* CAREER PAGE removed entirely (2026-09-24, Matt's call: it never got
-   real content beyond a prototype, and career stats will instead live on
-   a future public driver profile page). The old .rc-career-* rules
-   (card shell, hero row, stat groups, discipline incident lines, the
-   registration-status pill) lived here. */
 
 .rc-rulebook-draft-note { font-size: 13px; color: var(--rc-steel); font-style: italic; }
