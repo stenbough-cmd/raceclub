@@ -129,6 +129,21 @@
      Ingestion.gs's XML import, not hand-typed) as its own selling point
      alongside the five existing claims. Card count comment above updated
      back to six.
+
+  WHAT CHANGED IN THIS PASS (2026-09-25, Matt's ask: "update the What is
+  Race Club section... drum up some hype... reference things we built
+  into the system that make it unique like the League Hub... we also run
+  endurance events... All cars on the grid are actual teams in the WEC"):
+  - "What Is Race Club" rewritten from one short paragraph into three,
+    hyping the persistent-career pitch, calling out the League Hub by
+    name as the public results/standings page unique to this site, and
+    covering the WEC-style endurance rounds mixed into the calendar plus
+    every grid car being modeled on a real WEC team.
+  - Discord CTA: swapped discord_logo_rev.png for the standard-color
+    discord_logo.png (matches the asset Account.html's sidebar already
+    uses), and reworded the line to "Join the Race Club community for
+    more information and all the updates!"
+  - Closing CTA button: "Create Your Driver" -> "Create Your Profile".
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -182,11 +197,28 @@
     <div class="rc-landing-inner">
       <h2>What Is Race Club</h2>
       <p class="rc-landing-tagline">
-        Race Club is a persistent, solo-driver career built on real Le Mans
-        Ultimate league races. You join a real team, race real league
-        rounds against real friends, and build a driving record that
-        carries your career forward: no NPC grid, no shortcuts, just your
-        results, race after race.
+        Race Club is a persistent league built on real Le Mans Ultimate
+        racing. It's not a lobby you drop into for one race and forget.
+        Every round you run, every result you post, and every season you
+        complete carries into the next: you're building an actual career,
+        one race at a time.
+      </p>
+      <p class="rc-landing-tagline">
+        The League Hub is where that career lives. Standings, results, and
+        news update the moment a round is scored, all sitting on one
+        public page anyone can pull up, not buried in a spreadsheet only
+        the admins can read. Follow your own progress or scout the whole
+        grid before you even sign up.
+      </p>
+      <p class="rc-landing-tagline">
+        Because Race Club is built on a WEC style format, the season isn't
+        wall to wall sprint races. Endurance rounds are mixed into the
+        calendar too, and they reward a different kind of driver: the one
+        who manages tires and fuel and knows when to push and when to
+        hold back, not just the fastest lap of the day. And every car
+        you'll race against is modeled on a real WEC team, from the
+        factory Hypercar programs down through GT3, so the grid you're
+        lining up on is the same one you'd watch on a real broadcast.
       </p>
     </div>
   </section>
@@ -196,14 +228,15 @@
        community for more information!") -- a standalone dark strip, not
        folded into the section above it, so it reads as its own call to
        action rather than another line of the "What Is Race Club" copy.
-       discord_logo_rev.png is the reversed/light logo variant, for this
-       dark background (discord_logo.png, the standard-color version, is
-       what the Account.html sidebar link uses against its own dark
-       chrome instead -- see buildDiscordNavLink there). -->
+       Switched from discord_logo_rev.png (the reversed/light variant) to
+       the standard-color discord_logo.png (2026-09-25, Matt's ask) --
+       that's the same asset the Account.html sidebar link already uses
+       against its own dark chrome, see buildDiscordNavLink there, so this
+       CTA now matches it instead of using a separate reversed asset. -->
   <div class="rc-discord-cta">
     <a class="rc-discord-cta-link" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
-      <img class="rc-discord-cta-logo" src="assets/images/discord_logo_rev.png" alt="Discord">
-      <span>Join the Race Club community for more information!</span>
+      <img class="rc-discord-cta-logo" src="assets/images/discord_logo.png" alt="Discord">
+      <span>Join the Race Club community for more information and all the updates!</span>
     </a>
   </div>
 
@@ -910,7 +943,7 @@
     <div class="rc-landing-inner rc-cta-inner">
       <h2>Ready To Race?</h2>
       <p>Pick a team and you're on the grid. No waitlist, no draft, just the seat you chose. Sign up, get approved, and stake your claim before the season starts.</p>
-      <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Driver</a>
+      <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Profile</a>
     </div>
   </section>
 
