@@ -7822,100 +7822,63 @@
       reviewCloseBtn.title = inProgress ? 'Cannot close while finalizing' : '';
     }
 
+    // Redesigned 2026-09-25 (Matt's ask: "redesign the results review
+    // popup with functionality in mind... it's kind of a mess"). Three
+    // clear sections now, top to bottom, matching the actual order a
+    // steward works through this popup:
+    //   1. A plain status line (info only, no button) -- what state this
+    //      round is in and what's left to do.
+    //   2. The protest list to review/rule.
+    //   3. ONE action bar at the very bottom with both real actions
+    //      side by side: Apply Ruling(s) (save whatever's been chosen
+    //      above) and Finalize/Un-Finalize (lock the round in).
+    // Previously Finalize lived in its own bar at the TOP while Apply
+    // Ruling(s) lived in its own box at the BOTTOM -- two separate
+    // primary actions in two different places, with a status message
+    // duplicated between them. Now there's exactly one place actions
+    // happen, in the order you'd actually use them (rule, then
+    // finalize), and exactly one place status is reported.
     function render() {
       modal.body.innerHTML = '';
       modal.body.appendChild(buildSpinner('Loading protests...'));
       fetchApi('adminGetRoundProtests', { token: token, params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
         modal.body.innerHTML = '';
 
-        // Finalize bar -- always shown first, regardless of how many
-        // protests there are, so it's never scrolled past or missed.
-        // Every protest on this round needs a ruling before Finalize can
-        // be clicked (2026-09-24, item 7) -- Un-Finalize is never gated
-        // this way, only the forward Finalize direction.
-        var hasUnruledProtests = !!(data.success && data.protests && data.protests.some(function (p) { return p.status === 'Pending'; }));
-        var finalizeBar = el('div', 'rc-panel');
-        finalizeBar.style.cssText = 'margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
-        finalizeBar.appendChild(el('div', 'rc-hint', escapeHtml(resultsFinalized
-          ? 'This round is finalized. No further penalties will be assessed.'
-          : (hasUnruledProtests ? 'Every protest on this round needs a ruling before it can be finalized.' : 'Not finalized yet. Protest rulings can still be applied below.'))));
-        var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
-        finalizeBtn.type = 'button';
-        if (!resultsFinalized && hasUnruledProtests) {
-          finalizeBtn.disabled = true;
-          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest below before finalizing.');
-        }
-        finalizeBtn.addEventListener('click', function () {
-          var goingToFinalize = !resultsFinalized;
-          var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
-          var confirmMsg = resultsFinalized
-            ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
-            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
-          // Restores the button's normal label/color -- shared by both the
-          // failure and timeout paths below, since render() (which would
-          // otherwise rebuild this button fresh) only runs on success.
-          function restoreFinalizeBtn() {
-            finalizeBtn.className = resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
-            finalizeBtn.textContent = resultsFinalized ? 'Un-Finalize' : 'Finalize';
-          }
-          openConfirmModal(resultsFinalized ? 'Un-Finalize Results' : 'Finalize Results', confirmMsg, resultsFinalized ? 'Un-Finalize' : 'Finalize', function () {
-            finalizeBtn.disabled = true;
-            // In-progress state (2026-09-24, Matt's ask: "make the
-            // FINALIZE button go gray and say FINALIZING...") -- forced
-            // gray/secondary regardless of direction, so it always reads
-            // as "busy" rather than staying red mid-Finalize. The X
-            // button dims with a matching tooltip via
-            // setFinalizeInProgress, same convention as the Import
-            // Results modal's close button.
-            finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
-            finalizeBtn.textContent = goingToFinalize ? 'FINALIZING...' : 'UN-FINALIZING...';
-            setFinalizeInProgress(true);
-            fetchApi(action, { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
-              setFinalizeInProgress(false);
-              finalizeBtn.disabled = false;
-              if (!result.success) {
-                showToast(result.message || 'Could not update this round.', 'error');
-                restoreFinalizeBtn();
-                return;
-              }
-              resultsFinalized = !resultsFinalized;
-              showToast(resultsFinalized ? 'Round finalized.' : 'Round un-finalized.', 'success');
-              render();
-              if (typeof outerReload === 'function') outerReload();
-            }).catch(function () {
-              setFinalizeInProgress(false);
-              finalizeBtn.disabled = false;
-              restoreFinalizeBtn();
-              showToast('Could not reach the server.', 'error');
-            });
-          });
-        });
-        finalizeBar.appendChild(finalizeBtn);
-        modal.body.appendChild(finalizeBar);
-
         if (!data.success) {
           modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests for this round.'));
           return;
         }
-        if (!data.protests.length) {
-          modal.body.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
-          return;
-        }
 
-        // Rulable rows (2026-09-25, Matt's ask: "make one button at the
-        // bottom that says APPLY RULING(S) so they aren't on every
-        // individual ruling") -- each still-Pending, not-locked protest
-        // below pushes its own {p, select, overrideBox, isOverride}
-        // entry here instead of getting its own Apply button;
-        // one shared button at the very end of render() walks this list
-        // and submits only the rows where a ruling was actually chosen.
-        // A row left on "Choose a ruling..." is simply skipped -- it
-        // stays Pending and shows up again, unchanged, the next time this
-        // round is opened (Matt: "any ruling that doesn't have a decision
-        // made is left over in the list to be ruled upon").
+        var protests = data.protests || [];
+        var hasUnruledProtests = protests.some(function (p) { return p.status === 'Pending'; });
+
+        // 1. Status line -- info only, never a click target. Exactly one
+        // sentence describing where this round stands right now.
+        var statusText = resultsFinalized
+          ? 'This round is finalized. No further penalties will be assessed.'
+          : (hasUnruledProtests
+            ? 'Not finalized yet. Every protest below needs a ruling before this round can be finalized.'
+            : (protests.length ? 'All protests have been ruled on. Ready to finalize.' : 'No protests filed for this round. Ready to finalize.'));
+        var statusPanel = el('div', 'rc-panel');
+        statusPanel.style.cssText = 'margin-bottom:14px;';
+        statusPanel.appendChild(el('div', 'rc-hint', escapeHtml(statusText)));
+        modal.body.appendChild(statusPanel);
+
+        // 2. Protest list. Rulable rows (2026-09-25, Matt's ask: "make
+        // one button at the bottom that says APPLY RULING(S) so they
+        // aren't on every individual ruling") -- each still-Pending,
+        // not-locked protest below pushes its own {protestId, select,
+        // overrideBox, currentIsOverride} entry here instead of getting
+        // its own Apply button; the shared button in the action bar
+        // below walks this list and submits only the rows where a
+        // ruling was actually chosen. A row left on "Choose a
+        // ruling..." is simply skipped -- it stays Pending and shows up
+        // again, unchanged, the next time this round is opened (Matt:
+        // "any ruling that doesn't have a decision made is left over in
+        // the list to be ruled upon").
         var rulableRows = [];
 
-        data.protests.forEach(function (p) {
+        protests.forEach(function (p) {
           var row = el('div', 'rc-panel');
           row.style.cssText = 'margin-bottom:10px;';
           var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
@@ -7944,7 +7907,7 @@
             if (resultsFinalized) {
               var lockedHint = el('div', 'rc-hint');
               lockedHint.style.cssText = 'margin-top:8px;';
-              lockedHint.textContent = 'This round is finalized. Un-Finalize above to rule on this protest.';
+              lockedHint.textContent = 'This round is finalized. Un-Finalize below to rule on this protest.';
               row.appendChild(lockedHint);
             } else {
               // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
@@ -8043,36 +8006,49 @@
               });
             }
           } else {
-            var outcome = el('div', 'rc-hint', 'margin-top:8px;');
-            outcome.textContent = p.status + (p.status === 'Upheld' ? (': Tier ' + p.penaltyTier) : '') +
-              (p.reviewedByName ? (', ruled by ' + p.reviewedByName) : '');
+            // Already-ruled outcome line -- same "Upheld: Tier N penalty
+            // applied to <name>." / "Protest denied." / "Protest
+            // withdrawn." phrasing as the Dashboard Protest card
+            // (buildDashProtestItem, 2026-09-25 redesign) rather than a
+            // bare "Upheld: Tier 3" fragment, so the language matches
+            // wherever a ruled protest shows up on the site.
+            var outcomeText;
+            if (p.status === 'Upheld') {
+              outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty' + (against ? (' applied to ' + against) : '') + '.';
+            } else if (p.status === 'Denied') {
+              outcomeText = 'Protest denied.';
+            } else {
+              outcomeText = 'Protest withdrawn.';
+            }
+            if (p.reviewedByName) outcomeText += ' Ruled by ' + p.reviewedByName + '.';
+            var outcome = el('div', 'rc-hint');
+            outcome.style.cssText = 'margin-top:8px;';
+            outcome.textContent = outcomeText;
             row.appendChild(outcome);
           }
 
           modal.body.appendChild(row);
         });
 
-        // Shared "APPLY RULING(S)" button (2026-09-25, Matt's ask: "make
-        // one button at the bottom... so they aren't on every individual
-        // ruling") -- only appears when there's at least one still-open
-        // protest to rule on. Walks rulableRows, submits only the rows
-        // where the steward actually picked something other than "Choose
-        // a ruling..." (an untouched row is simply left alone -- it stays
-        // Pending and is still there, unchanged, next time this round is
-        // opened), validates each selected row's override-explanation
-        // requirement up front so a bad row never partially submits the
-        // batch, then fires all the valid writes together.
+        if (!protests.length) {
+          modal.body.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
+        }
+
+        // 3. Action bar -- Apply Ruling(s) (left, only when there's at
+        // least one open protest to rule on) and Finalize/Un-Finalize
+        // (right, always) in one bordered box, so both of this popup's
+        // real actions live in exactly one place.
+        var actionBar = el('div', 'rc-panel');
+        actionBar.style.cssText = 'margin-top:10px;display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;';
+
         if (rulableRows.length) {
-          // Own .rc-panel container (2026-09-25, Matt's ask: "move the
-          // APPLY RULING(S) in the container above it so it's not
-          // sitting outside of the container") -- was a bare div with no
-          // border, floating below the last protest's own bordered
-          // .rc-panel row. Now it gets the same bordered-box treatment
-          // as the Finalize bar and every protest row above it, instead
-          // of rendering as an unenclosed button underneath everything.
-          var applyAllPanel = el('div', 'rc-panel');
-          applyAllPanel.style.cssText = 'display:flex;justify-content:flex-end;margin-top:10px;';
-          var applyAllRow = applyAllPanel;
+          // Walks rulableRows, submits only the rows where the steward
+          // actually picked something other than "Choose a ruling..."
+          // (an untouched row is simply left alone -- it stays Pending
+          // and is still there, unchanged, next time this round is
+          // opened), validates each selected row's override-explanation
+          // requirement up front so a bad row never partially submits
+          // the batch, then fires all the valid writes together.
           var applyAllBtn = el('button', 'rc-btn-primary rc-btn-sm', 'APPLY RULING(S)');
           applyAllBtn.type = 'button';
           applyAllBtn.addEventListener('click', function () {
@@ -8114,9 +8090,66 @@
               if (typeof outerReload === 'function') outerReload();
             });
           });
-          applyAllRow.appendChild(applyAllBtn);
-          modal.body.appendChild(applyAllRow);
+          actionBar.appendChild(applyAllBtn);
         }
+
+        // Every protest on this round needs a ruling before Finalize can
+        // be clicked (2026-09-24, item 7) -- Un-Finalize is never gated
+        // this way, only the forward Finalize direction.
+        var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
+        finalizeBtn.type = 'button';
+        if (!resultsFinalized && hasUnruledProtests) {
+          finalizeBtn.disabled = true;
+          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
+        }
+        finalizeBtn.addEventListener('click', function () {
+          var goingToFinalize = !resultsFinalized;
+          var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
+          var confirmMsg = resultsFinalized
+            ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
+            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
+          // Restores the button's normal label/color -- shared by both the
+          // failure and timeout paths below, since render() (which would
+          // otherwise rebuild this button fresh) only runs on success.
+          function restoreFinalizeBtn() {
+            finalizeBtn.className = resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
+            finalizeBtn.textContent = resultsFinalized ? 'Un-Finalize' : 'Finalize';
+          }
+          openConfirmModal(resultsFinalized ? 'Un-Finalize Results' : 'Finalize Results', confirmMsg, resultsFinalized ? 'Un-Finalize' : 'Finalize', function () {
+            finalizeBtn.disabled = true;
+            // In-progress state (2026-09-24, Matt's ask: "make the
+            // FINALIZE button go gray and say FINALIZING...") -- forced
+            // gray/secondary regardless of direction, so it always reads
+            // as "busy" rather than staying red mid-Finalize. The X
+            // button dims with a matching tooltip via
+            // setFinalizeInProgress, same convention as the Import
+            // Results modal's close button.
+            finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
+            finalizeBtn.textContent = goingToFinalize ? 'FINALIZING...' : 'UN-FINALIZING...';
+            setFinalizeInProgress(true);
+            fetchApi(action, { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
+              setFinalizeInProgress(false);
+              finalizeBtn.disabled = false;
+              if (!result.success) {
+                showToast(result.message || 'Could not update this round.', 'error');
+                restoreFinalizeBtn();
+                return;
+              }
+              resultsFinalized = !resultsFinalized;
+              showToast(resultsFinalized ? 'Round finalized.' : 'Round un-finalized.', 'success');
+              render();
+              if (typeof outerReload === 'function') outerReload();
+            }).catch(function () {
+              setFinalizeInProgress(false);
+              finalizeBtn.disabled = false;
+              restoreFinalizeBtn();
+              showToast('Could not reach the server.', 'error');
+            });
+          });
+        });
+        actionBar.appendChild(finalizeBtn);
+
+        modal.body.appendChild(actionBar);
       }).catch(function () {
         modal.body.innerHTML = '';
         modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
