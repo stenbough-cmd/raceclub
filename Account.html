@@ -7878,9 +7878,20 @@
         // the list to be ruled upon").
         var rulableRows = [];
 
+        // One shared container for the whole list AND the action bar
+        // (2026-09-25, Matt's ask: "move the apply rulings and finalize
+        // button to INSIDE the other container with the rulings listed
+        // instead of having a separate container just for the buttons")
+        // -- was its own protest-per-.rc-panel stack plus a separate
+        // .rc-panel just for the buttons; now everything lives in one
+        // bordered box, with a divider line between entries
+        // (.rc-round-review-item) instead of each getting its own
+        // nested border.
+        var listPanel = el('div', 'rc-panel');
+        modal.body.appendChild(listPanel);
+
         protests.forEach(function (p) {
-          var row = el('div', 'rc-panel');
-          row.style.cssText = 'margin-bottom:10px;';
+          var row = el('div', 'rc-round-review-item');
           var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
           // Human-context intro sentence (2026-09-24, item 7) -- names the
           // actual filer and accused instead of the old flat comma-joined
@@ -8027,19 +8038,19 @@
             row.appendChild(outcome);
           }
 
-          modal.body.appendChild(row);
+          listPanel.appendChild(row);
         });
 
         if (!protests.length) {
-          modal.body.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
+          listPanel.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
         }
 
         // 3. Action bar -- Apply Ruling(s) (left, only when there's at
         // least one open protest to rule on) and Finalize/Un-Finalize
-        // (right, always) in one bordered box, so both of this popup's
-        // real actions live in exactly one place.
-        var actionBar = el('div', 'rc-panel');
-        actionBar.style.cssText = 'margin-top:10px;display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;';
+        // (right, always) -- now the last item INSIDE listPanel, with
+        // its own divider line, rather than a separate bordered box.
+        var actionBar = el('div', 'rc-round-review-item rc-round-review-actions');
+        actionBar.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;';
 
         if (rulableRows.length) {
           // Walks rulableRows, submits only the rows where the steward
@@ -8149,7 +8160,7 @@
         });
         actionBar.appendChild(finalizeBtn);
 
-        modal.body.appendChild(actionBar);
+        listPanel.appendChild(actionBar);
       }).catch(function () {
         modal.body.innerHTML = '';
         modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));

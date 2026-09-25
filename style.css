@@ -568,6 +568,13 @@ p { margin: 0 0 0.75em; }
    height via the row's align-items:stretch, rather than sitting at
    .rc-btn-row's normal short inline-action height. */
 .rc-ruling-standards-btn { flex: 1 1 auto; min-width: 0; }
+/* Review & Finalize popup's protest list (openRoundEditFinalizeModal,
+   Account.html) -- 2026-09-25 redesign: every protest, plus the Apply
+   Ruling(s)/Finalize action bar at the end, lives inside ONE .rc-panel
+   container now instead of each getting its own separate bordered box.
+   Divider line between entries takes the place of the old per-entry
+   border, same convention as .rc-protest-dash-list's own item divider. */
+.rc-round-review-item + .rc-round-review-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; margin-top: 14px; }
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should

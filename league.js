@@ -1136,20 +1136,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
 
   bodyEl.appendChild(_rclBuildRaceHeadline_(result));
 
-  // profileId -> total Time-effect penalty seconds this round (2026-09-25,
-  // Matt's ask: "when there is a time penalty, there needs to be a bold
-  // +10s or +40s... next to the total time in the ALL RESULTS list on top
-  // of the penalty that's added to the bottom"). Same result.penalties
-  // array the "Penalties Assessed" section below already reads -- this
-  // just also indexes it by profileId so each standings row can show its
-  // own total alongside Total Time. Only Time-effect entries count here;
-  // a DSQ/Warning has no seconds to add and already shows via the DSQ
-  // position badge / a plain log entry respectively.
-  var timePenaltySecondsByProfileId = {};
-  (result.penalties || []).forEach(function (p) {
-    if (p.effectType !== 'Time' || !p.against) return;
-    timePenaltySecondsByProfileId[p.against] = (timePenaltySecondsByProfileId[p.against] || 0) + (Number(p.effectSeconds) || 0);
-  });
+  // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
+  // reverted the same day (Matt's call: "I don't want the +10s penalty
+  // showing up in the all results leaderboard. I'll have to figure out a
+  // better way to display penalties on the board. For now, keep the
+  // penalties at the bottom of the page") -- penalties stay ONLY in the
+  // "Penalties Assessed" section below, same as before this ever changed.
 
   // profileId -> display name, built off this round's own full standings
   // -- penalties (below) only carry a profileId (see the `against` field
@@ -1207,18 +1199,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
-      // Total Time cell, plus a bold "+Ns" badge right next to it when
-      // this driver picked up a Time-effect penalty this round
-      // (2026-09-25, Matt's ask) -- the badge is a call-out here, not a
-      // replacement for the "Penalties Assessed" list at the bottom of
-      // this same popup, which still has the full infraction/tier detail.
-      var totalTimeCell = _rclEl('div', 'rcl-race-row-num rcl-race-row-totaltime');
-      totalTimeCell.appendChild(_rclEl('span', null, _rclFormatTotalTime_(row.finishTimeSeconds)));
-      var timePenaltySeconds = row.profileId ? (timePenaltySecondsByProfileId[row.profileId] || 0) : 0;
-      if (timePenaltySeconds > 0) {
-        totalTimeCell.appendChild(_rclEl('span', 'rcl-race-row-penalty-badge', '+' + timePenaltySeconds + 's'));
-      }
-      rowEl.appendChild(totalTimeCell);
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));

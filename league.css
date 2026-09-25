@@ -998,14 +998,11 @@ body.rc-league-page {
 .rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
 .rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
 .rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
-/* Total Time cell in the View All Results list, plus its optional
-   "+Ns" penalty badge (2026-09-25, Matt's ask) -- time and badge sit on
-   one line, right-aligned like every other numeric column here. The
-   badge reuses the site's one red accent (it's calling out a penalty)
-   and stays bold even against the already-bold time next to it, so it
-   reads as its own distinct callout rather than part of the time. */
-.rcl-race-row-totaltime { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
-.rcl-race-row-penalty-badge { color: var(--rc-red); font-weight: 800; font-variant-numeric: tabular-nums; }
+/* .rcl-race-row-totaltime/.rcl-race-row-penalty-badge (the "+Ns" badge
+   next to Total Time) tried and reverted 2026-09-25, same day -- Matt
+   wants penalties staying ONLY in the "Penalties Assessed" list at the
+   bottom of this popup for now, until there's a better on-leaderboard
+   treatment. */
 .rcl-race-row-num,
 .rcl-race-row-gap,
 .rcl-race-row-interval,
