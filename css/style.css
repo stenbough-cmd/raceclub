@@ -4190,6 +4190,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   cursor: pointer;
 }
 .rc-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
+/* Dimmed/unclickable while a save-in-progress state has the popup locked
+   (2026-09-26, added for the Protests File/Edit/Withdraw in-flight work --
+   the same X-dimming convention Finalize/Un-Finalize Results already
+   applies via setFinalizeInProgress, now backed by a real CSS rule since
+   none existed for this button before). */
+.rc-modal-close:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 .rc-modal-body { padding: 20px; }
 /* Wider variant for content-heavy popups (currently just the Season
    Creation Wizard) -- the default 460px is right for a short form like

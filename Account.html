@@ -2036,10 +2036,17 @@
     row.appendChild(icon);
 
     var body = el('div', 'rc-protest-dash-item-body');
-    var dateStr = p.submittedAt ? formatShortDate(p.submittedAt) : '';
+    // Round <n> instead of a posted date (2026-09-26, Matt's ask: "instead
+    // of a date being posted in the protests dashboard and popup, I'd like
+    // for it to display the Round <round n>" -- keeps every protest tied
+    // to the race it came from throughout the season, which reads more
+    // useful here than when it was merely filed. Reuses the same
+    // .rc-protest-dash-date badge styling the date used to have -- only
+    // the text content changed, not the look.
+    var roundStr = p.roundNumber ? ('Round ' + p.roundNumber) : '';
     var against = (p.involvedNames || []).slice(1).join(' and ');
 
-    // Three-line layout (2026-09-24, styling pass): date + who on line 1,
+    // Three-line layout (2026-09-24, styling pass): round + who on line 1,
     // the infraction type alone on line 2, then the pending/ruled status
     // line (below) -- replaces the old single run-on sentence that also
     // buried the infraction type and round/track inside it.
@@ -2047,7 +2054,7 @@
     var whoText = p.isMine
       ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
       : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.');
-    whoLine.innerHTML = (dateStr ? '<span class="rc-protest-dash-date">' + escapeHtml(dateStr) + '</span> ' : '') + whoText;
+    whoLine.innerHTML = (roundStr ? '<span class="rc-protest-dash-date">' + escapeHtml(roundStr) + '</span> ' : '') + whoText;
     body.appendChild(whoLine);
 
     body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType || 'Infraction not specified')));
@@ -2086,10 +2093,13 @@
   // Protest -- Dashboard preview card (2026-09-08, Matt's call: "the
   // PROTEST card shows the last 3 PROTESTS that the driver submitted and
   // whether they're Pending, Upheld or Denied"; redesigned 2026-09-24 into
-  // the open-circle/checkmark line-item look above). Backed by
+  // the open-circle/checkmark line-item look above; narrowed 2026-09-26,
+  // Matt's rule, to only the CURRENT race's protests -- see
+  // handleGetDashboardData's currentRaceOnly:true call into
+  // handleGetMyProtests, Results.gs/Protests.gs). Backed by
   // action=getMyProtests with no `full`/`limit` param, which the server
-  // already caps at the most recent 3 (see handleGetMyProtests,
-  // Protests.gs) -- this card never re-slices the array itself, it just
+  // already caps at the most recent 3 within that current race (see
+  // handleGetMyProtests, Protests.gs) -- this card never re-slices the array itself, it just
   // renders whatever comes back. That same endpoint also includes
   // protests filed AGAINST this driver, not just ones they filed.
   // The link at the bottom no longer goes to a standalone Protests page
@@ -2969,7 +2979,13 @@
     // el: the modal card itself (not the dimmed backdrop) -- exposed so a
     // caller can add a one-off class to it, e.g. the Season Wizard's
     // shake-on-invalid-Next animation (.rc-shake).
-    return { close: close, body: body, el: modal };
+    // closeBtn (2026-09-26, added for the Protests in-flight-request work)
+    // -- exposed so a caller can dim/disable the X while a save/withdraw/
+    // edit request is in flight, same convention Finalize/Un-Finalize
+    // Results already uses via setFinalizeInProgress. Purely additive --
+    // every existing caller that only destructures {close, body, el}
+    // is unaffected.
+    return { close: close, body: body, el: modal, closeBtn: closeBtn };
   }
 
   // Updates an already-open showModal()'s title text in place -- used by
@@ -5207,48 +5223,61 @@
   // -----------------------------------------------------------------------
   function openProtestModal(token) {
     var modal = showModal('Protests', { wide: true, accentHead: true });
-    modal.body.appendChild(buildSpinner('Loading your protests...'));
 
-    // full:1 (was limit:10) -- the popup shows the WHOLE multi-season
-    // history inline (grouped by season pill) instead of a 10-row preview
-    // + a separate "Show full history" popup.
-    //
-    // One combined getProtestsPageData call (2026-09-24, Matt's "batch
-    // them altogether" efficiency pass) instead of two separate fetchApi
-    // round trips -- see handleGetProtestsPageData in Protests.gs. The
-    // two underlying actions (getProtestFilingOptions, getMyProtests)
-    // still exist and are still used elsewhere unchanged.
-    fetchApi('getProtestsPageData', { token: token }).then(function (combined) {
-      var filing = combined && combined.filing, mine = combined && combined.mine;
+    // Pulled out into its own function (2026-09-26, Matt's ask: "when
+    // editing or withdrawing a protest, have it reload the protest
+    // popup") so Edit/Withdraw can refresh this SAME popup in place --
+    // re-fetch + re-render right here, no modal close/reopen, no full
+    // page reload -- instead of the old rcReloadAfterSave() full-page
+    // round trip. Still called once up front for the initial open.
+    function loadAndRenderProtestPopup() {
       modal.body.innerHTML = '';
+      modal.body.appendChild(buildSpinner('Loading your protests...'));
 
-      if (!filing || !filing.success) {
-        modal.body.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load your protests right now.'));
-        return;
-      }
-      // Same "no season" empty state as Calendar/Results (2026-09-18,
-      // Matt's call: add Protests to that list) -- handleGetProtestFilingOptions
-      // already returns hasSeason:false when there's no active season
-      // calendar, same signal Calendar and Results already gate on.
-      if (!filing.hasSeason) {
-        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
-        return;
-      }
-      // Not registered for the active season -- nothing to show (Matt's
-      // rule, 2026-09-23: only registered drivers see protests, and only
-      // the current season's protest history, not a driver's full
-      // multi-season past). Same "registered" signal Calendar/Results
-      // gate on.
-      if (!filing.registered) {
-        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to file or withdraw a protest.'));
-        return;
-      }
+      // full:1 (was limit:10) -- the popup shows the WHOLE multi-season
+      // history inline (grouped by season pill) instead of a 10-row preview
+      // + a separate "Show full history" popup.
+      //
+      // One combined getProtestsPageData call (2026-09-24, Matt's "batch
+      // them altogether" efficiency pass) instead of two separate fetchApi
+      // round trips -- see handleGetProtestsPageData in Protests.gs. The
+      // two underlying actions (getProtestFilingOptions, getMyProtests)
+      // still exist and are still used elsewhere unchanged.
+      fetchApi('getProtestsPageData', { token: token }).then(function (combined) {
+        var filing = combined && combined.filing, mine = combined && combined.mine;
+        modal.body.innerHTML = '';
 
-      buildProtestPopupBody(modal, token, filing, mine && mine.success ? (mine.protests || []) : []);
-    }).catch(function () {
-      modal.body.innerHTML = '';
-      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
-    });
+        if (!filing || !filing.success) {
+          modal.body.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load your protests right now.'));
+          return;
+        }
+        // Same "no season" empty state as Calendar/Results (2026-09-18,
+        // Matt's call: add Protests to that list) -- handleGetProtestFilingOptions
+        // already returns hasSeason:false when there's no active season
+        // calendar, same signal Calendar and Results already gate on.
+        if (!filing.hasSeason) {
+          modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Protests open up once a season is underway.'));
+          return;
+        }
+        // Not registered for the active season -- nothing to show (Matt's
+        // rule, 2026-09-23: only registered drivers see protests, and only
+        // the current season's protest history, not a driver's full
+        // multi-season past). Same "registered" signal Calendar/Results
+        // gate on.
+        if (!filing.registered) {
+          modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to file or withdraw a protest.'));
+          return;
+        }
+
+        buildProtestPopupBody(modal, token, filing, mine && mine.success ? (mine.protests || []) : [], loadAndRenderProtestPopup);
+      }).catch(function () {
+        modal.body.innerHTML = '';
+        modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+      });
+    }
+
+    loadAndRenderProtestPopup();
+    return modal;
   }
 
   // The popup's content (2026-09-24 redesign, Matt's call: "remove the
@@ -5259,7 +5288,7 @@
   // (.rc-protest-action-row already does that), then a bordered container
   // (.rc-protest-history-box) with every protest this driver filed or was
   // named in, newest season first.
-  function buildProtestPopupBody(modal, token, filing, protests) {
+  function buildProtestPopupBody(modal, token, filing, protests, refreshPopup) {
     var container = modal.body;
     // "Below the red line to the right, there should be a button that
     // says FILE PROTEST" -- gray, not red (house rule: a button that only
@@ -5316,7 +5345,7 @@
       // way), capped to the most recent 10 -- oldest silently drops off,
       // no "load more"/pagination.
       var list = el('div', 'rc-protest-dash-list');
-      visible.slice(0, 10).forEach(function (p) { list.appendChild(buildProtestPopupHistoryItem(p, token)); });
+      visible.slice(0, 10).forEach(function (p) { list.appendChild(buildProtestPopupHistoryItem(p, token, modal, refreshPopup)); });
       historyBox.appendChild(list);
     }
     container.appendChild(historyBox);
@@ -5329,14 +5358,17 @@
   // aren't finalized yet (Matt, 2026-09-24 redesign: "if it hasn't been
   // ruled on yet, the driver can WITHDRAW it with a button... If a
   // protest has already been ruled, the WITHDRAW button is gone").
-  function buildProtestPopupHistoryItem(p, token) {
+  function buildProtestPopupHistoryItem(p, token, parentModal, refreshPopup) {
     var row = buildDashProtestItem(p);
     var canModify = p.isMine && p.status === 'Pending' && !p.resultsFinalized;
     if (canModify) {
       var actions = el('div', 'rc-protest-popup-item-actions');
       var editBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Edit');
       editBtn.type = 'button';
-      editBtn.addEventListener('click', function () { openEditProtestModal(token, p, function () { rcReloadAfterSave(); }); });
+      // onSaved is refreshPopup, not rcReloadAfterSave (2026-09-26, Matt's
+      // ask) -- a successful edit re-fetches and re-renders THIS popup in
+      // place instead of a full page reload.
+      editBtn.addEventListener('click', function () { openEditProtestModal(token, p, refreshPopup); });
       actions.appendChild(editBtn);
 
       // Withdraw is styled identically to Edit (2026-09-24 styling pass,
@@ -5346,7 +5378,7 @@
       // override as the red File Protest button elsewhere in this file.
       var withdrawBtn = el('button', 'rc-btn-row rc-btn-secondary', 'Withdraw');
       withdrawBtn.type = 'button';
-      withdrawBtn.addEventListener('click', function () { openWithdrawProtestConfirm(token, p, function () { rcReloadAfterSave(); }); });
+      withdrawBtn.addEventListener('click', function () { openWithdrawProtestConfirm(token, p, withdrawBtn, parentModal, refreshPopup); });
       actions.appendChild(withdrawBtn);
 
       row.appendChild(actions);
@@ -5354,18 +5386,41 @@
     return row;
   }
 
-  function openWithdrawProtestConfirm(token, p, onWithdrawn) {
+  // Reworked 2026-09-26 (Matt's ask: "say WITHDRAWING... on a grayed out
+  // button after hitting it and dimming the x in the corner and making it
+  // unclickable"). openConfirmModal always closes ITS OWN dialog the
+  // instant Withdraw is clicked, then fires onConfirm -- exactly the same
+  // shape the Finalize/Un-Finalize Results confirm already uses (see
+  // openAdminGetRoundReview's finalizeBtn/setFinalizeInProgress): the
+  // confirm dialog disappears, but the Protests popup underneath
+  // (parentModal) stays open, so onConfirm puts the BUSY state on the
+  // row's own Withdraw button and dims the popup's own X for the duration
+  // of the fetch, then a successful withdraw hands off to refreshPopup
+  // (onWithdrawn) to re-render the whole list rather than trying to patch
+  // this one row in place.
+  function openWithdrawProtestConfirm(token, p, withdrawBtn, parentModal, onWithdrawn) {
     var who = (p.involvedNames || []).slice(1).join(', ');
     openConfirmModal('Withdraw Protest', 'Withdraw this protest' + (who ? (' against ' + who) : '') +
       '? It\'s removed from your own history -- the round it was filed against keeps its own record.', 'Withdraw', function () {
+      withdrawBtn.disabled = true;
+      withdrawBtn.textContent = 'WITHDRAWING...';
+      if (parentModal && parentModal.closeBtn) parentModal.closeBtn.disabled = true;
       fetchApi('withdrawProtest', { method: 'POST', token: token, body: { protestId: p.protestId } }).then(function (data) {
+        if (parentModal && parentModal.closeBtn) parentModal.closeBtn.disabled = false;
         if (!data || !data.success) {
+          withdrawBtn.disabled = false;
+          withdrawBtn.textContent = 'Withdraw';
           showToast((data && data.message) || 'Could not withdraw that protest.', 'error');
           return;
         }
         showToast('Protest withdrawn.', 'success');
         if (typeof onWithdrawn === 'function') onWithdrawn();
-      }).catch(function () { showToast('Could not reach the server.', 'error'); });
+      }).catch(function () {
+        if (parentModal && parentModal.closeBtn) parentModal.closeBtn.disabled = false;
+        withdrawBtn.disabled = false;
+        withdrawBtn.textContent = 'Withdraw';
+        showToast('Could not reach the server.', 'error');
+      });
     });
   }
 
@@ -5563,6 +5618,12 @@
       var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
       if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
       submitBtn.disabled = true;
+      // Dim + disable the X for the duration of the submit (2026-09-26,
+      // Matt's ask: "when submitting a protest, dim and disable the x in
+      // the corner until the submit is done and the page reloads") --
+      // re-enabled on failure below; on success the modal closes outright
+      // so there's nothing left to re-enable.
+      if (modal.closeBtn) modal.closeBtn.disabled = true;
       fetchApi('submitProtest', {
         method: 'POST', token: token, body: {
           roundId: roundSelect.value, infractionType: fields.infractionSelect.value,
@@ -5572,6 +5633,7 @@
       }).then(function (data) {
         submitBtn.disabled = false;
         if (!data.success) {
+          if (modal.closeBtn) modal.closeBtn.disabled = false;
           showToast(data.message || 'Could not submit that protest.', 'error');
           return;
         }
@@ -5580,6 +5642,7 @@
         if (typeof onSubmitted === 'function') onSubmitted();
       }).catch(function () {
         submitBtn.disabled = false;
+        if (modal.closeBtn) modal.closeBtn.disabled = false;
         showToast('Could not reach the server -- protest not submitted.', 'error');
       });
     });
@@ -5634,6 +5697,13 @@
         var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
         if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
         saveBtn.disabled = true;
+        // Grayed-out "SAVING CHANGES..." + dimmed/unclickable X while the
+        // save is in flight (2026-09-26, Matt's ask) -- .rc-btn-primary's
+        // existing :disabled styling already grays the button out, so
+        // this is purely a text-content + disabled-state change, no new
+        // CSS. Restored on failure below.
+        saveBtn.textContent = 'SAVING CHANGES...';
+        if (modal.closeBtn) modal.closeBtn.disabled = true;
         fetchApi('editProtest', {
           method: 'POST', token: token, body: {
             protestId: p.protestId, infractionType: fields.infractionSelect.value,
@@ -5643,6 +5713,8 @@
         }).then(function (data2) {
           saveBtn.disabled = false;
           if (!data2.success) {
+            saveBtn.textContent = 'Save Changes';
+            if (modal.closeBtn) modal.closeBtn.disabled = false;
             showToast(data2.message || 'Could not save that protest.', 'error');
             return;
           }
@@ -5651,6 +5723,8 @@
           if (typeof onSaved === 'function') onSaved();
         }).catch(function () {
           saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          if (modal.closeBtn) modal.closeBtn.disabled = false;
           showToast('Could not reach the server -- protest not saved.', 'error');
         });
       });
