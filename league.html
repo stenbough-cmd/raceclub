@@ -63,7 +63,11 @@
 </div>
 
 <div id="rc-header"></div>
-<script>renderHeader();</script>
+<!-- leagueHubBadge (2026-09-26, Matt's ask) -- adds the large "/" +
+     league_hub_logo.png mark next to the Race Club logo, only on this
+     page. See js/header.js's renderHeader() and .rc-header-leaguehub-*
+     in css/style.css. -->
+<script>renderHeader({ leagueHubBadge: true });</script>
 
 <div class="rcl-ticker-wrap">
   <div class="rcl-ticker-label">Highlights</div>
@@ -79,7 +83,16 @@
          season-context details, filled in by _rclRenderHero. Season NAME
          (added 2026-09-19) sits right after the number on that same line. -->
     <div class="rcl-hero-eyebrow">Race Club</div>
-    <h1 class="rcl-hero-title">League Hub</h1>
+    <!-- league_hub_banner.png in place of the plain text title (2026-09-26,
+         Matt's ask: "Instead of LEAGUE HUB being written out on the page
+         as the title, league_hub_banner.png would take its place") -- the
+         .rcl-hero-title class stays on the <h1> itself so it keeps
+         heading semantics and the section's existing spacing, while
+         .rcl-hero-title-img (css/league.css) sizes the image where the
+         text glyphs used to sit. -->
+    <h1 class="rcl-hero-title rcl-hero-title-img-wrap">
+      <img class="rcl-hero-title-img" src="assets/images/league_hub_banner.png" alt="League Hub">
+    </h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
     <!-- Season snapshot + League Format stats moved into the "View Season
          Details" popup (2026-09-19, Matt's call) -- opened from a link at

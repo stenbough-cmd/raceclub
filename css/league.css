@@ -409,6 +409,18 @@ body.rc-league-page {
      benefits the same way. */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
+/* league_hub_banner.png title (2026-09-26, Matt's ask) -- .rcl-hero-title
+   stays on the <h1> for its margin/heading semantics; this just undoes the
+   text-specific properties that don't apply to an <img> child (line-height
+   would otherwise leave extra inline whitespace under the image) and sizes
+   the graphic roughly where the old text glyphs sat, scaling with the same
+   viewport-width clamp the text used. */
+.rcl-hero-title-img-wrap { line-height: 0; text-shadow: none; }
+.rcl-hero-title-img {
+  display: block;
+  height: clamp(40px, 7.5vw, 78px);
+  width: auto;
+}
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
    eyebrow above and the body-text sub-line below. */
