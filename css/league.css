@@ -425,11 +425,28 @@ body.rc-league-page {
    different font file with different metrics. */
 .rcl-hero-title-league { font-weight: 400; }
 /* Heavier + red (2026-09-27 follow-up, Matt's ask: "the HUB needs to be
-   slightly heavier weight and red color") -- was font-weight: 700 with no
-   color override (plain .rcl-hero-title white/ink). Still inherits the
-   same font-size/line-height as .rcl-hero-title-league, so only weight and
-   color set it apart, not size. */
-.rcl-hero-title-hub { font-weight: 900; color: var(--rc-red); }
+   slightly heavier weight and red color"; then "HUB needs to be even
+   heavier weight" -- font-weight: 900 is already the top of the CSS scale,
+   so there's no heavier standard weight to ask the browser for. Plain
+   Helvetica/Arial also don't ship a 900 ("black") weight face on most
+   systems -- the browser just renders its regular bold at 900, which is
+   why it wasn't reading any heavier than before. Two real fixes layered
+   together: (1) Arial Black is an actual black-weight typeface (shipped
+   with Windows and Office fonts, so it's ahead of Helvetica/Arial in the
+   stack here for this one span only), and (2) -webkit-text-stroke adds a
+   thin same-color outline that thickens the strokes further wherever Arial
+   Black itself isn't installed (Helvetica/Arial fall back to that; support
+   for the property itself is effectively universal in current browsers
+   despite the -webkit- prefix). Together these read noticeably heavier
+   than a plain font-weight bump ever could on this font stack. Still
+   inherits the same font-size/line-height as .rcl-hero-title-league, so
+   only weight/stroke and color set it apart, not size. */
+.rcl-hero-title-hub {
+  font-family: 'Arial Black', Helvetica, Arial, sans-serif;
+  font-weight: 900;
+  color: var(--rc-red);
+  -webkit-text-stroke: 0.6px var(--rc-red);
+}
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
    eyebrow above and the body-text sub-line below. */
