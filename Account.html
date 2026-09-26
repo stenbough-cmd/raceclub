@@ -5093,10 +5093,17 @@
       wrap.appendChild(el('p', 'rc-hint', 'No result recorded for you in this race.'));
       return wrap;
     }
+    // Labels changed to "Your Finish"/"Your Grid" and "Your Class" inserted
+    // between them (2026-09-27, Matt's ask: this strip is about the
+    // driver's own race, and "Finish"/"Grid" alone read ambiguous next to
+    // the round-wide stat strip above it that also has a Winner/Pole/
+    // Fastest Lap). you.carClass already comes back on every driver row
+    // from Results.gs's buildDriverRow_ -- just wasn't surfaced here yet.
     var grid = el('div', 'rc-results-stat-strip');
     [
-      resultsStatBlock('Finish', you.position ? ('P' + you.position + (you.classPosition ? ' (Class P' + you.classPosition + ')' : '')) : (you.finishStatus || 'Not Classified')),
-      resultsStatBlock('Grid', you.gridPos ? ('P' + you.gridPos + (you.classGridPos ? ' (Class P' + you.classGridPos + ')' : '')) : ''),
+      resultsStatBlock('Your Finish', you.position ? ('P' + you.position + (you.classPosition ? ' (Class P' + you.classPosition + ')' : '')) : (you.finishStatus || 'Not Classified')),
+      resultsStatBlock('Your Grid', you.gridPos ? ('P' + you.gridPos + (you.classGridPos ? ' (Class P' + you.classGridPos + ')' : '')) : ''),
+      resultsStatBlock('Your Class', you.carClass),
       resultsStatBlock('Laps', you.laps),
       resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatLapTime_(you.bestLapTime) : ''),
       resultsStatBlock('Total Time', (you.finishTimeSeconds !== null && you.finishTimeSeconds !== undefined) ? _rcFormatTotalTime_(you.finishTimeSeconds) : ''),
@@ -5115,27 +5122,28 @@
     return wrap;
   }
 
-  // One line of readable text per RaceEvents row, keyed off EventType --
-  // matches the exact Detail shapes Ingestion.gs writes (see that file's
-  // EventType comment). Falls back to just the raw event type name for
-  // anything unrecognized rather than hiding the row.
-  function _rcFormatEventLine_(evt) {
-    var d = evt.detail || {};
-    switch (evt.eventType) {
-      case 'Incident':
-        return 'Incident' + (d.ContactWith ? ': contact with ' + d.ContactWith : '') + (d.SeverityValue ? ' (severity ' + d.SeverityValue + ')' : '');
-      case 'TrackLimit':
-        return 'Track Limit' + (d.Outcome ? ': ' + d.Outcome : '') + (d.CurrentPoints !== undefined ? ' (points: ' + d.CurrentPoints + ')' : '');
-      case 'SimPenaltyIssued':
-        return 'Penalty Issued' + (d.PenaltyType ? ': ' + d.PenaltyType : '') + (d.Reason ? ' (' + d.Reason + ')' : '') +
-          (d.TimeSeconds ? ', ' + d.TimeSeconds + 's' : '') + (d.LapsPenalty ? ', ' + d.LapsPenalty + ' lap(s)' : '');
-      case 'SimPenaltyServed':
-        return 'Penalty Served' + (d.PenaltyType ? ': ' + d.PenaltyType : '');
-      case 'Sector':
-        return d.Kind === 'BestSector' ? ('Best Sector ' + (d.SectorIndex || '') + (d.Class ? ' (' + d.Class + ')' : '')) : 'Suspension Damage';
-      default:
-        return evt.eventType || 'Event';
-    }
+  // mm:ss (or h:mm:ss past the hour mark) for a race report event's
+  // elapsed-time stamp -- mirrors league.js's own _rclFormatEventTime_
+  // exactly (2026-09-27, for this page's Race Report rework, see
+  // resultsRaceReport below).
+  function _rcFormatEventTime_(seconds) {
+    if (seconds === null || seconds === undefined || isNaN(seconds)) return '';
+    var total = Math.max(0, Math.floor(seconds));
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    var ss = s < 10 ? '0' + s : String(s);
+    if (h > 0) return h + ':' + (m < 10 ? '0' + m : String(m)) + ':' + ss;
+    return m + ':' + ss;
+  }
+
+  // Tier effect text for one penalty entry -- mirrors league.js's own
+  // _rclDescribePenaltyEffect_ exactly (2026-09-27, for resultsPenalties
+  // Assessed below).
+  function _rcDescribePenaltyEffect_(effectType, effectSeconds) {
+    if (effectType === 'Time') return '+' + (Number(effectSeconds) || 0) + 's';
+    if (effectType === 'DSQ') return 'Disqualified';
+    return 'Logged';
   }
 
   // Index of the lap with the lowest numeric value in `field` (lapTime,
@@ -5211,38 +5219,96 @@
     return scrollWrap;
   }
 
-  // "RACE REPORT" -- this driver's own incidents/track limits/penalties for
-  // the session, grouped by lap and styled to mimic the League Hub's Race
-  // Report (2026-09-26, Matt's ask: "organized in the same way as the race
-  // report... make sure the appearance of the list mimics Race Report"),
-  // recolored for this page's white background instead of league.html's
-  // dark theme. Collisions and track cuts are NOT split into separate
-  // groups (Matt's explicit ask) -- session.events is already one
-  // chronological list (Results.gs), this just groups those same rows by
-  // lap number for display instead of repeating "Lap N" on every line.
-  // Lap numbers here already have the formation-lap shift applied
-  // server-side (Results.gs's _rcApplyFormationLapShift_/
-  // _rcShiftEventLapNum_) so "Lap 1" is the real first racing lap, not the
-  // parade lap, and each event's own elapsed time lines up with true race
-  // time.
-  function resultsRaceReport(session) {
+  // Clause kind -> the CSS class that colors it -- exact mirror of
+  // league.js's own CLAUSE_CLASS map inside _rclBuildAllResultsBody_
+  // (2026-09-27 rework, see resultsRaceReport below). "penalty" stays the
+  // line's default dim-carbon on purpose, same as league.js.
+  var RC_REPORT_CLAUSE_CLASS_ = {
+    wall: 'rc-results-report-clause-wall',
+    car: 'rc-results-report-clause-car',
+    damage: 'rc-results-report-clause-damage',
+    pit: 'rc-results-report-clause-pit',
+    position_gain: 'rc-results-report-clause-gain',
+    position_loss: 'rc-results-report-clause-loss',
+    retirement: 'rc-results-report-clause-retirement',
+    fastest_lap: 'rc-results-report-clause-fastest'
+  };
+
+  // "RACE REPORT" -- REWRITTEN 2026-09-27 (Matt's ask: "review the race
+  // report in ALL RESULTS on the league page and mimic that exactly...
+  // the times and laps you had when things happened are completely
+  // wrong... copy the exact way we figured it out on the league.html
+  // page"). The old version grouped this page's own session.events by
+  // evt.lapNum, which is the raw per-event RaceEvents row -- unreliable
+  // (many rows have no LapNum at all, hence "almost all the events
+  // happening PRE the race") and nothing like how the League Hub's Race
+  // Report actually works. The League Hub instead renders
+  // result.raceReport -- a pre-built, clause-tagged, CORRECTLY lap-
+  // numbered array (_rcBuildRaceReportForSession_, Ingestion.gs, built
+  // once at import time from the same formation-lap-shift/lap-window
+  // logic that fixed every one of Matt's "lap 1 is being treated as the
+  // parade lap"/"pit shows before the crash that caused it" reports).
+  // This function now takes that SAME raceReport array (race.raceReport,
+  // Results.gs's _rcBuildDriverFullRoundResult_ now includes it, filtered
+  // down to just this driver's own entries -- see that function's own
+  // comment) and renders it with the exact same per-clause markup/logic
+  // league.js's _rclBuildAllResultsBody_ uses, just against this page's
+  // light-theme classes (rc-results-report-clause-* below, style.css)
+  // instead of league.css's dark-theme rcl-report-clause-* ones. Fastest-
+  // lap/fastest-sector mentions are just the "fastest_lap" clause kind --
+  // it gets its own bold-purple class here exactly like every other
+  // clause color, which is what actually answers Matt's separate ask
+  // ("fastest sectors and laps being bolded purple") that never worked
+  // under the old plain-text renderer.
+  function resultsRaceReport(raceReport) {
     var wrap = el('div', 'rc-results-report');
     wrap.appendChild(el('div', 'rc-results-report-title', 'Race Report'));
 
     var byLap = {}, lapOrder = [];
-    session.events.forEach(function (evt) {
-      var key = evt.lapNum || 'Pre';
+    (raceReport || []).forEach(function (entry) {
+      var key = entry.lapNum;
       if (!(key in byLap)) { byLap[key] = []; lapOrder.push(key); }
-      byLap[key].push(evt);
+      byLap[key].push(entry);
     });
 
     var list = el('div', 'rc-results-report-list');
-    lapOrder.forEach(function (lapKey) {
+    lapOrder.forEach(function (lapNum) {
       var lapRow = el('div', 'rc-results-report-lap');
-      lapRow.appendChild(el('div', 'rc-results-report-lap-num', lapKey === 'Pre' ? 'Pre' : ('Lap ' + lapKey)));
+      lapRow.appendChild(el('div', 'rc-results-report-lap-num', 'Lap ' + lapNum));
       var textWrap = el('div', 'rc-results-report-lap-text');
-      byLap[lapKey].forEach(function (evt) {
-        textWrap.appendChild(el('p', 'rc-results-report-line', escapeHtml(_rcFormatEventLine_(evt))));
+      byLap[lapNum].forEach(function (entry) {
+        var lineEl = document.createElement('p');
+        lineEl.className = 'rc-results-report-line';
+        if (entry.clauses) {
+          // Structured entry (matches league.js exactly) -- class pill,
+          // timestamp, bold name, then each clause as its own colored span.
+          if (entry.carClass) lineEl.appendChild(_rcClassAbbrevPill(entry.carClass));
+          if (entry.et !== null && entry.et !== undefined) {
+            lineEl.appendChild(el('span', 'rc-results-report-timestamp', _rcFormatEventTime_(entry.et)));
+          }
+          var nameEl = document.createElement('span');
+          nameEl.className = 'rc-results-report-name';
+          nameEl.textContent = entry.name;
+          lineEl.appendChild(nameEl);
+          var allClauses = entry.positionClause ? entry.clauses.concat([entry.positionClause]) : entry.clauses;
+          allClauses.forEach(function (clause, i) {
+            lineEl.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
+            var clauseClass = RC_REPORT_CLAUSE_CLASS_[clause.kind];
+            if (clauseClass) {
+              var span = document.createElement('span');
+              span.className = clauseClass;
+              span.textContent = clause.text;
+              lineEl.appendChild(span);
+            } else {
+              lineEl.appendChild(document.createTextNode(clause.text));
+            }
+          });
+          lineEl.appendChild(document.createTextNode('.'));
+        } else {
+          // A round imported before clause tagging shipped -- flat `text`.
+          lineEl.textContent = entry.text;
+        }
+        textWrap.appendChild(lineEl);
       });
       lapRow.appendChild(textWrap);
       list.appendChild(lapRow);
@@ -5251,15 +5317,71 @@
     return wrap;
   }
 
-  // One panel per session this driver has laps and/or events for. Session
-  // subheader is just "QUALIFYING RESULTS"/"RACE RESULTS" now (2026-09-26,
-  // Matt's ask: "no need for a track name or any other identifiers since
-  // the container has the header that explains the event") -- the round's
-  // own title line above already names the event/track/layout.
+  // "PENALTIES ASSESSED" -- NEW 2026-09-27 (Matt's ask: "add a penalties
+  // assessed at the bottom, just like ALL RESULTS has"). Scoped to just
+  // this driver's own penalties (race.penalties is pre-filtered to this
+  // driver's ProfileID by Results.gs's _rcBuildDriverFullRoundResult_) --
+  // this page's Results section has always deliberately been "just the
+  // player's results, no leaderboard or extra fluff" (see
+  // resultsRoundPanel's own header comment), so every OTHER driver's
+  // penalties don't belong here the way they do on the League Hub's public
+  // ALL RESULTS popup. Same row markup/wording as league.js's own
+  // Penalties Assessed section (_rclBuildAllResultsBody_), just this
+  // page's light-theme classes and "You" in place of a resolved driver
+  // name (there's only ever one driver's rows here).
+  function resultsPenaltiesAssessed(penalties) {
+    var wrap = el('div', 'rc-results-penalties');
+    wrap.appendChild(el('div', 'rc-results-report-title', 'Penalties Assessed'));
+    if (!penalties || !penalties.length) {
+      wrap.appendChild(el('p', 'rc-hint', 'No penalties were assessed against you this round.'));
+      return wrap;
+    }
+    penalties.forEach(function (p) {
+      var row = el('div', 'rc-results-report-lap');
+      var lapVal = p.lapNumber;
+      var posLabel = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' :
+        (lapVal ? ('Lap ' + lapVal) : '-');
+      row.appendChild(el('div', 'rc-results-report-lap-num', posLabel));
+      var textWrap = el('div', 'rc-results-report-lap-text');
+      var lineEl = document.createElement('p');
+      lineEl.className = 'rc-results-report-line';
+      if (p.carClass) lineEl.appendChild(_rcClassAbbrevPill(p.carClass));
+      var nameEl = document.createElement('span');
+      nameEl.className = 'rc-results-report-name';
+      nameEl.textContent = 'You';
+      lineEl.appendChild(nameEl);
+      var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
+      var tierPhrase = tierInfo
+        ? tierInfo.label.replace(/^Tier (\d+): /, 'Tier $1 ').replace(/\s*\([^)]*\)\s*$/, '')
+        : ('Tier ' + (p.penaltyTier || '?'));
+      var infractionPhrase = (p.infractionType === 'Avoidable Contact (Self Report)')
+        ? 'self-reported an incident'
+        : (p.infractionType || 'Infraction');
+      lineEl.appendChild(document.createTextNode(' ' + infractionPhrase + ': ' + tierPhrase + ' '));
+      var effectSpan = document.createElement('span');
+      effectSpan.className = 'rc-results-penalty-effect';
+      effectSpan.textContent = '(' + _rcDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
+      lineEl.appendChild(effectSpan);
+      textWrap.appendChild(lineEl);
+      row.appendChild(textWrap);
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+
+  // One panel per session this driver has laps for. Session subheader is
+  // just "QUALIFYING RESULTS"/"RACE RESULTS" now (2026-09-26, Matt's ask:
+  // "no need for a track name or any other identifiers since the
+  // container has the header that explains the event") -- the round's own
+  // title line above already names the event/track/layout. Race Report/
+  // Penalties Assessed moved OUT of here and up to the round level
+  // (resultsRoundPanel, 2026-09-27) -- they're round-wide (raceReport only
+  // ever comes from the Race session, never Qualify), not a per-session
+  // concern the way the lap table is.
   function resultsSessionsDetail(sessions) {
     var wrap = el('div', 'rc-results-sessions');
     (sessions || []).forEach(function (session) {
-      if ((!session.laps || !session.laps.length) && (!session.events || !session.events.length)) return;
+      if (!session.laps || !session.laps.length) return;
 
       var sessionPanel = el('div', 'rc-results-session');
       var typeUpper = String(session.sessionType || '').toUpperCase();
@@ -5267,8 +5389,7 @@
         (typeUpper.indexOf('RACE') === 0 ? 'Race Results' : (escapeHtml(session.sessionType || 'Session') + ' Results'));
       sessionPanel.appendChild(el('div', 'rc-results-session-title', label));
 
-      if (session.laps && session.laps.length) sessionPanel.appendChild(resultsLapsTable(session));
-      if (session.events && session.events.length) sessionPanel.appendChild(resultsRaceReport(session));
+      sessionPanel.appendChild(resultsLapsTable(session));
 
       wrap.appendChild(sessionPanel);
     });
@@ -5285,7 +5406,12 @@
   // the weight/shape match exactly.
   function _rcBuildResultsEventTitleLine_(race) {
     var line = el('h3', 'rc-results-round-title');
-    if (race.roundNum) line.appendChild(document.createTextNode('Round ' + race.roundNum + '   '));
+    // "Round N" wrapped in its own span, lighter weight than the rest of
+    // the title (2026-09-27, Matt's ask) -- same per-segment-span pattern
+    // already used for event/track/layout below, just applied to the
+    // round number too instead of leaving it as a bare text node
+    // inheriting the h3's full 700 weight.
+    if (race.roundNum) line.appendChild(el('span', 'rc-results-round-title-roundnum', 'Round ' + race.roundNum + '   '));
     line.appendChild(el('span', 'rc-results-round-title-event', escapeHtml(race.eventName || 'Race')));
     if (race.track) {
       line.appendChild(document.createTextNode(' at '));
@@ -5340,6 +5466,20 @@
     // rewrite, Matt's call).
     panel.appendChild(resultsYourSummary(you));
     panel.appendChild(resultsSessionsDetail(race.sessions));
+
+    // Race Report + Penalties Assessed (2026-09-27 rework/addition) --
+    // round-level, not per-session (raceReport only ever comes from the
+    // Race session; a Qualify-only round simply has none). Both are
+    // pre-filtered to just this driver by Results.gs's
+    // _rcBuildDriverFullRoundResult_ -- see resultsRaceReport/
+    // resultsPenaltiesAssessed's own comments above for the full story.
+    // Race Report is skipped entirely on a round with no report data
+    // (imported before this feature existed, or Qualify-only), same as
+    // league.js's own "no report isn't something to flag" convention --
+    // Penalties Assessed always renders, with its own "none assessed"
+    // empty state, since a clean race is worth confirming explicitly.
+    if (race.raceReport && race.raceReport.length) panel.appendChild(resultsRaceReport(race.raceReport));
+    panel.appendChild(resultsPenaltiesAssessed(race.penalties));
 
     return panel;
   }

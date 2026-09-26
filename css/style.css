@@ -3126,6 +3126,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    styling and format"), just this page's own light-theme colors instead
    of league's white-on-dark. */
 .rc-results-round-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; color: var(--rc-carbon); margin: 0; }
+/* "Round N" lighter than the rest of the title (2026-09-27, Matt's ask) --
+   was a bare text node inheriting the h3's 700 weight; now its own span,
+   same pattern as -event/-track/-layout below. */
+.rc-results-round-title-roundnum { font-weight: 400; color: var(--rc-carbon); }
 .rc-results-round-title-event { font-weight: 800; color: var(--rc-carbon); }
 .rc-results-round-title-track { font-weight: 500; color: var(--rc-carbon); }
 .rc-results-round-title-layout { font-weight: 500; color: var(--rc-steel); }
@@ -3198,18 +3202,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    light-background counterpart. */
 .rc-results-fastest { font-weight: 700; color: var(--rc-class-lmp3); }
 
-/* Race Report -- personal Results page (2026-09-26, Matt's ask: "I want
-   the incidents and lap times organized in the same way as the race
-   report... Make sure the appearance of the list mimics Race Report").
-   Mirrors league.js's .rcl-report-lap/-lap-num/-lap-text/-line row
-   shape exactly, recolored for this page's white-card background
-   instead of the League Hub's dark theme. Collisions and track cuts
-   are deliberately NOT split into two lists here (Matt: "Mix together
-   the collisions with the track cuts so they aren't seperated by two
-   groups") -- .rc-results-report-line is one flat style for every
-   event type, no per-clause color coding like the League Hub's
-   .rcl-report-clause-* (this page keeps every captured event, not just
-   curated highlights, so a busy multi-color treatment would be noisy). */
+/* Race Report -- personal Results page. REWORKED 2026-09-27 (Matt's ask:
+   "review the race report in ALL RESULTS on the league page and mimic
+   that exactly... copy the exact way we figured it out on the league.html
+   page") -- this now renders the SAME clause-tagged raceReport data and
+   per-clause coloring league.js's .rcl-report-clause-* does (js/Account.html's
+   resultsRaceReport), just recolored for this page's white-card background
+   instead of the League Hub's dark theme. The row shape itself
+   (.rc-results-report-lap/-lap-num/-lap-text/-line) is unchanged from the
+   original 2026-09-26 version and still mirrors league.js's
+   .rcl-report-lap/-lap-num/-lap-text/-line exactly. */
 .rc-results-report { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rc-offwhite); }
 .rc-results-report-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
 .rc-results-report-list { display: flex; flex-direction: column; }
@@ -3219,6 +3221,39 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-report-lap-text { flex: 1 1 auto; min-width: 0; }
 .rc-results-report-line { margin: 0 0 4px; font-size: 13px; line-height: 1.5; color: var(--rc-carbon); }
 .rc-results-report-line:last-child { margin-bottom: 0; }
+/* Driver name -- bold, full-strength carbon (this page's "always white"
+   equivalent on a light background), matching league.js's
+   .rcl-report-name treatment of always-bold-emphasized names. */
+.rc-results-report-name { color: var(--rc-carbon); font-weight: 700; }
+.rc-results-report-timestamp { margin-right: 6px; color: var(--rc-steel); font-variant-numeric: tabular-nums; font-size: 12px; }
+/* Clause color-coding within a report line -- light-theme counterpart of
+   league.css's .rcl-report-clause-* (2026-09-27). Same color intent per
+   clause kind, just this page's existing tokens instead of the League
+   Hub's dark-theme ones: wall stays a plain dim gray, car-to-car contact
+   is amber, damage/pit are orange, gains are green, losses are red (not
+   bold, matching league.js), retirement is bold carbon, and fastest
+   lap/sector is the same bold purple (--rc-class-lmp3) this page's
+   .rc-results-fastest already established for the Lap Time Log table --
+   this is the fix for Matt's separate "fastest sectors and laps being
+   bolded purple" ask, which never actually worked under the old flat-text
+   renderer. */
+.rc-results-report-clause-wall { color: var(--rc-steel); }
+.rc-results-report-clause-car { color: var(--rc-warning-accent); font-weight: 700; }
+.rc-results-report-clause-damage { color: var(--rc-orange); font-weight: 700; }
+.rc-results-report-clause-pit { color: var(--rc-orange); font-weight: 700; }
+.rc-results-report-clause-gain { color: var(--rc-ok); font-weight: 700; }
+.rc-results-report-clause-loss { color: var(--rc-red); }
+.rc-results-report-clause-retirement { color: var(--rc-carbon); font-weight: 700; }
+.rc-results-report-clause-fastest { color: var(--rc-class-lmp3); font-weight: 700; }
+
+/* Penalties Assessed -- personal Results page (2026-09-27, Matt's ask:
+   "add a penalties assessed at the bottom, just like ALL RESULTS has").
+   Reuses the exact same .rc-results-report-lap/-lap-num/-lap-text/-line/
+   -name row shape above -- only the penalty effect itself
+   (.rc-results-penalty-effect) gets its own bold-red treatment, same
+   convention as league.css's .rcl-penalty-effect. */
+.rc-results-penalties { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rc-offwhite); }
+.rc-results-penalty-effect { color: var(--rc-red); font-weight: 700; }
 
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
