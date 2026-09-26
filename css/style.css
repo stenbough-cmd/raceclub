@@ -136,6 +136,12 @@
   --rc-positive-border: #bfe2c4;
   --rc-negative: #ff3b30;
   --rc-negative-bg: #fdecea;
+  /* --rc-negative-border: the light-fill/border pairing for --rc-negative,
+     matching how --rc-positive-border pairs with --rc-positive (2026-09-26,
+     promoted from the one hardcoded #f4c2bd literal .rc-team-perk-penalty
+     already used, once a second call site -- the protest-ruling/round-
+     upload status circles below -- needed the exact same tint). */
+  --rc-negative-border: #f4c2bd;
   --rc-balanced: #1a5276;
   --rc-gold: #b8860b;
   --rc-warning: #a3790a;
@@ -1933,7 +1939,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-team-perk-chip strong { font-family: var(--rc-font-heading); font-weight: 700; }
 .rc-team-perk-bonus { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
-.rc-team-perk-penalty { background: var(--rc-negative-bg); border-color: #f4c2bd; color: var(--rc-negative); }
+
+.rc-team-perk-penalty { background: var(--rc-negative-bg); border-color: var(--rc-negative-border); color: var(--rc-negative); }
 .rc-team-perk-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
 .rc-team-card-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
 /* Join button anchored bottom-right of the card (Matt's call), not just
@@ -2463,6 +2470,48 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
 .rc-protest-dash-icon-ruled { background: var(--rc-steel); }
 .rc-protest-dash-item-body { flex: 1; min-width: 0; }
+
+/* Outcome-colored status circles (2026-09-26, Matt's ask) -- a second look
+   for this same small circle-icon slot (.rc-protest-dash-icon above),
+   alongside the plain open-ring (-pending) and solid-gray-fill (-ruled)
+   looks that already existed. Matches the exact tinted-fill/colored-border/
+   colored-glyph treatment the big green Registered .rc-regstatus-icon-done
+   circle already uses elsewhere on the site (light tint background +
+   matching-color border + matching-color glyph, not a solid dark fill with
+   a white icon) -- just scaled down to this row icon's small 18px size,
+   and extended with red/yellow variants that complement that same green
+   rather than reuse it: green reuses --rc-positive/-border/-bg outright;
+   red reuses --rc-negative/-border/-bg (the site's existing "penalty" red
+   trio, see the :root comment above); yellow reuses the exact
+   #fdf6e3/#e8b93a/--rc-warning trio .rc-regstatus-icon-open already
+   established sitewide for "a yellow, in-between state." Two call sites
+   share these classes directly rather than each getting their own copy,
+   so both stay visually identical automatically:
+     - Dashboard Protest card (buildDashProtestItem, Account.html) --
+       green+check for Upheld, red+X for Denied, yellow+tilde for Upheld
+       at Tier 1 (Warning, the mildest tier -- no real competitive effect,
+       so it reads as "acknowledged" rather than a clean "case closed").
+     - League Tools' per-round upload status line (buildRoundStatusLine,
+       Account.html) -- yellow+tilde once only one of Qualify/Race is
+       uploaded, yellow+check once both are in but not yet reviewed, green+
+       check once the round is reviewed and finalized. The plain open gray
+       ring (-pending above) still covers "nothing uploaded yet" for that
+       same line, unchanged.
+   The glyph itself is a plain text character (a checkmark, an X, or a
+   tilde) set via innerHTML/textContent and colored via `color: currentColor`
+   from whichever variant below is applied, exactly like .rc-regstatus-icon
+   -done's own checkmark -- not an SVG, unlike the older -ruled look. */
+.rc-statuscircle-green,
+.rc-statuscircle-yellow,
+.rc-statuscircle-red {
+  border: 2px solid;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.rc-statuscircle-green { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
+.rc-statuscircle-yellow { background: #fdf6e3; border-color: #e8b93a; color: var(--rc-warning); }
+.rc-statuscircle-red { background: var(--rc-negative-bg); border-color: var(--rc-negative-border); color: var(--rc-negative); }
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
 /* .rc-protest-dash-outcome/.rc-protest-dash-pending removed (2026-09-26)

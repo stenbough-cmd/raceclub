@@ -2002,6 +2002,23 @@
   // see .rc-protest-dash-icon/-pending/-ruled in style.css.
   var RC_PROTEST_RULED_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>';
 
+  // Ruling-outcome status circle (2026-09-26, Matt's ask) -- replaces the
+  // old single "solid gray + white check" look above with an outcome-
+  // colored circle for the two real rulings: green+check for Upheld
+  // (any tier but 1), red+X for Denied, yellow+tilde for Upheld
+  // specifically at Tier 1 (Warning). See the long .rc-statuscircle-*
+  // comment in style.css for the full palette rationale -- these are the
+  // same classes League Tools' own per-round upload status line
+  // (buildRoundStatusLine below) reuses directly, per Matt's ask that both
+  // share "the same style." Returns null for anything else (Pending,
+  // Withdrawn) so the caller falls back to the existing plain looks.
+  function _rcProtestOutcomeIcon_(status, penaltyTier) {
+    if (status === 'Denied') return { cls: 'rc-statuscircle-red', glyph: '✕' };
+    if (status === 'Upheld' && Number(penaltyTier) === 1) return { cls: 'rc-statuscircle-yellow', glyph: '~' };
+    if (status === 'Upheld') return { cls: 'rc-statuscircle-green', glyph: '✓' };
+    return null;
+  }
+
   // Shared "who this protest is against" name list (2026-09-26, pulled out
   // while fixing a latent bug: involvedNames is built server-side as
   // [filerName, against1, against2?] for a real driver-filed protest, but
@@ -2044,10 +2061,20 @@
     // exception -- pulling your own protest is final the moment it
     // happens, with no round-finalization step it's waiting on at all.
     var isOfficial = p.status === 'Withdrawn' || ((p.status === 'Upheld' || p.status === 'Denied') && !!p.resultsFinalized);
+    // Outcome-colored circle for an official Upheld/Denied ruling
+    // (2026-09-26, see _rcProtestOutcomeIcon_'s own comment above);
+    // Withdrawn keeps the older neutral solid-gray-fill look since pulling
+    // your own protest isn't a "ruling" with an outcome to color.
+    var outcomeIcon = isOfficial ? _rcProtestOutcomeIcon_(p.status, p.penaltyTier) : null;
 
     var row = el('div', 'rc-protest-dash-item');
-    var icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
-    if (isOfficial) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    var icon;
+    if (outcomeIcon) {
+      icon = el('div', 'rc-protest-dash-icon ' + outcomeIcon.cls, outcomeIcon.glyph);
+    } else {
+      icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+      if (isOfficial) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    }
     row.appendChild(icon);
 
     var body = el('div', 'rc-protest-dash-item-body');
@@ -4169,46 +4196,54 @@
   }
 
   // Round status line (2026-09-23, Matt's ask; recolored/rewritten
-  // 2026-09-24, item 8) -- one line summarizing exactly where a round's
-  // results stand, in a fixed 4-stage sequence:
-  //   1. Awaiting results.
-  //   2. Qualifying results uploaded, awaiting race results.
-  //   3. Results uploaded, awaiting review.
-  //   4. Results reviewed and finalized. Official results posted.
-  // No more per-stage color coding (was red/yellow/green,
-  // .rc-round-status-red/-yellow/-green, removed) -- the text is always
-  // light gray and italic (.rc-round-status-text), and the icon is always
-  // an open gray circle except on stage 4, where it fills solid gray with
-  // a white checkmark. That's the exact same open-circle/checkmark-circle
-  // pattern (and the exact same .rc-protest-dash-icon/-pending/-ruled
-  // classes plus RC_PROTEST_RULED_ICON) the Dashboard's Protest card
-  // already uses, reused here directly rather than duplicated so the two
-  // stay visually identical automatically.
+  // 2026-09-24, item 8; recolored again 2026-09-26, Matt's ask for a real
+  // 4-state circle here matching the Protest card's outcome colors) -- one
+  // line summarizing exactly where a round's results stand, in a fixed
+  // 4-stage sequence, each with its own circle look now:
+  //   1. Awaiting results. -- open gray ring (.rc-protest-dash-icon-pending,
+  //      unchanged -- nothing uploaded yet).
+  //   2. Qualifying (or Race) results uploaded, awaiting the other. --
+  //      yellow circle with a tilde (.rc-statuscircle-yellow) -- only one
+  //      of the two session types is in.
+  //   3. Results uploaded, awaiting review. -- yellow circle with a
+  //      checkmark (.rc-statuscircle-yellow) -- both are in now, still
+  //      needs a human review/finalize pass.
+  //   4. Results reviewed and finalized. Official results posted. -- green
+  //      circle with a checkmark (.rc-statuscircle-green).
+  // Same .rc-statuscircle-* classes the Dashboard Protest card's own
+  // outcome circles use (see that CSS comment in style.css for the full
+  // palette rationale) -- shared directly rather than duplicated so the
+  // two stay visually identical automatically, per Matt's explicit ask
+  // that both share "the same style." The text itself is unchanged: always
+  // light gray and italic (.rc-round-status-text).
   // A LOCKED round (an earlier round isn't finalized yet) gets no note at
   // all -- its Import Results/Delete Results buttons are hidden with
   // nothing else said about it; the note above is reserved for the one
   // round that's actually actionable right now.
   function buildRoundStatusLine(r, locked) {
     var isFinal = !!r.resultsFinalized;
-    var text;
+    var text, iconCls, glyph;
     if (isFinal) {
       text = 'Results reviewed and finalized. Official results posted.';
+      iconCls = 'rc-statuscircle-green'; glyph = '✓';
     } else if (r.hasResults) {
       text = 'Results uploaded, awaiting review.';
+      iconCls = 'rc-statuscircle-yellow'; glyph = '✓';
     } else if (r.hasAnySessionImported) {
       // The 4-stage sequence names only the Qualifying-then-Race order;
       // this mirrors that same wording for the reverse order (a race
       // session imported before qualifying), a case the original design
       // already handled separately -- judgment call, item 8.
       text = r.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.';
+      iconCls = 'rc-statuscircle-yellow'; glyph = '~';
     } else if (!locked) {
       text = 'Awaiting results.';
+      iconCls = null; glyph = null;
     } else {
       return null;
     }
     var line = el('div', 'rc-round-status');
-    var icon = el('span', 'rc-protest-dash-icon' + (isFinal ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
-    if (isFinal) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    var icon = el('span', 'rc-protest-dash-icon' + (iconCls ? (' ' + iconCls) : ' rc-protest-dash-icon-pending'), glyph || undefined);
     line.appendChild(icon);
     line.appendChild(el('span', 'rc-round-status-text', text));
     return line;

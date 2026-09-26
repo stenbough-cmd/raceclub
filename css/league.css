@@ -253,10 +253,11 @@ body.rc-league-page {
   /* Bumped a little (was 14px/22px), 2026-09-23 Matt's ask: "increase the
      max height and width of the logos... so they can be seen easier".
      +5px more (was 27px), 2026-09-24 Matt's ask: "add 5 more pixels max
-     width for manufacturer logos in TICKER scroll". */
+     width for manufacturer logos in TICKER scroll". +5px more again (was
+     32px), 2026-09-26, same ask repeated. */
   height: 17px;
   width: auto;
-  max-width: 32px;
+  max-width: 37px;
   object-fit: contain;
 }
 /* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the

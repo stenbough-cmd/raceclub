@@ -437,6 +437,16 @@ function renderHeader(opts) {
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
               '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">Feedback</button>' +
+              // Discord link, right under Feedback (2026-09-26, Matt's
+              // ask), matching the sidebar's own order exactly (Edit
+              // Profile, Help, Feedback, Discord -- see buildSidebarNav,
+              // Account.html) -- opens in a new tab so a driver never
+              // loses their place on whatever page this dropdown is open
+              // on. A plain <a> styled with the same .rc-header-menu-item
+              // class as every other item here, rather than trying to
+              // reuse the sidebar's icon+label .rc-nav-item treatment,
+              // since this menu has no icon slot on any of its other rows.
+              '<a class="rc-header-menu-item" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">Discord</a>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';

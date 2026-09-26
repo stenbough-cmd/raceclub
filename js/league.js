@@ -315,6 +315,13 @@ function _rclBuildTickerItems(hub) {
 
   // Next race -- same "first non-bye, unfinished" pick the Calendar
   // section's own "UP NEXT" pill uses (see _rclRenderCalendar above).
+  // Built here but NOT pushed yet (2026-09-26, Matt's ask: "move the NEXT
+  // RACE part of the ticker until after all the results sections") --
+  // pushed at the very end of this function instead, after every
+  // class-results/roster item below, so it always reads last no matter
+  // which of the two results branches (pre-season roster vs in-season top
+  // 5) actually ran.
+  var nextRaceItem = null;
   var nextEntry = null;
   (hub.calendar || []).forEach(function (entry) {
     if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
@@ -328,12 +335,12 @@ function _rclBuildTickerItems(hub) {
     // already uses, so buildRun() below can give the date its own
     // lighter-weight .rcl-ticker-season-dates span instead of it being
     // plain text baked into the rest of the line.
-    items.push({
+    nextRaceItem = {
       tag: 'NEXT RACE',
       text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
         (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : ''),
       datesText: nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : ''
-    });
+    };
   }
 
   // Driver rows (both branches below) are kept as STRUCTURED data --
@@ -355,6 +362,7 @@ function _rclBuildTickerItems(hub) {
       if (!rows.length) return;
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', driverRows: rows });
     });
+    if (nextRaceItem) items.push(nextRaceItem);
     return items;
   }
 
@@ -366,15 +374,26 @@ function _rclBuildTickerItems(hub) {
   // itself only has room to show 3 (see handleGetLeagueHub, Website.gs).
   var lastRace = hub.tickerLastRace;
   if (lastRace) {
-    // Format changed 2026-09-23 (Matt's ask): "Round n EventName: track"
-    // -- was "EventName (Round n):". Split into a bold part (round +
-    // event name) and a normal-weight part (the track), per Matt's ask
-    // that "the round and event name should remain bolded while the
-    // track name should be normal weight" -- buildRun() below renders
-    // these as two differently-weighted spans (.rcl-ticker-prefix-bold/
-    // -dim, css/league.css) instead of one plain string.
-    var raceLabelBold = (lastRace.roundNum ? ('Round ' + lastRace.roundNum + ' ') : '') + (lastRace.eventName || 'Race');
-    var raceLabelDim = lastRace.track ? (': ' + lastRace.track) : ':';
+    // Format changed 2026-09-26 (Matt's ask): "Round n EventName at
+    // TrackName:Layout (date)" -- was "Round n EventName: track"
+    // (2026-09-23). Round n is now its OWN normal-weight piece
+    // (prefixNormalText, plain text at the item's own base weight, same
+    // as any other unstyled ticker text) -- previously bolded together
+    // with the event name; the event name alone stays bold
+    // (prefixBoldText). Track name and layout now share the exact same
+    // normal-weight styling (Matt's ask: "make the layout the same style
+    // as the track name") -- both folded into prefixDimText, matching
+    // the Calendar's own "<event> at <track>:<layout>" three-piece
+    // convention (see _rcBuildRoundResultData_'s layout comment,
+    // Results.gs). The date this round was actually raced closes the
+    // line out in the ticker's existing darker-gray date style
+    // (prefixDatesText below -> .rcl-ticker-season-dates), same treatment
+    // SEASON/NEXT RACE already give their own dates.
+    var raceLabelNormal = lastRace.roundNum ? ('Round ' + lastRace.roundNum + ' ') : '';
+    var raceLabelBold = lastRace.eventName || 'Race';
+    var raceTrackLayout = lastRace.track ? (lastRace.track + (lastRace.layout ? (':' + lastRace.layout) : '')) : '';
+    var raceLabelDim = raceTrackLayout ? (' at ' + raceTrackLayout) : '';
+    var raceLabelDates = lastRace.startUtc ? (' (' + _rclFormatDate(lastRace.startUtc) + ')') : '';
     var resultClasses = _rclSortByTickerClassOrder_(lastRace.classes || [], function (cls) { return cls.className; });
     resultClasses.forEach(function (cls) {
       var standings = (cls.standings || []).slice(0, 5);
@@ -389,11 +408,16 @@ function _rclBuildTickerItems(hub) {
       // so it's left without a rank prefix.
       items.push({
         tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5',
-        prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim,
+        prefixNormalText: raceLabelNormal, prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim,
+        prefixDatesText: raceLabelDates,
         driverRows: rows, showRank: true
       });
     });
   }
+
+  // NEXT RACE, last (2026-09-26, Matt's ask -- see this item's own build
+  // comment above).
+  if (nextRaceItem) items.push(nextRaceItem);
 
   return items;
 }
@@ -477,16 +501,18 @@ function _rclRenderTicker(hub) {
         // HTML, so this uses   (non-breaking space) x10 to actually
         // render as a wide gap instead of silently becoming a single
         // space.
-        // Bold round/event name + normal-weight track (2026-09-23,
-        // Matt's ask: "the round and event name should remain bolded
-        // while the track name should be normal weight"), THEN 5
-        // spaces before the driver list starts (Matt's ask: "insert 5
-        // spaces before beginning the top [5]"). The pre-results
+        // Plain "Round n" + bold event name + normal-weight "at track:
+        // layout" + gray raced-on date (2026-09-26, Matt's ask -- see
+        // _rclBuildTickerItems' own comment on this exact item shape),
+        // THEN 5 spaces before the driver list starts (Matt's ask:
+        // "insert 5 spaces before beginning the top [5]"). The pre-results
         // roster item still uses the older plain prefixText (no
         // bold/track split -- there's no race/track to name yet).
         if (item.prefixBoldText !== undefined) {
+          if (item.prefixNormalText) el.appendChild(document.createTextNode(item.prefixNormalText));
           el.appendChild(_rclEl('span', 'rcl-ticker-prefix-bold', item.prefixBoldText));
           if (item.prefixDimText) el.appendChild(_rclEl('span', 'rcl-ticker-prefix-dim', item.prefixDimText));
+          if (item.prefixDatesText) el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.prefixDatesText));
           el.appendChild(document.createTextNode('     '));
         } else if (item.prefixText) {
           el.appendChild(document.createTextNode(item.prefixText));
@@ -589,7 +615,7 @@ function _rclRenderTicker(hub) {
     // above, so divide by it to get one run's width) against a fixed
     // px/sec rate, so the strip always moves at the same visual pace no
     // matter how much text it's carrying.
-    var PX_PER_SEC = 70; // tuned to read as a steady, easy-to-follow news-ticker crawl
+    var PX_PER_SEC = 64; // 2026-09-26, Matt's ask: "slow the ticker down ever so slightly" (was 70)
     var MIN_DURATION_SEC = 12; // floor so a very short ticker (e.g. no results yet) doesn't zip past
     var runWidth = track.scrollWidth / RUN_COUNT;
     var mainDurationSec = Math.max(runWidth / PX_PER_SEC, MIN_DURATION_SEC);
