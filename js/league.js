@@ -349,11 +349,17 @@ function _rclBuildTickerItems(hub) {
     // ROUND n results item below (2026-09-26, Matt's ask: "make the NEXT
     // RACE event the same exact style/weight/format as the ROUND N race
     // in the highlight") -- bold event name, normal-weight " at
-    // track:layout", gray " (date)", same field names and the exact same
-    // ':' (no space) join between track and layout ROUND n's own
-    // raceTrackLayout below uses, rather than the ': ' (with a space)
-    // this item used to build on its own.
-    var nextTrackLayout = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? (':' + nextEntry.layout) : '')) : '';
+    // track: layout", gray " (date)", same field names and the same
+    // ': ' (space after the colon) join between track and layout
+    // ROUND n's own raceTrackLayout below uses.
+    // Exact spacing spelled out literally (2026-09-27, Matt's ask, giving
+    // "(space)" markers for every single-space gap): "<event title>
+    // (space)at(space)<track>:(space)<track layout>(space)(<date>)" --
+    // one space before/after "at", one space after the track's colon
+    // (not before it), one space before the parenthesized date. That's
+    // exactly what prefixBoldText + " at " + track + ": " + layout +
+    // " (" + date + ")" produces below and in the ROUND n item.
+    var nextTrackLayout = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? (': ' + nextEntry.layout) : '')) : '';
     nextRaceItem = {
       tag: 'NEXT RACE',
       prefixBoldText: nextEntry.eventName || 'Race',
@@ -417,7 +423,7 @@ function _rclBuildTickerItems(hub) {
     // combined list like the first pass had.
     var raceTag = lastRace.roundNum ? ('ROUND ' + lastRace.roundNum) : 'ROUND RESULTS';
     var raceLabelBold = lastRace.eventName || 'Race';
-    var raceTrackLayout = lastRace.track ? (lastRace.track + (lastRace.layout ? (':' + lastRace.layout) : '')) : '';
+    var raceTrackLayout = lastRace.track ? (lastRace.track + (lastRace.layout ? (': ' + lastRace.layout) : '')) : '';
     var raceLabelDim = raceTrackLayout ? (' at ' + raceTrackLayout) : '';
     var raceLabelDates = lastRace.startUtc ? (' (' + _rclFormatDate(lastRace.startUtc) + ')') : '';
     var resultClasses = _rclSortByTickerClassOrder_(lastRace.classes || [], function (cls) { return cls.className; });
