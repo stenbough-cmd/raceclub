@@ -345,19 +345,20 @@ function _rclBuildTickerItems(hub) {
     if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
   });
   if (nextEntry) {
-    var nextTrackText = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? ': ' + nextEntry.layout : '')) : '';
-    var nextDateText = nextEntry.startUtc ? _rclFormatDate(nextEntry.startUtc) : '';
-    // Split into text/datesText (2026-09-23, Matt's ask: "the date after
-    // the next race... should be gray like the season duration date is")
-    // -- same nameText/datesText structured pattern the SEASON item above
-    // already uses, so buildRun() below can give the date its own
-    // lighter-weight .rcl-ticker-season-dates span instead of it being
-    // plain text baked into the rest of the line.
+    // Same prefixBoldText/prefixDimText/prefixDatesText shape as the
+    // ROUND n results item below (2026-09-26, Matt's ask: "make the NEXT
+    // RACE event the same exact style/weight/format as the ROUND N race
+    // in the highlight") -- bold event name, normal-weight " at
+    // track:layout", gray " (date)", same field names and the exact same
+    // ':' (no space) join between track and layout ROUND n's own
+    // raceTrackLayout below uses, rather than the ': ' (with a space)
+    // this item used to build on its own.
+    var nextTrackLayout = nextEntry.track ? (nextEntry.track + (nextEntry.layout ? (':' + nextEntry.layout) : '')) : '';
     nextRaceItem = {
       tag: 'NEXT RACE',
-      text: _rclEscapeHtml(nextEntry.eventName || 'Race') +
-        (nextTrackText ? ' at ' + _rclEscapeHtml(nextTrackText) : ''),
-      datesText: nextDateText ? ' (' + _rclEscapeHtml(nextDateText) + ')' : ''
+      prefixBoldText: nextEntry.eventName || 'Race',
+      prefixDimText: nextTrackLayout ? (' at ' + nextTrackLayout) : '',
+      prefixDatesText: nextEntry.startUtc ? (' (' + _rclFormatDate(nextEntry.startUtc) + ')') : ''
     };
   }
 
@@ -405,14 +406,15 @@ function _rclBuildTickerItems(hub) {
     // Track name and layout still share one normal-weight span
     // (prefixDimText), and the raced-on date still closes it out in the
     // ticker's gray date style (prefixDatesText) -- both unchanged from
-    // the first pass. A second gold tag-styled label, "TOP 10 RESULTS:"
-    // (midTag, rendered via the same .rcl-ticker-item-tag class -- Matt's
-    // ask: "label TOP 10 RESULTS in gold like the other categories"),
-    // introduces the driver lists. From there every class's own top 10
-    // (was top 5) runs in Hypercar-to-LMGTE order as one classGroups
-    // array -- see buildRun's item.classGroups branch below -- separated
-    // from the NEXT class by a wider 15-space gap instead of a whole new
-    // tag+prefix repeating (Matt: "instead of relabeling the next class").
+    // the first pass. Every class's own top 10 (was top 5) runs in
+    // Hypercar-to-LMGTE order as one classGroups array -- see buildRun's
+    // item.classGroups branch below -- separated from the next class by
+    // a wider 15-space gap instead of a whole new tag+prefix repeating
+    // (Matt: "instead of relabeling the next class"). EACH group carries
+    // its own gold "TOP TEN RESULTS:" tag (2026-09-26 follow-up, Matt's
+    // ask: "Add a TOP TEN RESULTS: label in front of all classes that
+    // have results being scored") -- not one shared tag before the whole
+    // combined list like the first pass had.
     var raceTag = lastRace.roundNum ? ('ROUND ' + lastRace.roundNum) : 'ROUND RESULTS';
     var raceLabelBold = lastRace.eventName || 'Race';
     var raceTrackLayout = lastRace.track ? (lastRace.track + (lastRace.layout ? (':' + lastRace.layout) : '')) : '';
@@ -434,7 +436,7 @@ function _rclBuildTickerItems(hub) {
         return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className };
       });
       if (!rows.length) return;
-      classGroups.push({ driverRows: rows });
+      classGroups.push({ driverRows: rows, tag: 'TOP TEN RESULTS' });
     });
     // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
     // place before drivers in the ticker") -- ranked TOP 10 rows only;
@@ -444,7 +446,6 @@ function _rclBuildTickerItems(hub) {
       items.push({
         tag: raceTag,
         prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim, prefixDatesText: raceLabelDates,
-        midTag: 'TOP 10 RESULTS',
         classGroups: classGroups, showRank: true
       });
     }
@@ -538,6 +539,28 @@ function _rclRenderTicker(hub) {
       // where the label ends and the data starts instead of a color/weight
       // change. See .rcl-ticker-item-tag in css/league.css.
       el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.tag + ':'));
+      // Shared prefix rendering (2026-09-26 follow-up, Matt's ask: "make
+      // the NEXT RACE event the same exact style/weight/format as the
+      // ROUND N race in the highlight") -- bold event name + normal-
+      // weight "at track:layout" + gray raced-on date, applies to ANY
+      // item carrying these fields, not just ones with a driver list
+      // below (NEXT RACE has none) -- both items now share this one code
+      // path instead of NEXT RACE using its own separate plain-text
+      // branch. The pre-results roster item still uses the older plain
+      // prefixText (no bold/track split -- there's no race/track to name
+      // yet).
+      if (item.prefixBoldText !== undefined) {
+        if (item.prefixNormalText) el.appendChild(document.createTextNode(item.prefixNormalText));
+        el.appendChild(_rclEl('span', 'rcl-ticker-prefix-bold', item.prefixBoldText));
+        if (item.prefixDimText) el.appendChild(_rclEl('span', 'rcl-ticker-prefix-dim', item.prefixDimText));
+        if (item.prefixDatesText) el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.prefixDatesText));
+        // 5-space gap before the driver list starts (Matt's ask: "insert
+        // 5 spaces before beginning the top [5]") -- only when there's a
+        // driver list following; NEXT RACE has nothing after its prefix.
+        if (item.driverRows || item.classGroups) el.appendChild(document.createTextNode('     '));
+      } else if (item.prefixText) {
+        el.appendChild(document.createTextNode(item.prefixText));
+      }
       if (item.driverRows || item.classGroups) {
         // Driver-list items (2026-09-23 rewrite, extended 2026-09-26 for
         // classGroups) -- structured rows instead of one joined string,
@@ -550,32 +573,8 @@ function _rclRenderTicker(hub) {
         // Matt's ask). Plain U+0020 spaces collapse to one in HTML, so
         // this uses   (non-breaking space) throughout to actually render
         // as real gaps instead of silently collapsing.
-        // Plain "Round n" (now the item's own TAG, not part of this
-        // prefix -- see _rclBuildTickerItems) + bold event name +
-        // normal-weight "at track:layout" + gray raced-on date, THEN 5
-        // spaces before the mid-tag/driver list starts (Matt's ask:
-        // "insert 5 spaces before beginning the top [5]"). The pre-
-        // results roster item still uses the older plain prefixText (no
-        // bold/track split -- there's no race/track to name yet).
-        if (item.prefixBoldText !== undefined) {
-          if (item.prefixNormalText) el.appendChild(document.createTextNode(item.prefixNormalText));
-          el.appendChild(_rclEl('span', 'rcl-ticker-prefix-bold', item.prefixBoldText));
-          if (item.prefixDimText) el.appendChild(_rclEl('span', 'rcl-ticker-prefix-dim', item.prefixDimText));
-          if (item.prefixDatesText) el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.prefixDatesText));
-          el.appendChild(document.createTextNode('     '));
-        } else if (item.prefixText) {
-          el.appendChild(document.createTextNode(item.prefixText));
-        }
-        // midTag (2026-09-26, Matt's ask: "label 'TOP 10 RESULTS:' in
-        // gold like the other categories") -- a second tag-styled label
-        // (same .rcl-ticker-item-tag gold treatment as the item's own
-        // leading tag above), introducing the driver lists that follow.
-        if (item.midTag) {
-          el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.midTag + ':'));
-          el.appendChild(document.createTextNode('     '));
-        }
         var list = _rclEl('span', 'rcl-ticker-driver-list');
-        function appendRankedRow(row, idxInClass) {
+        function appendRankedRow(targetList, row, idxInClass) {
           // Bold white rank prefix (2026-09-23, Matt's ask: "Please
           // put 1st, 2nd, 3rd, 4th and 5th before the names in bold
           // white") -- ranked rows only (item.showRank), see
@@ -583,35 +582,57 @@ function _rclRenderTicker(hub) {
           // finishing order so it never sets showRank. Rank resets per
           // class group (idxInClass), not across the whole combined
           // list, since each class's top 10 is its own standalone
-          // ranking.
+          // ranking. Takes an explicit targetList (2026-09-26 follow-up)
+          // since rows now land either in the shared list or in a
+          // per-class group's own rowsWrap (see classGroups branch
+          // below).
           if (item.showRank) {
             // 2 spaces between the rank and the manufacturer logo
             // (2026-09-23, Matt's ask), not just the 1 the trailing space
             // in the rank text used to give it.
-            list.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idxInClass + 1)));
-            list.appendChild(document.createTextNode('  '));
+            targetList.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idxInClass + 1)));
+            targetList.appendChild(document.createTextNode('  '));
           }
-          list.appendChild(buildDriverEntry(row));
+          targetList.appendChild(buildDriverEntry(row));
         }
         if (item.classGroups) {
-          // Combined round-results item (2026-09-26 rewrite, Matt's ask:
-          // "start with the highest class results, a 15 space gap
-          // instead of relabeling the next class") -- every class's top
-          // 10 runs one after another in this ONE item, separated from
-          // the next class by a wider 15 non-breaking-space gap instead
-          // of a whole new tag+prefix repeating per class the way
-          // separate items used to (see _rclBuildTickerItems).
+          // Combined round-results item (2026-09-26 rewrite, extended
+          // 2026-09-26 follow-up, Matt's ask: "Add a TOP TEN RESULTS:
+          // label in front of all classes that have results being
+          // scored") -- every class's top 10 runs one after another in
+          // this ONE item, separated from the next class by a wider 15
+          // non-breaking-space gap (Matt: "instead of relabeling the
+          // next class"). Each group now carries its OWN gold
+          // "TOP TEN RESULTS:" tag (group.tag) instead of one shared
+          // tag before the whole combined list, wrapped together with
+          // its rows in a small flex span (.rcl-ticker-class-section)
+          // that uses the same 8px gap as .rcl-ticker-item's own
+          // tag-to-content spacing (Matt: "make the space between this
+          // label and the drivers the same as every other category")
+          // instead of a manual nbsp count.
           item.classGroups.forEach(function (group, gIdx) {
             if (gIdx > 0) list.appendChild(document.createTextNode('               '));
-            group.driverRows.forEach(function (row, idx) {
-              if (idx > 0) list.appendChild(document.createTextNode('          '));
-              appendRankedRow(row, idx);
-            });
+            if (group.tag) {
+              var section = _rclEl('span', 'rcl-ticker-class-section');
+              section.appendChild(_rclEl('span', 'rcl-ticker-item-tag', group.tag + ':'));
+              var rowsWrap = _rclEl('span', 'rcl-ticker-driver-list');
+              group.driverRows.forEach(function (row, idx) {
+                if (idx > 0) rowsWrap.appendChild(document.createTextNode('          '));
+                appendRankedRow(rowsWrap, row, idx);
+              });
+              section.appendChild(rowsWrap);
+              list.appendChild(section);
+            } else {
+              group.driverRows.forEach(function (row, idx) {
+                if (idx > 0) list.appendChild(document.createTextNode('          '));
+                appendRankedRow(list, row, idx);
+              });
+            }
           });
         } else {
           item.driverRows.forEach(function (row, idx) {
             if (idx > 0) list.appendChild(document.createTextNode('          '));
-            appendRankedRow(row, idx);
+            appendRankedRow(list, row, idx);
           });
         }
         el.appendChild(list);
@@ -622,11 +643,13 @@ function _rclRenderTicker(hub) {
         if (item.datesText) {
           el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.datesText));
         }
-      } else {
-        // NEXT RACE (and anything else with a plain text + optional date)
-        // -- same gray/lighter treatment as SEASON's own date span
-        // (2026-09-23, Matt's ask: "any date that's listed in the ticker
-        // should be gray like the season duration date is").
+      } else if (item.prefixBoldText === undefined && item.text !== undefined) {
+        // Any remaining plain text + optional date item -- same
+        // gray/lighter treatment as SEASON's own date span (2026-09-23,
+        // Matt's ask: "any date that's listed in the ticker should be
+        // gray like the season duration date is"). Guarded against
+        // prefixBoldText items (like NEXT RACE) which already rendered
+        // everything they need above and have no separate item.text.
         el.appendChild(document.createTextNode(item.text));
         if (item.datesText) {
           el.appendChild(_rclEl('span', 'rcl-ticker-season-dates', item.datesText));
