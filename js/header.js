@@ -377,7 +377,15 @@ function renderHeader(opts) {
   if (opts.leagueHubBadge) {
     html += '<span class="rc-header-leaguehub-badge">' +
               '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
-                '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub">' +
+                // draggable="false" (2026-09-27, Matt's ask: make sure the
+                // browser doesn't try to copy/drag the logo like a plain
+                // image, since it's really a link) -- stops the browser's
+                // native "pick up and drag this image out" behavior. The
+                // matching user-select/user-drag CSS is on
+                // .rc-header-leaguehub-logo (style.css) -- together they
+                // keep this reading as a clickable link, not draggable/
+                // selectable image content.
+                '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
               '</a>' +
             '</span>';
   }

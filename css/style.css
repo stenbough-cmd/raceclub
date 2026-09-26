@@ -3308,7 +3308,24 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    display:flex/height:100% pattern as .rc-header-logo-link so the image
    inside it still centers vertically against the 70px header. */
 .rc-header-leaguehub-logo-link { display: flex; align-items: center; height: 100%; }
-.rc-header-leaguehub-logo { height: 40px; display: block; }
+/* Reads as a link, not a copyable/draggable image (2026-09-27, Matt's ask:
+   "make sure my browser doesn't try to copy the letters from the logo...
+   knows it's a graphic that's a link, not something to be copied") --
+   user-select:none stops the browser from letting anyone click-drag-select
+   the image (and its alt text, in browsers that expose it as selectable
+   fallback content) the way it would a text run; -webkit-user-drag:none is
+   Safari's equivalent of the draggable="false" attribute already on the
+   <img> itself (header.js) for browsers that don't respect the attribute
+   alone. This can't stop a deliberate right-click "Save Image As" (no
+   browser-side trick reliably can, short of hurting accessibility), but it
+   does stop the incidental drag/select behavior a plain <img> has by
+   default. */
+.rc-header-leaguehub-logo {
+  height: 40px;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 .rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; margin-left: auto; }
 .rc-header-link {
   font-family: var(--rc-font-heading);

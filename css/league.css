@@ -404,7 +404,9 @@ body.rc-league-page {
      Windows), so the title never silently falls back to the generic
      sans-serif system font. */
   font-family: Helvetica, Arial, sans-serif;
-  font-size: clamp(32px, 5.4vw, 56px);
+  /* Slightly larger (2026-09-27 follow-up, Matt's ask) -- was
+     clamp(32px, 5.4vw, 56px). */
+  font-size: clamp(36px, 6vw, 64px);
   font-weight: 800;
   letter-spacing: 0.01em;
   text-transform: uppercase;
@@ -422,7 +424,12 @@ body.rc-league-page {
    height" as each other instead of one span's weight pulling in a
    different font file with different metrics. */
 .rcl-hero-title-league { font-weight: 400; }
-.rcl-hero-title-hub { font-weight: 700; }
+/* Heavier + red (2026-09-27 follow-up, Matt's ask: "the HUB needs to be
+   slightly heavier weight and red color") -- was font-weight: 700 with no
+   color override (plain .rcl-hero-title white/ink). Still inherits the
+   same font-size/line-height as .rcl-hero-title-league, so only weight and
+   color set it apart, not size. */
+.rcl-hero-title-hub { font-weight: 900; color: var(--rc-red); }
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
    eyebrow above and the body-text sub-line below. */
