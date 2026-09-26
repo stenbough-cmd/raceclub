@@ -545,26 +545,38 @@ p { margin: 0 0 0.75em; }
    pills, which Matt did not ask to change. */
 .rc-badge-status-neutral,
 .rc-badge-race-quiet { background: var(--rc-silver); color: var(--rc-steel); }
-/* League Tools round status line (2026-09-23, Matt's ask) -- a small
-   circle-icon + colored text line under a race row's date/track hint,
-   replacing the old plain-gray partial-import note. Red = one of
-   Qualify/Race imported, the other pending. Yellow = both imported, not
-   yet finalized. Green = finalized/official. Icon color always matches
-   the text color (currentColor on the inline ICON_CIRCLE_EMPTY/
-   ICON_CIRCLE_CHECK svg). */
-.rc-round-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; margin-top: 4px; }
-.rc-round-status-icon { display: flex; flex: none; }
-.rc-round-status-icon svg { display: block; }
-.rc-round-status-red { color: var(--rc-negative); }
-/* Matches the Admin role pill's yellow exactly (2026-09-23, Matt's ask:
-   "Make the yellow for Results uploaded, awaiting validation. And for
-   when qualifying or race is uploaded, the same yellow as the admin
-   pill") -- was --rc-warning, a darker muted yellow-brown that didn't
-   match any other yellow on the site. --rc-role-admin (style.css) is
-   used here directly rather than a new duplicate token, so any future
-   change to the Admin pill's color stays in sync with this automatically. */
-.rc-round-status-yellow { color: var(--rc-role-admin); }
-.rc-round-status-green { color: var(--rc-positive); }
+/* League Tools round status line (2026-09-23, Matt's ask; recolored
+   2026-09-24, item 8) -- a small circle-icon + text line under a race
+   row's date/track hint, replacing the old plain-gray partial-import
+   note. No more per-stage red/yellow/green coding (those classes,
+   .rc-round-status-red/-yellow/-green, and the icon-color-matches-text
+   convention they drove, are removed) -- the text is always light gray
+   and italic (.rc-round-status-text), and the icon reuses the Dashboard
+   Protest card's own .rc-protest-dash-icon/-pending/-ruled classes
+   directly (open gray circle, filled gray with a white checkmark only
+   once finalized) instead of a separate icon here. */
+.rc-round-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
+/* .rc-ruling-select/.rc-ruling-standards-btn removed (2026-09-26) -- both
+   were sized to share one row (the ruling dropdown at 66%, the Penalty
+   Standards opener filling the rest); the Penalty Standards popup is gone
+   (Matt's ask -- he's building a "suggested penalty" system instead), so
+   the select is back to plain full width, styled inline. */
+/* Review & Finalize popup's protest list (openRoundEditFinalizeModal,
+   Account.html) -- redesigned again 2026-09-26 (Matt's ask: "make the list
+   of protests mimic the protests list, with a circle in front of the
+   title") to reuse the Dashboard Protest card's own .rc-protest-dash-item/
+   -icon/-item-body/-line markup and .rc-protest-dash-list's item spacing/
+   divider directly, rather than the one-off .rc-round-review-item divider
+   this popup used from 2026-09-25 (removed). The Apply Ruling/Finalize
+   action bar moved out of this list entirely, up to its own row just below
+   the modal header (same "add button row" placement Cars/Tracks/Members
+   use, .rc-panel + a flex row above it) -- see openRoundEditFinalizeModal.
+   Ruling controls (the tier dropdown, override box) render inside the
+   tree-indent row (.rc-dm-subrow/.rc-dm-tree) below the infraction line
+   for a still-Pending protest, and the ruling's outcome text renders there
+   instead once it's been ruled on -- same "Drivers involved -> infraction
+   -> indented ruling" order every entry now follows. */
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should
@@ -2443,13 +2455,27 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    buildDashProtestItem in Account.html. */
 .rc-protest-dash-list { display: flex; flex-direction: column; gap: 14px; }
 .rc-protest-dash-item { display: flex; align-items: flex-start; gap: 10px; }
+/* Divider between rows when a list has more than one protest (2026-09-24
+   styling pass, Matt's ask). Only fires on the 2nd+ item, so a single-
+   protest card/list never grows an orphan rule. */
+.rc-protest-dash-list .rc-protest-dash-item + .rc-protest-dash-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; }
 .rc-protest-dash-icon { flex: none; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 .rc-protest-dash-icon-pending { border: 2px solid var(--rc-silver); background: transparent; }
 .rc-protest-dash-icon-ruled { background: var(--rc-steel); }
 .rc-protest-dash-item-body { flex: 1; min-width: 0; }
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
-.rc-protest-dash-outcome { margin-top: 3px; font-size: 12px; color: var(--rc-steel); }
+/* .rc-protest-dash-outcome/.rc-protest-dash-pending removed (2026-09-26)
+   -- the pending/ruled note under each protest is now a .rc-dm-subrow +
+   .rc-dm-tree row (same tree-glyph sub-row the Data Management Cars/
+   Tracks lists use), not its own styled line -- see buildDashProtestItem,
+   Account.html. */
+/* Edit/Withdraw actions appended to a Protests-popup history row
+   (buildProtestPopupHistoryItem, Account.html) -- sits to the right of
+   the row's icon+text body, right-justified and top-aligned with the
+   date/first line (2026-09-24, item 6; confirmed placement 2026-09-24
+   styling pass). */
+.rc-protest-popup-item-actions { display: flex; flex-wrap: nowrap; gap: 8px; flex: none; margin-left: auto; align-self: flex-start; }
 .rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
 .rc-cs-stat { flex: 1 1 80px; text-align: center; }
 .rc-cs-stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
@@ -2733,8 +2759,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    instead of showing disabled with a hover lock icon. */
 .rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
-.rc-protest-season-group { padding: 10px 0; }
-.rc-protest-season-group + .rc-protest-season-group { border-top: 1px solid var(--rc-offwhite); }
+/* .rc-protest-season-group (the old per-season grouping pill/tree-line
+   wrapper) removed 2026-09-24, item 6 -- the popup's history list is now
+   one flat, newest-first list of Dashboard-style rows, no more season
+   grouping. */
 
 /* -------------------------------------------------------------------- */
 /* WAGER (2026-09-02) -- the Wager page (renderWagerSection, Account.html)

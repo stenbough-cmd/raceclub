@@ -108,7 +108,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td>4</td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
       '<tr><td>5</td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
       '<tr><td>6</td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td>7</td><td>Suspension</td><td>Driver sits out one or more future rounds; requires a prior Tier 6 disqualification</td></tr></table>' +
+      '<tr><td>7</td><td>Suspension</td><td>Driver sits out one or more future rounds</td></tr></table>' +
       '<h4>5.2 Infraction Types</h4>' +
       '<p><strong>Contact &amp; driving standards</strong></p>' +
       '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +

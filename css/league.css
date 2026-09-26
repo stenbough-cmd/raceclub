@@ -822,6 +822,15 @@ body.rc-league-page {
    has already shrunk as far as it can, since flex-shrink gives priority
    to whichever sibling has more room to give (flex:1) first. */
 .rcl-standings-name { font-size: 14.5px; font-weight: 700; color: var(--rcl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 24px; }
+/* DNF name/car number, light gray (2026-09-26, Matt's ask: "any DNF
+   drivers in the list should have a light gray name and number style, to
+   make them less of a highlight but not invisible") -- weight/size stay
+   exactly the same as every other row (2026-09-24, Matt's ask against
+   bolding a DNF name -- see _rclBuildDriverIdentity_, js/league.js), only
+   the color dims. Applied via .rcl-standings-identity-dnf on the identity
+   block wrapping both spans. */
+.rcl-standings-identity-dnf .rcl-standings-name,
+.rcl-standings-identity-dnf .rcl-standings-carnum { color: var(--rcl-ink-faint); }
 /* Same font-size as the driver name now (2026-09-19 follow-up, Matt's
    call: "place the team after it... all of this in the same size font
    as the driver name") -- was its own smaller line below the name; a
@@ -914,13 +923,6 @@ body.rc-league-page {
   white-space: nowrap;
   flex: none;
 }
-/* DNF/DSQ bold name (2026-09-23, Matt's ask: "Make sure DNFs are
-   displayed on leaderboard in bold letters") -- .rcl-standings-name is
-   already 700 weight; this bumps to the heaviest weight in the type
-   ramp so a DNF/DSQ row's name is unmistakably distinct from a normal
-   finisher's at a glance, on Recent Results and View All Results alike
-   (see _rclIsDnf_/_rclBuildDriverIdentity_, js/league.js). */
-.rcl-standings-name-dnf { font-weight: 900; }
 /* "View Points Tables" link at the bottom of the Leaderboard panel
    (2026-09-19, Matt's call) -- opens the points tables in a popup instead
    of them living in their own panel on the page. Same shape as the
@@ -960,6 +962,14 @@ body.rc-league-page {
    above still uses the same two classes and just ends up as one full-
    width "column", which is harmless. */
 .rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+/* "Round <n>   <Event>: <Track>" header line (2026-09-26, Matt's ask) --
+   same font-size/weight/color as the Calendar's own event name
+   (.rcl-cal-event + .rcl-cal-event-name combined, further down this
+   file), so Recent Results and the View All Results popup (both share
+   _rclBuildRaceHeadline_, js/league.js) read with the exact same heading
+   treatment the Calendar already uses for a round. Replaces the old
+   plain "EVENT" label+value stat this row used to be. */
+.rcl-race-headline-eventname { font-size: 18px; font-weight: 800; color: var(--rcl-ink); }
 .rcl-race-headline-row { display: flex; gap: 22px; }
 .rcl-race-headline-stat { flex: 1 1 0; min-width: 0; }
 .rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
@@ -969,6 +979,11 @@ body.rc-league-page {
    note, .rcl-standings-status-preliminary, so this page has one gold
    consistently rather than two different golds). */
 .rcl-race-headline-value-accent { color: #e0b64c; }
+/* Fastest-lap driver's name in the Recent Results panel (2026-09-26,
+   Matt's ask) -- a light purple, distinct from the gold Winner accent
+   above and the metal gold/silver/bronze position colors, since a
+   fastest-lap holder isn't necessarily a podium finisher. */
+.rcl-race-row-fastestlap .rcl-standings-name { color: #b388ff; }
 .rcl-race-class + .rcl-race-class { margin-top: 18px; }
 .rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
 
@@ -991,8 +1006,18 @@ body.rc-league-page {
    identically across Current Standings/Recent Results/View All Results. */
 .rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
 /* ON column removed entirely (2026-09-23 follow-up, Matt's ask) -- 8
-   columns now, driver bumped from 1.5fr to 2fr with that freed space. */
-.rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 78px 78px 84px 92px; }
+   columns now, driver bumped from 1.5fr to 2fr with that freed space.
+   PEN column added 2026-09-26 (Matt's ask: "add a PEN column after the
+   Total Time column") -- 9 columns now, 64px slotted in right after Total
+   Time (118px). This is a distinct, separate ask from the "+Ns badge next
+   to Total Time" idea Matt tried and reverted 2026-09-25 (see the comment
+   above _rclBuildAllResultsBody_, js/league.js) -- that revert stays; this
+   is its own dedicated column, not a badge glued onto Total Time. */
+.rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 64px 78px 78px 84px 92px; }
+/* Qualifying tab (2026-09-26, Matt's ask) -- Pos/Driver/Best Lap/Sector
+   1-3/Avg (KM/H), 7 columns. No Laps/Total Time/Pen/Gap/Interval -- a
+   Qualify session has none of those concepts. */
+.rcl-race-grid-qualifying { grid-template-columns: 40px 2fr 92px 80px 80px 80px 84px; }
 .rcl-race-row {
   display: grid;
   gap: 12px;
@@ -1005,6 +1030,11 @@ body.rc-league-page {
 .rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
 .rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
 .rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+/* .rcl-race-row-totaltime/.rcl-race-row-penalty-badge (the "+Ns" badge
+   next to Total Time) tried and reverted 2026-09-25, same day -- Matt
+   wants penalties staying ONLY in the "Penalties Assessed" list at the
+   bottom of this popup for now, until there's a better on-leaderboard
+   treatment. */
 .rcl-race-row-num,
 .rcl-race-row-gap,
 .rcl-race-row-interval,
@@ -1015,6 +1045,12 @@ body.rc-league-page {
   font-size: 13px;
   text-align: right;
 }
+/* PEN column (2026-09-26, Matt's ask -- distinct from the reverted "+Ns"
+   badge above: its own dedicated column, right after Total Time). Bold red
+   when a driver actually has a time penalty this round, same dash-for-
+   "nothing here" convention GAP/INTERVAL already use for a leader/DSQ row. */
+.rcl-race-row-pen { font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; color: var(--rcl-ink-faint); }
+.rcl-race-row-pen-active { color: var(--rc-red); font-weight: 800; }
 /* Category labels, divider line BELOW them (2026-09-23 follow-up, Matt's
    ask: "move the line BELOW the catagory labels" -- was above), no
    background fill. Shared by Current Standings, Recent Results and View
@@ -1048,11 +1084,13 @@ body.rc-league-page {
 /* Results) -- see _rclOpenAllResultsModal/_rclBuildAllResultsBody_,       */
 /* js/league.js.                                                          */
 /* -------------------------------------------------------------------- */
-/* Half width (2026-09-23, Matt's mid-turn ask: "make the round dropdown
-   box 1/2 the width"). */
-.rcl-allresults-select-row { margin-bottom: 18px; }
+/* 2/3 width (2026-09-26, Matt's ask -- was 1/2, 2026-09-23) -- the round
+   select now shares its row with the Qualifying/Race select to its right
+   (.rcl-allresults-session-select below) rather than sitting alone, so
+   the row is a flex pair now instead of one standalone dropdown. */
+.rcl-allresults-select-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
 .rcl-allresults-select {
-  width: 50%;
+  width: 66.6667%;
   min-width: 220px;
   max-width: 100%;
   background: var(--rcl-bg);
@@ -1064,6 +1102,22 @@ body.rc-league-page {
   padding: 8px 10px;
 }
 .rcl-allresults-select:focus { border-color: var(--rc-red); }
+/* Qualifying/Race toggle (2026-09-26, Matt's ask) -- sits to the right of
+   the round select, taking up the rest of the row; same visual style,
+   just a plain flex:1 instead of a fixed percentage since it only ever
+   needs to fit "Qualifying"/"Race". */
+.rcl-allresults-session-select {
+  flex: 1 1 0;
+  min-width: 140px;
+  background: var(--rcl-bg);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 5px;
+  color: var(--rcl-ink);
+  font-family: var(--rc-font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.rcl-allresults-session-select:focus { border-color: var(--rc-red); }
 /* Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask). Lap
    number as a small fixed-width label on the left (matches the visual
    weight of a lap counter, not a ranking, so it deliberately does NOT
@@ -1117,8 +1171,17 @@ body.rc-league-page {
    here is enough to turn it into one consistent-width column without
    touching the shared badge classes other pages also use. 46px fits
    "LMGT3"/"LMGTE" (the longest labels) with room to spare; "HY"/"LMP2"/
-   "LMP3" just center within the same box. */
-.rcl-report-pill { width: 46px; justify-content: center; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
+   "LMP3" just center within the same box.
+   Right-justified within that column, not centered (2026-09-26 follow-up,
+   Matt's ask: "pills should look like they exist in columns, right-
+   justified against the right side, with the next column [timestamp]
+   left-justified, so timestamps all share the same starting position" --
+   the fixed-width box already made the timestamp column line up; this
+   just changes how the pill text sits inside its own box). Same uniform
+   padding on every pill regardless of label length -- .rc-badge-chip-
+   abbrev's 2px 6px stays untouched, this box just changes where that
+   padded pill sits within the wider fixed column. */
+.rcl-report-pill { width: 46px; justify-content: flex-end; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
@@ -1134,18 +1197,14 @@ body.rc-league-page {
 .rcl-report-clause-retirement { color: var(--rcl-ink); font-weight: 700; } /* retires from the race: bold white (2026-09-24, Matt's ask) */
 .rcl-report-clause-fastest { color: var(--rcl-report-fastest); font-weight: 700; } /* fastest lap of the race: bold purple (2026-09-24, Matt's ask) */
 .rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
-.rcl-penalty-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  padding: 6px 0;
-  font-size: 13.5px;
-  border-bottom: 1px solid var(--rcl-line);
-}
-.rcl-penalty-row:last-child { border-bottom: none; }
-.rcl-penalty-name { color: var(--rcl-ink); font-weight: 700; }
-.rcl-penalty-detail { color: var(--rcl-ink-dim); }
+/* Penalties Assessed rows redesigned 2026-09-26 (item 20, Matt's ask) to
+   reuse the Race Report's own row layout (.rcl-report-lap/-lap-num/-lap-
+   text/-line/-name above) instead of the old plain .rcl-penalty-row/
+   -name/-detail treatment, which is removed -- name goes bold white via
+   the shared .rcl-report-name, the infraction reads in the shared
+   .rcl-report-line's plain dim style, and only the penalty effect itself
+   (.rcl-penalty-effect) gets its own bold red treatment. */
+.rcl-penalty-effect { color: var(--rc-red); font-weight: 700; }
 
 /* -------------------------------------------------------------------- */
 /* Calendar -- full season schedule (added 2026-09-19). Replaces the old */

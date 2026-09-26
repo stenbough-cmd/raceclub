@@ -66,7 +66,7 @@ var RC_FETCH_TIMEOUT_MS_LONG = 45000;
 // adminUpdateNews). Only openImportXmlModal's own _rcFetchOnce_ call
 // (Account.html) uses this -- bumping it doesn't touch how long any other
 // action waits before giving up.
-var RC_FETCH_TIMEOUT_MS_IMPORT = 60000;
+var RC_FETCH_TIMEOUT_MS_IMPORT = 120000;
 
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
