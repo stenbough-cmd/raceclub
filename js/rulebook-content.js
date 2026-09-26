@@ -62,7 +62,20 @@ var RULEBOOK_SECTIONS = [
       '<li>Class and team choice both lock in immediately, no confirmation step after Join This Team</li>' +
       '</ul></div>' +
       '<h4>2.2 Classes</h4>' +
-      '<p>Race Club currently runs five classes: Hypercar, LMP2, LMP3, LMGT3, and LMGTE. Which classes are open for a given season is set when that season is created.</p>'
+      '<p>Race Club currently runs five classes:</p>' +
+      // Same colored class pills used everywhere else on the site
+      // (_rcClassBadge, Account.html) -- hand-written here since this
+      // file is plain HTML strings, not built through that helper
+      // (2026-09-27, Matt's ask: "make the classes look like the class
+      // pills that we designed, HY, LMP2, LMP3, LMGT3 and LMGTE").
+      '<div class="rc-rulebook-pill-row">' +
+      '<span class="rc-badge-chip rc-badge-hypercar">HY</span>' +
+      '<span class="rc-badge-chip rc-badge-lmp2">LMP2</span>' +
+      '<span class="rc-badge-chip rc-badge-lmp3">LMP3</span>' +
+      '<span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span>' +
+      '<span class="rc-badge-chip rc-badge-lmgte">LMGTE</span>' +
+      '</div>' +
+      '<p>Which classes are open for a given season is set when that season is created. See the Glossary (Section 9) for a brief description of each class.</p>'
   },
   {
     id: 'race-weekend-format', num: '3', title: 'Race Weekend Format',
@@ -180,7 +193,17 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
       '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
       '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
-      '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs Hypercar, LMP2, LMP3, LMGT3, and LMGTE.</td></tr>' +
+      '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.</td></tr>' +
+      // Per-class glossary rows (2026-09-27, Matt's ask: "in the glossary,
+      // I'd like all the classes listed with a brief description") -- same
+      // colored pill in the term column as Section 2.2 above, one row per
+      // class instead of the single generic "Class" line this used to be
+      // the only entry for.
+      '<tr><td><span class="rc-badge-chip rc-badge-hypercar">HY</span></td><td>The top class: purpose-built prototype race cars, the fastest and most technically advanced cars in the league, competing for the overall race win.</td></tr>' +
+      '<tr><td><span class="rc-badge-chip rc-badge-lmp2">LMP2</span></td><td>A spec prototype class one tier below Hypercar -- every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</td></tr>' +
+      '<tr><td><span class="rc-badge-chip rc-badge-lmp3">LMP3</span></td><td>An entry-level prototype class below LMP2 -- a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</td></tr>' +
+      '<tr><td><span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span></td><td>GT3-spec grand tourer cars built on real production models, balanced against each other by Balance of Performance.</td></tr>' +
+      '<tr><td><span class="rc-badge-chip rc-badge-lmgte">LMGTE</span></td><td>A production-based endurance GT class, distinct from LMGT3’s own GT3 ruleset, built for close, sustained racing over a full stint.</td></tr>' +
       '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
       '<tr><td><strong>Steward</strong></td><td>An Admin, Organizer, or Steward who reviews and rules on protests.</td></tr>' +
       '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +

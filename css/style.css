@@ -5398,6 +5398,16 @@ body.rc-modal-scroll-locked {
 .rc-rulebook-section p { margin: 0 0 12px; }
 .rc-rulebook-section ul { margin: 8px 0 12px; padding-left: 20px; }
 .rc-rulebook-section table { margin: 12px 0; }
+/* Class pill row -- Section 2.2's "Classes" list (2026-09-27, Matt's ask:
+   "make the classes look like the class pills that we designed"). Same
+   .rc-badge-chip pills used everywhere else on the site, just laid out in
+   a wrapping flex row with breathing room instead of the bare inline text
+   list this used to be. */
+.rc-rulebook-pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+/* Glossary's per-class rows (2026-09-27) reuse the same pill markup
+   directly inside the term column -- vertical-align keeps a short pill
+   from sitting low against the description column's taller text. */
+.rc-rulebook-section table .rc-badge-chip { vertical-align: middle; }
 
 .rc-rulebook-callout {
   margin: 14px 0;
