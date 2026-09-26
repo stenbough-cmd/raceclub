@@ -2790,14 +2790,16 @@
     var msgLine = el('div', 'rc-signing-message', SIGNING_MESSAGES_[0]);
     stage.appendChild(msgLine);
 
+    // Sharp cut to the next message, no crossfade (2026-09-26, Matt's ask:
+    // "it looks messy... it should maybe just flip to the next without any
+    // fade effect so it looks sharp") -- was opacity-0 -> 180ms setTimeout
+    // -> opacity-1, which is exactly the crossfade that looked blurry/
+    // delayed; the CSS transition it relied on (.rc-signing-message) is
+    // gone too, so a straight textContent swap is now an instant flip.
     var msgIndex = 0;
     var msgTimer = setInterval(function () {
       msgIndex = (msgIndex + 1) % SIGNING_MESSAGES_.length;
-      msgLine.style.opacity = '0';
-      setTimeout(function () {
-        msgLine.textContent = SIGNING_MESSAGES_[msgIndex];
-        msgLine.style.opacity = '1';
-      }, 180);
+      msgLine.textContent = SIGNING_MESSAGES_[msgIndex];
     }, 1400);
 
     // Preloaded the same way the old video was (present in the DOM from

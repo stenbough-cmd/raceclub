@@ -2022,7 +2022,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-offwhite);
   min-height: 20px;
   letter-spacing: 0.02em;
-  transition: opacity 0.18s ease;
 }
 /* The class welcome image itself -- edge-to-edge cover, fading in from
    fully transparent, then dimming to half brightness once the reveal
@@ -4242,6 +4241,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
   padding: 24px;
   z-index: 2000;
+}
+/* Center popups over the content area, not the whole screen (2026-09-26,
+   Matt's ask: "take the sidebar out of the equation" so every popup reads
+   as centered to the right of it instead of dead-center of the browser
+   window). Desktop only (matches .rc-sidebar's own 768px breakpoint --
+   below that the sidebar is hidden behind the hamburger menu, so there's
+   nothing to offset for). Backdrop still dims the sidebar too; only the
+   popup's centering axis shifts, via extra left padding equal to the
+   sidebar's 220px width plus the same 24px breathing room the backdrop
+   already gives every other edge. */
+@media (min-width: 769px) {
+  .rc-modal-backdrop { padding-left: 244px; }
 }
 .rc-modal {
   width: 100%;
