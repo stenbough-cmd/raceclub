@@ -46,7 +46,7 @@ function apiBaseUrlIsUnset() {
 // rejects immediately with RC_NO_CSV_URL, and every caller (league.js,
 // index.html) catches that and falls straight through to the existing
 // fetchApi() call, exactly as if this feature didn't exist yet.
-var RC_LEAGUE_HUB_CSV_URL = '';
+var RC_LEAGUE_HUB_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=37344457&single=true&output=csv';
 var RC_GRID_TEASER_CSV_URL = '';
 
 // fetchPublishedJson(csvUrl) -> Promise<Object>
