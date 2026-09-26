@@ -60,6 +60,18 @@
   --rc-class-lmp3: #6b3fa0;
   --rc-class-lmp2: #2b6cb0;
   --rc-class-hypercar: var(--rc-red);
+  /* Fastest lap/sector purple (2026-09-27, Matt's report: "make the
+     fastest sector times and fastest overall lap time more purple. It
+     looks black right now but it's bold" -- the Lap Time Log table's
+     fastest-cell highlight was reusing --rc-class-lmp3, a duller purple
+     tuned to read as a class badge color, not an emphasis color, AND its
+     selector (.rc-results-fastest alone) was losing a specificity fight
+     to .rc-results-table td's own color rule -- font-weight applied fine
+     since there was no competing bold rule, but color silently lost,
+     which is exactly "bold but looks black." Both fixed below: a
+     dedicated, more saturated purple token, and a higher-specificity
+     selector so it actually wins. */
+  --rc-fastest-purple: #7c3aed;
 
   /* Car Objective Tier badge colors (added 2026-08-30) -- standard gaming
      rarity convention: Low = gray, Mid = blue, High = purple. Gold is
@@ -3195,12 +3207,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-laps-table th, .rc-results-laps-table td { font-size: 11.5px; padding: 5px 8px; }
 /* Fastest lap / fastest sector highlight (2026-09-26, Matt's ask:
    "fastest lap time bold purple" in Qualifying, "fastest lap and the
-   fastest times in each sector bold and purple" in Race). Reuses the
-   existing --rc-class-lmp3 purple token (already proven readable on a
-   white background as the LMP3 class badge) rather than inventing a
-   new color -- same idea as league.js's --rcl-report-fastest, just the
-   light-background counterpart. */
-.rc-results-fastest { font-weight: 700; color: var(--rc-class-lmp3); }
+   fastest times in each sector bold and purple" in Race). REWORKED
+   2026-09-27 (Matt's report: "it looks black right now but it's bold") --
+   .rc-results-table td's own color rule (style.css) is two simple
+   selectors (0,2,0) against this class alone at (0,1,0), so it was
+   silently winning the color even though .rc-results-fastest's
+   font-weight had nothing competing with it -- bold stayed, purple never
+   showed. Qualified with the table/td ancestry to match that specificity
+   (now (0,3,0)), and swapped to the new, more saturated --rc-fastest-
+   purple token (was --rc-class-lmp3, tuned for a class BADGE, not an
+   emphasis color -- too dull for this). */
+.rc-results-table td.rc-results-fastest { font-weight: 700; color: var(--rc-fastest-purple); }
 
 /* Race Report -- personal Results page. REWORKED 2026-09-27 (Matt's ask:
    "review the race report in ALL RESULTS on the league page and mimic
@@ -3232,11 +3249,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Hub's dark-theme ones: wall stays a plain dim gray, car-to-car contact
    is amber, damage/pit are orange, gains are green, losses are red (not
    bold, matching league.js), retirement is bold carbon, and fastest
-   lap/sector is the same bold purple (--rc-class-lmp3) this page's
-   .rc-results-fastest already established for the Lap Time Log table --
-   this is the fix for Matt's separate "fastest sectors and laps being
-   bolded purple" ask, which never actually worked under the old flat-text
-   renderer. */
+   lap/sector is the same bold --rc-fastest-purple this page's
+   .rc-results-fastest uses for the Lap Time Log table (both updated
+   together 2026-09-27, Matt's report: "make the fastest sector times and
+   fastest overall lap time more purple" -- was the duller --rc-class-lmp3
+   class-badge color). No specificity fight here the way the table cell
+   had -- this span has no ancestor rule competing for its own color, so
+   it was already rendering purple, just the duller shade. */
 .rc-results-report-clause-wall { color: var(--rc-steel); }
 .rc-results-report-clause-car { color: var(--rc-warning-accent); font-weight: 700; }
 .rc-results-report-clause-damage { color: var(--rc-orange); font-weight: 700; }
@@ -3244,7 +3263,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-report-clause-gain { color: var(--rc-ok); font-weight: 700; }
 .rc-results-report-clause-loss { color: var(--rc-red); }
 .rc-results-report-clause-retirement { color: var(--rc-carbon); font-weight: 700; }
-.rc-results-report-clause-fastest { color: var(--rc-class-lmp3); font-weight: 700; }
+.rc-results-report-clause-fastest { color: var(--rc-fastest-purple); font-weight: 700; }
 
 /* Penalties Assessed -- personal Results page (2026-09-27, Matt's ask:
    "add a penalties assessed at the bottom, just like ALL RESULTS has").

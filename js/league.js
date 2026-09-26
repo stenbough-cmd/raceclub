@@ -1091,9 +1091,17 @@ function _rclBuildEventTitleLine_(entry, hideRoundNum) {
 // opts.hideRoundNum (2026-09-26) -- the All Results popup passes this true
 // (see _rclBuildAllResultsBody_ below); Recent Results calls this with no
 // opts at all, so its round number keeps showing.
+// opts.hideStatRow (2026-09-27, Matt's ask: "in the RECENT RESULTS
+// container, remove the header that says the winner/pole/fastest lap") --
+// Recent Results now passes this true, dropping the whole Winner/Pole/
+// Fastest Lap stat row and keeping only the event title line. The All
+// Results popup is untouched (still gets the full stat row here) -- it's
+// being replaced by its own richer per-class Winner/Most Laps Led/Pole/
+// Fastest Lap breakdown instead, see _rclBuildAllResultsBody_ below, which
+// no longer calls this function's stat row at all.
 function _rclBuildRaceHeadline_(r, opts) {
   opts = opts || {};
-  var headline = _rclEl('div', 'rcl-race-headline');
+  var headline = _rclEl('div', 'rcl-race-headline' + (opts.hideStatRow ? ' rcl-race-headline-notabs' : ''));
   // variant: 'accent' (gold, Winner) or 'fastestlap' (purple, Fastest Lap
   // -- 2026-09-26, Matt's ask: "make sure the FASTEST LAP winner in the
   // header has their name purple, in the header only" -- distinct from
@@ -1106,12 +1114,104 @@ function _rclBuildRaceHeadline_(r, opts) {
   }
   headline.appendChild(_rclBuildEventTitleLine_(r, opts.hideRoundNum));
 
-  var detailRow = _rclEl('div', 'rcl-race-headline-row');
-  detailRow.appendChild(stat('Winner', r.overallWinner, 'accent'));
-  detailRow.appendChild(stat('Pole', r.overallPoleSitter));
-  detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + _rclFormatLapTime_(r.overallFastestLapTime) + ')' : '')) : '', r.overallFastestLapDriver ? 'fastestlap' : null));
-  headline.appendChild(detailRow);
+  if (!opts.hideStatRow) {
+    var detailRow = _rclEl('div', 'rcl-race-headline-row');
+    detailRow.appendChild(stat('Winner', r.overallWinner, 'accent'));
+    detailRow.appendChild(stat('Pole', r.overallPoleSitter));
+    detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + _rclFormatLapTime_(r.overallFastestLapTime) + ')' : '')) : '', r.overallFastestLapDriver ? 'fastestlap' : null));
+    headline.appendChild(detailRow);
+  }
   return headline;
+}
+
+// Icons for the All Results popup's per-class category breakdown
+// (2026-09-27, Matt's ask: "add icons in front of winner, most laps led,
+// pole and fastest lap catagory titles"). Same 16x16/viewBox 24/stroke-
+// 1.8 convention as _RCL_ICON_FLAG above and Account.html's own ICON_*
+// constants -- kept as their own consts here since this page doesn't load
+// Account.html (see this file's own header comment on why nothing there
+// is shared).
+var _RCL_ICON_TROPHY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>';
+var _RCL_ICON_LAPS_LED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg>';
+var _RCL_ICON_POLE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="21" x2="6" y2="3"></line><path d="M6 4l12 4-12 4"></path></svg>';
+var _RCL_ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
+
+// Bare class pill, normal (not ticker-shrunk) size -- same color/label
+// lookup as _rclClassPill_/_rclTickerClassPill_ above, just without either
+// one's own positioning wrapper, for a row that already ends with the
+// pill as its last element (2026-09-27, category breakdown rows below).
+function _rclCategoryClassPill_(cls) {
+  var key = String(cls || '').trim();
+  var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
+  var label = key === 'Hypercar' ? 'HY' : key;
+  var pill = document.createElement('span');
+  pill.className = 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : '');
+  pill.textContent = label || '?';
+  return pill;
+}
+
+// Per-class Winner/Most Laps Led/Pole/Fastest Lap breakdown for the All
+// Results popup (2026-09-27 rework, Matt's ask: "add MOST LAPS LED in
+// between the WINNER and POLE catagories... underneath each catagory
+// needs to have the winner from each class... the higher class is on
+// top... make sure the results are taking this into effect -- that each
+// class gets points and bonus points separate from each other"). Replaces
+// the old flat overall-only Winner/Pole/Fastest Lap stat row
+// (_rclBuildRaceHeadline_'s detailRow, now hidden here via hideStatRow --
+// see the call site below) with one row PER CLASS actually represented
+// this round, under each category, in the site's canonical class order
+// (result.classes already arrives sorted Hypercar -> LMP2 -> LMP3 ->
+// LMGT3 -> LMGTE, CAR_CLASS_CANONICAL_ORDER_, Results.gs) so a driver
+// reads highest class first, same convention as every other list on the
+// site. Row content order is name, car number, then the class pill last
+// (Matt: "behind the name is the driver's number and after that is the
+// HY pill... do the same styling" for every other class's own row) --
+// Most Laps Led/Fastest Lap each add their own parenthetical (laps led /
+// lap time) between the number and the pill; Pole has no parenthetical
+// ("driver names and numbers are fine").
+function _rclBuildResultsCategoryBreakdown_(result) {
+  var wrap = _rclEl('div', 'rcl-race-categories');
+  var classes = result.classes || [];
+
+  function buildRow(name, carNumber, parenText, carClass) {
+    var row = _rclEl('div', 'rcl-race-category-row');
+    row.appendChild(_rclEl('span', 'rcl-race-category-name', _rclEscapeHtml(name)));
+    if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
+    if (parenText) row.appendChild(_rclEl('span', 'rcl-race-category-extra', '(' + _rclEscapeHtml(parenText) + ')'));
+    if (carClass) row.appendChild(_rclCategoryClassPill_(carClass));
+    return row;
+  }
+
+  function buildCategory(icon, title, rows) {
+    if (!rows.length) return;
+    var cat = _rclEl('div', 'rcl-race-category');
+    var head = _rclEl('div', 'rcl-race-category-title');
+    var iconSpan = _rclEl('span', 'rcl-race-category-icon', icon);
+    head.appendChild(iconSpan);
+    head.appendChild(document.createTextNode(title));
+    cat.appendChild(head);
+    rows.forEach(function (r) { cat.appendChild(r); });
+    wrap.appendChild(cat);
+  }
+
+  var winnerRows = [], lapsLedRows = [], poleRows = [], fastestRows = [];
+  classes.forEach(function (cls) {
+    if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, null, cls.className));
+    if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
+      lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, cls.classMostLapsLedCount + (cls.classMostLapsLedCount === 1 ? ' lap led' : ' laps led'), cls.className));
+    }
+    if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, null, cls.className));
+    if (cls.classFastestLapDriver) {
+      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, cls.classFastestLapTime ? _rclFormatLapTime_(cls.classFastestLapTime) : null, cls.className));
+    }
+  });
+
+  buildCategory(_RCL_ICON_TROPHY, 'Winner', winnerRows);
+  buildCategory(_RCL_ICON_LAPS_LED, 'Most Laps Led', lapsLedRows);
+  buildCategory(_RCL_ICON_POLE, 'Pole', poleRows);
+  buildCategory(_RCL_ICON_STOPWATCH, 'Fastest Lap', fastestRows);
+
+  return wrap;
 }
 
 function _rclRenderResults(hub) {
@@ -1129,7 +1229,7 @@ function _rclRenderResults(hub) {
   }
 
   var r = hub.lastRace;
-  body.appendChild(_rclBuildRaceHeadline_(r));
+  body.appendChild(_rclBuildRaceHeadline_(r, { hideStatRow: true }));
 
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
   // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule:
@@ -1359,8 +1459,11 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // keep the event name as it is") -- Recent Results (which also calls
   // _rclBuildRaceHeadline_, with no opts) keeps its round number; only
   // this popup drops it, since the round is already picked explicitly via
-  // the dropdown right above.
-  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true }));
+  // the dropdown right above. hideStatRow (2026-09-27) -- the old flat
+  // overall-only Winner/Pole/Fastest Lap row is replaced by the per-class
+  // breakdown right below (_rclBuildResultsCategoryBreakdown_).
+  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true }));
+  bodyEl.appendChild(_rclBuildResultsCategoryBreakdown_(result));
 
   // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
   // reverted the same day (Matt's call: "I don't want the +10s penalty

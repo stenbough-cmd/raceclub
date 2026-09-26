@@ -500,7 +500,13 @@
   // handleAdminRuleOnProtest).
   var NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
-    { id: 'results', label: 'Results', icon: ICON_RESULTS },
+    // Label renamed Results -> Career (2026-09-27, Matt's ask) -- id/icon
+    // and every internal key (RC_LAZY_SECTION_RENDERERS, the #results
+    // hash reload target, RC_RESULTS_VIEW_SEASON_KEY_, etc.) are
+    // UNCHANGED on purpose, only the driver-facing label text changes --
+    // renaming the id too would risk breaking any bookmarked #results
+    // link or in-flight sessionStorage key for no visible benefit.
+    { id: 'results', label: 'Career', icon: ICON_RESULTS },
     { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
   ];
 
@@ -3827,7 +3833,7 @@
       body: 'Your homepage: registration status, current seat, next race, most recent result, and recent protests.' },
     { icon: ICON_CALENDAR, title: 'Calendar',
       body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
-    { icon: ICON_RESULTS, title: 'Results',
+    { icon: ICON_RESULTS, title: 'Career',
       body: 'Season standings and every completed round\'s full results, with fastest laps, DNFs/DSQs, and penalties marked.' },
     { icon: ICON_PROTESTS, title: 'Protests',
       body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
@@ -5280,9 +5286,13 @@
         var lineEl = document.createElement('p');
         lineEl.className = 'rc-results-report-line';
         if (entry.clauses) {
-          // Structured entry (matches league.js exactly) -- class pill,
-          // timestamp, bold name, then each clause as its own colored span.
-          if (entry.carClass) lineEl.appendChild(_rcClassAbbrevPill(entry.carClass));
+          // Structured entry -- timestamp, bold name, then each clause as
+          // its own colored span. No class pill in front of the timestamp
+          // any more (2026-09-27, Matt's ask: "get rid of the class pills
+          // in front of the timestamps in the race report" -- this page's
+          // Race Report is already scoped to just this one driver, so the
+          // pill wasn't distinguishing anything the way it does on the
+          // League Hub's multi-driver ALL RESULTS report).
           if (entry.et !== null && entry.et !== undefined) {
             lineEl.appendChild(el('span', 'rc-results-report-timestamp', _rcFormatEventTime_(entry.et)));
           }
@@ -5566,26 +5576,31 @@
         // for instance) shouldn't leave the page stuck failing on every
         // future visit -- clear it and fall back to the active season.
         if (viewSeasonId) sessionStorage.removeItem(RC_RESULTS_VIEW_SEASON_KEY_);
-        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
         section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
         return;
       }
       if (!res.hasSeason) {
-        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'Results fill in once a season is underway.'));
         return;
       }
       // Not registered for the active season -- nothing to show (Matt's
       // rule, 2026-09-23: only registered drivers see the current
-      // season's results here). Full career history still lives on the
-      // Career page, which isn't gated this way.
+      // season's results here). NOTE: this used to say career history
+      // "still lives on the Career page" -- that separate page was
+      // removed 2026-09-24 (its stats will live on a future public driver
+      // profile page instead) before this nav item itself was ever
+      // renamed Results -> Career (2026-09-27); this section IS now "the
+      // Career page," and it's still gated the same way -- past, completed
+      // seasons remain reachable via the season picker below regardless.
       if (!res.registered) {
-        section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its results.'));
         return;
       }
 
-      section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+      section.appendChild(el('h2', 'margin-top:0;', 'Career'));
 
       // Explainer paragraph removed (2026-09-18, Matt's call: "remove any
       // descriptions from below the headers on the pages... we have a
@@ -5631,7 +5646,7 @@
       section.appendChild(panel);
     }).catch(function () {
       section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Results'));
+      section.appendChild(el('h2', 'margin-top:0;', 'Career'));
       section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
     });
   }

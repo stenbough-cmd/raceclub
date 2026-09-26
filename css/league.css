@@ -1036,6 +1036,21 @@ body.rc-league-page {
    above still uses the same two classes and just ends up as one full-
    width "column", which is harmless. */
 .rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
+/* Recent Results panel + All Results popup (2026-09-27, Matt's ask:
+   "remove the header that says the winner/pole/fastest lap. Leave a
+   large enough gap until the graphite <class> header so it doesn't look
+   crowded") -- with the flat stat row gone (see _rclBuildRaceHeadline_'s
+   opts.hideStatRow, js/league.js) this headline is just the one
+   event-title line, so the original 26px/16px gap (sized to sit under a
+   whole extra stat row) reads cramped against whatever comes right after
+   it -- the graphite class header on Recent Results, or the new per-class
+   category breakdown on the All Results popup (_rclBuildResultsCategoryBreakdown_,
+   which also passes hideStatRow now). Bumped up on its own modifier class
+   rather than changing the base rule, since nothing on this page uses the
+   un-modified .rcl-race-headline WITH its full stat row any more, but
+   keeping this as an opt-in modifier (rather than editing the base rule)
+   still protects any future caller that brings the stat row back. */
+.rcl-race-headline-notabs { margin-bottom: 34px; padding-bottom: 22px; }
 /* "Round <n>   <Event> at <Track>: <Layout>" header line (2026-09-26
    rework, Matt's ask) -- same three-piece weight/color split as the
    Calendar's own event line (.rcl-cal-event/-event-name/-event-track/
@@ -1064,6 +1079,36 @@ body.rc-league-page {
    header should be purple"). Same light purple as before, just scoped to
    this one headline stat value now instead of a whole row's name. */
 .rcl-race-headline-value-fastestlap { color: #b388ff; }
+
+/* Per-class category breakdown -- All Results popup (2026-09-27, Matt's
+   ask: replaces the old flat overall-only Winner/Pole/Fastest Lap stat
+   row with one row PER CLASS under each category, "the higher class is
+   on top", plus a new Most Laps Led category between Winner and Pole).
+   Four category blocks in a row, wrapping on narrow widths since a
+   5-class round would otherwise squeeze every column too tight. */
+.rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
+.rcl-race-category { flex: 1 1 200px; min-width: 180px; }
+.rcl-race-category-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+  margin-bottom: 8px;
+}
+/* Icon inherits the title's own dim color -- decorative, not a semantic
+   accent (2026-09-27, Matt's ask: "add icons in front of winner, most
+   laps led, pole and fastest lap catagory titles"). */
+.rcl-race-category-icon { display: inline-flex; color: var(--rcl-ink-faint); }
+.rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
+.rcl-race-category-row:last-child { margin-bottom: 0; }
+.rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
+.rcl-race-category-number { color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+.rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 .rcl-race-class + .rcl-race-class { margin-top: 18px; }
 .rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
 
