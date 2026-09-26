@@ -2457,14 +2457,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-protest-dash-item-body { flex: 1; min-width: 0; }
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
-/* Ruled outcome line and the "(pending decision)" note (2026-09-24, item
-   6; resized 2026-09-24 styling pass to match the 13px protest text
-   above it, Matt's ask -- was 12px) styled identically: light gray,
-   italic, same size as the rest of the card's text -- so a pending row
-   and a ruled row read as one consistent family in the Dashboard
-   Protest card and the redesigned Protests popup list alike. */
-.rc-protest-dash-outcome { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
-.rc-protest-dash-pending { margin-top: 3px; font-size: 13px; color: var(--rc-steel); font-style: italic; }
+/* .rc-protest-dash-outcome/.rc-protest-dash-pending removed (2026-09-26)
+   -- the pending/ruled note under each protest is now a .rc-dm-subrow +
+   .rc-dm-tree row (same tree-glyph sub-row the Data Management Cars/
+   Tracks lists use), not its own styled line -- see buildDashProtestItem,
+   Account.html. */
 /* Edit/Withdraw actions appended to a Protests-popup history row
    (buildProtestPopupHistoryItem, Account.html) -- sits to the right of
    the row's icon+text body, right-justified and top-aligned with the

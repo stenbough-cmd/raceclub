@@ -2003,15 +2003,25 @@
   // addition (Protests.gs) -- previously only a combined roundLabel
   // string was available, which didn't match this exact copy.
   function buildDashProtestItem(p) {
-    // Withdrawn counts as "ruled" here (resolved, not still pending) even
-    // though no steward actually ruled on it -- there's nothing left to
-    // wait on, so it gets the same filled-checkmark treatment as Upheld/
-    // Denied rather than sitting open forever.
-    var isRuled = p.status === 'Upheld' || p.status === 'Denied' || p.status === 'Withdrawn';
+    // A decision exists (2026-09-26 rename from "isRuled") once a steward
+    // has actually ruled Upheld/Denied, or the filer withdrew it -- this
+    // is what decides whether the tree-note below shows "Pending
+    // outcome..." or the actual ruling text.
+    var isDecided = p.status === 'Upheld' || p.status === 'Denied' || p.status === 'Withdrawn';
+    // The circle only fills in once that decision is ALSO official
+    // (2026-09-26, Matt's ask: "the circle also fills in once it's been
+    // ruled on and the results have been made official") -- an Upheld/
+    // Denied ruling can exist for a while before the round it's on gets
+    // Finalized (Finalize is gated on every protest having a ruling, not
+    // the other way around), so there's a real window where isDecided is
+    // true but the circle should still read as open. Withdrawn is the one
+    // exception -- pulling your own protest is final the moment it
+    // happens, with no round-finalization step it's waiting on at all.
+    var isOfficial = p.status === 'Withdrawn' || ((p.status === 'Upheld' || p.status === 'Denied') && !!p.resultsFinalized);
 
     var row = el('div', 'rc-protest-dash-item');
-    var icon = el('div', 'rc-protest-dash-icon' + (isRuled ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
-    if (isRuled) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    var icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+    if (isOfficial) icon.innerHTML = RC_PROTEST_RULED_ICON;
     row.appendChild(icon);
 
     var body = el('div', 'rc-protest-dash-item-body');
@@ -2031,31 +2041,33 @@
 
     body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType || 'Infraction not specified')));
 
-    if (isRuled) {
-      // 2026-09-24 redesign, item 6: the outcome line now names WHO the
-      // penalty landed on, not just the tier, so it reads as a complete
-      // sentence on its own rather than needing the line above for
-      // context. Denied/Withdrawn stay simple since there's no penalty or
-      // target to name. Styled identically to the "(pending decision)"
-      // note below (light gray italic, .rc-protest-dash-outcome) so
-      // pending and ruled rows read as one consistent family.
-      var outcomeText;
-      if (p.status === 'Upheld') {
-        var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
-        outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
-      } else if (p.status === 'Denied') {
-        outcomeText = 'Protest denied.';
-      } else {
-        outcomeText = 'Protest withdrawn.';
-      }
-      body.appendChild(el('div', 'rc-protest-dash-outcome', escapeHtml(outcomeText)));
+    // Tree-note row underneath the protest (2026-09-26 redesign, Matt's
+    // ask: "instead of (pending decision)... have one of those |_
+    // category list organizer things underneath each report" -- the same
+    // tree-glyph sub-row already used by the Data Management Cars/Tracks
+    // lists, .rc-dm-subrow + .rc-dm-tree (style.css), reused here as-is
+    // rather than duplicated so this note always matches that look
+    // automatically. Text is "Pending outcome..." until a decision
+    // exists (isDecided), then the ruling text takes its place in the
+    // exact same spot -- the circle's own fill timing (isOfficial) is
+    // separate, see the comment on that variable above.
+    var noteRow = el('div', 'rc-dm-subrow');
+    noteRow.appendChild(el('span', 'rc-dm-tree', '└'));
+    var noteText;
+    if (!isDecided) {
+      noteText = 'Pending outcome...';
+    } else if (p.status === 'Upheld') {
+      // 2026-09-24 redesign, item 6: names WHO the penalty landed on, not
+      // just the tier, so it reads as a complete sentence on its own.
+      var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
+      noteText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
+    } else if (p.status === 'Denied') {
+      noteText = 'Protest denied.';
     } else {
-      // "(pending decision)" note (2026-09-24, item 6) -- a still-open
-      // protest gets the same light-gray-italic treatment as the ruled
-      // outcome line above, just with placeholder wording since there's
-      // no ruling yet to describe.
-      body.appendChild(el('div', 'rc-protest-dash-pending', '(pending decision)'));
+      noteText = 'Protest withdrawn.';
     }
+    noteRow.appendChild(el('span', null, escapeHtml(noteText)));
+    body.appendChild(noteRow);
     row.appendChild(body);
     return row;
   }
