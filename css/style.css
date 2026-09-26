@@ -5110,21 +5110,11 @@ body.rc-modal-scroll-locked {
 /* -------------------------------------------------------------------- */
 .rc-help-panel-note { font-size: 13px; color: var(--rc-steel); line-height: 1.6; margin: 0 0 16px; }
 
-/* "About Race Club" -- Matt's personal note (2026-09-18), not a product
-   description. Slightly roomier line-height than the rest of Help since
-   it's meant to read like a written note, not reference material; the
-   last (placeholder-disclosure) paragraph is italic and a touch muted so
-   it reads as an aside once real copy replaces the rest. */
-.rc-about-blurb p { font-size: 13.5px; color: var(--rc-carbon); line-height: 1.65; margin: 0 0 14px; }
-.rc-about-blurb p:last-child { margin-bottom: 0; color: var(--rc-steel); }
-/* Signature image slot -- hidden entirely via the <img>'s own onerror
-   until assets/images/signature.png actually exists (Account.html), so this
-   never shows a broken-image icon in the meantime. */
-.rc-about-signature { margin-top: 18px; }
-.rc-about-signature img { max-height: 56px; display: block; }
-
-/* "Need Help?" -- icon-led contact rows, same shape as index.html's
-   "What You'll Need" list, instead of a plain bulleted <ul>. */
+/* "Need More Help?" -- icon-led contact rows, same shape as index.html's
+   "What You'll Need" list, instead of a plain bulleted <ul>. Panel now
+   sits below the main Help content (2026-09-26, Matt's call); the old
+   "About Race Club" panel and its .rc-about-blurb/.rc-about-signature
+   rules were removed entirely along with it. */
 .rc-help-contact-list { display: flex; flex-direction: column; gap: 14px; }
 .rc-help-contact-row { display: flex; align-items: center; gap: 14px; font-size: 13.5px; color: var(--rc-carbon); line-height: 1.55; }
 .rc-help-contact-icon {
@@ -5147,9 +5137,15 @@ body.rc-modal-scroll-locked {
    would read as heavy, not polished. */
 .rc-help-guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-top: 4px;
+}
+@media (max-width: 900px) {
+  .rc-help-guide-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .rc-help-guide-grid { grid-template-columns: 1fr; }
 }
 .rc-help-guide-card {
   background: var(--rc-offwhite);

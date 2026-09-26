@@ -723,22 +723,28 @@ function _rcOpenFeedbackModal() {
   });
   body.appendChild(categorySelect);
 
+  // Name auto-filled from the logged-in driver's own profile and locked
+  // (2026-09-26, Matt's ask: "automatically insert the user's name (since
+  // users have to be logged in to see the feedback form) and don't allow
+  // them to change it") -- reads the same lightweight profile cache the
+  // header itself already uses to show the driver's name/avatar
+  // (getProfileCache, js/auth.js), so no extra round trip. A disabled
+  // input still looks like a normal field-plus-value, just not editable.
+  // Email (optional) removed entirely the same day (Matt's ask: "not
+  // needed since I can see the member who submitted the feedback") --
+  // handleSubmitFeedback (Website.gs) already tolerates a missing email
+  // fine (falls back to the admin's own address as replyTo), so no
+  // backend change was needed.
   var nameLabel = document.createElement('label');
   nameLabel.textContent = 'Name';
   body.appendChild(nameLabel);
   var nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.maxLength = 120;
-  nameInput.required = true;
+  var cachedProfileForFeedback_ = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+  nameInput.value = (cachedProfileForFeedback_ && cachedProfileForFeedback_.displayName) || '';
+  nameInput.disabled = true;
   body.appendChild(nameInput);
-
-  var emailLabel = document.createElement('label');
-  emailLabel.textContent = 'Email (optional)';
-  body.appendChild(emailLabel);
-  var emailInput = document.createElement('input');
-  emailInput.type = 'email';
-  emailInput.maxLength = 180;
-  body.appendChild(emailInput);
 
   var messageLabel = document.createElement('label');
   messageLabel.textContent = 'Message';
@@ -797,13 +803,9 @@ function _rcOpenFeedbackModal() {
   submitBtn.addEventListener('click', function () {
     var message = messageInput.value.trim();
     errorMsg.style.display = 'none';
-    // Name required, email optional (2026-09-21, Matt's ask) -- was both
-    // optional.
-    if (!nameInput.value.trim()) {
-      errorMsg.textContent = 'Enter your name before sending.';
-      errorMsg.style.display = 'block';
-      return;
-    }
+    // Name is no longer a field the driver fills in (2026-09-26) -- it's
+    // locked to their own profile name, so there's nothing to validate
+    // here any more; the one real check left is the message itself.
     if (!message) {
       errorMsg.textContent = 'Enter a message before sending.';
       errorMsg.style.display = 'block';
@@ -821,7 +823,6 @@ function _rcOpenFeedbackModal() {
       body: {
         category: categorySelect.value,
         name: nameInput.value.trim(),
-        email: emailInput.value.trim(),
         message: message,
         pageUrl: window.location.href
       }

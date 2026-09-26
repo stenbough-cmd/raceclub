@@ -652,7 +652,8 @@
     link.href = 'https://discord.gg/UxWgwDwc9U';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Join Discord</span>';
+    // Label shortened to just "Discord" (2026-09-26, Matt's ask).
+    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Discord</span>';
     return link;
   }
 
@@ -3794,34 +3795,30 @@
   // ---------------------------------------------------------------------
   var HELP_GUIDE_ITEMS = [
     { icon: ICON_DASHBOARD, title: 'Dashboard',
-      body: 'Your homepage after logging in. Shows your Registration Status, your Current Seat once you have one, your next scheduled race, your most recent result, and your last few filed Protests.' },
+      body: 'Your homepage: registration status, current seat, next race, most recent result, and recent protests.' },
     { icon: ICON_CALENDAR, title: 'Calendar',
-      body: 'Open it with "← View full season" on your Next Race card. Shows the full season schedule, in order -- each race\'s date and time in your own timezone, the track, session details, and a weather forecast icon.' },
+      body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
     { icon: ICON_RESULTS, title: 'Results',
-      body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
+      body: 'Season standings and every completed round\'s full results, with fastest laps, DNFs/DSQs, and penalties marked.' },
     { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'Open it with "← File, withdraw, and review protests" on your Dashboard\'s Protest card. Pick the race, lap, infraction type, and the other driver involved (if any), then submit -- you can file up to 2 protests per race, including any you withdraw, within 24 hours of that round\'s results posting. Edit or withdraw a protest any time before a steward rules on it or the round is finalized; a protest filed against you never counts against your own 2. Your Dashboard card only shows your most recent race, while the full popup keeps your whole season\'s history, sorted by Round.' },
+      body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
-      body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
+      body: 'Click your name in the header to edit your profile or change your password.' },
     { icon: ICON_ADMIN, title: 'Admin and League Tools',
-      body: 'Admin accounts get two extra pages. League Tools browses every season and its races, can recompute a season\'s results if an earlier round gets corrected, and publishes League News posts. Admin manages members, tracks, cars, and creating or ending a season.' }
+      body: 'Admin accounts get two extra pages: League Tools (seasons, races, results, news) and Admin (members, tracks, cars).' }
   ];
 
   // ---------------------------------------------------------------------
-  // HELP SECTION -- About Race Club, Need Help?, How To Use This Site,
-  // then Rules and Regulations (the Rulebook), each its own card using
-  // the same "rc-panel rc-dash-card" + "rc-dash-card-title" chrome as
-  // every other featured panel on the site (Calendar's season panel,
-  // Results, League Management, Admin's Data Management) -- 2026-09-18
-  // redesign, Matt's call: "make the styling of the containers consistent
-  // with the rest of the website account pages... add icons for sections
-  // that show icons on the page... make it more human-friendly." This
-  // briefly lived as a standalone page (help.html) so the Rulebook would
-  // have more room to grow, but Matt's call was to fold it back into the
-  // sidebar shell -- losing the sidebar/nav chrome on its own separate
-  // page felt like leaving the site, not like part of the account.
+  // HELP SECTION -- How To Use This Site, then Rules and Regulations (the
+  // Rulebook), then Need More Help?, each its own card using the same
+  // "rc-panel rc-dash-card" + "rc-dash-card-title" chrome as every other
+  // featured panel on the site (Calendar's season panel, Results, League
+  // Management, Admin's Data Management). Reordered 2026-09-26 (Matt's
+  // call) so the quick how-to grid leads, the Rulebook follows, and the
+  // contact panel sits last as a fallback; the old "About Race Club"
+  // panel was removed entirely.
   //
-  // Content here is fully static -- the About/Need Help/guide copy is
+  // Content here is fully static -- the guide/contact copy is
   // hand-written below, and the Rulebook comes from
   // js/rulebook-content.js's RULEBOOK_SECTIONS (kept separate from this
   // file for the same reason as before: updating the rulebook as it
@@ -3835,58 +3832,13 @@
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
-    // About panel (2026-09-18 rewrite, Matt's call) -- NOT a description
-    // of what the site does (the "How To Use This Site" grid below
-    // already covers that, and Matt didn't want it said twice). This is
-    // a personal note instead: why Race Club exists, how it's actually
-    // built, and where it might go -- written in Matt's voice, about the
-    // project rather than about the product. Placeholder copy for now;
-    // Matt plans to write his own version of this later, with a
-    // signature image underneath it (see rc-about-signature below --
-    // points at assets/images/signature.png, which doesn't exist yet, so the
-    // onerror hides the whole line cleanly instead of showing a broken
-    // image icon until that file is actually added).
-    var about = el('div', 'rc-panel rc-dash-card');
-    about.appendChild(el('h3', 'rc-dash-card-title', 'About Race Club'));
-    about.appendChild(el('div', 'rc-about-blurb',
-      '<p>Race Club started as a way to give our Le Mans Ultimate races the shape of a real season instead of a string of one-off lobbies. I wanted a good weekend to actually mean something the following week, not just bragging rights until the server closed -- standings, a season, a driving record that carries forward.</p>' +
-      '<p>Everything here is hand-built: Google Sheets as the database, Apps Script as the backend, and this site reading straight from each race\'s own results data. That was a deliberate choice -- it\'s a foundation I can keep extending myself, not a fixed product I\'m stuck with.</p>' +
-      '<p>Where it goes next is still open. I\'d like this to grow past one title and one group of drivers eventually, and there are a few ideas I\'m sitting on for tying more of a driver\'s actual racing into their profile here. Nothing below is locked in -- this is just where my head\'s at.</p>' +
-      '<p><em>This is placeholder copy. I\'ll swap it out with what I actually want to say here, signed below.</em></p>'));
-    about.appendChild(el('div', 'rc-about-signature', '<img src="assets/images/signature.png" alt="Matt\'s signature" onerror="this.parentNode.style.display=\'none\';">'));
-    section.appendChild(about);
-
-    // Need Help? -- short icon-led contact list, same icon-left row shape
-    // as index.html's "What You'll Need" section, instead of a plain
-    // bulleted <ul>.
-    var contact = el('div', 'rc-panel rc-dash-card');
-    contact.appendChild(el('h3', 'rc-dash-card-title', 'Need Help?'));
-    var contactList = el('div', 'rc-help-contact-list');
-    var contactRow1 = el('div', 'rc-help-contact-row');
-    contactRow1.appendChild(el('div', 'rc-help-contact-icon', ICON_MAIL));
-    contactRow1.appendChild(el('div', null, 'Questions about your account, results, or standings? Email <a href="mailto:stenbough@gmail.com">Race Club Admin</a>.'));
-    contactList.appendChild(contactRow1);
-    var contactRow2 = el('div', 'rc-help-contact-row');
-    contactRow2.appendChild(el('div', 'rc-help-contact-icon', ICON_LOCK));
-    contactRow2.appendChild(el('div', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
-    contactList.appendChild(contactRow2);
-    // Points at the Rulebook's own Getting Started section (2026-09-01)
-    // rather than duplicating the registration steps here -- one place to
-    // keep that content current instead of two.
-    var contactRow3 = el('div', 'rc-help-contact-row');
-    contactRow3.appendChild(el('div', 'rc-help-contact-icon', ICON_FLAG));
-    contactRow3.appendChild(el('div', null, 'New here? Jump to Section 2, Getting Started, in the Rulebook below for how registering for a team works.'));
-    contactList.appendChild(contactRow3);
-    contact.appendChild(contactList);
-    section.appendChild(contact);
-
-    // How To Use This Site -- the old stacked h4/p walkthrough replaced
-    // with an icon-card grid (2026-09-18, Matt's call), one card per
-    // page, each using the exact same glyph that page's own sidebar
-    // link/header icon uses so a driver can match a card to a nav item
-    // at a glance. Every line still describes only what's live today --
-    // rewritten 2026-09-18 for the V1 scope cut (Finances, Sponsors,
-    // Wager, and Reputation/Hall of Fame no longer exist).
+    // How To Use This Site -- top container on the Help page (2026-09-26,
+    // Matt's call: this replaces the old "About Race Club" panel as the
+    // first thing a driver sees here). A quick, factual "how to" grid,
+    // one card per page, each using the exact same glyph that page's own
+    // sidebar link/header icon uses so a driver can match a card to a nav
+    // item at a glance -- kept brief on purpose, ahead of the fuller
+    // Rulebook below.
     var guide = el('div', 'rc-panel rc-dash-card');
     guide.appendChild(el('h3', 'rc-dash-card-title', 'How To Use This Site'));
     var guideGrid = el('div', 'rc-help-guide-grid');
@@ -3944,6 +3896,25 @@
     rulebook.appendChild(rbNav);
     rulebook.appendChild(rbSections);
     section.appendChild(rulebook);
+
+    // Need More Help? -- moved below the main Help content (2026-09-26,
+    // Matt's call), short icon-led contact list, same icon-left row shape
+    // as index.html's "What You'll Need" section, instead of a plain
+    // bulleted <ul>. The old third row pointing at the Rulebook's Getting
+    // Started section was removed at Matt's request.
+    var contact = el('div', 'rc-panel rc-dash-card');
+    contact.appendChild(el('h3', 'rc-dash-card-title', 'Need More Help?'));
+    var contactList = el('div', 'rc-help-contact-list');
+    var contactRow1 = el('div', 'rc-help-contact-row');
+    contactRow1.appendChild(el('div', 'rc-help-contact-icon', ICON_MAIL));
+    contactRow1.appendChild(el('div', null, 'Questions about your account, results, or standings? Email <a href="mailto:stenbough@gmail.com">Race Club Admin</a>.'));
+    contactList.appendChild(contactRow1);
+    var contactRow2 = el('div', 'rc-help-contact-row');
+    contactRow2.appendChild(el('div', 'rc-help-contact-icon', ICON_LOCK));
+    contactRow2.appendChild(el('div', null, 'Locked out or can\'t remember your password? Use <a href="reset-password.html">Forgot password?</a> on the login page.'));
+    contactList.appendChild(contactRow2);
+    contact.appendChild(contactList);
+    section.appendChild(contact);
   }
 
   // ---------------------------------------------------------------------
