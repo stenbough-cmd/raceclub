@@ -63,11 +63,12 @@
 </div>
 
 <div id="rc-header"></div>
-<!-- leagueHubBadge (2026-09-26, Matt's ask) -- adds the large "/" +
-     league_hub_logo.png mark next to the Race Club logo, only on this
-     page. See js/header.js's renderHeader() and .rc-header-leaguehub-*
-     in css/style.css. -->
-<script>renderHeader({ leagueHubBadge: true });</script>
+<!-- League Hub badge next to the Race Club logo (2026-09-26) -- used to be
+     opt-in here via renderHeader({leagueHubBadge:true}), but it's
+     unconditional now (2026-09-27, Matt's ask: show it on every page's
+     navbar, not just this one) -- see js/header.js's renderHeader() and
+     .rc-header-leaguehub-* in css/style.css. -->
+<script>renderHeader();</script>
 
 <div class="rcl-ticker-wrap">
   <div class="rcl-ticker-label">Highlights</div>

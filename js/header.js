@@ -337,9 +337,21 @@ function renderHeaderPending() {
   var mount = document.getElementById('rc-header');
   if (!mount) return;
   mount.className = 'rc-fixed-header';
+  // League Hub badge included here too (2026-09-27, Matt's ask: "add the
+  // league hub logo to the navbar on all parts of the site") -- see the
+  // matching markup/comment in renderHeader() below for the full history.
+  // Included in this pending state too so the header doesn't visibly gain
+  // the badge a moment later once renderHeader() takes over -- it reads as
+  // present from the very first paint.
   mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
       '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
-    '</a><nav class="rc-header-nav"></nav>';
+    '</a>' +
+    '<span class="rc-header-leaguehub-badge">' +
+      '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
+        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
+      '</a>' +
+    '</span>' +
+    '<nav class="rc-header-nav"></nav>';
 }
 
 // opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER)
@@ -368,27 +380,30 @@ function renderHeader(opts) {
   // would be the league_hub_png"; follow-up same day removed the slash --
   // "remove the forward slash from the navbar in between the logos" --
   // keeping the space between them via margin instead, and made the logo
-  // itself a link to league.html) -- opt-in via opts.leagueHubBadge so it
-  // only shows up where a page asks for it (league.html) rather than on
-  // every page this shared header renders on. Sits in the same left-hand
-  // flex cluster as the logo, not spaced apart from it -- see
-  // .rc-header-nav's margin-left: auto (style.css) for how the nav still
-  // ends up pushed flush right regardless of whether this badge is here.
-  if (opts.leagueHubBadge) {
-    html += '<span class="rc-header-leaguehub-badge">' +
-              '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
-                // draggable="false" (2026-09-27, Matt's ask: make sure the
-                // browser doesn't try to copy/drag the logo like a plain
-                // image, since it's really a link) -- stops the browser's
-                // native "pick up and drag this image out" behavior. The
-                // matching user-select/user-drag CSS is on
-                // .rc-header-leaguehub-logo (style.css) -- together they
-                // keep this reading as a clickable link, not draggable/
-                // selectable image content.
-                '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
-              '</a>' +
-            '</span>';
-  }
+  // itself a link to league.html). Used to be opt-in via opts.leagueHubBadge
+  // so only league.html showed it; now unconditional (2026-09-27, Matt's
+  // ask: "add the league hub logo to the navbar on all parts of the site,
+  // not just the league.html navbar") -- every page that mounts this
+  // shared header gets it, with no per-page opt-in needed (there are too
+  // many renderHeader() call sites sprinkled through Account.html/
+  // edit-profile.js for an opt-in flag to reliably reach all of them
+  // anyway). Sits in the same left-hand flex cluster as the logo, not
+  // spaced apart from it -- see .rc-header-nav's margin-left: auto
+  // (style.css) for how the nav still ends up pushed flush right
+  // regardless.
+  html += '<span class="rc-header-leaguehub-badge">' +
+            '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
+              // draggable="false" (2026-09-27, Matt's ask: make sure the
+              // browser doesn't try to copy/drag the logo like a plain
+              // image, since it's really a link) -- stops the browser's
+              // native "pick up and drag this image out" behavior. The
+              // matching user-select/user-drag CSS is on
+              // .rc-header-leaguehub-logo (style.css) -- together they
+              // keep this reading as a clickable link, not draggable/
+              // selectable image content.
+              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
+            '</a>' +
+          '</span>';
   html += '<nav class="rc-header-nav">';
   // League Hub link -- top navbar only while logged OUT, next to LOGIN/
   // REGISTER (2026-09-18, Matt's call). Once logged in it moves into the

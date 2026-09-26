@@ -1245,8 +1245,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
   padding: 40px 16px;
   background: #ffffff;
-  --rc-red: #ed230d;
-  --rc-red-dark: #c81c0a;
+  /* --rc-red/--rc-red-dark (2026-09-27, Matt's ask: "for consistency sake,
+     just make the red on the auth pages the same color") -- these used to
+     be their own near-identical-but-not-quite reds (#ed230d/#c81c0a)
+     instead of just inheriting the sitewide --rc-red/--rc-red-dark
+     (#F21B0C/#c81509) from :root. Removed entirely rather than
+     re-pinned to matching literals, so this can never drift from the
+     sitewide brand red again if that token ever changes. */
   --rc-carbon: #1a1a1a;
   --rc-steel: #8c8c8c;
   --rc-silver: #dbdbdb;
@@ -3282,12 +3287,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-logo-link { display: flex; align-items: center; height: 100%; }
 .rc-header-logo { height: 58px; display: block; }
 /* League Hub badge -- the league_hub_logo.png mark, sitting right after
-   the Race Club logo (2026-09-26). Opt-in per page via
-   renderHeader({leagueHubBadge: true}) -- see js/header.js -- currently
-   only league.html passes it. Hidden below 640px (same "hide the
-   decorative extra before the functional stuff" convention as
-   .rc-header-account-text) so it never crowds the LOGIN/REGISTER text or
-   account menu on a narrow phone header.
+   the Race Club logo (2026-09-26). Used to be opt-in per page via
+   renderHeader({leagueHubBadge: true}); now unconditional (2026-09-27,
+   Matt's ask: "add the league hub logo to the navbar on all parts of the
+   site, not just the league.html navbar") -- see js/header.js. Hidden
+   below 640px (same "hide the decorative extra before the functional
+   stuff" convention as .rc-header-account-text) so it never crowds the
+   LOGIN/REGISTER text or account menu on a narrow phone header.
    The "/" divider that used to sit here is gone (2026-09-26 follow-up,
    Matt's ask: "remove the forward slash from the navbar in between the
    logos") -- margin-left alone now keeps a large, deliberate gap between
