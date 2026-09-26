@@ -3281,36 +3281,33 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-header-logo-link { display: flex; align-items: center; height: 100%; }
 .rc-header-logo { height: 58px; display: block; }
-/* League Hub badge -- large "/" divider + the league_hub_logo.png mark,
-   sitting right after the Race Club logo (2026-09-26, Matt's ask: "a VERY
-   LARGE... forward slash after the Race Club logo... to the right of the
-   forward slash would be the league_hub_png"). Opt-in per page via
+/* League Hub badge -- the league_hub_logo.png mark, sitting right after
+   the Race Club logo (2026-09-26). Opt-in per page via
    renderHeader({leagueHubBadge: true}) -- see js/header.js -- currently
    only league.html passes it. Hidden below 640px (same "hide the
    decorative extra before the functional stuff" convention as
    .rc-header-account-text) so it never crowds the LOGIN/REGISTER text or
-   account menu on a narrow phone header. */
+   account menu on a narrow phone header.
+   The "/" divider that used to sit here is gone (2026-09-26 follow-up,
+   Matt's ask: "remove the forward slash from the navbar in between the
+   logos") -- margin-left alone now keeps a large, deliberate gap between
+   the two logos in its place (was 14px alongside the slash's own ~30px
+   glyph width + 10px gap; 48px keeps roughly that same total breathing
+   room now that the slash itself is gone). */
 .rc-header-leaguehub-badge {
   display: none;
   align-items: center;
-  gap: 10px;
   height: 100%;
-  margin-left: 14px;
+  margin-left: 48px;
 }
 @media (min-width: 640px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
-/* "VERY LARGE... just a few pixels less than the total height of the
-   navbar" -- .rc-fixed-header is 70px tall; 64px of line-height puts the
-   glyph within a few px of that without ever clipping against the
-   header's own top/bottom edges. */
-.rc-header-leaguehub-slash {
-  font-family: var(--rc-font-heading);
-  font-weight: 800;
-  font-size: 52px;
-  line-height: 64px;
-  color: var(--rc-carbon);
-}
+/* Logo now links to league.html (2026-09-26 follow-up, Matt's ask: "Make
+   the league hub logo link to the league hub page") -- same
+   display:flex/height:100% pattern as .rc-header-logo-link so the image
+   inside it still centers vertically against the 70px header. */
+.rc-header-leaguehub-logo-link { display: flex; align-items: center; height: 100%; }
 .rc-header-leaguehub-logo { height: 40px; display: block; }
 .rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; margin-left: auto; }
 .rc-header-link {

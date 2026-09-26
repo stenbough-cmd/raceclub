@@ -90,7 +90,13 @@
          stay on disk (still used by the header's leaguehub badge, see
          js/header.js) -- just no longer referenced here. -->
     <div class="rcl-hero-eyebrow">Race Club</div>
-    <h1 class="rcl-hero-title">League Hub</h1>
+    <!-- Split into two weighted spans (2026-09-27, Matt's ask: "make the
+         LEAGUE part a lighter weight and make the HUB part heavier...
+         make sure the fonts are the same height") -- both spans inherit
+         the same font-family/font-size from .rcl-hero-title (see
+         css/league.css) and differ only in font-weight, so neither one
+         renders at a different size/height than the other. -->
+    <h1 class="rcl-hero-title"><span class="rcl-hero-title-league">League</span> <span class="rcl-hero-title-hub">Hub</span></h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
     <!-- Season snapshot + League Format stats moved into the "View Season
          Details" popup (2026-09-19, Matt's call) -- opened from a link at

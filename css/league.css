@@ -396,7 +396,14 @@ body.rc-league-page {
   margin-bottom: 10px;
 }
 .rcl-hero-title {
-  font-family: var(--rc-font-heading);
+  /* Helvetica (2026-09-27, Matt's ask: "Use Helvetica for font") -- scoped
+     to just this title, not the sitewide --rc-font-heading var, since this
+     is a one-off typographic treatment (mixed weights below) rather than a
+     site-wide font change. Arial is the near-universal Helvetica
+     substitute on systems that don't ship Helvetica itself (mainly
+     Windows), so the title never silently falls back to the generic
+     sans-serif system font. */
+  font-family: Helvetica, Arial, sans-serif;
   font-size: clamp(32px, 5.4vw, 56px);
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -409,6 +416,13 @@ body.rc-league-page {
      benefits the same way. */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
+/* "LEAGUE" lighter, "HUB" heavier (2026-09-27, Matt's ask) -- both spans
+   inherit font-family/font-size/line-height straight from .rcl-hero-title
+   above and change ONLY font-weight, which is what keeps them "the same
+   height" as each other instead of one span's weight pulling in a
+   different font file with different metrics. */
+.rcl-hero-title-league { font-weight: 400; }
+.rcl-hero-title-hub { font-weight: 700; }
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
    eyebrow above and the body-text sub-line below. */

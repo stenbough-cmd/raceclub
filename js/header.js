@@ -363,18 +363,22 @@ function renderHeader(opts) {
   html += '<a class="rc-header-logo-link" href="index.html">' +
             '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
           '</a>';
-  // League Hub badge (2026-09-26, Matt's ask: "a VERY LARGE... forward
-  // slash after the Race Club logo graphic... to the right of the forward
-  // slash would be the league_hub_png") -- opt-in via opts.leagueHubBadge
-  // so it only shows up where a page asks for it (league.html) rather than
-  // on every page this shared header renders on. Sits in the same
-  // left-hand flex cluster as the logo, not spaced apart from it -- see
+  // League Hub badge (2026-09-26, added for "a VERY LARGE... forward slash
+  // after the Race Club logo graphic... to the right of the forward slash
+  // would be the league_hub_png"; follow-up same day removed the slash --
+  // "remove the forward slash from the navbar in between the logos" --
+  // keeping the space between them via margin instead, and made the logo
+  // itself a link to league.html) -- opt-in via opts.leagueHubBadge so it
+  // only shows up where a page asks for it (league.html) rather than on
+  // every page this shared header renders on. Sits in the same left-hand
+  // flex cluster as the logo, not spaced apart from it -- see
   // .rc-header-nav's margin-left: auto (style.css) for how the nav still
   // ends up pushed flush right regardless of whether this badge is here.
   if (opts.leagueHubBadge) {
     html += '<span class="rc-header-leaguehub-badge">' +
-              '<span class="rc-header-leaguehub-slash" aria-hidden="true">/</span>' +
-              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub">' +
+              '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
+                '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub">' +
+              '</a>' +
             '</span>';
   }
   html += '<nav class="rc-header-nav">';
