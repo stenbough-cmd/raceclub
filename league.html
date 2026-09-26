@@ -78,29 +78,19 @@
 
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
-    <!-- "Race Club" eyebrow RESTORED (2026-09-26, second follow-up, Matt's
-         ask: "return the red RACE CLUB to where it was on the league
-         banner") -- back to plain static text, in flow, same as its
-         original 2026-09-19 form. -->
+    <!-- Fully reverted to the original text hero (2026-09-26, fourth
+         follow-up, Matt's ask: "put the RACE CLUB (in red) back where it
+         originally was, the LEAGUE HUB text (in white)... and the season
+         information below it where it originally was") -- the
+         league_hub_banner.png title swap and its absolute-positioned
+         overlap layout (from earlier the same day) are undone; back to
+         plain static "Race Club" eyebrow + plain "League Hub" <h1> text +
+         the season line, all in normal flow exactly as this hero looked
+         before any of that. league_hub_banner.png/league_hub_logo.png
+         stay on disk (still used by the header's leaguehub badge, see
+         js/header.js) -- just no longer referenced here. -->
     <div class="rcl-hero-eyebrow">Race Club</div>
-    <!-- league_hub_banner.png (2026-09-26, Matt's ask: "Instead of LEAGUE
-         HUB being written out on the page as the title, league_hub_
-         banner.png would take its place"), still 2x size (2026-09-26
-         follow-up) but now taken OUT of normal flow entirely and layered
-         as a backdrop behind the eyebrow above and the season line below
-         (2026-09-26, third follow-up, Matt's ask: "move it down 40px and
-         to the left 70 pixels and let the text RACE CLUB above and
-         SEASON n / SEASON NAME lay over top of the graphic in those
-         spots") -- .rcl-hero-title-img-wrap is position:absolute now (see
-         css/league.css), so it no longer pushes the season line down the
-         way it did while it sat in flow; .rcl-hero-eyebrow and
-         .rcl-hero-season both get a z-index bump so they stay legible on
-         top of it wherever the graphic's offset position happens to
-         overlap them. The .rcl-hero-title class stays on the <h1> for
-         heading semantics. -->
-    <h1 class="rcl-hero-title rcl-hero-title-img-wrap">
-      <img class="rcl-hero-title-img" src="assets/images/league_hub_banner.png" alt="League Hub">
-    </h1>
+    <h1 class="rcl-hero-title">League Hub</h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
     <!-- Season snapshot + League Format stats moved into the "View Season
          Details" popup (2026-09-19, Matt's call) -- opened from a link at
