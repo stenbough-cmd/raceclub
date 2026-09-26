@@ -3057,30 +3057,48 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Matt's call: "a plethora of numbers and stats"). */
 .rc-results-round-list { display: flex; flex-direction: column; gap: 16px; }
 /* Nested container -- a bordered box (not a full rc-panel shadow, since
-   these sit inside the season's own rc-panel) per race event, same
-   "gray border" weight Calendar's own per-race cards use
-   (.rc-cal-race). */
-.rc-results-round { position: relative; overflow: hidden; border: 2px solid var(--rc-offwhite); border-radius: 10px; padding: 16px 18px; }
-/* Light-gray top accent (2026-09-09, Matt's call: "add a light gray top
-   border similar to the same rules as the gold special event top border
-   in the calendar") -- same diagonal "finish flag" clipped strip shape
-   as Calendar's .rc-cal-race-special::before, just var(--rc-silver)
-   instead of gold, so each round card on this page gets the same family
-   of accent the Calendar's own cards use for their top border. */
-.rc-results-round::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40%;
-  height: 4px;
-  background: var(--rc-silver);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-}
+   these sit inside the season's own rc-panel) per race event. Redesigned
+   2026-09-26 (Matt's ask: "remove the extra half border from the top of
+   the inside container and just keep it a 1 line border that goes
+   around") -- the old diagonal top accent (::before) is gone entirely,
+   and the border weight/color now matches the rest of the account pages'
+   own card border convention (.rc-cal-race's 2px var(--rc-silver-dark))
+   instead of the very light --rc-offwhite this page used to use alone. */
+.rc-results-round { position: relative; overflow: hidden; border: 2px solid var(--rc-silver-dark); border-radius: 10px; padding: 16px 18px; }
 .rc-results-round .rc-hint { margin-top: 2px; margin-bottom: 8px; display: block; }
-.rc-results-round-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; color: var(--rc-carbon); margin: 0; }
-.rc-results-round-track { font-size: 12px; color: var(--rc-steel); margin-top: 2px; }
+/* Round title -- same three-piece "Round N   EventName at Track: Layout"
+   shape and weights as league.js's own All Results event title
+   (_rclBuildEventTitleLine_, 2026-09-26, Matt's ask: "make the round
+   number title at the top identical to the ALL RESULTS event title
+   styling and format"), just this page's own light-theme colors instead
+   of league's white-on-dark. */
+.rc-results-round-title { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; color: var(--rc-carbon); margin: 0; }
+.rc-results-round-title-event { font-weight: 800; color: var(--rc-carbon); }
+.rc-results-round-title-track { font-weight: 500; color: var(--rc-carbon); }
+.rc-results-round-title-layout { font-weight: 500; color: var(--rc-steel); }
 .rc-results-season-standings { margin-bottom: 16px; }
+
+/* Season picker -- past, Completed-season dropdown + RETRIEVE RESULTS
+   button (2026-09-26, Matt's ask), sitting under the season header's red
+   underline. 1/3-width select, button to its right; stacks full-width on
+   narrow screens rather than squeezing. */
+.rc-results-season-picker { display: flex; gap: 10px; align-items: stretch; margin: 12px 0 18px; }
+.rc-results-season-select {
+  flex: 0 0 33%;
+  min-width: 0;
+  font-family: var(--rc-font-body);
+  font-size: 13px;
+  color: var(--rc-carbon);
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.rc-results-season-retrieve { flex: none; }
+@media (max-width: 640px) {
+  .rc-results-season-picker { flex-direction: column; }
+  .rc-results-season-select { flex-basis: auto; }
+}
 
 .rc-results-stat-strip { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 10px 0 14px; padding: 10px 0; border-top: 1px solid var(--rc-offwhite); border-bottom: 1px solid var(--rc-offwhite); }
 .rc-results-stat { min-width: 0; }
@@ -3118,11 +3136,36 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-session { border-top: 1px solid var(--rc-offwhite); padding-top: 12px; }
 .rc-results-session-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
 .rc-results-laps-table th, .rc-results-laps-table td { font-size: 11.5px; padding: 5px 8px; }
-.rc-results-events-list { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
-.rc-results-event-line { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-results-event-line:last-child { border-bottom: none; }
-.rc-results-event-lap { flex: none; min-width: 52px; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
-.rc-results-event-text { color: var(--rc-carbon); }
+/* Fastest lap / fastest sector highlight (2026-09-26, Matt's ask:
+   "fastest lap time bold purple" in Qualifying, "fastest lap and the
+   fastest times in each sector bold and purple" in Race). Reuses the
+   existing --rc-class-lmp3 purple token (already proven readable on a
+   white background as the LMP3 class badge) rather than inventing a
+   new color -- same idea as league.js's --rcl-report-fastest, just the
+   light-background counterpart. */
+.rc-results-fastest { font-weight: 700; color: var(--rc-class-lmp3); }
+
+/* Race Report -- personal Results page (2026-09-26, Matt's ask: "I want
+   the incidents and lap times organized in the same way as the race
+   report... Make sure the appearance of the list mimics Race Report").
+   Mirrors league.js's .rcl-report-lap/-lap-num/-lap-text/-line row
+   shape exactly, recolored for this page's white-card background
+   instead of the League Hub's dark theme. Collisions and track cuts
+   are deliberately NOT split into two lists here (Matt: "Mix together
+   the collisions with the track cuts so they aren't seperated by two
+   groups") -- .rc-results-report-line is one flat style for every
+   event type, no per-clause color coding like the League Hub's
+   .rcl-report-clause-* (this page keeps every captured event, not just
+   curated highlights, so a busy multi-color treatment would be noisy). */
+.rc-results-report { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rc-offwhite); }
+.rc-results-report-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
+.rc-results-report-list { display: flex; flex-direction: column; }
+.rc-results-report-lap { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--rc-offwhite); }
+.rc-results-report-lap:last-child { border-bottom: none; }
+.rc-results-report-lap-num { flex: none; width: 62px; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-carbon); padding-top: 2px; }
+.rc-results-report-lap-text { flex: 1 1 auto; min-width: 0; }
+.rc-results-report-line { margin: 0 0 4px; font-size: 13px; line-height: 1.5; color: var(--rc-carbon); }
+.rc-results-report-line:last-child { margin-bottom: 0; }
 
 .rc-recent-results-column > .rc-badge-chip { margin-bottom: 8px; }
 /* Full finishing order -- one compact grid row per driver, position /
@@ -5025,23 +5068,15 @@ body.rc-modal-scroll-locked {
   color: var(--rc-steel);
 }
 .rc-cal-race-status-up { color: var(--rc-red); }
-.rc-cal-race-status-note {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--rc-steel);
-}
-/* Preliminary reuses the site's one gold accent so "not final yet" reads
-   as an amber/caution note, same convention league.html's own
-   .rcl-cal-status-preliminary uses. */
-.rc-cal-race-status-note-preliminary { color: var(--rc-gold); }
+/* The results-posted note line (.rc-cal-race-status-note*) that used to
+   render under the status word was removed (2026-09-26, Matt's ask: "just
+   keep the race status") along with its call site in Account.html's
+   raceCard(). */
 
 /* Faded row once a round's start time has passed (2026-09-24, matching
    league.html's .rcl-cal-row-finished) -- dims the round bar/event/meta/
-   in-game line, but deliberately NOT the status word or its results note,
-   so the COMPLETED/results phrase stays fully legible against the row. */
+   in-game line, but deliberately NOT the status word, so the COMPLETED
+   status stays fully legible against the row. */
 .rc-cal-race.rc-cal-finished .rc-cal-round-bar,
 .rc-cal-race.rc-cal-finished .rc-cal-race-datetime,
 .rc-cal-race.rc-cal-finished .rc-cal-race-event,

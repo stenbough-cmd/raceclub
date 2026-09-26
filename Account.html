@@ -4846,17 +4846,11 @@
       statusText = 'COMPLETED'; statusClass = 'complete';
     }
     statusWrap.appendChild(el('div', 'rc-cal-race-status rc-cal-race-status-' + statusClass, statusText));
-    if (entry.finished && !isSpecial) {
-      var noteText, noteClass;
-      if (entry.hasResults) {
-        noteText = entry.resultsFinalized ? 'Official Results Posted' : 'Preliminary Results Posted';
-        noteClass = entry.resultsFinalized ? 'official' : 'preliminary';
-      } else {
-        noteText = 'No Results Posted Yet';
-        noteClass = 'none';
-      }
-      statusWrap.appendChild(el('div', 'rc-cal-race-status-note rc-cal-race-status-note-' + noteClass, noteText));
-    }
+    // The results-posted note line (Official/Preliminary/No Results Posted
+    // Yet) that used to render under the status word here was removed
+    // (2026-09-26, Matt's ask: "remove the points notifications and just
+    // keep the race status") -- the status word alone (UP NEXT/SCHEDULED/
+    // COMPLETED) is all this row shows now.
     head.appendChild(statusWrap);
     body.appendChild(head);
 
@@ -4981,21 +4975,46 @@
     return block;
   }
 
-  // Full race classification time, in M:SS.sss motorsport shape, with an
-  // H:MM:SS.sss fallback since a whole race's elapsed time can genuinely
-  // run past an hour on a longer endurance round (2026-09-09, Matt's
-  // call: "add a total time column after fastest lap column" on the
-  // Results page's per-class table).
+  // Full race classification time, h:mm:ss.mmm -- same shape and padding
+  // rule as league.js's own _rclFormatTotalTime_ (Matt's exact format
+  // example there: "6:00:07.219"), so a driver never sees this page and
+  // the League Hub disagree about how a total time reads. No leading zero
+  // on the hours digit; minutes/seconds always 2 digits, milliseconds
+  // always 3.
   function _rcFormatTotalTime_(sec) {
     if (sec === null || sec === undefined || isNaN(sec)) return '';
-    var abs = Math.abs(sec);
-    var h = Math.floor(abs / 3600);
-    var m = Math.floor((abs - h * 3600) / 60);
-    var s = abs - h * 3600 - m * 60;
-    if (h > 0) {
-      return h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
-    }
-    return m + ':' + (s < 10 ? '0' : '') + s.toFixed(3);
+    var totalMs = Math.round(sec * 1000);
+    var ms = totalMs % 1000;
+    var totalSec = Math.floor(totalMs / 1000);
+    var s = totalSec % 60;
+    var totalMin = Math.floor(totalSec / 60);
+    var m = totalMin % 60;
+    var h = Math.floor(totalMin / 60);
+    function pad(n, len) { var str = String(n); while (str.length < len) str = '0' + str; return str; }
+    return (h > 0 ? h + ':' + pad(m, 2) : String(m)) + ':' + pad(s, 2) + '.' + pad(ms, 3);
+  }
+
+  // Single lap/sector time, m:ss:mmm -- same colon-before-milliseconds
+  // shape as league.js's own _rclFormatLapTime_ (Matt's ask there: "make
+  // the fastest lap and best lap time in the leaderboards formatted ->
+  // M:SS:Milliseconds"), applied here to every lap time, sector time, and
+  // best/fastest lap value on this page so the whole page reads one
+  // consistent format (2026-09-26, Matt's ask: "All lap times and best
+  // times should follow the same M:SS:milliseconds format across the
+  // whole page"). Raw values off the XML import are decimal-seconds
+  // strings like "92.3456"; a non-numeric value (blank, or an
+  // already-punctuated string an older code path handed in) falls back to
+  // an em space rather than "NaN:NaN:NaN".
+  function _rcFormatLapTime_(raw) {
+    var totalSeconds = Number(raw);
+    if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '—';
+    var totalMs = Math.round(totalSeconds * 1000);
+    var ms = totalMs % 1000;
+    var totalSec = Math.floor(totalMs / 1000);
+    var s = totalSec % 60;
+    var m = Math.floor(totalSec / 60);
+    function pad(n, len) { var str = String(n); while (str.length < len) str = '0' + str; return str; }
+    return m + ':' + pad(s, 2) + ':' + pad(ms, 3);
   }
 
   function _rcIsDnfRow_(row) {
@@ -5019,7 +5038,7 @@
       resultsStatBlock('Finish', you.position ? ('P' + you.position + (you.classPosition ? ' (Class P' + you.classPosition + ')' : '')) : (you.finishStatus || 'Not Classified')),
       resultsStatBlock('Grid', you.gridPos ? ('P' + you.gridPos + (you.classGridPos ? ' (Class P' + you.classGridPos + ')' : '')) : ''),
       resultsStatBlock('Laps', you.laps),
-      resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatTotalTime_(parseFloat(you.bestLapTime)) : ''),
+      resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatLapTime_(you.bestLapTime) : ''),
       resultsStatBlock('Total Time', (you.finishTimeSeconds !== null && you.finishTimeSeconds !== undefined) ? _rcFormatTotalTime_(you.finishTimeSeconds) : ''),
       resultsStatBlock('Points', you.points === null ? '' : you.points),
       resultsStatBlock('Pit Stops', you.pitstops),
@@ -5059,90 +5078,177 @@
     }
   }
 
-  // Full unfiltered lap-by-lap + RaceEvents breakdown, one container per
-  // session this driver actually has laps/events for (Qualify/Race,
-  // whichever the round's own Sessions rows cover -- Practice was removed
-  // from ingestion entirely 2026-09-21, see Ingestion.gs) -- "everything
-  // the XML captured for this driver, unfiltered" (Matt's call). This is
-  // also where sim-issued/served penalties already show up per session
-  // (SimPenaltyIssued/SimPenaltyServed, via _rcFormatEventLine_ above) --
-  // informational only, never actionable from here; nothing on this page
-  // lets anyone rule on one, since the Rulebook treats these as automatic
-  // and final. Horizontally scrollable on its own container, same as every
-  // other wide table on this page, so a narrow screen never forces the
-  // whole page to scroll sideways.
+  // Index of the lap with the lowest numeric value in `field` (lapTime,
+  // sector1, sector2, or sector3) -- used to bold-and-purple this driver's
+  // own fastest lap/sector in the tables below (2026-09-26, Matt's ask).
+  // Each column gets its OWN fastest independently (a driver's fastest S1
+  // isn't necessarily on the same lap as their fastest lap time). Returns
+  // -1 when nothing in the column parses as a real time (an out-lap's
+  // blank sector, for instance).
+  function _rcFastestLapIndex_(laps, field) {
+    var bestIdx = -1, bestVal = Infinity;
+    laps.forEach(function (l, i) {
+      var v = parseFloat(l[field]);
+      if (!isNaN(v) && v > 0 && v < bestVal) { bestVal = v; bestIdx = i; }
+    });
+    return bestIdx;
+  }
+
+  // Full unfiltered lap-by-lap breakdown, one table per session this driver
+  // actually has laps for (Qualify/Race, whichever the round's own
+  // Sessions rows cover -- Practice was removed from ingestion entirely
+  // 2026-09-21, see Ingestion.gs) -- "everything the XML captured for this
+  // driver, unfiltered" (Matt's call), minus the raw tire-wear-percentage
+  // columns (2026-09-26, Matt's ask: "get rid of all the tire columns/data
+  // from the race" -- Compound F/R stay, they're what tire the driver was
+  // actually on, not a wear reading). This driver's own fastest lap time
+  // gets bolded purple in a Qualify table, and both fastest lap time and
+  // each sector's own fastest get bolded purple in a Race table
+  // (.rc-results-fastest, style.css). Horizontally scrollable on its own
+  // container, same as every other wide table on this page, so a narrow
+  // screen never forces the whole page to scroll sideways.
+  function resultsLapsTable(session) {
+    var isRace = String(session.sessionType || '').indexOf('Race') === 0;
+    var fastestLapIdx = _rcFastestLapIndex_(session.laps, 'lapTime');
+    var fastestS1Idx = isRace ? _rcFastestLapIndex_(session.laps, 'sector1') : -1;
+    var fastestS2Idx = isRace ? _rcFastestLapIndex_(session.laps, 'sector2') : -1;
+    var fastestS3Idx = isRace ? _rcFastestLapIndex_(session.laps, 'sector3') : -1;
+
+    var scrollWrap = el('div', 'rc-results-table-wrap');
+    var table = document.createElement('table');
+    table.className = 'rc-results-table rc-results-laps-table';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Fuel Used', 'VE', 'VE Used', 'Compound F', 'Compound R'].forEach(function (h) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    session.laps.forEach(function (l, i) {
+      var tr = document.createElement('tr');
+      function td(v, fastest) {
+        var c = document.createElement('td');
+        if (fastest) c.className = 'rc-results-fastest';
+        c.textContent = (v === null || v === undefined || v === '') ? '—' : String(v);
+        tr.appendChild(c);
+      }
+      td(l.lapNum); td(l.positionAtLap);
+      td(_rcFormatLapTime_(l.lapTime), i === fastestLapIdx);
+      td(_rcFormatLapTime_(l.sector1), i === fastestS1Idx);
+      td(_rcFormatLapTime_(l.sector2), i === fastestS2Idx);
+      td(_rcFormatLapTime_(l.sector3), i === fastestS3Idx);
+      td(l.topSpeed); td(l.fuel); td(l.fuelUsed); td(l.ve); td(l.veUsed);
+      td(l.frontCompound || [l.compoundFL, l.compoundFR].filter(Boolean).join('/'));
+      td(l.rearCompound || [l.compoundRL, l.compoundRR].filter(Boolean).join('/'));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    scrollWrap.appendChild(table);
+    return scrollWrap;
+  }
+
+  // "RACE REPORT" -- this driver's own incidents/track limits/penalties for
+  // the session, grouped by lap and styled to mimic the League Hub's Race
+  // Report (2026-09-26, Matt's ask: "organized in the same way as the race
+  // report... make sure the appearance of the list mimics Race Report"),
+  // recolored for this page's white background instead of league.html's
+  // dark theme. Collisions and track cuts are NOT split into separate
+  // groups (Matt's explicit ask) -- session.events is already one
+  // chronological list (Results.gs), this just groups those same rows by
+  // lap number for display instead of repeating "Lap N" on every line.
+  // Lap numbers here already have the formation-lap shift applied
+  // server-side (Results.gs's _rcApplyFormationLapShift_/
+  // _rcShiftEventLapNum_) so "Lap 1" is the real first racing lap, not the
+  // parade lap, and each event's own elapsed time lines up with true race
+  // time.
+  function resultsRaceReport(session) {
+    var wrap = el('div', 'rc-results-report');
+    wrap.appendChild(el('div', 'rc-results-report-title', 'Race Report'));
+
+    var byLap = {}, lapOrder = [];
+    session.events.forEach(function (evt) {
+      var key = evt.lapNum || 'Pre';
+      if (!(key in byLap)) { byLap[key] = []; lapOrder.push(key); }
+      byLap[key].push(evt);
+    });
+
+    var list = el('div', 'rc-results-report-list');
+    lapOrder.forEach(function (lapKey) {
+      var lapRow = el('div', 'rc-results-report-lap');
+      lapRow.appendChild(el('div', 'rc-results-report-lap-num', lapKey === 'Pre' ? 'Pre' : ('Lap ' + lapKey)));
+      var textWrap = el('div', 'rc-results-report-lap-text');
+      byLap[lapKey].forEach(function (evt) {
+        textWrap.appendChild(el('p', 'rc-results-report-line', escapeHtml(_rcFormatEventLine_(evt))));
+      });
+      lapRow.appendChild(textWrap);
+      list.appendChild(lapRow);
+    });
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  // One panel per session this driver has laps and/or events for. Session
+  // subheader is just "QUALIFYING RESULTS"/"RACE RESULTS" now (2026-09-26,
+  // Matt's ask: "no need for a track name or any other identifiers since
+  // the container has the header that explains the event") -- the round's
+  // own title line above already names the event/track/layout.
   function resultsSessionsDetail(sessions) {
     var wrap = el('div', 'rc-results-sessions');
     (sessions || []).forEach(function (session) {
       if ((!session.laps || !session.laps.length) && (!session.events || !session.events.length)) return;
 
       var sessionPanel = el('div', 'rc-results-session');
-      var label = (session.sessionType || 'Session') + (session.trackVenue ? ' · ' + session.trackVenue : '');
-      sessionPanel.appendChild(el('div', 'rc-results-session-title', escapeHtml(label)));
+      var typeUpper = String(session.sessionType || '').toUpperCase();
+      var label = typeUpper.indexOf('QUALIFY') === 0 ? 'Qualifying Results' :
+        (typeUpper.indexOf('RACE') === 0 ? 'Race Results' : (escapeHtml(session.sessionType || 'Session') + ' Results'));
+      sessionPanel.appendChild(el('div', 'rc-results-session-title', label));
 
-      if (session.laps && session.laps.length) {
-        var scrollWrap = el('div', 'rc-results-table-wrap');
-        var table = document.createElement('table');
-        table.className = 'rc-results-table rc-results-laps-table';
-        var thead = document.createElement('thead');
-        var headRow = document.createElement('tr');
-        ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Fuel Used', 'VE', 'VE Used', 'Tire FL', 'Tire FR', 'Tire RL', 'Tire RR', 'Compound F', 'Compound R'].forEach(function (h) {
-          var th = document.createElement('th');
-          th.textContent = h;
-          headRow.appendChild(th);
-        });
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-
-        var tbody = document.createElement('tbody');
-        session.laps.forEach(function (l) {
-          var tr = document.createElement('tr');
-          function td(v) {
-            var c = document.createElement('td');
-            c.textContent = (v === null || v === undefined || v === '') ? '—' : String(v);
-            tr.appendChild(c);
-          }
-          td(l.lapNum); td(l.positionAtLap);
-          td(l.lapTime); td(l.sector1); td(l.sector2); td(l.sector3);
-          td(l.topSpeed); td(l.fuel); td(l.fuelUsed); td(l.ve); td(l.veUsed);
-          td(l.tireWearFL); td(l.tireWearFR); td(l.tireWearRL); td(l.tireWearRR);
-          td(l.frontCompound || [l.compoundFL, l.compoundFR].filter(Boolean).join('/'));
-          td(l.rearCompound || [l.compoundRL, l.compoundRR].filter(Boolean).join('/'));
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        scrollWrap.appendChild(table);
-        sessionPanel.appendChild(scrollWrap);
-      }
-
-      if (session.events && session.events.length) {
-        var eventsList = el('div', 'rc-results-events-list');
-        session.events.forEach(function (evt) {
-          var line = el('div', 'rc-results-event-line');
-          line.appendChild(el('span', 'rc-results-event-lap', evt.lapNum ? ('Lap ' + evt.lapNum) : (evt.elapsedTime || '')));
-          line.appendChild(el('span', 'rc-results-event-text', escapeHtml(_rcFormatEventLine_(evt))));
-          eventsList.appendChild(line);
-        });
-        sessionPanel.appendChild(eventsList);
-      }
+      if (session.laps && session.laps.length) sessionPanel.appendChild(resultsLapsTable(session));
+      if (session.events && session.events.length) sessionPanel.appendChild(resultsRaceReport(session));
 
       wrap.appendChild(sessionPanel);
     });
     return wrap;
   }
 
+  // Same three-piece "Round N   EventName at Track: Layout" title line
+  // league.js's own _rclBuildEventTitleLine_ builds for the League Hub's
+  // All Results popup (2026-09-26, Matt's ask: "make the round number
+  // title at the top identical to the ALL RESULTS event title styling and
+  // format") -- event name bold, track normal weight, layout a step
+  // dimmer, round number plain. Colors are this page's own light-theme
+  // tokens (--rc-carbon/--rc-steel), not league's white-on-dark ones, but
+  // the weight/shape match exactly.
+  function _rcBuildResultsEventTitleLine_(race) {
+    var line = el('h3', 'rc-results-round-title');
+    if (race.roundNum) line.appendChild(document.createTextNode('Round ' + race.roundNum + '   '));
+    line.appendChild(el('span', 'rc-results-round-title-event', escapeHtml(race.eventName || 'Race')));
+    if (race.track) {
+      line.appendChild(document.createTextNode(' at '));
+      line.appendChild(el('span', 'rc-results-round-title-track', escapeHtml(race.track)));
+    }
+    if (race.layout) {
+      line.appendChild(document.createTextNode(': '));
+      line.appendChild(el('span', 'rc-results-round-title-layout', escapeHtml(race.layout)));
+    }
+    return line;
+  }
+
   function resultsRoundPanel(race) {
     var you = race.you;
     var panel = el('div', 'rc-results-round');
 
-    // Header is the round # + event name, track underneath as the
-    // subheader (2026-09-08, Matt's call) -- the finishing-place corner
-    // figure the Dashboard's Recent Results card shows is deliberately
-    // NOT repeated here; this page's job is the comprehensive breakdown,
-    // not a personal-highlight headline.
-    panel.appendChild(el('h3', 'rc-results-round-title',
-      (race.roundNum ? 'Round ' + race.roundNum + ': ' : '') + escapeHtml(race.eventName || race.track || 'Race')));
-    if (race.track) panel.appendChild(el('div', 'rc-results-round-track', escapeHtml(race.track)));
+    // Header is the round # + event name/track/layout, one line, same
+    // styling convention as the League Hub's All Results event title
+    // (2026-09-26 rework -- see _rcBuildResultsEventTitleLine_ above). The
+    // finishing-place corner figure the Dashboard's Recent Results card
+    // shows is deliberately NOT repeated here; this page's job is the
+    // comprehensive breakdown, not a personal-highlight headline.
+    panel.appendChild(_rcBuildResultsEventTitleLine_(race));
 
     // Race-wide conditions/format + headline names (2026-09-07) -- winner/
     // pole/fastest lap of the whole event, track/weather/format numbers,
@@ -5154,8 +5260,12 @@
       resultsStatBlock('Winner', race.overallWinner),
       resultsStatBlock('Pole Sitter', race.overallPoleSitter),
       resultsStatBlock('Fastest Lap', race.overallFastestLapDriver ?
-        (race.overallFastestLapDriver + (race.overallFastestLapTime ? ' (' + race.overallFastestLapTime + ')' : '')) : ''),
+        (race.overallFastestLapDriver + (race.overallFastestLapTime ? ' (' + _rcFormatLapTime_(race.overallFastestLapTime) + ')' : '')) : ''),
+      // Finishers/DNF split (2026-09-26, Matt's ask) -- race.totalFinishers
+      // is now actual classified finishers only, race.totalDnf its own
+      // stat block right next to it (Results.gs).
       resultsStatBlock('Finishers', race.totalFinishers),
+      resultsStatBlock('DNF', race.totalDnf),
       resultsStatBlock('Race Laps', race.totalLaps || race.mostLapsCompleted),
       resultsStatBlock('Race Length', race.raceLengthMinutes ? (race.raceLengthMinutes + ' min') : ''),
       resultsStatBlock('Track Length', race.trackLengthMeters ? (Math.round(race.trackLengthMeters) + ' m') : ''),
@@ -5174,17 +5284,88 @@
     return panel;
   }
 
+  // Which season's results to show sticks across a reload via
+  // sessionStorage (2026-09-26, Matt's ask -- see the season picker below),
+  // same "a flag survives the reload, the section reads it back" pattern
+  // as raceclub_open_edit_profile elsewhere on this file. Empty/absent
+  // means "the current active season," the page's original default
+  // behavior.
+  var RC_RESULTS_VIEW_SEASON_KEY_ = 'raceclub_results_view_season';
+
+  // Season picker -- "Season N: Name MMM D - MMM D, YYYY" dropdown (1/3
+  // width) plus a RETRIEVE RESULTS button, sitting under the season
+  // header's red underline (2026-09-26, Matt's ask), for pulling up a
+  // past, Completed season's results once the active season has moved on.
+  // Only rendered once the driver actually HAS a past season on record --
+  // an empty list would just be dead chrome. Clicking Retrieve Results
+  // stores the chosen season (or clears it, for "Current Season") and does
+  // a real page reload back to this section, same as every other
+  // save-then-reload flow on the site -- Results is a lazy section, so
+  // this deliberately calls window.location.reload() directly rather than
+  // rcReloadAfterSave() (which would just re-render Results in place
+  // without an actual page reload).
+  function resultsSeasonPicker(pastSeasons, viewSeasonId) {
+    var row = el('div', 'rc-results-season-picker');
+    var select = document.createElement('select');
+    select.className = 'rc-results-season-select';
+
+    var currentOpt = document.createElement('option');
+    currentOpt.value = '';
+    currentOpt.textContent = 'Current Season';
+    if (!viewSeasonId) currentOpt.selected = true;
+    select.appendChild(currentOpt);
+
+    var driverTz = '';
+    try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
+
+    pastSeasons.forEach(function (s) {
+      var opt = document.createElement('option');
+      opt.value = s.seasonId;
+      var numLabel = seasonNumberLabel(s.seasonId);
+      var dateRange = (s.startUtc && s.endUtc) ? (' ' + formatShortDate(s.startUtc, driverTz) + ' - ' + formatShortDate(s.endUtc, driverTz)) : '';
+      opt.textContent = (numLabel ? 'Season ' + numLabel + ': ' : '') + (s.name || '') + dateRange;
+      if (s.seasonId === viewSeasonId) opt.selected = true;
+      select.appendChild(opt);
+    });
+    row.appendChild(select);
+
+    var retrieveBtn = el('button', 'rc-btn-primary rc-results-season-retrieve', 'Retrieve Results');
+    retrieveBtn.type = 'button';
+    retrieveBtn.addEventListener('click', function () {
+      if (select.value) sessionStorage.setItem(RC_RESULTS_VIEW_SEASON_KEY_, select.value);
+      else sessionStorage.removeItem(RC_RESULTS_VIEW_SEASON_KEY_);
+      rcActiveSectionId = 'results';
+      window.location.hash = '#results';
+      window.location.reload();
+    });
+    row.appendChild(retrieveBtn);
+    return row;
+  }
+
   function renderResultsSection(token) {
     var section = document.getElementById('rc-section-results');
     if (!section) return;
     section.innerHTML = '';
     section.appendChild(buildPageSpinner('Loading your results...'));
 
+    var viewSeasonId = sessionStorage.getItem(RC_RESULTS_VIEW_SEASON_KEY_) || '';
+    var resultsFetchOpts = { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG };
+    if (viewSeasonId) resultsFetchOpts.params = { seasonId: viewSeasonId };
+
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
-    return fetchApi('getSeasonResults', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+    return Promise.all([
+      fetchApi('getSeasonResults', resultsFetchOpts),
+      fetchApi('getMyPastSeasons', { token: token })
+    ]).then(function (both) {
+      var res = both[0];
+      var pastSeasonsRes = both[1];
       section.innerHTML = '';
 
       if (!res || !res.success) {
+        // A stale/bad viewSeasonId (a season that's since been un-completed,
+        // for instance) shouldn't leave the page stuck failing on every
+        // future visit -- clear it and fall back to the active season.
+        if (viewSeasonId) sessionStorage.removeItem(RC_RESULTS_VIEW_SEASON_KEY_);
         section.appendChild(el('h2', 'margin-top:0;', 'Results'));
         section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
         return;
@@ -5215,6 +5396,9 @@
       // same rc-dash-card chrome the Calendar page's season panel already
       // uses -- header is the season number + name, exactly like
       // Calendar's own season header, so the two pages read as one family.
+      // The header updates to whichever season was actually retrieved
+      // (res.seasonId/res.seasonName), so switching seasons via the picker
+      // below is reflected here automatically after the reload.
       var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
       var head = el('div', 'rc-cal-season-head');
       var seasonNumLabel = seasonNumberLabel(res.seasonId);
@@ -5222,6 +5406,9 @@
       // Class pills removed from the top-right corner (2026-09-24, Matt's
       // call) -- the header is just the season title now.
       panel.appendChild(head);
+
+      var pastSeasons = (pastSeasonsRes && pastSeasonsRes.success) ? (pastSeasonsRes.seasons || []) : [];
+      if (pastSeasons.length) panel.appendChild(resultsSeasonPicker(pastSeasons, viewSeasonId));
 
       // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a
       // League Hub page now so we don't need a leaderboard or extra fluff
