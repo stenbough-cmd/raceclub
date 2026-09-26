@@ -30,6 +30,83 @@ function apiBaseUrlIsUnset() {
   return !API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') !== -1;
 }
 
+// ---- PUBLISHED-CSV CONFIG (2026-09-26, Matt's ask: run League Hub and Meet
+// The Grid off a published Google Sheets CSV instead of Apps Script) ----
+// Leave either of these blank until you've done the one-time manual step in
+// Google Sheets: open the sheet, File > Share > Publish to web, pick the
+// tab named ("PublishedLeagueHub" or "PublishedGridTeaser"), format
+// "Comma-separated values (.csv)", check "Automatically republish when
+// changes are made," then Publish -- paste the URL it gives you here. Both
+// tabs are created automatically the next time their normal Apps Script
+// cache gets refreshed (an import, a season action, a Cars catalog change,
+// etc.) -- see _rcPublishJsonToSheet_ in Website.gs -- so there's nothing to
+// create by hand, only to publish.
+//
+// Leaving either blank is completely safe: fetchPublishedJson() below
+// rejects immediately with RC_NO_CSV_URL, and every caller (league.js,
+// index.html) catches that and falls straight through to the existing
+// fetchApi() call, exactly as if this feature didn't exist yet.
+var RC_LEAGUE_HUB_CSV_URL = '';
+var RC_GRID_TEASER_CSV_URL = '';
+
+// fetchPublishedJson(csvUrl) -> Promise<Object>
+//
+// Fetches a Google Sheets "Publish to the web" CSV URL directly -- a plain
+// static file served by Google's own servers, no Apps Script execution at
+// all -- and reassembles it back into the JSON object it was published
+// from. See _rcPublishJsonToSheet_'s long comment in Website.gs for the
+// write side of this: the payload is JSON.stringify()'d, chunked into
+// <=45,000-character pieces (Sheets' single-cell limit is 50,000), and
+// written one chunk per row in column A of a dedicated tab with no header
+// row.
+//
+// Google's CSV export wraps any cell containing a comma, quote, or newline
+// in double quotes and doubles internal quotes (standard CSV escaping).
+// Since JSON.stringify() never emits a literal newline character inside a
+// string (only the escaped two-character sequence \n), every chunk is
+// guaranteed to come back as exactly one line in the exported CSV -- so
+// reassembly is just: split on newlines, strip a wrapping pair of quotes
+// and un-double any doubled quotes on each line, concatenate, then
+// JSON.parse the result.
+//
+// Rejects (never resolves with a broken payload) on:
+//   RC_NO_CSV_URL          -- csvUrl is blank/unset (feature not turned on
+//                             yet, or Matt hasn't pasted the URL in above)
+//   RC_CSV_FETCH_FAILED_<status> -- the fetch itself failed or came back
+//                             non-OK (e.g. the tab was unpublished)
+//   RC_CSV_EMPTY            -- fetch succeeded but the body was blank
+//                             (tab exists but was never actually written,
+//                             or was cleared)
+//   (a JSON.parse SyntaxError) -- reassembled text wasn't valid JSON
+// Every caller is expected to .catch() any of these and fall back to the
+// normal fetchApi() call -- this is a pure performance optimization, never
+// the only path to the data.
+function fetchPublishedJson(csvUrl) {
+  if (!csvUrl) return Promise.reject(new Error('RC_NO_CSV_URL'));
+
+  return fetch(csvUrl, { cache: 'no-store' }).then(function (res) {
+    if (!res.ok) throw new Error('RC_CSV_FETCH_FAILED_' + res.status);
+    return res.text();
+  }).then(function (text) {
+    if (!text) throw new Error('RC_CSV_EMPTY');
+
+    var lines = text.split(/\r\n|\r|\n/).filter(function (line) {
+      return line.length > 0;
+    });
+    if (!lines.length) throw new Error('RC_CSV_EMPTY');
+
+    var jsonStr = lines.map(function (line) {
+      var unquoted = line;
+      if (unquoted.charAt(0) === '"' && unquoted.charAt(unquoted.length - 1) === '"') {
+        unquoted = unquoted.substring(1, unquoted.length - 1);
+      }
+      return unquoted.replace(/""/g, '"');
+    }).join('');
+
+    return JSON.parse(jsonStr);
+  });
+}
+
 // How long a single attempt is allowed to hang before it's treated as
 // failed (2026-09-14, Matt's report: "the dashboard sometimes never loads
 // anything"). Apps Script Web Apps queue same-user requests rather than

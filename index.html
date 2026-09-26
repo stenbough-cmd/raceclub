@@ -899,12 +899,60 @@
       });
     }
 
+    // Client-side port of handleGetGridTeaser's own per-class shuffle-and-
+    // cap (Website.gs) -- needed only on the published-CSV path (2026-09-26,
+    // Matt's ask: "can we somehow integrate the index to use a CSV for the
+    // MEET THE GRID cards... so it doesn't call Apps Scripts for every
+    // index hit too?"). RC_GRID_TEASER_CSV_URL publishes the raw POOL
+    // (_rcBuildGridTeaserPool_'s shape: {hasSeason, seasonId, seasonName,
+    // seasonStartDate, activeClasses, totalCarCount, byClass}), not the
+    // already-shuffled-and-capped response handleGetGridTeaser normally
+    // returns -- the shuffle happens fresh on every real request there
+    // specifically so a visitor sees a different subset on each visit, and
+    // a published CSV is a flat file that can't do that server-side. This
+    // reproduces that same shuffle (Fisher-Yates, matching _rcShuffle_) and
+    // cap (6 per class, matching GRID_TEASER_PER_CLASS_CAP) here instead,
+    // then reassembles the exact {success:true, hasSeason:true, ...,
+    // teams} shape render() above already expects.
+    function shuffle_(arr) {
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function buildGridTeaserResponseFromPool_(pool) {
+      if (!pool || !pool.hasSeason) return { success: true, hasSeason: false };
+
+      var GRID_TEASER_PER_CLASS_CAP = 6;
+      var teams = [];
+      (pool.activeClasses || []).forEach(function (cls) {
+        var classPool = (pool.byClass[cls] || []).slice();
+        teams = teams.concat(shuffle_(classPool).slice(0, GRID_TEASER_PER_CLASS_CAP));
+      });
+
+      return {
+        success: true, hasSeason: true,
+        seasonId: pool.seasonId, seasonName: pool.seasonName,
+        seasonStartDate: pool.seasonStartDate,
+        activeClasses: pool.activeClasses,
+        totalCarCount: pool.totalCarCount,
+        teams: teams
+      };
+    }
+
     function loadGridTeaser() {
       if (started) return;
       started = true;
-      fetchApi('getGridTeaser', {})
+      fetchPublishedJson(RC_GRID_TEASER_CSV_URL)
+        .then(function (pool) { return buildGridTeaserResponseFromPool_(pool); })
         .then(render)
-        .catch(function () { renderStaticSample_(); });
+        .catch(function () {
+          fetchApi('getGridTeaser', {})
+            .then(render)
+            .catch(function () { renderStaticSample_(); });
+        });
     }
 
     if ('IntersectionObserver' in window) {

@@ -2456,6 +2456,68 @@ function _rclHidePageLoader() {
   }, 450); // matches the 0.4s CSS transition, plus a hair of slack
 }
 
+// _rclPatchTimeDerivedFields_(hub) -- client-side port of
+// _rcRefreshTimeDerivedLeagueHubFields_ (Website.gs). Only needed on the
+// published-CSV path (2026-09-26): a CacheService/getLeagueHub read always
+// goes through that server-side function first, so it never serves a stale
+// "UPCOMING" entry whose scheduled start has already passed (see that
+// function's own long comment for the original bug report). A published
+// CSV has no such gate -- it's a flat file that only changes when
+// _rcPublishJsonToSheet_ rewrites it (an import, a season action, a news
+// post, etc.), same as the CacheService copy's write side, but nothing
+// re-derives these fields on every READ the way handleGetLeagueHub does.
+// Without this, a round could sit showing UPCOMING on a CSV-fed page for
+// up to the gap between real writes, even though the round's start time
+// has already passed. Keep this in exact lockstep with the server-side
+// function if that one ever changes.
+function _rclPatchTimeDerivedFields_(hub) {
+  if (!hub || !hub.hasSeason || !Array.isArray(hub.calendar)) return hub;
+  var nowMs = Date.now();
+
+  hub.calendar.forEach(function (entry) {
+    entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
+  });
+
+  var completedEntries = hub.calendar.filter(function (entry) {
+    return entry.kind === 'round' && entry.finished && entry.hasResults;
+  });
+  hub.roundsCompleted = completedEntries.length;
+  hub.hasUnofficialResults = completedEntries.some(function (entry) { return !entry.resultsFinalized; });
+
+  var nextEntry = hub.calendar.filter(function (entry) {
+    return entry.kind !== 'bye' && !entry.finished;
+  })[0];
+  hub.nextRace = nextEntry ? {
+    kind: nextEntry.kind,
+    eventName: nextEntry.eventName || '',
+    track: nextEntry.track || '',
+    layout: nextEntry.layout || '',
+    startUtc: nextEntry.startUtc || '',
+    raceLengthTier: nextEntry.raceLengthTier || '',
+    roundNum: nextEntry.roundNum || 0,
+    totalRounds: hub.totalRounds
+  } : null;
+
+  return hub;
+}
+
+// _rclFetchLeagueHub_() -- tries the published CSV first (2026-09-26,
+// Matt's ask: "publishing the league hub itself as a CSV will eliminate
+// the use of apps scripts altogether for loading the league hub"), which
+// hits Google's own static-file servers with zero Apps Script execution,
+// and falls back to the normal fetchApi('getLeagueHub', ...) call --
+// unchanged from before this feature existed -- on ANY failure: the CSV
+// URL hasn't been configured yet (RC_LEAGUE_HUB_CSV_URL left blank in
+// api.js), the fetch itself failed, or the reassembled text didn't parse.
+// This is a pure performance path, never the only way to load the page.
+function _rclFetchLeagueHub_() {
+  return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).then(function (hub) {
+    return _rclPatchTimeDerivedFields_(hub);
+  }).catch(function () {
+    return fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
@@ -2464,16 +2526,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // stashes the fetched hub (_rclHubForPoints) so the "View Points
   // Tables" link can build the popup on demand instead.
   var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderNews];
-  // BUG FIX (2026-09-23 audit -- Matt's report: league.html times out and
-  // shows no season after a long wait). This call had no timeoutMs
-  // override at all, so it used the 20s default meant for small dashboard
-  // reads even though the League Hub payload scales with the whole
-  // season's standings/results/news. Combined with the League Hub cache
-  // fix in Website.gs (_rcRefreshLeagueHubCache_ no longer silently
-  // stops caching once the payload crosses 100KB), a cache MISS here can
-  // still take a real full rebuild -- give it the same long budget every
-  // other heavy read on the site uses.
-  fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (hub) {
+
+  function showHub(hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
@@ -2485,7 +2539,15 @@ document.addEventListener('DOMContentLoaded', function () {
     _rclRenderTicker(hub);
     RENDERERS.forEach(function (fn) { fn(hub); });
     _rclHidePageLoader();
-  }).catch(function () {
+  }
+
+  // BUG FIX (2026-09-23 audit -- Matt's report: league.html times out and
+  // shows no season after a long wait). The fetchApi fallback call inside
+  // _rclFetchLeagueHub_ still uses RC_FETCH_TIMEOUT_MS_LONG rather than
+  // the 20s default meant for small dashboard reads, since the League Hub
+  // payload scales with the whole season's standings/results/news and a
+  // cache MISS server-side can still take a real full rebuild.
+  _rclFetchLeagueHub_().then(showHub).catch(function () {
     _rclRenderTicker({ lastRace: null, standings: [] });
     RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
     _rclRenderHero({ hasSeason: false });
