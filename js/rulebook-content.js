@@ -41,9 +41,9 @@
 var RULEBOOK_SECTIONS = [
   {
     id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
-    html: '<p>Race Club is a persistent driver career league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile -- results, penalties, and history all carry forward instead of resetting each week.</p>' +
+    html: '<p>Race Club is a persistent driver career league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile: results, penalties, and history all carry forward instead of resetting each week.</p>' +
       '<p>The League Hub is the public view of that career: standings, results, and news update as soon as a round is scored, visible to anyone without needing to log in.</p>' +
-      '<p>Race Club runs a WEC-style season: race length varies round to round, mixing shorter sprint rounds with longer endurance rounds. Cars are grouped into classes modeled on real WEC competition -- Hypercar, LMP2, LMP3, LMGT3, and LMGTE.</p>' +
+      '<p>Race Club runs a WEC-style season: race length varies round to round, mixing shorter sprint rounds with longer endurance rounds. Cars are grouped into classes modeled on real WEC competition.</p>' +
       '<div class="rc-rulebook-callout"><strong>Overview:</strong><ul>' +
       '<li>Driver profile, results, and career history persist across every season</li>' +
       '<li>Every race, penalty, and bonus is logged to your permanent record</li>' +
@@ -55,9 +55,8 @@ var RULEBOOK_SECTIONS = [
     html: '<h4>2.1 Registering For a Season</h4>' +
       '<p>When a season is open for registration, the Dashboard’s Registration Status card shows REGISTER FOR [SEASON NAME]. Clicking it opens the registration popup:</p>' +
       '<ol><li>Choose a class. If only one class is currently open, this step is skipped automatically.</li>' +
-      '<li>Choose a car. Cars are listed by car number, lowest to highest.</li>' +
+      '<li>Choose a car. Cars are listed alphabetically by manufacturer.</li>' +
       '<li>Click Join This Team. This locks the seat in immediately and cannot be undone.</li></ol>' +
-      '<p>Joining a team plays a short signing sequence, then holds on a congratulations screen until Continue is clicked. Continue reloads the page and returns to the Dashboard with the new team reflected everywhere.</p>' +
       '<div class="rc-rulebook-callout"><strong>Registering:</strong><ul>' +
       '<li>Seats are first-come, first-served: once a driver joins a team, that seat is locked for the rest of the season</li>' +
       '<li>Class and team choice both lock in immediately, no confirmation step after Join This Team</li>' +
@@ -68,25 +67,26 @@ var RULEBOOK_SECTIONS = [
   {
     id: 'race-weekend-format', num: '3', title: 'Race Weekend Format',
     html: '<h4>3.1 Session Order</h4>' +
-      '<p>A race weekend runs in one fixed order: the server opens for practice first, then qualifying, then the race. Session start times are set per round and shown on the Calendar -- they can vary from season to season, so check the Calendar for a specific round rather than assuming a fixed schedule.</p>' +
+      '<p>A race weekend runs in one fixed order: the server opens for practice first, then qualifying, then the race. Session start times are set per round and shown on the Calendar, and vary from season to season.</p>' +
       '<p>Be in the server before qualifying starts. A driver who isn’t in by the start of qualifying may not be able to start the race.</p>' +
       '<h4>3.2 Qualifying Format</h4>' +
-      '<p>Qualifying is either private (each driver sets a time independently) or public (all drivers qualify together on track at the same time). Which format is used is decided at the start of the season and applies to every round that season -- it is not changed round to round.</p>' +
+      '<p>Qualifying is either private (each driver sets a time independently) or public (all drivers qualify together on track at the same time). Which format is used is decided at the start of the season and applies to every round that season.</p>' +
       '<h4>3.3 Formation Lap &amp; Start</h4>' +
       '<p>The formation lap and race start are handled automatically by the game. Drivers must follow the game’s visual cues; a jump start or formation lap violation is penalized automatically and is not reviewable (see Section 4.3).</p>' +
       '<h4>3.4 No-Shows (Missed Races)</h4>' +
-      '<p>A driver who doesn’t take part in a round has that round recorded as a missed race. A missed race simply scores no points for that round -- nothing else about it is treated differently from a race the driver could have attended. How many of a season’s worst results (including missed races) can be dropped from the championship total is a per-season setting -- see Section 7.</p>'
+      '<p>A driver who doesn’t take part in a round has that round recorded as a missed race. A missed race simply scores no points for that round, nothing else about it is treated differently from a race the driver could have attended. How many of a season’s worst results (including missed races) can be dropped from the championship total is listed in the season details. See Section 7 for more information on points and standings.</p>'
   },
   {
     id: 'driving-standards', num: '4', title: 'Driving Standards',
     html: '<h4>4.1 General Principles</h4>' +
-      '<p>Race Club expects competitive, hard racing. Contact and incidents happen, and not every incident is a penalty. The standard stewards apply is whether an action was reasonably avoidable, not simply whether contact occurred. Drivers are expected to race with awareness of who’s around them and to leave room where it’s reasonably possible to do so.</p>' +
+      '<p>Race Club expects competitive, yet fair, racing. Contact and incidents happen, and not every incident is a penalty. <u>The standard stewards apply is whether an action was reasonably avoidable, not simply whether contact occurred.</u> Drivers are expected to race with awareness of who’s around them and to leave room where it’s reasonably possible to do so.</p>' +
       '<h4>4.2 On-Track Conduct</h4>' +
       '<p>Drivers are responsible for:</p>' +
       '<ul><li>Avoiding contact that could reasonably have been avoided</li>' +
       '<li>Rejoining the track safely after going off, without endangering other cars</li>' +
       '<li>Racing other drivers fairly: no blocking, weaving, or erratic defensive driving</li>' +
-      '<li>Being aware of blue flags when about to be lapped</li></ul>' +
+      '<li>Being aware of blue flags when about to be lapped</li>' +
+      '<li>Holding the brakes when off track or after a loss of car control</li></ul>' +
       '<h4>4.3 Automatically Enforced (No Organizer Action Required)</h4>' +
       '<p>The following are detected and penalized automatically by LMU’s in-game systems. Stewards do not review or re-adjudicate these:</p>' +
       '<ul><li>Track limits</li><li>Pit lane speeding</li><li>Jump starts</li><li>Formation lap conduct</li></ul>' +
@@ -94,29 +94,29 @@ var RULEBOOK_SECTIONS = [
       '<h4>4.4 Reviewed by Stewards</h4>' +
       '<p>The following require steward review after the race, since the game doesn’t reliably catch them:</p>' +
       '<ul><li>Avoidable collisions and their consequences</li><li>Unsafe rejoins</li><li>Blocking/weaving</li>' +
-      '<li>Blue flag violations</li><li>Deliberate retaliation or unsportsmanlike conduct</li></ul>' +
+      '<li>Blue flag violations</li><li>Deliberate retaliation or unsportsmanlike conduct (on or off the track)</li></ul>' +
       '<p>There is no live steward commentary or in-race intervention. All of the above are assessed after the fact, via replay and driver reports, and penalties are applied to the final classification (see Section 5).</p>' +
       '<h4>4.5 Incident Reporting (Protests)</h4>' +
       '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved, if any.</p>' +
       '<ul><li>A protest must be filed within 24 hours of that round’s results being posted.</li>' +
       '<li>Each driver can file up to 2 protests per race. A withdrawn protest still counts toward that limit.</li>' +
       '<li>A protest can be edited or withdrawn any time before a steward rules on it, or before the round’s results are finalized.</li></ul>' +
-      '<p>Once filed, a protest is reviewed and ruled on by the Steward Board -- see Section 5.</p>'
+      '<p>Once filed, a protest is reviewed and ruled on by the Steward Board. See Section 5.</p>'
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board rules on it and assigns a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward -- a ruling isn’t just a recorded judgment, it moves the finishing position and points on its own. Tier 7 (Suspension) is enforced automatically as well. Two infraction types -- Wrong-Class Entry and Wrong-Team/Car Entry -- carry a standard Tier 6.</div>' +
+    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board rules on it and assigns a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
       '<table><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
-      '<tr><td>1</td><td>Warning</td><td>Logged only, no time or position impact</td></tr>' +
-      '<tr><td>2</td><td>Time Penalty (5s)</td><td>Added to final race time</td></tr>' +
-      '<tr><td>3</td><td>Time Penalty (10s)</td><td>Added to final race time</td></tr>' +
-      '<tr><td>4</td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
-      '<tr><td>5</td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
-      '<tr><td>6</td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td>7</td><td>Suspension</td><td>Driver sits out one or more future rounds</td></tr></table>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged only, no time or position impact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (5s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (10s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Driver sits out one or more future rounds</td></tr></table>' +
       '<h4>5.2 Infraction Types</h4>' +
       '<p><strong>Contact &amp; driving standards</strong></p>' +
       '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +
@@ -130,13 +130,13 @@ var RULEBOOK_SECTIONS = [
       '<h4>5.3 Example Incidents by Tier</h4>' +
       '<p>For context, these are illustrative examples, not an exhaustive list. Stewards retain discretion to adjust based on circumstances.</p>' +
       '<table><tr><td><strong>Tier</strong></td><td><strong>Example Incident</strong></td></tr>' +
-      '<tr><td>1, Warning</td><td>Minor, brief off-line defensive move with no contact; borderline blue flag delay with no time gained</td></tr>' +
-      '<tr><td>2, 5s</td><td>Light contact causing another driver to briefly run wide, no spin or position change</td></tr>' +
-      '<tr><td>3, 10s</td><td>Contact causing another driver to spin or lose a position; ignoring a blue flag long enough to hold up a lapping car</td></tr>' +
-      '<tr><td>4, Drive-Through Equiv. (+20s)</td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
-      '<tr><td>5, Stop-and-Go Equiv. (+40s)</td><td>Deliberate or reckless contact</td></tr>' +
-      '<tr><td>6, Disqualification</td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
-      '<tr><td>7, Suspension</td><td>Repeated Tier 4/5 offenses within a season following a prior disqualification; serious conduct violations off-track</td></tr></table>'
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Minor, brief off-line defensive move with no contact; borderline blue flag delay with no time gained</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Light contact causing another driver to briefly run wide, no spin or position change</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Contact causing another driver to spin or lose a position; ignoring a blue flag long enough to hold up a lapping car</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Deliberate or reckless contact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Repeated Tier 4/5 offenses within a season following a prior disqualification; serious conduct violations off-track</td></tr></table>'
   },
   {
     id: 'race-control', num: '6', title: 'Race Control Procedures',
@@ -146,7 +146,7 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'points-standings', num: '7', title: 'Points & Standings',
-    html: '<p>Every round awards championship points by finishing position within your class. Longer and higher-profile rounds are worth more points than shorter ones, so the calendar isn’t weighted evenly round to round -- exact point values are set per season and can change from one season to the next.</p>' +
+    html: '<p>Every round awards championship points by finishing position within your class. Longer and higher-profile rounds are worth more points than shorter ones, so the calendar isn’t weighted evenly round to round. Exact point values are set per season and can change from one season to the next.</p>' +
       '<p>Pole position, fastest lap, and most laps led are tracked automatically each race and can add bonus points on top of finishing position.</p>' +
       '<p>A season can allow a number of drop weeks: once enough rounds have been completed, each driver’s lowest-scoring result(s) are dropped from their championship total, up to the number of drop weeks that season allows.</p>' +
       '<p>Special events are exhibition (“fun”) races and never count toward championship standings. They don’t count as a missed race either, and have no effect on drop weeks or anything else tied to the championship.</p>' +
@@ -154,9 +154,9 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'conduct-discipline', num: '8', title: 'Conduct & Discipline (Off-Track)',
-    html: '<p>Race Club is a friendly, competitive community. Most incidents are just racing -- a respectful conversation between the drivers involved solves things faster than escalating.</p>' +
+    html: '<p>Race Club is a friendly, competitive community. Most incidents are just racing. Many times, a respectful conversation between the drivers involved solves things faster and more effectively than escalating issues to an organizer.</p>' +
       '<h4>Expected of every driver</h4>' +
-      '<ul><li>Race hard, but race fair -- treat contact and mistakes as part of racing, not a reason for retaliation</li>' +
+      '<ul><li>Race hard, but race fair, treat contact and mistakes as part of racing, not a reason for retaliation</li>' +
       '<li>Talk to other drivers the way you would if they were standing in front of you</li>' +
       '<li>Keep race chat, voice comms, and Discord respectful, even in the heat of the moment</li>' +
       '<li>Try to work out disagreements directly with the other driver first</li>' +
@@ -176,7 +176,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
       '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
       '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
-      '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all -- nothing to race, nothing to score.</td></tr>' +
+      '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all: nothing to race, nothing to score.</td></tr>' +
       '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
       '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
       '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
@@ -184,7 +184,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
       '<tr><td><strong>Steward</strong></td><td>An Admin, Organizer, or Steward who reviews and rules on protests.</td></tr>' +
       '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
-      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest -- from a Warning up to Suspension (Section 5.1).</td></tr>' +
+      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
       '<tr><td><strong>Finalized Results</strong></td><td>A round whose results and rulings are locked in and can no longer be protested, edited, or changed.</td></tr>' +
       '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
       '</table>'

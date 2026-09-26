@@ -5228,3 +5228,30 @@ body.rc-modal-scroll-locked {
    registration-status pill) lived here. */
 
 .rc-rulebook-draft-note { font-size: 13px; color: var(--rc-steel); font-style: italic; }
+
+/* Penalty tier badges (Rulebook Section 5.1/5.3) -- a square pill with its
+   own container color per tier, escalating green (Tier 1, mildest) to red
+   (Tier 7, most severe) so the severity reads at a glance without having
+   to read the row text (2026-09-26, Matt's ask). Bold white numerals on a
+   solid fill rather than colored text on the card background, since a
+   filled container reads more clearly as a status/severity chip. */
+.rc-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--rc-white);
+  line-height: 1;
+}
+.rc-tier-badge.rc-tier-1 { background: #2e8b3f; }
+.rc-tier-badge.rc-tier-2 { background: #6a9c2e; }
+.rc-tier-badge.rc-tier-3 { background: #a8a02e; }
+.rc-tier-badge.rc-tier-4 { background: #c9962e; }
+.rc-tier-badge.rc-tier-5 { background: #d9702e; }
+.rc-tier-badge.rc-tier-6 { background: #d9502e; }
+.rc-tier-badge.rc-tier-7 { background: #c62828; }
