@@ -686,6 +686,11 @@ body.rc-league-page {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  /* Space above (2026-09-26 follow-up, Matt's ask: "add a space between
+     the bottom of the leaderboard and the results notifications") -- this
+     note sits directly after the standings columns/class tables with no
+     gap of its own otherwise. */
+  margin-top: 18px;
   margin-bottom: 16px;
 }
 .rcl-standings-status-preliminary { color: #e0b64c; }
@@ -1126,16 +1131,17 @@ body.rc-league-page {
 /* Results) -- see _rclOpenAllResultsModal/_rclBuildAllResultsBody_,       */
 /* js/league.js.                                                          */
 /* -------------------------------------------------------------------- */
-/* 3/4 width (2026-09-26, Matt's ask -- was 2/3 earlier the same day, 1/2
-   on 2026-09-23) -- the round select shares its row with the Qualifying/
-   Race select to its right (.rcl-allresults-session-select below) rather
-   than sitting alone, so the row is a flex pair now instead of one
-   standalone dropdown. */
+/* 3/4 width (2026-09-26 follow-up, Matt's ask: "make the round dropdown
+   box 3/4 width and let the race/qualifying dropdown box take up the
+   remaining on that row" -- was a fixed 75%/25% width pair, which
+   overflowed the row by exactly the 10px gap since percentage widths
+   don't account for a flex gap; flex-grow ratios (3:1 of the space left
+   after the gap is subtracted) give the same 3/4-to-1/4 split with no
+   overflow). */
 .rcl-allresults-select-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
 .rcl-allresults-select {
-  width: 75%;
+  flex: 3 1 0;
   min-width: 220px;
-  max-width: 100%;
   background: var(--rcl-bg);
   border: 1px solid var(--rcl-line-bright);
   border-radius: 5px;
@@ -1145,11 +1151,11 @@ body.rc-league-page {
   padding: 8px 10px;
 }
 .rcl-allresults-select:focus { border-color: var(--rc-red); }
-/* Qualifying/Race toggle -- 1/4 width (2026-09-26, Matt's ask, same pass
-   as the round select's 3/4 above), sitting to the right of the round
-   select. */
+/* Qualifying/Race toggle -- takes up the remaining quarter of the row
+   (2026-09-26 follow-up, Matt's ask, same pass as the round select's 3/4
+   above). */
 .rcl-allresults-session-select {
-  width: 25%;
+  flex: 1 1 0;
   min-width: 140px;
   background: var(--rcl-bg);
   border: 1px solid var(--rcl-line-bright);
@@ -1220,22 +1226,33 @@ body.rc-league-page {
    class color classes (.rc-badge-lmgt3 etc.) come from style.css, loaded
    on this page too (see the file header comment). Timestamp is plain
    muted text, tabular-nums so a column of them lines up digit-for-digit.
-   Reworked 2026-09-26 (Matt's catch): the pill itself used to be stretched
-   to a fixed 46px box with its TEXT right-justified inside that box
-   (.rcl-report-pill, width:46px + justify-content:flex-end directly on
-   the badge span) so every pill lined up on the right -- but that gave a
-   short label like "HY" uneven padding (a big gap on the left inside its
-   own box, only .rc-badge-chip-abbrev's normal 6px on the right), which
-   read as broken, not "padded evenly around the text." The fix: the fixed
-   width + right-alignment now live on a separate wrapper,
-   .rcl-report-pill-col (built by _rclClassPill_, js/league.js), with the
-   actual .rc-badge-chip-abbrev pill sitting inside it unmodified --
-   inline-flex, auto-width, so it hugs its own text with even padding on
-   both sides regardless of label length ("HY" vs "LMGT3"/"LMGTE"), while
-   still landing on the same right edge column to column so the timestamp
-   after it starts at one consistent position. 46px still fits "LMGT3"/
-   "LMGTE" (the longest labels) with room to spare. */
-.rcl-report-pill-col { display: inline-block; width: 46px; text-align: right; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
+   Reworked 2026-09-26, twice the same day:
+   1) The pill itself used to be stretched to a fixed 46px box with its
+      TEXT right-justified inside that box (.rcl-report-pill, width:46px +
+      justify-content:flex-end directly on the badge span) so every pill
+      lined up on the right -- but that gave a short label like "HY"
+      uneven padding (a big gap on the left inside its own box, only
+      .rc-badge-chip-abbrev's normal 6px on the right). Fixed by moving
+      the fixed width/right-alignment onto a separate wrapper
+      (.rcl-report-pill-col, built by _rclClassPill_, js/league.js),
+      leaving the actual .rc-badge-chip-abbrev pill inside it unmodified
+      so it hugs its own text with even padding regardless of label
+      length.
+   2) That wrapper used display:inline-block + text-align:right at 46px
+      wide, which turned out too narrow for "LMGT3"/"LMGTE" (5 characters)
+      -- an inline-block narrower than its own content doesn't reliably
+      right-align the overflow the way flexbox does, and Matt's report
+      confirmed it: the pills read centered, and LMGT3's pill overlapped
+      the timestamp after it. Switched to inline-flex + justify-content:
+      flex-end (well-defined overflow direction -- content wider than the
+      box bleeds toward the START of the row, i.e. left, never touching
+      what follows on the right) and widened to 58px with real headroom
+      over "LMGT3"/"LMGTE" at this pill's 12px font. flex-shrink:0 on the
+      badge itself (below) stops it from ever being squeezed narrower than
+      its own text, so a label is never clipped even if this column's
+      width guess is ever too tight for a future label. */
+.rcl-report-pill-col { display: inline-flex; justify-content: flex-end; width: 58px; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
+.rcl-report-pill-col > .rc-badge-chip { flex-shrink: 0; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
@@ -1433,17 +1450,14 @@ body.rc-league-page {
   color: var(--rcl-ink-faint);
 }
 .rcl-cal-status-up { color: var(--rc-red); }
+/* Plain gray COMPLETE (2026-09-26, Matt's ask: "in the Season calendar...
+   just say COMPLETED in gray once a race is over. No need to duplicate
+   the type of results posted here since it's on every results table") --
+   the separate gold PRELIMINARY/gray OFFICIAL "...RESULTS POSTED" variants
+   this used to have (2026-09-19/2026-09-21) are removed; that distinction
+   now lives only on the Recent Results/Current Standings/All Results
+   notices (_rclBuildResultsStatusNotice_, js/league.js). */
 .rcl-cal-status-complete { color: var(--rcl-ink-dim); }
-/* PRELIMINARY/OFFICIAL RESULTS POSTED (2026-09-19 follow-up, renamed
-   2026-09-21 from UNOFFICIAL/OFFICIAL RESULTS -- Matt's ask: "COMPLETED
-   notification... PRELIMINARY RESULTS POSTED... OFFICIAL RESULTS
-   POSTED") -- preliminary reuses the same gold accent .rcl-cal-row-
-   special's own text already uses elsewhere in this file, so "not final
-   yet" reads as an amber/caution note rather than inventing a new hue;
-   official settles back to the same calm, done-with-this tone COMPLETE
-   always used. */
-.rcl-cal-status-preliminary { color: #e0b64c; }
-.rcl-cal-status-official { color: var(--rcl-ink-dim); }
 /* Faded row once a round's start time has passed (2026-09-21, Matt's
    ask: "have the race faded out with a COMPLETED notification") --
    dims the round bar/event/track/meta chips, but deliberately NOT

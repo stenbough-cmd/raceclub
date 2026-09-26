@@ -56,16 +56,17 @@ function _rclEscapeHtml(str) {
 // pill) -- Matt's own list for this ask was exactly those five labels.
 var RCL_CLASS_PILL_COLOR_ = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
 // Wrapped in a fixed-width, right-aligned column (.rcl-report-pill-col,
-// 2026-09-26 rework) so every pill keeps the exact same padding around its
-// own text (a 2-letter "HY" pill and a 5-letter "LMGT3"/"LMGTE" pill are
-// each their own natural width, via .rc-badge-chip-abbrev's fixed 2px 6px
-// padding, style.css) while still lining up against one shared right edge
-// column to column -- Matt's catch: the old version stretched the pill
-// itself to a fixed 46px box and right-justified the TEXT inside it, which
-// gave a short label like "HY" a big gap on one side of its own padding
-// instead of even padding all the way around. The fix moves the fixed
-// width/right-alignment onto a plain wrapper span instead, leaving the
-// pill itself free to hug its own text.
+// 2026-09-26 rework, twice the same day -- see that class's own comment,
+// css/league.css, for the full history) so every pill keeps the exact
+// same padding around its own text (a 2-letter "HY" pill and a 5-letter
+// "LMGT3"/"LMGTE" pill are each their own natural width, via
+// .rc-badge-chip-abbrev's fixed 2px 6px padding, style.css) while still
+// lining up against one shared right edge column to column, using
+// flexbox's justify-content:flex-end (not text-align on a plain
+// inline-block, which turned out not to reliably right-justify an
+// overflowing pill -- Matt's catch: "LMGT3 pills... are now centered in a
+// column... the LMGT3 pill overlaps the timestamp since it's wider than
+// the HY pill").
 function _rclClassPill_(cls) {
   var key = String(cls || '').trim();
   var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
@@ -1075,7 +1076,9 @@ function _rclBuildResultsStatusNotice_(round) {
   var finalized = !!round.resultsFinalized;
   var dateSource = finalized ? round.finalizedAt : (round.importedAt || round.startUtc);
   var dateText = dateSource ? _rclFormatDate(dateSource) : '';
-  var label = (finalized ? '*OFFICIAL RESULTS' : '*PRELIMINARY RESULTS') + (dateText ? ' (' + dateText + ')' : '');
+  // "(POSTED ON <date>)" (2026-09-26 follow-up, Matt's ask) -- was just
+  // "(<date>)" with no label.
+  var label = (finalized ? '*OFFICIAL RESULTS' : '*PRELIMINARY RESULTS') + (dateText ? ' (POSTED ON ' + dateText + ')' : '');
   return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary', label);
 }
 
@@ -1784,27 +1787,21 @@ function _rclRenderCalendar(hub) {
       eventLine.appendChild(_rclEl('span', 'rcl-cal-event-layout', _rclEscapeHtml(entry.layout)));
     }
     topLine.appendChild(eventLine);
-    // COMPLETED, with a results phrase appended once there's something to
-    // report (2026-09-21 rewrite, Matt's ask: "have the race faded out
-    // with a COMPLETED notification, if it hasn't been finalized yet,
-    // have it also say PRELIMINARY RESULTS POSTED and if it's finalized
-    // OFFICIAL RESULTS POSTED" -- was "AWAITING RESULTS"/"UNOFFICIAL
-    // RESULTS"/"OFFICIAL RESULTS" on their own, 2026-09-19). Same
-    // resultsFinalized field Account.html's driver-facing Calendar
-    // already reads this way (see its own "Completed"/"Preliminary
-    // Results Posted"/"Official Results Posted" badges, raceCard()), now
-    // public here too.
+    // Simplified to a plain "COMPLETED" in gray once a race is over
+    // (2026-09-26, Matt's ask: "no need to duplicate the type of results
+    // posted here since it's on every results table" -- the preliminary/
+    // official distinction now lives on the Recent Results/Current
+    // Standings/All Results notices instead, so repeating it here too was
+    // redundant). Was "COMPLETED · OFFICIAL/PRELIMINARY RESULTS POSTED"
+    // (2026-09-21 rewrite of the original "AWAITING RESULTS"/"UNOFFICIAL
+    // RESULTS"/"OFFICIAL RESULTS" wording, 2026-09-19).
     var statusText, statusClass;
     if (idx === nextIdx) {
       statusText = 'UP NEXT'; statusClass = 'up';
     } else if (!entry.finished) {
       statusText = 'UPCOMING'; statusClass = 'upcoming';
-    } else if (!entry.hasResults) {
-      statusText = 'COMPLETED'; statusClass = 'complete';
-    } else if (entry.resultsFinalized) {
-      statusText = 'COMPLETED · OFFICIAL RESULTS POSTED'; statusClass = 'official';
     } else {
-      statusText = 'COMPLETED · PRELIMINARY RESULTS POSTED'; statusClass = 'preliminary';
+      statusText = 'COMPLETED'; statusClass = 'complete';
     }
     topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusClass, statusText));
     rowBody.appendChild(topLine);
