@@ -557,17 +557,11 @@ p { margin: 0 0 0.75em; }
    once finalized) instead of a separate icon here. */
 .rc-round-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
-/* League Tools protest ruling dropdown (openRoundEditFinalizeModal,
-   Account.html) -- 66% width (2026-09-25, was 75%, Matt's ask), so the
-   "Penalty Standards" opener button fits on the same row beside it.
-   flex-basis (not just width) so it holds its share in the row's flex
-   layout regardless of the select's own content width. */
-.rc-ruling-select { flex: 0 0 66%; width: 66%; }
-/* Penalty Standards opener next to the ruling select (2026-09-24 styling
-   pass) -- fills the remaining space and stretches to the select's 44px
-   height via the row's align-items:stretch, rather than sitting at
-   .rc-btn-row's normal short inline-action height. */
-.rc-ruling-standards-btn { flex: 1 1 auto; min-width: 0; }
+/* .rc-ruling-select/.rc-ruling-standards-btn removed (2026-09-26) -- both
+   were sized to share one row (the ruling dropdown at 66%, the Penalty
+   Standards opener filling the rest); the Penalty Standards popup is gone
+   (Matt's ask -- he's building a "suggested penalty" system instead), so
+   the select is back to plain full width, styled inline. */
 /* Review & Finalize popup's protest list (openRoundEditFinalizeModal,
    Account.html) -- 2026-09-25 redesign: every protest, plus the Apply
    Ruling(s)/Finalize action bar at the end, lives inside ONE .rc-panel

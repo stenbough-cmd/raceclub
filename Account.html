@@ -7753,64 +7753,11 @@
   // for its own sake.
 
   // EDIT (2026-09-08) -- League Management round row's protest-ruling popup.
-  // Suggested tier RANGES for the driver-filed infraction types
-  // (PROTEST_INFRACTION_TYPES, reference-data.js) -- unlike
-  // SUGGESTED_TIER_BY_INFRACTION (reference-data.js/Protests.gs), which
-  // fixes ONE tier for the two auto-flagged registration-mismatch types
-  // and is enforced with a written-explanation gate on deviation, these
-  // five driver-filed types are explicitly "judged case by case" per that
-  // file's own comment -- there is no rulebook-mandated single tier for
-  // any of them. This table is new, 2026-09-24 (item 7), authored here as
-  // a starting-point guide for the Penalty Standards popup so rulings
-  // stay roughly consistent steward to steward; it's advisory only (shown
-  // in the popup, never read by any ruling logic) and a steward can rule
-  // outside a listed range when the incident calls for it. Matt should
-  // treat these ranges themselves as a first draft to review/adjust, not
-  // settled Rulebook text.
-  var PROTEST_TYPICAL_TIER_RANGE = {
-    'Intentional Wrecking': 'Tier 5-6 (Stop-and-Go Equivalent to Disqualification)',
-    'Unsafe Rejoin': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
-    'Avoidable Contact (Other Driver)': 'Tier 2-4 (Time Penalty to Drive-Through Equivalent)',
-    'Avoidable Contact (Self Report)': 'Tier 1-3 (Warning to Time Penalty; see the self-reporting note below)',
-    'Unsportsmanlike Behavior': 'Tier 3-6 (Time Penalty to Disqualification, depending on severity)'
-  };
-
-  // Reference popup (2026-09-24, item 7) explaining what each penalty
-  // tier means and giving a standardized ruling schedule, so a steward's
-  // rulings don't drift ad hoc from one round to the next. Reuses
-  // PENALTY_TIERS/SUGGESTED_TIER_BY_INFRACTION (reference-data.js) as its
-  // data source directly, rather than re-describing them, so this popup
-  // can never say something different from what the ruling dropdown
-  // itself offers. Terminology ("infraction type", "steward", "tier")
-  // matches the Help section's own Protests guide entry
-  // (HELP_GUIDE_ITEMS) so the two never drift apart in wording.
-  function openPenaltyStandardsModal() {
-    var body = el('div');
-    body.appendChild(el('p', 'rc-hint', 'A standardized starting point for protest rulings, so penalties stay consistent steward to steward. Use judgment: these are guidelines, not a formula, and a ruling can land outside a listed range when the incident calls for it.'));
-
-    body.appendChild(el('h4', null, 'Penalty Tiers'));
-    PENALTY_TIERS.forEach(function (t) {
-      body.appendChild(el('div', 'rc-hint', t.label + ' (' + t.effect + ')'));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Standard Ruling For Auto-Flagged Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are auto-flagged by the system (a registration mismatch, not driver-filed) and always carry a fixed standard tier. Ruling at a different tier requires a written explanation.'));
-    Object.keys(SUGGESTED_TIER_BY_INFRACTION).forEach(function (infraction) {
-      var tierInfo = penaltyTierByNumber(SUGGESTED_TIER_BY_INFRACTION[infraction]);
-      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (tierInfo ? (tierInfo.label + ' (' + tierInfo.effect + ')') : ('Tier ' + SUGGESTED_TIER_BY_INFRACTION[infraction]))));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Typical Ruling Range For Driver-Filed Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'These are judged case by case, with no fixed tier, but absent unusual circumstances a ruling should land in this range:'));
-    PROTEST_INFRACTION_TYPES.forEach(function (infraction) {
-      body.appendChild(el('div', 'rc-hint', infraction + ': ' + (PROTEST_TYPICAL_TIER_RANGE[infraction] || 'No standard range; steward discretion.')));
-    });
-
-    body.appendChild(el('h4', 'margin-top:16px;', 'Self-Reported Infractions'));
-    body.appendChild(el('p', 'rc-hint', 'A driver who self-reports an infraction (filed as "Avoidable Contact (Self Report)") should receive a reduced penalty tier compared to the same infraction reported by someone else. This rewards coming forward on your own. It\'s a policy note for the ruling steward to apply, not something the site enforces automatically.'));
-
-    showModal('Penalty Standards', { bodyEl: body, wide: true });
-  }
+  // Penalty Standards popup (and its PROTEST_TYPICAL_TIER_RANGE advisory
+  // table) removed entirely (2026-09-26, Matt's ask: "I'm going to create
+  // a 'suggested penalty' system instead") -- that replacement isn't built
+  // yet, so for now a steward just has PENALTY_TIERS' own effect text in
+  // the ruling dropdown to go on, same as before this popup existed.
 
   // Lists every protest filed for this round; a Pending one gets a penalty-
   // tier dropdown (or Deny) and an Apply button, an already-ruled one shows
@@ -7976,18 +7923,15 @@
               }
 
               // Ruling row (2026-09-24 styling pass; select narrowed to
-              // 66% 2026-09-25, Matt's ask): the select and the Penalty
-              // Standards opener share one row, select fixed at 66% width
-              // (.rc-ruling-select) with the button filling the rest --
-              // no wrap, so they can never split onto separate lines the
-              // way the old single flex-wrap row did. align-items:stretch
-              // makes the button match the select's 44px height (Matt's
-              // ask: "slightly taller to match the size of the dropdown
-              // box").
+              // 66% 2026-09-25 to share the row with the now-removed
+              // Penalty Standards opener). That button is gone (2026-09-26,
+              // see the comment above this section), so the select goes
+              // back to full width -- .rc-ruling-select's own 66% rule
+              // still exists in style.css but no longer applies here since
+              // this element no longer carries that class.
               var controlRow = el('div', 'display:flex;gap:8px;align-items:stretch;margin-top:8px;flex-wrap:nowrap;');
-              // 66% width (2026-09-25) -- .rc-ruling-select.
               var select = document.createElement('select');
-              select.className = 'rc-ruling-select';
+              select.style.cssText = 'width:100%;';
               select.appendChild(new Option('Choose a ruling...', ''));
               select.appendChild(new Option('Deny', 'deny'));
               // "Deny (duplicate protest)" option removed 2026-09-25
@@ -8000,11 +7944,9 @@
               // only OPENS a reference popup, no save, so it stays gray
               // per the site's button-color rule even though what it
               // documents feeds into a ruling that does save. Fills the
-              // remaining space next to the select.
-              var standardsBtn = el('button', 'rc-btn-secondary rc-ruling-standards-btn', 'Penalty Standards');
-              standardsBtn.type = 'button';
-              standardsBtn.addEventListener('click', function () { openPenaltyStandardsModal(); });
-              controlRow.appendChild(standardsBtn);
+              // remaining space next to the select. Penalty Standards
+              // button removed (2026-09-26, see the comment above this
+              // section) -- controlRow now just holds the select.
               row.appendChild(controlRow);
 
               // The optional free-text narrative box (2026-09-24, item 7)
@@ -8085,7 +8027,11 @@
         // (right, always) -- now the last item INSIDE listPanel, with
         // its own divider line, rather than a separate bordered box.
         var actionBar = el('div', 'rc-round-review-item rc-round-review-actions');
-        actionBar.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;';
+        // Extra top margin on top of the shared divider's own spacing
+        // (.rc-round-review-item + .rc-round-review-item, style.css) --
+        // 2026-09-26, Matt's ask for more breathing room between the last
+        // protest and these buttons than the divider alone gave it.
+        actionBar.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:10px;';
 
         if (rulableRows.length) {
           // Walks rulableRows, submits only the rows where the steward
@@ -8095,7 +8041,10 @@
           // opened), validates each selected row's override-explanation
           // requirement up front so a bad row never partially submits
           // the batch, then fires all the valid writes together.
-          var applyAllBtn = el('button', 'rc-btn-primary rc-btn-sm', 'APPLY RULING(S)');
+          // Label changed from "APPLY RULING(S)" to "APPLY RULING"
+          // (2026-09-26, Matt's ask) -- purely cosmetic, still applies
+          // every rulable row's selection same as before.
+          var applyAllBtn = el('button', 'rc-btn-primary rc-btn-sm', 'APPLY RULING');
           applyAllBtn.type = 'button';
           applyAllBtn.addEventListener('click', function () {
             var toSubmit = [];
