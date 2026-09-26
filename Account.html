@@ -4247,21 +4247,22 @@
         btnGroup.appendChild(addBtn);
       }
 
-      // REVIEW (2026-09-19, Matt's call: "the correct way to handle the
-      // edit and finalize buttons are to combine them" -- replaces the old
-      // separate Finalize and Edit buttons; renamed from "Edit & Finalize"
-      // to always read "Review" 2026-09-23, Matt's ask, and the separate
-      // VIEW button removed the same day -- Matt's ask: "remove the VIEW
-      // button and function/popup and change the EDIT & FINALIZE button to
-      // REVIEW" -- this one popup already shows the round's results AND
-      // lets an admin/organizer finalize/un-finalize it, so the read-only
-      // View popup was pure duplication). Only meaningful once a round
-      // actually has results. Always enabled, whether or not the round is
-      // already finalized -- Un-Finalize lives inside the popup itself
-      // (openRoundEditFinalizeModal) instead of a separate disabled/
+      // REVIEW & FINALIZE (2026-09-19, Matt's call: "the correct way to
+      // handle the edit and finalize buttons are to combine them" --
+      // replaces the old separate Finalize and Edit buttons; renamed from
+      // "Edit & Finalize" to just "Review" 2026-09-23, and renamed again to
+      // "REVIEW & FINALIZE" 2026-09-26, Matt's ask -- the separate VIEW
+      // button removed 2026-09-23 the same day -- Matt's ask: "remove the
+      // VIEW button and function/popup and change the EDIT & FINALIZE
+      // button to REVIEW" -- this one popup already shows the round's
+      // results AND lets an admin/organizer finalize/un-finalize it, so the
+      // read-only View popup was pure duplication). Only meaningful once a
+      // round actually has results. Always enabled, whether or not the
+      // round is already finalized -- Un-Finalize lives inside the popup
+      // itself (openRoundEditFinalizeModal) instead of a separate disabled/
       // enabled button pair out here.
       if (r.hasResults) {
-        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Review');
+        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'REVIEW & FINALIZE');
         editFinalizeBtn.type = 'button';
         editFinalizeBtn.addEventListener('click', function () {
           openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
@@ -7826,30 +7827,39 @@
     // since render() rebuilds the Finalize button (and its click handler)
     // fresh every time but the modal chrome itself never changes.
     var reviewCloseBtn = modal.el.querySelector('.rc-modal-close');
-    function setFinalizeInProgress(inProgress) {
+    // reason (2026-09-26) -- also reused by the Apply Ruling button now
+    // (Matt's ask: "after hitting APPLY RULING, dim the x in the corner
+    // and disable it"), so the tooltip text says what's actually in
+    // flight instead of always saying "finalizing".
+    function setFinalizeInProgress(inProgress, reason) {
       if (!reviewCloseBtn) return;
       reviewCloseBtn.disabled = inProgress;
       reviewCloseBtn.style.opacity = inProgress ? '0.35' : '';
       reviewCloseBtn.style.cursor = inProgress ? 'not-allowed' : '';
-      reviewCloseBtn.title = inProgress ? 'Cannot close while finalizing' : '';
+      reviewCloseBtn.title = inProgress ? ('Cannot close while ' + (reason || 'finalizing')) : '';
     }
 
-    // Redesigned 2026-09-25 (Matt's ask: "redesign the results review
-    // popup with functionality in mind... it's kind of a mess"). Three
-    // clear sections now, top to bottom, matching the actual order a
-    // steward works through this popup:
-    //   1. A plain status line (info only, no button) -- what state this
-    //      round is in and what's left to do.
-    //   2. The protest list to review/rule.
-    //   3. ONE action bar at the very bottom with both real actions
-    //      side by side: Apply Ruling(s) (save whatever's been chosen
-    //      above) and Finalize/Un-Finalize (lock the round in).
-    // Previously Finalize lived in its own bar at the TOP while Apply
-    // Ruling(s) lived in its own box at the BOTTOM -- two separate
-    // primary actions in two different places, with a status message
-    // duplicated between them. Now there's exactly one place actions
-    // happen, in the order you'd actually use them (rule, then
-    // finalize), and exactly one place status is reported.
+    // Redesigned again 2026-09-26 (Matt's ask). Two sections now, top to
+    // bottom:
+    //   1. ONE action bar right below the header, above the list -- Apply
+    //      Ruling (only when there's at least one open protest to rule on)
+    //      and Finalize/Un-Finalize, right-aligned. Same placement Cars/
+    //      Tracks/Members use for their own "Add ..." button
+    //      (openAdminListModal) -- Matt: "move the buttons to the right
+    //      side, just below the header line but above the container".
+    //   2. The protest list, with no separate status-message panel above
+    //      it any more (removed entirely, Matt's ask) -- it's just the
+    //      list now. Each entry reuses the Dashboard Protest card's own
+    //      circle/checkmark look (buildDashProtestItem/.rc-protest-dash-*)
+    //      instead of the plain .rc-round-review-item box this popup used
+    //      2026-09-25: an open circle for a still-Pending protest, filled
+    //      solid with a checkmark once it has a ruling AND the round is
+    //      finalized. Every entry follows the same order, top to bottom --
+    //      drivers involved, then infraction type, then an indented
+    //      tree-note row (.rc-dm-subrow/.rc-dm-tree) holding either the
+    //      ruling controls (still Pending) or the ruling's outcome text
+    //      (once ruled), e.g. "Upheld: Tier 3 penalty applied to Matteo
+    //      Cressoni. Ruled by Matt Stenzel."
     function render() {
       modal.body.innerHTML = '';
       modal.body.appendChild(buildSpinner('Loading protests...'));
@@ -7864,187 +7874,175 @@
         var protests = data.protests || [];
         var hasUnruledProtests = protests.some(function (p) { return p.status === 'Pending'; });
 
-        // 1. Status line -- info only, never a click target. Exactly one
-        // sentence describing where this round stands right now.
-        var statusText = resultsFinalized
-          ? 'This round is finalized. No further penalties will be assessed.'
-          : (hasUnruledProtests
-            ? 'Not finalized yet. Every protest below needs a ruling before this round can be finalized.'
-            : (protests.length ? 'All protests have been ruled on. Ready to finalize.' : 'No protests filed for this round. Ready to finalize.'));
-        var statusPanel = el('div', 'rc-panel');
-        statusPanel.style.cssText = 'margin-bottom:14px;';
-        statusPanel.appendChild(el('div', 'rc-hint', escapeHtml(statusText)));
-        modal.body.appendChild(statusPanel);
-
-        // 2. Protest list. Rulable rows (2026-09-25, Matt's ask: "make
-        // one button at the bottom that says APPLY RULING(S) so they
-        // aren't on every individual ruling") -- each still-Pending,
-        // not-locked protest below pushes its own {protestId, select,
-        // overrideBox, currentIsOverride} entry here instead of getting
-        // its own Apply button; the shared button in the action bar
-        // below walks this list and submits only the rows where a
-        // ruling was actually chosen. A row left on "Choose a
-        // ruling..." is simply skipped -- it stays Pending and shows up
-        // again, unchanged, the next time this round is opened (Matt:
-        // "any ruling that doesn't have a decision made is left over in
-        // the list to be ruled upon").
+        // Rulable rows (2026-09-25, Matt's ask: "make one button at the
+        // bottom that says APPLY RULING(S) so they aren't on every
+        // individual ruling") -- each still-Pending, not-locked protest
+        // below pushes its own {protestId, select, overrideBox,
+        // currentIsOverride} entry here instead of getting its own Apply
+        // button; the shared button in the action bar walks this list and
+        // submits only the rows where a ruling was actually chosen. A row
+        // left on "Choose a ruling..." is simply skipped -- it stays
+        // Pending and shows up again, unchanged, the next time this round
+        // is opened (Matt: "any ruling that doesn't have a decision made
+        // is left over in the list to be ruled upon"). Built by the list
+        // loop below, but needed before the action bar (which renders
+        // ABOVE the list in the DOM -- see the two modal.body.appendChild
+        // calls at the end of this function).
         var rulableRows = [];
 
-        // One shared container for the whole list AND the action bar
-        // (2026-09-25, Matt's ask: "move the apply rulings and finalize
-        // button to INSIDE the other container with the rulings listed
-        // instead of having a separate container just for the buttons")
-        // -- was its own protest-per-.rc-panel stack plus a separate
-        // .rc-panel just for the buttons; now everything lives in one
-        // bordered box, with a divider line between entries
-        // (.rc-round-review-item) instead of each getting its own
-        // nested border.
-        var listPanel = el('div', 'rc-panel');
-        modal.body.appendChild(listPanel);
+        // Protest list -- one .rc-panel wrapping every entry, reusing
+        // .rc-protest-dash-list's own item spacing/divider (2026-09-26,
+        // Matt's ask: "make the list of protests mimic the protests list,
+        // with a circle in front of the title... spaces in between each
+        // protest").
+        var listPanel = el('div', 'rc-panel rc-protest-dash-list');
 
         protests.forEach(function (p) {
-          var row = el('div', 'rc-round-review-item');
-          var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          // Human-context intro sentence (2026-09-24, item 7) -- names the
-          // actual filer and accused instead of the old flat comma-joined
-          // name list, same "Filed a protest against <name>" naming
-          // pattern the Dashboard's own protest card (buildDashProtestItem)
-          // already uses, so the wording matches across the site. Falls
-          // back to the auto-flagged phrasing when there's no human filer
-          // (a registration-mismatch protest has no FilerProfileID).
           var against = (p.involvedNames || []).slice(1).join(' and ');
+          var isPending = p.status === 'Pending';
+          var isLockedPending = isPending && resultsFinalized;
+          // Circle fills in (with a checkmark) once this protest has a
+          // real decision AND that decision is locked in by Finalize --
+          // same isOfficial rule buildDashProtestItem uses (Withdrawn is
+          // always official the moment it happens, no Finalize step to
+          // wait on).
+          var isOfficial = !isPending && (p.status === 'Withdrawn' || !!resultsFinalized);
+
+          var row = el('div', 'rc-protest-dash-item');
+          var icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+          if (isOfficial) icon.innerHTML = RC_PROTEST_RULED_ICON;
+          row.appendChild(icon);
+
+          var body = el('div', 'rc-protest-dash-item-body');
+
+          // 1. Drivers involved (2026-09-26, Matt's ask: "drivers involved
+          // on top") -- the protest's "title", next to the circle. Same
+          // "Filed a protest against <name>" naming pattern the Dashboard's
+          // own protest card (buildDashProtestItem) uses, so the wording
+          // matches across the site. Falls back to the auto-flagged
+          // phrasing when there's no human filer (a registration-mismatch
+          // protest has no FilerProfileID).
+          var titleRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
           var introText = p.isAutoFlagged
             ? ('Auto-flagged against ' + (against || 'a driver') + '.')
             : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.');
-          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml(introText)));
+          titleRow.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(introText)));
           // Same auto-flag badge as the Stewarding page (see that page's own
           // comment) -- a steward ruling from here needs the same "this one
           // wasn't filed by a driver" context.
           if (p.isAutoFlagged) {
-            labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
+            titleRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
           }
-          row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
+          body.appendChild(titleRow);
 
-          if (p.status === 'Pending') {
-            if (resultsFinalized) {
-              var lockedHint = el('div', 'rc-hint');
-              lockedHint.style.cssText = 'margin-top:8px;';
-              lockedHint.textContent = 'This round is finalized. Un-Finalize below to rule on this protest.';
-              row.appendChild(lockedHint);
-            } else {
-              // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
-              // Entry are the only two infraction types with a Rulebook-
-              // mandated standard tier (SUGGESTED_TIER_BY_INFRACTION in
-              // reference-data.js, mirrored server-side by
-              // SUGGESTED_TIER_BY_INFRACTION_ in Protests.gs). Shown up
-              // front so the ruling steward knows before they even open the
-              // dropdown; the override-explanation field below only appears
-              // once they actually pick something other than this tier.
-              var suggestedTier = p.suggestedTier || null;
-              if (suggestedTier) {
-                var suggestedTierInfo = penaltyTierByNumber(suggestedTier);
-                var suggestedHint = el('div', 'rc-hint');
-                suggestedHint.style.cssText = 'margin-top:8px;';
-                suggestedHint.textContent = 'Standard tier for ' + p.infractionType + ': ' +
-                  (suggestedTierInfo ? suggestedTierInfo.label : ('Tier ' + suggestedTier)) +
-                  '. Ruling at a different tier requires a written explanation.';
-                row.appendChild(suggestedHint);
-              }
+          // 2. Infraction type (2026-09-26, Matt's ask: "below is the
+          // infraction type"), same lap/description suffix as before.
+          body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType) + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
 
-              // Ruling row (2026-09-24 styling pass; select narrowed to
-              // 66% 2026-09-25 to share the row with the now-removed
-              // Penalty Standards opener). That button is gone (2026-09-26,
-              // see the comment above this section), so the select goes
-              // back to full width -- .rc-ruling-select's own 66% rule
-              // still exists in style.css but no longer applies here since
-              // this element no longer carries that class.
-              var controlRow = el('div', 'display:flex;gap:8px;align-items:stretch;margin-top:8px;flex-wrap:nowrap;');
-              var select = document.createElement('select');
-              select.style.cssText = 'width:100%;';
-              select.appendChild(new Option('Choose a ruling...', ''));
-              select.appendChild(new Option('Deny', 'deny'));
-              // "Deny (duplicate protest)" option removed 2026-09-25
-              // (Matt's ask) -- a plain "Deny" now covers every denial,
-              // duplicate or otherwise.
-              PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
-              controlRow.appendChild(select);
+          // 3. Tree-indented ruling row (2026-09-26, Matt's ask: "below
+          // that is the indention with the ruling") -- the same
+          // .rc-dm-subrow/.rc-dm-tree sub-row the Dashboard Protest card
+          // and Data Management lists both use. Holds the ruling controls
+          // while Pending and not locked, or the ruling's outcome text
+          // once ruled -- never both.
+          var noteRow = el('div', 'rc-dm-subrow');
+          noteRow.style.alignItems = 'flex-start';
+          noteRow.appendChild(el('span', 'rc-dm-tree', '└'));
+          var noteBody = el('div');
+          noteBody.style.cssText = 'flex:1;min-width:0;';
+          noteRow.appendChild(noteBody);
 
-              // Gray "Penalty Standards" opener (2026-09-24, item 7) --
-              // only OPENS a reference popup, no save, so it stays gray
-              // per the site's button-color rule even though what it
-              // documents feeds into a ruling that does save. Fills the
-              // remaining space next to the select. Penalty Standards
-              // button removed (2026-09-26, see the comment above this
-              // section) -- controlRow now just holds the select.
-              row.appendChild(controlRow);
-
-              // The optional free-text narrative box (2026-09-24, item 7)
-              // was removed 2026-09-25 (Matt's ask: "remove all text
-              // boxes from the review under each ruling") -- the
-              // override-explanation box just below is kept, since the
-              // server actually requires it for a standard-tier
-              // deviation (OVERRIDE_EXPLANATION_REQUIRED,
-              // handleAdminRuleOnProtest, Protests.gs) and removing it
-              // would leave no way to satisfy that check.
-
-              // Override-explanation field -- only relevant when this
-              // infraction has a standard tier at all, so it stays hidden
-              // entirely for every other infraction type. Toggled by the
-              // select's own change handler below.
-              var overrideWrap = null;
-              var overrideBox = null;
-              if (suggestedTier) {
-                overrideWrap = el('div');
-                overrideWrap.style.cssText = 'margin-top:8px;display:none;';
-                overrideBox = document.createElement('textarea');
-                overrideBox.rows = 3;
-                overrideBox.maxLength = 2000;
-                overrideBox.placeholder = 'Explain why this ruling deviates from the standard tier...';
-                overrideWrap.appendChild(overrideBox);
-                row.appendChild(overrideWrap);
-              }
-
-              function currentIsOverride_() {
-                if (!suggestedTier || select.value.indexOf('uphold:') !== 0) return false;
-                return Number(select.value.split(':')[1]) !== suggestedTier;
-              }
-
-              select.addEventListener('change', function () {
-                if (!overrideWrap) return;
-                overrideWrap.style.display = currentIsOverride_() ? '' : 'none';
-              });
-
-              // No per-row Apply button any more (2026-09-25, Matt's ask) --
-              // this row registers itself with the shared "APPLY RULING(S)"
-              // button built once after every protest row is rendered.
-              rulableRows.push({
-                protestId: p.protestId, select: select,
-                overrideBox: overrideBox, currentIsOverride: currentIsOverride_
-              });
+          if (isPending && !resultsFinalized) {
+            // Standard-tier hint (2026-09-23) -- Wrong-Class/Wrong-Team-Car
+            // Entry are the only two infraction types with a Rulebook-
+            // mandated standard tier (SUGGESTED_TIER_BY_INFRACTION in
+            // reference-data.js, mirrored server-side by
+            // SUGGESTED_TIER_BY_INFRACTION_ in Protests.gs). Shown up
+            // front so the ruling steward knows before they even open the
+            // dropdown; the override-explanation field below only appears
+            // once they actually pick something other than this tier.
+            var suggestedTier = p.suggestedTier || null;
+            if (suggestedTier) {
+              var suggestedTierInfo = penaltyTierByNumber(suggestedTier);
+              var suggestedHint = el('div', 'rc-hint');
+              suggestedHint.style.cssText = 'margin-bottom:8px;';
+              suggestedHint.textContent = 'Standard tier for ' + p.infractionType + ': ' +
+                (suggestedTierInfo ? suggestedTierInfo.label : ('Tier ' + suggestedTier)) +
+                '. Ruling at a different tier requires a written explanation.';
+              noteBody.appendChild(suggestedHint);
             }
+
+            // Ruling dropdown -- full width within the indented note body.
+            var select = document.createElement('select');
+            select.style.cssText = 'width:100%;';
+            select.appendChild(new Option('Choose a ruling...', ''));
+            select.appendChild(new Option('Deny', 'deny'));
+            // "Deny (duplicate protest)" option removed 2026-09-25
+            // (Matt's ask) -- a plain "Deny" now covers every denial,
+            // duplicate or otherwise.
+            PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
+            noteBody.appendChild(select);
+
+            // Override-explanation field -- only relevant when this
+            // infraction has a standard tier at all, so it stays hidden
+            // entirely for every other infraction type. Toggled by the
+            // select's own change handler below. Kept even though the old
+            // free-text narrative box was removed 2026-09-25 -- the server
+            // actually requires this one for a standard-tier deviation
+            // (OVERRIDE_EXPLANATION_REQUIRED, handleAdminRuleOnProtest,
+            // Protests.gs).
+            var overrideWrap = null;
+            var overrideBox = null;
+            if (suggestedTier) {
+              overrideWrap = el('div');
+              overrideWrap.style.cssText = 'margin-top:8px;display:none;';
+              overrideBox = document.createElement('textarea');
+              overrideBox.rows = 3;
+              overrideBox.maxLength = 2000;
+              overrideBox.placeholder = 'Explain why this ruling deviates from the standard tier...';
+              overrideWrap.appendChild(overrideBox);
+              noteBody.appendChild(overrideWrap);
+            }
+
+            function currentIsOverride_() {
+              if (!suggestedTier || select.value.indexOf('uphold:') !== 0) return false;
+              return Number(select.value.split(':')[1]) !== suggestedTier;
+            }
+
+            select.addEventListener('change', function () {
+              if (!overrideWrap) return;
+              overrideWrap.style.display = currentIsOverride_() ? '' : 'none';
+            });
+
+            // No per-row Apply button any more (2026-09-25, Matt's ask) --
+            // this row registers itself with the shared "APPLY RULING"
+            // button built once after every protest row is rendered.
+            rulableRows.push({
+              protestId: p.protestId, select: select,
+              overrideBox: overrideBox, currentIsOverride: currentIsOverride_
+            });
+          } else if (isLockedPending) {
+            noteBody.textContent = 'This round is finalized. Un-Finalize above to rule on this protest.';
           } else {
             // Already-ruled outcome line -- same "Upheld: Tier N penalty
             // applied to <name>." / "Protest denied." / "Protest
             // withdrawn." phrasing as the Dashboard Protest card
-            // (buildDashProtestItem, 2026-09-25 redesign) rather than a
-            // bare "Upheld: Tier 3" fragment, so the language matches
-            // wherever a ruled protest shows up on the site.
+            // (buildDashProtestItem), so the language matches wherever a
+            // ruled protest shows up on the site.
             var outcomeText;
             if (p.status === 'Upheld') {
-              outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty' + (against ? (' applied to ' + against) : '') + '.';
+              outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + (against || 'the accused driver') + '.';
             } else if (p.status === 'Denied') {
               outcomeText = 'Protest denied.';
             } else {
               outcomeText = 'Protest withdrawn.';
             }
             if (p.reviewedByName) outcomeText += ' Ruled by ' + p.reviewedByName + '.';
-            var outcome = el('div', 'rc-hint');
-            outcome.style.cssText = 'margin-top:8px;';
-            outcome.textContent = outcomeText;
-            row.appendChild(outcome);
+            noteBody.textContent = outcomeText;
           }
 
+          body.appendChild(noteRow);
+          row.appendChild(body);
           listPanel.appendChild(row);
         });
 
@@ -8052,16 +8050,11 @@
           listPanel.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
         }
 
-        // 3. Action bar -- Apply Ruling(s) (left, only when there's at
-        // least one open protest to rule on) and Finalize/Un-Finalize
-        // (right, always) -- now the last item INSIDE listPanel, with
-        // its own divider line, rather than a separate bordered box.
-        var actionBar = el('div', 'rc-round-review-item rc-round-review-actions');
-        // Extra top margin on top of the shared divider's own spacing
-        // (.rc-round-review-item + .rc-round-review-item, style.css) --
-        // 2026-09-26, Matt's ask for more breathing room between the last
-        // protest and these buttons than the divider alone gave it.
-        actionBar.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:10px;';
+        // Action bar -- Apply Ruling (only when there's at least one open
+        // protest to rule on) and Finalize/Un-Finalize, right-aligned, in
+        // its own row above the list (2026-09-26, Matt's ask -- see this
+        // function's header comment).
+        var actionBar = el('div', 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;');
 
         if (rulableRows.length) {
           // Walks rulableRows, submits only the rows where the steward
@@ -8071,9 +8064,6 @@
           // opened), validates each selected row's override-explanation
           // requirement up front so a bad row never partially submits
           // the batch, then fires all the valid writes together.
-          // Label changed from "APPLY RULING(S)" to "APPLY RULING"
-          // (2026-09-26, Matt's ask) -- purely cosmetic, still applies
-          // every rulable row's selection same as before.
           var applyAllBtn = el('button', 'rc-btn-primary rc-btn-sm', 'APPLY RULING');
           applyAllBtn.type = 'button';
           applyAllBtn.addEventListener('click', function () {
@@ -8096,21 +8086,37 @@
             }
             if (!toSubmit.length) { showToast('Choose a ruling for at least one protest first.', 'error'); return; }
 
+            // Dim/disable the X while a ruling is saving, same as a
+            // Finalize/Un-Finalize write (2026-09-26, Matt's ask: "after
+            // hitting APPLY RULING, dim the x in the corner and disable
+            // it (like the import results popup) and change APPLY RULING
+            // to RULING... in the gray box").
             applyAllBtn.disabled = true;
-            applyAllBtn.textContent = 'APPLYING...';
+            applyAllBtn.className = 'rc-btn-secondary rc-btn-sm';
+            applyAllBtn.textContent = 'RULING...';
+            setFinalizeInProgress(true, 'a ruling is being applied');
             Promise.all(toSubmit.map(function (sub) {
               return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub })
                 .catch(function () { return { success: false, error: 'NETWORK' }; });
             })).then(function (results) {
+              setFinalizeInProgress(false);
               var failed = results.filter(function (r) { return !r || !r.success; });
               if (failed.length) {
                 var firstMessage = (failed[0] && failed[0].message) || 'Could not reach the server.';
                 showToast(failed.length === toSubmit.length
                   ? firstMessage
                   : (failed.length + ' of ' + toSubmit.length + ' ruling(s) could not be saved: ' + firstMessage), 'error');
-              } else {
-                showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
+                applyAllBtn.disabled = false;
+                applyAllBtn.className = 'rc-btn-primary rc-btn-sm';
+                applyAllBtn.textContent = 'APPLY RULING';
+                return;
               }
+              showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
+              // Re-render in place (not a close -- there may be more
+              // rulings still to make). The Finalize button below picks up
+              // its enabled/disabled state fresh here too (2026-09-26,
+              // Matt's ask: "the FINALIZE button should be active unless
+              // there are more rulings to still make").
               render();
               if (typeof outerReload === 'function') outerReload();
             });
@@ -8133,9 +8139,10 @@
           var confirmMsg = resultsFinalized
             ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
             : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
-          // Restores the button's normal label/color -- shared by both the
-          // failure and timeout paths below, since render() (which would
-          // otherwise rebuild this button fresh) only runs on success.
+          // Restores the button's normal label/color -- shared by the
+          // failure and timeout paths below (a failure no longer calls
+          // render(), since a successful Finalize now closes the popup
+          // instead of re-rendering it -- see the success branch below).
           function restoreFinalizeBtn() {
             finalizeBtn.className = resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
             finalizeBtn.textContent = resultsFinalized ? 'Un-Finalize' : 'Finalize';
@@ -8162,8 +8169,12 @@
               }
               resultsFinalized = !resultsFinalized;
               showToast(resultsFinalized ? 'Round finalized.' : 'Round un-finalized.', 'success');
-              render();
               if (typeof outerReload === 'function') outerReload();
+              // Closes the popup instead of re-rendering it in place
+              // (2026-09-26, Matt's ask: "after hitting the finalize
+              // button, have it go back to the league tools page and not
+              // stay on the review and finalize popup").
+              modal.close();
             }).catch(function () {
               setFinalizeInProgress(false);
               finalizeBtn.disabled = false;
@@ -8174,7 +8185,8 @@
         });
         actionBar.appendChild(finalizeBtn);
 
-        listPanel.appendChild(actionBar);
+        modal.body.appendChild(actionBar);
+        modal.body.appendChild(listPanel);
       }).catch(function () {
         modal.body.innerHTML = '';
         modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));

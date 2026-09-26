@@ -1379,12 +1379,22 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       nameEl.className = 'rcl-report-name';
       nameEl.textContent = name;
       lineEl.appendChild(nameEl);
+      // Format fixed 2026-09-26 (Matt's ask -- the tier label already
+      // spells out its own seconds, e.g. "Tier 3: Time Penalty (10s)", so
+      // pairing that as-is with the effect span produced a redundant
+      // "Time Penalty (10s) (+10s)". Strip that "(Ns)" suffix off the tier
+      // phrase (it's the same number the red effect span already shows)
+      // and turn "Tier 3: Time Penalty" into "Tier 3 Time Penalty" so the
+      // whole line reads "Intentional Wrecking: Tier 3 Time Penalty
+      // (+10s)".
       var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
-      var tierLabel = tierInfo ? tierInfo.label.replace(/^Tier \d+: /, '') : ('Tier ' + (p.penaltyTier || '?'));
-      lineEl.appendChild(document.createTextNode(' ' + (p.infractionType || 'Infraction') + ' (' + tierLabel + ') '));
+      var tierPhrase = tierInfo
+        ? tierInfo.label.replace(/^Tier (\d+): /, 'Tier $1 ').replace(/\s*\([^)]*\)\s*$/, '')
+        : ('Tier ' + (p.penaltyTier || '?'));
+      lineEl.appendChild(document.createTextNode(' ' + (p.infractionType || 'Infraction') + ': ' + tierPhrase + ' '));
       var effectSpan = document.createElement('span');
       effectSpan.className = 'rcl-penalty-effect';
-      effectSpan.textContent = _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds);
+      effectSpan.textContent = '(' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
       lineEl.appendChild(effectSpan);
       textWrap.appendChild(lineEl);
       row.appendChild(textWrap);

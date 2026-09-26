@@ -563,12 +563,20 @@ p { margin: 0 0 0.75em; }
    (Matt's ask -- he's building a "suggested penalty" system instead), so
    the select is back to plain full width, styled inline. */
 /* Review & Finalize popup's protest list (openRoundEditFinalizeModal,
-   Account.html) -- 2026-09-25 redesign: every protest, plus the Apply
-   Ruling(s)/Finalize action bar at the end, lives inside ONE .rc-panel
-   container now instead of each getting its own separate bordered box.
-   Divider line between entries takes the place of the old per-entry
-   border, same convention as .rc-protest-dash-list's own item divider. */
-.rc-round-review-item + .rc-round-review-item { border-top: 1px solid var(--rc-silver); padding-top: 14px; margin-top: 14px; }
+   Account.html) -- redesigned again 2026-09-26 (Matt's ask: "make the list
+   of protests mimic the protests list, with a circle in front of the
+   title") to reuse the Dashboard Protest card's own .rc-protest-dash-item/
+   -icon/-item-body/-line markup and .rc-protest-dash-list's item spacing/
+   divider directly, rather than the one-off .rc-round-review-item divider
+   this popup used from 2026-09-25 (removed). The Apply Ruling/Finalize
+   action bar moved out of this list entirely, up to its own row just below
+   the modal header (same "add button row" placement Cars/Tracks/Members
+   use, .rc-panel + a flex row above it) -- see openRoundEditFinalizeModal.
+   Ruling controls (the tier dropdown, override box) render inside the
+   tree-indent row (.rc-dm-subrow/.rc-dm-tree) below the infraction line
+   for a still-Pending protest, and the ruling's outcome text renders there
+   instead once it's been ruled on -- same "Drivers involved -> infraction
+   -> indented ruling" order every entry now follows. */
 /* Car Objective Tier pill (.rc-badge-cartier and its low/mid/high/elite
    color variants) removed entirely 2026-09-19 -- Matt's call: car Tier
    classification doesn't matter anymore, and tier information should
