@@ -145,6 +145,20 @@ var RC_FETCH_TIMEOUT_MS_LONG = 45000;
 // action waits before giving up.
 var RC_FETCH_TIMEOUT_MS_IMPORT = 120000;
 
+// Recompute Season's own budget (2026-09-26, Matt's report: "Recompute
+// Season says it cannot reach the server when I click on it and wait" --
+// this call had NO timeoutMs override at all, so it inherited the 20s
+// default meant for small dashboard reads. handleAdminRecomputeSeason
+// (Seasons.gs) re-runs SeasonHistory/StandingsCache for every completed
+// round in the season in sequence -- real per-round Sheets I/O, the same
+// order of magnitude as a single round import above -- so any season past
+// a couple of rounds was blowing straight through 20s: the client aborted
+// and reported failure while the script kept quietly finishing server-
+// side. 2 minutes, matching Matt's own ask for how long the "Recomputing
+// Season Standings..." popup (see openSeasonManagementSection's
+// recomputeBtn, Account.html) should be allowed to sit up.
+var RC_FETCH_TIMEOUT_MS_RECOMPUTE = 120000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom

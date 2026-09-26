@@ -4009,8 +4009,30 @@
       withTooltip(recomputeBtn, 'Re-runs standings for every completed round in order -- use this after correcting an earlier round\'s results or a protest ruling, so later rounds and Season Standings reflect the fix.');
       recomputeBtn.addEventListener('click', function () {
         recomputeBtn.disabled = true;
-        fetchApi('adminRecomputeSeason', { method: 'POST', token: token, body: { seasonId: s.seasonId } }).then(function (data) {
+        // Loading-lights popup (2026-09-26, Matt's ask) -- reuses the same
+        // .rc-startlights "starting grid" sequence every other loading
+        // state on the site already shows (buildSpinner), so a recompute
+        // in progress reads as one more flavor of the same familiar
+        // loading moment rather than a new pattern. No Cancel/X while the
+        // request is in flight (closeBtn disabled below, same convention
+        // as File Protest's submit -- see submitBtn's own comment above)
+        // since there's nothing sensible to cancel back to mid-recompute.
+        // Closes itself automatically the instant the request settles,
+        // success OR failure, in both branches below -- never left up
+        // waiting on user action.
+        var recomputeModal = showModal('Recompute Season', { bodyEl: buildSpinner('RECOMPUTING SEASON STANDINGS...') });
+        if (recomputeModal.closeBtn) recomputeModal.closeBtn.disabled = true;
+        fetchApi('adminRecomputeSeason', {
+          method: 'POST', token: token, body: { seasonId: s.seasonId },
+          // RC_FETCH_TIMEOUT_MS_RECOMPUTE (2026-09-26, see api.js's own
+          // comment) -- was uncapped at the 20s default, which is what
+          // made this report "cannot reach the server" on any season with
+          // more than a couple of completed rounds even though the
+          // recompute itself was still finishing normally server-side.
+          timeoutMs: RC_FETCH_TIMEOUT_MS_RECOMPUTE
+        }).then(function (data) {
           recomputeBtn.disabled = false;
+          recomputeModal.close(true);
           if (!data.success) {
             showToast(data.message || 'Could not recompute this season.', 'error');
             return;
@@ -4019,6 +4041,7 @@
           showToast(msg, 'success');
         }).catch(function () {
           recomputeBtn.disabled = false;
+          recomputeModal.close(true);
           showToast('Could not reach the server.', 'error');
         });
       });
