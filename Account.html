@@ -271,6 +271,17 @@
     return d.innerHTML;
   }
 
+  // A protest/adjustment's LapNumber for display (2026-09-26, added
+  // alongside the Pre-race/Post-race lap options, buildProtestFormFields
+  // below) -- holds either a real lap number or the literal strings
+  // "Pre-race"/"Post-race", so this decides ": Lap 12" vs ": Pre-race" vs
+  // ": Post-race" without every call site re-deriving that itself.
+  function _rcProtestLapLabel(lapNumber) {
+    if (lapNumber === undefined || lapNumber === null || lapNumber === '') return '';
+    var isNumeric = !isNaN(Number(lapNumber)) && String(lapNumber).trim() !== '';
+    return ': ' + (isNumeric ? ('Lap ' + escapeHtml(String(lapNumber))) : escapeHtml(String(lapNumber)));
+  }
+
   // ---------------------------------------------------------------------
   // THEMED TOOLTIP (rebuilt 2026-08-30, Matt's call: "stop all tooltips
   // from being cut off when hovering over something in a popup") -- see
@@ -4528,7 +4539,7 @@
             labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
           }
           row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (': Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
           var outcome = el('div', 'rc-hint');
           outcome.style.cssText = 'margin-top:6px;';
           outcome.textContent = p.status === 'Pending'
@@ -5401,63 +5412,71 @@
       });
   }
 
-  // Shared field builder for both the File and Edit popups. Includes Lap
-  // Number (paired 50/50 with the caller's Race field when raceFieldWrap
-  // is passed, File only, see item 6/7), up to 3 "Driver Involved" boxes
-  // (box 1 is always the filer, fixed and disabled; boxes 2 and 3 offer
-  // everyone else on the grid, filer excluded, 2026-09-24 styling pass),
-  // infraction type, and an optional 200-word description. `initial`
-  // (optional) prefills every field from an existing protest, for Edit.
+  // Shared field builder for both the File and Edit popups. Includes a
+  // "DRIVER INVOLVED"/"DRIVER INVOLVED"/Lap Number row (box 1 is always the
+  // filer, fixed and disabled; box 2 offers everyone else on the grid,
+  // filer excluded; the old third "Driver Involved" box was removed
+  // 2026-09-26 -- Matt's ask: "only one person can be pegged for causing
+  // an incident" -- and Lap Number moved into this row alongside the two
+  // driver boxes, each at 1/3 width, with "Pre-race"/"Post-race" options
+  // bookending the numbered laps), infraction type, and an optional
+  // 200-word description. The caller's Race field (File only) renders as
+  // its own full-width row ahead of this one when raceFieldWrap is passed.
+  // `initial` (optional) prefills every field from an existing protest,
+  // for Edit.
   function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial, raceFieldWrap) {
     initial = initial || {};
 
+    // Race, when present, is now its own full-width row above the
+    // Driver Involved / Lap Number row below (2026-09-26, item 6 follow-up
+    // -- Lap Number moved into that row, so it's no longer paired 50/50
+    // with Race the way it was 2026-09-24; Edit's form has no Race field
+    // at all, since the round is fixed there).
+    if (raceFieldWrap) container.appendChild(raceFieldWrap);
+
     var lapSelect = document.createElement('select');
+    // "Pre-race" ahead of Lap 1 and "Post-race" behind the last lap
+    // (2026-09-26, Matt's ask) -- plain strings, not sentinel numbers, so
+    // they read correctly everywhere LapNumber is displayed or stored
+    // (_rcProtestLapLabel above, Core.gs's Adjustments schema) without any
+    // numeric-lap code needing to special-case them.
+    lapSelect.appendChild(new Option('Pre-race', 'Pre-race'));
     laps.forEach(function (n) { lapSelect.appendChild(new Option('Lap ' + n, n)); });
-    var lapFieldWrap = wizField('Lap Number', lapSelect, null);
-    if (raceFieldWrap) {
-      // Race + Lap Number side by side, 50/50 (2026-09-24, item 6) --
-      // reuses the same .rc-wiz-field-pair split wizFieldPairRow's own
-      // two columns use; built by hand here since the Race field's own
-      // wrap (with its <select> already wired up by the caller,
-      // openFileProtestModal) exists before this runs. Edit's form has no
-      // Race field (the round is fixed there), so it keeps the old
-      // full-width Lap Number row.
-      var raceLapRow = el('div', 'rc-wiz-field-pair');
-      raceLapRow.appendChild(raceFieldWrap);
-      raceLapRow.appendChild(lapFieldWrap);
-      container.appendChild(raceLapRow);
-    } else {
-      container.appendChild(lapFieldWrap);
-    }
+    lapSelect.appendChild(new Option('Post-race', 'Post-race'));
 
     // Box 1 is always the filer, and it's fixed -- not a choice (2026-09-24,
     // Matt's ask: "the first drop down box has to be the driver filing the
     // protest"). It's disabled and only ever holds that one option; its
     // value was already never submitted (see the two fetchApi calls below,
-    // which only ever read driver2Select/driver3Select), so this just makes
-    // the display match what was already true functionally.
+    // which only ever read driver2Select), so this just makes the display
+    // match what was already true functionally.
     var driver1Select = document.createElement('select');
     driver1Select.disabled = true;
     var me = driverRoster.filter(function (d) { return d.profileId === myProfileId; })[0];
     driver1Select.appendChild(new Option(me ? me.name : 'You', myProfileId || ''));
 
-    // Boxes 2 and 3 are "anyone else on the grid" -- the filer is already
-    // named in box 1, so they're excluded from these two lists entirely
-    // (2026-09-24, Matt's ask: "the next two boxes can be anyone else on
-    // the grid except the driver filing the protest because they're
-    // already chosen for box one").
+    // One driver-involved box now, not two (2026-09-26, Matt's ask: "only
+    // one person can be pegged for causing an incident" -- the old third
+    // dropdown, Driver Involved 3/driver3Select, is removed entirely). The
+    // filer is already named in box 1, so they're excluded from this list.
     var otherDrivers = driverRoster.filter(function (d) { return d.profileId !== myProfileId; });
     var driver2Select = document.createElement('select');
-    var driver3Select = document.createElement('select');
     driver2Select.appendChild(new Option('Choose Driver', ''));
-    driver3Select.appendChild(new Option('Choose Driver', ''));
     _rcAppendGroupedDriverOptions_(driver2Select, otherDrivers);
-    _rcAppendGroupedDriverOptions_(driver3Select, otherDrivers);
 
+    // Box 1, "Driver Involved" (box 2), and Lap Number all share one row
+    // now, each at 1/3 width (2026-09-26, Matt's ask: "both dropdown boxes
+    // [driver-involved and lap] at 1/3 width each" -- box 1 is disabled/
+    // fixed, not really a "dropdown choice", but sits in the same row so
+    // the two real choices land at the same 1/3 width instead of growing
+    // to fill a 50/50 pair). Both boxes now say "DRIVER INVOLVED"
+    // (2026-09-26, Matt's ask: box 1 -- already fixed/disabled as the
+    // filer -- and box 2 both read the same label; only one of them is
+    // actually a choice).
     var driversRow = el('div', 'rc-wiz-field-row-3');
-    driversRow.appendChild(wizField('Driver Involved 1', driver1Select, null));
-    driversRow.appendChild(wizField('Driver Involved 2', driver2Select, null));
-    driversRow.appendChild(wizField('Driver Involved 3', driver3Select, null));
+    driversRow.appendChild(wizField('DRIVER INVOLVED', driver1Select, null));
+    driversRow.appendChild(wizField('DRIVER INVOLVED', driver2Select, null));
+    driversRow.appendChild(wizField('Lap Number', lapSelect, null));
     container.appendChild(driversRow);
 
     var infractionSelect = document.createElement('select');
@@ -5480,12 +5499,11 @@
     if (initial.lapNumber !== undefined && initial.lapNumber !== null) lapSelect.value = String(initial.lapNumber);
     if (initial.infractionType) infractionSelect.value = initial.infractionType;
     if (initial.against) driver2Select.value = initial.against;
-    if (initial.against2) driver3Select.value = initial.against2;
     if (initial.description) descBox.value = initial.description;
 
     return {
       lapSelect: lapSelect, infractionSelect: infractionSelect,
-      driver1Select: driver1Select, driver2Select: driver2Select, driver3Select: driver3Select,
+      driver1Select: driver1Select, driver2Select: driver2Select,
       descBox: descBox
     };
   }
@@ -5512,12 +5530,12 @@
       fieldsContainer.innerHTML = '';
       fields = null;
       if (!round) return;
-      // Race + Lap Number side by side, each half width (2026-09-24, item
-      // 6) -- the Race field (roundSelect, built once above so its
-      // selected value survives a repopulate) is handed in here so
-      // buildProtestFormFields can pair it with the Lap Number field it
-      // already builds, instead of Race sitting in its own full-width row
-      // above this container like before.
+      // Race field (roundSelect, built once above so its selected value
+      // survives a repopulate) is handed in here so buildProtestFormFields
+      // renders it as its own full-width row, ahead of the Driver
+      // Involved / Lap Number row (2026-09-26, item 6 follow-up -- Lap
+      // Number moved into that row, so Race no longer pairs 50/50 with it
+      // the way it did as of 2026-09-24).
       fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {}, wizField('Race', roundSelect, null));
     }
     populateForRound(rounds[0].roundId);
@@ -5548,7 +5566,7 @@
         method: 'POST', token: token, body: {
           roundId: roundSelect.value, infractionType: fields.infractionSelect.value,
           lapNumber: fields.lapSelect.value, againstProfileId: fields.driver2Select.value,
-          against2ProfileId: fields.driver3Select.value, description: fields.descBox.value.trim()
+          description: fields.descBox.value.trim()
         }
       }).then(function (data) {
         submitBtn.disabled = false;
@@ -5599,7 +5617,7 @@
       body.appendChild(fieldsContainer);
       var fields = buildProtestFormFields(fieldsContainer, data.laps || [], data.driverRoster || [], data.myProfileId, {
         lapNumber: p.lapNumber, infractionType: p.infractionType,
-        against: p.againstProfileId, against2: p.against2ProfileId, description: p.description
+        against: p.againstProfileId, description: p.description
       });
 
       // No in-popup result banner (2026-09-23, Matt's call -- see the
@@ -5619,7 +5637,7 @@
           method: 'POST', token: token, body: {
             protestId: p.protestId, infractionType: fields.infractionSelect.value,
             lapNumber: fields.lapSelect.value, againstProfileId: fields.driver2Select.value,
-            against2ProfileId: fields.driver3Select.value, description: fields.descBox.value.trim()
+            description: fields.descBox.value.trim()
           }
         }).then(function (data2) {
           saveBtn.disabled = false;
@@ -7906,7 +7924,7 @@
             labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
           }
           row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + (p.lapNumber ? (': Lap ' + escapeHtml(String(p.lapNumber))) : '') + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
+          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
 
           if (p.status === 'Pending') {
             if (resultsFinalized) {

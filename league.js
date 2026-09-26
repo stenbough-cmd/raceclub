@@ -648,8 +648,12 @@ function _rclIsDnf_(row) {
 // `dnf` flag (2026-09-24, Matt's ask to drop the bold DNF/DSQ name
 // treatment) -- see _rclIsDnf_/the position badge for how DNF/DSQ still
 // shows on a row.
-function _rclBuildDriverIdentity_(row) {
-  var identity = _rclEl('div', 'rcl-standings-identity');
+// dnf (2026-09-26, Matt's ask: "any DNF drivers in the list should have a
+// light gray name and number style") -- optional, only Recent Results/
+// View All Results pass it (Current Standings' season-total rows have no
+// per-row DNF concept, same as _rclIsDnf_ above already notes).
+function _rclBuildDriverIdentity_(row, dnf) {
+  var identity = _rclEl('div', 'rcl-standings-identity' + (dnf ? ' rcl-standings-identity-dnf' : ''));
   var logoSlot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var logoImg = document.createElement('img');
@@ -913,9 +917,18 @@ function _rclBuildRaceHeadline_(r) {
     s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (accent ? ' rcl-race-headline-value-accent' : ''), _rclEscapeHtml(value || '--')));
     return s;
   }
-  var eventRow = _rclEl('div', 'rcl-race-headline-row');
-  eventRow.appendChild(stat('Event', (r.eventName || '') + (r.track ? ': ' + r.track : '')));
-  headline.appendChild(eventRow);
+  // Event name line reworked (2026-09-26, Matt's ask) from a plain
+  // "EVENT" label+value stat (like Winner/Pole/Fastest Lap below it) into
+  // its own big header line: "Round <n>   <Event>: <Track>", styled with
+  // the exact same font-family/weight/size as the Calendar's own event
+  // name (.rcl-cal-event/.rcl-cal-event-name, css/league.css) via the
+  // shared .rcl-race-headline-eventname class, so Recent Results and the
+  // View All Results popup (both call this same builder) read with the
+  // identical heading treatment the Calendar already uses for a round.
+  var eventLine = _rclEl('div', 'rcl-race-headline-eventname');
+  var eventText = (r.roundNum ? 'Round ' + r.roundNum + '   ' : '') + (r.eventName || '') + (r.track ? ': ' + r.track : '');
+  eventLine.textContent = eventText;
+  headline.appendChild(eventLine);
 
   var detailRow = _rclEl('div', 'rcl-race-headline-row');
   detailRow.appendChild(stat('Winner', r.overallWinner, true));
@@ -974,12 +987,18 @@ function _rclRenderResults(hub) {
       // metal coloring, manufacturer logo, flag, car number and team all
       // come along for free from _rclBuildPosBadge_/_rclBuildDriverIdentity_.
       var dnf = _rclIsDnf_(row);
-      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-3' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+      // Fastest-lap driver's name goes purple (2026-09-26, Matt's ask: "in
+      // the recent results container in League Hub, make the fastest lap
+      // person at the top of the list purple") -- row.wonFastestLap is
+      // already computed server-side (Results.gs, per class), so this is
+      // just a modifier class; see .rcl-race-row-fastestlap in
+      // css/league.css.
+      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-3' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : '') + (row.wonFastestLap ? ' rcl-race-row-fastestlap' : ''));
       // Same DSQ-over-DNF precedence as the All Results popup (2026-09-24,
       // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
       // a small field.
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
@@ -1092,15 +1111,16 @@ function _rclFormatTotalTime_(seconds) {
   return h + ':' + pad(m, 2) + ':' + pad(s, 2) + '.' + pad(ms, 3);
 }
 
-// Fastest/best lap time, m:ss.xxx (2026-09-24, Matt's ask: "make the
-// fastest laps in the recent results container and the view all results
-// display like this m:ss:xxx instead of the xx.xxxx" -- BestLapTime comes
-// off the XML import, and out of Results.gs, as a raw decimal-seconds
-// string like "92.3456"; this is the standard motorsport lap-time
-// notation for it). No hour component -- unlike _rclFormatTotalTime_
-// above (a full race time), a single lap is never going to run an hour.
-// A non-numeric value (already-formatted or genuinely missing) falls
-// back to '--' rather than showing "NaN:NaN.NaN".
+// Fastest/best lap time, MM:SS:mmm (2026-09-26, Matt's ask: "make the
+// fastest lap and best lap time in the leaderboards formatted -> MM:SS:
+// Milliseconds" -- was m:ss.xxx, single-digit minutes with a period
+// before the milliseconds; now zero-padded 2-digit minutes and colons
+// throughout, e.g. "01:32:345"). BestLapTime comes off the XML import,
+// and out of Results.gs, as a raw decimal-seconds string like "92.3456".
+// No hour component -- unlike _rclFormatTotalTime_ above (a full race
+// time), a single lap is never going to run an hour. A non-numeric value
+// (already-formatted or genuinely missing) falls back to '--' rather
+// than showing "NaN:NaN:NaN".
 function _rclFormatLapTime_(raw) {
   var totalSeconds = Number(raw);
   if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '--';
@@ -1110,7 +1130,7 @@ function _rclFormatLapTime_(raw) {
   var s = totalSec % 60;
   var m = Math.floor(totalSec / 60);
   function pad(n, len) { var str = String(n); while (str.length < len) str = '0' + str; return str; }
-  return m + ':' + pad(s, 2) + '.' + pad(ms, 3);
+  return pad(m, 2) + ':' + pad(s, 2) + ':' + pad(ms, 3);
 }
 
 // AVG (KM/H) -- not a stored field, derived from trackLengthMeters (on the
@@ -1140,14 +1160,28 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // reverted the same day (Matt's call: "I don't want the +10s penalty
   // showing up in the all results leaderboard. I'll have to figure out a
   // better way to display penalties on the board. For now, keep the
-  // penalties at the bottom of the page") -- penalties stay ONLY in the
-  // "Penalties Assessed" section below, same as before this ever changed.
+  // penalties at the bottom of the page"). A dedicated PEN column (below,
+  // penSecondsByProfileId) is a distinct, later ask (2026-09-26, Matt: "add
+  // a PEN column after the Total Time column") -- a real grid column, not
+  // a badge glued onto Total Time, so it does not undo that revert. The
+  // full "Penalties Assessed" list at the bottom of the popup still stays,
+  // unchanged, as the only place a penalty's full detail (infraction type,
+  // tier, lap) is spelled out.
 
   // profileId -> display name, built off this round's own full standings
   // -- penalties (below) only carry a profileId (see the `against` field
   // on _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs), so this
   // is how the popup resolves a name to show next to each one.
   var namesByProfileId = {};
+  // profileId -> total seconds of Time-effect penalties this round, summed
+  // (2026-09-26, for the new PEN column below). A driver can be hit with
+  // more than one time penalty in a round, so this sums every Time-effect
+  // adjustment against them rather than showing only the first.
+  var penSecondsByProfileId = {};
+  (result.penalties || []).forEach(function (p) {
+    if (p.effectType !== 'Time' || !p.against) return;
+    penSecondsByProfileId[p.against] = (penSecondsByProfileId[p.against] || 0) + (Number(p.effectSeconds) || 0);
+  });
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
   // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule).
   (result.classes || []).forEach(function (cls) {
@@ -1169,6 +1203,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     headRow.appendChild(_rclEl('div', null, 'Driver'));
     headRow.appendChild(_rclEl('div', null, 'Laps'));
     headRow.appendChild(_rclEl('div', null, 'Total Time'));
+    headRow.appendChild(_rclEl('div', null, 'Pen'));
     headRow.appendChild(_rclEl('div', null, 'Gap'));
     headRow.appendChild(_rclEl('div', null, 'Interval'));
     headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
@@ -1197,9 +1232,11 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
+      var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pen' + (penSeconds ? ' rcl-race-row-pen-active' : ''), penSeconds ? ('+' + penSeconds + 's') : '--'));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-interval', _rclFormatIntervalToAhead_(row, aheadRow)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
@@ -1310,6 +1347,14 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // names. This is the one and only place a round's penalties render on
   // the League Hub (Matt's placement call, see this section's header
   // comment above).
+  //
+  // Redesigned 2026-09-26 (Matt's ask, item 20) to read like a Race Report
+  // line instead of its own plain name/detail row: a lap-number-style
+  // label in the position slot ("Pre"/"Post"/"Lap N"), then a class pill,
+  // the driver's name bold white (same .rcl-report-name treatment a Race
+  // Report line uses), the infraction described in that same plain dim
+  // line style ("hits a wall or track object"'s own font treatment, no
+  // extra color), and the penalty itself in bold red.
   var penSection = _rclEl('div', 'rcl-penalties-section');
   penSection.appendChild(_rclEl('div', 'rcl-race-class-name', 'Penalties Assessed'));
   var penalties = result.penalties || [];
@@ -1317,18 +1362,104 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     penSection.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No penalties were assessed for this round.'));
   } else {
     penalties.forEach(function (p) {
-      var row = _rclEl('div', 'rcl-penalty-row');
+      var row = _rclEl('div', 'rcl-report-lap');
+      // "Pre"/"Post" (2026-09-26, Matt's ask -- not the full "Pre-race"/
+      // "Post-race" the lap dropdown itself shows, just the short form in
+      // this position slot) or "Lap N" for a normal numeric lap; "-" for a
+      // pre-existing Adjustments row from before LapNumber was tracked.
+      var lapVal = p.lapNumber;
+      var posLabel = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' :
+        (lapVal ? ('Lap ' + lapVal) : '-');
+      row.appendChild(_rclEl('div', 'rcl-report-lap-num', posLabel));
+      var textWrap = _rclEl('div', 'rcl-report-lap-text');
+      var lineEl = _rclEl('p', 'rcl-report-line');
+      if (p.carClass) lineEl.appendChild(_rclClassPill_(p.carClass));
       var name = (p.against && namesByProfileId[p.against]) || 'Unknown Driver';
-      row.appendChild(_rclEl('div', 'rcl-penalty-name', _rclEscapeHtml(name)));
+      var nameEl = document.createElement('span');
+      nameEl.className = 'rcl-report-name';
+      nameEl.textContent = name;
+      lineEl.appendChild(nameEl);
       var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
       var tierLabel = tierInfo ? tierInfo.label.replace(/^Tier \d+: /, '') : ('Tier ' + (p.penaltyTier || '?'));
-      var detailText = (p.infractionType || 'Infraction') + ': ' + tierLabel +
-        ' (' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
-      row.appendChild(_rclEl('div', 'rcl-penalty-detail', _rclEscapeHtml(detailText)));
+      lineEl.appendChild(document.createTextNode(' ' + (p.infractionType || 'Infraction') + ' (' + tierLabel + ') '));
+      var effectSpan = document.createElement('span');
+      effectSpan.className = 'rcl-penalty-effect';
+      effectSpan.textContent = _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds);
+      lineEl.appendChild(effectSpan);
+      textWrap.appendChild(lineEl);
+      row.appendChild(textWrap);
       penSection.appendChild(row);
     });
   }
   bodyEl.appendChild(penSection);
+}
+
+// Qualifying tab of "All Results" (2026-09-26, Matt's ask: "the results
+// that show are every driver's best qualifying lap time, their sector
+// times from that lap and avg km/h" -- times in MM:SS:milliseconds, same
+// _rclFormatLapTime_ every other lap time on this page already uses).
+// Consumes handleGetPublicRoundQualifying's result shape (Website.gs):
+// { roundId, roundNum, eventName, track, hasQualifying, classes: [{
+// className, standings: [{ profileId, name, carNumber, teamName, carClass,
+// qualifyingPos, bestLapTime, sector1, sector2, sector3, avgKmh }] }] }.
+// A qualifying row has no country/manufacturer fields the way a race
+// result row does -- _rclBuildDriverIdentity_ already handles either being
+// absent (it only renders the flag/logo when the field is present), so no
+// changes were needed there.
+function _rclBuildQualifyingBody_(result, bodyEl) {
+  bodyEl.innerHTML = '';
+  if (!result) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
+    return;
+  }
+
+  // Simple round-identifying line -- no Winner/Pole/Fastest Lap headline
+  // here (_rclBuildRaceHeadline_ is Race-session specific and doesn't
+  // apply to a Qualify session), same styled treatment as the Race view's
+  // event name line (.rcl-race-headline-eventname, css/league.css).
+  var eventLine = _rclEl('div', 'rcl-race-headline-eventname');
+  eventLine.textContent = (result.roundNum ? 'Round ' + result.roundNum + '   ' : '') + (result.eventName || '') + (result.track ? ': ' + result.track : '');
+  bodyEl.appendChild(eventLine);
+
+  if (!result.hasQualifying || !(result.classes || []).length) {
+    bodyEl.appendChild(_rclEmptyState('No Qualifying Data', 'No qualifying session was imported for this round.'));
+    return;
+  }
+
+  // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
+  // (CAR_CLASS_CANONICAL_ORDER_, Website.gs), same convention as the Race
+  // view above.
+  result.classes.forEach(function (cls) {
+    var clsWrap = _rclEl('div', 'rcl-race-class');
+    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' QUALIFYING'));
+
+    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-qualifying');
+    headRow.appendChild(_rclEl('div', null, 'Pos'));
+    headRow.appendChild(_rclEl('div', null, 'Driver'));
+    headRow.appendChild(_rclEl('div', null, 'Best Lap'));
+    headRow.appendChild(_rclEl('div', null, 'Sector 1'));
+    headRow.appendChild(_rclEl('div', null, 'Sector 2'));
+    headRow.appendChild(_rclEl('div', null, 'Sector 3'));
+    headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
+    clsWrap.appendChild(headRow);
+
+    var standings = cls.standings || [];
+    if (!standings.length) {
+      clsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No qualifying times posted for this class.'));
+    }
+    standings.forEach(function (row, idx) {
+      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-qualifying' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+      rowEl.appendChild(_rclBuildPosBadge_(idx));
+      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector1)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector2)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector3)));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', (row.avgKmh !== null && row.avgKmh !== undefined) ? String(row.avgKmh) : '--'));
+      clsWrap.appendChild(rowEl);
+    });
+    bodyEl.appendChild(clsWrap);
+  });
 }
 
 function _rclOpenAllResultsModal(hub) {
@@ -1353,15 +1484,29 @@ function _rclOpenAllResultsModal(hub) {
   rounds.forEach(function (r) {
     var opt = document.createElement('option');
     opt.value = r.roundId;
-    // "<Round n> <EventName>: <track> (Date)" (2026-09-23 correction,
-    // Matt's exact format).
-    var label = (r.roundNum ? 'Round ' + r.roundNum + ' ' : '') + (r.eventName || r.roundId);
+    // "<Round n>   <EventName>: <track> (Date)" (2026-09-23 correction,
+    // Matt's exact format; spacer widened to 3 spaces 2026-09-26, Matt's
+    // ask, so the round number and event name read as two distinct
+    // pieces instead of running together).
+    var label = (r.roundNum ? 'Round ' + r.roundNum + '   ' : '') + (r.eventName || r.roundId);
     if (r.track) label += ': ' + r.track;
     if (r.startUtc) label += ' (' + _rclFormatDate(r.startUtc) + ')';
     opt.textContent = label;
     select.appendChild(opt);
   });
   selectRow.appendChild(select);
+
+  // Qualifying/Race toggle (2026-09-26, Matt's ask: "to the right of that
+  // box, make a dropdown box that says Qualifying and Race. Have it
+  // default on race.") -- sits beside the round select in the same row
+  // (.rcl-allresults-select-row is now a flex row, see league.css).
+  // Switching either dropdown re-loads via the shared load() below.
+  var sessionSelect = document.createElement('select');
+  sessionSelect.className = 'rcl-allresults-session-select';
+  sessionSelect.appendChild(new Option('Race', 'race'));
+  sessionSelect.appendChild(new Option('Qualifying', 'qualifying'));
+  sessionSelect.value = 'race';
+  selectRow.appendChild(sessionSelect);
   body.appendChild(selectRow);
 
   var resultsWrap = _rclEl('div', 'rcl-allresults-body');
@@ -1369,7 +1514,7 @@ function _rclOpenAllResultsModal(hub) {
   dialog.appendChild(body);
   overlay.appendChild(dialog);
 
-  function loadRound(roundId) {
+  function loadRound(roundId, sessionKind) {
     resultsWrap.innerHTML = '';
     // Standard site loading animation (2026-09-24, Matt's ask) -- the same
     // "starting grid lights" markup as the full-page loader
@@ -1379,7 +1524,19 @@ function _rclOpenAllResultsModal(hub) {
     // own dark-theme override of .rc-inline-spinner-wrap/.rc-startlights/
     // .rc-loading-text (league.css) already covers this markup, so no new
     // CSS is needed here.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_('Loading round results...'));
+    resultsWrap.appendChild(_rclBuildInlineSpinner_(sessionKind === 'qualifying' ? 'Loading qualifying results...' : 'Loading round results...'));
+    if (sessionKind === 'qualifying') {
+      // getPublicRoundQualifying (2026-09-26) -- a separate endpoint from
+      // getPublicRoundResults below, since a Qualify session's data (best
+      // lap + sectors, no finish position/gap/interval) has almost
+      // nothing in common with a Race session's row shape.
+      fetchApi('getPublicRoundQualifying', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+        _rclBuildQualifyingBody_((res && res.success) ? res.result : null, resultsWrap);
+      }).catch(function () {
+        _rclBuildQualifyingBody_(null, resultsWrap);
+      });
+      return;
+    }
     // BUG FIX (2026-09-23 audit): roundId was passed as a bare options
     // field instead of inside options.params, so fetchApi never actually
     // put it on the URL -- the server always saw a missing roundId and
@@ -1393,8 +1550,9 @@ function _rclOpenAllResultsModal(hub) {
     });
   }
 
-  select.addEventListener('change', function () { loadRound(select.value); });
-  loadRound(rounds[0].roundId);
+  select.addEventListener('change', function () { loadRound(select.value, sessionSelect.value); });
+  sessionSelect.addEventListener('change', function () { loadRound(select.value, sessionSelect.value); });
+  loadRound(rounds[0].roundId, sessionSelect.value);
 
   // Closable ONLY via the X button -- same posture every other popup on
   // this page uses.
