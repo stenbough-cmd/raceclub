@@ -2758,7 +2758,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    simply don't render any more once a protest is no longer modifiable,
    instead of showing disabled with a hover lock icon. */
 .rc-protest-action-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
-.rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 4px 16px; }
+/* Top padding bumped 4px -> 12px (2026-09-26, Matt's ask: "a tiny more
+   padding at the top of the container where the protests are listed") --
+   left/right/bottom untouched, the top edge was sitting noticeably tighter
+   against the first row than the box's own bottom edge did. */
+.rc-protest-history-box { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 12px 16px 4px; }
 /* .rc-protest-season-group (the old per-season grouping pill/tree-line
    wrapper) removed 2026-09-24, item 6 -- the popup's history list is now
    one flat, newest-first list of Dashboard-style rows, no more season

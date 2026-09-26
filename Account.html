@@ -2065,16 +2065,28 @@
     // line (below) -- replaces the old single run-on sentence that also
     // buried the infraction type and round/track inside it.
     var whoLine = el('div', 'rc-protest-dash-line');
+    // Self-report wording (2026-09-26, Matt's ask: "if I self reported,
+    // instead of showing 'Matt Stenzel submitted a protest against Jonny
+    // Adam.' it should say 'Matt Stenzel self-reported an incident with
+    // Jonny Adam.'") -- checked ahead of the auto-flagged/isMine branches
+    // below, since a self-report is still isMine (the filer names the
+    // OTHER driver who was involved, but the penalty is always the
+    // filer's own -- see PROTEST_SELF_REPORT_INFRACTION_,  Protests.gs).
+    var isSelfReport = p.infractionType === 'Avoidable Contact (Self Report)';
     // Auto-flagged wording (2026-09-26, Matt's ask: "any time something is
     // AUTO FLAGGED against a driver, I want it to say: Auto-flagged
     // against a driver, <driver name>") -- takes priority over the usual
     // isMine/filed-against-you phrasing, since an auto-flagged protest has
     // no human filer at all.
-    var whoText = p.isAutoFlagged
-      ? ('Auto-flagged against a driver, ' + escapeHtml(against || 'a driver') + '.')
-      : (p.isMine
-        ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
-        : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.'));
+    var whoText = isSelfReport
+      ? (p.isMine
+        ? ('Self-reported an incident with ' + escapeHtml(against || 'another driver') + '.')
+        : (escapeHtml(p.filerName || 'A driver') + ' self-reported an incident with you.'))
+      : (p.isAutoFlagged
+        ? ('Auto-flagged against a driver, ' + escapeHtml(against || 'a driver') + '.')
+        : (p.isMine
+          ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
+          : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.')));
     whoLine.innerHTML = (roundStr ? '<span class="rc-protest-dash-date">' + escapeHtml(roundStr) + '</span> ' : '') + whoText;
     body.appendChild(whoLine);
 
@@ -5680,11 +5692,13 @@
       var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
       if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
       submitBtn.disabled = true;
-      // Dim + disable the X for the duration of the submit (2026-09-26,
-      // Matt's ask: "when submitting a protest, dim and disable the x in
-      // the corner until the submit is done and the page reloads") --
-      // re-enabled on failure below; on success the modal closes outright
-      // so there's nothing left to re-enable.
+      // Grayed-out "SUBMITTING PROTEST..." (2026-09-26, Matt's ask) plus
+      // the X dimmed/disabled for the duration of the submit (2026-09-26,
+      // earlier ask: "when submitting a protest, dim and disable the x in
+      // the corner until the submit is done and the page reloads") -- both
+      // restored on failure below; on success the modal closes outright so
+      // there's nothing left to restore.
+      submitBtn.textContent = 'SUBMITTING PROTEST...';
       if (modal.closeBtn) modal.closeBtn.disabled = true;
       fetchApi('submitProtest', {
         method: 'POST', token: token, body: {
@@ -5695,6 +5709,7 @@
       }).then(function (data) {
         submitBtn.disabled = false;
         if (!data.success) {
+          submitBtn.textContent = 'Submit Protest';
           if (modal.closeBtn) modal.closeBtn.disabled = false;
           showToast(data.message || 'Could not submit that protest.', 'error');
           return;
@@ -5704,6 +5719,7 @@
         if (typeof onSubmitted === 'function') onSubmitted();
       }).catch(function () {
         submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Protest';
         if (modal.closeBtn) modal.closeBtn.disabled = false;
         showToast('Could not reach the server -- protest not submitted.', 'error');
       });
@@ -8074,9 +8090,14 @@
           // phrasing when there's no human filer (a registration-mismatch
           // protest has no FilerProfileID).
           var titleRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          var introText = p.isAutoFlagged
-            ? ('Auto-flagged against a driver, ' + (against || 'a driver') + '.')
-            : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.');
+          // Self-report wording (2026-09-26, Matt's ask -- see
+          // buildDashProtestItem's matching comment) takes priority over
+          // both the auto-flagged and default phrasing below.
+          var introText = (p.infractionType === 'Avoidable Contact (Self Report)')
+            ? ((p.filerName || 'A driver') + ' self-reported an incident with ' + (against || 'another driver') + '.')
+            : (p.isAutoFlagged
+              ? ('Auto-flagged against a driver, ' + (against || 'a driver') + '.')
+              : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.'));
           titleRow.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(introText)));
           // Same auto-flag badge as the Stewarding page (see that page's own
           // comment) -- a steward ruling from here needs the same "this one
@@ -8299,7 +8320,7 @@
             withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
           }
           finalizeBtn.addEventListener('click', function () {
-            var confirmMsg = 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round, and this cannot be undone -- there is no way to un-finalize a round once it\'s finalized.';
+            var confirmMsg = 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
             // Restores the button's normal label/color -- shared by the
             // failure and timeout paths below (a failure no longer calls
             // render(), since a successful Finalize now closes the popup

@@ -1480,7 +1480,19 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var tierPhrase = tierInfo
         ? tierInfo.label.replace(/^Tier (\d+): /, 'Tier $1 ').replace(/\s*\([^)]*\)\s*$/, '')
         : ('Tier ' + (p.penaltyTier || '?'));
-      lineEl.appendChild(document.createTextNode(' ' + (p.infractionType || 'Infraction') + ': ' + tierPhrase + ' '));
+      // Self-report wording (2026-09-26, Matt's ask: "mimic this on the
+      // penalties assessed list" -- same self-report phrasing Account.html's
+      // Dashboard/Protests popup and the League Management ruling popup all
+      // use now) -- "self-reported an incident" in place of the raw
+      // infraction-type label. The name above is already the FILER's own
+      // (Protests.gs's handleAdminRuleOnProtest always docks the filer
+      // themselves for this infraction type, never the other driver they
+      // named as involved), so this line reads "<filer> self-reported an
+      // incident: Tier N Time Penalty (+Ns)" end to end.
+      var infractionPhrase = (p.infractionType === 'Avoidable Contact (Self Report)')
+        ? 'self-reported an incident'
+        : (p.infractionType || 'Infraction');
+      lineEl.appendChild(document.createTextNode(' ' + infractionPhrase + ': ' + tierPhrase + ' '));
       var effectSpan = document.createElement('span');
       effectSpan.className = 'rcl-penalty-effect';
       effectSpan.textContent = '(' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
