@@ -80,6 +80,24 @@ function _rclClassPill_(cls) {
   return col;
 }
 
+// Ticker-sized class pill (2026-09-26, Matt's ask -- see buildDriverEntry's
+// own comment, js/league.js, for why the ticker needs its own smaller
+// variant instead of reusing _rclClassPill_'s fixed-width right-aligned
+// column above verbatim). Same color/label lookup (RCL_CLASS_PILL_COLOR_,
+// the Hypercar->HY abbreviation), just the bare pill with no wrapper --
+// .rcl-ticker-class-pill (css/league.css) shrinks the font/padding down
+// small enough to sit inline next to a driver's car number without ever
+// reading larger than the manufacturer logo or the driver's own name.
+function _rclTickerClassPill_(cls) {
+  var key = String(cls || '').trim();
+  var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
+  var label = key === 'Hypercar' ? 'HY' : key;
+  var pill = document.createElement('span');
+  pill.className = 'rc-badge-chip rc-badge-chip-abbrev rcl-ticker-class-pill' + (colorClass ? ' ' + colorClass : '');
+  pill.textContent = label || '?';
+  return pill;
+}
+
 // mm:ss (or h:mm:ss past the hour mark) for a race report event's
 // elapsed-time stamp (2026-09-24, Matt's ask) -- races run anywhere from
 // a sprint to several hours, so the hour digit only shows once it's
@@ -374,45 +392,62 @@ function _rclBuildTickerItems(hub) {
   // itself only has room to show 3 (see handleGetLeagueHub, Website.gs).
   var lastRace = hub.tickerLastRace;
   if (lastRace) {
-    // Format changed 2026-09-26 (Matt's ask): "Round n EventName at
-    // TrackName:Layout (date)" -- was "Round n EventName: track"
-    // (2026-09-23). Round n is now its OWN normal-weight piece
-    // (prefixNormalText, plain text at the item's own base weight, same
-    // as any other unstyled ticker text) -- previously bolded together
-    // with the event name; the event name alone stays bold
-    // (prefixBoldText). Track name and layout now share the exact same
-    // normal-weight styling (Matt's ask: "make the layout the same style
-    // as the track name") -- both folded into prefixDimText, matching
-    // the Calendar's own "<event> at <track>:<layout>" three-piece
-    // convention (see _rcBuildRoundResultData_'s layout comment,
-    // Results.gs). The date this round was actually raced closes the
-    // line out in the ticker's existing darker-gray date style
-    // (prefixDatesText below -> .rcl-ticker-season-dates), same treatment
-    // SEASON/NEXT RACE already give their own dates.
-    var raceLabelNormal = lastRace.roundNum ? ('Round ' + lastRace.roundNum + ' ') : '';
+    // Format changed 2026-09-26 (Matt's ask, second pass) -- ONE combined
+    // ticker item now covers the whole round's results, instead of a
+    // separate item per class each re-stating "Round n EventName at
+    // Track:Layout (date)" (that was itself only a few messages old, see
+    // the 2026-09-26/first-pass history this replaces). "Round n" moved
+    // out of the prefix text entirely and into the item's own gold TAG
+    // slot (same tag slot SEASON/NEXT RACE/etc. all use, .rcl-ticker-
+    // item-tag) -- Matt's ask: "have it say 'ROUND n:' instead of
+    // '<class> TOP 5:'". The event title itself no longer repeats "Round
+    // n" in front of it (prefixBoldText is just the event name now).
+    // Track name and layout still share one normal-weight span
+    // (prefixDimText), and the raced-on date still closes it out in the
+    // ticker's gray date style (prefixDatesText) -- both unchanged from
+    // the first pass. A second gold tag-styled label, "TOP 10 RESULTS:"
+    // (midTag, rendered via the same .rcl-ticker-item-tag class -- Matt's
+    // ask: "label TOP 10 RESULTS in gold like the other categories"),
+    // introduces the driver lists. From there every class's own top 10
+    // (was top 5) runs in Hypercar-to-LMGTE order as one classGroups
+    // array -- see buildRun's item.classGroups branch below -- separated
+    // from the NEXT class by a wider 15-space gap instead of a whole new
+    // tag+prefix repeating (Matt: "instead of relabeling the next class").
+    var raceTag = lastRace.roundNum ? ('ROUND ' + lastRace.roundNum) : 'ROUND RESULTS';
     var raceLabelBold = lastRace.eventName || 'Race';
     var raceTrackLayout = lastRace.track ? (lastRace.track + (lastRace.layout ? (':' + lastRace.layout) : '')) : '';
     var raceLabelDim = raceTrackLayout ? (' at ' + raceTrackLayout) : '';
     var raceLabelDates = lastRace.startUtc ? (' (' + _rclFormatDate(lastRace.startUtc) + ')') : '';
     var resultClasses = _rclSortByTickerClassOrder_(lastRace.classes || [], function (cls) { return cls.className; });
+    var classGroups = [];
     resultClasses.forEach(function (cls) {
-      var standings = (cls.standings || []).slice(0, 5);
+      // TOP 10, was TOP 5 (2026-09-26, Matt's ask: "make it a top 10 list
+      // instead of a top 5 list").
+      var standings = (cls.standings || []).slice(0, 10);
       if (!standings.length) return;
       var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer };
+        // carClass (2026-09-26, Matt's ask: "behind every number on every
+        // driver will be the class pill they belong to") -- every row in
+        // this one group is the same class, so this is just cls.className
+        // repeated per row for buildDriverEntry to key its pill color off
+        // of, not something read off the row's own raw data.
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className };
       });
       if (!rows.length) return;
-      // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
-      // place before drivers in the ticker") -- ranked TOP 5 rows only;
-      // the pre-results roster list above has no finishing order to show,
-      // so it's left without a rank prefix.
-      items.push({
-        tag: (cls.className || 'CLASS').toUpperCase() + ' TOP 5',
-        prefixNormalText: raceLabelNormal, prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim,
-        prefixDatesText: raceLabelDates,
-        driverRows: rows, showRank: true
-      });
+      classGroups.push({ driverRows: rows });
     });
+    // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
+    // place before drivers in the ticker") -- ranked TOP 10 rows only;
+    // the pre-results roster list above has no finishing order to show,
+    // so it's left without a rank prefix.
+    if (classGroups.length) {
+      items.push({
+        tag: raceTag,
+        prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim, prefixDatesText: raceLabelDates,
+        midTag: 'TOP 10 RESULTS',
+        classGroups: classGroups, showRank: true
+      });
+    }
   }
 
   // NEXT RACE, last (2026-09-26, Matt's ask -- see this item's own build
@@ -474,6 +509,22 @@ function _rclRenderTicker(hub) {
       numSpan.textContent = ' #' + row.carNumber;
       entry.appendChild(numSpan);
     }
+    // Class pill, right behind the car number (2026-09-26, Matt's ask:
+    // "behind every number on every driver will be the class pill they
+    // belong to") -- only set on rows that carry one (the in-season TOP
+    // 10 results list, see _rclBuildTickerItems); the pre-season roster
+    // rows never set row.carClass, so they render exactly as before.
+    // Reuses _rclClassPill_'s own RCL_CLASS_PILL_COLOR_ map and
+    // .rc-badge-chip-abbrev pill shape (same red HY/blue LMP2/purple
+    // LMP3/green LMGT3/orange LMGTE colors as the Race Report's own
+    // class pills), just wrapped in .rcl-ticker-class-pill instead of
+    // that pill's fixed-width right-aligned column -- see that class's
+    // own comment, css/league.css, for why it needs to be smaller here:
+    // no larger than the manufacturer logo, not larger than the driver
+    // name, just barely big enough to be recognizable.
+    if (row.carClass) {
+      entry.appendChild(_rclTickerClassPill_(row.carClass));
+    }
     return entry;
   }
 
@@ -487,26 +538,24 @@ function _rclRenderTicker(hub) {
       // where the label ends and the data starts instead of a color/weight
       // change. See .rcl-ticker-item-tag in css/league.css.
       el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.tag + ':'));
-      if (item.driverRows) {
-        // Driver-list items (2026-09-23 rewrite) -- structured rows
-        // instead of one joined string, so each name gets its own logo +
-        // differently-weighted spans (see buildDriverEntry above) rather
-        // than reading as a flat wall of text. Separator between entries
-        // is 10 non-breaking spaces (2026-09-24, was 7 -- Matt's ask for
-        // "3 more spaces in between all drivers"; before that, 5, see the
+      if (item.driverRows || item.classGroups) {
+        // Driver-list items (2026-09-23 rewrite, extended 2026-09-26 for
+        // classGroups) -- structured rows instead of one joined string,
+        // so each name gets its own logo + differently-weighted spans
+        // (see buildDriverEntry above) rather than reading as a flat wall
+        // of text. Separator between entries within one class is 10
+        // non-breaking spaces (2026-09-24, was 7 -- Matt's ask for "3
+        // more spaces in between all drivers"; before that, 5, see the
         // 2026-09-23 history above), not a comma (2026-09-23 follow-up,
-        // Matt's ask) -- same format for BOTH the pre-results roster and
-        // the in-season "TOP 5" results list, since both go through this
-        // one driverRows path. Plain U+0020 spaces collapse to one in
-        // HTML, so this uses   (non-breaking space) x10 to actually
-        // render as a wide gap instead of silently becoming a single
-        // space.
-        // Plain "Round n" + bold event name + normal-weight "at track:
-        // layout" + gray raced-on date (2026-09-26, Matt's ask -- see
-        // _rclBuildTickerItems' own comment on this exact item shape),
-        // THEN 5 spaces before the driver list starts (Matt's ask:
-        // "insert 5 spaces before beginning the top [5]"). The pre-results
-        // roster item still uses the older plain prefixText (no
+        // Matt's ask). Plain U+0020 spaces collapse to one in HTML, so
+        // this uses   (non-breaking space) throughout to actually render
+        // as real gaps instead of silently collapsing.
+        // Plain "Round n" (now the item's own TAG, not part of this
+        // prefix -- see _rclBuildTickerItems) + bold event name +
+        // normal-weight "at track:layout" + gray raced-on date, THEN 5
+        // spaces before the mid-tag/driver list starts (Matt's ask:
+        // "insert 5 spaces before beginning the top [5]"). The pre-
+        // results roster item still uses the older plain prefixText (no
         // bold/track split -- there's no race/track to name yet).
         if (item.prefixBoldText !== undefined) {
           if (item.prefixNormalText) el.appendChild(document.createTextNode(item.prefixNormalText));
@@ -517,23 +566,54 @@ function _rclRenderTicker(hub) {
         } else if (item.prefixText) {
           el.appendChild(document.createTextNode(item.prefixText));
         }
+        // midTag (2026-09-26, Matt's ask: "label 'TOP 10 RESULTS:' in
+        // gold like the other categories") -- a second tag-styled label
+        // (same .rcl-ticker-item-tag gold treatment as the item's own
+        // leading tag above), introducing the driver lists that follow.
+        if (item.midTag) {
+          el.appendChild(_rclEl('span', 'rcl-ticker-item-tag', item.midTag + ':'));
+          el.appendChild(document.createTextNode('     '));
+        }
         var list = _rclEl('span', 'rcl-ticker-driver-list');
-        item.driverRows.forEach(function (row, idx) {
-          if (idx > 0) list.appendChild(document.createTextNode('          '));
+        function appendRankedRow(row, idxInClass) {
           // Bold white rank prefix (2026-09-23, Matt's ask: "Please
           // put 1st, 2nd, 3rd, 4th and 5th before the names in bold
-          // white") -- ranked TOP 5 rows only (item.showRank), see
+          // white") -- ranked rows only (item.showRank), see
           // _rclBuildTickerItems; the pre-results roster has no
-          // finishing order so it never sets showRank.
+          // finishing order so it never sets showRank. Rank resets per
+          // class group (idxInClass), not across the whole combined
+          // list, since each class's top 10 is its own standalone
+          // ranking.
           if (item.showRank) {
             // 2 spaces between the rank and the manufacturer logo
             // (2026-09-23, Matt's ask), not just the 1 the trailing space
             // in the rank text used to give it.
-            list.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idx + 1)));
+            list.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idxInClass + 1)));
             list.appendChild(document.createTextNode('  '));
           }
           list.appendChild(buildDriverEntry(row));
-        });
+        }
+        if (item.classGroups) {
+          // Combined round-results item (2026-09-26 rewrite, Matt's ask:
+          // "start with the highest class results, a 15 space gap
+          // instead of relabeling the next class") -- every class's top
+          // 10 runs one after another in this ONE item, separated from
+          // the next class by a wider 15 non-breaking-space gap instead
+          // of a whole new tag+prefix repeating per class the way
+          // separate items used to (see _rclBuildTickerItems).
+          item.classGroups.forEach(function (group, gIdx) {
+            if (gIdx > 0) list.appendChild(document.createTextNode('               '));
+            group.driverRows.forEach(function (row, idx) {
+              if (idx > 0) list.appendChild(document.createTextNode('          '));
+              appendRankedRow(row, idx);
+            });
+          });
+        } else {
+          item.driverRows.forEach(function (row, idx) {
+            if (idx > 0) list.appendChild(document.createTextNode('          '));
+            appendRankedRow(row, idx);
+          });
+        }
         el.appendChild(list);
       } else if (item.nameText !== undefined) {
         // SEASON item (2026-09-23) -- name at the line's normal weight,

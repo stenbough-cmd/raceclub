@@ -270,6 +270,21 @@ body.rc-league-page {
    light gray") -- same --rcl-ink-dim token every other muted label on
    this page already uses, rather than inventing a new gray. */
 .rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink-dim); }
+/* Class pill riding right behind the car number (2026-09-26, Matt's ask:
+   "behind every number on every driver will be the class pill they
+   belong to... make sure the pill is no larger than the manufacturer
+   logo... not larger than the driver name... it should be recognizeable
+   that's all"). Built by _rclTickerClassPill_ (js/league.js), which
+   reuses the same .rc-badge-chip-abbrev pill shape and RCL_CLASS_PILL_COLOR_
+   red HY/blue LMP2/purple LMP3/green LMGT3/orange LMGTE colors as the
+   Race Report's own class pills (_rclClassPill_) -- this override just
+   shrinks it down small enough for an inline ticker entry: the
+   manufacturer logo above sits at 17px tall, so this pill's total height
+   (font-size + line-height + padding) stays comfortably under that, and
+   its 9px font reads clearly smaller than the 13.5px driver name next to
+   it while the label itself (HY/LMP2/LMP3/LMGT3/LMGTE) stays fully
+   legible -- recognizable at a glance, nothing more. */
+.rcl-ticker-class-pill { font-size: 9px; padding: 1px 5px; line-height: 1.3; letter-spacing: 0.02em; }
 /* TOP 5 prefix split (2026-09-23, Matt's ask: "Round n EventName: track",
    round/event bold, track normal weight) -- bold is heavier than the
    item's own base 600 (.rcl-ticker-item), dim is lighter. */
