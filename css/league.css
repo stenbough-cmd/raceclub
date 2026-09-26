@@ -385,13 +385,24 @@ body.rc-league-page {
   transform: rotate(18deg);
   z-index: 0;
 }
-.rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
-/* Currently unused (2026-09-26 follow-up, Matt's ask: "remove the RACE
-   CLUB text above it") -- the .rcl-hero-eyebrow div itself is commented
-   out in league.html, not deleted, specifically so this rule (and that
-   markup) can come back together to revert. Left in place rather than
-   removed. */
+/* min-height (2026-09-26, third follow-up) -- reserves enough room for the
+   now-absolutely-positioned banner graphic (.rcl-hero-title-img-wrap,
+   below) to fully fit without .rcl-hero's own overflow:hidden clipping it.
+   The graphic sits top:40px, up to 156px tall (its 2x clamp() max), so it
+   needs at least 196px of vertical room under it; 200px rounds that up
+   with a hair of slack. Flow content alone (eyebrow + season + sub) is
+   nowhere near that tall, so without this the hero would size itself to
+   the short text and slice the bottom of the graphic clean off. */
+.rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; min-height: 200px; }
+/* Restored (2026-09-26, second follow-up, Matt's ask: "return the red
+   RACE CLUB to where it was") -- back in the markup too, see league.html.
+   position:relative + z-index (2026-09-26, third follow-up) so it stays
+   legible on top of the banner graphic, which now sits behind it as an
+   absolutely-positioned layer (.rcl-hero-title-img-wrap) instead of
+   pushing content down from above it. */
 .rcl-hero-eyebrow {
+  position: relative;
+  z-index: 2;
   font-family: var(--rc-font-heading);
   font-size: 13px;
   font-weight: 800;
@@ -415,12 +426,26 @@ body.rc-league-page {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 /* league_hub_banner.png title (2026-09-26, Matt's ask) -- .rcl-hero-title
-   stays on the <h1> for its margin/heading semantics; this just undoes the
-   text-specific properties that don't apply to an <img> child (line-height
-   would otherwise leave extra inline whitespace under the image) and sizes
-   the graphic roughly where the old text glyphs sat, scaling with the same
-   viewport-width clamp the text used. */
-.rcl-hero-title-img-wrap { line-height: 0; text-shadow: none; }
+   stays on the <h1> for its margin/heading semantics.
+   Taken out of flow entirely (2026-09-26, third follow-up, Matt's ask:
+   "move it down 40px and to the left 70 pixels and let the text RACE CLUB
+   above and SEASON n / SEASON NAME lay over top of the graphic in those
+   spots") -- position:absolute against .rcl-hero-inner (the nearest
+   positioned ancestor) instead of sitting in flow between the eyebrow and
+   season line, so it no longer pushes them apart; the eyebrow and season
+   keep their own normal-flow spacing exactly as if this weren't here, and
+   the graphic is free to overlap into both of their spots behind them
+   (z-index:1, below the eyebrow/season's z-index:2). top/left are the
+   literal 40px-down/70px-left offset from .rcl-hero-inner's own top-left
+   corner -- was static in flow with no top/left before this pass. */
+.rcl-hero-title-img-wrap {
+  position: absolute;
+  top: 40px;
+  left: -70px;
+  z-index: 1;
+  line-height: 0;
+  text-shadow: none;
+}
 .rcl-hero-title-img {
   display: block;
   /* 2x (2026-09-26 follow-up, Matt's ask: "needs to be twice as big") --
@@ -430,8 +455,13 @@ body.rc-league-page {
 }
 /* Season number line (added 2026-09-19) -- sits between the big title
    and the season-context details, its own size step between the small
-   eyebrow above and the body-text sub-line below. */
+   eyebrow above and the body-text sub-line below.
+   position:relative + z-index (2026-09-26, third follow-up) -- same reason
+   as .rcl-hero-eyebrow above, stays legible on top of the now-absolutely-
+   positioned banner graphic behind it. */
 .rcl-hero-season {
+  position: relative;
+  z-index: 2;
   margin-top: 10px;
   font-family: var(--rc-font-heading);
   /* Bumped up substantially (2026-09-19, Matt's explicit ask: "Make the
