@@ -2001,6 +2001,20 @@
   // see .rc-protest-dash-icon/-pending/-ruled in style.css.
   var RC_PROTEST_RULED_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>';
 
+  // Shared "who this protest is against" name list (2026-09-26, pulled out
+  // while fixing a latent bug: involvedNames is built server-side as
+  // [filerName, against1, against2?] for a real driver-filed protest, but
+  // as just [against1, against2?] for a system auto-flagged one (no filer
+  // to prepend -- see handleGetMyProtests/handleAdminGetRoundProtests,
+  // Protests.gs). Every call site used to unconditionally .slice(1),
+  // which silently dropped the actual accused driver's name for an
+  // auto-flagged protest. Used by buildDashProtestItem below and the
+  // League Management Review & Finalize popup's own protest list.
+  function _rcProtestAccusedNames_(p) {
+    var names = p.involvedNames || [];
+    return p.isAutoFlagged ? names : names.slice(1);
+  }
+
   // One line item in the Dashboard Protest card (2026-09-24 redesign,
   // Matt's exact spec: "(open gray circle) <date> Filed a protest against
   // <name> for <incident reason> in Round <round n> at <track>. After a
@@ -2044,16 +2058,23 @@
     // .rc-protest-dash-date badge styling the date used to have -- only
     // the text content changed, not the look.
     var roundStr = p.roundNumber ? ('Round ' + p.roundNumber) : '';
-    var against = (p.involvedNames || []).slice(1).join(' and ');
+    var against = _rcProtestAccusedNames_(p).join(' and ');
 
     // Three-line layout (2026-09-24, styling pass): round + who on line 1,
     // the infraction type alone on line 2, then the pending/ruled status
     // line (below) -- replaces the old single run-on sentence that also
     // buried the infraction type and round/track inside it.
     var whoLine = el('div', 'rc-protest-dash-line');
-    var whoText = p.isMine
-      ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
-      : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.');
+    // Auto-flagged wording (2026-09-26, Matt's ask: "any time something is
+    // AUTO FLAGGED against a driver, I want it to say: Auto-flagged
+    // against a driver, <driver name>") -- takes priority over the usual
+    // isMine/filed-against-you phrasing, since an auto-flagged protest has
+    // no human filer at all.
+    var whoText = p.isAutoFlagged
+      ? ('Auto-flagged against a driver, ' + escapeHtml(against || 'a driver') + '.')
+      : (p.isMine
+        ? ('Filed a protest against ' + escapeHtml(against || 'a driver') + '.')
+        : (escapeHtml(p.filerName || 'A driver') + ' filed a protest against you.'));
     whoLine.innerHTML = (roundStr ? '<span class="rc-protest-dash-date">' + escapeHtml(roundStr) + '</span> ' : '') + whoText;
     body.appendChild(whoLine);
 
@@ -2073,7 +2094,22 @@
     noteRow.appendChild(el('span', 'rc-dm-tree', '└'));
     var noteText;
     if (!isDecided) {
-      noteText = 'Pending outcome...';
+      // Standard-tier hint while still pending (2026-09-26, Matt's ask --
+      // "I like this... in the tree aspect", quoting the same "Standard
+      // tier for X: Tier N: label. Ruling at a different tier requires a
+      // written explanation." wording the League Management ruling popup
+      // already shows a steward). Only the two auto-flagged infraction
+      // types carry a suggestedTier (SUGGESTED_TIER_BY_INFRACTION_,
+      // Protests.gs) -- for every driver-filed protest this stays the
+      // plain "Pending outcome..." line, unchanged.
+      if (p.suggestedTier) {
+        var pendingTierInfo = penaltyTierByNumber(p.suggestedTier);
+        noteText = 'Standard tier for ' + p.infractionType + ': ' +
+          (pendingTierInfo ? pendingTierInfo.label : ('Tier ' + p.suggestedTier)) +
+          '. Ruling at a different tier requires a written explanation.';
+      } else {
+        noteText = 'Pending outcome...';
+      }
     } else if (p.status === 'Upheld') {
       // 2026-09-24 redesign, item 6: names WHO the penalty landed on, not
       // just the tier, so it reads as a complete sentence on its own.
@@ -2121,7 +2157,18 @@
       card.appendChild(list);
     }
 
-    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', '← File, withdraw and review protests');
+    // Link text updated (2026-09-26, Matt's ask) -- "File, withdraw, and
+    // review" (Oxford comma added to match) plus a pending-decision count
+    // in parens, e.g. "(3 currently pending a decision)", so a driver can
+    // see at a glance whether there's anything still open without having
+    // to open the popup. pendingCount comes off the same currentRaceOnly-
+    // scoped getMyProtests response the card's own list already uses (see
+    // handleGetMyProtests, Protests.gs) -- omitted entirely when there's
+    // nothing pending, rather than saying "(0 currently pending...)".
+    var pendingCount = (data && data.success && typeof data.pendingCount === 'number') ? data.pendingCount : 0;
+    var linkText = '← File, withdraw, and review protests' +
+      (pendingCount > 0 ? (' (' + pendingCount + ' currently pending a decision)') : '');
+    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', linkText);
     protestLink.type = 'button';
     protestLink.addEventListener('click', function () {
       openProtestModal(currentToken);
@@ -3741,7 +3788,7 @@
     { icon: ICON_RESULTS, title: 'Results',
       body: 'Season Standings up top, then every completed round with a full stat breakdown per driver. Purple marks the fastest lap in each class, red rows are a DNF or DSQ, and blue text flags an incident, track limit, or penalty.' },
     { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'Open it with "← File, withdraw and review protests" on your Dashboard\'s Protest card. Pick the race and lap, an infraction type, and up to two other drivers involved if any, then submit. You have 24 hours after a round\'s results are posted to file, and you can withdraw any time before a steward rules on it.' },
+      body: 'Open it with "← File, withdraw, and review protests" on your Dashboard\'s Protest card. Pick the race, lap, infraction type, and the other driver involved (if any), then submit -- you can file up to 2 protests per race, including any you withdraw, within 24 hours of that round\'s results posting. Edit or withdraw a protest any time before a steward rules on it or the round is finalized; a protest filed against you never counts against your own 2. Your Dashboard card only shows your most recent race, while the full popup keeps your whole season\'s history, sorted by Round.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
       body: 'Click your name in the header to edit your username, name, email, location, timezone, and avatar, or change your password.' },
     { icon: ICON_ADMIN, title: 'Admin and League Tools',
@@ -4271,18 +4318,26 @@
       // button removed 2026-09-23 the same day -- Matt's ask: "remove the
       // VIEW button and function/popup and change the EDIT & FINALIZE
       // button to REVIEW" -- this one popup already shows the round's
-      // results AND lets an admin/organizer finalize/un-finalize it, so the
+      // results AND lets an admin/organizer finalize it, so the
       // read-only View popup was pure duplication). Only meaningful once a
-      // round actually has results. Always enabled, whether or not the
-      // round is already finalized -- Un-Finalize lives inside the popup
-      // itself (openRoundEditFinalizeModal) instead of a separate disabled/
-      // enabled button pair out here.
+      // round actually has results. Grayed out and disabled once the round
+      // is finalized (2026-09-26, Matt's ask: "once a round has been
+      // reviewed and finalized, disable all buttons from the row... like
+      // the IMPORT RESULTS button is disabled" -- same treatment, and
+      // Un-Finalize is gone entirely now, see openRoundEditFinalizeModal's
+      // own comment: "once a round is finalized, it's finalized").
       if (r.hasResults) {
         var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'REVIEW & FINALIZE');
         editFinalizeBtn.type = 'button';
-        editFinalizeBtn.addEventListener('click', function () {
-          openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
-        });
+        if (r.resultsFinalized) {
+          editFinalizeBtn.disabled = true;
+          editFinalizeBtn.title = 'This round is finalized and can no longer be reviewed.';
+          editFinalizeBtn.style.cssText = 'opacity:0.5;';
+        } else {
+          editFinalizeBtn.addEventListener('click', function () {
+            openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
+          });
+        }
         btnGroup.appendChild(editFinalizeBtn);
       }
 
@@ -4303,7 +4358,14 @@
         // Erase Round Ingestion popup already wipe every session type for a
         // round in one shot, so this was always safe to allow -- it just
         // used to be wrongly gated on the "both types in" flag instead.
-        if (r.hasAnySessionImported) {
+        // Finalized rounds are checked FIRST now (2026-09-26, Matt's ask,
+        // same as REVIEW & FINALIZE above) -- a finalized round's results
+        // can no longer be deleted at all, regardless of import state.
+        if (r.resultsFinalized) {
+          delBtn.disabled = true;
+          delBtn.title = 'This round is finalized and its results can no longer be deleted.';
+          delBtn.style.cssText = 'opacity:0.5;';
+        } else if (r.hasAnySessionImported) {
           // Plain gray, not red -- opens the erase popup, doesn't erase by
           // itself (see the Delete Season comment above for why).
           delBtn.addEventListener('click', function () {
@@ -7876,13 +7938,23 @@
   // popup, replacing the separate Edit and Finalize buttons on the race
   // row. Ruling on a protest (Apply Ruling) already saves that one
   // decision immediately, independent of Finalize -- that's the "save the
-  // decisions without finalizing" half. Finalize/Un-Finalize now lives
-  // right here too, in its own bar above the protest list, so both halves
-  // of a Steward's job on a round happen from the same place. `opts.
-  // resultsFinalized` seeds the initial state; toggling it here re-renders
-  // the whole modal (protest rulings disable while finalized, same rule
-  // the server already enforces) and calls outerReload so the race row
-  // behind this modal picks up the new status pill/button label too.
+  // decisions without finalizing" half. Finalize lives right here too, in
+  // its own bar above the protest list, so both halves of a Steward's job
+  // on a round happen from the same place. `opts.resultsFinalized` seeds
+  // the initial state; a successful Finalize closes the popup outright
+  // (see the click handler below) and calls outerReload so the race row
+  // behind this modal picks up the finalized state and disables itself
+  // (see buildSeasonRaceRow).
+  //
+  // UN-FINALIZE REMOVED ENTIRELY (2026-09-26, Matt's explicit call: "I
+  // want both disabled and the UN-FINALIZE button and function to no
+  // longer exist. Once a round is finalized, it's finalized.") -- this
+  // popup is no longer even reachable from a finalized round's row
+  // (REVIEW & FINALIZE is disabled there), and the Finalize button below
+  // only ever renders while resultsFinalized is still false, as a second
+  // line of defense. The old adminUnfinalizeRound action/handler
+  // (Seasons.gs/Core.gs) is gone too -- there is no server-side path back
+  // to Pending once a round is finalized.
   function openRoundEditFinalizeModal(token, opts, outerReload) {
     var roundId = opts.roundId || '';
     var roundLabel = opts.roundLabel || roundId;
@@ -7972,15 +8044,20 @@
         var listPanel = el('div', 'rc-panel rc-protest-dash-list');
 
         protests.forEach(function (p) {
-          var against = (p.involvedNames || []).slice(1).join(' and ');
+          var against = _rcProtestAccusedNames_(p).join(' and ');
           var isPending = p.status === 'Pending';
           var isLockedPending = isPending && resultsFinalized;
-          // Circle fills in (with a checkmark) once this protest has a
-          // real decision AND that decision is locked in by Finalize --
-          // same isOfficial rule buildDashProtestItem uses (Withdrawn is
-          // always official the moment it happens, no Finalize step to
-          // wait on).
-          var isOfficial = !isPending && (p.status === 'Withdrawn' || !!resultsFinalized);
+          // Checkmark shows as soon as this protest has ANY real decision
+          // (Upheld/Denied/Withdrawn) -- no longer gated on Finalize
+          // (2026-09-26, Matt's ask: "after the review and finalize popup
+          // reloads with the decisions made, they should all have
+          // checkmarks which signals that the protest has been reviewed
+          // and ruled on by a league organizer"). This is deliberately
+          // different from the driver-facing Dashboard card's own
+          // isOfficial rule (buildDashProtestItem), which still waits for
+          // Finalize before showing a filled circle to the driver -- that
+          // distinction is unchanged, only this steward-facing list moved.
+          var isOfficial = !isPending;
 
           var row = el('div', 'rc-protest-dash-item');
           var icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
@@ -7998,7 +8075,7 @@
           // protest has no FilerProfileID).
           var titleRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
           var introText = p.isAutoFlagged
-            ? ('Auto-flagged against ' + (against || 'a driver') + '.')
+            ? ('Auto-flagged against a driver, ' + (against || 'a driver') + '.')
             : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.');
           titleRow.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(introText)));
           // Same auto-flag badge as the Stewarding page (see that page's own
@@ -8096,7 +8173,14 @@
               overrideBox: overrideBox, currentIsOverride: currentIsOverride_
             });
           } else if (isLockedPending) {
-            noteBody.textContent = 'This round is finalized. Un-Finalize above to rule on this protest.';
+            // Should be effectively unreachable now (Finalize itself
+            // requires every protest to already have a ruling, and a
+            // finalized round can never be un-finalized -- 2026-09-26,
+            // Matt's call), kept only as a defensive message in case some
+            // edge case (e.g. a fresh auto-flagged protest surfacing after
+            // the fact) ever produces a Pending protest on an already-
+            // finalized round.
+            noteBody.textContent = 'This round is finalized and can no longer be ruled on.';
           } else {
             // Already-ruled outcome line -- same "Upheld: Tier N penalty
             // applied to <name>." / "Protest denied." / "Protest
@@ -8164,10 +8248,11 @@
             // Finalize/Un-Finalize write (2026-09-26, Matt's ask: "after
             // hitting APPLY RULING, dim the x in the corner and disable
             // it (like the import results popup) and change APPLY RULING
-            // to RULING... in the gray box").
+            // to RULING... in the gray box"; text changed again the same
+            // day to "APPLYING RULES..." per Matt's follow-up).
             applyAllBtn.disabled = true;
             applyAllBtn.className = 'rc-btn-secondary rc-btn-sm';
-            applyAllBtn.textContent = 'RULING...';
+            applyAllBtn.textContent = 'APPLYING RULES...';
             setFinalizeInProgress(true, 'a ruling is being applied');
             Promise.all(toSubmit.map(function (sub) {
               return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub })
@@ -8198,66 +8283,67 @@
           actionBar.appendChild(applyAllBtn);
         }
 
-        // Every protest on this round needs a ruling before Finalize can
-        // be clicked (2026-09-24, item 7) -- Un-Finalize is never gated
-        // this way, only the forward Finalize direction.
-        var finalizeBtn = el('button', resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm', resultsFinalized ? 'Un-Finalize' : 'Finalize');
-        finalizeBtn.type = 'button';
-        if (!resultsFinalized && hasUnruledProtests) {
-          finalizeBtn.disabled = true;
-          withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
-        }
-        finalizeBtn.addEventListener('click', function () {
-          var goingToFinalize = !resultsFinalized;
-          var action = resultsFinalized ? 'adminUnfinalizeRound' : 'adminFinalizeRound';
-          var confirmMsg = resultsFinalized
-            ? 'Un-finalize ' + roundLabel + '? This reopens it for protest rulings.'
-            : 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round.';
-          // Restores the button's normal label/color -- shared by the
-          // failure and timeout paths below (a failure no longer calls
-          // render(), since a successful Finalize now closes the popup
-          // instead of re-rendering it -- see the success branch below).
-          function restoreFinalizeBtn() {
-            finalizeBtn.className = resultsFinalized ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
-            finalizeBtn.textContent = resultsFinalized ? 'Un-Finalize' : 'Finalize';
-          }
-          openConfirmModal(resultsFinalized ? 'Un-Finalize Results' : 'Finalize Results', confirmMsg, resultsFinalized ? 'Un-Finalize' : 'Finalize', function () {
+        // Finalize only -- no Un-Finalize any more (2026-09-26, Matt's
+        // explicit call: "once a round is finalized, it's finalized").
+        // This popup shouldn't even be reachable once resultsFinalized is
+        // true (REVIEW & FINALIZE is disabled on the row -- see
+        // buildSeasonRaceRow), so this button simply doesn't render at all
+        // in that case, as a second line of defense rather than showing a
+        // dead/disabled control. Every protest on this round still needs a
+        // ruling before Finalize can be clicked (2026-09-24, item 7).
+        if (!resultsFinalized) {
+          var finalizeBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Finalize');
+          finalizeBtn.type = 'button';
+          if (hasUnruledProtests) {
             finalizeBtn.disabled = true;
-            // In-progress state (2026-09-24, Matt's ask: "make the
-            // FINALIZE button go gray and say FINALIZING...") -- forced
-            // gray/secondary regardless of direction, so it always reads
-            // as "busy" rather than staying red mid-Finalize. The X
-            // button dims with a matching tooltip via
-            // setFinalizeInProgress, same convention as the Import
-            // Results modal's close button.
-            finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
-            finalizeBtn.textContent = goingToFinalize ? 'FINALIZING...' : 'UN-FINALIZING...';
-            setFinalizeInProgress(true);
-            fetchApi(action, { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
-              setFinalizeInProgress(false);
-              finalizeBtn.disabled = false;
-              if (!result.success) {
-                showToast(result.message || 'Could not update this round.', 'error');
+            withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
+          }
+          finalizeBtn.addEventListener('click', function () {
+            var confirmMsg = 'Finalize ' + roundLabel + '? This means no further penalties will be assessed. These are the most current, correct results for this round, and this cannot be undone -- there is no way to un-finalize a round once it\'s finalized.';
+            // Restores the button's normal label/color -- shared by the
+            // failure and timeout paths below (a failure no longer calls
+            // render(), since a successful Finalize now closes the popup
+            // instead of re-rendering it -- see the success branch below).
+            function restoreFinalizeBtn() {
+              finalizeBtn.className = 'rc-btn-primary rc-btn-sm';
+              finalizeBtn.textContent = 'Finalize';
+            }
+            openConfirmModal('Finalize Results', confirmMsg, 'Finalize', function () {
+              finalizeBtn.disabled = true;
+              // In-progress state (2026-09-24, Matt's ask: "make the
+              // FINALIZE button go gray and say FINALIZING..."). The X
+              // button dims with a matching tooltip via
+              // setFinalizeInProgress, same convention as the Import
+              // Results modal's close button.
+              finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
+              finalizeBtn.textContent = 'FINALIZING...';
+              setFinalizeInProgress(true);
+              fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
+                setFinalizeInProgress(false);
+                finalizeBtn.disabled = false;
+                if (!result.success) {
+                  showToast(result.message || 'Could not update this round.', 'error');
+                  restoreFinalizeBtn();
+                  return;
+                }
+                resultsFinalized = true;
+                showToast('Round finalized.', 'success');
+                if (typeof outerReload === 'function') outerReload();
+                // Closes the popup instead of re-rendering it in place
+                // (2026-09-26, Matt's ask: "after hitting the finalize
+                // button, have it go back to the league tools page and not
+                // stay on the review and finalize popup").
+                modal.close();
+              }).catch(function () {
+                setFinalizeInProgress(false);
+                finalizeBtn.disabled = false;
                 restoreFinalizeBtn();
-                return;
-              }
-              resultsFinalized = !resultsFinalized;
-              showToast(resultsFinalized ? 'Round finalized.' : 'Round un-finalized.', 'success');
-              if (typeof outerReload === 'function') outerReload();
-              // Closes the popup instead of re-rendering it in place
-              // (2026-09-26, Matt's ask: "after hitting the finalize
-              // button, have it go back to the league tools page and not
-              // stay on the review and finalize popup").
-              modal.close();
-            }).catch(function () {
-              setFinalizeInProgress(false);
-              finalizeBtn.disabled = false;
-              restoreFinalizeBtn();
-              showToast('Could not reach the server.', 'error');
+                showToast('Could not reach the server.', 'error');
+              });
             });
           });
-        });
-        actionBar.appendChild(finalizeBtn);
+          actionBar.appendChild(finalizeBtn);
+        }
 
         modal.body.appendChild(actionBar);
         modal.body.appendChild(listPanel);
