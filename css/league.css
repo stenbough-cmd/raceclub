@@ -386,6 +386,11 @@ body.rc-league-page {
   z-index: 0;
 }
 .rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
+/* Currently unused (2026-09-26 follow-up, Matt's ask: "remove the RACE
+   CLUB text above it") -- the .rcl-hero-eyebrow div itself is commented
+   out in league.html, not deleted, specifically so this rule (and that
+   markup) can come back together to revert. Left in place rather than
+   removed. */
 .rcl-hero-eyebrow {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -418,7 +423,9 @@ body.rc-league-page {
 .rcl-hero-title-img-wrap { line-height: 0; text-shadow: none; }
 .rcl-hero-title-img {
   display: block;
-  height: clamp(40px, 7.5vw, 78px);
+  /* 2x (2026-09-26 follow-up, Matt's ask: "needs to be twice as big") --
+     was height: clamp(40px, 7.5vw, 78px); revert to that to undo. */
+  height: clamp(80px, 15vw, 156px);
   width: auto;
 }
 /* Season number line (added 2026-09-19) -- sits between the big title
