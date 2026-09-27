@@ -1353,6 +1353,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    PNG from stretching to fill that box. */
 .rc-nav-item img { flex: none; width: 16px; height: 16px; object-fit: contain; }
 .rc-nav-item:hover { background: #262626; color: var(--rc-white); }
+/* Discord row (2026-09-27, Matt's ask) -- hovers to Discord's own Blurple
+   instead of the generic dark hover every other sidebar row gets, since
+   this is the one link that leaves the site for Discord itself. */
+.rc-nav-item-discord:hover { background: #5865F2; color: var(--rc-white); }
 .rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
 /* Admin/League Tools/Stewarding now always render in the sidebar instead
    of being hidden from a role that can't use them (2026-09-19, Matt's
@@ -3545,6 +3549,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-decoration: none;
 }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
+/* Discord row in the avatar dropdown (2026-09-27, Matt's ask: bring this
+   in line with Discord's brand guidelines) -- shows the real, uncolored
+   Discord mark next to the label (display: flex to lay out icon + text,
+   matching the sidebar's own .rc-nav-item pattern) and hovers to
+   Discord's own Blurple instead of the site red every other row uses, so
+   this one link visibly reads as "opens Discord" rather than an in-app
+   action. Specificity note: this rule must come after the plain
+   .rc-header-menu-item:hover rule above so its color wins. */
+.rc-header-menu-item-discord { display: flex; align-items: center; gap: 8px; }
+.rc-header-menu-item-discord:hover { color: #5865F2; }
 /* Divider between menu items (added 2026-09-18 for the League Hub /
    Dashboard+Edit Profile / Logout grouping) -- light theme equivalent of
    Account.html's dark-sidebar .rc-nav-divider. */
@@ -3879,23 +3893,47 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* Discord community CTA strip (2026-09-24, Matt's ask) -- sits between
    "What Is Race Club" and the "Why Race Club" section, a dark full-width
-   band so it reads as its own moment rather than another paragraph. */
-.rc-discord-cta { background: var(--rc-carbon); padding: 28px 24px; text-align: center; }
-.rc-discord-cta-link {
+   band so it reads as its own moment rather than another paragraph.
+   Redesigned 2026-09-27 (Matt's ask: comply with Discord's brand
+   guidelines) -- a real Blurple (#5865F2, Discord's documented primary
+   color) pill button carries the actual Discord branding; the eyebrow and
+   heading around it stay in Race Club's own red/heading-font treatment so
+   the strip still reads as this site's, not Discord's. */
+.rc-discord-cta { background: var(--rc-carbon); padding: 48px 24px; text-align: center; }
+.rc-discord-cta-inner { max-width: 560px; margin: 0 auto; }
+.rc-discord-cta-heading {
+  font-family: var(--rc-font-heading);
+  font-size: 23px;
+  color: var(--rc-white);
+  margin: 0 0 10px;
+  text-wrap: balance;
+}
+.rc-discord-cta-sub { font-size: 14px; color: #b8bcc2; margin: 0 0 24px; }
+/* The button itself: solid Blurple, white mark + label -- generous
+   padding keeps clear space around the logo (Discord's guideline), and
+   height-only sizing on the logo (width: auto below) means it's never
+   stretched or squashed. */
+.rc-discord-cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  background: #5865F2;
   color: var(--rc-white);
   text-decoration: none;
   font-family: var(--rc-font-heading);
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 15px 28px;
+  border-radius: 999px;
+  transition: background 0.12s ease, transform 0.12s ease;
 }
-.rc-discord-cta-link:hover { color: var(--rc-gold); }
-.rc-discord-cta-link:hover .rc-discord-cta-logo { transform: scale(1.06); }
-.rc-discord-cta-logo { height: 32px; width: auto; flex: none; transition: transform 0.12s ease; }
+.rc-discord-cta-btn:hover { background: #4752c4; transform: translateY(-1px); }
+.rc-discord-cta-logo { height: 22px; width: auto; flex: none; }
 @media (max-width: 560px) {
-  .rc-discord-cta-link { flex-direction: column; gap: 10px; font-size: 15px; }
+  .rc-discord-cta-heading { font-size: 19px; }
+  .rc-discord-cta-btn { padding: 13px 22px; font-size: 13px; }
 }
 .rc-landing-inner h2 { font-size: 26px; }
 .rc-landing-tagline { font-size: 16px; line-height: 1.6; color: var(--rc-steel); max-width: 680px; margin-top: 14px; }

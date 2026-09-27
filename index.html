@@ -228,16 +228,32 @@
        community for more information!") -- a standalone dark strip, not
        folded into the section above it, so it reads as its own call to
        action rather than another line of the "What Is Race Club" copy.
-       Switched from discord_logo_rev.png (the reversed/light variant) to
-       the standard-color discord_logo.png (2026-09-25, Matt's ask) --
-       that's the same asset the Account.html sidebar link already uses
-       against its own dark chrome, see buildDiscordNavLink there, so this
-       CTA now matches it instead of using a separate reversed asset. -->
+
+       Redesigned 2026-09-27 (Matt's ask: bring this in line with
+       Discord's own brand guidelines, per discord.com/branding) as a real
+       Blurple (#5865F2, Discord's own primary brand color) pill button
+       instead of a plain inline text link -- the button is the one
+       element on the page that's actually "Discord branded", while the
+       eyebrow/heading around it stay in Race Club's own red/heading-font
+       treatment so the strip still reads as part of this site. Uses
+       discord_logo_rev.png (the white/reversed mark) sitting on the solid
+       Blurple button -- Discord's guidelines explicitly allow the white
+       version of the mark, and using it here (rather than the full-color
+       mark) keeps proper contrast without ever recoloring or distorting
+       the mark itself. Generous padding on every side of the logo inside
+       the button keeps clear space around it, and the mark is never
+       stretched (height set, width auto) or used as part of Race Club's
+       own name/logo -- both explicit guideline requirements. -->
   <div class="rc-discord-cta">
-    <a class="rc-discord-cta-link" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
-      <img class="rc-discord-cta-logo" src="assets/images/discord_logo.png" alt="Discord">
-      <span>Join the Race Club community for more information and all the updates!</span>
-    </a>
+    <div class="rc-discord-cta-inner">
+      <div class="rc-eyebrow">Community</div>
+      <h2 class="rc-discord-cta-heading">Race Chat, Schedules, And Every Update Happen Here First.</h2>
+      <p class="rc-discord-cta-sub">Not required to race, but where the Race Club community actually lives.</p>
+      <a class="rc-discord-cta-btn" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
+        <img class="rc-discord-cta-logo" src="assets/images/discord_logo_rev.png" alt="Discord">
+        <span>Join Our Discord</span>
+      </a>
+    </div>
   </div>
 
   <!-- "Why Race Club" -- the recruiting section. Six short highlight

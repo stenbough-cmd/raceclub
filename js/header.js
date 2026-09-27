@@ -491,11 +491,16 @@ function renderHeader(opts) {
               // Profile, Help, Feedback, Discord -- see buildSidebarNav,
               // Account.html) -- opens in a new tab so a driver never
               // loses their place on whatever page this dropdown is open
-              // on. A plain <a> styled with the same .rc-header-menu-item
-              // class as every other item here, rather than trying to
-              // reuse the sidebar's icon+label .rc-nav-item treatment,
-              // since this menu has no icon slot on any of its other rows.
-              '<a class="rc-header-menu-item" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">Discord</a>' +
+              // on. Gets its own modifier class + the Discord mark
+              // (2026-09-27, Matt's ask: bring this in line with Discord's
+              // brand guidelines) -- hovers to Discord's own Blurple
+              // (#5865F2) instead of the red every other row hovers to
+              // (.rc-header-menu-item-discord:hover, style.css), so this
+              // one link reads as "leaving to Discord" rather than another
+              // in-app action, and shows the real (uncolored, undistorted)
+              // Discord mark next to the label same as the sidebar link.
+              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">' +
+                '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">Discord</a>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';

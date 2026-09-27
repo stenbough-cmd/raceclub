@@ -654,7 +654,13 @@
   // Discord in the sidebar this time.
   function buildDiscordNavLink() {
     var link = document.createElement('a');
-    link.className = 'rc-nav-item';
+    // rc-nav-item-discord (2026-09-27, Matt's ask: bring this in line with
+    // Discord's brand guidelines) -- hovers to Discord's own Blurple
+    // (#5865F2, .rc-nav-item-discord:hover, style.css) instead of the
+    // generic dark hover every other sidebar row gets, since this is the
+    // one link that leaves the site for Discord. The logo image itself is
+    // untouched either way -- no filter/recolor was ever applied to it.
+    link.className = 'rc-nav-item rc-nav-item-discord';
     link.href = 'https://discord.gg/UxWgwDwc9U';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
