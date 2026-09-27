@@ -629,6 +629,20 @@ function escapeHtmlHeader_(str) {
 function rcOpenLegalModal() {
   var backdrop = document.createElement('div');
   backdrop.className = 'rc-modal-backdrop';
+  // Center dead-center on pages that have no driver dashboard sidebar
+  // (2026-09-27, Matt's ask: "in the league hub and index only, make it
+  // so that clicking the legal disclosure link brings it up in the
+  // center of the page, not offset like in account") -- .rc-modal-
+  // backdrop's own padding-left:244px (style.css, desktop only) shifts
+  // every modal right to center it over Account.html's content area
+  // beside the sidebar, which is correct there but leaves this same
+  // modal off-center on league.html/index.html, neither of which has a
+  // sidebar to offset for. Detecting the sidebar's actual presence
+  // (rather than checking the page by name) keeps this correct
+  // automatically if a page's sidebar situation ever changes.
+  if (!document.querySelector('.rc-sidebar')) {
+    backdrop.classList.add('rc-modal-backdrop-centered');
+  }
   var modal = document.createElement('div');
   modal.className = 'rc-modal rc-modal-wide';
   var head = document.createElement('div');

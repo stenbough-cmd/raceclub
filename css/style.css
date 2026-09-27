@@ -4382,6 +4382,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    already gives every other edge. */
 @media (min-width: 769px) {
   .rc-modal-backdrop { padding-left: 244px; }
+  /* Opt back out of the sidebar-offset centering above (2026-09-27,
+     added for the Legal Disclaimer modal on league.html/index.html --
+     see rcOpenLegalModal's comment, js/header.js). Only a modal that
+     explicitly knows there's no sidebar to offset for adds this class;
+     every other .rc-modal-backdrop keeps the offset unchanged. */
+  .rc-modal-backdrop.rc-modal-backdrop-centered { padding-left: 24px; }
 }
 .rc-modal {
   width: 100%;
