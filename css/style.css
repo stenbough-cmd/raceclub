@@ -4570,7 +4570,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-transform: uppercase;
   margin-bottom: 10px;
 }
-.rc-seasonfmt-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* A touch of margin-top added here (2026-09-27, Matt's ask) so "This
+   Season"/"Season Format"'s gap under their pill (was 10px, entirely
+   from .rc-seasonfmt-group-label's own margin-bottom) reads on par with
+   the Calendar pill's own gap to its race-card list just below (10px
+   label margin-bottom + 4px .rc-cal-race-list margin-top = 14px total,
+   see that rule further down) -- only the first stats row in a group
+   picks this up, since the adjacent-sibling rule right below still wins
+   for spacing between stacked rows. */
+.rc-seasonfmt-stats-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .rc-seasonfmt-stats-row + .rc-seasonfmt-stats-row { margin-top: 8px; }
 .rc-seasonfmt-stat {
   background: var(--rc-offwhite);
