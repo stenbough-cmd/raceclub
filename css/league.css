@@ -1147,15 +1147,17 @@ body.rc-league-page {
 .rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
 .rcl-race-category-row:last-child { margin-bottom: 0; }
 .rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
-/* Same size and weight as the name next to it (2026-09-27, Matt's ask:
-   "make the numbers behind their names the same size and style font as
-   the names") -- font-size was already inherited from .rcl-race-
-   category-row (14px, matching the name), but font-weight defaulted to
-   normal while the name is 700; explicit 700 here matches it. Color stays
-   its own dimmer tone by default so the number still reads as secondary
-   next to the name -- except on a winner/fastest-lap row, where the
-   modifier rules below override it to match the name's accent color. */
-.rcl-race-category-number { font-weight: 700; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+/* Same size, weight, AND color as the name next to it (2026-09-27, Matt's
+   ask, revised same day -- "in pole and laps led in ALL RESULTS, the
+   numbers behind the drivers need to be the same style color and weight
+   as the driver name": the first pass only matched weight and left color
+   on its own dimmer tone, which still read as mismatched on Pole/Most
+   Laps Led rows). font-size was already inherited from .rcl-race-
+   category-row (14px, matching the name). Winner/fastest-lap rows still
+   override this to their own gold/purple accent below, same color as
+   THEIR name, so every category now reads as one consistent name+number
+   unit. */
+.rcl-race-category-number { font-weight: 700; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
 /* Winner/Fastest Lap accent colors (2026-09-27, Matt's ask: "make the
    winner name gold and fastest lap names purple in ALL RESULTS") -- same
    gold/purple tokens already used for the headline's own Winner/Fastest
