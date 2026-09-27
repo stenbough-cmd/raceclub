@@ -4697,6 +4697,12 @@ body.rc-modal-scroll-locked {
   border-bottom: 1px solid var(--rc-silver);
 }
 .rc-wizard-subhead:first-child { margin-top: 0; }
+/* Plain divider between the round race cards and the Special Event cards
+   (2026-09-27, Matt's ask: drop the "SPECIAL EVENTS" label and its "Fun
+   races..." line, keep just the gray line with room around it) -- same
+   line weight/color .rc-wizard-subhead's own border-bottom uses, just on
+   its own with no label. */
+.rc-wizard-divider { border: none; border-top: 1px solid var(--rc-silver); margin: 26px 0; }
 .rc-wizard-race-card { margin-top: 12px; }
 .rc-wizard-actions {
   display: flex;

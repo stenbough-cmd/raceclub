@@ -6726,7 +6726,10 @@
       // anything but blank/'now' any more.
       releaseMode: 'now',
       releaseDateTime: '',
-      classes: { LMGTE: false, LMGT3: true, LMP2: false, LMP3: false, Hypercar: false },
+      // Everything unchecked by default (2026-09-27, Matt's ask) -- LMGT3
+      // used to default to true; an admin now has to deliberately pick
+      // every class this season runs.
+      classes: { LMGTE: false, LMGT3: false, LMP2: false, LMP3: false, Hypercar: false },
       classSeasons: { LMGTE: '', LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
       frequency: 'Weekly',
       byeWeeks: 0,
@@ -6971,32 +6974,33 @@
     // categories gets .rc-wiz-editable-when-locked so the blanket-disable
     // pass below (see state.__locked) can skip them without hardcoding
     // field references there.
-    container.appendChild(wizSubhead('Identity'));
+    // Identity & Access (2026-09-27, Matt's ask: fold the old standalone
+    // "Access & Server Behavior" section into Identity, since it only ever
+    // held the one Default Password field) -- Season Name and Default
+    // Password now share one row, 50% width each, both still
+    // .rc-wiz-editable-when-locked so they stay editable on a locked
+    // (already-raced) season same as before.
+    container.appendChild(wizSubhead('Identity & Access'));
     var nameInput = wizTextInput(state.seasonName, function (v) { state.seasonName = v; });
-    nameInput.maxLength = 24;
-    nameInput.style.maxWidth = '50%';
+    nameInput.maxLength = 30;
     nameInput.classList.add('rc-wiz-editable-when-locked');
     requireField(nameInput, requiredEls);
-    container.appendChild(wizField('Season Name', nameInput));
-
-    container.appendChild(wizSubhead('Access & Server Behavior'));
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
-    pwInput.style.maxWidth = '50%';
     pwInput.classList.add('rc-wiz-editable-when-locked');
     requireField(pwInput, requiredEls);
-    container.appendChild(wizField('Default Password', pwInput));
+    container.appendChild(fieldPairRow('Season Name', nameInput, 'Default Password', pwInput));
 
+    // Private Qualifying/Track Limits Preset moved down into the Race
+    // Settings section below (2026-09-27, Matt's ask) -- built here so
+    // they're still declared before the classes-lock logic that follows,
+    // but appended later, right at the top of Race Settings. NOTE
+    // (2026-09-02, Matt's call, still true): these two don't get
+    // .rc-wiz-editable-when-locked -- once a season's first round has
+    // passed, only Season Name and Default Password stay editable;
+    // everything else, these two included, freezes in the state.__locked
+    // blanket-disable pass below.
     var privateQualifyingSelect = wizSelect(['Yes', 'No'], state.privateQualifying, function (v) { state.privateQualifying = v; });
     var trackLimitsSelect = wizSelect(['Strict', 'Relaxed', 'Default'], state.trackLimitsPreset, function (v) { state.trackLimitsPreset = v; });
-    // NOTE (2026-09-02, Matt's call): Private Qualifying and Track Limits
-    // Preset no longer get .rc-wiz-editable-when-locked -- once a season's
-    // first round has passed, ONLY Season Name and Default Password stay
-    // editable. Everything else on this page (including these two) freezes
-    // with the rest in the state.__locked blanket-disable pass below.
-    container.appendChild(fieldPairRow(
-      'Private Qualifying', privateQualifyingSelect,
-      'Track Limits Preset', trackLimitsSelect
-    ));
 
     // Classes/Economy/Objectives are locked PERMANENTLY the moment a
     // season is edited at all -- not just once the first round has raced
@@ -7008,12 +7012,12 @@
     // further down this function.
     var editSeasonLock = !!state.__editSeasonId;
     if (editSeasonLock) {
-      var classLockNote = el('div', 'rc-hint', 'Car Class(es) are locked once a season is created -- they can no longer be changed here.');
+      var classLockNote = el('div', 'rc-hint', 'Car Classes are locked once a season is created -- they can no longer be changed here.');
       classLockNote.style.marginBottom = '8px';
       container.appendChild(classLockNote);
     }
 
-    container.appendChild(wizSubhead('Car Class(es)'));
+    container.appendChild(wizSubhead('Car Classes'));
     var classesWrap = el('div');
     var classesGroupEntry;
     // The Elite Tier dropdowns this used to also refresh (renderEliteWrap)
@@ -7104,6 +7108,16 @@
     // underneath it was just repeating the same thing a second time.
     container.appendChild(classesWrap);
 
+    // Schedule moved above Format (2026-09-27, Matt's ask).
+    container.appendChild(wizSubhead('Schedule'));
+    var startDate = el('input'); startDate.type = 'date'; startDate.value = state.seasonStartDate || '';
+    startDate.addEventListener('input', function () { state.seasonStartDate = startDate.value; });
+    requireField(startDate, requiredEls);
+    var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
+    startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
+    requireField(startTime, requiredEls);
+    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
+
     container.appendChild(wizSubhead('Format'));
     var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
     requireField(byeWeeksInput, requiredEls);
@@ -7146,16 +7160,14 @@
     container.appendChild(bonusRow);
     ['Sprint', 'Medium', 'Long'].forEach(function (tier) { container.appendChild(renderWizardPointsTable(state, tier, requiredEls)); });
 
-    container.appendChild(wizSubhead('Schedule'));
-    var startDate = el('input'); startDate.type = 'date'; startDate.value = state.seasonStartDate || '';
-    startDate.addEventListener('input', function () { state.seasonStartDate = startDate.value; });
-    requireField(startDate, requiredEls);
-    var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
-    startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
-    requireField(startTime, requiredEls);
-    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
-
     container.appendChild(wizSubhead('Race Settings'));
+    // Private Qualifying/Track Limits Preset now lead Race Settings
+    // (2026-09-27, Matt's ask) -- built earlier in this function (right
+    // after Identity & Access), appended here as the section's top row.
+    container.appendChild(fieldPairRow(
+      'Private Qualifying', privateQualifyingSelect,
+      'Track Limits Preset', trackLimitsSelect
+    ));
     container.appendChild(fieldPairRow(
       'Setup Rules', wizSelect(['Fixed', 'Open'], state.raceSettings.setupRules, function (v) { state.raceSettings.setupRules = v; }),
       'Pit Stop Requirements', wizSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], state.raceSettings.pitStopReq, function (v) { state.raceSettings.pitStopReq = v; })
@@ -7293,7 +7305,7 @@
     if (state.byeWeeks > 0) {
       container.appendChild(wizSubhead('Bye Weeks'));
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Pick which scheduled week each bye lands on -- any race that would have landed there automatically moves to the next available week. A bye week can\'t share a day with a Special Event either -- picking one bumps the bye to the next open week.'));
+        'Pick which scheduled week each bye lands on. Any race that would have landed there automatically moves to the next available week. A bye week cannot share a day with a Special Event.'));
       var byeRow = el('div', 'rc-wiz-field-pair');
       var slots = computeSeasonSlots(state);
       state.byeWeekDates.forEach(function (val, idx) {
@@ -7346,12 +7358,16 @@
     var computedRaceDates = computeRaceDates(state);
     state.races.forEach(function (race, idx) {
       var card = el('div', 'rc-panel rc-wizard-race-card');
-      card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race ' + (idx + 1)));
+      card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Round ' + (idx + 1)));
 
+      // Required + 30-char max (2026-09-27, Matt's ask) -- was optional
+      // with a "leave blank to default" hint; every round now needs its
+      // own name, so that hint (and the fallback name logic that read it)
+      // no longer applies.
       var eventNameInput = wizTextInput(race.eventName || '', function (v) { race.eventName = v; });
-      eventNameInput.placeholder = 'Round ' + (idx + 1);
-      card.appendChild(wizField('Event Name (optional)', eventNameInput,
-        'Leave blank to default to "Round ' + (idx + 1) + '".'));
+      eventNameInput.maxLength = 30;
+      requireField(eventNameInput, requiredEls);
+      card.appendChild(wizField('Event Name', eventNameInput));
 
       var raceDateInput = el('input'); raceDateInput.type = 'date';
       raceDateInput.value = computedRaceDates[idx] || '';
@@ -7442,17 +7458,23 @@
     // card. Type stays 'Points' only on the backend (Core.gs), so this data
     // rides along inertly in seasonDetails.
     if (state.specialEvents.length) {
-      container.appendChild(wizSubhead('Special Events'));
-      container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-        'Fun races -- no championship points, no payouts.'));
+      // No heading or explainer text here any more (2026-09-27, Matt's
+      // ask: "remove SPECIAL EVENTS subheading, remove 'Fun races...'"
+      // -- just the gray divider line .rc-wizard-subhead already drew,
+      // now on its own with breathing room above and below
+      // (.rc-wizard-divider, style.css) instead of carrying a label.
+      container.appendChild(el('hr', 'rc-wizard-divider'));
       state.specialEvents.forEach(function (evt, idx) {
         var card = el('div', 'rc-panel rc-wizard-race-card');
         card.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Special Event ' + (idx + 1)));
 
+        // Required + 30-char max (2026-09-27, Matt's ask), same as the
+        // regular round Event Name above -- the "leave blank to default"
+        // hint no longer applies now that this can't be left blank.
         var evtNameInput = wizTextInput(evt.eventName, function (v) { evt.eventName = v; });
-        evtNameInput.placeholder = 'Special Event ' + (idx + 1);
-        card.appendChild(wizField('Event Name (optional)', evtNameInput,
-          'Leave blank to default to "Special Event ' + (idx + 1) + '".'));
+        evtNameInput.maxLength = 30;
+        requireField(evtNameInput, requiredEls);
+        card.appendChild(wizField('Event Name', evtNameInput));
 
         var evtDate = el('input'); evtDate.type = 'date'; evtDate.value = evt.date || '';
         evtDate.style.maxWidth = '50%';
@@ -7577,7 +7599,7 @@
     // Tier classification doesn't matter anymore).
 
     var racesPanel = el('div', 'rc-panel'); racesPanel.style.marginTop = '12px';
-    racesPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Events (' + state.races.length + ')'));
+    racesPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Championship Rounds (' + state.races.length + ')'));
     if (!state.races.length) {
       racesPanel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No races configured.'));
     } else {
