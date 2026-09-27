@@ -382,7 +382,14 @@ function _rclBuildTickerItems(hub) {
       var standings = cls.standings || [];
       if (!standings.length) return;
       var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer };
+        // carClass (2026-09-27, Matt's ask: "add class pills behind driver
+        // names in the ticker when there aren't any seasons active") --
+        // same field the in-season TOP 10 branch below already sets, just
+        // added here too so buildDriverEntry's existing "if (row.carClass)"
+        // pill render (see its own comment there) picks it up on the
+        // pre-season roster list as well. Every row in one cls group is the
+        // same class, so this is just cls.className repeated per row.
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className };
       });
       if (!rows.length) return;
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', driverRows: rows });
@@ -518,10 +525,11 @@ function _rclRenderTicker(hub) {
     }
     // Class pill, right behind the car number (2026-09-26, Matt's ask:
     // "behind every number on every driver will be the class pill they
-    // belong to") -- only set on rows that carry one (the in-season TOP
-    // 10 results list, see _rclBuildTickerItems); the pre-season roster
-    // rows never set row.carClass, so they render exactly as before.
-    // Reuses _rclClassPill_'s own RCL_CLASS_PILL_COLOR_ map and
+    // belong to"; extended 2026-09-27 to the pre-season roster list too --
+    // "add class pills behind driver names in the ticker when there aren't
+    // any seasons active") -- both branches in _rclBuildTickerItems now set
+    // row.carClass, so this renders identically whether a season's results
+    // are posted yet or not. Reuses _rclClassPill_'s own RCL_CLASS_PILL_COLOR_ map and
     // .rc-badge-chip-abbrev pill shape (same red HY/blue LMP2/purple
     // LMP3/green LMGT3/orange LMGTE colors as the Race Report's own
     // class pills), just wrapped in .rcl-ticker-class-pill instead of
