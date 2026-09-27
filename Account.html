@@ -4427,8 +4427,16 @@
     // RoundID/results at all, so they're skipped when folding this --
     // they never block or get blocked by it.
     var priorFinalized = true;
+    // Special Event counter (2026-09-27, Matt's ask: label them "Special
+    // Event N: <event name>" the same way rounds are "Round N: <event
+    // name>") -- counts only special-kind entries, in the same order this
+    // list already renders them, so a season with a special event before
+    // and after its rounds still gets "Special Event 1"/"Special Event 2"
+    // in order rather than numbering off the round list too.
+    var specialCount = 0;
     real.forEach(function (r) {
-      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized));
+      if (r.kind === 'special') specialCount++;
+      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized, specialCount));
       if (r.kind !== 'special') priorFinalized = priorFinalized && !!r.resultsFinalized;
     });
     return box;
@@ -4494,13 +4502,16 @@
   // below. The function body itself is unchanged: passing true either way
   // still means "say nothing, this round isn't actionable right now."
 
-  function buildSeasonRaceRow(r, token, reload, priorFinalized) {
+  function buildSeasonRaceRow(r, token, reload, priorFinalized, specialNumber) {
     var row = el('div', 'rc-group-row');
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
 
     var isSpecial = r.kind === 'special';
-    var title = isSpecial ? (r.eventName || 'Special Event') : ('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''));
+    // "Special Event N: <event name>" (2026-09-27, Matt's ask) -- matches
+    // the "Round N: <event name>" pattern championship rounds already use,
+    // instead of just the bare event name with no numbering.
+    var title = isSpecial ? ('Special Event ' + (specialNumber || 1) + ': ' + (r.eventName || 'Untitled')) : ('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''));
     var roundLabel = 'Round ' + r.roundNumber + (r.track ? ': ' + r.track : '');
 
     // Status pill AND the Finalized chip removed entirely from this row
@@ -4536,8 +4547,13 @@
       new Date(r.startUtc).getTime() > Date.now();
     var suppressUnstarted = locked || notYetRaced;
 
+    // Track now shows for Special Events too, same as championship rounds
+    // (2026-09-27, Matt's ask: "add the track underneath it just like the
+    // normal championship rounds have with a dot the day date and time
+    // after") -- was round-only; Special Event entries already carry
+    // their own r.track (Seasons.gs), it just wasn't being read here.
     var metaParts = [];
-    if (!isSpecial && r.track) metaParts.push(r.track);
+    if (r.track) metaParts.push(r.track);
     if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
     textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'Date/time not set')));
 
@@ -8977,13 +8993,19 @@
                 return;
               }
               showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
-              // Re-render in place (not a close -- there may be more
-              // rulings still to make). The Finalize button below picks up
-              // its enabled/disabled state fresh here too (2026-09-26,
-              // Matt's ask: "the FINALIZE button should be active unless
-              // there are more rulings to still make").
-              render();
+              // Closes this popup and refreshes League Tools behind it
+              // (2026-09-27, Matt's ask: "after applying rulings, also
+              // reload the account page and bring the user back to the
+              // league tools page") -- was render() + outerReload(),
+              // which re-rendered the ruling list in place and left this
+              // popup open for more rulings. Now matches the Finalize
+              // button right below exactly (2026-09-26: "after hitting
+              // the finalize button, have it go back to the league tools
+              // page and not stay on the review and finalize popup") --
+              // outerReload() re-renders League Management fresh, then
+              // the popup closes.
               if (typeof outerReload === 'function') outerReload();
+              modal.close();
             });
           });
           actionBar.appendChild(applyAllBtn);
