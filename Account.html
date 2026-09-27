@@ -5104,13 +5104,14 @@
       wrap.appendChild(el('p', 'rc-hint', 'No result recorded for you in this race.'));
       return wrap;
     }
-    // Labels changed to "Your Finish"/"Your Grid" and "Your Class" inserted
+    // Labels changed to "My Finish"/"My Grid" (was "Your Finish"/"Your
+    // Grid", then relabeled again 2026-09-27) and "Your Class" inserted
     // between them (2026-09-27, Matt's ask: this strip is about the
     // driver's own race, and "Finish"/"Grid" alone read ambiguous next to
-    // the round-wide stat strip above it that also has a Winner/Pole/
+    // the round-wide stat strip above it that also has a Class Winner/Pole/
     // Fastest Lap). you.carClass already comes back on every driver row
     // from Results.gs's buildDriverRow_ -- just wasn't surfaced here yet.
-    // "Your Finish"/"Your Grid" show IN-CLASS position only now (2026-09-27
+    // "My Finish"/"My Grid" show IN-CLASS position only (2026-09-27
     // follow-up, Matt's ask: "For the Finish, it's assumed to be in class,
     // don't do the overall, just do the place I finished" -- this whole
     // strip is already scoped to just this one driver, so an overall
@@ -5121,8 +5122,11 @@
     // position tracking and classPosition/classGridPos came back empty.
     var grid = el('div', 'rc-results-stat-strip');
     [
-      resultsStatBlock('Your Finish', (you.classPosition || you.position) ? ('P' + (you.classPosition || you.position)) : (you.finishStatus || 'Not Classified')),
-      resultsStatBlock('Your Grid', (you.classGridPos || you.gridPos) ? ('P' + (you.classGridPos || you.gridPos)) : ''),
+      // "My Finish"/"My Grid" (was "Your Finish"/"Your Grid", 2026-09-27
+      // follow-up, Matt's ask) -- "Your Class"/"Your Best Lap" etc. below
+      // keep "Your" on purpose, Matt's rename was specific to these two.
+      resultsStatBlock('My Finish', (you.classPosition || you.position) ? ('P' + (you.classPosition || you.position)) : (you.finishStatus || 'Not Classified')),
+      resultsStatBlock('My Grid', (you.classGridPos || you.gridPos) ? ('P' + (you.classGridPos || you.gridPos)) : ''),
       resultsStatBlock('Your Class', you.carClass),
       resultsStatBlock('Laps', you.laps),
       // Purple (2026-09-27, Matt's ask: "Make the best lap time for my
@@ -5501,11 +5505,14 @@
       resultsStatBlock('Laps Led', yourClass ? yourClass.classMostLapsLedDriver : ''),
       resultsStatBlock('Pole Sitter', yourClass ? yourClass.classPoleSitter : ''),
       resultsStatBlock('Fastest Lap', yourClass ? yourClass.classFastestLapDriver : ''),
-      // Finishers/DNF split (2026-09-26, Matt's ask) -- race.totalFinishers
-      // is now actual classified finishers only, race.totalDnf its own
-      // stat block right next to it (Results.gs).
-      resultsStatBlock('Finishers', race.totalFinishers),
-      resultsStatBlock('DNF', race.totalDnf),
+      // Finishers/DNF split, now IN-CLASS (2026-09-27, Matt's ask: "The
+      // finshers and DNF numbers need to be in-class values too for the
+      // CAREER page") -- was race.totalFinishers/totalDnf (every driver in
+      // the round, every class); now yourClass.classFinishers/classDnf,
+      // scoped the same way Class Winner/Laps Led/Pole Sitter/Fastest Lap
+      // already are just above.
+      resultsStatBlock('Finishers', yourClass ? yourClass.classFinishers : ''),
+      resultsStatBlock('DNF', yourClass ? yourClass.classDnf : ''),
       resultsStatBlock('Race Laps', race.totalLaps || race.mostLapsCompleted),
       resultsStatBlock('Race Length', race.raceLengthMinutes ? (race.raceLengthMinutes + ' min') : ''),
       // Track Length removed (2026-09-27, Matt's ask). Weather now folds

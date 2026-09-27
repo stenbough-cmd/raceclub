@@ -3209,6 +3209,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-you-summary .rc-results-stat-strip { border-top: none; }
 .rc-results-sessions { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
 .rc-results-session { border-top: 1px solid var(--rc-offwhite); padding-top: 12px; }
+/* Just ONE gray line below My Finish/My Grid, not two (2026-09-27, Matt's
+   ask: "remove the double gray line and make it just one gray line below
+   the YOUR FINISH YOUR GRID") -- .rc-results-stat-strip (the My Finish/My
+   Grid/etc. strip, immediately above .rc-results-sessions) already draws
+   its own border-bottom, so the first .rc-results-session's border-top
+   right after it was a second line stacked close behind the first. The
+   strip's own line stays; only the first session's redundant one is
+   dropped -- a later session in a multi-session round still gets its
+   border-top as the separator between it and the one before it. */
+.rc-results-sessions .rc-results-session:first-child { border-top: none; padding-top: 0; }
 .rc-results-session-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 8px; }
 .rc-results-laps-table th, .rc-results-laps-table td { font-size: 11.5px; padding: 5px 8px; }
 /* Fastest lap / fastest sector highlight (2026-09-26, Matt's ask:
