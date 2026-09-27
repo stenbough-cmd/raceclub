@@ -130,6 +130,17 @@
 var RC_HEADER_HEIGHT = 70;
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
+// Hamburger icon (2026-09-27, mobile nav pass, Matt's ask: "a menu icon
+// that opens the nav links in a dropdown") -- same stroke-width/cap/join
+// convention as every other inline icon on the site (Account.html's
+// ICON_* constants), just declared here since header.js is its own script
+// scope. Used two places below: inside the logged-in account toggle
+// (swaps in for the avatar/name/role/chevron at mobile widths, see
+// .rc-header-hamburger-icon in style.css) and as a brand-new standalone
+// toggle button for the logged-out state, which otherwise has nothing to
+// collapse behind a menu at all.
+var RC_HEADER_ICON_HAMBURGER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+
 function _rcEnsureToastContainer() {
   var c = document.getElementById(RC_TOAST_CONTAINER_ID);
   if (!c) {
@@ -462,6 +473,14 @@ function renderHeader(opts) {
               // only place the size is set -- safe to bump with no other
               // measurement (unlike the bell icon below) tied to it.
               '<svg class="rc-header-account-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
+              // Hamburger icon (2026-09-27, mobile nav pass) -- hidden by
+              // default (.rc-header-hamburger-icon, style.css), shown in
+              // place of the avatar/name/role/chevron above at <=820px.
+              // Same button, same click handler, same dropdown below --
+              // only the VISUAL swaps at mobile widths, so none of the
+              // open/close/outside-click/hover-away wiring further down
+              // this file needs to know or care which one is showing.
+              '<span class="rc-header-hamburger-icon" aria-hidden="true">' + RC_HEADER_ICON_HAMBURGER + '</span>' +
             '</button>' +
             // Dropdown now mirrors Account.html's own sidebar, same order
             // (2026-09-19, Matt's call) -- Dashboard/Calendar/Results/
@@ -512,7 +531,22 @@ function renderHeader(opts) {
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
-    html += '<a class="rc-header-link" href="login.html">REGISTER / LOGIN</a>';
+    // Logged-out state (2026-09-27, mobile nav pass) -- used to be just
+    // the bare REGISTER/LOGIN link with nothing to collapse on mobile. Now
+    // mirrors the logged-in toggle's pattern: the plain link stays for
+    // desktop, hidden below 820px in favor of a hamburger button that
+    // opens a small panel with League Hub (since .rc-header-leaguehub-badge
+    // next to the logo hides at this same width, this is the only way to
+    // reach it on mobile while logged out) and Register/Login.
+    html += '<a class="rc-header-link" id="rc-header-login-link" href="login.html">REGISTER / LOGIN</a>' +
+            '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
+              RC_HEADER_ICON_HAMBURGER +
+            '</button>' +
+            '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
+              '<a class="rc-header-menu-item" href="league.html">League Hub</a>' +
+              '<hr class="rc-header-menu-divider">' +
+              '<a class="rc-header-menu-item" href="login.html">Register / Login</a>' +
+            '</div>';
   }
   html += '</nav>';
 
@@ -614,6 +648,45 @@ function renderHeader(opts) {
     // (2026-09-24, Matt's call: eliminate the in-app notification system
     // entirely, moving to an external Discord bot).
     // ---------------------------------------------------------------
+  } else {
+    // Logged-out hamburger (2026-09-27, mobile nav pass) -- same open/
+    // close/outside-click/Escape/hover-away pattern as the logged-in
+    // account toggle above, just against the smaller League Hub/Register-
+    // Login panel instead of the full account menu. Shares the same
+    // _rcHeaderOutsideClickHandler/_rcHeaderEscapeHandler slots (see the
+    // leak-fix comment on those vars) so switching between logged-in and
+    // logged-out renders never stacks a second pair of document listeners.
+    var hamburgerToggle = document.getElementById('rc-header-hamburger-toggle');
+    var mobileMenu = document.getElementById('rc-header-mobile-menu');
+
+    function closeMobileMenu() {
+      mobileMenu.style.display = 'none';
+      hamburgerToggle.setAttribute('aria-expanded', 'false');
+    }
+    function openMobileMenu() {
+      mobileMenu.style.display = 'block';
+      hamburgerToggle.setAttribute('aria-expanded', 'true');
+    }
+
+    hamburgerToggle.addEventListener('click', function (evt) {
+      evt.stopPropagation();
+      if (mobileMenu.style.display === 'block') closeMobileMenu(); else openMobileMenu();
+    });
+
+    if (_rcHeaderOutsideClickHandler) document.removeEventListener('click', _rcHeaderOutsideClickHandler);
+    if (_rcHeaderEscapeHandler) document.removeEventListener('keydown', _rcHeaderEscapeHandler);
+
+    _rcHeaderOutsideClickHandler = function (evt) {
+      if (mobileMenu.style.display === 'block' && !mobileMenu.contains(evt.target) && !hamburgerToggle.contains(evt.target)) closeMobileMenu();
+    };
+    _rcHeaderEscapeHandler = function (evt) {
+      if (evt.key !== 'Escape') return;
+      if (mobileMenu.style.display === 'block') closeMobileMenu();
+    };
+    document.addEventListener('click', _rcHeaderOutsideClickHandler);
+    document.addEventListener('keydown', _rcHeaderEscapeHandler);
+
+    _rcWireHoverAwayClose([hamburgerToggle, mobileMenu], closeMobileMenu);
   }
 }
 

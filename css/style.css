@@ -3405,7 +3405,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: 100%;
   margin-left: 48px;
 }
-@media (min-width: 640px) {
+/* 640px -> 821px (2026-09-27, mobile nav pass) -- unified with the
+   hamburger breakpoint below (max-width: 820px) so the badge and the full
+   nav switch to their mobile behavior together instead of at two
+   different widths. Nothing is lost by hiding it a bit earlier: the
+   hamburger menu's first item is always "League Hub" (logged-out panel
+   and logged-in dropdown both), so there's still exactly one tap away to
+   reach it below this width. */
+@media (min-width: 821px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
 /* Logo now links to league.html (2026-09-26 follow-up, Matt's ask: "Make
@@ -3590,8 +3597,66 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Account.html's dark-sidebar .rc-nav-divider. */
 .rc-header-menu-divider { border: none; border-top: 1px solid var(--rc-silver); margin: 6px 4px; }
 
-@media (min-width: 480px) {
+/* 480px -> 821px (2026-09-27, mobile nav pass) -- same unification as the
+   League Hub badge above; this rule now only matters above the hamburger
+   breakpoint, since .rc-header-account-text is hidden outright (along
+   with the avatar and chevron) below it -- see the hamburger block below. */
+@media (min-width: 821px) {
   .rc-header-account-text { display: flex; }
+}
+
+/* Hamburger icon + logged-out toggle button -- both hidden by default
+   (desktop); shown only below the mobile breakpoint (2026-09-27, mobile
+   nav pass, Matt's ask: "a menu icon that opens the nav links in a
+   dropdown or slide-out panel"). The icon itself sits inside the SAME
+   .rc-header-account-toggle button the avatar/name/role/chevron already
+   use when logged in (js/header.js) -- only the visual swaps at mobile
+   widths, so the click/open/close/outside-click wiring never has to know
+   which one is showing. The standalone .rc-header-hamburger-toggle button
+   only exists for the logged-out state, which has nothing else to
+   collapse behind a menu on desktop. */
+.rc-header-hamburger-icon { display: none; align-items: center; color: var(--rc-carbon); }
+.rc-header-hamburger-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--rc-carbon);
+  cursor: pointer;
+}
+.rc-header-hamburger-toggle:hover,
+.rc-header-hamburger-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-red); }
+
+@media (max-width: 820px) {
+  /* Logged in: collapse the avatar/name/role/chevron stack down to just
+     the hamburger icon, inside the same toggle button. */
+  .rc-header-avatar,
+  .rc-header-account-text,
+  .rc-header-account-chevron { display: none; }
+  .rc-header-hamburger-icon { display: inline-flex; }
+  .rc-header-account-toggle { padding: 8px; }
+
+  /* Logged out: swap the plain REGISTER/LOGIN link for the hamburger
+     toggle + its League Hub/Register-Login panel. */
+  #rc-header-login-link { display: none; }
+  .rc-header-hamburger-toggle { display: inline-flex; }
+
+  /* Slightly wider than the desktop dropdown's 180px min-width (shared
+     .rc-header-account-menu rule above -- both the logged-in dropdown and
+     the logged-out mobile panel use it) for more comfortable tap targets
+     at mobile widths; still right-anchored under the hamburger rather
+     than a full-bleed slide-out, since the menu's own item count is short
+     enough that a right-aligned panel reads fine at any width down to a
+     phone. */
+  .rc-header-account-menu { min-width: 220px; }
+
+  /* Tighter side padding reclaims a bit of width for the logo + hamburger
+     on a phone-width header -- 28px a side was sized for a full desktop
+     nav that no longer shows here. */
+  .rc-fixed-header { padding: 0 16px; }
 }
 
 /* Pages other than index.html sit below the fixed header. */
