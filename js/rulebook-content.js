@@ -122,7 +122,7 @@ var RULEBOOK_SECTIONS = [
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
-      '<table><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
+      '<table class="rc-rulebook-tier-table rc-rulebook-penalty-table"><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged only, no time or position impact</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (5s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (10s)</td><td>Added to final race time</td></tr>' +
@@ -142,7 +142,7 @@ var RULEBOOK_SECTIONS = [
       '<li>Wrong-team/car entry: a driver who races a car or team seat other than the one they registered for is disqualified from that race and removed from the session (kicked); this is also a Tier 6 (Disqualification) matter, not a graduated penalty.</li></ul>' +
       '<h4>5.3 Example Incidents by Tier</h4>' +
       '<p>For context, these are illustrative examples, not an exhaustive list. Stewards retain discretion to adjust based on circumstances.</p>' +
-      '<table><tr><td><strong>Tier</strong></td><td><strong>Example Incident</strong></td></tr>' +
+      '<table class="rc-rulebook-tier-table"><tr><td><strong>Tier</strong></td><td><strong>Example Incident</strong></td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Minor, brief off-line defensive move with no contact; borderline blue flag delay with no time gained</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Light contact causing another driver to briefly run wide, no spin or position change</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Contact causing another driver to spin or lose a position; ignoring a blue flag long enough to hold up a lapping car</td></tr>' +

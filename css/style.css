@@ -5468,6 +5468,19 @@ body.rc-modal-scroll-locked {
    directly inside the term column -- vertical-align keeps a short pill
    from sitting low against the description column's taller text. */
 .rc-rulebook-section table .rc-badge-chip { vertical-align: middle; }
+/* Sections 5.1 (Tier/Penalty/Effect) and 5.3 (Tier/Example Incident) both
+   auto-size their columns off table width:100% (2026-09-27, Matt's ask:
+   match the Tier-to-second-column gap between the two, and tighten
+   Penalty-to-Effect in 5.1). Left to itself, table auto-layout gives the
+   Tier badge column a DIFFERENT width in each table depending on how many
+   other columns are competing for the leftover space (5.1 has 3 columns,
+   5.3 has 2), so the visual gap after the badge doesn't match between the
+   two even though the badge itself is the same size. Pinning the Tier
+   column to one fixed width on both tables keeps that gap identical; the
+   .rc-rulebook-penalty-table rule below also caps 5.1's own Penalty
+   column so Effect isn't left with an oversized gap of its own. */
+.rc-rulebook-tier-table td:first-child { width: 44px; }
+.rc-rulebook-penalty-table td:nth-child(2) { width: 190px; }
 
 .rc-rulebook-callout {
   margin: 14px 0;

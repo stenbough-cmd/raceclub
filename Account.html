@@ -3261,6 +3261,66 @@
     input.focus();
   }
 
+  // Password re-entry step for a truly irreversible admin action (2026-09-27,
+  // Matt's ask, first used by Delete Season below) -- verifies the caller's
+  // OWN current password (handleVerifyOwnPassword, Auth.gs) before letting
+  // them move on to the final typed-confirm popup. Wrong or empty password:
+  // the popup shakes (same .rc-shake convention the Season Wizard's invalid-
+  // Next uses), the password box gets .rc-field-invalid's red border, and a
+  // toast explains why -- "Fill in current password to save changes" for an
+  // empty box, "Incorrect current password entered" for a wrong one. Success
+  // closes this popup and calls onConfirm(), same handoff shape as
+  // openTypeToConfirmModal.
+  function openPasswordReauthModal(token, title, message, onConfirm) {
+    var body = el('div');
+    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
+    var input = document.createElement('input');
+    input.type = 'password';
+    input.autocomplete = 'current-password';
+    input.placeholder = 'Your password';
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--rc-silver);border-radius:6px;font-size:14px;font-family:var(--rc-font-body);';
+    body.appendChild(input);
+    input.addEventListener('input', function () { input.classList.remove('rc-field-invalid'); });
+
+    var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
+    var confirmBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Continue');
+    confirmBtn.type = 'button';
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal(title, { bodyEl: body });
+    cancelBtn.addEventListener('click', modal.close);
+
+    function shakeAndFlag(msg) {
+      input.classList.add('rc-field-invalid');
+      modal.el.classList.remove('rc-shake');
+      void modal.el.offsetWidth;
+      modal.el.classList.add('rc-shake');
+      showToast(msg, 'error');
+    }
+
+    var checking = false;
+    confirmBtn.addEventListener('click', function () {
+      if (checking) return;
+      var pw = input.value;
+      if (!pw) { shakeAndFlag('Fill in current password to save changes'); return; }
+      checking = true;
+      fetchApi('verifyOwnPassword', { method: 'POST', token: token, body: { password: pw } }).then(function (data) {
+        checking = false;
+        if (!data.success) { shakeAndFlag('Incorrect current password entered'); return; }
+        modal.close();
+        onConfirm();
+      }).catch(function () {
+        checking = false;
+        shakeAndFlag('Could not reach the server -- try again.');
+      });
+    });
+    input.focus();
+  }
+
   // END SEASON -- moved here to the Admin page from League Management
   // (2026-09-09, Matt's call: "only admins should be able to create and
   // end seasons" -- both the League Management/Admin nav links are already
@@ -3398,20 +3458,24 @@
         var chosenId = select.value;
         var chosen = eligible.filter(function (s) { return s.seasonId === chosenId; })[0];
         var chosenName = chosen ? (chosen.name || chosenId) : chosenId;
-        // skipOnClose (true) -- the first confirm popup opens right
+        // skipOnClose (true) -- the password re-auth popup opens right
         // behind this one.
         modal.close(true);
 
-        openTypeToConfirmModal(
+        // Picker -> password re-entry -> typed "PERMANENTLY ERASE" nuclear
+        // confirm (2026-09-27, Matt's ask: replace the first typed-phrase
+        // step with a password re-check, and rename the final required
+        // phrase to PERMANENTLY ERASE) -- two real gates instead of two
+        // typed phrases in a row.
+        openPasswordReauthModal(
+          token,
           'Delete Season',
-          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, and protest tied to this season. This cannot be undone.',
-          'DELETE SEASON',
-          'Continue',
+          'You are about to permanently delete "' + chosenName + '". This removes every round, registration, imported result, lap, and protest tied to this season. This cannot be undone. Enter your password to continue.',
           function () {
             openTypeToConfirmModal(
               'Confirm Permanent Deletion',
               'This is the final step. There is no backup and no way to recover "' + chosenName + '" once this runs -- everything tied to it is gone for good.',
-              'PERMANENTLY DELETE',
+              'PERMANENTLY ERASE',
               'Delete Season Forever',
               function () {
                 fetchApi('adminDeleteSeason', {
