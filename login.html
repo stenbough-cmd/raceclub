@@ -181,7 +181,13 @@
     // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
     // Apps can't handle a CORS preflight (OPTIONS) request, which
     // application/json would trigger. Do not change this.
-    fetchApi('login', { method: 'POST', body: { username: username, password: password } })
+    // timeoutMs: RC_FETCH_TIMEOUT_MS_LOGIN, 1 minute (2026-09-27, Matt's
+    // ask: "as a general rule, let the login screen take up to a minute
+    // to try and contact the server before throwing an error") -- this
+    // call had no override before, so it inherited the 20s default sized
+    // for small dashboard reads, even though a cold Apps Script start plus
+    // the login handler's own Sheets lookup can take longer under load.
+    fetchApi('login', { method: 'POST', body: { username: username, password: password }, timeoutMs: RC_FETCH_TIMEOUT_MS_LOGIN })
       .then(function (data) {
         btn.disabled = false;
         btn.textContent = 'Log In';

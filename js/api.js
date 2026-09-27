@@ -178,6 +178,15 @@ var RC_FETCH_TIMEOUT_MS_PROTEST = 60000;
 // Changes..." instead of closing optimistically before confirmation.
 var RC_FETCH_TIMEOUT_MS_PROFILE = 60000;
 
+// Login's own budget, 1 minute (2026-09-27, Matt's ask: "as a general
+// rule, let the login screen take up to a minute to try and contact the
+// server before throwing an error") -- the login POST had no timeoutMs
+// override at all before this, so it inherited the 20s default meant for
+// small dashboard reads, even though a cold Apps Script start plus the
+// login handler's own Sheets lookup can genuinely take longer than that
+// under load. Only login.html's login form submit uses this.
+var RC_FETCH_TIMEOUT_MS_LOGIN = 60000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom
