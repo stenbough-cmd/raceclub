@@ -1137,13 +1137,18 @@ body.rc-league-page {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--rcl-ink-faint);
+  /* Red, all four the same (2026-09-27, Matt's ask: "make winner, most
+     laps led, pole, and fastest lap catagory labels and icons red, the
+     same") -- was the dim gray label tone. */
+  color: var(--rc-red);
   margin-bottom: 8px;
 }
-/* Icon inherits the title's own dim color -- decorative, not a semantic
-   accent (2026-09-27, Matt's ask: "add icons in front of winner, most
-   laps led, pole and fastest lap catagory titles"). */
-.rcl-race-category-icon { display: inline-flex; color: var(--rcl-ink-faint); }
+/* Icon has its own explicit color (rather than truly inheriting the
+   title's) since it needs to stay red even on Winner/Fastest Lap rows,
+   where .rcl-race-category-row-winner/-fastestLap recolor the NAME and
+   NUMBER gold/purple but never touch this title row above them (2026-09-27,
+   Matt's ask, same red as the title text next to it). */
+.rcl-race-category-icon { display: inline-flex; color: var(--rc-red); }
 .rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
 .rcl-race-category-row:last-child { margin-bottom: 0; }
 .rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
@@ -1193,7 +1198,10 @@ body.rc-league-page {
    next class") -- shared by Recent Results and the All Results popup, both
    of which build their per-class blocks as sibling .rcl-race-class divs. */
 .rcl-race-class + .rcl-race-class { margin-top: 32px; }
-.rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
+/* Red (2026-09-27, Matt's ask: "race report and penalties assessed red
+   too") -- was the dim gray label tone; this class is only ever used for
+   those two section titles ("Race Report"/"Penalties Assessed", league.js). */
+.rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 6px; }
 
 /* Recent Results / View All Results rows (rewritten 2026-09-23, Matt's
    ask: "Make the weight and color of all the drivers in RECENT RESULTS
