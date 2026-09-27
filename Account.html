@@ -2172,6 +2172,75 @@
     return row;
   }
 
+  // Stewarding page's own protest row (2026-09-27, Matt's ask: "make the
+  // format of the protest the same as the protests card in the dash and
+  // the protests popup") -- same icon system (open circle/red X/yellow
+  // tilde/green check, _rcProtestOutcomeIcon_/RC_PROTEST_RULED_ICON) and
+  // the same .rc-protest-dash-item/-item-body/-dash-line/.rc-dm-subrow
+  // classes buildDashProtestItem uses, so it's visually identical. Not a
+  // direct call to buildDashProtestItem itself, though, because that
+  // function's wording assumes the VIEWER is one of the two parties
+  // (p.isMine -> "Filed a protest against X" / else -> "X filed a protest
+  // against YOU") -- a steward reviewing someone else's protest is neither,
+  // so this uses third-person wording instead (same phrasing the League
+  // Management Review & Finalize list already uses for the same reason,
+  // see that list's inline row-building code). isOfficial also doesn't
+  // wait on the round being finalized the way the driver-facing dashboard
+  // card does -- a steward needs to see the true current ruling state
+  // immediately, same call the League Management list already makes.
+  function buildStewardingProtestItem_(p) {
+    var isOfficial = p.status !== 'Pending';
+    var outcomeIcon = isOfficial ? _rcProtestOutcomeIcon_(p.status, p.penaltyTier) : null;
+
+    var row = el('div', 'rc-protest-dash-item');
+    var icon;
+    if (outcomeIcon) {
+      icon = el('div', 'rc-protest-dash-icon ' + outcomeIcon.cls, outcomeIcon.glyph);
+    } else {
+      icon = el('div', 'rc-protest-dash-icon' + (isOfficial ? ' rc-protest-dash-icon-ruled' : ' rc-protest-dash-icon-pending'));
+      if (isOfficial) icon.innerHTML = RC_PROTEST_RULED_ICON;
+    }
+    row.appendChild(icon);
+
+    var body = el('div', 'rc-protest-dash-item-body');
+    var against = _rcProtestAccusedNames_(p).join(' and ');
+    var isSelfReport = p.infractionType === 'Avoidable Contact (Self Report)';
+    var whoText = isSelfReport
+      ? ((p.filerName || 'A driver') + ' self-reported an incident with ' + (against || 'another driver') + '.')
+      : (p.isAutoFlagged
+        ? ('Auto-flagged against a driver, ' + (against || 'a driver') + '.')
+        : ((p.filerName || 'A driver') + ' submitted a protest against ' + (against || 'a driver') + '.'));
+    var whoLine = el('div', 'rc-protest-dash-line', escapeHtml(whoText));
+    body.appendChild(whoLine);
+
+    body.appendChild(el('div', 'rc-protest-dash-line', escapeHtml(p.infractionType || 'Infraction not specified') + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
+
+    var noteRow = el('div', 'rc-dm-subrow');
+    noteRow.appendChild(el('span', 'rc-dm-tree', '└'));
+    var noteText;
+    if (p.status === 'Pending') {
+      if (p.suggestedTier) {
+        var pendingTierInfo = penaltyTierByNumber(p.suggestedTier);
+        noteText = 'Standard tier for ' + p.infractionType + ': ' +
+          (pendingTierInfo ? pendingTierInfo.label : ('Tier ' + p.suggestedTier)) +
+          '. Ruling at a different tier requires a written explanation.';
+      } else {
+        noteText = 'Pending outcome...';
+      }
+    } else if (p.status === 'Upheld') {
+      noteText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + (against || 'the other driver') + '.';
+    } else if (p.status === 'Denied') {
+      noteText = 'Protest denied.';
+    } else {
+      noteText = 'Protest withdrawn.';
+    }
+    if (p.reviewedByName && p.status !== 'Pending') noteText += ' Ruled by ' + p.reviewedByName + '.';
+    noteRow.appendChild(el('span', null, escapeHtml(noteText)));
+    body.appendChild(noteRow);
+    row.appendChild(body);
+    return row;
+  }
+
   // Protest -- Dashboard preview card (2026-09-08, Matt's call: "the
   // PROTEST card shows the last 3 PROTESTS that the driver submitted and
   // whether they're Pending, Upheld or Denied"; redesigned 2026-09-24 into
@@ -4588,8 +4657,13 @@
   // STEWARDING (2026-09-19) -- Steward's own page, separate from League
   // Tools (Admin/Organizer only). A running list of every round that has
   // at least one filed protest, most recently raced round first, grouped
-  // so a Steward gets the round's own context (season, track, whether
-  // it's already finalized) alongside each protest. Read-only for now --
+  // under a "Season N: Season Name" header (2026-09-27 rework, Matt's
+  // ask -- was "Season Name: Event Name" with a track/date line under it;
+  // that line is gone now, the header is the only thing above each
+  // round's protest list) with its own pending-count/Finalized badges.
+  // Each protest inside renders in the same open-circle/checkmark format
+  // as the Dashboard's Protest card (buildStewardingProtestItem_), most
+  // recent first. Read-only for now --
   // Matt's call: "It's just a page with a running list of protests for
   // now. Eventually a UPHOLD and REJECT system will be implemented...
   // But not building that right now." Ruling on a protest still only
@@ -4619,13 +4693,18 @@
         panel.style.cssText = 'margin-bottom:16px;';
 
         var headerRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;');
+        // "SEASON <n>: <SEASON NAME>" (2026-09-27, Matt's ask) -- was
+        // "<SEASON NAME>: <EVENT NAME>". seasonNumberLabel() pulls the
+        // number straight off the SeasonID string, same helper Registration
+        // Status' own "REGISTERED FOR SEASON N: Name" headline uses. The
+        // event-name/track/date line that used to sit under this title is
+        // gone entirely (Matt's ask: "remove the race event in between the
+        // header at the container which holds all the protests") -- this
+        // header is now the ONLY thing above the protest list.
+        var seasonNum = seasonNumberLabel(r.seasonId);
+        var titleText = 'Season' + (seasonNum ? (' ' + seasonNum) : '') + (r.seasonName ? (': ' + r.seasonName) : '');
         var titleWrap = el('div');
-        var titleText = (r.seasonName ? r.seasonName + ': ' : '') + (r.eventName || ('Round ' + r.roundNumber));
         titleWrap.appendChild(el('h3', 'rc-dash-card-title', escapeHtml(titleText)));
-        var metaParts = [];
-        if (r.track) metaParts.push(r.track);
-        if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
-        titleWrap.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · '))));
         headerRow.appendChild(titleWrap);
 
         var badgeWrap = el('div', 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;');
@@ -4638,30 +4717,18 @@
         headerRow.appendChild(badgeWrap);
         panel.appendChild(headerRow);
 
-        r.protests.forEach(function (p) {
-          var row = el('div', 'rc-panel');
-          row.style.cssText = 'margin-top:10px;';
-          var labelRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-          labelRow.appendChild(el('div', 'rc-dm-row-label', escapeHtml((p.involvedNames || []).join(', '))));
-          // Auto-detected registration mismatches (2026-09-21) ride the
-          // exact same Pending -> Upheld/Denied flow as a driver-filed
-          // protest -- this badge is the only thing that tells them apart
-          // at a glance, same neutral/graphite treatment as every other
-          // "grouping label, not a status" badge on the site (see
-          // .rc-badge-graphite, style.css).
-          if (p.isAutoFlagged) {
-            labelRow.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', 'Auto-Flagged'));
-          }
-          row.appendChild(labelRow);
-          row.appendChild(el('div', 'rc-hint', escapeHtml(p.infractionType) + _rcProtestLapLabel(p.lapNumber) + (p.description ? (': "' + escapeHtml(p.description) + '"') : '')));
-          var outcome = el('div', 'rc-hint');
-          outcome.style.cssText = 'margin-top:6px;';
-          outcome.textContent = p.status === 'Pending'
-            ? 'Pending review'
-            : p.status + (p.status === 'Upheld' ? (': Tier ' + p.penaltyTier) : '') + (p.reviewedByName ? (', ruled by ' + p.reviewedByName) : '');
-          row.appendChild(outcome);
-          panel.appendChild(row);
+        // Protest rows -- same open-circle/red-X/yellow-tilde/green-check
+        // format as the Dashboard's own Protest card and the Protests popup
+        // (buildDashProtestItem), organized the same way (most recent
+        // first) -- see buildStewardingProtestItem_'s own comment for why
+        // this is a separate function rather than calling
+        // buildDashProtestItem directly (2026-09-27, Matt's ask).
+        var sortedProtests = (r.protests || []).slice().sort(function (a, b) {
+          return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
         });
+        var list = el('div', 'rc-protest-dash-list');
+        sortedProtests.forEach(function (p) { list.appendChild(buildStewardingProtestItem_(p)); });
+        panel.appendChild(list);
 
         section.appendChild(panel);
       });
@@ -8688,10 +8755,13 @@
             // hitting APPLY RULING, dim the x in the corner and disable
             // it (like the import results popup) and change APPLY RULING
             // to RULING... in the gray box"; text changed again the same
-            // day to "APPLYING RULES..." per Matt's follow-up).
+            // day to "APPLYING RULES..."; corrected again 2026-09-27,
+            // Matt's catch, to "APPLYING RULINGS..." -- the earlier text
+            // read as a typo/mismatch against the button's own "APPLY
+            // RULING" label).
             applyAllBtn.disabled = true;
             applyAllBtn.className = 'rc-btn-secondary rc-btn-sm';
-            applyAllBtn.textContent = 'APPLYING RULES...';
+            applyAllBtn.textContent = 'APPLYING RULINGS...';
             setFinalizeInProgress(true, 'a ruling is being applied');
             Promise.all(toSubmit.map(function (sub) {
               return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub })
