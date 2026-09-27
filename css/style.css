@@ -3555,15 +3555,25 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
 /* Discord row in the avatar dropdown (2026-09-27, Matt's ask: bring this
-   in line with Discord's brand guidelines) -- shows the real, uncolored
-   Discord mark next to the label (display: flex to lay out icon + text,
-   matching the sidebar's own .rc-nav-item pattern) and hovers to
-   Discord's own Blurple instead of the site red every other row uses, so
-   this one link visibly reads as "opens Discord" rather than an in-app
-   action. Specificity note: this rule must come after the plain
-   .rc-header-menu-item:hover rule above so its color wins. */
-.rc-header-menu-item-discord { display: flex; align-items: center; gap: 8px; }
-.rc-header-menu-item-discord:hover { color: #5865F2; }
+   in line with Discord's brand guidelines, and later that same day: use
+   the official Discord-Symbol-White.svg mark here to match the black
+   sidebar and the blurple CTA button). This dropdown's own background is
+   white/offwhite (.rc-header-account-menu, .rc-header-menu-item:hover),
+   so a plain white icon would be invisible against it -- this row gets
+   its own permanent Blurple background + white text/icon (rather than
+   only on hover) so the mark always has the contrast it needs, the same
+   way the sidebar (black) and CTA button (blurple) already provide it by
+   default. Hover darkens to the same shade the CTA button hovers to.
+   Specificity note: this rule must come after the plain
+   .rc-header-menu-item:hover rule above so its background/color win. */
+.rc-header-menu-item-discord {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #5865F2;
+  color: var(--rc-white);
+}
+.rc-header-menu-item-discord:hover { background: #4752c4; color: var(--rc-white); }
 /* Divider between menu items (added 2026-09-18 for the League Hub /
    Dashboard+Edit Profile / Logout grouping) -- light theme equivalent of
    Account.html's dark-sidebar .rc-nav-divider. */
@@ -3934,7 +3944,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-radius: 999px;
   transition: background 0.12s ease, transform 0.12s ease;
 }
-.rc-discord-cta-btn:hover { background: #4752c4; transform: translateY(-1px); }
+.rc-discord-cta-btn:hover { background: #4752c4; color: var(--rc-white); transform: translateY(-1px); }
 .rc-discord-cta-logo { height: 22px; width: auto; flex: none; }
 @media (max-width: 560px) {
   .rc-discord-cta-heading { font-size: 19px; }

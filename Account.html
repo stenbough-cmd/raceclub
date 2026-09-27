@@ -648,10 +648,13 @@
   // the side") -- replaces the earlier icon-row version with a real
   // .rc-nav-item, same markup shape as makeNavButton() above just built
   // as an <a> (leaves the site) instead of a <button> (switches section).
-  // Uses Matt's own discord_logo.png asset, sized to match this file's
-  // 16x16 icon convention (see .rc-nav-item img, style.css). The YouTube
-  // placeholder from the first pass is gone -- Matt only asked for
-  // Discord in the sidebar this time.
+  // Uses the official Discord-Symbol-White.svg mark (2026-09-27, Matt's
+  // ask: use this asset everywhere -- black sidebar, blurple button, and
+  // avatar menu). Sized to roughly match this file's 16x16 icon
+  // convention (see .rc-nav-item img, style.css), but width is scaled to
+  // the mark's real ~1.32:1 aspect ratio instead of forcing it square.
+  // The YouTube placeholder from the first pass is gone -- Matt only
+  // asked for Discord in the sidebar this time.
   function buildDiscordNavLink() {
     var link = document.createElement('a');
     // rc-nav-item-discord (2026-09-27, Matt's ask: bring this in line with
@@ -665,7 +668,7 @@
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     // Label shortened to just "Discord" (2026-09-26, Matt's ask).
-    link.innerHTML = '<img src="assets/images/discord_logo.png" alt="" width="16" height="16">' + '<span>Discord</span>';
+    link.innerHTML = '<img src="assets/images/Discord-Symbol-White.svg" alt="" width="21" height="16">' + '<span>Discord</span>';
     return link;
   }
 
