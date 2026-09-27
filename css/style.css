@@ -3416,7 +3416,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    nav's own touch target is in play, and phone has its own way back to
    League Hub now (see .rc-leaguehub-mobile-section, index.html). */
 @media (min-width: 641px) and (max-width: 820px) {
-  .rc-header-leaguehub-badge { display: flex; margin-left: 24px; }
+  /* Moved further left (2026-09-27 second follow-up, Matt's ask: "League
+     Hub graphic needs to move to the left by 1/2 the distance it
+     currently is to the Race Club graphic") -- halved again, 24px -> 12px,
+     on top of the earlier 48px -> 24px halving from the first tablet
+     pass. */
+  .rc-header-leaguehub-badge { display: flex; margin-left: 12px; }
 }
 @media (min-width: 821px) {
   .rc-header-leaguehub-badge { display: flex; }
@@ -3678,6 +3683,30 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 640px) {
   .rc-leaguehub-mobile-section { display: block; }
 }
+/* League Hub logo link, in place of the earlier "Visit League Hub" text
+   button (2026-09-27 second follow-up, Matt's ask: "instead of a 'VISIT
+   LEAGUE HUB' button, add the League Hub logo graphic and center justify
+   it. Make it the same size as the race club graphic is") -- sized to
+   match .rc-hero-badge's own mobile height (22px, see above) since that's
+   the Race Club graphic this section sits just below on the page.
+   text-align: center on the wrapper centers the inline-block logo link;
+   the link itself carries no visible text, so no underline/link styling
+   is needed. */
+.rc-leaguehub-mobile-section .rc-leaguehub-mobile-logo-link {
+  display: inline-block;
+  cursor: pointer;
+}
+.rc-leaguehub-mobile-section .rc-leaguehub-mobile-logo-wrap {
+  text-align: center;
+  margin-top: 20px;
+}
+.rc-leaguehub-mobile-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 
 /* Pages other than index.html sit below the fixed header. */
 .rc-auth-page { padding-top: 70px; }
@@ -3866,8 +3895,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 640px) {
   .rc-hero-badge {
     height: 22px;
-    bottom: 10px;
-    right: 10px;
+    /* Pulled in further (2026-09-27 second follow-up, Matt's ask: "the
+       Race Club logo... needs to move a closer to the corner than where
+       it's currently at") -- 10px -> 6px on top of the first pass. */
+    bottom: 6px;
+    right: 6px;
   }
 }
 /* Tablet (2026-09-27, Matt's ask: "on tablet... the logo can remain the
@@ -3876,8 +3908,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    inherits the clamp() above), only the inset is roughly halved. */
 @media (min-width: 641px) and (max-width: 820px) {
   .rc-hero-badge {
-    bottom: 26px;
-    right: 26px;
+    /* Pulled in further (2026-09-27 second follow-up, same ask as the
+       phone override above) -- 26px -> 14px, about half again. */
+    bottom: 14px;
+    right: 14px;
   }
 }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
@@ -4298,6 +4332,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    on-hover convention as the rest of the site's text links. */
 .rc-needs-body p a { color: var(--rc-red); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.12s ease; }
 .rc-needs-body p a:hover { text-decoration-color: var(--rc-red); }
+/* Whole Discord item is a link now (2026-09-27, Matt's ask: "make sure the
+   Discord section in 'WHAT YOU'LL NEED' links appropriately to the invite
+   link, same as the blurple button, a few sections above") -- the item
+   used to only carry a link on a few words buried mid-sentence; now the
+   entire card (icon, heading, and body) shares the same href/target/rel
+   as .rc-discord-cta-btn above it, same destination, same new-tab
+   behavior, just a much bigger, more obvious tap target. `a.rc-needs-item`
+   needs the reset below since .rc-needs-item's own display:flex/padding/
+   border rules (above) don't touch color or cursor, which an anchor
+   otherwise inherits browser defaults for. */
+a.rc-needs-item {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 @media (max-width: 860px) {
   .rc-needs-list { grid-template-columns: 1fr; }
   .rc-needs-item { border-left: none !important; }

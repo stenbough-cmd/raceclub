@@ -239,7 +239,16 @@
         scored, all on one public page. Follow your own career or scout the
         whole grid before you even sign up.
       </p>
-      <a class="rc-btn-primary rc-cta-btn" href="league.html">Visit League Hub</a>
+      <!-- League Hub logo instead of a text button (2026-09-27 follow-up,
+           Matt's ask: "instead of a 'VISIT LEAGUE HUB' button, add the
+           League Hub logo graphic and center justify it. Make it the same
+           size as the race club graphic is") -- sized to match
+           .rc-hero-badge's mobile height (style.css). -->
+      <div class="rc-leaguehub-mobile-logo-wrap">
+        <a class="rc-leaguehub-mobile-logo-link" href="league.html">
+          <img class="rc-leaguehub-mobile-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">
+        </a>
+      </div>
     </div>
   </section>
 
@@ -425,15 +434,22 @@
           </div>
         </div>
 
-        <div class="rc-needs-item">
+        <!-- Whole item is now a link to the Discord invite (2026-09-27
+             follow-up, Matt's ask: "make sure the Discord section in
+             'WHAT YOU'LL NEED' links appropriately to the invite link
+             (same as the blurple button) a few sections above") -- same
+             href/target/rel as .rc-discord-cta-btn above, just a much
+             bigger tap target than the few words the link used to live
+             on. -->
+        <a class="rc-needs-item" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
           <div class="rc-needs-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           </div>
           <div class="rc-needs-body">
             <h3>Discord</h3>
-            <p>Not required, but strongly encouraged: <a href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">our Discord server</a> is where race chat, schedules, community updates, and results talk actually happen.</p>
+            <p>Not required, but strongly encouraged: our Discord server is where race chat, schedules, community updates, and results talk actually happen.</p>
           </div>
-        </div>
+        </a>
 
       </div>
     </div>
