@@ -1428,12 +1428,23 @@ function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
 // elapsed time across different lap counts isn't meaningful -- so that
 // takes priority over the time-based gap whenever the compared car is
 // behind on laps.
-function _rclFormatGap_(row, leaderRow) {
+// rowPenSeconds/leaderPenSeconds (2026-09-27, Matt's report: "the total
+// time in the ALL RESULTS popup did not update for a driver after a
+// penalty of +5 seconds was applied... I'd like to see the total time
+// updated so it shows the corrected time") -- finishTimeSeconds off the
+// XML import is always the raw, un-penalized time (Results.gs never
+// writes a penalty into it), so once the Total Time column below starts
+// adding a driver's own Time-effect penalty seconds before displaying it,
+// Gap has to add the same correction on both sides of its subtraction or
+// it goes stale relative to the Total Time column right next to it (a
+// penalized driver's Total Time would grow but their Gap wouldn't move to
+// match). Optional/defaults to 0 since this is the only caller today.
+function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
   if (row.disqualified) return 'DSQ';
   if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !leaderRow || leaderRow.finishTimeSeconds === null || leaderRow.finishTimeSeconds === undefined) return '--';
   var lapsDown = (leaderRow.laps || 0) - (row.laps || 0);
   if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
-  var gap = row.finishTimeSeconds - leaderRow.finishTimeSeconds;
+  var gap = (row.finishTimeSeconds + (rowPenSeconds || 0)) - (leaderRow.finishTimeSeconds + (leaderPenSeconds || 0));
   if (gap <= 0) return 'Leader';
   return '+' + gap.toFixed(3);
 }
@@ -1588,10 +1599,18 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(row.finishTimeSeconds)));
       var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
+      // Total Time now shows the CORRECTED time (2026-09-27, Matt's report
+      // above) -- raw finishTimeSeconds plus this driver's own Time-effect
+      // penalty seconds, so a +5s penalty actually moves the number shown
+      // here instead of only showing up in the separate Pen column.
+      var correctedFinishTimeSeconds = (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined)
+        ? row.finishTimeSeconds
+        : (row.finishTimeSeconds + penSeconds);
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(correctedFinishTimeSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pen' + (penSeconds ? ' rcl-race-row-pen-active' : ''), penSeconds ? ('+' + penSeconds + 's') : '--'));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow)));
+      var leaderPenSeconds = (leaderRow && leaderRow.profileId) ? (penSecondsByProfileId[leaderRow.profileId] || 0) : 0;
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow, penSeconds, leaderPenSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
       // PTS (2026-09-26, Matt's ask) -- points earned THIS race, already
@@ -1618,6 +1637,17 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // supplies "the gray line" this notice needs to sit above.
   var allResultsNotice = _rclBuildResultsStatusNotice_(result);
   if (allResultsNotice) bodyEl.appendChild(allResultsNotice);
+  // Mobile-only "view on PC" nudge (2026-09-27, Matt's ask: "add another
+  // notation under the *RESULTS STATUS at the bottom of the tables" -- the
+  // exact text "**FOR FULL RESULTS, VIEW ON PC BROWSER") -- the standings
+  // grid above collapses down to just Pos/Driver/Pts on phone widths (see
+  // .rcl-race-grid-allresults' mobile override, league.css), so a phone
+  // visitor is told there's more detail (Laps/Total Time/Pen/Gap/Avg/Best
+  // Lap) on a bigger screen. rcl-standings-status-mobile-note is display:
+  // none by default and only shown back in at the mobile breakpoint
+  // (league.css) -- desktop/tablet already see every column, so the note
+  // would be redundant there.
+  bodyEl.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER'));
 
   // Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask: "a
   // lap-by-lap race report to post under the ALL RESULTS standings").
@@ -1869,7 +1899,14 @@ function _rclOpenAllResultsModal(hub) {
   if (!rounds.length) return;
 
   var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide');
+  // rcl-modal-dialog-allresults (2026-09-27) -- a scoping class just for
+  // this popup's own mobile overrides (hiding team names, trimming the
+  // standings grid down to Pos/Driver/Pts) so they don't also apply to
+  // every OTHER popup that reuses .rcl-modal-dialog-wide or
+  // _rclBuildDriverIdentity_'s shared .rcl-standings-team markup (Drivers
+  // roster, Points Tables -- both of which Matt confirmed "look good,
+  // don't change").
+  var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide rcl-modal-dialog-allresults');
   var head = _rclEl('div', 'rcl-modal-head');
   head.appendChild(_rclEl('div', 'rcl-modal-title', 'All Results'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
@@ -2043,14 +2080,24 @@ function _rclRenderCalendar(hub) {
     // status badge itself (appended below) stays at full opacity so the
     // COMPLETED/results notification stays legible against the faded row.
     var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : '') + (isSpecial ? ' rcl-cal-row-special' : '') + (entry.finished ? ' rcl-cal-row-finished' : ''));
-    var roundLabel = entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : '');
+    var roundLabelShort = entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : '');
+    // Long form (2026-09-27, Matt's mobile ask: "have it say ROUND 1,
+    // ROUND 2, etc instead of R1, R2") -- both spans render always;
+    // .rcl-cal-round-short/-long (league.css) toggle which one is visible
+    // by breakpoint, same "build both, let CSS pick" approach as the
+    // mobile-only results notice above (_rclBuildAllResultsBody_), rather
+    // than a JS media-query check that would need to re-run on resize.
+    var roundLabelLong = entry.roundNum ? ('ROUND ' + entry.roundNum) : (isSpecial ? 'SPECIAL' : '');
     // Special-event rounds get a gold accent instead of the standard
     // brand red (2026-09-19, Matt's ask, refined same day to also color
     // the event/track text -- see .rcl-cal-row-special in css/league.css)
     // -- makes a special round visually distinct at a glance in the
     // schedule.
     var roundClass = 'rcl-cal-round' + (isSpecial ? ' rcl-cal-round-special' : '');
-    row.appendChild(_rclEl('div', roundClass, _rclEscapeHtml(roundLabel)));
+    var roundEl = _rclEl('div', roundClass);
+    roundEl.appendChild(_rclEl('span', 'rcl-cal-round-short', _rclEscapeHtml(roundLabelShort)));
+    roundEl.appendChild(_rclEl('span', 'rcl-cal-round-long', _rclEscapeHtml(roundLabelLong)));
+    row.appendChild(roundEl);
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
     // Day/date/time the race starts -- plain text above the event title

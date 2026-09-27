@@ -9040,7 +9040,12 @@
             applyAllBtn.textContent = 'APPLYING RULINGS...';
             setFinalizeInProgress(true, 'a ruling is being applied');
             Promise.all(toSubmit.map(function (sub) {
-              return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub })
+              // 2 minute budget (2026-09-27, Matt's ask), same named-
+              // constant convention as Recompute Season/Import XML -- a
+              // batch of several rulings firing in parallel is real Sheets
+              // I/O per row server-side, not a small dashboard read, so it
+              // shouldn't inherit the 20s default.
+              return fetchApi('adminRuleOnProtest', { method: 'POST', token: token, body: sub, timeoutMs: RC_FETCH_TIMEOUT_MS_RULINGS })
                 .catch(function () { return { success: false, error: 'NETWORK' }; });
             })).then(function (results) {
               setFinalizeInProgress(false);
@@ -9056,19 +9061,19 @@
                 return;
               }
               showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
-              // Closes this popup and refreshes League Tools behind it
-              // (2026-09-27, Matt's ask: "after applying rulings, also
-              // reload the account page and bring the user back to the
-              // league tools page") -- was render() + outerReload(),
-              // which re-rendered the ruling list in place and left this
-              // popup open for more rulings. Now matches the Finalize
-              // button right below exactly (2026-09-26: "after hitting
-              // the finalize button, have it go back to the league tools
-              // page and not stay on the review and finalize popup") --
-              // outerReload() re-renders League Management fresh, then
-              // the popup closes.
+              // Stays open and reloads itself in place (2026-09-27, Matt's
+              // ask: "make it so the popup stays on the screen, and when
+              // the rulings are done being processed, the popup can reload
+              // with the finalize button now active") -- was
+              // outerReload() + modal.close(), which sent the admin back
+              // to the League Tools page instead of letting them see the
+              // now-ruled protests and click Finalize right here. Still
+              // refreshes League Tools behind the scenes so its own status
+              // line is current whenever this popup does eventually close,
+              // but render() (this popup's own re-fetch) is what actually
+              // recomputes hasUnruledProtests and un-disables Finalize.
               if (typeof outerReload === 'function') outerReload();
-              modal.close();
+              render();
             });
           });
           actionBar.appendChild(applyAllBtn);

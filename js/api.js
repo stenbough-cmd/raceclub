@@ -187,6 +187,17 @@ var RC_FETCH_TIMEOUT_MS_PROFILE = 60000;
 // under load. Only login.html's login form submit uses this.
 var RC_FETCH_TIMEOUT_MS_LOGIN = 60000;
 
+// Apply Ruling's own budget, 2 minutes (2026-09-27, Matt's ask: "add 2
+// minutes timeout for applying rulings from the league tools editing
+// popup") -- adminRuleOnProtest had no timeoutMs override at all before
+// this, so a batch of rulings (openRoundReviewModal's APPLY RULING button,
+// Account.html, fires one adminRuleOnProtest call per selected protest via
+// Promise.all) inherited the 20s default meant for small dashboard reads.
+// Matching RC_FETCH_TIMEOUT_MS_RECOMPUTE/IMPORT above rather than sharing
+// either of theirs -- same reasoning: its own named budget so raising it
+// later doesn't also change how long some other action waits.
+var RC_FETCH_TIMEOUT_MS_RULINGS = 120000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom

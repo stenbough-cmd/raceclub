@@ -758,6 +758,11 @@ body.rc-league-page {
   margin-bottom: 16px;
 }
 .rcl-standings-status-preliminary { color: #e0b64c; }
+/* Mobile-only "view on PC" nudge, appended after this notice in the All
+   Results popup (2026-09-27, _rclBuildAllResultsBody_) -- hidden above the
+   mobile breakpoint (see that media query below), since desktop/tablet
+   already see every column of the standings grid. */
+.rcl-standings-status-mobile-note { display: none; }
 .rcl-standings-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
 /* Gap above already spaces columns/rows in the grid -- the old stacked-
    layout margin would only unevenly pad whichever class happens to start
@@ -1578,6 +1583,11 @@ body.rc-league-page {
   background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
   color: #241b04;
 }
+/* Short ("R1")/long ("ROUND 1") round-label pair (2026-09-27) -- long form
+   stays hidden except at the mobile breakpoint (see that media query
+   below), where the round bar itself moves to the top of the row and has
+   room to spell the word out. */
+.rcl-cal-round-long { display: none; }
 /* One combined "<event name> at <track name>: <layout>" line (2026-09-24,
    Matt's ask), three independently-styled pieces inside .rcl-cal-event --
    .rcl-cal-event-name bold and white/ink, .rcl-cal-event-track normal
@@ -2040,6 +2050,19 @@ body.rc-league-page {
 .rcl-modal-head {
   position: sticky;
   top: 0;
+  /* z-index (2026-09-27, Matt's report: "in all of the popups, the headers
+     and tops of the table with labels appear above the popup container
+     header and not underneath" -- e.g. the ALL RESULTS standings' brushed-
+     nickel class header/column labels painting over this bar once scrolled
+     up under it) -- exact same bug and exact same fix as .rc-modal-head's
+     own z-index in css/style.css: a sticky element with no z-index has no
+     stacking priority over later-in-DOM body content once it's pinned
+     mid-scroll, so table headers/labels scrolling up underneath this bar
+     could paint on top of it instead of staying behind it. This one shared
+     class backs every popup on league.html (News, Points Table, Drivers,
+     Season Details, All Results, Qualifying, Feedback, Edit Profile), so
+     fixing it here fixes every one of them at once. */
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2211,8 +2234,133 @@ body.rc-league-page {
 .rcl-empty-state-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink-dim); }
 .rcl-empty-state-subtitle { margin-top: 6px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 
-@media (max-width: 560px) {
+/* -------------------------------------------------------------------- */
+/* MOBILE (<=640px) -- matches the site's own phone/tablet split         */
+/* (css/style.css, 2026-09-27: "max-width: 640px" phone / "641px-1024px" */
+/* tablet), rather than this page's earlier one-off 560px cutoff. First  */
+/* real mobile pass for league.html (2026-09-27, Matt's ask -- ticker/   */
+/* hero band, then the All Results popup, then Current Standings/       */
+/* Calendar below). Recent Results, League News, the Points Table/      */
+/* Drivers/Season Details popups are all explicitly UNCHANGED per       */
+/* Matt's own call-out -- nothing in this block touches them.           */
+/* -------------------------------------------------------------------- */
+@media (max-width: 640px) {
   .rcl-hero { padding: 34px 20px 42px; }
   .rcl-main { padding: 26px 16px 60px; }
   .rcl-panel-body { padding: 14px; }
+
+  /* Ticker label (2026-09-27, Matt's ask: "Remove HIGHLIGHTS text and
+     reduce the red slanted container so that the bottom of the slant is
+     approximately 10 pixels off the left edge of the screen") -- the
+     label's shape comes from its clip-path, unchanged: a rectangle with
+     the trailing (right) edge cut diagonally in by 14px
+     (.rcl-ticker-label above). Fixing the box's own width at 24px means
+     that cut lands its bottom point at 24 - 14 = 10px from the left edge
+     exactly. font-size:0 collapses "Highlights" to zero visible space
+     without touching the markup (league.html) or JS -- the label stays a
+     real element, just an empty-looking slanted tab. */
+  .rcl-ticker-label { width: 24px; padding: 0; font-size: 0; }
+
+  /* Hero's big diagonal red accent (2026-09-27, Matt's ask: "moved to the
+     right so that the top edge of the slant sits inside the right edge 10
+     pixels") -- narrowed and pushed further right/off-screen than the
+     desktop -6%/220px version so only a slim sliver shows on a phone-width
+     hero instead of the bar dominating the whole banner. This is a
+     best-effort estimate (the rotated geometry makes the exact pixel math
+     hard to pin down without seeing it rendered) -- flag for Matt to
+     nudge `right`/`width` further once he's looked at it on a phone. */
+  .rcl-hero::after { width: 120px; right: -56px; }
+
+  /* SEASON N / SEASON NAME (2026-09-27, Matt's ask: "reduce the size...
+     so that it's slightly larger than the RACE CLUB [eyebrow] over top the
+     LEAGUE HUB title" -- LEAGUE HUB's own .rcl-hero-title is deliberately
+     untouched here) -- .rcl-hero-eyebrow (RACE CLUB) is 13px, so 15px
+     reads as "slightly larger" without approaching the 24px desktop size. */
+  .rcl-hero-season { font-size: 15px; }
+
+  /* Vertically center the whole LEAGUE HUB text block within the banner
+     (2026-09-27, Matt's ask) -- was relying on padding-top/padding-bottom
+     happening to roughly balance around the text's own height, which
+     drifts off-center as soon as that height changes (e.g. a long season
+     name wrapping to two lines). A flex box with a real min-height centers
+     the block regardless of exactly how tall its content is. Padding
+     becomes symmetric (was 34px top / 42px bottom above) now that
+     centering is flex-driven, not padding-driven. */
+  .rcl-hero { display: flex; align-items: center; min-height: 240px; padding: 28px 20px; }
+
+  /* ALL RESULTS popup standings tables (2026-09-27, Matt's ask: "need to
+     be reduced to only POS, DRIVER and PTS columns") -- .rcl-race-grid-
+     allresults is used only by this popup's Race-view standings (both the
+     column-label row and every data row share it), and its 9 children are
+     always in this exact order: Pos, Driver, Laps, Total Time, Pen, Gap,
+     Avg, Best Lap, Pts. Hiding children 3-8 by position and collapsing the
+     grid to 3 tracks leaves exactly Pos/Driver/Pts. */
+  .rcl-race-grid-allresults { grid-template-columns: 32px 1fr 44px; }
+  .rcl-race-grid-allresults > div:nth-child(3),
+  .rcl-race-grid-allresults > div:nth-child(4),
+  .rcl-race-grid-allresults > div:nth-child(5),
+  .rcl-race-grid-allresults > div:nth-child(6),
+  .rcl-race-grid-allresults > div:nth-child(7),
+  .rcl-race-grid-allresults > div:nth-child(8) { display: none; }
+
+  /* Team names hidden in the driver column (2026-09-27, Matt's ask: "so
+     only manufacturer logo/driver name/driver number visible") --
+     .rcl-standings-team is _rclBuildDriverIdentity_'s shared team-name
+     span, reused by Recent Results/Drivers/Points Tables too, so this is
+     deliberately scoped to just the two containers Matt actually asked
+     for: the All Results popup (.rcl-modal-dialog-allresults, its own
+     scoping class added in js/league.js) and the Current Standings panel
+     (#rcl-standings-body). Recent Results, the Drivers roster, and Points
+     Tables all keep showing team names, unchanged, per Matt's explicit
+     "looks good, don't change" on those. */
+  .rcl-modal-dialog-allresults .rcl-standings-team,
+  #rcl-standings-body .rcl-standings-team { display: none; }
+
+  /* "**FOR FULL RESULTS, VIEW ON PC BROWSER" (2026-09-27) -- shown back in
+     only here; see .rcl-standings-status-mobile-note's base display:none
+     above and the comment on where it's built (_rclBuildAllResultsBody_,
+     js/league.js). */
+  .rcl-standings-status-mobile-note { display: block; }
+
+  /* Race Report / Penalties Assessed (2026-09-27, Matt's ask: "move the
+     events from the right of the lap catagory to underneath each lap
+     catagory. Add a slight indention to the event lines. Do the same
+     format with the penalties assessed") -- .rcl-report-lap is the one
+     shared row layout both sections build from (Penalties Assessed reuses
+     it directly, see _rclBuildAllResultsBody_'s own comment on that), so
+     one change covers both. Stacks the lap/pre-post label above its text
+     instead of beside it, with a small left indent on the text to read as
+     nested under the label rather than a second top-level line. */
+  .rcl-report-lap { flex-direction: column; gap: 4px; }
+  .rcl-report-lap-num { width: auto; padding-top: 0; }
+  .rcl-report-lap-text { padding-left: 14px; }
+
+  /* Current Standings driver list -- team name hidden above (shared rule
+     with the All Results popup); no other change needed here, the class
+     column layout (.rcl-standings-columns) already stacks to one column
+     under 900px (see that rule earlier in this file).
+
+     Calendar (2026-09-27, Matt's ask: "remove the UP NEXT and COMPLETED /
+     status text. Instead of the round container/number being on the left
+     side of the race/event entries, have it placed on top of the
+     containers and have it say ROUND 1, ROUND 2, etc instead of R1, R2")
+     -- .rcl-cal-status covers all three states (UP NEXT/UPCOMING/
+     COMPLETED, see rcl-cal-status-up/-upcoming/-complete) so hiding the
+     base class removes the notification text in one rule. .rcl-cal-row
+     switches from a side-by-side row (round bar left, event body right)
+     to stacked, and the round bar itself swaps from a small fixed-width
+     square to a full-width bar sized for its now-longer "ROUND N" text
+     (.rcl-cal-round-short/-long above swap which span is visible). */
+  .rcl-cal-status { display: none; }
+  .rcl-cal-row { flex-direction: column; }
+  .rcl-cal-round {
+    width: 100%;
+    height: auto;
+    padding: 6px 0;
+    font-size: 15px;
+    border-radius: 0;
+  }
+  .rcl-cal-round-short { display: none; }
+  .rcl-cal-round-long { display: inline; }
+  .rcl-cal-row-body { padding: 10px 14px; }
 }
