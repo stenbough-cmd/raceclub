@@ -5439,6 +5439,13 @@ body.rc-modal-scroll-locked {
 .rc-rulebook-section p { margin: 0 0 12px; }
 .rc-rulebook-section ul { margin: 8px 0 12px; padding-left: 20px; }
 .rc-rulebook-section table { margin: 12px 0; }
+/* Top-align every cell (2026-09-27, Matt's ask) -- without this, the
+   Glossary's "Class" row (its term cell is a single short line, its
+   description cell now holds the term text plus five nested class-type
+   sub-rows) defaults to the browser's vertical-align: middle for <td>,
+   which centers "Class" against that much taller cell instead of
+   keeping it flush with the first line of its own description. */
+.rc-rulebook-section table td { vertical-align: top; }
 /* Class pill row -- Section 2.2's "Classes" list (2026-09-27, Matt's ask:
    "make the classes look like the class pills that we designed"). Same
    .rc-badge-chip pills used everywhere else on the site, just laid out in
