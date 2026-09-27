@@ -1051,16 +1051,19 @@ body.rc-league-page {
    keeping this as an opt-in modifier (rather than editing the base rule)
    still protects any future caller that brings the stat row back. */
 .rcl-race-headline-notabs { margin-bottom: 34px; padding-bottom: 22px; }
-/* Recent Results only (2026-09-27, Matt's ask: "move the topmost class
-   results header bar to where the gray line is below the event title...
-   and deleted the gray line") -- drops .rcl-race-headline's border-bottom
-   entirely and collapses its padding, so the first .rcl-standings-class-
-   header graphite bar (js/league.js's _rclRenderResults) sits right where
-   that line used to be, with a single modest margin standing in for both
-   the old line and the old post-line gap. Left off .rcl-race-headline-
-   notabs itself (used above) since the All Results popup's category
-   breakdown still wants its own bigger gap/line combo -- see
-   _rclBuildRaceHeadline_'s opts.closeGapNoLine, js/league.js. */
+/* Started Recent Results only (2026-09-27, Matt's ask: "move the topmost
+   class results header bar to where the gray line is below the event
+   title... and deleted the gray line"), then extended to the All Results
+   popup the same day ("remove the line above the header in between the
+   bonus points winners and the event name") -- drops .rcl-race-headline's
+   border-bottom entirely and collapses its padding, so whatever comes right
+   after (Recent Results' first .rcl-standings-class-header graphite bar, or
+   All Results' category breakdown, _rclBuildResultsCategoryBreakdown_) sits
+   right where that line used to be, with a single modest margin standing in
+   for both the old line and the old post-line gap. Left off .rcl-race-
+   headline-notabs itself (used above) so a future caller can still opt into
+   the old bigger gap/line combo -- see _rclBuildRaceHeadline_'s
+   opts.closeGapNoLine, js/league.js. */
 .rcl-race-headline-closegap { padding-bottom: 0; border-bottom: none; margin-bottom: 16px; }
 /* "Round <n>   <Event> at <Track>: <Layout>" header line (2026-09-26
    rework, Matt's ask) -- same three-piece weight/color split as the
@@ -1120,7 +1123,11 @@ body.rc-league-page {
 .rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
 .rcl-race-category-number { color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
 .rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
-.rcl-race-class + .rcl-race-class { margin-top: 18px; }
+/* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
+   the bottom of the top class leaderboard to the graphite header of the
+   next class") -- shared by Recent Results and the All Results popup, both
+   of which build their per-class blocks as sibling .rcl-race-class divs. */
+.rcl-race-class + .rcl-race-class { margin-top: 32px; }
 .rcl-race-class-name { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-dim); margin-bottom: 6px; }
 
 /* Recent Results / View All Results rows (rewritten 2026-09-23, Matt's

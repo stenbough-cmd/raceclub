@@ -1102,15 +1102,17 @@ function _rclBuildEventTitleLine_(entry, hideRoundNum) {
 function _rclBuildRaceHeadline_(r, opts) {
   opts = opts || {};
   var headlineClass = 'rcl-race-headline' + (opts.hideStatRow ? ' rcl-race-headline-notabs' : '') +
-    // Recent Results only (2026-09-27, Matt's ask: "move the topmost class
-    // results header bar to where the gray line is below the event title...
-    // and deleted the gray line") -- closes the headline's own bottom
-    // border+gap entirely so the first .rcl-standings-class-header graphite
-    // bar (js/league.js's _rclRenderResults) sits right where that line
-    // used to be, with just a small breathing-room margin in its place.
-    // Scoped to its own modifier (rather than editing .rcl-race-headline-
-    // notabs, which the All Results popup's category breakdown also uses)
-    // so that popup's spacing is untouched.
+    // Started Recent Results only (2026-09-27, Matt's ask: "move the topmost
+    // class results header bar to where the gray line is below the event
+    // title... and deleted the gray line"), then extended to the All Results
+    // popup too the same day ("remove the line above the header in between
+    // the bonus points winners and the event name") -- closes the headline's
+    // own bottom border+gap entirely so whatever comes right after it (the
+    // first .rcl-standings-class-header graphite bar in Recent Results, or
+    // the category breakdown in All Results) sits right where that line
+    // used to be, with just a small breathing-room margin in its place. Kept
+    // as its own modifier (rather than editing .rcl-race-headline-notabs
+    // directly) purely so a future caller can still opt out.
     (opts.closeGapNoLine ? ' rcl-race-headline-closegap' : '');
   var headline = _rclEl('div', headlineClass);
   // variant: 'accent' (gold, Winner) or 'fastestlap' (purple, Fastest Lap
@@ -1475,8 +1477,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // this popup drops it, since the round is already picked explicitly via
   // the dropdown right above. hideStatRow (2026-09-27) -- the old flat
   // overall-only Winner/Pole/Fastest Lap row is replaced by the per-class
-  // breakdown right below (_rclBuildResultsCategoryBreakdown_).
-  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true }));
+  // breakdown right below (_rclBuildResultsCategoryBreakdown_). closeGapNoLine
+  // (2026-09-27 follow-up, Matt's ask: "remove the line above the header in
+  // between the bonus points winners and the event name") -- same treatment
+  // Recent Results already got, now applied here too so the category
+  // breakdown sits right under the title with no divider line between them.
+  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true, closeGapNoLine: true }));
   bodyEl.appendChild(_rclBuildResultsCategoryBreakdown_(result));
 
   // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
