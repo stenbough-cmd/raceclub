@@ -1197,8 +1197,14 @@ function _rclBuildResultsCategoryBreakdown_(result) {
   var wrap = _rclEl('div', 'rcl-race-categories');
   var classes = result.classes || [];
 
-  function buildRow(name, carNumber, parenText, carClass) {
-    var row = _rclEl('div', 'rcl-race-category-row');
+  // rowKind (2026-09-27, Matt's ask: "make the winner name gold and
+  // fastest lap names purple in ALL RESULTS") -- 'winner'/'fastestLap'
+  // add a color modifier class to the row so both the name AND the car
+  // number pick up the accent color together (see .rcl-race-category-row-
+  // winner/-fastestlap, css/league.css); Most Laps Led and Pole stay the
+  // plain ink color, unchanged.
+  function buildRow(name, carNumber, parenText, carClass, rowKind) {
+    var row = _rclEl('div', 'rcl-race-category-row' + (rowKind ? ' rcl-race-category-row-' + rowKind : ''));
     row.appendChild(_rclEl('span', 'rcl-race-category-name', _rclEscapeHtml(name)));
     if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
     if (parenText) row.appendChild(_rclEl('span', 'rcl-race-category-extra', '(' + _rclEscapeHtml(parenText) + ')'));
@@ -1220,13 +1226,13 @@ function _rclBuildResultsCategoryBreakdown_(result) {
 
   var winnerRows = [], lapsLedRows = [], poleRows = [], fastestRows = [];
   classes.forEach(function (cls) {
-    if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, null, cls.className));
+    if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, null, cls.className, 'winner'));
     if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
       lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, null, cls.className));
     }
     if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, null, cls.className));
     if (cls.classFastestLapDriver) {
-      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, null, cls.className));
+      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, null, cls.className, 'fastestLap'));
     }
   });
 

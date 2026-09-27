@@ -799,7 +799,11 @@ body.rc-league-page {
     linear-gradient(135deg, #d9dade 0%, #b7b9be 45%, #eceef0 55%, #9a9ca1 100%);
   color: #24262b;
   font-family: var(--rc-font-heading);
-  font-size: 12.5px;
+  /* Bumped 12.5px -> 14px (2026-09-27, Matt's ask: "increase the brushed
+     nickel header font a little bit larger") -- across every use of this
+     class sitewide (Recent Results, Current Standings, the All Results
+     Race/Qualifying popups, and the Drivers roster all share it). */
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1143,7 +1147,26 @@ body.rc-league-page {
 .rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
 .rcl-race-category-row:last-child { margin-bottom: 0; }
 .rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
-.rcl-race-category-number { color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+/* Same size and weight as the name next to it (2026-09-27, Matt's ask:
+   "make the numbers behind their names the same size and style font as
+   the names") -- font-size was already inherited from .rcl-race-
+   category-row (14px, matching the name), but font-weight defaulted to
+   normal while the name is 700; explicit 700 here matches it. Color stays
+   its own dimmer tone by default so the number still reads as secondary
+   next to the name -- except on a winner/fastest-lap row, where the
+   modifier rules below override it to match the name's accent color. */
+.rcl-race-category-number { font-weight: 700; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
+/* Winner/Fastest Lap accent colors (2026-09-27, Matt's ask: "make the
+   winner name gold and fastest lap names purple in ALL RESULTS") -- same
+   gold/purple tokens already used for the headline's own Winner/Fastest
+   Lap stat values above (.rcl-race-headline-value-accent/-fastestlap),
+   just reused here for the per-class category breakdown rows. The car
+   number picks up the same color as its name so the two read as one
+   accented unit; Most Laps Led and Pole rows are untouched. */
+.rcl-race-category-row-winner .rcl-race-category-name,
+.rcl-race-category-row-winner .rcl-race-category-number { color: #e0b64c; }
+.rcl-race-category-row-fastestLap .rcl-race-category-name,
+.rcl-race-category-row-fastestLap .rcl-race-category-number { color: #b388ff; }
 .rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 /* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
    the bottom of the top class leaderboard to the graphite header of the

@@ -4137,6 +4137,45 @@
         });
       });
       btnGroup.appendChild(recomputeBtn);
+
+      // REBUILD RACE REPORTS (2026-09-27, Matt's report: "fastest lap
+      // messages aren't showing up in the race report") -- RaceReportJson
+      // is only ever written once, at import time, so a round imported
+      // before the per-class fastest-lap logic shipped (or one whose
+      // report build silently failed) stays stale forever with no other
+      // way to fix it short of re-importing that round's original XML.
+      // This reruns the report builder from what's already stored in
+      // DriverResults/Laps/RaceEvents instead (see
+      // handleAdminRebuildRaceReports/_rcRebuildRaceReportForSession_,
+      // Ingestion.gs) -- same season-scoped button shape as Recompute
+      // Season right next to it.
+      var rebuildReportsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Rebuild Race Reports');
+      rebuildReportsBtn.type = 'button';
+      withTooltip(rebuildReportsBtn, 'Regenerates the lap-by-lap Race Report (fastest lap, contact, pit stops, etc.) for every round in this season from already-imported data -- use this if a round\'s Race Report is missing something a re-import would normally include.');
+      rebuildReportsBtn.addEventListener('click', function () {
+        rebuildReportsBtn.disabled = true;
+        var rebuildModal = showModal('Rebuild Race Reports', { bodyEl: buildSpinner('REBUILDING RACE REPORTS...') });
+        if (rebuildModal.closeBtn) rebuildModal.closeBtn.disabled = true;
+        fetchApi('adminRebuildRaceReports', {
+          method: 'POST', token: token, body: { seasonId: s.seasonId },
+          timeoutMs: RC_FETCH_TIMEOUT_MS_RECOMPUTE
+        }).then(function (data) {
+          rebuildReportsBtn.disabled = false;
+          rebuildModal.close(true);
+          if (!data.success) {
+            showToast(data.message || 'Could not rebuild race reports for this season.', 'error');
+            return;
+          }
+          var msg = 'Rebuilt ' + data.roundsRebuilt + ' race report' + (data.roundsRebuilt === 1 ? '' : 's') +
+            (data.roundsFailed ? (' (' + data.roundsFailed + ' could not be rebuilt).') : '.');
+          showToast(msg, data.roundsFailed ? 'error' : 'success');
+        }).catch(function () {
+          rebuildReportsBtn.disabled = false;
+          rebuildModal.close(true);
+          showToast('Could not reach the server.', 'error');
+        });
+      });
+      btnGroup.appendChild(rebuildReportsBtn);
     }
 
     // Admin-only (2026-09-14, Matt's call: "league organizers are not
