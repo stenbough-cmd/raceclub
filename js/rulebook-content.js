@@ -185,31 +185,34 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'glossary', num: '9', title: 'Glossary',
+    // Alphabetized by term (2026-09-27, Matt's ask) -- the five class-type
+    // rows are no longer flat entries of their own; they're nested under
+    // the "Class" row using the same tree-glyph sub-row look ("└", the
+    // .rc-dm-tree/.rc-dm-subrow convention from the Data Management lists
+    // and Dashboard protest cards, style.css) so alphabetizing the real
+    // terms doesn't scatter HY/LMP2/LMP3/LMGT3/LMGTE across the table.
     html: '<table>' +
-      '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
-      '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
-      '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
       '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all: nothing to race, nothing to score.</td></tr>' +
-      '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
-      '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
-      '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
-      '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.</td></tr>' +
-      // Per-class glossary rows (2026-09-27, Matt's ask: "in the glossary,
-      // I'd like all the classes listed with a brief description") -- same
-      // colored pill in the term column as Section 2.2 above, one row per
-      // class instead of the single generic "Class" line this used to be
-      // the only entry for.
-      '<tr><td><span class="rc-badge-chip rc-badge-hypercar">HY</span></td><td>The top class: purpose-built prototype race cars, the fastest and most technically advanced cars in the league, competing for the overall race win.</td></tr>' +
-      '<tr><td><span class="rc-badge-chip rc-badge-lmp2">LMP2</span></td><td>A spec prototype class one tier below Hypercar -- every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</td></tr>' +
-      '<tr><td><span class="rc-badge-chip rc-badge-lmp3">LMP3</span></td><td>An entry-level prototype class below LMP2 -- a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</td></tr>' +
-      '<tr><td><span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span></td><td>GT3-spec grand tourer cars built on real production models, balanced against each other by Balance of Performance.</td></tr>' +
-      '<tr><td><span class="rc-badge-chip rc-badge-lmgte">LMGTE</span></td><td>A production-based endurance GT class, distinct from LMGT3’s own GT3 ruleset, built for close, sustained racing over a full stint.</td></tr>' +
-      '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
-      '<tr><td><strong>Steward</strong></td><td>An Admin, Organizer, or Steward who reviews and rules on protests.</td></tr>' +
-      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
-      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
-      '<tr><td><strong>Finalized Results</strong></td><td>A round whose results and rulings are locked in and can no longer be protested, edited, or changed.</td></tr>' +
+      '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-hypercar">HY</span><span>The top class: purpose-built prototype race cars, the fastest and most technically advanced cars in the league, competing for the overall race win.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp2">LMP2</span><span>A spec prototype class one tier below Hypercar -- every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp3">LMP3</span><span>An entry-level prototype class below LMP2 -- a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span><span>GT3-spec grand tourer cars built on real production models, balanced against each other by Balance of Performance.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgte">LMGTE</span><span>A production-based endurance GT class, distinct from LMGT3’s own GT3 ruleset, built for close, sustained racing over a full stint.</span></div>' +
+        '</td></tr>' +
       '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
+      '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
+      '<tr><td><strong>Finalized Results</strong></td><td>A round whose results and rulings are locked in and can no longer be protested, edited, or changed.</td></tr>' +
+      '<tr><td><strong>Preliminary Results</strong></td><td>A round’s results as posted right after the race: still open to protests, corrections, or rulings until they’re locked in as Finalized Results.</td></tr>' +
+      '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
+      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
+      '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
+      '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
+      '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
+      '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
+      '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
+      '<tr><td><strong>Steward</strong></td><td>An Admin, Organizer, or Steward who reviews and rules on protests.</td></tr>' +
+      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
       '</table>'
   }
 ];
