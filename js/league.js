@@ -324,9 +324,17 @@ function _rclBuildTickerItems(hub) {
     // css/league.css) while the season number/name stays at the item's
     // normal weight. See the driverRows items just below for the same
     // "structured data in, differently-weighted spans out" pattern.
+    // Season number moved INTO the gold tag itself (2026-09-27, Matt's
+    // ask) -- was a plain "SEASON" tag followed by "Season N: <name>" in
+    // the item's own text, which read as "SEASON: Season N: <name>" once
+    // buildRun() appended the tag's trailing colon (a genuine redundancy,
+    // not what Matt wanted). Tag is now "SEASON N" (colon still appended
+    // by buildRun, same as every other item), and nameText is just the
+    // season name on its own -- dates keep their existing lighter-weight
+    // styling untouched.
     items.push({
-      tag: 'SEASON',
-      nameText: 'Season ' + _rclEscapeHtml(String(hub.seasonNumber)) + (hub.seasonName ? ': ' + _rclEscapeHtml(hub.seasonName) : ''),
+      tag: 'SEASON ' + _rclEscapeHtml(String(hub.seasonNumber)),
+      nameText: hub.seasonName ? _rclEscapeHtml(hub.seasonName) : '',
       datesText: seasonDates ? ' (' + _rclEscapeHtml(seasonDates) + ')' : ''
     });
   }
