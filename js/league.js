@@ -1101,7 +1101,18 @@ function _rclBuildEventTitleLine_(entry, hideRoundNum) {
 // no longer calls this function's stat row at all.
 function _rclBuildRaceHeadline_(r, opts) {
   opts = opts || {};
-  var headline = _rclEl('div', 'rcl-race-headline' + (opts.hideStatRow ? ' rcl-race-headline-notabs' : ''));
+  var headlineClass = 'rcl-race-headline' + (opts.hideStatRow ? ' rcl-race-headline-notabs' : '') +
+    // Recent Results only (2026-09-27, Matt's ask: "move the topmost class
+    // results header bar to where the gray line is below the event title...
+    // and deleted the gray line") -- closes the headline's own bottom
+    // border+gap entirely so the first .rcl-standings-class-header graphite
+    // bar (js/league.js's _rclRenderResults) sits right where that line
+    // used to be, with just a small breathing-room margin in its place.
+    // Scoped to its own modifier (rather than editing .rcl-race-headline-
+    // notabs, which the All Results popup's category breakdown also uses)
+    // so that popup's spacing is untouched.
+    (opts.closeGapNoLine ? ' rcl-race-headline-closegap' : '');
+  var headline = _rclEl('div', headlineClass);
   // variant: 'accent' (gold, Winner) or 'fastestlap' (purple, Fastest Lap
   // -- 2026-09-26, Matt's ask: "make sure the FASTEST LAP winner in the
   // header has their name purple, in the header only" -- distinct from
@@ -1229,7 +1240,7 @@ function _rclRenderResults(hub) {
   }
 
   var r = hub.lastRace;
-  body.appendChild(_rclBuildRaceHeadline_(r, { hideStatRow: true }));
+  body.appendChild(_rclBuildRaceHeadline_(r, { hideStatRow: true, closeGapNoLine: true }));
 
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
   // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule:

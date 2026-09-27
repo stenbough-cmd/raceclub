@@ -1051,6 +1051,17 @@ body.rc-league-page {
    keeping this as an opt-in modifier (rather than editing the base rule)
    still protects any future caller that brings the stat row back. */
 .rcl-race-headline-notabs { margin-bottom: 34px; padding-bottom: 22px; }
+/* Recent Results only (2026-09-27, Matt's ask: "move the topmost class
+   results header bar to where the gray line is below the event title...
+   and deleted the gray line") -- drops .rcl-race-headline's border-bottom
+   entirely and collapses its padding, so the first .rcl-standings-class-
+   header graphite bar (js/league.js's _rclRenderResults) sits right where
+   that line used to be, with a single modest margin standing in for both
+   the old line and the old post-line gap. Left off .rcl-race-headline-
+   notabs itself (used above) since the All Results popup's category
+   breakdown still wants its own bigger gap/line combo -- see
+   _rclBuildRaceHeadline_'s opts.closeGapNoLine, js/league.js. */
+.rcl-race-headline-closegap { padding-bottom: 0; border-bottom: none; margin-bottom: 16px; }
 /* "Round <n>   <Event> at <Track>: <Layout>" header line (2026-09-26
    rework, Matt's ask) -- same three-piece weight/color split as the
    Calendar's own event line (.rcl-cal-event/-event-name/-event-track/
