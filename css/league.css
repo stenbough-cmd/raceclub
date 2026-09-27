@@ -1169,6 +1169,16 @@ body.rc-league-page {
 .rcl-race-category-row-winner .rcl-race-category-number { color: #e0b64c; }
 .rcl-race-category-row-fastestLap .rcl-race-category-name,
 .rcl-race-category-row-fastestLap .rcl-race-category-number { color: #b388ff; }
+/* Shrink the class pill to match the row's own name/number text height
+   (2026-09-27, Matt's ask: "reduce the height of the class pills at the
+   top where bonus point winners are -- make the class pills the same
+   height as the driver name/number font size") -- .rc-badge-chip-abbrev's
+   normal line-height (1.6, inherited from .rc-badge-chip) makes the pill
+   noticeably taller than the 14px name/number text sitting right next to
+   it in this row specifically. Scoped to just this row so every other
+   .rc-badge-chip-abbrev pill on the site (Current Standings, the class
+   badge elsewhere) keeps its usual size. */
+.rcl-race-category-row .rc-badge-chip-abbrev { line-height: 1; padding: 1px 6px; }
 .rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 /* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
    the bottom of the top class leaderboard to the graphite header of the
