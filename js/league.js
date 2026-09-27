@@ -2017,11 +2017,8 @@ function _rclRenderCalendar(hub) {
   hub.calendar.forEach(function (entry, idx) {
     if (entry.kind === 'bye') {
       var byeRow = _rclEl('div', 'rcl-cal-row rcl-cal-row-bye');
-      byeRow.appendChild(_rclEl('div', 'rcl-cal-round', 'BYE'));
-      var byeBody = _rclEl('div', 'rcl-cal-row-body');
-      byeBody.appendChild(_rclEl('div', 'rcl-cal-track', 'Bye Week'));
-      byeBody.appendChild(_rclEl('div', 'rcl-cal-meta', '<span class="rcl-cal-meta-item">' + _rclEscapeHtml(_rclFormatDate(entry.startUtc)) + '</span>'));
-      byeRow.appendChild(byeBody);
+      byeRow.appendChild(_rclEl('div', 'rcl-cal-bye-label', 'Bye Week'));
+      byeRow.appendChild(_rclEl('div', 'rcl-cal-bye-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
       body.appendChild(byeRow);
       return;
     }

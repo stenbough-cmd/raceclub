@@ -5206,7 +5206,13 @@ body.rc-modal-scroll-locked {
 .rc-cal-format-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rc-cal-format-list + .rc-cal-format-list { margin-top: 10px; }
 
-.rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+/* Sits right under the "Calendar" pill now (2026-09-27, Matt's ask: pull
+   the race containers up closer to the pill) -- margin-top trimmed from
+   18px to 4px so the gap reads the same tight, close-to-its-label spacing
+   the "This Season"/"Season Format" stat rows above it already have
+   (their own gap comes entirely from .rc-seasonfmt-group-label's own
+   10px margin-bottom, no extra margin-top on the row itself). */
+.rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
 
 /* Bye week -- deliberately close to empty (Matt's call: "keep bye weeks
    off the details screen and just use blank containers within the

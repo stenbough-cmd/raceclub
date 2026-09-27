@@ -1652,9 +1652,36 @@ body.rc-league-page {
 .rcl-cal-row-finished .rcl-cal-meta {
   opacity: 0.5;
 }
-.rcl-cal-row-bye { opacity: 0.7; }
-.rcl-cal-row-bye .rcl-cal-round { background: var(--rcl-line-bright); font-size: 13px; }
-.rcl-cal-row-bye .rcl-cal-track { font-weight: 600; color: var(--rcl-ink-dim); }
+/* Bye week -- dashed "nothing scheduled" slot (2026-09-27, Matt's ask: match
+   the dashed/centered treatment Account's own .rc-cal-bye card uses, sized
+   and colored to fit league.html's dark theme and type scale instead of
+   copying Account's light-page values literally). No round-number bar --
+   a bye isn't a round, so it gets its own flat centered box rather than
+   the round + body split every real race row uses. */
+.rcl-cal-row-bye {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 22px 14px;
+  border: 1px dashed var(--rcl-line-bright);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.rcl-cal-bye-label {
+  font-family: var(--rc-font-heading);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  text-align: center;
+}
+.rcl-cal-bye-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rcl-ink-dim);
+  text-align: center;
+}
 /* "View Season Details" link at the bottom of the Calendar panel
    (2026-09-19, Matt's call: season details move out of the hero band into
    a popup opened from here) -- same shape as the Leaderboard's own "View
