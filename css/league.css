@@ -1444,6 +1444,18 @@ body.rc-league-page {
       width guess is ever too tight for a future label. */
 .rcl-report-pill-col { display: inline-flex; justify-content: flex-end; width: 58px; flex-shrink: 0; margin-right: 6px; vertical-align: 1px; }
 .rcl-report-pill-col > .rc-badge-chip { flex-shrink: 0; }
+/* Slightly smaller/shorter, same fashion as the All Results category-row
+   pill fix above (2026-09-27, Matt's ask: "reduce the height/size of the
+   class pills that show up next to the timestamps in the race report
+   slightly") -- .rc-badge-chip-abbrev's normal line-height (1.6,
+   inherited from .rc-badge-chip) and 12px font read a bit large next to
+   this report line's own 13.5px text and 12px timestamp. Scoped to just
+   the report's pill column (both the Race Report and Penalties Assessed
+   sections use _rclClassPill_/.rcl-report-pill-col) so every other
+   .rc-badge-chip-abbrev pill on the site is untouched. The 58px column
+   width above still has plenty of headroom for "LMGT3"/"LMGTE" at this
+   slightly smaller size. */
+.rcl-report-pill-col .rc-badge-chip-abbrev { line-height: 1; padding: 1px 5px; font-size: 11px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
