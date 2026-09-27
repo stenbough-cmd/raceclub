@@ -1300,7 +1300,14 @@ body.rc-league-page {
    26px, border-bottom 1px var(--rcl-line)), just as its own standalone
    element since the Qualifying tab has no Winner/Pole/Fastest Lap stat
    row to share that container with. */
-.rcl-qualifying-title-divider { margin: 10px 0 26px; border-bottom: 1px solid var(--rcl-line); }
+/* Line removed (2026-09-27, Matt's ask: "remove the gray line below the
+   event/race name" in Qualifying's All Results tab) -- matches the same
+   closeGapNoLine treatment the Race tab's headline already got (Recent
+   Results/All Results), just kept as this element's own rule since
+   Qualifying has no headline container to attach a modifier class to. The
+   space it used to create above the standings stays, just without the
+   border-bottom that used to sit inside it. */
+.rcl-qualifying-title-divider { margin: 10px 0 26px; }
 /* Sector times normal weight, Best Lap bold (2026-09-26, Matt's ask: "in
    the qualifying standings, make the best lap bold and leave the sector
    times a normal weight") -- scoped to rows inside the Qualifying grid

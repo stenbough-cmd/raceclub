@@ -1796,13 +1796,13 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
   // view uses (_rclBuildEventTitleLine_ above), round number hidden same
   // as the Race view's All Results popup.
   bodyEl.appendChild(_rclBuildEventTitleLine_(result, true));
-  // Divider line + a little breathing room before the standings start
-  // (2026-09-26, Matt's ask: "add a line below the event title and the
-  // start of the standings. Then leave a space and start the standings
-  // like it is in the race standings") -- same border/spacing idea as
-  // .rcl-race-headline's own border-bottom, just as its own standalone
-  // element since there's no Winner/Pole/Fastest Lap stat row here to
-  // share that container with.
+  // Breathing room before the standings start (2026-09-26, Matt's ask: "add
+  // a line below the event title and the start of the standings. Then
+  // leave a space and start the standings like it is in the race
+  // standings") -- the line itself was removed 2026-09-27 (Matt: "remove
+  // the gray line below the event/race name" in Qualifying) to match the
+  // Race tab's own headline, which lost its line the same way; the spacing
+  // this element creates stays.
   bodyEl.appendChild(_rclEl('div', 'rcl-qualifying-title-divider'));
 
   if (!result.hasQualifying || !(result.classes || []).length) {
