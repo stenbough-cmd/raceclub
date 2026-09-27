@@ -500,8 +500,13 @@ function renderHeader(opts) {
               // gets, both so the white mark always has contrast against
               // this otherwise white/offwhite dropdown and so this one
               // link reads as "leaving to Discord" rather than another
-              // in-app action.
-              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">' +
+              // in-app action. Points at the club's own channel (not the
+              // generic invite link) -- 2026-09-27, Matt's ask: dashboard
+              // Discord links can assume the driver already joined the
+              // server, so this one goes straight to the channel; the
+              // index.html landing-page CTA (pre-join) keeps the invite
+              // link.
+              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer">' +
                 '<img src="assets/images/Discord-Symbol-White.svg" alt="" width="21" height="16">Discord</a>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +

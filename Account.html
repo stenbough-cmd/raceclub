@@ -663,8 +663,14 @@
     // generic dark hover every other sidebar row gets, since this is the
     // one link that leaves the site for Discord. The logo image itself is
     // untouched either way -- no filter/recolor was ever applied to it.
+    // Points at the club's own channel (not the generic invite link) --
+    // 2026-09-27, Matt's ask: dashboard-side Discord links can assume the
+    // driver has already joined the server, so send them straight into
+    // the channel rather than through an invite screen. The index.html
+    // landing-page CTA (pre-join) still uses the invite link -- only the
+    // in-app sidebar/avatar-menu links changed.
     link.className = 'rc-nav-item rc-nav-item-discord';
-    link.href = 'https://discord.gg/UxWgwDwc9U';
+    link.href = 'https://discord.com/channels/1538292330870611968/1551231154353479730';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     // Label shortened to just "Discord" (2026-09-26, Matt's ask).
