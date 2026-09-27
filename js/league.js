@@ -479,7 +479,7 @@ function _rclRenderTicker(hub) {
   if (!items.length) {
     track.innerHTML = '';
     track.style.animation = 'none';
-    track.appendChild(_rclEl('div', 'rcl-ticker-empty', 'Highlights will fill in once a season is underway.'));
+    track.appendChild(_rclEl('div', 'rcl-ticker-empty', 'Highlights fill in once a season is underway.'));
     return;
   }
 
@@ -1995,7 +1995,7 @@ function _rclRenderCalendar(hub) {
   if (calendarTitleEl) calendarTitleEl.textContent = hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Calendar') : 'Calendar';
 
   if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'The season schedule shows up here once it is built.'));
+    body.appendChild(_rclEmptyState('No Data To Display', 'Calendar fills in once a season is underway.'));
     return;
   }
 
