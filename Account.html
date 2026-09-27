@@ -7075,9 +7075,18 @@
     var nameInput = wizTextInput(state.seasonName, function (v) { state.seasonName = v; });
     nameInput.maxLength = 30;
     nameInput.classList.add('rc-wiz-editable-when-locked');
+    // Overrides the wizard's blanket "shrink every box to 50%" rule
+    // (.rc-wizard-content input[type="text"], style.css) with an inline
+    // max-width -- inline wins over that class per its own comment. Left at
+    // 50% (of the popup) it would compound with this field's OWN column
+    // already being 50% wide (.rc-field-pair below), leaving the box only
+    // 25% of the popup -- the bug Matt caught 2026-09-27. Season Name and
+    // Default Password should each fill their half of the row.
+    nameInput.style.maxWidth = '100%';
     requireField(nameInput, requiredEls);
     var pwInput = wizTextInput(state.defaultPassword, function (v) { state.defaultPassword = v; });
     pwInput.classList.add('rc-wiz-editable-when-locked');
+    pwInput.style.maxWidth = '100%';
     requireField(pwInput, requiredEls);
     container.appendChild(fieldPairRow('Season Name', nameInput, 'Default Password', pwInput));
 
