@@ -838,8 +838,14 @@
   // Script Web App, and Apps Script does not run several requests from
   // the same user in true parallel, so those 8 stacked up one after
   // another instead of finishing together. action=getDashboardData
-  // (handleGetDashboardData, DataCache.gs) does the same 8 lookups
+  // (handleGetDashboardData, Results.gs) does the same lookups
   // server-side, in one execution, and returns them all in one response.
+  // (Slice count has drifted down since this was written as systems got
+  // cut -- recentResults/finances/reputation/sponsors/seasonObjective are
+  // all gone now, see the profile/activeSeason/currentSeat/nextRace/
+  // myProtests slices handleGetDashboardData actually returns today,
+  // Results.gs -- but the one-combined-call-instead-of-many shape this
+  // comment is really about hasn't changed.)
   //
   // Every card still gets its own promise, exactly as before -- they all
   // just resolve (or reject) together off that one underlying fetch,
@@ -11199,8 +11205,10 @@
   // the dash, have the dash populate instantly and load the cards one by
   // one like the wager card loads, fading into place"): NOTHING here
   // gates the page anymore -- not even the 3-call "priority batch" from
-  // earlier the same day. All 6 dashboard-data calls fire in this same
-  // breath (fetchDashboardData below) and are handed straight through as
+  // earlier the same day. All of the dashboard's data now rides in as ONE
+  // combined getDashboardData call (fetchDashboardData below -- see its
+  // own comment for how that one HTTP round trip still hands back a
+  // separate promise per card) and is handed straight through as
   // still-in-flight promises; the Dashboard section is built (see
   // renderProfile -> renderDashboardSection) the instant the PROFILE
   // fetch itself resolves, and every single card fades its real content
@@ -11213,13 +11221,19 @@
   // leaves that one card's own placeholder hanging forever or blocks any
   // other card.
   //
-  // getMyWagerSummary is deliberately NOT part of this batch -- folding
-  // it in here (2026-09-02) roughly DOUBLED the whole dashboard's load
-  // time, because Apps Script Web Apps don't actually run several
-  // fetch() calls from the same user fully in parallel server-side
-  // (per-user concurrent-execution limits mean they queue up behind each
-  // other to some degree). The Wager dashboard card fetches its own data
-  // separately, same as it always has.
+  // (Stale note removed 2026-09-27, efficiency pass -- this used to
+  // explain why getMyWagerSummary was deliberately kept OUT of this batch
+  // and fetched by its own separate call instead, folding it in having
+  // roughly doubled dashboard load time back on 2026-09-02. The Wager
+  // system, and its dashboard card, no longer exist at all (V1 scope cut,
+  // 2026-09-18) -- there is no separate wager fetch to reason about here
+  // any more. The underlying lesson still holds for anything added back
+  // to the dashboard later, though: Apps Script Web Apps don't actually
+  // run several fetch() calls from the same user fully in parallel
+  // server-side, so a new card's data should go through the combined
+  // getDashboardData batch above rather than firing its own independent
+  // call, unless it's proven to be one of the rare cases (like this one
+  // was) where folding it in costs more than it saves.)
   var dashboardData = fetchDashboardData(token);
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
