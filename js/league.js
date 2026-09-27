@@ -1315,7 +1315,11 @@ function _rclRenderResults(hub) {
       // a small field.
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? String(row.points) : '--'));
+      // "+" prefix (2026-09-27, Matt's ask) -- makes clear these are points
+      // GAINED from this particular race, not a running total. Same
+      // treatment the All Results popup's own Pts column already uses
+      // (_rclBuildAllResultsBody_ below).
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
     body.appendChild(clsWrap);
