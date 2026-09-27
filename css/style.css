@@ -3173,6 +3173,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-stat { min-width: 0; }
 .rc-results-stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-steel); margin-bottom: 2px; }
 .rc-results-stat-value { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 700; color: var(--rc-carbon); white-space: nowrap; }
+/* "Your Best Lap" purple in the Career page's own-race stat strip
+   (2026-09-27, Matt's ask: "Make the best lap time for my career purple in
+   the header") -- same --rc-fastest-purple token as every other fastest-
+   lap/sector emphasis on this page (Lap Time Log, Race Report). Applied via
+   resultsStatBlock's optional variant param. */
+.rc-results-stat-value-purple { color: var(--rc-fastest-purple); }
 
 .rc-results-class { margin-top: 16px; }
 .rc-results-class-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }

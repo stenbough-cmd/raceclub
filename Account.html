@@ -5033,11 +5033,16 @@
   // (2026-09-07, Matt's call: "a plethora of numbers and stats") -- one
   // <div> per stat, label above value, so the strip reads at a glance
   // without needing a legend.
-  function resultsStatBlock(label, value) {
+  // variant (2026-09-27, Matt's ask: "Make the best lap time for my career
+  // purple in the header") -- optional modifier suffix on the value div,
+  // e.g. 'purple' -> rc-results-stat-value-purple (style.css), same
+  // --rc-fastest-purple token as every other fastest-lap emphasis on this
+  // page. Omitted entirely by every other caller, so this is additive.
+  function resultsStatBlock(label, value, variant) {
     if (value === null || value === undefined || value === '') return null;
     var block = el('div', 'rc-results-stat');
     block.appendChild(el('div', 'rc-results-stat-label', escapeHtml(label)));
-    block.appendChild(el('div', 'rc-results-stat-value', escapeHtml(String(value))));
+    block.appendChild(el('div', 'rc-results-stat-value' + (variant ? ' rc-results-stat-value-' + variant : ''), escapeHtml(String(value))));
     return block;
   }
 
@@ -5105,17 +5110,31 @@
     // the round-wide stat strip above it that also has a Winner/Pole/
     // Fastest Lap). you.carClass already comes back on every driver row
     // from Results.gs's buildDriverRow_ -- just wasn't surfaced here yet.
+    // "Your Finish"/"Your Grid" show IN-CLASS position only now (2026-09-27
+    // follow-up, Matt's ask: "For the Finish, it's assumed to be in class,
+    // don't do the overall, just do the place I finished" -- this whole
+    // strip is already scoped to just this one driver, so an overall
+    // finishing position across every class was never the number that
+    // mattered here; classPosition/classGridPos are the actual finish/grid
+    // this driver's own class saw). Falls back to the overall
+    // position/gridPos only in the rare case a round predates class
+    // position tracking and classPosition/classGridPos came back empty.
     var grid = el('div', 'rc-results-stat-strip');
     [
-      resultsStatBlock('Your Finish', you.position ? ('P' + you.position + (you.classPosition ? ' (Class P' + you.classPosition + ')' : '')) : (you.finishStatus || 'Not Classified')),
-      resultsStatBlock('Your Grid', you.gridPos ? ('P' + you.gridPos + (you.classGridPos ? ' (Class P' + you.classGridPos + ')' : '')) : ''),
+      resultsStatBlock('Your Finish', (you.classPosition || you.position) ? ('P' + (you.classPosition || you.position)) : (you.finishStatus || 'Not Classified')),
+      resultsStatBlock('Your Grid', (you.classGridPos || you.gridPos) ? ('P' + (you.classGridPos || you.gridPos)) : ''),
       resultsStatBlock('Your Class', you.carClass),
       resultsStatBlock('Laps', you.laps),
-      resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatLapTime_(you.bestLapTime) : ''),
+      // Purple (2026-09-27, Matt's ask: "Make the best lap time for my
+      // career purple in the header") -- same --rc-fastest-purple emphasis
+      // as every other fastest-lap/sector highlight on this page.
+      resultsStatBlock('Best Lap', you.bestLapTime ? _rcFormatLapTime_(you.bestLapTime) : '', 'purple'),
       resultsStatBlock('Total Time', (you.finishTimeSeconds !== null && you.finishTimeSeconds !== undefined) ? _rcFormatTotalTime_(you.finishTimeSeconds) : ''),
       resultsStatBlock('Points', you.points === null ? '' : you.points),
-      resultsStatBlock('Pit Stops', you.pitstops),
-      resultsStatBlock('Incidents / Track Limits / Penalties', (you.incidentsCount || 0) + ' / ' + (you.trackLimitsCount || 0) + ' / ' + (you.penaltiesCount || 0)),
+      // "Pits" (was "Pit Stops") and "Inc/Trk Lim/Pen" (was "Incidents /
+      // Track Limits / Penalties") -- both shortened 2026-09-27, Matt's ask.
+      resultsStatBlock('Pits', you.pitstops),
+      resultsStatBlock('Inc/Trk Lim/Pen', (you.incidentsCount || 0) + ' / ' + (you.trackLimitsCount || 0) + ' / ' + (you.penaltiesCount || 0)),
       resultsStatBlock('DNF Reason', you.dnfReason)
     ].forEach(function (block) { if (block) grid.appendChild(block); });
     wrap.appendChild(grid);
@@ -5210,7 +5229,11 @@
         c.textContent = (v === null || v === undefined || v === '') ? '—' : String(v);
         tr.appendChild(c);
       }
-      td(l.lapNum); td(l.positionAtLap);
+      // Lap number also goes purple/bold on the fastest lap row (2026-09-27,
+      // Matt's ask: "make the lap number where the fastest lap was purple
+      // and bold") -- same fastestLapIdx/rc-results-fastest treatment the
+      // Lap Time column already used, just applied to this cell too.
+      td(l.lapNum, i === fastestLapIdx); td(l.positionAtLap);
       td(_rcFormatLapTime_(l.lapTime), i === fastestLapIdx);
       td(_rcFormatLapTime_(l.sector1), i === fastestS1Idx);
       td(_rcFormatLapTime_(l.sector2), i === fastestS2Idx);
@@ -5446,17 +5469,38 @@
     // comprehensive breakdown, not a personal-highlight headline.
     panel.appendChild(_rcBuildResultsEventTitleLine_(race));
 
-    // Race-wide conditions/format + headline names (2026-09-07) -- winner/
-    // pole/fastest lap of the whole event, track/weather/format numbers,
-    // all pulled straight off DriverResults/Sessions/RoundDetails, nothing
-    // guessed. Skips any stat this round's data doesn't actually have
-    // (resultsStatBlock returns null and el() silently drops nulls below).
+    // Race-wide conditions/format + headline names -- REWORKED 2026-09-27
+    // (Matt's ask: "All of the data in the header where values are, HAS to
+    // be class information. I don't care about any hypercar results if I'm
+    // in the LMGT3 class"). Winner/Pole/Fastest Lap/Laps Led now all read
+    // from race.classes -- the SAME per-class breakdown Results.gs already
+    // computes for the League Hub's All Results popup
+    // (classWinner/classPoleSitter/classFastestLapDriver/
+    // classMostLapsLedDriver, see _rcBuildRoundResultData_) -- filtered down
+    // to just this driver's OWN class (you.carClass), instead of the old
+    // race.overallWinner/overallPoleSitter/overallFastestLapDriver fields,
+    // which were always whichever class happened to be fastest overall
+    // (always Hypercar in a mixed field) regardless of what class this
+    // driver actually raced in. "Winner" relabeled "Class Winner" to make
+    // that scoping explicit; Pole Sitter/Fastest Lap keep their labels but
+    // now carry the in-class driver too. Laps Led is new, slotted between
+    // Class Winner and Pole Sitter (mirrors the League Hub All Results
+    // popup's own Winner -> Most Laps Led -> Pole -> Fastest Lap order).
+    // Fastest Lap's time-in-parens is gone (Matt: "Remove the fast lap time
+    // in the parenthesis after the name in the fastest lap").
+    var yourClass = (race.classes || []).filter(function (c) { return c.className === you.carClass; })[0];
+    // Finishers/DNF/Race Laps/Race Length/Weather/Chance of Rain are round-
+    // wide facts, not another class's results -- they stay as-is (Matt's
+    // rule above is specifically about WHO won/set pole/fastest lap/led
+    // laps, not the round's own conditions). Skips any stat this round's
+    // data doesn't actually have (resultsStatBlock returns null and el()
+    // silently drops nulls below).
     var statStrip = el('div', 'rc-results-stat-strip');
     [
-      resultsStatBlock('Winner', race.overallWinner),
-      resultsStatBlock('Pole Sitter', race.overallPoleSitter),
-      resultsStatBlock('Fastest Lap', race.overallFastestLapDriver ?
-        (race.overallFastestLapDriver + (race.overallFastestLapTime ? ' (' + _rcFormatLapTime_(race.overallFastestLapTime) + ')' : '')) : ''),
+      resultsStatBlock('Class Winner', yourClass ? yourClass.classWinner : ''),
+      resultsStatBlock('Laps Led', yourClass ? yourClass.classMostLapsLedDriver : ''),
+      resultsStatBlock('Pole Sitter', yourClass ? yourClass.classPoleSitter : ''),
+      resultsStatBlock('Fastest Lap', yourClass ? yourClass.classFastestLapDriver : ''),
       // Finishers/DNF split (2026-09-26, Matt's ask) -- race.totalFinishers
       // is now actual classified finishers only, race.totalDnf its own
       // stat block right next to it (Results.gs).
@@ -5464,10 +5508,15 @@
       resultsStatBlock('DNF', race.totalDnf),
       resultsStatBlock('Race Laps', race.totalLaps || race.mostLapsCompleted),
       resultsStatBlock('Race Length', race.raceLengthMinutes ? (race.raceLengthMinutes + ' min') : ''),
-      resultsStatBlock('Track Length', race.trackLengthMeters ? (Math.round(race.trackLengthMeters) + ' m') : ''),
-      resultsStatBlock('Weather', race.weather),
-      resultsStatBlock('Chance of Rain', race.chanceOfRain ? (race.chanceOfRain + '%') : ''),
-      resultsStatBlock('Temperature', (race.temperatureC !== null && race.temperatureC !== undefined) ? (race.temperatureC + '°C') : '')
+      // Track Length removed (2026-09-27, Matt's ask). Weather now folds
+      // temperature in and the separate Temperature stat is gone (Matt:
+      // "combine the temperature with the weather pattern and get rid of
+      // the separate temperature category") -- Chance of Rain stays its
+      // own stat, unaffected.
+      resultsStatBlock('Weather', race.weather ?
+        (race.weather + ((race.temperatureC !== null && race.temperatureC !== undefined) ? ' · ' + race.temperatureC + '°C' : '')) :
+        ((race.temperatureC !== null && race.temperatureC !== undefined) ? (race.temperatureC + '°C') : '')),
+      resultsStatBlock('Chance of Rain', race.chanceOfRain ? (race.chanceOfRain + '%') : '')
     ].forEach(function (block) { if (block) statStrip.appendChild(block); });
     if (statStrip.childNodes.length) panel.appendChild(statStrip);
 
