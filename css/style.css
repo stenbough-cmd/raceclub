@@ -3413,9 +3413,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    Race Club logo halved (48px -> 24px) so it sits close to the logo
    instead of floating toward the middle of the header. Phone (<=640px)
    still hides it entirely below -- no room for it once the hamburger
-   nav's own touch target is in play, and phone has its own way back to
-   League Hub now (see .rc-leaguehub-mobile-section, index.html). */
-@media (min-width: 641px) and (max-width: 820px) {
+   nav's own touch target is in play.
+   Upper bound raised 820px -> 1024px (2026-09-27 third follow-up, Matt's
+   catch: "viewing on my ipad pro tablet, nothing is changing style-wise")
+   -- 820px matches a regular iPad's portrait width, but an iPad Pro's
+   logical CSS viewport is wider (834px on the 11" model, 1024px on the
+   12.9"/13"), so it was falling past this range entirely into the
+   >=821px desktop rule below, which never had the halved gap applied.
+   1024px covers both iPad Pro sizes in portrait; landscape on either
+   (1194px/1366px) still falls to the desktop treatment below. */
+@media (min-width: 641px) and (max-width: 1024px) {
   /* Moved further left (2026-09-27 second follow-up, Matt's ask: "League
      Hub graphic needs to move to the left by 1/2 the distance it
      currently is to the Race Club graphic") -- halved again, 24px -> 12px,
@@ -3670,44 +3677,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   .rc-fixed-header { padding: 0 16px; }
 }
 
-/* League Hub mobile-only section (2026-09-27, Matt's ask) -- index.html
-   only, sits between "What Is Race Club" and the Discord CTA band. Gives
-   phone visitors a second way back to League Hub now that the header's
-   badge/full nav are behind the hamburger menu below 821px, without
-   touching the Discord band or the tablet/desktop layout at all. Tablet
-   keeps the navbar's own League Hub badge visible instead (see
-   .rc-header-leaguehub-badge above), so this stays phone-only, same
-   640px boundary as the hero badge's mobile override and the Meet The
-   Grid phone-only card cap (index.html, isPhoneWidth_). */
-.rc-leaguehub-mobile-section { display: none; }
-@media (max-width: 640px) {
-  .rc-leaguehub-mobile-section { display: block; }
-}
-/* League Hub logo link, in place of the earlier "Visit League Hub" text
-   button (2026-09-27 second follow-up, Matt's ask: "instead of a 'VISIT
-   LEAGUE HUB' button, add the League Hub logo graphic and center justify
-   it. Make it the same size as the race club graphic is") -- sized to
-   match .rc-hero-badge's own mobile height (22px, see above) since that's
-   the Race Club graphic this section sits just below on the page.
-   text-align: center on the wrapper centers the inline-block logo link;
-   the link itself carries no visible text, so no underline/link styling
-   is needed. */
-.rc-leaguehub-mobile-section .rc-leaguehub-mobile-logo-link {
-  display: inline-block;
-  cursor: pointer;
-}
-.rc-leaguehub-mobile-section .rc-leaguehub-mobile-logo-wrap {
-  text-align: center;
-  margin-top: 20px;
-}
-.rc-leaguehub-mobile-logo {
-  height: 22px;
-  width: auto;
-  display: block;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
 /* Pages other than index.html sit below the fixed header. */
 .rc-auth-page { padding-top: 70px; }
 .rc-shell { padding-top: 70px; }
@@ -3905,8 +3874,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Tablet (2026-09-27, Matt's ask: "on tablet... the logo can remain the
    same size but it should move 1/2 the distance closer to the right edge
    and bottom from where it is currently") -- size is untouched (still
-   inherits the clamp() above), only the inset is roughly halved. */
-@media (min-width: 641px) and (max-width: 820px) {
+   inherits the clamp() above), only the inset is roughly halved.
+   Upper bound raised 820px -> 1024px (2026-09-27 third follow-up, same
+   iPad Pro catch as .rc-header-leaguehub-badge above) -- an iPad Pro's
+   portrait viewport (834px/1024px) is wider than a regular iPad's, so it
+   was missing this override entirely and falling back to the desktop
+   clamp(). */
+@media (min-width: 641px) and (max-width: 1024px) {
   .rc-hero-badge {
     /* Pulled in further (2026-09-27 second follow-up, same ask as the
        phone override above) -- 26px -> 14px, about half again. */
