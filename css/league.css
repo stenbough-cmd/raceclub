@@ -1177,8 +1177,16 @@ body.rc-league-page {
    noticeably taller than the 14px name/number text sitting right next to
    it in this row specifically. Scoped to just this row so every other
    .rc-badge-chip-abbrev pill on the site (Current Standings, the class
-   badge elsewhere) keeps its usual size. */
-.rcl-race-category-row .rc-badge-chip-abbrev { line-height: 1; padding: 1px 6px; }
+   badge elsewhere) keeps its usual size. Top/bottom padding nudged up
+   from 1px to 3px (2026-09-27, Matt's follow-up ask: "increase the pill
+   heights... slightly so there is the same padding at the top and
+   bottom as there is on the sides") -- with line-height:1, the font's
+   own internal leading already reads as extra vertical whitespace the
+   6px horizontal padding doesn't have an equivalent of, so matching the
+   two numerically (6px top/bottom) overshot on a visual check; 3px
+   balances the two sides without ballooning the pill back to its
+   original height. */
+.rcl-race-category-row .rc-badge-chip-abbrev { line-height: 1; padding: 3px 6px; }
 .rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 /* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
    the bottom of the top class leaderboard to the graphite header of the
@@ -1454,8 +1462,15 @@ body.rc-league-page {
    sections use _rclClassPill_/.rcl-report-pill-col) so every other
    .rc-badge-chip-abbrev pill on the site is untouched. The 58px column
    width above still has plenty of headroom for "LMGT3"/"LMGTE" at this
-   slightly smaller size. */
-.rcl-report-pill-col .rc-badge-chip-abbrev { line-height: 1; padding: 1px 5px; font-size: 11px; }
+   slightly smaller size. Top/bottom padding nudged up from 1px to 3px
+   (2026-09-27, Matt's follow-up ask: "increase the pill heights...
+   slightly so there is the same padding at the top and bottom as there
+   is on the sides") -- same reasoning as the All Results category-row
+   pill just above: matching the 5px side padding exactly overshot
+   visually once line-height:1's own leading is accounted for, so 3px
+   balances the two without re-growing the pill back toward its
+   original size. */
+.rcl-report-pill-col .rc-badge-chip-abbrev { line-height: 1; padding: 3px 5px; font-size: 11px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay
