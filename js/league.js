@@ -1177,9 +1177,12 @@ function _rclCategoryClassPill_(cls) {
 // site. Row content order is name, car number, then the class pill last
 // (Matt: "behind the name is the driver's number and after that is the
 // HY pill... do the same styling" for every other class's own row) --
-// Most Laps Led/Fastest Lap each add their own parenthetical (laps led /
-// lap time) between the number and the pill; Pole has no parenthetical
-// ("driver names and numbers are fine").
+// EVERY category is just name/number/pill now, no parenthetical. Most Laps
+// Led and Fastest Lap originally added their own parenthetical (laps led
+// count / lap time) between the number and the pill, but Matt asked to
+// drop both (2026-09-27: "remove the (fastest lap) and (laps led) behind
+// the names in the header list above ALL RESULTS") so all four categories
+// read identically to Pole, which never had one.
 function _rclBuildResultsCategoryBreakdown_(result) {
   var wrap = _rclEl('div', 'rcl-race-categories');
   var classes = result.classes || [];
@@ -1209,11 +1212,11 @@ function _rclBuildResultsCategoryBreakdown_(result) {
   classes.forEach(function (cls) {
     if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, null, cls.className));
     if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
-      lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, cls.classMostLapsLedCount + (cls.classMostLapsLedCount === 1 ? ' lap led' : ' laps led'), cls.className));
+      lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, null, cls.className));
     }
     if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, null, cls.className));
     if (cls.classFastestLapDriver) {
-      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, cls.classFastestLapTime ? _rclFormatLapTime_(cls.classFastestLapTime) : null, cls.className));
+      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, null, cls.className));
     }
   });
 

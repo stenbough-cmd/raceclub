@@ -209,11 +209,18 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // Calendar, Protests and Career removed from this dropdown (2026-09-24,
   // Matt's call): Calendar and Protests are now popups reached from
   // Dashboard cards rather than standalone sections (see Account.html's
-  // Next Race / Protest cards), and Career was removed entirely (it will
-  // live on a future public driver profile instead). Dashboard/Results
-  // are the only section links left here.
-  html += link('dashboard', 'Dashboard') + link('results', 'Results');
-  // A second divider between Results and the permission-gated items --
+  // Next Race / Protest cards), and a separate "Career" page was removed
+  // entirely that day (its stats will live on a future public driver
+  // profile instead) -- that's unrelated to the Results nav item below,
+  // which was itself renamed Results -> Career on 2026-09-27 (Matt's ask,
+  // "Make it say CAREER instead of RESULTS in the avatar dropdown menu"
+  // for this dropdown specifically, matching the same rename already done
+  // on Account.html's own sidebar/dashboard nav). The section id stays
+  // 'results' on purpose (matches data-rc-section/#results routing) --
+  // only the label text changes. Dashboard/Career are the only section
+  // links left here.
+  html += link('dashboard', 'Dashboard') + link('results', 'Career');
+  // A second divider between Career and the permission-gated items --
   // only when at least one of them actually shows for this role, so a
   // Driver/Steward-without-Organizer account never ends up with two
   // dividers back to back and nothing between them.
