@@ -3671,24 +3671,29 @@
     return list;
   })();
 
-  // Shared avatar circle -- an uploaded/picked image (profile.avatarFilename,
-  // from assets/avatars/) when one is set, otherwise the same initials
-  // fallback the header uses (_rcHeaderInitials(), global from header.js --
-  // loaded before this script, so it's safe to call directly here without
-  // duplicating that logic). onerror falls back to initials too, in case a
-  // stored filename doesn't actually exist under assets/avatars/.
+  // Shared avatar circle -- a picked preset, the default avatar, or a
+  // driver-pasted image link (profile.avatarFilename, resolved by
+  // rcAvatarSrc_, global from header.js -- see its comment there for the
+  // three shapes this can be) when one is set, otherwise the same initials
+  // fallback the header uses (_rcHeaderInitials(), also from header.js --
+  // loaded before this script, so both are safe to call directly here
+  // without duplicating that logic). onerror falls back to the default
+  // avatar first (2026-09-27, Matt's ask -- a pasted link failing is the
+  // common case now), then initials as the last resort if the default
+  // image itself is unreachable too.
   function buildAvatarCircle(profile, extraClass) {
     var circle = el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
     var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
-    if (profile && profile.avatarFilename) {
+    var avatarSrc = (typeof rcAvatarSrc_ === 'function' && profile) ? rcAvatarSrc_(profile.avatarFilename) : '';
+    if (avatarSrc) {
       var img = document.createElement('img');
       img.className = 'rc-avatar-circle-img';
       img.alt = '';
-      img.src = 'assets/avatars/' + profile.avatarFilename;
-      img.onerror = function () {
+      img.src = avatarSrc;
+      rcWireAvatarFallback_(img, function () {
         img.remove();
         circle.textContent = initials;
-      };
+      });
       circle.appendChild(img);
     } else {
       circle.textContent = initials;
@@ -3741,6 +3746,7 @@
       btn.appendChild(img);
       btn.addEventListener('click', function () {
         selected = filename;
+        urlInput.value = ''; // picking a preset clears any pasted link so the two can't fight at Save
         refreshSelection();
       });
       grid.appendChild(btn);
@@ -3749,12 +3755,53 @@
     refreshSelection();
     body.appendChild(grid);
 
+    // Paste-your-own-image-link row (2026-09-27, Matt's ask: "allow users
+    // to link their own image file... In the text box, add https:// and
+    // they can type after that. The https:// cannot be removed") -- the
+    // "https://" prefix is a separate, non-editable label (.rc-avatar-url-
+    // prefix, style.css) sitting beside a plain text input rather than
+    // part of the input's own value, so there's nothing for a driver to
+    // even try to delete: it's simply not there to select. The input only
+    // ever holds whatever comes after it.
+    body.appendChild(el('p', 'rc-hint', 'Or paste a link to your own image:'));
+    var urlRow = el('div', 'rc-avatar-url-row');
+    urlRow.appendChild(el('span', 'rc-avatar-url-prefix', 'https://'));
+    var urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.className = 'rc-avatar-url-input';
+    urlInput.placeholder = 'yoursite.com/your-image.jpg';
+    // Prefills with whatever's already there if the current avatar IS a
+    // pasted link (rcAvatarSrc_'s https:// shape, header.js), so reopening
+    // this popup to tweak an existing link doesn't look like it forgot it.
+    if (profile.avatarFilename && /^https:\/\//i.test(profile.avatarFilename)) {
+      urlInput.value = profile.avatarFilename.replace(/^https:\/\//i, '');
+    }
+    // Typing a link visually deselects the grid above (no preset and a
+    // pasted link can't both be "the" selection at once) -- the actual
+    // value used at Save time is computed fresh from urlInput/selected
+    // right there, this is just the grid's own highlight staying honest
+    // about which one currently wins.
+    urlInput.addEventListener('input', function () {
+      if (urlInput.value.trim()) {
+        selected = null;
+        refreshSelection();
+      }
+    });
+    urlRow.appendChild(urlInput);
+    body.appendChild(urlRow);
+
     var saveBtn = el('button', 'rc-btn-primary', 'Save Avatar');
     saveBtn.type = 'button';
     saveBtn.style.marginTop = '18px';
     saveBtn.addEventListener('click', function () {
-      if (!selected) {
-        showToast('Pick an avatar first.', 'error');
+      // A pasted link wins over a grid pick if both are somehow present
+      // (shouldn't happen given the mutual-clear wiring above, but this is
+      // the actual source of truth either way) -- trimmed so whitespace
+      // alone doesn't count as "a link was pasted."
+      var typedUrl = urlInput.value.trim();
+      var finalSelection = typedUrl ? ('https://' + typedUrl) : selected;
+      if (!finalSelection) {
+        showToast('Pick an avatar or paste an image link first.', 'error');
         return;
       }
 
@@ -3763,12 +3810,12 @@
       // to run" -- his standing rule for the whole site). The picker
       // closes and the new avatar shows up everywhere on screen the
       // instant it's picked; the actual write to the sheet happens
-      // silently in the background below. avatarFilename is the only
-      // field genuinely changing here, and it's already known
-      // client-side (it's whatever was just clicked), so there's nothing
-      // to fake or leave blank.
+      // silently in the background below. A pasted link that turns out
+      // not to be a real image isn't caught here -- rcWireAvatarFallback_
+      // (header.js) is what falls it back to the default avatar wherever
+      // it's later rendered, same as any other broken avatar image.
       var previousAvatarFilename = profile.avatarFilename;
-      profile.avatarFilename = selected;
+      profile.avatarFilename = finalSelection;
       if (onSaved) onSaved(profile);
       setProfileCache(profile);
       if (typeof renderHeader === 'function') renderHeader();
@@ -3785,7 +3832,7 @@
           email: profile.email,
           location: profile.location || '',
           timeZone: profile.timeZone || '',
-          avatarFilename: selected
+          avatarFilename: finalSelection
         }
       })
         .then(function (data) {

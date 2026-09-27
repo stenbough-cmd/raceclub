@@ -59,19 +59,23 @@ var RC_AVATAR_FILENAMES_ = (function () {
   return list;
 })();
 
-// Same avatar-or-initials rendering as Account.html's buildAvatarCircle().
+// Same avatar-or-initials rendering as Account.html's buildAvatarCircle(),
+// including the rcAvatarSrc_/rcWireAvatarFallback_ resolve-then-default-
+// then-initials chain (both globals from header.js -- see the comment on
+// rcAvatarSrc_ there for the three avatarFilename shapes this now covers).
 function _rcEP_buildAvatarCircle(profile, extraClass) {
   var circle = _rcEP_el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
   var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
-  if (profile && profile.avatarFilename) {
+  var avatarSrc = (typeof rcAvatarSrc_ === 'function' && profile) ? rcAvatarSrc_(profile.avatarFilename) : '';
+  if (avatarSrc) {
     var img = document.createElement('img');
     img.className = 'rc-avatar-circle-img';
     img.alt = '';
-    img.src = 'assets/avatars/' + profile.avatarFilename;
-    img.onerror = function () {
+    img.src = avatarSrc;
+    rcWireAvatarFallback_(img, function () {
       img.remove();
       circle.textContent = initials;
-    };
+    });
     circle.appendChild(img);
   } else {
     circle.textContent = initials;
@@ -177,6 +181,7 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
     btn.appendChild(img);
     btn.addEventListener('click', function () {
       selected = filename;
+      urlInput.value = ''; // picking a preset clears any pasted link so the two can't fight at Save
       refreshSelection();
     });
     grid.appendChild(btn);
@@ -185,17 +190,42 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   refreshSelection();
   body.appendChild(grid);
 
+  // Paste-your-own-image-link row -- same shape as Account.html's own copy
+  // of this popup (openAvatarPickerModal), see its comment for the full
+  // reasoning on why "https://" is a separate non-editable label rather
+  // than part of the input's own value.
+  body.appendChild(_rcEP_el('p', 'rc-hint', 'Or paste a link to your own image:'));
+  var urlRow = _rcEP_el('div', 'rc-avatar-url-row');
+  urlRow.appendChild(_rcEP_el('span', 'rc-avatar-url-prefix', 'https://'));
+  var urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.className = 'rc-avatar-url-input';
+  urlInput.placeholder = 'yoursite.com/your-image.jpg';
+  if (profile.avatarFilename && /^https:\/\//i.test(profile.avatarFilename)) {
+    urlInput.value = profile.avatarFilename.replace(/^https:\/\//i, '');
+  }
+  urlInput.addEventListener('input', function () {
+    if (urlInput.value.trim()) {
+      selected = null;
+      refreshSelection();
+    }
+  });
+  urlRow.appendChild(urlInput);
+  body.appendChild(urlRow);
+
   var saveBtn = _rcEP_el('button', 'rc-btn-primary', 'Save Avatar');
   saveBtn.type = 'button';
   saveBtn.style.marginTop = '18px';
   saveBtn.addEventListener('click', function () {
-    if (!selected) {
-      showToast('Pick an avatar first.', 'error');
+    var typedUrl = urlInput.value.trim();
+    var finalSelection = typedUrl ? ('https://' + typedUrl) : selected;
+    if (!finalSelection) {
+      showToast('Pick an avatar or paste an image link first.', 'error');
       return;
     }
 
     var previousAvatarFilename = profile.avatarFilename;
-    profile.avatarFilename = selected;
+    profile.avatarFilename = finalSelection;
     if (onSaved) onSaved(profile);
     setProfileCache(profile);
     if (typeof renderHeader === 'function') renderHeader();
@@ -212,7 +242,7 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
         email: profile.email,
         location: profile.location || '',
         timeZone: profile.timeZone || '',
-        avatarFilename: selected
+        avatarFilename: finalSelection
       }
     })
       .then(function (data) {

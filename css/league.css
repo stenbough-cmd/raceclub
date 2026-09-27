@@ -2127,6 +2127,14 @@ body.rc-league-page {
 .rcl-modal-dialog textarea:focus {
   border-color: var(--rc-red);
 }
+/* The avatar-URL "https://" prefix label (style.css .rc-avatar-url-prefix)
+   is a <span>, not an <input>, so the generic input override above doesn't
+   touch it -- give it its own dark-theme colors (2026-09-27). */
+.rcl-modal-dialog .rc-avatar-url-prefix {
+  background: var(--rcl-bg);
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink-dim);
+}
 /* Same dark-theme override, extended for the Edit Profile popup
    (js/edit-profile.js, added 2026-09-21 alongside this popup's own
    in-place-on-league.html support): .rc-panel (the Change Password box)

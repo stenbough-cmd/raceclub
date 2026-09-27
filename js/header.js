@@ -130,6 +130,49 @@
 var RC_HEADER_HEIGHT = 70;
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
+// Shared avatar helpers (2026-09-27, Matt's ask: "let users link their own
+// image file... paste it in") -- defined here, not duplicated per file,
+// since header.js already loads on every page before any other inline
+// script runs (same pattern as showToast/_rcHeaderInitials/renderHeader,
+// all already called directly from Account.html/edit-profile.js as
+// globals). Every avatar render on the site (this file's own header
+// avatar, Account.html's buildAvatarCircle/openAvatarPickerModal,
+// edit-profile.js's parallel copies) should go through these two instead
+// of reimplementing the src/fallback logic a third and fourth time.
+//
+// profile.avatarFilename is now one of three shapes:
+//   ''                                    -> no avatar; caller shows initials
+//   'avatar-NN.png' / 'avatar_default.jpg' (a preset or the default file)
+//                                          -> assets/avatars/<name>
+//   'https://...' (a driver-pasted link)  -> the URL itself, unchanged
+//
+// RC_AVATAR_DEFAULT_FILE_ mirrors RC_AVATAR_DEFAULT_FILENAME (Auth.gs) --
+// every brand new account starts with this avatar now instead of a blank
+// one (see handleRegister/adminCreateUser, Auth.gs), and it's also what a
+// broken avatar image (most commonly a dead or non-image link a driver
+// pasted in) falls back to instead of silently going blank.
+var RC_AVATAR_DEFAULT_FILE_ = 'avatar_default.jpg';
+
+function rcAvatarSrc_(avatarFilename) {
+  if (!avatarFilename) return '';
+  return (/^https:\/\//i.test(avatarFilename)) ? avatarFilename : ('assets/avatars/' + avatarFilename);
+}
+
+// Wire onto an <img> that's already showing an avatar (img.src already
+// set via rcAvatarSrc_ above). onFinalFailure runs only once the default
+// image ITSELF has also failed to load (or the src was already the
+// default when it failed) -- callers use it to reveal initials, same
+// last-resort each avatar circle already had before this change.
+function rcWireAvatarFallback_(img, onFinalFailure) {
+  img.onerror = function () {
+    if (img.src.indexOf(RC_AVATAR_DEFAULT_FILE_) !== -1) {
+      if (onFinalFailure) onFinalFailure();
+      return;
+    }
+    img.src = 'assets/avatars/' + RC_AVATAR_DEFAULT_FILE_;
+  };
+}
+
 // Hamburger icon (2026-09-27, mobile nav pass, Matt's ask: "a menu icon
 // that opens the nav links in a dropdown") -- same stroke-width/cap/join
 // convention as every other inline icon on the site (Account.html's
@@ -450,14 +493,21 @@ function renderHeader(opts) {
     // Logout in the dropdown itself.
     // Avatar image (added 2026-08-30, Matt's call) -- initials render
     // underneath regardless, and the chosen avatar image sits on top of
-    // them absolutely-positioned (.rc-header-avatar-img in style.css);
-    // its onerror just hides the <img> itself, revealing the initials
-    // underneath, same "silently fall back" convention Account.html's own
-    // buildAvatarCircle() uses. cached.avatarFilename comes from
-    // setProfileCache() (js/auth.js).
+    // them absolutely-positioned (.rc-header-avatar-img in style.css).
+    // src comes from rcAvatarSrc_ above (a driver-pasted link now renders
+    // directly, not under assets/avatars/). onerror falls back to
+    // RC_AVATAR_DEFAULT_FILE_ first (2026-09-27, Matt's ask -- a pasted
+    // link failing is the common case now, not a missing local asset) and
+    // only hides the <img> (revealing the initials underneath) if the
+    // default image itself also fails to load. Inline onerror rather than
+    // rcWireAvatarFallback_ since this is still a raw HTML string at this
+    // point, not a live <img> element -- same constraint every other piece
+    // of this function is already built around. cached.avatarFilename
+    // comes from setProfileCache() (js/auth.js).
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
-    var avatarImgHtml = avatarFilename
-      ? '<img class="rc-header-avatar-img" src="assets/avatars/' + escapeHtmlHeader_(avatarFilename) + '" alt="" onerror="this.style.display=\'none\';">'
+    var avatarSrc = rcAvatarSrc_(avatarFilename);
+    var avatarImgHtml = avatarSrc
+      ? '<img class="rc-header-avatar-img" src="' + escapeHtmlHeader_(avatarSrc) + '" alt="" onerror="if(this.src.indexOf(\'' + RC_AVATAR_DEFAULT_FILE_ + '\')!==-1){this.style.display=\'none\';}else{this.src=\'assets/avatars/' + RC_AVATAR_DEFAULT_FILE_ + '\';}">'
       : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +
