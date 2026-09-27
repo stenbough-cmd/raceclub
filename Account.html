@@ -1171,9 +1171,8 @@
     // league.html's dark hero styling. Lives outside `body` (appended once,
     // here, not inside any render* function above) so it survives every
     // repaint those functions do to `body.innerHTML` on refreshStatus().
-    // Same "← Label" bottom-left link shape Next Race's "View full season"
-    // and Protest's "Go to Protests" cards already use (.rc-link-btn
-    // .rc-dash-card-link).
+    // Same "← Label" bottom-left link shape Protest's "Go to Protests"
+    // card already uses (.rc-link-btn .rc-dash-card-link).
     var formatBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View season details');
     formatBtn.type = 'button';
     formatBtn.addEventListener('click', function () { openSeasonFormatModal(); });
@@ -1513,8 +1512,28 @@
   // Format" to "Season Details" (2026-09-24) -- the two stat groups
   // inside are "This Season" and "Season Format" (rendered uppercase via
   // .rc-seasonfmt-group-label's own CSS, same as league.html's).
+  //
+  // Calendar folded into the bottom of this popup (2026-09-27, Matt's
+  // ask) -- the standalone Calendar popup (openCalendarModal) is gone
+  // entirely; its exact same race-card list now renders here instead,
+  // under its own "CALENDAR" graphite pill (the same .rc-seasonfmt-group-
+  // label pill shape "This Season"/"Season Format" already use above it).
+  // Matt's reasoning: a driver deciding whether to sign up should be able
+  // to see the season's schedule right alongside its format/stats,
+  // without needing a seat first -- this popup already reads the public,
+  // no-token getLeagueHub payload, and hub.calendar is the same public
+  // race-entry list league.html's own Calendar tab renders from (built
+  // off the same _rcBuildSeasonEntriesById_ as the old per-driver
+  // getSeasonCalendar call the standalone popup used), so nothing here is
+  // gated behind registration any more the way the old popup's calendar
+  // was. raceCard()/formatRaceDateTime() etc. are unchanged -- only where
+  // this content lives moved.
   function openSeasonFormatModal() {
     var modal = showModal('Season Details', { wide: true, accentHead: true });
+    // 50px wider than the plain .rc-modal-wide (2026-09-24, carried over
+    // from the old standalone Calendar popup) -- the race-card list below
+    // needs the extra room the stat-tile groups above it don't.
+    modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading season details...'));
     fetchApi('getLeagueHub', {}).then(function (hub) {
       modal.body.innerHTML = '';
@@ -1527,12 +1546,36 @@
       _rcSetModalTitle(modal, hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details');
       var snapshotStats = _rcBuildSeasonSnapshotStats_(hub);
       var formatStats = _rcBuildSeasonFormatStats_(hub);
-      if (!snapshotStats.length && !formatStats.length) {
+      var hasCalendar = !!(hub.calendar && hub.calendar.length);
+      if (!snapshotStats.length && !formatStats.length && !hasCalendar) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once they are set.'));
         return;
       }
       if (snapshotStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('This Season', snapshotStats));
       if (formatStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('Season Format', formatStats));
+
+      // CALENDAR group -- same pill shape as the two stat groups above,
+      // same race-card list the old standalone popup rendered, format
+      // untouched (2026-09-27, Matt's explicit ask: "keep the calendar
+      // race containers format identical to what they are now, we're
+      // only changing where they're located").
+      if (hasCalendar) {
+        var calGroup = el('div', 'rc-seasonfmt-group');
+        calGroup.appendChild(el('div', 'rc-seasonfmt-group-label', 'Calendar'));
+        var driverTz = '';
+        try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
+        // First not-yet-finished round/special gets the "UP NEXT" status,
+        // same rule the old popup and league.html's own calendar use --
+        // byes never do, nothing to point a driver toward on a week off.
+        var nextIdx = -1;
+        hub.calendar.forEach(function (entry, idx) {
+          if (nextIdx === -1 && entry.kind !== 'bye' && !entry.finished) nextIdx = idx;
+        });
+        var calList = el('div', 'rc-cal-race-list');
+        hub.calendar.forEach(function (entry, idx) { calList.appendChild(raceCard(entry, driverTz, null, idx === nextIdx)); });
+        calGroup.appendChild(calList);
+        modal.body.appendChild(calGroup);
+      }
     }).catch(function () {
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
@@ -1847,7 +1890,7 @@
 
     var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
     if (!registered) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to view the next race.'));
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to view the next race information.'));
       return card;
     }
 
@@ -1997,14 +2040,12 @@
 
     card.appendChild(body);
 
-    // Link opens the Calendar popup (2026-09-24, Matt's call -- Calendar
-    // is no longer a standalone nav page) -- see openCalendarModal above.
-    var viewSeasonBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View full season');
-    viewSeasonBtn.type = 'button';
-    viewSeasonBtn.addEventListener('click', function () {
-      openCalendarModal(currentToken);
-    });
-    card.appendChild(viewSeasonBtn);
+    // "← View full season" link removed entirely (2026-09-27, Matt's ask)
+    // -- the Calendar popup it opened is gone; its content now lives at
+    // the bottom of the View Season Details popup instead (see
+    // openSeasonFormatModal), reachable from Registration Status's own
+    // "← View season details" link. Makes more sense for a driver who
+    // hasn't signed up yet and wants to see the schedule before deciding.
 
     return card;
   }
@@ -5072,7 +5113,7 @@
   // don't vary race to race, but show on every card anyway for quick
   // reference rather than making the driver flip back to Season Settings.
   // isNext flags the first not-yet-finished round/special in the list
-  // (computed once by the caller, openCalendarModal, same "first
+  // (computed once by the caller, openSeasonFormatModal, same "first
   // unfinished entry" rule league.html's own _rclRenderCalendar uses for
   // its UP NEXT pill).
   //
@@ -5191,77 +5232,14 @@
     return card;
   }
 
-  // Calendar -- converted from a standalone nav section to a popup
-  // (2026-09-24, Matt's call: "instead of '<- View the full schedule'
-  // opening up another page, I'd like it to produce a popup like the team
-  // and season format does, and basically copy the style that we built on
-  // the calendar page and have it live as a popup"). Reached from the
-  // Dashboard's Next Race card ("<- View full season"); same wide/
-  // accent-header popup shell as Season Format/Current Seat Info/
-  // Protests, with the exact same season-header + race-list content the
-  // old standalone Calendar page rendered.
-  function openCalendarModal(token) {
-    var modal = showModal('Calendar', { wide: true, accentHead: true });
-    // 50px wider than every other wide popup (2026-09-24, Matt's ask) --
-    // .rc-modal-wide's own 820px is shared with Season Details/Current
-    // Seat Info/Protests, so this bumps just the Calendar popup's own
-    // instance rather than every wide popup on the site.
-    modal.el.classList.add('rc-modal-calendar-wide');
-    modal.body.appendChild(buildSpinner('Loading your calendar...'));
-
-    fetchApi('getSeasonCalendar', { token: token }).then(function (res) {
-      modal.body.innerHTML = '';
-
-      if (!res || !res.success) {
-        modal.body.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load the season calendar right now.'));
-        return;
-      }
-      if (!res.hasSeason) {
-        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'The calendar fills in once a season is open.'));
-        return;
-      }
-      // Not registered for the active season -- nothing to show (Matt's
-      // rule, 2026-09-23: only registered drivers see the current
-      // season's schedule here). Same empty-state treatment, different
-      // copy from the "no season at all" case above.
-      if (!res.registered) {
-        modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its calendar.'));
-        return;
-      }
-
-      var driverTz = '';
-      try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
-
-      // Title becomes "SEASON <n> CALENDAR" once the season number is
-      // known (2026-09-24, Matt's ask -- matches league.html's own popup
-      // title).
-      var calSeasonNumLabel = seasonNumberLabel(res.seasonId);
-      _rcSetModalTitle(modal, calSeasonNumLabel ? ('Season ' + calSeasonNumLabel + ' Calendar') : 'Calendar');
-
-      // No "Season N: Name" container any more (2026-09-24, Matt's call:
-      // "Like the PROTESTS popup, remove the <season n> <season name>
-      // container and have everything sit within the popup below the red
-      // header line at the top") -- the race list renders directly under
-      // the modal's own red accent-header line, same move openProtestModal
-      // made.
-      var races = res.races || [];
-      // First not-yet-finished round/special gets the "UP NEXT" status
-      // (byes never do -- nothing to point a driver toward on a week off),
-      // same rule league.html's own _rclRenderCalendar uses.
-      var nextIdx = -1;
-      races.forEach(function (entry, idx) {
-        if (nextIdx === -1 && entry.kind !== 'bye' && !entry.finished) nextIdx = idx;
-      });
-
-      var list = el('div', 'rc-cal-race-list');
-      var raceSettings = (res.seasonDetails || {}).raceSettings || {};
-      races.forEach(function (entry, idx) { list.appendChild(raceCard(entry, driverTz, raceSettings, idx === nextIdx)); });
-      modal.body.appendChild(list);
-    }).catch(function () {
-      modal.body.innerHTML = '';
-      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
-    });
-  }
+  // Standalone Calendar popup (openCalendarModal) removed entirely
+  // (2026-09-27, Matt's ask: "you can eliminate the previous calendar
+  // popup code within the account.html now that we combined it with the
+  // season details popup") -- its content now renders at the bottom of
+  // openSeasonFormatModal (Season Details) instead, using the public
+  // hub.calendar list rather than a per-driver getSeasonCalendar fetch,
+  // so it's visible to a driver who hasn't even registered yet. raceCard()
+  // right above this comment is unchanged and still does the rendering.
 
   // =======================================================================
   // RESULTS (2026-09-07) -- the comprehensive breakdown the Dashboard's
