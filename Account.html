@@ -1740,7 +1740,7 @@
     // for the same data right before that rebuild lands was pure waste.
 
     if (!initialData || !initialData.success || !initialData.hasSeat) {
-      renderEmpty('Not on a team yet -- register for a season to lock in a seat.');
+      renderEmpty('Not on a team yet. Register for a season to lock in a seat.');
     } else {
       renderSeat(initialData);
     }
@@ -1832,7 +1832,7 @@
 
     var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
     if (!registered) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet -- register for a season to view the next race.'));
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to view the next race.'));
       return card;
     }
 
@@ -3291,7 +3291,7 @@
       // sense, and a season with no races yet should be Deleted instead.
       var eligible = (data.seasons || []).filter(function (s) { return s.locked && s.status !== 'Completed'; });
       if (!eligible.length) {
-        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to end -- a season needs at least one posted race result, and can\'t already be Completed.'));
+        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to end because a season needs at least one posted race result.'));
         return;
       }
 
@@ -3379,7 +3379,7 @@
       }
       var eligible = (data.seasons || []).filter(function (s) { return s.status !== 'Completed'; });
       if (!eligible.length) {
-        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to delete -- once a season has been ended with End Season, it can no longer be deleted.'));
+        body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No season is currently eligible to delete. Once a season has been ended with End Season, it can no longer be deleted.'));
         return;
       }
 
@@ -4601,7 +4601,7 @@
         // Create/End/Delete Season) -- only reachable here, in the
         // clickable branch; the disabled branches above already carry
         // their own more useful "why this is grayed out" tooltip instead.
-        withTooltip(createBtn, 'Start a brand-new season -- opens registration and lets drivers pick a team right away.');
+        withTooltip(createBtn, 'Start a brand new season.');
         createBtn.addEventListener('click', function () { openSeasonWizardWithLoad(); });
       }
       row.appendChild(createBtn);
@@ -4618,7 +4618,7 @@
         endSeasonBtn.disabled = true;
         withTooltip(endSeasonBtn, 'Only Admins can end a season.');
       } else {
-        withTooltip(endSeasonBtn, 'Mark a season complete. Every round, result, and stat stays on record -- nothing is deleted.');
+        withTooltip(endSeasonBtn, 'Mark a season complete.');
         endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
       }
       row.appendChild(endSeasonBtn);
@@ -4636,7 +4636,7 @@
         deleteSeasonBtn.disabled = true;
         withTooltip(deleteSeasonBtn, 'Only Admins can delete a season.');
       } else {
-        withTooltip(deleteSeasonBtn, 'Permanently erase a season that hasn\'t ended yet -- every round, result, and registration tied to it, gone for good.');
+        withTooltip(deleteSeasonBtn, 'Permenantly erase a season from the database. This action is irreversible.');
         deleteSeasonBtn.addEventListener('click', function () { openDeleteSeasonModal(token, reload); });
       }
       row.appendChild(deleteSeasonBtn);
@@ -4692,7 +4692,7 @@
         return;
       }
       if (!data.rounds || !data.rounds.length) {
-        section.appendChild(buildEmptyStatePanel('No Protests Filed', 'Nothing here yet -- protests filed against a round will show up here for review.'));
+        section.appendChild(buildEmptyStatePanel('No Protests Filed', 'Protests will appear here for review once a season begins.'));
         return;
       }
 

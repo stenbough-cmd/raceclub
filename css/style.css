@@ -3354,8 +3354,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 0 28px;
   z-index: 1000;
 }
-.rc-header-logo-link { display: flex; align-items: center; height: 100%; }
-.rc-header-logo { height: 58px; display: block; }
+.rc-header-logo-link { display: flex; align-items: center; height: 100%; cursor: pointer; }
+/* cursor: pointer + user-select: none explicitly on both the link and the
+   image (2026-09-27, Matt's ask: "make sure both graphics on the left
+   side of the navbar are clickable everywhere and don't show a text
+   cursor on hover") -- belt-and-suspenders alongside the anchor's own
+   default pointer cursor, so hovering anywhere over the logo graphic
+   itself never shows a text-select (I-beam) cursor or lets a click-drag
+   select it as text, on every page (this markup is shared by every page
+   via renderHeader(), js/header.js). Matches the same treatment
+   .rc-header-leaguehub-logo already had. */
+.rc-header-logo { height: 58px; display: block; cursor: pointer; user-select: none; -webkit-user-drag: none; }
 /* League Hub badge -- the league_hub_logo.png mark, sitting right after
    the Race Club logo (2026-09-26). Used to be opt-in per page via
    renderHeader({leagueHubBadge: true}); now unconditional (2026-09-27,
@@ -3383,7 +3392,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    the league hub logo link to the league hub page") -- same
    display:flex/height:100% pattern as .rc-header-logo-link so the image
    inside it still centers vertically against the 70px header. */
-.rc-header-leaguehub-logo-link { display: flex; align-items: center; height: 100%; }
+.rc-header-leaguehub-logo-link { display: flex; align-items: center; height: 100%; cursor: pointer; }
 /* Reads as a link, not a copyable/draggable image (2026-09-27, Matt's ask:
    "make sure my browser doesn't try to copy the letters from the logo...
    knows it's a graphic that's a link, not something to be copied") --
@@ -3401,11 +3410,14 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   display: block;
   user-select: none;
   -webkit-user-drag: none;
+  cursor: pointer;
 }
 .rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; margin-left: auto; }
 .rc-header-link {
   font-family: var(--rc-font-heading);
-  font-size: 13px;
+  font-size: 15px; /* bumped from 13px (2026-09-27, Matt's ask) -- the only
+                       link this class renders is REGISTER/LOGIN, so this is
+                       a safe, isolated size bump. */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;

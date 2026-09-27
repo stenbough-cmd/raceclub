@@ -479,7 +479,7 @@ function _rclRenderTicker(hub) {
   if (!items.length) {
     track.innerHTML = '';
     track.style.animation = 'none';
-    track.appendChild(_rclEl('div', 'rcl-ticker-empty', 'No results or standings yet -- check back once the season gets underway.'));
+    track.appendChild(_rclEl('div', 'rcl-ticker-empty', 'Highlights will fill in once a season is underway.'));
     return;
   }
 
@@ -1250,7 +1250,7 @@ function _rclRenderResults(hub) {
   body.innerHTML = '';
 
   if (!hub.hasSeason || !hub.lastRace) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a race has been run.'));
+    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
     // "View All Results" (2026-09-23) still gets a chance to appear even
     // when the abbreviated lastRace panel has nothing to show -- see the
     // shared block at the end of this function.
@@ -2630,7 +2630,10 @@ function _rclRenderHero(hub) {
   var subEl = document.getElementById('rcl-hero-sub');
 
   if (!hub.hasSeason) {
-    if (subEl) { subEl.textContent = 'No season is currently underway. Check back once the next one opens.'; subEl.style.display = ''; }
+    // Left blank on purpose (2026-09-27, Matt's call) -- no fallback
+    // copy here anymore, the hero band just shows nothing below the
+    // logo/title until a season is underway.
+    if (subEl) { subEl.textContent = ''; subEl.style.display = 'none'; }
     return;
   }
 
