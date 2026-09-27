@@ -420,6 +420,33 @@ function manufacturerLogoSrc(manufacturerName) {
   return 'assets/manufacturers/' + slug + '.png';
 }
 
+// Same slug, .svg extension -- the fallback manufacturerLogoFallback() below
+// tries once the .png 404s (2026-09-27, Matt's ask: some manufacturers only
+// have vector art on hand; use it instead of hiding the logo entirely).
+function manufacturerLogoSvgSrc(manufacturerName) {
+  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+  return 'assets/manufacturers/' + slug + '.svg';
+}
+
+// Arms an <img> whose src is already set to manufacturerLogoSrc(name) with a
+// two-step fallback chain: if the .png 404s, try the same-named .svg; if
+// that ALSO 404s, run onAllFailed (every existing call site passes a
+// function that hides the <img> or its wrapper, same as before this
+// fallback existed). Callers still set imgEl.src themselves first -- this
+// only wires what happens on error.
+function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
+  var triedSvg = false;
+  imgEl.onerror = function () {
+    if (!triedSvg) {
+      triedSvg = true;
+      imgEl.src = manufacturerLogoSvgSrc(manufacturerName);
+    } else {
+      imgEl.onerror = null;
+      if (typeof onAllFailed === 'function') onAllFailed();
+    }
+  };
+}
+
 // sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
 // system out of the site. See season-1-mvp-scope.md.
 

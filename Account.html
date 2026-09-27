@@ -1598,7 +1598,7 @@
       var logo = document.createElement('img');
       logo.src = manufacturerLogoSrc(data.manufacturer);
       logo.alt = data.manufacturer;
-      logo.onerror = function () { logoBox.style.display = 'none'; };
+      manufacturerLogoFallback(logo, data.manufacturer, function () { logoBox.style.display = 'none'; });
       logoBox.appendChild(logo);
     }
     identity.appendChild(logoBox);
@@ -1752,7 +1752,7 @@
         logo.className = 'rc-cs-logo';
         logo.src = manufacturerLogoSrc(data.manufacturer);
         logo.alt = data.manufacturer;
-        logo.onerror = function () { logoWrap.style.display = 'none'; };
+        manufacturerLogoFallback(logo, data.manufacturer, function () { logoWrap.style.display = 'none'; });
         logoWrap.appendChild(logo);
         row.appendChild(logoWrap);
       }
@@ -2568,7 +2568,7 @@
           var img = document.createElement('img');
           img.src = manufacturerLogoSrc(manu);
           img.alt = manu;
-          img.onerror = function () { logoBtn.style.display = 'none'; };
+          manufacturerLogoFallback(img, manu, function () { logoBtn.style.display = 'none'; });
           logoBtn.appendChild(img);
         }
         row.appendChild(logoBtn);
@@ -2654,7 +2654,7 @@
         var logo = document.createElement('img');
         logo.src = manufacturerLogoSrc(team.manufacturer);
         logo.alt = team.manufacturer;
-        logo.onerror = function () { logoBox.style.display = 'none'; };
+        manufacturerLogoFallback(logo, team.manufacturer, function () { logoBox.style.display = 'none'; });
         logoBox.appendChild(logo);
       }
       identity.appendChild(logoBox);
@@ -3028,7 +3028,7 @@
         logo.className = 'rc-signing-reveal-logo';
         logo.alt = team.manufacturer;
         logo.src = manufacturerLogoSrc(team.manufacturer);
-        logo.onerror = function () { this.style.display = 'none'; };
+        manufacturerLogoFallback(logo, team.manufacturer, function () { logo.style.display = 'none'; });
         identity.appendChild(logo);
       }
       identity.appendChild(el('div', 'rc-signing-reveal-team',
@@ -10734,11 +10734,12 @@
             logo.className = 'rc-dm-car-logo';
             logo.alt = '';
             logo.src = manufacturerLogoSrc(c.Manufacturer || '');
-            // Hides gracefully rather than showing a broken-image icon when
-            // that manufacturer's logo file hasn't been uploaded yet -- same
-            // pattern currentSeatBlock() uses elsewhere for this exact file
-            // naming convention (see manufacturerLogoSrc()'s own comment).
-            logo.onerror = function () { this.style.display = 'none'; };
+            // Tries the same-named .svg if the .png 404s, and only then
+            // hides gracefully rather than showing a broken-image icon --
+            // same pattern currentSeatBlock() uses elsewhere for this exact
+            // file naming convention (see manufacturerLogoFallback()'s own
+            // comment in reference-data.js).
+            manufacturerLogoFallback(logo, c.Manufacturer || '', function () { logo.style.display = 'none'; });
             logoCol.appendChild(logo);
             info.appendChild(logoCol);
 

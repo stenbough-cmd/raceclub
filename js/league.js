@@ -520,7 +520,7 @@ function _rclRenderTicker(hub) {
       logo.className = 'rcl-ticker-driver-logo';
       logo.src = manufacturerLogoSrc(row.manufacturer);
       logo.alt = '';
-      logo.onerror = function () { logo.style.display = 'none'; };
+      manufacturerLogoFallback(logo, row.manufacturer, function () { logo.style.display = 'none'; });
       entry.appendChild(logo);
     }
     var nameSpan = _rclEl('span', 'rcl-ticker-driver-name');
@@ -826,7 +826,7 @@ function _rclBuildDriverIdentity_(row, dnf) {
     logoImg.className = 'rcl-standings-mfr-logo';
     logoImg.src = manufacturerLogoSrc(row.manufacturer);
     logoImg.alt = '';
-    logoImg.onerror = function () { logoSlot.style.display = 'none'; };
+    manufacturerLogoFallback(logoImg, row.manufacturer, function () { logoSlot.style.display = 'none'; });
     logoSlot.appendChild(logoImg);
   } else {
     logoSlot.style.display = 'none';

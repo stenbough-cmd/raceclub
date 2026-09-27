@@ -552,6 +552,28 @@
       return 'assets/manufacturers/' + slug + '.png';
     }
 
+    // Same slug, .svg extension -- tried once the .png 404s (2026-09-27,
+    // Matt's ask, mirrored from the same fallback in js/reference-data.js;
+    // kept here too since this page doesn't load that script -- see this
+    // function's own comment there for the full rationale).
+    function manufacturerLogoSvgSrc_(name) {
+      var slug = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+      return 'assets/manufacturers/' + slug + '.svg';
+    }
+
+    function manufacturerLogoFallback_(imgEl, name, onAllFailed) {
+      var triedSvg = false;
+      imgEl.onerror = function () {
+        if (!triedSvg) {
+          triedSvg = true;
+          imgEl.src = manufacturerLogoSvgSrc_(name);
+        } else {
+          imgEl.onerror = null;
+          if (typeof onAllFailed === 'function') onAllFailed();
+        }
+      };
+    }
+
     // "SZN-0001" -> "1" -- same convention Account.html's own
     // seasonNumberLabel() uses.
     function seasonNumberLabel_(seasonId) {
@@ -592,7 +614,7 @@
       logo.className = 'rc-grid-teaser-logo';
       logo.alt = '';
       logo.src = manufacturerLogoSrc_(manufacturer);
-      logo.onerror = function () { logo.style.display = 'none'; };
+      manufacturerLogoFallback_(logo, manufacturer, function () { logo.style.display = 'none'; });
       head.appendChild(logo);
 
       var identity = document.createElement('div');
