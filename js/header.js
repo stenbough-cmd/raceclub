@@ -412,14 +412,15 @@ function renderHeader(opts) {
             '</a>' +
           '</span>';
   html += '<nav class="rc-header-nav">';
-  // League Hub link -- top navbar only while logged OUT, next to LOGIN/
-  // REGISTER (2026-09-18, Matt's call). Once logged in it moves into the
-  // account dropdown instead (see the menu markup below) rather than
-  // sitting in the top bar twice.
-  if (!token) {
-    html += '<a class="rc-header-link" href="league.html">LEAGUE HUB</a>';
-    html += '<span class="rc-header-sep">·</span>';
-  }
+  // League Hub link REMOVED from the logged-out top navbar (2026-09-27,
+  // Matt's ask: "remove the LEAGUE HUB link from the right side when not
+  // signed in on all page navbars") -- was added here 2026-09-18, next to
+  // LOGIN/REGISTER, before the League Hub logo badge (above, left of the
+  // nav) existed at all. Once that badge went unconditional on every page
+  // 2026-09-27, this link became a redundant second way to reach league.html
+  // while logged out; the badge alone covers it now. Logged-in behavior is
+  // unchanged -- League Hub still lives in the account dropdown (see the
+  // menu markup below), never duplicated in the top bar either way.
   if (token) {
     var displayName = cached ? (cached.displayName || '') : '';
     var initials = _rcHeaderInitials(displayName);
