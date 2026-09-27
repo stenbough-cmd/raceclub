@@ -3863,10 +3863,11 @@
     form.appendChild(username);
 
     // First Name / Last Name / Suffix share one row now (2026-09-27,
-    // Matt's ask: 42.5% / 42.5% / 15%) instead of stacking as three full-
-    // width fields -- .rc-field-trio-name (style.css) is a one-off grid
-    // template just for this ratio, since the site's existing
-    // .rc-field-trio is an even 1/1/1 three-column split.
+    // Matt's ask: First/Last 40% each, Suffix fills the rest) instead of
+    // stacking as three full-width fields -- .rc-field-trio-name
+    // (style.css) is a one-off grid template just for this ratio, since
+    // the site's existing .rc-field-trio is an even 1/1/1 three-column
+    // split.
     var nameRow = el('div', 'rc-field-trio-name');
     var firstCol = el('div');
     firstCol.appendChild(el('label', 'margin-top:0;', 'First Name'));
@@ -3957,18 +3958,18 @@
 
     // Pulled out of the submit handler so it can run either immediately
     // (no password change requested) or only after a password change
-    // succeeds (see below) -- exactly the same optimistic-close/instant-
-    // header-update body as before this pass, just no longer inline.
+    // succeeds (see below). No longer optimistic (2026-09-27, Matt's ask:
+    // the button should say "Saving Changes..." and actually wait up to a
+    // minute for the server to confirm rather than closing the popup
+    // first and quietly reverting if the save turns out to have failed).
     function saveProfileFieldsAndClose() {
-      var previousProfileCache = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-      var optimisticDisplayName = [firstName.value.trim(), lastName.value.trim(), suffix.value].filter(function (s) { return s; }).join(' ');
-      setProfileCache({ displayName: optimisticDisplayName, role: previousProfileCache ? previousProfileCache.role : '', avatarFilename: profile.avatarFilename || '' });
-      if (typeof renderHeader === 'function') renderHeader();
-      if (modalHandle) modalHandle.close();
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving Changes...';
 
       fetchApi('updateOwnProfile', {
         method: 'POST',
         token: token,
+        timeoutMs: RC_FETCH_TIMEOUT_MS_PROFILE,
         body: {
           username: username.value.trim(),
           firstName: firstName.value.trim(),
@@ -3981,18 +3982,19 @@
       })
         .then(function (data) {
           if (!data.success) {
-            if (previousProfileCache) setProfileCache(previousProfileCache);
-            if (typeof renderHeader === 'function') renderHeader();
-            showToast(data.message || 'Could not save your changes -- reverted.', 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+            showToast(data.message || 'Could not save your changes.', 'error');
             return;
           }
           setProfileCache(data.profile); // keeps the header avatar/name current here and on every other page, once the reload below actually re-renders it
+          if (modalHandle) modalHandle.close();
           rcReloadAfterSave();
         })
         .catch(function () {
-          if (previousProfileCache) setProfileCache(previousProfileCache);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast('Could not reach the server -- changes reverted.', 'error');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          showToast('Could not reach the server -- try again.', 'error');
         });
     }
 
@@ -4004,18 +4006,16 @@
       }
 
       // Password change is folded into this same SAVE CHANGES button
-      // (2026-09-27, Matt's ask): an untouched password section (both new-
-      // password boxes empty) means the driver isn't changing their
-      // password at all, and profile fields save exactly as before,
-      // instantly, with no wait on the server. Typing into either new-
-      // password box means they ARE changing it, which this button now
-      // also has to carry out -- and unlike the profile fields, whether
-      // that succeeds depends on a fact only the server can check (is
-      // "current password" actually correct), so in that case ONLY the
-      // popup waits on the server before closing: current password missing
-      // or wrong shakes the modal, highlights that box red, and toasts
-      // which of the two happened, leaving every field exactly as typed so
-      // nothing has to be re-entered.
+      // (2026-09-27, Matt's ask). An untouched password section (both new-
+      // password boxes empty) skips straight to the profile-fields save.
+      // Typing into either new-password box means they ARE changing it,
+      // which this button now also has to carry out first -- current
+      // password missing or wrong shakes the modal, highlights that box
+      // red, and toasts which of the two happened, leaving every field
+      // exactly as typed so nothing has to be re-entered. Either way, the
+      // button now waits on the server (up to RC_FETCH_TIMEOUT_MS_PROFILE)
+      // and shows "Saving Changes..." the whole time (2026-09-27, Matt's
+      // follow-up ask) instead of closing before confirmation.
       var changingPassword = !!(pwNew.value || pwConfirm.value);
       if (!changingPassword) {
         saveProfileFieldsAndClose();
@@ -4030,10 +4030,12 @@
         return;
       }
       saveBtn.disabled = true;
-      fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
+      saveBtn.textContent = 'Saving Changes...';
+      fetchApi('changeOwnPassword', { method: 'POST', token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_PROFILE, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
         .then(function (pwData) {
-          saveBtn.disabled = false;
           if (!pwData.success) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
             if (pwData.error === 'INVALID_CURRENT_PASSWORD') {
               shakeAndFlagPassword('Incorrect current password entered');
             } else {
@@ -4042,14 +4044,13 @@
             return;
           }
           // Password's already changed server-side at this point -- the
-          // profile-fields save below still gets to close instantly/
-          // optimistically same as the no-password-change path, since
-          // nothing about IT depends on a server-side check the way the
-          // password did.
+          // profile-fields save below carries on waiting/showing "Saving
+          // Changes..." exactly the same as the no-password-change path.
           saveProfileFieldsAndClose();
         })
         .catch(function () {
           saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
           showToast('Could not reach the server -- try again.', 'error');
         });
     });

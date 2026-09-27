@@ -168,6 +168,16 @@ var RC_FETCH_TIMEOUT_MS_RECOMPUTE = 120000;
 // this.
 var RC_FETCH_TIMEOUT_MS_PROTEST = 60000;
 
+// Edit Profile's SAVE CHANGES budget, 1 minute (2026-09-27, Matt's ask:
+// "give the system up to 1 minute for server confirmation so it doesn't
+// timeout too early should the server be busy") -- updateOwnProfile and
+// changeOwnPassword both had no timeoutMs override at all before this, so
+// they inherited the 20s default meant for small dashboard reads. Used by
+// the Edit Profile popup's SAVE CHANGES button (Account.html and
+// edit-profile.js), which now waits on the server and shows "Saving
+// Changes..." instead of closing optimistically before confirmation.
+var RC_FETCH_TIMEOUT_MS_PROFILE = 60000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom

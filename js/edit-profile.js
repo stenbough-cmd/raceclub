@@ -363,8 +363,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var username = _rcEP_el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
   form.appendChild(username);
 
-  // First Name / Last Name / Suffix share one row, 42.5% / 42.5% / 15%
-  // (2026-09-27, Matt's ask, mirroring Account.html's own openEditProfileModal).
+  // First Name / Last Name / Suffix share one row, First/Last 40% each and
+  // Suffix filling the rest (2026-09-27, Matt's ask, mirroring
+  // Account.html's own openEditProfileModal).
   var nameRow = _rcEP_el('div', 'rc-field-trio-name');
   var firstCol = _rcEP_el('div');
   firstCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'First Name'));
@@ -450,16 +451,17 @@ function _rcEPOpenEditProfileModal(profile, token) {
     showToast(msg, 'error');
   }
 
+  // No longer optimistic (2026-09-27, Matt's ask: the button should say
+  // "Saving Changes..." and actually wait up to a minute for the server to
+  // confirm rather than closing first and quietly reverting on failure).
   function saveProfileFieldsAndClose() {
-    var previousProfileCache = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-    var optimisticDisplayName = [firstName.value.trim(), lastName.value.trim(), suffix.value].filter(function (s) { return s; }).join(' ');
-    setProfileCache({ displayName: optimisticDisplayName, role: previousProfileCache ? previousProfileCache.role : '', avatarFilename: profile.avatarFilename || '' });
-    if (typeof renderHeader === 'function') renderHeader();
-    if (modalHandle) modalHandle.close();
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving Changes...';
 
     fetchApi('updateOwnProfile', {
       method: 'POST',
       token: token,
+      timeoutMs: RC_FETCH_TIMEOUT_MS_PROFILE,
       body: {
         username: username.value.trim(),
         firstName: firstName.value.trim(),
@@ -472,19 +474,20 @@ function _rcEPOpenEditProfileModal(profile, token) {
     })
       .then(function (data) {
         if (!data.success) {
-          if (previousProfileCache) setProfileCache(previousProfileCache);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast(data.message || 'Could not save your changes -- reverted.', 'error');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+          showToast(data.message || 'Could not save your changes.', 'error');
           return;
         }
         setProfileCache(data.profile);
         if (typeof renderHeader === 'function') renderHeader();
+        if (modalHandle) modalHandle.close();
         showToast('Profile updated.', 'success');
       })
       .catch(function () {
-        if (previousProfileCache) setProfileCache(previousProfileCache);
-        if (typeof renderHeader === 'function') renderHeader();
-        showToast('Could not reach the server -- changes reverted.', 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        showToast('Could not reach the server -- try again.', 'error');
       });
   }
 
@@ -497,7 +500,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
 
     // Password change folded into SAVE CHANGES (2026-09-27, Matt's ask),
     // mirroring Account.html's own openEditProfileModal exactly -- see its
-    // comment for the full reasoning.
+    // comment for the full reasoning. The button waits on the server (up
+    // to RC_FETCH_TIMEOUT_MS_PROFILE) and shows "Saving Changes..." the
+    // whole time (2026-09-27, Matt's follow-up ask).
     var changingPassword = !!(pwNew.value || pwConfirm.value);
     if (!changingPassword) {
       saveProfileFieldsAndClose();
@@ -512,10 +517,12 @@ function _rcEPOpenEditProfileModal(profile, token) {
       return;
     }
     saveBtn.disabled = true;
-    fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
+    saveBtn.textContent = 'Saving Changes...';
+    fetchApi('changeOwnPassword', { method: 'POST', token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_PROFILE, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
       .then(function (pwData) {
-        saveBtn.disabled = false;
         if (!pwData.success) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
           if (pwData.error === 'INVALID_CURRENT_PASSWORD') {
             shakeAndFlagPassword('Incorrect current password entered');
           } else {
@@ -527,6 +534,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
       })
       .catch(function () {
         saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
         showToast('Could not reach the server -- try again.', 'error');
       });
   });

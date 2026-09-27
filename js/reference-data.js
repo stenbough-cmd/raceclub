@@ -115,96 +115,20 @@ function getTimezoneList() {
   return TIMEZONE_LIST.slice().sort(function (a, b) { return timezoneOffsetMinutes(a) - timezoneOffsetMinutes(b); });
 }
 
-// Friendly display names for TIMEZONE_LIST (2026-09-27, Matt's ask: make
-// sure areas that don't observe Daylight Saving Time -- Arizona and
-// Hawaii are the two U.S. examples, but the same applies to a handful of
-// other zones already in the curated list above -- read clearly as their
-// own distinct option, not a raw IANA path a driver has to decode). Every
-// zone already in TIMEZONE_LIST gets a plain English name here; the ones
-// that never shift for DST say so explicitly so there's no ambiguity
-// picking between e.g. "Arizona" and "Denver" or "Hawaii" and "Anchorage".
-// This is a label lookup only -- it doesn't add or remove any zone from
-// TIMEZONE_LIST, so the list itself stays exactly as curated above.
-var TIMEZONE_FRIENDLY_NAMES_ = {
-  'Pacific/Honolulu': 'Hawaii',
-  'America/Anchorage': 'Alaska',
-  'America/Los_Angeles': 'Pacific Time (US & Canada)',
-  'America/Tijuana': 'Tijuana / Baja California',
-  'America/Denver': 'Mountain Time (US & Canada)',
-  'America/Phoenix': 'Arizona',
-  'America/Chicago': 'Central Time (US & Canada)',
-  'America/Mexico_City': 'Mexico City',
-  'America/New_York': 'Eastern Time (US & Canada)',
-  'America/Bogota': 'Bogotá',
-  'America/Halifax': 'Atlantic Time (Canada)',
-  'America/La_Paz': 'La Paz',
-  'America/Sao_Paulo': 'São Paulo',
-  'America/Argentina/Buenos_Aires': 'Buenos Aires',
-  'America/Noronha': 'Fernando de Noronha',
-  'Atlantic/Cape_Verde': 'Cape Verde',
-  'Europe/London': 'London',
-  'Africa/Accra': 'Accra',
-  'Europe/Paris': 'Paris / Berlin',
-  'Africa/Lagos': 'Lagos',
-  'Europe/Athens': 'Athens',
-  'Africa/Johannesburg': 'Johannesburg',
-  'Europe/Moscow': 'Moscow',
-  'Africa/Nairobi': 'Nairobi',
-  'Asia/Tehran': 'Tehran',
-  'Asia/Dubai': 'Dubai',
-  'Asia/Baku': 'Baku',
-  'Asia/Kabul': 'Kabul',
-  'Asia/Karachi': 'Karachi',
-  'Asia/Kolkata': 'India (Kolkata)',
-  'Asia/Kathmandu': 'Nepal (Kathmandu)',
-  'Asia/Dhaka': 'Dhaka',
-  'Asia/Yangon': 'Yangon',
-  'Asia/Bangkok': 'Bangkok',
-  'Asia/Jakarta': 'Jakarta',
-  'Asia/Shanghai': 'China (Shanghai)',
-  'Asia/Singapore': 'Singapore',
-  'Australia/Perth': 'Western Australia (Perth)',
-  'Asia/Tokyo': 'Tokyo',
-  'Asia/Seoul': 'Seoul',
-  'Australia/Adelaide': 'Adelaide',
-  'Australia/Sydney': 'Sydney',
-  'Pacific/Port_Moresby': 'Papua New Guinea',
-  'Pacific/Noumea': 'New Caledonia',
-  'Pacific/Auckland': 'Auckland',
-  'Pacific/Fiji': 'Fiji',
-  'Pacific/Tongatapu': 'Tonga',
-  'Pacific/Kiritimati': 'Kiritimati'
-};
-
-// Zones in TIMEZONE_LIST that never shift for Daylight Saving Time -- most
-// of the world outside North America/Europe/Australia's DST-observing
-// regions falls in here, but the two most likely to get mixed up with a
-// DST-observing neighbor are Arizona (vs. Denver/Mountain Time) and
-// Hawaii (vs. Alaska), which is what prompted this whole lookup
-// (2026-09-27, Matt's ask). Labeled "no DST" right in the dropdown so
-// there's never a guess about which of two similarly-offset zones to
-// pick.
-var TIMEZONE_NO_DST_ = {
-  'Pacific/Honolulu': true, 'America/Phoenix': true, 'America/La_Paz': true,
-  'America/Argentina/Buenos_Aires': true, 'Atlantic/Cape_Verde': true,
-  'Africa/Accra': true, 'Africa/Lagos': true, 'Africa/Johannesburg': true,
-  'Europe/Moscow': true, 'Africa/Nairobi': true, 'Asia/Dubai': true,
-  'Asia/Kabul': true, 'Asia/Karachi': true, 'Asia/Kolkata': true,
-  'Asia/Kathmandu': true, 'Asia/Dhaka': true, 'Asia/Yangon': true,
-  'Asia/Shanghai': true, 'Asia/Singapore': true, 'Australia/Perth': true,
-  'Pacific/Port_Moresby': true, 'Pacific/Noumea': true,
-  'Pacific/Tongatapu': true, 'Pacific/Kiritimati': true
-};
-
+// Reverted 2026-09-27 (Matt's ask): the friendly-name + "(no DST)" labels
+// briefly added here looked bad in the dropdown. Matt's underlying ask
+// was only ever "make sure all zones are covered" -- TIMEZONE_LIST above
+// was never touched by that change (every standard UTC offset already
+// has a representative city, including the half-hour/45-minute ones), so
+// reverting the label back to its original plain-IANA-name form loses
+// nothing zone-coverage-wise, it just stops changing how the list looks.
 function timezoneLabel(tz) {
-  var friendly = TIMEZONE_FRIENDLY_NAMES_[tz] || tz.replace(/_/g, ' ').replace(/\//g, ' - ');
   try {
     var offsetPart = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
       .formatToParts(new Date()).find(function (p) { return p.type === 'timeZoneName'; });
-    var suffix = (offsetPart ? offsetPart.value : '') + (TIMEZONE_NO_DST_[tz] ? (offsetPart ? ', no DST' : 'no DST') : '');
-    return friendly + (suffix ? ' (' + suffix + ')' : '');
+    return tz.replace(/_/g, ' ') + (offsetPart ? ' (' + offsetPart.value + ')' : '');
   } catch (err) {
-    return friendly + (TIMEZONE_NO_DST_[tz] ? ' (no DST)' : '');
+    return tz.replace(/_/g, ' ');
   }
 }
 

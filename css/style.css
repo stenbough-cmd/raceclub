@@ -1570,9 +1570,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-field-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-trio:first-child { margin-top: 0; }
 /* First Name / Last Name / Suffix row in Edit Profile (2026-09-27, Matt's
-   ask: 42.5% / 42.5% / 15%, not an even three-way split like the plain
-   .rc-field-trio above). */
-.rc-field-trio-name { display: grid; grid-template-columns: 42.5% 42.5% 15%; gap: 0 16px; margin-top: 18px; }
+   ask: 40% / 40%, Suffix fills the rest, not an even three-way split like
+   the plain .rc-field-trio above). */
+.rc-field-trio-name { display: grid; grid-template-columns: 40% 40% 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-trio-name:first-child { margin-top: 0; }
 
 /* -------------------------------------------------------------------- */
