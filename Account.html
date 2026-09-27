@@ -3044,40 +3044,53 @@
   // Result messaging goes through showToast() (js/header.js) rather than
   // its own inline status line, per Matt's sitewide toast call.
   // ---------------------------------------------------------------------
-  function passwordChangeSection(token) {
+  // opts.noOwnButton (2026-09-27, Matt's ask: fold password-change into
+  // Edit Profile's own SAVE CHANGES button, dropping the standalone
+  // UPDATE PASSWORD button) -- when true, this renders just the three
+  // fields with no button/click-handler of its own; the caller (Edit
+  // Profile's form submit handler below) reads them via the returned
+  // box's .rc-pw-current/.rc-pw-new/.rc-pw-confirm classes and drives the
+  // actual changeOwnPassword call itself. The forced-password lock screen
+  // (renderProfile's mustChangePassword branch further down) still calls
+  // this with no opts at all, so it keeps its own fully self-contained
+  // button exactly as before -- that screen has no surrounding form to
+  // fold into.
+  function passwordChangeSection(token, opts) {
+    opts = opts || {};
     var box = document.createElement('div');
     box.className = 'rc-panel';
     box.style.borderColor = 'var(--rc-red)';
     box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
-    var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password';
-    var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
-    var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password';
-    var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
+    var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password'; cur.className = 'rc-pw-current';
+    var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)'; next.className = 'rc-pw-new';
+    var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password'; confirm.className = 'rc-pw-confirm';
+    box.appendChild(cur); box.appendChild(next); box.appendChild(confirm);
 
-    btn.addEventListener('click', function () {
-      if (next.value !== confirm.value) {
-        showToast('New password and confirmation don\'t match.', 'error');
-        return;
-      }
-      // Deliberately left waiting on the server (2026-09-03 pass): unlike
-      // everything else on this page, success here genuinely depends on
-      // a fact only the server can check -- whether currentPassword is
-      // actually correct -- and that's a common, expected way for this
-      // particular action to fail (a typo, forgetting which password),
-      // not a rare edge case. There's nothing honest to show optimistically
-      // before that check runs, so this one action still waits.
-      fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
-        .then(function (data) {
-          showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
-          // A full reload (rather than box.remove()) covers both callers
-          // at once: the forced-password lock screen (mustChangePassword
-          // re-checks fresh on reload and drops the lock on its own) and
-          // the Edit Profile modal's embedded copy of this form.
-          if (data.success) rcReloadAfterSave();
-        });
-    });
-
-    box.appendChild(cur); box.appendChild(next); box.appendChild(confirm); box.appendChild(btn);
+    if (!opts.noOwnButton) {
+      var btn = el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
+      btn.addEventListener('click', function () {
+        if (next.value !== confirm.value) {
+          showToast('New password and confirmation don\'t match.', 'error');
+          return;
+        }
+        // Deliberately left waiting on the server (2026-09-03 pass): unlike
+        // everything else on this page, success here genuinely depends on
+        // a fact only the server can check -- whether currentPassword is
+        // actually correct -- and that's a common, expected way for this
+        // particular action to fail (a typo, forgetting which password),
+        // not a rare edge case. There's nothing honest to show optimistically
+        // before that check runs, so this one action still waits.
+        fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
+          .then(function (data) {
+            showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
+            // A full reload (rather than box.remove()) drops the forced-
+            // password lock screen -- mustChangePassword re-checks fresh
+            // on reload and clears the lock on its own.
+            if (data.success) rcReloadAfterSave();
+          });
+      });
+      box.appendChild(btn);
+    }
     return box;
   }
 
@@ -3840,15 +3853,26 @@
     var username = el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
     form.appendChild(username);
 
-    form.appendChild(el('label', null, 'First Name'));
+    // First Name / Last Name / Suffix share one row now (2026-09-27,
+    // Matt's ask: 42.5% / 42.5% / 15%) instead of stacking as three full-
+    // width fields -- .rc-field-trio-name (style.css) is a one-off grid
+    // template just for this ratio, since the site's existing
+    // .rc-field-trio is an even 1/1/1 three-column split.
+    var nameRow = el('div', 'rc-field-trio-name');
+    var firstCol = el('div');
+    firstCol.appendChild(el('label', 'margin-top:0;', 'First Name'));
     var firstName = el('input'); firstName.type = 'text'; firstName.value = profile.firstName || ''; firstName.required = true;
-    form.appendChild(firstName);
+    firstCol.appendChild(firstName);
+    nameRow.appendChild(firstCol);
 
-    form.appendChild(el('label', null, 'Last Name'));
+    var lastCol = el('div');
+    lastCol.appendChild(el('label', 'margin-top:0;', 'Last Name'));
     var lastName = el('input'); lastName.type = 'text'; lastName.value = profile.lastName || ''; lastName.required = true;
-    form.appendChild(lastName);
+    lastCol.appendChild(lastName);
+    nameRow.appendChild(lastCol);
 
-    form.appendChild(el('label', null, 'Suffix (optional)'));
+    var suffixCol = el('div');
+    suffixCol.appendChild(el('label', 'margin-top:0;', 'Suffix'));
     var suffix = document.createElement('select');
     var suffixBlank = document.createElement('option'); suffixBlank.value = ''; suffixBlank.textContent = 'None';
     suffix.appendChild(suffixBlank);
@@ -3857,7 +3881,9 @@
       if (profile.suffix === s) opt.selected = true;
       suffix.appendChild(opt);
     });
-    form.appendChild(suffix);
+    suffixCol.appendChild(suffix);
+    nameRow.appendChild(suffixCol);
+    form.appendChild(nameRow);
 
     form.appendChild(el('label', null, 'Email Address'));
     var email = el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
@@ -3898,30 +3924,33 @@
 
     body.appendChild(form);
     body.appendChild(el('hr', 'rc-nav-divider', null));
-    body.appendChild(passwordChangeSection(token));
+    // noOwnButton: true (2026-09-27, Matt's ask) -- Change Password no
+    // longer has its own UPDATE PASSWORD button here; SAVE CHANGES above
+    // drives both saves together. See passwordChangeSection's own comment
+    // for why the forced-password lock screen elsewhere still gets its
+    // own self-contained copy.
+    var pwBox = passwordChangeSection(token, { noOwnButton: true });
+    body.appendChild(pwBox);
+    var pwCurrent = pwBox.querySelector('.rc-pw-current');
+    var pwNew = pwBox.querySelector('.rc-pw-new');
+    var pwConfirm = pwBox.querySelector('.rc-pw-confirm');
+    pwCurrent.addEventListener('input', function () { pwCurrent.classList.remove('rc-field-invalid'); });
 
     var modalHandle = showModal('Edit Profile', { bodyEl: body });
 
-    form.addEventListener('submit', function (evt) {
-      evt.preventDefault();
-      if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
-        showToast('Username, first name, last name, and email are required.', 'error');
-        return;
-      }
+    function shakeAndFlagPassword(msg) {
+      pwCurrent.classList.add('rc-field-invalid');
+      modalHandle.el.classList.remove('rc-shake');
+      void modalHandle.el.offsetWidth;
+      modalHandle.el.classList.add('rc-shake');
+      showToast(msg, 'error');
+    }
 
-      // Instant, no wait on the server (2026-09-03, Matt's call: "the
-      // user should not have to wait for the sheet to save or the script
-      // to run" -- his standing rule for the whole site). The popup
-      // closes the moment Save Changes is clicked, and the header's
-      // name/avatar update right away too -- displayName itself is
-      // computed server-side from First/Last/Suffix (never edited
-      // directly here), so this builds the same "First Last Suffix"
-      // shape client-side as a stand-in; the quiet background reload
-      // below fills in the server's actual computed value once the save
-      // lands, same "placeholder now, real value later" pattern used
-      // elsewhere on this page. A failure (e.g. that username is already
-      // taken) reverts the header back to what it showed before and
-      // explains why via toast, since the popup is already gone.
+    // Pulled out of the submit handler so it can run either immediately
+    // (no password change requested) or only after a password change
+    // succeeds (see below) -- exactly the same optimistic-close/instant-
+    // header-update body as before this pass, just no longer inline.
+    function saveProfileFieldsAndClose() {
       var previousProfileCache = (typeof getProfileCache === 'function') ? getProfileCache() : null;
       var optimisticDisplayName = [firstName.value.trim(), lastName.value.trim(), suffix.value].filter(function (s) { return s; }).join(' ');
       setProfileCache({ displayName: optimisticDisplayName, role: previousProfileCache ? previousProfileCache.role : '', avatarFilename: profile.avatarFilename || '' });
@@ -3955,6 +3984,64 @@
           if (previousProfileCache) setProfileCache(previousProfileCache);
           if (typeof renderHeader === 'function') renderHeader();
           showToast('Could not reach the server -- changes reverted.', 'error');
+        });
+    }
+
+    form.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
+        showToast('Username, first name, last name, and email are required.', 'error');
+        return;
+      }
+
+      // Password change is folded into this same SAVE CHANGES button
+      // (2026-09-27, Matt's ask): an untouched password section (both new-
+      // password boxes empty) means the driver isn't changing their
+      // password at all, and profile fields save exactly as before,
+      // instantly, with no wait on the server. Typing into either new-
+      // password box means they ARE changing it, which this button now
+      // also has to carry out -- and unlike the profile fields, whether
+      // that succeeds depends on a fact only the server can check (is
+      // "current password" actually correct), so in that case ONLY the
+      // popup waits on the server before closing: current password missing
+      // or wrong shakes the modal, highlights that box red, and toasts
+      // which of the two happened, leaving every field exactly as typed so
+      // nothing has to be re-entered.
+      var changingPassword = !!(pwNew.value || pwConfirm.value);
+      if (!changingPassword) {
+        saveProfileFieldsAndClose();
+        return;
+      }
+      if (!pwCurrent.value) {
+        shakeAndFlagPassword('Fill in current password to save changes');
+        return;
+      }
+      if (pwNew.value !== pwConfirm.value) {
+        showToast('New password and confirmation don\'t match.', 'error');
+        return;
+      }
+      saveBtn.disabled = true;
+      fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
+        .then(function (pwData) {
+          saveBtn.disabled = false;
+          if (!pwData.success) {
+            if (pwData.error === 'INVALID_CURRENT_PASSWORD') {
+              shakeAndFlagPassword('Incorrect current password entered');
+            } else {
+              showToast(pwData.message || 'Could not update your password.', 'error');
+            }
+            return;
+          }
+          // Password's already changed server-side at this point -- the
+          // profile-fields save below still gets to close instantly/
+          // optimistically same as the no-password-change path, since
+          // nothing about IT depends on a server-side check the way the
+          // password did.
+          saveProfileFieldsAndClose();
+        })
+        .catch(function () {
+          saveBtn.disabled = false;
+          showToast('Could not reach the server -- try again.', 'error');
         });
     });
   }

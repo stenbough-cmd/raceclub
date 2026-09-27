@@ -1569,6 +1569,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-field-pair:first-child { margin-top: 0; }
 .rc-field-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-trio:first-child { margin-top: 0; }
+/* First Name / Last Name / Suffix row in Edit Profile (2026-09-27, Matt's
+   ask: 42.5% / 42.5% / 15%, not an even three-way split like the plain
+   .rc-field-trio above). */
+.rc-field-trio-name { display: grid; grid-template-columns: 42.5% 42.5% 15%; gap: 0 16px; margin-top: 18px; }
+.rc-field-trio-name:first-child { margin-top: 0; }
 
 /* -------------------------------------------------------------------- */
 /* Edit Profile -- avatar circle + Change Avatar picker (2026-08-30).    */
@@ -3330,7 +3335,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 @media (max-width: 900px) {
   .rc-details-row { grid-template-columns: 1fr; }
   .rc-details-row-2 { grid-template-columns: 1fr; }
-  .rc-field-pair, .rc-field-trio { grid-template-columns: 1fr; }
+  .rc-field-pair, .rc-field-trio, .rc-field-trio-name { grid-template-columns: 1fr; }
 }
 
 /* -------------------------------------------------------------------- */

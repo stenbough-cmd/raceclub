@@ -244,29 +244,38 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
 // minus the rcReloadAfterSave() call on success (that function navigates
 // to Account.html#<section>, which makes no sense to fire from index.html
 // or league.html -- a toast alone is the confirmation here).
-function _rcEPPasswordChangeSection(token) {
+//
+// noOwnButton (2026-09-27, Matt's ask, mirroring the same change in
+// Account.html's passwordChangeSection) -- when true, renders just the
+// three fields with no button of its own; _rcEPOpenEditProfileModal below
+// reads them via .rc-pw-current/.rc-pw-new/.rc-pw-confirm and drives the
+// change through its own SAVE CHANGES button instead.
+function _rcEPPasswordChangeSection(token, opts) {
+  opts = opts || {};
   var box = document.createElement('div');
   box.className = 'rc-panel';
   box.style.borderColor = 'var(--rc-red)';
   box.appendChild(_rcEP_el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
-  var cur = _rcEP_el('input'); cur.type = 'password'; cur.placeholder = 'Current password';
-  var next = _rcEP_el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)';
-  var confirm = _rcEP_el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password';
-  var btn = _rcEP_el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
+  var cur = _rcEP_el('input'); cur.type = 'password'; cur.placeholder = 'Current password'; cur.className = 'rc-pw-current';
+  var next = _rcEP_el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)'; next.className = 'rc-pw-new';
+  var confirm = _rcEP_el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password'; confirm.className = 'rc-pw-confirm';
+  box.appendChild(cur); box.appendChild(next); box.appendChild(confirm);
 
-  btn.addEventListener('click', function () {
-    if (next.value !== confirm.value) {
-      showToast('New password and confirmation don\'t match.', 'error');
-      return;
-    }
-    fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
-      .then(function (data) {
-        showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
-        if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; }
-      });
-  });
-
-  box.appendChild(cur); box.appendChild(next); box.appendChild(confirm); box.appendChild(btn);
+  if (!opts.noOwnButton) {
+    var btn = _rcEP_el('button', null, 'Update Password'); btn.className = 'rc-btn-primary rc-btn-sm'; btn.style.marginTop = '14px';
+    btn.addEventListener('click', function () {
+      if (next.value !== confirm.value) {
+        showToast('New password and confirmation don\'t match.', 'error');
+        return;
+      }
+      fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
+        .then(function (data) {
+          showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
+          if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; }
+        });
+    });
+    box.appendChild(btn);
+  }
   return box;
 }
 
@@ -354,15 +363,23 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var username = _rcEP_el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
   form.appendChild(username);
 
-  form.appendChild(_rcEP_el('label', null, 'First Name'));
+  // First Name / Last Name / Suffix share one row, 42.5% / 42.5% / 15%
+  // (2026-09-27, Matt's ask, mirroring Account.html's own openEditProfileModal).
+  var nameRow = _rcEP_el('div', 'rc-field-trio-name');
+  var firstCol = _rcEP_el('div');
+  firstCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'First Name'));
   var firstName = _rcEP_el('input'); firstName.type = 'text'; firstName.value = profile.firstName || ''; firstName.required = true;
-  form.appendChild(firstName);
+  firstCol.appendChild(firstName);
+  nameRow.appendChild(firstCol);
 
-  form.appendChild(_rcEP_el('label', null, 'Last Name'));
+  var lastCol = _rcEP_el('div');
+  lastCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'Last Name'));
   var lastName = _rcEP_el('input'); lastName.type = 'text'; lastName.value = profile.lastName || ''; lastName.required = true;
-  form.appendChild(lastName);
+  lastCol.appendChild(lastName);
+  nameRow.appendChild(lastCol);
 
-  form.appendChild(_rcEP_el('label', null, 'Suffix (optional)'));
+  var suffixCol = _rcEP_el('div');
+  suffixCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'Suffix'));
   var suffix = document.createElement('select');
   var suffixBlank = document.createElement('option'); suffixBlank.value = ''; suffixBlank.textContent = 'None';
   suffix.appendChild(suffixBlank);
@@ -371,7 +388,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
     if (profile.suffix === s) opt.selected = true;
     suffix.appendChild(opt);
   });
-  form.appendChild(suffix);
+  suffixCol.appendChild(suffix);
+  nameRow.appendChild(suffixCol);
+  form.appendChild(nameRow);
 
   form.appendChild(_rcEP_el('label', null, 'Email Address'));
   var email = _rcEP_el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
@@ -412,17 +431,26 @@ function _rcEPOpenEditProfileModal(profile, token) {
 
   body.appendChild(form);
   body.appendChild(_rcEP_el('hr', 'rc-nav-divider', null));
-  body.appendChild(_rcEPPasswordChangeSection(token));
+  // noOwnButton: true (2026-09-27, Matt's ask, mirroring Account.html) --
+  // SAVE CHANGES above drives both saves together now.
+  var pwBox = _rcEPPasswordChangeSection(token, { noOwnButton: true });
+  body.appendChild(pwBox);
+  var pwCurrent = pwBox.querySelector('.rc-pw-current');
+  var pwNew = pwBox.querySelector('.rc-pw-new');
+  var pwConfirm = pwBox.querySelector('.rc-pw-confirm');
+  pwCurrent.addEventListener('input', function () { pwCurrent.classList.remove('rc-field-invalid'); });
 
   var modalHandle = _rcEPShowModal('Edit Profile', { bodyEl: body });
 
-  form.addEventListener('submit', function (evt) {
-    evt.preventDefault();
-    if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
-      showToast('Username, first name, last name, and email are required.', 'error');
-      return;
-    }
+  function shakeAndFlagPassword(msg) {
+    pwCurrent.classList.add('rc-field-invalid');
+    modalHandle.el.classList.remove('rc-shake');
+    void modalHandle.el.offsetWidth;
+    modalHandle.el.classList.add('rc-shake');
+    showToast(msg, 'error');
+  }
 
+  function saveProfileFieldsAndClose() {
     var previousProfileCache = (typeof getProfileCache === 'function') ? getProfileCache() : null;
     var optimisticDisplayName = [firstName.value.trim(), lastName.value.trim(), suffix.value].filter(function (s) { return s; }).join(' ');
     setProfileCache({ displayName: optimisticDisplayName, role: previousProfileCache ? previousProfileCache.role : '', avatarFilename: profile.avatarFilename || '' });
@@ -457,6 +485,49 @@ function _rcEPOpenEditProfileModal(profile, token) {
         if (previousProfileCache) setProfileCache(previousProfileCache);
         if (typeof renderHeader === 'function') renderHeader();
         showToast('Could not reach the server -- changes reverted.', 'error');
+      });
+  }
+
+  form.addEventListener('submit', function (evt) {
+    evt.preventDefault();
+    if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
+      showToast('Username, first name, last name, and email are required.', 'error');
+      return;
+    }
+
+    // Password change folded into SAVE CHANGES (2026-09-27, Matt's ask),
+    // mirroring Account.html's own openEditProfileModal exactly -- see its
+    // comment for the full reasoning.
+    var changingPassword = !!(pwNew.value || pwConfirm.value);
+    if (!changingPassword) {
+      saveProfileFieldsAndClose();
+      return;
+    }
+    if (!pwCurrent.value) {
+      shakeAndFlagPassword('Fill in current password to save changes');
+      return;
+    }
+    if (pwNew.value !== pwConfirm.value) {
+      showToast('New password and confirmation don\'t match.', 'error');
+      return;
+    }
+    saveBtn.disabled = true;
+    fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: pwCurrent.value, newPassword: pwNew.value } })
+      .then(function (pwData) {
+        saveBtn.disabled = false;
+        if (!pwData.success) {
+          if (pwData.error === 'INVALID_CURRENT_PASSWORD') {
+            shakeAndFlagPassword('Incorrect current password entered');
+          } else {
+            showToast(pwData.message || 'Could not update your password.', 'error');
+          }
+          return;
+        }
+        saveProfileFieldsAndClose();
+      })
+      .catch(function () {
+        saveBtn.disabled = false;
+        showToast('Could not reach the server -- try again.', 'error');
       });
   });
 }
