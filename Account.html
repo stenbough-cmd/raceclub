@@ -1337,7 +1337,7 @@
       // Manufacturer stat, right of Class (2026-09-20, Matt's ask: "add
       // manufacturer to the bottom stats to the right of CLASS and spell
       // out the manufacturer (FORD, PORSCHE, FERRARI, etc)") -- reg.manufacturer
-      // already comes back from handleGetActiveSeason (DataCache.gs), no
+      // already comes back from handleGetActiveSeason (Results.gs), no
       // backend change needed. Uppercased here rather than trusting the
       // sheet's own casing, same plain-text stat treatment as Class.
       var mfrStat = el('div', 'rc-regstatus-stat');
@@ -1655,7 +1655,7 @@
   // page already prefetched in parallel with the profile (see the bottom
   // of this script) -- like Registration Status, this card never fetches
   // or spinners on its own (Matt's call: "no loaders in any of the cards,
-  // ever"). handleGetMyCurrentSeat (DataCache.gs) prefers the richest
+  // ever"). handleGetMyCurrentSeat (Results.gs) prefers the richest
   // source available: the most recent SeasonHistory.CurrentSeat JSON
   // blob (real season stats, written after each round's results are
   // ingested) and falls back to the live Registrations/Teams/Cars rows
@@ -1870,7 +1870,7 @@
   }
 
   // Full-width "quick glance" banner, backed by action=getNextRace
-  // (handleGetNextRace, DataCache.gs) -- reuses the exact same merged
+  // (handleGetNextRace, Seasons.gs) -- reuses the exact same merged
   // round/special/bye entries the Calendar page computes, so this can
   // never show a different "next race" than Calendar would (Matt's call).
   // Like every other Dashboard card, this never fetches or spinners on
@@ -1926,7 +1926,7 @@
     if (!isSpecial && data.roundNum) {
       // "ROUND n OF total" (2026-09-02, Matt's call) -- totalRounds comes
       // straight off _rcBuildActiveSeasonCalendar_'s own rounds.length
-      // (DataCache.gs), the same season the round number itself is drawn
+      // (Seasons.gs), the same season the round number itself is drawn
       // from, so this can never disagree with the Calendar page's own
       // round count. Falls back to the bare "ROUND n" if a season somehow
       // has no totalRounds figure (defensive only -- shouldn't happen).
@@ -2370,18 +2370,19 @@
   //     ±20% around its Tier average -- see the Car Objectives system) is
   //     the WHOLE cost now, not a per-team add-on to a season-long fee.
   //   - No reputation-floor class gating and no beginRegistration call --
-  //     Reputation isn't a real computed number yet this season (see
-  //     DataCache.gs's financesReputation.reputationScore comment), so
-  //     there's nothing real to gate against; every class is open to
-  //     every driver.
+  //     when this was written, Reputation wasn't a real computed number
+  //     yet this season; since then the whole Reputation/Finances system
+  //     was removed entirely (V1 scope cut, 2026-09-17/18), so there is
+  //     still nothing to gate against, permanently now -- every class is
+  //     open to every driver.
   //   - No separate chooseClass server action/state -- picking a class is
   //     purely a client-side filter now. The one server write is joinTeam
   //     itself, which locks the team immediately (Registrations.TeamID),
-  //     with no sponsor IDs attached. Sponsors aren't picked at
-  //     registration at all any more (Matt's call, 2026-09-01) -- a driver
-  //     picks them later, any time before the season starts, from the
-  //     Sponsors page (renderSponsorsSection below), which the Dashboard
-  //     Sponsors card links straight to until they've picked at least one.
+  //     with no sponsor IDs attached -- the Sponsorship system this
+  //     originally deferred to (a Sponsors page/Dashboard card picked
+  //     later) was itself removed entirely in the same V1 scope cut, so
+  //     there is no follow-up sponsor pick anywhere any more, deferred or
+  //     otherwise.
   //   - Team cards no longer show a Tier chip (removed entirely 2026-09-19,
   //     car Tier classification doesn't matter anymore) or a Car Objective
   //     chip (removed earlier, V1 scope cut) -- just team identity now.
@@ -4304,7 +4305,7 @@
     // (a corrected re-import, a protest ruling recorded after later rounds
     // were already imported) is reflected in every later round's numbers
     // and in Season Standings -- see handleAdminRecomputeSeason,
-    // DataCache.gs.
+    // Seasons.gs.
     if (s.locked) {
       // Styled to match Edit Season (2026-09-25, Matt's ask) -- a
       // deliberate one-off exception to the "gray unless it saves" color
@@ -4370,7 +4371,7 @@
     // able to edit seasons, only import race data and deal with
     // protests etc" -- reverses the previous day's "organizers can
     // edit" call). The backend already required Admin here
-    // (handleUpdateSeason, DataCache.gs, requireRole(admin, ['Admin'])).
+    // (handleUpdateSeason, Seasons.gs, requireRole(admin, ['Admin'])).
     // Always renders now (2026-09-19, Matt's call: "I want all buttons to
     // be visible in the LEAGUE TOOLS... and only show disabled if...the
     // user doesn't have credentials to use that function") -- an
@@ -4389,7 +4390,7 @@
     // Delete removed from this row entirely (2026-09-14, Matt's call:
     // "Remove DELETE from the Season buttons so that only EDIT SEASON
     // and the arrow is there") -- only Edit Season and the races
-    // disclosure arrow remain per-row. adminDeleteSeason (DataCache.gs)
+    // disclosure arrow remain per-row. adminDeleteSeason (Seasons.gs)
     // is untouched server-side; there's just no button wired to it here
     // anymore.
 
@@ -4458,7 +4459,7 @@
   // One row per race/special event within a season's expanded Races box
   // (buildSeasonRow above) -- status pill reads finished/hasResults off
   // the same entries Calendar builds (adminGetSeasonRaces reuses
-  // _rcBuildSeasonEntriesById_, DataCache.gs), and Add Results/Delete are
+  // _rcBuildSeasonEntriesById_, Seasons.gs), and Add Results/Delete are
   // only offered for a real Round (a Special Event has no RoundID to
   // import against until that system is designed for real -- see Rounds'
   // schema comment in Core.gs). Bye weeks are filtered out entirely --
@@ -4796,7 +4797,7 @@
   // credentials to use that function"), but both stay disabled with a
   // tooltip for anyone who isn't an Admin -- they write straight to the
   // Seasons sheet the moment they're clicked (handleCreateSeason/
-  // handleAdminArchiveSeason, DataCache.gs, both requireRole(admin,
+  // handleAdminArchiveSeason, Seasons.gs, both requireRole(admin,
   // ['Admin'])), same as Edit Season below. This reverses the previous
   // 2026-09-19 call earlier the same day ("CREATE SEASON and END
   // SEASON... only appear to admins") that hid the whole row from
@@ -5034,7 +5035,7 @@
   // pre-v0.5 archive (commit ab231e0: withTooltip/calStat/weatherIcon/
   // formatRaceDateTime/formatByeDate/formatPointsList/raceCard/
   // seasonDetailsPanel), but every data source is real now instead of the
-  // old CALENDAR_MOCK_SEASON -- see handleGetSeasonCalendar (DataCache.gs)
+  // old CALENDAR_MOCK_SEASON -- see handleGetSeasonCalendar (Seasons.gs)
   // for how Rounds + seasonDetails.specialEvents + seasonDetails.
   // byeWeekDates get merged into one chronological list server-side.
   // Fetches fresh every time the link is clicked (same pattern as Data/
@@ -6500,7 +6501,7 @@
   //      the archive's name-only WIZARD_TRACK_LAYOUTS map -- see
   //      loadWizardTrackList()/resolveTrackId() below.
   //   2) finishWizard() packs everything the current handleCreateSeason
-  //      (4_DataCache.gs) doesn't look up individually -- classes,
+  //      (Seasons.gs) doesn't look up individually -- classes,
   //      classSeasons, economy, raceSettings, specialEvents, etc. -- into
   //      one seasonDetails JSON blob, matching the SeasonDetails/
   //      RoundDetails "one JSON column" convention the rest of the site
@@ -6891,7 +6892,7 @@
 
   // League Management's "Edit Season" button -- loads the same track/car
   // reference data the wizard always needs, plus the season itself
-  // (action=getSeasonForEdit, handleGetSeasonForEdit in DataCache.gs:
+  // (action=getSeasonForEdit, handleGetSeasonForEdit in Seasons.gs:
   // whichever season is most recent, any status, with a `locked` flag and
   // a `raced` flag per round). buildEditWizardState() turns that into the
   // same shape defaultWizardState() produces so the existing wizard pages
@@ -7989,7 +7990,7 @@
     }
 
     // Wired to the real backend (action=createSeason, handleCreateSeason in
-    // DataCache.gs). Everything the backend doesn't look up individually
+    // Seasons.gs). Everything the backend doesn't look up individually
     // (classes/classSeasons/economy/raceSettings/specialEvents/etc.) is
     // bundled into one seasonDetails JSON blob, matching the
     // Seasons.SeasonDetails / Rounds.RoundDetails "one JSON column"
@@ -8013,7 +8014,7 @@
     // shape, they just differ in which action they call and what happens
     // after. includeRoundIds is true only for the edit path: updateSeason
     // needs to know which existing Rounds row each entry corresponds to
-    // (see handleUpdateSeason's locked-mode matching, DataCache.gs).
+    // (see handleUpdateSeason's locked-mode matching, Seasons.gs).
     function buildSeasonWizardPayload(includeRoundIds) {
       // When a race/special event is left without its own custom Event
       // Name, fall back to the season's own name rather than a generic
@@ -8180,7 +8181,7 @@
     }
 
     // Edit Season's real save point -- action=updateSeason (handleUpdateSeason,
-    // DataCache.gs) enforces the lock rule server-side regardless of what
+    // Seasons.gs) enforces the lock rule server-side regardless of what
     // this wizard instance has disabled, so nothing here needs to re-derive
     // "is this allowed" -- it just sends everything currently in state,
     // roundId included, and trusts the backend to apply or skip each piece.
@@ -8565,7 +8566,7 @@
   // that round actually has results to erase -- see buildSeasonRaceRow).
   // Requires typing ERASE, same weight as every other irreversible admin
   // action on this site (openTypeToConfirmModal). See
-  // handleAdminEraseRoundIngestion / _rcEraseRoundIngestion_ (DataCache.gs)
+  // handleAdminEraseRoundIngestion / _rcEraseRoundIngestion_ (Results.gs)
   // for exactly what gets removed/reverted.
   function openEraseRoundIngestionModal(token, opts) {
     opts = opts || {};
@@ -10741,7 +10742,7 @@
         // (2026-09-23, Matt's ask, replacing the prior car-number/sheet-row
         // ordering) -- car number is still the tiebreaker within the same
         // manufacturer, same convention as the Choose Your Team picker's
-        // own sort (handleGetAvailableTeams, DataCache.gs).
+        // own sort (handleGetAvailableTeams, Seasons.gs).
         seasonKeys.forEach(function (season) {
           bySeason[season].sort(function (a, b) {
             var manuCompare = String(a.Manufacturer || '').localeCompare(String(b.Manufacturer || ''));

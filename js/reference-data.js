@@ -150,7 +150,7 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // LMGTE added 2026-09-20 (Matt's ask: "I also added a LMGTE class of car
 // data to the sheets. This is a rookie class of cars below LMGT3") --
 // slotted in FIRST, below LMGT3 on the ladder, since it's the entry-level
-// class every other class sits above. Mirrored in DataCache.gs's own
+// class every other class sits above. Mirrored in Results.gs's own
 // CAR_CLASS_CANONICAL_ORDER_ -- keep both in sync if this order ever
 // changes again.
 var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
@@ -163,7 +163,7 @@ var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 // numeric rank. It drives which of the tier's objectives a car draws
 // (CAR_OBJECTIVE_CATALOG below) and the ±20%-randomized seat cost/
 // objective bonus computed from the wizard's per-tier averages (see
-// handleCreateSeason in 4_DataCache.gs). This is separate from the older,
+// handleCreateSeason in Seasons.gs). This is separate from the older,
 // still-unmodified driver-wide Season Objectives mechanic (one fixed list
 // every driver shares regardless of car -- see
 // v0.3-Economy-Reputation-Design.md).
@@ -252,41 +252,16 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Win Season Championship': 'Wins the class championship.'
 };
 
-// Reputation floor required to join each class -- LOCKED per Matt's call
-// (v0.20.8 correction): LMGT3 (Bronze) has no floor -- money only, same
-// as the ladder in the Rulebook/system map. LMP3 requires 300, LMP2
-// requires 400, Hypercar requires 600. (Was LMGT3:0/LMP3:0/LMP2:400/
-// Hypercar:500 before this pass -- Matt's direct correction moved LMP3
-// from open to a real floor and raised Hypercar's floor from 500 to 600.)
-// A driver who clears a class's floor is always free to pick that class
-// themselves -- no admin approval needed. Enforced both server-side
-// (handleChooseClass, 4_DataCache.gs -- TODO once that check is added)
-// and client-side (the class-choice screen in Account.html, which also
-// shows this exact number next to each class). See Race Club
-// Rulebook.md Section 9/10 and the v0.3 design doc for the full mechanic,
-// including Class Placement Requests -- the driver-initiated, admin-
-// approved exception for a class a driver doesn't yet qualify for.
-// LMGTE (2026-09-20) sits below LMGT3 on the ladder, so it gets the same
-// no-floor/open treatment LMGT3 already has -- neither requires proven
-// reputation to join.
-var CAR_CLASS_REPUTATION_FLOOR = { LMGTE: 0, LMGT3: 0, LMP3: 300, LMP2: 400, Hypercar: 600 };
-
-// Class Placement Request denial reasons -- admin-curated, fixed list
-// (same pattern as the Sponsor/Vanity catalogs: preconfigured options,
-// not free text), so a denied driver always gets a clear, specific
-// answer. "Other" is the one deliberate escape hatch, paired with a
-// short admin-written note -- same "last resort, not the default"
-// treatment as the Steward Board's free-text incident fallback. See
-// Race Club Rulebook.md Section 10 for the full Class Placement Request
-// flow this feeds into.
-var CLASS_PLACEMENT_DENIAL_REASONS = [
-  'Not Enough Proven Reputation',
-  'Unknown / Unverified Skill Level',
-  'Not Enough Race History in Race Club Yet',
-  'Recent Conduct or Discipline Concerns',
-  'No Seat Available in That Class Right Now',
-  'Other'
-];
+// CAR_CLASS_REPUTATION_FLOOR and CLASS_PLACEMENT_DENIAL_REASONS REMOVED
+// (2026-09-27, efficiency pass) -- the per-class Reputation floor gate
+// (LMGTE/LMGT3 open, LMP3 300, LMP2 400, Hypercar 600) and its Class
+// Placement Request exception flow were designed (Race Club Rulebook.md
+// Section 9/10, the v0.3 design doc) but the server-side enforcement was
+// still an open TODO (no handleChooseClass ever existed to check it) when
+// the whole Reputation system was cut in the V1 scope cut, 2026-09-17/18
+// -- there is no reputation score anywhere in the site anymore for a floor
+// to even compare against. Confirmed dead (no remaining references
+// anywhere) before removing. Same fate as the Sponsor catalogs below.
 
 // SPONSOR_TIER_LIST, SPONSOR_BONUS_TRIGGERS/SPONSOR_PENALTY_TRIGGERS and
 // their description/suggested-amount/range-label tables, and
@@ -485,20 +460,16 @@ function countryFlagSrc(countryName) {
   return 'https://flagcdn.com/' + code.toLowerCase() + '.svg';
 }
 
-// Same slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/avatars/{slug}.jpg instead -- e.g. "Porsche" -> "porsche.jpg".
-// Not currently called from anywhere client-side (the server auto-writes
-// this exact filename to ProfileID.AvatarFile at team lock -- see
-// manufacturerToAvatarFile() / handleJoinTeam in 4_DataCache.gs, the
-// actual server-side mirror of this slug rule -- and avatarImageSrc() in
-// Account.html just reads whatever's stored there), but kept here as the
-// documented client-side reference for the same convention, and in case
-// a future screen wants to preview a manufacturer's avatar before a team
-// is actually locked.
-function manufacturerAvatarSrc(manufacturerName) {
-  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/avatars/' + slug + '.jpg';
-}
+// manufacturerAvatarSrc() REMOVED (2026-09-27, efficiency pass) -- same
+// slugging convention as manufacturerLogoSrc() above, pointed at
+// assets/avatars/{slug}.jpg instead. Its own comment already admitted it
+// was "not currently called from anywhere client-side," documenting a
+// claimed server-side auto-avatar-at-team-lock mirror (manufacturerToAvatarFile()/
+// handleJoinTeam in the old DataCache.gs) that doesn't actually exist in
+// today's handleJoinTeam (Seasons.gs) -- no avatar-writing code there at
+// all. Avatars are entirely user-chosen via Edit Profile now (see
+// edit-profile.js). Confirmed dead (no remaining callers anywhere) before
+// removing.
 
 // Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
 // side dropdown source; the server independently re-validates against its
