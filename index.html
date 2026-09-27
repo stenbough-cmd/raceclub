@@ -220,6 +220,29 @@
     </div>
   </section>
 
+  <!-- League Hub mobile-only section (2026-09-27, Matt's ask) -- phone loses
+       its one-tap way to League Hub once the header's League Hub badge and
+       full nav collapse behind the hamburger menu below 821px (tablet keeps
+       the navbar badge visible instead, just moved closer to the Race Club
+       logo -- see .rc-header-leaguehub-badge, style.css). This gives phone
+       visitors a second, always-visible way in, without touching the
+       Discord band or the tablet/desktop layout at all -- Matt's explicit
+       call after brainstorming a site-wide "Community" redesign and
+       deciding to keep the Discord section exactly as it is. Hidden above
+       640px via .rc-leaguehub-mobile-section (style.css). -->
+  <section class="rc-landing-section rc-leaguehub-mobile-section">
+    <div class="rc-landing-inner">
+      <div class="rc-eyebrow">League Hub</div>
+      <h2>Every Standing, Result, And Story. One Page.</h2>
+      <p class="rc-landing-tagline">
+        Standings, race results, and news update the moment a round is
+        scored, all on one public page. Follow your own career or scout the
+        whole grid before you even sign up.
+      </p>
+      <a class="rc-btn-primary rc-cta-btn" href="league.html">Visit League Hub</a>
+    </div>
+  </section>
+
   <!-- Discord community CTA (added 2026-09-24, Matt's ask: "leave a space
        under the What is Race Club information... Join the Race Club
        community for more information!") -- a standalone dark strip, not
@@ -846,17 +869,30 @@
     // faded in together on the next frame -- there's no
     // server wait to mask, so a stagger would only slow the perceived
     // load down for no reason.
+    // Phone-only total-card cap threshold (2026-09-27, Matt's ask: "on
+    // mobile can we make the total amount of MEET THE GRID cards being 6.
+    // Keep the tablet the same as the computer") -- 640px matches the same
+    // boundary used for the hero badge's mobile override and the League
+    // Hub mobile section (css/style.css), so "phone" means the same width
+    // everywhere on this page. Tablet (641-820px) and desktop are
+    // untouched by this -- they keep whatever the per-class cap already
+    // produces, same as before this change.
+    function isPhoneWidth_() {
+      return window.innerWidth <= 640;
+    }
+
     function renderStaticSample_() {
       var classNames = Object.keys(STATIC_CARS_BY_CLASS);
       var chosenClass = classNames[Math.floor(Math.random() * classNames.length)];
       var pool = STATIC_CARS_BY_CLASS[chosenClass].slice();
 
-      // Fisher-Yates shuffle, then take up to 9.
+      // Fisher-Yates shuffle, then take up to 9 (6 on phone -- see
+      // isPhoneWidth_ above).
       for (var i = pool.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
         var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
       }
-      var picks = pool.slice(0, Math.min(9, pool.length));
+      var picks = pool.slice(0, Math.min(isPhoneWidth_() ? 6 : 9, pool.length));
 
       taglineEl.textContent = 'No season is running right now. Here are ' + picks.length +
         ' of the ' + pool.length + ' teams in the ' + STATIC_CLASS_YEAR[chosenClass] + ' ' +
@@ -901,6 +937,14 @@
       taglineEl.textContent = tagline;
 
       rowEl.innerHTML = '';
+      // Phone-only total cap to 6 cards (see isPhoneWidth_ above) -- a
+      // straight slice of the already-shuffled list, taken before the
+      // per-class grouping below so whatever classes land in the first 6
+      // keep their existing order/grouping. Tablet and desktop pass
+      // data.teams through unchanged (still just the per-class cap of 6
+      // each, same as before this change).
+      var teams = (isPhoneWidth_() && data.teams.length > 6) ? data.teams.slice(0, 6) : data.teams;
+
       // Group into one row per class, each with its own rotated label
       // (2026-09-20, Matt's ask -- see buildClassGroup_ above). data.teams
       // already arrives grouped contiguously by class (handleGetGridTeaser,
@@ -909,7 +953,7 @@
       // class buckets, preserving the order classes first appear in.
       var classOrder = [];
       var teamsByClass = {};
-      data.teams.forEach(function (team) {
+      teams.forEach(function (team) {
         var cls = team.carClass || 'Unclassified';
         if (!teamsByClass[cls]) { teamsByClass[cls] = []; classOrder.push(cls); }
         teamsByClass[cls].push(team);

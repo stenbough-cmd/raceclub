@@ -3405,13 +3405,19 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: 100%;
   margin-left: 48px;
 }
-/* 640px -> 821px (2026-09-27, mobile nav pass) -- unified with the
-   hamburger breakpoint below (max-width: 820px) so the badge and the full
-   nav switch to their mobile behavior together instead of at two
-   different widths. Nothing is lost by hiding it a bit earlier: the
-   hamburger menu's first item is always "League Hub" (logged-out panel
-   and logged-in dropdown both), so there's still exactly one tap away to
-   reach it below this width. */
+/* Tablet (2026-09-27 follow-up, Matt's ask: "on tablet, if we move the
+   league hub navbar graphic over by about 1/2 the distance to the race
+   club logo, we can keep the tablet league hub graphic up. Right now it's
+   awkwardly in the middle to middle left part of the navbar") -- shown
+   again at tablet widths instead of only >=821px, with the gap to the
+   Race Club logo halved (48px -> 24px) so it sits close to the logo
+   instead of floating toward the middle of the header. Phone (<=640px)
+   still hides it entirely below -- no room for it once the hamburger
+   nav's own touch target is in play, and phone has its own way back to
+   League Hub now (see .rc-leaguehub-mobile-section, index.html). */
+@media (min-width: 641px) and (max-width: 820px) {
+  .rc-header-leaguehub-badge { display: flex; margin-left: 24px; }
+}
 @media (min-width: 821px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
@@ -3659,6 +3665,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   .rc-fixed-header { padding: 0 16px; }
 }
 
+/* League Hub mobile-only section (2026-09-27, Matt's ask) -- index.html
+   only, sits between "What Is Race Club" and the Discord CTA band. Gives
+   phone visitors a second way back to League Hub now that the header's
+   badge/full nav are behind the hamburger menu below 821px, without
+   touching the Discord band or the tablet/desktop layout at all. Tablet
+   keeps the navbar's own League Hub badge visible instead (see
+   .rc-header-leaguehub-badge above), so this stays phone-only, same
+   640px boundary as the hero badge's mobile override and the Meet The
+   Grid phone-only card cap (index.html, isPhoneWidth_). */
+.rc-leaguehub-mobile-section { display: none; }
+@media (max-width: 640px) {
+  .rc-leaguehub-mobile-section { display: block; }
+}
+
 /* Pages other than index.html sit below the fixed header. */
 .rc-auth-page { padding-top: 70px; }
 .rc-shell { padding-top: 70px; }
@@ -3833,6 +3853,32 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: clamp(38px, 33.94px + 1.13vw, 52px);
   width: auto;
   z-index: 2;
+}
+/* Phone (2026-09-27, Matt's ask: "the Race Club logo that resides in the
+   lower right corner needs to shrink by 1/2 and move much closer to the
+   corner, it currently is sitting too high and too much left") -- the
+   clamp() above is tuned for the 360px-1600px desktop/tablet range and
+   still reads oversized/too far from the corner at true phone widths, so
+   this overrides both the size and the inset directly instead of
+   extending the clamp's low end further. Roughly half the clamp's own
+   height range, and a much tighter corner inset than the clamp ever
+   reaches. */
+@media (max-width: 640px) {
+  .rc-hero-badge {
+    height: 22px;
+    bottom: 10px;
+    right: 10px;
+  }
+}
+/* Tablet (2026-09-27, Matt's ask: "on tablet... the logo can remain the
+   same size but it should move 1/2 the distance closer to the right edge
+   and bottom from where it is currently") -- size is untouched (still
+   inherits the clamp() above), only the inset is roughly halved. */
+@media (min-width: 641px) and (max-width: 820px) {
+  .rc-hero-badge {
+    bottom: 26px;
+    right: 26px;
+  }
 }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps
    tagline, middle-left over the hero photo (2026-09-13, Matt's call).
