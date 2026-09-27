@@ -1442,7 +1442,12 @@
     }
     (hub.standings || []).forEach(function (cls) {
       var count = (cls.standings || []).length;
-      if (count) row2.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
+      // Abbreviated via _rcClassPillLabel (2026-09-27, Matt's ask: "instead
+      // of using the full HYPERCAR DRIVERS in the bubble, abbreviate it
+      // like the rest to HY DRIVERS") -- same helper every other class pill
+      // on the site already uses (Hypercar -> HY, everything else
+      // unchanged since it's already short enough).
+      if (count) row2.push({ value: String(count), label: _rcClassPillLabel(cls.className || 'Class') + ' Drivers' });
     });
     if (hub.dropWeeks) row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
     if (hub.byeWeeks) row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
@@ -1561,7 +1566,7 @@
       // only changing where they're located").
       if (hasCalendar) {
         var calGroup = el('div', 'rc-seasonfmt-group');
-        calGroup.appendChild(el('div', 'rc-seasonfmt-group-label', 'Calendar'));
+        calGroup.appendChild(el('div', 'rc-seasonfmt-group-label', 'Race Calendar'));
         var driverTz = '';
         try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
         // First not-yet-finished round/special gets the "UP NEXT" status,
@@ -7111,7 +7116,12 @@
     // independent of and in addition to the time-based state.__locked pass
     // further down this function.
     var editSeasonLock = !!state.__editSeasonId;
-    if (editSeasonLock) {
+    // Note only shown before the season has started (2026-09-27, Matt's
+    // ask) -- once state.__locked is true, the much more prominent
+    // "This season's first round has started" panel further down this
+    // function already covers Car Classes being frozen along with
+    // everything else, so this narrower note would just be redundant.
+    if (editSeasonLock && !state.__locked) {
       var classLockNote = el('div', 'rc-hint', 'Car Classes are locked once a season is created -- they can no longer be changed here.');
       classLockNote.style.marginBottom = '8px';
       container.appendChild(classLockNote);
@@ -7655,10 +7665,10 @@
   }
 
   // Page 3 -- read-only rollup of everything above.
+  // Intro note removed (2026-09-27, Matt's ask) -- the review step's own
+  // read-only panels already make clear what this page is; no lead-in
+  // sentence needed above the panel stack.
   function renderWizardPreviewPage(state, container) {
-    container.appendChild(el('p', 'color:var(--rc-steel);font-size:12.5px;margin-bottom:12px;',
-      'Review everything below before creating the season -- Back is always available to make changes.'));
-
     var idPanel = el('div', 'rc-panel');
     idPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Identity & Access'));
     idPanel.appendChild(previewLine('Season Name', state.seasonName || '(untitled)'));
@@ -8111,10 +8121,17 @@
       footerButtons.forEach(function (b) { b.disabled = true; });
       var originalLabel = triggerBtn.textContent;
       triggerBtn.textContent = 'SAVING SEASON...';
+      // Dim and disable the popup's X while the save is in flight
+      // (2026-09-27, Matt's ask) -- same modal.closeBtn.disabled
+      // convention already used by Finalize/Un-Finalize and the other
+      // in-flight-request save flows; .rc-modal-close:disabled (style.css)
+      // already gives it the dimmed, unclickable look.
+      if (modal.closeBtn) modal.closeBtn.disabled = true;
 
       function restoreButtons() {
         footerButtons.forEach(function (b) { b.disabled = false; });
         triggerBtn.textContent = originalLabel;
+        if (modal.closeBtn) modal.closeBtn.disabled = false;
       }
 
       var payload = buildSeasonWizardPayload(false);
@@ -8165,11 +8182,16 @@
       contentWrap.innerHTML = '';
       contentWrap.appendChild(buildSpinner('Saving season...'));
       footerBar.innerHTML = '';
+      // Same X-disable treatment as finishWizard's "SAVING SEASON..." save
+      // above (2026-09-27, Matt's ask) -- Edit Season's save is the same
+      // kind of in-flight write and shouldn't be closeable mid-save either.
+      if (modal.closeBtn) modal.closeBtn.disabled = true;
 
       var payload = buildSeasonWizardPayload(true);
 
       function showResultPanel(ok, title, message) {
         contentWrap.innerHTML = '';
+        if (modal.closeBtn) modal.closeBtn.disabled = false;
         var note = el('div', 'rc-panel');
         note.style.borderColor = ok ? 'var(--rc-ok)' : 'var(--rc-red)';
         note.appendChild(el('h3', 'margin-top:0;', title));

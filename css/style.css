@@ -1603,6 +1603,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    the edit profile window") -- Edit Profile's own avatar, centered above
    its Change/Delete links rather than sitting beside them. */
 .rc-avatar-circle-xl { width: 144px; height: 144px; font-size: 44px; }
+/* Edit Profile's avatar circle only (2026-09-27, Matt's ask: "leave a 3px
+   gap and add a black 2px circle around it") -- scoped to
+   .rc-avatar-edit-row (only ever used by openEditProfileModal) rather than
+   the shared .rc-avatar-circle base, so the header avatar and every other
+   place this class shows up are untouched. Same double box-shadow layering
+   the Wager card's avatar ring already uses just above -- first shadow is
+   the 3px transparent gap, second is the 2px carbon (site's "black" token)
+   ring drawn just outside it. */
+.rc-avatar-edit-row .rc-avatar-circle {
+  box-shadow: 0 0 0 3px transparent, 0 0 0 5px var(--rc-carbon);
+}
 .rc-avatar-circle-img { width: 100%; height: 100%; object-fit: cover; }
 .rc-avatar-edit-row {
   display: flex;
