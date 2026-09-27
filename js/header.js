@@ -15,7 +15,7 @@
     to index.html, so it was a redundant second way to do the same thing.
   - The logo and avatar are both slightly larger (38px -> 46px logo,
     32px -> 40px avatar) to give the header a bit more presence.
-  - Logged out: "LEAGUE HUB · REGISTER/LOGIN" (League Hub added 2026-09-18,
+  - Logged out: "LEAGUE HUB · REGISTER / LOGIN" (League Hub added 2026-09-18,
     since league.html is public).
   - Logged in: League Hub moves out of the top bar and into the account
     dropdown instead (top of the menu, above a divider) -- added
@@ -512,7 +512,7 @@ function renderHeader(opts) {
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';
   } else {
-    html += '<a class="rc-header-link" href="login.html">REGISTER/LOGIN</a>';
+    html += '<a class="rc-header-link" href="login.html">REGISTER / LOGIN</a>';
   }
   html += '</nav>';
 
