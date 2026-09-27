@@ -6120,7 +6120,10 @@
           roundId: roundSelect.value, infractionType: fields.infractionSelect.value,
           lapNumber: fields.lapSelect.value, againstProfileId: fields.driver2Select.value,
           description: fields.descBox.value.trim()
-        }
+        },
+        // 1 minute budget (2026-09-27, Matt's ask) -- see
+        // RC_FETCH_TIMEOUT_MS_PROTEST's comment in js/api.js.
+        timeoutMs: RC_FETCH_TIMEOUT_MS_PROTEST
       }).then(function (data) {
         submitBtn.disabled = false;
         if (!data.success) {

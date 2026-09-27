@@ -159,6 +159,15 @@ var RC_FETCH_TIMEOUT_MS_IMPORT = 120000;
 // recomputeBtn, Account.html) should be allowed to sit up.
 var RC_FETCH_TIMEOUT_MS_RECOMPUTE = 120000;
 
+// Protest submission's own budget, 1 minute (2026-09-27, Matt's ask:
+// "increase wait time when submitting a protest to 1 minute before timing
+// out and throwing a server error") -- submitProtest had no timeoutMs
+// override at all before this, so it inherited the 20s default meant for
+// small dashboard reads even though filing a protest can take longer under
+// load. Only the File Protest modal's submit call (Account.html) uses
+// this.
+var RC_FETCH_TIMEOUT_MS_PROTEST = 60000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom
