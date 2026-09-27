@@ -776,18 +776,40 @@ body.rc-league-page {
    .rcl-standings-pos already uses for non-podium position badges
    elsewhere on this page, so "graphite" reads as one consistent surface
    sitewide rather than a new color introduced just for this bar. */
+/* Brushed nickel + red accent rule (2026-09-27, Matt's ask, replacing the
+   flat graphite gradient above) -- three layers: a fine repeating diagonal
+   gradient for the brushed-metal texture, a light-to-dark diagonal sweep
+   for the satin sheen, and an inset highlight/shadow pair plus a drop
+   shadow to sell it as a raised metal bar rather than a flat tint. Text
+   flips to dark ink with a light text-shadow since the bar itself is now
+   light, not dark. The 2px red rule along the bottom keeps a bit of Race
+   Club's one accent color on what would otherwise be an entirely neutral
+   header -- ties it back to the rest of the page's red-underline
+   convention (.rc-dash-card-title, .rcl-panel-head's own border-bottom)
+   instead of reading as a totally separate material. Approved from the
+   "Option C" mockup Matt reviewed before this shipped. */
 .rcl-standings-class-header {
-  background: linear-gradient(135deg, var(--rcl-line-bright) 0%, var(--rcl-line) 100%);
-  color: var(--rcl-ink);
+  position: relative;
+  background:
+    repeating-linear-gradient(100deg,
+      rgba(255, 255, 255, 0.09) 0px,
+      rgba(255, 255, 255, 0.09) 1px,
+      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.05) 3px),
+    linear-gradient(135deg, #d9dade 0%, #b7b9be 45%, #eceef0 55%, #9a9ca1 100%);
+  color: #24262b;
   font-family: var(--rc-font-heading);
   font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   text-align: center;
-  padding: 8px 10px;
+  padding: 8px 10px 7px;
   border-radius: 6px;
   margin-bottom: 12px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid var(--rc-red);
 }
 .rcl-standings-row {
   display: grid;
