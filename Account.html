@@ -3867,25 +3867,12 @@
     section.innerHTML = '';
     section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
-    // How To Use This Site -- top container on the Help page (2026-09-26,
-    // Matt's call: this replaces the old "About Race Club" panel as the
-    // first thing a driver sees here). A quick, factual "how to" grid,
-    // one card per page, each using the exact same glyph that page's own
-    // sidebar link/header icon uses so a driver can match a card to a nav
-    // item at a glance -- kept brief on purpose, ahead of the fuller
-    // Rulebook below.
-    var guide = el('div', 'rc-panel rc-dash-card');
-    guide.appendChild(el('h3', 'rc-dash-card-title', 'How To Use This Site'));
-    var guideGrid = el('div', 'rc-help-guide-grid');
-    HELP_GUIDE_ITEMS.forEach(function (item) {
-      var card = el('div', 'rc-help-guide-card');
-      card.appendChild(el('div', 'rc-help-guide-icon', item.icon));
-      card.appendChild(el('h4', null, item.title));
-      card.appendChild(el('p', null, item.body));
-      guideGrid.appendChild(card);
-    });
-    guide.appendChild(guideGrid);
-    section.appendChild(guide);
+    // "How To Use This Site" container REMOVED entirely (2026-09-27,
+    // Matt's ask: "get rid of the whole container HOW TO USE THIS SITE in
+    // the help section"). It used to be the first card here, ahead of the
+    // Rulebook -- HELP_GUIDE_ITEMS (above) is now unused by this section
+    // but left in place in case a future help card wants the same
+    // per-page icon/title/body data.
 
     // Rules and Regulations (the Rulebook) -- same rc-dash-card chrome as
     // the panels above, plus its own "Jump To A Section" quick-nav grid
