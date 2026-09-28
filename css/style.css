@@ -3707,6 +3707,27 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      own 16px side padding at this width, set in the 820px block above). */
   .rc-header-hamburger-icon svg,
   .rc-header-hamburger-toggle svg { width: 30px; height: 30px; }
+
+  /* Optically center the hamburger against the RACE CLUB wordmark
+     (2026-09-29, Matt's ask: "make the hamburger in the navbar vertically
+     centered with the raceclub graphic in the same navbar", mobile only).
+     Measured: both the hamburger button and the logo <img> already sit on
+     the exact same mathematical mid-line of the 70px header (flex
+     align-items:center on .rc-fixed-header/.rc-header-nav puts both boxes'
+     centers at the same y). The mismatch is optical, not layout -- the
+     logo's own ink (bold RACE CLUB lettering) is concentrated in its
+     upper portion, with only the thin tagline + double underline below,
+     so the wordmark's visual weight sits a couple pixels above its own
+     bounding-box center while the symmetric hamburger icon's visual
+     center IS its bounding-box center. That reads as the hamburger
+     sitting slightly low next to the logo. Nudging the hamburger buttons
+     (not the logo) up by 2px lines up their visual centers instead of
+     their invisible boxes. Covers both hamburger states: the logged-out
+     .rc-header-hamburger-toggle button and the logged-in
+     .rc-header-account-toggle (which swaps to the same icon at this
+     width, see the 820px block above). */
+  .rc-header-hamburger-toggle,
+  .rc-header-account-toggle { position: relative; top: -2px; }
 }
 
 /* Pages other than index.html sit below the fixed header. */
