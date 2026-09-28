@@ -2249,6 +2249,30 @@ body.rc-league-page {
   .rcl-main { padding: 26px 16px 60px; }
   .rcl-panel-body { padding: 14px; }
 
+  /* Horizontal scrollbar fix, All Results popup (2026-09-28, Matt's
+     report: "something on the popup is causing a horizontal scroll bar to
+     appear. It's just slightly larger than the popup... I want it to just
+     have a vertical scroll bar"). Two real causes, both from content that
+     doesn't shrink below a fixed minimum width in the dialog's normal
+     28px-padding layout: the round/session select row's own min-widths
+     (220px/140px, .rcl-allresults-select/-session-select above) can run a
+     few px past what's left of a phone-width dialog even after they wrap
+     onto separate lines, and the dialog's own 28px side padding just makes
+     that margin tighter than it needs to be on a small screen. Trimming
+     the dialog's padding and letting both selects go full-width (instead
+     of a fixed min-width) fixes the real cause; overflow-x:hidden on the
+     dialog is also added as a hard guarantee -- ANY future element that
+     ends up a few px too wide clips instead of ever reopening a horizontal
+     scrollbar, matching Matt's ask literally ("just have a vertical
+     scroll bar"). .rcl-modal-head's own negative bleed margin is brought
+     down to match the dialog's new 16px padding (was -28px/28px, canceling
+     out the desktop padding) so its red-underlined bar still bleeds
+     exactly to the dialog's edges instead of overshooting past them. */
+  .rcl-modal-dialog { padding: 0 16px 20px; overflow-x: hidden; }
+  .rcl-modal-head { margin: 0 -16px 20px; padding: 20px 16px 16px; }
+  .rcl-allresults-select,
+  .rcl-allresults-session-select { min-width: 0; width: 100%; }
+
   /* Ticker label (2026-09-27, Matt's ask: "Remove HIGHLIGHTS text and
      reduce the red slanted container so that the bottom of the slant is
      approximately 10 pixels off the left edge of the screen") -- the
@@ -2287,6 +2311,18 @@ body.rc-league-page {
      becomes symmetric (was 34px top / 42px bottom above) now that
      centering is flex-driven, not padding-driven. */
   .rcl-hero { display: flex; align-items: center; min-height: 240px; padding: 28px 20px; }
+  /* Left-aligned, not centered (2026-09-28 follow-up, Matt's ask: "move it
+     to the left like it is on every other platform with just a small
+     padding on the left") -- .rcl-hero-inner's own margin:0 auto (base
+     rule) is what was centering it horizontally: a flex item's auto
+     margins still soak up free main-axis space in a flex row, the same
+     trick that centers a block element outside of flex. Zeroing it here
+     lets the item fall back to flex-start (this row's initial main-axis
+     alignment), so the text block hugs .rcl-hero's own left padding
+     (20px, just above) the same way index.html/Account.html's headers do,
+     while align-items:center above keeps it vertically centered exactly
+     as before -- that's the OTHER axis, untouched by this change. */
+  .rcl-hero-inner { margin: 0; }
 
   /* ALL RESULTS popup standings tables (2026-09-27, Matt's ask: "need to
      be reduced to only POS, DRIVER and PTS columns") -- .rcl-race-grid-
@@ -2319,8 +2355,13 @@ body.rc-league-page {
   /* "**FOR FULL RESULTS, VIEW ON PC BROWSER" (2026-09-27) -- shown back in
      only here; see .rcl-standings-status-mobile-note's base display:none
      above and the comment on where it's built (_rclBuildAllResultsBody_,
-     js/league.js). */
-  .rcl-standings-status-mobile-note { display: block; }
+     js/league.js). margin-top trimmed 18px -> 4px (2026-09-28, Matt's ask:
+     "move it closer to the notification above it") -- .rcl-standings-
+     status-note's base 18px top margin is sized for sitting below a
+     STANDINGS TABLE, which is a lot more visual weight than the short
+     *PRELIMINARY/*OFFICIAL notice directly above this one, so the two
+     notes were reading as two separate paragraphs instead of a pair. */
+  .rcl-standings-status-mobile-note { display: block; margin-top: 4px; }
 
   /* Race Report / Penalties Assessed (2026-09-27, Matt's ask: "move the
      events from the right of the lap catagory to underneath each lap
@@ -2353,12 +2394,24 @@ body.rc-league-page {
      (.rcl-cal-round-short/-long above swap which span is visible). */
   .rcl-cal-status { display: none; }
   .rcl-cal-row { flex-direction: column; }
+  /* Round bar follow-up (2026-09-28, Matt's ask): keep the small top-left
+     curve the desktop bar already has (border-top-left-radius:8px, base
+     rule above) -- no border-radius override here any more, so it just
+     carries over. Bigger text now that the bar has a full row's width to
+     itself (was 15px), left-justified with a little padding instead of
+     centered, and a thin border on the three edges that don't already
+     have one from the row's own layout (left/right/bottom -- top is the
+     dialog/panel's own edge for the first row, and every other row's
+     bottom border above already separates it from the one before). */
   .rcl-cal-round {
     width: 100%;
     height: auto;
-    padding: 6px 0;
-    font-size: 15px;
-    border-radius: 0;
+    justify-content: flex-start;
+    padding: 8px 0 8px 14px;
+    font-size: 19px;
+    border-left: 1px solid var(--rcl-line-bright);
+    border-right: 1px solid var(--rcl-line-bright);
+    border-bottom: 1px solid var(--rcl-line-bright);
   }
   .rcl-cal-round-short { display: none; }
   .rcl-cal-round-long { display: inline; }

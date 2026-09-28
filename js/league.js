@@ -2156,7 +2156,13 @@ function _rclRenderCalendar(hub) {
     // outline switch In-Game/Weather already use (see _rclChip above).
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
     if (lengthMin) {
-      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier.toUpperCase() + ' ') : '';
+      // Title case, not all-caps (2026-09-28, Matt's ask: "the length tier
+      // shouldn't be all caps inside the pill... it should say Sprint or
+      // Medium or Long") -- raceLengthTier already arrives from the server
+      // as "Sprint"/"Medium"/"Long" (RoundDetails' own stored casing,
+      // Seasons.gs), so this now just uses it as-is instead of forcing
+      // .toUpperCase() on it.
+      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier + ' ') : '';
       metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, tierPrefix + lengthMin + ' mins', true));
     }
     // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
