@@ -2291,15 +2291,28 @@ body.rc-league-page {
      hero instead of the bar dominating the whole banner. This is a
      best-effort estimate (the rotated geometry makes the exact pixel math
      hard to pin down without seeing it rendered) -- flag for Matt to
-     nudge `right`/`width` further once he's looked at it on a phone. */
-  .rcl-hero::after { width: 120px; right: -56px; }
+     nudge `right`/`width` further once he's looked at it on a phone.
+     Nudged closer to the true right edge (2026-09-29, Matt's ask: "move
+     the red semi opaque angled border on the right of the header banner a
+     little closer to the right side of the page") -- right: -56px left a
+     small dark triangular gap between the bar's lower edge and the
+     viewport's actual right edge; -42px shifts the whole rotated bar left
+     just enough to close most of that gap without it swallowing the
+     eyebrow/title text. */
+  .rcl-hero::after { width: 120px; right: -42px; }
 
-  /* SEASON N / SEASON NAME (2026-09-27, Matt's ask: "reduce the size...
-     so that it's slightly larger than the RACE CLUB [eyebrow] over top the
-     LEAGUE HUB title" -- LEAGUE HUB's own .rcl-hero-title is deliberately
-     untouched here) -- .rcl-hero-eyebrow (RACE CLUB) is 13px, so 15px
-     reads as "slightly larger" without approaching the 24px desktop size. */
-  .rcl-hero-season { font-size: 15px; }
+  /* RACE CLUB eyebrow + SEASON N / SEASON NAME pulled tighter around
+     LEAGUE HUB, and both shrunk a touch further (2026-09-29, Matt's ask:
+     "reduce the size of RACE CLUB in the header and move it slightly
+     closer to LEAGUE HUB... slightly reduce the size of SEASON N / SEASON
+     NAME below LEAGUE HUB and move it slightly closer to LEAGUE HUB...
+     keep these three titles a little closer together in the banner").
+     LEAGUE HUB's own .rcl-hero-title is deliberately untouched -- only the
+     two lines around it move. Base .rcl-hero-eyebrow is 13px/10px
+     margin-bottom; base .rcl-hero-season was already stepped down to 15px
+     here on 2026-09-27. */
+  .rcl-hero-eyebrow { font-size: 11px; margin-bottom: 4px; }
+  .rcl-hero-season { font-size: 13px; margin-top: 4px; }
 
   /* Vertically center the whole LEAGUE HUB text block within the banner
      (2026-09-27, Matt's ask) -- was relying on padding-top/padding-bottom
