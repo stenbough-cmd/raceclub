@@ -1,0 +1,5 @@
+# macOS Finder metadata -- never useful to track, and Finder regenerates
+# these constantly just from browsing folders in this repo (2026-09-28,
+# Matt: "I feel like there's never anything to push other than image files"
+# -- .DS_Store churn was the noise showing up in GitHub Desktop's diff).
+.DS_Store
