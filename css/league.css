@@ -2321,7 +2321,11 @@ body.rc-league-page {
      while still comfortably fitting the eyebrow + title + season line
      (~88px of real content); min-height is a floor, not a fixed height, so
      nothing clips if a season name wraps to two lines. */
-  .rcl-hero { display: flex; align-items: center; min-height: 120px; padding: 16px 20px; }
+  /* Nudged back up slightly (2026-09-29, Matt's ask: "increase the height
+     of the banner slightly") -- 120px/16px above read a little too tight
+     after the previous pass; 150px/20px gives the hero a bit more room
+     while staying far more panoramic than the original 240px/28px. */
+  .rcl-hero { display: flex; align-items: center; min-height: 150px; padding: 20px 20px; }
   /* Left-aligned, not centered (2026-09-28 follow-up, Matt's ask: "move it
      to the left like it is on every other platform with just a small
      padding on the left") -- .rcl-hero-inner's own margin:0 auto (base
@@ -2354,14 +2358,17 @@ body.rc-league-page {
      only manufacturer logo/driver name/driver number visible") --
      .rcl-standings-team is _rclBuildDriverIdentity_'s shared team-name
      span, reused by Recent Results/Drivers/Points Tables too, so this is
-     deliberately scoped to just the two containers Matt actually asked
-     for: the All Results popup (.rcl-modal-dialog-allresults, its own
-     scoping class added in js/league.js) and the Current Standings panel
-     (#rcl-standings-body). Recent Results, the Drivers roster, and Points
-     Tables all keep showing team names, unchanged, per Matt's explicit
-     "looks good, don't change" on those. */
+     deliberately scoped to just the containers Matt actually asked for:
+     the All Results popup (.rcl-modal-dialog-allresults, its own scoping
+     class added in js/league.js), the Current Standings panel
+     (#rcl-standings-body), and -- added 2026-09-29, Matt's ask: "Remove
+     team names from listed drivers in recent results on league.html" --
+     the Recent Results panel (#rcl-results-body). The Drivers roster and
+     Points Tables still keep showing team names, unchanged, per Matt's
+     earlier explicit "looks good, don't change" on those. */
   .rcl-modal-dialog-allresults .rcl-standings-team,
-  #rcl-standings-body .rcl-standings-team { display: none; }
+  #rcl-standings-body .rcl-standings-team,
+  #rcl-results-body .rcl-standings-team { display: none; }
 
   /* "**FOR FULL RESULTS, VIEW ON PC BROWSER" (2026-09-27) -- shown back in
      only here; see .rcl-standings-status-mobile-note's base display:none
