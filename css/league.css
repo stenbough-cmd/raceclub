@@ -2245,7 +2245,6 @@ body.rc-league-page {
 /* Matt's own call-out -- nothing in this block touches them.           */
 /* -------------------------------------------------------------------- */
 @media (max-width: 640px) {
-  .rcl-hero { padding: 34px 20px 42px; }
   .rcl-main { padding: 26px 16px 60px; }
   .rcl-panel-body { padding: 14px; }
 
@@ -2310,7 +2309,19 @@ body.rc-league-page {
      the block regardless of exactly how tall its content is. Padding
      becomes symmetric (was 34px top / 42px bottom above) now that
      centering is flex-driven, not padding-driven. */
-  .rcl-hero { display: flex; align-items: center; min-height: 240px; padding: 28px 20px; }
+  /* Height reduced (2026-09-28, Matt's ask: "reduce the height of the image
+     banner on the league header so that the aspect is more like the aspect
+     on the original pc browser which is 2936 x 494ish aspect... THIS IS
+     MOBILE edit only") -- the desktop banner image is a wide panoramic
+     strip (~5.94:1 width:height); at a 240px min-height on a ~375px-wide
+     phone the mobile hero was only ~1.56:1, so background-cover was
+     cropping deep into a heavily zoomed vertical slice of the image.
+     Dropping to 120px/16px padding roughly doubles the ratio to ~3.1:1 --
+     meaningfully more panoramic and much closer to the source image --
+     while still comfortably fitting the eyebrow + title + season line
+     (~88px of real content); min-height is a floor, not a fixed height, so
+     nothing clips if a season name wraps to two lines. */
+  .rcl-hero { display: flex; align-items: center; min-height: 120px; padding: 16px 20px; }
   /* Left-aligned, not centered (2026-09-28 follow-up, Matt's ask: "move it
      to the left like it is on every other platform with just a small
      padding on the left") -- .rcl-hero-inner's own margin:0 auto (base
