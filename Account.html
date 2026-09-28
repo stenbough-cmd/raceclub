@@ -5664,7 +5664,12 @@
       var textWrap = el('div', 'rc-results-report-lap-text');
       var lineEl = document.createElement('p');
       lineEl.className = 'rc-results-report-line';
-      if (p.carClass) lineEl.appendChild(_rcClassAbbrevPill(p.carClass));
+      // Class pill removed (2026-09-29, Matt's ask: "remove class pill from
+      // career page entry in penalties assessed section") -- there's only
+      // ever one driver's own penalties here, and the round/session this
+      // panel sits under already establishes which class this is, so the
+      // pill was redundant. p.carClass itself is left alone server-side --
+      // just no longer rendered here.
       var nameEl = document.createElement('span');
       nameEl.className = 'rc-results-report-name';
       nameEl.textContent = 'You';
