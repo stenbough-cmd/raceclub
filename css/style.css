@@ -1589,21 +1589,51 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    gap and add a black 2px circle around it") -- scoped to
    .rc-avatar-edit-row (only ever used by openEditProfileModal) rather than
    the shared .rc-avatar-circle base, so the header avatar and every other
-   place this class shows up are untouched. Same double box-shadow layering
-   the Wager card's avatar ring already uses just above -- first shadow is
-   the 3px transparent gap, second is the 2px carbon (site's "black" token)
-   ring drawn just outside it. */
+   place this class shows up are untouched.
+   Recolored + thickened into a metallic graphite ring (2026-09-29, Matt's
+   ask: "make the border around the avatar a metallic graphite border, and
+   a little thicker so it looks like it's actually present and around the
+   photo") -- the old flat 2px carbon (near-black) ring was thin enough to
+   read as barely there. box-shadow can't paint a true conic/radial
+   gradient around a circle, so the "metallic" read comes from stacking
+   three concentric bands the same way a lot of brushed-metal edges work
+   in print: a lighter graphite band closest to the photo (catches the
+   light), a darker graphite body (the bulk of the ring), then a faint
+   pale rim right at the outer edge (a thin highlight, like light glancing
+   off a beveled edge) -- same "light-to-dark-to-light" logic as the
+   brushed-nickel table header's satin sweep (.rcl-standings-class-header,
+   css/league.css), just built from shadow rings instead of a background
+   gradient since this shape is a circle. Overall ring is now 6px thick
+   (3px-to-9px) vs. the old 2px (3px-to-5px). */
 .rc-avatar-edit-row .rc-avatar-circle {
-  box-shadow: 0 0 0 3px transparent, 0 0 0 5px var(--rc-carbon);
+  box-shadow:
+    0 0 0 3px transparent,
+    0 0 0 5px #55575c,
+    0 0 0 8px #26272b,
+    0 0 0 9px rgba(255, 255, 255, 0.14);
 }
 .rc-avatar-circle-img { width: 100%; height: 100%; object-fit: cover; }
 .rc-avatar-edit-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  /* Uniform 10px gap replaced with per-pair spacing (2026-09-29, Matt's
+     ask: "have CHANGE AVATAR and DELETE AVATAR closer together and move
+     both 1 row away from the bottom of the avatar preview image") -- a
+     flex column's own `gap` is one fixed value between every child, so it
+     couldn't give the circle-to-links gap and the links-to-each-other gap
+     two different sizes at once. Zeroed here; both real gaps now live as
+     margins on the specific elements below instead. */
+  gap: 0;
   margin-bottom: 20px;
 }
+/* Circle-to-links gap: roughly one extra text row below the (now thicker,
+   see .rc-avatar-edit-row .rc-avatar-circle above) metallic ring, in
+   place of the old 10px. */
+.rc-avatar-edit-row .rc-avatar-circle-xl { margin-bottom: 24px; }
+/* Change-to-Delete gap: tightened well below that, so the two links read
+   as one grouped control under the photo. */
+.rc-avatar-change-link { margin-bottom: 6px; }
 .rc-avatar-change-link,
 .rc-avatar-delete-link {
   font-family: var(--rc-font-heading);
