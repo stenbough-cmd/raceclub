@@ -3916,9 +3916,15 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
     height: 22px;
     /* Pulled in further (2026-09-27 second follow-up, Matt's ask: "the
        Race Club logo... needs to move a closer to the corner than where
-       it's currently at") -- 10px -> 6px on top of the first pass. */
-    bottom: 6px;
-    right: 6px;
+       it's currently at") -- 10px -> 6px on top of the first pass.
+       Eased back out slightly (2026-09-29, Matt's ask: "move the Race
+       Club logo graphic... up SLIGHTLY and left SLIGHTLY... just add a
+       little more gap to the logo and the edges of the image") -- 6px
+       was sitting flush enough against the corner to read cramped;
+       12px gives it a bit of breathing room without undoing the
+       "much closer to the corner" call from the pass before. */
+    bottom: 12px;
+    right: 12px;
   }
 }
 /* Tablet (2026-09-27, Matt's ask: "on tablet... the logo can remain the

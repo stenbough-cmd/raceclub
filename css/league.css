@@ -2298,8 +2298,15 @@ body.rc-league-page {
      small dark triangular gap between the bar's lower edge and the
      viewport's actual right edge; -42px shifts the whole rotated bar left
      just enough to close most of that gap without it swallowing the
-     eyebrow/title text. */
-  .rcl-hero::after { width: 120px; right: -42px; }
+     eyebrow/title text.
+     Still too far left (2026-09-29, Matt's follow-up: "move the red
+     slanted border over the banner to the right 20 pixels. It's still too
+     far left from the right edge of the webpage") -- right is an inward
+     offset, so a MORE negative value pushes the bar further right/off-
+     canvas; -42px -> -62px moves it exactly 20px right on screen
+     (verified: right:-62 renders 20px right of right:-42 at any width,
+     since `right` doesn't scale with viewport). */
+  .rcl-hero::after { width: 120px; right: -62px; }
 
   /* RACE CLUB eyebrow + SEASON N / SEASON NAME pulled tighter around
      LEAGUE HUB, and both shrunk a touch further (2026-09-29, Matt's ask:
