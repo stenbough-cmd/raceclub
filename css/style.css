@@ -1393,38 +1393,20 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 @media (max-width: 768px) {
   .rc-shell { flex-direction: column; }
-  /* THE ACTUAL CAUSE OF THE PERSISTENT GAP: .rc-shell has a sitewide
-     padding-top: 72px (below) to clear the fixed site header on pages
-     that have no topbar of their own. On mobile, .rc-topbar ALSO clears
-     that same fixed header via its own margin-top: 72px -- so .rc-shell's
-     72px was being added a SECOND time on top of that, pushing both the
-     dashboard and the opened mobile nav down by an extra 72px for no
-     reason. Zeroing it out here (mobile only) removes the duplicate; the
-     topbar's own margin-top still handles clearing the fixed header. */
-  .rc-shell { padding-top: 0; }
-  .rc-sidebar {
-    display: none;
-    padding: 12px 16px;
-  }
-  /* Opened mobile nav overlays the dashboard instead of pushing it down --
-     taken out of the flex flow entirely (position: absolute, relative to
-     .rc-shell) so .rc-main never has to make room for it. top: 0 here
-     lines up with the top of .rc-shell, which (after the fix above) is
-     now immediately below the topbar, so the menu connects directly to
-     the topbar's bottom edge with no gap. min-height covers down to the
-     bottom of the viewport so it reads as a proper overlay panel sitting
-     on top of whatever's behind it, not just a floating box. */
-  .rc-sidebar.rc-sidebar-open {
-    display: flex;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%;
-    min-height: 100vh;
-    z-index: 500;
-    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
-  }
-  .rc-topbar { display: flex; }
+  /* .rc-shell's own padding-top:70px (below, sitewide) is what clears the
+     fixed site header now (2026-09-28, Matt's ask: "remove that black bar
+     altogether, the links are redundant" -- .rc-topbar, its own hamburger,
+     and the .rc-sidebar slide-out it used to open are all removed below).
+     Previously this was zeroed out here because .rc-topbar's own
+     margin-top:70px was doing the clearing instead -- now that the topbar
+     never shows, .rc-shell needs to do that job itself again, so this
+     override is gone (the sitewide 70px just applies). A second, later
+     override further down this file used to re-zero this on mobile too
+     (and actually won the cascade, being later at the same specificity)
+     -- that one is removed the same way, right next to .rc-topbar's own
+     base margin-top rule. */
+  .rc-sidebar { display: none; }
+  .rc-topbar { display: none; }
   /* Applied to <body> via JS (openMobileMenu()/closeMobileMenu() in
      Account.html) while the mobile menu is open. Plain `overflow: hidden`
      on body does NOT reliably block touch-driven scrolling on iOS
@@ -3692,6 +3674,17 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   #rc-header-login-link { display: none; }
   .rc-header-hamburger-toggle { display: inline-flex; }
 
+  /* Bigger tap target on phone widths (2026-09-28, Matt's ask: "make the
+     navbar hamburger bigger on mobile") -- narrowed further at <=640px
+     below, since a phone has even less competing header content than a
+     tablet-width screen. The icon markup itself is a raw inline <svg
+     width="22" height="22" ...> (RC_HEADER_ICON_HAMBURGER, header.js) --
+     CSS width/height on the svg selector wins over those HTML attributes,
+     so this is a real size bump, not just a bigger click area around the
+     same-size glyph. */
+  .rc-header-hamburger-icon svg,
+  .rc-header-hamburger-toggle svg { width: 26px; height: 26px; }
+
   /* Slightly wider than the desktop dropdown's 180px min-width (shared
      .rc-header-account-menu rule above -- both the logged-in dropdown and
      the logged-out mobile panel use it) for more comfortable tap targets
@@ -3706,22 +3699,28 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      nav that no longer shows here. */
   .rc-fixed-header { padding: 0 16px; }
 }
+@media (max-width: 640px) {
+  /* Bigger again at true phone widths (2026-09-28, Matt's ask: "make the
+     navbar hamburger bigger on mobile") -- the tablet-range 26px bump
+     above still reads small once the header has shrunk down to just logo
+     + hamburger with nothing else competing for room (.rc-fixed-header's
+     own 16px side padding at this width, set in the 820px block above). */
+  .rc-header-hamburger-icon svg,
+  .rc-header-hamburger-toggle svg { width: 30px; height: 30px; }
+}
 
 /* Pages other than index.html sit below the fixed header. */
 .rc-auth-page { padding-top: 70px; }
 .rc-shell { padding-top: 70px; }
-.rc-topbar { margin-top: 70px; }
-/* THE ACTUAL BUG BEHIND THE PERSISTENT MOBILE GAP: the earlier mobile
-   override (".rc-shell { padding-top: 0; }" in the @media block above)
-   has the exact same specificity as the unconditional rule directly
-   above this comment -- and since THIS one comes later in the file, it
-   was winning on mobile too, silently cancelling that override back to
-   70px (formerly 72px) the whole time. Repeating the override here,
-   after the rule it needs to beat, guarantees it's actually the last
-   matching declaration so it wins for real. */
-@media (max-width: 768px) {
-  .rc-shell { padding-top: 0; }
-}
+/* .rc-topbar and its own margin-top:70px clearing rule are gone
+   (2026-09-28, Matt's ask -- see the @media (max-width: 768px) block
+   above where .rc-topbar/.rc-sidebar are hidden for good). .rc-shell's
+   own 70px padding-top right above is what clears the fixed header at
+   every width now, mobile included -- there used to be a SECOND mobile
+   override here forcing this back to 0px (to cancel out .rc-topbar's own
+   clearing margin, back when that bar still rendered on mobile); it's
+   removed along with the topbar itself, so the plain 70px above just
+   applies everywhere now, same as .rc-auth-page. */
 
 /* -------------------------------------------------------------------- */
 /* Toast notifications (js/header.js's showToast()) — the one sitewide  */
