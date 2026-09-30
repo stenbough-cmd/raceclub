@@ -454,12 +454,15 @@ function _rclBuildTickerItems(hub) {
         return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
       });
       if (!rows.length) return;
-      // Tag reworded to "TOP TEN CLASS RESULTS" (2026-09-30, Matt's ask:
-      // "have it say top ten class results: for catagories in ticker") --
-      // was "TOP TEN RESULTS", now spells out that each group is one
-      // class's own top 10, since the per-row class pill that used to mark
-      // that (removed same day, see buildDriverEntry above) is gone.
-      classGroups.push({ driverRows: rows, tag: 'TOP TEN CLASS RESULTS' });
+      // Tag now names the class itself -- "TOP TEN <CLASS> RESULTS"
+      // (2026-09-30 follow-up, Matt's ask: "It should say TOP TEN <CLASS>
+      // RESULTS: so that each class is represented in the ticker") --
+      // was the generic "TOP TEN CLASS RESULTS" for every group, which
+      // read identically no matter which class it was; same
+      // cls.className.toUpperCase() the pre-season roster's own
+      // "<CLASS> DRIVERS" tag already uses above, so Hypercar/LMP2/LMP3/
+      // LMGT3/LMGTE all read out in full, not abbreviated.
+      classGroups.push({ driverRows: rows, tag: 'TOP TEN ' + (cls.className || 'CLASS').toUpperCase() + ' RESULTS' });
     });
     // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
     // place before drivers in the ticker") -- ranked TOP 10 rows only;
