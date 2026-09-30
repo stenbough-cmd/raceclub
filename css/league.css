@@ -263,13 +263,23 @@ body.rc-league-page {
 /* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
    name is now the quieter part of each entry. */
 .rcl-ticker-driver-name { font-weight: 500; }
+/* Nationality flag, between the name and the car number (2026-09-30,
+   Matt's ask: "add flags to all driver names in ticker- between name and
+   number") -- same .rcl-standings-flag look (16x12, rounded corners, thin
+   border) the Leaderboard/Recent Results/View All Results identity block
+   already uses (_rclBuildDriverIdentity_ above), reused as-is here rather
+   than a new ticker-specific size, since the ticker entry's own 8px gap
+   (.rcl-ticker-driver-entry) already gives it the same breathing room as
+   the logo and name around it. */
 /* Weight is the same the whole line used to render at before this split
    (Matt's explicit "keep the number weight the same as it is") -- stays
-   the heaviest part of each driver entry. Color changed to light gray
-   2026-09-23 (Matt's ask: "make the numbers behind the driver names a
-   light gray") -- same --rcl-ink-dim token every other muted label on
-   this page already uses, rather than inventing a new gray. */
-.rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink-dim); }
+   the heaviest part of each driver entry. White like the name (2026-09-30,
+   Matt's ask: "make the number white like the name") -- was a dedicated
+   light-gray tone (--rcl-ink-dim, added 2026-09-23); var(--rcl-ink) matches
+   what .rcl-ticker-driver-name itself renders at (inherited from
+   .rcl-ticker-item, which never overrides color), so name and number now
+   read as the same white. */
+.rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink); }
 /* Class pill riding right behind the car number (2026-09-26, Matt's ask:
    "behind every number on every driver will be the class pill they
    belong to... make sure the pill is no larger than the manufacturer

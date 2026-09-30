@@ -397,7 +397,10 @@ function _rclBuildTickerItems(hub) {
         // pill render (see its own comment there) picks it up on the
         // pre-season roster list as well. Every row in one cls group is the
         // same class, so this is just cls.className repeated per row.
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className };
+        // country (2026-09-30, Matt's ask: "add flags to all driver names
+        // in ticker") -- same field buildDriverEntry now reads to render a
+        // nationality flag between the name and car number.
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
       });
       if (!rows.length) return;
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', driverRows: rows });
@@ -454,7 +457,10 @@ function _rclBuildTickerItems(hub) {
         // this one group is the same class, so this is just cls.className
         // repeated per row for buildDriverEntry to key its pill color off
         // of, not something read off the row's own raw data.
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className };
+        // country (2026-09-30, Matt's ask: "add flags to all driver names
+        // in ticker") -- same field buildDriverEntry now reads to render a
+        // nationality flag between the name and car number.
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
       });
       if (!rows.length) return;
       classGroups.push({ driverRows: rows, tag: 'TOP TEN RESULTS' });
@@ -526,6 +532,25 @@ function _rclRenderTicker(hub) {
     var nameSpan = _rclEl('span', 'rcl-ticker-driver-name');
     nameSpan.textContent = row.name;
     entry.appendChild(nameSpan);
+    // Nationality flag, between the name and car number (2026-09-30, Matt's
+    // ask: "add flags to all driver names in ticker- between name and
+    // number") -- same countryFlagSrc lookup + .rcl-standings-flag styling
+    // (16x12, rounded corners, thin border) the Leaderboard/Recent Results/
+    // View All Results identity block already uses for its own flag
+    // (_rclBuildDriverIdentity_ above); onerror-hide follows that same
+    // convention for a country with no flag asset uploaded yet.
+    if (row.country && typeof countryFlagSrc === 'function') {
+      var flagSrc = countryFlagSrc(row.country);
+      if (flagSrc) {
+        var flagImg = document.createElement('img');
+        flagImg.className = 'rcl-standings-flag';
+        flagImg.src = flagSrc;
+        flagImg.alt = '';
+        flagImg.title = row.country;
+        flagImg.onerror = function () { flagImg.style.display = 'none'; };
+        entry.appendChild(flagImg);
+      }
+    }
     if (row.carNumber) {
       var numSpan = _rclEl('span', 'rcl-ticker-driver-num');
       numSpan.textContent = ' #' + row.carNumber;
