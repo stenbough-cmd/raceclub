@@ -1601,7 +1601,12 @@
   // that card's own .rc-team-card/-head/-identity/-name/-subtitle CSS
   // wholesale rather than inventing a second copy of the same shape.
   function buildSeatInfoPanel(data) {
-    var card = el('div', 'rc-team-card');
+    // rc-seatinfo-card (2026-09-30) -- scoping modifier alongside the
+    // shared rc-team-card base class (also used by Choose Your Team's own
+    // buildTeamCard, registration flow) so the mobile-only tweaks below
+    // (logo size, car-number placement) hit only THIS popup, never the
+    // registration card that happens to share the same base markup.
+    var card = el('div', 'rc-team-card rc-seatinfo-card');
     var head = el('div', 'rc-team-card-head');
     var identity = el('div', 'rc-team-card-identity');
     var logoBox = el('div', 'rc-team-logo-box');
@@ -1614,8 +1619,25 @@
     }
     identity.appendChild(logoBox);
     var nameCol = el('div');
-    nameCol.appendChild(el('div', 'rc-team-name', escapeHtml((data.teamName || 'Unnamed Team') + (data.carNumber ? ' #' + data.carNumber : ''))));
-    if (data.carModel) nameCol.appendChild(el('div', 'rc-team-subtitle', escapeHtml(data.carModel)));
+    // Car number's position swaps by breakpoint (2026-09-30, Matt's ask,
+    // mobile only: "move the # of the car to after the car name in the
+    // subhead. Also make the number the same style/size/color as the car
+    // name. So it would say Ford Mustang GT3 #77... below the team name").
+    // Desktop/tablet keep the number on the TEAM NAME line, unchanged
+    // (.rc-seatinfo-carnum-desktop); mobile instead appends it onto the
+    // car-MODEL line below (.rc-seatinfo-carnum-mobile), where it's just
+    // plain text inside .rc-team-subtitle -- no separate color/size rule
+    // needed, since inheriting that element's own style IS "the same
+    // style/size/color as the car name." Both spans are always built;
+    // rc-seatinfo-carnum-desktop/-mobile (style.css) toggle which one
+    // shows, same "build both, let CSS pick" pattern used sitewide rather
+    // than a JS media-query check that would need to re-run on resize.
+    var nameHtml = escapeHtml(data.teamName || 'Unnamed Team');
+    if (data.carNumber) nameHtml += '<span class="rc-seatinfo-carnum-desktop"> #' + escapeHtml(data.carNumber) + '</span>';
+    nameCol.appendChild(el('div', 'rc-team-name', nameHtml));
+    var subtitleHtml = data.carModel ? escapeHtml(data.carModel) : '';
+    if (data.carNumber) subtitleHtml += '<span class="rc-seatinfo-carnum-mobile">' + (data.carModel ? ' ' : '') + '#' + escapeHtml(data.carNumber) + '</span>';
+    if (subtitleHtml) nameCol.appendChild(el('div', 'rc-team-subtitle', subtitleHtml));
     identity.appendChild(nameCol);
     head.appendChild(identity);
     if (data.teamDesc) head.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--rc-offwhite);';
@@ -5227,8 +5249,19 @@
       (isSpecial ? ' rc-cal-race-special' : '') +
       (isNext ? ' rc-cal-race-next' : ''));
 
-    var roundLabel = isSpecial ? 'SP' : ('R' + entry.roundNum);
-    card.appendChild(el('div', 'rc-cal-round-bar' + (isSpecial ? ' rc-cal-round-bar-special' : ''), escapeHtml(roundLabel)));
+    // Short ("R1")/long ("ROUND 1") pair (2026-09-30, Matt's ask: "make it
+    // say ROUND N instead of R1" on mobile only) -- both spans render
+    // always, .rc-cal-round-bar-short/-long (style.css) toggle which one
+    // is visible by breakpoint, same "build both, let CSS pick" approach
+    // league.html's own mobile calendar already uses (_rclRenderCalendar,
+    // js/league.js) rather than a JS media-query check that would need to
+    // re-run on resize.
+    var roundLabelShort = isSpecial ? 'SP' : ('R' + entry.roundNum);
+    var roundLabelLong = isSpecial ? 'SPECIAL' : ('ROUND ' + entry.roundNum);
+    var roundBar = el('div', 'rc-cal-round-bar' + (isSpecial ? ' rc-cal-round-bar-special' : ''));
+    roundBar.appendChild(el('span', 'rc-cal-round-bar-short', escapeHtml(roundLabelShort)));
+    roundBar.appendChild(el('span', 'rc-cal-round-bar-long', escapeHtml(roundLabelLong)));
+    card.appendChild(roundBar);
 
     var body = el('div', 'rc-cal-race-body');
 

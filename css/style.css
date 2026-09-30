@@ -1899,6 +1899,21 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
 }
 .rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* Current Seat Info popup, mobile only (2026-09-30, Matt's ask: "decrease
+   the size of the manufacturer logo slightly, move the # of the car to
+   after the car name in the subhead... this is only on mobile") --
+   scoped to .rc-seatinfo-card (buildSeatInfoPanel's own modifier class,
+   Account.html) so neither Choose Your Team's registration card (which
+   shares .rc-team-card/.rc-team-logo-box/.rc-team-name/.rc-team-subtitle)
+   nor this popup's own desktop/tablet view are touched. Logo trimmed from
+   90x55 to 74x45 -- same aspect ratio, just a modest step down, not a
+   redesign. Car-number span pair flips which one shows (see
+   .rc-seatinfo-carnum-mobile's base display:none above). */
+@media (max-width: 640px) {
+  .rc-seatinfo-card .rc-team-logo-box { width: 74px; height: 45px; }
+  .rc-seatinfo-card .rc-seatinfo-carnum-desktop { display: none; }
+  .rc-seatinfo-card .rc-seatinfo-carnum-mobile { display: inline; }
+}
 /* Manufacturer filter row (2026-09-23, Matt's ask) -- sits above the team
    card list, one bold "ALL" label at the left plus a manufacturer logo
    for every distinct manufacturer fielding a car in this class, spread
@@ -1956,6 +1971,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    12.5px. */
 .rc-team-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; }
 .rc-team-subtitle { font-size: 14px; color: var(--rc-steel); margin-top: 2px; }
+/* Car number's mobile position (2026-09-30) -- see buildSeatInfoPanel's own
+   comment (Account.html) for the full history. Desktop/tablet show the
+   number on the team-name line by default (span just renders inline,
+   inheriting .rc-team-name's own color/size); the mobile-only span is
+   hidden until the breakpoint below flips both. */
+.rc-seatinfo-carnum-mobile { display: none; }
 /* Total cost -- bumped up to read as the headline number it actually is,
    not a caption (Matt's call: "increase the total cost in the top right
    corner"). */
@@ -5536,11 +5557,38 @@ body.rc-modal-scroll-locked {
   background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
   color: #241b04;
 }
+/* Short ("R1")/long ("ROUND 1") pair (2026-09-30) -- long form stays
+   hidden except at the mobile breakpoint below, same pattern league.html
+   uses for its own round bar (.rcl-cal-round-short/-long, league.css). */
+.rc-cal-round-bar-long { display: none; }
 
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; padding: 14px 16px; }
-@media (max-width: 560px) {
-  .rc-cal-race { flex-wrap: wrap; }
+@media (max-width: 640px) {
   .rc-cal-race-body { min-width: 220px; }
+  /* Round bar moves to the top of the card, full width (2026-09-30, Matt's
+     ask: "make the round header in the calendar race events on the
+     dashboard popup extend across the top of the event container... make
+     it say ROUND N instead of R1" -- mobile only) -- same layout switch
+     league.html's own mobile calendar makes for .rcl-cal-round (league.css),
+     just keeping THIS bar's own existing style (silver/gold gradient,
+     font, color) untouched, per Matt's explicit "keep the same style that
+     it already has." .rc-cal-race's flex-direction switches to column so
+     the bar stacks above .rc-cal-race-body instead of sitting beside it
+     (replacing the old flex-wrap:wrap, which only let the two pieces wrap
+     rather than reliably stacking); the bar itself swaps from a small
+     centered square to a full-width, left-aligned strip with the same
+     padding league's own mobile round bar uses (8px 0 8px 14px,
+     .rcl-cal-round's mobile override) so the two pages' mobile calendars
+     match. */
+  .rc-cal-race { flex-direction: column; }
+  .rc-cal-round-bar {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    padding: 8px 0 8px 14px;
+  }
+  .rc-cal-round-bar-short { display: none; }
+  .rc-cal-round-bar-long { display: inline; }
 }
 
 .rc-cal-race-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }

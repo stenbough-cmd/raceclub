@@ -1092,6 +1092,19 @@ function _rclOpenDriversModal(hub) {
 // one flat-weight string). Shared by _rclBuildRaceHeadline_ (Race
 // headline, below) and _rclBuildQualifyingBody_ (Qualifying tab) so the
 // two never drift apart.
+// "EVENT" label (2026-09-30, Matt's ask: "add 'EVENT' (in the same all
+// caps, gray font as the bonus catagories.) above the event/track title
+// in ALL RESULTS") -- reuses .rcl-race-category-title's exact typography
+// (css/league.css) via a dedicated class so the two stay visually
+// identical without coupling this label to the category row's own
+// flex/icon layout. ALL RESULTS-only (both the Race tab, via
+// _rclBuildRaceHeadline_'s opts.showEventLabel below, and the Qualifying
+// tab, which calls this directly) -- Recent Results' own event line is
+// deliberately left alone, unchanged.
+function _rclBuildEventLabel_() {
+  return _rclEl('div', 'rcl-race-event-label', 'Event');
+}
+
 function _rclBuildEventTitleLine_(entry, hideRoundNum) {
   var eventLine = _rclEl('div', 'rcl-race-headline-eventname');
   if (!hideRoundNum && entry.roundNum) {
@@ -1146,6 +1159,9 @@ function _rclBuildRaceHeadline_(r, opts) {
     s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (variant ? ' rcl-race-headline-value-' + variant : ''), _rclEscapeHtml(value || '--')));
     return s;
   }
+  // opts.showEventLabel (2026-09-30) -- ALL RESULTS only, see
+  // _rclBuildEventLabel_'s own comment above.
+  if (opts.showEventLabel) headline.appendChild(_rclBuildEventLabel_());
   headline.appendChild(_rclBuildEventTitleLine_(r, opts.hideRoundNum));
 
   if (!opts.hideStatRow) {
@@ -1251,7 +1267,8 @@ function _rclBuildResultsCategoryBreakdown_(result) {
 
   buildCategory(_RCL_ICON_TROPHY, 'Winner', winnerRows);
   buildCategory(_RCL_ICON_LAPS_LED, 'Most Laps Led', lapsLedRows);
-  buildCategory(_RCL_ICON_POLE, 'Pole', poleRows);
+  // "Pole" -> "Pole Sitter" (2026-09-30, Matt's ask).
+  buildCategory(_RCL_ICON_POLE, 'Pole Sitter', poleRows);
   buildCategory(_RCL_ICON_STOPWATCH, 'Fastest Lap', fastestRows);
 
   return wrap;
@@ -1554,7 +1571,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // between the bonus points winners and the event name") -- same treatment
   // Recent Results already got, now applied here too so the category
   // breakdown sits right under the title with no divider line between them.
-  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true, closeGapNoLine: true }));
+  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true, closeGapNoLine: true, showEventLabel: true }));
   bodyEl.appendChild(_rclBuildResultsCategoryBreakdown_(result));
 
   // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
@@ -1873,6 +1890,7 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
   // apply to a Qualify session), same shared title-line builder the Race
   // view uses (_rclBuildEventTitleLine_ above), round number hidden same
   // as the Race view's All Results popup.
+  bodyEl.appendChild(_rclBuildEventLabel_());
   bodyEl.appendChild(_rclBuildEventTitleLine_(result, true));
   // Breathing room before the standings start (2026-09-26, Matt's ask: "add
   // a line below the event title and the start of the standings. Then

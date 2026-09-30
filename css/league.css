@@ -1107,6 +1107,24 @@ body.rc-league-page {
    _rclBuildEventTitleLine_ (js/league.js) so Recent Results and the View
    All Results popup/Qualifying tab (all three call it) read with the
    exact same heading treatment the Calendar already uses for a round. */
+/* "EVENT" label above the event/track title, ALL RESULTS only (2026-09-30,
+   Matt's ask: "add 'EVENT' (in the same all caps, gray font as the bonus
+   catagories.) above the event/track title in ALL RESULTS") -- same
+   typography as .rcl-race-category-title above (font/size/weight/letter-
+   spacing/uppercase/color), just without that class's flex/gap/icon
+   layout, since this is a bare text label with nothing beside it. Built
+   by _rclBuildEventLabel_ (js/league.js), only called from the ALL
+   RESULTS popup's Race and Qualifying tabs -- Recent Results' event line
+   is unchanged. */
+.rcl-race-event-label {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-dim);
+  margin-bottom: 4px;
+}
 .rcl-race-headline-eventname { font-size: 18px; color: var(--rcl-ink); }
 .rcl-race-headline-event-name { font-weight: 800; }
 .rcl-race-headline-event-track { font-weight: 500; }
@@ -1145,18 +1163,24 @@ body.rc-league-page {
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  /* Red, all four the same (2026-09-27, Matt's ask: "make winner, most
-     laps led, pole, and fastest lap catagory labels and icons red, the
-     same") -- was the dim gray label tone. */
-  color: var(--rc-red);
+  /* Gray, matching the event line's own track/layout tone (2026-09-30,
+     Matt's ask: "make the Winner, Most Laps Led, Pole -> Pole Sitter and
+     Fastest Lap with their respective icons, the same gray color as the
+     track name in the event on the ALL RESULTS page") -- was red
+     (2026-09-27 pass, reverted here); var(--rcl-ink-dim) is the same gray
+     .rcl-race-headline-event-layout already uses on the event title line
+     right above this breakdown, so both read as the same "dim label"
+     gray instead of two different tones. */
+  color: var(--rcl-ink-dim);
   margin-bottom: 8px;
 }
 /* Icon has its own explicit color (rather than truly inheriting the
-   title's) since it needs to stay red even on Winner/Fastest Lap rows,
-   where .rcl-race-category-row-winner/-fastestLap recolor the NAME and
-   NUMBER gold/purple but never touch this title row above them (2026-09-27,
-   Matt's ask, same red as the title text next to it). */
-.rcl-race-category-icon { display: inline-flex; color: var(--rc-red); }
+   title's) since it needs to stay this gray even on Winner/Fastest Lap
+   rows, where .rcl-race-category-row-winner/-fastestLap recolor the NAME
+   and NUMBER gold/purple but never touch this title row above them
+   (2026-09-30, same gray as the title text next to it, see comment
+   above). */
+.rcl-race-category-icon { display: inline-flex; color: var(--rcl-ink-dim); }
 .rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
 .rcl-race-category-row:last-child { margin-bottom: 0; }
 .rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
