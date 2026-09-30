@@ -2226,7 +2226,19 @@
     } else if (p.status === 'Upheld') {
       // 2026-09-24 redesign, item 6: names WHO the penalty landed on, not
       // just the tier, so it reads as a complete sentence on its own.
-      var penalizedName = p.isMine ? (against || 'the other driver') : 'you';
+      // Self-report fix (2026-09-30, Matt's catch: "Fix self reports on
+      // PROTESTS card on dashboard displaying the other driver got the
+      // penalty... That was from an upheld penalty that I filed") -- a
+      // self-report's "against" name is just the OTHER driver who was
+      // involved in the incident, never who the penalty lands on; the
+      // penalty always lands on the filer (isSelfReport implies the
+      // filer is always the one penalized, regardless of p.isMine, since
+      // a self-report has no "opposing" party the way a normal protest
+      // does). Checked ahead of the normal isMine/against branch below,
+      // same precedence isSelfReport already gets in whoText above.
+      var penalizedName = isSelfReport
+        ? (p.isMine ? 'you' : (p.filerName || 'the reporting driver'))
+        : (p.isMine ? (against || 'the other driver') : 'you');
       noteText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + penalizedName + '.';
     } else if (p.status === 'Denied') {
       noteText = 'Protest denied.';
@@ -2295,7 +2307,12 @@
         noteText = 'Pending outcome...';
       }
     } else if (p.status === 'Upheld') {
-      noteText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + (against || 'the other driver') + '.';
+      // Self-report fix (2026-09-30, same catch as buildDashProtestItem
+      // above) -- a self-report's penalty always lands on the filer, not
+      // on the named "against" driver (who was only involved in the
+      // incident, not penalized).
+      noteText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' +
+        (isSelfReport ? (p.filerName || 'the reporting driver') : (against || 'the other driver')) + '.';
     } else if (p.status === 'Denied') {
       noteText = 'Protest denied.';
     } else {
@@ -8976,7 +8993,14 @@
             // ruled protest shows up on the site.
             var outcomeText;
             if (p.status === 'Upheld') {
-              outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' + (against || 'the accused driver') + '.';
+              // Self-report fix (2026-09-30, same catch as
+              // buildDashProtestItem/buildStewardingProtestItem_ above) --
+              // a self-report's penalty always lands on the filer, not on
+              // the named "against" driver (who was only involved in the
+              // incident, not penalized).
+              var isSelfReportRow = p.infractionType === 'Avoidable Contact (Self Report)';
+              outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' +
+                (isSelfReportRow ? (p.filerName || 'the reporting driver') : (against || 'the accused driver')) + '.';
             } else if (p.status === 'Denied') {
               outcomeText = 'Protest denied.';
             } else {

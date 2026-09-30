@@ -996,6 +996,11 @@ function _rclRenderStandings(hub) {
   if (hasResults && hub.lastRace) {
     var standingsNotice = _rclBuildResultsStatusNotice_(hub.lastRace);
     if (standingsNotice) body.appendChild(standingsNotice);
+    // Mobile-only "view on PC" nudge (2026-09-30, Matt's ask -- see
+    // _rclBuildMobileViewOnPcNote_ for the full history) -- Current
+    // Standings hides team names on phone width too (league.css), so it
+    // gets the same nudge under its status notice.
+    if (standingsNotice) body.appendChild(_rclBuildMobileViewOnPcNote_());
   }
 
   // "View Points Tables" / "View All Drivers" links (2026-09-19 /
@@ -1359,6 +1364,30 @@ function _rclBuildResultsStatusNotice_(round) {
   return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary', label);
 }
 
+// Mobile-only "view on PC" nudge -- was All Results-only (2026-09-27,
+// Matt's ask: "add another notation under the *RESULTS STATUS at the
+// bottom of the tables" -- the exact text "**FOR FULL RESULTS, VIEW ON PC
+// BROWSER"), extended (2026-09-30, Matt's ask: "'**For detailed results,
+// view on PC browser' should be under the ALL RESULTS leaderboard note,
+// the recent results note and current standings", clarified mobile-only)
+// to sit under the same *PRELIMINARY/*OFFICIAL RESULTS notice everywhere
+// it appears, not just the All Results popup -- Recent Results and
+// Current Standings both collapse columns/hide team names at the mobile
+// breakpoint too (league.css), so a phone visitor gets the same nudge
+// there. Pulled into its own shared builder so the exact wording/classes
+// stay identical at all three call sites instead of drifting. Text kept
+// as the site's established all-caps status-note convention (matches
+// *PRELIMINARY RESULTS/*OFFICIAL RESULTS next to it) rather than the
+// mixed-case phrasing in Matt's ask, which read as a paraphrase of the
+// existing note rather than a wording change.
+// rcl-standings-status-mobile-note is display:none by default and only
+// shown back in at the mobile breakpoint (league.css) -- desktop/tablet
+// already see everything this note would be pointing them to, so it
+// would be redundant there.
+function _rclBuildMobileViewOnPcNote_() {
+  return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER');
+}
+
 // Shared by both branches of _rclRenderResults above (the normal render
 // and its "no lastRace yet" empty-state fallback) so the link still shows
 // up whenever the season actually has any completed rounds on record,
@@ -1376,6 +1405,12 @@ function _rclAppendViewAllResultsLink_(body, hub) {
   if (!hub.resultsRounds || !hub.resultsRounds.length) return;
   var notice = _rclBuildResultsStatusNotice_(hub.lastRace);
   if (notice) body.appendChild(notice);
+  // Mobile-only "view on PC" nudge (2026-09-30, Matt's ask -- see
+  // _rclBuildMobileViewOnPcNote_ for the full history) -- Recent Results
+  // hides team names on phone width same as Current Standings/All
+  // Results (league.css), so it gets the same nudge under its status
+  // notice, only shown once there's actually a notice to sit under.
+  if (notice) body.appendChild(_rclBuildMobileViewOnPcNote_());
   var linkRow = _rclEl('div', 'rcl-cal-details-row rcl-results-bottom-row');
   var link = _rclEl('button', 'rcl-cal-details-link', 'View All Results');
   link.type = 'button';
@@ -1637,17 +1672,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // supplies "the gray line" this notice needs to sit above.
   var allResultsNotice = _rclBuildResultsStatusNotice_(result);
   if (allResultsNotice) bodyEl.appendChild(allResultsNotice);
-  // Mobile-only "view on PC" nudge (2026-09-27, Matt's ask: "add another
-  // notation under the *RESULTS STATUS at the bottom of the tables" -- the
-  // exact text "**FOR FULL RESULTS, VIEW ON PC BROWSER") -- the standings
-  // grid above collapses down to just Pos/Driver/Pts on phone widths (see
-  // .rcl-race-grid-allresults' mobile override, league.css), so a phone
-  // visitor is told there's more detail (Laps/Total Time/Pen/Gap/Avg/Best
-  // Lap) on a bigger screen. rcl-standings-status-mobile-note is display:
-  // none by default and only shown back in at the mobile breakpoint
-  // (league.css) -- desktop/tablet already see every column, so the note
-  // would be redundant there.
-  bodyEl.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER'));
+  // Mobile-only "view on PC" nudge (see _rclBuildMobileViewOnPcNote_ above
+  // for the full history) -- the standings grid above collapses down to
+  // just Pos/Driver/Pts on phone widths (see .rcl-race-grid-allresults'
+  // mobile override, league.css), so a phone visitor is told there's more
+  // detail (Laps/Total Time/Pen/Gap/Avg/Best Lap) on a bigger screen.
+  bodyEl.appendChild(_rclBuildMobileViewOnPcNote_());
 
   // Race Report -- lap-by-lap highlights (2026-09-24, Matt's ask: "a
   // lap-by-lap race report to post under the ALL RESULTS standings").

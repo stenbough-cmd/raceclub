@@ -1553,21 +1553,44 @@ body.rc-league-page {
    diagonal metallic-gradient treatment .rcl-cal-round-special already
    uses for gold, just in a neutral silver tone, so a normal points round
    reads as a deliberately different metal from a special event's gold
-   rather than the page's one loud red accent. */
+   rather than the page's one loud red accent.
+   Upgraded to the full brushed-nickel treatment (2026-09-30, Matt's ask:
+   "make the calendar round container background the same metalic look as
+   the table headers with the silver bottom border") -- same three-layer
+   background as .rcl-standings-class-header above (fine repeating
+   diagonal gradient for the brushed-metal texture, plus the light-to-dark
+   satin sweep), the same inset highlight/shadow + drop-shadow pair to
+   read as raised metal, and the same steel-silver bottom rule
+   (#c9cbce, matching that header's own 2026-09-29 recolor) in place of
+   the old flat two-stop gradient. Only .rcl-cal-round's own layout
+   properties (size/flex/font/corner radius) are unchanged, so this still
+   sizes and positions exactly as before -- and since neither the mobile
+   override below nor the "finished round" opacity dim (.rcl-cal-row-
+   finished .rcl-cal-round further down) touch `background`, both mobile/
+   tablet and the dimmed-when-finished state pick this up automatically. */
 .rcl-cal-round {
   flex: none;
   width: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e4e5e8 0%, #a6a8ae 100%);
+  background:
+    repeating-linear-gradient(100deg,
+      rgba(255, 255, 255, 0.09) 0px,
+      rgba(255, 255, 255, 0.09) 1px,
+      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.05) 3px),
+    linear-gradient(135deg, #d9dade 0%, #b7b9be 45%, #eceef0 55%, #9a9ca1 100%);
   font-family: var(--rc-font-heading);
   font-size: 22px;
   font-weight: 900;
   line-height: 1;
-  color: #1c1d20;
+  color: #24262b;
   text-align: center;
   user-select: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid #c9cbce;
   /* Slight curve on just the top-left corner (2026-09-19, Matt's ask) --
      the row's other three corners stay square, matching the bar's flush
      fit against the row's left/top/bottom edges; only the one corner
@@ -2452,7 +2475,14 @@ body.rc-league-page {
     font-size: 19px;
     border-left: 1px solid var(--rcl-line-bright);
     border-right: 1px solid var(--rcl-line-bright);
-    border-bottom: 1px solid var(--rcl-line-bright);
+    /* Keep the steel-silver bottom accent at this width too (2026-09-30,
+       Matt's ask: "make mobile pc and tablet versions respect this
+       change") -- was a plain 1px var(--rcl-line-bright) line, which would
+       have quietly erased the brushed-nickel bar's silver bottom border
+       the moment the layout switched to full-width on phone. Same 2px
+       #c9cbce as the base rule above; left/right stay the plain thin line
+       since those two edges aren't part of the "silver border" ask. */
+    border-bottom: 2px solid #c9cbce;
   }
   .rcl-cal-round-short { display: none; }
   .rcl-cal-round-long { display: inline; }
