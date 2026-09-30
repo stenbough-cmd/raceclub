@@ -198,6 +198,20 @@ var RC_FETCH_TIMEOUT_MS_LOGIN = 60000;
 // later doesn't also change how long some other action waits.
 var RC_FETCH_TIMEOUT_MS_RULINGS = 120000;
 
+// Integrity Check's own budget, 5 minutes (2026-09-30, Matt's explicit ask:
+// "I'd like the timeout on the refresh to be 5 minutes so I'm not getting an
+// error while the check is running") -- adminIntegrityCheck (Seasons.gs)
+// runs a full unsplit pass over the active season: every cache refresh,
+// every completed round's StandingsCache/public-round-cache rebuild, and a
+// full Registrations/Teams/Cars/StandingsCache referential scan, all in one
+// request (Matt's call against splitting it into smaller/faster buttons --
+// see the Admin section's Integrity Check button, Account.html). The
+// longest of this file's existing named budgets (RC_FETCH_TIMEOUT_MS_RULINGS/
+// _RECOMPUTE/_IMPORT) is 2 minutes; this one deliberately gets its own
+// separate, longer budget rather than sharing any of theirs, so raising it
+// later never changes how long some other action waits.
+var RC_FETCH_TIMEOUT_MS_INTEGRITY = 300000;
+
 // Automatic retries after a short, then longer, pause (2026-09-14, same
 // report: "no season is currently open" shown when one genuinely was, plus
 // a follow-up report that a single retry still wasn't enough headroom

@@ -8555,6 +8555,17 @@
     carsBtn.addEventListener('click', function () { openCarsModal(token); });
     row.appendChild(carsBtn);
 
+    // INTEGRITY CHECK (2026-09-30, Matt's ask) -- see openIntegrityCheckModal's
+    // own comment further down for what this actually does. Gray like every
+    // other opener here (race-club-ui-consistency's "gray unless it saves"
+    // rule) -- this button only opens a modal; the check itself runs once
+    // the modal is up, same as every other admin action shaped this way.
+    var integrityBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Integrity Check');
+    integrityBtn.type = 'button';
+    withTooltip(integrityBtn, 'Scans the active season for anything a write path failed to keep in sync -- stale caches, broken team/car references, orphaned history -- fixing what\'s safe automatically and listing anything that needs your call.');
+    integrityBtn.addEventListener('click', function () { openIntegrityCheckModal(token); });
+    row.appendChild(integrityBtn);
+
     // News button removed from here (2026-09-18 follow-up) -- League News
     // moved to its own panel on the League Tools page (Matt's call), with
     // a much bigger editor (scheduling, a hero image) than this popup ever
@@ -9405,6 +9416,72 @@
     }, function (carsData, reload) {
       return buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token, reload);
     }, { label: 'Add Car', onClick: function (reload) { openAddCarModal(token, reload); } });
+  }
+
+  // One finding row -- area label + a FIXED/FLAGGED status word, message
+  // underneath. Plain inline-styled text rather than a new CSS class, same
+  // "one-off popup content" convention the rest of this file already uses
+  // for a single-purpose result block (e.g. the red server-error <p>
+  // elsewhere in this file) rather than adding a shared class for something
+  // that only ever renders in this one modal.
+  function buildIntegrityFindingRow_(finding) {
+    var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-offwhite);');
+    var head = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:10px;');
+    head.appendChild(el('div', 'font-weight:700;font-size:13px;color:var(--rc-carbon);', escapeHtml(finding.area || '')));
+    var statusColor = finding.status === 'fixed' ? 'var(--rc-steel)' : 'var(--rc-red)';
+    var statusLabel = finding.status === 'fixed' ? 'FIXED' : 'FLAGGED';
+    head.appendChild(el('div', 'font-size:10.5px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:' + statusColor + ';flex:none;', statusLabel));
+    row.appendChild(head);
+    row.appendChild(el('div', 'font-size:13px;color:var(--rc-steel);margin-top:3px;', escapeHtml(finding.message || '')));
+    return row;
+  }
+
+  // INTEGRITY CHECK popup -- runs handleAdminIntegrityCheck (Seasons.gs)
+  // against the active/registration-open season and lists what it found.
+  // Same loading-lights-in-a-modal shape as Recompute Season (no Cancel/X
+  // while in flight, since there's nothing sensible to cancel back to
+  // mid-check), just with a real results list afterward instead of a toast
+  // -- there can be several findings worth actually reading, not just a
+  // one-line success/fail. RC_FETCH_TIMEOUT_MS_INTEGRITY (api.js, 5
+  // minutes, Matt's explicit ask) -- this is a full, unsplit pass over
+  // every check in RC_INTEGRITY_CHECKS_ (Seasons.gs), including a full
+  // Registrations/Teams/Cars/StandingsCache scan and a StandingsCache
+  // rebuild for every completed round, so it can genuinely take longer than
+  // this site's normal 20s dashboard-read budget on a season with many
+  // rounds already run.
+  function openIntegrityCheckModal(token) {
+    var modal = showModal('Integrity Check', { wide: true, accentHead: true });
+    modal.body.appendChild(buildSpinner('RUNNING INTEGRITY CHECK...'));
+    if (modal.closeBtn) modal.closeBtn.disabled = true;
+    fetchApi('adminIntegrityCheck', {
+      method: 'POST', token: token, body: {},
+      timeoutMs: RC_FETCH_TIMEOUT_MS_INTEGRITY
+    }).then(function (data) {
+      if (modal.closeBtn) modal.closeBtn.disabled = false;
+      modal.body.innerHTML = '';
+      if (!data || !data.success) {
+        modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not run the integrity check.'));
+        return;
+      }
+      if (!data.hasSeason) {
+        modal.body.appendChild(buildEmptyStatePanel('No Active Season', 'There\'s no season currently open or running to check.'));
+        return;
+      }
+      modal.body.appendChild(el('div', 'rc-hint', 'Season: ' + escapeHtml(data.seasonName || data.seasonId)));
+      var summary = (data.fixedCount || 0) + ' fixed · ' + (data.flaggedCount || 0) + ' flagged';
+      modal.body.appendChild(el('div', 'margin-top:6px;font-weight:800;font-size:14px;color:var(--rc-carbon);', summary));
+      if (!data.findings || !data.findings.length) {
+        modal.body.appendChild(buildEmptyStatePanel('Nothing To Report', 'Everything checked out clean.'));
+        return;
+      }
+      var list = el('div', 'margin-top:14px;');
+      data.findings.forEach(function (finding) { list.appendChild(buildIntegrityFindingRow_(finding)); });
+      modal.body.appendChild(list);
+    }).catch(function () {
+      if (modal.closeBtn) modal.closeBtn.disabled = false;
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+    });
   }
 
   // LEAGUE NEWS -- backs league.html's public news/narrative feed and
