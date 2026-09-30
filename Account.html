@@ -1513,6 +1513,75 @@
     return group;
   }
 
+  // _rcPatchLeagueHubTimeFields_(hub) -- local port of js/league.js's own
+  // _rclPatchTimeDerivedFields_ (2026-09-30, see _rcFetchLeagueHubCsvFirst_
+  // below for why this is needed at all). Account.html doesn't load
+  // league.js (it's a self-contained file, same reason league.js keeps its
+  // own small local copies of Account.html's helpers rather than sharing
+  // an include) so this is a deliberate duplicate, not a shared function --
+  // keep it in exact lockstep with league.js's copy (and ultimately
+  // Website.gs's _rcRefreshTimeDerivedLeagueHubFields_) if either ever
+  // changes. Only .finished/.roundsCompleted/.hasUnofficialResults/
+  // .nextRace actually matter to this popup (the calendar's own "UP NEXT"
+  // pick below reads entry.finished), but the whole hub object is patched
+  // in place so nothing here has to know which fields a future caller
+  // might also need.
+  function _rcPatchLeagueHubTimeFields_(hub) {
+    if (!hub || !hub.hasSeason || !Array.isArray(hub.calendar)) return hub;
+    var nowMs = Date.now();
+
+    hub.calendar.forEach(function (entry) {
+      entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
+    });
+
+    var completedEntries = hub.calendar.filter(function (entry) {
+      return entry.kind === 'round' && entry.finished && entry.hasResults;
+    });
+    hub.roundsCompleted = completedEntries.length;
+    hub.hasUnofficialResults = completedEntries.some(function (entry) { return !entry.resultsFinalized; });
+
+    var nextEntry = hub.calendar.filter(function (entry) {
+      return entry.kind !== 'bye' && !entry.finished;
+    })[0];
+    hub.nextRace = nextEntry ? {
+      kind: nextEntry.kind,
+      eventName: nextEntry.eventName || '',
+      track: nextEntry.track || '',
+      layout: nextEntry.layout || '',
+      startUtc: nextEntry.startUtc || '',
+      raceLengthTier: nextEntry.raceLengthTier || '',
+      roundNum: nextEntry.roundNum || 0,
+      totalRounds: hub.totalRounds
+    } : null;
+
+    return hub;
+  }
+
+  // _rcFetchLeagueHubCsvFirst_() -- Season Details popup's own copy of
+  // js/league.js's _rclFetchLeagueHub_ (2026-09-30, Matt's ask: "make a
+  // cache csv call for the season details... popup... so it doesn't have
+  // to ask apps script"). Season Details already reads exactly the same
+  // public, no-token getLeagueHub payload league.html's whole page is
+  // built from (see this popup's own header comment above), and that
+  // payload is already published as a public CSV for league.js to read
+  // with zero Apps Script execution (RC_LEAGUE_HUB_CSV_URL, js/api.js,
+  // 2026-09-26) -- so this popup can read the exact same CSV instead of
+  // firing its own separate getLeagueHub call, with no backend changes at
+  // all. Tries the CSV first, falls back to the normal
+  // fetchApi('getLeagueHub', ...) call on ANY failure (URL not configured,
+  // fetch failed, bad JSON) -- a pure performance path, never the only way
+  // to load this popup. _rcPatchLeagueHubTimeFields_ above re-derives the
+  // calendar's finished/nextRace fields the CSV path skips (a CacheService-
+  // backed getLeagueHub read already does this server-side; a flat
+  // published CSV has no such gate -- see that function's own comment).
+  function _rcFetchLeagueHubCsvFirst_() {
+    return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).then(function (hub) {
+      return _rcPatchLeagueHubTimeFields_(hub);
+    }).catch(function () {
+      return fetchApi('getLeagueHub', {});
+    });
+  }
+
   // "View Season Details" popup -- identical in width (820px, same as
   // league.html's own non-wide .rcl-modal-dialog) and header treatment
   // (bold uppercase title, red 2px underline) to the rest of the account
@@ -1546,7 +1615,7 @@
     // needs the extra room the stat-tile groups above it don't.
     modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading season details...'));
-    fetchApi('getLeagueHub', {}).then(function (hub) {
+    _rcFetchLeagueHubCsvFirst_().then(function (hub) {
       modal.body.innerHTML = '';
       if (!hub || !hub.success || !hub.hasSeason) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
@@ -1646,20 +1715,72 @@
     return card;
   }
 
+  // _rcFindOwnSeatInHubStandings_(hub, profileId) -- looks this driver's own
+  // row up inside a League Hub payload's public standings (2026-09-30,
+  // Matt's ask: "make a cache csv call for the... current seat info
+  // popup[] so it doesn't have to ask apps script"). hub.standings is
+  // class-grouped ({className, standings:[...]}), built from every
+  // registration in the CURRENT active/registration season
+  // (_rcBuildSeasonStandings_, Results.gs) -- each row now carries
+  // carModel/teamDesc too (2026-09-30 addition, same commit) specifically
+  // so this lookup can return the exact same field set
+  // handleGetMyCurrentSeatInfo does. Returns null (never throws) if the
+  // hub has no standings yet or this profile isn't in them -- the caller
+  // falls back to the live fetchApi call in that case, same as any other
+  // published-CSV read on this site.
+  function _rcFindOwnSeatInHubStandings_(hub, profileId) {
+    if (!hub || !Array.isArray(hub.standings)) return null;
+    var found = null;
+    hub.standings.some(function (cls) {
+      var row = (cls.standings || []).filter(function (r) { return r.profileId === profileId; })[0];
+      if (row) { found = row; return true; }
+      return false;
+    });
+    if (!found) return null;
+    return {
+      success: true, hasSeat: true,
+      teamName: found.teamName || '',
+      teamDesc: found.teamDesc || '',
+      carClass: found.carClass || '',
+      manufacturer: found.manufacturer || '',
+      carModel: found.carModel || '',
+      carNumber: found.carNumber || ''
+    };
+  }
+
   // "View Current Seat Info" popup -- same width/header treatment as the
   // Season Format popup above (820px, bold uppercase title, red 2px
   // underline), opened from Current Seat's own "← View current seat info"
-  // link (currentSeatCard). Backed by getMyCurrentSeatInfo
-  // (handleGetMyCurrentSeatInfo, Results.gs), a small dedicated action
-  // that resolves this driver's current Registrations/Teams/Cars rows the
-  // same way the "else" branch of handleGetMyCurrentSeat already does,
-  // just returning the fuller team-card field set (teamDesc in
-  // particular) that card's own StandingsCache-sourced stat display never
-  // needed.
-  function openCurrentSeatInfoModal(token) {
+  // link (currentSeatCard).
+  //
+  // CSV-first (2026-09-30, Matt's ask, same as Season Details above) --
+  // tries the published League Hub CSV via _rcFetchLeagueHubCsvFirst_ and
+  // this driver's own row in it (_rcFindOwnSeatInHubStandings_ above)
+  // before ever asking Apps Script. Falls back to the original
+  // getMyCurrentSeatInfo call (handleGetMyCurrentSeatInfo, Results.gs) on
+  // ANY miss: the CSV URL isn't configured, the fetch/parse failed, OR
+  // (the one case specific to this popup, unlike Season Details) this
+  // driver's own profileId simply isn't in the current hub's standings --
+  // e.g. their latest registration is for a past, already-archived season
+  // rather than the currently open one, which getMyCurrentSeatInfo would
+  // still correctly resolve via a live Registrations lookup but a
+  // CURRENT-season-only published hub never would. This is still a pure
+  // performance path, never the only way to load this popup.
+  function openCurrentSeatInfoModal(token, profileId) {
     var modal = showModal('Current Seat Info', { wide: true, accentHead: true });
     modal.body.appendChild(buildSpinner('Loading your seat info...'));
-    fetchApi('getMyCurrentSeatInfo', { token: token }).then(function (data) {
+    // Resolved to the CSV-sourced row, or null on any miss -- caught here
+    // (not left to the outer .catch below) so a CSV miss falls through to
+    // exactly ONE fetchApi('getMyCurrentSeatInfo') call, never two: without
+    // this inner .catch, a rejection from _rcFetchLeagueHubCsvFirst_ would
+    // otherwise skip straight to the SAME fetchApi call in the outer
+    // .catch below, after the .then's own fetchApi call had already been
+    // set in motion.
+    Promise.resolve(_rcFetchLeagueHubCsvFirst_().then(function (hub) {
+      return _rcFindOwnSeatInHubStandings_(hub, profileId);
+    }).catch(function () { return null; })).then(function (fromHub) {
+      return fromHub || fetchApi('getMyCurrentSeatInfo', { token: token });
+    }).then(function (data) {
       modal.body.innerHTML = '';
       if (!data || !data.success || !data.hasSeat) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for a season to lock in a seat.'));
@@ -1709,7 +1830,7 @@
     // here) so it survives renderEmpty/renderSeat's repaints of body.
     var seatInfoBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View current seat info');
     seatInfoBtn.type = 'button';
-    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token); });
+    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token, profile.ProfileID); });
     card.appendChild(seatInfoBtn);
 
     // Adds/replaces/removes the class-pill figure in the header row --
