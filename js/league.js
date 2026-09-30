@@ -80,23 +80,14 @@ function _rclClassPill_(cls) {
   return col;
 }
 
-// Ticker-sized class pill (2026-09-26, Matt's ask -- see buildDriverEntry's
-// own comment, js/league.js, for why the ticker needs its own smaller
-// variant instead of reusing _rclClassPill_'s fixed-width right-aligned
-// column above verbatim). Same color/label lookup (RCL_CLASS_PILL_COLOR_,
-// the Hypercar->HY abbreviation), just the bare pill with no wrapper --
-// .rcl-ticker-class-pill (css/league.css) shrinks the font/padding down
-// small enough to sit inline next to a driver's car number without ever
-// reading larger than the manufacturer logo or the driver's own name.
-function _rclTickerClassPill_(cls) {
-  var key = String(cls || '').trim();
-  var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
-  var label = key === 'Hypercar' ? 'HY' : key;
-  var pill = document.createElement('span');
-  pill.className = 'rc-badge-chip rc-badge-chip-abbrev rcl-ticker-class-pill' + (colorClass ? ' ' + colorClass : '');
-  pill.textContent = label || '?';
-  return pill;
-}
+// _rclTickerClassPill_ removed (2026-09-30, Matt's ask: "remove class pills
+// from highlights ticker") -- it built the small per-driver class pill
+// buildDriverEntry used to append after each car number; that call site is
+// gone (see buildDriverEntry's own comment further below), and each class
+// group's "TOP TEN CLASS RESULTS:" tag now carries that information
+// instead. .rcl-ticker-class-pill (css/league.css) is left in place in case
+// a future ticker item wants a small inline pill again, but nothing
+// currently references it.
 
 // mm:ss (or h:mm:ss past the hour mark) for a race report event's
 // elapsed-time stamp (2026-09-24, Matt's ask) -- races run anywhere from
@@ -463,7 +454,12 @@ function _rclBuildTickerItems(hub) {
         return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
       });
       if (!rows.length) return;
-      classGroups.push({ driverRows: rows, tag: 'TOP TEN RESULTS' });
+      // Tag reworded to "TOP TEN CLASS RESULTS" (2026-09-30, Matt's ask:
+      // "have it say top ten class results: for catagories in ticker") --
+      // was "TOP TEN RESULTS", now spells out that each group is one
+      // class's own top 10, since the per-row class pill that used to mark
+      // that (removed same day, see buildDriverEntry above) is gone.
+      classGroups.push({ driverRows: rows, tag: 'TOP TEN CLASS RESULTS' });
     });
     // showRank (2026-09-23, Matt's ask: "use 1st, 2nd, 3rd, 4th and 5th
     // place before drivers in the ticker") -- ranked TOP 10 rows only;
@@ -556,23 +552,13 @@ function _rclRenderTicker(hub) {
       numSpan.textContent = ' #' + row.carNumber;
       entry.appendChild(numSpan);
     }
-    // Class pill, right behind the car number (2026-09-26, Matt's ask:
-    // "behind every number on every driver will be the class pill they
-    // belong to"; extended 2026-09-27 to the pre-season roster list too --
-    // "add class pills behind driver names in the ticker when there aren't
-    // any seasons active") -- both branches in _rclBuildTickerItems now set
-    // row.carClass, so this renders identically whether a season's results
-    // are posted yet or not. Reuses _rclClassPill_'s own RCL_CLASS_PILL_COLOR_ map and
-    // .rc-badge-chip-abbrev pill shape (same red HY/blue LMP2/purple
-    // LMP3/green LMGT3/orange LMGTE colors as the Race Report's own
-    // class pills), just wrapped in .rcl-ticker-class-pill instead of
-    // that pill's fixed-width right-aligned column -- see that class's
-    // own comment, css/league.css, for why it needs to be smaller here:
-    // no larger than the manufacturer logo, not larger than the driver
-    // name, just barely big enough to be recognizable.
-    if (row.carClass) {
-      entry.appendChild(_rclTickerClassPill_(row.carClass));
-    }
+    // Class pill removed (2026-09-30, Matt's ask: "remove class pills from
+    // highlights ticker") -- each class's own "TOP TEN CLASS RESULTS:" tag
+    // (see the classGroups.tag change in _rclBuildTickerItems below) now
+    // carries that information instead, so a pill on every single driver
+    // row was redundant. row.carClass is still set on each row (used only
+    // by this removed pill previously) but is otherwise harmless to leave
+    // in place.
     return entry;
   }
 
