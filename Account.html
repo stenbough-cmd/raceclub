@@ -9232,7 +9232,21 @@
             // "Deny (duplicate protest)" option removed 2026-09-25
             // (Matt's ask) -- a plain "Deny" now covers every denial,
             // duplicate or otherwise.
-            PENALTY_TIERS.forEach(function (t) { select.appendChild(new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier)); });
+            PENALTY_TIERS.forEach(function (t) {
+              var opt = new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier);
+              // Tier 7 (Suspension) requires a prior Upheld Tier 6
+              // (Disqualification) against this driver this season (Race
+              // Club Rulebook.md Section 5.1) -- grayed out/disabled here
+              // when that hasn't happened yet (2026-10-01, Matt's ask).
+              // Enforced again server-side (handleAdminRuleOnProtest's
+              // TIER7_REQUIRES_PRIOR_DSQ gate) so this is a convenience,
+              // not the only check.
+              if (t.tier === 7 && !p.canRuleTier7) {
+                opt.disabled = true;
+                opt.text = opt.text + ' -- requires a prior Tier 6 DSQ this season';
+              }
+              select.appendChild(opt);
+            });
             noteBody.appendChild(select);
 
             // Override-explanation field -- only relevant when this

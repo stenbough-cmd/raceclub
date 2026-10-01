@@ -309,10 +309,18 @@ var PROTEST_INFRACTION_TYPES = [
 // dropdown and suggested-tier text). See _rclDescribePenaltyEffect_/the
 // tierLabel regex in league.js, which strips this same "Tier N: " prefix
 // back off -- kept in sync with this format.
+// Labels no longer repeat the tier's own seconds value in a middle
+// parenthesis (2026-10-01, Matt's ask: "remove the middle parenthesis (n)
+// number and just leave the longer written (10 sec penalty) that already
+// exists") -- the dropdown already appends `effect` in its own trailing
+// parenthesis right after this label, so "Tier 2: Time Penalty (5s)
+// (+5s added to final race time)" had the same number twice. Tiers 4/5/6/7
+// never had a middle number to begin with (their label names the
+// equivalent/consequence, not a seconds value), so only 2 and 3 change.
 var PENALTY_TIERS = [
   { tier: 1, label: 'Tier 1: Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
-  { tier: 2, label: 'Tier 2: Time Penalty (5s)', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
-  { tier: 3, label: 'Tier 3: Time Penalty (10s)', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
+  { tier: 2, label: 'Tier 2: Time Penalty', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
+  { tier: 3, label: 'Tier 3: Time Penalty', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
   { tier: 4, label: 'Tier 4: Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
   { tier: 5, label: 'Tier 5: Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
   { tier: 6, label: 'Tier 6: Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
