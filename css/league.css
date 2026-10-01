@@ -1162,16 +1162,20 @@ body.rc-league-page {
    CLASS instead, called from inside that class's own .rcl-race-class
    block (_rclBuildClassCategoryBreakdown_, js/league.js) -- see
    .rcl-race-categories-inclass right below for how its border/spacing
-   flips to suit sitting at the BOTTOM of a class section now instead of
-   the top of the whole popup. */
+   suits sitting right under a class's own header and above its standings
+   table, same position within a class section this used to occupy at the
+   very top of the whole popup (2026-10-01, briefly moved to sit
+   underneath the standings table instead the same day -- Matt's
+   follow-up: "I want it to live under the header and above the table in
+   each class" -- this supersedes that). */
 .rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
 .rcl-race-categories-inclass {
-  margin-top: 20px;
-  margin-bottom: 0;
-  padding-top: 18px;
-  padding-bottom: 0;
-  border-bottom: none;
-  border-top: 1px solid var(--rcl-line);
+  margin-top: 0;
+  margin-bottom: 18px;
+  padding-top: 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rcl-line);
+  border-top: none;
 }
 .rcl-race-category { flex: 1 1 200px; min-width: 180px; }
 .rcl-race-category-title {

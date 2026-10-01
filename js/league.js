@@ -1186,11 +1186,11 @@ var _RCL_ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill=
 // Winner's gold rowKind is untouched (not part of that ask).
 function _rclBuildClassCategoryBreakdown_(cls) {
   // rcl-race-categories-inclass (css/league.css) restyles the shared
-  // .rcl-race-categories block for sitting at the BOTTOM of a class
-  // section instead of the top of the whole popup -- border/margin on the
-  // top instead of the bottom, separating it from the standings table
-  // above it rather than from whatever used to follow the old combined
-  // block.
+  // .rcl-race-categories block for sitting right under a class's own
+  // header and above its standings table (2026-10-01 follow-up, Matt's
+  // ask: "I want it to live under the header and above the table in each
+  // class" -- briefly sat underneath the standings table instead, same
+  // day, before this).
   var wrap = _rclEl('div', 'rcl-race-categories rcl-race-categories-inclass');
 
   // rowKind (2026-09-27, Matt's ask: "make the winner name gold... in ALL
@@ -1586,6 +1586,15 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     // Current Standings both use.
     clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
 
+    // Winner/Most Laps Led/Pole Sitter/Fastest Lap breakdown for THIS
+    // class only, right under its own header and above its standings
+    // table (2026-10-01 follow-up, Matt's ask: "I want it to live under
+    // the header and above the table in each class" -- supersedes the
+    // same-day change that put this underneath the table instead; see
+    // _rclBuildClassCategoryBreakdown_'s own comment above for the fuller
+    // history).
+    clsWrap.appendChild(_rclBuildClassCategoryBreakdown_(cls));
+
     // Column labels, divider line BELOW them (2026-09-23 follow-up,
     // Matt's ask: "move the line BELOW the catagory labels" -- was above)
     // -- POS, DRIVER, LAPS, TOTAL TIME, PEN, GAP, AVG (KM/H), BEST LAP,
@@ -1651,10 +1660,6 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
-    // Winner/Most Laps Led/Pole Sitter/Fastest Lap breakdown for THIS
-    // class only, underneath its own standings table (2026-10-01, Matt's
-    // ask -- see _rclBuildClassCategoryBreakdown_'s own comment above).
-    clsWrap.appendChild(_rclBuildClassCategoryBreakdown_(cls));
     bodyEl.appendChild(clsWrap);
   });
 
