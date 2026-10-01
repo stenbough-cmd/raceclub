@@ -560,23 +560,19 @@ function renderHeader(opts) {
               // Profile, Help, Feedback, Discord -- see buildSidebarNav,
               // Account.html) -- opens in a new tab so a driver never
               // loses their place on whatever page this dropdown is open
-              // on. Gets its own modifier class + the official
-              // Discord-Symbol-White.svg mark (2026-09-27, Matt's ask: use
-              // this asset everywhere -- black sidebar, blurple button,
-              // and avatar menu). This row carries its own permanent
-              // Blurple background (.rc-header-menu-item-discord,
-              // style.css) rather than the site-red hover every other row
-              // gets, both so the white mark always has contrast against
-              // this otherwise white/offwhite dropdown and so this one
-              // link reads as "leaving to Discord" rather than another
-              // in-app action. Points at the club's own channel (not the
-              // generic invite link) -- 2026-09-27, Matt's ask: dashboard
-              // Discord links can assume the driver already joined the
-              // server, so this one goes straight to the channel; the
-              // index.html landing-page CTA (pre-join) keeps the invite
-              // link.
-              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer">' +
-                '<img src="assets/images/Discord-Symbol-White.svg" alt="" width="21" height="16">Discord</a>' +
+              // on. Gets its own modifier class (.rc-header-menu-item-
+              // discord, style.css) purely for its Blurple HOVER state --
+              // un-blurpled and the Discord mark dropped 2026-10-01 (Matt's
+              // ask: leave it plain like every other row until hovered,
+              // and lose the icon), so it now sits flush with the rest of
+              // this menu at rest, same idea as the sidebar's own
+              // .rc-nav-item-discord. Points at the club's own channel (not
+              // the generic invite link) -- 2026-09-27, Matt's ask:
+              // dashboard Discord links can assume the driver already
+              // joined the server, so this one goes straight to the
+              // channel; the index.html landing-page CTA (pre-join) keeps
+              // the invite link.
+              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer">Discord</a>' +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
             '</div>';

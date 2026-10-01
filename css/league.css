@@ -563,24 +563,12 @@ body.rc-league-page {
 }
 .rcl-seasonfmt-row-label { color: var(--rcl-ink-dim); font-weight: 600; }
 .rcl-seasonfmt-row-value { color: var(--rcl-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-/* Championship Points' own tier rows (Sprint/Medium/Long) -- a tree
-   sub-row with a branch glyph, matching the Data Management Cars/Tracks
-   lists' own .rc-dm-subrow/.rc-dm-tree shape (2026-10-01, Matt's ask:
-   "make the |_ formatted like how it is in the tree list for cars and
-   tracks in data management"). league.html doesn't share Account.html's
-   .rc-dm-* classes (different page, different theme), so this is a
-   same-shape dark-theme equivalent, not a reuse of those exact classes.
-   Bonus Points rows do NOT use this -- they're plain .rcl-seasonfmt-row
-   (Matt's ask: "get rid of the tree indents" for bonus points). */
-.rcl-seasonfmt-subrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0 4px 20px;
-  font-size: 12.5px;
-  color: var(--rcl-ink-dim);
-}
-.rcl-seasonfmt-tree { color: var(--rcl-ink-faint); font-weight: 700; flex: none; }
+/* Championship Points' own tier rows (Sprint/Medium/Long) briefly had a
+   tree sub-row here (2026-10-01) matching the Data Management Cars/Tracks
+   lists' .rc-dm-subrow/.rc-dm-tree shape -- removed the same day (Matt's
+   ask: "get rid of the tree indentation and just make it like the rest --
+   Sprint: P1 n, P2 n, etc") in favor of the plain .rcl-seasonfmt-row every
+   other row here already uses. */
 
 /* -------------------------------------------------------------------- */
 /* Layout                                                                */
@@ -1841,8 +1829,8 @@ body.rc-league-page {
    moved into their own "Points Tables" popup off the Leaderboard panel
    same day). Removed 2026-10-01 (Matt's ask) -- Championship Points now
    has its own pill section inside the Season Details popup, with its
-   tiers as tree sub-rows and Bonus Points as plain flat rows underneath
-   (.rcl-seasonfmt-subrow/.rcl-seasonfmt-tree, further up this file). */
+   tiers and Bonus Points both plain flat rows (.rcl-seasonfmt-row, further
+   up this file). */
 
 /* Drivers section removed 2026-09-19 (Matt's call: drivers are already
    visible via the Leaderboard) -- .rcl-drivers-class/.rcl-drivers-grid/

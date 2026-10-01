@@ -777,20 +777,13 @@ function _rclRenderTicker(hub) {
 // ---------------------------------------------------------------------
 // LEADERBOARD (standings)
 // ---------------------------------------------------------------------
-// Holds the full fetched hub so the "View Points Tables" link's popup
-// (opened well after this render finishes) can build its tables without
-// a second server round trip -- same pattern _rclNewsList already uses
-// for the story popup.
-var _rclHubForPoints = null;
-
-// Builds the whole "one column per class" grid -- shared by the ranked
-// Standings panel (hasResults true, real points) and the Drivers popup
-// below (hasResults always false, a plain roster) -- 2026-09-21 refactor,
-// pulled out of _rclRenderStandings so both places render an identical
-// row for identical data instead of two copies of this markup drifting
-// apart over time. hasResults being false renders exactly what the
-// Standings panel used to show itself before its first race was scored
-// (empty position slot, no points column) -- see the per-arg comments
+// Builds the whole "one column per class" grid for the ranked Standings
+// panel (hasResults true, real points) -- 2026-09-21 refactor, originally
+// shared with the "View All Drivers" popup's plain roster (hasResults
+// false), which was removed 2026-10-01 (Matt's call: redundant with the
+// ticker/this panel). The hasResults-false path (empty position slot, no
+// points column) is unused now but left in place rather than stripped,
+// in case a future roster view wants it again -- see the per-arg comments
 // below for why each piece looks the way it does.
 // Shared row-building pieces (2026-09-23 refactor, Matt's ask: "Make the
 // weight and color of all the drivers in RECENT RESULTS the same as
@@ -967,22 +960,19 @@ function _rclRenderStandings(hub) {
   var body = document.getElementById('rcl-standings-body');
   if (!body) return;
   body.innerHTML = '';
-  _rclHubForPoints = hub;
 
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
   // Before any race has actually been run, there's nothing to rank yet
   // (2026-09-19 follow-up, Matt's call: "if there hasn't been a race
   // posted yet, there shouldn't be a ranked list -- just the graphic
   // container, no number, and no points") -- same hasResults gate the
-  // ticker already uses (roundsCompleted > 0).
-  // 2026-09-21 follow-up (Matt's catch): that pre-results state used to
-  // show the plain driver roster right here, which meant a driver could
-  // ONLY ever be found by scrolling this panel. Roster browsing moved out
-  // to its own "View All Drivers" popup (_rclOpenDriversModal below,
-  // reachable anytime a season has registrations), and CURRENT STANDINGS
-  // itself now shows the same circle-slash "no data" empty state RECENT
-  // RESULTS uses whenever there's nothing ranked to show yet -- Standings
-  // is purely about ranked results now, not a roster fallback.
+  // ticker already uses (roundsCompleted > 0). CURRENT STANDINGS shows the
+  // same circle-slash "no data" empty state RECENT RESULTS uses whenever
+  // there's nothing ranked to show yet. The separate "View All Drivers"
+  // popup this panel used to link to (2026-09-21-2026-10-01) was removed
+  // 2026-10-01 (Matt's call: redundant -- the ticker already lists every
+  // driver before a season has results, and once it does, that same
+  // roster IS this panel).
   var hasResults = (hub.roundsCompleted || 0) > 0;
 
   if (!hasStandings || !hasResults) {
@@ -995,11 +985,9 @@ function _rclRenderStandings(hub) {
     // notifications that pop up at the top of CURRENT STANDINGS") -- the
     // old top-of-panel "Preliminary Results Pending League Review"/
     // "Official Results" note (2026-09-19/2026-09-23) is gone; the same
-    // idea now shows at the BOTTOM of this panel instead, right above the
-    // "View Points Tables"/"View All Drivers" links' own divider line, as
+    // idea now shows at the BOTTOM of this panel instead, as
     // "*PRELIMINARY RESULTS (date)"/"*OFFICIAL RESULTS (date)" -- see the
-    // shared _rclBuildResultsStatusNotice_ call below, right before
-    // linkRow is appended.
+    // shared _rclBuildResultsStatusNotice_ call below.
     body.appendChild(_rclBuildStandingsColumns_(hub.standings, true));
   }
 
@@ -1017,65 +1005,12 @@ function _rclRenderStandings(hub) {
     if (standingsNotice) body.appendChild(_rclBuildMobileViewOnPcNote_());
   }
 
-  // "View All Drivers" link (2026-09-21) -- shown whenever the season
-  // actually has registered drivers to show, whether or not any race has
-  // been scored yet, so the Drivers popup stays reachable even during the
-  // empty-state above. The old "View Points Tables" link that used to sit
-  // beside this one was removed 2026-10-01 (Matt's ask) now that
-  // Championship Points/Bonus Points are folded straight into the "View
-  // Season Details" popup instead of their own separate popup.
-  if (hasStandings) {
-    var linkRow = _rclEl('div', 'rcl-standings-points-row');
-    var driversLink = _rclEl('button', 'rcl-standings-points-link', 'View All Drivers');
-    driversLink.type = 'button';
-    driversLink.addEventListener('click', function () { _rclOpenDriversModal(_rclHubForPoints); });
-    linkRow.appendChild(driversLink);
-    body.appendChild(linkRow);
-  }
-}
-
-// Drivers popup (2026-09-21, Matt's ask): a season's full roster, always
-// in the same "no rank, no points" mode the Standings panel itself shows
-// before its first race is scored (see _rclBuildStandingsColumns_ above)
-// -- reachable any time a season has registrations, not gated on results
-// existing, so a driver isn't ONLY ever discoverable through the ranked
-// Standings list. Same .rcl-modal-overlay/dialog shell every other League
-// Hub popup uses (e.g. _rclOpenSeasonDetailsModal), styled to match a
-// .rcl-panel exactly.
-function _rclOpenDriversModal(hub) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  // rcl-modal-dialog-wide (2026-09-21, Matt's ask: "increase the width of
-  // the drivers list popup") -- a scoped modifier on the shared dialog
-  // shell (see .rcl-modal-dialog-wide, league.css) rather than widening
-  // .rcl-modal-dialog itself, since News/Points Table/Season Details all
-  // share that base class and were never asked to get wider too. The
-  // full driver roster (identity block + car/team columns) is the widest
-  // content any of these modals shows, so it's the one that benefits.
-  var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide');
-  var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Drivers'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-
-  var body = _rclEl('div', 'rcl-modal-body');
-  if (!hub || !hub.hasSeason || !hub.standings || !hub.standings.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Drivers fill in once a season is underway.'));
-  } else {
-    body.appendChild(_rclBuildStandingsColumns_(hub.standings, false));
-  }
-  dialog.appendChild(body);
-
-  overlay.appendChild(dialog);
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
-  function close() {
-    overlay.remove();
-    _rclUnlockBodyScroll();
-  }
-  closeBtn.addEventListener('click', close);
+  // "View All Drivers" link (2026-09-21) and its popup (_rclOpenDriversModal)
+  // removed 2026-10-01 (Matt's call: redundant -- the ticker already lists
+  // every driver before a season has results, and once it does, this
+  // panel's own ranked list already shows every registered driver). The
+  // "View Points Tables" link that used to sit beside it was removed the
+  // same day for a similar reason (folded into "View Season Details").
 }
 
 // ---------------------------------------------------------------------
@@ -2259,9 +2194,7 @@ function _rclRenderCalendar(hub) {
   // "View Season Details" link (2026-09-19, Matt's call: season details
   // move out of the hero band into a popup opened from here instead --
   // see _rclOpenSeasonDetailsModal below). Closes over the local `hub`
-  // param directly since this function already has it, same pattern as
-  // the Leaderboard's "View Points Tables" link uses _rclHubForPoints for
-  // (that one needs a stashed global since it's a different function).
+  // param directly since this function already has it.
   var detailsRow = _rclEl('div', 'rcl-cal-details-row');
   var detailsLink = _rclEl('button', 'rcl-cal-details-link', 'View Season Details');
   detailsLink.type = 'button';
@@ -2616,10 +2549,11 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
   if (rs.pitStopReq) block4.push({ label: 'Pitstop Requirements', value: rs.pitStopReq });
   if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
-  // "Points until DT" -- rs.trackLimitPoints, how many track-limit points
-  // are allowed before the sim auto-issues a Drive Through penalty (same
-  // field this popup used to label just "Pts" next to "Track Limit").
-  if (rs.trackLimitPoints) block4.push({ label: 'Points until DT', value: String(rs.trackLimitPoints) });
+  // "Infractions until Drive-Thru" (was "Points until DT", 2026-10-01
+  // follow-up, Matt's ask) -- rs.trackLimitPoints, how many track-limit
+  // points are allowed before the sim auto-issues a Drive Through penalty
+  // (same field this popup used to label just "Pts" next to "Track Limit").
+  if (rs.trackLimitPoints) block4.push({ label: 'Infractions until Drive-Thru', value: rs.trackLimitPoints + ' pts' });
   if (block4.length) sections.push({ pill: 'Season Rules', blocks: [block4] });
 
   return sections;
@@ -2709,16 +2643,14 @@ function _rclOpenSeasonDetailsModal(hub) {
   //   (Matt's ask: "Make CHAMPIONSHIP POINTS into a pill... add a SEASON
   //   RULES pill in the same style"). _rclBuildSeasonFormatBlocks_ returns
   //   one such SECTION per pill now, not a flat list of blocks.
-  // - Championship Points' own tier rows (Sprint/Medium/Long) use a tree
-  //   sub-row with a "└" glyph, same shape as the Data Management
-  //   Cars/Tracks lists' own .rc-dm-subrow/.rc-dm-tree (Matt's ask: "make
-  //   the |_ formatted like how it is in the tree list for cars and tracks
-  //   in data management") -- .rcl-seasonfmt-tree below is league.html's
-  //   own dark-theme equivalent of that Account.html-only class.
-  // - "Bonus Points" no longer has its own header at all -- just a blank
-  //   gap above its flat (non-tree) rows (Matt's ask: "get rid of that and
-  //   leave a space... just list the bonus point catagories and their
-  //   values").
+  // - Championship Points' own tier rows (Sprint/Medium/Long) are plain
+  //   flat rows too now, no tree indent (2026-10-01 follow-up, Matt's ask:
+  //   "get rid of the tree indentation and just make it like the rest --
+  //   Sprint: P1 n, P2 n, etc" -- supersedes an even earlier version of
+  //   this same day that gave them a tree sub-row).
+  // - "Bonus Points" has no header of its own at all -- just a blank gap
+  //   above its own flat rows (Matt's ask: "get rid of that and leave a
+  //   space... just list the bonus point catagories and their values").
   // The Calendar itself is NOT in this popup on league.html -- it's
   // already its own permanent panel on the page, with this "View Season
   // Details" link living at the bottom of it (see _rclRenderCalendar) --
@@ -2727,12 +2659,6 @@ function _rclOpenSeasonDetailsModal(hub) {
     var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
       '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
     return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-  function buildTreeRow(stat) {
-    var row = _rclEl('div', 'rcl-seasonfmt-subrow');
-    row.appendChild(_rclEl('span', 'rcl-seasonfmt-tree', '└'));
-    row.appendChild(_rclEl('span', null, _rclEscapeHtml(stat.label) + ': ' + _rclEscapeHtml(stat.value)));
-    return row;
   }
 
   var sections = _rclBuildSeasonFormatBlocks_(hub);
@@ -2750,7 +2676,7 @@ function _rclOpenSeasonDetailsModal(hub) {
       } else {
         if (section.tiers.length) {
           var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTreeRow(stat)); });
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildRow(stat)); });
           list.appendChild(tierBlock);
         }
         if (section.bonus.length) {
@@ -2859,10 +2785,6 @@ function _rclFetchLeagueHub_() {
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
-  // _rclRenderPoints removed from this list (2026-09-19) -- points tables
-  // are no longer rendered into the page directly; _rclRenderStandings
-  // stashes the fetched hub (_rclHubForPoints) so the "View Points
-  // Tables" link can build the popup on demand instead.
   var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderNews];
 
   function showHub(hub) {

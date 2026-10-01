@@ -1526,9 +1526,10 @@
     if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
     if (rs.pitStopReq) block4.push({ label: 'Pitstop Requirements', value: rs.pitStopReq });
     if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
-    // "Points until DT" -- rs.trackLimitPoints, how many track-limit points
-    // are allowed before the sim auto-issues a Drive Through penalty.
-    if (rs.trackLimitPoints) block4.push({ label: 'Points until DT', value: String(rs.trackLimitPoints) });
+    // "Infractions until Drive-Thru" (was "Points until DT", 2026-10-01
+    // follow-up, Matt's ask) -- rs.trackLimitPoints, how many track-limit
+    // points are allowed before the sim auto-issues a Drive Through penalty.
+    if (rs.trackLimitPoints) block4.push({ label: 'Infractions until Drive-Thru', value: rs.trackLimitPoints + ' pts' });
     if (block4.length) sections.push({ pill: 'Season Rules', blocks: [block4] });
 
     return sections;
@@ -1542,24 +1543,19 @@
   // appends each one in turn. Rows are plain "Category: Value" text,
   // left-aligned (Matt's catch: "I don't want the values to be on one side
   // and the catagory on the other"), not a two-column layout.
-  // Championship Points' own tier rows (Sprint/Medium/Long) reuse the
-  // site's existing Data Management Cars/Tracks tree-row shape as-is
-  // (.rc-dm-subrow/.rc-dm-tree, same page/theme -- Matt's ask: "make the
-  // |_ formatted like how it is in the tree list for cars and tracks in
-  // data management"); Bonus Points rows are plain, non-tree rows with no
-  // header of their own, just a blank gap above them (Matt's ask: "get rid
-  // of that and leave a space").
+  // Championship Points' own tier rows (Sprint/Medium/Long) are plain flat
+  // rows too now, no tree indent (2026-10-01 follow-up, Matt's ask: "get
+  // rid of the tree indentation and just make it like the rest -- Sprint:
+  // P1 n, P2 n, etc" -- supersedes an even earlier version of this same
+  // day that gave them a Data Management-style tree sub-row). Bonus Points
+  // rows are the same plain shape, with no header of their own, just a
+  // blank gap above them (Matt's ask: "get rid of that and leave a
+  // space").
   function buildSeasonFmtGroups_(sections) {
     function buildRow(stat) {
       var html = '<span class="rc-seasonfmt-row-label">' + escapeHtml(stat.label) + ':</span> ' +
         '<span class="rc-seasonfmt-row-value">' + escapeHtml(String(stat.value)) + '</span>';
       return el('div', 'rc-seasonfmt-row', html);
-    }
-    function buildTreeRow(stat) {
-      var row = el('div', 'rc-dm-subrow');
-      row.appendChild(el('span', 'rc-dm-tree', '└'));
-      row.appendChild(el('span', null, escapeHtml(stat.label) + ': ' + escapeHtml(String(stat.value))));
-      return row;
     }
     return sections.map(function (section) {
       var group = el('div', 'rc-seasonfmt-group');
@@ -1574,7 +1570,7 @@
       } else {
         if (section.tiers.length) {
           var tierBlock = el('div', 'rc-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTreeRow(stat)); });
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildRow(stat)); });
           list.appendChild(tierBlock);
         }
         if (section.bonus.length) {
