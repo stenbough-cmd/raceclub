@@ -1421,66 +1421,127 @@
     return card;
   }
 
-  // "This Season"/"League Format" stat groups for the Season Format popup
-  // below -- ported straight from league.js's own _rclBuildSnapshotStats/
-  // _rclBuildFormatStats (same field order, same conditions for showing a
-  // given tile), just re-expressed as {value,label} pairs this file's own
-  // buildCareerStat() tile builder already knows how to render, instead of
-  // league.js's .rcl-hero-stat markup. Keep these in sync with their
-  // league.js originals if that popup's fields ever change -- there was no
-  // clean way to share the actual functions across the two separate
-  // <script> files.
-  function _rcBuildSeasonSnapshotStats_(hub) {
-    var row1 = [], row2 = [];
+  // Season Format list for the Season Format popup below -- rebuilt
+  // 2026-10-01 (Matt's ask: "remove the bubble data blocks in favor of
+  // this more traditional list format") from the old two-group bubble-tile
+  // layout into one combined vertical list, also folding in Championship
+  // Points/Bonus Points (new content here -- Account.html never had its
+  // own separate points-tables popup the way league.html did). Ported
+  // straight from league.js's own _rclBuildSeasonFormatBlocks_ (same field
+  // order, same conditions for showing a given row) -- keep these in sync
+  // if that popup's fields ever change; there's no clean way to share the
+  // actual function across the two separate <script> files.
+  function _rcBuildSeasonFormatBlocks_(hub) {
+    var rs = hub.raceSettings || {};
+    var blocks = [];
+
+    var block1 = [];
     if (hub.seasonStartUtc && hub.seasonEndUtc) {
       var startLabel = formatDateLabel(String(hub.seasonStartUtc).slice(0, 10));
       var endLabel = formatDateLabel(String(hub.seasonEndUtc).slice(0, 10));
       if (startLabel && endLabel) {
-        row1.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
+        block1.push({ label: 'Season Dates', value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : '') });
       }
     }
+    if (hub.frequency) block1.push({ label: 'Schedule Frequency', value: hub.frequency });
+    // Event Time -- the one recurring local race time + zone set in the
+    // Season Creation Wizard (hub.seasonStartTime/hub.enteredTimeZone, see
+    // Website.gs), not any individual round's own startUtc (those vary
+    // round to round and already show on the Calendar below).
+    if (hub.seasonStartTime) {
+      block1.push({ label: 'Event Time', value: _rcFormat12h_(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + hub.enteredTimeZone) : '') });
+    }
+    if (hub.totalRounds) block1.push({ label: 'Championship Rounds', value: String(hub.totalRounds) });
+    var specialEventCount = (hub.calendar || []).filter(function (entry) { return entry.kind === 'special'; }).length;
+    if (specialEventCount) block1.push({ label: 'Special Events', value: String(specialEventCount) });
+    if (hub.dropWeeks) block1.push({ label: hub.dropWeeks === 1 ? 'Drop Week' : 'Drop Weeks', value: String(hub.dropWeeks) });
+    if (hub.byeWeeks) block1.push({ label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks', value: String(hub.byeWeeks) });
     var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
-    if (classNames.length) {
-      row1.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
-    }
-    if (hub.totalRounds) {
-      row1.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
-    }
+    if (classNames.length) block1.push({ label: classNames.length === 1 ? 'Class' : 'Classes', value: classNames.join(', ') });
     (hub.standings || []).forEach(function (cls) {
       var count = (cls.standings || []).length;
-      // Abbreviated via _rcClassPillLabel (2026-09-27, Matt's ask: "instead
-      // of using the full HYPERCAR DRIVERS in the bubble, abbreviate it
-      // like the rest to HY DRIVERS") -- same helper every other class pill
-      // on the site already uses (Hypercar -> HY, everything else
-      // unchanged since it's already short enough).
-      if (count) row2.push({ value: String(count), label: _rcClassPillLabel(cls.className || 'Class') + ' Drivers' });
+      // Abbreviated via _rcClassPillLabel (2026-09-27, Matt's ask) -- same
+      // helper every other class pill on the site already uses.
+      if (count) block1.push({ label: _rcClassPillLabel(cls.className || 'Class') + ' Drivers', value: String(count) });
     });
-    if (hub.dropWeeks) row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
-    if (hub.byeWeeks) row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
-    if (hub.frequency) row2.push({ value: hub.frequency, label: 'Frequency' });
-    return row1.concat(row2);
+    if (block1.length) blocks.push({ rows: block1 });
+
+    var block2 = [];
+    if (rs.practiceLengthMin) block2.push({ label: 'Practice Duration', value: rs.practiceLengthMin + ' min' });
+    if (rs.qualifyLengthMin) block2.push({ label: 'Qualify Duration', value: rs.qualifyLengthMin + ' min' });
+    if (hub.privateQualifying) block2.push({ label: 'Qualifying Type', value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public' });
+    block2.push({ label: 'Race Duration', value: 'Varies' });
+    if (block2.length) blocks.push({ rows: block2 });
+
+    // Championship Points / Bonus Points -- new content here (Account.html
+    // never had its own standalone points-tables popup), same
+    // hub.pointsTables/hub.bonusPoints fields the Season Creation Wizard
+    // writes and league.js's own popup reads.
+    var tables = hub.pointsTables || {};
+    var tierNames = Object.keys(tables).filter(function (name) { return (tables[name].points || []).length; });
+    var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
+    var bonus = hub.bonusPoints || {};
+    var bonusKeys = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
+    if (tierNames.length || bonusKeys.length) {
+      var pointsBlock = { tiers: [], bonus: [] };
+      tierNames.forEach(function (tierName) {
+        var tier = tables[tierName] || {};
+        var pts = (tier.points || []).map(function (val, idx) { return 'P' + (idx + 1) + ' ' + val; }).join(', ');
+        pointsBlock.tiers.push({ label: tierName, value: pts });
+      });
+      bonusKeys.forEach(function (key) {
+        pointsBlock.bonus.push({ label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' });
+      });
+      blocks.push(pointsBlock);
+    }
+
+    var block4 = [];
+    if (rs.setupRules) block4.push({ label: 'Setup Rules', value: rs.setupRules });
+    if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
+    if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
+    if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
+    if (rs.pitStopReq) block4.push({ label: 'Pitstop Requirements', value: rs.pitStopReq });
+    if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
+    // "Points until DT" -- rs.trackLimitPoints, how many track-limit points
+    // are allowed before the sim auto-issues a Drive Through penalty.
+    if (rs.trackLimitPoints) block4.push({ label: 'Points until DT', value: String(rs.trackLimitPoints) });
+    if (block4.length) blocks.push({ rows: block4 });
+
+    return blocks;
   }
 
-  function _rcBuildSeasonFormatStats_(hub) {
-    var rs = hub.raceSettings || {};
-    var row1 = [], row2 = [];
-    if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
-    if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-    // Qualify Type (2026-09-24, Matt's ask), between Qualify and Race
-    // Length -- same hub.privateQualifying field league.js's own
-    // _rclBuildFormatStats reads.
-    if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
-    // "Race Length" (was "Race Time", 2026-09-24, Matt's ask).
-    row1.push({ value: 'Varies', label: 'Race Length' });
-    if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
-    if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
-    if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-    // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
-    if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
-    if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
-    if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
-    if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
-    return row1.concat(row2);
+  // Renders _rcBuildSeasonFormatBlocks_'s blocks as a plain vertical list
+  // (.rc-seasonfmt-list, style.css) under one "Season Format" pill header
+  // (.rc-seasonfmt-group-label, unchanged) -- replaces the old
+  // buildSeasonFmtStatGroup bubble-tile builder (2026-10-01, Matt's ask).
+  function buildSeasonFmtList_(blocks) {
+    var group = el('div', 'rc-seasonfmt-group');
+    group.appendChild(el('div', 'rc-seasonfmt-group-label', 'Season Format'));
+    var list = el('div', 'rc-seasonfmt-list');
+    function buildRow(stat, isSub) {
+      var row = el('div', 'rc-seasonfmt-row' + (isSub ? ' rc-seasonfmt-subrow' : ''));
+      row.appendChild(el('div', 'rc-seasonfmt-row-label', escapeHtml(stat.label)));
+      row.appendChild(el('div', 'rc-seasonfmt-row-value', escapeHtml(String(stat.value))));
+      return row;
+    }
+    blocks.forEach(function (block) {
+      var blockEl = el('div', 'rc-seasonfmt-block');
+      if (block.rows) {
+        block.rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+      } else {
+        if (block.tiers.length) {
+          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Championship Points'));
+          block.tiers.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        }
+        if (block.bonus.length) {
+          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Bonus Points'));
+          block.bonus.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        }
+      }
+      list.appendChild(blockEl);
+    });
+    group.appendChild(list);
+    return group;
   }
 
   // "View Season Format" popup (2026-09-24, Matt's ask: identical to
@@ -1492,26 +1553,6 @@
   // is a cheap on-click fetch, not something worth folding into the
   // Dashboard's own combined getDashboardData call for a popup most
   // drivers will never open.
-  // One "bubble" stat group -- a gray pill label (.rc-seasonfmt-group-
-  // label) followed by a wrapping row of bordered value/label tiles
-  // (.rc-seasonfmt-stat), the account-styled equivalent of league.html's
-  // own .rcl-hero-stats-label + .rcl-hero-stat "details bubbles" (see
-  // style.css for the full comment). Shared by the Season Format popup
-  // below and the Current Seat Info popup further down (buildCurrentSeatCard
-  // area) so both popups' stat groups look identical.
-  function buildSeasonFmtStatGroup(label, stats) {
-    var group = el('div', 'rc-seasonfmt-group');
-    group.appendChild(el('div', 'rc-seasonfmt-group-label', escapeHtml(label)));
-    var row = el('div', 'rc-seasonfmt-stats-row');
-    stats.forEach(function (s) {
-      var tile = el('div', 'rc-seasonfmt-stat');
-      tile.appendChild(el('div', 'rc-seasonfmt-stat-value', escapeHtml(String(s.value))));
-      tile.appendChild(el('div', 'rc-seasonfmt-stat-label', escapeHtml(s.label)));
-      row.appendChild(tile);
-    });
-    group.appendChild(row);
-    return group;
-  }
 
   // _rcPatchLeagueHubTimeFields_(hub) -- local port of js/league.js's own
   // _rclPatchTimeDerivedFields_ (2026-09-30, see _rcFetchLeagueHubCsvFirst_
@@ -1585,19 +1626,21 @@
   // "View Season Details" popup -- identical in width (820px, same as
   // league.html's own non-wide .rcl-modal-dialog) and header treatment
   // (bold uppercase title, red 2px underline) to the rest of the account
-  // page's popups, and using the same bordered "bubble" stat tiles
-  // league.html's Season Details popup uses instead of the plain
-  // borderless tile this first shipped with (2026-09-24, Matt's catch).
-  // Title and Registration Status card link both renamed from "Season
-  // Format" to "Season Details" (2026-09-24) -- the two stat groups
-  // inside are "This Season" and "Season Format" (rendered uppercase via
-  // .rc-seasonfmt-group-label's own CSS, same as league.html's).
+  // page's popups. Title and Registration Status card link both renamed
+  // from "Season Format" to "Season Details" (2026-09-24).
+  //
+  // Content rebuilt 2026-10-01 (Matt's ask) from two "This Season"/"Season
+  // Format" bubble-tile groups into ONE combined vertical list under a
+  // single "Season Format" pill header (buildSeasonFmtList_ above), also
+  // folding in Championship Points/Bonus Points.
   //
   // Calendar folded into the bottom of this popup (2026-09-27, Matt's
   // ask) -- the standalone Calendar popup (openCalendarModal) is gone
   // entirely; its exact same race-card list now renders here instead,
   // under its own "CALENDAR" graphite pill (the same .rc-seasonfmt-group-
-  // label pill shape "This Season"/"Season Format" already use above it).
+  // label pill shape the "Season Format" list header above it uses) --
+  // kept exactly as-is by this redesign, per Matt's explicit ask to leave
+  // the calendar section untouched.
   // Matt's reasoning: a driver deciding whether to sign up should be able
   // to see the season's schedule right alongside its format/stats,
   // without needing a seat first -- this popup already reads the public,
@@ -1612,7 +1655,7 @@
     var modal = showModal('Season Details', { wide: true, accentHead: true });
     // 50px wider than the plain .rc-modal-wide (2026-09-24, carried over
     // from the old standalone Calendar popup) -- the race-card list below
-    // needs the extra room the stat-tile groups above it don't.
+    // needs the extra room the Season Format list above it doesn't.
     modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading season details...'));
     _rcFetchLeagueHubCsvFirst_().then(function (hub) {
@@ -1624,15 +1667,13 @@
       // Title becomes "SEASON <n> DETAILS" once the season number is known
       // (2026-09-24, Matt's ask -- matches league.html's own popup title).
       _rcSetModalTitle(modal, hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details');
-      var snapshotStats = _rcBuildSeasonSnapshotStats_(hub);
-      var formatStats = _rcBuildSeasonFormatStats_(hub);
+      var formatBlocks = _rcBuildSeasonFormatBlocks_(hub);
       var hasCalendar = !!(hub.calendar && hub.calendar.length);
-      if (!snapshotStats.length && !formatStats.length && !hasCalendar) {
+      if (!formatBlocks.length && !hasCalendar) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once they are set.'));
         return;
       }
-      if (snapshotStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('This Season', snapshotStats));
-      if (formatStats.length) modal.body.appendChild(buildSeasonFmtStatGroup('Season Format', formatStats));
+      if (formatBlocks.length) modal.body.appendChild(buildSeasonFmtList_(formatBlocks));
 
       // CALENDAR group -- same pill shape as the two stat groups above,
       // same race-card list the old standalone popup rendered, format
@@ -6904,6 +6945,21 @@
       igQualifyStart: '13:00',
       igRaceStart: '14:00'
     };
+  }
+
+  // A sim-clock "HH:MM" string (24-hour, as the admin typed it into the
+  // wizard's Season Start Time field) into a 12-hour "H:MM AM/PM" label --
+  // local port of league.js's own _rclFormat12h (2026-10-01, Season Format
+  // list's new "Event Time" row). Keep in sync with that copy.
+  function _rcFormat12h_(hhmm) {
+    if (!hhmm) return '';
+    var parts = String(hhmm).split(':');
+    if (parts.length < 2) return hhmm;
+    var h = parseInt(parts[0], 10);
+    if (isNaN(h)) return hhmm;
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + parts[1] + ' ' + ampm;
   }
 
   // Local-timezone YYYY-MM-DD for today -- used to default date pickers to

@@ -4792,17 +4792,14 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   color: var(--rc-carbon);
 }
 
-/* "Bubble" stat tiles for the Season Format/Current Seat Info popups
-   (2026-09-24) -- the account-styled equivalent of league.html's own
-   .rcl-hero-stat/-value/-label ("details bubbles," see league.css), which
-   the first pass of the Season Format popup missed entirely (it reused
-   the plain, borderless .rc-cs-stat tile instead). Same value-over-label,
-   centered, bordered-rounded-rectangle shape, just in the account page's
-   white/offwhite/steel tokens instead of league.html's dark-hero ones.
-   .rc-seasonfmt-group-label is the matching gray pill this popup's "This
-   Season"/"League Format" (or, on Current Seat Info, its own group
-   headers) group headers use -- same shape as league.html's own
-   .rcl-hero-stats-label/.rcl-pill-label pill. */
+/* Season Format popup -- group header pill + vertical list (2026-10-01,
+   replacing the old bordered "bubble" stat tiles, Matt's ask: "remove the
+   bubble data blocks in favor of this more traditional list format").
+   .rc-seasonfmt-group-label is unchanged -- the same graphite pill this
+   popup's single "Season Format" header (and, on Current Seat Info/the
+   Calendar block below, its own group headers) always used. The tiles
+   that used to follow it are replaced by .rc-seasonfmt-list's plain
+   label/value rows, built by buildSeasonFmtList_ (Account.html). */
 .rc-seasonfmt-group { margin-top: 20px; }
 .rc-seasonfmt-group:first-child { margin-top: 0; }
 .rc-seasonfmt-group-label {
@@ -4824,40 +4821,40 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   text-transform: uppercase;
   margin-bottom: 10px;
 }
-/* A touch of margin-top added here (2026-09-27, Matt's ask) so "This
-   Season"/"Season Format"'s gap under their pill (was 10px, entirely
-   from .rc-seasonfmt-group-label's own margin-bottom) reads on par with
-   the Calendar pill's own gap to its race-card list just below (10px
-   label margin-bottom + 4px .rc-cal-race-list margin-top = 14px total,
-   see that rule further down) -- only the first stats row in a group
-   picks this up, since the adjacent-sibling rule right below still wins
-   for spacing between stacked rows. */
-.rc-seasonfmt-stats-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.rc-seasonfmt-stats-row + .rc-seasonfmt-stats-row { margin-top: 8px; }
-.rc-seasonfmt-stat {
-  background: var(--rc-offwhite);
-  border: 1px solid var(--rc-silver);
-  border-radius: 6px;
-  padding: 6px 10px;
-  min-width: 74px;
-  text-align: center;
+.rc-seasonfmt-list { margin-top: 4px; }
+.rc-seasonfmt-block + .rc-seasonfmt-block { margin-top: 18px; }
+.rc-seasonfmt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rc-silver);
+  font-size: 13.5px;
 }
-.rc-seasonfmt-stat-value {
-  font-family: var(--rc-font-heading);
-  font-size: 16px;
-  font-weight: 800;
+.rc-seasonfmt-row:last-child { border-bottom: none; }
+.rc-seasonfmt-row-label { color: var(--rc-steel); }
+.rc-seasonfmt-row-value {
   color: var(--rc-carbon);
-  line-height: 1.1;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
-.rc-seasonfmt-stat-label {
-  margin-top: 2px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+/* Championship Points/Bonus Points sub-rows -- indented under their own
+   section label, new content here (2026-10-01) since Account.html never
+   had its own separate points-tables popup the way league.html did. */
+.rc-seasonfmt-section-label {
+  margin: 10px 0 4px;
+  font-family: var(--rc-font-heading);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--rc-steel);
 }
+.rc-seasonfmt-block > .rc-seasonfmt-section-label:first-child { margin-top: 0; }
+.rc-seasonfmt-subrow { padding-left: 14px; }
+.rc-seasonfmt-subrow .rc-seasonfmt-row-label { font-size: 12.5px; }
 
 /* Body scroll lock while ANY popup (showModal(), Account.html) is open --
    same iOS-Safari-safe pattern as .rc-scroll-locked (position: fixed, not

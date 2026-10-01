@@ -540,42 +540,40 @@ body.rc-league-page {
   text-transform: uppercase;
   margin-bottom: 10px;
 }
-.rcl-hero-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Space between row1 and row2 within a group (2026-09-24, Matt's catch:
-   "add a space in between the bubbles on the 1st and 2nd row... they're
-   currently touching") -- same rule Account.html's own
-   .rc-seasonfmt-stats-row already carries; league.css was just missing it. */
-.rcl-hero-stats-row + .rcl-hero-stats-row { margin-top: 8px; }
-/* Smaller, center-aligned bubbles (2026-09-19, Matt's call, in the Season
-   Details popup: "reduce the size of the details bubbles so they don't
-   take up so much space and center align the values in each bubble") --
-   smaller padding/min-width and a smaller value font than the original
-   size, which was sized for the old hero-band placement, not a compact
-   popup body. */
-.rcl-hero-stat {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--rcl-line-bright);
-  border-radius: 6px;
-  padding: 6px 10px;
-  min-width: 74px;
-  text-align: center;
+/* Season Details popup -- traditional vertical list (2026-10-01, replacing
+   the old "bubble" tile grid above, Matt's ask: "remove the bubble data
+   blocks in favor of this more traditional list format"). One list holds
+   several blocks (season snapshot / session format / Championship+Bonus
+   Points / technical rules), each block a plain stack of label/value rows
+   with a hairline divider between rows; blocks get extra margin-top
+   between them, standing in for the "blank line" separation in Matt's
+   spec. Built by _rclBuildSeasonFormatBlocks_ (js/league.js). */
+.rcl-seasonfmt-list { margin-top: 10px; }
+.rcl-seasonfmt-block + .rcl-seasonfmt-block { margin-top: 18px; }
+.rcl-seasonfmt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rcl-line);
+  font-size: 13.5px;
 }
-.rcl-hero-stat-value {
-  font-family: var(--rc-font-heading);
-  font-size: 16px;
-  font-weight: 800;
+.rcl-seasonfmt-row:last-child { border-bottom: none; }
+.rcl-seasonfmt-row-label { color: var(--rcl-ink-dim); }
+.rcl-seasonfmt-row-value {
   color: var(--rcl-ink);
-  line-height: 1.1;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
-.rcl-hero-stat-label {
-  margin-top: 2px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-faint);
-}
+/* Championship Points/Bonus Points sub-rows (folded in from the old,
+   removed Points Tables popup, 2026-10-01) sit indented under their own
+   "Championship Points"/"Bonus Points" pill (.rcl-pill-label, reused as-is
+   -- same class the old Points Tables popup's Bonus Points label used). */
+.rcl-seasonfmt-section-label { margin: 2px 0 6px; }
+.rcl-seasonfmt-subrow { padding-left: 14px; }
+.rcl-seasonfmt-subrow .rcl-seasonfmt-row-label { font-size: 12.5px; color: var(--rcl-ink-faint); }
 
 /* -------------------------------------------------------------------- */
 /* Layout                                                                */
@@ -1832,101 +1830,12 @@ body.rc-league-page {
 }
 .rcl-cal-details-link:hover { text-decoration: underline; }
 
-/* -------------------------------------------------------------------- */
-/* Points -- race-length-tier tables + bonus points (added 2026-09-19).  */
-/* No longer its own panel on the page (removed 2026-09-19) -- these      */
-/* classes now render inside the "View Points Tables" popup opened from   */
-/* the Leaderboard panel instead (_rclOpenPointsModal, js/league.js);     */
-/* the markup/classes themselves are unchanged.                          */
-/* -------------------------------------------------------------------- */
-.rcl-points-tier + .rcl-points-tier { margin-top: 22px; }
-/* align-items: center (was baseline) -- the duration is now a padded
-   .rcl-chip-light pill instead of plain text, and baseline alignment
-   against a padded box no longer lines the two up the way it did for two
-   plain text runs (2026-09-19, Matt's ask: "make the tier length and time
-   more aesthetic"). */
-.rcl-points-tier-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.rcl-points-tier-name {
-  font-family: var(--rc-font-heading);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--rcl-ink);
-}
-/* Tier name + duration merged into one pill (2026-09-21, Matt's ask:
-   "extend a border around the length tier coming off of the time pill so
-   it looks like one pill, half of it rounded bordered and half of it the
-   time in mins") -- only used when a tier actually has a duration (see
-   _rclBuildPointsBody, js/league.js); the plain .rcl-points-tier-name
-   above stays as-is for anything without an adjacent chip (e.g. the
-   "Bonus Points" label). The wrapper owns the ONE border/radius/overflow-
-   clip for both halves; the label half gets its own light fill + a right
-   border as the seam, and the chip half (.rcl-chip-light, reused as-is)
-   has its own border/radius stripped so it reads as the pill's other
-   half instead of a second, separate pill sitting flush against the
-   first.  */
-.rcl-points-tier-pill {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid #b6b8bd;
-  border-radius: 5px;
-  overflow: hidden;
-}
-.rcl-points-tier-pill-label {
-  display: flex;
-  align-items: center;
-  background: #d9dadd;
-  color: #1c1d20;
-  padding: 3px 10px;
-  font-family: var(--rc-font-heading);
-  font-size: 12.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border-right: 1px solid #b6b8bd;
-  white-space: nowrap;
-}
-.rcl-points-tier-pill .rcl-chip-light { border: none; border-radius: 0; }
-.rcl-points-table { display: flex; flex-wrap: wrap; gap: 8px; }
-.rcl-points-pos {
-  background: var(--rcl-bg-raised-2);
-  border: 1px solid var(--rcl-line);
-  border-radius: 6px;
-  padding: 6px 10px;
-  min-width: 46px;
-  text-align: center;
-}
-/* Wider variant for the Bonus Points row below (2026-09-19) -- "Pole
-   Position"/"Fastest Lap"/"Most Laps Led" need more room than a bare
-   position number like "P1". */
-.rcl-points-pos-wide { min-width: 96px; }
-.rcl-points-pos-num { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--rcl-ink-faint); text-transform: uppercase; }
-.rcl-points-pos-val { margin-top: 2px; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-/* Bonus points' own value -- was the brand red accent (2026-09-19),
-   changed to plain white (2026-09-21, Matt's ask: "make the bonus points
-   numbers white not red") -- same var(--rcl-ink) every other
-   .rcl-points-pos-val already uses, so this class is now redundant with
-   the base rule but kept (rather than removed from the js/league.js
-   markup) in case a future pass wants bonus rows visually distinct
-   again. */
-.rcl-points-pos-val-accent { color: var(--rcl-ink); }
-/* Bonus Points row (renamed from "Bonus Points This Season", 2026-09-19)
-   now mirrors a tier block's own structure exactly -- label, then a
-   .rcl-points-table of position-style boxes underneath -- instead of a
-   flat row of plain-text chips, so it reads as visually consistent with
-   the tier tables above it (Matt's ask: "style it more closely to the
-   tier points tables so it looks like it's consistent"). Block layout,
-   not flex, since its two children (label + table) already stack the way
-   a tier's head+table do. */
-.rcl-points-bonus-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
-/* The actual type style comes from .rcl-points-tier-name, applied
-   alongside this class in js/league.js so "Bonus Points" reads exactly
-   like a tier name above it -- this rule only adds this row's own
-   spacing, matching .rcl-points-tier-head's margin-bottom exactly. */
-.rcl-points-bonus-label { margin-bottom: 10px; }
-/* Only used by the "no bonus points this season" fallback message now. */
-.rcl-points-bonus-chip { font-size: 13.5px; color: var(--rcl-ink-dim); }
+/* Points -- race-length-tier tables + bonus points (added 2026-09-19,
+   moved into their own "Points Tables" popup off the Leaderboard panel
+   same day). Removed 2026-10-01 (Matt's ask) -- Championship Points/Bonus
+   Points now render as indented sub-rows inside the Season Details list
+   instead (.rcl-seasonfmt-subrow, .rcl-seasonfmt-section-label, further
+   up this file). */
 
 /* Drivers section removed 2026-09-19 (Matt's call: drivers are already
    visible via the Leaderboard) -- .rcl-drivers-class/.rcl-drivers-grid/

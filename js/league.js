@@ -1017,19 +1017,15 @@ function _rclRenderStandings(hub) {
     if (standingsNotice) body.appendChild(_rclBuildMobileViewOnPcNote_());
   }
 
-  // "View Points Tables" / "View All Drivers" links (2026-09-19 /
-  // 2026-09-21) -- shown whenever the season actually has registered
-  // drivers to show, whether or not any race has been scored yet, so the
-  // Drivers popup stays reachable even during the empty-state above.
+  // "View All Drivers" link (2026-09-21) -- shown whenever the season
+  // actually has registered drivers to show, whether or not any race has
+  // been scored yet, so the Drivers popup stays reachable even during the
+  // empty-state above. The old "View Points Tables" link that used to sit
+  // beside this one was removed 2026-10-01 (Matt's ask) now that
+  // Championship Points/Bonus Points are folded straight into the "View
+  // Season Details" popup instead of their own separate popup.
   if (hasStandings) {
     var linkRow = _rclEl('div', 'rcl-standings-points-row');
-    var pointsLink = _rclEl('button', 'rcl-standings-points-link', 'View Points Tables');
-    pointsLink.type = 'button';
-    pointsLink.addEventListener('click', function () { _rclOpenPointsModal(_rclHubForPoints); });
-    linkRow.appendChild(pointsLink);
-    // "View All Drivers" (2026-09-21, Matt's ask: "a link next to the
-    // points tables link... that opens up a drivers list popup") -- same
-    // link styling, second in the row.
     var driversLink = _rclEl('button', 'rcl-standings-points-link', 'View All Drivers');
     driversLink.type = 'button';
     driversLink.addEventListener('click', function () { _rclOpenDriversModal(_rclHubForPoints); });
@@ -1044,8 +1040,8 @@ function _rclRenderStandings(hub) {
 // -- reachable any time a season has registrations, not gated on results
 // existing, so a driver isn't ONLY ever discoverable through the ranked
 // Standings list. Same .rcl-modal-overlay/dialog shell every other League
-// Hub popup uses (_rclOpenPointsModal/_rclOpenSeasonDetailsModal), styled
-// to match a .rcl-panel exactly.
+// Hub popup uses (e.g. _rclOpenSeasonDetailsModal), styled to match a
+// .rcl-panel exactly.
 function _rclOpenDriversModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   // rcl-modal-dialog-wide (2026-09-21, Matt's ask: "increase the width of
@@ -2274,122 +2270,13 @@ function _rclRenderCalendar(hub) {
   body.appendChild(detailsRow);
 }
 
-// ---------------------------------------------------------------------
 // POINTS -- race-length-tier point tables + bonus points (added
-// 2026-09-19, moved into a popup off the Leaderboard panel same day --
-// see _rclOpenPointsModal below). Straight passthrough of Seasons.
-// SeasonDetails.pointsTables/bonusPoints (same shape the Season Creation
-// Wizard writes and handleGetSeasonCalendar already hands a logged-in
-// driver), just public here. Table order follows the tiers as they come
-// back from the server object (Sprint/Medium/Long, the only tiers the
-// wizard creates) rather than a hardcoded list, so a renamed or added
-// tier still shows up without a frontend change.
-// ---------------------------------------------------------------------
-function _rclBuildPointsBody(hub, body) {
-  var tables = (hub && hub.pointsTables) || {};
-  var tierNames = Object.keys(tables);
-  if (!hub || !hub.hasSeason || !tierNames.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Points tables fill in once a season is underway.'));
-    return;
-  }
-
-  tierNames.forEach(function (tierName) {
-    var tier = tables[tierName] || {};
-    var points = tier.points || [];
-    if (!points.length) return;
-    var wrap = _rclEl('div', 'rcl-points-tier');
-    var head = _rclEl('div', 'rcl-points-tier-head');
-    // Duration as a .rcl-chip-light pill with a clock icon (2026-09-19,
-    // Matt's ask: "make the tier length and time more aesthetic") --
-    // same shared chip the Calendar's own time+length pill uses. Merged
-    // with the tier name into one two-halved pill (2026-09-21, Matt's
-    // ask: "extend a border around the length tier coming off of the
-    // time pill so it looks like one pill, half of it rounded bordered
-    // and half of it the time in mins") via .rcl-points-tier-pill (css/
-    // league.css) -- only when there's actually a duration to pair it
-    // with; a tier with no duration falls back to the plain text label.
-    if (tier.duration) {
-      var tierPill = _rclEl('div', 'rcl-points-tier-pill');
-      tierPill.appendChild(_rclEl('div', 'rcl-points-tier-pill-label', _rclEscapeHtml(tierName)));
-      tierPill.appendChild(_rclChip(_RCL_ICON_CLOCK, tier.duration + ' Min'));
-      head.appendChild(tierPill);
-    } else {
-      head.appendChild(_rclEl('div', 'rcl-points-tier-name', _rclEscapeHtml(tierName)));
-    }
-    wrap.appendChild(head);
-    var table = _rclEl('div', 'rcl-points-table');
-    points.forEach(function (val, idx) {
-      var pos = _rclEl('div', 'rcl-points-pos');
-      pos.appendChild(_rclEl('div', 'rcl-points-pos-num', 'P' + (idx + 1)));
-      pos.appendChild(_rclEl('div', 'rcl-points-pos-val', String(val)));
-      table.appendChild(pos);
-    });
-    wrap.appendChild(table);
-    body.appendChild(wrap);
-  });
-
-  var bonus = hub.bonusPoints || {};
-  var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
-  var bonusChips = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
-  if (bonusChips.length) {
-    var bonusRow = _rclEl('div', 'rcl-points-bonus-row');
-    // "Bonus Points" (shortened from "Bonus Points This Season",
-    // 2026-09-19, Matt's ask). Now the same gray-pill treatment as the
-    // Season Details popup's own group headers (.rcl-pill-label,
-    // 2026-09-24, Matt's ask: "make the BONUS POINTS catagory the same
-    // style pill") -- was the plain uppercase text style a tier name
-    // without a duration uses (.rcl-points-tier-name); that class stays
-    // as-is for tier names elsewhere. .rcl-points-bonus-label still
-    // carries this row's own layout (margin-bottom) -- see css/league.css.
-    bonusRow.appendChild(_rclEl('div', 'rcl-points-bonus-label rcl-pill-label', 'Bonus Points'));
-    // Each bonus category now renders as a .rcl-points-pos box, same
-    // shape as a tier table's P1/P2/etc. boxes, inside its own
-    // .rcl-points-table -- mirrors a tier block's head+table structure
-    // exactly (2026-09-19, Matt's ask: "style it more closely to the
-    // tier points tables so it looks like it's consistent").
-    var bonusTable = _rclEl('div', 'rcl-points-table');
-    bonusChips.forEach(function (key) {
-      var chip = _rclEl('div', 'rcl-points-pos rcl-points-pos-wide');
-      chip.appendChild(_rclEl('div', 'rcl-points-pos-num', _rclEscapeHtml(bonusLabels[key])));
-      chip.appendChild(_rclEl('div', 'rcl-points-pos-val rcl-points-pos-val-accent', '+' + Number(bonus[key])));
-      bonusTable.appendChild(chip);
-    });
-    bonusRow.appendChild(bonusTable);
-    body.appendChild(bonusRow);
-  } else if (tierNames.length) {
-    body.appendChild(_rclEl('div', 'rcl-points-bonus-row',
-      '<div class="rcl-points-bonus-chip">No bonus points are awarded this season.</div>'));
-  }
-}
-
-// Opens the points tables in a popup, same .rcl-modal-overlay/dialog shell
-// the story popup uses (styled to match a .rcl-panel exactly, 2026-09-19)
-// -- reachable from the "View Points Tables" link at the bottom of the
-// Leaderboard panel (_rclRenderStandings above).
-function _rclOpenPointsModal(hub) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
-  var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Points Tables'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-  var body = _rclEl('div', 'rcl-modal-body');
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
-
-  _rclBuildPointsBody(hub, body);
-
-  // Same "closable only via the X button" posture as the news story
-  // popup -- no backdrop click, no Escape key.
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
-}
+// 2026-09-19, moved into their own "Points Tables" popup off the
+// Leaderboard panel same day). Removed 2026-10-01 (Matt's ask) in favor of
+// folding Championship Points/Bonus Points straight into the "View Season
+// Details" popup's list instead -- see _rclBuildSeasonFormatBlocks_'s
+// points block and _rclOpenSeasonDetailsModal above, which read the exact
+// same hub.pointsTables/hub.bonusPoints fields this used to.
 
 // Drivers section removed 2026-09-19 (Matt's call: "drivers can be seen
 // by viewing the leaderboard") -- _rclRenderDrivers/#rcl-drivers-body
@@ -2610,107 +2497,105 @@ function _rclOpenStoryModal(startIndex) {
 // itself stays the static "League Hub" (set directly in league.html);
 // the eyebrow above it carries "Race Club".
 // ---------------------------------------------------------------------
-// Rebuilt into two FIXED rows (2026-09-24, Matt's ask, replacing the
-// earlier single flowing row that just listed whatever fields happened to
-// be non-empty) -- row1 is always Season Dates/Classes/Rounds Completed,
-// in that order; row2 is each class's own driver count, then Drop
-// Race(s)/Bye Week(s)/Frequency. A field with nothing to show (e.g. no
-// dropWeeks set) is simply skipped, but the ORDER within each row never
-// changes -- unlike before, this no longer folds a missing field's slot
-// over to fill from the other row.
-function _rclBuildSnapshotStats(hub) {
-  var row1 = [];
-  var row2 = [];
+// Rebuilt 2026-10-01 (Matt's ask) from two "bubble" tile groups into one
+// single vertical list, under one "Season Format" header -- also folds in
+// Championship Points/Bonus Points, previously their own separate "Points
+// Tables" popup (now removed, see _rclRenderStandings' old "View Points
+// Tables" link). Returns an array of BLOCKS, each rendered with a little
+// extra margin-top between blocks (the "blank line" separation in Matt's
+// spec) -- a plain block is just { rows: [{label, value}, ...] }; the one
+// points block carries its own tiers/bonus shape instead, since it needs
+// its own nested "Championship Points"/"Bonus Points" sub-headers rather
+// than flat label/value rows. A row with nothing to show is simply
+// skipped, same as the old bubble builders did.
+function _rclBuildSeasonFormatBlocks_(hub) {
+  var rs = hub.raceSettings || {};
+  var blocks = [];
 
+  // --- Block 1: season snapshot -------------------------------------
+  var block1 = [];
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
     var endLabel = _rclFormatDate(hub.seasonEndUtc);
     if (startLabel && endLabel) {
-      row1.push({ value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : ''), label: 'Season Dates' });
+      block1.push({ label: 'Season Dates', value: startLabel + (endLabel !== startLabel ? (' - ' + endLabel) : '') });
     }
   }
-
-  // Which car classes are running this season -- pulled from hub.standings,
-  // the same per-class list the Leaderboard section below already uses, so
-  // this can never name a class that isn't actually fielding cars.
+  if (hub.frequency) block1.push({ label: 'Schedule Frequency', value: hub.frequency });
+  // Event Time (added 2026-10-01, was "Race Time" in Matt's first draft of
+  // this spec, renamed to "Event Time" mid-build) -- the one recurring
+  // local race time + zone the admin set in the Season Creation Wizard
+  // (hub.seasonStartTime/hub.enteredTimeZone, see Website.gs), NOT any
+  // individual round's own startUtc (those vary round to round and already
+  // show on the Calendar below).
+  if (hub.seasonStartTime) {
+    block1.push({ label: 'Event Time', value: _rclFormat12h(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + hub.enteredTimeZone) : '') });
+  }
+  if (hub.totalRounds) block1.push({ label: 'Championship Rounds', value: String(hub.totalRounds) });
+  // Special Events -- a count of hub.calendar entries of kind 'special'
+  // (see _rcBuildSeasonEntries_, Seasons.gs), never surfaced as its own
+  // figure before this redesign.
+  var specialEventCount = (hub.calendar || []).filter(function (entry) { return entry.kind === 'special'; }).length;
+  if (specialEventCount) block1.push({ label: 'Special Events', value: String(specialEventCount) });
+  if (hub.dropWeeks) block1.push({ label: hub.dropWeeks === 1 ? 'Drop Week' : 'Drop Weeks', value: String(hub.dropWeeks) });
+  if (hub.byeWeeks) block1.push({ label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks', value: String(hub.byeWeeks) });
   var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
-  if (classNames.length) {
-    row1.push({ value: classNames.join(', '), label: classNames.length === 1 ? 'Class' : 'Classes' });
-  }
-
-  if (hub.totalRounds) {
-    row1.push({ value: (hub.roundsCompleted || 0) + '/' + hub.totalRounds, label: 'Rounds Completed' });
-  }
-
-  // Per-class driver counts open row2 -- one bubble per class fielding
-  // cars this season ("<Class> Drivers"), however many that is.
+  if (classNames.length) block1.push({ label: classNames.length === 1 ? 'Class' : 'Classes', value: classNames.join(', ') });
   (hub.standings || []).forEach(function (cls) {
     var count = (cls.standings || []).length;
-    if (count) row2.push({ value: String(count), label: (cls.className || 'Class') + ' Drivers' });
+    if (count) block1.push({ label: (cls.className || 'Class') + ' Drivers', value: String(count) });
   });
+  if (block1.length) blocks.push({ rows: block1 });
 
-  if (hub.dropWeeks) {
-    row2.push({ value: String(hub.dropWeeks), label: hub.dropWeeks === 1 ? 'Drop Race' : 'Drop Races' });
+  // --- Block 2: session format ---------------------------------------
+  var block2 = [];
+  if (rs.practiceLengthMin) block2.push({ label: 'Practice Duration', value: rs.practiceLengthMin + ' min' });
+  if (rs.qualifyLengthMin) block2.push({ label: 'Qualify Duration', value: rs.qualifyLengthMin + ' min' });
+  if (hub.privateQualifying) block2.push({ label: 'Qualifying Type', value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public' });
+  // Race Duration -- static "Varies" row, always shown (race length
+  // genuinely differs by round/tier -- see the Championship Points block
+  // below for each tier's own duration).
+  block2.push({ label: 'Race Duration', value: 'Varies' });
+  if (block2.length) blocks.push({ rows: block2 });
+
+  // --- Block 3: Championship Points / Bonus Points --------------------
+  // Folded in from the old, now-removed standalone "Points Tables" popup
+  // (_rclBuildPointsBody) -- same hub.pointsTables/hub.bonusPoints fields,
+  // just rendered as indented sub-rows under this list instead of a
+  // separate popup's tile tables.
+  var tables = hub.pointsTables || {};
+  var tierNames = Object.keys(tables).filter(function (name) { return (tables[name].points || []).length; });
+  var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
+  var bonus = hub.bonusPoints || {};
+  var bonusKeys = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
+  if (tierNames.length || bonusKeys.length) {
+    var pointsBlock = { tiers: [], bonus: [] };
+    tierNames.forEach(function (tierName) {
+      var tier = tables[tierName] || {};
+      var pts = (tier.points || []).map(function (val, idx) { return 'P' + (idx + 1) + ' ' + val; }).join(', ');
+      pointsBlock.tiers.push({ label: tierName, value: pts });
+    });
+    bonusKeys.forEach(function (key) {
+      pointsBlock.bonus.push({ label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' });
+    });
+    blocks.push(pointsBlock);
   }
 
-  if (hub.byeWeeks) {
-    row2.push({ value: String(hub.byeWeeks), label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks' });
-  }
+  // --- Block 4: technical rules ----------------------------------------
+  var block4 = [];
+  if (rs.setupRules) block4.push({ label: 'Setup Rules', value: rs.setupRules });
+  if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
+  if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
+  if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
+  if (rs.pitStopReq) block4.push({ label: 'Pitstop Requirements', value: rs.pitStopReq });
+  if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
+  // "Points until DT" -- rs.trackLimitPoints, how many track-limit points
+  // are allowed before the sim auto-issues a Drive Through penalty (same
+  // field this popup used to label just "Pts" next to "Track Limit").
+  if (rs.trackLimitPoints) block4.push({ label: 'Points until DT', value: String(rs.trackLimitPoints) });
+  if (block4.length) blocks.push({ rows: block4 });
 
-  if (hub.frequency) {
-    row2.push({ value: hub.frequency, label: 'Frequency' });
-  }
-
-  return { row1: row1, row2: row2 };
-}
-
-// League Format -- season-wide race rules, not season-specific results.
-// Multiplier fields ('Off'/'Realistic'/'2x'/'3x', see
-// RACE_SETTINGS_MULTIPLIER_OPTIONS in Account.html) are shown as-is --
-// same labels the wizard itself uses, so this page can never say
-// something different from what the admin actually picked.
-//
-// Also rebuilt into two fixed rows (2026-09-24, Matt's ask): row1 is
-// always Practice/Qualify/Race Time, in that order -- Race Time is a
-// STATIC "Varies" bubble (race length actually varies by round/tier, see
-// hub.pointsTables' own per-tier durations in the separate Points Tables
-// popup), always shown, not conditioned on any data field. row2 is Setup
-// Rules/Track Limit/Pts/Tires Per Race/Pit Stop Rule/Fuel Consumption/Tire
-// Wear, in that order. "Track Limit" (hub.trackLimitsPreset -- Strict/
-// Relaxed/Default) and "Pts" (rs.trackLimitPoints -- how many track-limit
-// points are allowed before a penalty) are two DIFFERENT fields, not a
-// duplicate -- one is the ruleset name, the other is that ruleset's point
-// threshold.
-function _rclBuildFormatStats(hub) {
-  var rs = hub.raceSettings || {};
-  var row1 = [];
-  if (rs.practiceLengthMin) row1.push({ value: rs.practiceLengthMin + ' min', label: 'Practice' });
-  if (rs.qualifyLengthMin) row1.push({ value: rs.qualifyLengthMin + ' min', label: 'Qualify' });
-  // Qualify Type (added 2026-09-24, Matt's ask: "add a bubble Qualify
-  // Type (private or public) in between Qualify and Race Length") --
-  // hub.privateQualifying is the season's raw 'Yes'/'No' field (see
-  // handleGetLeagueHub, Website.gs), shown here as Private/Public.
-  if (hub.privateQualifying) row1.push({ value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public', label: 'Qualify Type' });
-  // Race Length -- static "Varies" bubble, always shown (2026-09-24,
-  // Matt's ask), unlike every other bubble here which is conditioned on
-  // actual data. Race length genuinely does vary by round/tier (see
-  // hub.pointsTables' own per-tier durations in the separate Points
-  // Tables popup), so there's no single number to show here -- this just
-  // says so plainly. Renamed from "Race Time" to "Race Length" (2026-09-24,
-  // Matt's ask).
-  row1.push({ value: 'Varies', label: 'Race Length' });
-
-  var row2 = [];
-  if (rs.setupRules) row2.push({ value: rs.setupRules, label: 'Setup Rules' });
-  if (hub.trackLimitsPreset) row2.push({ value: hub.trackLimitsPreset, label: 'Track Limit' });
-  if (rs.trackLimitPoints) row2.push({ value: String(rs.trackLimitPoints), label: 'Pts' });
-  // "Tires" (was "Tires Per Race", 2026-09-24, Matt's ask).
-  if (rs.tireCount) row2.push({ value: String(rs.tireCount), label: 'Tires' });
-  if (rs.pitStopReq) row2.push({ value: rs.pitStopReq, label: 'Pit Stop Rule' });
-  if (rs.fuelMultiplier) row2.push({ value: rs.fuelMultiplier, label: 'Fuel Consumption' });
-  if (rs.tireWearMultiplier) row2.push({ value: rs.tireWearMultiplier, label: 'Tire Wear' });
-
-  return { row1: row1, row2: row2 };
+  return blocks;
 }
 
 // _rclRenderStatsRow removed 2026-09-19 -- its two call sites both moved
@@ -2766,9 +2651,9 @@ function _rclRenderHero(hub) {
 
 // Opens the season snapshot + league format stats (previously rendered
 // straight into the hero band) in a popup instead, same .rcl-modal-*
-// shell the news story and points tables popups use -- reachable from the
-// "View Season Details" link at the bottom of the Calendar panel
-// (_rclRenderCalendar above).
+// shell the news story popup uses -- reachable from the "View Season
+// Details" link at the bottom of the Calendar panel (_rclRenderCalendar
+// above).
 function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
@@ -2784,46 +2669,47 @@ function _rclOpenSeasonDetailsModal(hub) {
 
   var body = _rclEl('div', 'rcl-modal-body');
 
-  // Builds one .rcl-hero-stats-row of tiles -- shared by both groups'
-  // row1/row2 below instead of duplicating this loop four times.
-  function buildStatsRow(stats) {
-    var row = _rclEl('div', 'rcl-hero-stats-row');
-    stats.forEach(function (s) {
-      var tile = _rclEl('div', 'rcl-hero-stat');
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-value', _rclEscapeHtml(s.value)));
-      tile.appendChild(_rclEl('div', 'rcl-hero-stat-label', _rclEscapeHtml(s.label)));
-      row.appendChild(tile);
-    });
+  // Rebuilt 2026-10-01 (Matt's ask: "remove the bubble data blocks in
+  // favor of this more traditional list format") -- one "Season Format"
+  // header (replaces the old "This Season"/"League Format" pair) over a
+  // single vertical list, built from _rclBuildSeasonFormatBlocks_'s blocks.
+  // A plain block renders as flat label/value rows; the points block
+  // renders its own "Championship Points"/"Bonus Points" sub-headers with
+  // indented sub-rows underneath. The Calendar itself is NOT in this popup
+  // on league.html -- it's already its own permanent panel on the page,
+  // with this "View Season Details" link living at the bottom of it (see
+  // _rclRenderCalendar) -- so there's nothing to re-render here for it.
+  function buildRow(stat, isSub) {
+    var row = _rclEl('div', 'rcl-seasonfmt-row' + (isSub ? ' rcl-seasonfmt-subrow' : ''));
+    row.appendChild(_rclEl('div', 'rcl-seasonfmt-row-label', _rclEscapeHtml(stat.label)));
+    row.appendChild(_rclEl('div', 'rcl-seasonfmt-row-value', _rclEscapeHtml(stat.value)));
     return row;
   }
 
-  // Two explicit rows per group now (2026-09-24, Matt's ask), rather than
-  // one flowing row that wrapped wherever the browser felt like -- see
-  // _rclBuildSnapshotStats/_rclBuildFormatStats above for the fixed
-  // per-row field order. A group with nothing in EITHER row is skipped
-  // entirely, same as before; a group with something in only one row
-  // still renders just that one.
-  var snapshot = _rclBuildSnapshotStats(hub);
-  var hasSnapshot = snapshot.row1.length || snapshot.row2.length;
-  if (hasSnapshot) {
-    var snapshotGroup = _rclEl('div', 'rcl-hero-stats-group');
-    snapshotGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Season'));
-    if (snapshot.row1.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row1));
-    if (snapshot.row2.length) snapshotGroup.appendChild(buildStatsRow(snapshot.row2));
-    body.appendChild(snapshotGroup);
-  }
-
-  var format = _rclBuildFormatStats(hub);
-  var hasFormat = format.row1.length || format.row2.length;
-  if (hasFormat) {
-    var formatGroup = _rclEl('div', 'rcl-hero-stats-group');
-    formatGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'League Format'));
-    if (format.row1.length) formatGroup.appendChild(buildStatsRow(format.row1));
-    if (format.row2.length) formatGroup.appendChild(buildStatsRow(format.row2));
-    body.appendChild(formatGroup);
-  }
-
-  if (!hasSnapshot && !hasFormat) {
+  var blocks = _rclBuildSeasonFormatBlocks_(hub);
+  if (blocks.length) {
+    var listGroup = _rclEl('div', 'rcl-hero-stats-group');
+    listGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'Season Format'));
+    var list = _rclEl('div', 'rcl-seasonfmt-list');
+    blocks.forEach(function (block) {
+      var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
+      if (block.rows) {
+        block.rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+      } else {
+        if (block.tiers.length) {
+          blockEl.appendChild(_rclEl('div', 'rcl-pill-label rcl-seasonfmt-section-label', 'Championship Points'));
+          block.tiers.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        }
+        if (block.bonus.length) {
+          blockEl.appendChild(_rclEl('div', 'rcl-pill-label rcl-seasonfmt-section-label', 'Bonus Points'));
+          block.bonus.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        }
+      }
+      list.appendChild(blockEl);
+    });
+    listGroup.appendChild(list);
+    body.appendChild(listGroup);
+  } else {
     body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
   }
 
