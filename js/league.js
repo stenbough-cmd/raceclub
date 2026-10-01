@@ -1532,23 +1532,18 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     return;
   }
 
-  // hideRoundNum used to be true here (2026-09-26, Matt's ask: "in the
-  // event title in the ALL RESULTS popup, remove the round number before
-  // the event name") -- reversed 2026-10-01 (Matt's ask: "add 'Round
-  // <round n>' before the Event Name in the title... leave a space after
-  // Round n") -- the round dropdown above already picks the round
-  // explicitly, but Matt wants it back on the title line itself now too,
-  // just with a single plain space (roundNumSep: ' ') instead of Recent
-  // Results' own three-space gap. hideStatRow (2026-09-27) -- the old flat
-  // overall-only Winner/Pole/Fastest Lap row is gone; each class's own
-  // breakdown is built inline inside its own .rcl-race-class block now
-  // (_rclBuildClassCategoryBreakdown_, called per class below) instead of
-  // one combined block up here. closeGapNoLine (2026-09-27 follow-up,
-  // Matt's ask: "remove the line above the header in between the bonus
-  // points winners and the event name") -- same treatment Recent Results
-  // already got, now applied here too so the first class section sits
-  // right under the title with no divider line between them.
-  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideStatRow: true, closeGapNoLine: true, roundNumSep: ' ' }));
+  // The headline (event title + "Round n" prefix) is gone entirely as of
+  // 2026-10-01 (Matt's ask: "having the title of the event above the
+  // leaderboards is redundant since it lives in the drop down box which is
+  // also viewable" -- the round select above already reads "Round n -
+  // EventName: Track (Date)", same info this used to repeat). This line
+  // went through several earlier passes the same day (round number hidden,
+  // then shown again with a single-space separator, "EVENT" label added
+  // then removed) before Matt's call to drop the whole thing -- see
+  // _rclBuildRaceHeadline_/_rclBuildEventTitleLine_ above, both still used
+  // by Recent Results (_rclRenderResults), which is unaffected by this.
+  // .rcl-allresults-select-row's own margin-bottom (css/league.css)
+  // supplies the breathing room before the first class section now.
 
   // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
   // reverted the same day (Matt's call: "I don't want the +10s penalty
@@ -1870,23 +1865,15 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
     return;
   }
 
-  // Simple round-identifying line -- no Winner/Pole/Fastest Lap headline
-  // here (_rclBuildRaceHeadline_ is Race-session specific and doesn't
-  // apply to a Qualify session), same shared title-line builder the Race
-  // view uses (_rclBuildEventTitleLine_ above). Round number shown with a
-  // single-space separator now, same as the Race tab (2026-10-01, Matt's
-  // ask -- see that function's own comment); the "EVENT" label that used
-  // to sit above this line is gone the same day ("eliminate EVENT label
-  // above it and move the event title up").
-  bodyEl.appendChild(_rclBuildEventTitleLine_(result, false, ' '));
-  // Breathing room before the standings start (2026-09-26, Matt's ask: "add
-  // a line below the event title and the start of the standings. Then
-  // leave a space and start the standings like it is in the race
-  // standings") -- the line itself was removed 2026-09-27 (Matt: "remove
-  // the gray line below the event/race name" in Qualifying) to match the
-  // Race tab's own headline, which lost its line the same way; the spacing
-  // this element creates stays.
-  bodyEl.appendChild(_rclEl('div', 'rcl-qualifying-title-divider'));
+  // The event title line (and its Winner/Pole/Fastest Lap headline on the
+  // Race tab) is gone entirely as of 2026-10-01 (Matt's ask: "having the
+  // title of the event above the leaderboards is redundant since it lives
+  // in the drop down box which is also viewable" -- the round select
+  // above already reads "Round n - EventName: Track (Date)", same info
+  // this line used to repeat). .rcl-allresults-select-row's own
+  // margin-bottom (css/league.css) is what supplies the breathing room
+  // before the standings start now; .rcl-qualifying-title-divider (which
+  // used to do that job) is removed along with this.
 
   if (!result.hasQualifying || !(result.classes || []).length) {
     bodyEl.appendChild(_rclEmptyState('No Qualifying Data', 'No qualifying session was imported for this round.'));
