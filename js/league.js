@@ -1426,13 +1426,14 @@ function _rclAppendViewAllResultsLink_(body, hub) {
 
 // Tier effect text for one penalty entry -- effectType/effectSeconds come
 // straight off the Adjustments row this penalty was built from (see
-// _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs). Tier 1/7
-// never produce a penalty row in the first place (see PENALTY_TIER_EFFECTS_,
-// Protests.gs / PENALTY_TIERS, reference-data.js), so this only ever needs
-// to describe a Time or DSQ effect.
+// _rcBuildRoundResultData_'s penaltiesThisRound, Results.gs). Only Tier 1
+// never produces a penalty row in the first place (see
+// PENALTY_TIER_EFFECTS_, Protests.gs / PENALTY_TIERS, reference-data.js);
+// Tier 7 (Suspension) got its own 'Suspension' effect row 2026-10-01.
 function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
   if (effectType === 'Time') return '+' + (Number(effectSeconds) || 0) + 's';
   if (effectType === 'DSQ') return 'Disqualified';
+  if (effectType === 'Suspension') return 'Suspended';
   return 'Logged';
 }
 
@@ -1466,6 +1467,11 @@ function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
 // penalized driver's Total Time would grow but their Gap wouldn't move to
 // match). Optional/defaults to 0 since this is the only caller today.
 function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
+  // Suspended-this-round (2026-10-01) checked before DSQ -- a Tier 7
+  // ruling now removes the driver from THIS race's own classification
+  // the same way a DSQ does, so the same "no real gap" short-circuit
+  // applies, just with its own SUS text instead of DSQ.
+  if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
   if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !leaderRow || leaderRow.finishTimeSeconds === null || leaderRow.finishTimeSeconds === undefined) return '--';
   var lapsDown = (leaderRow.laps || 0) - (row.laps || 0);
@@ -1489,6 +1495,7 @@ function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
 // stale next to the (already-corrected) Total Time column right next to
 // it.
 function _rclFormatInterval_(row, prevRow, rowPenSeconds, prevPenSeconds) {
+  if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
   if (!prevRow) return '--';
   if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || prevRow.finishTimeSeconds === null || prevRow.finishTimeSeconds === undefined) return '--';
@@ -1541,6 +1548,7 @@ function _rclFormatLapTime_(raw) {
 // (2026-09-23, Matt's ask). A DSQ'd/DNF driver with no usable finish time
 // shows a dash rather than a bogus speed.
 function _rclFormatAvgSpeed_(row, trackLengthMeters) {
+  if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
   if (!trackLengthMeters || !row.laps || row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || row.finishTimeSeconds <= 0) return '--';
   var kmh = (trackLengthMeters * row.laps / 1000) / (row.finishTimeSeconds / 3600);

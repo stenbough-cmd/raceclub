@@ -324,7 +324,15 @@ var PENALTY_TIERS = [
   { tier: 4, label: 'Tier 4: Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
   { tier: 5, label: 'Tier 5: Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
   { tier: 6, label: 'Tier 6: Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
-  { tier: 7, label: 'Tier 7: Suspension', effect: 'Sits out one or more future rounds', effectType: null, effectSeconds: 0 }
+  // Suspension now also removes the driver from THIS race's own
+  // classification (2026-10-01, Matt's clarified rule: a Tier 7 ruling
+  // doesn't score points for the race it's ruled on either, and that race
+  // itself already shows SUS, same as every race after it) -- on top of
+  // sitting out the rest of the season. Requires a prior Upheld Tier 6 for
+  // this driver this season (enforced in the ruling dropdown and
+  // server-side -- see handleAdminRuleOnProtest's TIER7_REQUIRES_PRIOR_DSQ
+  // gate in Protests.gs).
+  { tier: 7, label: 'Tier 7: Suspension', effect: 'Removed from this race, suspended for the rest of the season', effectType: 'Suspension', effectSeconds: 0 }
 ];
 
 function penaltyTierByNumber(tierNum) {

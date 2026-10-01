@@ -5726,6 +5726,11 @@
   function _rcDescribePenaltyEffect_(effectType, effectSeconds) {
     if (effectType === 'Time') return '+' + (Number(effectSeconds) || 0) + 's';
     if (effectType === 'DSQ') return 'Disqualified';
+    // Suspension (2026-10-01) -- a Tier 7 ruling now writes its own
+    // Adjustments row (removed from that race's own classification, same
+    // as a DSQ, plus the season-long suspension), see PENALTY_TIER_EFFECTS_
+    // in Protests.gs.
+    if (effectType === 'Suspension') return 'Suspended';
     return 'Logged';
   }
 
@@ -9236,15 +9241,13 @@
               var opt = new Option(t.label + ' (' + t.effect + ')', 'uphold:' + t.tier);
               // Tier 7 (Suspension) requires a prior Upheld Tier 6
               // (Disqualification) against this driver this season (Race
-              // Club Rulebook.md Section 5.1) -- grayed out/disabled here
-              // when that hasn't happened yet (2026-10-01, Matt's ask).
+              // Club Rulebook.md Section 5.1) -- just grayed out/disabled
+              // here when that hasn't happened yet (2026-10-01, Matt's ask;
+              // no explanatory text on the option itself, by design).
               // Enforced again server-side (handleAdminRuleOnProtest's
               // TIER7_REQUIRES_PRIOR_DSQ gate) so this is a convenience,
               // not the only check.
-              if (t.tier === 7 && !p.canRuleTier7) {
-                opt.disabled = true;
-                opt.text = opt.text + ' -- requires a prior Tier 6 DSQ this season';
-              }
+              if (t.tier === 7 && !p.canRuleTier7) opt.disabled = true;
               select.appendChild(opt);
             });
             noteBody.appendChild(select);
