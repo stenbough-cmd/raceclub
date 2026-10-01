@@ -829,13 +829,14 @@ function _rclBuildPosBadge_(idx, textOverride) {
 
 // DNF detection (2026-09-23, Matt's ask: "Make sure DNFs are displayed on
 // leaderboard in bold letters") -- a DSQ'd driver (row.disqualified,
-// already tracked) or a raw FinishStatus containing "DNF" (mechanical
-// failure, crash, etc. -- not disqualified, just didn't finish) both
-// count. Only meaningful on a round-result row (Recent Results/View All
-// Results); a Current Standings season-total row has neither field, so
-// this always returns false there.
+// already tracked), a suspended driver's synthetic row (row.suspended,
+// 2026-10-01 -- All Results popup only, see _rclBuildPosBadge_ call site),
+// or a raw FinishStatus containing "DNF" (mechanical failure, crash, etc.
+// -- not disqualified, just didn't finish) all count. Only meaningful on a
+// round-result row (Recent Results/View All Results); a Current Standings
+// season-total row has neither field, so this always returns false there.
 function _rclIsDnf_(row) {
-  return !!(row && (row.disqualified || /dnf/i.test(row.finishStatus || '')));
+  return !!(row && (row.disqualified || row.suspended || /dnf/i.test(row.finishStatus || '')));
 }
 
 // logo, name, country flag, car number, team -- one identical identity
@@ -1654,7 +1655,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // that never actually happened (2026-09-24, Matt's ask: "make sure
       // drivers who DNF during a race has DNF on the all results board").
       var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
+      // Suspended (SUS) takes precedence over DSQ/DNF -- synthetic row
+      // injected server-side (Results.gs) for every round on/after a Tier 7
+      // ruling's effective round, All Results popup only (2026-10-01, Matt's
+      // ask: "SUS shows up on every race POS container on AND after the
+      // penalty... SUS drivers show up underneath DSQ drivers").
+      rowEl.appendChild(_rclBuildPosBadge_(idx, row.suspended ? 'SUS' : (row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined))));
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
