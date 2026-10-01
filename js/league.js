@@ -1474,6 +1474,30 @@ function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
   return '+' + gap.toFixed(3);
 }
 
+// INTERVAL (to the car directly ahead), back in the All Results table
+// (2026-10-01, Matt's ask: "Remove the penalty column and put Interval
+// stats back in there instead. We already have a Penalties Assessed
+// section" -- the PEN column it's replacing sat in this exact slot, right
+// after Total Time). Same shape as _rclFormatGap_ just above, just
+// measured against the row immediately ahead in this class's standings
+// (prevRow) instead of the class leader -- the leader/first row has no
+// car ahead of it, so that row always shows '--'. Same lap-down override
+// and same-penalty-correction reasoning as GAP (see that function's own
+// comment) applies here too: prevRow's own Time-effect penalty seconds
+// have to be added on both sides of the subtraction, or Interval goes
+// stale next to the (already-corrected) Total Time column right next to
+// it.
+function _rclFormatInterval_(row, prevRow, rowPenSeconds, prevPenSeconds) {
+  if (row.disqualified) return 'DSQ';
+  if (!prevRow) return '--';
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || prevRow.finishTimeSeconds === null || prevRow.finishTimeSeconds === undefined) return '--';
+  var lapsDown = (prevRow.laps || 0) - (row.laps || 0);
+  if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
+  var interval = (row.finishTimeSeconds + (rowPenSeconds || 0)) - (prevRow.finishTimeSeconds + (prevPenSeconds || 0));
+  if (interval <= 0) return '--';
+  return '+' + interval.toFixed(3);
+}
+
 // TOTAL TIME as h:mm:ss.mmm (2026-09-23, Matt's exact format example:
 // "6:00:07.219"). No leading zero on the hours digit, but minutes/seconds
 // are always 2 digits and milliseconds always 3, matching that example.
@@ -1592,18 +1616,20 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
 
     // Column labels, divider line BELOW them (2026-09-23 follow-up,
     // Matt's ask: "move the line BELOW the catagory labels" -- was above)
-    // -- POS, DRIVER, LAPS, TOTAL TIME, PEN, GAP, AVG (KM/H), BEST LAP,
-    // PTS. INTERVAL removed and PTS added in its place at the end
-    // (2026-09-26, Matt's ask: "remove the INTERVAL column... add a PTS
-    // column to show how many they got from this race"). ON removed
-    // entirely (2026-09-23 follow-up, Matt's ask). Same grid as the data
-    // rows below it so every label lines up with its column.
+    // -- POS, DRIVER, LAPS, TOTAL TIME, INTERVAL, GAP, AVG (KM/H), BEST
+    // LAP, PTS. PEN removed and INTERVAL put back in its slot (2026-10-01,
+    // Matt's ask: "Remove the penalty column and put Interval stats back
+    // in there instead. We already have a Penalties Assessed section" --
+    // that section, further down this popup, is now the only place a
+    // round's penalties show). ON removed entirely (2026-09-23 follow-up,
+    // Matt's ask). Same grid as the data rows below it so every label
+    // lines up with its column.
     var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
     headRow.appendChild(_rclEl('div', null, 'Pos'));
     headRow.appendChild(_rclEl('div', null, 'Driver'));
     headRow.appendChild(_rclEl('div', null, 'Laps'));
     headRow.appendChild(_rclEl('div', null, 'Total Time'));
-    headRow.appendChild(_rclEl('div', null, 'Pen'));
+    headRow.appendChild(_rclEl('div', null, 'Interval'));
     headRow.appendChild(_rclEl('div', null, 'Gap'));
     headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
     headRow.appendChild(_rclEl('div', null, 'Best Lap'));
@@ -1632,15 +1658,19 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
-      // Total Time now shows the CORRECTED time (2026-09-27, Matt's report
-      // above) -- raw finishTimeSeconds plus this driver's own Time-effect
-      // penalty seconds, so a +5s penalty actually moves the number shown
-      // here instead of only showing up in the separate Pen column.
+      // Total Time still shows the CORRECTED time (2026-09-27, Matt's
+      // report above) -- raw finishTimeSeconds plus this driver's own
+      // Time-effect penalty seconds, so a +5s penalty still moves the
+      // number shown here even with the PEN column itself gone; Gap and
+      // Interval (right below) both need this same correction kept too,
+      // or they'd go stale next to Total Time's own corrected number.
       var correctedFinishTimeSeconds = (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined)
         ? row.finishTimeSeconds
         : (row.finishTimeSeconds + penSeconds);
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatTotalTime_(correctedFinishTimeSeconds)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pen' + (penSeconds ? ' rcl-race-row-pen-active' : ''), penSeconds ? ('+' + penSeconds + 's') : '--'));
+      var prevRow = idx > 0 ? standings[idx - 1] : null;
+      var prevPenSeconds = (prevRow && prevRow.profileId) ? (penSecondsByProfileId[prevRow.profileId] || 0) : 0;
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatInterval_(row, prevRow, penSeconds, prevPenSeconds)));
       var leaderPenSeconds = (leaderRow && leaderRow.profileId) ? (penSecondsByProfileId[leaderRow.profileId] || 0) : 0;
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow, penSeconds, leaderPenSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));

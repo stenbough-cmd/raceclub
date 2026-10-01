@@ -1169,16 +1169,17 @@ body.rc-league-page {
    follow-up: "I want it to live under the header and above the table in
    each class" -- this supersedes that). */
 .rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
-/* 16px gap above (was 10px, then 0 before that -- Matt's ask, twice: "add
-   a tiny bit more space between the class header and the bonus
-   catagories", then again "add a little more space between the bonus
-   catagories and the header"), and no line/padding below any more (Matt's
-   ask: "remove the gray line below the catagory so there's just a gap
-   before the table header starts") -- the 18px margin-bottom alone now
-   supplies that gap before .rcl-race-col-head, with nothing to visually
-   divide the two. */
+/* 24px gap above (was 16px, then 10px, then 0 before that -- Matt's ask,
+   three times now: "add a tiny bit more space between the class header
+   and the bonus catagories", "add a little more space between the bonus
+   catagories and the header again", "still needs a little more space
+   added between the header and bonus catagory"), and no line/padding
+   below any more (Matt's ask: "remove the gray line below the catagory so
+   there's just a gap before the table header starts") -- the 18px
+   margin-bottom alone now supplies that gap before .rcl-race-col-head,
+   with nothing to visually divide the two. */
 .rcl-race-categories-inclass {
-  margin-top: 16px;
+  margin-top: 24px;
   margin-bottom: 18px;
   padding-top: 0;
   padding-bottom: 0;
@@ -1280,16 +1281,15 @@ body.rc-league-page {
 .rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
 /* ON column removed entirely (2026-09-23 follow-up, Matt's ask) -- 8
    columns then, driver bumped from 1.5fr to 2fr with that freed space.
-   PEN column added 2026-09-26 (Matt's ask: "add a PEN column after the
-   Total Time column") -- 9 columns, 64px slotted in right after Total
-   Time (118px). This is a distinct, separate ask from the "+Ns badge next
-   to Total Time" idea Matt tried and reverted 2026-09-25 (see the comment
-   above _rclBuildAllResultsBody_, js/league.js) -- that revert stays; this
-   is its own dedicated column, not a badge glued onto Total Time.
-   INTERVAL removed, PTS added at the end (2026-09-26 follow-up, Matt's
-   ask: "remove the INTERVAL column... add a PTS column") -- still 9
-   columns; PTS gets a compact 52px, same idea as GAP/Best Lap's own
-   fixed widths. */
+   A PEN column (same 64px slot right after Total Time) briefly lived here
+   2026-09-26 through 2026-10-01, then was removed and INTERVAL (to the
+   car directly ahead) put back in its place (Matt's ask: "Remove the
+   penalty column and put Interval stats back in there instead. We
+   already have a Penalties Assessed section" -- that section, further
+   down the popup, is the one place penalties show now). INTERVAL/PTS'
+   column widths are otherwise unchanged from the PEN-era layout -- still
+   9 columns, PTS keeps its compact 52px at the end, same idea as GAP/Best
+   Lap's own fixed widths. */
 .rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 64px 78px 84px 92px 52px; }
 /* Qualifying tab (2026-09-26, Matt's ask) -- Pos/Driver/Best Lap/Sector
    1-3/Avg (KM/H), 7 columns. No Laps/Total Time/Pen/Gap -- a Qualify
@@ -1321,13 +1321,12 @@ body.rc-league-page {
   font-size: 13px;
   text-align: right;
 }
-/* PEN column (2026-09-26, Matt's ask -- distinct from the reverted "+Ns"
-   badge above: its own dedicated column, right after Total Time). Bold red
-   when a driver actually has a time penalty this round, same dash-for-
-   "nothing here" convention GAP already uses for a leader/DSQ row. */
-.rcl-race-row-pen { font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; color: var(--rcl-ink-faint); }
-.rcl-race-row-pen-active { color: var(--rc-red); font-weight: 800; }
-/* PTS column (2026-09-26, Matt's ask -- replaces the removed INTERVAL
+/* .rcl-race-row-pen/-pen-active (the PEN column's own styling, 2026-09-26)
+   removed 2026-10-01 along with the column itself -- see this file's own
+   comment on .rcl-race-grid-allresults above. The INTERVAL cell that took
+   its slot reuses .rcl-race-row-gap (just above) rather than a dedicated
+   class of its own, since it's styled identically to GAP.
+   PTS column (2026-09-26, Matt's ask -- replaces the removed INTERVAL
    column, at the end of the row: "add a PTS column to show how many they
    got from this race... make sure it includes any bonus points" -- the
    row's own points field already folds bonus points into the total
