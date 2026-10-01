@@ -4823,23 +4823,18 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 }
 .rc-seasonfmt-list { margin-top: 4px; }
 .rc-seasonfmt-block + .rc-seasonfmt-block { margin-top: 18px; }
+/* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
+   layout (2026-10-01, Matt's catch: "I don't want the values to be on one
+   side and the catagory on the other... category then a colon, then a
+   space and then the value") -- a single text run per row, read top to
+   bottom the way Matt's own spec was typed. */
 .rc-seasonfmt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--rc-silver);
+  padding: 4px 0;
   font-size: 13.5px;
-}
-.rc-seasonfmt-row:last-child { border-bottom: none; }
-.rc-seasonfmt-row-label { color: var(--rc-steel); }
-.rc-seasonfmt-row-value {
   color: var(--rc-carbon);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
 }
+.rc-seasonfmt-row-label { color: var(--rc-steel); font-weight: 600; }
+.rc-seasonfmt-row-value { color: var(--rc-carbon); font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Championship Points/Bonus Points sub-rows -- indented under their own
    section label, new content here (2026-10-01) since Account.html never
    had its own separate points-tables popup the way league.html did. */
@@ -4853,7 +4848,10 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   color: var(--rc-steel);
 }
 .rc-seasonfmt-block > .rc-seasonfmt-section-label:first-child { margin-top: 0; }
-.rc-seasonfmt-subrow { padding-left: 14px; }
+/* Sub-rows get a literal "|_" tree-branch prefix in the row's own text
+   (built in Account.html), same ask -- a little left padding keeps the
+   branch character from sitting flush against the section label above it. */
+.rc-seasonfmt-subrow { padding-left: 4px; }
 .rc-seasonfmt-subrow .rc-seasonfmt-row-label { font-size: 12.5px; }
 
 /* Body scroll lock while ANY popup (showModal(), Account.html) is open --

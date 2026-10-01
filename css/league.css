@@ -550,29 +550,37 @@ body.rc-league-page {
    spec. Built by _rclBuildSeasonFormatBlocks_ (js/league.js). */
 .rcl-seasonfmt-list { margin-top: 10px; }
 .rcl-seasonfmt-block + .rcl-seasonfmt-block { margin-top: 18px; }
+/* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
+   layout (2026-10-01, Matt's catch: "I don't want the values to be on one
+   side and the catagory on the other... category then a colon, then a
+   space and then the value") -- a single text run per row, read top to
+   bottom the way Matt's own spec was typed. */
 .rcl-seasonfmt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--rcl-line);
+  padding: 4px 0;
   font-size: 13.5px;
-}
-.rcl-seasonfmt-row:last-child { border-bottom: none; }
-.rcl-seasonfmt-row-label { color: var(--rcl-ink-dim); }
-.rcl-seasonfmt-row-value {
   color: var(--rcl-ink);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
 }
-/* Championship Points/Bonus Points sub-rows (folded in from the old,
-   removed Points Tables popup, 2026-10-01) sit indented under their own
-   "Championship Points"/"Bonus Points" pill (.rcl-pill-label, reused as-is
-   -- same class the old Points Tables popup's Bonus Points label used). */
-.rcl-seasonfmt-section-label { margin: 2px 0 6px; }
-.rcl-seasonfmt-subrow { padding-left: 14px; }
+.rcl-seasonfmt-row-label { color: var(--rcl-ink-dim); font-weight: 600; }
+.rcl-seasonfmt-row-value { color: var(--rcl-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Championship Points/Bonus Points sub-headers -- plain uppercase text,
+   matching Account.html's own .rc-seasonfmt-section-label group-label
+   style (2026-10-01, Matt's ask: "format the headers for championship and
+   bonus points in the league.html to how it is on the account page"),
+   not the gray .rcl-pill-label pill this used before. */
+.rcl-seasonfmt-section-label {
+  margin: 10px 0 4px;
+  font-family: var(--rc-font-heading);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+.rcl-seasonfmt-block > .rcl-seasonfmt-section-label:first-child { margin-top: 0; }
+/* Sub-rows get a literal "|_" tree-branch prefix in the row's own text
+   (built in js/league.js), same ask -- a little left padding keeps the
+   branch character from sitting flush against the section label above it. */
+.rcl-seasonfmt-subrow { padding-left: 4px; }
 .rcl-seasonfmt-subrow .rcl-seasonfmt-row-label { font-size: 12.5px; color: var(--rcl-ink-faint); }
 
 /* -------------------------------------------------------------------- */

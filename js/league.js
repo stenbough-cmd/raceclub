@@ -2673,17 +2673,25 @@ function _rclOpenSeasonDetailsModal(hub) {
   // favor of this more traditional list format") -- one "Season Format"
   // header (replaces the old "This Season"/"League Format" pair) over a
   // single vertical list, built from _rclBuildSeasonFormatBlocks_'s blocks.
-  // A plain block renders as flat label/value rows; the points block
-  // renders its own "Championship Points"/"Bonus Points" sub-headers with
-  // indented sub-rows underneath. The Calendar itself is NOT in this popup
-  // on league.html -- it's already its own permanent panel on the page,
-  // with this "View Season Details" link living at the bottom of it (see
-  // _rclRenderCalendar) -- so there's nothing to re-render here for it.
+  // Each row is plain "Category: Value" text, left-aligned (2026-10-01
+  // follow-up, Matt's catch: "I don't want the values to be on one side
+  // and the catagory on the other... category then a colon, then a space
+  // and then the value" -- NOT a two-column label/value layout). A points
+  // sub-row gets a literal "|_" tree-branch prefix, same ask. The
+  // "Championship Points"/"Bonus Points" sub-headers are plain uppercase
+  // text (.rcl-seasonfmt-section-label), matching Account.html's own
+  // group-label style instead of a pill (2026-10-01 follow-up, Matt's ask:
+  // "format the headers for championship and bonus points in the
+  // league.html to how it is on the account page"). The Calendar itself is
+  // NOT in this popup on league.html -- it's already its own permanent
+  // panel on the page, with this "View Season Details" link living at the
+  // bottom of it (see _rclRenderCalendar) -- so there's nothing to
+  // re-render here for it.
   function buildRow(stat, isSub) {
-    var row = _rclEl('div', 'rcl-seasonfmt-row' + (isSub ? ' rcl-seasonfmt-subrow' : ''));
-    row.appendChild(_rclEl('div', 'rcl-seasonfmt-row-label', _rclEscapeHtml(stat.label)));
-    row.appendChild(_rclEl('div', 'rcl-seasonfmt-row-value', _rclEscapeHtml(stat.value)));
-    return row;
+    var html = (isSub ? '|_' : '') +
+      '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
+      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
+    return _rclEl('div', 'rcl-seasonfmt-row' + (isSub ? ' rcl-seasonfmt-subrow' : ''), html);
   }
 
   var blocks = _rclBuildSeasonFormatBlocks_(hub);
@@ -2697,11 +2705,11 @@ function _rclOpenSeasonDetailsModal(hub) {
         block.rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
       } else {
         if (block.tiers.length) {
-          blockEl.appendChild(_rclEl('div', 'rcl-pill-label rcl-seasonfmt-section-label', 'Championship Points'));
+          blockEl.appendChild(_rclEl('div', 'rcl-seasonfmt-section-label', 'Championship Points:'));
           block.tiers.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
         }
         if (block.bonus.length) {
-          blockEl.appendChild(_rclEl('div', 'rcl-pill-label rcl-seasonfmt-section-label', 'Bonus Points'));
+          blockEl.appendChild(_rclEl('div', 'rcl-seasonfmt-section-label', 'Bonus Points:'));
           block.bonus.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
         }
       }

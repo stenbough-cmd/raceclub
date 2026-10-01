@@ -1514,15 +1514,20 @@
   // (.rc-seasonfmt-list, style.css) under one "Season Format" pill header
   // (.rc-seasonfmt-group-label, unchanged) -- replaces the old
   // buildSeasonFmtStatGroup bubble-tile builder (2026-10-01, Matt's ask).
+  // Each row is plain "Category: Value" text, left-aligned (2026-10-01
+  // follow-up, Matt's catch: "I don't want the values to be on one side
+  // and the catagory on the other... category then a colon, then a space
+  // and then the value"), not a two-column layout. A points sub-row gets a
+  // literal "|_" tree-branch prefix, same ask.
   function buildSeasonFmtList_(blocks) {
     var group = el('div', 'rc-seasonfmt-group');
     group.appendChild(el('div', 'rc-seasonfmt-group-label', 'Season Format'));
     var list = el('div', 'rc-seasonfmt-list');
     function buildRow(stat, isSub) {
-      var row = el('div', 'rc-seasonfmt-row' + (isSub ? ' rc-seasonfmt-subrow' : ''));
-      row.appendChild(el('div', 'rc-seasonfmt-row-label', escapeHtml(stat.label)));
-      row.appendChild(el('div', 'rc-seasonfmt-row-value', escapeHtml(String(stat.value))));
-      return row;
+      var html = (isSub ? '|_' : '') +
+        '<span class="rc-seasonfmt-row-label">' + escapeHtml(stat.label) + ':</span> ' +
+        '<span class="rc-seasonfmt-row-value">' + escapeHtml(String(stat.value)) + '</span>';
+      return el('div', 'rc-seasonfmt-row' + (isSub ? ' rc-seasonfmt-subrow' : ''), html);
     }
     blocks.forEach(function (block) {
       var blockEl = el('div', 'rc-seasonfmt-block');
@@ -1530,11 +1535,11 @@
         block.rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
       } else {
         if (block.tiers.length) {
-          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Championship Points'));
+          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Championship Points:'));
           block.tiers.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
         }
         if (block.bonus.length) {
-          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Bonus Points'));
+          blockEl.appendChild(el('div', 'rc-seasonfmt-section-label', 'Bonus Points:'));
           block.bonus.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
         }
       }
