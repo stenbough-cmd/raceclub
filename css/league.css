@@ -1169,12 +1169,18 @@ body.rc-league-page {
    follow-up: "I want it to live under the header and above the table in
    each class" -- this supersedes that). */
 .rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
+/* 10px gap above (was 0, Matt's ask: "add a tiny bit more space between
+   the class header and the bonus catagories"), and no line/padding below
+   any more (Matt's ask: "remove the gray line below the catagory so
+   there's just a gap before the table header starts") -- the 18px
+   margin-bottom alone now supplies that gap before .rcl-race-col-head,
+   with nothing to visually divide the two. */
 .rcl-race-categories-inclass {
-  margin-top: 0;
+  margin-top: 10px;
   margin-bottom: 18px;
   padding-top: 0;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--rcl-line);
+  padding-bottom: 0;
+  border-bottom: none;
   border-top: none;
 }
 .rcl-race-category { flex: 1 1 200px; min-width: 180px; }
