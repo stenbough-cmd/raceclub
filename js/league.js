@@ -181,6 +181,28 @@ function _rclFormat12h(hhmm) {
   return h12 + ':' + parts[1] + ' ' + ampm;
 }
 
+// IANA zone name (e.g. "America/New_York", what the admin actually picks
+// in the Season Creation Wizard and what hub.enteredTimeZone carries) ->
+// its short abbreviation for right now (EST/EDT/etc -- 2026-10-01, Matt's
+// ask: "Instead of writing the literal timezone location, use EST, EDT,
+// etc labels behind event time"). Uses today's date rather than the
+// season's own start date since this is just a display label, not a
+// precise instant -- a zone's abbreviation only ever flips between its
+// standard/daylight forms, and getting that exactly right for a date
+// months in the future isn't worth the added complexity here. Falls back
+// to the raw zone string on any failure (an unrecognized/empty zone, or a
+// browser without full Intl timezone support) so this never throws.
+function _rclTzAbbrev_(tz) {
+  if (!tz) return '';
+  try {
+    var parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date());
+    var part = parts.filter(function (p) { return p.type === 'timeZoneName'; })[0];
+    return part ? part.value : tz;
+  } catch (e) {
+    return tz;
+  }
+}
+
 // A calendar entry's race length in actual minutes rather than its
 // Sprint/Medium/Long tier name (2026-09-19, Matt's ask: "instead of
 // saying the tier, say the minutes"). A Special Event entry already
@@ -1039,21 +1061,33 @@ function _rclRenderStandings(hub) {
 // two never drift apart.
 // "EVENT" label (2026-09-30, Matt's ask: "add 'EVENT' (in the same all
 // caps, gray font as the bonus catagories.) above the event/track title
-// in ALL RESULTS") -- reuses .rcl-race-category-title's exact typography
-// (css/league.css) via a dedicated class so the two stay visually
-// identical without coupling this label to the category row's own
-// flex/icon layout. ALL RESULTS-only (both the Race tab, via
-// _rclBuildRaceHeadline_'s opts.showEventLabel below, and the Qualifying
-// tab, which calls this directly) -- Recent Results' own event line is
-// deliberately left alone, unchanged.
-function _rclBuildEventLabel_() {
-  return _rclEl('div', 'rcl-race-event-label', 'Event');
-}
+// in ALL RESULTS") -- removed again 2026-10-01 (Matt's ask: "eliminate
+// EVENT label above it and move the event title up"), once the ALL
+// RESULTS popup went back to showing its own "Round n" prefix right on
+// the title line (see _rclBuildEventTitleLine_'s roundSep param below) --
+// the label's job (flagging this as the event title) is redundant with
+// that prefix, and dropping it lets the title sit right at the top of
+// the popup/tab the way Recent Results' own event line always has.
+// _rclBuildEventLabel_ itself and its .rcl-race-event-label CSS rule were
+// removed along with its two call sites (_rclBuildRaceHeadline_'s former
+// opts.showEventLabel branch, and _rclBuildQualifyingBody_ below).
 
-function _rclBuildEventTitleLine_(entry, hideRoundNum) {
+// roundSep (2026-10-01, Matt's ask: "add 'Round <round n>' before the
+// Event Name in the title [of the ALL RESULTS popup]... leave a space
+// after Round n") -- defaults to the three-space gap Recent Results has
+// always used ("Round n   EventName"), but the ALL RESULTS popup/
+// Qualifying tab (which un-hide the round number here for the first time,
+// see their own call sites below) pass a single plain space instead, per
+// Matt's literal ask. The "Round n" text itself is a bare text node with
+// no class of its own (same as it's always been) -- it inherits
+// .rcl-race-headline-eventname's own color/weight (var(--rcl-ink), a
+// near-white #f2f2f0, and no bold -- only the event NAME span below gets
+// font-weight 800), which already reads as "white, normal weight" with no
+// extra CSS needed.
+function _rclBuildEventTitleLine_(entry, hideRoundNum, roundSep) {
   var eventLine = _rclEl('div', 'rcl-race-headline-eventname');
   if (!hideRoundNum && entry.roundNum) {
-    eventLine.appendChild(document.createTextNode('Round ' + entry.roundNum + '   '));
+    eventLine.appendChild(document.createTextNode('Round ' + entry.roundNum + (roundSep || '   ')));
   }
   eventLine.appendChild(_rclEl('span', 'rcl-race-headline-event-name', _rclEscapeHtml(entry.eventName || '')));
   if (entry.track) {
@@ -1104,10 +1138,9 @@ function _rclBuildRaceHeadline_(r, opts) {
     s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (variant ? ' rcl-race-headline-value-' + variant : ''), _rclEscapeHtml(value || '--')));
     return s;
   }
-  // opts.showEventLabel (2026-09-30) -- ALL RESULTS only, see
-  // _rclBuildEventLabel_'s own comment above.
-  if (opts.showEventLabel) headline.appendChild(_rclBuildEventLabel_());
-  headline.appendChild(_rclBuildEventTitleLine_(r, opts.hideRoundNum));
+  // opts.roundNumSep (2026-10-01) -- passed straight through to
+  // _rclBuildEventTitleLine_; see that function's own comment above.
+  headline.appendChild(_rclBuildEventTitleLine_(r, opts.hideRoundNum, opts.roundNumSep));
 
   if (!opts.hideStatRow) {
     var detailRow = _rclEl('div', 'rcl-race-headline-row');
@@ -1131,58 +1164,56 @@ var _RCL_ICON_LAPS_LED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="
 var _RCL_ICON_POLE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="21" x2="6" y2="3"></line><path d="M6 4l12 4-12 4"></path></svg>';
 var _RCL_ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
 
-// Bare class pill, normal (not ticker-shrunk) size -- same color/label
-// lookup as _rclClassPill_/_rclTickerClassPill_ above, just without either
-// one's own positioning wrapper, for a row that already ends with the
-// pill as its last element (2026-09-27, category breakdown rows below).
-function _rclCategoryClassPill_(cls) {
-  var key = String(cls || '').trim();
-  var colorClass = RCL_CLASS_PILL_COLOR_[key] || '';
-  var label = key === 'Hypercar' ? 'HY' : key;
-  var pill = document.createElement('span');
-  pill.className = 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : '');
-  pill.textContent = label || '?';
-  return pill;
-}
-
 // Per-class Winner/Most Laps Led/Pole/Fastest Lap breakdown for the All
-// Results popup (2026-09-27 rework, Matt's ask: "add MOST LAPS LED in
-// between the WINNER and POLE catagories... underneath each catagory
-// needs to have the winner from each class... the higher class is on
-// top... make sure the results are taking this into effect -- that each
-// class gets points and bonus points separate from each other"). Replaces
-// the old flat overall-only Winner/Pole/Fastest Lap stat row
-// (_rclBuildRaceHeadline_'s detailRow, now hidden here via hideStatRow --
-// see the call site below) with one row PER CLASS actually represented
-// this round, under each category, in the site's canonical class order
-// (result.classes already arrives sorted Hypercar -> LMP2 -> LMP3 ->
-// LMGT3 -> LMGTE, CAR_CLASS_CANONICAL_ORDER_, Results.gs) so a driver
-// reads highest class first, same convention as every other list on the
-// site. Row content order is name, car number, then the class pill last
-// (Matt: "behind the name is the driver's number and after that is the
-// HY pill... do the same styling" for every other class's own row) --
-// EVERY category is just name/number/pill now, no parenthetical. Most Laps
-// Led and Fastest Lap originally added their own parenthetical (laps led
-// count / lap time) between the number and the pill, but Matt asked to
-// drop both (2026-09-27: "remove the (fastest lap) and (laps led) behind
-// the names in the header list above ALL RESULTS") so all four categories
-// read identically to Pole, which never had one.
-function _rclBuildResultsCategoryBreakdown_(result) {
-  var wrap = _rclEl('div', 'rcl-race-categories');
-  var classes = result.classes || [];
+// Results popup. Originally (2026-09-27) one combined block at the TOP of
+// the popup with every class's row stacked under each category, a class
+// pill on the end of each row to tell them apart. Reworked 2026-10-01
+// (Matt's ask: "move the bonus point sections to underneath their
+// respective class section. So each section will get the catagories with
+// the icons and a list of 1 name under each catagory") -- now called ONCE
+// PER CLASS, from inside that class's own .rcl-race-class block (see the
+// call site in _rclBuildAllResultsBody_ below), so each category only
+// ever has the one row for THIS class. The class pill is gone with it --
+// no longer needed now that the whole breakdown already sits inside that
+// class's own section -- replaced with the driver's country flag instead
+// (same .rcl-standings-flag look/lookup every other driver row on this
+// page already uses, Matt's ask: "eliminate the class pill behind the
+// driver name but let's add their country flag"). The Fastest Lap row's
+// purple name color is also gone (Matt's ask: "remove the purple style to
+// the fastest lap winners and make it bold white like the others") -- no
+// 'fastestLap' rowKind is passed any more, so it falls through to the
+// same plain bold-ink styling Most Laps Led/Pole Sitter already use;
+// Winner's gold rowKind is untouched (not part of that ask).
+function _rclBuildClassCategoryBreakdown_(cls) {
+  // rcl-race-categories-inclass (css/league.css) restyles the shared
+  // .rcl-race-categories block for sitting at the BOTTOM of a class
+  // section instead of the top of the whole popup -- border/margin on the
+  // top instead of the bottom, separating it from the standings table
+  // above it rather than from whatever used to follow the old combined
+  // block.
+  var wrap = _rclEl('div', 'rcl-race-categories rcl-race-categories-inclass');
 
-  // rowKind (2026-09-27, Matt's ask: "make the winner name gold and
-  // fastest lap names purple in ALL RESULTS") -- 'winner'/'fastestLap'
-  // add a color modifier class to the row so both the name AND the car
-  // number pick up the accent color together (see .rcl-race-category-row-
-  // winner/-fastestlap, css/league.css); Most Laps Led and Pole stay the
-  // plain ink color, unchanged.
-  function buildRow(name, carNumber, parenText, carClass, rowKind) {
+  // rowKind (2026-09-27, Matt's ask: "make the winner name gold... in ALL
+  // RESULTS") -- 'winner' still adds a color modifier class so the name
+  // AND car number pick up the gold accent together (see
+  // .rcl-race-category-row-winner, css/league.css); every other category
+  // stays the plain bold-ink color.
+  function buildRow(name, carNumber, country, rowKind) {
     var row = _rclEl('div', 'rcl-race-category-row' + (rowKind ? ' rcl-race-category-row-' + rowKind : ''));
     row.appendChild(_rclEl('span', 'rcl-race-category-name', _rclEscapeHtml(name)));
     if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
-    if (parenText) row.appendChild(_rclEl('span', 'rcl-race-category-extra', '(' + _rclEscapeHtml(parenText) + ')'));
-    if (carClass) row.appendChild(_rclCategoryClassPill_(carClass));
+    if (country && typeof countryFlagSrc === 'function') {
+      var flagSrc = countryFlagSrc(country);
+      if (flagSrc) {
+        var flagImg = document.createElement('img');
+        flagImg.className = 'rcl-standings-flag rcl-race-category-flag';
+        flagImg.src = flagSrc;
+        flagImg.alt = '';
+        flagImg.title = country;
+        flagImg.onerror = function () { flagImg.style.display = 'none'; };
+        row.appendChild(flagImg);
+      }
+    }
     return row;
   }
 
@@ -1199,20 +1230,17 @@ function _rclBuildResultsCategoryBreakdown_(result) {
   }
 
   var winnerRows = [], lapsLedRows = [], poleRows = [], fastestRows = [];
-  classes.forEach(function (cls) {
-    if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, null, cls.className, 'winner'));
-    if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
-      lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, null, cls.className));
-    }
-    if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, null, cls.className));
-    if (cls.classFastestLapDriver) {
-      fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, null, cls.className, 'fastestLap'));
-    }
-  });
+  if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, cls.classWinnerCountry, 'winner'));
+  if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
+    lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, cls.classMostLapsLedCountry));
+  }
+  if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, cls.classPoleSitterCountry));
+  if (cls.classFastestLapDriver) {
+    fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, cls.classFastestLapDriverCountry));
+  }
 
   buildCategory(_RCL_ICON_TROPHY, 'Winner', winnerRows);
   buildCategory(_RCL_ICON_LAPS_LED, 'Most Laps Led', lapsLedRows);
-  // "Pole" -> "Pole Sitter" (2026-09-30, Matt's ask).
   buildCategory(_RCL_ICON_POLE, 'Pole Sitter', poleRows);
   buildCategory(_RCL_ICON_STOPWATCH, 'Fastest Lap', fastestRows);
 
@@ -1504,20 +1532,23 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     return;
   }
 
-  // hideRoundNum (2026-09-26, Matt's ask: "in the event title in the ALL
-  // RESULTS popup, remove the round number before the event name, but
-  // keep the event name as it is") -- Recent Results (which also calls
-  // _rclBuildRaceHeadline_, with no opts) keeps its round number; only
-  // this popup drops it, since the round is already picked explicitly via
-  // the dropdown right above. hideStatRow (2026-09-27) -- the old flat
-  // overall-only Winner/Pole/Fastest Lap row is replaced by the per-class
-  // breakdown right below (_rclBuildResultsCategoryBreakdown_). closeGapNoLine
-  // (2026-09-27 follow-up, Matt's ask: "remove the line above the header in
-  // between the bonus points winners and the event name") -- same treatment
-  // Recent Results already got, now applied here too so the category
-  // breakdown sits right under the title with no divider line between them.
-  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideRoundNum: true, hideStatRow: true, closeGapNoLine: true, showEventLabel: true }));
-  bodyEl.appendChild(_rclBuildResultsCategoryBreakdown_(result));
+  // hideRoundNum used to be true here (2026-09-26, Matt's ask: "in the
+  // event title in the ALL RESULTS popup, remove the round number before
+  // the event name") -- reversed 2026-10-01 (Matt's ask: "add 'Round
+  // <round n>' before the Event Name in the title... leave a space after
+  // Round n") -- the round dropdown above already picks the round
+  // explicitly, but Matt wants it back on the title line itself now too,
+  // just with a single plain space (roundNumSep: ' ') instead of Recent
+  // Results' own three-space gap. hideStatRow (2026-09-27) -- the old flat
+  // overall-only Winner/Pole/Fastest Lap row is gone; each class's own
+  // breakdown is built inline inside its own .rcl-race-class block now
+  // (_rclBuildClassCategoryBreakdown_, called per class below) instead of
+  // one combined block up here. closeGapNoLine (2026-09-27 follow-up,
+  // Matt's ask: "remove the line above the header in between the bonus
+  // points winners and the event name") -- same treatment Recent Results
+  // already got, now applied here too so the first class section sits
+  // right under the title with no divider line between them.
+  bodyEl.appendChild(_rclBuildRaceHeadline_(result, { hideStatRow: true, closeGapNoLine: true, roundNumSep: ' ' }));
 
   // A bold "+Ns" badge next to Total Time was tried 2026-09-25 and
   // reverted the same day (Matt's call: "I don't want the +10s penalty
@@ -1620,6 +1651,10 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
+    // Winner/Most Laps Led/Pole Sitter/Fastest Lap breakdown for THIS
+    // class only, underneath its own standings table (2026-10-01, Matt's
+    // ask -- see _rclBuildClassCategoryBreakdown_'s own comment above).
+    clsWrap.appendChild(_rclBuildClassCategoryBreakdown_(cls));
     bodyEl.appendChild(clsWrap);
   });
 
@@ -1833,10 +1868,12 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
   // Simple round-identifying line -- no Winner/Pole/Fastest Lap headline
   // here (_rclBuildRaceHeadline_ is Race-session specific and doesn't
   // apply to a Qualify session), same shared title-line builder the Race
-  // view uses (_rclBuildEventTitleLine_ above), round number hidden same
-  // as the Race view's All Results popup.
-  bodyEl.appendChild(_rclBuildEventLabel_());
-  bodyEl.appendChild(_rclBuildEventTitleLine_(result, true));
+  // view uses (_rclBuildEventTitleLine_ above). Round number shown with a
+  // single-space separator now, same as the Race tab (2026-10-01, Matt's
+  // ask -- see that function's own comment); the "EVENT" label that used
+  // to sit above this line is gone the same day ("eliminate EVENT label
+  // above it and move the event title up").
+  bodyEl.appendChild(_rclBuildEventTitleLine_(result, false, ' '));
   // Breathing room before the standings start (2026-09-26, Matt's ask: "add
   // a line below the event title and the start of the standings. Then
   // leave a space and start the standings like it is in the race
@@ -2470,7 +2507,7 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   // individual round's own startUtc (those vary round to round and already
   // show on the Calendar below).
   if (hub.seasonStartTime) {
-    block1.push({ label: 'Event Time', value: _rclFormat12h(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + hub.enteredTimeZone) : '') });
+    block1.push({ label: 'Event Time', value: _rclFormat12h(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + _rclTzAbbrev_(hub.enteredTimeZone)) : '') });
   }
   if (hub.totalRounds) block1.push({ label: 'Championship Rounds', value: String(hub.totalRounds) });
   // Special Events -- a count of hub.calendar entries of kind 'special'
@@ -2622,9 +2659,11 @@ function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  // "SEASON <n> DETAILS" once the season number is known (2026-09-24,
-  // Matt's ask -- matches Account.html's own popup title).
-  head.appendChild(_rclEl('div', 'rcl-modal-title', hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details'));
+  // Just "SEASON DETAILS", no season number (2026-10-01, Matt's ask --
+  // was "SEASON <n> DETAILS" once the season number was known, 2026-09-24;
+  // matches Account.html's own popup title, which dropped its number the
+  // same way).
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');

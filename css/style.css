@@ -4790,7 +4790,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
    (and, on the Calendar block below, its own group header) always used.
    The tiles that used to follow it are replaced by .rc-seasonfmt-list's
    plain label/value rows, built by buildSeasonFmtGroups_ (Account.html). */
-.rc-seasonfmt-group { margin-top: 20px; }
+.rc-seasonfmt-group { margin-top: 26px; }
 .rc-seasonfmt-group:first-child { margin-top: 0; }
 .rc-seasonfmt-group-label {
   display: inline-flex;
@@ -4809,7 +4809,10 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 10px;
+  /* 6px, was 10px (2026-10-01, Matt's ask: "move the pills closer to the
+     section they're labeling") -- paired with .rc-seasonfmt-list's own
+     margin-top dropping to 0 the same day. */
+  margin-bottom: 6px;
 }
 /* Season Format / Championship Points / Season Rules are each their own
    pill-headed .rc-seasonfmt-group now (2026-10-01 follow-up, Matt's ask:
@@ -4817,7 +4820,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
    same style as SEASON FORMAT"), so .rc-seasonfmt-list only ever holds ONE
    pill section's own blocks at a time -- see buildSeasonFmtGroups_
    (Account.html) for how the sections themselves stack. */
-.rc-seasonfmt-list { margin-top: 4px; }
+.rc-seasonfmt-list { margin-top: 0; }
 .rc-seasonfmt-block + .rc-seasonfmt-block { margin-top: 18px; }
 /* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
    layout (2026-10-01, Matt's catch: "I don't want the values to be on one

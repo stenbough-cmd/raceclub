@@ -495,8 +495,8 @@ body.rc-league-page {
    Format) rather than one long row so the two different kinds of
    information -- what's happening this season vs. how the league always
    runs -- stay visually separate. */
-.rcl-hero-stats-group { margin-top: 22px; }
-.rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 20px; }
+.rcl-hero-stats-group { margin-top: 26px; }
+.rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 26px; }
 /* Standalone gray "pill" label -- same look as a Points Tables tier's own
    pill half (.rcl-points-tier-pill-label further below), just with a full
    border/radius on every side since nothing is fused against it here.
@@ -538,7 +538,11 @@ body.rc-league-page {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 10px;
+  /* 6px, was 10px (2026-10-01, Matt's ask: "move the pills closer to the
+     section they're labeling") -- paired with .rcl-seasonfmt-list's own
+     margin-top dropping to 0 the same day, so the only gap between a pill
+     and its own rows is this one, instead of the two stacking to 20px. */
+  margin-bottom: 6px;
 }
 /* Season Details popup -- traditional vertical list (2026-10-01, replacing
    the old "bubble" tile grid above, Matt's ask: "remove the bubble data
@@ -549,7 +553,10 @@ body.rc-league-page {
    same style as SEASON FORMAT"), so this list only ever holds ONE pill
    section's own blocks at a time -- see _rclOpenSeasonDetailsModal
    (js/league.js) for how the sections themselves stack. */
-.rcl-seasonfmt-list { margin-top: 10px; }
+/* 0, was 10px (2026-10-01, "move the pills closer to the section they're
+   labeling") -- see .rcl-hero-stats-label's own margin-bottom comment
+   above, which now supplies the whole gap by itself. */
+.rcl-seasonfmt-list { margin-top: 0; }
 .rcl-seasonfmt-block + .rcl-seasonfmt-block { margin-top: 18px; }
 /* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
    layout (2026-10-01, Matt's catch: "I don't want the values to be on one
@@ -1116,23 +1123,12 @@ body.rc-league-page {
    All Results popup/Qualifying tab (all three call it) read with the
    exact same heading treatment the Calendar already uses for a round. */
 /* "EVENT" label above the event/track title, ALL RESULTS only (2026-09-30,
-   Matt's ask: "add 'EVENT' (in the same all caps, gray font as the bonus
-   catagories.) above the event/track title in ALL RESULTS") -- same
-   typography as .rcl-race-category-title above (font/size/weight/letter-
-   spacing/uppercase/color), just without that class's flex/gap/icon
-   layout, since this is a bare text label with nothing beside it. Built
-   by _rclBuildEventLabel_ (js/league.js), only called from the ALL
-   RESULTS popup's Race and Qualifying tabs -- Recent Results' event line
-   is unchanged. */
-.rcl-race-event-label {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-dim);
-  margin-bottom: 4px;
-}
+   Matt's ask: "add 'EVENT'... above the event/track title in ALL
+   RESULTS"). Removed again 2026-10-01 (Matt's ask: "eliminate EVENT label
+   above it and move the event title up" -- see js/league.js's own comment
+   on _rclBuildEventTitleLine_'s roundSep for the fuller history) -- its
+   .rcl-race-event-label rule and _rclBuildEventLabel_ (js/league.js) are
+   both gone with it. */
 .rcl-race-headline-eventname { font-size: 18px; color: var(--rcl-ink); }
 .rcl-race-headline-event-name { font-weight: 800; }
 .rcl-race-headline-event-track { font-weight: 500; }
@@ -1159,8 +1155,24 @@ body.rc-league-page {
    row with one row PER CLASS under each category, "the higher class is
    on top", plus a new Most Laps Led category between Winner and Pole).
    Four category blocks in a row, wrapping on narrow widths since a
-   5-class round would otherwise squeeze every column too tight. */
+   5-class round would otherwise squeeze every column too tight.
+   Originally ONE combined block at the top of the popup, covering every
+   class; reworked 2026-10-01 (Matt's ask: "move the bonus point sections
+   to underneath their respective class section") to render once PER
+   CLASS instead, called from inside that class's own .rcl-race-class
+   block (_rclBuildClassCategoryBreakdown_, js/league.js) -- see
+   .rcl-race-categories-inclass right below for how its border/spacing
+   flips to suit sitting at the BOTTOM of a class section now instead of
+   the top of the whole popup. */
 .rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
+.rcl-race-categories-inclass {
+  margin-top: 20px;
+  margin-bottom: 0;
+  padding-top: 18px;
+  padding-bottom: 0;
+  border-bottom: none;
+  border-top: 1px solid var(--rcl-line);
+}
 .rcl-race-category { flex: 1 1 200px; min-width: 180px; }
 .rcl-race-category-title {
   display: flex;
@@ -1203,35 +1215,28 @@ body.rc-league-page {
    THEIR name, so every category now reads as one consistent name+number
    unit. */
 .rcl-race-category-number { font-weight: 700; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-/* Winner/Fastest Lap accent colors (2026-09-27, Matt's ask: "make the
-   winner name gold and fastest lap names purple in ALL RESULTS") -- same
-   gold/purple tokens already used for the headline's own Winner/Fastest
-   Lap stat values above (.rcl-race-headline-value-accent/-fastestlap),
-   just reused here for the per-class category breakdown rows. The car
-   number picks up the same color as its name so the two read as one
-   accented unit; Most Laps Led and Pole rows are untouched. */
+/* Winner's gold accent color (2026-09-27, Matt's ask: "make the winner
+   name gold... in ALL RESULTS") -- same gold token the headline's own
+   Winner stat value uses (.rcl-race-headline-value-accent), reused here
+   for the per-class category breakdown row. The car number picks up the
+   same color as its name so the two read as one accented unit; Most Laps
+   Led and Pole rows are untouched. Fastest Lap's matching purple rule
+   (.rcl-race-category-row-fastestLap) is gone (2026-10-01, Matt's ask:
+   "remove the purple style to the fastest lap winners and make it bold
+   white like the others") -- that row now falls through to the same
+   plain bold-ink .rcl-race-category-name/-number styling every other
+   category already uses. */
 .rcl-race-category-row-winner .rcl-race-category-name,
 .rcl-race-category-row-winner .rcl-race-category-number { color: #e0b64c; }
-.rcl-race-category-row-fastestLap .rcl-race-category-name,
-.rcl-race-category-row-fastestLap .rcl-race-category-number { color: #b388ff; }
-/* Shrink the class pill to match the row's own name/number text height
-   (2026-09-27, Matt's ask: "reduce the height of the class pills at the
-   top where bonus point winners are -- make the class pills the same
-   height as the driver name/number font size") -- .rc-badge-chip-abbrev's
-   normal line-height (1.6, inherited from .rc-badge-chip) makes the pill
-   noticeably taller than the 14px name/number text sitting right next to
-   it in this row specifically. Scoped to just this row so every other
-   .rc-badge-chip-abbrev pill on the site (Current Standings, the class
-   badge elsewhere) keeps its usual size. Top/bottom padding nudged up
-   from 1px to 3px (2026-09-27, Matt's follow-up ask: "increase the pill
-   heights... slightly so there is the same padding at the top and
-   bottom as there is on the sides") -- with line-height:1, the font's
-   own internal leading already reads as extra vertical whitespace the
-   6px horizontal padding doesn't have an equivalent of, so matching the
-   two numerically (6px top/bottom) overshot on a visual check; 3px
-   balances the two sides without ballooning the pill back to its
-   original height. */
-.rcl-race-category-row .rc-badge-chip-abbrev { line-height: 1; padding: 3px 6px; }
+/* Country flag (2026-10-01, Matt's ask: "eliminate the class pill behind
+   the driver name but let's add their country flag" -- the class pill
+   that used to end this row, sized via a now-removed
+   .rcl-race-category-row .rc-badge-chip-abbrev rule, is gone now that
+   each breakdown already sits inside its own class's section). Reuses
+   .rcl-standings-flag's exact look (16x12, rounded corners, thin border)
+   every other driver row on this page already shows a flag with; this
+   modifier just tightens the row gap slightly for the smaller flag. */
+.rcl-race-category-flag { margin-left: -2px; }
 .rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 /* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
    the bottom of the top class leaderboard to the graphite header of the
@@ -1519,6 +1524,13 @@ body.rc-league-page {
    balances the two without re-growing the pill back toward its
    original size. */
 .rcl-report-pill-col .rc-badge-chip-abbrev { line-height: 1; padding: 3px 5px; font-size: 11px; }
+/* Slightly less rounded than the site's usual 5px pill radius (2026-10-01,
+   Matt's ask: "make the radius on the class pills in RACE REPORT slightly
+   less so it looks more rectangular with soft edges") -- scoped to just
+   this report pill column (both Race Report and Penalties Assessed, same
+   as the line above) so every other .rc-badge-chip pill on the site keeps
+   its normal 5px corners. */
+.rcl-report-pill-col .rc-badge-chip { border-radius: 3px; }
 .rcl-report-timestamp { margin-right: 6px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; font-size: 12px; }
 /* Clause color-coding within a report line (2026-09-24, Matt's ask,
    extended same day to cover pit/position too). "penalty" clauses stay

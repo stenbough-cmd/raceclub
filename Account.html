@@ -1451,7 +1451,7 @@
     // Website.gs), not any individual round's own startUtc (those vary
     // round to round and already show on the Calendar below).
     if (hub.seasonStartTime) {
-      block1.push({ label: 'Event Time', value: _rcFormat12h_(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + hub.enteredTimeZone) : '') });
+      block1.push({ label: 'Event Time', value: _rcFormat12h_(hub.seasonStartTime) + (hub.enteredTimeZone ? (' ' + _rcTzAbbrev_(hub.enteredTimeZone)) : '') });
     }
     if (hub.totalRounds) block1.push({ label: 'Championship Rounds', value: String(hub.totalRounds) });
     var specialEventCount = (hub.calendar || []).filter(function (entry) { return entry.kind === 'special'; }).length;
@@ -1719,9 +1719,14 @@
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
         return;
       }
-      // Title becomes "SEASON <n> DETAILS" once the season number is known
-      // (2026-09-24, Matt's ask -- matches league.html's own popup title).
-      _rcSetModalTitle(modal, hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Details') : 'Season Details');
+      // Just "Season Details", no season number (2026-10-01, Matt's ask --
+      // was "SEASON <n> DETAILS" once the season number was known,
+      // 2026-09-24; matches league.html's own popup title, which dropped
+      // its number the same way). showModal already sets this same title
+      // up front, so this call is really just a no-op reset for the
+      // "No Data To Display" early-return path above, which never reaches
+      // here.
+      _rcSetModalTitle(modal, 'Season Details');
       var formatSections = _rcBuildSeasonFormatBlocks_(hub);
       var hasCalendar = !!(hub.calendar && hub.calendar.length);
       if (!formatSections.length && !hasCalendar) {
@@ -7015,6 +7020,22 @@
     var ampm = h >= 12 ? 'PM' : 'AM';
     var h12 = h % 12; if (h12 === 0) h12 = 12;
     return h12 + ':' + parts[1] + ' ' + ampm;
+  }
+
+  // IANA zone name (e.g. "America/New_York", what hub.enteredTimeZone
+  // carries) -> its short abbreviation for right now (EST/EDT/etc,
+  // 2026-10-01, Matt's ask: "Instead of writing the literal timezone
+  // location, use EST, EDT, etc labels behind event time") -- local port
+  // of league.js's own _rclTzAbbrev_. Keep in sync with that copy.
+  function _rcTzAbbrev_(tz) {
+    if (!tz) return '';
+    try {
+      var parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date());
+      var part = parts.filter(function (p) { return p.type === 'timeZoneName'; })[0];
+      return part ? part.value : tz;
+    } catch (e) {
+      return tz;
+    }
   }
 
   // Local-timezone YYYY-MM-DD for today -- used to default date pickers to
