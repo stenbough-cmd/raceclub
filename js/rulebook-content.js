@@ -129,7 +129,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Driver sits out one or more future rounds</td></tr></table>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. Requires a prior Tier 6 disqualification against the same driver this season.</td></tr></table>' +
       '<h4>5.2 Infraction Types</h4>' +
       '<p><strong>Contact &amp; driving standards</strong></p>' +
       '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +
@@ -149,7 +149,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Deliberate or reckless contact</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Repeated Tier 4/5 offenses within a season following a prior disqualification; serious conduct violations off-track</td></tr></table>'
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>A driver already disqualified (Tier 6) this season commits another serious offense, e.g. a second intentional wreck; serious off-track conduct violations following a prior disqualification</td></tr></table>'
   },
   {
     id: 'race-control', num: '6', title: 'Race Control Procedures',
