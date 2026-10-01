@@ -2520,17 +2520,20 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   // Folded in from the old, now-removed standalone "Points Tables" popup
   // (_rclBuildPointsBody) -- same hub.pointsTables/hub.bonusPoints fields.
   // Its own "Championship Points" pill (2026-10-01 follow-up); the tiers
-  // render as tree sub-rows (Sprint/Medium/Long), bonus categories render
-  // as plain flat rows with no "Bonus Points" header of their own -- just
-  // a blank gap above them (same follow-up, Matt's ask).
+  // render as plain flat rows, bonus categories too, with no "Bonus
+  // Points" header of their own -- just a blank gap above them (same
+  // follow-up, Matt's ask). Tier rows carry a raw `points` array rather
+  // than a pre-joined string (2026-10-01 follow-up, Matt's ask: "make the
+  // points... normal weight and keep the positions in front, bold") since
+  // the renderer needs each position/value pair separately to bold only
+  // the "Pn" part of each one.
   var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
   var bonus = hub.bonusPoints || {};
   var bonusKeys = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
   if (tierNames.length || bonusKeys.length) {
     var tiers = tierNames.map(function (tierName) {
       var tier = tables[tierName] || {};
-      var pts = (tier.points || []).map(function (val, idx) { return 'P' + (idx + 1) + ' ' + val; }).join(', ');
-      return { label: tierName, value: pts };
+      return { label: tierName, points: tier.points || [] };
     });
     var bonusRows = bonusKeys.map(function (key) {
       return { label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' };
@@ -2647,7 +2650,12 @@ function _rclOpenSeasonDetailsModal(hub) {
   //   flat rows too now, no tree indent (2026-10-01 follow-up, Matt's ask:
   //   "get rid of the tree indentation and just make it like the rest --
   //   Sprint: P1 n, P2 n, etc" -- supersedes an even earlier version of
-  //   this same day that gave them a tree sub-row).
+  //   this same day that gave them a tree sub-row). Each tier row bolds
+  //   only its "Pn" position markers, leaving the point values themselves
+  //   normal weight (2026-10-01 follow-up, Matt's ask: "make the points...
+  //   normal weight and keep the positions in front, bold") -- see
+  //   buildTierRow below, the one row type that doesn't use the shared
+  //   bold-value styling every other row here gets.
   // - "Bonus Points" has no header of its own at all -- just a blank gap
   //   above its own flat rows (Matt's ask: "get rid of that and leave a
   //   space... just list the bonus point catagories and their values").
@@ -2658,6 +2666,13 @@ function _rclOpenSeasonDetailsModal(hub) {
   function buildRow(stat) {
     var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
       '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+  function buildTierRow(stat) {
+    var pts = (stat.points || []).map(function (val, idx) {
+      return '<span class="rcl-seasonfmt-pos">P' + (idx + 1) + '</span> ' + _rclEscapeHtml(String(val));
+    }).join(', ');
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' + pts;
     return _rclEl('div', 'rcl-seasonfmt-row', html);
   }
 
@@ -2676,7 +2691,7 @@ function _rclOpenSeasonDetailsModal(hub) {
       } else {
         if (section.tiers.length) {
           var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildRow(stat)); });
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
           list.appendChild(tierBlock);
         }
         if (section.bonus.length) {

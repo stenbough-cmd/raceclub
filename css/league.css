@@ -568,7 +568,12 @@ body.rc-league-page {
    lists' .rc-dm-subrow/.rc-dm-tree shape -- removed the same day (Matt's
    ask: "get rid of the tree indentation and just make it like the rest --
    Sprint: P1 n, P2 n, etc") in favor of the plain .rcl-seasonfmt-row every
-   other row here already uses. */
+   other row here already uses. Those rows don't use .rcl-seasonfmt-row-
+   value at all (2026-10-01 follow-up, Matt's ask: "make the points...
+   normal weight and keep the positions in front, bold") -- only the "Pn"
+   position marker in front of each point value is bold; the point value
+   itself inherits the row's own normal weight. */
+.rcl-seasonfmt-pos { font-weight: 700; color: var(--rcl-ink); }
 
 /* -------------------------------------------------------------------- */
 /* Layout                                                                */

@@ -1498,17 +1498,20 @@
     // never had its own standalone points-tables popup), same
     // hub.pointsTables/hub.bonusPoints fields the Season Creation Wizard
     // writes and league.js's own popup reads. Its own "Championship
-    // Points" pill (2026-10-01 follow-up); tiers render as tree sub-rows,
-    // bonus categories render as plain flat rows with no header of their
-    // own, just a blank gap above them (same follow-up, Matt's ask).
+    // Points" pill (2026-10-01 follow-up); tiers and bonus categories both
+    // render as plain flat rows, with no "Bonus Points" header of its own,
+    // just a blank gap above it (same follow-up, Matt's ask). Tier rows
+    // carry a raw `points` array rather than a pre-joined string (2026-10-01
+    // follow-up, Matt's ask: "make the points... normal weight and keep the
+    // positions in front, bold") since the renderer needs each position/
+    // value pair separately to bold only the "Pn" part of each one.
     var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
     var bonus = hub.bonusPoints || {};
     var bonusKeys = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
     if (tierNames.length || bonusKeys.length) {
       var tiers = tierNames.map(function (tierName) {
         var tier = tables[tierName] || {};
-        var pts = (tier.points || []).map(function (val, idx) { return 'P' + (idx + 1) + ' ' + val; }).join(', ');
-        return { label: tierName, value: pts };
+        return { label: tierName, points: tier.points || [] };
       });
       var bonusRows = bonusKeys.map(function (key) {
         return { label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' };
@@ -1547,14 +1550,25 @@
   // rows too now, no tree indent (2026-10-01 follow-up, Matt's ask: "get
   // rid of the tree indentation and just make it like the rest -- Sprint:
   // P1 n, P2 n, etc" -- supersedes an even earlier version of this same
-  // day that gave them a Data Management-style tree sub-row). Bonus Points
-  // rows are the same plain shape, with no header of their own, just a
-  // blank gap above them (Matt's ask: "get rid of that and leave a
-  // space").
+  // day that gave them a Data Management-style tree sub-row). Each tier
+  // row bolds only its "Pn" position markers, leaving the point values
+  // normal weight (2026-10-01 follow-up, Matt's ask: "make the points...
+  // normal weight and keep the positions in front, bold") -- see
+  // buildTierRow below, the one row type that skips the shared bold-value
+  // styling every other row here gets. Bonus Points rows are the plain
+  // buildRow shape, with no header of their own, just a blank gap above
+  // them (Matt's ask: "get rid of that and leave a space").
   function buildSeasonFmtGroups_(sections) {
     function buildRow(stat) {
       var html = '<span class="rc-seasonfmt-row-label">' + escapeHtml(stat.label) + ':</span> ' +
         '<span class="rc-seasonfmt-row-value">' + escapeHtml(String(stat.value)) + '</span>';
+      return el('div', 'rc-seasonfmt-row', html);
+    }
+    function buildTierRow(stat) {
+      var pts = (stat.points || []).map(function (val, idx) {
+        return '<span class="rc-seasonfmt-pos">P' + (idx + 1) + '</span> ' + escapeHtml(String(val));
+      }).join(', ');
+      var html = '<span class="rc-seasonfmt-row-label">' + escapeHtml(stat.label) + ':</span> ' + pts;
       return el('div', 'rc-seasonfmt-row', html);
     }
     return sections.map(function (section) {
@@ -1570,7 +1584,7 @@
       } else {
         if (section.tiers.length) {
           var tierBlock = el('div', 'rc-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildRow(stat)); });
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
           list.appendChild(tierBlock);
         }
         if (section.bonus.length) {

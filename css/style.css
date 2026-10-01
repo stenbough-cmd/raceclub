@@ -4831,13 +4831,12 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 }
 .rc-seasonfmt-row-label { color: var(--rc-steel); font-weight: 600; }
 .rc-seasonfmt-row-value { color: var(--rc-carbon); font-weight: 700; font-variant-numeric: tabular-nums; }
-/* Championship Points' own tier rows (Sprint/Medium/Long) reuse the
-   site's existing Data Management Cars/Tracks tree-row shape as-is
-   (.rc-dm-subrow/.rc-dm-tree, defined above -- 2026-10-01, Matt's ask:
-   "make the |_ formatted like how it is in the tree list for cars and
-   tracks in data management") rather than a one-off lookalike. Bonus
-   Points rows do NOT use this -- they're plain .rc-seasonfmt-row (Matt's
-   ask: "get rid of the tree indents" for bonus points). */
+/* Championship Points' own tier rows (Sprint/Medium/Long) don't use
+   .rc-seasonfmt-row-value at all (2026-10-01, Matt's ask: "make the
+   points... normal weight and keep the positions in front, bold") -- only
+   the "Pn" position marker in front of each point value is bold; the
+   point value itself inherits the row's own normal weight. */
+.rc-seasonfmt-pos { font-weight: 700; color: var(--rc-carbon); }
 
 /* Body scroll lock while ANY popup (showModal(), Account.html) is open --
    same iOS-Safari-safe pattern as .rc-scroll-locked (position: fixed, not
