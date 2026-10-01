@@ -2505,14 +2505,22 @@ function _rclOpenStoryModal(startIndex) {
 // extra margin-top between blocks (the "blank line" separation in Matt's
 // spec) -- a plain block is just { rows: [{label, value}, ...] }; the one
 // points block carries its own tiers/bonus shape instead, since it needs
-// its own nested "Championship Points"/"Bonus Points" sub-headers rather
-// than flat label/value rows. A row with nothing to show is simply
-// skipped, same as the old bubble builders did.
+// its own nested tree-sub-rows (Championship Points) and flat rows (Bonus
+// Points) rather than one flat run of label/value rows. A row with
+// nothing to show is simply skipped, same as the old bubble builders did.
+//
+// Returns an array of SECTIONS, each its own pill-headed group (2026-10-01
+// follow-up, Matt's ask: "Make CHAMPIONSHIP POINTS into a pill that's
+// similar to the SEASON FORMAT pill above" / "add a SEASON RULES pill in
+// the same style as SEASON FORMAT") -- { pill, blocks: [[{label,value},...]
+// ,...] } for a plain section, or { pill, tiers, bonus } for the
+// Championship Points section specifically.
 function _rclBuildSeasonFormatBlocks_(hub) {
   var rs = hub.raceSettings || {};
-  var blocks = [];
+  var sections = [];
 
   // --- Block 1: season snapshot -------------------------------------
+  var blocks = [];
   var block1 = [];
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
@@ -2545,45 +2553,64 @@ function _rclBuildSeasonFormatBlocks_(hub) {
     var count = (cls.standings || []).length;
     if (count) block1.push({ label: (cls.className || 'Class') + ' Drivers', value: String(count) });
   });
-  if (block1.length) blocks.push({ rows: block1 });
+  if (block1.length) blocks.push(block1);
+
+  // tables/tierNames computed here (not just inside the Championship
+  // Points section below) because block2's own Race Durations row
+  // (2026-10-01 follow-up, Matt's ask: "instead of Varies, have it list
+  // out the race durations... Sprint MM mins, Medium MM mins, Long MM
+  // mins") also reads each tier's duration.
+  var tables = hub.pointsTables || {};
+  var tierNames = Object.keys(tables).filter(function (name) { return (tables[name].points || []).length; });
 
   // --- Block 2: session format ---------------------------------------
   var block2 = [];
   if (rs.practiceLengthMin) block2.push({ label: 'Practice Duration', value: rs.practiceLengthMin + ' min' });
   if (rs.qualifyLengthMin) block2.push({ label: 'Qualify Duration', value: rs.qualifyLengthMin + ' min' });
   if (hub.privateQualifying) block2.push({ label: 'Qualifying Type', value: hub.privateQualifying === 'Yes' ? 'Private' : 'Public' });
-  // Race Duration -- static "Varies" row, always shown (race length
-  // genuinely differs by round/tier -- see the Championship Points block
-  // below for each tier's own duration).
-  block2.push({ label: 'Race Duration', value: 'Varies' });
-  if (block2.length) blocks.push({ rows: block2 });
+  // Race Durations -- was a static "Varies" row; now lists each tier's own
+  // duration (2026-10-01 follow-up), since that's exactly what "varies"
+  // meant -- the tiers' durations themselves live in hub.pointsTables.
+  var tiersWithDuration = tierNames.filter(function (name) { return tables[name].duration; });
+  if (tiersWithDuration.length) {
+    block2.push({
+      label: 'Race Durations',
+      value: tiersWithDuration.map(function (name) { return name + ' ' + tables[name].duration + ' mins'; }).join(', ')
+    });
+  } else {
+    block2.push({ label: 'Race Duration', value: 'Varies' });
+  }
+  if (block2.length) blocks.push(block2);
+  if (blocks.length) sections.push({ pill: 'Season Format', blocks: blocks });
 
-  // --- Block 3: Championship Points / Bonus Points --------------------
+  // --- Championship Points / Bonus Points ------------------------------
   // Folded in from the old, now-removed standalone "Points Tables" popup
-  // (_rclBuildPointsBody) -- same hub.pointsTables/hub.bonusPoints fields,
-  // just rendered as indented sub-rows under this list instead of a
-  // separate popup's tile tables.
-  var tables = hub.pointsTables || {};
-  var tierNames = Object.keys(tables).filter(function (name) { return (tables[name].points || []).length; });
+  // (_rclBuildPointsBody) -- same hub.pointsTables/hub.bonusPoints fields.
+  // Its own "Championship Points" pill (2026-10-01 follow-up); the tiers
+  // render as tree sub-rows (Sprint/Medium/Long), bonus categories render
+  // as plain flat rows with no "Bonus Points" header of their own -- just
+  // a blank gap above them (same follow-up, Matt's ask).
   var bonusLabels = { pole: 'Pole Position', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
   var bonus = hub.bonusPoints || {};
   var bonusKeys = Object.keys(bonusLabels).filter(function (key) { return Number(bonus[key]) > 0; });
   if (tierNames.length || bonusKeys.length) {
-    var pointsBlock = { tiers: [], bonus: [] };
-    tierNames.forEach(function (tierName) {
+    var tiers = tierNames.map(function (tierName) {
       var tier = tables[tierName] || {};
       var pts = (tier.points || []).map(function (val, idx) { return 'P' + (idx + 1) + ' ' + val; }).join(', ');
-      pointsBlock.tiers.push({ label: tierName, value: pts });
+      return { label: tierName, value: pts };
     });
-    bonusKeys.forEach(function (key) {
-      pointsBlock.bonus.push({ label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' });
+    var bonusRows = bonusKeys.map(function (key) {
+      return { label: bonusLabels[key], value: '+' + Number(bonus[key]) + ' pts' };
     });
-    blocks.push(pointsBlock);
+    sections.push({ pill: 'Championship Points', tiers: tiers, bonus: bonusRows });
   }
 
-  // --- Block 4: technical rules ----------------------------------------
+  // --- Season Rules -----------------------------------------------------
+  // Own "Season Rules" pill (2026-10-01 follow-up, Matt's ask), same style
+  // as "Season Format"/"Championship Points" above it. "Setups" (was
+  // "Setup Rules", same follow-up).
   var block4 = [];
-  if (rs.setupRules) block4.push({ label: 'Setup Rules', value: rs.setupRules });
+  if (rs.setupRules) block4.push({ label: 'Setups', value: rs.setupRules });
   if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
   if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
   if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
@@ -2593,9 +2620,9 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   // are allowed before the sim auto-issues a Drive Through penalty (same
   // field this popup used to label just "Pts" next to "Track Limit").
   if (rs.trackLimitPoints) block4.push({ label: 'Points until DT', value: String(rs.trackLimitPoints) });
-  if (block4.length) blocks.push({ rows: block4 });
+  if (block4.length) sections.push({ pill: 'Season Rules', blocks: [block4] });
 
-  return blocks;
+  return sections;
 }
 
 // _rclRenderStatsRow removed 2026-09-19 -- its two call sites both moved
@@ -2670,53 +2697,71 @@ function _rclOpenSeasonDetailsModal(hub) {
   var body = _rclEl('div', 'rcl-modal-body');
 
   // Rebuilt 2026-10-01 (Matt's ask: "remove the bubble data blocks in
-  // favor of this more traditional list format") -- one "Season Format"
-  // header (replaces the old "This Season"/"League Format" pair) over a
-  // single vertical list, built from _rclBuildSeasonFormatBlocks_'s blocks.
-  // Each row is plain "Category: Value" text, left-aligned (2026-10-01
-  // follow-up, Matt's catch: "I don't want the values to be on one side
-  // and the catagory on the other... category then a colon, then a space
-  // and then the value" -- NOT a two-column label/value layout). A points
-  // sub-row gets a literal "|_" tree-branch prefix, same ask. The
-  // "Championship Points"/"Bonus Points" sub-headers are plain uppercase
-  // text (.rcl-seasonfmt-section-label), matching Account.html's own
-  // group-label style instead of a pill (2026-10-01 follow-up, Matt's ask:
-  // "format the headers for championship and bonus points in the
-  // league.html to how it is on the account page"). The Calendar itself is
-  // NOT in this popup on league.html -- it's already its own permanent
-  // panel on the page, with this "View Season Details" link living at the
-  // bottom of it (see _rclRenderCalendar) -- so there's nothing to
-  // re-render here for it.
-  function buildRow(stat, isSub) {
-    var html = (isSub ? '|_' : '') +
-      '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
+  // favor of this more traditional list format") then revised twice more
+  // the same day:
+  // - Rows are plain "Category: Value" text, left-aligned (Matt's catch:
+  //   "I don't want the values to be on one side and the catagory on the
+  //   other... category then a colon, then a space and then the value"),
+  //   not a two-column layout.
+  // - "Championship Points" and "Season Rules" are now each their own
+  //   pill-headed section (.rcl-hero-stats-group/-label), same style as
+  //   "Season Format" above them, instead of a plain text sub-header
+  //   (Matt's ask: "Make CHAMPIONSHIP POINTS into a pill... add a SEASON
+  //   RULES pill in the same style"). _rclBuildSeasonFormatBlocks_ returns
+  //   one such SECTION per pill now, not a flat list of blocks.
+  // - Championship Points' own tier rows (Sprint/Medium/Long) use a tree
+  //   sub-row with a "└" glyph, same shape as the Data Management
+  //   Cars/Tracks lists' own .rc-dm-subrow/.rc-dm-tree (Matt's ask: "make
+  //   the |_ formatted like how it is in the tree list for cars and tracks
+  //   in data management") -- .rcl-seasonfmt-tree below is league.html's
+  //   own dark-theme equivalent of that Account.html-only class.
+  // - "Bonus Points" no longer has its own header at all -- just a blank
+  //   gap above its flat (non-tree) rows (Matt's ask: "get rid of that and
+  //   leave a space... just list the bonus point catagories and their
+  //   values").
+  // The Calendar itself is NOT in this popup on league.html -- it's
+  // already its own permanent panel on the page, with this "View Season
+  // Details" link living at the bottom of it (see _rclRenderCalendar) --
+  // so there's nothing to re-render here for it.
+  function buildRow(stat) {
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
       '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
-    return _rclEl('div', 'rcl-seasonfmt-row' + (isSub ? ' rcl-seasonfmt-subrow' : ''), html);
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+  function buildTreeRow(stat) {
+    var row = _rclEl('div', 'rcl-seasonfmt-subrow');
+    row.appendChild(_rclEl('span', 'rcl-seasonfmt-tree', '└'));
+    row.appendChild(_rclEl('span', null, _rclEscapeHtml(stat.label) + ': ' + _rclEscapeHtml(stat.value)));
+    return row;
   }
 
-  var blocks = _rclBuildSeasonFormatBlocks_(hub);
-  if (blocks.length) {
-    var listGroup = _rclEl('div', 'rcl-hero-stats-group');
-    listGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'Season Format'));
-    var list = _rclEl('div', 'rcl-seasonfmt-list');
-    blocks.forEach(function (block) {
-      var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
-      if (block.rows) {
-        block.rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+  var sections = _rclBuildSeasonFormatBlocks_(hub);
+  if (sections.length) {
+    sections.forEach(function (section) {
+      var group = _rclEl('div', 'rcl-hero-stats-group');
+      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
+      var list = _rclEl('div', 'rcl-seasonfmt-list');
+      if (section.blocks) {
+        section.blocks.forEach(function (rows) {
+          var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
+          rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+          list.appendChild(blockEl);
+        });
       } else {
-        if (block.tiers.length) {
-          blockEl.appendChild(_rclEl('div', 'rcl-seasonfmt-section-label', 'Championship Points:'));
-          block.tiers.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        if (section.tiers.length) {
+          var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTreeRow(stat)); });
+          list.appendChild(tierBlock);
         }
-        if (block.bonus.length) {
-          blockEl.appendChild(_rclEl('div', 'rcl-seasonfmt-section-label', 'Bonus Points:'));
-          block.bonus.forEach(function (stat) { blockEl.appendChild(buildRow(stat, true)); });
+        if (section.bonus.length) {
+          var bonusBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.bonus.forEach(function (stat) { bonusBlock.appendChild(buildRow(stat)); });
+          list.appendChild(bonusBlock);
         }
       }
-      list.appendChild(blockEl);
+      group.appendChild(list);
+      body.appendChild(group);
     });
-    listGroup.appendChild(list);
-    body.appendChild(listGroup);
   } else {
     body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
   }

@@ -542,12 +542,13 @@ body.rc-league-page {
 }
 /* Season Details popup -- traditional vertical list (2026-10-01, replacing
    the old "bubble" tile grid above, Matt's ask: "remove the bubble data
-   blocks in favor of this more traditional list format"). One list holds
-   several blocks (season snapshot / session format / Championship+Bonus
-   Points / technical rules), each block a plain stack of label/value rows
-   with a hairline divider between rows; blocks get extra margin-top
-   between them, standing in for the "blank line" separation in Matt's
-   spec. Built by _rclBuildSeasonFormatBlocks_ (js/league.js). */
+   blocks in favor of this more traditional list format"), revised twice
+   more the same day. Season Format / Championship Points / Season Rules
+   are now each their own pill-headed .rcl-hero-stats-group (Matt's ask:
+   "Make CHAMPIONSHIP POINTS into a pill... add a SEASON RULES pill in the
+   same style as SEASON FORMAT"), so this list only ever holds ONE pill
+   section's own blocks at a time -- see _rclOpenSeasonDetailsModal
+   (js/league.js) for how the sections themselves stack. */
 .rcl-seasonfmt-list { margin-top: 10px; }
 .rcl-seasonfmt-block + .rcl-seasonfmt-block { margin-top: 18px; }
 /* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
@@ -562,26 +563,24 @@ body.rc-league-page {
 }
 .rcl-seasonfmt-row-label { color: var(--rcl-ink-dim); font-weight: 600; }
 .rcl-seasonfmt-row-value { color: var(--rcl-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
-/* Championship Points/Bonus Points sub-headers -- plain uppercase text,
-   matching Account.html's own .rc-seasonfmt-section-label group-label
-   style (2026-10-01, Matt's ask: "format the headers for championship and
-   bonus points in the league.html to how it is on the account page"),
-   not the gray .rcl-pill-label pill this used before. */
-.rcl-seasonfmt-section-label {
-  margin: 10px 0 4px;
-  font-family: var(--rc-font-heading);
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-faint);
+/* Championship Points' own tier rows (Sprint/Medium/Long) -- a tree
+   sub-row with a branch glyph, matching the Data Management Cars/Tracks
+   lists' own .rc-dm-subrow/.rc-dm-tree shape (2026-10-01, Matt's ask:
+   "make the |_ formatted like how it is in the tree list for cars and
+   tracks in data management"). league.html doesn't share Account.html's
+   .rc-dm-* classes (different page, different theme), so this is a
+   same-shape dark-theme equivalent, not a reuse of those exact classes.
+   Bonus Points rows do NOT use this -- they're plain .rcl-seasonfmt-row
+   (Matt's ask: "get rid of the tree indents" for bonus points). */
+.rcl-seasonfmt-subrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 4px 20px;
+  font-size: 12.5px;
+  color: var(--rcl-ink-dim);
 }
-.rcl-seasonfmt-block > .rcl-seasonfmt-section-label:first-child { margin-top: 0; }
-/* Sub-rows get a literal "|_" tree-branch prefix in the row's own text
-   (built in js/league.js), same ask -- a little left padding keeps the
-   branch character from sitting flush against the section label above it. */
-.rcl-seasonfmt-subrow { padding-left: 4px; }
-.rcl-seasonfmt-subrow .rcl-seasonfmt-row-label { font-size: 12.5px; color: var(--rcl-ink-faint); }
+.rcl-seasonfmt-tree { color: var(--rcl-ink-faint); font-weight: 700; flex: none; }
 
 /* -------------------------------------------------------------------- */
 /* Layout                                                                */
@@ -1840,10 +1839,10 @@ body.rc-league-page {
 
 /* Points -- race-length-tier tables + bonus points (added 2026-09-19,
    moved into their own "Points Tables" popup off the Leaderboard panel
-   same day). Removed 2026-10-01 (Matt's ask) -- Championship Points/Bonus
-   Points now render as indented sub-rows inside the Season Details list
-   instead (.rcl-seasonfmt-subrow, .rcl-seasonfmt-section-label, further
-   up this file). */
+   same day). Removed 2026-10-01 (Matt's ask) -- Championship Points now
+   has its own pill section inside the Season Details popup, with its
+   tiers as tree sub-rows and Bonus Points as plain flat rows underneath
+   (.rcl-seasonfmt-subrow/.rcl-seasonfmt-tree, further up this file). */
 
 /* Drivers section removed 2026-09-19 (Matt's call: drivers are already
    visible via the Leaderboard) -- .rcl-drivers-class/.rcl-drivers-grid/
