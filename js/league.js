@@ -2348,8 +2348,15 @@ function _rclRenderRaceCarousel(hub) {
     if (trackLine) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-meta', _rclEscapeHtml(trackLine)));
     if (entry.startUtc) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-date', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
 
-    var statusText = idx === nextIdx ? 'UP NEXT' : (!entry.finished ? 'UPCOMING' : (entry.hasResults ? 'RESULTS AVAILABLE' : 'COMPLETED'));
-    hero.appendChild(_rclEl('div', 'rcl-carousel-hero-status', statusText));
+    // Status text only for a race that HASN'T happened yet (UP NEXT /
+    // UPCOMING) -- once a race is finished, nothing here says so in words
+    // any more (2026-10-02 follow-up, Matt's ask: "instead of saying
+    // RESULTS AVAILABLE or whatever, just show the RACE RECAP button" --
+    // the button itself, appended below when results exist, is now the
+    // only "this one's done" signal).
+    if (!entry.finished) {
+      hero.appendChild(_rclEl('div', 'rcl-carousel-hero-status', idx === nextIdx ? 'UP NEXT' : 'UPCOMING'));
+    }
 
     var btnRow = _rclEl('div', 'rcl-carousel-hero-btns');
     var infoBtn = _rclEl('button', 'rcl-carousel-hero-btn', 'RACE INFO');
