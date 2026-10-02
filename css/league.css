@@ -1760,87 +1760,99 @@ body.rc-league-page {
      position, same purpose scroll-padding would serve, done this way
      instead because it also gives the strip real breathing room past the
      viewport edge on wide screens, matching the reference images. */
-  padding: 4px calc(50vw - 90px) 28px;
+  padding: 4px calc(50vw - 160px) 28px;
   -webkit-overflow-scrolling: touch;
 }
 .rcl-carousel-track::-webkit-scrollbar { height: 6px; }
 .rcl-carousel-track::-webkit-scrollbar-thumb { background: var(--rcl-line-bright); border-radius: 3px; }
+/* Bare, no card (2026-10-02 follow-up, Matt's ask: "I don't want the
+   calendar to live in containers... make it feel grand, big, like the
+   MANUFACTURERS' STANDINGS we created" -- the box/border/background this
+   item used to have is gone; a plain bottom-border divider is the only
+   separator between items now, same "sits directly on the page" posture
+   as .rcl-mfr-tile having no card shell either). Each item is now its own
+   flag + event name label, full size, all the time -- not revealed only
+   once centered; only the EXTRA detail below the name (.rcl-carousel-hero)
+   is active-only. */
 .rcl-carousel-item {
   flex: 0 0 auto;
-  width: 108px;
+  width: 220px;
   scroll-snap-align: center;
   cursor: pointer;
-  border-radius: 10px;
-  border: 1px solid var(--rcl-line);
-  background: var(--rcl-bg-raised);
-  padding: 14px 10px;
+  border-bottom: 3px solid transparent;
+  padding: 0 4px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  opacity: 0.6;
-  transition: width 0.25s ease, opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, border-color 0.2s ease, width 0.25s ease;
 }
-.rcl-carousel-item:hover { opacity: 0.85; border-color: var(--rcl-line-bright); }
-.rcl-carousel-item-finished { opacity: 0.45; }
+.rcl-carousel-item:hover { opacity: 0.85; }
+.rcl-carousel-item-finished { opacity: 0.4; }
 .rcl-carousel-item-finished:hover { opacity: 0.7; }
-.rcl-carousel-item-special { border-color: var(--rcl-gold, #c9a227); }
-.rcl-carousel-flag { width: 22px; height: 16px; object-fit: cover; border-radius: 2px; margin-bottom: 8px; }
-.rcl-carousel-round {
+.rcl-carousel-flag {
+  width: 40px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 0 1px var(--rcl-line-bright);
+}
+/* Grand, bold, bright -- same scale/weight vocabulary as the
+   Manufacturers' Standings podium (.rcl-mfr-title is 24px/800 uppercase;
+   this matches it directly) rather than the small muted label the strip
+   used to show. */
+.rcl-carousel-name {
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  line-height: 1.15;
+}
+.rcl-carousel-item-special .rcl-carousel-name { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-sub {
+  margin-top: 6px;
   font-family: var(--rc-font-heading);
   font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--rc-red);
 }
-.rcl-carousel-item-special .rcl-carousel-round { color: var(--rcl-gold, #c9a227); }
-.rcl-carousel-date {
-  margin-top: 4px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-faint);
-}
-/* The expanded "hero" content -- hidden entirely on a compact (non-
-   active) item; this is what makes the active item read as an opened-up
-   card rather than just a differently-colored thumbnail, same effect as
-   the reference's own centered expanded entry. */
+.rcl-carousel-item-special .rcl-carousel-sub { color: var(--rcl-gold, #c9a227); }
+/* The expanded "hero" content -- the EXTRA detail (track, full date,
+   status, RACE INFO/RACE RECAP) an active item reveals below its
+   already-visible flag/name/round line; hidden entirely on a compact
+   item. */
 .rcl-carousel-hero { display: none; }
 .rcl-carousel-item-active {
-  width: 260px;
+  width: 320px;
   opacity: 1;
-  border-color: var(--rc-red);
-  background: var(--rcl-bg-raised2, #1b1b1e);
+  border-bottom-color: var(--rc-red);
   cursor: default;
 }
-.rcl-carousel-item-active.rcl-carousel-item-special { border-color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-active .rcl-carousel-name { font-size: 28px; }
+.rcl-carousel-item-active.rcl-carousel-item-special { border-bottom-color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-item-active .rcl-carousel-hero {
   display: block;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--rcl-line);
+  margin-top: 14px;
   width: 100%;
 }
-.rcl-carousel-hero-name {
-  font-family: var(--rc-font-heading);
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--rcl-ink);
-  line-height: 1.25;
-}
-.rcl-carousel-item-special .rcl-carousel-hero-name { color: var(--rcl-gold, #c9a227); }
-.rcl-carousel-hero-meta { margin-top: 4px; font-size: 12px; color: var(--rcl-ink-dim); }
-.rcl-carousel-hero-date { margin-top: 4px; font-size: 11.5px; color: var(--rcl-ink-faint); }
+.rcl-carousel-hero-meta { font-size: 14px; font-weight: 600; color: var(--rcl-ink-dim); }
+.rcl-carousel-hero-date { margin-top: 4px; font-size: 12.5px; color: var(--rcl-ink-faint); }
 .rcl-carousel-hero-status {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 10px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--rc-red);
 }
-.rcl-carousel-hero-btns { margin-top: 10px; display: flex; gap: 8px; justify-content: center; }
+.rcl-carousel-item-special .rcl-carousel-hero-status { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-hero-btns { margin-top: 14px; display: flex; gap: 10px; justify-content: center; }
 /* Red text-style buttons, same deliberate exception as
    .rcl-cal-details-link/.rcl-cal-status-link elsewhere on this page --
    these open a popup rather than writing data, but the site's own
@@ -1851,9 +1863,9 @@ body.rc-league-page {
   background: none;
   border: 1px solid var(--rc-red);
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-family: var(--rc-font-heading);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1869,9 +1881,11 @@ body.rc-league-page {
 }
 @media (max-width: 640px) {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
-  .rcl-carousel-track { padding: 4px calc(50vw - 70px) 22px; gap: 10px; }
-  .rcl-carousel-item { width: 88px; padding: 12px 8px; }
-  .rcl-carousel-item-active { width: 220px; }
+  .rcl-carousel-track { padding: 4px calc(50vw - 125px) 22px; gap: 10px; }
+  .rcl-carousel-item { width: 170px; }
+  .rcl-carousel-name { font-size: 17px; }
+  .rcl-carousel-item-active { width: 250px; }
+  .rcl-carousel-item-active .rcl-carousel-name { font-size: 21px; }
   .rcl-carousel-details-row { padding: 0 16px; }
 }
 

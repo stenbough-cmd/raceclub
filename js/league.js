@@ -2311,9 +2311,14 @@ function _rclRenderRaceCarousel(hub) {
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
 
-    // Compact stub -- always visible; what a side (non-centered) item
-    // shows: flag, round label, short date. Matches the reference's own
-    // thin off-to-the-side columns.
+    // Compact stub -- always visible, on EVERY item, not just the active
+    // one (2026-10-02 follow-up, Matt's ask: "I want the flag, the name
+    // of the event, to be listed in the calendar exactly like the image
+    // I sent" -- the event name used to only appear once an item was
+    // expanded; now the flag + event name are the strip's own permanent
+    // label, same bare-page/no-card, big-bold-bright treatment as the
+    // Manufacturers' Standings podium (.rcl-mfr-title/-tile-name) rather
+    // than a small muted date stub.
     var stub = _rclEl('div', 'rcl-carousel-stub');
     if (entry.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(entry.country);
@@ -2326,16 +2331,19 @@ function _rclRenderRaceCarousel(hub) {
         stub.appendChild(flagImg);
       }
     }
-    stub.appendChild(_rclEl('div', 'rcl-carousel-round', _rclEscapeHtml(entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : ''))));
-    stub.appendChild(_rclEl('div', 'rcl-carousel-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
+    stub.appendChild(_rclEl('div', 'rcl-carousel-name', _rclEscapeHtml(entry.eventName || 'Race')));
+    var stubSubLabel = (entry.roundNum ? ('Round ' + entry.roundNum) : (isSpecial ? 'Special' : '')) +
+      (entry.startUtc ? ((entry.roundNum || isSpecial) ? ' · ' : '') + _rclFormatDate(entry.startUtc) : '');
+    stub.appendChild(_rclEl('div', 'rcl-carousel-sub', _rclEscapeHtml(stubSubLabel)));
     item.appendChild(stub);
 
-    // Expanded hero content -- built every time (not just for the active
-    // item) so clicking a side item to make it active never needs a
-    // second render pass; .rcl-carousel-item-active is what actually
-    // reveals this in CSS (league.css).
+    // Expanded hero content -- the EXTRA detail an active item reveals
+    // underneath its already-visible flag/name/date (track, full
+    // date+time, status, the RACE INFO/RACE RECAP buttons). Built every
+    // time (not just for the active item) so clicking a side item to make
+    // it active never needs a second render pass; .rcl-carousel-item-
+    // active is what actually reveals this in CSS (league.css).
     var hero = _rclEl('div', 'rcl-carousel-hero');
-    hero.appendChild(_rclEl('div', 'rcl-carousel-hero-name', _rclEscapeHtml(entry.eventName || 'Race')));
     var trackLine = (entry.track || '') + (entry.layout ? (': ' + entry.layout) : '');
     if (trackLine) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-meta', _rclEscapeHtml(trackLine)));
     if (entry.startUtc) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-date', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
