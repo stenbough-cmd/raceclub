@@ -2348,7 +2348,12 @@ function _rclRenderRaceCarousel(hub) {
     return;
   }
 
-  outer.appendChild(_rclEl('div', 'rcl-carousel-heading', 'Schedule'));
+  // "Schedule" heading removed (2026-10-02 follow-up, Matt's ask: "get
+  // rid of the Schedule header for the section -- it's not needed") --
+  // the carousel now opens straight into the track, with no section
+  // label above it. .rcl-carousel-heading's CSS rule is left in place
+  // (unused) rather than ripped out, same posture as the page's other
+  // dead-but-harmless leftovers.
 
   var nextIdx = -1;
   raceEntries.forEach(function (entry, idx) { if (nextIdx === -1 && !entry.finished) nextIdx = idx; });
