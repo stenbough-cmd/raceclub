@@ -1202,7 +1202,8 @@ function _rclBuildClassCategoryBreakdown_(cls) {
   function buildRow(name, carNumber, country, rowKind) {
     var row = _rclEl('div', 'rcl-race-category-row' + (rowKind ? ' rcl-race-category-row-' + rowKind : ''));
     row.appendChild(_rclEl('span', 'rcl-race-category-name', _rclEscapeHtml(name)));
-    if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
+    // Flag sits between the name and the car number (2026-10-02, Matt's
+    // ask) -- was name, number, flag; now name, flag, number.
     if (country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(country);
       if (flagSrc) {
@@ -1215,6 +1216,7 @@ function _rclBuildClassCategoryBreakdown_(cls) {
         row.appendChild(flagImg);
       }
     }
+    if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
     return row;
   }
 
@@ -1403,7 +1405,10 @@ function _rclAppendViewAllResultsLink_(body, hub) {
   // notice, only shown once there's actually a notice to sit under.
   if (notice) body.appendChild(_rclBuildMobileViewOnPcNote_());
   var linkRow = _rclEl('div', 'rcl-cal-details-row rcl-results-bottom-row');
-  var link = _rclEl('button', 'rcl-cal-details-link', 'View All Results');
+  // "View Full Race Details" (2026-10-02, Matt's ask -- was "View All
+  // Results"); still opens the same popup (_rclOpenAllResultsModal), whose
+  // own ALL RESULTS header/title text is unchanged.
+  var link = _rclEl('button', 'rcl-cal-details-link', 'View Full Race Details');
   link.type = 'button';
   link.addEventListener('click', function () { _rclOpenAllResultsModal(hub); });
   linkRow.appendChild(link);
