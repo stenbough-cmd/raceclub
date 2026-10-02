@@ -633,6 +633,22 @@ body.rc-league-page {
   text-transform: uppercase;
   text-align: center;
   color: var(--rcl-ink);
+  margin-bottom: 4px;
+}
+/* "Hypercar Class" (2026-10-02, Matt's ask) -- this podium is always
+   Hypercar-only (_rclComputeManufacturerStandings_, js/league.js), which
+   wasn't labeled anywhere on the page itself until this. Smaller and
+   dimmer than the title above it, same "label under a bigger heading"
+   relationship .rcl-cal-datetime/.rcl-panel-title use elsewhere on this
+   page, not a second title of its own. */
+.rcl-mfr-subtitle {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--rcl-ink-dim);
   margin-bottom: 24px;
 }
 .rcl-mfr-podium {
@@ -738,7 +754,8 @@ body.rc-league-page {
   .rcl-mfr-tile-box-inner { padding: 10px; }
   .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
-  .rcl-mfr-title { font-size: 19px; margin-bottom: 16px; }
+  .rcl-mfr-title { font-size: 19px; margin-bottom: 4px; }
+  .rcl-mfr-subtitle { font-size: 11px; margin-bottom: 16px; }
 }
 
 /* -------------------------------------------------------------------- */

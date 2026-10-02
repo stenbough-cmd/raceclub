@@ -898,13 +898,14 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
     // Graphite header bar (2026-09-23, Matt's ask: "instead of it just
     // having the class name off to the top left of the columns, add an
     // additional row with a graphite background that has <CLASS>
-    // LEADERBOARD centered above each column" -- and for the Drivers
-    // roster popup, "<CLASS> DRIVERS" the same way) -- replaces both the
-    // plain top-left text label the ranked Standings panel used to show
-    // AND the colored class pill the Drivers popup used to show, with
-    // one consistent full-width centered header (.rcl-standings-class-
-    // header, css/league.css) whose text differs by which view this is.
-    var headerText = (cls.className || 'CLASS').toUpperCase() + (hasResults ? ' LEADERBOARD' : ' DRIVERS');
+    // LEADERBOARD centered above each column"). Always "<CLASS> DRIVERS"
+    // now (2026-10-02, Matt's ask: "Make the CHAMPIONSHIP STANDINGS table
+    // headers say <CLASS> DRIVERS instead of <CLASS> LEADERBOARD" --
+    // this function's only live caller is Championship Standings, which
+    // always passes hasResults:true, so this used to always read
+    // "LEADERBOARD" in practice; the hasResults param still gates the
+    // Pos/Driver/Pts column labels just below, unchanged).
+    var headerText = (cls.className || 'CLASS').toUpperCase() + ' DRIVERS';
     wrap.appendChild(_rclEl('div', 'rcl-standings-class-header', headerText));
     var clsStandings = cls.standings || [];
     if (!clsStandings.length) {
@@ -1383,19 +1384,31 @@ function _rclRenderManufacturerStandings(hub) {
   if (!body) return;
   body.innerHTML = '';
 
-  // No season, or no Hypercar entrants with points yet -- section just
-  // stays empty (no title, no empty-state card) rather than claiming a
-  // "no data" message, since this sits bare on the page with no container
-  // to anchor one against; Recent Results/Championship Standings above
-  // and below it already carry that messaging while a season spins up.
-  if (!hub.hasSeason) return;
-  var top3 = _rclComputeManufacturerStandings_(hub);
-  if (!top3.length) return;
+  // No season, or no Hypercar entrants with points yet -- section is
+  // silently hidden entirely (2026-10-02, Matt's ask: "If Hypercars
+  // aren't in the season, this section is silently hidden and the
+  // containers below shift up") rather than just left empty -- an empty
+  // .rcl-row-full still carries its own margin-top (css/league.css),
+  // which would leave a stray gap above Championship Standings instead
+  // of actually closing it up. display:none collapses that margin along
+  // with everything else; the else branch below resets it back to
+  // visible for the next render once a Hypercar class does have points
+  // (no full page reload needed for this to reappear).
+  var top3 = hub.hasSeason ? _rclComputeManufacturerStandings_(hub) : [];
+  if (!top3.length) {
+    body.style.display = 'none';
+    return;
+  }
+  body.style.display = '';
 
-  // Just "Manufacturers' Standings" (2026-10-02, Matt's ask: "Get rid of
-  // the 2026 and leave it to just Manufacturers' Standings" -- his
-  // reference mockup had a "2026" year line under the title).
+  // "Manufacturers' Standings" / "Hypercar Class" (2026-10-02, Matt's
+  // asks: "Get rid of the 2026 and leave it to just Manufacturers'
+  // Standings" for the title -- his reference mockup had a "2026" year
+  // line under it -- then "Make it say HYPERCAR CLASS underneath" as a
+  // follow-up, since this podium is Hypercar-only and that wasn't
+  // labeled anywhere on the page itself).
   body.appendChild(_rclEl('div', 'rcl-mfr-title', "Manufacturers' Standings"));
+  body.appendChild(_rclEl('div', 'rcl-mfr-subtitle', 'Hypercar Class'));
 
   var podium = _rclEl('div', 'rcl-mfr-podium');
   // Classic podium order left-to-right: P2, P1 (center, tallest), P3.
