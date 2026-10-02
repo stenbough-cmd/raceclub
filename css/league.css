@@ -616,6 +616,93 @@ body.rc-league-page {
    again with its own multi-column layout below (.rcl-standings-columns). */
 
 /* -------------------------------------------------------------------- */
+/* MANUFACTURERS' STANDINGS -- top 3 Hypercar manufacturers by points,   */
+/* added 2026-10-02 (Matt's ask, podium mockup supplied). Deliberately   */
+/* NOT a .rcl-panel -- no card border/background/header strip, sits bare */
+/* on the page between Recent Results and Championship Standings. Gold/ */
+/* silver/bronze tones reuse the exact gradients Current Standings'      */
+/* position badges already use (.rcl-standings-row-p1/p2/p3 further down */
+/* this file) so the two podium conventions on this page read as one     */
+/* system instead of two different metal palettes.                      */
+/* -------------------------------------------------------------------- */
+.rcl-mfr-title {
+  font-family: var(--rc-font-heading);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--rcl-ink);
+  margin-bottom: 24px;
+}
+.rcl-mfr-podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+}
+.rcl-mfr-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 180px;
+}
+.rcl-mfr-tile-box {
+  width: 100%;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rcl-bg-raised);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 10px;
+  padding: 16px;
+}
+/* P1's box is taller than P2/P3 (2026-10-02, matches the podium mockup's
+   own proportions -- center tile both taller and visually "first"). */
+.rcl-mfr-tile-p1 .rcl-mfr-tile-box { height: 160px; }
+.rcl-mfr-tile-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
+.rcl-mfr-tile-name {
+  margin-top: 14px;
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rcl-ink);
+  text-align: center;
+}
+.rcl-mfr-tile-rankline {
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px solid var(--rcl-line-bright);
+  text-align: center;
+}
+.rcl-mfr-tile-rank {
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 900;
+}
+/* Gold/silver/bronze -- same three gradients as the Current Standings
+   position badges (.rcl-standings-row-p1/p2/p3's own .rcl-standings-pos
+   rule, further down this file), applied here as text/border color
+   instead of a filled badge background. */
+.rcl-mfr-tile-p1 .rcl-mfr-tile-rankline { border-top-color: #cf9f2c; }
+.rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: #f4dc8e; }
+.rcl-mfr-tile-p2 .rcl-mfr-tile-rankline { border-top-color: #a7abb2; }
+.rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: #eceef1; }
+.rcl-mfr-tile-p3 .rcl-mfr-tile-rankline { border-top-color: #a3653a; }
+.rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: #dba876; }
+@media (max-width: 640px) {
+  .rcl-mfr-podium { gap: 10px; }
+  .rcl-mfr-tile { width: 31%; }
+  .rcl-mfr-tile-box { height: 90px; padding: 10px; }
+  .rcl-mfr-tile-p1 .rcl-mfr-tile-box { height: 108px; }
+  .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
+  .rcl-mfr-title { font-size: 19px; margin-bottom: 16px; }
+}
+
+/* -------------------------------------------------------------------- */
 /* Section / card shell -- angled corner tab on every section header,   */
 /* the dark-page equivalent of .rc-dash-card's red-underline title.      */
 /* Rounded corners (2026-09-19, Matt's call) match the Dashboard cards'  */

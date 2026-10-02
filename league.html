@@ -137,6 +137,19 @@
 
   </div>
 
+  <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by
+       championship points, as a plain podium (2026-10-02, Matt's ask: "I
+       wouldn't want it sitting in a container... I'd like for it to be in
+       between the recent results and championship standings containers
+       and live on the main page"). Deliberately NOT a .rcl-panel -- no
+       card border/background, just the title + podium sitting directly on
+       the page like the hero band above it. Built entirely from
+       hub.standings (already public, already carries each driver's
+       manufacturer + championshipPoints) -- no new server data needed.
+       See _rclRenderManufacturerStandings/_rclComputeManufacturerStandings_
+       in js/league.js. -->
+  <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
+
   <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
        "I don't want points tables listed in the league hub anymore... make
        the LEADERBOARD container contain a column for every class... and

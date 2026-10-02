@@ -1345,6 +1345,88 @@ function _rclRenderResults(hub) {
 // "as of the most recently completed round" -- or the currently-selected
 // round's own result for the All Results popup); null/no round yet
 // returns null so a caller can skip appending anything.
+// ---------------------------------------------------------------------
+// MANUFACTURERS' STANDINGS -- added 2026-10-02, Matt's ask: a plain (no
+// panel/card) podium between Recent Results and Championship Standings
+// showing the top 3 Hypercar-class manufacturers by championship points.
+// Entirely derived from hub.standings, which already carries each
+// Hypercar driver's `manufacturer` and `championshipPoints` (no new
+// server data) -- see _rcBuildSeasonStandings_, Results.gs.
+// ---------------------------------------------------------------------
+
+// Sums each driver's championshipPoints into their manufacturer within
+// the Hypercar class only (not every class -- Matt's ask was specifically
+// "the top 3 manufacturers for the hypercar catagory"), then returns the
+// top 3 manufacturers by that total, highest first. A manufacturer with
+// no cars/points yet (blank string) is skipped rather than showing as a
+// blank podium tile.
+function _rclComputeManufacturerStandings_(hub) {
+  var clsEntry = (hub.standings || []).filter(function (c) { return c.className === 'Hypercar'; })[0];
+  if (!clsEntry || !clsEntry.standings || !clsEntry.standings.length) return [];
+
+  var totalsByManufacturer = {};
+  clsEntry.standings.forEach(function (row) {
+    var mfr = row.manufacturer || '';
+    if (!mfr) return;
+    totalsByManufacturer[mfr] = (totalsByManufacturer[mfr] || 0) + (Number(row.championshipPoints) || 0);
+  });
+
+  var ranked = Object.keys(totalsByManufacturer).map(function (mfr) {
+    return { manufacturer: mfr, points: totalsByManufacturer[mfr] };
+  });
+  ranked.sort(function (a, b) { return b.points - a.points; });
+  return ranked.slice(0, 3);
+}
+
+function _rclRenderManufacturerStandings(hub) {
+  var body = document.getElementById('rcl-manufacturer-standings');
+  if (!body) return;
+  body.innerHTML = '';
+
+  // No season, or no Hypercar entrants with points yet -- section just
+  // stays empty (no title, no empty-state card) rather than claiming a
+  // "no data" message, since this sits bare on the page with no container
+  // to anchor one against; Recent Results/Championship Standings above
+  // and below it already carry that messaging while a season spins up.
+  if (!hub.hasSeason) return;
+  var top3 = _rclComputeManufacturerStandings_(hub);
+  if (!top3.length) return;
+
+  // Just "Manufacturers' Standings" (2026-10-02, Matt's ask: "Get rid of
+  // the 2026 and leave it to just Manufacturers' Standings" -- his
+  // reference mockup had a "2026" year line under the title).
+  body.appendChild(_rclEl('div', 'rcl-mfr-title', "Manufacturers' Standings"));
+
+  var podium = _rclEl('div', 'rcl-mfr-podium');
+  // Classic podium order left-to-right: P2, P1 (center, tallest), P3.
+  // rankIdx is 0-based (0 = P1/gold) -- falls back to plain rank order
+  // (P1, P2, ...) if fewer than 3 manufacturers have points yet, since
+  // there's no "center" to build around with only 1 or 2 tiles.
+  var displayOrder = (top3.length === 3) ? [1, 0, 2] : top3.map(function (_, i) { return i; });
+  displayOrder.forEach(function (rankIdx) {
+    var entry = top3[rankIdx];
+    if (!entry) return;
+    var tile = _rclEl('div', 'rcl-mfr-tile rcl-mfr-tile-p' + (rankIdx + 1));
+    var box = _rclEl('div', 'rcl-mfr-tile-box');
+    var img = document.createElement('img');
+    img.className = 'rcl-mfr-tile-logo';
+    img.src = manufacturerLogoSrc(entry.manufacturer);
+    img.alt = entry.manufacturer;
+    // Same onerror-hide convention as every other manufacturer logo on
+    // this page (manufacturerLogoFallback -- tries a .svg before giving
+    // up and hiding the <img> entirely).
+    manufacturerLogoFallback(img, entry.manufacturer, function () { img.style.display = 'none'; });
+    box.appendChild(img);
+    tile.appendChild(box);
+    tile.appendChild(_rclEl('div', 'rcl-mfr-tile-name', _rclEscapeHtml(entry.manufacturer.toUpperCase())));
+    var rankWrap = _rclEl('div', 'rcl-mfr-tile-rankline');
+    rankWrap.appendChild(_rclEl('span', 'rcl-mfr-tile-rank', String(rankIdx + 1)));
+    tile.appendChild(rankWrap);
+    podium.appendChild(tile);
+  });
+  body.appendChild(podium);
+}
+
 function _rclBuildResultsStatusNotice_(round) {
   if (!round) return null;
   var finalized = !!round.resultsFinalized;
@@ -2931,7 +3013,7 @@ function _rclFetchLeagueHub_() {
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderCalendar, _rclRenderNews];
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderCalendar, _rclRenderNews];
 
   function showHub(hub) {
     if (!hub || !hub.success) {
