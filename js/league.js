@@ -2467,15 +2467,15 @@ function _rclRenderRaceCarousel(hub) {
     if (itemEls[activeIdx]) itemEls[activeIdx].scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
   });
 
-  // "View Season Details" link -- relocated here (2026-10-02) from the
-  // old Calendar panel this carousel replaces; same popup
-  // (_rclOpenSeasonDetailsModal above), same link styling.
-  var detailsRow = _rclEl('div', 'rcl-carousel-details-row');
-  var detailsLink = _rclEl('button', 'rcl-cal-details-link', 'View Season Details');
-  detailsLink.type = 'button';
-  detailsLink.addEventListener('click', function () { _rclOpenSeasonDetailsModal(hub); });
-  detailsRow.appendChild(detailsLink);
-  outer.appendChild(detailsRow);
+  // "View Season Details" link removed entirely (2026-10-02 follow-up,
+  // Matt's ask: "get rid of view season details") -- it had already been
+  // relocated here from the old Calendar panel; now there's no entry
+  // point to that popup anywhere on the page at all. Its own Season
+  // Format/Season Rules content lives on in the RACE INFO popup below
+  // (_rclOpenRaceInfoModal, which reuses the same
+  // _rclBuildSeasonFormatBlocks_ data), but Championship Points --
+  // the one section RACE INFO deliberately doesn't carry -- has no public
+  // home on this page any more as of this change.
 }
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
@@ -2952,14 +2952,13 @@ function _rclRenderHero(hub) {
   }
 
   // Snapshot/format stat strips moved out of the hero band entirely
-  // (2026-09-19, Matt's call: "Instead of the season details at the top
-  // of the league hub, make it show up in a container themed popup when
-  // VIEW SEASON DETAILS link at the bottom of the calendar is clicked")
-  // -- see _rclOpenSeasonDetailsModal below, opened from its "View Season
-  // Details" link (now at the bottom of the race carousel,
-  // _rclRenderRaceCarousel, since 2026-10-02's calendar->carousel
-  // replacement). rcl-hero-sub stays as the plain-text "no season"
-  // fallback only.
+  // (2026-09-19, Matt's call), then their popup (_rclOpenSeasonDetailsModal)
+  // and its one entry point, the "View Season Details" link, were removed
+  // outright (2026-10-02 follow-up, Matt's ask: "get rid of view season
+  // details") -- that content's Season Format/Season Rules half lives on
+  // in the RACE INFO popup (_rclOpenRaceInfoModal), but Championship
+  // Points has no public home on this page any more. rcl-hero-sub stays
+  // as the plain-text "no season" fallback only.
   var subEl = document.getElementById('rcl-hero-sub');
 
   if (!hub.hasSeason) {
@@ -2973,111 +2972,14 @@ function _rclRenderHero(hub) {
   if (subEl) subEl.style.display = 'none';
 }
 
-// Opens the season snapshot + league format stats (previously rendered
-// straight into the hero band) in a popup instead, same .rcl-modal-*
-// shell the news story popup uses -- reachable from the "View Season
-// Details" link at the bottom of the race carousel (_rclRenderRaceCarousel
-// above, which replaced the old Calendar panel 2026-10-02).
-function _rclOpenSeasonDetailsModal(hub) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
-  var head = _rclEl('div', 'rcl-modal-head');
-  // Just "SEASON DETAILS", no season number (2026-10-01, Matt's ask --
-  // was "SEASON <n> DETAILS" once the season number was known, 2026-09-24;
-  // matches Account.html's own popup title, which dropped its number the
-  // same way).
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-
-  var body = _rclEl('div', 'rcl-modal-body');
-
-  // Rebuilt 2026-10-01 (Matt's ask: "remove the bubble data blocks in
-  // favor of this more traditional list format") then revised twice more
-  // the same day:
-  // - Rows are plain "Category: Value" text, left-aligned (Matt's catch:
-  //   "I don't want the values to be on one side and the catagory on the
-  //   other... category then a colon, then a space and then the value"),
-  //   not a two-column layout.
-  // - "Championship Points" and "Season Rules" are now each their own
-  //   pill-headed section (.rcl-hero-stats-group/-label), same style as
-  //   "Season Format" above them, instead of a plain text sub-header
-  //   (Matt's ask: "Make CHAMPIONSHIP POINTS into a pill... add a SEASON
-  //   RULES pill in the same style"). _rclBuildSeasonFormatBlocks_ returns
-  //   one such SECTION per pill now, not a flat list of blocks.
-  // - Championship Points' own tier rows (Sprint/Medium/Long) are plain
-  //   flat rows too now, no tree indent (2026-10-01 follow-up, Matt's ask:
-  //   "get rid of the tree indentation and just make it like the rest --
-  //   Sprint: P1 n, P2 n, etc" -- supersedes an even earlier version of
-  //   this same day that gave them a tree sub-row). Each tier row bolds
-  //   only its "Pn" position markers, leaving the point values themselves
-  //   normal weight (2026-10-01 follow-up, Matt's ask: "make the points...
-  //   normal weight and keep the positions in front, bold") -- see
-  //   buildTierRow below, the one row type that doesn't use the shared
-  //   bold-value styling every other row here gets.
-  // - "Bonus Points" has no header of its own at all -- just a blank gap
-  //   above its own flat rows (Matt's ask: "get rid of that and leave a
-  //   space... just list the bonus point catagories and their values").
-  // The Calendar itself is NOT in this popup on league.html -- it's
-  // already its own permanent panel on the page, with this "View Season
-  // Details" link living at the bottom of it (see _rclRenderCalendar) --
-  // so there's nothing to re-render here for it.
-  function buildRow(stat) {
-    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
-      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
-    return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-  function buildTierRow(stat) {
-    var pts = (stat.points || []).map(function (val, idx) {
-      return '<span class="rcl-seasonfmt-pos">P' + (idx + 1) + '</span> ' + _rclEscapeHtml(String(val));
-    }).join(', ');
-    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' + pts;
-    return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-
-  var sections = _rclBuildSeasonFormatBlocks_(hub);
-  if (sections.length) {
-    sections.forEach(function (section) {
-      var group = _rclEl('div', 'rcl-hero-stats-group');
-      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
-      var list = _rclEl('div', 'rcl-seasonfmt-list');
-      if (section.blocks) {
-        section.blocks.forEach(function (rows) {
-          var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
-          rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
-          list.appendChild(blockEl);
-        });
-      } else {
-        if (section.tiers.length) {
-          var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
-          list.appendChild(tierBlock);
-        }
-        if (section.bonus.length) {
-          var bonusBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.bonus.forEach(function (stat) { bonusBlock.appendChild(buildRow(stat)); });
-          list.appendChild(bonusBlock);
-        }
-      }
-      group.appendChild(list);
-      body.appendChild(group);
-    });
-  } else {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
-  }
-
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
-
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
-}
+// _rclOpenSeasonDetailsModal (the season snapshot + league format stats
+// popup, previously reachable via a "View Season Details" link at the
+// bottom of the race carousel) removed outright 2026-10-02 (Matt's ask:
+// "get rid of view season details"). Its Season Format/Season Rules
+// content lives on in the RACE INFO popup below (_rclOpenRaceInfoModal),
+// which reuses the same _rclBuildSeasonFormatBlocks_ data -- Championship
+// Points, the one section RACE INFO deliberately excludes, has no public
+// entry point on this page any more as of this removal.
 
 // Full-page loading overlay (2026-09-19, Matt's ask: "a loading animation
 // in the center of the page... with the page behind very very dim until
