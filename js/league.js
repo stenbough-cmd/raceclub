@@ -2242,220 +2242,236 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
 // carries an "UP NEXT" pill on whichever round/special is first in line,
 // so there's no separate widget saying the same thing twice.
 // ---------------------------------------------------------------------
-// Builds one UP NEXT / UPCOMING / VIEW RESULTS / COMPLETED status node for
-// a calendar row (2026-10-02, Matt's ask -- see _rclRenderCalendar's own
-// comment at its two call sites for the full reasoning). `mobile` just
-// adds an extra class (.rcl-cal-round-status) so league.css can show this
-// copy only inside the round bar on phone width and hide the desktop copy
-// there instead -- both copies otherwise behave identically, including a
-// completed round's own click handler.
-function _rclBuildCalStatusNode_(entry, idx, nextIdx, hub, mobile) {
-  var baseClass = 'rcl-cal-status' + (mobile ? ' rcl-cal-round-status' : '');
-  if (idx === nextIdx) {
-    return _rclEl('div', baseClass + ' rcl-cal-status-up', 'UP NEXT');
-  }
-  if (!entry.finished) {
-    return _rclEl('div', baseClass + ' rcl-cal-status-upcoming', 'UPCOMING');
-  }
-  if (entry.hasResults && entry.roundId) {
-    var btn = _rclEl('button', baseClass + ' rcl-cal-status-complete rcl-cal-status-link', 'VIEW RESULTS');
-    btn.type = 'button';
-    btn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, entry.roundId); });
-    return btn;
-  }
-  // Completed but no results imported yet -- nothing to link to, same
-  // plain text as before.
-  return _rclEl('div', baseClass + ' rcl-cal-status-complete', 'COMPLETED');
-}
+// RACE CAROUSEL -- replaces the Calendar panel entirely (2026-10-02,
+// Matt's ask: "build a better calendar section... on the fiawec.com
+// website, the calendar there is pretty sweet. It looks like it's a
+// carousal... clicking on one of the races off to the side centers it and
+// opens it up to see results or race information" -- reference images of
+// fiawec.com's own race strip supplied). Renders into #rcl-race-carousel
+// (league.html), which is deliberately NOT a .rcl-panel and is allowed to
+// bleed past .rcl-main's max-width (see .rcl-carousel-outer's breakout
+// rule, css/league.css) so the strip can run the full width of the
+// viewport, exactly like the reference.
+//
+// Resolved via AskUserQuestion before building (Matt's exact answers):
+// - Scope: replaces the Calendar panel outright, not an addition next to
+//   it.
+// - No Replay/video button -- RACE INFO and RACE RECAP only.
+// - RACE INFO opens a popup with track + season format/rules info
+//   (_rclOpenRaceInfoModal below, reusing _rclBuildSeasonFormatBlocks_'s
+//   Season Format + Season Rules sections -- NOT Championship Points,
+//   which isn't "format and rules"). RACE RECAP reuses the existing Race
+//   Details results popup (_rclOpenAllResultsModal), preselected to that
+//   round.
+// - Stays a touch-swipeable carousel on mobile (plain horizontal
+//   overflow-x scroll already is).
+//
+// Bye weeks are left out of the strip entirely -- there's no race to
+// show for a week off, and FIAWEC's own calendar doesn't carry blank
+// weeks either. The round nearest "now" that hasn't happened yet opens as
+// the initially-centered/expanded item, same "UP NEXT" convention the old
+// calendar used.
+function _rclRenderRaceCarousel(hub) {
+  var outer = document.getElementById('rcl-race-carousel');
+  if (!outer) return;
+  outer.innerHTML = '';
 
-function _rclRenderCalendar(hub) {
-  var body = document.getElementById('rcl-calendar-body');
-  if (!body) return;
-  body.innerHTML = '';
-
-  // Plain "Calendar" (2026-10-02, Matt's ask -- was "Season <n> Calendar",
-  // 2026-09-24). The season number is still shown elsewhere (hero, Season
-  // Details popup), so repeating it in this panel's own title was
-  // redundant. Left as an explicit assignment (rather than just relying on
-  // league.html's own static markup) so a stale title from a previous
-  // render never lingers if this ever becomes conditional again.
-  var calendarTitleEl = document.getElementById('rcl-calendar-title');
-  if (calendarTitleEl) calendarTitleEl.textContent = 'Calendar';
-
-  if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Calendar fills in once a season is underway.'));
+  var raceEntries = (hub.hasSeason && hub.calendar) ? hub.calendar.filter(function (e) { return e.kind !== 'bye'; }) : [];
+  if (!raceEntries.length) {
+    outer.appendChild(_rclEmptyState('No Data To Display', 'The season schedule shows up here once it is set.'));
     return;
   }
 
-  // First not-yet-finished round/special (byes never get the pill --
-  // there's nothing to point drivers toward on a week off).
+  outer.appendChild(_rclEl('div', 'rcl-carousel-heading', 'Schedule'));
+
   var nextIdx = -1;
-  hub.calendar.forEach(function (entry, idx) {
-    if (nextIdx === -1 && entry.kind !== 'bye' && !entry.finished) nextIdx = idx;
-  });
+  raceEntries.forEach(function (entry, idx) { if (nextIdx === -1 && !entry.finished) nextIdx = idx; });
+  var activeIdx = nextIdx === -1 ? (raceEntries.length - 1) : nextIdx;
 
-  hub.calendar.forEach(function (entry, idx) {
-    if (entry.kind === 'bye') {
-      var byeRow = _rclEl('div', 'rcl-cal-row rcl-cal-row-bye');
-      byeRow.appendChild(_rclEl('div', 'rcl-cal-bye-label', 'Bye Week'));
-      byeRow.appendChild(_rclEl('div', 'rcl-cal-bye-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
-      body.appendChild(byeRow);
-      return;
-    }
+  var track = _rclEl('div', 'rcl-carousel-track');
+  outer.appendChild(track);
 
-    // Redesigned 2026-09-19 (Matt's call, two passes): the round label
-    // owns the row's left edge (bright, large, solid red or gold for a
-    // special -- see .rcl-cal-round), event name is now the bold primary
-    // line at the top with the track underneath it in a lighter weight
-    // ("move the event to above the track name" -- previously the other
-    // way around), and a meta chip row below adds time+length, in-game
-    // start, and weather -- all public-safe fields handleGetLeagueHub now
-    // sends (see its own comment in Website.gs).
+  var itemEls = [];
+
+  function setActive(idx) {
+    activeIdx = idx;
+    itemEls.forEach(function (itemEl, i) {
+      itemEl.classList.toggle('rcl-carousel-item-active', i === idx);
+    });
+    itemEls[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  raceEntries.forEach(function (entry, idx) {
     var isSpecial = entry.kind === 'special';
-    // rcl-cal-row-finished (2026-09-21, Matt's ask: "make both calendars
-    // have the race faded out with a COMPLETED notification") -- fades
-    // the round bar/event/track/meta chips once a round's start time has
-    // passed (see .rcl-cal-row-finished in css/league.css), while the
-    // status badge itself (appended below) stays at full opacity so the
-    // COMPLETED/results notification stays legible against the faded row.
-    var row = _rclEl('div', 'rcl-cal-row' + (idx === nextIdx ? ' rcl-cal-row-next' : '') + (isSpecial ? ' rcl-cal-row-special' : '') + (entry.finished ? ' rcl-cal-row-finished' : ''));
-    var roundLabelShort = entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : '');
-    // Long form (2026-09-27, Matt's mobile ask: "have it say ROUND 1,
-    // ROUND 2, etc instead of R1, R2") -- both spans render always;
-    // .rcl-cal-round-short/-long (league.css) toggle which one is visible
-    // by breakpoint, same "build both, let CSS pick" approach as the
-    // mobile-only results notice above (_rclBuildAllResultsBody_), rather
-    // than a JS media-query check that would need to re-run on resize.
-    var roundLabelLong = entry.roundNum ? ('ROUND ' + entry.roundNum) : (isSpecial ? 'SPECIAL' : '');
-    // Special-event rounds get a gold accent instead of the standard
-    // brand red (2026-09-19, Matt's ask, refined same day to also color
-    // the event/track text -- see .rcl-cal-row-special in css/league.css)
-    // -- makes a special round visually distinct at a glance in the
-    // schedule.
-    var roundClass = 'rcl-cal-round' + (isSpecial ? ' rcl-cal-round-special' : '');
-    var roundEl = _rclEl('div', roundClass);
-    roundEl.appendChild(_rclEl('span', 'rcl-cal-round-short', _rclEscapeHtml(roundLabelShort)));
-    roundEl.appendChild(_rclEl('span', 'rcl-cal-round-long', _rclEscapeHtml(roundLabelLong)));
+    var isActive = idx === activeIdx;
+    var item = _rclEl('div', 'rcl-carousel-item' +
+      (isActive ? ' rcl-carousel-item-active' : '') +
+      (isSpecial ? ' rcl-carousel-item-special' : '') +
+      (entry.finished ? ' rcl-carousel-item-finished' : ''));
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
 
-    // _rclBuildCalStatusNode_ (2026-10-02, Matt's ask) -- builds the same
-    // UP NEXT / UPCOMING / COMPLETED status as a standalone node so it can
-    // be placed in two different spots at once: the usual desktop spot
-    // (top-right of the event line, appended to topLine below) and a
-    // second copy inside the round bar itself for mobile, where
-    // .rcl-cal-status is hidden entirely (see league.css's 640px block) --
-    // Matt's ask was specifically "let UPCOMING live inside the calendar
-    // round headers on the right side" on mobile, not just hide it there.
-    // A completed round with results now gets a real "VIEW RESULTS" link
-    // instead of static text, in both spots -- opens the Race Details
-    // popup (_rclOpenAllResultsModal) with this exact round preselected,
-    // rather than always defaulting to the most recent one.
-    var mobileStatusEl = _rclBuildCalStatusNode_(entry, idx, nextIdx, hub, true);
-    if (mobileStatusEl) roundEl.appendChild(mobileStatusEl);
-    row.appendChild(roundEl);
-
-    var rowBody = _rclEl('div', 'rcl-cal-row-body');
-    // Day/date/time the race starts -- plain text above the event title
-    // (2026-09-24, Matt's ask: "move the day, date and time the race
-    // starts above the event title, remove it from a pill so it's just
-    // text"), not a pill any more. The time pill below now carries only
-    // the length (prefixed with the tier name).
-    if (entry.startUtc) {
-      rowBody.appendChild(_rclEl('div', 'rcl-cal-datetime', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
-    }
-    var topLine = _rclEl('div', 'rcl-cal-row-top');
-    // "<event name> at <track name>: <layout>" as one combined primary
-    // line, three independently-styled pieces (2026-09-24, Matt's ask,
-    // replacing the earlier "<event name>: <track name>" version from
-    // earlier the same day) -- event name bold and white, track name
-    // normal weight but still white, layout normal weight but gray. On a
-    // special event the whole line (all three pieces, plus the plain " at
-    // "/": " connector text) reads one uniform gold instead, via
-    // .rcl-cal-row-special overriding each span's color below -- see
-    // css/league.css.
-    var eventLine = _rclEl('div', 'rcl-cal-event');
-    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-name', _rclEscapeHtml(entry.eventName || 'Race')));
-    eventLine.appendChild(document.createTextNode(' at '));
-    eventLine.appendChild(_rclEl('span', 'rcl-cal-event-track', _rclEscapeHtml(entry.track || '(no track)')));
-    if (entry.layout) {
-      eventLine.appendChild(document.createTextNode(': '));
-      eventLine.appendChild(_rclEl('span', 'rcl-cal-event-layout', _rclEscapeHtml(entry.layout)));
-    }
-    topLine.appendChild(eventLine);
-    // Simplified to a plain "COMPLETED" in gray once a race is over
-    // (2026-09-26, Matt's ask: "no need to duplicate the type of results
-    // posted here since it's on every results table" -- the preliminary/
-    // official distinction now lives on the Recent Results/Current
-    // Standings/All Results notices instead, so repeating it here too was
-    // redundant). Was "COMPLETED · OFFICIAL/PRELIMINARY RESULTS POSTED"
-    // (2026-09-21 rewrite of the original "AWAITING RESULTS"/"UNOFFICIAL
-    // RESULTS"/"OFFICIAL RESULTS" wording, 2026-09-19). Completed-with-
-    // results rounds now get a "VIEW RESULTS" link instead of plain text
-    // (2026-10-02) -- see _rclBuildCalStatusNode_ above.
-    topLine.appendChild(_rclBuildCalStatusNode_(entry, idx, nextIdx, hub, false));
-    rowBody.appendChild(topLine);
-
-    var metaRow = _rclEl('div', 'rcl-cal-meta');
-    // Length pill -- same gray outline pill as In-Game/Weather below
-    // (2026-09-19, Matt's call: "make the date time and length pill less
-    // prominent"). Race start date/time moved out of this pill entirely
-    // (2026-09-24, see the plain-text .rcl-cal-datetime line above) --
-    // this chip now leads with the tier name instead, e.g. "SPRINT 20
-    // mins" (Matt's exact example). The `true` third arg is the same
-    // outline switch In-Game/Weather already use (see _rclChip above).
-    var lengthMin = _rclEntryLengthMinutes(entry, hub);
-    if (lengthMin) {
-      // Title case, not all-caps (2026-09-28, Matt's ask: "the length tier
-      // shouldn't be all caps inside the pill... it should say Sprint or
-      // Medium or Long") -- raceLengthTier already arrives from the server
-      // as "Sprint"/"Medium"/"Long" (RoundDetails' own stored casing,
-      // Seasons.gs), so this now just uses it as-is instead of forcing
-      // .toUpperCase() on it.
-      var tierPrefix = entry.raceLengthTier ? (entry.raceLengthTier + ' ') : '';
-      metaRow.appendChild(_rclChip(_RCL_ICON_CLOCK, tierPrefix + lengthMin + ' mins', true));
-    }
-    // In-game time: spelled out ("In-Game Event Time" -- was "In-Game",
-    // 2026-09-21, Matt's follow-up ask), race time only -- practice/
-    // qualify in-game times dropped from this line (2026-09-19, Matt's
-    // ask: "spell out In-game and only put the race time for in-game").
-    // Flag icon (2026-09-21, Matt's ask), not the gamepad glyph this
-    // chip used before -- see _RCL_ICON_FLAG above. In-Game and Weather
-    // are both gray outline pills, not solid (2026-09-19, Matt's call)
-    // -- the `true` third arg to _rclChip.
-    if (entry.igRaceStart) {
-      metaRow.appendChild(_rclChip(_RCL_ICON_FLAG, 'In-Game Event Time ' + _rclFormat12h(entry.igRaceStart), true));
-    }
-    // Weather + chance of precipitation (2026-09-19, Matt's ask), same
-    // "N% Rain" convention and 5-tier icon Account.html's own Calendar
-    // page already uses for this (weatherIcon() + "N% Rain") -- only
-    // shows once a weather value has actually been set for this entry.
-    // Temperature appended after the rain chance (2026-09-21, Matt's ask:
-    // "add temperature info after the rain chance on the calendar") --
-    // same "N% Rain · N°C" convention Account.html's own Calendar already
-    // uses (see its calStat(weatherIcon(...), ...) call), only shown when
-    // Website.gs's getLeagueHub actually sent a temperature for this round.
-    if (entry.weather) {
-      var weatherText = (entry.chanceOfRain || 0) + '% Rain';
-      if (entry.temperatureC !== null && entry.temperatureC !== undefined) {
-        weatherText += ' · ' + entry.temperatureC + '°C';
+    // Compact stub -- always visible; what a side (non-centered) item
+    // shows: flag, round label, short date. Matches the reference's own
+    // thin off-to-the-side columns.
+    var stub = _rclEl('div', 'rcl-carousel-stub');
+    if (entry.country && typeof countryFlagSrc === 'function') {
+      var flagSrc = countryFlagSrc(entry.country);
+      if (flagSrc) {
+        var flagImg = document.createElement('img');
+        flagImg.className = 'rcl-carousel-flag';
+        flagImg.src = flagSrc;
+        flagImg.alt = entry.country;
+        flagImg.onerror = function () { flagImg.style.display = 'none'; };
+        stub.appendChild(flagImg);
       }
-      metaRow.appendChild(_rclChip(_rclWeatherIcon(entry), weatherText, true));
     }
-    rowBody.appendChild(metaRow);
+    stub.appendChild(_rclEl('div', 'rcl-carousel-round', _rclEscapeHtml(entry.roundNum ? ('R' + entry.roundNum) : (isSpecial ? 'SP' : ''))));
+    stub.appendChild(_rclEl('div', 'rcl-carousel-date', _rclEscapeHtml(_rclFormatDate(entry.startUtc))));
+    item.appendChild(stub);
 
-    row.appendChild(rowBody);
-    body.appendChild(row);
+    // Expanded hero content -- built every time (not just for the active
+    // item) so clicking a side item to make it active never needs a
+    // second render pass; .rcl-carousel-item-active is what actually
+    // reveals this in CSS (league.css).
+    var hero = _rclEl('div', 'rcl-carousel-hero');
+    hero.appendChild(_rclEl('div', 'rcl-carousel-hero-name', _rclEscapeHtml(entry.eventName || 'Race')));
+    var trackLine = (entry.track || '') + (entry.layout ? (': ' + entry.layout) : '');
+    if (trackLine) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-meta', _rclEscapeHtml(trackLine)));
+    if (entry.startUtc) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-date', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
+
+    var statusText = idx === nextIdx ? 'UP NEXT' : (!entry.finished ? 'UPCOMING' : (entry.hasResults ? 'RESULTS AVAILABLE' : 'COMPLETED'));
+    hero.appendChild(_rclEl('div', 'rcl-carousel-hero-status', statusText));
+
+    var btnRow = _rclEl('div', 'rcl-carousel-hero-btns');
+    var infoBtn = _rclEl('button', 'rcl-carousel-hero-btn', 'RACE INFO');
+    infoBtn.type = 'button';
+    infoBtn.addEventListener('click', function (evt) {
+      evt.stopPropagation();
+      _rclOpenRaceInfoModal(hub, entry);
+    });
+    btnRow.appendChild(infoBtn);
+    if (entry.finished && entry.hasResults && entry.roundId) {
+      var recapBtn = _rclEl('button', 'rcl-carousel-hero-btn', 'RACE RECAP');
+      recapBtn.type = 'button';
+      recapBtn.addEventListener('click', function (evt) {
+        evt.stopPropagation();
+        _rclOpenAllResultsModal(hub, entry.roundId);
+      });
+      btnRow.appendChild(recapBtn);
+    }
+    hero.appendChild(btnRow);
+    item.appendChild(hero);
+
+    item.addEventListener('click', function () { if (idx !== activeIdx) setActive(idx); });
+    item.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); setActive(idx); }
+    });
+
+    itemEls.push(item);
+    track.appendChild(item);
   });
 
-  // "View Season Details" link (2026-09-19, Matt's call: season details
-  // move out of the hero band into a popup opened from here instead --
-  // see _rclOpenSeasonDetailsModal below). Closes over the local `hub`
-  // param directly since this function already has it.
-  var detailsRow = _rclEl('div', 'rcl-cal-details-row');
+  // Center the initially-active item without an animated scroll (an
+  // animated auto-scroll firing the instant the page loads would be
+  // jarring) -- rAF so layout/widths (the active item is wider than the
+  // rest) have settled first.
+  requestAnimationFrame(function () {
+    if (itemEls[activeIdx]) itemEls[activeIdx].scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+  });
+
+  // "View Season Details" link -- relocated here (2026-10-02) from the
+  // old Calendar panel this carousel replaces; same popup
+  // (_rclOpenSeasonDetailsModal above), same link styling.
+  var detailsRow = _rclEl('div', 'rcl-carousel-details-row');
   var detailsLink = _rclEl('button', 'rcl-cal-details-link', 'View Season Details');
   detailsLink.type = 'button';
   detailsLink.addEventListener('click', function () { _rclOpenSeasonDetailsModal(hub); });
   detailsRow.appendChild(detailsLink);
-  body.appendChild(detailsRow);
+  outer.appendChild(detailsRow);
+}
+
+// RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
+// button above) -- this specific round's own track/session details up
+// top ("This Race"), then the season's Season Format + Season Rules
+// sections reused as-is from _rclBuildSeasonFormatBlocks_. Deliberately
+// excludes that function's "Championship Points" section -- Matt's own
+// answer to what RACE INFO should show was "information about the track,
+// the format and rules," which Championship Points isn't; that's still
+// reachable from the separate "View Season Details" link/popup.
+function _rclOpenRaceInfoModal(hub, entry) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Race Info'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body');
+
+  // Same plain "Category: Value" row shape _rclOpenSeasonDetailsModal uses
+  // (see that function's own comment for why) -- duplicated here rather
+  // than shared since it's a few lines and each popup builds its own body
+  // independently.
+  function buildRow(stat) {
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
+      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+
+  var roundRows = [];
+  roundRows.push({ label: 'Event', value: entry.eventName || 'Race' });
+  if (entry.track) roundRows.push({ label: 'Track', value: entry.track + (entry.layout ? (': ' + entry.layout) : '') });
+  if (entry.startUtc) roundRows.push({ label: 'Date', value: _rclFormatDateTime(entry.startUtc) });
+  if (entry.raceLengthTier) {
+    roundRows.push({ label: 'Race Length', value: entry.raceLengthTier + (entry.raceLengthMinutes ? (' (' + entry.raceLengthMinutes + ' mins)') : '') });
+  }
+  if (entry.igRaceStart) roundRows.push({ label: 'In-Game Event Time', value: _rclFormat12h(entry.igRaceStart) });
+  if (entry.weather) {
+    var weatherText = (entry.chanceOfRain || 0) + '% Rain';
+    if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherText += ' · ' + entry.temperatureC + '°C';
+    roundRows.push({ label: 'Weather', value: weatherText });
+  }
+  var roundGroup = _rclEl('div', 'rcl-hero-stats-group');
+  roundGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Race'));
+  var roundList = _rclEl('div', 'rcl-seasonfmt-list');
+  var roundBlock = _rclEl('div', 'rcl-seasonfmt-block');
+  roundRows.forEach(function (stat) { roundBlock.appendChild(buildRow(stat)); });
+  roundList.appendChild(roundBlock);
+  roundGroup.appendChild(roundList);
+  body.appendChild(roundGroup);
+
+  var sections = _rclBuildSeasonFormatBlocks_(hub).filter(function (s) { return s.pill === 'Season Format' || s.pill === 'Season Rules'; });
+  sections.forEach(function (section) {
+    var group = _rclEl('div', 'rcl-hero-stats-group');
+    group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
+    var list = _rclEl('div', 'rcl-seasonfmt-list');
+    (section.blocks || []).forEach(function (rows) {
+      var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
+      rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+      list.appendChild(blockEl);
+    });
+    group.appendChild(list);
+    body.appendChild(group);
+  });
+
+  if (!roundRows.length && !sections.length) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Race info shows up here once it is set.'));
+  }
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  // Closable only via the X button -- same posture every other popup on
+  // this page uses.
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // POINTS -- race-length-tier point tables + bonus points (added
@@ -2852,9 +2868,11 @@ function _rclRenderHero(hub) {
   // (2026-09-19, Matt's call: "Instead of the season details at the top
   // of the league hub, make it show up in a container themed popup when
   // VIEW SEASON DETAILS link at the bottom of the calendar is clicked")
-  // -- see _rclOpenSeasonDetailsModal below, opened from
-  // _rclRenderCalendar instead. rcl-hero-sub stays as the plain-text
-  // "no season" fallback only.
+  // -- see _rclOpenSeasonDetailsModal below, opened from its "View Season
+  // Details" link (now at the bottom of the race carousel,
+  // _rclRenderRaceCarousel, since 2026-10-02's calendar->carousel
+  // replacement). rcl-hero-sub stays as the plain-text "no season"
+  // fallback only.
   var subEl = document.getElementById('rcl-hero-sub');
 
   if (!hub.hasSeason) {
@@ -2871,8 +2889,8 @@ function _rclRenderHero(hub) {
 // Opens the season snapshot + league format stats (previously rendered
 // straight into the hero band) in a popup instead, same .rcl-modal-*
 // shell the news story popup uses -- reachable from the "View Season
-// Details" link at the bottom of the Calendar panel (_rclRenderCalendar
-// above).
+// Details" link at the bottom of the race carousel (_rclRenderRaceCarousel
+// above, which replaced the old Calendar panel 2026-10-02).
 function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
@@ -3057,7 +3075,7 @@ function _rclFetchLeagueHub_() {
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderCalendar, _rclRenderNews];
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews];
 
   function showHub(hub) {
     if (!hub || !hub.success) {

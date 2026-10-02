@@ -10085,6 +10085,23 @@
     var region = el('input'); region.type = 'text'; region.placeholder = 'e.g. Europe, North America';
     form.appendChild(region);
 
+    // Country (added 2026-10-02) -- unlike Region, this IS a governed
+    // dropdown (COUNTRIES, reference-data.js) because it has to match
+    // COUNTRY_CODES exactly for countryFlagSrc() to find a flag for the
+    // new race carousel on the League Hub page (js/league.js). Optional --
+    // left blank just means no flag renders for this venue.
+    form.appendChild(el('label', null, 'Country (optional)'));
+    var country = el('select');
+    var countryBlank = document.createElement('option');
+    countryBlank.value = ''; countryBlank.textContent = 'No flag';
+    country.appendChild(countryBlank);
+    (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      country.appendChild(opt);
+    });
+    form.appendChild(country);
+
     var saveBtn = el('button', null, 'Add Track');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -10109,7 +10126,7 @@
       modalHandle.close();
       fetchApi('adminAddTrackLayout', {
         method: 'POST', token: token,
-        body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim() }
+        body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim(), country: country.value }
       })
         .then(function (data) {
           if (!data.success) {
@@ -10842,7 +10859,25 @@
           // region, via the adjacent-sibling CSS rule.
           var group = el('div', 'rc-dm-group rc-dm-venue-group');
           var row = el('div', 'rc-dm-row rc-dm-row-light rc-dm-row-noborder');
-          row.appendChild(el('span', 'rc-dm-row-label', escapeHtml(v.name)));
+          // Country flag (added 2026-10-02) -- small icon next to the venue
+          // name, same countryFlagSrc()+onerror-hide convention used
+          // elsewhere on the site (e.g. the Championship Standings driver
+          // rows) -- lets an admin see at a glance which venues still need
+          // a Country set for the race carousel's flags to show.
+          var labelWrap = el('span', 'rc-dm-row-label');
+          if (rows[0] && rows[0].Country && typeof countryFlagSrc === 'function') {
+            var flagSrc = countryFlagSrc(rows[0].Country);
+            if (flagSrc) {
+              var flagImg = document.createElement('img');
+              flagImg.src = flagSrc;
+              flagImg.alt = rows[0].Country;
+              flagImg.style.cssText = 'width:16px;height:12px;object-fit:cover;border-radius:2px;margin-right:6px;vertical-align:middle;';
+              flagImg.onerror = function () { flagImg.style.display = 'none'; };
+              labelWrap.appendChild(flagImg);
+            }
+          }
+          labelWrap.appendChild(document.createTextNode(v.name));
+          row.appendChild(labelWrap);
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
           editBtn.addEventListener('click', function () { openEditTrackModal(v.name, rows, token, reload); });
@@ -10907,6 +10942,21 @@
     regionInput.value = (rows[0] && rows[0].Region) || '';
     regionInput.placeholder = 'e.g. Europe, North America';
     form.appendChild(regionInput);
+
+    // Country (added 2026-10-02) -- governed dropdown, same list/reasoning
+    // as openAddTrackModal's own Country field above.
+    form.appendChild(el('label', null, 'Country'));
+    var countryInput = el('select');
+    var countryInputBlank = document.createElement('option');
+    countryInputBlank.value = ''; countryInputBlank.textContent = 'No flag';
+    countryInput.appendChild(countryInputBlank);
+    (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      countryInput.appendChild(opt);
+    });
+    countryInput.value = (rows[0] && rows[0].Country) || '';
+    form.appendChild(countryInput);
 
     var updateTrackBtn = el('button', null, 'Save Changes');
     updateTrackBtn.type = 'submit';
@@ -11008,7 +11058,7 @@
       // brand new -- there's nothing to deactivate yet). The quiet
       // background reconcile below fills the real TrackID in once the
       // write lands; a failure removes the row and explains why.
-      var provisionalRow = { TrackID: '', TrackName: venueName, Layout: layoutName, Region: (rows[0] && rows[0].Region) || '', Active: 'Active' };
+      var provisionalRow = { TrackID: '', TrackName: venueName, Layout: layoutName, Region: (rows[0] && rows[0].Region) || '', Country: (rows[0] && rows[0].Country) || '', Active: 'Active' };
       rows.push(provisionalRow);
       addInput.value = '';
       renderLayoutList();
@@ -11039,13 +11089,16 @@
       var newName = nameInput.value.trim();
       var newRegion = regionInput.value.trim();
       var previousRegion = (rows[0] && rows[0].Region) || '';
+      var newCountry = countryInput.value;
+      var previousCountry = (rows[0] && rows[0].Country) || '';
       if (!newName) {
         showToast('Track name is required.', 'error');
         return;
       }
       var nameChanged = newName !== venueName;
       var regionChanged = newRegion !== previousRegion;
-      if (!nameChanged && !regionChanged) {
+      var countryChanged = newCountry !== previousCountry;
+      if (!nameChanged && !regionChanged && !countryChanged) {
         modalHandle.close();
         return;
       }
@@ -11065,6 +11118,12 @@
         tasks.push(fetchApi('adminUpdateTrackRegion', {
           method: 'POST', token: token,
           body: { trackName: venueName, region: newRegion }
+        }));
+      }
+      if (countryChanged) {
+        tasks.push(fetchApi('adminUpdateTrackCountry', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, country: newCountry }
         }));
       }
       if (nameChanged) {

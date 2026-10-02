@@ -167,14 +167,21 @@
     </section>
   </div>
 
-  <div class="rcl-row-full">
-    <section class="rcl-panel">
-      <div class="rcl-panel-head">
-        <div class="rcl-panel-title" id="rcl-calendar-title">Calendar</div>
-      </div>
-      <div class="rcl-panel-body" id="rcl-calendar-body"></div>
-    </section>
-  </div>
+  <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
+       (2026-10-02, Matt's ask: "I'd like to build a better calendar
+       section instead of the typical container holding a calendar...
+       Can we make something like this live after the CHAMPIONSHIP
+       STANDINGS? It would live on the webpage, not confined to a
+       container and stretch as wide as it needs to" -- FIAWEC.com's own
+       calendar strip as the reference). Deliberately NOT a .rcl-panel --
+       no card border/background, and its scroll track is allowed to
+       bleed past .rcl-main's own max-width on wide viewports (see
+       .rcl-carousel-outer's breakout rule, css/league.css) exactly like
+       the reference: round entries can run off the left/right edge of
+       the page itself, not just the content column. Built from
+       hub.calendar (same data the old Calendar panel used) by
+       _rclRenderRaceCarousel, js/league.js. -->
+  <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
 
   <!-- Drivers section removed (2026-09-19, Matt's call: "drivers can be
        seen by viewing the leaderboard") -- the Leaderboard panel above
