@@ -1257,10 +1257,10 @@ function _rclRenderResults(hub) {
 
   if (!hub.hasSeason || !hub.lastRace) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
-    // "View All Results" (2026-09-23) still gets a chance to appear even
-    // when the abbreviated lastRace panel has nothing to show -- see the
-    // shared block at the end of this function.
-    _rclAppendViewAllResultsLink_(body, hub);
+    // The status notice still gets a chance to appear even when the
+    // abbreviated lastRace panel has nothing to show -- see the shared
+    // helper call at the end of this function.
+    _rclAppendResultsStatusNotice_(body, hub);
     return;
   }
 
@@ -1322,14 +1322,13 @@ function _rclRenderResults(hub) {
     });
     body.appendChild(clsWrap);
   });
-
-  // "View All Results" (2026-09-23, Matt's ask) -- opens the full,
-  // uncapped results for any completed round in a popup, WITH that
-  // round's penalties list. Penalties are deliberately NOT rendered here
-  // inline at the bottom of Recent Results -- Matt's explicit placement
-  // call -- they only ever show inside that popup (_rclOpenAllResultsModal
-  // below), which is what this link opens.
-  _rclAppendViewAllResultsLink_(body, hub);
+  // "View Full Race Details" link removed from this panel (2026-10-02,
+  // Matt's ask) -- Recent Results is getting replaced by a dedicated "Last
+  // Race" section, so this panel no longer links out to the Race Details
+  // popup at all. See _rclRenderCalendar's own "VIEW RESULTS" link below
+  // for the new way into that popup. The status notice + mobile nudge that
+  // used to sit above that link stay put.
+  _rclAppendResultsStatusNotice_(body, hub);
 }
 
 // "*PRELIMINARY RESULTS (date)"/"*OFFICIAL RESULTS (date)" notice (2026-09-26
@@ -1394,7 +1393,13 @@ function _rclBuildMobileViewOnPcNote_() {
 // class so Calendar's own "View Season Details" link (which shares
 // .rcl-cal-details-row but deliberately has no line above it, per that
 // section's own comment) stays untouched.
-function _rclAppendViewAllResultsLink_(body, hub) {
+// Was _rclAppendViewAllResultsLink_ -- renamed and trimmed 2026-10-02
+// (Matt's ask: "Remove 'VIEW FULL RACE DETAILS' from RECENT RESULTS...
+// this section will be getting revamped anyways"). The link/button into
+// the Race Details popup is gone from this panel; the status
+// notice + mobile "view on PC" nudge it used to sit above are kept exactly
+// as before, since those weren't part of that ask.
+function _rclAppendResultsStatusNotice_(body, hub) {
   if (!hub.resultsRounds || !hub.resultsRounds.length) return;
   var notice = _rclBuildResultsStatusNotice_(hub.lastRace);
   if (notice) body.appendChild(notice);
@@ -1404,15 +1409,6 @@ function _rclAppendViewAllResultsLink_(body, hub) {
   // Results (league.css), so it gets the same nudge under its status
   // notice, only shown once there's actually a notice to sit under.
   if (notice) body.appendChild(_rclBuildMobileViewOnPcNote_());
-  var linkRow = _rclEl('div', 'rcl-cal-details-row rcl-results-bottom-row');
-  // "View Full Race Details" (2026-10-02, Matt's ask -- was "View All
-  // Results"); still opens the same popup (_rclOpenAllResultsModal), whose
-  // own ALL RESULTS header/title text is unchanged.
-  var link = _rclEl('button', 'rcl-cal-details-link', 'View Full Race Details');
-  link.type = 'button';
-  link.addEventListener('click', function () { _rclOpenAllResultsModal(hub); });
-  linkRow.appendChild(link);
-  body.appendChild(linkRow);
 }
 
 // ---------------------------------------------------------------------
@@ -1965,7 +1961,13 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
   });
 }
 
-function _rclOpenAllResultsModal(hub) {
+// preselectRoundId (added 2026-10-02, optional) -- when a caller already
+// knows which round the viewer wants (the Calendar's own "VIEW RESULTS"
+// link on a specific completed round, see _rclRenderCalendar below), that
+// round loads first instead of this popup's old default of always starting
+// on the most recently completed round (rounds[0]). Omitted/unmatched
+// falls back to that same original behavior unchanged.
+function _rclOpenAllResultsModal(hub, preselectRoundId) {
   var rounds = hub.resultsRounds || [];
   if (!rounds.length) return;
 
@@ -1979,7 +1981,10 @@ function _rclOpenAllResultsModal(hub) {
   // don't change").
   var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide rcl-modal-dialog-allresults');
   var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'All Results'));
+  // "Race Details" (2026-10-02, Matt's ask -- was "All Results"). Purely a
+  // label change: still the exact same popup, same dropdown, same
+  // Qualifying/Race toggle, same underlying data/endpoints.
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Race Details'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -2083,7 +2088,15 @@ function _rclOpenAllResultsModal(hub) {
 
   select.addEventListener('change', function () { loadRound(select.value, sessionSelect.value); });
   sessionSelect.addEventListener('change', function () { loadRound(select.value, sessionSelect.value); });
-  loadRound(rounds[0].roundId, sessionSelect.value);
+
+  // Only honor preselectRoundId if it's actually one of this popup's own
+  // round options -- a stale/unknown id just falls through to the original
+  // "most recent round" default below.
+  var initialRoundId = (preselectRoundId && rounds.some(function (r) { return r.roundId === preselectRoundId; }))
+    ? preselectRoundId
+    : rounds[0].roundId;
+  select.value = initialRoundId;
+  loadRound(initialRoundId, sessionSelect.value);
 
   // Closable ONLY via the X button -- same posture every other popup on
   // this page uses.
@@ -2103,16 +2116,45 @@ function _rclOpenAllResultsModal(hub) {
 // carries an "UP NEXT" pill on whichever round/special is first in line,
 // so there's no separate widget saying the same thing twice.
 // ---------------------------------------------------------------------
+// Builds one UP NEXT / UPCOMING / VIEW RESULTS / COMPLETED status node for
+// a calendar row (2026-10-02, Matt's ask -- see _rclRenderCalendar's own
+// comment at its two call sites for the full reasoning). `mobile` just
+// adds an extra class (.rcl-cal-round-status) so league.css can show this
+// copy only inside the round bar on phone width and hide the desktop copy
+// there instead -- both copies otherwise behave identically, including a
+// completed round's own click handler.
+function _rclBuildCalStatusNode_(entry, idx, nextIdx, hub, mobile) {
+  var baseClass = 'rcl-cal-status' + (mobile ? ' rcl-cal-round-status' : '');
+  if (idx === nextIdx) {
+    return _rclEl('div', baseClass + ' rcl-cal-status-up', 'UP NEXT');
+  }
+  if (!entry.finished) {
+    return _rclEl('div', baseClass + ' rcl-cal-status-upcoming', 'UPCOMING');
+  }
+  if (entry.hasResults && entry.roundId) {
+    var btn = _rclEl('button', baseClass + ' rcl-cal-status-complete rcl-cal-status-link', 'VIEW RESULTS');
+    btn.type = 'button';
+    btn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, entry.roundId); });
+    return btn;
+  }
+  // Completed but no results imported yet -- nothing to link to, same
+  // plain text as before.
+  return _rclEl('div', baseClass + ' rcl-cal-status-complete', 'COMPLETED');
+}
+
 function _rclRenderCalendar(hub) {
   var body = document.getElementById('rcl-calendar-body');
   if (!body) return;
   body.innerHTML = '';
 
-  // Panel title becomes "SEASON <n> CALENDAR" once a season number is
-  // known (2026-09-24, Matt's ask), falling back to the plain "Calendar"
-  // the markup ships with (league.html) when there's no active season.
+  // Plain "Calendar" (2026-10-02, Matt's ask -- was "Season <n> Calendar",
+  // 2026-09-24). The season number is still shown elsewhere (hero, Season
+  // Details popup), so repeating it in this panel's own title was
+  // redundant. Left as an explicit assignment (rather than just relying on
+  // league.html's own static markup) so a stale title from a previous
+  // render never lingers if this ever becomes conditional again.
   var calendarTitleEl = document.getElementById('rcl-calendar-title');
-  if (calendarTitleEl) calendarTitleEl.textContent = hub.seasonNumber ? ('Season ' + hub.seasonNumber + ' Calendar') : 'Calendar';
+  if (calendarTitleEl) calendarTitleEl.textContent = 'Calendar';
 
   if (!hub.hasSeason || !hub.calendar || !hub.calendar.length) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Calendar fills in once a season is underway.'));
@@ -2168,6 +2210,21 @@ function _rclRenderCalendar(hub) {
     var roundEl = _rclEl('div', roundClass);
     roundEl.appendChild(_rclEl('span', 'rcl-cal-round-short', _rclEscapeHtml(roundLabelShort)));
     roundEl.appendChild(_rclEl('span', 'rcl-cal-round-long', _rclEscapeHtml(roundLabelLong)));
+
+    // _rclBuildCalStatusNode_ (2026-10-02, Matt's ask) -- builds the same
+    // UP NEXT / UPCOMING / COMPLETED status as a standalone node so it can
+    // be placed in two different spots at once: the usual desktop spot
+    // (top-right of the event line, appended to topLine below) and a
+    // second copy inside the round bar itself for mobile, where
+    // .rcl-cal-status is hidden entirely (see league.css's 640px block) --
+    // Matt's ask was specifically "let UPCOMING live inside the calendar
+    // round headers on the right side" on mobile, not just hide it there.
+    // A completed round with results now gets a real "VIEW RESULTS" link
+    // instead of static text, in both spots -- opens the Race Details
+    // popup (_rclOpenAllResultsModal) with this exact round preselected,
+    // rather than always defaulting to the most recent one.
+    var mobileStatusEl = _rclBuildCalStatusNode_(entry, idx, nextIdx, hub, true);
+    if (mobileStatusEl) roundEl.appendChild(mobileStatusEl);
     row.appendChild(roundEl);
 
     var rowBody = _rclEl('div', 'rcl-cal-row-body');
@@ -2205,16 +2262,10 @@ function _rclRenderCalendar(hub) {
     // Standings/All Results notices instead, so repeating it here too was
     // redundant). Was "COMPLETED · OFFICIAL/PRELIMINARY RESULTS POSTED"
     // (2026-09-21 rewrite of the original "AWAITING RESULTS"/"UNOFFICIAL
-    // RESULTS"/"OFFICIAL RESULTS" wording, 2026-09-19).
-    var statusText, statusClass;
-    if (idx === nextIdx) {
-      statusText = 'UP NEXT'; statusClass = 'up';
-    } else if (!entry.finished) {
-      statusText = 'UPCOMING'; statusClass = 'upcoming';
-    } else {
-      statusText = 'COMPLETED'; statusClass = 'complete';
-    }
-    topLine.appendChild(_rclEl('div', 'rcl-cal-status rcl-cal-status-' + statusClass, statusText));
+    // RESULTS"/"OFFICIAL RESULTS" wording, 2026-09-19). Completed-with-
+    // results rounds now get a "VIEW RESULTS" link instead of plain text
+    // (2026-10-02) -- see _rclBuildCalStatusNode_ above.
+    topLine.appendChild(_rclBuildCalStatusNode_(entry, idx, nextIdx, hub, false));
     rowBody.appendChild(topLine);
 
     var metaRow = _rclEl('div', 'rcl-cal-meta');

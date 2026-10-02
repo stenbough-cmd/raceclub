@@ -1767,6 +1767,29 @@ body.rc-league-page {
    now lives only on the Recent Results/Current Standings/All Results
    notices (_rclBuildResultsStatusNotice_, js/league.js). */
 .rcl-cal-status-complete { color: var(--rcl-ink-dim); }
+/* "VIEW RESULTS" (2026-10-02, Matt's ask) -- a completed round with
+   results now gets a real link here instead of plain "COMPLETED" text,
+   opening the Race Details popup on that exact round
+   (_rclBuildCalStatusNode_, js/league.js). Button reset so it reads as
+   plain text like every other status, just clickable -- red like the
+   site's other "opens a popup" text links (.rcl-cal-details-link above)
+   rather than gray, so it actually reads as actionable at this small size. */
+.rcl-cal-status-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--rc-red);
+}
+.rcl-cal-status-link:hover { text-decoration: underline; }
+/* Mobile-only copy of the status node, living inside the round bar itself
+   (.rcl-cal-round) instead of up in the event line -- hidden on desktop,
+   where .rcl-cal-status (the original copy, appended to .rcl-cal-row-top)
+   already covers this. Shown instead of that copy under the 640px
+   breakpoint below, where .rcl-cal-status is hidden entirely. */
+.rcl-cal-round-status { display: none; }
 /* Faded row once a round's start time has passed (2026-09-21, Matt's
    ask: "have the race faded out with a COMPLETED notification") --
    dims the round bar/event/track/meta chips, but deliberately NOT
@@ -2429,7 +2452,7 @@ body.rc-league-page {
     width: 100%;
     height: auto;
     justify-content: flex-start;
-    padding: 8px 0 8px 14px;
+    padding: 8px 14px 8px 14px;
     font-size: 19px;
     border-left: 1px solid var(--rcl-line-bright);
     border-right: 1px solid var(--rcl-line-bright);
@@ -2444,5 +2467,27 @@ body.rc-league-page {
   }
   .rcl-cal-round-short { display: none; }
   .rcl-cal-round-long { display: inline; }
+  /* UPCOMING / VIEW RESULTS, right side of the round bar (2026-10-02,
+     Matt's ask: "let UPCOMING live inside the calendar round headers on
+     the right side, and when a race is completed, swap it with the VIEW
+     RESULTS link"). This is the mobile-only copy from
+     _rclBuildCalStatusNode_ -- the desktop copy stays hidden via
+     .rcl-cal-status above. margin-left:auto pushes it to the far right of
+     the bar's own flex row without needing to touch that row's
+     justify-content (still flex-start, for the ROUND N text). Smaller than
+     its desktop size (11px -> 10px) and the round bar's own ink color
+     (not red/steel) so it reads as part of the bar, not a competing
+     accent -- except the VIEW RESULTS link, which keeps its red link
+     color so it's still obviously clickable. */
+  .rcl-cal-round-status {
+    display: inline-block;
+    margin-left: auto;
+    font-size: 10px;
+  }
+  .rcl-cal-round-status.rcl-cal-status-up,
+  .rcl-cal-round-status.rcl-cal-status-upcoming,
+  .rcl-cal-round-status.rcl-cal-status-complete:not(.rcl-cal-status-link) {
+    color: inherit;
+  }
   .rcl-cal-row-body { padding: 10px 14px; }
 }
