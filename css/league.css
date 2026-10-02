@@ -656,16 +656,33 @@ body.rc-league-page {
    bottom margin here is what pushes P1 up off that shared baseline
    instead of just making its box taller, which is what this replaced. */
 .rcl-mfr-tile-p1 { margin-bottom: 28px; }
-/* All three boxes the same size and perfectly square (2026-10-02, Matt's
-   follow-up: "make the squares surrounding the top 3 larger and make
-   them square 1:1 and make them all the same size") -- was a fixed
-   height with a taller P1 variant; aspect-ratio keeps it square at any
-   width this tile ever ends up, including the mobile override below.
-   width:100% of the tile (max-width:250px above) is what makes the box
-   itself respect the same 250px cap as the logo inside it, below. */
+/* Square-at-all-costs box (2026-10-02, Matt's follow-up: "the containers
+   around the logos are still missshaped. I want them square at all
+   costs" -- a plain width:100% + aspect-ratio:1/1 box wasn't holding
+   reliably, so this switches to the padding-bottom:100% trick instead:
+   percentage padding is always computed off the containing block's
+   WIDTH, even padding-top/bottom, so a box with no declared height and
+   padding-bottom:100% is forced to exactly match its own width no matter
+   what -- not dependent on aspect-ratio support/resolution in this
+   nested flex layout at all. .rcl-mfr-tile-box is now just that sizing
+   shell (zero height, 100% padding-bottom); everything actually visible
+   -- border, background, the logo -- lives in the absolutely-positioned
+   .rcl-mfr-tile-box-inner that fills it exactly (built in js/league.js).
+   max-width:250px (2026-10-02 follow-up: "with 250x250px square
+   containers") makes every box exactly 250x250 on desktop, where the
+   250px-wide tile (.rcl-mfr-tile above) gives it a 250px width to square
+   off of; the mobile override further down shrinks the tile, and this
+   box shrinks and stays square right along with it. */
 .rcl-mfr-tile-box {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  max-width: 250px;
+  height: 0;
+  padding-bottom: 100%;
+}
+.rcl-mfr-tile-box-inner {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -673,16 +690,14 @@ body.rc-league-page {
   border: 1px solid var(--rcl-line-bright);
   border-radius: 10px;
   padding: 20px;
+  box-sizing: border-box;
 }
-/* Hard 250px cap on both dimensions (2026-10-02, Matt's follow-up: "the
-   logos have to have a maximum width and maximum height so they are
-   identical in size, 250px max is good") -- was only max-width/
-   max-height: 100% of the box, which let a wide logo (Toyota's oval) and
-   a tall one (Ferrari's shield) each fill the box differently and read
-   as inconsistent sizes. This caps every logo at the same absolute size
-   regardless of its native proportions or the box's own size, so all
-   three read as one consistent scale. */
-.rcl-mfr-tile-logo { max-width: 250px; max-height: 250px; width: 100%; height: 100%; object-fit: contain; }
+/* Hard 200px cap on both dimensions (2026-10-02, Matt's follow-up: "make
+   the logos max size 200px x 200px" -- was 250px, same as the box) --
+   leaves a consistent margin inside every 250x250 box regardless of a
+   logo's own native proportions (Toyota's wide oval vs. Ferrari's tall
+   shield), so all three read as one consistent scale. */
+.rcl-mfr-tile-logo { max-width: 200px; max-height: 200px; width: 100%; height: 100%; object-fit: contain; }
 .rcl-mfr-tile-name {
   margin-top: 14px;
   font-family: var(--rc-font-heading);
@@ -720,7 +735,7 @@ body.rc-league-page {
   .rcl-mfr-podium { gap: 10px; }
   .rcl-mfr-tile { width: 31%; }
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
-  .rcl-mfr-tile-box { padding: 10px; }
+  .rcl-mfr-tile-box-inner { padding: 10px; }
   .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 16px; }

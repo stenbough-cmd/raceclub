@@ -1407,7 +1407,20 @@ function _rclRenderManufacturerStandings(hub) {
     var entry = top3[rankIdx];
     if (!entry) return;
     var tile = _rclEl('div', 'rcl-mfr-tile rcl-mfr-tile-p' + (rankIdx + 1));
+    // Square-at-all-costs box (2026-10-02, Matt's follow-up: "the
+    // containers around the logos are still missshaped. I want them
+    // square at all costs") -- a plain width:100% + aspect-ratio:1/1 box
+    // wasn't holding square reliably here, so this switches to the old
+    // reliable padding-bottom:100% trick instead: percentage padding is
+    // always computed off the containing block's WIDTH (even
+    // padding-top/bottom), so a box with no declared height and
+    // padding-bottom:100% is forced to exactly match its own width, no
+    // matter what. .rcl-mfr-tile-box is now just that sizing shell
+    // (height:0, padding-bottom:100%); everything actually visible --
+    // border, background, the logo -- lives in the absolutely-positioned
+    // .rcl-mfr-tile-box-inner that fills it.
     var box = _rclEl('div', 'rcl-mfr-tile-box');
+    var boxInner = _rclEl('div', 'rcl-mfr-tile-box-inner');
     var img = document.createElement('img');
     img.className = 'rcl-mfr-tile-logo';
     img.src = manufacturerLogoSrc(entry.manufacturer);
@@ -1416,7 +1429,8 @@ function _rclRenderManufacturerStandings(hub) {
     // this page (manufacturerLogoFallback -- tries a .svg before giving
     // up and hiding the <img> entirely).
     manufacturerLogoFallback(img, entry.manufacturer, function () { img.style.display = 'none'; });
-    box.appendChild(img);
+    boxInner.appendChild(img);
+    box.appendChild(boxInner);
     tile.appendChild(box);
     tile.appendChild(_rclEl('div', 'rcl-mfr-tile-name', _rclEscapeHtml(entry.manufacturer.toUpperCase())));
     var rankWrap = _rclEl('div', 'rcl-mfr-tile-rankline');
