@@ -1788,9 +1788,14 @@ body.rc-league-page {
   opacity: 0.55;
   transition: opacity 0.2s ease, border-color 0.2s ease, width 0.25s ease;
 }
-.rcl-carousel-item:hover { opacity: 0.85; }
+/* Full opacity on hover, always -- including a finished (dimmed) item
+   (2026-10-02 follow-up, Matt's ask: "upon hover, the calendar event
+   shouldn't ever dim"). .rcl-carousel-item:hover (class + pseudo-class)
+   outranks the single-class .rcl-carousel-item-finished on specificity,
+   so this rule already wins over the dimmed state regardless of source
+   order, for both a compact and a finished item. */
+.rcl-carousel-item:hover { opacity: 1; }
 .rcl-carousel-item-finished { opacity: 0.4; }
-.rcl-carousel-item-finished:hover { opacity: 0.7; }
 .rcl-carousel-flag {
   width: 40px;
   height: 28px;
