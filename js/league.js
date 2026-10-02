@@ -118,6 +118,14 @@ function _rclFormatEventTime_(seconds) {
 // here at all. league.js is otherwise self-contained from Account.html
 // (no shared JS include), so this is its own small copy of the JS side
 // of that pattern only.
+// Live-ticking countdown timers the race carousel starts (one per
+// not-yet-happened entry's hero, see _rclBuildCountdown_/
+// _rclRenderRaceCarousel below) -- tracked at module scope so a hub
+// refresh re-render can clear every interval from the PREVIOUS render
+// before building new ones, rather than leaking one setInterval per
+// refresh forever.
+var _rclCarouselCountdownTimers_ = [];
+
 var _rclScrollLockY = 0;
 function _rclLockBodyScroll() {
   _rclScrollLockY = window.scrollY || window.pageYOffset || 0;
@@ -2271,10 +2279,68 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
 // weeks either. The round nearest "now" that hasn't happened yet opens as
 // the initially-centered/expanded item, same "UP NEXT" convention the old
 // calendar used.
+// Live DAYS:HOURS:MIN:SEC countdown block (2026-10-02 follow-up, Matt's
+// ask, fiawec.com reference image supplied: "add a countdown timer like
+// the one here, but instead of 'PRACTICE 1' it would say EVENT" -- same
+// "COUNTDOWN TO <thing>" caption + four boxed unit/label pairs the
+// reference uses, just counting down to the round's own start time
+// (entry.startUtc) instead of a practice session Race Club doesn't track
+// separately here). Ticks every second via setInterval; the caller is
+// responsible for clearing it (see _rclCarouselCountdownTimers_ above) --
+// this function only ever starts one.
+function _rclBuildCountdown_(startUtc) {
+  var wrap = _rclEl('div', 'rcl-carousel-countdown');
+  wrap.appendChild(_rclEl('div', 'rcl-carousel-countdown-label', 'Countdown to <strong>Event</strong>'));
+  var unitsRow = _rclEl('div', 'rcl-carousel-countdown-units');
+  wrap.appendChild(unitsRow);
+
+  var UNITS = [
+    { key: 'd', label: 'Days', ms: 86400000 },
+    { key: 'h', label: 'Hours', ms: 3600000 },
+    { key: 'm', label: 'Min', ms: 60000 },
+    { key: 's', label: 'Sec', ms: 1000 }
+  ];
+  var numEls = {};
+  UNITS.forEach(function (u, i) {
+    if (i > 0) unitsRow.appendChild(_rclEl('span', 'rcl-carousel-countdown-sep', ':'));
+    var unitEl = _rclEl('div', 'rcl-carousel-countdown-unit');
+    var numEl = _rclEl('div', 'rcl-carousel-countdown-num', '00');
+    unitEl.appendChild(numEl);
+    unitEl.appendChild(_rclEl('div', 'rcl-carousel-countdown-unitlabel', u.label));
+    unitsRow.appendChild(unitEl);
+    numEls[u.key] = numEl;
+  });
+
+  var targetMs = new Date(startUtc).getTime();
+  function tick() {
+    var remaining = targetMs - Date.now();
+    if (remaining < 0) remaining = 0;
+    var days = Math.floor(remaining / 86400000);
+    var hours = Math.floor((remaining % 86400000) / 3600000);
+    var mins = Math.floor((remaining % 3600000) / 60000);
+    var secs = Math.floor((remaining % 60000) / 1000);
+    numEls.d.textContent = String(days);
+    numEls.h.textContent = ('0' + hours).slice(-2);
+    numEls.m.textContent = ('0' + mins).slice(-2);
+    numEls.s.textContent = ('0' + secs).slice(-2);
+  }
+  tick();
+  var timerId = setInterval(tick, 1000);
+  _rclCarouselCountdownTimers_.push(timerId);
+
+  return wrap;
+}
+
 function _rclRenderRaceCarousel(hub) {
   var outer = document.getElementById('rcl-race-carousel');
   if (!outer) return;
   outer.innerHTML = '';
+
+  // Clear every countdown interval the PREVIOUS render of this carousel
+  // started -- outer.innerHTML='' above already removed their DOM, but an
+  // interval keeps firing against detached elements forever otherwise.
+  _rclCarouselCountdownTimers_.forEach(function (id) { clearInterval(id); });
+  _rclCarouselCountdownTimers_.length = 0;
 
   var raceEntries = (hub.hasSeason && hub.calendar) ? hub.calendar.filter(function (e) { return e.kind !== 'bye'; }) : [];
   if (!raceEntries.length) {
@@ -2376,6 +2442,12 @@ function _rclRenderRaceCarousel(hub) {
       btnRow.appendChild(recapBtn);
     }
     hero.appendChild(btnRow);
+
+    // Live countdown to this race's own start time -- upcoming races only
+    // (a finished one has nothing left to count down to).
+    if (!entry.finished && entry.startUtc) {
+      hero.appendChild(_rclBuildCountdown_(entry.startUtc));
+    }
     item.appendChild(hero);
 
     item.addEventListener('click', function () { if (idx !== activeIdx) setActive(idx); });

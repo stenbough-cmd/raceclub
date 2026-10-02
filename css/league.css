@@ -1873,6 +1873,56 @@ body.rc-league-page {
   cursor: pointer;
 }
 .rcl-carousel-hero-btn:hover { background: var(--rc-red); color: #fff; }
+/* Countdown block (2026-10-02 follow-up, fiawec.com reference image) --
+   same "COUNTDOWN TO <thing>" caption + four boxed unit/label pairs the
+   reference uses. Active item only (the hero it lives in is already
+   active-only), upcoming races only (_rclBuildCountdown_/
+   _rclRenderRaceCarousel, league.js). */
+.rcl-carousel-countdown { margin-top: 16px; }
+.rcl-carousel-countdown-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-dim);
+  margin-bottom: 8px;
+}
+.rcl-carousel-countdown-label strong,
+.rcl-carousel-countdown-label b { color: var(--rcl-ink); }
+.rcl-carousel-countdown-units {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.rcl-carousel-countdown-unit { display: flex; flex-direction: column; align-items: center; min-width: 34px; }
+.rcl-carousel-countdown-num {
+  font-family: var(--rc-font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.rcl-carousel-countdown-unitlabel {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+.rcl-carousel-countdown-sep {
+  font-family: var(--rc-font-heading);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--rcl-ink-faint);
+  margin-top: -14px;
+}
+@media (max-width: 640px) {
+  .rcl-carousel-countdown-num { font-size: 22px; }
+  .rcl-carousel-countdown-unit { min-width: 28px; }
+}
 .rcl-carousel-details-row {
   max-width: 1180px;
   margin: 0 auto;
