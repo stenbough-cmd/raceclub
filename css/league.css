@@ -916,6 +916,14 @@ body.rc-league-page {
   margin-bottom: 16px;
 }
 .rcl-standings-status-preliminary { color: #e0b64c; }
+/* Status-footer wrapper (2026-10-02, Matt's ask: "make it live at the
+   bottom of the container and add a gray line above it to signal that
+   it's the 'footer' section") -- reuses .rcl-results-bottom-row's own
+   border-top/spacing (further down this file). The notice's own
+   margin-top is zeroed out here only -- it's redundant once the wrapper
+   itself already supplies the gap above via padding-top, and doubling up
+   pushed the text too far from the line. */
+.rcl-results-status-footer .rcl-standings-status-note:first-child { margin-top: 0; }
 /* Mobile-only "view on PC" nudge, appended after this notice in the All
    Results popup (2026-09-27, _rclBuildAllResultsBody_) -- hidden above the
    mobile breakpoint (see that media query below), since desktop/tablet

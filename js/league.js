@@ -1018,15 +1018,11 @@ function _rclRenderStandings(hub) {
   // Bottom notice, same as Recent Results' (2026-09-26) -- reports the
   // most recently completed round's own preliminary/official status and
   // posting date, since the season total these standings represent is
-  // only ever as "official" as its most recent contributor.
+  // only ever as "official" as its most recent contributor. Wrapped as a
+  // bordered footer (2026-10-02) -- see _rclAppendResultsStatusFooter_'s
+  // own comment above.
   if (hasResults && hub.lastRace) {
-    var standingsNotice = _rclBuildResultsStatusNotice_(hub.lastRace);
-    if (standingsNotice) body.appendChild(standingsNotice);
-    // Mobile-only "view on PC" nudge (2026-09-30, Matt's ask -- see
-    // _rclBuildMobileViewOnPcNote_ for the full history) -- Current
-    // Standings hides team names on phone width too (league.css), so it
-    // gets the same nudge under its status notice.
-    if (standingsNotice) body.appendChild(_rclBuildMobileViewOnPcNote_());
+    _rclAppendResultsStatusFooter_(body, hub.lastRace);
   }
 
   // "View All Drivers" link (2026-09-21) and its popup (_rclOpenDriversModal)
@@ -1508,16 +1504,37 @@ function _rclBuildMobileViewOnPcNote_() {
 // the Race Details popup is gone from this panel; the status
 // notice + mobile "view on PC" nudge it used to sit above are kept exactly
 // as before, since those weren't part of that ask.
+// Footer wrapper (2026-10-02, Matt's ask: "In any container that has a
+// notification on the status of the results... make it live at the
+// bottom of the container and add a gray line above it to signal that
+// it's the 'footer' section of the container") -- wraps the status
+// notice + mobile "view on PC" nudge in the same bordered
+// .rcl-results-bottom-row treatment VIEW ALL RESULTS used to sit under
+// (see the comment above this function), so it reads as a deliberate
+// footer instead of just the last two lines of text in the panel. Shared
+// by Recent Results and Current Standings, the two places this notice is
+// genuinely the last thing in the container -- the All Results popup
+// (_rclBuildAllResultsBody_ below) deliberately keeps its own plain
+// (line-less) placement, since Race Report/Penalties Assessed already
+// follow it there with their own border-top dividers; wrapping it there
+// too would be a line immediately followed by another line.
+function _rclAppendResultsStatusFooter_(body, round) {
+  var notice = _rclBuildResultsStatusNotice_(round);
+  if (!notice) return;
+  var footer = _rclEl('div', 'rcl-results-bottom-row rcl-results-status-footer');
+  footer.appendChild(notice);
+  // Mobile-only "view on PC" nudge (2026-09-30, Matt's ask -- see
+  // _rclBuildMobileViewOnPcNote_ for the full history) -- Recent Results/
+  // Current Standings both hide team names on phone width same as All
+  // Results (league.css), so it gets the same nudge under its status
+  // notice.
+  footer.appendChild(_rclBuildMobileViewOnPcNote_());
+  body.appendChild(footer);
+}
+
 function _rclAppendResultsStatusNotice_(body, hub) {
   if (!hub.resultsRounds || !hub.resultsRounds.length) return;
-  var notice = _rclBuildResultsStatusNotice_(hub.lastRace);
-  if (notice) body.appendChild(notice);
-  // Mobile-only "view on PC" nudge (2026-09-30, Matt's ask -- see
-  // _rclBuildMobileViewOnPcNote_ for the full history) -- Recent Results
-  // hides team names on phone width same as Current Standings/All
-  // Results (league.css), so it gets the same nudge under its status
-  // notice, only shown once there's actually a notice to sit under.
-  if (notice) body.appendChild(_rclBuildMobileViewOnPcNote_());
+  _rclAppendResultsStatusFooter_(body, hub.lastRace);
 }
 
 // ---------------------------------------------------------------------
