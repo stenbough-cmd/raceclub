@@ -645,7 +645,8 @@ body.rc-league-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 220px;
+  width: 250px;
+  max-width: 100%;
 }
 /* P1 sits higher than P2/P3 (2026-10-02, Matt's follow-up: "make the
    number 1 square sit higher than the other two so it created a slight
@@ -659,7 +660,9 @@ body.rc-league-page {
    follow-up: "make the squares surrounding the top 3 larger and make
    them square 1:1 and make them all the same size") -- was a fixed
    height with a taller P1 variant; aspect-ratio keeps it square at any
-   width this tile ever ends up, including the mobile override below. */
+   width this tile ever ends up, including the mobile override below.
+   width:100% of the tile (max-width:250px above) is what makes the box
+   itself respect the same 250px cap as the logo inside it, below. */
 .rcl-mfr-tile-box {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -671,7 +674,15 @@ body.rc-league-page {
   border-radius: 10px;
   padding: 20px;
 }
-.rcl-mfr-tile-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* Hard 250px cap on both dimensions (2026-10-02, Matt's follow-up: "the
+   logos have to have a maximum width and maximum height so they are
+   identical in size, 250px max is good") -- was only max-width/
+   max-height: 100% of the box, which let a wide logo (Toyota's oval) and
+   a tall one (Ferrari's shield) each fill the box differently and read
+   as inconsistent sizes. This caps every logo at the same absolute size
+   regardless of its native proportions or the box's own size, so all
+   three read as one consistent scale. */
+.rcl-mfr-tile-logo { max-width: 250px; max-height: 250px; width: 100%; height: 100%; object-fit: contain; }
 .rcl-mfr-tile-name {
   margin-top: 14px;
   font-family: var(--rc-font-heading);
@@ -688,9 +699,11 @@ body.rc-league-page {
   border-top: 2px solid var(--rcl-line-bright);
   text-align: center;
 }
+/* Rank number font size bumped (2026-10-02, Matt's follow-up: "increase
+   the font size of the places underneath them") -- was 20px. */
 .rcl-mfr-tile-rank {
   font-family: var(--rc-font-heading);
-  font-size: 20px;
+  font-size: 32px;
   font-weight: 900;
 }
 /* Gold/silver/bronze -- same three gradients as the Current Standings
@@ -709,6 +722,7 @@ body.rc-league-page {
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
   .rcl-mfr-tile-box { padding: 10px; }
   .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
+  .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 16px; }
 }
 
