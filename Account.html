@@ -3980,7 +3980,7 @@
     // silently got shifted out and el() rendered the literal text
     // "margin-top:0;" instead (2026-09-01 bug report: "this displays on
     // the change avatar popup"). Fixed to the intended 2-arg call.
-    body.appendChild(el('p', 'rc-hint', 'Choose a profile picture. You can change this again any time.'));
+    body.appendChild(el('p', 'rc-hint', 'Choose from one of our AI generated profile pictures. You can change this again any time.'));
 
     var grid = el('div', 'rc-avatar-picker-grid');
     var selected = profile.avatarFilename || null;
@@ -4024,7 +4024,12 @@
     // part of the input's own value, so there's nothing for a driver to
     // even try to delete: it's simply not there to select. The input only
     // ever holds whatever comes after it.
-    body.appendChild(el('p', 'rc-hint', 'Or paste a link to your own image:'));
+    //
+    // Margin-top added (2026-10-03, Matt's ask) so this line isn't sitting
+    // right against the bottom of the grid above.
+    var urlHint = el('p', 'rc-hint', 'Or paste a link to your own image:');
+    urlHint.style.marginTop = '18px';
+    body.appendChild(urlHint);
     var urlRow = el('div', 'rc-avatar-url-row');
     urlRow.appendChild(el('span', 'rc-avatar-url-prefix', 'https://'));
     var urlInput = document.createElement('input');
@@ -4050,6 +4055,10 @@
     });
     urlRow.appendChild(urlInput);
     body.appendChild(urlRow);
+    // Image restriction note (2026-10-03, Matt's ask: keep the site from
+    // loading massively sized files, and keep avatars square) -- a note
+    // only for now, not enforced client- or server-side.
+    body.appendChild(el('div', 'rc-hint', 'Image must be square and under 5MB.'));
 
     var saveBtn = el('button', 'rc-btn-primary', 'Save Avatar');
     saveBtn.type = 'button';
@@ -4287,16 +4296,9 @@
     // call: eliminate the in-app notification system entirely, moving to
     // an external Discord bot).
 
-    var saveBtn = el('button', null, 'Save Changes');
-    saveBtn.type = 'submit';
-    saveBtn.className = 'rc-btn-primary';
-    saveBtn.style.marginTop = '16px';
-    form.appendChild(saveBtn);
-
     body.appendChild(form);
-    body.appendChild(el('hr', 'rc-nav-divider', null));
     // noOwnButton: true (2026-09-27, Matt's ask) -- Change Password no
-    // longer has its own UPDATE PASSWORD button here; SAVE CHANGES above
+    // longer has its own UPDATE PASSWORD button here; SAVE CHANGES below
     // drives both saves together. See passwordChangeSection's own comment
     // for why the forced-password lock screen elsewhere still gets its
     // own self-contained copy.
@@ -4306,6 +4308,21 @@
     var pwNew = pwBox.querySelector('.rc-pw-new');
     var pwConfirm = pwBox.querySelector('.rc-pw-confirm');
     pwCurrent.addEventListener('input', function () { pwCurrent.classList.remove('rc-field-invalid'); });
+
+    // SAVE CHANGES moved to the bottom of the popup, below Change Password
+    // (2026-10-03, Matt's ask) -- the old divider that used to separate it
+    // from the password section above is gone entirely now that the
+    // button itself sits below that section instead. Physically outside
+    // <form> but still wired to it via the HTML5 form="" attribute, so
+    // both a click here and pressing Enter in any of the fields above
+    // still fire the form's own 'submit' listener below.
+    form.id = form.id || ('rc-edit-profile-form-' + Date.now());
+    var saveBtn = el('button', null, 'Save Changes');
+    saveBtn.type = 'submit';
+    saveBtn.setAttribute('form', form.id);
+    saveBtn.className = 'rc-btn-primary';
+    saveBtn.style.marginTop = '20px';
+    body.appendChild(saveBtn);
 
     var modalHandle = showModal('Edit Profile', { bodyEl: body });
 
@@ -10976,12 +10993,12 @@
     // list's own activeLayouts filter just above this function.
     var isActive = rows.some(_rcRowActive);
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleTrackBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Deactivate This Track' : 'Reactivate This Track');
+    var toggleTrackBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Deactivate This Track' : 'Reactivate This Track');
     toggleTrackBtn.type = 'button';
     statusWrap.appendChild(toggleTrackBtn);
     body.appendChild(statusWrap);
 
-    body.appendChild(el('h3', 'margin:22px 0 0;font-size:14px;', 'Layouts'));
+    body.appendChild(el('h3', 'margin:22px 0 0;font-size:15px;', 'Layouts'));
     var listWrap = el('div', 'rc-dm-layout-list');
     body.appendChild(listWrap);
 
@@ -10996,7 +11013,7 @@
         var layoutRow = el('div', 'rc-dm-layout-row' + (active ? '' : ' rc-dm-layout-inactive'));
         layoutRow.appendChild(el('span', 'rc-dm-layout-name', escapeHtml(r.Layout || '(unnamed layout)')));
         layoutRow.appendChild(el('span', 'rc-dm-status-pill ' + (active ? 'rc-dm-status-pill-active' : 'rc-dm-status-pill-inactive'), active ? 'Active' : 'Inactive'));
-        var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', active ? 'Deactivate' : 'Reactivate');
+        var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm rc-btn-row', active ? 'Deactivate' : 'Reactivate');
         toggleBtn.type = 'button';
         toggleBtn.addEventListener('click', function () {
           // Instant, no wait on the server (2026-09-03, Matt's call: "all

@@ -157,7 +157,7 @@ function _rcEPShowModal(title, opts) {
 // setProfileCache + renderHeader(), same as it always does).
 function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   var body = _rcEP_el('div');
-  body.appendChild(_rcEP_el('p', 'rc-hint', 'Choose a profile picture. You can change this again any time.'));
+  body.appendChild(_rcEP_el('p', 'rc-hint', 'Choose from one of our AI generated profile pictures. You can change this again any time.'));
 
   var grid = _rcEP_el('div', 'rc-avatar-picker-grid');
   var selected = profile.avatarFilename || null;
@@ -194,7 +194,12 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   // of this popup (openAvatarPickerModal), see its comment for the full
   // reasoning on why "https://" is a separate non-editable label rather
   // than part of the input's own value.
-  body.appendChild(_rcEP_el('p', 'rc-hint', 'Or paste a link to your own image:'));
+  //
+  // Margin-top added (2026-10-03, Matt's ask), same as Account.html's own
+  // copy, so this line isn't sitting right against the bottom of the grid.
+  var urlHint = _rcEP_el('p', 'rc-hint', 'Or paste a link to your own image:');
+  urlHint.style.marginTop = '18px';
+  body.appendChild(urlHint);
   var urlRow = _rcEP_el('div', 'rc-avatar-url-row');
   urlRow.appendChild(_rcEP_el('span', 'rc-avatar-url-prefix', 'https://'));
   var urlInput = document.createElement('input');
@@ -212,6 +217,9 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   });
   urlRow.appendChild(urlInput);
   body.appendChild(urlRow);
+  // Image restriction note (2026-10-03, Matt's ask), same as Account.html's
+  // own copy -- a note only for now, not enforced client- or server-side.
+  body.appendChild(_rcEP_el('div', 'rc-hint', 'Image must be square and under 5MB.'));
 
   var saveBtn = _rcEP_el('button', 'rc-btn-primary', 'Save Avatar');
   saveBtn.type = 'button';
@@ -454,22 +462,30 @@ function _rcEPOpenEditProfileModal(profile, token) {
   // eliminate the in-app notification system entirely, moving to an
   // external Discord bot).
 
-  var saveBtn = _rcEP_el('button', null, 'Save Changes');
-  saveBtn.type = 'submit';
-  saveBtn.className = 'rc-btn-primary';
-  saveBtn.style.marginTop = '16px';
-  form.appendChild(saveBtn);
-
   body.appendChild(form);
-  body.appendChild(_rcEP_el('hr', 'rc-nav-divider', null));
   // noOwnButton: true (2026-09-27, Matt's ask, mirroring Account.html) --
-  // SAVE CHANGES above drives both saves together now.
+  // SAVE CHANGES below drives both saves together now.
   var pwBox = _rcEPPasswordChangeSection(token, { noOwnButton: true });
   body.appendChild(pwBox);
   var pwCurrent = pwBox.querySelector('.rc-pw-current');
   var pwNew = pwBox.querySelector('.rc-pw-new');
   var pwConfirm = pwBox.querySelector('.rc-pw-confirm');
   pwCurrent.addEventListener('input', function () { pwCurrent.classList.remove('rc-field-invalid'); });
+
+  // SAVE CHANGES moved to the bottom of the popup, below Change Password
+  // (2026-10-03, Matt's ask, mirroring Account.html) -- the old divider
+  // that used to separate it from the password section above is gone now
+  // that the button itself sits below that section. Physically outside
+  // <form> but still wired to it via the HTML5 form="" attribute, so both
+  // a click here and pressing Enter in any of the fields above still fire
+  // the form's own 'submit' listener below.
+  form.id = form.id || ('rc-edit-profile-form-' + Date.now());
+  var saveBtn = _rcEP_el('button', null, 'Save Changes');
+  saveBtn.type = 'submit';
+  saveBtn.setAttribute('form', form.id);
+  saveBtn.className = 'rc-btn-primary';
+  saveBtn.style.marginTop = '20px';
+  body.appendChild(saveBtn);
 
   var modalHandle = _rcEPShowModal('Edit Profile', { bodyEl: body });
 
