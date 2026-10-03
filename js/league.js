@@ -389,16 +389,22 @@ function _rclBuildTickerItems(hub) {
 
   // Ended-season ticker content (2026-10-03, Matt's ask: use the normal
   // ticker mechanism, but swap "TOP TEN <CLASS>" for "FINAL <CLASS>
-  // CHAMPIONSHIP RESULTS:", drop NEXT RACE entirely, and add a "TOP 3
-  // MANUFACTURER CHAMPIONSHIP:" podium segment at the end) -- branches
-  // off completely from the in-season logic below rather than threading
+  // CHAMPIONSHIP RESULTS:", drop NEXT RACE entirely, and add a "FINAL
+  // MANUFACTURERS' STANDINGS:" ranking segment at the end; follow-up the
+  // same day: show the ENTIRE grid per class, not just the top 10, and
+  // list every manufacturer ranked, not just the top 3) -- branches off
+  // completely from the in-season logic below rather than threading
   // seasonEnded checks through it, since nothing else about this state
   // (no next race, final standings instead of last-round results) shares
   // code with the normal flow.
   if (hub.seasonEnded) {
     var finalClassLists = _rclSortByTickerClassOrder_(hub.standings || [], function (cls) { return cls.className; });
     finalClassLists.forEach(function (cls) {
-      var standings = (cls.standings || []).slice(0, 10);
+      // No top-10 cap (2026-10-03 follow-up, Matt's ask: "don't limit the
+      // FINAL CLASS RESULTS to a top ten. Display the entire grid
+      // ranking") -- every classified driver in the class's final
+      // standings, not a slice.
+      var standings = cls.standings || [];
       if (!standings.length) return;
       var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
         return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
@@ -407,16 +413,18 @@ function _rclBuildTickerItems(hub) {
       items.push({ tag: 'FINAL ' + (cls.className || 'CLASS').toUpperCase() + ' CHAMPIONSHIP RESULTS', driverRows: rows, showRank: true });
     });
 
-    // Top 3 Hypercar-class manufacturers by championship points -- same
-    // totals _rclComputeManufacturerStandings_ already computes for the
-    // plain podium elsewhere on the page (no new server data), just
-    // rendered here as logo + manufacturer name only, no driver names/
-    // numbers/flags (Matt's explicit ask).
-    var mfrTop3 = _rclComputeManufacturerStandings_(hub);
-    if (mfrTop3.length) {
+    // Every Hypercar-class manufacturer with points, ranked (2026-10-03
+    // follow-up, Matt's ask: "list all the manufacturers as a ranking" --
+    // was just the top 3) -- same full ranked list the page's own
+    // Manufacturers' Standings "rest" list uses
+    // (_rclComputeManufacturerStandingsFull_), rendered here as logo +
+    // manufacturer name only, no driver names/numbers/flags (Matt's
+    // original ask, unchanged).
+    var mfrFull = _rclComputeManufacturerStandingsFull_(hub);
+    if (mfrFull.length) {
       items.push({
-        tag: 'TOP 3 MANUFACTURER CHAMPIONSHIP',
-        manufacturerRows: mfrTop3.map(function (m) { return { manufacturer: m.manufacturer }; }),
+        tag: "FINAL MANUFACTURERS' STANDINGS",
+        manufacturerRows: mfrFull.map(function (m) { return { manufacturer: m.manufacturer }; }),
         showRank: true
       });
     }
@@ -788,15 +796,18 @@ function _rclRenderTicker(hub) {
         }
         el.appendChild(list);
       } else if (item.manufacturerRows) {
-        // "TOP 3 MANUFACTURER CHAMPIONSHIP" (2026-10-03) -- same podium-
-        // style ranked list as a driver group, just manufacturer-only
-        // entries (buildManufacturerEntry above).
+        // "FINAL MANUFACTURERS' STANDINGS" (2026-10-03, follow-up Matt's
+        // ask: "add two spaces after the place, then the manufacturer
+        // logo. In between each manufacturer, leave 8 spaces") -- same
+        // podium-style ranked list as a driver group, just manufacturer-
+        // only entries (buildManufacturerEntry above), 8 non-breaking
+        // spaces between manufacturers instead of driverRows' own 10.
         var mfrList = _rclEl('span', 'rcl-ticker-driver-list');
         item.manufacturerRows.forEach(function (row, idx) {
-          if (idx > 0) mfrList.appendChild(document.createTextNode('          '));
+          if (idx > 0) mfrList.appendChild(document.createTextNode('        '));
           if (item.showRank) {
             mfrList.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idx + 1)));
-            mfrList.appendChild(document.createTextNode('  '));
+            mfrList.appendChild(document.createTextNode('  '));
           }
           mfrList.appendChild(buildManufacturerEntry(row));
         });
@@ -1136,7 +1147,7 @@ function _rclRenderStandings(hub) {
   // bordered footer (2026-10-02) -- see _rclAppendResultsStatusFooter_'s
   // own comment above.
   if (hasResults && hub.lastRace) {
-    _rclAppendResultsStatusFooter_(body, hub.lastRace);
+    _rclAppendResultsStatusFooter_(body, hub.lastRace, hub.seasonEnded, hub.seasonNumber);
   }
 
   // "View All Drivers" link (2026-09-21) and its popup (_rclOpenDriversModal)
@@ -1466,8 +1477,11 @@ function _rclRenderLastRace_(hub) {
   // see Website.gs/_rcComputeClassSeasonMentions_, Results.gs), so the
   // podium tile builder below (_rclBuildLastRacePodium_) is reused as-is;
   // only the header text and the mention-tile pool differ.
+  // "Last Race" -> "Final Results" once the season showing has ended
+  // (2026-10-03 follow-up, Matt's ask -- was "Last Season", one message
+  // earlier the same day).
   var titleEl = document.getElementById('rcl-last-race-title');
-  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Last Season' : 'Last Race';
+  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Results' : 'Last Race';
 
   var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
@@ -1759,7 +1773,11 @@ function _rclRenderManufacturerStandings(hub) {
   // line under it -- then "Make it say HYPERCAR CLASS underneath" as a
   // follow-up, since this podium is Hypercar-only and that wasn't
   // labeled anywhere on the page itself).
-  body.appendChild(_rclEl('div', 'rcl-mfr-title', "Manufacturers' Standings"));
+  // "Manufacturers' Standings" -> "Final Manufacturers' Standings" once
+  // the season showing has ended (2026-10-03 follow-up, Matt's ask) --
+  // the podium data itself (_rclComputeManufacturerStandings_) is already
+  // that season's final totals either way, just the label changes.
+  body.appendChild(_rclEl('div', 'rcl-mfr-title', hub.seasonEnded ? "Final Manufacturers' Standings" : "Manufacturers' Standings"));
   body.appendChild(_rclEl('div', 'rcl-mfr-subtitle', 'Hypercar Class'));
 
   var podium = _rclEl('div', 'rcl-mfr-podium');
@@ -1859,8 +1877,18 @@ function _rclRenderManufacturerStandings(hub) {
   }
 }
 
-function _rclBuildResultsStatusNotice_(round) {
+// seasonEnded/seasonNumber (2026-10-03 follow-up, Matt's ask: once the
+// season showing has ended, Championship Standings' own footer notice
+// should read "*FINAL RESULTS FOR SEASON <N>" instead of "*OFFICIAL
+// RESULTS (POSTED ON <date>)") -- both optional, only passed by the one
+// call site (_rclRenderStandings) that actually has hub in hand; every
+// other caller keeps the original preliminary/official-by-date wording.
+function _rclBuildResultsStatusNotice_(round, seasonEnded, seasonNumber) {
   if (!round) return null;
+  if (seasonEnded) {
+    var label = '*FINAL RESULTS' + (seasonNumber ? (' FOR SEASON ' + seasonNumber) : '');
+    return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary', label);
+  }
   var finalized = !!round.resultsFinalized;
   var dateSource = finalized ? round.finalizedAt : (round.importedAt || round.startUtc);
   var dateText = dateSource ? _rclFormatDate(dateSource) : '';
@@ -1927,8 +1955,8 @@ function _rclBuildMobileViewOnPcNote_() {
 // (line-less) placement, since Race Report/Penalties Assessed already
 // follow it there with their own border-top dividers; wrapping it there
 // too would be a line immediately followed by another line.
-function _rclAppendResultsStatusFooter_(body, round) {
-  var notice = _rclBuildResultsStatusNotice_(round);
+function _rclAppendResultsStatusFooter_(body, round, seasonEnded, seasonNumber) {
+  var notice = _rclBuildResultsStatusNotice_(round, seasonEnded, seasonNumber);
   if (!notice) return;
   var footer = _rclEl('div', 'rcl-results-bottom-row rcl-results-status-footer');
   footer.appendChild(notice);
