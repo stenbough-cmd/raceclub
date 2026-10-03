@@ -2111,7 +2111,16 @@ body.rc-league-page {
    wrapper classes below), matching the reference's own hero copy sitting
    inside the page margins while only the scrollable strip itself bleeds
    to the edges. */
+/* A bit more breathing room above the carousel than the shared
+   .rcl-row-full margin-top:28px gives every other full-width row
+   (2026-10-03, Matt's ask: "Add a little more margin between the top of
+   the calendar and the bottom of the first row of containers" -- "the
+   calendar" is this race carousel, "the first row of containers" is the
+   League News/Last Race row directly above it). Overriding here, not on
+   the shared .rcl-row-full rule itself, so every other full-width row
+   sitewide keeps its existing 28px. */
 .rcl-carousel-outer {
+  margin-top: 44px;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
   width: 100vw;
