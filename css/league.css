@@ -910,12 +910,14 @@ body.rc-league-page {
   gap: 28px;
   margin-top: 20px;
 }
+/* Widened slightly 160px -> 180px (2026-10-03 follow-up, Matt's ask:
+   "make all 3 podium rectangles slightly wider"). */
 .rcl-lr-podium-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 160px;
-  max-width: 31%;
+  width: 180px;
+  max-width: 33%;
 }
 /* Driver identity sits ABOVE the stand, not inside a boxed tile (Matt:
    "have the manufacturer logo above the driver name, flag and number
@@ -978,21 +980,22 @@ body.rc-league-page {
   font-weight: 900;
   color: rgba(20, 16, 8, 0.75);
 }
-/* Heights trimmed slightly (2026-10-03 follow-up, Matt's ask: "Reduce
-   the height of all podium rectangles slightly") -- same P1/P2/P3
-   ratio, each just scaled down ~17%. */
-.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 124px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
-.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 92px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
-.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 72px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
+/* Heights trimmed again (2026-10-03, second follow-up: "again, slightly
+   reduce the difference in height from first to second to third") --
+   P1-P3 spread narrowed from 52px to 34px, same tallest-to-shortest
+   order, just a gentler step between each. */
+.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 116px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
+.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 96px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 82px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
 @media (max-width: 640px) {
   .rcl-lr-podium { gap: 10px; }
-  .rcl-lr-podium-tile { width: 31%; }
+  .rcl-lr-podium-tile { width: 33%; }
   .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
-  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 90px; }
-  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 68px; }
-  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
+  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 86px; }
+  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 74px; }
+  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 64px; }
 }
 
 /* Each tile: icon + title on top, the stat as the big visual anchor,
