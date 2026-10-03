@@ -502,10 +502,9 @@
     { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
     // Label renamed Results -> Career (2026-09-27, Matt's ask) -- id/icon
     // and every internal key (RC_LAZY_SECTION_RENDERERS, the #results
-    // hash reload target, RC_RESULTS_VIEW_SEASON_KEY_, etc.) are
-    // UNCHANGED on purpose, only the driver-facing label text changes --
-    // renaming the id too would risk breaking any bookmarked #results
-    // link or in-flight sessionStorage key for no visible benefit.
+    // hash reload target, etc.) are UNCHANGED on purpose, only the
+    // driver-facing label text changes -- renaming the id too would risk
+    // breaking any bookmarked #results link for no visible benefit.
     { id: 'results', label: 'Career', icon: ICON_RESULTS },
     { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
   ];
@@ -6170,109 +6169,30 @@
     return panel;
   }
 
-  // Which season's results to show sticks across a reload via
-  // sessionStorage (2026-09-26, Matt's ask -- see the season picker below),
-  // same "a flag survives the reload, the section reads it back" pattern
-  // as raceclub_open_edit_profile elsewhere on this file. Empty/absent
-  // means "the current active season," the page's original default
-  // behavior.
-  var RC_RESULTS_VIEW_SEASON_KEY_ = 'raceclub_results_view_season';
-
-  // Season picker -- "Season N: Name MMM D - MMM D, YYYY" dropdown (1/3
-  // width) plus a RETRIEVE RESULTS button, sitting under the season
-  // header's red underline (2026-09-26, Matt's ask), for pulling up a
-  // past, Completed season's results once the active season has moved on.
-  // Only rendered once the driver actually HAS a past season on record --
-  // an empty list would just be dead chrome. Clicking Retrieve Results
-  // stores the chosen season (or clears it, for "Current Season") and does
-  // a real page reload back to this section, same as every other
-  // save-then-reload flow on the site -- Results is a lazy section, so
-  // this deliberately calls window.location.reload() directly rather than
-  // rcReloadAfterSave() (which would just re-render Results in place
-  // without an actual page reload).
-  function resultsSeasonPicker(pastSeasons, viewSeasonId) {
-    var row = el('div', 'rc-results-season-picker');
-    var select = document.createElement('select');
-    select.className = 'rc-results-season-select';
-
-    var currentOpt = document.createElement('option');
-    currentOpt.value = '';
-    currentOpt.textContent = 'Current Season';
-    if (!viewSeasonId) currentOpt.selected = true;
-    select.appendChild(currentOpt);
-
-    var driverTz = '';
-    try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
-
-    pastSeasons.forEach(function (s) {
-      var opt = document.createElement('option');
-      opt.value = s.seasonId;
-      var numLabel = seasonNumberLabel(s.seasonId);
-      var dateRange = (s.startUtc && s.endUtc) ? (' ' + formatShortDate(s.startUtc, driverTz) + ' - ' + formatShortDate(s.endUtc, driverTz)) : '';
-      opt.textContent = (numLabel ? 'Season ' + numLabel + ': ' : '') + (s.name || '') + dateRange;
-      if (s.seasonId === viewSeasonId) opt.selected = true;
-      select.appendChild(opt);
-    });
-    row.appendChild(select);
-
-    var retrieveBtn = el('button', 'rc-btn-primary rc-results-season-retrieve', 'Retrieve Results');
-    retrieveBtn.type = 'button';
-    retrieveBtn.addEventListener('click', function () {
-      if (select.value) sessionStorage.setItem(RC_RESULTS_VIEW_SEASON_KEY_, select.value);
-      else sessionStorage.removeItem(RC_RESULTS_VIEW_SEASON_KEY_);
-      rcActiveSectionId = 'results';
-      window.location.hash = '#results';
-      window.location.reload();
-    });
-    row.appendChild(retrieveBtn);
-    return row;
-  }
-
+  // Full career rework (2026-10-03, Matt's ask: "it should give a driver's
+  // complete career stats not just last season or the current season.
+  // It's a historical record of every event that driver has been a part
+  // of") -- replaces the old season-picker/RETRIEVE RESULTS/sessionStorage
+  // mechanism (resultsSeasonPicker, RC_RESULTS_VIEW_SEASON_KEY_, both
+  // removed) with a single getMyCareerResults call that returns EVERY
+  // season the driver has resulted rounds in, newest first. There's no
+  // longer a single season to switch between -- everything renders at
+  // once, each season in its own panel, same rc-cal-season-head/title
+  // header Calendar's season panel already uses so the two pages keep
+  // reading as one family.
   function renderResultsSection(token) {
     var section = document.getElementById('rc-section-results');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading your results...'));
-
-    var viewSeasonId = sessionStorage.getItem(RC_RESULTS_VIEW_SEASON_KEY_) || '';
-    var resultsFetchOpts = { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG };
-    if (viewSeasonId) resultsFetchOpts.params = { seasonId: viewSeasonId };
+    section.appendChild(buildPageSpinner('Loading your career...'));
 
     // `return`ed (2026-09-08), same reason as renderFinancesSection above.
-    return Promise.all([
-      fetchApi('getSeasonResults', resultsFetchOpts),
-      fetchApi('getMyPastSeasons', { token: token })
-    ]).then(function (both) {
-      var res = both[0];
-      var pastSeasonsRes = both[1];
+    return fetchApi('getMyCareerResults', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
       section.innerHTML = '';
 
       if (!res || !res.success) {
-        // A stale/bad viewSeasonId (a season that's since been un-completed,
-        // for instance) shouldn't leave the page stuck failing on every
-        // future visit -- clear it and fall back to the active season.
-        if (viewSeasonId) sessionStorage.removeItem(RC_RESULTS_VIEW_SEASON_KEY_);
         section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
-        return;
-      }
-      if (!res.hasSeason) {
-        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Results fill in once a season is underway.'));
-        return;
-      }
-      // Not registered for the active season -- nothing to show (Matt's
-      // rule, 2026-09-23: only registered drivers see the current
-      // season's results here). NOTE: this used to say career history
-      // "still lives on the Career page" -- that separate page was
-      // removed 2026-09-24 (its stats will live on a future public driver
-      // profile page instead) before this nav item itself was ever
-      // renamed Results -> Career (2026-09-27); this section IS now "the
-      // Career page," and it's still gated the same way -- past, completed
-      // seasons remain reachable via the season picker below regardless.
-      if (!res.registered) {
-        section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Register for the current season to see its results.'));
+        section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load your career results right now.'));
         return;
       }
 
@@ -6283,47 +6203,37 @@
       // help file for help on these sections and I want to keep it
       // clean") -- see renderHelpSection's Results entry instead.
 
-      // One outer container for the whole page (2026-09-08, Matt's call),
-      // same rc-dash-card chrome the Calendar page's season panel already
-      // uses -- header is the season number + name, exactly like
-      // Calendar's own season header, so the two pages read as one family.
-      // The header updates to whichever season was actually retrieved
-      // (res.seasonId/res.seasonName), so switching seasons via the picker
-      // below is reflected here automatically after the reload.
-      var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
-      var head = el('div', 'rc-cal-season-head');
-      var seasonNumLabel = seasonNumberLabel(res.seasonId);
-      head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(res.seasonName || '')));
-      // Class pills removed from the top-right corner (2026-09-24, Matt's
-      // call) -- the header is just the season title now.
-      panel.appendChild(head);
-
-      var pastSeasons = (pastSeasonsRes && pastSeasonsRes.success) ? (pastSeasonsRes.seasons || []) : [];
-      if (pastSeasons.length) panel.appendChild(resultsSeasonPicker(pastSeasons, viewSeasonId));
+      var seasons = res.seasons || [];
+      if (!res.hasCareer || !seasons.length) {
+        section.appendChild(buildEmptyStatePanel('No Data To Display', 'Your career history fills in once you have results from a round.'));
+        return;
+      }
 
       // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a
       // League Hub page now so we don't need a leaderboard or extra fluff
       // in there") -- the public League Hub carries the whole-field
       // standings table now; this page is purely this driver's own races.
-      var rounds = (res.rounds || []).slice().sort(function (a, b) {
-        var at = a.startUtc ? new Date(a.startUtc).getTime() : 0;
-        var bt = b.startUtc ? new Date(b.startUtc).getTime() : 0;
-        return bt - at; // most recent first
-      });
+      // seasons/rounds already arrive newest-first from Results.gs
+      // (handleGetMyCareerResults), so no re-sort is needed here.
+      var wrap = el('div', 'rc-results-career-list');
+      seasons.forEach(function (s) {
+        var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
+        var head = el('div', 'rc-cal-season-head');
+        var seasonNumLabel = seasonNumberLabel(s.seasonId);
+        head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(s.seasonName || '')));
+        panel.appendChild(head);
 
-      if (rounds.length) {
         var list = el('div', 'rc-results-round-list');
-        rounds.forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
+        (s.rounds || []).forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
         panel.appendChild(list);
-      } else {
-        panel.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'No results have been posted yet this season.'));
-      }
 
-      section.appendChild(panel);
+        wrap.appendChild(panel);
+      });
+      section.appendChild(wrap);
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Career'));
-      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load season results right now.'));
+      section.appendChild(el('p', 'color:var(--rc-steel);', 'Could not load your career results right now.'));
     });
   }
 
