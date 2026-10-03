@@ -1361,8 +1361,18 @@ function _rclRenderLastRace_(hub) {
     // ask) -- this section isn't a standings table any more (that's the
     // plain POS/DRIVER/PTS row list Current Standings itself shows), it's
     // the podium + headline-mention story for the class, so "HIGHLIGHTS"
-    // reads more accurately than reusing "STANDINGS".
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
+    // reads more accurately than reusing "STANDINGS". "FROM ROUND N AT
+    // TRACK" appended in a lightweight sub-span (2026-10-03, second
+    // follow-up, Matt's ask) -- same header bar/line, just a lighter
+    // weight than "<CLASS> HIGHLIGHTS" itself so the two read as a label
+    // plus a subordinate detail, not two equally-weighted phrases.
+    var headerDiv = _rclEl('div', 'rcl-standings-class-header');
+    headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
+    if (r.roundNum || r.track) {
+      var fromBits = 'FROM ROUND ' + (r.roundNum || '') + (r.track ? (' AT ' + r.track.toUpperCase()) : '');
+      headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
+    }
+    clsWrap.appendChild(headerDiv);
     clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
     if ((cls.headlineMentions || []).length) {
       clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
@@ -1424,8 +1434,17 @@ function _rclBuildLastRacePodium_(cls) {
     driverWrap.appendChild(identity);
     tile.appendChild(driverWrap);
 
+    // Ordinal suffix (st/nd/rd), top-aligned against the number rather
+    // than centered/baseline-aligned (2026-10-03 follow-up, Matt's ask:
+    // "Write 1st, 2nd and 3rd (st, nd and rd all top vertically
+    // justified against the numbers)") -- always one of these three
+    // since this is a top-3 podium, no need for the general ordinal-
+    // suffix logic (11th/12th/13th etc.) a season-long list would need.
     var stand = _rclEl('div', 'rcl-lr-podium-stand');
-    stand.appendChild(_rclEl('span', 'rcl-lr-podium-standnum', String(rankIdx + 1)));
+    var standNumWrap = _rclEl('span', 'rcl-lr-podium-standnum-wrap');
+    standNumWrap.appendChild(_rclEl('span', 'rcl-lr-podium-standnum', String(rankIdx + 1)));
+    standNumWrap.appendChild(_rclEl('span', 'rcl-lr-podium-standsuffix', ['', 'st', 'nd', 'rd'][rankIdx + 1] || ''));
+    stand.appendChild(standNumWrap);
     tile.appendChild(stand);
 
     podium.appendChild(tile);

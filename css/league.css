@@ -1012,11 +1012,27 @@ body.rc-league-page {
   border-radius: 8px 8px 0 0;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 10px rgba(0, 0, 0, 0.25);
 }
+/* Number + ordinal suffix (2026-10-03 follow-up, Matt's ask: "Write
+   1st, 2nd and 3rd... st, nd and rd all top vertically justified
+   against the numbers") -- inline-flex with align-items:flex-start, not
+   center/baseline, so the suffix's TOP lines up with the number's top
+   instead of looking like a typical centered or baseline superscript. */
+.rcl-lr-podium-standnum-wrap {
+  display: inline-flex;
+  align-items: flex-start;
+}
 .rcl-lr-podium-standnum {
   font-family: var(--rc-font-heading);
   font-size: 34px;
   font-weight: 900;
   color: rgba(20, 16, 8, 0.75);
+}
+.rcl-lr-podium-standsuffix {
+  font-family: var(--rc-font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: rgba(20, 16, 8, 0.75);
+  margin-left: 2px;
 }
 /* Heights all reduced equally (2026-10-03, third follow-up: "reduce the
    overall height of all 3 podium rectangles... so they all equally are
@@ -1032,6 +1048,7 @@ body.rc-league-page {
   .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
+  .rcl-lr-podium-standsuffix { font-size: 12px; }
   .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 74px; }
   .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 62px; }
   .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
@@ -1329,6 +1346,16 @@ body.rc-league-page {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4);
   border-bottom: 2px solid #c9cbce;
+}
+/* "FROM ROUND N AT TRACK", appended after "<CLASS> HIGHLIGHTS" inside
+   Last Race's own class header only (2026-10-03, second follow-up,
+   Matt's ask) -- lighter weight than the bold label it follows, same
+   size/letter-spacing/uppercase/color otherwise (inherits from
+   .rcl-standings-class-header above), so it reads as a subordinate
+   detail rather than a second equally-weighted label. */
+.rcl-lr-class-header-sub {
+  font-weight: 400;
+  opacity: 0.75;
 }
 .rcl-standings-row {
   display: grid;
