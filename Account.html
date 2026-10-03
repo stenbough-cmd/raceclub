@@ -6169,17 +6169,42 @@
     return panel;
   }
 
-  // Full career rework (2026-10-03, Matt's ask: "it should give a driver's
+  // Career page rework (2026-10-03, Matt's ask: "it should give a driver's
   // complete career stats not just last season or the current season.
   // It's a historical record of every event that driver has been a part
-  // of") -- replaces the old season-picker/RETRIEVE RESULTS/sessionStorage
-  // mechanism (resultsSeasonPicker, RC_RESULTS_VIEW_SEASON_KEY_, both
-  // removed) with a single getMyCareerResults call that returns EVERY
-  // season the driver has resulted rounds in, newest first. There's no
-  // longer a single season to switch between -- everything renders at
-  // once, each season in its own panel, same rc-cal-season-head/title
-  // header Calendar's season panel already uses so the two pages keep
-  // reading as one family.
+  // of"), then corrected same day (Matt: "I don't want all the career
+  // stats all at once... I want it how it was before where I could
+  // retrieve results from other seasons using a dropdown box" -- the
+  // all-at-once render was the wrong shape, AND it was never the actual
+  // bug: the old picker going missing between seasons was really the old
+  // getSeasonResults/getMyPastSeasons pair only offering the CURRENT
+  // season's dropdown, which went empty the moment a season ended with
+  // no new one started). The fix that sticks: one getMyCareerResults call
+  // (replacing that old pair) still fetches EVERY season the driver has
+  // resulted rounds in, newest first, so there's always something to
+  // pick from once the driver has ANY history -- but the page is back to
+  // showing ONE season at a time via a dropdown (resultsSeasonPicker
+  // below), defaulting to the newest. Switching seasons no longer needs
+  // its own fetchApi round trip or a page reload (no more
+  // RC_RESULTS_VIEW_SEASON_KEY_/sessionStorage) since every season's data
+  // is already in hand from the one call -- the select just re-renders
+  // from it instantly.
+  function resultsSeasonPicker(seasons, onChange) {
+    var row = el('div', 'rc-results-season-picker');
+    var select = document.createElement('select');
+    select.className = 'rc-results-season-select';
+    seasons.forEach(function (s, i) {
+      var opt = document.createElement('option');
+      opt.value = String(i);
+      var numLabel = seasonNumberLabel(s.seasonId);
+      opt.textContent = (numLabel ? 'Season ' + numLabel + ': ' : '') + (s.seasonName || '');
+      select.appendChild(opt);
+    });
+    select.addEventListener('change', function () { onChange(parseInt(select.value, 10) || 0); });
+    row.appendChild(select);
+    return row;
+  }
+
   function renderResultsSection(token) {
     var section = document.getElementById('rc-section-results');
     if (!section) return;
@@ -6203,33 +6228,52 @@
       // help file for help on these sections and I want to keep it
       // clean") -- see renderHelpSection's Results entry instead.
 
+      // Seasons with zero resulted rounds are already filtered out server
+      // side (handleGetMyCareerResults), so every entry here has
+      // something to show -- this is what keeps the picker from ever
+      // landing on a season with nothing in it.
       var seasons = res.seasons || [];
       if (!res.hasCareer || !seasons.length) {
         section.appendChild(buildEmptyStatePanel('No Data To Display', 'Your career history fills in once you have results from a round.'));
         return;
       }
 
+      // One outer container for the whole page (2026-09-08, Matt's call),
+      // same rc-dash-card chrome the Calendar page's season panel already
+      // uses -- header is the season number + name, exactly like
+      // Calendar's own season header, so the two pages read as one
+      // family. The title and round list below are rebuilt in place by
+      // renderSeason() whenever the picker's selection changes.
+      var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
+      var head = el('div', 'rc-cal-season-head');
+      var titleEl = el('h3', 'rc-cal-season-title', '');
+      head.appendChild(titleEl);
+      panel.appendChild(head);
+
       // No Leaderboard here anymore (2026-09-19, Matt's call: "We have a
       // League Hub page now so we don't need a leaderboard or extra fluff
       // in there") -- the public League Hub carries the whole-field
       // standings table now; this page is purely this driver's own races.
-      // seasons/rounds already arrive newest-first from Results.gs
-      // (handleGetMyCareerResults), so no re-sort is needed here.
-      var wrap = el('div', 'rc-results-career-list');
-      seasons.forEach(function (s) {
-        var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
-        var head = el('div', 'rc-cal-season-head');
-        var seasonNumLabel = seasonNumberLabel(s.seasonId);
-        head.appendChild(el('h3', 'rc-cal-season-title', (seasonNumLabel ? 'Season ' + seasonNumLabel + ': ' : '') + escapeHtml(s.seasonName || '')));
-        panel.appendChild(head);
+      var list = el('div', 'rc-results-round-list');
 
-        var list = el('div', 'rc-results-round-list');
+      function renderSeason(idx) {
+        var s = seasons[idx] || seasons[0];
+        var numLabel = seasonNumberLabel(s.seasonId);
+        titleEl.textContent = (numLabel ? 'Season ' + numLabel + ': ' : '') + (s.seasonName || '');
+        list.innerHTML = '';
+        // rounds already arrive newest-first from Results.gs
+        // (handleGetMyCareerResults), so no re-sort is needed here.
         (s.rounds || []).forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
-        panel.appendChild(list);
+      }
 
-        wrap.appendChild(panel);
-      });
-      section.appendChild(wrap);
+      // Picker only shown once there's actually more than one season to
+      // choose between -- a single-season career just shows that season,
+      // no dead chrome.
+      if (seasons.length > 1) panel.appendChild(resultsSeasonPicker(seasons, renderSeason));
+      panel.appendChild(list);
+      renderSeason(0); // newest season by default
+
+      section.appendChild(panel);
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'Career'));
