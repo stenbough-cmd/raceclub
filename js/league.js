@@ -387,6 +387,43 @@ function _rclBuildTickerItems(hub) {
     });
   }
 
+  // Ended-season ticker content (2026-10-03, Matt's ask: use the normal
+  // ticker mechanism, but swap "TOP TEN <CLASS>" for "FINAL <CLASS>
+  // CHAMPIONSHIP RESULTS:", drop NEXT RACE entirely, and add a "TOP 3
+  // MANUFACTURER CHAMPIONSHIP:" podium segment at the end) -- branches
+  // off completely from the in-season logic below rather than threading
+  // seasonEnded checks through it, since nothing else about this state
+  // (no next race, final standings instead of last-round results) shares
+  // code with the normal flow.
+  if (hub.seasonEnded) {
+    var finalClassLists = _rclSortByTickerClassOrder_(hub.standings || [], function (cls) { return cls.className; });
+    finalClassLists.forEach(function (cls) {
+      var standings = (cls.standings || []).slice(0, 10);
+      if (!standings.length) return;
+      var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
+      });
+      if (!rows.length) return;
+      items.push({ tag: 'FINAL ' + (cls.className || 'CLASS').toUpperCase() + ' CHAMPIONSHIP RESULTS', driverRows: rows, showRank: true });
+    });
+
+    // Top 3 Hypercar-class manufacturers by championship points -- same
+    // totals _rclComputeManufacturerStandings_ already computes for the
+    // plain podium elsewhere on the page (no new server data), just
+    // rendered here as logo + manufacturer name only, no driver names/
+    // numbers/flags (Matt's explicit ask).
+    var mfrTop3 = _rclComputeManufacturerStandings_(hub);
+    if (mfrTop3.length) {
+      items.push({
+        tag: 'TOP 3 MANUFACTURER CHAMPIONSHIP',
+        manufacturerRows: mfrTop3.map(function (m) { return { manufacturer: m.manufacturer }; }),
+        showRank: true
+      });
+    }
+
+    return items;
+  }
+
   // Next race -- same "first non-bye, unfinished" pick the Calendar
   // section's own "UP NEXT" pill uses (see _rclRenderCalendar above).
   // Built here but NOT pushed yet (2026-09-26, Matt's ask: "move the NEXT
@@ -622,6 +659,27 @@ function _rclRenderTicker(hub) {
     return entry;
   }
 
+  // Manufacturer-only entry for the ended-season "TOP 3 MANUFACTURER
+  // CHAMPIONSHIP" segment (2026-10-03) -- logo + manufacturer name only,
+  // deliberately none of buildDriverEntry's name/flag/car-number fields
+  // (Matt's explicit ask: "instead of driver names/numbers/flags etc, do
+  // <manufacturer logo> <manufacturer>").
+  function buildManufacturerEntry(row) {
+    var entry = _rclEl('span', 'rcl-ticker-driver-entry');
+    if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.className = 'rcl-ticker-driver-logo';
+      logo.src = manufacturerLogoSrc(row.manufacturer);
+      logo.alt = '';
+      manufacturerLogoFallback(logo, row.manufacturer, function () { logo.style.display = 'none'; });
+      entry.appendChild(logo);
+    }
+    var nameSpan = _rclEl('span', 'rcl-ticker-driver-name');
+    nameSpan.textContent = row.manufacturer || '';
+    entry.appendChild(nameSpan);
+    return entry;
+  }
+
   function buildRun() {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
@@ -729,6 +787,20 @@ function _rclRenderTicker(hub) {
           });
         }
         el.appendChild(list);
+      } else if (item.manufacturerRows) {
+        // "TOP 3 MANUFACTURER CHAMPIONSHIP" (2026-10-03) -- same podium-
+        // style ranked list as a driver group, just manufacturer-only
+        // entries (buildManufacturerEntry above).
+        var mfrList = _rclEl('span', 'rcl-ticker-driver-list');
+        item.manufacturerRows.forEach(function (row, idx) {
+          if (idx > 0) mfrList.appendChild(document.createTextNode('          '));
+          if (item.showRank) {
+            mfrList.appendChild(_rclEl('span', 'rcl-ticker-driver-rank', _rclOrdinal_(idx + 1)));
+            mfrList.appendChild(document.createTextNode('  '));
+          }
+          mfrList.appendChild(buildManufacturerEntry(row));
+        });
+        el.appendChild(mfrList);
       } else if (item.nameText !== undefined) {
         // SEASON item (2026-09-23) -- name at the line's normal weight,
         // dates in their own lighter span right after it.
@@ -1020,6 +1092,13 @@ function _rclRenderStandings(hub) {
   if (!body) return;
   body.innerHTML = '';
 
+  // "Championship Standings" -> "FINAL CHAMPIONSHIP STANDINGS" once the
+  // season showing has ended (2026-10-03, Matt's ask) -- hub.standings
+  // itself is unchanged either way (it's always that season's current/
+  // final points table), just the label.
+  var titleEl = document.getElementById('rcl-standings-title');
+  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
+
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
   // Before any race has actually been run, there's nothing to rank yet
   // (2026-09-19 follow-up, Matt's call: "if there hasn't been a race
@@ -1229,6 +1308,28 @@ var RCL_MENTION_ICON_BY_TYPE_ = {
   positionSwap: _RCL_ICON_SWAP_VERTICAL
 };
 
+// Season-level mention icons (2026-10-03, "Last Season" redesign) -- same
+// 16x16/viewBox 24/stroke-1.8 icon convention, backing
+// _rcComputeClassSeasonMentions_'s pool of 8 (Results.gs). A few reuse a
+// race-level icon whose metaphor already fits (ironManSeason/
+// fastestLapKing/seasonSurge/underdogStory/titleFight); three are new
+// (trophy, checkered flag, checklist) for the three season-only shapes
+// that don't have a race-level equivalent.
+var _RCL_ICON_TROPHY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"></path><path d="M8 5H5a3 3 0 0 0 3 5"></path><path d="M16 5h3a3 3 0 0 1-3 5"></path><path d="M9 20h6"></path><path d="M12 13v4"></path></svg>';
+var _RCL_ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"></path><path d="M5 4h13l-3 4 3 4H5"></path></svg>';
+var _RCL_ICON_CHECKLIST = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h10"></path><path d="M9 12h10"></path><path d="M9 18h10"></path><path d="M4 6l1 1 2-2"></path><path d="M4 12l1 1 2-2"></path><path d="M4 18l1 1 2-2"></path></svg>';
+
+var RCL_SEASON_MENTION_ICON_BY_TYPE_ = {
+  seasonDominance: _RCL_ICON_TROPHY,
+  titleFight: _RCL_ICON_CONVERGE,
+  ironManSeason: _RCL_ICON_SHIELD_CHECK,
+  polePositionKing: _RCL_ICON_FLAG,
+  fastestLapKing: _RCL_ICON_BOLT,
+  seasonSurge: _RCL_ICON_TRENDING_UP,
+  underdogStory: _RCL_ICON_REBOUND,
+  mrConsistency: _RCL_ICON_CHECKLIST
+};
+
 // Per-class Winner/Most Laps Led/Pole/Fastest Lap breakdown for the All
 // Results popup. Originally (2026-09-27) one combined block at the TOP of
 // the popup with every class's row stacked under each category, a class
@@ -1355,12 +1456,48 @@ function _rclRenderLastRace_(hub) {
   // 1000-char truncation to show the full story -- this function only
   // has to hide/show the Last Race panel and flag the shared row via
   // .rcl-news-lastrace-row-newsonly, css/league.css does the rest.
+  // "Last Race" -> "Last Season" once the season showing has ended
+  // (2026-10-03, Matt's ask: "Change Last Race to Last Season and keep
+  // the podium sections for each class, but instead of the mention
+  // containers that we choose from during a season, display 4 season
+  // only mentions"). hub.lastSeason carries the same per-class
+  // {className, standings (top 3, this class's own final podium),
+  // mentions} shape hub.lastRace.classes does (just season-aggregated --
+  // see Website.gs/_rcComputeClassSeasonMentions_, Results.gs), so the
+  // podium tile builder below (_rclBuildLastRacePodium_) is reused as-is;
+  // only the header text and the mention-tile pool differ.
+  var titleEl = document.getElementById('rcl-last-race-title');
+  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Last Season' : 'Last Race';
+
   var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
-  var hasLastRace = hub.hasSeason && !!hub.lastRace;
+  var seasonEnded = !!hub.seasonEnded;
+  var hasLastRace = hub.hasSeason && (seasonEnded ? !!hub.lastSeason : !!hub.lastRace);
   if (panel) panel.style.display = hasLastRace ? '' : 'none';
   if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasLastRace);
   if (!hasLastRace) return;
+
+  if (seasonEnded) {
+    var ls = hub.lastSeason;
+    // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE,
+    // same as hub.lastRace.classes (_rcBuildSeasonStandings_ sorts the
+    // same way hub.standings already does).
+    (ls.classes || []).forEach(function (cls) {
+      var clsWrap = _rclEl('div', 'rcl-lr-class');
+      var headerDiv = _rclEl('div', 'rcl-standings-class-header');
+      headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' SEASON HIGHLIGHTS'));
+      if (hub.seasonNumber) {
+        headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' SEASON ' + hub.seasonNumber));
+      }
+      clsWrap.appendChild(headerDiv);
+      clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
+      if ((cls.mentions || []).length) {
+        clsWrap.appendChild(_rclBuildLastSeasonMentions_(cls.mentions));
+      }
+      body.appendChild(clsWrap);
+    });
+    return;
+  }
 
   var r = hub.lastRace;
 
@@ -1482,6 +1619,30 @@ function _rclBuildLastRaceMentions_(mentions) {
     var tile = _rclEl('div', 'rcl-lr-mention-tile');
     var head = _rclEl('div', 'rcl-lr-mention-head');
     head.appendChild(_rclEl('span', 'rcl-lr-mention-icon', RCL_MENTION_ICON_BY_TYPE_[m.typeKey] || ''));
+    head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
+    tile.appendChild(head);
+    tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
+    var driverNames = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean).join(' & ');
+    if (driverNames) tile.appendChild(_rclEl('div', 'rcl-lr-mention-drivers', _rclEscapeHtml(driverNames)));
+    tile.appendChild(_rclEl('div', 'rcl-lr-mention-narrative', _rclEscapeHtml(m.narrative || '')));
+    grid.appendChild(tile);
+  });
+  return grid;
+}
+
+// Same tile shape as _rclBuildLastRaceMentions_ above, just 4-across
+// (2026-10-03, "Last Season" redesign: "display 4 season only mentions
+// that tell the story of the season") instead of 3, and reading the
+// season-level icon map/typeKeys (_rcComputeClassSeasonMentions_,
+// Results.gs) instead of the race-level pool. .rcl-lr-mentions-season
+// is the same grid as .rcl-lr-mentions with one more column at desktop
+// width (css/league.css).
+function _rclBuildLastSeasonMentions_(mentions) {
+  var grid = _rclEl('div', 'rcl-lr-mentions rcl-lr-mentions-season');
+  mentions.slice(0, 4).forEach(function (m) {
+    var tile = _rclEl('div', 'rcl-lr-mention-tile');
+    var head = _rclEl('div', 'rcl-lr-mention-head');
+    head.appendChild(_rclEl('span', 'rcl-lr-mention-icon', RCL_SEASON_MENTION_ICON_BY_TYPE_[m.typeKey] || ''));
     head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
     tile.appendChild(head);
     tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
@@ -3020,7 +3181,12 @@ function _rclRenderNews(hub) {
   // at all in that case (undefined charLimit -> _rclStoryPreviewHtml
   // never truncates), so the full story shows with no "Continue
   // reading..." link, matching the wider column it now has.
-  var hasLastRace = hub.hasSeason && !!hub.lastRace;
+  // hub.lastSeason fallback (2026-10-03, "Last Season" redesign) -- once
+  // the season showing has ended, _rclRenderLastRace_ shows the Last
+  // Season panel off hub.lastSeason instead of hub.lastRace; this check
+  // has to agree with that one or News would wrongly widen to full-row
+  // while a Last Season panel is still visible right next to it.
+  var hasLastRace = hub.hasSeason && !!(hub.seasonEnded ? hub.lastSeason : hub.lastRace);
   var preview = _rclStoryPreviewHtml(current.body, hasLastRace ? 1000 : undefined);
   currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', preview.html));
   if (preview.truncated) {

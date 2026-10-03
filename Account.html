@@ -3726,7 +3726,16 @@
                 return;
               }
               showToast('Season ended.', 'success');
-              if (typeof reload === 'function') reload();
+              // Full page reload, not the in-place re-render `reload`
+              // normally does (2026-10-03, Matt's ask: "reload the entire
+              // account page and THEN return to the league tools page") --
+              // ending a season can ripple into other sections' numbers
+              // (e.g. a driver's Current Seat card), so this uses the same
+              // rcReloadAfterSave() mechanism every other save on the site
+              // goes through (a real navigation/reload, landing back on
+              // League Tools), rather than just refreshing this one panel.
+              rcActiveSectionId = 'league';
+              rcReloadAfterSave();
             }).catch(function () {
               showToast('Could not reach the server -- season not ended.', 'error');
             });
@@ -4623,6 +4632,16 @@
 
     var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
+    // Once a season has ended, every button on its row (and on each of its
+    // round rows below) disappears except the races disclosure toggle
+    // (2026-10-03, Matt's ask: "remove all buttons from ended season and
+    // all the rounds in that season EXCEPT for the drop down button. That
+    // remains") -- an ended season is read-only history at this point, so
+    // Recompute Season and Edit Season (both below) are skipped entirely
+    // rather than just disabled, and buildSeasonRaceRow does the same for
+    // its own Import Results/Review & Finalize/Delete Results buttons.
+    var isEnded = s.status === 'Completed';
+
     // RECOMPUTE SEASON (2026-09-08) -- only offered once the season has at
     // least one round with results (s.locked -- same "has actually raced"
     // gate End Season/Delete already use). Re-runs SeasonHistory for every
@@ -4631,7 +4650,7 @@
     // were already imported) is reflected in every later round's numbers
     // and in Season Standings -- see handleAdminRecomputeSeason,
     // Seasons.gs.
-    if (s.locked) {
+    if (s.locked && !isEnded) {
       // Styled to match Edit Season (2026-09-25, Matt's ask) -- a
       // deliberate one-off exception to the "gray unless it saves" color
       // rule, same kind of explicit override as the red File Protest
@@ -4702,15 +4721,17 @@
     // user doesn't have credentials to use that function") -- an
     // Organizer viewer sees the button but it's disabled with a tooltip
     // instead of missing entirely.
-    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
-    editBtn.type = 'button';
-    if (currentProfile && currentProfile.role === 'Admin') {
-      editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
-    } else {
-      editBtn.disabled = true;
-      withTooltip(editBtn, 'Only Admins can edit season details.');
+    if (!isEnded) {
+      var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
+      editBtn.type = 'button';
+      if (currentProfile && currentProfile.role === 'Admin') {
+        editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
+      } else {
+        editBtn.disabled = true;
+        withTooltip(editBtn, 'Only Admins can edit season details.');
+      }
+      btnGroup.appendChild(editBtn);
     }
-    btnGroup.appendChild(editBtn);
 
     // Delete removed from this row entirely (2026-09-14, Matt's call:
     // "Remove DELETE from the Season buttons so that only EDIT SEASON
@@ -4746,7 +4767,7 @@
     // created first, so this is simply seasons[0]) starts already expanded
     // on page load instead of requiring a click.
     var racesBox = el('div', 'padding-left:20px;' + (defaultExpanded ? '' : 'display:none;'));
-    racesBox.appendChild(buildSeasonRacesList(races || [], token, reload));
+    racesBox.appendChild(buildSeasonRacesList(races || [], token, reload, isEnded));
     // Triangle disclosure toggle (2026-09-13, Matt's call) -- replaces the
     // old "Show Races (n)"/"Hide Races" text button. The race count isn't
     // lost, it's already shown right above in this row's own meta line
@@ -4789,7 +4810,7 @@
   // import against until that system is designed for real -- see Rounds'
   // schema comment in Core.gs). Bye weeks are filtered out entirely --
   // they're not a race at all.
-  function buildSeasonRacesList(races, token, reload) {
+  function buildSeasonRacesList(races, token, reload, isEnded) {
     var box = el('div');
     var real = (races || []).filter(function (r) { return r.kind !== 'bye'; });
     if (!real.length) {
@@ -4814,7 +4835,7 @@
     var specialCount = 0;
     real.forEach(function (r) {
       if (r.kind === 'special') specialCount++;
-      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized, specialCount));
+      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized, specialCount, isEnded));
       if (r.kind !== 'special') priorFinalized = priorFinalized && !!r.resultsFinalized;
     });
     return box;
@@ -4880,7 +4901,7 @@
   // below. The function body itself is unchanged: passing true either way
   // still means "say nothing, this round isn't actionable right now."
 
-  function buildSeasonRaceRow(r, token, reload, priorFinalized, specialNumber) {
+  function buildSeasonRaceRow(r, token, reload, priorFinalized, specialNumber, isEnded) {
     var row = el('div', 'rc-group-row');
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
@@ -4947,7 +4968,7 @@
 
     var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
 
-    if (!isSpecial && r.roundId) {
+    if (!isSpecial && r.roundId && !isEnded) {
       // No round picker in either popup below -- the click that opened
       // this row already knows exactly which round it's for (Matt's
       // call), so openImportXmlModal/openEraseRoundIngestionModal go
@@ -5173,11 +5194,21 @@
       // any more than Data Management had, so this still opens the
       // season-picker popup first (openEndSeasonModal), chaining into the
       // same typed "END SEASON" confirmation before anything happens.
+      // Disabled once no season is eligible to end (2026-10-03, Matt's
+      // ask: "there should not be any other season to end at that point
+      // so the END SEASON button should be disabled") -- same eligibility
+      // rule openEndSeasonModal's own picker already filters on (needs at
+      // least one posted result and isn't already Completed), just
+      // surfaced on the button itself instead of only inside the popup.
+      var hasEndableSeason = (seasons || []).some(function (s) { return s.locked && s.status !== 'Completed'; });
       var endSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'End Season');
       endSeasonBtn.type = 'button';
       if (!isAdmin) {
         endSeasonBtn.disabled = true;
         withTooltip(endSeasonBtn, 'Only Admins can end a season.');
+      } else if (!hasEndableSeason) {
+        endSeasonBtn.disabled = true;
+        withTooltip(endSeasonBtn, 'No season is currently eligible to end.');
       } else {
         withTooltip(endSeasonBtn, 'Mark a season complete.');
         endSeasonBtn.addEventListener('click', function () { openEndSeasonModal(token, reload); });
@@ -5191,11 +5222,19 @@
       // inside the season-picker popup itself, not gated here, so a
       // season that's ineligible just doesn't show up in that popup's
       // list rather than disabling this button outright.
+      // Disabled once no season is eligible to delete (2026-10-03, Matt's
+      // ask: "if there are none that can be deleted, disable the button")
+      // -- eligibility is just status !== 'Completed', the exact same
+      // check hasOpenSeason above already computes, so this reuses it
+      // rather than recomputing the same filter a third time.
       var deleteSeasonBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Delete Season');
       deleteSeasonBtn.type = 'button';
       if (!isAdmin) {
         deleteSeasonBtn.disabled = true;
         withTooltip(deleteSeasonBtn, 'Only Admins can delete a season.');
+      } else if (!hasOpenSeason) {
+        deleteSeasonBtn.disabled = true;
+        withTooltip(deleteSeasonBtn, 'No season is currently eligible to delete.');
       } else {
         withTooltip(deleteSeasonBtn, 'Permenantly erase a season from the database. This action is irreversible.');
         deleteSeasonBtn.addEventListener('click', function () { openDeleteSeasonModal(token, reload); });

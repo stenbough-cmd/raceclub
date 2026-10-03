@@ -1088,6 +1088,11 @@ body.rc-league-page {
   gap: 14px;
   margin-top: 24px;
 }
+/* "Last Season" variant (2026-10-03) -- 4 mention tiles instead of 3,
+   same tile look otherwise. */
+.rcl-lr-mentions-season {
+  grid-template-columns: repeat(4, 1fr);
+}
 .rcl-lr-mention-tile {
   background: var(--rcl-bg-raised);
   border: 1px solid var(--rcl-line-bright);
@@ -1131,7 +1136,8 @@ body.rc-league-page {
   color: var(--rcl-ink-dim);
 }
 @media (max-width: 640px) {
-  .rcl-lr-mentions { grid-template-columns: 1fr; gap: 10px; }
+  .rcl-lr-mentions,
+  .rcl-lr-mentions-season { grid-template-columns: 1fr; gap: 10px; }
   .rcl-lr-mention-tile { padding: 12px; }
   .rcl-lr-mention-stat { font-size: 18px; }
 }

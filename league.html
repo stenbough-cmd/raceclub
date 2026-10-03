@@ -166,7 +166,11 @@
          _rclRenderLastRace_, js/league.js. -->
     <section class="rcl-panel" id="rcl-last-race-panel">
       <div class="rcl-panel-head">
-        <div class="rcl-panel-title">Last Race</div>
+        <!-- "Last Race" -> "Last Season" once hub.seasonEnded (2026-10-03,
+             "Last Season" redesign) -- _rclRenderLastRace_ (js/league.js)
+             swaps this text and switches the body to hub.lastSeason's
+             season-level podium + mentions instead of hub.lastRace's. -->
+        <div class="rcl-panel-title" id="rcl-last-race-title">Last Race</div>
       </div>
       <div class="rcl-panel-body" id="rcl-last-race"></div>
     </section>
@@ -204,7 +208,10 @@
   <div class="rcl-row-full">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
-        <div class="rcl-panel-title">Championship Standings</div>
+        <!-- "Championship Standings" -> "FINAL CHAMPIONSHIP STANDINGS" once
+             hub.seasonEnded (2026-10-03, "Last Season" redesign) -- text
+             swapped by _rclRenderStandings, js/league.js. -->
+        <div class="rcl-panel-title" id="rcl-standings-title">Championship Standings</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
