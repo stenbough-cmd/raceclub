@@ -1356,12 +1356,13 @@ function _rclRenderLastRace_(hub) {
   // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule).
   (r.classes || []).forEach(function (cls) {
     var clsWrap = _rclEl('div', 'rcl-lr-class');
-    // Same graphite "<CLASS> STANDINGS" header Current Standings uses --
-    // the one piece of the old Recent Results panel kept as-is, since it's
-    // just a section label, not part of the "feels like the championship
-    // table" look Matt was reacting to (that was the plain POS/DRIVER/PTS
-    // row list below it, now gone).
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
+    // Same graphite header bar Current Standings uses, but reads "<CLASS>
+    // HIGHLIGHTS" here, not "STANDINGS" (2026-10-03 follow-up, Matt's
+    // ask) -- this section isn't a standings table any more (that's the
+    // plain POS/DRIVER/PTS row list Current Standings itself shows), it's
+    // the podium + headline-mention story for the class, so "HIGHLIGHTS"
+    // reads more accurately than reusing "STANDINGS".
+    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
     clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
     if ((cls.headlineMentions || []).length) {
       clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
@@ -1612,16 +1613,20 @@ function _rclRenderManufacturerStandings(hub) {
     var rankWrap = _rclEl('div', 'rcl-mfr-tile-rankline');
     rankWrap.appendChild(_rclEl('span', 'rcl-mfr-tile-rank', String(rankIdx + 1)));
     tile.appendChild(rankWrap);
-    // Points added next to the manufacturer name (2026-10-03, Matt's ask:
-    // "add points next to the MANUFACTURERS on the podium section with a
-    // 5-space gap... manufacturer and N PTS should be the same style") --
-    // one text run, one class, so both halves render in the exact same
-    // style with no separate element to keep in sync. 5 literal
-    // non-breaking spaces for the gap, since plain spaces collapse in
-    // HTML and this is meant to read as a fixed gap, not a flexible one.
-    var nameLine = _rclEl('div', 'rcl-mfr-tile-name',
-      _rclEscapeHtml(entry.manufacturer.toUpperCase()) + '     ' + Math.round(entry.points) + ' PTS');
+    // Name on its own line, points on the line below it (2026-10-03,
+    // second follow-up, Matt's ask: "make the MANUFACTURERS names on
+    // their own line, and then below it list the amount of points in
+    // the same style and height as the rest of the list below P4-Pn" --
+    // supersedes the previous same-day pass that put name+points on one
+    // line together with a 5-space gap). Points now reuse
+    // .rcl-mfr-rest-item's own text style (14px/800, same letter-
+    // spacing/color) instead of .rcl-mfr-tile-name's bigger style, so
+    // the number reads at the same size/weight it does further down in
+    // the P4+ list.
+    var nameLine = _rclEl('div', 'rcl-mfr-tile-name', _rclEscapeHtml(entry.manufacturer.toUpperCase()));
     tile.appendChild(nameLine);
+    var ptsLine = _rclEl('div', 'rcl-mfr-tile-points', Math.round(entry.points) + ' PTS');
+    tile.appendChild(ptsLine);
     podium.appendChild(tile);
   });
   body.appendChild(podium);

@@ -824,6 +824,22 @@ body.rc-league-page {
   color: var(--rcl-ink);
   text-align: center;
 }
+/* Points, on their own line below the name (2026-10-03, second
+   follow-up, Matt's ask: "make the MANUFACTURERS names on their own
+   line, and then below it list the amount of points in the same style
+   and height as the rest of the list below P4-Pn") -- matches
+   .rcl-mfr-rest-item's text style exactly (14px/800, same letter-
+   spacing and dim color), including its own 12px mobile size further
+   down this file. */
+.rcl-mfr-tile-points {
+  margin-top: 4px;
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rcl-ink-dim);
+  text-align: center;
+}
 /* Divider line moved back between the rank number and the name/points line
    (2026-10-03, Matt's ask: "move the line... back in between the place
    and manufacturer") -- was a border-TOP above the rank number (right
@@ -865,6 +881,7 @@ body.rc-league-page {
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
   .rcl-mfr-tile-box-inner { padding: 10px; }
   .rcl-mfr-tile-name { font-size: 18px; margin-top: 10px; }
+  .rcl-mfr-tile-points { font-size: 12px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 4px; }
   .rcl-mfr-subtitle { font-size: 11px; margin-bottom: 16px; }
