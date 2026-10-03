@@ -1014,9 +1014,18 @@ body.rc-league-page {
 }
 /* Number + ordinal suffix (2026-10-03 follow-up, Matt's ask: "Write
    1st, 2nd and 3rd... st, nd and rd all top vertically justified
-   against the numbers") -- inline-flex with align-items:flex-start, not
-   center/baseline, so the suffix's TOP lines up with the number's top
-   instead of looking like a typical centered or baseline superscript. */
+   against the numbers"). First pass used align-items:flex-start alone,
+   which aligned the two SPANS' line-box tops -- but a 15px line box
+   carries more leading above its own glyph than a 34px line box does,
+   so the suffix's actual letterforms ended up floating above the
+   number's letterforms instead of level with them (2026-10-03, third
+   follow-up: "the st, nd and rd are sitting too high, actually above
+   the numbers... need to be at the top or just barely above the
+   number"). Fix: line-height:1 on both spans collapses each line box
+   down to (near enough) its own glyph height, so flex-start now lines
+   up the actual visible tops, not leftover leading -- margin-top nudges
+   the suffix down those last couple px to land it right at/just below
+   the number's own top instead of above it. */
 .rcl-lr-podium-standnum-wrap {
   display: inline-flex;
   align-items: flex-start;
@@ -1025,14 +1034,17 @@ body.rc-league-page {
   font-family: var(--rc-font-heading);
   font-size: 34px;
   font-weight: 900;
+  line-height: 1;
   color: rgba(20, 16, 8, 0.75);
 }
 .rcl-lr-podium-standsuffix {
   font-family: var(--rc-font-heading);
   font-size: 15px;
   font-weight: 800;
-  color: rgba(20, 16, 8, 0.75);
+  line-height: 1;
+  margin-top: 4px;
   margin-left: 2px;
+  color: rgba(20, 16, 8, 0.75);
 }
 /* Heights all reduced equally (2026-10-03, third follow-up: "reduce the
    overall height of all 3 podium rectangles... so they all equally are
@@ -1048,7 +1060,7 @@ body.rc-league-page {
   .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
-  .rcl-lr-podium-standsuffix { font-size: 12px; }
+  .rcl-lr-podium-standsuffix { font-size: 12px; margin-top: 3px; }
   .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 74px; }
   .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 62px; }
   .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
