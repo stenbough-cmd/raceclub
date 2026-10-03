@@ -3230,10 +3230,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-results-round-title-layout { font-weight: 500; color: var(--rc-steel); }
 .rc-results-season-standings { margin-bottom: 16px; }
 
-/* Season picker -- past, Completed-season dropdown + RETRIEVE RESULTS
-   button (2026-09-26, Matt's ask), sitting under the season header's red
-   underline. 1/3-width select, button to its right; stacks full-width on
-   narrow screens rather than squeezing. */
+/* Season picker -- dropdown over every season the driver has career
+   results for (2026-09-26, Matt's ask; reworked 2026-10-03 to switch
+   seasons instantly from the already-fetched career payload instead of a
+   RETRIEVE RESULTS button + reload), sitting under the season header's
+   red underline. 1/3-width select; stacks full-width on narrow screens
+   rather than squeezing. */
 .rc-results-season-picker { display: flex; gap: 10px; align-items: stretch; margin: 12px 0 18px; }
 .rc-results-season-select {
   flex: 0 0 33%;
@@ -3246,7 +3248,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   border-radius: 6px;
   padding: 8px 10px;
 }
-.rc-results-season-retrieve { flex: none; }
 @media (max-width: 640px) {
   .rc-results-season-picker { flex-direction: column; }
   .rc-results-season-select { flex-basis: auto; }
