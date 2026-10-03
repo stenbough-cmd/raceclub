@@ -1775,18 +1775,33 @@ body.rc-league-page {
    not revealed only once centered; only the EXTRA detail below the header
    (.rcl-carousel-hero: race details + button) is active-only. */
 .rcl-carousel-item {
+  position: relative;
   flex: 0 0 auto;
   width: 240px;
   scroll-snap-align: center;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
   padding: 0 4px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   opacity: 0.55;
-  transition: opacity 0.2s ease, border-color 0.2s ease, width 0.25s ease;
+  transition: opacity 0.2s ease, width 0.25s ease;
+}
+/* Light gray vertical divider between entries (2026-10-03 follow-up,
+   Matt's ask: "Add a light gray vertical line seperating calendar
+   entries") -- sits centered in the track's own 14px gap rather than on
+   either item's own edge, so it reads as a divider between items, not a
+   border that belongs to one of them. No line before the very first
+   item. */
+.rcl-carousel-item:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 14%;
+  bottom: 14%;
+  width: 1px;
+  background: var(--rcl-line-bright);
 }
 /* Full opacity on hover, always -- including a finished (dimmed) item
    (2026-10-02 follow-up, Matt's ask: "upon hover, the calendar event
@@ -1851,10 +1866,8 @@ body.rc-league-page {
 .rcl-carousel-item-active {
   width: 340px;
   opacity: 1;
-  border-bottom-color: var(--rc-red);
   cursor: default;
 }
-.rcl-carousel-item-active.rcl-carousel-item-special { border-bottom-color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-item-active .rcl-carousel-hero {
   display: block;
   margin-top: 16px;
@@ -1863,18 +1876,21 @@ body.rc-league-page {
 /* Race details -- lightest weight possible, smaller, light gray, all caps
    (2026-10-03, Matt's exact ask: "EVENING RACE, SPRINT 20 MINS LONG" /
    "CLEAR & 26° WITH 0% CHANCE OF RAIN"). */
-.rcl-carousel-details { margin-bottom: 4px; }
+.rcl-carousel-details { margin-bottom: 16px; }
+/* Same font style as the "Hypercar Class" subtitle under MANUFACTURERS'
+   STANDINGS (.rcl-mfr-subtitle) -- 2026-10-03 follow-up, Matt's ask, this
+   supersedes the earlier "lightest weight possible" spec for this line. */
 .rcl-carousel-details-line {
   font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 300;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rcl-ink-faint);
+  color: var(--rcl-ink-dim);
   line-height: 1.5;
 }
 .rcl-carousel-hero-btns {
-  margin-top: 14px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1981,6 +1997,7 @@ body.rc-league-page {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
   .rcl-carousel-track { padding: 4px calc(50vw - 135px) 22px; gap: 10px; }
   .rcl-carousel-item { width: 190px; }
+  .rcl-carousel-item:not(:first-child)::before { left: -5px; }
   .rcl-carousel-eventname { font-size: 13px; }
   .rcl-carousel-trackname { font-size: 22px; }
   .rcl-carousel-datetime { font-size: 13px; }
