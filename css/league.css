@@ -778,8 +778,13 @@ body.rc-league-page {
    logo's own native proportions (Toyota's wide oval vs. Ferrari's tall
    shield), so all three read as one consistent scale. */
 .rcl-mfr-tile-logo { max-width: 200px; max-height: 200px; width: 100%; height: 100%; object-fit: contain; }
+/* margin-top dropped from 14px to 0 (2026-10-03, see .rcl-mfr-tile-rankline's
+   own comment just below) -- the divider line that used to sit above the
+   rank number now sits here instead, below the rank number, so this gap
+   is supplied by that divider's own padding/margin instead of being
+   doubled up with a second gap here too. */
 .rcl-mfr-tile-name {
-  margin-top: 14px;
+  margin-top: 0;
   font-family: var(--rc-font-heading);
   font-size: 14px;
   font-weight: 800;
@@ -787,11 +792,18 @@ body.rc-league-page {
   color: var(--rcl-ink);
   text-align: center;
 }
+/* Divider line moved back between the rank number and the name/points line
+   (2026-10-03, Matt's ask: "move the line... back in between the place
+   and manufacturer") -- was a border-TOP above the rank number (right
+   under the logo box) from the 2026-10-03 position/name swap; now a
+   border-BOTTOM below it instead, so reading top to bottom it's still
+   logo -> rank number -> divider -> name/points, just with the line
+   sitting one step lower than it did right after that swap. */
 .rcl-mfr-tile-rankline {
   width: 100%;
   margin-top: 10px;
-  padding-top: 8px;
-  border-top: 2px solid var(--rcl-line-bright);
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--rcl-line-bright);
   text-align: center;
 }
 /* Rank number font size bumped (2026-10-02, Matt's follow-up: "increase
@@ -805,18 +817,18 @@ body.rc-league-page {
    position badges (.rcl-standings-row-p1/p2/p3's own .rcl-standings-pos
    rule, further down this file), applied here as text/border color
    instead of a filled badge background. */
-.rcl-mfr-tile-p1 .rcl-mfr-tile-rankline { border-top-color: #cf9f2c; }
+.rcl-mfr-tile-p1 .rcl-mfr-tile-rankline { border-bottom-color: #cf9f2c; }
 .rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: #f4dc8e; }
-.rcl-mfr-tile-p2 .rcl-mfr-tile-rankline { border-top-color: #a7abb2; }
+.rcl-mfr-tile-p2 .rcl-mfr-tile-rankline { border-bottom-color: #a7abb2; }
 .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: #eceef1; }
-.rcl-mfr-tile-p3 .rcl-mfr-tile-rankline { border-top-color: #a3653a; }
+.rcl-mfr-tile-p3 .rcl-mfr-tile-rankline { border-bottom-color: #a3653a; }
 .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: #dba876; }
 @media (max-width: 640px) {
   .rcl-mfr-podium { gap: 10px; }
   .rcl-mfr-tile { width: 31%; }
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
   .rcl-mfr-tile-box-inner { padding: 10px; }
-  .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
+  .rcl-mfr-tile-name { font-size: 11px; margin-top: 0; }
   .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 4px; }
   .rcl-mfr-subtitle { font-size: 11px; margin-bottom: 16px; }
