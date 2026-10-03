@@ -5,10 +5,10 @@
   the shared site header, a season hero band (season number + name,
   "League Hub" title, and two stat strips built from real data -- This
   Season and League Format), then Recent Results + League News side by
-  side, then the Calendar/race carousel full width (moved above
-  Manufacturers' Standings 2026-10-03, Matt's ask), then Manufacturers'
-  Standings, then Leaderboard full width (one column per class,
-  2026-09-19). No separate Drivers section (removed
+  side, then the Calendar/race carousel full width (swapped with
+  Manufacturers' Standings, 2026-10-03, Matt's ask), then Leaderboard
+  full width (one column per class, 2026-09-19), then Manufacturers'
+  Standings. No separate Drivers section (removed
   2026-09-19 -- the Leaderboard already lists every driver per class). No
   separate Points Tables panel either (also removed 2026-09-19) -- it's a
   "View Points Tables" link at the bottom of the Leaderboard panel that
@@ -159,29 +159,12 @@
        the page itself, not just the content column. Built from
        hub.calendar (same data the old Calendar panel used) by
        _rclRenderRaceCarousel, js/league.js.
-       Moved above Manufacturers' Standings/Championship Standings
-       (2026-10-03, Matt's ask: "swap manufacturers standings and calendar
-       on league.html page") -- now sits directly under Recent
-       Results/League News, in the position Manufacturers' Standings used
-       to occupy. -->
+       Swapped with Manufacturers' Standings (2026-10-03, Matt's ask:
+       "swap manufacturers standings and calendar on league.html page") --
+       now sits directly under Recent Results/League News, in the
+       position Manufacturers' Standings used to occupy; Championship
+       Standings (below) did not move. -->
   <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
-
-  <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by
-       championship points, as a plain podium (2026-10-02, Matt's ask: "I
-       wouldn't want it sitting in a container... I'd like for it to be in
-       between the recent results and championship standings containers
-       and live on the main page"). Deliberately NOT a .rcl-panel -- no
-       card border/background, just the title + podium sitting directly on
-       the page like the hero band above it. Built entirely from
-       hub.standings (already public, already carries each driver's
-       manufacturer + championshipPoints) -- no new server data needed.
-       See _rclRenderManufacturerStandings/_rclComputeManufacturerStandings_
-       in js/league.js.
-       Moved below the Race Carousel (2026-10-03, Matt's ask: "swap
-       manufacturers standings and calendar on league.html page") -- now
-       sits directly above Championship Standings, in the position the
-       Race Carousel used to occupy. -->
-  <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
 
   <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
        "I don't want points tables listed in the league hub anymore... make
@@ -199,6 +182,23 @@
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
   </div>
+
+  <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by
+       championship points, as a plain podium (2026-10-02, Matt's ask: "I
+       wouldn't want it sitting in a container... I'd like for it to be in
+       between the recent results and championship standings containers
+       and live on the main page"). Deliberately NOT a .rcl-panel -- no
+       card border/background, just the title + podium sitting directly on
+       the page like the hero band above it. Built entirely from
+       hub.standings (already public, already carries each driver's
+       manufacturer + championshipPoints) -- no new server data needed.
+       See _rclRenderManufacturerStandings/_rclComputeManufacturerStandings_
+       in js/league.js.
+       Swapped with the Race Carousel (2026-10-03, Matt's ask: "swap
+       manufacturers standings and calendar on league.html page") -- now
+       sits directly below Championship Standings, in the position the
+       Race Carousel used to occupy. -->
+  <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
 
   <!-- Website-specific containers -- 4 square image tiles, under the
        Calendar/race carousel (2026-10-03, Matt's ask). Deliberately NOT
