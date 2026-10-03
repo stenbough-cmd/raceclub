@@ -1319,8 +1319,9 @@ function _rclBuildClassCategoryBreakdown_(cls) {
 // logo-tile look Manufacturers' Standings uses -- Matt's explicit ask was
 // "I don't want it to feel like a copy of the championship table... have
 // a similar design as the manufacturers standings with 1, 2 and 3 having
-// a quick visual identification"), then a 2x2 grid of up to 4 "headline
-// mention" tiles. Results.gs now computes and picks the mentions
+// a quick visual identification"), then a 3-across row of "headline
+// mention" tiles sitting on the same row as the podium. Results.gs now
+// computes and picks the mentions
 // server-side (_rcComputeClassHeadlineMentions_, see that file's own
 // comment block and the Project doc claude/last-race-section-content-
 // 2026-10-03.md for the full pool-of-10/significance-bar writeup) -- this
@@ -1335,17 +1336,21 @@ function _rclRenderLastRace_(hub) {
   // section is back in a .rcl-panel (league.html) with its own
   // .rcl-panel-title, same as League News, so this body would otherwise
   // show the title twice.
+  //
+  // Event title line + the *OFFICIAL/PRELIMINARY RESULTS status
+  // footer/mobile nudge/gray divider line (_rclBuildRaceHeadline_,
+  // _rclAppendResultsStatusNotice_) are BOTH gone (2026-10-03 follow-up,
+  // Matt's ask: "Get rid of the event listing just under the header and
+  // have the CLASS container under the red line"; "get rid of any notes
+  // at the bottom... and also get rid of the gray line at the bottom") --
+  // the first class's own graphite header bar now sits directly under the
+  // panel's red underline, and nothing follows the last class's mentions.
   if (!hub.hasSeason || !hub.lastRace) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
-    // Still gets a chance to show up even when the lastRace payload
-    // itself came back empty, same edge case _rclAppendResultsStatusNotice_
-    // was written to cover originally -- see that function's own comment.
-    _rclAppendResultsStatusNotice_(body, hub);
     return;
   }
 
   var r = hub.lastRace;
-  body.appendChild(_rclBuildRaceHeadline_(r, { hideStatRow: true, closeGapNoLine: true }));
 
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
   // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule).
@@ -1363,8 +1368,6 @@ function _rclRenderLastRace_(hub) {
     }
     body.appendChild(clsWrap);
   });
-
-  _rclAppendResultsStatusNotice_(body, hub);
 }
 
 // Podium-STAND graphic for one class's top 3 (2026-10-03, Matt's exact
@@ -1427,16 +1430,21 @@ function _rclBuildLastRacePodium_(cls) {
   return podium;
 }
 
-// 2x2 "headline mention" grid (2026-10-03, Matt's exact spec): each tile
-// is icon + title on top, the stat itself as the big visual anchor, then
-// the driver(s) and a one-line plain-prose narrative underneath --
-// deliberately not all-caps/table-like, since the whole point of this
-// grid (per Matt) is to tell the STORY of the race rather than repeat
-// stats the podium above it (or Championship Standings elsewhere on the
-// page) already shows.
+// 3-across "headline mention" row, sitting on the same row as the podium
+// (2026-10-03 follow-up, Matt's ask: "Make it 3 mentions per class and
+// make the mentions live on the same row under the podium" -- was a 2x2
+// grid of 4). Each tile is icon + title on top, the stat itself as the
+// big visual anchor, then the driver(s) and a one-line plain-prose
+// narrative underneath -- deliberately not all-caps/table-like, since the
+// whole point of this row (per Matt) is to tell the STORY of the race
+// rather than repeat stats the podium above it (or Championship Standings
+// elsewhere on the page) already shows. Results.gs still computes and
+// ranks the full pool of 10 per class; this just takes the top 3 instead
+// of the top 4 now (see _rcComputeClassHeadlineMentions_'s own
+// `candidates.slice(0, 3)`, which was updated to match).
 function _rclBuildLastRaceMentions_(mentions) {
   var grid = _rclEl('div', 'rcl-lr-mentions');
-  mentions.slice(0, 4).forEach(function (m) {
+  mentions.slice(0, 3).forEach(function (m) {
     var tile = _rclEl('div', 'rcl-lr-mention-tile');
     var head = _rclEl('div', 'rcl-lr-mention-head');
     head.appendChild(_rclEl('span', 'rcl-lr-mention-icon', RCL_MENTION_ICON_BY_TYPE_[m.typeKey] || ''));

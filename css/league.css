@@ -631,22 +631,26 @@ body.rc-league-page {
 /* Full-width rows below the two-column grid (Leaderboard/Calendar, added
    2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 28px; }
-/* League News (25%) + Last Race (75%) on one row (2026-10-03, Matt's ask)
-   -- same shape as the old .rcl-grid (News/Recent Results, 1fr/2fr) but
-   at a 1fr/3fr ratio. Both columns are .rcl-panel cards (Last Race got
-   its own panel wrapper back in a 2026-10-03 follow-up: "make LAST RACE
-   live in a container the same way RECENT RESULTS did with a header and
-   red line under the header"). align-items:start (not stretch, unlike
-   the old .rcl-grid) since Last Race is far taller than the News card
-   (multiple classes' podiums + mention grids) -- stretching News's panel
-   background to match that height would leave a tall empty card, so
-   News just sits at its own natural height at the top of the row
-   instead. */
+/* League News (1/3) + Last Race (2/3) on one row (2026-10-03, Matt's ask,
+   ratio corrected same day from an earlier 1fr/3fr pass to 1fr/2fr: "Make
+   the LAST RACE container 2/3 the width and the LEAGUE NEWS 1/3 the
+   width"). Both columns are .rcl-panel cards. align-items:stretch (2026-
+   10-03 follow-up, Matt's ask: "Make the LEAGUE NEWS container stretch so
+   that it's as tall as the LAST RACE container. If the LEAGUE NEWS is
+   taller... then make the container of the LAST RACE bottom reach the
+   bottom of the LEAGUE NEWS bottom") -- CSS Grid's align-items:stretch is
+   inherently symmetric (every item in a row stretches to the row's
+   tallest item, whichever one that is), so this one rule alone covers
+   both directions Matt described: News stretches to match a taller Last
+   Race, and Last Race stretches to match a taller News (the empty-season
+   case). Each .rcl-panel's own background already fills its full grid-
+   stretched box height automatically -- no extra flex/height plumbing
+   needed on top of this. */
 .rcl-news-lastrace-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 28px;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 900px) {
   .rcl-news-lastrace-row { grid-template-columns: 1fr; }
@@ -865,18 +869,22 @@ body.rc-league-page {
 }
 
 /* -------------------------------------------------------------------- */
-/* LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask). Not a  */
-/* .rcl-panel -- deliberately bare on the page like Manufacturers'       */
-/* Standings above it, so it doesn't read as another copy of the        */
-/* Championship Standings card (Matt: "I don't want it to feel like a   */
-/* copy of the championship table... have a similar design as the       */
-/* manufacturers standings with 1, 2 and 3 having a quick visual         */
-/* identification"). One sub-section per class: a podium-STAND graphic   */
-/* (the stand ITSELF is the gold/silver/bronze rectangle -- not a thin   */
-/* border/text accent around a logo box like Manufacturers' Standings    */
-/* uses -- with the place number centered inside it) plus a 2x2          */
-/* "headline mention" tile grid. The gold/silver/bronze gradients below  */
-/* are the exact same ones Current Standings' position badges use        */
+/* LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask). Lives  */
+/* in a .rcl-panel (league.html) with its own red-underline header, same */
+/* shell as League News (2026-10-03 follow-up, Matt's ask: "make 'LAST   */
+/* RACE' live in a container the same way RECENT RESULTS did with a      */
+/* header and red line under the header") -- but the podium/mentions     */
+/* design below still deliberately avoids echoing the Championship       */
+/* Standings table itself (Matt: "I don't want it to feel like a copy of */
+/* the championship table... have a similar design as the manufacturers */
+/* standings with 1, 2 and 3 having a quick visual identification").     */
+/* One sub-section per class: a podium-STAND graphic (the stand ITSELF   */
+/* is the gold/silver/bronze rectangle -- not a thin border/text accent  */
+/* around a logo box like Manufacturers' Standings uses -- with the      */
+/* place number centered inside it) plus a 3-across "headline mention"   */
+/* tile row sitting on the same row as the podium (2026-10-03 follow-up, */
+/* was a 2x2 grid of 4). The gold/silver/bronze gradients below are the  */
+/* exact same ones Current Standings' position badges use                */
 /* (.rcl-standings-row-p1/p2/p3's own .rcl-standings-pos rule further    */
 /* down this file), so every podium/medal treatment on this page reads  */
 /* as one system instead of three different metal palettes.             */
@@ -968,12 +976,17 @@ body.rc-league-page {
   .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 64px; }
 }
 
-/* 2x2 headline-mention grid (Matt's exact spec: "a 2x2 grid for the
-   MENTIONS section with the mention title, the stat and below it lives
-   the driver(s) and what happened in a short narrative form"). */
+/* Each tile: icon + title on top, the stat as the big visual anchor,
+   then driver(s) and a short narrative underneath (Matt's original
+   spec for this tile's own internal layout: "the mention title, the
+   stat and below it lives the driver(s) and what happened in a short
+   narrative form"). */
+/* 3-across single row, not a 2x2 grid (2026-10-03 follow-up, Matt's ask:
+   "Make it 3 mentions per class and make the mentions live on the same
+   row under the podium"). */
 .rcl-lr-mentions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-top: 24px;
 }
