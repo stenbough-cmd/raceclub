@@ -5,8 +5,10 @@
   the shared site header, a season hero band (season number + name,
   "League Hub" title, and two stat strips built from real data -- This
   Season and League Format), then Recent Results + League News side by
-  side, then Leaderboard full width (one column per class, 2026-09-19),
-  then Calendar full width. No separate Drivers section (removed
+  side, then the Calendar/race carousel full width (moved above
+  Manufacturers' Standings 2026-10-03, Matt's ask), then Manufacturers'
+  Standings, then Leaderboard full width (one column per class,
+  2026-09-19). No separate Drivers section (removed
   2026-09-19 -- the Leaderboard already lists every driver per class). No
   separate Points Tables panel either (also removed 2026-09-19) -- it's a
   "View Points Tables" link at the bottom of the Leaderboard panel that
@@ -143,6 +145,27 @@
 
   </div>
 
+  <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
+       (2026-10-02, Matt's ask: "I'd like to build a better calendar
+       section instead of the typical container holding a calendar...
+       Can we make something like this live after the CHAMPIONSHIP
+       STANDINGS? It would live on the webpage, not confined to a
+       container and stretch as wide as it needs to" -- FIAWEC.com's own
+       calendar strip as the reference). Deliberately NOT a .rcl-panel --
+       no card border/background, and its scroll track is allowed to
+       bleed past .rcl-main's own max-width on wide viewports (see
+       .rcl-carousel-outer's breakout rule, css/league.css) exactly like
+       the reference: round entries can run off the left/right edge of
+       the page itself, not just the content column. Built from
+       hub.calendar (same data the old Calendar panel used) by
+       _rclRenderRaceCarousel, js/league.js.
+       Moved above Manufacturers' Standings/Championship Standings
+       (2026-10-03, Matt's ask: "swap manufacturers standings and calendar
+       on league.html page") -- now sits directly under Recent
+       Results/League News, in the position Manufacturers' Standings used
+       to occupy. -->
+  <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
+
   <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by
        championship points, as a plain podium (2026-10-02, Matt's ask: "I
        wouldn't want it sitting in a container... I'd like for it to be in
@@ -153,7 +176,11 @@
        hub.standings (already public, already carries each driver's
        manufacturer + championshipPoints) -- no new server data needed.
        See _rclRenderManufacturerStandings/_rclComputeManufacturerStandings_
-       in js/league.js. -->
+       in js/league.js.
+       Moved below the Race Carousel (2026-10-03, Matt's ask: "swap
+       manufacturers standings and calendar on league.html page") -- now
+       sits directly above Championship Standings, in the position the
+       Race Carousel used to occupy. -->
   <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
 
   <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
@@ -172,22 +199,6 @@
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
   </div>
-
-  <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
-       (2026-10-02, Matt's ask: "I'd like to build a better calendar
-       section instead of the typical container holding a calendar...
-       Can we make something like this live after the CHAMPIONSHIP
-       STANDINGS? It would live on the webpage, not confined to a
-       container and stretch as wide as it needs to" -- FIAWEC.com's own
-       calendar strip as the reference). Deliberately NOT a .rcl-panel --
-       no card border/background, and its scroll track is allowed to
-       bleed past .rcl-main's own max-width on wide viewports (see
-       .rcl-carousel-outer's breakout rule, css/league.css) exactly like
-       the reference: round entries can run off the left/right edge of
-       the page itself, not just the content column. Built from
-       hub.calendar (same data the old Calendar panel used) by
-       _rclRenderRaceCarousel, js/league.js. -->
-  <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
 
   <!-- Website-specific containers -- 4 square image tiles, under the
        Calendar/race carousel (2026-10-03, Matt's ask). Deliberately NOT

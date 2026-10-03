@@ -2512,7 +2512,7 @@ function _rclRenderRaceCarousel(hub) {
     itemEls.forEach(function (itemEl, i) {
       itemEl.classList.toggle('rcl-carousel-item-active', i === idx);
     });
-    itemEls[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    _rclCenterCarouselItem_(track, itemEls[idx], true);
   }
 
   // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
@@ -2624,8 +2624,32 @@ function _rclRenderRaceCarousel(hub) {
   // jarring) -- rAF so layout/widths (the active item is wider than the
   // rest) have settled first.
   requestAnimationFrame(function () {
-    if (itemEls[activeIdx]) itemEls[activeIdx].scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+    if (itemEls[activeIdx]) _rclCenterCarouselItem_(track, itemEls[activeIdx], false);
   });
+}
+
+// Centers a carousel item horizontally WITHIN THE CAROUSEL'S OWN SCROLL
+// TRACK ONLY (2026-10-03 fix, Matt's bug report: "league.html always
+// opens up halfway down the page instead of the top"). The previous code
+// used itemEl.scrollIntoView({inline:'center', block:'nearest'}), which
+// does not only scroll the carousel track -- when the active item (set on
+// every page load, including the very first render) sits lower on the
+// page than the viewport, the browser also scrolls ancestor containers
+// (here, the whole page) vertically to bring it fully into view, even
+// with block:'nearest'. That vertical scroll is what dropped the page
+// partway down on load. Setting scrollLeft directly on .rcl-carousel-track
+// (the actual overflow-x:auto element, see css/league.css) only ever
+// moves that one horizontal track and never touches window/page scroll.
+// scroll-behavior:smooth is set on the track in CSS, so an inline
+// scrollBehavior override is used to get an instant jump for the initial
+// load (smooth=false) vs. an animated one for a user click (smooth=true).
+function _rclCenterCarouselItem_(track, itemEl, smooth) {
+  if (!track || !itemEl) return;
+  var target = itemEl.offsetLeft - (track.clientWidth - itemEl.offsetWidth) / 2;
+  var prevBehavior = track.style.scrollBehavior;
+  track.style.scrollBehavior = smooth ? 'smooth' : 'auto';
+  track.scrollLeft = target;
+  track.style.scrollBehavior = prevBehavior;
 }
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
