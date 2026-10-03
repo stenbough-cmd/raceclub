@@ -849,7 +849,7 @@ function _rclRenderTicker(hub) {
 // the CURRENT STANDINGS list") -- pulled out of the loop below so Recent
 // Results and the View All Results popup can build IDENTICAL identity
 // blocks and position badges instead of a second, drifting copy of this
-// markup (see _rclRenderResults/_rclBuildAllResultsBody_ further down).
+// markup (see _rclRenderLastRace_/_rclBuildAllResultsBody_ further down).
 var RCL_POS_METAL_CLASS_ = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
 
 // idx is 0-based finish position (0 = P1/gold, 1 = P2/silver, 2 = P3/
@@ -1071,7 +1071,8 @@ function _rclRenderStandings(hub) {
 // ---------------------------------------------------------------------
 // RECENT RESULTS (last completed race)
 // ---------------------------------------------------------------------
-// Shared headline builder (2026-09-23, pulled out of _rclRenderResults and
+// Shared headline builder (2026-09-23, pulled out of what was then
+// _rclRenderResults, now _rclRenderLastRace_, and
 // _rclBuildAllResultsBody_, which used to each build an identical copy of
 // this) -- Event on its own line, Winner/Pole/Fastest Lap together on the
 // row underneath (Matt's ask: "The Event should be on one line, Winner
@@ -1197,6 +1198,37 @@ var _RCL_ICON_LAPS_LED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="
 var _RCL_ICON_POLE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="21" x2="6" y2="3"></line><path d="M6 4l12 4-12 4"></path></svg>';
 var _RCL_ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
 
+// Icons for the Last Race section's 10 possible "headline mention" tiles
+// (2026-10-03, Matt's ask: "give the mention types a different icon along
+// with the mention") -- same 16x16/viewBox 24/stroke-1.8 convention as
+// every other icon on this page. One per typeKey in
+// RCL_MENTION_ICON_BY_TYPE_ below; Results.gs only sends the typeKey, this
+// page owns the icon (and could reskin them without an Apps Script
+// redeploy).
+var _RCL_ICON_TRENDING_UP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></svg>';
+var _RCL_ICON_TRENDING_DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"></path><path d="M15 17h6v-6"></path></svg>';
+var _RCL_ICON_WARNING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 21h20L12 3z"></path><line x1="12" y1="9" x2="12" y2="14"></line><line x1="12" y1="17.3" x2="12" y2="17.31"></line></svg>';
+var _RCL_ICON_SHIELD_CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"></path><path d="M9 12l2 2 4-4"></path></svg>';
+var _RCL_ICON_CAMERA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg>';
+var _RCL_ICON_BOLT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"></path></svg>';
+var _RCL_ICON_REBOUND = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5v6a5 5 0 0 0 5 5h11"></path><path d="M16 12l4 4-4 4"></path></svg>';
+var _RCL_ICON_FLAME = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 4-3 5-3 9a3 3 0 0 0 6 0c0-1-1-2-1-2 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 5-6 5-12z"></path></svg>';
+var _RCL_ICON_CONVERGE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6"></path><path d="M20 6l-7 6 7 6"></path></svg>';
+var _RCL_ICON_SWAP_VERTICAL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12"></path><path d="M4 13l3 3 3-3"></path><path d="M17 20V8"></path><path d="M20 11l-3-3-3 3"></path></svg>';
+
+var RCL_MENTION_ICON_BY_TYPE_ = {
+  hardCharger: _RCL_ICON_TRENDING_UP,
+  fallenFavorite: _RCL_ICON_TRENDING_DOWN,
+  chaosAgent: _RCL_ICON_WARNING,
+  ironMan: _RCL_ICON_SHIELD_CHECK,
+  photoFinish: _RCL_ICON_CAMERA,
+  statementLap: _RCL_ICON_BOLT,
+  bounceBack: _RCL_ICON_REBOUND,
+  streakWatch: _RCL_ICON_FLAME,
+  closingIn: _RCL_ICON_CONVERGE,
+  positionSwap: _RCL_ICON_SWAP_VERTICAL
+};
+
 // Per-class Winner/Most Laps Led/Pole/Fastest Lap breakdown for the All
 // Results popup. Originally (2026-09-27) one combined block at the TOP of
 // the popup with every class's row stacked under each category, a class
@@ -1282,16 +1314,30 @@ function _rclBuildClassCategoryBreakdown_(cls) {
   return wrap;
 }
 
-function _rclRenderResults(hub) {
-  var body = document.getElementById('rcl-results-body');
+// LAST RACE -- replaces Recent Results entirely (2026-10-03, Matt's ask).
+// One sub-section per class: a top-3 podium-STAND graphic (not the boxed
+// logo-tile look Manufacturers' Standings uses -- Matt's explicit ask was
+// "I don't want it to feel like a copy of the championship table... have
+// a similar design as the manufacturers standings with 1, 2 and 3 having
+// a quick visual identification"), then a 2x2 grid of up to 4 "headline
+// mention" tiles. Results.gs now computes and picks the mentions
+// server-side (_rcComputeClassHeadlineMentions_, see that file's own
+// comment block and the Project doc claude/last-race-section-content-
+// 2026-10-03.md for the full pool-of-10/significance-bar writeup) -- this
+// function and its two helpers below just render what hub.lastRace
+// already hands them.
+function _rclRenderLastRace_(hub) {
+  var body = document.getElementById('rcl-last-race');
   if (!body) return;
   body.innerHTML = '';
 
+  body.appendChild(_rclEl('div', 'rcl-mfr-title', 'Last Race'));
+
   if (!hub.hasSeason || !hub.lastRace) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
-    // The status notice still gets a chance to appear even when the
-    // abbreviated lastRace panel has nothing to show -- see the shared
-    // helper call at the end of this function.
+    // Still gets a chance to show up even when the lastRace payload
+    // itself came back empty, same edge case _rclAppendResultsStatusNotice_
+    // was written to cover originally -- see that function's own comment.
     _rclAppendResultsStatusNotice_(body, hub);
     return;
   }
@@ -1300,67 +1346,107 @@ function _rclRenderResults(hub) {
   body.appendChild(_rclBuildRaceHeadline_(r, { hideStatRow: true, closeGapNoLine: true }));
 
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE
-  // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule:
-  // "the displayed order of results always needs to be Hypercar, LMP2,
-  // LMP3, LMGT3 and then LMGTE").
+  // (CAR_CLASS_CANONICAL_ORDER_, Results.gs -- 2026-09-23, Matt's rule).
   (r.classes || []).forEach(function (cls) {
-    var clsWrap = _rclEl('div', 'rcl-race-class');
-    // Graphite "<CLASS> STANDINGS" header (2026-09-23, Matt's ask) -- same
-    // shared graphite bar the Current Standings panel uses (see
-    // .rcl-standings-class-header, css/league.css), just different text.
+    var clsWrap = _rclEl('div', 'rcl-lr-class');
+    // Same graphite "<CLASS> STANDINGS" header Current Standings uses --
+    // the one piece of the old Recent Results panel kept as-is, since it's
+    // just a section label, not part of the "feels like the championship
+    // table" look Matt was reacting to (that was the plain POS/DRIVER/PTS
+    // row list below it, now gone).
     clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
-
-    // Divider + POS/DRIVER/PTS column labels (2026-09-23, Matt's ask: "add
-    // a line above the top row and add catagory headers. POS, DRIVER, and
-    // PTS"), same 3-column grid as the rows below so everything lines up.
-    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-3');
-    headRow.appendChild(_rclEl('div', null, 'Pos'));
-    headRow.appendChild(_rclEl('div', null, 'Driver'));
-    headRow.appendChild(_rclEl('div', null, 'Pts'));
-    clsWrap.appendChild(headRow);
-
-    // Top 5 + points gained this race (2026-09-23, Matt's ask: "The
-    // standings tables should have the top 5 drivers and how many points
-    // they gained from the race" -- was best lap time). hub.lastRace is
-    // already capped to 5 per class server-side (see
-    // _rcBuildLeagueHubPayload_, Website.gs), but slice defensively here
-    // too in case that ever changes.
-    (cls.standings || []).slice(0, 5).forEach(function (row, idx) {
-      // Pos badge + driver identity now the exact same shared markup as
-      // Current Standings (2026-09-23, Matt's ask) -- gold/silver/bronze
-      // metal coloring, manufacturer logo, flag, car number and team all
-      // come along for free from _rclBuildPosBadge_/_rclBuildDriverIdentity_.
-      var dnf = _rclIsDnf_(row);
-      // Fastest-lap driver's name in this list is NOT purple any more
-      // (2026-09-26, Matt's follow-up correction -- purple was tried here
-      // the same day it shipped and reverted: "I don't want the fastest
-      // lap driver in the standings list to be purple, only the driver
-      // that is mentioned in the header should be purple" -- see
-      // _rclBuildRaceHeadline_'s Fastest Lap stat above, which now carries
-      // that purple instead). row.wonFastestLap is still computed
-      // server-side (Results.gs) but no longer consumed here.
-      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-3' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
-      // Same DSQ-over-DNF precedence as the All Results popup (2026-09-24,
-      // Matt's ask) -- a top-5-by-points DNF is rare but not impossible in
-      // a small field.
-      rowEl.appendChild(_rclBuildPosBadge_(idx, row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined)));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
-      // "+" prefix (2026-09-27, Matt's ask) -- makes clear these are points
-      // GAINED from this particular race, not a running total. Same
-      // treatment the All Results popup's own Pts column already uses
-      // (_rclBuildAllResultsBody_ below).
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-points', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
-      clsWrap.appendChild(rowEl);
-    });
+    clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
+    if ((cls.headlineMentions || []).length) {
+      clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
+    }
     body.appendChild(clsWrap);
   });
-  // "View Full Race Details" link removed from this panel (2026-10-02,
-  // Matt's ask) -- Recent Results is getting replaced by a dedicated "Last
-  // Race" section, so this panel no longer links out to the Race Details
-  // popup at all. See _rclRenderCalendar's own "VIEW RESULTS" link below
-  // for the new way into that popup. The status notice + mobile nudge that
-  // used to sit above that link stay put.
+
   _rclAppendResultsStatusNotice_(body, hub);
+}
+
+// Podium-STAND graphic for one class's top 3 (2026-10-03, Matt's exact
+// spec): classic left-to-right P2/P1/P3 order, P1's stand tallest and
+// centered (gold), P2 to its left (silver), P3 to its right (bronze,
+// shortest) -- the PLACE NUMBER lives inside the stand, vertically
+// centered; the driver's identity (manufacturer logo above a flag + car
+// number + name line) sits above the stand, not inside a boxed tile like
+// Manufacturers' Standings' logo tiles. No points shown here (Matt: "No
+// need for point totals on this podium graphic") -- that's deliberate,
+// the points/story live in the mention tiles below it instead.
+function _rclBuildLastRacePodium_(cls) {
+  var top3 = (cls.standings || []).slice(0, 3);
+  var podium = _rclEl('div', 'rcl-lr-podium');
+  if (!top3.length) {
+    podium.appendChild(_rclEmptyState('No Data To Display', 'No classified finishers yet.'));
+    return podium;
+  }
+  // Same fallback as the Manufacturers' podium (_rclRenderManufacturerStandings)
+  // for a sparse field -- plain rank order instead of a P2/P1/P3 "center"
+  // that doesn't exist with only 1 or 2 finishers.
+  var displayOrder = (top3.length === 3) ? [1, 0, 2] : top3.map(function (_, i) { return i; });
+  displayOrder.forEach(function (rankIdx) {
+    var row = top3[rankIdx];
+    if (!row) return;
+    var dnf = _rclIsDnf_(row);
+    var tile = _rclEl('div', 'rcl-lr-podium-tile rcl-lr-podium-tile-p' + (rankIdx + 1));
+
+    var driverWrap = _rclEl('div', 'rcl-lr-podium-driver');
+    var img = document.createElement('img');
+    img.className = 'rcl-lr-podium-logo';
+    img.src = manufacturerLogoSrc(row.manufacturer);
+    img.alt = row.manufacturer || '';
+    manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
+    driverWrap.appendChild(img);
+
+    var identity = _rclEl('div', 'rcl-lr-podium-identity');
+    if (row.country && typeof countryFlagSrc === 'function') {
+      var flagSrc = countryFlagSrc(row.country);
+      if (flagSrc) {
+        var flagImg = document.createElement('img');
+        flagImg.className = 'rcl-lr-podium-flag';
+        flagImg.src = flagSrc;
+        flagImg.alt = row.country;
+        flagImg.onerror = function () { flagImg.style.display = 'none'; };
+        identity.appendChild(flagImg);
+      }
+    }
+    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
+    if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-number', '#' + _rclEscapeHtml(row.carNumber)));
+    driverWrap.appendChild(identity);
+    tile.appendChild(driverWrap);
+
+    var stand = _rclEl('div', 'rcl-lr-podium-stand');
+    stand.appendChild(_rclEl('span', 'rcl-lr-podium-standnum', String(rankIdx + 1)));
+    tile.appendChild(stand);
+
+    podium.appendChild(tile);
+  });
+  return podium;
+}
+
+// 2x2 "headline mention" grid (2026-10-03, Matt's exact spec): each tile
+// is icon + title on top, the stat itself as the big visual anchor, then
+// the driver(s) and a one-line plain-prose narrative underneath --
+// deliberately not all-caps/table-like, since the whole point of this
+// grid (per Matt) is to tell the STORY of the race rather than repeat
+// stats the podium above it (or Championship Standings elsewhere on the
+// page) already shows.
+function _rclBuildLastRaceMentions_(mentions) {
+  var grid = _rclEl('div', 'rcl-lr-mentions');
+  mentions.slice(0, 4).forEach(function (m) {
+    var tile = _rclEl('div', 'rcl-lr-mention-tile');
+    var head = _rclEl('div', 'rcl-lr-mention-head');
+    head.appendChild(_rclEl('span', 'rcl-lr-mention-icon', RCL_MENTION_ICON_BY_TYPE_[m.typeKey] || ''));
+    head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
+    tile.appendChild(head);
+    tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
+    var driverNames = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean).join(' & ');
+    if (driverNames) tile.appendChild(_rclEl('div', 'rcl-lr-mention-drivers', _rclEscapeHtml(driverNames)));
+    tile.appendChild(_rclEl('div', 'rcl-lr-mention-narrative', _rclEscapeHtml(m.narrative || '')));
+    grid.appendChild(tile);
+  });
+  return grid;
 }
 
 // "*PRELIMINARY RESULTS (date)"/"*OFFICIAL RESULTS (date)" notice (2026-09-26
@@ -1599,8 +1685,8 @@ function _rclBuildMobileViewOnPcNote_() {
   return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER');
 }
 
-// Shared by both branches of _rclRenderResults above (the normal render
-// and its "no lastRace yet" empty-state fallback) so the link still shows
+// Shared by both branches of _rclRenderLastRace_ (the normal render and
+// its "no lastRace yet" empty-state fallback) so the link still shows
 // up whenever the season actually has any completed rounds on record,
 // even in the rare case the abbreviated lastRace payload itself came back
 // empty for some reason. The status notice above only shows when there's
@@ -1815,7 +1901,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // then shown again with a single-space separator, "EVENT" label added
   // then removed) before Matt's call to drop the whole thing -- see
   // _rclBuildRaceHeadline_/_rclBuildEventTitleLine_ above, both still used
-  // by Recent Results (_rclRenderResults), which is unaffected by this.
+  // by Last Race (_rclRenderLastRace_), which is unaffected by this.
   // .rcl-allresults-select-row's own margin-bottom (css/league.css)
   // supplies the breathing room before the first class section now.
 
@@ -1935,8 +2021,9 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // row.points is the same adjusted-per-round total
       // _rcRecomputeStandingsCacheFromRound_ writes to StandingsCache
       // (Results.gs), which already folds bonus points into the total
-      // before it's ever stored, same field Recent Results' own Pts
-      // column (_rclRenderResults above) reads.
+      // before it's ever stored, same field Last Race's own podium
+      // (_rclRenderLastRace_ above) no longer shows but the field itself
+      // still exists on the row for.
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
@@ -3536,7 +3623,7 @@ function _rclFetchLeagueHub_() {
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderWebsiteContainers];
+  var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderWebsiteContainers];
 
   function showHub(hub) {
     if (!hub || !hub.success) {

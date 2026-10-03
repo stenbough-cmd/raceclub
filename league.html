@@ -4,11 +4,14 @@
   Public ESPN-style league hub: a scrolling results/standings ticker under
   the shared site header, a season hero band (season number + name,
   "League Hub" title, and two stat strips built from real data -- This
-  Season and League Format), then Recent Results + League News side by
-  side, then the Calendar/race carousel full width (swapped with
-  Manufacturers' Standings, 2026-10-03, Matt's ask), then Leaderboard
-  full width (one column per class, 2026-09-19), then Manufacturers'
-  Standings. No separate Drivers section (removed
+  Season and League Format), then League News full width, then Last Race
+  full width (replaces Recent Results, 2026-10-03, Matt's ask -- a top-3
+  podium + 4 "headline mention" tiles per class, see
+  claude/last-race-section-content-2026-10-03.md), then the Calendar/race
+  carousel full width (swapped with Manufacturers' Standings, 2026-10-03,
+  Matt's ask), then Leaderboard full width (one column per class,
+  2026-09-19), then Manufacturers' Standings. No separate Drivers section
+  (removed
   2026-09-19 -- the Leaderboard already lists every driver per class). No
   separate Points Tables panel either (also removed 2026-09-19) -- it's a
   "View Points Tables" link at the bottom of the Leaderboard panel that
@@ -118,32 +121,44 @@
 </section>
 
 <main class="rcl-main">
-  <div class="rcl-grid">
 
-    <!-- League News moved before Recent Results (2026-09-20, Matt's call). -->
-    <div class="rcl-col">
-      <section class="rcl-panel">
-        <!-- rcl-panel-head-news (2026-09-19) -- distinguishes this header
-             from Recent Results' identical .rcl-panel-head so the
-             news_banner.jpg background (see css/league.css) applies only
-             here, not to every panel header on the page. -->
-        <div class="rcl-panel-head rcl-panel-head-news">
-          <div class="rcl-panel-title">League News</div>
-        </div>
-        <div class="rcl-panel-body" id="rcl-news-body"></div>
-      </section>
-    </div>
-
-    <div class="rcl-col">
-      <section class="rcl-panel">
-        <div class="rcl-panel-head">
-          <div class="rcl-panel-title">Recent Results</div>
-        </div>
-        <div class="rcl-panel-body" id="rcl-results-body"></div>
-      </section>
-    </div>
-
+  <!-- League News -- full width on its own now (2026-10-03) -- used to
+       share a 2-column .rcl-grid with Recent Results (News got the
+       narrower 1fr column, Results the wider 2fr one); now that Recent
+       Results is gone (replaced by the Last Race section below, which
+       needed to be its own full-width non-panel section rather than
+       squeezed into that 2fr column -- see Matt's explicit "I don't want
+       it to feel like a copy of the championship table" ask), News alone
+       in that grid would have looked like a stray half-width card, so it
+       moved to its own full-width row instead. -->
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <!-- rcl-panel-head-news (2026-09-19) -- distinguishes this header
+           from other panels' identical .rcl-panel-head so the
+           news_banner.jpg background (see css/league.css) applies only
+           here, not to every panel header on the page. -->
+      <div class="rcl-panel-head rcl-panel-head-news">
+        <div class="rcl-panel-title">League News</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-news-body"></div>
+    </section>
   </div>
+
+  <!-- LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask).
+       Deliberately NOT a .rcl-panel -- same "bare on the page" treatment
+       as Manufacturers' Standings below, specifically so it doesn't read
+       as another copy of the Championship Standings card. One sub-section
+       per class (Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE): a top-3
+       finishing podium (podium-STAND graphic -- gold/silver/bronze
+       rectangles of different heights, place number centered in each
+       stand, driver identity above it) plus a 2x2 grid of "headline
+       mention" tiles (icon + title, the stat, then the driver(s) and a
+       one-line narrative) picked from the pool of 10 documented in the
+       Project doc claude/last-race-section-content-2026-10-03.md. Built
+       entirely from hub.lastRace.classes[].headlineMentions (Results.gs
+       now computes and attaches these server-side) by
+       _rclRenderLastRace_, js/league.js. -->
+  <div class="rcl-row-full" id="rcl-last-race"></div>
 
   <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
        (2026-10-02, Matt's ask: "I'd like to build a better calendar
@@ -161,9 +176,9 @@
        _rclRenderRaceCarousel, js/league.js.
        Swapped with Manufacturers' Standings (2026-10-03, Matt's ask:
        "swap manufacturers standings and calendar on league.html page") --
-       now sits directly under Recent Results/League News, in the
-       position Manufacturers' Standings used to occupy; Championship
-       Standings (below) did not move. -->
+       now sits directly under Last Race/League News, in the position
+       Manufacturers' Standings used to occupy; Championship Standings
+       (below) did not move. -->
   <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
 
   <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
