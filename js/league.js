@@ -2925,13 +2925,38 @@ function _rclRenderStoryBodyBlocks(container, rawBody) {
   });
 }
 
-// Flattened, single-block version for the clamped on-page preview -- CSS
-// line-clamp only works cleanly on one box, so paragraph breaks become a
-// double line-break inside one div instead of separate <p> elements.
-function _rclStoryPreviewHtml(rawBody) {
-  var escaped = _rclEscapeHtml(rawBody || '');
+// Flattened, single-block version of the on-page preview -- paragraph
+// breaks become a double line-break inside one div instead of separate
+// <p> elements, same reason as before (a single box is simpler to style
+// than a paragraph list for a preview).
+//
+// Character-based cap, not a CSS line-clamp any more (2026-10-03, Matt's
+// ask: "Can we make the character limit 1000 before a 'CONTINUE
+// READING' link is shown?" -- replaces the old -webkit-line-clamp:14
+// approach, which cut off after a fixed number of LINES regardless of
+// how many characters that held on a given screen width, and which
+// always showed "Continue reading..." even for a story short enough to
+// never need it). Cuts on the RAW body, before escaping/markup, then
+// backs off to the last whole word so a story isn't chopped mid-word --
+// the one edge case this doesn't fully guard is cutting exactly inside
+// a **bold**/++underline++/*italic* marker pair, which just leaves the
+// stray marker characters visible as plain text in that rare case,
+// rather than risking a broken tag. Returns `truncated` so the caller
+// only shows "Continue reading..." when the cap actually kicked in.
+function _rclStoryPreviewHtml(rawBody, charLimit) {
+  var full = rawBody || '';
+  var truncated = !!charLimit && full.length > charLimit;
+  var body = full;
+  if (truncated) {
+    var cut = full.slice(0, charLimit);
+    var lastSpace = cut.lastIndexOf(' ');
+    if (lastSpace > charLimit * 0.6) cut = cut.slice(0, lastSpace);
+    body = cut.replace(/[\s.,;:!?-]+$/, '') + '…';
+  }
+  var escaped = _rclEscapeHtml(body);
   var paragraphs = escaped.split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
-  return paragraphs.map(function (p) { return _rclApplyInlineMarkup(p.replace(/\n/g, '<br>')); }).join('<br><br>');
+  var html = paragraphs.map(function (p) { return _rclApplyInlineMarkup(p.replace(/\n/g, '<br>')); }).join('<br><br>');
+  return { html: html, truncated: truncated };
 }
 
 function _rclNewsMetaLine(item) {
@@ -2970,11 +2995,17 @@ function _rclRenderNews(hub) {
   }
   currentWrap.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(current.title)));
   currentWrap.appendChild(_rclEl('div', 'rcl-news-meta', _rclEscapeHtml(_rclNewsMetaLine(current))));
-  currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', _rclStoryPreviewHtml(current.body)));
-  var continueLink = _rclEl('a', 'rcl-news-continue', 'Continue reading...');
-  continueLink.href = 'javascript:void(0)';
-  continueLink.addEventListener('click', function () { _rclOpenStoryModal(0); });
-  currentWrap.appendChild(continueLink);
+  // 1000-character cap (2026-10-03, Matt's ask), not the old fixed
+  // 14-line CSS clamp -- "Continue reading..." now only shows up when
+  // the story is actually longer than that, via preview.truncated.
+  var preview = _rclStoryPreviewHtml(current.body, 1000);
+  currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', preview.html));
+  if (preview.truncated) {
+    var continueLink = _rclEl('a', 'rcl-news-continue', 'Continue reading...');
+    continueLink.href = 'javascript:void(0)';
+    continueLink.addEventListener('click', function () { _rclOpenStoryModal(0); });
+    currentWrap.appendChild(continueLink);
+  }
   body.appendChild(currentWrap);
 
   if (_rclNewsList.length > 1) {

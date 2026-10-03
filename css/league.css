@@ -2745,19 +2745,17 @@ body.rc-league-page {
   font-style: italic;
 }
 .rcl-news-editnote { margin-top: 10px; font-size: 12.5px; font-style: italic; color: var(--rcl-ink-faint); }
-/* Clamped preview (raised from 6 to 14 lines, 2026-09-23, Matt's ask:
-   "make more available on preview on the main league page before
-   CONTINUE READING shows up") -- the "Continue reading..." link right
-   below still sits directly under whatever the clamp cuts off. */
+/* No CSS line-clamp any more (2026-10-03, Matt's ask: "make the
+   character limit 1000 before a 'CONTINUE READING' link is shown") --
+   js/league.js's _rclStoryPreviewHtml now cuts the text itself at 1000
+   characters (word-boundary aware) and only renders "Continue
+   reading..." when that cap actually applied, so this box just displays
+   whatever text it was handed in full -- no line count to clamp to. */
 .rcl-news-current-body {
   margin-top: 10px;
   font-size: 14px;
   line-height: 1.6;
   color: var(--rcl-ink-dim);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 14;
-  overflow: hidden;
 }
 .rcl-news-current-body strong { color: var(--rcl-ink); }
 .rcl-news-continue {
