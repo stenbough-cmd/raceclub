@@ -131,7 +131,7 @@
        they're back on one row together, just at a 1:3 ratio instead of
        the old Recent-Results-era 1:2. See .rcl-news-lastrace-row,
        css/league.css. -->
-  <div class="rcl-row-full rcl-news-lastrace-row">
+  <div class="rcl-row-full rcl-news-lastrace-row" id="rcl-news-lastrace-row">
     <section class="rcl-panel">
       <!-- rcl-panel-head-news (2026-09-19) -- distinguishes this header
            from other panels' identical .rcl-panel-head so the
@@ -164,7 +164,7 @@
          entirely from hub.lastRace.classes[].headlineMentions
          (Results.gs now computes and attaches these server-side) by
          _rclRenderLastRace_, js/league.js. -->
-    <section class="rcl-panel">
+    <section class="rcl-panel" id="rcl-last-race-panel">
       <div class="rcl-panel-head">
         <div class="rcl-panel-title">Last Race</div>
       </div>

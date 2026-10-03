@@ -636,16 +636,13 @@ body.rc-league-page {
    the LAST RACE container 2/3 the width and the LEAGUE NEWS 1/3 the
    width"). Both columns are .rcl-panel cards. align-items:stretch (2026-
    10-03 follow-up, Matt's ask: "Make the LEAGUE NEWS container stretch so
-   that it's as tall as the LAST RACE container. If the LEAGUE NEWS is
-   taller... then make the container of the LAST RACE bottom reach the
-   bottom of the LEAGUE NEWS bottom") -- CSS Grid's align-items:stretch is
-   inherently symmetric (every item in a row stretches to the row's
-   tallest item, whichever one that is), so this one rule alone covers
-   both directions Matt described: News stretches to match a taller Last
-   Race, and Last Race stretches to match a taller News (the empty-season
-   case). Each .rcl-panel's own background already fills its full grid-
-   stretched box height automatically -- no extra flex/height plumbing
-   needed on top of this. */
+   that it's as tall as the LAST RACE container") -- CSS Grid's
+   align-items:stretch is inherently symmetric (every item in a row
+   stretches to the row's tallest item), so this one rule covers both
+   directions: News stretches to match a taller Last Race, and vice
+   versa. Each .rcl-panel's own background already fills its full
+   grid-stretched box height automatically -- no extra flex/height
+   plumbing needed on top of this. */
 .rcl-news-lastrace-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
@@ -654,6 +651,17 @@ body.rc-league-page {
 }
 @media (max-width: 900px) {
   .rcl-news-lastrace-row { grid-template-columns: 1fr; }
+}
+/* No season / no Last Race data (2026-10-03, second follow-up, Matt's
+   ask: "If there is no season OR no data to display in LAST RACE, I
+   want it to silently disappear and for LEAGUE NEWS to take over 100%
+   of the width") -- supersedes the old behavior (an in-body "No Data To
+   Display" empty state sitting in the normal 1fr/2fr split). Toggled by
+   _rclRenderLastRace_ (js/league.js), which also hides the Last Race
+   .rcl-panel itself via display:none -- this single-column override
+   just lets League News fill the row it's left in. */
+.rcl-news-lastrace-row.rcl-news-lastrace-row-newsonly {
+  grid-template-columns: 1fr;
 }
 /* .rcl-grid-even (Leaderboard/Points Tables 50/50 row) removed 2026-09-19
    -- Points Tables is no longer its own panel; Leaderboard is full width

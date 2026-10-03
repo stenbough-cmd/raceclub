@@ -1345,10 +1345,22 @@ function _rclRenderLastRace_(hub) {
   // at the bottom... and also get rid of the gray line at the bottom") --
   // the first class's own graphite header bar now sits directly under the
   // panel's red underline, and nothing follows the last class's mentions.
-  if (!hub.hasSeason || !hub.lastRace) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
-    return;
-  }
+  //
+  // No season / no data -- the whole panel disappears silently (2026-10-03,
+  // second follow-up, Matt's ask: "If there is no season OR no data to
+  // display in LAST RACE, I want it to silently disappear and for LEAGUE
+  // NEWS to take over 100% of the width" -- was an in-body "No Data To
+  // Display" empty state before this). _rclRenderNews (same hub payload,
+  // same check) is what actually widens League News and drops its own
+  // 1000-char truncation to show the full story -- this function only
+  // has to hide/show the Last Race panel and flag the shared row via
+  // .rcl-news-lastrace-row-newsonly, css/league.css does the rest.
+  var panel = document.getElementById('rcl-last-race-panel');
+  var row = document.getElementById('rcl-news-lastrace-row');
+  var hasLastRace = hub.hasSeason && !!hub.lastRace;
+  if (panel) panel.style.display = hasLastRace ? '' : 'none';
+  if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasLastRace);
+  if (!hasLastRace) return;
 
   var r = hub.lastRace;
 
@@ -2998,7 +3010,18 @@ function _rclRenderNews(hub) {
   // 1000-character cap (2026-10-03, Matt's ask), not the old fixed
   // 14-line CSS clamp -- "Continue reading..." now only shows up when
   // the story is actually longer than that, via preview.truncated.
-  var preview = _rclStoryPreviewHtml(current.body, 1000);
+  //
+  // EXCEPT when Last Race has nothing to show (2026-10-03, second
+  // follow-up, Matt's ask: "allow the full news story to be displayed
+  // without a 'CONTINUED...'" once League News takes over the full row)
+  // -- same hasLastRace check _rclRenderLastRace_ makes from this same
+  // hub payload, just independently here since every renderer gets the
+  // whole hub and neither needs to read the other's DOM state. No cap
+  // at all in that case (undefined charLimit -> _rclStoryPreviewHtml
+  // never truncates), so the full story shows with no "Continue
+  // reading..." link, matching the wider column it now has.
+  var hasLastRace = hub.hasSeason && !!hub.lastRace;
+  var preview = _rclStoryPreviewHtml(current.body, hasLastRace ? 1000 : undefined);
   currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', preview.html));
   if (preview.truncated) {
     var continueLink = _rclEl('a', 'rcl-news-continue', 'Continue reading...');
