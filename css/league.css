@@ -1760,7 +1760,7 @@ body.rc-league-page {
      position, same purpose scroll-padding would serve, done this way
      instead because it also gives the strip real breathing room past the
      viewport edge on wide screens, matching the reference images. */
-  padding: 4px calc(50vw - 160px) 28px;
+  padding: 4px calc(50vw - 170px) 28px;
   -webkit-overflow-scrolling: touch;
 }
 .rcl-carousel-track::-webkit-scrollbar { height: 6px; }
@@ -1770,13 +1770,13 @@ body.rc-league-page {
    MANUFACTURERS' STANDINGS we created" -- the box/border/background this
    item used to have is gone; a plain bottom-border divider is the only
    separator between items now, same "sits directly on the page" posture
-   as .rcl-mfr-tile having no card shell either). Each item is now its own
-   flag + event name label, full size, all the time -- not revealed only
-   once centered; only the EXTRA detail below the name (.rcl-carousel-hero)
-   is active-only. */
+   as .rcl-mfr-tile having no card shell either). Each item shows its own
+   flag/event-name/track-name/date-time header, full size, all the time --
+   not revealed only once centered; only the EXTRA detail below the header
+   (.rcl-carousel-hero: race details + button) is active-only. */
 .rcl-carousel-item {
   flex: 0 0 auto;
-  width: 220px;
+  width: 240px;
   scroll-snap-align: center;
   cursor: pointer;
   border-bottom: 3px solid transparent;
@@ -1804,86 +1804,129 @@ body.rc-league-page {
   margin-bottom: 10px;
   box-shadow: 0 0 0 1px var(--rcl-line-bright);
 }
-/* Grand, bold, bright -- same scale/weight vocabulary as the
-   Manufacturers' Standings podium (.rcl-mfr-title is 24px/800 uppercase;
-   this matches it directly) rather than the small muted label the strip
-   used to show. */
-.rcl-carousel-name {
+.rcl-carousel-header { display: flex; flex-direction: column; align-items: center; }
+/* Typography spec, 2026-10-03 (Matt's exact ask, with a worked example):
+   event name medium weight, white, slightly smaller than the track name;
+   track name extra heavy weight, white, even larger; date/time extra
+   light weight, red, same size as the event name. */
+.rcl-carousel-eventname {
   font-family: var(--rc-font-heading);
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 500;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--rcl-ink);
-  line-height: 1.15;
+  line-height: 1.2;
 }
-.rcl-carousel-item-special .rcl-carousel-name { color: var(--rcl-gold, #c9a227); }
-.rcl-carousel-sub {
+.rcl-carousel-item-special .rcl-carousel-eventname { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-trackname {
+  margin-top: 2px;
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  line-height: 1.1;
+}
+.rcl-carousel-item-special .rcl-carousel-trackname { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-datetime {
   margin-top: 6px;
   font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: 15px;
+  font-weight: 200;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--rc-red);
 }
-.rcl-carousel-item-special .rcl-carousel-sub { color: var(--rcl-gold, #c9a227); }
-/* The expanded "hero" content -- the EXTRA detail (track, full date,
-   status, RACE INFO/RACE RECAP) an active item reveals below its
-   already-visible flag/name/round line; hidden entirely on a compact
-   item. */
+.rcl-carousel-item-special .rcl-carousel-datetime { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-active .rcl-carousel-eventname { font-size: 20px; }
+.rcl-carousel-item-active .rcl-carousel-trackname { font-size: 34px; }
+.rcl-carousel-item-active .rcl-carousel-datetime { font-size: 20px; }
+/* The expanded "hero" content -- the EXTRA detail (race details lines,
+   RACE INFO/RACE RECAP buttons) an active item reveals below its
+   already-visible flag/event-name/track-name/date-time header; hidden
+   entirely on a compact item. */
 .rcl-carousel-hero { display: none; }
 .rcl-carousel-item-active {
-  width: 320px;
+  width: 340px;
   opacity: 1;
   border-bottom-color: var(--rc-red);
   cursor: default;
 }
-.rcl-carousel-item-active .rcl-carousel-name { font-size: 28px; }
 .rcl-carousel-item-active.rcl-carousel-item-special { border-bottom-color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-item-active .rcl-carousel-hero {
   display: block;
-  margin-top: 14px;
+  margin-top: 16px;
   width: 100%;
 }
-.rcl-carousel-hero-meta { font-size: 14px; font-weight: 600; color: var(--rcl-ink-dim); }
-.rcl-carousel-hero-date { margin-top: 4px; font-size: 12.5px; color: var(--rcl-ink-faint); }
-.rcl-carousel-hero-status {
-  margin-top: 10px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+/* Race details -- lightest weight possible, smaller, light gray, all caps
+   (2026-10-03, Matt's exact ask: "EVENING RACE, SPRINT 20 MINS LONG" /
+   "CLEAR & 26° WITH 0% CHANCE OF RAIN"). */
+.rcl-carousel-details { margin-bottom: 4px; }
+.rcl-carousel-details-line {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--rc-red);
+  color: var(--rcl-ink-faint);
+  line-height: 1.5;
 }
-.rcl-carousel-item-special .rcl-carousel-hero-status { color: var(--rcl-gold, #c9a227); }
-.rcl-carousel-hero-btns { margin-top: 14px; display: flex; gap: 10px; justify-content: center; }
-/* Red text-style buttons, same deliberate exception as
-   .rcl-cal-details-link/.rcl-cal-status-link elsewhere on this page --
-   these open a popup rather than writing data, but the site's own
-   established precedent on THIS page is red for a popup-opening action
-   here, kept for visual consistency with the carousel's own red accent
-   rather than the site-wide gray-unless-saves button rule. */
+.rcl-carousel-hero-btns {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+/* White border, white text; fills solid white on hover (2026-10-03,
+   Matt's exact ask: "Make buttons white border and fill in white with
+   hover. A little less radius on the corners of the buttons too") --
+   replaces the previous red-outline treatment (which was itself a
+   deliberate carried-over exception to the site's gray-unless-saves
+   button rule; this is a further carousel-specific override on top of
+   that, scoped to .rcl-carousel-hero-btn only). Radius trimmed from 6px
+   to 4px per that same ask. */
 .rcl-carousel-hero-btn {
   background: none;
-  border: 1px solid var(--rc-red);
-  border-radius: 6px;
+  border: 1px solid var(--rcl-ink);
+  border-radius: 4px;
   padding: 7px 14px;
   font-family: var(--rc-font-heading);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--rc-red);
+  color: var(--rcl-ink);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.rcl-carousel-hero-btn:hover { background: var(--rc-red); color: #fff; }
+.rcl-carousel-hero-btn:hover { background: var(--rcl-ink); color: #0b0b0d; }
+/* Wraps whichever of (countdown | disabled button | active button) is
+   currently showing in the RACE RECAP slot -- just a centering shell, no
+   look of its own. */
+.rcl-carousel-recap-slot { display: flex; flex-direction: column; align-items: center; width: 100%; }
+/* Disabled RACE RECAP state (2026-10-03, Matt's exact ask: "once a race's
+   timer hits zero, a disabled RACE RECAP button appears... After the
+   results get's uploaded, the button becomes active") -- dimmed, inert,
+   no hover response, so it reads as "not yet available" rather than as a
+   second live action. */
+.rcl-carousel-hero-btn-disabled,
+.rcl-carousel-hero-btn-disabled:hover {
+  border-color: var(--rcl-line-bright);
+  color: var(--rcl-ink-faint);
+  background: none;
+  cursor: not-allowed;
+}
 /* Countdown block (2026-10-02 follow-up, fiawec.com reference image) --
    same "COUNTDOWN TO <thing>" caption + four boxed unit/label pairs the
    reference uses. Active item only (the hero it lives in is already
    active-only), upcoming races only (_rclBuildCountdown_/
-   _rclRenderRaceCarousel, league.js). */
-.rcl-carousel-countdown { margin-top: 16px; }
+   _rclRenderRaceCarousel, league.js). Sits in the same slot a RACE RECAP
+   button would occupy (.rcl-carousel-recap-slot), swapped for the actual
+   button the instant the countdown reaches zero. */
+.rcl-carousel-countdown { margin-top: 0; }
 .rcl-carousel-countdown-label {
   font-size: 12px;
   font-weight: 700;
@@ -1936,11 +1979,15 @@ body.rc-league-page {
 }
 @media (max-width: 640px) {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
-  .rcl-carousel-track { padding: 4px calc(50vw - 125px) 22px; gap: 10px; }
-  .rcl-carousel-item { width: 170px; }
-  .rcl-carousel-name { font-size: 17px; }
-  .rcl-carousel-item-active { width: 250px; }
-  .rcl-carousel-item-active .rcl-carousel-name { font-size: 21px; }
+  .rcl-carousel-track { padding: 4px calc(50vw - 135px) 22px; gap: 10px; }
+  .rcl-carousel-item { width: 190px; }
+  .rcl-carousel-eventname { font-size: 13px; }
+  .rcl-carousel-trackname { font-size: 17px; }
+  .rcl-carousel-datetime { font-size: 13px; }
+  .rcl-carousel-item-active { width: 270px; }
+  .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 15px; }
+  .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 24px; }
+  .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 15px; }
   .rcl-carousel-details-row { padding: 0 16px; }
 }
 

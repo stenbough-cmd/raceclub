@@ -174,6 +174,33 @@ function _rclFormatDateTime(iso) {
     ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
 
+// Same as _rclFormatDateTime above but with the month spelled out in full
+// (2026-10-03, race carousel redesign, Matt's exact example: "SEPTEMBER
+// 28, 2026, 8:00 PM EDT" -- carousel-only, every other date on this page
+// keeps the abbreviated "Sep 28" form _rclFormatDateTime already gives).
+function _rclFormatDateTimeLong_(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) +
+    ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+}
+
+// Morning/Afternoon/Evening/Night label from a race's own local start hour
+// (2026-10-03, race carousel redesign, Matt's exact example: "EVENING
+// RACE..."). Browser-local hour, same "no per-viewer timezone on this
+// public page" posture every other date/time helper here already has.
+function _rclTimeOfDayLabel_(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var h = d.getHours();
+  if (h >= 5 && h < 12) return 'Morning';
+  if (h >= 12 && h < 17) return 'Afternoon';
+  if (h >= 17 && h < 21) return 'Evening';
+  return 'Night';
+}
+
 // A sim-clock "HH:MM" string (24-hour, as the admin typed it into the
 // wizard's in-game time fields) into a 12-hour "H:MM AM/PM" label, purely
 // cosmetic -- matches the 12-hour clock every other time on this page
@@ -2288,17 +2315,24 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
 // separately here). Ticks every second via setInterval; the caller is
 // responsible for clearing it (see _rclCarouselCountdownTimers_ above) --
 // this function only ever starts one.
-function _rclBuildCountdown_(startUtc) {
+// Live DAYS:HOURS:MIN:SEC countdown block. `onComplete`, when given, fires
+// ONCE the instant the countdown reaches zero (2026-10-03 follow-up,
+// Matt's ask: "once a race's timer hits zero, a disabled RACE RECAP
+// button appears" -- this has to happen live, the moment the ticking
+// countdown itself hits 0:00:00:00, not just on the carousel's next full
+// re-render from a hub refresh). Stops its own interval right after
+// firing onComplete -- there's nothing left to count down.
+function _rclBuildCountdown_(startUtc, onComplete) {
   var wrap = _rclEl('div', 'rcl-carousel-countdown');
   wrap.appendChild(_rclEl('div', 'rcl-carousel-countdown-label', 'Countdown to <strong>Event</strong>'));
   var unitsRow = _rclEl('div', 'rcl-carousel-countdown-units');
   wrap.appendChild(unitsRow);
 
   var UNITS = [
-    { key: 'd', label: 'Days', ms: 86400000 },
-    { key: 'h', label: 'Hours', ms: 3600000 },
-    { key: 'm', label: 'Min', ms: 60000 },
-    { key: 's', label: 'Sec', ms: 1000 }
+    { key: 'd', label: 'Days' },
+    { key: 'h', label: 'Hours' },
+    { key: 'm', label: 'Min' },
+    { key: 's', label: 'Sec' }
   ];
   var numEls = {};
   UNITS.forEach(function (u, i) {
@@ -2312,9 +2346,11 @@ function _rclBuildCountdown_(startUtc) {
   });
 
   var targetMs = new Date(startUtc).getTime();
+  var timerId = null;
   function tick() {
     var remaining = targetMs - Date.now();
-    if (remaining < 0) remaining = 0;
+    var done = remaining <= 0;
+    if (done) remaining = 0;
     var days = Math.floor(remaining / 86400000);
     var hours = Math.floor((remaining % 86400000) / 3600000);
     var mins = Math.floor((remaining % 3600000) / 60000);
@@ -2323,12 +2359,47 @@ function _rclBuildCountdown_(startUtc) {
     numEls.h.textContent = ('0' + hours).slice(-2);
     numEls.m.textContent = ('0' + mins).slice(-2);
     numEls.s.textContent = ('0' + secs).slice(-2);
+    if (done) {
+      if (timerId !== null) {
+        clearInterval(timerId);
+        var pos = _rclCarouselCountdownTimers_.indexOf(timerId);
+        if (pos !== -1) _rclCarouselCountdownTimers_.splice(pos, 1);
+        timerId = null;
+      }
+      if (onComplete) onComplete();
+    }
   }
   tick();
-  var timerId = setInterval(tick, 1000);
-  _rclCarouselCountdownTimers_.push(timerId);
+  if (timerId === null && targetMs - Date.now() > 0) {
+    // Only actually schedule ticking if tick() above didn't already fire
+    // onComplete synchronously (a race whose start time is already in the
+    // past the instant this renders).
+    timerId = setInterval(tick, 1000);
+    _rclCarouselCountdownTimers_.push(timerId);
+  }
 
   return wrap;
+}
+
+// Builds the RACE RECAP slot for a finished race: a disabled (unclickable,
+// dimmed) button once the race has happened but results aren't imported
+// yet, or the normal active button once they are (2026-10-03 follow-up,
+// Matt's exact spec: "once a race's timer hits zero, a disabled RACE
+// RECAP button appears. After the results get's uploaded, the button
+// becomes active.").
+function _rclBuildRecapButton_(hub, entry) {
+  var hasResults = !!(entry.hasResults && entry.roundId);
+  var btn = _rclEl('button', 'rcl-carousel-hero-btn' + (hasResults ? '' : ' rcl-carousel-hero-btn-disabled'), 'RACE RECAP');
+  btn.type = 'button';
+  if (!hasResults) {
+    btn.disabled = true;
+  } else {
+    btn.addEventListener('click', function (evt) {
+      evt.stopPropagation();
+      _rclOpenAllResultsModal(hub, entry.roundId);
+    });
+  }
+  return btn;
 }
 
 function _rclRenderRaceCarousel(hub) {
@@ -2348,13 +2419,6 @@ function _rclRenderRaceCarousel(hub) {
     return;
   }
 
-  // "Schedule" heading removed (2026-10-02 follow-up, Matt's ask: "get
-  // rid of the Schedule header for the section -- it's not needed") --
-  // the carousel now opens straight into the track, with no section
-  // label above it. .rcl-carousel-heading's CSS rule is left in place
-  // (unused) rather than ripped out, same posture as the page's other
-  // dead-but-harmless leftovers.
-
   var nextIdx = -1;
   raceEntries.forEach(function (entry, idx) { if (nextIdx === -1 && !entry.finished) nextIdx = idx; });
   var activeIdx = nextIdx === -1 ? (raceEntries.length - 1) : nextIdx;
@@ -2372,6 +2436,19 @@ function _rclRenderRaceCarousel(hub) {
     itemEls[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
 
+  // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
+  // flag, then three always-visible header lines -- event name (medium
+  // weight, white, slightly smaller than the track name), track name
+  // (extra heavy weight, white, larger), date/time (extra light weight,
+  // red, same size as the event name) -- then, active-item-only, two
+  // lightest-weight small light-gray all-caps "race details" lines (time
+  // of day + session length, then weather) and finally the button slot.
+  // The header lines used to split across a compact "stub" (flag/name/
+  // round+date) and only the active item's "hero" got the full track
+  // name + full date -- now every item shows the full flag/name/track/
+  // date header at all times (just smaller when compact), and only the
+  // race-details-and-button section is active-item-only, per Matt's
+  // worked example showing that header content unconditionally.
   raceEntries.forEach(function (entry, idx) {
     var isSpecial = entry.kind === 'special';
     var isActive = idx === activeIdx;
@@ -2382,15 +2459,7 @@ function _rclRenderRaceCarousel(hub) {
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
 
-    // Compact stub -- always visible, on EVERY item, not just the active
-    // one (2026-10-02 follow-up, Matt's ask: "I want the flag, the name
-    // of the event, to be listed in the calendar exactly like the image
-    // I sent" -- the event name used to only appear once an item was
-    // expanded; now the flag + event name are the strip's own permanent
-    // label, same bare-page/no-card, big-bold-bright treatment as the
-    // Manufacturers' Standings podium (.rcl-mfr-title/-tile-name) rather
-    // than a small muted date stub.
-    var stub = _rclEl('div', 'rcl-carousel-stub');
+    var header = _rclEl('div', 'rcl-carousel-header');
     if (entry.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(entry.country);
       if (flagSrc) {
@@ -2399,34 +2468,38 @@ function _rclRenderRaceCarousel(hub) {
         flagImg.src = flagSrc;
         flagImg.alt = entry.country;
         flagImg.onerror = function () { flagImg.style.display = 'none'; };
-        stub.appendChild(flagImg);
+        header.appendChild(flagImg);
       }
     }
-    stub.appendChild(_rclEl('div', 'rcl-carousel-name', _rclEscapeHtml(entry.eventName || 'Race')));
-    var stubSubLabel = (entry.roundNum ? ('Round ' + entry.roundNum) : (isSpecial ? 'Special' : '')) +
-      (entry.startUtc ? ((entry.roundNum || isSpecial) ? ' · ' : '') + _rclFormatDate(entry.startUtc) : '');
-    stub.appendChild(_rclEl('div', 'rcl-carousel-sub', _rclEscapeHtml(stubSubLabel)));
-    item.appendChild(stub);
+    header.appendChild(_rclEl('div', 'rcl-carousel-eventname', _rclEscapeHtml(entry.eventName || 'Race')));
+    if (entry.track) header.appendChild(_rclEl('div', 'rcl-carousel-trackname', _rclEscapeHtml(entry.track)));
+    if (entry.startUtc) header.appendChild(_rclEl('div', 'rcl-carousel-datetime', _rclEscapeHtml(_rclFormatDateTimeLong_(entry.startUtc))));
+    item.appendChild(header);
 
-    // Expanded hero content -- the EXTRA detail an active item reveals
-    // underneath its already-visible flag/name/date (track, full
-    // date+time, status, the RACE INFO/RACE RECAP buttons). Built every
-    // time (not just for the active item) so clicking a side item to make
-    // it active never needs a second render pass; .rcl-carousel-item-
-    // active is what actually reveals this in CSS (league.css).
+    // Race details + button -- active-item-only (CSS reveals
+    // .rcl-carousel-hero only under .rcl-carousel-item-active). Built
+    // every time, not just for the active item, so clicking a side item
+    // to make it active never needs a second render pass.
     var hero = _rclEl('div', 'rcl-carousel-hero');
-    var trackLine = (entry.track || '') + (entry.layout ? (': ' + entry.layout) : '');
-    if (trackLine) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-meta', _rclEscapeHtml(trackLine)));
-    if (entry.startUtc) hero.appendChild(_rclEl('div', 'rcl-carousel-hero-date', _rclEscapeHtml(_rclFormatDateTime(entry.startUtc))));
 
-    // Status text only for a race that HASN'T happened yet (UP NEXT /
-    // UPCOMING) -- once a race is finished, nothing here says so in words
-    // any more (2026-10-02 follow-up, Matt's ask: "instead of saying
-    // RESULTS AVAILABLE or whatever, just show the RACE RECAP button" --
-    // the button itself, appended below when results exist, is now the
-    // only "this one's done" signal).
-    if (!entry.finished) {
-      hero.appendChild(_rclEl('div', 'rcl-carousel-hero-status', idx === nextIdx ? 'UP NEXT' : 'UPCOMING'));
+    var detailLines = [];
+    var timeOfDay = _rclTimeOfDayLabel_(entry.startUtc);
+    var lengthMin = _rclEntryLengthMinutes(entry, hub);
+    var sessionBits = [];
+    if (entry.raceLengthTier) sessionBits.push(entry.raceLengthTier);
+    if (lengthMin) sessionBits.push(lengthMin + ' Mins Long');
+    var sessionLine = (timeOfDay ? (timeOfDay + ' Race') : '') + (sessionBits.length ? ((timeOfDay ? ', ' : '') + sessionBits.join(' ')) : '');
+    if (sessionLine) detailLines.push(sessionLine);
+    if (entry.weather) {
+      var weatherLine = entry.weather;
+      if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherLine += ' & ' + entry.temperatureC + '°';
+      weatherLine += ' with ' + (entry.chanceOfRain || 0) + '% chance of rain';
+      detailLines.push(weatherLine);
+    }
+    if (detailLines.length) {
+      var detailsWrap = _rclEl('div', 'rcl-carousel-details');
+      detailLines.forEach(function (line) { detailsWrap.appendChild(_rclEl('div', 'rcl-carousel-details-line', _rclEscapeHtml(line))); });
+      hero.appendChild(detailsWrap);
     }
 
     var btnRow = _rclEl('div', 'rcl-carousel-hero-btns');
@@ -2437,22 +2510,25 @@ function _rclRenderRaceCarousel(hub) {
       _rclOpenRaceInfoModal(hub, entry);
     });
     btnRow.appendChild(infoBtn);
-    if (entry.finished && entry.hasResults && entry.roundId) {
-      var recapBtn = _rclEl('button', 'rcl-carousel-hero-btn', 'RACE RECAP');
-      recapBtn.type = 'button';
-      recapBtn.addEventListener('click', function (evt) {
-        evt.stopPropagation();
-        _rclOpenAllResultsModal(hub, entry.roundId);
-      });
-      btnRow.appendChild(recapBtn);
+
+    // The RACE RECAP slot -- three states (2026-10-03, Matt's exact spec):
+    // a live countdown while the race hasn't happened yet; a disabled
+    // RACE RECAP button the instant that countdown hits zero (whether
+    // that's because the page loaded after the race already started, or
+    // because the countdown ticked down to it live -- see
+    // _rclBuildCountdown_'s onComplete above); the normal clickable RACE
+    // RECAP button once results are actually in.
+    if (!entry.finished && entry.startUtc) {
+      var recapSlot = _rclEl('div', 'rcl-carousel-recap-slot');
+      recapSlot.appendChild(_rclBuildCountdown_(entry.startUtc, function () {
+        recapSlot.innerHTML = '';
+        recapSlot.appendChild(_rclBuildRecapButton_(hub, entry));
+      }));
+      btnRow.appendChild(recapSlot);
+    } else {
+      btnRow.appendChild(_rclBuildRecapButton_(hub, entry));
     }
     hero.appendChild(btnRow);
-
-    // Live countdown to this race's own start time -- upcoming races only
-    // (a finished one has nothing left to count down to).
-    if (!entry.finished && entry.startUtc) {
-      hero.appendChild(_rclBuildCountdown_(entry.startUtc));
-    }
     item.appendChild(hero);
 
     item.addEventListener('click', function () { if (idx !== activeIdx) setActive(idx); });
@@ -2471,16 +2547,6 @@ function _rclRenderRaceCarousel(hub) {
   requestAnimationFrame(function () {
     if (itemEls[activeIdx]) itemEls[activeIdx].scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
   });
-
-  // "View Season Details" link removed entirely (2026-10-02 follow-up,
-  // Matt's ask: "get rid of view season details") -- it had already been
-  // relocated here from the old Calendar panel; now there's no entry
-  // point to that popup anywhere on the page at all. Its own Season
-  // Format/Season Rules content lives on in the RACE INFO popup below
-  // (_rclOpenRaceInfoModal, which reuses the same
-  // _rclBuildSeasonFormatBlocks_ data), but Championship Points --
-  // the one section RACE INFO deliberately doesn't carry -- has no public
-  // home on this page any more as of this change.
 }
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
