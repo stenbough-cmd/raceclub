@@ -828,16 +828,20 @@ body.rc-league-page {
    follow-up, Matt's ask: "make the MANUFACTURERS names on their own
    line, and then below it list the amount of points in the same style
    and height as the rest of the list below P4-Pn") -- matches
-   .rcl-mfr-rest-item's text style exactly (14px/800, same letter-
-   spacing and dim color), including its own 12px mobile size further
-   down this file. */
+   .rcl-mfr-rest-item's text SIZE/weight (14px/800), including its own
+   12px mobile size further down this file, but NOT its dim color --
+   color is --rcl-ink (same bright white as .rcl-mfr-tile-name above),
+   per the third follow-up: "Make the points in the MANUFACTURER PODIUM
+   white like the names." The P4+ rest-of-field list below keeps its own
+   dim color; only this podium-only points line matches the name's
+   brightness instead. */
 .rcl-mfr-tile-points {
   margin-top: 4px;
   font-family: var(--rc-font-heading);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--rcl-ink-dim);
+  color: var(--rcl-ink);
   text-align: center;
 }
 /* Divider line moved back between the rank number and the name/points line
@@ -929,12 +933,19 @@ body.rc-league-page {
 }
 /* Widened slightly 160px -> 180px (2026-10-03 follow-up, Matt's ask:
    "make all 3 podium rectangles slightly wider"). */
+/* overflow: visible (2026-10-03, third follow-up, Matt's ask: "FORCE an
+   overflow of the column/container to keep the podium driver name and
+   flag all on one line") -- the tile has a fixed width, but the name +
+   flag row below is now forced to one line (see .rcl-lr-podium-identity/
+   -name's own white-space:nowrap below) and allowed to spill past this
+   box's edges rather than wrap to a second line or get clipped. */
 .rcl-lr-podium-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 180px;
   max-width: 33%;
+  overflow: visible;
 }
 /* Driver identity sits ABOVE the stand, not inside a boxed tile (Matt:
    "have the manufacturer logo above the driver name, flag and number
@@ -946,6 +957,7 @@ body.rc-league-page {
   align-items: center;
   gap: 6px;
   margin-bottom: 12px;
+  overflow: visible;
 }
 /* Max-height/max-width cap, not a fixed square box (2026-10-03
    follow-up, Matt's ask: "make the manufacturer logos max height 30 or
@@ -954,12 +966,18 @@ body.rc-league-page {
    width cap first, a tall shield hits the height cap first), rather
    than being forced into a fixed square the way the 48x48 box used to. */
 .rcl-lr-podium-logo { max-width: 50px; max-height: 30px; width: auto; height: auto; object-fit: contain; }
+/* flex-wrap: nowrap (was wrap) -- forced onto one line, overflowing the
+   tile's fixed width rather than wrapping to a second line (2026-10-03,
+   third follow-up, Matt's ask: "FORCE an overflow of the column/
+   container to keep the podium driver name and flag all on one
+   line"). */
 .rcl-lr-podium-identity {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: visible;
 }
 /* Flag sits AFTER the name in source order, not before (2026-10-03
    follow-up, Matt's ask: "add the flags behind the name (not in
@@ -974,6 +992,7 @@ body.rc-league-page {
   letter-spacing: 0.03em;
   color: var(--rcl-ink);
   text-align: center;
+  white-space: nowrap;
 }
 .rcl-lr-podium-name-dnf { color: var(--rcl-ink-dim); }
 /* The stand itself IS the colored rectangle (Matt's exact spec: "a gold
@@ -997,22 +1016,23 @@ body.rc-league-page {
   font-weight: 900;
   color: rgba(20, 16, 8, 0.75);
 }
-/* Heights trimmed again (2026-10-03, second follow-up: "again, slightly
-   reduce the difference in height from first to second to third") --
-   P1-P3 spread narrowed from 52px to 34px, same tallest-to-shortest
-   order, just a gentler step between each. */
-.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 116px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
-.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 96px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
-.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 82px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
+/* Heights all reduced equally (2026-10-03, third follow-up: "reduce the
+   overall height of all 3 podium rectangles... so they all equally are
+   reduced") -- 16px off each, same 34px P1-P3 spread as the previous
+   follow-up, just shifted down as a group rather than changing the
+   spread again. */
+.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 100px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
+.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 80px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 66px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
 @media (max-width: 640px) {
   .rcl-lr-podium { gap: 10px; }
   .rcl-lr-podium-tile { width: 33%; }
   .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
-  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 86px; }
-  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 74px; }
-  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 64px; }
+  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 74px; }
+  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 62px; }
+  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
 }
 
 /* Each tile: icon + title on top, the stat as the big visual anchor,
