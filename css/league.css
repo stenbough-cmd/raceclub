@@ -641,15 +641,49 @@ body.rc-league-page {
    dimmer than the title above it, same "label under a bigger heading"
    relationship .rcl-cal-datetime/.rcl-panel-title use elsewhere on this
    page, not a second title of its own. */
+/* Font-size bumped from 13px to 14px (2026-10-03, Matt's ask: "increase
+   the size of the subheading HYPERCAR CLASS to be the same height as the
+   1-2-3 manufacturers listed under the boxes") -- 14px matches
+   .rcl-mfr-tile-name's own font-size exactly. */
 .rcl-mfr-subtitle {
   font-family: var(--rc-font-heading);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: center;
   color: var(--rcl-ink-dim);
   margin-bottom: 24px;
+}
+/* Rest-of-field list, ranks 4 and on (2026-10-03, Matt's ask) -- two
+   columns, left to right, below the top-3 podium. Text size matches
+   .rcl-mfr-tile-name (14px/800) exactly, per Matt's "same size as the
+   1-2-3 leaders"; color is light gray (--rcl-ink-dim) rather than
+   .rcl-mfr-tile-name's full-bright --rcl-ink, per his explicit ask. */
+.rcl-mfr-rest {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 32px;
+  row-gap: 14px;
+  max-width: 640px;
+  margin: 28px auto 0;
+}
+.rcl-mfr-rest-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rcl-ink-dim);
+}
+.rcl-mfr-rest-rank { flex: 0 0 auto; }
+.rcl-mfr-rest-name { flex: 1 1 auto; }
+.rcl-mfr-rest-pts { flex: 0 0 auto; }
+@media (max-width: 640px) {
+  .rcl-mfr-rest { grid-template-columns: 1fr; column-gap: 0; row-gap: 10px; }
+  .rcl-mfr-rest-item { font-size: 12px; }
 }
 .rcl-mfr-podium {
   display: flex;
@@ -2940,4 +2974,164 @@ body.rc-league-page {
     color: inherit;
   }
   .rcl-cal-row-body { padding: 10px 14px; }
+}
+
+/* -------------------------------------------------------------------- */
+/* WEBSITE-SPECIFIC CONTAINERS -- 4 square image tiles under the race    */
+/* carousel (2026-10-03, Matt's ask): SEASON FORMAT / LEAGUE RULES /     */
+/* MEMBER LIST / JOIN RACE CLUB. 4-across on desktop, naturally wraps    */
+/* 2x2 then stacked as the viewport narrows (same grid auto-fit approach */
+/* as the rest of this page's responsive rows, no extra JS needed).      */
+/* Square-at-all-costs via the same padding-bottom:100% trick            */
+/* .rcl-mfr-tile-box uses above (percentage padding resolves off the     */
+/* containing block's WIDTH even for padding-top/bottom, so a zero-      */
+/* height box with padding-bottom:100% is forced to exactly match its    */
+/* own width no matter what column width the grid gives it).             */
+/* -------------------------------------------------------------------- */
+.rcl-wc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .rcl-wc-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .rcl-wc-grid { grid-template-columns: 1fr; }
+}
+/* Same border/corner-radius/background treatment as .rcl-panel (the
+   page's other containers), plus the image itself as a cover background
+   on the tile element directly -- set/cleared from js/league.js
+   (_rclRenderWebsiteContainers) rather than a CSS background-image per
+   tile, since each tile's image filename is data, not something CSS can
+   express per-instance. No image, or the image 404s -- the inline
+   background-image is cleared in JS and this rule's own
+   background:var(--rcl-bg-raised) shows through untouched, same color
+   every other container on the page uses. */
+.rcl-wc-tile {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%;
+  border: 1px solid var(--rcl-line);
+  border-radius: 8px;
+  background-color: var(--rcl-bg-raised);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.035), 0 6px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  overflow: hidden;
+  /* "Slightly larger" on hover (Matt's exact words), same transition
+     timing/easing as the Meet the Grid team cards on index.html
+     (.rc-grid-teaser-card.rc-grid-teaser-visible:hover, css/style.css) --
+     a scale bump reads better here than that card's vertical lift, since
+     these are square image tiles, not text cards. */
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.rcl-wc-tile:hover {
+  transform: scale(1.035);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  border-color: var(--rcl-line-bright);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rcl-wc-tile { transition: none; }
+  .rcl-wc-tile:hover { transform: none; }
+}
+/* Text sits directly over the image with no header bar -- same style as
+   .rcl-panel-title (this page's "current headers": 20px/800/uppercase),
+   vertically AND horizontally centered in the square via the absolutely-
+   positioned inner wrapper. A translucent dark scrim behind just the text
+   keeps it readable over a busy image without dimming the whole tile
+   image itself. */
+.rcl-wc-tile-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  font-family: var(--rc-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(180deg, rgba(10, 10, 11, 0.15) 0%, rgba(10, 10, 11, 0.45) 100%);
+  box-sizing: border-box;
+}
+@media (max-width: 480px) {
+  .rcl-wc-tile-label { font-size: 16px; }
+}
+
+/* -------------------------------------------------------------------- */
+/* LEAGUE RULES popup -- reuses Account.html's own .rc-rulebook-* markup  */
+/* and layout (style.css, already loaded on this page) verbatim; this    */
+/* just overrides those shared classes' light-theme colors to fit the    */
+/* dark league page shell, scoped under .rcl-rules-modal-body so         */
+/* Account.html's own light-theme copy is completely untouched.          */
+/* -------------------------------------------------------------------- */
+.rcl-rules-modal-body .rc-rulebook-nav {
+  background: var(--rcl-bg-raised-2);
+  border-color: var(--rcl-line);
+}
+.rcl-rules-modal-body .rc-rulebook-nav-title { color: var(--rcl-ink-dim); }
+.rcl-rules-modal-body .rc-rulebook-nav-link { color: var(--rc-red); }
+.rcl-rules-modal-body .rc-rulebook-nav-link:hover {
+  color: var(--rc-red-dark);
+  background: var(--rcl-bg-raised);
+}
+.rcl-rules-modal-body .rc-rulebook-nav-link.rc-rulebook-draft { color: var(--rcl-ink-faint); }
+.rcl-rules-modal-body .rc-rulebook-nav-link.rc-rulebook-draft:hover { color: var(--rcl-ink-dim); }
+.rcl-rules-modal-body .rc-rulebook-section { border-top-color: var(--rcl-line); }
+.rcl-rules-modal-body .rc-rulebook-section h3,
+.rcl-rules-modal-body .rc-rulebook-section h4 { color: var(--rcl-ink); }
+.rcl-rules-modal-body .rc-rulebook-section p,
+.rcl-rules-modal-body .rc-rulebook-section li { color: var(--rcl-ink-dim); }
+.rcl-rules-modal-body .rc-rulebook-callout {
+  background: var(--rcl-bg-raised-2);
+  color: var(--rcl-ink-dim);
+}
+.rcl-rules-modal-body .rc-rulebook-draft-note { color: var(--rcl-ink-faint); }
+
+/* -------------------------------------------------------------------- */
+/* MEMBER LIST popup -- role-tiered groups (Admin highest, Driver        */
+/* lowest), bold white name + gray "Joined on <date>" subline, per       */
+/* Matt's exact spec. Static rows for now (no hover/link styling --      */
+/* clicking through to an individual profile is a future feature).       */
+/* -------------------------------------------------------------------- */
+.rcl-memberlist-group { margin-bottom: 24px; }
+.rcl-memberlist-group:last-child { margin-bottom: 0; }
+.rcl-memberlist-tier {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-red);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-memberlist-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rcl-line);
+}
+.rcl-memberlist-row:last-child { border-bottom: none; }
+.rcl-memberlist-name {
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--rcl-ink);
+}
+.rcl-memberlist-joined {
+  font-size: 12px;
+  color: var(--rcl-ink-dim);
+  white-space: nowrap;
 }

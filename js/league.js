@@ -1410,6 +1410,36 @@ function _rclComputeManufacturerStandings_(hub) {
   return ranked.slice(0, 3);
 }
 
+// Full Hypercar manufacturer standings, every manufacturer with points,
+// highest first -- same totals as _rclComputeManufacturerStandings_ above
+// (duplicated rather than sliced out of it so that function's own "top 3"
+// contract stays obviously unchanged), used by the ranks-4-and-on list
+// added below the top-3 podium (2026-10-03, Matt's ask: a "Manufacturers'
+// Standings" list under the existing boxes, left-to-right two-column,
+// starting from "1. TOYOTA... 2. FERRARI..."). His example numbered from
+// 1, but the podium above it already covers ranks 1-3 -- showing those
+// three again in a second list directly underneath them would just be
+// duplicate information, so this picks up where the podium leaves off
+// (rank 4 on) and keeps numbering continuous with it instead. Worth a
+// second look from Matt if that's not actually what he pictured.
+function _rclComputeManufacturerStandingsFull_(hub) {
+  var clsEntry = (hub.standings || []).filter(function (c) { return c.className === 'Hypercar'; })[0];
+  if (!clsEntry || !clsEntry.standings || !clsEntry.standings.length) return [];
+
+  var totalsByManufacturer = {};
+  clsEntry.standings.forEach(function (row) {
+    var mfr = row.manufacturer || '';
+    if (!mfr) return;
+    totalsByManufacturer[mfr] = (totalsByManufacturer[mfr] || 0) + (Number(row.championshipPoints) || 0);
+  });
+
+  var ranked = Object.keys(totalsByManufacturer).map(function (mfr) {
+    return { manufacturer: mfr, points: totalsByManufacturer[mfr] };
+  });
+  ranked.sort(function (a, b) { return b.points - a.points; });
+  return ranked;
+}
+
 function _rclRenderManufacturerStandings(hub) {
   var body = document.getElementById('rcl-manufacturer-standings');
   if (!body) return;
@@ -1483,6 +1513,25 @@ function _rclRenderManufacturerStandings(hub) {
     podium.appendChild(tile);
   });
   body.appendChild(podium);
+
+  // Rest-of-field list, ranks 4 and on, two-column left-to-right
+  // (2026-10-03, Matt's ask -- see _rclComputeManufacturerStandingsFull_'s
+  // own comment for why this starts at rank 4 instead of repeating the
+  // top 3 the podium above already shows). Silently omitted when there's
+  // nothing beyond the top 3 yet.
+  var fullField = _rclComputeManufacturerStandingsFull_(hub);
+  var rest = fullField.slice(3);
+  if (rest.length) {
+    var restList = _rclEl('div', 'rcl-mfr-rest');
+    rest.forEach(function (entry, i) {
+      var row = _rclEl('div', 'rcl-mfr-rest-item');
+      row.appendChild(_rclEl('span', 'rcl-mfr-rest-rank', String(i + 4) + '.'));
+      row.appendChild(_rclEl('span', 'rcl-mfr-rest-name', _rclEscapeHtml(entry.manufacturer.toUpperCase())));
+      row.appendChild(_rclEl('span', 'rcl-mfr-rest-pts', Math.round(entry.points) + ' PTS'));
+      restList.appendChild(row);
+    });
+    body.appendChild(restList);
+  }
 }
 
 function _rclBuildResultsStatusNotice_(round) {
@@ -3023,13 +3072,10 @@ function _rclRenderHero(hub) {
   }
 
   // Snapshot/format stat strips moved out of the hero band entirely
-  // (2026-09-19, Matt's call), then their popup (_rclOpenSeasonDetailsModal)
-  // and its one entry point, the "View Season Details" link, were removed
-  // outright (2026-10-02 follow-up, Matt's ask: "get rid of view season
-  // details") -- that content's Season Format/Season Rules half lives on
-  // in the RACE INFO popup (_rclOpenRaceInfoModal), but Championship
-  // Points has no public home on this page any more. rcl-hero-sub stays
-  // as the plain-text "no season" fallback only.
+  // (2026-09-19, Matt's call) -- see _rclOpenSeasonDetailsModal below,
+  // restored 2026-10-03 as the popup the new SEASON FORMAT tile opens
+  // (_rclRenderWebsiteContainers). rcl-hero-sub stays as the plain-text
+  // "no season" fallback only.
   var subEl = document.getElementById('rcl-hero-sub');
 
   if (!hub.hasSeason) {
@@ -3043,14 +3089,286 @@ function _rclRenderHero(hub) {
   if (subEl) subEl.style.display = 'none';
 }
 
-// _rclOpenSeasonDetailsModal (the season snapshot + league format stats
-// popup, previously reachable via a "View Season Details" link at the
-// bottom of the race carousel) removed outright 2026-10-02 (Matt's ask:
-// "get rid of view season details"). Its Season Format/Season Rules
-// content lives on in the RACE INFO popup below (_rclOpenRaceInfoModal),
-// which reuses the same _rclBuildSeasonFormatBlocks_ data -- Championship
-// Points, the one section RACE INFO deliberately excludes, has no public
-// entry point on this page any more as of this removal.
+// Opens the season snapshot + league format stats in a popup, same
+// .rcl-modal-* shell the news story popup uses. Briefly removed entirely
+// on 2026-10-02 (Matt's ask: "get rid of view season details", its one
+// entry point at the time being a "View Season Details" link at the
+// bottom of the race carousel), then restored 2026-10-03 once the new
+// SEASON FORMAT tile (_rclRenderWebsiteContainers) needed exactly this
+// content back -- the function itself is unchanged from before its
+// removal; only its entry point is different now (the tile, not a text
+// link on the carousel).
+function _rclOpenSeasonDetailsModal(hub) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  // Just "SEASON DETAILS", no season number (2026-10-01, Matt's ask --
+  // was "SEASON <n> DETAILS" once the season number was known, 2026-09-24;
+  // matches Account.html's own popup title, which dropped its number the
+  // same way).
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body');
+
+  // Rebuilt 2026-10-01 (Matt's ask: "remove the bubble data blocks in
+  // favor of this more traditional list format") then revised twice more
+  // the same day:
+  // - Rows are plain "Category: Value" text, left-aligned (Matt's catch:
+  //   "I don't want the values to be on one side and the catagory on the
+  //   other... category then a colon, then a space and then the value"),
+  //   not a two-column layout.
+  // - "Championship Points" and "Season Rules" are now each their own
+  //   pill-headed section (.rcl-hero-stats-group/-label), same style as
+  //   "Season Format" above them, instead of a plain text sub-header
+  //   (Matt's ask: "Make CHAMPIONSHIP POINTS into a pill... add a SEASON
+  //   RULES pill in the same style"). _rclBuildSeasonFormatBlocks_ returns
+  //   one such SECTION per pill now, not a flat list of blocks.
+  // - Championship Points' own tier rows (Sprint/Medium/Long) are plain
+  //   flat rows too now, no tree indent (2026-10-01 follow-up, Matt's ask:
+  //   "get rid of the tree indentation and just make it like the rest --
+  //   Sprint: P1 n, P2 n, etc" -- supersedes an even earlier version of
+  //   this same day that gave them a tree sub-row). Each tier row bolds
+  //   only its "Pn" position markers, leaving the point values themselves
+  //   normal weight (2026-10-01 follow-up, Matt's ask: "make the points...
+  //   normal weight and keep the positions in front, bold") -- see
+  //   buildTierRow below, the one row type that doesn't use the shared
+  //   bold-value styling every other row here gets.
+  // - "Bonus Points" has no header of its own at all -- just a blank gap
+  //   above its own flat rows (Matt's ask: "get rid of that and leave a
+  //   space... just list the bonus point catagories and their values").
+  function buildRow(stat) {
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
+      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+  function buildTierRow(stat) {
+    var pts = (stat.points || []).map(function (val, idx) {
+      return '<span class="rcl-seasonfmt-pos">P' + (idx + 1) + '</span> ' + _rclEscapeHtml(String(val));
+    }).join(', ');
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' + pts;
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+
+  var sections = _rclBuildSeasonFormatBlocks_(hub);
+  if (sections.length) {
+    sections.forEach(function (section) {
+      var group = _rclEl('div', 'rcl-hero-stats-group');
+      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
+      var list = _rclEl('div', 'rcl-seasonfmt-list');
+      if (section.blocks) {
+        section.blocks.forEach(function (rows) {
+          var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
+          rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+          list.appendChild(blockEl);
+        });
+      } else {
+        if (section.tiers.length) {
+          var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
+          list.appendChild(tierBlock);
+        }
+        if (section.bonus.length) {
+          var bonusBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.bonus.forEach(function (stat) { bonusBlock.appendChild(buildRow(stat)); });
+          list.appendChild(bonusBlock);
+        }
+      }
+      group.appendChild(list);
+      body.appendChild(group);
+    });
+  } else {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
+  }
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
+}
+
+// LEAGUE RULES popup (2026-10-03, LEAGUE RULES tile, _rclRenderWebsiteContainers
+// below) -- same RULEBOOK_SECTIONS data Account.html's Rules and
+// Regulations card reads (js/rulebook-content.js, now also loaded on this
+// page, see league.html), rendered with the exact same markup/classes
+// (.rc-rulebook-nav/.rc-rulebook-section/etc. -- style.css, also already
+// loaded here) so the content itself never drifts between the two pages.
+// Only the colors differ: .rcl-rules-modal-body (css/league.css) overrides
+// those shared classes' light-theme colors for this page's dark shell,
+// same "reuse the structure, override the palette" approach the Edit
+// Profile/Change Avatar popups already take on this page (edit-profile.js).
+function _rclOpenLeagueRulesModal() {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'League Rules'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body rcl-rules-modal-body');
+
+  var rbNav = _rclEl('div', 'rc-rulebook-nav');
+  rbNav.appendChild(_rclEl('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+  var rbNavGrid = _rclEl('div', 'rc-rulebook-nav-grid');
+  var rbSections = _rclEl('div');
+  if (typeof RULEBOOK_SECTIONS !== 'undefined') {
+    RULEBOOK_SECTIONS.forEach(function (sec) {
+      var link = document.createElement('a');
+      link.href = '#rcl-rulebook-sec-' + sec.id;
+      link.className = 'rc-rulebook-nav-link' + (sec.draft ? ' rc-rulebook-draft' : '');
+      link.textContent = sec.num + '. ' + sec.title;
+      rbNavGrid.appendChild(link);
+
+      var secWrap = _rclEl('div', 'rc-rulebook-section');
+      secWrap.id = 'rcl-rulebook-sec-' + sec.id;
+      secWrap.appendChild(_rclEl('h3', null, sec.num + '. ' + sec.title));
+      if (sec.draft) {
+        secWrap.appendChild(_rclEl('p', 'rc-rulebook-draft-note', sec.draftNote ? ('Not yet drafted. ' + sec.draftNote) : 'Not yet drafted.'));
+      } else {
+        // Safe to use innerHTML here -- RULEBOOK_SECTIONS' html strings are
+        // hand-authored by us, not sourced from user input (see that
+        // file's own header comment).
+        var secBody = document.createElement('div');
+        secBody.innerHTML = sec.html || '';
+        secWrap.appendChild(secBody);
+      }
+      rbSections.appendChild(secWrap);
+    });
+  }
+  rbNav.appendChild(rbNavGrid);
+  body.appendChild(rbNav);
+  body.appendChild(rbSections);
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
+}
+
+// MEMBER LIST popup (2026-10-03, MEMBER LIST tile, _rclRenderWebsiteContainers
+// below) -- fetches handleGetMemberList (Website.gs) fresh on every open
+// (small, public, no-token payload -- not worth folding into the cached
+// League Hub bundle). Grouped by role tier, Admin highest/Driver lowest
+// (same order the server already sorts in, VALID_ROLES/Auth.gs), each row
+// a bold white name + a gray "Joined on <date>" subline, per Matt's exact
+// spec. Static for now (no click handler on a row) but keeps profileId on
+// each entry so a future per-row link to an individual profile page has
+// what it needs without a second fetch then.
+var RCL_ROLE_TIERS_ = ['Admin', 'Organizer', 'Steward', 'Driver'];
+function _rclOpenMemberListModal() {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Member List'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body');
+  body.appendChild(_rclBuildInlineSpinner_('Loading members...'));
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
+
+  fetchApi('getMemberList', {}).then(function (res) {
+    body.innerHTML = '';
+    var members = (res && res.success && res.members) ? res.members : [];
+    if (!members.length) {
+      body.appendChild(_rclEmptyState('No Members Yet', 'Members show up here once accounts are created.'));
+      return;
+    }
+
+    RCL_ROLE_TIERS_.forEach(function (tier) {
+      var tierMembers = members.filter(function (m) { return (m.role || 'Driver') === tier; });
+      if (!tierMembers.length) return;
+      var group = _rclEl('div', 'rcl-memberlist-group');
+      group.appendChild(_rclEl('div', 'rcl-memberlist-tier', tier === 'Admin' ? 'Admins' : tier + 's'));
+      tierMembers.forEach(function (m) {
+        var row = _rclEl('div', 'rcl-memberlist-row');
+        row.appendChild(_rclEl('div', 'rcl-memberlist-name', _rclEscapeHtml(m.displayName || 'Unknown Driver')));
+        row.appendChild(_rclEl('div', 'rcl-memberlist-joined', 'Joined on ' + (_rclFormatDate(m.joinedAt) || 'an unknown date')));
+        group.appendChild(row);
+      });
+      body.appendChild(group);
+    });
+  }).catch(function () {
+    body.innerHTML = '';
+    body.appendChild(_rclEmptyState('Could Not Load Members', 'Could not reach the server -- try again.'));
+  });
+}
+
+// WEBSITE-SPECIFIC CONTAINERS -- 4 square image tiles under the race
+// carousel (2026-10-03, Matt's ask): SEASON FORMAT, LEAGUE RULES, MEMBER
+// LIST, JOIN RACE CLUB. Each tile's background image lives in
+// assets/images/<name>.jpg; a tile whose image 404s falls back to the
+// same --rcl-bg-raised every other container on this page uses (the
+// onerror handler below just clears the inline background-image, letting
+// .rcl-wc-tile's own CSS background color show through -- see
+// css/league.css). Always rendered regardless of hasSeason (unlike the
+// podium/carousel above it) -- these are static site-navigation tiles,
+// not season data.
+var RCL_WEBSITE_CONTAINERS_ = [
+  { label: 'Season Format', image: 'season_format.jpg' },
+  { label: 'League Rules', image: 'league_rules.jpg' },
+  { label: 'Member List', image: 'member_list.jpg' },
+  { label: 'Join Race Club', image: 'join_race_club.jpg' }
+];
+function _rclRenderWebsiteContainers(hub) {
+  var wrap = document.getElementById('rcl-website-containers');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  RCL_WEBSITE_CONTAINERS_.forEach(function (def) {
+    var tile = _rclEl('div', 'rcl-wc-tile');
+    tile.style.backgroundImage = "url('assets/images/" + def.image + "')";
+    var img = new Image();
+    img.onerror = function () { tile.style.backgroundImage = 'none'; };
+    img.src = 'assets/images/' + def.image;
+
+    tile.appendChild(_rclEl('div', 'rcl-wc-tile-label', _rclEscapeHtml(def.label.toUpperCase())));
+
+    tile.setAttribute('role', 'button');
+    tile.setAttribute('tabindex', '0');
+    function activate() {
+      if (def.label === 'Season Format') {
+        _rclOpenSeasonDetailsModal(hub);
+      } else if (def.label === 'League Rules') {
+        _rclOpenLeagueRulesModal();
+      } else if (def.label === 'Member List') {
+        _rclOpenMemberListModal();
+      } else if (def.label === 'Join Race Club') {
+        window.location.href = 'register.html';
+      }
+    }
+    tile.addEventListener('click', activate);
+    tile.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); activate(); }
+    });
+    wrap.appendChild(tile);
+  });
+}
 
 // Full-page loading overlay (2026-09-19, Matt's ask: "a loading animation
 // in the center of the page... with the page behind very very dim until
@@ -3135,7 +3453,7 @@ function _rclFetchLeagueHub_() {
 document.addEventListener('DOMContentLoaded', function () {
   if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
 
-  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews];
+  var RENDERERS = [_rclRenderStandings, _rclRenderResults, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderWebsiteContainers];
 
   function showHub(hub) {
     if (!hub || !hub.success) {

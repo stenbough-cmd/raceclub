@@ -39,6 +39,12 @@
      of navigating to Account.html first. See _rcOpenEditProfileFromHeader
      (js/header.js) and js/edit-profile.js's own file header comment. -->
 <script src="js/edit-profile.js"></script>
+<!-- rulebook-content.js (added 2026-10-03) -- RULEBOOK_SECTIONS, the same
+     source Account.html's own Rules and Regulations card reads from. Used
+     by the LEAGUE RULES tile's popup below (_rclOpenLeagueRulesModal,
+     js/league.js) so the two pages show identical rules content without
+     duplicating it here. -->
+<script src="js/rulebook-content.js"></script>
 </head>
 <body class="rc-league-page">
 
@@ -182,6 +188,14 @@
        hub.calendar (same data the old Calendar panel used) by
        _rclRenderRaceCarousel, js/league.js. -->
   <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
+
+  <!-- Website-specific containers -- 4 square image tiles, under the
+       Calendar/race carousel (2026-10-03, Matt's ask). Deliberately NOT
+       .rcl-panel cards -- each tile IS its own bordered/rounded box (see
+       .rcl-wc-tile, css/league.css), same corner/border treatment as
+       .rcl-panel but with no header strip, built/wired entirely by
+       _rclRenderWebsiteContainers, js/league.js. -->
+  <div class="rcl-row-full rcl-wc-grid" id="rcl-website-containers"></div>
 
   <!-- Drivers section removed (2026-09-19, Matt's call: "drivers can be
        seen by viewing the leaderboard") -- the Leaderboard panel above
