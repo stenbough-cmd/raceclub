@@ -10938,21 +10938,37 @@
   function openEditTrackModal(venueName, rows, token, reload) {
     var body = el('div');
 
-    // Track Name + Region now share one form with one combined submit
-    // button, "Save Changes" (2026-09-21, Matt's ask: "instead of 'SAVE
-    // NAME' and 'SAVE REGION' buttons on the edit track, can you make one
-    // all-encompassing button at the bottom" -- was two separate fields
-    // each with their own Save button/call; button text then changed from
-    // "Update Track" to "Save Changes" per Matt's immediate follow-up,
-    // matching openEditCarModal's own submit button below). One click
-    // saves whichever of the two actually changed (adminUpdateTrackName
-    // and/or adminUpdateTrackRegion, both venue-level so they apply to
-    // every row sharing this TrackName at once), or just closes the popup
-    // if neither did.
+    // Track Name + Nick Name + Region + Country all share one form with
+    // one combined submit button, "Save Changes" (2026-09-21, Matt's ask:
+    // "instead of 'SAVE NAME' and 'SAVE REGION' buttons on the edit
+    // track, can you make one all-encompassing button at the bottom" --
+    // was two separate fields each with their own Save button/call;
+    // button text then changed from "Update Track" to "Save Changes" per
+    // Matt's immediate follow-up, matching openEditCarModal's own submit
+    // button below; Nick Name/ShortName added 2026-10-03). One click
+    // saves whichever of these actually changed (adminUpdateTrackName/
+    // adminUpdateTrackShortName/adminUpdateTrackRegion/
+    // adminUpdateTrackCountry, all venue-level so they apply to every row
+    // sharing this TrackName at once), or just closes the popup if none
+    // did.
     var form = el('form');
     form.appendChild(el('label', 'margin-top:0;', 'Track Name'));
     var nameInput = el('input'); nameInput.type = 'text'; nameInput.value = venueName; nameInput.required = true;
     form.appendChild(nameInput);
+
+    // Nick Name / ShortName (2026-10-03, Matt's ask: "Add a 'NICK NAME'
+    // text box after TRACK NAME in the EDIT track popup") -- venue-level,
+    // same optional/blank-allowed shape as Region/Country below. Used in
+    // place of the full Track Name on the public league.html calendar's
+    // track description and the Last Race section's "<CLASS> HIGHLIGHTS
+    // FROM ROUND N AT <TRACK>" headers (Seasons.gs's
+    // _rcBuildSeasonEntries_) -- blank just falls back to Track Name
+    // everywhere.
+    form.appendChild(el('label', null, 'Nick Name'));
+    var shortNameInput = el('input'); shortNameInput.type = 'text';
+    shortNameInput.value = (rows[0] && rows[0].ShortName) || '';
+    shortNameInput.placeholder = 'Shorter name shown on the public site';
+    form.appendChild(shortNameInput);
 
     form.appendChild(el('label', null, 'Region'));
     var regionInput = el('input'); regionInput.type = 'text';
@@ -11104,6 +11120,8 @@
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
       var newName = nameInput.value.trim();
+      var newShortName = shortNameInput.value.trim();
+      var previousShortName = (rows[0] && rows[0].ShortName) || '';
       var newRegion = regionInput.value.trim();
       var previousRegion = (rows[0] && rows[0].Region) || '';
       var newCountry = countryInput.value;
@@ -11113,9 +11131,10 @@
         return;
       }
       var nameChanged = newName !== venueName;
+      var shortNameChanged = newShortName !== previousShortName;
       var regionChanged = newRegion !== previousRegion;
       var countryChanged = newCountry !== previousCountry;
-      if (!nameChanged && !regionChanged && !countryChanged) {
+      if (!nameChanged && !shortNameChanged && !regionChanged && !countryChanged) {
         modalHandle.close();
         return;
       }
@@ -11131,6 +11150,12 @@
       // try again.
       modalHandle.close();
       var tasks = [];
+      if (shortNameChanged) {
+        tasks.push(fetchApi('adminUpdateTrackShortName', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, shortName: newShortName }
+        }));
+      }
       if (regionChanged) {
         tasks.push(fetchApi('adminUpdateTrackRegion', {
           method: 'POST', token: token,
