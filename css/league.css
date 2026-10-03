@@ -808,16 +808,18 @@ body.rc-league-page {
    closer to the name than the rank number, since only the rankline side
    had a gap and this side had none) -- equal gap above and below the
    line now centers it evenly between the two. */
-/* Font size bumped to match .rcl-mfr-tile-rank's own size exactly
-   (2026-10-03, Matt's ask: "increase the size of the podium winners so
-   that it matches the position sizes" -- the manufacturer name/points
-   line was 14px against the rank number's 32px, noticeably smaller).
-   Nothing else about this element (box, rankline, spacing) changed. */
+/* Font size/weight now match .rcl-lr-mention-stat exactly (2026-10-03
+   follow-up, Matt's ask: "Make the MANUFACTURER NAMES in the podium
+   standings the same height and weight as the data in the MENTIONS
+   containers from the LAST RACE section") -- supersedes the previous
+   2026-10-03 pass that matched this to .rcl-mfr-tile-rank's 32px/800
+   instead. Nothing else about this element (box, rankline, spacing)
+   changed. */
 .rcl-mfr-tile-name {
   margin-top: 10px;
   font-family: var(--rc-font-heading);
-  font-size: 32px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 900;
   letter-spacing: 0.04em;
   color: var(--rcl-ink);
   text-align: center;
@@ -862,7 +864,7 @@ body.rc-league-page {
   .rcl-mfr-tile { width: 31%; }
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
   .rcl-mfr-tile-box-inner { padding: 10px; }
-  .rcl-mfr-tile-name { font-size: 22px; margin-top: 10px; }
+  .rcl-mfr-tile-name { font-size: 18px; margin-top: 10px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 4px; }
   .rcl-mfr-subtitle { font-size: 11px; margin-bottom: 16px; }
@@ -890,7 +892,16 @@ body.rc-league-page {
 /* as one system instead of three different metal palettes.             */
 /* -------------------------------------------------------------------- */
 .rcl-lr-class { margin-top: 32px; }
-.rcl-lr-class:first-of-type { margin-top: 20px; }
+/* First class's header sits the same distance below the panel's red
+   underline as Championship Points' first <CLASS> DRIVERS header does
+   (2026-10-03 follow-up, Matt's ask: "Move everything up... so the
+   <CLASS> STANDINGS container sits below the red header line the same
+   distance as... CHAMPIONSHIP POINTS") -- Championship Points' first
+   .rcl-standings-class gets no extra margin-top of its own (only
+   .rcl-panel-body's own padding separates it from the header), so this
+   drops to 0 to match exactly instead of adding 20px on top of that
+   padding. */
+.rcl-lr-class:first-of-type { margin-top: 0; }
 
 .rcl-lr-podium {
   display: flex;
@@ -917,7 +928,13 @@ body.rc-league-page {
   gap: 6px;
   margin-bottom: 12px;
 }
-.rcl-lr-podium-logo { width: 48px; height: 48px; object-fit: contain; }
+/* Max-height/max-width cap, not a fixed square box (2026-10-03
+   follow-up, Matt's ask: "make the manufacturer logos max height 30 or
+   max width 50px") -- width/height:auto so a logo scales down to fit
+   within 50x30 keeping its own aspect ratio (a wide oval logo hits the
+   width cap first, a tall shield hits the height cap first), rather
+   than being forced into a fixed square the way the 48x48 box used to. */
+.rcl-lr-podium-logo { max-width: 50px; max-height: 30px; width: auto; height: auto; object-fit: contain; }
 .rcl-lr-podium-identity {
   display: flex;
   align-items: center;
@@ -925,6 +942,11 @@ body.rc-league-page {
   gap: 6px;
   flex-wrap: wrap;
 }
+/* Flag sits AFTER the name in source order, not before (2026-10-03
+   follow-up, Matt's ask: "add the flags behind the name (not in
+   front)") -- .rcl-lr-podium-identity is a row, so DOM order is visual
+   order here. The car-number span this used to pair with is gone
+   entirely (same follow-up, "Remove numbers from the names"). */
 .rcl-lr-podium-flag { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; flex: 0 0 auto; }
 .rcl-lr-podium-name {
   font-family: var(--rc-font-heading);
@@ -935,12 +957,6 @@ body.rc-league-page {
   text-align: center;
 }
 .rcl-lr-podium-name-dnf { color: var(--rcl-ink-dim); }
-.rcl-lr-podium-number {
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--rcl-ink-dim);
-}
 /* The stand itself IS the colored rectangle (Matt's exact spec: "a gold
    rectangle in the middle, tallest, silver to the left... bronze to the
    right... shortest. Places live within the boxes, vertically
@@ -962,18 +978,21 @@ body.rc-league-page {
   font-weight: 900;
   color: rgba(20, 16, 8, 0.75);
 }
-.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 150px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
-.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 112px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
-.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 86px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
+/* Heights trimmed slightly (2026-10-03 follow-up, Matt's ask: "Reduce
+   the height of all podium rectangles slightly") -- same P1/P2/P3
+   ratio, each just scaled down ~17%. */
+.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 124px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
+.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 92px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 72px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
 @media (max-width: 640px) {
   .rcl-lr-podium { gap: 10px; }
   .rcl-lr-podium-tile { width: 31%; }
-  .rcl-lr-podium-logo { width: 36px; height: 36px; }
+  .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
-  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 110px; }
-  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 84px; }
-  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 64px; }
+  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 90px; }
+  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 68px; }
+  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
 }
 
 /* Each tile: icon + title on top, the stat as the big visual anchor,

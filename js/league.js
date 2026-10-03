@@ -1404,7 +1404,11 @@ function _rclBuildLastRacePodium_(cls) {
     manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
     driverWrap.appendChild(img);
 
+    // Name first, flag behind it -- not in front, and no car number here
+    // any more (2026-10-03 follow-up, Matt's ask: "Remove numbers from
+    // the names and add the flags behind the name (not in front)").
     var identity = _rclEl('div', 'rcl-lr-podium-identity');
+    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
     if (row.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(row.country);
       if (flagSrc) {
@@ -1416,8 +1420,6 @@ function _rclBuildLastRacePodium_(cls) {
         identity.appendChild(flagImg);
       }
     }
-    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
-    if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-number', '#' + _rclEscapeHtml(row.carNumber)));
     driverWrap.appendChild(identity);
     tile.appendChild(driverWrap);
 
