@@ -1820,14 +1820,14 @@ body.rc-league-page {
 }
 .rcl-carousel-item-special .rcl-carousel-eventname { color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-trackname {
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--rc-font-heading);
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 900;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--rcl-ink);
-  line-height: 1.1;
+  line-height: 1.05;
 }
 .rcl-carousel-item-special .rcl-carousel-trackname { color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-datetime {
@@ -1841,7 +1841,7 @@ body.rc-league-page {
 }
 .rcl-carousel-item-special .rcl-carousel-datetime { color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 20px; }
-.rcl-carousel-item-active .rcl-carousel-trackname { font-size: 34px; }
+.rcl-carousel-item-active .rcl-carousel-trackname { font-size: 46px; }
 .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 20px; }
 /* The expanded "hero" content -- the EXTRA detail (race details lines,
    RACE INFO/RACE RECAP buttons) an active item reveals below its
@@ -1982,11 +1982,11 @@ body.rc-league-page {
   .rcl-carousel-track { padding: 4px calc(50vw - 135px) 22px; gap: 10px; }
   .rcl-carousel-item { width: 190px; }
   .rcl-carousel-eventname { font-size: 13px; }
-  .rcl-carousel-trackname { font-size: 17px; }
+  .rcl-carousel-trackname { font-size: 22px; }
   .rcl-carousel-datetime { font-size: 13px; }
   .rcl-carousel-item-active { width: 270px; }
   .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 15px; }
-  .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 24px; }
+  .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 32px; }
   .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 15px; }
   .rcl-carousel-details-row { padding: 0 16px; }
 }

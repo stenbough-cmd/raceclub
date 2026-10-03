@@ -2502,14 +2502,14 @@ function _rclRenderRaceCarousel(hub) {
       hero.appendChild(detailsWrap);
     }
 
+    // RACE INFO button removed from the carousel (2026-10-03 follow-up,
+    // Matt's ask: "Remove race info button. I'll find a place for the
+    // season details to live. For now, keep the popup and format and I'll
+    // reference it later"). _rclOpenRaceInfoModal below is intentionally
+    // left in place, unreferenced from here, for Matt to wire up to
+    // wherever he decides this content should live next -- do not delete
+    // it as dead code.
     var btnRow = _rclEl('div', 'rcl-carousel-hero-btns');
-    var infoBtn = _rclEl('button', 'rcl-carousel-hero-btn', 'RACE INFO');
-    infoBtn.type = 'button';
-    infoBtn.addEventListener('click', function (evt) {
-      evt.stopPropagation();
-      _rclOpenRaceInfoModal(hub, entry);
-    });
-    btnRow.appendChild(infoBtn);
 
     // The RACE RECAP slot -- three states (2026-10-03, Matt's exact spec):
     // a live countdown while the race hasn't happened yet; a disabled
