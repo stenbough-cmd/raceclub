@@ -2707,6 +2707,15 @@ body.rc-league-page {
    .rcl-standings-points-row already uses below Current Standings, so the
    two bottom-of-panel treatments read identically. */
 .rcl-results-bottom-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+/* Championship Standings' own status footer (2026-10-03, Matt's ask: "The
+   notes... underneath CHAMPIONSHIP STANDINGS table should sit on the
+   right side of the footer") -- the only current user of
+   .rcl-results-status-footer (_rclAppendResultsStatusFooter_,
+   js/league.js; Recent Results, the only other place this ever rendered,
+   is gone). Right-aligns both the status note and the mobile-only
+   "view on PC" nudge beneath it, rather than their default block
+   left-alignment. */
+.rcl-results-status-footer { text-align: right; }
 .rcl-cal-details-link {
   background: none;
   border: none;

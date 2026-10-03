@@ -576,6 +576,25 @@ function _rclBuildTickerItems(hub) {
         prefixBoldText: raceLabelBold, prefixDimText: raceLabelDim, prefixDatesText: raceLabelDates,
         classGroups: classGroups, showRank: true
       });
+
+      // TOP 3 MANUFACTURER STANDINGS (2026-10-03, Matt's ask: "Add a TOP 3
+      // MANUFACTURER STANDINGS: list after all TOP 10 class lists have
+      // been displayed if there is a hypercar class represented") --
+      // same top-3-Hypercar-manufacturers-by-championship-points totals
+      // the plain podium elsewhere on the page already computes
+      // (_rclComputeManufacturerStandings_, no new server data), empty
+      // when there's no Hypercar class/points yet, which doubles as the
+      // "only if Hypercar is represented" gate. Logo + manufacturer name
+      // only (same manufacturerRows shape/spacing the ended-season "FINAL
+      // MANUFACTURERS' STANDINGS" ticker segment uses).
+      var mfrTop3InSeason = _rclComputeManufacturerStandings_(hub);
+      if (mfrTop3InSeason.length) {
+        items.push({
+          tag: 'TOP 3 MANUFACTURER STANDINGS',
+          manufacturerRows: mfrTop3InSeason.map(function (m) { return { manufacturer: m.manufacturer }; }),
+          showRank: true
+        });
+      }
     }
   }
 
