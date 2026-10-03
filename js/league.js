@@ -1518,8 +1518,13 @@ function _rclRenderLastRace_(hub) {
       var clsWrap = _rclEl('div', 'rcl-lr-class');
       var headerDiv = _rclEl('div', 'rcl-standings-class-header');
       headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
+      // "FROM SEASON <N>" (2026-10-03, Matt's ask), same lighter-weight
+      // sub-span the in-season Last Race header uses for "FROM ROUND N AT
+      // TRACK" (rcl-lr-class-header-sub) -- "FROM" carries the same style
+      // as "SEASON <N>" here, both inside the one sub-span, rather than
+      // "FROM" reading as part of the bold "<CLASS> HIGHLIGHTS" text.
       if (hub.seasonNumber) {
-        headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' SEASON ' + hub.seasonNumber));
+        headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FROM SEASON ' + hub.seasonNumber));
       }
       clsWrap.appendChild(headerDiv);
       clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
@@ -1895,18 +1900,15 @@ function _rclRenderManufacturerStandings(hub) {
   }
 }
 
-// seasonEnded/seasonNumber (2026-10-03 follow-up, Matt's ask: once the
-// season showing has ended, Championship Standings' own footer notice
-// should read "*FINAL RESULTS FOR SEASON <N>" instead of "*OFFICIAL
-// RESULTS (POSTED ON <date>)") -- both optional, only passed by the one
-// call site (_rclRenderStandings) that actually has hub in hand; every
-// other caller keeps the original preliminary/official-by-date wording.
+// seasonEnded/seasonNumber params kept (unused) so every call site --
+// _rclRenderStandings included -- can pass them unchanged; removed
+// 2026-10-03 (Matt's ask: "don't let it change what it says just
+// because a season has ended... make this always function the same")
+// after a same-day round trip through "*FINAL RESULTS FOR SEASON <N>"
+// once a season ended. This notice now always reads the plain
+// preliminary/official-by-date wording, in season or out.
 function _rclBuildResultsStatusNotice_(round, seasonEnded, seasonNumber) {
   if (!round) return null;
-  if (seasonEnded) {
-    var label = '*FINAL RESULTS' + (seasonNumber ? (' FOR SEASON ' + seasonNumber) : '');
-    return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary', label);
-  }
   var finalized = !!round.resultsFinalized;
   var dateSource = finalized ? round.finalizedAt : (round.importedAt || round.startUtc);
   var dateText = dateSource ? _rclFormatDate(dateSource) : '';
