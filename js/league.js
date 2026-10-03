@@ -1035,14 +1035,13 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
     // Graphite header bar (2026-09-23, Matt's ask: "instead of it just
     // having the class name off to the top left of the columns, add an
     // additional row with a graphite background that has <CLASS>
-    // LEADERBOARD centered above each column"). Always "<CLASS> DRIVERS"
-    // now (2026-10-02, Matt's ask: "Make the CHAMPIONSHIP STANDINGS table
-    // headers say <CLASS> DRIVERS instead of <CLASS> LEADERBOARD" --
-    // this function's only live caller is Championship Standings, which
-    // always passes hasResults:true, so this used to always read
-    // "LEADERBOARD" in practice; the hasResults param still gates the
-    // Pos/Driver/Pts column labels just below, unchanged).
-    var headerText = (cls.className || 'CLASS').toUpperCase() + ' DRIVERS';
+    // LEADERBOARD centered above each column"). Briefly "<CLASS> DRIVERS"
+    // (2026-10-02 -> 2026-10-03), reverted back to "<CLASS> LEADERBOARD"
+    // (2026-10-03, Matt's ask) -- this function's only live caller is
+    // Championship Standings, which always passes hasResults:true; the
+    // hasResults param still gates the Pos/Driver/Pts column labels just
+    // below, unchanged.
+    var headerText = (cls.className || 'CLASS').toUpperCase() + ' LEADERBOARD';
     wrap.appendChild(_rclEl('div', 'rcl-standings-class-header', headerText));
     var clsStandings = cls.standings || [];
     if (!clsStandings.length) {
@@ -1496,11 +1495,11 @@ function _rclRenderLastRace_(hub) {
   // see Website.gs/_rcComputeClassSeasonMentions_, Results.gs), so the
   // podium tile builder below (_rclBuildLastRacePodium_) is reused as-is;
   // only the header text and the mention-tile pool differ.
-  // "Last Race" -> "Final Results" once the season showing has ended
-  // (2026-10-03 follow-up, Matt's ask -- was "Last Season", one message
-  // earlier the same day).
+  // "Last Race" -> "Season Recap" once the season showing has ended
+  // (2026-10-03, Matt's ask -- was "Final Results", then "Last Season"
+  // before that, both the same day).
   var titleEl = document.getElementById('rcl-last-race-title');
-  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Results' : 'Last Race';
+  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Season Recap' : 'Last Race';
 
   var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
