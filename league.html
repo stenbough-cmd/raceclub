@@ -122,16 +122,16 @@
 
 <main class="rcl-main">
 
-  <!-- League News -- full width on its own now (2026-10-03) -- used to
-       share a 2-column .rcl-grid with Recent Results (News got the
-       narrower 1fr column, Results the wider 2fr one); now that Recent
-       Results is gone (replaced by the Last Race section below, which
-       needed to be its own full-width non-panel section rather than
-       squeezed into that 2fr column -- see Matt's explicit "I don't want
-       it to feel like a copy of the championship table" ask), News alone
-       in that grid would have looked like a stray half-width card, so it
-       moved to its own full-width row instead. -->
-  <div class="rcl-row-full">
+  <!-- League News (25%) + LAST RACE (75%) side by side on one row
+       (2026-10-03, Matt's ask). News briefly had a stop as its own
+       full-width row (when Last Race first replaced Recent Results, since
+       Last Race needed to be its own full-width non-panel section rather
+       than squeezed into the old 2fr column -- see Matt's "I don't want
+       it to feel like a copy of the championship table" ask) -- now
+       they're back on one row together, just at a 1:3 ratio instead of
+       the old Recent-Results-era 1:2. See .rcl-news-lastrace-row,
+       css/league.css. -->
+  <div class="rcl-row-full rcl-news-lastrace-row">
     <section class="rcl-panel">
       <!-- rcl-panel-head-news (2026-09-19) -- distinguishes this header
            from other panels' identical .rcl-panel-head so the
@@ -142,23 +142,35 @@
       </div>
       <div class="rcl-panel-body" id="rcl-news-body"></div>
     </section>
-  </div>
 
-  <!-- LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask).
-       Deliberately NOT a .rcl-panel -- same "bare on the page" treatment
-       as Manufacturers' Standings below, specifically so it doesn't read
-       as another copy of the Championship Standings card. One sub-section
-       per class (Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE): a top-3
-       finishing podium (podium-STAND graphic -- gold/silver/bronze
-       rectangles of different heights, place number centered in each
-       stand, driver identity above it) plus a 2x2 grid of "headline
-       mention" tiles (icon + title, the stat, then the driver(s) and a
-       one-line narrative) picked from the pool of 10 documented in the
-       Project doc claude/last-race-section-content-2026-10-03.md. Built
-       entirely from hub.lastRace.classes[].headlineMentions (Results.gs
-       now computes and attaches these server-side) by
-       _rclRenderLastRace_, js/league.js. -->
-  <div class="rcl-row-full" id="rcl-last-race"></div>
+    <!-- LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask).
+         Back in a .rcl-panel (2026-10-03 follow-up, Matt's ask: "make
+         LAST RACE live in a container the same way RECENT RESULTS did
+         with a header and red line under the header") -- same
+         .rcl-panel-head/.rcl-panel-title/.rcl-panel-body shell as League
+         News, so the title + red underline comes for free. The INSIDE of
+         the container is still the podium-stand + mention-tile design,
+         not a return to the old plain POS/DRIVER/PTS row list Matt's
+         original "doesn't feel like a copy of the championship table"
+         ask was about -- that objection was to the row-list CONTENT, not
+         to having a card wrapper. One sub-section per class (Hypercar ->
+         LMP2 -> LMP3 -> LMGT3 -> LMGTE): a top-3 finishing podium
+         (podium-STAND graphic -- gold/silver/bronze rectangles of
+         different heights, place number centered in each stand, driver
+         identity above it) plus a 2x2 grid of "headline mention" tiles
+         (icon + title, the stat, then the driver(s) and a one-line
+         narrative) picked from the pool of 10 documented in the Project
+         doc claude/last-race-section-content-2026-10-03.md. Built
+         entirely from hub.lastRace.classes[].headlineMentions
+         (Results.gs now computes and attaches these server-side) by
+         _rclRenderLastRace_, js/league.js. -->
+    <section class="rcl-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title">Last Race</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-last-race"></div>
+    </section>
+  </div>
 
   <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
        (2026-10-02, Matt's ask: "I'd like to build a better calendar

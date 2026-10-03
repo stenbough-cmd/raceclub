@@ -631,6 +631,26 @@ body.rc-league-page {
 /* Full-width rows below the two-column grid (Leaderboard/Calendar, added
    2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 28px; }
+/* League News (25%) + Last Race (75%) on one row (2026-10-03, Matt's ask)
+   -- same shape as the old .rcl-grid (News/Recent Results, 1fr/2fr) but
+   at a 1fr/3fr ratio. Both columns are .rcl-panel cards (Last Race got
+   its own panel wrapper back in a 2026-10-03 follow-up: "make LAST RACE
+   live in a container the same way RECENT RESULTS did with a header and
+   red line under the header"). align-items:start (not stretch, unlike
+   the old .rcl-grid) since Last Race is far taller than the News card
+   (multiple classes' podiums + mention grids) -- stretching News's panel
+   background to match that height would leave a tall empty card, so
+   News just sits at its own natural height at the top of the row
+   instead. */
+.rcl-news-lastrace-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .rcl-news-lastrace-row { grid-template-columns: 1fr; }
+}
 /* .rcl-grid-even (Leaderboard/Points Tables 50/50 row) removed 2026-09-19
    -- Points Tables is no longer its own panel; Leaderboard is full width
    again with its own multi-column layout below (.rcl-standings-columns). */
@@ -784,10 +804,15 @@ body.rc-league-page {
    closer to the name than the rank number, since only the rankline side
    had a gap and this side had none) -- equal gap above and below the
    line now centers it evenly between the two. */
+/* Font size bumped to match .rcl-mfr-tile-rank's own size exactly
+   (2026-10-03, Matt's ask: "increase the size of the podium winners so
+   that it matches the position sizes" -- the manufacturer name/points
+   line was 14px against the rank number's 32px, noticeably smaller).
+   Nothing else about this element (box, rankline, spacing) changed. */
 .rcl-mfr-tile-name {
   margin-top: 10px;
   font-family: var(--rc-font-heading);
-  font-size: 14px;
+  font-size: 32px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--rcl-ink);
@@ -833,7 +858,7 @@ body.rc-league-page {
   .rcl-mfr-tile { width: 31%; }
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
   .rcl-mfr-tile-box-inner { padding: 10px; }
-  .rcl-mfr-tile-name { font-size: 11px; margin-top: 10px; }
+  .rcl-mfr-tile-name { font-size: 22px; margin-top: 10px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
   .rcl-mfr-title { font-size: 19px; margin-bottom: 4px; }
   .rcl-mfr-subtitle { font-size: 11px; margin-bottom: 16px; }

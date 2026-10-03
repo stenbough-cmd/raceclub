@@ -1331,8 +1331,10 @@ function _rclRenderLastRace_(hub) {
   if (!body) return;
   body.innerHTML = '';
 
-  body.appendChild(_rclEl('div', 'rcl-mfr-title', 'Last Race'));
-
+  // No in-body "Last Race" title any more (2026-10-03 follow-up) -- the
+  // section is back in a .rcl-panel (league.html) with its own
+  // .rcl-panel-title, same as League News, so this body would otherwise
+  // show the title twice.
   if (!hub.hasSeason || !hub.lastRace) {
     body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
     // Still gets a chance to show up even when the lastRace payload
