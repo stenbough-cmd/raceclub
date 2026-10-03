@@ -1506,23 +1506,53 @@ function _rclRenderManufacturerStandings(hub) {
     boxInner.appendChild(img);
     box.appendChild(boxInner);
     tile.appendChild(box);
-    tile.appendChild(_rclEl('div', 'rcl-mfr-tile-name', _rclEscapeHtml(entry.manufacturer.toUpperCase())));
+    // Position swapped above the name/points line (2026-10-03, Matt's
+    // ask: "swap the position and the team/points locations in the
+    // podium") -- was name/points above, rank number below; now the rank
+    // number sits right under the logo (its own border-top still the one
+    // divider line in the tile) and the name+points line sits under that.
     var rankWrap = _rclEl('div', 'rcl-mfr-tile-rankline');
     rankWrap.appendChild(_rclEl('span', 'rcl-mfr-tile-rank', String(rankIdx + 1)));
     tile.appendChild(rankWrap);
+    // Points added next to the manufacturer name (2026-10-03, Matt's ask:
+    // "add points next to the MANUFACTURERS on the podium section with a
+    // 5-space gap... manufacturer and N PTS should be the same style") --
+    // one text run, one class, so both halves render in the exact same
+    // style with no separate element to keep in sync. 5 literal
+    // non-breaking spaces for the gap, since plain spaces collapse in
+    // HTML and this is meant to read as a fixed gap, not a flexible one.
+    var nameLine = _rclEl('div', 'rcl-mfr-tile-name',
+      _rclEscapeHtml(entry.manufacturer.toUpperCase()) + '     ' + Math.round(entry.points) + ' PTS');
+    tile.appendChild(nameLine);
     podium.appendChild(tile);
   });
   body.appendChild(podium);
 
-  // Rest-of-field list, ranks 4 and on, two-column left-to-right
-  // (2026-10-03, Matt's ask -- see _rclComputeManufacturerStandingsFull_'s
-  // own comment for why this starts at rank 4 instead of repeating the
-  // top 3 the podium above already shows). Silently omitted when there's
-  // nothing beyond the top 3 yet.
+  // Rest-of-field list, ranks 4 and on, two columns -- top-to-bottom rank
+  // order within each column (2026-10-03 follow-up, Matt's ask: "I don't
+  // like the left to right listing so let's keep the two column layout
+  // but make it top to down rank" -- was left-to-right/row-major, e.g.
+  // rank 4 top-left, rank 5 top-right, rank 6 second row left; now rank 4
+  // fills the whole left column top-to-bottom before rank continues at
+  // the top of the right column, like a results sheet). See
+  // _rclComputeManufacturerStandingsFull_'s own comment for why this
+  // starts at rank 4 instead of repeating the top 3 the podium above
+  // already shows. Silently omitted when there's nothing beyond the top
+  // 3 yet.
+  //
+  // CSS alone (grid-auto-flow: column) only fills column-major if it
+  // already knows how many ROWS each column holds -- an implicit column
+  // count has no such limit, so it would just put everything in one tall
+  // column instead of wrapping to a second. rowCount here is that
+  // explicit height, set as an inline custom property .rcl-mfr-rest reads
+  // (css/league.css) rather than a fixed CSS constant, since it depends
+  // on how many manufacturers actually have points this season.
   var fullField = _rclComputeManufacturerStandingsFull_(hub);
   var rest = fullField.slice(3);
   if (rest.length) {
     var restList = _rclEl('div', 'rcl-mfr-rest');
+    var rowCount = Math.ceil(rest.length / 2);
+    restList.style.setProperty('--rcl-mfr-rest-rows', String(rowCount));
     rest.forEach(function (entry, i) {
       var row = _rclEl('div', 'rcl-mfr-rest-item');
       row.appendChild(_rclEl('span', 'rcl-mfr-rest-rank', String(i + 4) + '.'));

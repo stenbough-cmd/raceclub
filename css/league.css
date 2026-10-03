@@ -655,14 +655,24 @@ body.rc-league-page {
   color: var(--rcl-ink-dim);
   margin-bottom: 24px;
 }
-/* Rest-of-field list, ranks 4 and on (2026-10-03, Matt's ask) -- two
-   columns, left to right, below the top-3 podium. Text size matches
-   .rcl-mfr-tile-name (14px/800) exactly, per Matt's "same size as the
-   1-2-3 leaders"; color is light gray (--rcl-ink-dim) rather than
-   .rcl-mfr-tile-name's full-bright --rcl-ink, per his explicit ask. */
+/* Rest-of-field list, ranks 4 and on, below the top-3 podium. Text size
+   matches .rcl-mfr-tile-name (14px/800) exactly, per Matt's "same size as
+   the 1-2-3 leaders"; color is light gray (--rcl-ink-dim) rather than
+   .rcl-mfr-tile-name's full-bright --rcl-ink, per his explicit ask.
+   Two columns, top-to-bottom rank order within each column (2026-10-03
+   follow-up, Matt's ask: "keep the two column layout but make it top to
+   down rank") -- grid-auto-flow: column fills the first column
+   top-to-bottom before starting the second, rather than the default
+   row-major left-to-right order. That only works with an explicit row
+   count (an implicit column-flow grid has no idea when to wrap to a new
+   column otherwise), so --rcl-mfr-rest-rows is set per render from
+   js/league.js (ceil(entry count / 2)) rather than hardcoded here, since
+   it depends on how many manufacturers actually have points. */
 .rcl-mfr-rest {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(var(--rcl-mfr-rest-rows, 1), auto);
+  grid-auto-flow: column;
   column-gap: 32px;
   row-gap: 14px;
   max-width: 640px;
@@ -3043,7 +3053,12 @@ body.rc-league-page {
    vertically AND horizontally centered in the square via the absolutely-
    positioned inner wrapper. A translucent dark scrim behind just the text
    keeps it readable over a busy image without dimming the whole tile
-   image itself. */
+   image itself. backdrop-filter: blur (2026-10-03 follow-up, Matt's ask:
+   "a slight background blur/shadow to help the text pop") softens
+   whatever's directly behind the text itself on top of that scrim +
+   text-shadow, so busy/high-contrast parts of an image can't fight the
+   label no matter what the image looks like. -webkit- prefix needed for
+   Safari, which doesn't support the unprefixed property yet. */
 .rcl-wc-tile-label {
   position: absolute;
   inset: 0;
@@ -3059,7 +3074,9 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rcl-ink);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-  background: linear-gradient(180deg, rgba(10, 10, 11, 0.15) 0%, rgba(10, 10, 11, 0.45) 100%);
+  background: linear-gradient(180deg, rgba(10, 10, 11, 0.2) 0%, rgba(10, 10, 11, 0.5) 100%);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   box-sizing: border-box;
 }
 @media (max-width: 480px) {

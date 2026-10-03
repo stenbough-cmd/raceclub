@@ -10639,7 +10639,7 @@
 
     var isActive = driver.Status !== 'Disabled';
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
+    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
@@ -11404,7 +11404,7 @@
 
     var isActive = _rcRowActive(car);
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
-    var toggleBtn = el('button', 'rc-btn-primary rc-btn-sm', isActive ? 'Deactivate This Car' : 'Reactivate This Car');
+    var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Deactivate This Car' : 'Reactivate This Car');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
     body.appendChild(statusWrap);
