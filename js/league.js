@@ -1518,7 +1518,7 @@ function _rclRenderLastRace_(hub) {
     (ls.classes || []).forEach(function (cls) {
       var clsWrap = _rclEl('div', 'rcl-lr-class');
       var headerDiv = _rclEl('div', 'rcl-standings-class-header');
-      headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' SEASON HIGHLIGHTS'));
+      headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
       if (hub.seasonNumber) {
         headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' SEASON ' + hub.seasonNumber));
       }
