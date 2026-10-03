@@ -544,6 +544,26 @@ body.rc-league-page {
      and its own rows is this one, instead of the two stacking to 20px. */
   margin-bottom: 6px;
 }
+/* Season Format popup only (2026-10-03, Matt's ask: "I want the
+   catagories to look like the member catagories with a red header and
+   light gray line below it") -- overrides the plain gray-pill look above
+   with the exact same red-text/underline treatment the Member List
+   popup's own role-tier headers use (.rcl-memberlist-tier), scoped to
+   .rcl-seasonfmt-modal-body so the RACE INFO popup further up this file,
+   which reuses the same .rcl-hero-stats-label class for its own "This
+   Race"/Season Format/Season Rules pills, is completely unaffected. */
+.rcl-seasonfmt-modal-body .rcl-hero-stats-label {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0 0 6px;
+  margin-bottom: 10px;
+  color: var(--rc-red);
+  font-size: 13px;
+  border-bottom: 1px solid var(--rcl-line);
+}
 /* Season Details popup -- traditional vertical list (2026-10-01, replacing
    the old "bubble" tile grid above, Matt's ask: "remove the bubble data
    blocks in favor of this more traditional list format"), revised twice

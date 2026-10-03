@@ -2990,9 +2990,18 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   if (hub.byeWeeks) block1.push({ label: hub.byeWeeks === 1 ? 'Bye Week' : 'Bye Weeks', value: String(hub.byeWeeks) });
   var classNames = (hub.standings || []).map(function (cls) { return cls.className; }).filter(Boolean);
   if (classNames.length) block1.push({ label: classNames.length === 1 ? 'Class' : 'Classes', value: classNames.join(', ') });
+  // "<class> Seats" (2026-10-03, was "<class> Drivers" -- Matt's ask:
+  // show how many seats are still OPEN to race, not how many drivers are
+  // already signed up) -- hub.availableSeatsByClass is computed
+  // server-side (_rcComputeAvailableSeatsByClass_, Website.gs) since it
+  // needs Teams/Cars/Registrations data this page never otherwise reads.
+  // undefined (not just 0) means this class has no Teams at all for the
+  // season (nothing to show); 0 itself is shown -- "0 seats" (full) is
+  // meaningful information, unlike the old Drivers row, which hid a class
+  // entirely once it had a non-zero count only.
   (hub.standings || []).forEach(function (cls) {
-    var count = (cls.standings || []).length;
-    if (count) block1.push({ label: (cls.className || 'Class') + ' Drivers', value: String(count) });
+    var available = (hub.availableSeatsByClass || {})[cls.className];
+    if (available !== undefined) block1.push({ label: (cls.className || 'Class') + ' Seats', value: String(available) });
   });
   if (block1.length) blocks.push(block1);
 
@@ -3132,18 +3141,29 @@ function _rclOpenSeasonDetailsModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  // Just "SEASON DETAILS", no season number (2026-10-01, Matt's ask --
-  // was "SEASON <n> DETAILS" once the season number was known, 2026-09-24;
-  // matches Account.html's own popup title, which dropped its number the
-  // same way).
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Details'));
+  // "SEASON FORMAT" (2026-10-03, was "Season Details" -- Matt's ask: the
+  // tile that opens this popup is itself labeled SEASON FORMAT, so the
+  // popup's own title should match it instead of carrying its old name
+  // forward). The inner pill that used to be called "Season Format" is
+  // relabeled "Season Details" below (pillDisplayLabel_) so that name
+  // isn't lost, just moved -- this is a pure display-text swap, not a
+  // rename of the underlying section.pill identifiers themselves (those
+  // stay 'Season Format'/'Season Rules' so _rclOpenRaceInfoModal's own
+  // filter by that exact string, and _rclBuildSeasonFormatBlocks_ itself,
+  // are both untouched).
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Format'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
   head.appendChild(closeBtn);
   dialog.appendChild(head);
 
-  var body = _rclEl('div', 'rcl-modal-body');
+  // rcl-seasonfmt-modal-body (2026-10-03) -- scopes the red-header/
+  // light-gray-line section styling below (css/league.css) to just this
+  // popup, leaving the plain gray-pill .rcl-hero-stats-label look
+  // untouched everywhere else it's used (the RACE INFO popup, further up
+  // this file).
+  var body = _rclEl('div', 'rcl-modal-body rcl-seasonfmt-modal-body');
 
   // Rebuilt 2026-10-01 (Matt's ask: "remove the bubble data blocks in
   // favor of this more traditional list format") then revised twice more
@@ -3184,11 +3204,17 @@ function _rclOpenSeasonDetailsModal(hub) {
     return _rclEl('div', 'rcl-seasonfmt-row', html);
   }
 
+  // Display-only relabeling (2026-10-03, Matt's ask -- see the modal
+  // title's own comment above for why this is display text only, not a
+  // rename of section.pill itself): "Season Format" -> "Season Details",
+  // "Season Rules" -> "Race Rules". Championship Points is unchanged.
+  var pillDisplayLabel_ = { 'Season Format': 'Season Details', 'Season Rules': 'Race Rules' };
+
   var sections = _rclBuildSeasonFormatBlocks_(hub);
   if (sections.length) {
     sections.forEach(function (section) {
       var group = _rclEl('div', 'rcl-hero-stats-group');
-      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
+      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillDisplayLabel_[section.pill] || section.pill));
       var list = _rclEl('div', 'rcl-seasonfmt-list');
       if (section.blocks) {
         section.blocks.forEach(function (rows) {
@@ -3300,7 +3326,17 @@ function _rclOpenLeagueRulesModal() {
 // each entry so a future per-row link to an individual profile page has
 // what it needs without a second fetch then.
 var RCL_ROLE_TIERS_ = ['Admin', 'Organizer', 'Steward', 'Driver'];
-function _rclOpenMemberListModal() {
+// No fetch of its own, no loading state (2026-10-03, Matt's ask: "make the
+// member list popup as responsive as the season format popup... have the
+// information readily accessible so there's no waiting") -- hub.members
+// is already sitting in the same cached League Hub payload this page
+// loaded once up front (see _rcBuildMemberList_, Website.gs), so this
+// reads it directly, exactly the same "no fetch, just render what's
+// already in memory" shape _rclOpenSeasonDetailsModal above has always
+// had. The standalone getMemberList route still exists server-side for
+// anything else that might want just this list on its own, but
+// league.html itself no longer calls it.
+function _rclOpenMemberListModal(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
@@ -3312,24 +3348,11 @@ function _rclOpenMemberListModal() {
   dialog.appendChild(head);
 
   var body = _rclEl('div', 'rcl-modal-body');
-  body.appendChild(_rclBuildInlineSpinner_('Loading members...'));
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
 
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
-
-  fetchApi('getMemberList', {}).then(function (res) {
-    body.innerHTML = '';
-    var members = (res && res.success && res.members) ? res.members : [];
-    if (!members.length) {
-      body.appendChild(_rclEmptyState('No Members Yet', 'Members show up here once accounts are created.'));
-      return;
-    }
-
+  var members = (hub && hub.members) ? hub.members : [];
+  if (!members.length) {
+    body.appendChild(_rclEmptyState('No Members Yet', 'Members show up here once accounts are created.'));
+  } else {
     RCL_ROLE_TIERS_.forEach(function (tier) {
       var tierMembers = members.filter(function (m) { return (m.role || 'Driver') === tier; });
       if (!tierMembers.length) return;
@@ -3343,10 +3366,16 @@ function _rclOpenMemberListModal() {
       });
       body.appendChild(group);
     });
-  }).catch(function () {
-    body.innerHTML = '';
-    body.appendChild(_rclEmptyState('Could Not Load Members', 'Could not reach the server -- try again.'));
-  });
+  }
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // WEBSITE-SPECIFIC CONTAINERS -- 4 square image tiles under the race
@@ -3387,7 +3416,7 @@ function _rclRenderWebsiteContainers(hub) {
       } else if (def.label === 'League Rules') {
         _rclOpenLeagueRulesModal();
       } else if (def.label === 'Member List') {
-        _rclOpenMemberListModal();
+        _rclOpenMemberListModal(hub);
       } else if (def.label === 'Join Race Club') {
         window.location.href = 'register.html';
       }
