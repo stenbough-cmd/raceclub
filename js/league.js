@@ -3365,10 +3365,11 @@ function _rclRenderNews(hub) {
   if (_rclNewsList.length > 1) {
     var prevWrap = _rclEl('div', 'rcl-news-previous');
     prevWrap.appendChild(_rclEl('div', 'rcl-news-previous-head', 'More Stories'));
-    // Capped at the next 5 (2026-09-19, Matt's call) -- anything older
-    // than that stays reachable only through the read-story popup's own
-    // "Load More News" button, not listed out here on the page.
-    _rclNewsList.slice(1, 6).forEach(function (item, i) {
+    // Capped at the next 3 (2026-10-04, Matt's call; was 5 since
+    // 2026-09-19) -- anything older than that stays reachable only through
+    // the read-story popup's own "Load More News" button, not listed out
+    // here on the page.
+    _rclNewsList.slice(1, 4).forEach(function (item, i) {
       var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclEscapeHtml(item.title || '(untitled)'));
       titleBtn.type = 'button';
       titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1); });

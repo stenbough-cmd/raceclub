@@ -3521,6 +3521,23 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   -webkit-user-drag: none;
   cursor: pointer;
 }
+/* Both navbar logos grow slightly on hover (2026-10-04, Matt's ask: "when
+   someone hovers over either of the logos in the top left corners, they
+   should slightly get larger in size, similar to the containers at the
+   bottom of the league page") -- same scale-bump + transition timing as
+   league.html's .rcl-wc-tile:hover (css/league.css), a touch bigger
+   (1.06 vs 1.035) since these are small marks. Shared header markup, so
+   this applies on every page. */
+.rc-header-logo,
+.rc-header-leaguehub-logo { transition: transform 0.18s ease; }
+.rc-header-logo-link:hover .rc-header-logo,
+.rc-header-leaguehub-logo-link:hover .rc-header-leaguehub-logo { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) {
+  .rc-header-logo,
+  .rc-header-leaguehub-logo { transition: none; }
+  .rc-header-logo-link:hover .rc-header-logo,
+  .rc-header-leaguehub-logo-link:hover .rc-header-leaguehub-logo { transform: none; }
+}
 .rc-header-nav { display: flex; align-items: center; gap: 10px; position: relative; margin-left: auto; }
 .rc-header-link {
   font-family: var(--rc-font-heading);
