@@ -3541,7 +3541,8 @@
   // ask): they may only drive the registered class, car and number for the
   // whole season, stiff penalties apply otherwise. The X is hidden on
   // purpose so the only way out is the "I UNDERSTAND" button. That button
-  // only closes the popup (no write), so it is gray per the button rule.
+  // only closes the popup (no write); red per Matt's explicit call (2026-10-04),
+  // an intentional exception to the gray-unless-it-saves rule.
   function openSeasonCommitmentNotice(team, carClass) {
     team = team || {};
     var carText = [team.manufacturer, team.carModel].filter(Boolean).join(' ');
@@ -3558,10 +3559,10 @@
         escapeHtml(parts.join('  ·  ')));
       body.appendChild(reg);
     }
-    body.appendChild(el('p', 'color:var(--rc-red);font-size:14px;font-weight:700;margin:12px 0 0;',
-      'Stiff penalties apply when this rule is broken.'));
+    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;font-weight:700;text-decoration:none;margin:12px 0 0;',
+      'Severed penalties will apply when this rule is broken, up to, disqualification and suspension from the league.'));
     var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:18px;');
-    var okBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'I UNDERSTAND');
+    var okBtn = el('button', 'rc-btn-primary rc-btn-sm', 'I UNDERSTAND');
     okBtn.type = 'button';
     btnRow.appendChild(okBtn);
     body.appendChild(btnRow);
