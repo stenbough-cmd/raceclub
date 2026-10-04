@@ -533,7 +533,7 @@ function rcWireFooterLegalLink() {
 }
 
 // Feedback categories -- must match FEEDBACK_CATEGORIES_ in Website.gs exactly.
-var _RC_FEEDBACK_CATEGORIES_ = ['Bug Report', 'Feature Request', 'Rulebook / Rules Question', 'Account or Login Issue', 'General Feedback', 'Other'];
+var _RC_FEEDBACK_CATEGORIES_ = ['Bug Report', 'Feature Request', 'Rulebook / Rules Question', 'Account or Login Issue', 'Request League Role', 'General Feedback', 'Other'];
 var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
 
 // Feedback popup -- unlike Edit Profile (_rcOpenEditProfileFromHeader above, which navigates to

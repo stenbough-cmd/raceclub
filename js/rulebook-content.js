@@ -68,7 +68,7 @@ var RULEBOOK_SECTIONS = [
       '<li>Blue flag violations</li><li>Deliberate retaliation or unsportsmanlike conduct (on or off the track)</li></ul>' +
       '<p>There is no live steward commentary or in-race intervention. All of the above are assessed after the fact, via replay and driver reports, and penalties are applied to the final classification (see Section 5).</p>' +
       '<h4>4.5 Incident Reporting (Protests)</h4>' +
-      '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved, if any.</p>' +
+      '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved. The other driver is always required, even on a self-report.</p>' +
       '<ul><li>A protest must be filed within 24 hours of that round’s results being posted.</li>' +
       '<li>Each driver can file up to 2 protests per race. A withdrawn protest still counts toward that limit.</li>' +
       '<li>A protest can be edited or withdrawn any time before a steward rules on it, or before the round’s results are finalized.</li></ul>' +
@@ -87,7 +87,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. Requires a prior Tier 6 disqualification against the same driver this season.</td></tr></table>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. The driver’s account is also suspended: they cannot log in until an Admin reactivates it, and they score no points for the rest of the season. Requires a prior Tier 6 disqualification against the same driver this season.</td></tr></table>' +
       '<h4>5.2 Infraction Types</h4>' +
       '<p><strong>Contact &amp; driving standards</strong></p>' +
       '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +
@@ -154,7 +154,7 @@ var RULEBOOK_SECTIONS = [
         '</td></tr>' +
       '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
       '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
-      '<tr><td><strong>Finalized Results</strong></td><td>A round whose results and rulings are locked in and can no longer be protested, edited, or changed.</td></tr>' +
+      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
       '<tr><td><strong>Preliminary Results</strong></td><td>A round’s results as posted right after the race: still open to protests, corrections, or rulings until they’re locked in as Finalized Results.</td></tr>' +
       '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
       '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
@@ -163,7 +163,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
       '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
       '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
-      '<tr><td><strong>Steward</strong></td><td>An Admin, Organizer, or Steward who reviews and rules on protests.</td></tr>' +
+      '<tr><td><strong>Steward</strong></td><td>A league role that can view every filed protest on the Stewarding page and discuss them with the other stewards in the Stewards chat on Discord. Stewards do not rule on protests. Only Admins and Organizers issue rulings.</td></tr>' +
       '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
       '</table>'
   }

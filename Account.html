@@ -2358,7 +2358,7 @@
       body.appendChild(reg);
     }
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;font-weight:700;text-decoration:none;margin:12px 0 0;',
-      'Severed penalties will apply when this rule is broken, up to, disqualification and suspension from the league.'));
+      'Severe penalties will apply when this rule is broken, up to, disqualification and suspension from the league.'));
     var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:18px;');
     var okBtn = el('button', 'rc-btn-primary rc-btn-sm', 'I UNDERSTAND');
     okBtn.type = 'button';
@@ -4594,6 +4594,23 @@
       });
   }
 
+  // Red outline plus a shake of the popup when the other driver has not been chosen. The other
+  // driver is required on every protest, self-reports included.
+  function _rcFlagMissingOpponent_(modal, fields) {
+    var sel = fields.driver2Select;
+    if (sel.value) return false;
+    sel.classList.add('rc-field-invalid');
+    sel.addEventListener('change', function clearFlag() {
+      sel.classList.remove('rc-field-invalid');
+      sel.removeEventListener('change', clearFlag);
+    });
+    modal.el.classList.remove('rc-shake');
+    void modal.el.offsetWidth;
+    modal.el.classList.add('rc-shake');
+    showToast('Choose the other driver involved before filing.', 'error');
+    return true;
+  }
+
   // Shared field builder for both the File and Edit popups. Includes a "DRIVER INVOLVED"/"DRIVER
   // INVOLVED"/Lap Number row, infraction type, and an optional 200-word description.
   function buildProtestFormFields(container, laps, driverRoster, myProfileId, initial, raceFieldWrap) {
@@ -4623,7 +4640,7 @@
 
     // One driver-involved box now, not two. The filer is already named in box 1, so they're
     // excluded from this list.
-    var otherDrivers = driverRoster.filter(function (d) { return d.profileId !== myProfileId; });
+    var otherDrivers = driverRoster.filter(function (d) { return d.profileId && d.profileId !== myProfileId; });
     var driver2Select = document.createElement('select');
     driver2Select.appendChild(new Option('Choose Driver', ''));
     _rcAppendGroupedDriverOptions_(driver2Select, otherDrivers);
@@ -4709,6 +4726,7 @@
 
     submitBtn.addEventListener('click', function () {
       if (!fields) return;
+      if (_rcFlagMissingOpponent_(modal, fields)) return;
       var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
       if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
       submitBtn.disabled = true;
@@ -4778,6 +4796,7 @@
       var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Changes');
       saveBtn.type = 'button';
       saveBtn.addEventListener('click', function () {
+        if (_rcFlagMissingOpponent_(modal, fields)) return;
         var words = fields.descBox.value.trim().length ? fields.descBox.value.trim().split(/\s+/).length : 0;
         if (words > 200) { showToast('Description must be 200 words or fewer.', 'error'); return; }
         saveBtn.disabled = true;
@@ -5098,8 +5117,6 @@
       defaultPassword: '',
       privateQualifying: 'No',
       trackLimitsPreset: 'Default',
-      releaseMode: 'now',
-      releaseDateTime: '',
       // Everything unchecked by default -- LMGT3 used to default to true; an admin now has to
       // deliberately pick every class this season runs.
       classes: { LMGTE: false, LMGT3: false, LMP2: false, LMP3: false, Hypercar: false },
@@ -6032,7 +6049,7 @@
       footerBar.innerHTML = '';
 
       if (stepIndex === lastStep && state.__editSeasonId) {
-        // Editing: no draft, no scheduled-release option -- one real save
+        // Editing: one real save
         // point, straight to updateSeason.
         footerBar.style.alignItems = 'flex-end';
 
@@ -6070,12 +6087,10 @@
         backBtn.addEventListener('click', function () { goToStep(stepIndex - 1); });
         rightGroup.appendChild(backBtn);
 
-        // "Create a Future Season" (scheduled release) removed -- a season is always created and
-        // opens registration immediately now; state.releaseMode stays hard- coded to 'now' (set in
-        // the wizard's initial state) rather than ever becoming 'scheduled'.
+        // A season is always created and opens registration immediately.
         var createNowBtn = el('button', null, 'Create Season');
         createNowBtn.className = 'rc-btn-primary rc-btn-sm'; createNowBtn.type = 'button';
-        createNowBtn.addEventListener('click', function () { state.releaseMode = 'now'; finishWizard(createNowBtn); });
+        createNowBtn.addEventListener('click', function () { finishWizard(createNowBtn); });
         rightGroup.appendChild(createNowBtn);
 
         footerBar.appendChild(rightGroup);
@@ -6159,26 +6174,10 @@
         return localDateTimeToUtcIso(d, state.seasonStartTime);
       });
 
-      // releaseAtUtc is computed HERE, in the admin's own browser, rather than left for the backend
-      // to work out from releaseDateTime (a bare "2026-09-05T20:00" with no zone info) +
-      // enteredTimeZone (a label, not something Apps Script can reliably parse an arbitrary IANA
-      // name against). new Date(a plain datetime-local string) is interpreted in THIS browser's
-      // local zone, which is the zone the admin actually picked the date/time in -- so converting
-      // to a UTC instant right here is exact, and the backend's scheduled-release checker only ever
-      // has to compare two absolute timestamps.
-      var releaseAtUtc = '';
-      if (state.releaseMode === 'scheduled' && state.releaseDateTime) {
-        var releaseAtDate = new Date(state.releaseDateTime);
-        if (!isNaN(releaseAtDate.getTime())) releaseAtUtc = releaseAtDate.toISOString();
-      }
-
       var seasonDetails = {
         defaultPassword: state.defaultPassword,
         privateQualifying: state.privateQualifying,
         trackLimitsPreset: state.trackLimitsPreset,
-        releaseMode: state.releaseMode,
-        releaseDateTime: state.releaseDateTime,
-        releaseAtUtc: releaseAtUtc,
         enteredTimeZone: state.enteredTimeZone,
         classes: state.classes,
         classSeasons: state.classSeasons,
@@ -6549,7 +6548,7 @@
     var roundLabel = opts.roundLabel || roundId;
 
     var modal = showModal('Erase Round Ingestion Data', { wide: true });
-    modal.body.appendChild(el('div', 'rc-hint', 'Every imported Session/Driver Result/Lap/Race Event and Season History row for ' + escapeHtml(roundLabel) + ' is deleted. The Season, its Rounds, and every driver’s registration/seat are left alone.'));
+    modal.body.appendChild(el('div', 'rc-hint', 'Every imported Session/Driver Result/Lap/Race Event and Season History row for ' + escapeHtml(roundLabel) + ' is deleted. The Season, its Rounds, every driver’s registration/seat, and any protests and penalties filed on this round are left alone, and penalties are applied again once results are re-imported.'));
 
     // No in-popup result banner. The modal just closes itself on success (rcReloadAfterSave() below
     // already navigates away) or stays open with the erase button reset on failure so the admin can
@@ -6647,6 +6646,7 @@
 
         var protests = data.protests || [];
         var hasUnruledProtests = protests.some(function (p) { return p.status === 'Pending'; });
+        var windowStillOpen = !!data.windowOpen;
 
         // Rulable rows -- each still-Pending, not-locked protest below pushes its own {protestId,
         // select, overrideBox, currentIsOverride} entry here instead of getting its own Apply
@@ -6873,7 +6873,10 @@
         if (!resultsFinalized) {
           var finalizeBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Finalize');
           finalizeBtn.type = 'button';
-          if (hasUnruledProtests) {
+          if (windowStillOpen) {
+            finalizeBtn.disabled = true;
+            withTooltip(finalizeBtn, 'The protest window for this round is still open. It closes ' + (data.windowDeadlineIso ? new Date(data.windowDeadlineIso).toLocaleString() : 'in 24 hours') + '.');
+          } else if (hasUnruledProtests) {
             finalizeBtn.disabled = true;
             withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
           }
@@ -7667,6 +7670,9 @@
           var row = el('div', 'rc-group-row');
           var info = el('div', 'rc-dm-row-info');
           info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+          if (person.Status && person.Status !== 'Active') {
+            info.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', escapeHtml(String(person.Status).toUpperCase())));
+          }
           row.appendChild(info);
 
           var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
@@ -7881,11 +7887,14 @@
     resetPwWrap.appendChild(resetPwBtn);
     body.appendChild(resetPwWrap);
 
-    var isActive = driver.Status !== 'Disabled';
+    var isActive = driver.Status !== 'Disabled' && driver.Status !== 'Suspended';
     var statusWrap = el('div', 'padding-top:16px;margin-top:16px;border-top:1px solid var(--rc-silver);');
     var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm', isActive ? 'Disable This Account' : 'Reactivate This Account');
     toggleBtn.type = 'button';
     statusWrap.appendChild(toggleBtn);
+    if (driver.Status === 'Suspended') {
+      statusWrap.appendChild(el('div', 'rc-hint', 'This account was suspended by a Tier 7 ruling and cannot log in. Reactivating it lets the driver log in again. Their registration for the season in which they were suspended stays suspended.'));
+    }
     body.appendChild(statusWrap);
 
     var modalHandle = showModal('Edit Driver', { bodyEl: body });
