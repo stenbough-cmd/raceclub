@@ -2156,7 +2156,22 @@ body.rc-league-page {
   gap: 14px;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x mandatory;
+  /* scroll-snap-type removed (2026-10-04, Matt's bug report: clicking a
+     future event wasn't recentering it -- confirmed, in a headless-
+     browser reproduction, that "x mandatory" snapping was the actual
+     cause: it was silently correcting any JS-driven scrollLeft target
+     that didn't happen to land near an existing snap point back to
+     whichever one it considered nearest, including rounding a perfectly
+     valid target straight back down to 0. A prior attempt tried to
+     toggle this off only for the duration of each programmatic scroll
+     and hand it back once settled, but that timing is exactly what kept
+     landing wrong -- removing it outright is what a real reproduction
+     confirmed actually works, every time, for every item. Every
+     centering move here is already computed and driven precisely in JS
+     (js/league.js, _rclScrollCarouselTo_), so the one thing snapping
+     would have added -- a free, approximate rest position during an
+     untouched manual swipe -- isn't something this carousel needs
+     either. */
   scroll-behavior: smooth;
   /* Generous side padding (NOT the page's usual 32px) -- lets an item at
      either end of the strip still scroll all the way to a centered
@@ -2195,7 +2210,6 @@ body.rc-league-page {
      spaces 75px wide") -- was 240px for every item regardless of active
      state; the active item overrides this to 400px below. */
   width: 75px;
-  scroll-snap-align: center;
   cursor: pointer;
   padding: 0 4px 16px;
   display: flex;

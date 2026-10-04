@@ -2884,27 +2884,46 @@ function _rclRenderRaceCarousel(hub) {
 
   var itemEls = [];
 
+  // MOVE FIRST, THEN OPEN (2026-10-04, Matt's exact ask, after growing-
+  // then-centering kept landing wrong or not moving at all: "would it
+  // work if the whole calendar moved over to recenter the calendar event
+  // I clicked on, THEN open up?"). The previous approach toggled the
+  // active class (which starts the clicked item growing from 75px to
+  // 400px) and THEN tried to scroll it into center -- which means the
+  // thing being centered was changing size, mid-scroll, the entire time,
+  // so there was no single stable target to scroll to. This flips the
+  // order: figure out where the clicked item WILL sit once it's the
+  // active one, scroll there first while everything is still at its
+  // current (compact) size, and only swap the active class -- growing
+  // the now-already-centered item in place -- once that scroll has
+  // actually settled.
   function setActive(idx) {
-    activeIdx = idx;
-    itemEls.forEach(function (itemEl, i) {
-      itemEl.classList.toggle('rcl-carousel-item-active', i === idx);
+    if (idx === activeIdx) return;
+    var nextEl = itemEls[idx];
+    var prevIdx = activeIdx;
+
+    // Measures the scroll target for the FINAL layout (idx active, the
+    // current one compact again) by toggling the class instantly
+    // (transitions off) on every item, reading the layout, then
+    // reverting to the CURRENT visual state -- all inside one
+    // synchronous pass, so none of this ever actually paints. This is
+    // the same "disable transition, toggle, measure, revert" technique
+    // the initial height measurement below already relies on, for the
+    // same reason: reading layout right after a class change that would
+    // normally animate can otherwise hand back the pre-change value.
+    itemEls.forEach(function (el) { el.style.transition = 'none'; });
+    itemEls.forEach(function (el, i) { el.classList.toggle('rcl-carousel-item-active', i === idx); });
+    var target = nextEl.offsetLeft - (track.clientWidth - nextEl.offsetWidth) / 2;
+    itemEls.forEach(function (el, i) { el.classList.toggle('rcl-carousel-item-active', i === prevIdx); });
+    track.offsetHeight; // forces the revert above to land before transitions are restored
+    itemEls.forEach(function (el) { el.style.transition = ''; });
+
+    _rclScrollCarouselTo_(track, target, true, function () {
+      activeIdx = idx;
+      itemEls.forEach(function (el, i) {
+        el.classList.toggle('rcl-carousel-item-active', i === idx);
+      });
     });
-    var activeEl = itemEls[idx];
-    // Center immediately (handles the common case -- a side item growing
-    // INTO the center slot it's already scrolled near) and again once the
-    // width transition finishes. Needed because .rcl-carousel-item has a
-    // `width 0.25s ease` transition (2026-10-04's 75px/400px side/active
-    // widths, up from 240px/340px) -- centering synchronously, as this used
-    // to do alone, reads the item's width mid-animation and lands off-center
-    // once it settles. (2026-10-04, Matt's ask: "when a calendar is clicked
-    // on, the event should automatically be repositioned to center.")
-    _rclCenterCarouselItem_(track, activeEl, true);
-    var onWidthDone = function (evt) {
-      if (evt.target !== activeEl || evt.propertyName !== 'width') return;
-      activeEl.removeEventListener('transitionend', onWidthDone);
-      _rclCenterCarouselItem_(track, activeEl, true);
-    };
-    activeEl.addEventListener('transitionend', onWidthDone);
   }
 
   // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
@@ -3109,6 +3128,63 @@ function _rclRenderRaceCarousel(hub) {
   });
 }
 
+// Scrolls .rcl-carousel-track to an exact horizontal scrollLeft value
+// (2026-10-04 -- split out of the old _rclCenterCarouselItem_ below so
+// setActive, above, can scroll to where an item WILL sit once it's made
+// active, before actually making it active -- see that function's own
+// comment for why). onSettled, when given, fires once the scroll has
+// actually finished (scrollend where supported, a timeout fallback
+// otherwise) -- never synchronously, even for an instant/non-smooth jump,
+// so a caller can always treat it the same way.
+//
+// This used to also toggle .rcl-carousel-track's scroll-snap-type off for
+// the duration of the scroll and hand it back once settled, worked around
+// a theory that Safari/WebKit's "mandatory" snapping was fighting a JS-
+// driven scrollLeft assignment. A real headless-browser reproduction
+// confirmed snapping WAS the actual cause -- clicking anything but the
+// already-centered item did nothing, since "mandatory" was silently
+// correcting any target that wasn't already a valid snap point back to
+// whichever one it considered nearest, sometimes all the way back to 0 --
+// but that the disable/restore approach here was *itself* still buggy
+// (the restore could land while the scroll was still animating, letting
+// snapping grab the position back out from under it mid-flight). Rather
+// than keep chasing that timing, scroll-snap-type is removed from the
+// track entirely now (css/league.css) -- every centering move here is
+// already computed and driven precisely in JS, so nothing is lost by not
+// also having the browser's own approximate snapping layered on top.
+function _rclScrollCarouselTo_(track, target, smooth, onSettled) {
+  if (!track) { if (onSettled) setTimeout(onSettled, 0); return; }
+
+  if (track._rclScrollTimer) { clearTimeout(track._rclScrollTimer); track._rclScrollTimer = null; }
+  if (track._rclScrollHandler) { track.removeEventListener('scrollend', track._rclScrollHandler); track._rclScrollHandler = null; }
+
+  var prevBehavior = track.style.scrollBehavior;
+  track.style.scrollBehavior = smooth ? 'smooth' : 'auto';
+  track.scrollLeft = target;
+  track.style.scrollBehavior = prevBehavior;
+
+  var settled = false;
+  function settle() {
+    if (settled) return;
+    settled = true;
+    if (track._rclScrollHandler) track.removeEventListener('scrollend', track._rclScrollHandler);
+    track._rclScrollHandler = null;
+    track._rclScrollTimer = null;
+    if (onSettled) onSettled();
+  }
+  // scrollend (where supported) fires exactly when the browser's own
+  // smooth-scroll animation finishes -- Not every browser Race Club needs
+  // to support has it yet, so a generous timeout is the fallback net
+  // (650ms comfortably covers a smooth-scroll animation across the full
+  // width of the strip; the instant/non-smooth case, smooth=false, just
+  // needs its one frame).
+  if ('onscrollend' in window) {
+    track._rclScrollHandler = settle;
+    track.addEventListener('scrollend', settle);
+  }
+  track._rclScrollTimer = setTimeout(settle, smooth ? 650 : 50);
+}
+
 // Centers a carousel item horizontally WITHIN THE CAROUSEL'S OWN SCROLL
 // TRACK ONLY (2026-10-03 fix, Matt's bug report: "league.html always
 // opens up halfway down the page instead of the top"). The previous code
@@ -3124,69 +3200,13 @@ function _rclRenderRaceCarousel(hub) {
 // scroll-behavior:smooth is set on the track in CSS, so an inline
 // scrollBehavior override is used to get an instant jump for the initial
 // load (smooth=false) vs. an animated one for a user click (smooth=true).
-function _rclCenterCarouselItem_(track, itemEl, smooth) {
+// Only used for the page's very first render now (2026-10-04) -- a click
+// goes through setActive/_rclScrollCarouselTo_ above instead, since that
+// needs to scroll to where an item WILL be, not where it already is.
+function _rclCenterCarouselItem_(track, itemEl, smooth, onSettled) {
   if (!track || !itemEl) return;
   var target = itemEl.offsetLeft - (track.clientWidth - itemEl.offsetWidth) / 2;
-  // scroll-snap-type temporarily off (2026-10-04, Matt's bug report:
-  // "the only calendar event that sits in the center of the page is the
-  // very first... when clicking a future event... it just stays where it
-  // loaded") -- .rcl-carousel-track has scroll-snap-type: x mandatory
-  // (css/league.css), and Safari/WebKit in particular is known to fight a
-  // JS-driven scrollLeft/scrollTo assignment under "mandatory" snapping,
-  // snapping straight back to wherever the browser's own snap logic
-  // already considers "current" instead of actually landing on the
-  // target -- which reads exactly like "clicking anything but the
-  // already-centered item does nothing." The very first item centers
-  // correctly regardless, by the track's own left padding math alone
-  // (calc(50vw - 200px), sized so an item sitting at scrollLeft 0 is
-  // already centered) -- no scroll ever has to actually happen for that
-  // one, which is why only it ever worked. Turning snapping off for the
-  // duration of this one programmatic scroll, then restoring it once the
-  // scroll has settled, is the standard workaround: it still snaps back
-  // to a nice resting position for an ordinary touch/drag swipe (the only
-  // time it's actually needed), it just doesn't get a vote on a scroll
-  // this function is already aiming at a specific target itself.
-  // setActive calls this function TWICE per click (once synchronously,
-  // once again on the active item's own transitionend -- see setActive
-  // above) -- so the snap-restore state below lives on the track element
-  // itself (track._rclSnapRestore), not as a plain local closure, and the
-  // SECOND call only ever cancels/reschedules the first call's pending
-  // restore rather than capturing its own "previous" value. Without this,
-  // the second call would run while the first's override was still live,
-  // capture 'none' as if it were the ORIGINAL value, and its own restore
-  // would then permanently leave scroll-snap-type stuck off.
-  var restoreState = track._rclSnapRestore;
-  if (!restoreState) {
-    restoreState = track._rclSnapRestore = { originalSnap: track.style.scrollSnapType, timer: null, handler: null };
-    track.style.scrollSnapType = 'none';
-  } else {
-    if (restoreState.timer !== null) { clearTimeout(restoreState.timer); restoreState.timer = null; }
-    if (restoreState.handler) { track.removeEventListener('scrollend', restoreState.handler); restoreState.handler = null; }
-  }
-
-  var prevBehavior = track.style.scrollBehavior;
-  track.style.scrollBehavior = smooth ? 'smooth' : 'auto';
-  track.scrollLeft = target;
-  track.style.scrollBehavior = prevBehavior;
-
-  function restoreSnap() {
-    if (track._rclSnapRestore !== restoreState) return; // superseded by a later call already
-    track.style.scrollSnapType = restoreState.originalSnap;
-    if (restoreState.handler) track.removeEventListener('scrollend', restoreState.handler);
-    track._rclSnapRestore = null;
-  }
-  // scrollend (where supported) fires exactly when the browser's own
-  // smooth-scroll animation finishes -- the precise moment it's safe to
-  // hand snapping back without it fighting the scroll already in flight.
-  // Not every browser Race Club needs to support has it yet, so a
-  // generous timeout is the fallback net (650ms comfortably covers a
-  // smooth-scroll animation across the full width of the strip; the
-  // instant/non-smooth case, smooth=false, just needs its one frame).
-  if ('onscrollend' in window) {
-    restoreState.handler = restoreSnap;
-    track.addEventListener('scrollend', restoreSnap);
-  }
-  restoreState.timer = setTimeout(restoreSnap, smooth ? 650 : 50);
+  _rclScrollCarouselTo_(track, target, smooth, onSettled);
 }
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
