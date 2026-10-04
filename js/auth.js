@@ -31,6 +31,7 @@ function setProfileCache(profile) {
   profile = profile || {};
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
+      profileId: profile.profileId || '',
       displayName: profile.displayName || '',
       role: profile.role || '',
       // Blank/absent means "no avatar chosen," same as Account.html's own buildAvatarCircle()

@@ -278,6 +278,17 @@ function renderHeader(opts) {
   // markup below), never duplicated in the top bar either way.
   if (token) {
     var displayName = cached ? (cached.displayName || '') : '';
+    // Sessions saved before the profile ID was cached have no ID for the My Profile link; fetch it
+    // once in the background, save it, and redraw (guarded so it can never loop).
+    if (cached && !cached.profileId && typeof fetchApi === 'function' && !window._rcProfileIdHealing_) {
+      window._rcProfileIdHealing_ = true;
+      fetchApi('getProfile', { token: token }).then(function (data) {
+        if (data && data.success && data.profile && data.profile.profileId) {
+          setProfileCache(data.profile);
+          renderHeader(opts);
+        }
+      }).catch(function () {});
+    }
     var initials = _rcHeaderInitials(displayName);
     var role = cached ? (cached.role || 'Driver') : 'Driver';
 
