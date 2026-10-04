@@ -166,7 +166,7 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   body.appendChild(urlRow);
   // Image restriction note, same as Account.html's own copy -- a note only for now, not enforced
   // client- or server-side.
-  body.appendChild(_rcEP_el('div', 'rc-hint', 'Image must be square and under 5MB.'));
+  body.appendChild(_rcEP_el('div', 'rc-hint', 'Image must be square and under 1MB.'));
 
   var saveBtn = _rcEP_el('button', 'rc-btn-primary', 'Save Avatar');
   saveBtn.type = 'button';
