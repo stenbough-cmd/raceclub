@@ -2154,40 +2154,28 @@ body.rc-league-page {
   display: flex;
   align-items: stretch;
   gap: 14px;
+  /* Centered as a block, not scrolled (2026-10-04, Matt's call: after
+     three separate scroll-to-center approaches each broke in Safari in a
+     different way -- the last one traced all the way down to a genuine
+     WebKit bug where this track's scrollable range went stale after a
+     mid-session window resize -- Matt's exact instruction was to stop
+     fighting the browser and just keep the whole row centered as a
+     block, opening whichever item is clicked in place with no movement
+     at all. justify-content:center does that: the row sits centered
+     when it fits (every desktop width this site supports), and on a
+     narrow phone width where the compact items plus one active item
+     genuinely don't all fit, overflow-x:auto (below) is kept purely as a
+     fallback so content can still be reached by a manual swipe -- no JS
+     drives it any more. */
+  justify-content: center;
   overflow-x: auto;
   overflow-y: hidden;
-  /* scroll-snap-type removed (2026-10-04, Matt's bug report: clicking a
-     future event wasn't recentering it -- confirmed, in a headless-
-     browser reproduction, that "x mandatory" snapping was the actual
-     cause: it was silently correcting any JS-driven scrollLeft target
-     that didn't happen to land near an existing snap point back to
-     whichever one it considered nearest, including rounding a perfectly
-     valid target straight back down to 0. A prior attempt tried to
-     toggle this off only for the duration of each programmatic scroll
-     and hand it back once settled, but that timing is exactly what kept
-     landing wrong -- removing it outright is what a real reproduction
-     confirmed actually works, every time, for every item. Every
-     centering move here is already computed and driven precisely in JS
-     (js/league.js, _rclScrollCarouselTo_), so the one thing snapping
-     would have added -- a free, approximate rest position during an
-     untouched manual swipe -- isn't something this carousel needs
-     either. */
-  scroll-behavior: smooth;
-  /* Generous side padding (NOT the page's usual 32px) -- lets an item at
-     either end of the strip still scroll all the way to a centered
-     position, same purpose scroll-padding would serve, done this way
-     instead because it also gives the strip real breathing room past the
-     viewport edge on wide screens, matching the reference images. 200px
-     is half the active item's own 400px width (2026-10-04, was 170px for
-     the old 340px active width) -- keeps that same "item can still reach
-     dead center" math correct after the active width bump. */
-  padding: 4px calc(50vw - 200px) 28px;
+  padding: 4px 32px 28px;
   -webkit-overflow-scrolling: touch;
   /* No visible scrollbar (2026-10-04, Matt's ask: "I dont want horizontal
-     scrollbar behavior") -- the track still scrolls (clicking an item
-     still recenters it via scrollLeft, _rclCenterCarouselItem_ in
-     js/league.js), this just stops the browser from drawing a scrollbar
-     chrome for it. Firefox/IE-Edge-legacy via scrollbar-width/
+     scrollbar behavior") -- relevant now only for the narrow-phone
+     fallback overflow case above, since nothing scrolls this track on a
+     click any more. Firefox/IE-Edge-legacy via scrollbar-width/
      -ms-overflow-style, WebKit/Blink via the pseudo-element below. */
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -2539,13 +2527,15 @@ body.rc-league-page {
 }
 @media (max-width: 640px) {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
-  .rcl-carousel-track { padding: 4px calc(50vw - 135px) 22px; gap: 10px; }
+  .rcl-carousel-track { padding: 4px 16px 22px; gap: 10px; }
   /* Side items stay 75px even on mobile (2026-10-04) -- same universal
      compact width as desktop now, so this no longer needs its own
      shrink. Active item keeps its own smaller 270px cap here, though
      (unchanged) -- a fixed 400px active item would overflow a narrow
-     phone screen; the track's own padding calc above (half of 270) still
-     agrees with that cap. */
+     phone screen. The track's padding is just a plain gutter now (see
+     the base rule's own comment) since nothing here does scroll-math any
+     more -- a phone too narrow to fit every item just falls back to the
+     track's own overflow-x:auto for a manual swipe. */
   .rcl-carousel-item:not(:first-child)::before { left: -5px; }
   .rcl-carousel-eventname { font-size: 13px; }
   .rcl-carousel-trackname { font-size: 22px; }

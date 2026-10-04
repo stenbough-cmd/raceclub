@@ -2858,17 +2858,6 @@ function _rclBuildRecapButton_(hub, entry) {
   return btn;
 }
 
-// Fixed geometry constants (2026-10-04) mirroring css/league.css exactly
-// -- every non-active carousel item is this wide (.rcl-carousel-item's
-// base width) with this gap between items (.rcl-carousel-track's gap,
-// mobile override at the 640px breakpoint). Used by setActive below to
-// compute a click's scroll target by pure arithmetic instead of
-// measuring the DOM -- see that function's own comment for why. If
-// either of these ever changes in the CSS, update it here too.
-var RC_CAROUSEL_COMPACT_WIDTH_ = 75;
-var RC_CAROUSEL_GAP_DESKTOP_ = 14;
-var RC_CAROUSEL_GAP_MOBILE_ = 10;
-
 function _rclRenderRaceCarousel(hub) {
   var outer = document.getElementById('rcl-race-carousel');
   if (!outer) return;
@@ -2895,85 +2884,24 @@ function _rclRenderRaceCarousel(hub) {
 
   var itemEls = [];
 
-  // MOVE FIRST, THEN OPEN (2026-10-04, Matt's exact ask, after growing-
-  // then-centering kept landing wrong or not moving at all: "would it
-  // work if the whole calendar moved over to recenter the calendar event
-  // I clicked on, THEN open up?"). The previous approach toggled the
-  // active class (which starts the clicked item growing from 75px to
-  // 400px) and THEN tried to scroll it into center -- which means the
-  // thing being centered was changing size, mid-scroll, the entire time,
-  // so there was no single stable target to scroll to. This flips the
-  // order: figure out where the clicked item WILL sit once it's the
-  // active one, scroll there first while everything is still at its
-  // current (compact) size, and only swap the active class -- growing
-  // the now-already-centered item in place -- once that scroll has
-  // actually settled.
-  //
-  // Switched to the browser's own scrollIntoView (2026-10-04 follow-up,
-  // Matt's bug report persisting in Safari specifically even after a pure-
-  // arithmetic rewrite that was verified working in headless Chromium --
-  // Matt also pointed at fiawec.com's own working race calendar as a
-  // working reference point) -- two from-scratch approaches (measuring
-  // via a class-toggle trick, then hand-computed scroll-math) both came
-  // up short in Safari specifically, which points at Safari's handling of
-  // a manually-assigned track.scrollLeft + CSS scroll-behavior:smooth
-  // combination itself, not at the target number being wrong. itemEl.
-  // scrollIntoView({inline:'center'}) is the one browser-native primitive
-  // built to do exactly this, and every engine (Safari included) has to
-  // implement it consistently since it's load-bearing for basic
-  // accessibility (focus management). block:'nearest' keeps it from
-  // ALSO moving the page vertically -- the one real risk with
-  // scrollIntoView (and the reason an earlier version of this code moved
-  // away from it, see _rclScrollCarouselTo_'s own comment below), but
-  // that was specifically about the page's very FIRST render, before the
-  // user has scrolled the carousel into view at all; by the time this
-  // runs, the user has already clicked something inside it, so it's
-  // already vertically on screen and nothing above should need to move.
+  // Click just opens the item in place -- no scrolling at all (2026-10-04,
+  // Matt's exact call, after three straight scroll-centering approaches
+  // -- transitionend-based, pure arithmetic, then scrollIntoView -- each
+  // ran into a different Safari-specific wall, the last one traced all
+  // the way down to a genuine WebKit layout bug where the track's own
+  // scrollable range went stale after a mid-session window resize. Matt's
+  // call: stop fighting the browser to make the carousel scroll itself
+  // into a centered position on every click, and instead keep the whole
+  // row centered as a block (css/league.css: .rcl-carousel-track now uses
+  // justify-content:center instead of the old calc(50vw...) side padding
+  // built for scroll-math) and just toggle which item is open. Nothing
+  // here moves the track at all any more.
   function setActive(idx) {
     if (idx === activeIdx) return;
-    var nextEl = itemEls[idx];
-    // Phase 1: center the clicked item at its CURRENT (compact) size --
-    // scrollIntoView centers against whatever the layout actually is
-    // right now, so this has to happen before anything about its size
-    // changes.
-    nextEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-
-    var openSettled = false;
-    function openIt() {
-      if (openSettled) return;
-      openSettled = true;
-      track.removeEventListener('scrollend', openIt);
-      activeIdx = idx;
-      itemEls.forEach(function (el, i) {
-        el.classList.toggle('rcl-carousel-item-active', i === idx);
-      });
-      // Phase 2: growing the clicked item (75px -> its active width) and
-      // shrinking whichever one used to be active shifts everybody's
-      // position again, so the item that Phase 1 just centered drifts
-      // off-center by the time that width transition settles. One more
-      // (non-animated -- it's a small correction, not a second visible
-      // move) scrollIntoView once that transition has actually finished
-      // corrects it. transitionend is the precise signal; the timeout is
-      // the fallback net, same reasoning as the scroll settle above, and
-      // reSettled guards against both firing.
-      var reSettled = false;
-      function recenter() {
-        if (reSettled) return;
-        reSettled = true;
-        nextEl.removeEventListener('transitionend', onWidthDone);
-        nextEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
-      }
-      var onWidthDone = function (evt) {
-        if (evt.target !== nextEl || evt.propertyName !== 'width') return;
-        recenter();
-      };
-      nextEl.addEventListener('transitionend', onWidthDone);
-      setTimeout(recenter, 300);
-    }
-    // scrollend (where supported) fires exactly when the scroll actually
-    // finishes; a timeout is the fallback net for browsers without it.
-    if ('onscrollend' in window) track.addEventListener('scrollend', openIt);
-    setTimeout(openIt, 650);
+    activeIdx = idx;
+    itemEls.forEach(function (el, i) {
+      el.classList.toggle('rcl-carousel-item-active', i === idx);
+    });
   }
 
   // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
@@ -3170,85 +3098,8 @@ function _rclRenderRaceCarousel(hub) {
     // the reserved space. An explicit height is what the items stretch
     // to fill exactly.
     if (maxHeight > 0) track.style.height = maxHeight + 'px';
-
-    // Center the initially-active item without an animated scroll (an
-    // animated auto-scroll firing the instant the page loads would be
-    // jarring). Same pure-arithmetic target as setActive above, not a
-    // DOM measurement, for the same reason.
-    if (itemEls[activeIdx]) {
-      var initialGap = window.matchMedia('(max-width: 640px)').matches ? RC_CAROUSEL_GAP_MOBILE_ : RC_CAROUSEL_GAP_DESKTOP_;
-      _rclScrollCarouselTo_(track, activeIdx * (RC_CAROUSEL_COMPACT_WIDTH_ + initialGap), false);
-    }
   });
 }
-
-// Scrolls .rcl-carousel-track to an exact horizontal scrollLeft value
-// (2026-10-04 -- split out of the old _rclCenterCarouselItem_ below so
-// setActive, above, can scroll to where an item WILL sit once it's made
-// active, before actually making it active -- see that function's own
-// comment for why). onSettled, when given, fires once the scroll has
-// actually finished (scrollend where supported, a timeout fallback
-// otherwise) -- never synchronously, even for an instant/non-smooth jump,
-// so a caller can always treat it the same way.
-//
-// This used to also toggle .rcl-carousel-track's scroll-snap-type off for
-// the duration of the scroll and hand it back once settled, worked around
-// a theory that Safari/WebKit's "mandatory" snapping was fighting a JS-
-// driven scrollLeft assignment. A real headless-browser reproduction
-// confirmed snapping WAS the actual cause -- clicking anything but the
-// already-centered item did nothing, since "mandatory" was silently
-// correcting any target that wasn't already a valid snap point back to
-// whichever one it considered nearest, sometimes all the way back to 0 --
-// but that the disable/restore approach here was *itself* still buggy
-// (the restore could land while the scroll was still animating, letting
-// snapping grab the position back out from under it mid-flight). Rather
-// than keep chasing that timing, scroll-snap-type is removed from the
-// track entirely now (css/league.css) -- every centering move here is
-// already computed and driven precisely in JS, so nothing is lost by not
-// also having the browser's own approximate snapping layered on top.
-function _rclScrollCarouselTo_(track, target, smooth, onSettled) {
-  if (!track) { if (onSettled) setTimeout(onSettled, 0); return; }
-
-  if (track._rclScrollTimer) { clearTimeout(track._rclScrollTimer); track._rclScrollTimer = null; }
-  if (track._rclScrollHandler) { track.removeEventListener('scrollend', track._rclScrollHandler); track._rclScrollHandler = null; }
-
-  var prevBehavior = track.style.scrollBehavior;
-  track.style.scrollBehavior = smooth ? 'smooth' : 'auto';
-  track.scrollLeft = target;
-  track.style.scrollBehavior = prevBehavior;
-
-  var settled = false;
-  function settle() {
-    if (settled) return;
-    settled = true;
-    if (track._rclScrollHandler) track.removeEventListener('scrollend', track._rclScrollHandler);
-    track._rclScrollHandler = null;
-    track._rclScrollTimer = null;
-    if (onSettled) onSettled();
-  }
-  // scrollend (where supported) fires exactly when the browser's own
-  // smooth-scroll animation finishes -- Not every browser Race Club needs
-  // to support has it yet, so a generous timeout is the fallback net
-  // (650ms comfortably covers a smooth-scroll animation across the full
-  // width of the strip; the instant/non-smooth case, smooth=false, just
-  // needs its one frame).
-  if ('onscrollend' in window) {
-    track._rclScrollHandler = settle;
-    track.addEventListener('scrollend', settle);
-  }
-  track._rclScrollTimer = setTimeout(settle, smooth ? 650 : 50);
-}
-
-// (_rclCenterCarouselItem_, the itemEl-measuring version of the above,
-// removed 2026-10-04 -- both of its only two call sites, the initial
-// page-load center and setActive's click-to-center, now compute the
-// target by pure arithmetic instead; see setActive's own comment for
-// why. Original note on why this scrolls the track's own scrollLeft
-// rather than itemEl.scrollIntoView(), kept for context: scrollIntoView
-// was also scrolling the whole page vertically on the very first render,
-// 2026-10-03, Matt's bug report -- "league.html always opens up halfway
-// down the page instead of the top." Setting scrollLeft directly on
-// .rcl-carousel-track only ever moves that one horizontal track.)
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
 // button above) -- this specific round's own track/session details up
