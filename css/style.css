@@ -5480,7 +5480,8 @@ body.rc-modal-scroll-locked {
    the "This Season"/"Season Format" stat rows above it already have
    (their own gap comes entirely from .rc-seasonfmt-group-label's own
    10px margin-bottom, no extra margin-top on the row itself). */
-.rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+/* 2026-10-04: margin-top raised 4px -> 10px (Matt: a few more pixels between the pill and the race containers). */
+.rc-cal-race-list { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
 
 /* Bye week -- deliberately close to empty (Matt's call: "keep bye weeks
    off the details screen and just use blank containers within the
