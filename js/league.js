@@ -2909,36 +2909,71 @@ function _rclRenderRaceCarousel(hub) {
   // the now-already-centered item in place -- once that scroll has
   // actually settled.
   //
-  // The target is now PURE ARITHMETIC (2026-10-04 follow-up, Matt's bug
-  // report in Safari: "noticeable delay, no movement... opens in place
-  // without recentering") -- this used to measure the target by
-  // toggling the active class on/off with transitions disabled, reading
-  // layout mid-toggle, then reverting, all in one synchronous pass. That
-  // "disable transition, mutate, read, revert" sequence is exactly the
-  // kind of thing WebKit/Safari is known to not always flush synchronously
-  // the way Chromium does, so the read could land on a stale (pre- or
-  // mid-toggle) layout -- a target that happens to equal the CURRENT
-  // scrollLeft reads as "no movement," and the item still opens once the
-  // (unaffected) settle timeout fires regardless, matching the report
-  // exactly. The actual geometry here turns out not to need measuring at
-  // all: every item is the same 75px compact width with a fixed gap, and
-  // the track's own side padding (css/league.css, calc(50vw - half the
-  // active width)) is deliberately sized so the active item's width and
-  // the viewport width cancel out of the centering math entirely --
-  // scrolling item N into center, with every other item compact, always
-  // comes out to exactly N * (compact width + gap), full stop. No class
-  // toggling, no reflow timing, nothing left for a browser to disagree
-  // with Chromium about.
+  // Switched to the browser's own scrollIntoView (2026-10-04 follow-up,
+  // Matt's bug report persisting in Safari specifically even after a pure-
+  // arithmetic rewrite that was verified working in headless Chromium --
+  // Matt also pointed at fiawec.com's own working race calendar as a
+  // working reference point) -- two from-scratch approaches (measuring
+  // via a class-toggle trick, then hand-computed scroll-math) both came
+  // up short in Safari specifically, which points at Safari's handling of
+  // a manually-assigned track.scrollLeft + CSS scroll-behavior:smooth
+  // combination itself, not at the target number being wrong. itemEl.
+  // scrollIntoView({inline:'center'}) is the one browser-native primitive
+  // built to do exactly this, and every engine (Safari included) has to
+  // implement it consistently since it's load-bearing for basic
+  // accessibility (focus management). block:'nearest' keeps it from
+  // ALSO moving the page vertically -- the one real risk with
+  // scrollIntoView (and the reason an earlier version of this code moved
+  // away from it, see _rclScrollCarouselTo_'s own comment below), but
+  // that was specifically about the page's very FIRST render, before the
+  // user has scrolled the carousel into view at all; by the time this
+  // runs, the user has already clicked something inside it, so it's
+  // already vertically on screen and nothing above should need to move.
   function setActive(idx) {
     if (idx === activeIdx) return;
-    var gap = window.matchMedia('(max-width: 640px)').matches ? RC_CAROUSEL_GAP_MOBILE_ : RC_CAROUSEL_GAP_DESKTOP_;
-    var target = idx * (RC_CAROUSEL_COMPACT_WIDTH_ + gap);
-    _rclScrollCarouselTo_(track, target, true, function () {
+    var nextEl = itemEls[idx];
+    // Phase 1: center the clicked item at its CURRENT (compact) size --
+    // scrollIntoView centers against whatever the layout actually is
+    // right now, so this has to happen before anything about its size
+    // changes.
+    nextEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
+    var openSettled = false;
+    function openIt() {
+      if (openSettled) return;
+      openSettled = true;
+      track.removeEventListener('scrollend', openIt);
       activeIdx = idx;
       itemEls.forEach(function (el, i) {
         el.classList.toggle('rcl-carousel-item-active', i === idx);
       });
-    });
+      // Phase 2: growing the clicked item (75px -> its active width) and
+      // shrinking whichever one used to be active shifts everybody's
+      // position again, so the item that Phase 1 just centered drifts
+      // off-center by the time that width transition settles. One more
+      // (non-animated -- it's a small correction, not a second visible
+      // move) scrollIntoView once that transition has actually finished
+      // corrects it. transitionend is the precise signal; the timeout is
+      // the fallback net, same reasoning as the scroll settle above, and
+      // reSettled guards against both firing.
+      var reSettled = false;
+      function recenter() {
+        if (reSettled) return;
+        reSettled = true;
+        nextEl.removeEventListener('transitionend', onWidthDone);
+        nextEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+      }
+      var onWidthDone = function (evt) {
+        if (evt.target !== nextEl || evt.propertyName !== 'width') return;
+        recenter();
+      };
+      nextEl.addEventListener('transitionend', onWidthDone);
+      setTimeout(recenter, 300);
+    }
+    // scrollend (where supported) fires exactly when the scroll actually
+    // finishes; a timeout is the fallback net for browsers without it.
+    if ('onscrollend' in window) track.addEventListener('scrollend', openIt);
+    setTimeout(openIt, 650);
   }
 
   // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
