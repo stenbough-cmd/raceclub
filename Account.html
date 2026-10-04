@@ -6294,10 +6294,11 @@
         (s.rounds || []).forEach(function (race) { list.appendChild(resultsRoundPanel(race)); });
       }
 
-      // Picker only shown once there's actually more than one season to
-      // choose between -- a single-season career just shows that season,
-      // no dead chrome.
-      if (seasons.length > 1) panel.appendChild(resultsSeasonPicker(seasons, renderSeason));
+      // Picker always shown (2026-10-04, Matt's ask: "I'd like to see the
+      // dropdown list to choose a career season regardless if there is
+      // only one season the player participated in or not. It should
+      // always be visible") -- was hidden for a single-season career.
+      panel.appendChild(resultsSeasonPicker(seasons, renderSeason));
       panel.appendChild(list);
       renderSeason(0); // newest season by default
 
