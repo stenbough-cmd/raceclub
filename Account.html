@@ -6160,6 +6160,28 @@
     // comprehensive breakdown, not a personal-highlight headline.
     panel.appendChild(_rcBuildResultsEventTitleLine_(race));
 
+    // Seat driven for the season (2026-10-04, Matt's ask) -- manufacturer,
+    // team, car and number, from the driver's registration for this
+    // season, shown on every round container (raced or missed).
+    var seat = race.seat;
+    if (seat) {
+      var seatStrip = el('div', 'rc-results-stat-strip');
+      [
+        resultsStatBlock('Manufacturer', seat.manufacturer),
+        resultsStatBlock('Team', seat.teamName),
+        resultsStatBlock('Car', seat.carModel),
+        resultsStatBlock('Number', seat.carNumber ? '#' + seat.carNumber : '')
+      ].forEach(function (block) { if (block) seatStrip.appendChild(block); });
+      if (seatStrip.childNodes.length) panel.appendChild(seatStrip);
+    }
+
+    // Missed round (2026-10-04, Matt's ask) -- results exist for the round
+    // but not for this driver: keep the container, show the crossed circle.
+    if (race.missed || !you) {
+      panel.appendChild(buildEmptyStatePanel('No Race Data To Display'));
+      return panel;
+    }
+
     // Race-wide conditions/format + headline names -- REWORKED 2026-09-27
     // (Matt's ask: "All of the data in the header where values are, HAS to
     // be class information. I don't care about any hypercar results if I'm
