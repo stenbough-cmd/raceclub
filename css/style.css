@@ -1963,12 +1963,13 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
-/* Also capped at 115px wide (2026-10-04, Matt's ask: manufacturer logos in
-   Choose Your Team get a max width of 115px alongside their existing
-   height cap) -- min() keeps the old "never wider than its own button"
-   behavior when a row has so many manufacturers that each button is
-   narrower than 115px. Height cap unchanged (the button's own 36px). */
-.rc-team-manu-filter-logo img { max-width: 100%; max-width: min(100%, 115px); max-height: 100%; object-fit: contain; }
+/* Also capped at 100px wide (2026-10-04, Matt's ask: manufacturer logos in
+   Choose Your Team get a max width of 100px -- was 115px earlier the same
+   day -- alongside their existing height cap) -- min() keeps the old
+   "never wider than its own button" behavior when a row has so many
+   manufacturers that each button is narrower than 100px. Height cap
+   unchanged (the button's own 36px). */
+.rc-team-manu-filter-logo img { max-width: 100%; max-width: min(100%, 100px); max-height: 100%; object-fit: contain; }
 .rc-team-manu-filter-dim { opacity: 0.28; }
 /* Team name + car number: 20px/700 (2026-09-23, Matt's exact spec) --
    was briefly 26px/800 earlier the same day, before that; originally
