@@ -6,32 +6,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Driver Profile</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/league.css">
 <link rel="stylesheet" href="css/profile.css">
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
 <script src="js/reference-data.js"></script>
 </head>
-<body>
+<body class="rc-league-page">
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
 <main class="rc-profile-page">
-  <section class="rc-profile-card" id="rc-profile-card" hidden>
-    <div class="rc-profile-avatar-wrap">
-      <img class="rc-profile-avatar" id="rc-profile-avatar" alt="">
+  <section class="rcl-panel rc-profile-panel" id="rc-profile-card" hidden>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Driver Profile</div></div>
+    <div class="rcl-panel-body rc-profile-body">
+      <div class="rc-profile-avatar-wrap">
+        <img class="rc-profile-avatar" id="rc-profile-avatar" alt="">
+      </div>
+      <div class="rc-profile-name-row">
+        <h1 class="rc-profile-name" id="rc-profile-name"></h1>
+        <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
+      </div>
+      <div class="rc-profile-since" id="rc-profile-since"></div>
     </div>
-    <div class="rc-profile-name-row">
-      <h1 class="rc-profile-name" id="rc-profile-name"></h1>
-      <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
-    </div>
-    <div class="rc-profile-since" id="rc-profile-since"></div>
   </section>
 
-  <section class="rc-profile-card rc-profile-empty" id="rc-profile-empty" hidden>
-    <h1 class="rc-profile-name" id="rc-profile-empty-title">Profile Not Available</h1>
-    <p class="rc-profile-empty-text" id="rc-profile-empty-text"></p>
-    <a class="rc-btn-secondary rc-profile-back" href="league.html">Back To League Hub</a>
+  <section class="rcl-panel rc-profile-panel" id="rc-profile-empty" hidden>
+    <div class="rcl-panel-head"><div class="rcl-panel-title" id="rc-profile-empty-title">Profile Not Available</div></div>
+    <div class="rcl-panel-body rc-profile-body">
+      <p class="rc-profile-empty-text" id="rc-profile-empty-text"></p>
+      <a class="rc-btn-secondary rc-profile-back" href="league.html">Back To League Hub</a>
+    </div>
   </section>
 </main>
 
