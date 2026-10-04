@@ -2876,6 +2876,12 @@ body.rc-league-page {
    "view on PC" nudge beneath it, rather than their default block
    left-alignment. */
 .rcl-results-status-footer { text-align: right; }
+/* The gold status note under the Race Recap popup's results tables (and
+   the mobile-only "view on PC" nudge beneath it) sit on the RIGHT, not the
+   left (2026-10-04, Matt's ask) -- same right alignment the Championship
+   Standings status footer above already uses. Both are direct children of
+   the popup's .rcl-allresults-body. */
+.rcl-allresults-body > .rcl-standings-status-note { text-align: right; }
 .rcl-cal-details-link {
   background: none;
   border: none;

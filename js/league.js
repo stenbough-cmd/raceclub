@@ -2182,7 +2182,7 @@ function _rclFormatAvgSpeed_(row, trackLengthMeters) {
 // the round dropdown changes.
 function _rclBuildAllResultsBody_(result, bodyEl) {
   bodyEl.innerHTML = '';
-  if (!result) {
+  if (!result || !(result.classes || []).length) {
     bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
     return;
   }
@@ -2591,7 +2591,6 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
 // falls back to that same original behavior unchanged.
 function _rclOpenAllResultsModal(hub, preselectRoundId) {
   var rounds = hub.resultsRounds || [];
-  if (!rounds.length) return;
 
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   // rcl-modal-dialog-allresults (2026-09-27) -- a scoping class just for
@@ -2603,10 +2602,11 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // don't change").
   var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide rcl-modal-dialog-allresults');
   var head = _rclEl('div', 'rcl-modal-head');
-  // "Race Details" (2026-10-02, Matt's ask -- was "All Results"). Purely a
-  // label change: still the exact same popup, same dropdown, same
-  // Qualifying/Race toggle, same underlying data/endpoints.
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Race Details'));
+  // "Race Recap" (2026-10-04, Matt's ask -- was "Race Details" since
+  // 2026-10-02, "All Results" before that). Purely a label change: still
+  // the exact same popup, same dropdown, same Qualifying/Race toggle, same
+  // underlying data/endpoints.
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Race Recap'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -2614,6 +2614,23 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   dialog.appendChild(head);
 
   var body = _rclEl('div', 'rcl-modal-body');
+
+  // RACE RECAP button active but nothing to show (2026-10-04, Matt's ask:
+  // "if, for some reason there is no data to display but the RACE RECAP
+  // button is active, make sure there is a crossed circle on the popup
+  // with a note below it") -- this used to silently do nothing at all
+  // (no popup) when hub.resultsRounds was empty; now the popup still
+  // opens, with the same circle-slash empty state the rest of the page
+  // uses.
+  if (!rounds.length) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'No race results have been posted yet.'));
+    dialog.appendChild(body);
+    overlay.appendChild(dialog);
+    closeBtn.addEventListener('click', function () { document.body.removeChild(overlay); _rclUnlockBodyScroll(); });
+    document.body.appendChild(overlay);
+    _rclLockBodyScroll();
+    return;
+  }
 
   var selectRow = _rclEl('div', 'rcl-allresults-select-row');
   var select = document.createElement('select');
