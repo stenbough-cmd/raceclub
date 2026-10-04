@@ -2245,8 +2245,9 @@ body.rc-league-page {
   background: var(--rcl-line-bright);
   opacity: 0.55;
 }
-.rcl-carousel-item-finished:not(:first-child)::before { opacity: 0.4; }
-.rcl-carousel-item-active:not(:first-child)::before { opacity: 1; }
+/* One fixed brightness for every divider, whether its item is active,
+   finished, hovered or none of those (2026-10-04, Matt's ask: selecting
+   an event should not change the brightness of the lines). */
 /* Full opacity on hover, always -- including a finished (dimmed) item
    (2026-10-02 follow-up, Matt's ask: "upon hover, the calendar event
    shouldn't ever dim"). .rcl-carousel-item:hover (class + pseudo-class)
