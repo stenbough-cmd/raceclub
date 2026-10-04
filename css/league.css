@@ -2201,6 +2201,16 @@ body.rc-league-page {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Vertically centered (2026-10-04, Matt's ask: "make the future and
+     past events vertically justified in the list") -- the track stretches
+     every item to the row's full height (align-items: stretch, above), so
+     a side item's short compact-header content used to sit pinned to the
+     top of that tall box with empty space below it. Centering it here
+     makes every side item's content sit in the vertical middle of the
+     row, lined up with the active item's own content. The active item
+     overrides this back to flex-start below, since its header-then-hero
+     stack is meant to read top-down, not centered. */
+  justify-content: center;
   text-align: center;
   opacity: 0.55;
   transition: opacity 0.2s ease, width 0.25s ease;
@@ -2294,6 +2304,9 @@ body.rc-league-page {
   padding: 15px;
   opacity: 1;
   cursor: default;
+  /* Stays top-down (header, then hero below it) rather than the side
+     items' new vertical centering above -- see .rcl-carousel-item. */
+  justify-content: flex-start;
 }
 .rcl-carousel-item-active .rcl-carousel-hero {
   display: block;

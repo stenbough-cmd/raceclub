@@ -2885,7 +2885,22 @@ function _rclRenderRaceCarousel(hub) {
     itemEls.forEach(function (itemEl, i) {
       itemEl.classList.toggle('rcl-carousel-item-active', i === idx);
     });
-    _rclCenterCarouselItem_(track, itemEls[idx], true);
+    var activeEl = itemEls[idx];
+    // Center immediately (handles the common case -- a side item growing
+    // INTO the center slot it's already scrolled near) and again once the
+    // width transition finishes. Needed because .rcl-carousel-item has a
+    // `width 0.25s ease` transition (2026-10-04's 75px/400px side/active
+    // widths, up from 240px/340px) -- centering synchronously, as this used
+    // to do alone, reads the item's width mid-animation and lands off-center
+    // once it settles. (2026-10-04, Matt's ask: "when a calendar is clicked
+    // on, the event should automatically be repositioned to center.")
+    _rclCenterCarouselItem_(track, activeEl, true);
+    var onWidthDone = function (evt) {
+      if (evt.target !== activeEl || evt.propertyName !== 'width') return;
+      activeEl.removeEventListener('transitionend', onWidthDone);
+      _rclCenterCarouselItem_(track, activeEl, true);
+    };
+    activeEl.addEventListener('transitionend', onWidthDone);
   }
 
   // Redesigned 2026-10-03 (Matt's exact spec, with a worked example):
