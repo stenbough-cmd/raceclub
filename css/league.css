@@ -12,6 +12,7 @@ body.rc-league-page {
      section that already reads off them, with no per-rule changes needed. */
   --rcl-ink-dim: #b4b7bd;
   --rcl-ink-faint: #7d8088;
+  --rcl-gold: #e0b64c; /* special-event gold; same as the hero SEASON number */
   /* Race Report clause colors -- damage/collision aren't in the shared --rc-red brand accent, so
      they get their own two tokens here rather than borrowing a color that means something else on
      this page. */
@@ -1402,7 +1403,7 @@ body.rc-league-page {
   color: var(--rcl-ink);
   line-height: 1.2;
 }
-.rcl-carousel-item-special .rcl-carousel-eventname { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-special .rcl-carousel-eventname { color: var(--rcl-gold, #e0b64c); }
 .rcl-carousel-trackname {
   margin-top: 4px;
   font-family: var(--rc-font-heading);
@@ -1413,7 +1414,7 @@ body.rc-league-page {
   color: var(--rcl-ink);
   line-height: 1.05;
 }
-.rcl-carousel-item-special .rcl-carousel-trackname { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-special .rcl-carousel-trackname { color: var(--rcl-gold, #e0b64c); }
 .rcl-carousel-datetime {
   margin-top: 6px;
   font-family: var(--rc-font-heading);
@@ -1467,7 +1468,7 @@ body.rc-league-page {
   color: var(--rcl-ink);
   line-height: 1.05;
 }
-.rcl-carousel-item-special .rcl-carousel-compact-track { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-special .rcl-carousel-compact-track { color: var(--rcl-gold, #e0b64c); }
 .rcl-carousel-compact-month {
   margin-top: 6px;
   font-family: var(--rc-font-heading);
@@ -1552,7 +1553,7 @@ body.rc-league-page {
 /* "SPECIAL EVENT" in the countdown caption is gold on a special event -- same gold as the special
    item's title and track. */
 .rcl-carousel-item-special .rcl-carousel-countdown-label strong,
-.rcl-carousel-item-special .rcl-carousel-countdown-label b { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-item-special .rcl-carousel-countdown-label b { color: var(--rcl-gold, #e0b64c); }
 .rcl-carousel-countdown-units {
   display: flex;
   align-items: center;
