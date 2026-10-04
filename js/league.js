@@ -3121,10 +3121,66 @@ function _rclRenderRaceCarousel(hub) {
 function _rclCenterCarouselItem_(track, itemEl, smooth) {
   if (!track || !itemEl) return;
   var target = itemEl.offsetLeft - (track.clientWidth - itemEl.offsetWidth) / 2;
+  // scroll-snap-type temporarily off (2026-10-04, Matt's bug report:
+  // "the only calendar event that sits in the center of the page is the
+  // very first... when clicking a future event... it just stays where it
+  // loaded") -- .rcl-carousel-track has scroll-snap-type: x mandatory
+  // (css/league.css), and Safari/WebKit in particular is known to fight a
+  // JS-driven scrollLeft/scrollTo assignment under "mandatory" snapping,
+  // snapping straight back to wherever the browser's own snap logic
+  // already considers "current" instead of actually landing on the
+  // target -- which reads exactly like "clicking anything but the
+  // already-centered item does nothing." The very first item centers
+  // correctly regardless, by the track's own left padding math alone
+  // (calc(50vw - 200px), sized so an item sitting at scrollLeft 0 is
+  // already centered) -- no scroll ever has to actually happen for that
+  // one, which is why only it ever worked. Turning snapping off for the
+  // duration of this one programmatic scroll, then restoring it once the
+  // scroll has settled, is the standard workaround: it still snaps back
+  // to a nice resting position for an ordinary touch/drag swipe (the only
+  // time it's actually needed), it just doesn't get a vote on a scroll
+  // this function is already aiming at a specific target itself.
+  // setActive calls this function TWICE per click (once synchronously,
+  // once again on the active item's own transitionend -- see setActive
+  // above) -- so the snap-restore state below lives on the track element
+  // itself (track._rclSnapRestore), not as a plain local closure, and the
+  // SECOND call only ever cancels/reschedules the first call's pending
+  // restore rather than capturing its own "previous" value. Without this,
+  // the second call would run while the first's override was still live,
+  // capture 'none' as if it were the ORIGINAL value, and its own restore
+  // would then permanently leave scroll-snap-type stuck off.
+  var restoreState = track._rclSnapRestore;
+  if (!restoreState) {
+    restoreState = track._rclSnapRestore = { originalSnap: track.style.scrollSnapType, timer: null, handler: null };
+    track.style.scrollSnapType = 'none';
+  } else {
+    if (restoreState.timer !== null) { clearTimeout(restoreState.timer); restoreState.timer = null; }
+    if (restoreState.handler) { track.removeEventListener('scrollend', restoreState.handler); restoreState.handler = null; }
+  }
+
   var prevBehavior = track.style.scrollBehavior;
   track.style.scrollBehavior = smooth ? 'smooth' : 'auto';
   track.scrollLeft = target;
   track.style.scrollBehavior = prevBehavior;
+
+  function restoreSnap() {
+    if (track._rclSnapRestore !== restoreState) return; // superseded by a later call already
+    track.style.scrollSnapType = restoreState.originalSnap;
+    if (restoreState.handler) track.removeEventListener('scrollend', restoreState.handler);
+    track._rclSnapRestore = null;
+  }
+  // scrollend (where supported) fires exactly when the browser's own
+  // smooth-scroll animation finishes -- the precise moment it's safe to
+  // hand snapping back without it fighting the scroll already in flight.
+  // Not every browser Race Club needs to support has it yet, so a
+  // generous timeout is the fallback net (650ms comfortably covers a
+  // smooth-scroll animation across the full width of the strip; the
+  // instant/non-smooth case, smooth=false, just needs its one frame).
+  if ('onscrollend' in window) {
+    restoreState.handler = restoreSnap;
+    track.addEventListener('scrollend', restoreSnap);
+  }
+  restoreState.timer = setTimeout(restoreSnap, smooth ? 650 : 50);
 }
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
