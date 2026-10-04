@@ -3705,6 +3705,13 @@ function _rclAppendSeasonFormatSections_(hub, body) {
   // "Season Rules" -> "Race Rules". Championship Points is unchanged.
   var pillDisplayLabel_ = { 'Season Format': 'Season Details', 'Season Rules': 'Race Rules' };
 
+  // No active season (2026-10-04, Matt's ask): crossed circle plus a note,
+  // instead of whatever half-empty blocks a stale hub payload might build.
+  if (!hub.hasSeason) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'The season format shows up here once it is set.'));
+    return;
+  }
+
   var sections = _rclBuildSeasonFormatBlocks_(hub);
   if (sections.length) {
     sections.forEach(function (section) {
@@ -3733,7 +3740,7 @@ function _rclAppendSeasonFormatSections_(hub, body) {
       body.appendChild(group);
     });
   } else {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
+    body.appendChild(_rclEmptyState('No Data To Display', 'The season format shows up here once it is set.'));
   }
 }
 
