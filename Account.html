@@ -4797,11 +4797,11 @@
     if (isEnded) {
       editBtn.disabled = true;
       withTooltip(editBtn, 'This season has ended, so its details can no longer be edited.');
-    } else if (currentProfile && currentProfile.role === 'Admin') {
+    } else if (currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer')) {
       editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
     } else {
       editBtn.disabled = true;
-      withTooltip(editBtn, 'Only Admins can edit season details.');
+      withTooltip(editBtn, 'Only Admins and Organizers can edit season details.');
     }
     btnGroup.appendChild(editBtn);
 
@@ -5423,6 +5423,14 @@
     var section = document.getElementById('rc-section-league');
     if (!section) return;
     section.innerHTML = '';
+    // Page-level guard (2026-10-04, Matt's call: stewards get the Stewarding
+    // page only). The sidebar link is already disabled for them; this also
+    // covers a restored #league hash. The server enforces it regardless.
+    if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) {
+      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
+      section.appendChild(buildEmptyStatePanel('Access Restricted', 'League Tools requires Organizer or Admin access.'));
+      return;
+    }
 
     // No "League Management" heading while loading, and buildPageSpinner
     // (not the bare buildSpinner) for the wait itself -- Matt's standing
