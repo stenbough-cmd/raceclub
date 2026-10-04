@@ -6274,7 +6274,11 @@
       // renderSeason() whenever the picker's selection changes.
       var panel = el('div', 'rc-panel rc-cal-season rc-dash-card');
       var head = el('div', 'rc-cal-season-head');
-      var titleEl = el('h3', 'rc-cal-season-title', '');
+      // Static "RESULTS" header (2026-10-04, Matt's ask: "in the career card
+      // header, I want it to say RESULTS as a static card header instead of
+      // the season and season name") -- the season dropdown right below it
+      // already says which season is showing.
+      var titleEl = el('h3', 'rc-cal-season-title', 'Results');
       head.appendChild(titleEl);
       panel.appendChild(head);
 
@@ -6286,8 +6290,6 @@
 
       function renderSeason(idx) {
         var s = seasons[idx] || seasons[0];
-        var numLabel = seasonNumberLabel(s.seasonId);
-        titleEl.textContent = (numLabel ? 'Season ' + numLabel + ': ' : '') + (s.seasonName || '');
         list.innerHTML = '';
         // rounds already arrive newest-first from Results.gs
         // (handleGetMyCareerResults), so no re-sort is needed here.
