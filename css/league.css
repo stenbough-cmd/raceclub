@@ -576,6 +576,12 @@ body.rc-league-page {
 /* 0, was 10px (2026-10-01, "move the pills closer to the section they're
    labeling") -- see .rcl-hero-stats-label's own margin-bottom comment
    above, which now supplies the whole gap by itself. */
+/* SEASON PREVIEW in the LAST RACE panel (2026-10-04, Matt's ask: "move the
+   season details up so the text naturally starts on the first row of the
+   container") -- the first section's 26px group margin-top is meant for
+   separating stacked sections inside the popup, so drop it when that
+   section is the first thing in the panel body. Popup unaffected. */
+.rcl-panel-body.rcl-seasonfmt-modal-body > .rcl-hero-stats-group:first-child { margin-top: 0; }
 .rcl-seasonfmt-list { margin-top: 0; }
 .rcl-seasonfmt-block + .rcl-seasonfmt-block { margin-top: 18px; }
 /* Plain "Category: Value" line, left-aligned, NOT a two-column label/value
