@@ -186,23 +186,27 @@ function _rclFormatDateTimeLong_(iso) {
     ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
 
-// Morning/Midday/Evening/Night label from a race's own local start hour
-// (2026-10-03, race carousel redesign, Matt's exact example: "EVENING
-// RACE..."; "Afternoon" renamed "Midday" 2026-10-04, Matt's ask for
-// exactly these four options). Browser-local hour, same "no per-viewer
-// timezone on this public page" posture every other date/time helper
-// here already has -- this reads entry.startUtc, the round's own
-// real-world scheduled start time, NOT its in-game lore time
-// (igRaceStart/igPracticeStart/igQualifyStart), which is a separate
-// field entirely. If every event is showing the same period here despite
-// looking different in the schedule, double check which of those two
-// times was actually set per round -- this label only ever follows
-// startUtc.
-function _rclTimeOfDayLabel_(iso) {
-  if (!iso) return '';
-  var d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  var h = d.getHours();
+// Morning/Midday/Evening/Night label from a race's own IN-GAME start
+// time (2026-10-03, race carousel redesign, Matt's exact example:
+// "EVENING RACE..."; "Afternoon" renamed "Midday" 2026-10-04, Matt's ask
+// for exactly these four options; switched from real-world startUtc to
+// igRaceStart 2026-10-04 follow-up, Matt's bug report: "All events still
+// only show NIGHT RACE" -- the bucket math itself was already correct,
+// but it was reading entry.startUtc, the round's own real-world
+// scheduled start time (when people actually log on to race), which for
+// this league is consistently evening/night regardless of what the race
+// itself simulates -- there was never a bug to find there, just the
+// wrong field. igRaceStart is LMU's own in-game clock time for the race
+// (an admin-entered "HH:MM" sim-clock string -- see
+// _rclFormat12h/igPracticeStart/igQualifyStart, the same field family),
+// which is what actually varies race to race and is what "MORNING RACE"/
+// "NIGHT RACE" etc. are describing: what time of day it is IN the race,
+// sunrise/midday/sunset/floodlights, not when the real-world session was
+// booked.
+function _rclTimeOfDayLabel_(hhmm) {
+  if (!hhmm) return '';
+  var h = parseInt(String(hhmm).split(':')[0], 10);
+  if (isNaN(h)) return '';
   if (h >= 5 && h < 12) return 'Morning';
   if (h >= 12 && h < 17) return 'Midday';
   if (h >= 17 && h < 21) return 'Evening';
@@ -2981,7 +2985,9 @@ function _rclRenderRaceCarousel(hub) {
     var hero = _rclEl('div', 'rcl-carousel-hero');
 
     var detailLines = [];
-    var timeOfDay = _rclTimeOfDayLabel_(entry.startUtc);
+    // igRaceStart, not startUtc (2026-10-04 follow-up -- see
+    // _rclTimeOfDayLabel_'s own comment for why).
+    var timeOfDay = _rclTimeOfDayLabel_(entry.igRaceStart);
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
     // raceLengthTier (e.g. "Long") dropped from this line entirely
     // (2026-10-04, Matt's bug report -- his exact example: "LONG 80 MINS
@@ -2993,14 +2999,14 @@ function _rclRenderRaceCarousel(hub) {
     if (lengthMin) sessionBits.push(lengthMin + ' Mins Long');
     var sessionLine = (timeOfDay ? (timeOfDay + ' Race') : '') + (sessionBits.length ? ((timeOfDay ? ', ' : '') + sessionBits.join(' ')) : '');
     if (sessionLine) detailLines.push(sessionLine);
+    // Weather line reformatted (2026-10-04 follow-up, Matt's exact spec:
+    // "OVERCAST & RAIN, 25% CHANCE RAIN, 25° C") -- one fixed template
+    // every time now (condition, then rain chance, then temperature),
+    // replacing the old "<weather> & <temp>° with/no N% chance of rain"
+    // wording.
     if (entry.weather) {
-      var weatherLine = entry.weather;
-      if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherLine += ' & ' + entry.temperatureC + '°';
-      // "No rain forecasted" instead of "with 0% chance of rain"
-      // (2026-10-04, Matt's exact example) -- a nonzero chance keeps the
-      // original "with N% chance of rain" wording unchanged.
-      var rainPct = entry.chanceOfRain || 0;
-      weatherLine += rainPct > 0 ? (' with ' + rainPct + '% chance of rain') : ', no rain forecasted';
+      var weatherLine = entry.weather + ', ' + (entry.chanceOfRain || 0) + '% Chance Rain';
+      if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherLine += ', ' + entry.temperatureC + '° C';
       detailLines.push(weatherLine);
     }
     if (detailLines.length) {
