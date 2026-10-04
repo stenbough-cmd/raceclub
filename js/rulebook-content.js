@@ -1,43 +1,4 @@
 // Race Club — Rulebook content (js/rulebook-content.js)
-//
-// WHAT THIS FILE IS FOR
-// Holds the Rulebook popup's content as plain data, kept separate from
-// Account.html (already a very large file) so updating the rulebook as it
-// grows is a small, low-risk edit here instead of hunting through the
-// account script. This is a hand-maintained mirror of the Race Club
-// Rulebook.md document (the canonical source) -- whenever the rulebook
-// doc changes, update RULEBOOK_SECTIONS below to match. Each section's
-// `html` is written by hand (not parsed from Markdown at runtime) since
-// the content is controlled by us, not user input, and a full Markdown
-// parser would be a lot of weight for content that changes rarely.
-//
-// Rendered by renderHelpSection() in Account.html, under that section's
-// "Rules and Regulations" container: the index up top links to each
-// section's id (#rc-rulebook-sec-N), and unwritten sections still appear
-// in both the index and the body (marked "Not yet drafted") so the page
-// honestly reflects the rulebook's full planned scope, not just what's
-// done so far -- same "coming soon, not hidden" philosophy as the rest
-// of the site. (Help briefly lived on its own page, help.html, so the
-// Rulebook would have room to grow -- but that dropped the sidebar/nav
-// chrome, which read as leaving the site, so Matt had it folded back
-// into Account.html as an ordinary section.)
-//
-// REWRITTEN 2026-09-26 (Matt's pass): renumbered 1-9 after two sections
-// were folded away -- "Car & Class Selection" merged into Getting Started
-// (Section 2), and "Appeals" removed outright (there is no appeals
-// process; every automatic in-game call and every steward ruling is
-// final, see Sections 4.3 and 5). Every section's copy was also
-// tightened to stay factual and current-state-only -- no specific times
-// or point values that could change season to season, no "not yet
-// decided" placeholders where the real answer is just "set per season."
-//
-// title: shown in the index and as the section heading.
-// draft: true for sections not yet written -- renders a "Not yet
-//   drafted" note instead of html, and is visually de-emphasized in the
-//   "Jump To A Section" quick-nav (see .rc-rulebook-nav-link.rc-rulebook-
-//   draft in style.css).
-// html: the section body. Safe to use innerHTML here since every string
-//   below is authored by us, not sourced from user input.
 var RULEBOOK_SECTIONS = [
   {
     id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
@@ -63,11 +24,8 @@ var RULEBOOK_SECTIONS = [
       '</ul></div>' +
       '<h4>2.2 Classes</h4>' +
       '<p>Race Club currently runs five classes:</p>' +
-      // Same colored class pills used everywhere else on the site
-      // (_rcClassBadge, Account.html) -- hand-written here since this
-      // file is plain HTML strings, not built through that helper
-      // (2026-09-27, Matt's ask: "make the classes look like the class
-      // pills that we designed, HY, LMP2, LMP3, LMGT3 and LMGTE").
+      // Same colored class pills used everywhere else on the site (_rcClassBadge, Account.html) --
+      // hand-written here since this file is plain HTML strings, not built through that helper.
       '<div class="rc-rulebook-pill-row">' +
       '<span class="rc-badge-chip rc-badge-hypercar">HY</span>' +
       '<span class="rc-badge-chip rc-badge-lmp2">LMP2</span>' +
@@ -185,12 +143,6 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'glossary', num: '9', title: 'Glossary',
-    // Alphabetized by term (2026-09-27, Matt's ask) -- the five class-type
-    // rows are no longer flat entries of their own; they're nested under
-    // the "Class" row using the same tree-glyph sub-row look ("└", the
-    // .rc-dm-tree/.rc-dm-subrow convention from the Data Management lists
-    // and Dashboard protest cards, style.css) so alphabetizing the real
-    // terms doesn't scatter HY/LMP2/LMP3/LMGT3/LMGTE across the table.
     html: '<table>' +
       '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all: nothing to race, nothing to score.</td></tr>' +
       '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.' +

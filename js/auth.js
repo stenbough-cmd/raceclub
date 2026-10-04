@@ -1,22 +1,6 @@
-/*
-  Race Club — js/auth.js  (v0.2.5, GitHub Pages edition)
-
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  The source file kept its session token in localStorage because that was
-  the only way to persist state across views WITHIN one sandboxed embed
-  iframe. Now that every page is served from the same GitHub Pages origin,
-  localStorage works exactly the way it normally would across separate
-  pages — a token saved by login.html is visible to Account.html on the
-  next navigation, no special-casing required. This file centralizes the
-  token helpers and the 30-minute inactivity auto-logout timer so every
-  page uses the exact same logic instead of copy-pasting it.
-
-  NAVIGATION NOTE: since the token now persists reliably across real page
-  loads, the "carry the username to verify.html" step (register/login ->
-  verify) uses sessionStorage (see js reference in register.html/login.html/
-  verify.html) rather than an in-memory JS variable — that only survives
-  within one page's lifetime, and verify.html is a separate page load.
-*/
+// Race Club — js/auth.js (v0.2.5, GitHub Pages edition)
+// WHAT CHANGED VS. THE GOOGLE SITES VERSION: The source file kept its session token in localStorage
+// because that was the only way to persist state across views WITHIN one sandboxed embed iframe.
 
 var TOKEN_KEY = 'raceclub_token';
 var PROFILE_CACHE_KEY = 'raceclub_profile_cache';
@@ -34,39 +18,23 @@ function clearToken() {
   localStorage.removeItem(PROFILE_CACHE_KEY);
 }
 
-// Notification cache (setNotifCache/getNotifCache/NOTIF_CACHE_KEY) removed
-// in full (2026-09-24, Matt's call: eliminate the in-app notification bell
-// system entirely, moving to an external Discord bot).
+// Notification cache (setNotifCache/getNotifCache/NOTIF_CACHE_KEY) removed in full.
 
 // ---------------------------------------------------------------------
-// LIGHTWEIGHT PROFILE CACHE — lets the shared header (js/header.js) show
-// the driver's avatar/initials on every page without an extra Apps
-// Script round-trip on every single page load (which would add real
-// latency given Apps Script's cold-start cost). Whenever a page already
-// has a fresh profile payload anyway -- login.html's login response,
-// Account.html's getProfile call -- it calls setProfileCache() so any
-// OTHER page's header can read it back instantly. Only a few small
-// fields are kept (not the whole payload) since this is just for
-// rendering the header, not a source of truth for anything else.
+// LIGHTWEIGHT PROFILE CACHE — lets the shared header (js/header.js) show the driver's
+// avatar/initials on every page without an extra Apps Script round-trip on every single page load
+// (which would add real latency given Apps Script's cold-start cost).
 // ---------------------------------------------------------------------
-// Takes the flattened profile object itself (buildProfilePayload's shape
-// server-side -- {displayName, role, ...}), NOT a raw fetchApi() response
-// wrapper. Callers with a wrapper (login's {success, token, profile},
-// getProfile's {success, profile}) must pass the nested .profile through,
-// not the wrapper itself -- a bug fixed this pass (both call sites were
-// passing the wrapper, which meant every field read back out as blank).
+// Takes the flattened profile object itself (buildProfilePayload's shape server-side --
+// {displayName, role, ...}), NOT a raw fetchApi() response wrapper.
 function setProfileCache(profile) {
   profile = profile || {};
   try {
     localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
       displayName: profile.displayName || '',
       role: profile.role || '',
-      // Added 2026-08-30 (Matt's call: "make sure the avatar in the top
-      // right of the website changes to be the profile's chosen avatar")
-      // -- lets the header render the same picked image Account.html's
-      // Edit Profile popup shows, instead of always falling back to
-      // initials. Blank/absent means "no avatar chosen," same as
-      // Account.html's own buildAvatarCircle() convention.
+      // Blank/absent means "no avatar chosen," same as Account.html's own buildAvatarCircle()
+      // convention.
       avatarFilename: profile.avatarFilename || ''
     }));
   } catch (err) { /* storage full/unavailable -- header just falls back to '?' */ }
@@ -81,9 +49,8 @@ function getProfileCache() {
   }
 }
 
-// Call at the top of any page that requires a logged-in user (Account.html).
-// Redirects to login.html immediately if no token is saved. Returns the
-// token if present, so the caller can go straight on to load the profile.
+// Call at the top of any page that requires a logged-in user (Account.html). Redirects to
+// login.html immediately if no token is saved.
 function redirectIfNoToken() {
   var token = getToken();
   if (!token) {
@@ -94,13 +61,8 @@ function redirectIfNoToken() {
 }
 
 // ---------------------------------------------------------------------
-// INACTIVITY AUTO-LOGOUT — 30 minutes of no mouse/keyboard/touch activity
-// logs the user out and sends them back to login.html with an explanation.
-// This is a client-side idle timer, separate from the session token's own
-// server-side expiry (7 days) -- the token stays valid that whole time,
-// this just stops trusting an inactive browser tab with it. Ported
-// verbatim from the source file's behavior, just relocated here so
-// Account.html can call one function instead of repeating this block.
+// INACTIVITY AUTO-LOGOUT — 30 minutes of no mouse/keyboard/touch activity logs the user out and
+// sends them back to login.html with an explanation.
 // ---------------------------------------------------------------------
 var INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 var _inactivityTimer = null;

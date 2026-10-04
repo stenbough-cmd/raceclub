@@ -1,20 +1,8 @@
-/*
-  Race Club — js/reference-data.js  (v0.2.5, GitHub Pages edition)
-
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  In the single-file embed, the country list, country->flag-emoji lookup,
-  and the curated/offset-sorted timezone list were declared once and used
-  by both the registration form and the profile edit form because
-  everything shared one <script> scope. Split into real pages, both
-  register.html and Account.html need this same data — rather than
-  duplicating ~150 lines of country/timezone tables in two files, it lives
-  here once and both pages load it via <script src="js/reference-data.js">.
-
-  Every value below (COUNTRY_CODES, COUNTRIES, TIMEZONE_LIST,
-  PREFERRED_CLASSES, EVENT_LENGTHS, and the flagEmoji/timezoneLabel/
-  timezoneOffsetMinutes/getTimezoneList functions) is copied verbatim from
-  the source file — no entries added, removed, or reordered.
-*/
+// Race Club — js/reference-data.js (v0.2.5, GitHub Pages edition)
+// WHAT CHANGED VS. THE GOOGLE SITES VERSION: In the single-file embed, the country list,
+// country->flag-emoji lookup, and the curated/offset-sorted timezone list were declared once and
+// used by both the registration form and the profile edit form because everything shared one
+// <script> scope.
 
 var COUNTRY_CODES = {
   'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Andorra':'AD','Angola':'AO','Argentina':'AR','Armenia':'AM','Australia':'AU','Austria':'AT','Azerbaijan':'AZ',
@@ -54,12 +42,8 @@ function flagEmoji(countryName) {
 
 var COUNTRIES = ['Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Canada','Cape Verde','Central African Republic','Chad','Chile','China','Colombia','Comoros','Costa Rica','Croatia','Cuba','Cyprus','Czechia','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Ivory Coast','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Republic of the Congo','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe'];
 
-// Curated, not the full ~400-zone IANA list, but every standard UTC
-// offset (including the half-hour and 45-minute ones actually used by
-// real countries, e.g. India +5:30, Nepal +5:45, Iran +3:30) has at
-// least one representative city here, and offsets that span very
-// different regions of the world get two or three cities -- one per
-// area -- instead of a single global stand-in.
+// Curated, not the full ~400-zone IANA list, but every standard UTC offset (including the half-hour
+// and 45-minute ones actually used by real countries, e.g.
 var TIMEZONE_LIST = [
   'Pacific/Honolulu', 'America/Anchorage',
   'America/Los_Angeles', 'America/Tijuana',
@@ -93,10 +77,8 @@ var TIMEZONE_LIST = [
   'Pacific/Kiritimati'
 ];
 
-// Minutes offset from UTC, right now, for a given IANA zone -- e.g.
-// "America/Chicago" during DST returns -300. Used purely to SORT the
-// dropdown by actual UTC offset (west to east) rather than alphabetical
-// zone-name order.
+// Minutes offset from UTC, right now, for a given IANA zone -- e.g. "America/Chicago" during DST
+// returns -300.
 function timezoneOffsetMinutes(tz) {
   try {
     var parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(new Date());
@@ -115,13 +97,6 @@ function getTimezoneList() {
   return TIMEZONE_LIST.slice().sort(function (a, b) { return timezoneOffsetMinutes(a) - timezoneOffsetMinutes(b); });
 }
 
-// Reverted 2026-09-27 (Matt's ask): the friendly-name + "(no DST)" labels
-// briefly added here looked bad in the dropdown. Matt's underlying ask
-// was only ever "make sure all zones are covered" -- TIMEZONE_LIST above
-// was never touched by that change (every standard UTC offset already
-// has a representative city, including the half-hour/45-minute ones), so
-// reverting the label back to its original plain-IANA-name form loses
-// nothing zone-coverage-wise, it just stops changing how the list looks.
 function timezoneLabel(tz) {
   try {
     var offsetPart = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
@@ -135,66 +110,25 @@ function timezoneLabel(tz) {
 var PREFERRED_CLASSES = ['GTE', 'GT3', 'LMP3', 'LMP2', 'LMP2 *Unrestricted', 'Hypercar'];
 var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 
-// v0.17 -- the canonical race-class list, used as the SINGLE SOURCE for
-// both the Data Management > Cars panel's Class dropdown (Account.html)
-// and the Create Season wizard's class checkboxes. Sharing one list
-// between the two is what guarantees a car entered as "LMGT3" is always
-// the same "LMGT3" the wizard checks for availability against -- no risk
-// of the two places drifting to different names for the same class (this
-// replaces the wizard's old standalone ['GT3','LMP3','LMP2','Hypercar']
-// array, updated to match real LMU class naming / the Cars data itself).
-// Order (2026-08-21, Matt's call): GT3 -> LMP3 -> LMP2 -> Hypercar, the
-// order the ladder is meant to read in everywhere on the site (class
-// picker, wizard checkboxes/inputs, admin Cars class dropdown, etc.) --
-// LMP3 is the very next step up from GT3, not LMP2.
-// LMGTE added 2026-09-20 (Matt's ask: "I also added a LMGTE class of car
-// data to the sheets. This is a rookie class of cars below LMGT3") --
-// slotted in FIRST, below LMGT3 on the ladder, since it's the entry-level
-// class every other class sits above. Mirrored in Results.gs's own
-// CAR_CLASS_CANONICAL_ORDER_ -- keep both in sync if this order ever
-// changes again.
+// v0.17 -- the canonical race-class list, used as the SINGLE SOURCE for both the Data Management >
+// Cars panel's Class dropdown (Account.html) and the Create Season wizard's class checkboxes.
 var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
-// CAR OBJECTIVES SYSTEM (added 2026-08-29, reworked 2026-08-30) -- a
-// second, independent bonus layer alongside Sponsors, bound to a car for
-// one season. Unlike class, this is ONE global grouping across every class
-// combined (a GT3 and a Hypercar can both be "High" side by side) -- set
-// by hand per car/team in Car Management (Cars.Tier), never a computed
-// numeric rank. It drives which of the tier's objectives a car draws
-// (CAR_OBJECTIVE_CATALOG below) and the ±20%-randomized seat cost/
-// objective bonus computed from the wizard's per-tier averages (see
-// handleCreateSeason in Seasons.gs). This is separate from the older,
-// still-unmodified driver-wide Season Objectives mechanic (one fixed list
-// every driver shares regardless of car -- see
-// v0.3-Economy-Reputation-Design.md).
-//
-// CAR_TIER_LIST and the Elite Tier season-creation picker were removed
-// entirely 2026-09-19 (Matt's call: car Tier classification doesn't matter
-// anymore -- only Class does, and tier information should never surface
-// anywhere on the site). Cars.Tier/Teams.Tier are now archived columns in
-// the backend (see Core.gs's TAB_SCHEMAS), untouched but never read or
-// written going forward.
+// CAR OBJECTIVES SYSTEM -- a second, independent bonus layer alongside Sponsors, bound to a car for
+// one season. Unlike class, this is ONE global grouping across every class combined (a GT3 and a
+// Hypercar can both be "High" side by side) -- set by hand per car/team in Car Management
+// (Cars.Tier), never a computed numeric rank.
+// Cars.Tier/Teams.Tier are now archived columns in the backend (see Core.gs's TAB_SCHEMAS),
+// untouched but never read or written going forward.
 
-// 6 objectives per tier (Low/Mid/High), matched to that tier's difficulty
-// (Low = things a backmarker car can realistically pull off in a season;
-// High = things only a factory-caliber effort should manage, but every one
-// of the six should feel about equally hard to each other). Elite carries
-// just the one objective, deliberately -- see the note above.
-//
-// No two cars in the same tier get the same objective in the same season
-// while the pool lasts -- handleCreateSeason hands them out round-robin
-// per tier, repeating from the top only once every objective in that tier
-// is already assigned this season (six per tier keeps that ceiling well
-// out of reach for a normal-size grid). Season-end evaluation of these
-// (did the car's driver(s) actually meet it?) and a progress-tracking
-// display are NOT built yet -- this catalog exists so objective NAMES can
-// be assigned at Create Season now, with the scoring logic to follow as
-// its own pass (Matt's call).
-//
-// 'Half-Season Clean' (Low) and 'Clean Season' (Mid) removed 2026-09-23
-// (Matt's ask: remove all Clean Race language/bonus -- the Clean Race
-// system is gone from the site entirely, so no objective can reference
-// it anymore).
+// 6 objectives per tier (Low/Mid/High), matched to that tier's difficulty (Low = things a
+// backmarker car can realistically pull off in a season; High = things only a factory-caliber
+// effort should manage, but every one of the six should feel about equally hard to each other).
+// Elite carries just the one objective, deliberately.
+// No two cars in the same tier get the same objective in the same season while the pool lasts --
+// handleCreateSeason hands them out round-robin per tier, repeating from the top only once every
+// objective in that tier is already assigned this season (six per tier keeps that ceiling well out
+// of reach for a normal-size grid).
 var CAR_OBJECTIVE_CATALOG = {
   Low: [
     'Season Finisher',       // completes every scheduled round this season
@@ -218,20 +152,17 @@ var CAR_OBJECTIVE_CATALOG = {
     'Grand Slam Round',      // pole, win, and fastest lap all in the same round, at least once this season
     'Pole-to-Win Twice'      // qualifies P1 in class and wins from it, at least twice this season
   ],
-  // Elite -- one car per class, hand-picked per season in the Season
-  // Creation Wizard (never assigned via Car Management's Tier field, and
-  // never round-robin'd like the tiers above since there's exactly one
-  // Elite car per class to begin with). The single hardest objective on
-  // the site, matching the huge multiplier that comes with it.
+  // Elite -- one car per class, hand-picked per season in the Season Creation Wizard (never
+  // assigned via Car Management's Tier field, and never round-robin'd like the tiers above since
+  // there's exactly one Elite car per class to begin with).
   Elite: [
     'Win Season Championship' // wins the class championship
   ]
 };
 
-// One short, driver-facing description per objective above -- shown as a
-// hover tooltip on the objective's checkbox in the Create Season wizard,
-// and on the Season Objective chip on the Choose Your Team screen. Keep
-// these in sync with the inline comments in CAR_OBJECTIVE_CATALOG.
+// One short, driver-facing description per objective above -- shown as a hover tooltip on the
+// objective's checkbox in the Create Season wizard, and on the Season Objective chip on the Choose
+// Your Team screen. Keep these in sync with the inline comments in CAR_OBJECTIVE_CATALOG.
 var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Season Finisher': 'Completes every scheduled round this season.',
   'Podium Once': 'Finishes on the podium (class P1-P3) at least once.',
@@ -252,36 +183,15 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
   'Win Season Championship': 'Wins the class championship.'
 };
 
-// CAR_CLASS_REPUTATION_FLOOR and CLASS_PLACEMENT_DENIAL_REASONS REMOVED
-// (2026-09-27, efficiency pass) -- the per-class Reputation floor gate
-// (LMGTE/LMGT3 open, LMP3 300, LMP2 400, Hypercar 600) and its Class
-// Placement Request exception flow were designed (Race Club Rulebook.md
-// Section 9/10, the v0.3 design doc) but the server-side enforcement was
-// still an open TODO (no handleChooseClass ever existed to check it) when
-// the whole Reputation system was cut in the V1 scope cut, 2026-09-17/18
-// -- there is no reputation score anywhere in the site anymore for a floor
-// to even compare against. Confirmed dead (no remaining references
-// anywhere) before removing. Same fate as the Sponsor catalogs below.
+// Confirmed dead (no remaining references anywhere) before removing. Same fate as the Sponsor
+// catalogs below.
 
-// SPONSOR_TIER_LIST, SPONSOR_BONUS_TRIGGERS/SPONSOR_PENALTY_TRIGGERS and
-// their description/suggested-amount/range-label tables, and
-// sponsorTriggerDescription() were all removed entirely 2026-09-17 -- V1
-// scope cut, the whole Sponsorship system is out of the site for now. See
-// season-1-mvp-scope.md.
+// See season-1-mvp-scope.md.
 
 // ---------------------------------------------------------------------------
-// PROTESTS (2026-09-08) -- backs the driver-facing Protest submission page,
-// the Dashboard's Protest card, and League Management's EDIT (penalty-tier
-// assessment) popup. Everything here is admin/steward-facing catalog data,
-// same "one source of truth, referenced everywhere it's shown" pattern as
-// the Sponsor triggers above.
+// PROTESTS -- backs the driver-facing Protest submission page, the Dashboard's Protest card, and
+// League Management's EDIT (penalty-tier assessment) popup.
 
-// What a driver picks from when filing a protest -- exactly Matt's own
-// list, nothing added or reworded. "AVOIDABLE CONTACT (Self report)" is a
-// driver reporting their OWN at-fault contact rather than someone else's --
-// the "Drivers Involved" picker still applies (who else was involved), it's
-// just this driver admitting fault up front rather than naming someone else
-// as the cause.
 var PROTEST_INFRACTION_TYPES = [
   'Intentional Wrecking',
   'Unsafe Rejoin',
@@ -290,33 +200,9 @@ var PROTEST_INFRACTION_TYPES = [
   'Unsportsmanlike Behavior'
 ];
 
-// Race Club Rulebook.md Section 5.1 Penalty Tiers, mirrored here as data so
-// the EDIT popup's penalty-tier dropdown and its resulting time-penalty/
-// disqualification effect can never drift from the published rulebook
-// text. `effect` is the plain-language consequence shown next to the tier
-// in the dropdown; `effectType`/`effectSeconds` mirror Protests.gs's
-// PENALTY_TIER_EFFECTS_ exactly -- these are what actually get written to
-// the Adjustments tab once a protest is ruled on, replacing the old
-// per-tier monetary `fine` field (removed 2026-09-23, Matt's ask: remove
-// all "fines"/monetary language since there's no monetary system).
-// Tier 1 (Warning) and Tier 7 (Suspension) never produce an Adjustments
-// row -- Tier 1 is logged only, and Tier 7 is enforced via a Registrations
-// status change instead (see _rcSetRegistrationStatus_ in Protests.gs).
-// Tier labels use ": " not " -- " (2026-09-23, Matt's ask: "get rid of all
-// the -- between things... I like colons" -- applies to every "Label --
-// Value" style separator sitewide, this one included since it's what
-// PENALTY_TIERS' own .label renders directly into the Steward ruling
-// dropdown and suggested-tier text). See _rclDescribePenaltyEffect_/the
-// tierLabel regex in league.js, which strips this same "Tier N: " prefix
-// back off -- kept in sync with this format.
-// Labels no longer repeat the tier's own seconds value in a middle
-// parenthesis (2026-10-01, Matt's ask: "remove the middle parenthesis (n)
-// number and just leave the longer written (10 sec penalty) that already
-// exists") -- the dropdown already appends `effect` in its own trailing
-// parenthesis right after this label, so "Tier 2: Time Penalty (5s)
-// (+5s added to final race time)" had the same number twice. Tiers 4/5/6/7
-// never had a middle number to begin with (their label names the
-// equivalent/consequence, not a seconds value), so only 2 and 3 change.
+// Race Club Rulebook.md Section 5.1 Penalty Tiers, mirrored here as data so the EDIT popup's
+// penalty-tier dropdown and its resulting time-penalty/ disqualification effect can never drift
+// from the published rulebook text.
 var PENALTY_TIERS = [
   { tier: 1, label: 'Tier 1: Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
   { tier: 2, label: 'Tier 2: Time Penalty', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
@@ -324,14 +210,10 @@ var PENALTY_TIERS = [
   { tier: 4, label: 'Tier 4: Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
   { tier: 5, label: 'Tier 5: Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
   { tier: 6, label: 'Tier 6: Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
-  // Suspension now also removes the driver from THIS race's own
-  // classification (2026-10-01, Matt's clarified rule: a Tier 7 ruling
-  // doesn't score points for the race it's ruled on either, and that race
-  // itself already shows SUS, same as every race after it) -- on top of
-  // sitting out the rest of the season. Requires a prior Upheld Tier 6 for
-  // this driver this season (enforced in the ruling dropdown and
-  // server-side -- see handleAdminRuleOnProtest's TIER7_REQUIRES_PRIOR_DSQ
-  // gate in Protests.gs).
+  // Suspension now also removes the driver from THIS race's own classification -- on top of sitting
+  // out the rest of the season. Requires a prior Upheld Tier 6 for this driver this season
+  // (enforced in the ruling dropdown and server-side -- see handleAdminRuleOnProtest's
+  // TIER7_REQUIRES_PRIOR_DSQ gate in Protests.gs).
   { tier: 7, label: 'Tier 7: Suspension', effect: 'Removed from this race, suspended for the rest of the season', effectType: 'Suspension', effectSeconds: 0 }
 ];
 
@@ -343,82 +225,34 @@ function penaltyTierByNumber(tierNum) {
   return null;
 }
 
-// Mirrors Protests.gs's SUGGESTED_TIER_BY_INFRACTION_ -- the standard
-// ruling tier the Rulebook assigns to an infraction type, for UI use (a
-// hint next to the penalty-tier dropdown, and the basis for the
-// "ruling at a different tier requires a written explanation" prompt).
-// Added 2026-09-23 alongside the standardized-ruling backend work. Only
-// the two auto-flagged registration-mismatch infraction types carry a
-// fixed standard tier -- driver-filed infractions (contact, unsafe
-// rejoin, etc.) are judged case by case and have no entry here.
+// Mirrors Protests.gs's SUGGESTED_TIER_BY_INFRACTION_ -- the standard ruling tier the Rulebook
+// assigns to an infraction type, for UI use (a hint next to the penalty-tier dropdown, and the
+// basis for the "ruling at a different tier requires a written explanation" prompt).
 var SUGGESTED_TIER_BY_INFRACTION = {
   'Wrong-Class Entry': 6,
   'Wrong-Team/Car Entry': 6
 };
 
-// How long after a round's results are imported a driver can still file a
-// protest for it -- shortened 48 -> 24 (2026-09-24, Matt's call: "no one
-// is going to submit a protest from a fun, casual league 2 days later.
-// Plus it lets me make the results official sooner"). Measured against
-// that Round's Sessions row(s) ImportedAt, the same timestamp Ingestion.gs
-// stamps on every session it writes -- see the real source of truth,
-// PROTEST_WINDOW_HOURS_ in Protests.gs (this copy isn't currently read by
-// anything client-side, kept only so this file's reference constants stay
-// in sync with the backend's).
+// How long after a round's results are imported a driver can still file a protest for it --
+// shortened 48 -> 24.
 var PROTEST_WINDOW_HOURS = 24;
 
-// sponsorTermsTooltip() removed entirely 2026-09-17 -- V1 scope cut,
-// Sponsorship system out of the site. See season-1-mvp-scope.md.
+// See season-1-mvp-scope.md.
 
-// CSS variable (defined in css/style.css) holding each class's badge
-// color -- shared by the driver profile's Current Seat number badge and
-// anywhere else a class needs the same consistent color.
-// LMGTE (2026-09-20, Matt's ask: "the pill color is orange") added --
-// --rc-class-lmgte is defined alongside the other three class-color
-// tokens in css/style.css's :root.
+// CSS variable (defined in css/style.css) holding each class's badge color -- shared by the driver
+// profile's Current Seat number badge and anywhere else a class needs the same consistent color.
 var CAR_CLASS_BADGE_COLOR_VAR = { LMGTE: '--rc-class-lmgte', LMGT3: '--rc-class-lmgt3', LMP3: '--rc-class-lmp3', LMP2: '--rc-class-lmp2', Hypercar: '--rc-class-hypercar' };
 
-// Short abbreviated label per class (2026-09-19) -- for the compact class
-// pill on the Dashboard's Current Seat card, placed right before the car
-// number (Matt's ask: "a hypercar would have a red rectangle, rounded
-// edges with HY in it"). Same color tokens as CAR_CLASS_BADGE_COLOR_VAR
-// above, just a shorter label for the tighter space next to a car number.
-// LMGT3 stays spelled out in full here (2026-09-19 correction, Matt's
-// call: "Make sure class pills are saying LMGT3 and not just GT3
-// throughout the site") -- it was the one class this map actually
-// shortened rather than abbreviated to a genuinely different short form
-// (LMP3->P3, LMP2->P2 read unambiguously as their own class; "GT3" alone
-// reads as a different real-world class entirely, not shorthand for
-// LMGT3), so it's excluded from the abbreviation and just passes through
-// via _rcClassAbbrevPill's own key fallback below. LMGTE (2026-09-20)
-// gets the same treatment for the same reason -- "GTE" alone reads as
-// the real-world Le Mans GTE class, not shorthand for LMGTE.
+// Short abbreviated label per class -- for the compact class pill on the Dashboard's Current Seat
+// card, placed right before the car number.
 var CAR_CLASS_ABBREV = { LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 
-// Manufacturer logo file convention, two-color variant (2026-10-04, Matt's
-// ask: "if I have a black and white .png of the same logo, can the website
-// automatically call the correct one based off the background it's
-// against") -- assets/manufacturers/{slug}-black.png (for a light
-// background) and assets/manufacturers/{slug}-white.png (for a dark one),
-// e.g. "Toyota" -> "toyota-black.png"/"toyota-white.png". Every call site
-// is on a background that's fixed at build time, not something that
-// changes at runtime, so the caller just says which one it needs --
-// league.js's pages (league.html's own dark theme) always pass 'white';
-// Account.html's (the site's standard light card theme) always pass
-// 'black'. variant defaults to 'black' if omitted/invalid.
-//
-// Was assets/manufacturers/{slug}.png, one file per manufacturer, no
-// variant (2026-09-19 -> 2026-10-04) -- that single file is now the
-// fallback manufacturerLogoFallback() below drops back to when a
-// manufacturer's two-color pair hasn't been uploaded yet, so every
-// manufacturer still shows its one existing logo everywhere, exactly as
-// before, until Matt uploads a black/white pair for it (Toyota/Genesis/
-// Cadillac are the first three). Admin uploads the actual image files by
-// hand (not built/seeded here) using this exact naming -- lowercase,
-// spaces/punctuation collapsed to a single hyphen, e.g. "Aston Martin" ->
-// "aston-martin-black.png"/"aston-martin-white.png". Callers should always
-// set an onerror handler to hide the <img> gracefully if nothing's been
-// uploaded yet (see currentSeatBlock() in Account.html).
+// Manufacturer logo file convention, two-color variant -- assets/manufacturers/{slug}-black.png
+// (for a light background) and assets/manufacturers/{slug}-white.png (for a dark one), e.g.
+// "Toyota" -> "toyota-black.png"/"toyota-white.png".
+// Admin uploads the actual image files by hand (not built/seeded here) using this exact naming --
+// lowercase, spaces/punctuation collapsed to a single hyphen, e.g. "Aston Martin" ->
+// "aston-martin-black.png"/"aston-martin-white.png".
 function _rcMfrLogoSlug_(manufacturerName) {
   return String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
 }
@@ -427,30 +261,21 @@ function manufacturerLogoSrc(manufacturerName, variant) {
   return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '-' + v + '.png';
 }
 
-// Legacy single-file convention, kept only as the fallback chain's second
-// rung now (see manufacturerLogoFallback below) -- not called directly by
-// any page any more.
+// Legacy single-file convention, kept only as the fallback chain's second rung now (see
+// manufacturerLogoFallback below) -- not called directly by any page any more.
 function manufacturerLogoLegacySrc_(manufacturerName) {
   return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '.png';
 }
 
-// Same slug, .svg extension -- unchanged since 2026-09-27 (some
-// manufacturers only have vector art on hand), tried last, after both the
-// new black/white convention and the old single-file one.
 function manufacturerLogoSvgSrc(manufacturerName) {
   return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '.svg';
 }
 
-// Arms an <img> whose src is already set to manufacturerLogoSrc(name,
-// variant) with a three-step fallback chain (2026-10-04, extended for the
-// black/white variant split -- see manufacturerLogoSrc's own comment):
-// if the new {slug}-{variant}.png 404s, try the old single {slug}.png
-// (today's logo, right color or not, for a manufacturer that hasn't been
-// split into a pair yet); if THAT also 404s, try the same-named .svg; if
-// that ALSO 404s, run onAllFailed (every existing call site passes a
-// function that hides the <img> or its wrapper, same as before this
-// fallback existed). Callers still set imgEl.src themselves first -- this
-// only wires what happens on error.
+// Arms an <img> whose src is already set to manufacturerLogoSrc(name, variant) with a three-step
+// fallback chain: if the new {slug}-{variant}.png 404s, try the old single {slug}.png (today's
+// logo, right color or not, for a manufacturer that hasn't been split into a pair yet); if THAT
+// also 404s, try the same-named .svg; if that ALSO 404s, run onAllFailed (every existing call site
+// passes a function that hides the <img> or its wrapper, same as before this fallback existed).
 function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
   var step = 0;
   imgEl.onerror = function () {
@@ -467,51 +292,26 @@ function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
   };
 }
 
-// sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
-// system out of the site. See season-1-mvp-scope.md.
+// See season-1-mvp-scope.md.
 
-
-// Flat (non-emoji) country flag image -- flagcdn.com, keyed by the
-// lowercase ISO 3166-1 alpha-2 code looked up from COUNTRY_CODES
-// (2026-09-19, League Hub Leaderboard redesign, Matt's ask: "a flat flag
-// (not emoji) of the driver's home country"). Deliberately NOT
-// flagEmoji() above -- that one builds a Unicode emoji flag, which is
-// explicitly what Matt does not want here.
-//
-// Points at flagcdn.com (2026-09-19 follow-up -- was assets/flags/{code}.svg,
-// a manual-upload convention like manufacturerLogoSrc()/trackImageSrc()
-// above, but Matt never actually wanted to have to supply flag images one
-// country at a time; he was expecting something that "just worked" the
-// way a universal flag set would). flagcdn.com is a free, no-signup,
-// no-API-key public CDN built exactly for hot-linking flat SVG flags by
-// ISO code -- every country in COUNTRY_CODES already has an entry there,
-// so this needs no assets of Race Club's own and no further setup.
-// Callers should still always set an onerror handler to hide the <img>
-// gracefully (e.g. if countryName doesn't match anything in
-// COUNTRY_CODES, or the CDN is unreachable).
+// Flat (non-emoji) country flag image -- flagcdn.com, keyed by the lowercase ISO 3166-1 alpha-2
+// code looked up from COUNTRY_CODES.
+// Points at flagcdn.com. flagcdn.com is a free, no-signup, no-API-key public CDN built exactly for
+// hot-linking flat SVG flags by ISO code -- every country in COUNTRY_CODES already has an entry
+// there, so this needs no assets of Race Club's own and no further setup.
 function countryFlagSrc(countryName) {
   var code = COUNTRY_CODES[countryName || ''] || '';
   if (!code) return '';
   return 'https://flagcdn.com/' + code.toLowerCase() + '.svg';
 }
 
-// manufacturerAvatarSrc() REMOVED (2026-09-27, efficiency pass) -- same
-// slugging convention as manufacturerLogoSrc() above, pointed at
-// assets/avatars/{slug}.jpg instead. Its own comment already admitted it
-// was "not currently called from anywhere client-side," documenting a
-// claimed server-side auto-avatar-at-team-lock mirror (manufacturerToAvatarFile()/
-// handleJoinTeam in the old DataCache.gs) that doesn't actually exist in
-// today's handleJoinTeam (Seasons.gs) -- no avatar-writing code there at
-// all. Avatars are entirely user-chosen via Edit Profile now (see
-// edit-profile.js). Confirmed dead (no remaining callers anywhere) before
-// removing.
+// manufacturerAvatarSrc() REMOVED -- same slugging convention as manufacturerLogoSrc() above,
+// pointed at assets/avatars/{slug}.jpg instead. Avatars are entirely user-chosen via Edit Profile
+// now (see edit-profile.js).
 
-// Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client-
-// side dropdown source; the server independently re-validates against its
-// own copy, so this list is never trusted as the actual validation.
+// Mirrors DRIVER_NAME_SUFFIXES in 6_Auth.gs -- this is just the client- side dropdown source; the
+// server independently re-validates against its own copy, so this list is never trusted as the
+// actual validation.
 var DRIVER_NAME_SUFFIXES = ['Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
 
-// RC_LEDGER_TYPE_LABELS/ledgerTypeLabel() removed entirely 2026-09-17 -- V1
-// scope cut, the Finances page they backed is gone along with the whole
-// Finances/Economy, Sponsorship, and Wager/Betting systems. See
-// season-1-mvp-scope.md.
+// See season-1-mvp-scope.md.

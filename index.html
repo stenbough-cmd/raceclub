@@ -1,150 +1,4 @@
-<!--
-  Race Club -- index.html  (v0.3.0, hero landing page)
-
-  WHAT CHANGED VS. v0.2.5:
-  index.html used to be a pure redirect gate (check localStorage, bounce
-  to Account.html or login.html, never actually render). It's now a real
-  landing page: fixed site header (js/header.js) on top, a hero banner
-  below it, a short tagline blurb, and the class tiers as simple cards.
-
-  WHAT CHANGED IN THIS PASS (hero no longer fixed, 2026-09-13, Matt's
-  follow-up call: "the image should not be sticky anywhere... I want it
-  to scale when the user shrinks the window... if I can see the next
-  section creep up as I'm closing the window, that's ok"):
-  The hero used to be `position: fixed` with a same-height spacer div
-  faking scroll distance, sized off the viewport's HEIGHT. That's gone --
-  the hero is now sized by its own aspect-ratio (see .rc-hero in
-  css/style.css), so it scales with the window's WIDTH instead.
-
-  WHAT CHANGED IN THIS PASS (hero re-pinned as `sticky`, 2026-09-13,
-  Matt's later follow-up call: "can we still stick the banner to the top
-  of the webpage and have the bottom part scroll over top of it?"):
-  Brought back the "content slides up and covers the banner as you
-  scroll" effect, but via `position: sticky` instead of the old
-  `fixed` + spacer -- sticky keeps the hero's aspect-ratio-driven sizing
-  (so the width-based scaling above still works) while still pinning it
-  to `top: 72px`, right under the header, once the page scrolls that
-  far. No spacer needed this time: sticky reserves the hero's own space
-  in the document, which is exactly what lets .rc-hero-content (right
-  after it, opaque background, higher z-index) scroll up and visually
-  cover it.
-
-  There is no login/session logic on this page beyond what js/header.js
-  already provides (it reads getToken() itself to decide whether to show
-  "HOME · LOGIN/REGISTER" or "ACCOUNT").
-
-  WHAT CHANGED IN THIS PASS (ECO wording pass):
-  This is a wording-only pass to bring the page in line with the Race
-  Club ECO Season 1 design (race-club-eco-season-1.md) -- no styling,
-  layout, or markup structure changed, only copy. Specifically:
-  - The intro tagline dropped "no reset button" -- under ECO, seats,
-    sponsors, and wagers DO reset every season; only bank balance
-    carries forward. Reworded to say that honestly instead.
-  - "Sponsors Watch How You Drive" card reworded -- ECO sponsors come
-    bundled with the TEAM you buy into (three per team, harder/bigger
-    payouts on pricier teams, easier/conservative on cheaper ones), not
-    earned individually by driving style.
-  - "Real Teams, Real Seats" and "A Fresh Grid, Every Season" cards
-    reworded to reflect the one-time buy-in economy and the
-    bank-balance-only carryover.
-  - "Real Money On The Line" card reworded to reflect sponsor bonuses
-    landing every race and wager stakes freezing on acceptance.
-  - Class Tiers section: renamed GT3 -> LMGT3 (the actual Season 1 class
-    name per the design doc) and marked it as the only class actually
-    running this season. The three-gate mix ("Money only" vs. "Money +
-    Reputation") replaced with the real ECO gate -- affordability AND the
-    experience/consistency/safety checklist -- since ECO applies that same
-    two-bar test to every class above the first, not just the top two.
-    The other three tiers are kept as an aspirational future-seasons
-    ladder, not something buildable yet.
-
-  WHAT CHANGED IN THIS PASS (copy polish, Matt's direct edits):
-  - "This Isn't A Lobby. It's A Career." -> "This Isn't Just A Lobby.
-    It's A Career."
-  - Dropped the repeated "not bought outright" clause from both the
-    Class Tiers intro and the Hypercar card -- said once already by the
-    "earned, not bought" framing elsewhere on the ladder, so saying it
-    twice was redundant.
-  - Em dashes removed throughout the page copy (replaced with periods,
-    commas, or colons depending on the sentence) per Matt's house style:
-    use them sparingly, not as the default punctuation.
-
-  WHAT CHANGED IN THIS PASS (static page, 2026-09-13, Matt's call:
-  "Instead of the index being a 'live' page that updates based on the
-  season running, make it static... keep it generic and informational
-  about the service instead"):
-  - Class Tiers: dropped the "Season 1" / "Future Season" status badges
-    on each card (those described which season was actually running,
-    exactly the kind of specific-to-right-now reference this pass
-    removes) and the tagline's "Season 1 starts every driver in LMGT3"
-    framing. The bottom footer line on each card, previously "Gate: ...",
-    is now a difficulty label instead (2026-09-13, Matt's follow-up
-    call: "go from Rookie, Rookie to Intermediate, Intermediate and
-    Advanced for the 4 classes so there's some correlation with the
-    higher classes and difficulty level") -- purely informational and
-    evergreen, same regardless of which season or classes are live.
-  - "Reputation You Earn" highlight card reworded -- it used to describe
-    the old earned-eligibility checklist for moving up a class, which no
-    longer exists (see race-club-eco-season-1.md's "Moving up a class"
-    section) -- now describes the actual current policy: no money gate,
-    no experience checklist, open the moment a class is on the schedule.
-  - "Meet The Grid" went through two same-day reworks (an illustrative
-    carousel with made-up team names, then a static 3-across grid) that
-    Matt didn't want -- both undone. The section is back to its original
-    live design: getGridTeaser fetch, manufacturer logo images,
-    IntersectionObserver lazy-load, per-card fade-in stagger. See its own
-    comment above the section for the full history. The one real addition
-    (2026-09-13, Matt's call) is what happens when that fetch comes back
-    with no season actually running: instead of an empty "check back
-    later" message, the section now falls back to a random sample of up
-    to 9 real teams from one class, pulled from the same Cars-tab roster
-    data as before, rendered with the identical card markup as the live
-    grid -- and, since there's no server round-trip to hide behind here,
-    all built up front and faded in together rather than staggered.
-
-  WHAT CHANGED IN THIS PASS (2026-09-18, "fix the index page to align with
-  what we've built" -- V1 scope cut cleanup, see season-1-mvp-scope.md):
-  This page still described a "buy into a team" economy left over from an
-  earlier design that never shipped -- registration is actually free and
-  first-come-first-served (see handleJoinTeam, Seasons.gs -- no
-  BuyInCost read anymore). Fixed every live line that said otherwise: the
-  intro tagline ("buy into a team" -> "join a real team", dropped "build a
-  bank balance", which no longer exists), the "Real Teams, Real Seats" and
-  "A Fresh Grid, Every Season" highlight cards (both said "Buy into"), and
-  the closing CTA ("pay the buy-in" removed entirely). No markup, styling,
-  or the live Meet The Grid data-fetch changed -- that backend
-  (handleGetGridTeaser/_rcGridTeaserPool_, Website.gs) never touched
-  money/sponsors to begin with and is untouched by any of this.
-
-  WHAT CHANGED IN THIS PASS (2026-09-18, same session, two follow-up
-  calls):
-  1) "What You'll Need" no longer shares .rc-highlight-grid/-card/-icon
-     with "Why Race Club" -- it now has its own .rc-needs-* markup and CSS
-     (full-bleed dark band, plain icon-left list instead of white cards),
-     so the two sections read as visually distinct instead of the same
-     component repeated with different text. See the section's own
-     comment below for the reasoning.
-  2) Added a 6th "Why Race Club" card, "Every Race, Tracked" -- points out
-     the site itself (results pulled straight from real race data via
-     Ingestion.gs's XML import, not hand-typed) as its own selling point
-     alongside the five existing claims. Card count comment above updated
-     back to six.
-
-  WHAT CHANGED IN THIS PASS (2026-09-25, Matt's ask: "update the What is
-  Race Club section... drum up some hype... reference things we built
-  into the system that make it unique like the League Hub... we also run
-  endurance events... All cars on the grid are actual teams in the WEC"):
-  - "What Is Race Club" rewritten from one short paragraph into three,
-    hyping the persistent-career pitch, calling out the League Hub by
-    name as the public results/standings page unique to this site, and
-    covering the WEC-style endurance rounds mixed into the calendar plus
-    every grid car being modeled on a real WEC team.
-  - Discord CTA: swapped discord_logo_rev.png for the standard-color
-    discord_logo.png (matches the asset Account.html's sidebar already
-    uses), and reworded the line to "Join the Race Club community for
-    more information and all the updates!"
-  - Closing CTA button: "Create Your Driver" -> "Create Your Profile".
--->
+<!-- Race Club -- index.html (v0.3.0, hero landing page) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -155,14 +9,8 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
-<!-- reference-data.js + edit-profile.js (added 2026-09-21) -- let the
-     header's Edit Profile menu item open its popup in place on this page
-     instead of navigating to Account.html first. See
-     _rcOpenEditProfileFromHeader (js/header.js) and js/edit-profile.js's
-     own file header comment. reference-data.js supplies the country/
-     timezone lists the Edit Profile form needs (already loaded on
-     Account.html/league.html/register.html for the same reason; index.html
-     never needed it before this). -->
+<!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
+     popup in place on this page instead of navigating to Account.html first. -->
 <script src="js/reference-data.js"></script>
 <script src="js/edit-profile.js"></script>
 </head>
@@ -171,17 +19,9 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
-<!-- Hero banner, sticky right under the fixed header (see .rc-hero in
-     css/style.css) -- it sits in normal document flow until scrolled,
-     then pins to top: 72px while .rc-hero-content scrolls up and covers
-     it. Sized by aspect-ratio, not viewport height, so it still scales
-     with the window's width instead of being pinned to a fixed screen
-     height. The image itself is set entirely in CSS now (not inline
-     here) specifically so an @media (max-aspect-ratio) rule can swap it
-     for a dedicated portrait-shaped image on narrow/tall windows,
-     falling back to this standard landscape one otherwise -- an inline
-     style here would beat that media query on specificity and the swap
-     would never show. -->
+<!-- Hero banner, sticky right under the fixed header (see .rc-hero in css/style.css) -- it sits
+     in normal document flow until scrolled, then pins to top: 72px while .rc-hero-content
+     scrolls up and covers it. -->
 <div class="rc-hero" role="img" aria-label="Race Club: league cars on track">
   <div class="rc-hero-text">
     <div class="rc-hero-title rc-hero-title-shift">YOUR <span class="rc-hero-title-accent">CAREER</span></div>
@@ -220,29 +60,10 @@
     </div>
   </section>
 
-  <!-- Discord community CTA (added 2026-09-24, Matt's ask: "leave a space
-       under the What is Race Club information... Join the Race Club
-       community for more information!") -- a standalone dark strip, not
-       folded into the section above it, so it reads as its own call to
-       action rather than another line of the "What Is Race Club" copy.
-
-       Redesigned 2026-09-27 (Matt's ask: bring this in line with
-       Discord's own brand guidelines, per discord.com/branding) as a real
-       Blurple (#5865F2, Discord's own primary brand color) pill button
-       instead of a plain inline text link -- the button is the one
-       element on the page that's actually "Discord branded", while the
-       eyebrow/heading around it stay in Race Club's own red/heading-font
-       treatment so the strip still reads as part of this site. Uses
-       Discord-Symbol-White.svg (the official white mark, 2026-09-27,
-       Matt's ask: use this asset everywhere -- black sidebar, blurple
-       button, and avatar menu) sitting on the solid Blurple button --
-       Discord's guidelines explicitly allow the white version of the
-       mark, and using it here (rather than the full-color mark) keeps
-       proper contrast without ever recoloring or distorting the mark
-       itself. Generous padding on every side of the logo inside the
-       button keeps clear space around it, and the mark is never
-       stretched (height set, width auto) or used as part of Race Club's
-       own name/logo -- both explicit guideline requirements. -->
+  <!-- Uses Discord-Symbol-White.svg sitting on the solid Blurple button -- Discord's guidelines
+     explicitly allow the white version of the mark, and using it here (rather than the
+     full-color mark) keeps proper contrast without ever recoloring or distorting the mark
+     itself. -->
   <div class="rc-discord-cta">
     <div class="rc-discord-cta-inner">
       <div class="rc-eyebrow">Community</div>
@@ -255,9 +76,9 @@
     </div>
   </div>
 
-  <!-- "Why Race Club" -- the recruiting section. Six short highlight
-       cards, each icon + headline + one line, built specifically so this
-       reads as scannable claims instead of another paragraph of copy. -->
+  <!-- "Why Race Club" -- the recruiting section. Six short highlight cards, each icon + headline +
+     one line, built specifically so this reads as scannable claims instead of another paragraph
+     of copy. -->
   <section class="rc-landing-section rc-why-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Experience</div>
@@ -322,11 +143,9 @@
     </div>
   </section>
 
-  <!-- "How It Works" (2026-09-13, Matt's ask: "a 1-3 step by step (keep
-       it simple) of how it actually works") -- four steps, numbered
-       circles instead of the "Why Race Club" section's icons above so it
-       reads as a sequence, not another set of claims. Deliberately terse:
-       one short line per step, no restating the highlight cards' pitch. -->
+  <!-- "How It Works" -- four steps, numbered circles instead of the "Why Race Club" section's
+     icons above so it reads as a sequence, not another set of claims. Deliberately terse: one
+     short line per step, no restating the highlight cards' pitch. -->
   <section class="rc-landing-section rc-how-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Process</div>
@@ -363,17 +182,10 @@
     </div>
   </section>
 
-  <!-- "What You'll Need" (2026-09-13, Matt's ask; given its own distinct
-       look 2026-09-18, Matt's follow-up call: "make WHAT YOU'LL NEED
-       section look different than THE EXPERIENCE section" -- both used to
-       share .rc-highlight-grid/.rc-highlight-card/.rc-highlight-icon
-       verbatim, which read as the same section repeated with new text.
-       This one now gets its own markup (.rc-needs-*, scoped CSS below) --
-       full-bleed dark band instead of white cards on the off-white page,
-       and a plain numbered checklist instead of icon-top boxes, so it
-       reads as "here's what to line up before you join" rather than
-       another set of pitch claims. Same three items, same icons, just a
-       different frame -- nothing about "The Experience" section changed. -->
+  <!-- This one now gets its own markup (.rc-needs-*, scoped CSS below) -- full-bleed dark band
+     instead of white cards on the off-white page, and a plain numbered checklist instead of
+     icon-top boxes, so it reads as "here's what to line up before you join" rather than another
+     set of pitch claims. -->
   <section class="rc-landing-section rc-needs-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">Before You Join</div>
@@ -402,13 +214,6 @@
           </div>
         </div>
 
-        <!-- Whole item is now a link to the Discord invite (2026-09-27
-             follow-up, Matt's ask: "make sure the Discord section in
-             'WHAT YOU'LL NEED' links appropriately to the invite link
-             (same as the blurple button) a few sections above") -- same
-             href/target/rel as .rc-discord-cta-btn above, just a much
-             bigger tap target than the few words the link used to live
-             on. -->
         <a class="rc-needs-item" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
           <div class="rc-needs-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -423,11 +228,9 @@
     </div>
   </section>
 
-  <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top
-       hero uses -- that effect is specifically for covering a banner
-       pinned at the very top of the page as content scrolls up over it.
-       This one just sits in normal document flow between two sections
-       and scrolls past like anything else, per Matt's own description. -->
+  <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top hero uses -- that effect is
+     specifically for covering a banner pinned at the very top of the page as content scrolls up
+     over it. -->
   <div class="rc-mid-banner" role="img" aria-label="Race Club: the career, on and off track">
     <div class="rc-mid-banner-inner">
       <h2>This Is Your Legacy.</h2>
@@ -441,10 +244,8 @@
       <h2>Class Tiers</h2>
       <p class="rc-landing-tagline">Race Club features five classes ranging from LMGTE up to Hypercar. Classes are open the moment the league puts it on the schedule.</p>
       <div class="rc-tier-row">
-        <!-- LMGTE (added 2026-09-20) -- the rookie tier below LMGT3, per
-             Matt's ask. Same rc-tier-card treatment as the other four,
-             its own orange gradient matching --rc-class-lmgte (the pill
-             color used everywhere else on the site for this class). -->
+        <!-- Same rc-tier-card treatment as the other four, its own orange gradient matching
+     --rc-class-lmgte (the pill color used everywhere else on the site for this class). -->
         <div class="rc-card rc-tier-card rc-tier-orange">
           <h3>LMGTE</h3>
           <p>The entry point to Race Club. The most forgiving cars on the grid, built for a driver's very first race.</p>
@@ -474,66 +275,21 @@
     </div>
   </section>
 
-  <!-- "Meet The Grid" teaser (2026-09-01, built; 2026-09-02, made fully
-       dynamic per Matt's call) -- real team data, live off whatever
-       season/classes are actually running, not a hardcoded team list.
-       Restored to this exact original build on 2026-09-13 after two
-       failed reworks (a fictional carousel, then a random-sample static
-       grid) -- Matt wanted the page back to byte-for-byte this design,
-       manufacturer logos and all, not a reinterpretation of it.
-       Backed by the existing PUBLIC action getGridTeaser
-       (handleGetGridTeaser, Website.gs) -- no token needed, same
-       "usable with no auth, active-only" convention handleGetCars
-       already establishes. It resolves the current
-       season the same way the rest of the site does (most recent
-       Registration/Active season), reads which classes that season has
-       switched on and which real-world car-data year each one draws
-       its roster from, and returns real Cars rows (TeamName,
-       manufacturer, car model/number, class, and that team's own
-       TeamDesc bio) matching those class+year pairs -- one entry per
-       distinct team. So when Matt starts Season 2, or runs multiple
-       classes at once, or swaps which real-world year a class's roster
-       comes from, this section updates itself with no code change here.
-
-       Deliberately lazy: the fetch only fires once this section actually
-       scrolls near the viewport (see the IntersectionObserver in the
-       <script> below), not on page load -- Apps Script's cold-start
-       latency is real, and there's no reason to spend it before the user
-       has scrolled anywhere near this far down the page. rootMargin gives
-       it a head start (starts loading a little before the section is
-       actually on screen) so the data is normally already in hand by the
-       time it comes into view; cards then fade in one at a time, quickly,
-       rather than all snapping in at once.
-
-       The header text (season name/number, class list, car count, start
-       date) and every card are entirely JS-rendered from the fetched
-       payload -- nothing here is hardcoded per-team any more.
-
-       No-season / fetch-failure fallback (2026-09-13, Matt's call):
-       rather than sitting empty or showing a plain "check back later"
-       line, renderStaticSample_() below picks one class at random and
-       up to 9 real teams from it (fewer if the class has under 9 --
-       LMP2 currently has 6) out of a small baked-in roster (source: the
-       Cars tab of the "Race Club Data Sheets" spreadsheet), and renders
-       them with the exact same card markup the live grid uses via the
-       shared buildCard_() helper. Unlike the live grid's per-card
-       stagger (which exists to hide network latency), this sample has
-       no server round-trip to wait on, so every card is built up front
-       and faded in together on the next animation frame instead --
-       faster to appear, and there's no latency left to stagger against. -->
+  <!-- "Meet The Grid" teaser -- real team data, live off whatever season/classes are actually
+     running, not a hardcoded team list.
+     Deliberately lazy: the fetch only fires once this section actually scrolls near the viewport
+     (see the IntersectionObserver in the <script> below), not on page load -- Apps Script's
+     cold-start latency is real, and there's no reason to spend it before the user has scrolled
+     anywhere near this far down the page. rootMargin gives it a head start (starts loading a
+     little before the section is actually on screen) so the data is normally already in hand by
+     the time it comes into view; cards then fade in one at a time, quickly, rather than all
+     snapping in at once. -->
   <section class="rc-landing-section rc-grid-section" id="rc-grid-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Grid</div>
       <h2>Meet The Grid</h2>
       <p class="rc-landing-tagline" id="rc-grid-tagline"></p>
 
-      <!-- Renamed from a single flat grid to a column of per-class groups
-           (2026-09-20, Matt's ask: "to the left of each row, please have
-           a 90 degree ccw label of which class that row of teams belongs
-           to") -- each group gets its own .rc-grid-teaser-row grid (so a
-           class's own cards start a fresh row instead of interleaving
-           with the next class) plus a rotated .rc-grid-teaser-class-label
-           built in JS (buildClassGroup_ below). -->
       <div class="rc-grid-teaser-groups" id="rc-grid-teaser-groups"></div>
 
       <p class="rc-grid-teaser-footnote" id="rc-grid-teaser-footnote"></p>
@@ -548,21 +304,15 @@
     var footnoteEl = document.getElementById('rc-grid-teaser-footnote');
     var started = false;
 
-    // Same slugging rule as manufacturerLogoSrc() in js/reference-data.js
-    // (not loaded on this page -- everything else here is plain strings/
-    // DOM, so a whole extra script tag just for one function wasn't worth
-    // it). Keep this in sync if that convention ever changes -- 2026-09-19,
-    // Matt's call: manufacturer logos live in assets/manufacturers/, not
-    // nested under assets/images/.
+    // Same slugging rule as manufacturerLogoSrc() in js/reference-data.js (not loaded on this page
+    // -- everything else here is plain strings/ DOM, so a whole extra script tag just for one
+    // function wasn't worth it).
     function manufacturerLogoSrc_(name) {
       var slug = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
       return 'assets/manufacturers/' + slug + '.png';
     }
 
-    // Same slug, .svg extension -- tried once the .png 404s (2026-09-27,
-    // Matt's ask, mirrored from the same fallback in js/reference-data.js;
-    // kept here too since this page doesn't load that script -- see this
-    // function's own comment there for the full rationale).
+    // Same slug, .svg extension -- tried once the .png 404s.
     function manufacturerLogoSvgSrc_(name) {
       var slug = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
       return 'assets/manufacturers/' + slug + '.svg';
@@ -590,10 +340,9 @@
 
     function formatStartDate_(iso) {
       if (!iso) return '';
-      // seasonStartDate is stored as a plain "YYYY-MM-DD" (no time), so
-      // parse it as local rather than via `new Date(iso)` (which treats a
-      // bare date as UTC midnight and can print a day early/late
-      // depending on the visitor's own timezone).
+      // seasonStartDate is stored as a plain "YYYY-MM-DD" (no time), so parse it as local rather
+      // than via `new Date(iso)` (which treats a bare date as UTC midnight and can print a day
+      // early/late depending on the visitor's own timezone).
       var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
       if (!m) return '';
       var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -606,10 +355,9 @@
       return m ? m[1] : s;
     }
 
-    // Builds one .rc-grid-teaser-card, shared by both the live render
-    // (real season teams off the API) and the static no-season sample
-    // below -- same markup either way so the two states are visually
-    // identical, just fed from different data shapes.
+    // Builds one .rc-grid-teaser-card, shared by both the live render (real season teams off the
+    // API) and the static no-season sample below -- same markup either way so the two states are
+    // visually identical, just fed from different data shapes.
     function buildCard_(name, manufacturer, carModel, carNumber, bio) {
       var card = document.createElement('div');
       card.className = 'rc-grid-teaser-card';
@@ -646,19 +394,7 @@
       return card;
     }
 
-    // One class's own row of cards, with a rotated class-name label forced
-    // to the left of it (2026-09-20, Matt's ask: "to the left of each row,
-    // please have a 90 degree ccw label of which class that row of teams
-    // belongs to... don't move the cards in any further to fit this label
-    // in, force the label to the left of the 1st card"). The label itself
-    // is built by layoutClassLabels_ below, not here -- how many rows a
-    // class's cards actually wrap into depends on the live container width
-    // (CSS auto-fill), which isn't known until the browser has laid the
-    // cards out, so this just builds the group + its row of cards; the
-    // label(s) get measured and placed in a follow-up pass. cardEls is an
-    // array of already-built .rc-grid-teaser-card elements (from
-    // buildCard_), not raw data, so this same helper serves both the live
-    // grid and the no-season static sample below.
+    // One class's own row of cards, with a rotated class-name label forced to the left of it.
     function buildClassGroup_(className, cardEls) {
       var group = document.createElement('div');
       group.className = 'rc-grid-teaser-class-group';
@@ -672,26 +408,9 @@
       return group;
     }
 
-    // Places one rotated class-name label per ACTUAL visual row a class's
-    // cards wrap into (2026-09-20 follow-up, Matt's catch: "the class ...
-    // should be on every row that there are cards" and "the class text
-    // needs to be vertically centered with the cards in each row" -- the
-    // original build put one label spanning the whole class-group's
-    // height, so a class that wrapped into 2+ rows only showed its label
-    // once, centered against the group as a whole rather than against
-    // either row). Each .rc-grid-teaser-card in a class's row shares a
-    // manufacturer-logo/text layout with fixed dimensions (no async image
-    // reflow -- see .rc-grid-teaser-logo's explicit width/height, css/
-    // style.css), so cards finish laying out synchronously and their
-    // offsetTop can be read right after insertion: cards landing at the
-    // same offsetTop are on the same visual row. group has
-    // position:relative (css/style.css) and row has no position of its
-    // own, so card.offsetTop is already relative to the group -- the same
-    // frame of reference the label's own absolute top/height use, so a
-    // label's top/height line up exactly with the row of cards it labels.
-    // Re-run after every render and (debounced) on resize, since auto-fill
-    // can wrap a class into a different number of rows at a different
-    // viewport width.
+    // Places one rotated class-name label per ACTUAL visual row a class's cards wrap into. Re-run
+    // after every render and (debounced) on resize, since auto-fill can wrap a class into a
+    // different number of rows at a different viewport width.
     function layoutClassLabels_() {
       var groups = rowEl.querySelectorAll('.rc-grid-teaser-class-group');
       groups.forEach(function (group) {
@@ -706,9 +425,9 @@
         var cards = Array.prototype.slice.call(row.children);
         if (!cards.length) return;
 
-        // Cluster cards into visual rows by offsetTop -- cards within 2px
-        // of the same top are treated as the same row (guards against
-        // subpixel rounding differences between cards on one row).
+        // Cluster cards into visual rows by offsetTop -- cards within 2px of the same top are
+        // treated as the same row (guards against subpixel rounding differences between cards on
+        // one row).
         var rows = [];
         cards.forEach(function (card) {
           var top = card.offsetTop;
@@ -731,9 +450,9 @@
       });
     }
 
-    // Debounced resize handler -- a class's row count (and therefore how
-    // many labels it needs, and where each one sits) can change whenever
-    // the viewport width changes the auto-fill column count.
+    // Debounced resize handler -- a class's row count (and therefore how many labels it needs, and
+    // where each one sits) can change whenever the viewport width changes the auto-fill column
+    // count.
     var labelResizeTimer_ = null;
     window.addEventListener('resize', function () {
       clearTimeout(labelResizeTimer_);
@@ -750,14 +469,8 @@
     // Cars tab's own Season column) -- used only for the footnote below.
     var STATIC_CLASS_YEAR = { LMGT3: 2026, LMP3: 2026, LMP2: 2023, Hypercar: 2026 };
 
-    // Real roster data, grouped by class -- source of truth is the Cars
-    // tab of the "Race Club Data Sheets" spreadsheet. Used ONLY as the
-    // no-season fallback below: when getGridTeaser comes back with no
-    // season actually running, this section still shows real teams
-    // rather than an empty state, by randomly picking one class and up
-    // to 9 real teams from it. Cars entered under the same TeamName are
-    // folded into one entry here (numbers holds every car number that
-    // team fields); desc is each team's TeamDesc column verbatim.
+    // Real roster data, grouped by class -- source of truth is the Cars tab of the "Race Club Data
+    // Sheets" spreadsheet.
     var STATIC_CARS_BY_CLASS = {
       LMGT3: [
         { team: 'Garage 59', manufacturer: 'McLaren', car: 'McLaren 720S GT3 Evo', numbers: ['10', '58'],
@@ -841,26 +554,9 @@
       ]
     };
 
-    // No-season fallback (2026-09-13, Matt's call): rather than an empty
-    // "check back later" message, pick one class at random and up to 9
-    // real teams from it (fewer if the class has under 9 -- LMP2 has 6)
-    // and show those instead, in the exact same card design the live
-    // grid uses. Tagline reads "No season is running right now. Here are
-    // N of the M teams in the <year> <class> class." -- no separate note
-    // below the cards for this state (footnoteEl stays cleared). Unlike
-    // the live grid's per-card stagger (there's a network round-trip to
-    // hide latency behind there), every card here is built up front and
-    // faded in together on the next frame -- there's no
-    // server wait to mask, so a stagger would only slow the perceived
-    // load down for no reason.
-    // Phone-only total-card cap threshold (2026-09-27, Matt's ask: "on
-    // mobile can we make the total amount of MEET THE GRID cards being 6.
-    // Keep the tablet the same as the computer") -- 640px matches the same
-    // boundary used for the hero badge's mobile override and the League
-    // Hub mobile section (css/style.css), so "phone" means the same width
-    // everywhere on this page. Tablet (641-820px) and desktop are
-    // untouched by this -- they keep whatever the per-class cap already
-    // produces, same as before this change.
+    // No-season fallback: rather than an empty "check back later" message, pick one class at random
+    // and up to 9 real teams from it (fewer if the class has under 9 -- LMP2 has 6) and show those
+    // instead, in the exact same card design the live grid uses.
     function isPhoneWidth_() {
       return window.innerWidth <= 640;
     }
@@ -890,11 +586,10 @@
       layoutClassLabels_();
       footnoteEl.textContent = '';
 
-      // Two nested rAFs: the first lets the browser commit the cards'
-      // initial opacity:0/translateY styles (set by .rc-grid-teaser-card
-      // in CSS) to the render tree, the second then adds the visible
-      // class so the transition actually runs instead of the cards
-      // simply appearing already-faded-in on first paint.
+      // Two nested rAFs: the first lets the browser commit the cards' initial opacity:0/translateY
+      // styles (set by .rc-grid-teaser-card in CSS) to the render tree, the second then adds the
+      // visible class so the transition actually runs instead of the cards simply appearing
+      // already-faded-in on first paint.
       var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
@@ -921,20 +616,15 @@
       taglineEl.textContent = tagline;
 
       rowEl.innerHTML = '';
-      // Phone-only total cap to 6 cards (see isPhoneWidth_ above) -- a
-      // straight slice of the already-shuffled list, taken before the
-      // per-class grouping below so whatever classes land in the first 6
-      // keep their existing order/grouping. Tablet and desktop pass
-      // data.teams through unchanged (still just the per-class cap of 6
-      // each, same as before this change).
+      // Phone-only total cap to 6 cards (see isPhoneWidth_ above) -- a straight slice of the
+      // already-shuffled list, taken before the per-class grouping below so whatever classes land
+      // in the first 6 keep their existing order/grouping.
       var teams = (isPhoneWidth_() && data.teams.length > 6) ? data.teams.slice(0, 6) : data.teams;
 
-      // Group into one row per class, each with its own rotated label
-      // (2026-09-20, Matt's ask -- see buildClassGroup_ above). data.teams
-      // already arrives grouped contiguously by class (handleGetGridTeaser,
-      // Website.gs, concatenates each of data.activeClasses' own shuffled
-      // pool in turn) -- this just splits that single array back into per-
-      // class buckets, preserving the order classes first appear in.
+      // Group into one row per class, each with its own rotated label. data.teams already arrives
+      // grouped contiguously by class (handleGetGridTeaser, Website.gs, concatenates each of
+      // data.activeClasses' own shuffled pool in turn) -- this just splits that single array back
+      // into per- class buckets, preserving the order classes first appear in.
       var classOrder = [];
       var teamsByClass = {};
       teams.forEach(function (team) {
@@ -950,35 +640,20 @@
       });
       layoutClassLabels_();
 
-      // Footnote sentence removed (2026-09-08, Matt's call) -- footnoteEl
-      // stays declared/cleared in showFallback_ in case a future pass wants
-      // it again, but nothing populates it any more.
+      // Footnote sentence removed -- footnoteEl stays declared/cleared in showFallback_ in case a
+      // future pass wants it again, but nothing populates it any more.
 
-      // Fade cards in one by one, quickly, rather than all at once
-      // (Matt's ask). Each card starts at opacity:0/translateY via CSS
-      // (.rc-grid-teaser-card); adding .rc-grid-teaser-visible on a short
-      // stagger per card triggers its own transition.
+      // Fade cards in one by one, quickly, rather than all at once. Each card starts at
+      // opacity:0/translateY via CSS (.rc-grid-teaser-card); adding .rc-grid-teaser-visible on a
+      // short stagger per card triggers its own transition.
       var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
       cards.forEach(function (card, i) {
         setTimeout(function () { card.classList.add('rc-grid-teaser-visible'); }, i * 90);
       });
     }
 
-    // Client-side port of handleGetGridTeaser's own per-class shuffle-and-
-    // cap (Website.gs) -- needed only on the published-CSV path (2026-09-26,
-    // Matt's ask: "can we somehow integrate the index to use a CSV for the
-    // MEET THE GRID cards... so it doesn't call Apps Scripts for every
-    // index hit too?"). RC_GRID_TEASER_CSV_URL publishes the raw POOL
-    // (_rcBuildGridTeaserPool_'s shape: {hasSeason, seasonId, seasonName,
-    // seasonStartDate, activeClasses, totalCarCount, byClass}), not the
-    // already-shuffled-and-capped response handleGetGridTeaser normally
-    // returns -- the shuffle happens fresh on every real request there
-    // specifically so a visitor sees a different subset on each visit, and
-    // a published CSV is a flat file that can't do that server-side. This
-    // reproduces that same shuffle (Fisher-Yates, matching _rcShuffle_) and
-    // cap (6 per class, matching GRID_TEASER_PER_CLASS_CAP) here instead,
-    // then reassembles the exact {success:true, hasSeason:true, ...,
-    // teams} shape render() above already expects.
+    // Client-side port of handleGetGridTeaser's own per-class shuffle-and- cap (Website.gs) --
+    // needed only on the published-CSV path.
     function shuffle_(arr) {
       for (var i = arr.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
@@ -1021,20 +696,10 @@
     }
 
     if ('IntersectionObserver' in window) {
-      // rootMargin gives it a head start -- the fetch fires a bit before
-      // the section is actually on screen, so an Apps Script cold start
-      // usually has time to finish before the user actually scrolls this
-      // far, without spending that latency before the user has scrolled
-      // anywhere near here. Bumped from 800px to 2400px (2026-09-08,
-      // Matt's call: "make Meet The Grid populate faster") -- most of
-      // this section's own latency is now a cache hit server-side (see
-      // _rcGridTeaserPool_, Website.gs) rather than a fresh Sheets read,
-      // but Apps Script's own cold-start/dispatch overhead is still real
-      // and out of this page's control, so the only lever left here is
-      // starting the request as early as possible -- effectively as soon
-      // as the page loads for most viewport heights, so the fetch has the
-      // whole time the visitor spends reading the hero/tier sections
-      // above to finish before they ever reach this one.
+      // rootMargin gives it a head start -- the fetch fires a bit before the section is actually on
+      // screen, so an Apps Script cold start usually has time to finish before the user actually
+      // scrolls this far, without spending that latency before the user has scrolled anywhere near
+      // here.
       var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) { loadGridTeaser(); observer.disconnect(); }
@@ -1049,9 +714,8 @@
   })();
   </script>
 
-  <!-- Closing call to action. Dark band on purpose -- visual bookend to
-       the mid-banner and the dark tier cards above it, and a clear last
-       stop before the footer. -->
+  <!-- Closing call to action. Dark band on purpose -- visual bookend to the mid-banner and the
+     dark tier cards above it, and a clear last stop before the footer. -->
   <section class="rc-cta-section">
     <div class="rc-landing-inner rc-cta-inner">
       <h2>Ready To Race?</h2>

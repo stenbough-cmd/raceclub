@@ -1,62 +1,4 @@
-<!--
-  Race Club — login.html  (v0.2.5, GitHub Pages edition)
-
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  This is the source file's "LOGIN VIEW" pulled out into its own real
-  page. All the Sites-only workarounds (reportHeight()/postMessage resize
-  hack, scrollbar-hiding CSS, single #rc-root view-toggle div) are gone —
-  see the top-level migration notes for the full list. The actual login
-  logic (fetch to ?action=login with a text/plain POST body, the
-  EMAIL_NOT_VERIFIED inline "Resend verification email" flow, the
-  ACCOUNT_DISABLED mailto link) is preserved exactly, just reorganized:
-
-  - On success, the token is stored via setToken() (js/auth.js) and the
-    browser navigates to Account.html — the source rendered the profile
-    view in place instead, since it was still the same embed/page.
-  - On a "Resend verification email" click (either from a failed
-    EMAIL_NOT_VERIFIED login, or a fresh registration), the ProfileID is
-    stashed in sessionStorage under 'raceclub_pending_profile_id' and the
-    browser navigates to verify.html, which reads it from there. The
-    source kept this in a plain in-memory JS variable
-    (lastRegisteredUsername) since the code-entry view lived in the same
-    page; sessionStorage is the equivalent for a real page navigation and
-    is cleared automatically when the tab closes.
-  - A message can be queued for this page by another page via
-    sessionStorage's 'raceclub_login_message' key (used by the 30-minute
-    inactivity auto-logout in js/auth.js, and by verify.html after a
-    successful code verification) — read once on load, then cleared.
-
-  FLIP-BACK (this pass, Matt's direct call): login is by USERNAME again,
-  not email -- email's only job now is where a password-reset code gets
-  sent (reset-password.html). The field is Username, sent as the
-  `username` key, matching handleLogin. The "Resend verification email"
-  button now sends `username` too (handleResendVerification accepts
-  username as well as ProfileID, specifically for this screen, since a
-  driver who hasn't verified yet has no ProfileID typed in anywhere on
-  this page) and stashes the ProfileID the server hands back for
-  verify.html to use.
-
-  ADDED (this pass): a "Forgot password?" link under the "New here?" line,
-  pointing to the new reset-password.html.
-
-  TOASTS (this pass): every plain result message on this page (queued
-  cross-page messages, login failure, "could not reach the server", the
-  resend-code result) now goes through js/header.js's showToast() instead
-  of the old inline #rc-login-message box -- see that file's header
-  comment for why. The two exceptions are ACCOUNT_DISABLED (its mailto
-  link needs to stay clickable, which an auto-dismissing toast can't
-  guarantee) and EMAIL_NOT_VERIFIED (its message explains the Resend
-  button that appears right under it, and that button needs to still be
-  legible after the toast that announced it has faded) -- both keep their
-  explanatory text inline, right next to the control they belong to,
-  since a toast is the wrong home for text a driver still needs to be
-  reading when they act on it.
-
-  FIX (this pass): setProfileCache() was being handed the raw login
-  response ({success, token, profile}) instead of its nested .profile --
-  meant every field it cached (name, role) read back out blank on every
-  other page's header. Now passes data.profile through.
--->
+<!-- Race Club — login.html (v0.2.5, GitHub Pages edition) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,7 +39,7 @@
   </div>
 </div>
 
-<!-- Site footer -- on every page now (Matt's call), not just index.html. -->
+<!-- Site footer -- on every page now, not just index.html. -->
 <footer class="rc-site-footer">
   <div class="rc-site-footer-inner">
     <div class="rc-site-footer-legal">
@@ -124,22 +66,20 @@
     return;
   }
 
-  // Message queued by another page (inactivity timeout, verify.html
-  // success, reset-password.html success, etc.) -- shown once, then
-  // cleared.
+  // Message queued by another page (inactivity timeout, verify.html success, reset-password.html
+  // success, etc.) -- shown once, then cleared.
   var queuedMessage = sessionStorage.getItem('raceclub_login_message');
   if (queuedMessage) {
     showToast(queuedMessage, 'success');
     sessionStorage.removeItem('raceclub_login_message');
   }
 
-  // After a successful registration+verification, register.html stashes
-  // the username here (verify.html leaves it untouched, just carries it
-  // forward) so it can be pre-filled here and the password field focused,
-  // matching the source file's post-verify behavior of jumping straight
-  // back to a ready-to-type login form. reset-password.html only ever
-  // knows the driver's EMAIL, not their username, so it doesn't set this
-  // -- a password reset just queues the login-message toast instead.
+  // After a successful registration+verification, register.html stashes the username here
+  // (verify.html leaves it untouched, just carries it forward) so it can be pre-filled here and the
+  // password field focused, matching the source file's post-verify behavior of jumping straight
+  // back to a ready-to-type login form. reset-password.html only ever knows the driver's EMAIL, not
+  // their username, so it doesn't set this -- a password reset just queues the login-message toast
+  // instead.
   var prefillUsername = sessionStorage.getItem('raceclub_prefill_username');
   if (prefillUsername) {
     document.getElementById('rc-username').value = prefillUsername;
@@ -156,17 +96,6 @@
     btn.disabled = true;
     btn.textContent = 'Logging in...';
 
-    // Lock the username/password fields for the duration of the request
-    // (2026-09-01, Matt's call: "I should not be able to change anything
-    // in the username or password box until I either get through or am
-    // denied") -- previously only the button itself was disabled, so the
-    // text could still be edited while the login call was in flight.
-    // rc-field-locked (2026-09-02, Matt's call: "I want the text boxes
-    // grayed out, not just locked... obvious that nothing can be
-    // changed") -- same class the Edit Season wizard's own locked fields
-    // already use for this exact "grayed out, not just disabled" look
-    // (see .rc-field-locked in style.css), reused here instead of a
-    // second one-off style.
     var usernameField = document.getElementById('rc-username');
     var passwordField = document.getElementById('rc-password');
     usernameField.disabled = true;
@@ -177,16 +106,9 @@
     var username = usernameField.value.trim();
     var password = passwordField.value;
 
-    // IMPORTANT: Content-Type is deliberately 'text/plain' (see
-    // fetchApi in js/api.js), NOT 'application/json'. Apps Script Web
-    // Apps can't handle a CORS preflight (OPTIONS) request, which
-    // application/json would trigger. Do not change this.
-    // timeoutMs: RC_FETCH_TIMEOUT_MS_LOGIN, 1 minute (2026-09-27, Matt's
-    // ask: "as a general rule, let the login screen take up to a minute
-    // to try and contact the server before throwing an error") -- this
-    // call had no override before, so it inherited the 20s default sized
-    // for small dashboard reads, even though a cold Apps Script start plus
-    // the login handler's own Sheets lookup can take longer under load.
+    // IMPORTANT: Content-Type is deliberately 'text/plain' (see fetchApi in js/api.js), NOT
+    // 'application/json'. Apps Script Web Apps can't handle a CORS preflight (OPTIONS) request,
+    // which application/json would trigger.
     fetchApi('login', { method: 'POST', body: { username: username, password: password }, timeoutMs: RC_FETCH_TIMEOUT_MS_LOGIN })
       .then(function (data) {
         btn.disabled = false;
@@ -205,9 +127,8 @@
             msg.innerHTML = (data.message || 'This account has been disabled.') +
               ' <a href="mailto:' + data.contactEmail + '?subject=Race%20Club%20account">Contact administrator</a>';
           } else if (data.error === 'EMAIL_NOT_VERIFIED') {
-            // Stays inline too -- it explains the Resend button that
-            // appears right under it, which needs to still be legible
-            // after a toast would have already faded.
+            // Stays inline too -- it explains the Resend button that appears right under it, which
+            // needs to still be legible after a toast would have already faded.
             msg.className = 'rc-message rc-error';
             msg.textContent = data.message || 'Please verify your email before logging in.';
             resendBtn.style.display = 'inline-block';
@@ -216,21 +137,10 @@
           }
           return;
         }
-        // The login response IS a full profile payload plus a token (see
-        // the source file's buildProfilePayload comment) -- we don't need
-        // a second getProfile round-trip here. Account.html will pick the
-        // data back up itself via getProfile on load, same as any other
-        // direct visit to that page.
+        // The login response IS a full profile payload plus a token (see the source file's
+        // buildProfilePayload comment) -- we don't need a second getProfile round-trip here.
         setToken(data.token);
         setProfileCache(data.profile); // so the header avatar has something to show immediately, site-wide
-        // The login response IS the full profile payload already (see the
-        // comment above) -- stash it so Account.html can render straight
-        // from it instead of firing its own getProfile call right after
-        // redirecting here, which was a second full Apps Script round-trip
-        // back to back with the login call itself (each one can take
-        // several seconds on a cold start) and was the main reason login
-        // felt like it hung. sessionStorage, not localStorage, since this
-        // is meant to be read exactly once by the very next page load.
         sessionStorage.setItem('raceclub_fresh_profile', JSON.stringify(data));
         window.location.href = 'Account.html';
       })
@@ -245,9 +155,8 @@
       });
   });
 
-  // From the login screen, "Resend" sends a fresh code and jumps straight
-  // to verify.html's code-entry view, rather than just firing off an
-  // email and leaving the user on the login form.
+  // From the login screen, "Resend" sends a fresh code and jumps straight to verify.html's
+  // code-entry view, rather than just firing off an email and leaving the user on the login form.
   document.getElementById('rc-login-resend').addEventListener('click', function () {
     var username = document.getElementById('rc-username').value.trim();
     var btn = this;

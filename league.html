@@ -1,32 +1,4 @@
-<!--
-  Race Club -- league.html  (added 2026-09-18, reworked 2026-09-19)
-
-  Public ESPN-style league hub: a scrolling results/standings ticker under
-  the shared site header, a season hero band (season number + name,
-  "League Hub" title, and two stat strips built from real data -- This
-  Season and League Format), then League News full width, then Last Race
-  full width (replaces Recent Results, 2026-10-03, Matt's ask -- a top-3
-  podium + 4 "headline mention" tiles per class, see
-  claude/last-race-section-content-2026-10-03.md), then the Calendar/race
-  carousel full width (swapped with Manufacturers' Standings, 2026-10-03,
-  Matt's ask), then Leaderboard full width (one column per class,
-  2026-09-19), then Manufacturers' Standings. No separate Drivers section
-  (removed
-  2026-09-19 -- the Leaderboard already lists every driver per class). No
-  separate Points Tables panel either (also removed 2026-09-19) -- it's a
-  "View Points Tables" link at the bottom of the Leaderboard panel that
-  opens the same tables in a popup instead (js/league.js).
-  Public, no login required -- same "usable with no token at all"
-  convention as index.html and its getGridTeaser call (see js/league.js ->
-  getLeagueHub, Website.gs).
-
-  Header: loaded and mounted exactly like every other page on the site
-  (js/header.js's shared #rc-header div + renderHeader() call) -- it reads
-  getToken() itself to decide REGISTER/LOGIN vs. the account menu, no
-  page-specific logic needed here. The header itself stays the site's
-  standard light theme; only the content below it (css/league.css) goes
-  dark -- see that file's header comment for the full design rationale.
--->
+<!-- Race Club -- league.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,29 +11,17 @@
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
 <script src="js/reference-data.js"></script>
-<!-- edit-profile.js (added 2026-09-21) -- lets the header's Edit Profile
-     menu item open its popup in place on this page (dark-themed) instead
-     of navigating to Account.html first. See _rcOpenEditProfileFromHeader
-     (js/header.js) and js/edit-profile.js's own file header comment. -->
+<!-- edit-profile.js -- lets the header's Edit Profile menu item open its popup in place on this
+     page (dark-themed) instead of navigating to Account.html first. -->
 <script src="js/edit-profile.js"></script>
-<!-- rulebook-content.js (added 2026-10-03) -- RULEBOOK_SECTIONS, the same
-     source Account.html's own Rules and Regulations card reads from. Used
-     by the LEAGUE RULES tile's popup below (_rclOpenLeagueRulesModal,
-     js/league.js) so the two pages show identical rules content without
-     duplicating it here. -->
+<!-- rulebook-content.js -- RULEBOOK_SECTIONS, the same source Account.html's own Rules and
+     Regulations card reads from. -->
 <script src="js/rulebook-content.js"></script>
 </head>
 <body class="rc-league-page">
 
-<!-- Full-page loading overlay (2026-09-19, Matt's ask: "a loading
-     animation in the center of the page... with the page behind very
-     very dim until it loads and then displays the page") -- sits on top
-     of everything, including the header, until js/league.js's initial
-     getLeagueHub fetch resolves, then fades out and removes itself.
-     Reuses the same branded "starting grid lights" indicator every other
-     page's loading state already uses (.rc-startlights/.rc-startlight,
-     css/style.css, already loaded here) instead of inventing a new
-     spinner style for just this page. -->
+<!-- Full-page loading overlay -- sits on top of everything, including the header, until
+     js/league.js's initial getLeagueHub fetch resolves, then fades out and removes itself. -->
 <div class="rcl-page-loader" id="rcl-page-loader">
   <div class="rc-startlights">
     <div class="rc-startlight"></div>
@@ -74,11 +34,6 @@
 </div>
 
 <div id="rc-header"></div>
-<!-- League Hub badge next to the Race Club logo (2026-09-26) -- used to be
-     opt-in here via renderHeader({leagueHubBadge:true}), but it's
-     unconditional now (2026-09-27, Matt's ask: show it on every page's
-     navbar, not just this one) -- see js/header.js's renderHeader() and
-     .rc-header-leaguehub-* in css/style.css. -->
 <script>renderHeader();</script>
 
 <div class="rcl-ticker-wrap">
@@ -90,163 +45,72 @@
 
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
-    <!-- Fully reverted to the original text hero (2026-09-26, fourth
-         follow-up, Matt's ask: "put the RACE CLUB (in red) back where it
-         originally was, the LEAGUE HUB text (in white)... and the season
-         information below it where it originally was") -- the
-         league_hub_banner.png title swap and its absolute-positioned
-         overlap layout (from earlier the same day) are undone; back to
-         plain static "Race Club" eyebrow + plain "League Hub" <h1> text +
-         the season line, all in normal flow exactly as this hero looked
-         before any of that. league_hub_banner.png/league_hub_logo.png
-         stay on disk (still used by the header's leaguehub badge, see
-         js/header.js) -- just no longer referenced here. -->
     <div class="rcl-hero-eyebrow">Race Club</div>
-    <!-- Split into two weighted spans (2026-09-27, Matt's ask: "make the
-         LEAGUE part a lighter weight and make the HUB part heavier...
-         make sure the fonts are the same height") -- both spans inherit
-         the same font-family/font-size from .rcl-hero-title (see
-         css/league.css) and differ only in font-weight, so neither one
-         renders at a different size/height than the other. -->
+    <!-- Split into two weighted spans -- both spans inherit the same font-family/font-size from
+     .rcl-hero-title (see css/league.css) and differ only in font-weight, so neither one renders
+     at a different size/height than the other. -->
     <h1 class="rcl-hero-title"><span class="rcl-hero-title-league">League</span> <span class="rcl-hero-title-hub">Hub</span></h1>
     <div class="rcl-hero-season" id="rcl-hero-season"></div>
-    <!-- Season snapshot + League Format stats moved into the "View Season
-         Details" popup (2026-09-19, Matt's call) -- opened from a link at
-         the bottom of the Calendar panel, built by _rclOpenSeasonDetailsModal
-         in js/league.js. rcl-hero-sub is the plain-text fallback for
-         "no season" only; the stat-strip groups that used to sit here were
-         removed. -->
     <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
   </div>
 </section>
 
 <main class="rcl-main">
 
-  <!-- League News (25%) + LAST RACE (75%) side by side on one row
-       (2026-10-03, Matt's ask). News briefly had a stop as its own
-       full-width row (when Last Race first replaced Recent Results, since
-       Last Race needed to be its own full-width non-panel section rather
-       than squeezed into the old 2fr column -- see Matt's "I don't want
-       it to feel like a copy of the championship table" ask) -- now
-       they're back on one row together, just at a 1:3 ratio instead of
-       the old Recent-Results-era 1:2. See .rcl-news-lastrace-row,
-       css/league.css. -->
+  <!-- League News (25%) + LAST RACE (75%) side by side on one row. News briefly had a stop as its
+     own full-width row -- now they're back on one row together, just at a 1:3 ratio instead of
+     the old Recent-Results-era 1:2. -->
   <div class="rcl-row-full rcl-news-lastrace-row" id="rcl-news-lastrace-row">
     <section class="rcl-panel">
-      <!-- rcl-panel-head-news (2026-09-19) -- distinguishes this header
-           from other panels' identical .rcl-panel-head so the
-           news_banner.jpg background (see css/league.css) applies only
-           here, not to every panel header on the page. -->
+      <!-- rcl-panel-head-news -- distinguishes this header from other panels' identical
+     .rcl-panel-head so the news_banner.jpg background (see css/league.css) applies only here,
+     not to every panel header on the page. -->
       <div class="rcl-panel-head rcl-panel-head-news">
         <div class="rcl-panel-title">League News</div>
       </div>
       <div class="rcl-panel-body" id="rcl-news-body"></div>
     </section>
 
-    <!-- LAST RACE -- replaces Recent Results (2026-10-03, Matt's ask).
-         Back in a .rcl-panel (2026-10-03 follow-up, Matt's ask: "make
-         LAST RACE live in a container the same way RECENT RESULTS did
-         with a header and red line under the header") -- same
-         .rcl-panel-head/.rcl-panel-title/.rcl-panel-body shell as League
-         News, so the title + red underline comes for free. The INSIDE of
-         the container is still the podium-stand + mention-tile design,
-         not a return to the old plain POS/DRIVER/PTS row list Matt's
-         original "doesn't feel like a copy of the championship table"
-         ask was about -- that objection was to the row-list CONTENT, not
-         to having a card wrapper. One sub-section per class (Hypercar ->
-         LMP2 -> LMP3 -> LMGT3 -> LMGTE): a top-3 finishing podium
-         (podium-STAND graphic -- gold/silver/bronze rectangles of
-         different heights, place number centered in each stand, driver
-         identity above it) plus a 2x2 grid of "headline mention" tiles
-         (icon + title, the stat, then the driver(s) and a one-line
-         narrative) picked from the pool of 10 documented in the Project
-         doc claude/last-race-section-content-2026-10-03.md. Built
-         entirely from hub.lastRace.classes[].headlineMentions
-         (Results.gs now computes and attaches these server-side) by
-         _rclRenderLastRace_, js/league.js. -->
+    <!-- Back in a .rcl-panel -- same .rcl-panel-head/.rcl-panel-title/.rcl-panel-body shell as
+     League News, so the title + red underline comes for free. -->
     <section class="rcl-panel" id="rcl-last-race-panel">
       <div class="rcl-panel-head">
-        <!-- "Last Race" -> "Last Season" once hub.seasonEnded (2026-10-03,
-             "Last Season" redesign) -- _rclRenderLastRace_ (js/league.js)
-             swaps this text and switches the body to hub.lastSeason's
-             season-level podium + mentions instead of hub.lastRace's. -->
+        <!-- "Last Race" -> "Last Season" once hub.seasonEnded -- _rclRenderLastRace_ (js/league.js)
+     swaps this text and switches the body to hub.lastSeason's season-level podium + mentions
+     instead of hub.lastRace's. -->
         <div class="rcl-panel-title" id="rcl-last-race-title">Last Race</div>
       </div>
       <div class="rcl-panel-body" id="rcl-last-race"></div>
     </section>
   </div>
 
-  <!-- Race Carousel -- replaces the old boxed Calendar panel entirely
-       (2026-10-02, Matt's ask: "I'd like to build a better calendar
-       section instead of the typical container holding a calendar...
-       Can we make something like this live after the CHAMPIONSHIP
-       STANDINGS? It would live on the webpage, not confined to a
-       container and stretch as wide as it needs to" -- FIAWEC.com's own
-       calendar strip as the reference). Deliberately NOT a .rcl-panel --
-       no card border/background, and its scroll track is allowed to
-       bleed past .rcl-main's own max-width on wide viewports (see
-       .rcl-carousel-outer's breakout rule, css/league.css) exactly like
-       the reference: round entries can run off the left/right edge of
-       the page itself, not just the content column. Built from
-       hub.calendar (same data the old Calendar panel used) by
-       _rclRenderRaceCarousel, js/league.js.
-       Swapped with Manufacturers' Standings (2026-10-03, Matt's ask:
-       "swap manufacturers standings and calendar on league.html page") --
-       now sits directly under Last Race/League News, in the position
-       Manufacturers' Standings used to occupy; Championship Standings
-       (below) did not move. -->
+  <!-- Deliberately NOT a .rcl-panel -- no card border/background, and its scroll track is allowed
+     to bleed past .rcl-main's own max-width on wide viewports (see .rcl-carousel-outer's
+     breakout rule, css/league.css) exactly like the reference: round entries can run off the
+     left/right edge of the page itself, not just the content column. -->
   <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
 
-  <!-- LEADERBOARD -- full width again (2026-09-19, Matt's follow-up call:
-       "I don't want points tables listed in the league hub anymore... make
-       the LEADERBOARD container contain a column for every class... and
-       make it full width again"). Points Tables is no longer its own panel
-       here -- it's now a link at the bottom of this panel that opens it in
-       a popup (see #rcl-standings-points-link / _rclOpenPointsModal,
-       js/league.js), reusing the same tier-table markup that used to live
-       in the now-removed panel below this one. -->
+  <!-- LEADERBOARD -- full width again. -->
   <div class="rcl-row-full">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
-        <!-- "Championship Standings" -> "FINAL CHAMPIONSHIP STANDINGS" once
-             hub.seasonEnded (2026-10-03, "Last Season" redesign) -- text
-             swapped by _rclRenderStandings, js/league.js. -->
         <div class="rcl-panel-title" id="rcl-standings-title">Championship Standings</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
   </div>
 
-  <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by
-       championship points, as a plain podium (2026-10-02, Matt's ask: "I
-       wouldn't want it sitting in a container... I'd like for it to be in
-       between the recent results and championship standings containers
-       and live on the main page"). Deliberately NOT a .rcl-panel -- no
-       card border/background, just the title + podium sitting directly on
-       the page like the hero band above it. Built entirely from
-       hub.standings (already public, already carries each driver's
-       manufacturer + championshipPoints) -- no new server data needed.
-       See _rclRenderManufacturerStandings/_rclComputeManufacturerStandings_
-       in js/league.js.
-       Swapped with the Race Carousel (2026-10-03, Matt's ask: "swap
-       manufacturers standings and calendar on league.html page") -- now
-       sits directly below Championship Standings, in the position the
-       Race Carousel used to occupy. -->
+  <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by championship points, as a
+     plain podium. Deliberately NOT a .rcl-panel -- no card border/background, just the title +
+     podium sitting directly on the page like the hero band above it. -->
   <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
 
-  <!-- Website-specific containers -- 4 square image tiles, under the
-       Calendar/race carousel (2026-10-03, Matt's ask). Deliberately NOT
-       .rcl-panel cards -- each tile IS its own bordered/rounded box (see
-       .rcl-wc-tile, css/league.css), same corner/border treatment as
-       .rcl-panel but with no header strip, built/wired entirely by
-       _rclRenderWebsiteContainers, js/league.js. -->
+  <!-- Website-specific containers -- 4 square image tiles, under the Calendar/race carousel. -->
   <div class="rcl-row-full rcl-wc-grid" id="rcl-website-containers"></div>
 
-  <!-- Drivers section removed (2026-09-19, Matt's call: "drivers can be
-       seen by viewing the leaderboard") -- the Leaderboard panel above
-       already lists every driver per class, so a separate roster panel
-       was redundant. _rclRenderDrivers/#rcl-drivers-body removed to match
-       (js/league.js, css/league.css). -->
+  <!-- Drivers section removed -- the Leaderboard panel above already lists every driver per class,
+     so a separate roster panel was redundant. _rclRenderDrivers/#rcl-drivers-body removed to
+     match (js/league.js, css/league.css). -->
 </main>
 
 <!-- Site footer -- on every page. -->

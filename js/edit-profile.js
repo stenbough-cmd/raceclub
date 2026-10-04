@@ -1,46 +1,9 @@
-/*
-  Race Club — js/edit-profile.js
+// Race Club — js/edit-profile.js
+// Lets the Edit Profile popup open IN PLACE on index.html and league.html.
 
-  Lets the Edit Profile popup open IN PLACE on index.html and league.html
-  (2026-09-21, Matt's ask: "make it so that the popup appears on the index
-  or league page, with league styling, if the user is on the league or
-  index page" -- previously _rcOpenEditProfileFromHeader (js/header.js)
-  always navigated to Account.html first and opened its own copy of this
-  modal there, same as Edit Profile still does when clicked FROM
-  Account.html or from login/register/verify/reset-password, none of
-  which show the account dropdown at all when logged out).
-
-  This is a deliberate PARALLEL implementation of Account.html's own
-  openEditProfileModal/openAvatarPickerModal/passwordChangeSection, not a
-  shared one -- Account.html's copies stay exactly as they are (still used
-  when Edit Profile is opened from Account.html's own sidebar, or via the
-  header dropdown while already on Account.html). Duplicating this one
-  popup is simpler and lower-risk than refactoring Account.html's already
-  very large file to import from here, and this file only ever loads on
-  index.html/league.html (see those pages' <script> tags), so there's no
-  double-definition risk with Account.html's own functions of the same
-  name.
-
-  Themed to match whichever page it's opened from -- same
-  document.body.classList.contains('rc-league-page') branch
-  _rcOpenFeedbackModal (js/header.js) already uses -- via _rcEPShowModal
-  below, which builds either the light .rc-modal shell or the dark
-  .rcl-modal-dialog shell. Both branches use the NARROW width (460px,
-  .rcl-modal-dialog-narrow on the dark side -- see css/league.css) to
-  match Account.html's own Edit Profile/Change Avatar popups exactly,
-  which use the plain (non -wide) .rc-modal.
-
-  Depends on (all already loaded before this file on both pages -- see
-  <script src="js/..."> order in index.html/league.html's <head>):
-  js/api.js (fetchApi), js/auth.js (getToken/setProfileCache), js/header.js
-  (showToast, _rcHeaderInitials, renderHeader), js/reference-data.js
-  (COUNTRIES, DRIVER_NAME_SUFFIXES, getTimezoneList, timezoneLabel).
-*/
-
-// Local el()/escapeHtml() -- same tiny helpers Account.html's own script
-// scope has, duplicated here rather than shared since this file has its
-// own global scope on the pages that load it (index.html/league.html
-// never load Account.html's inline script).
+// Local el()/escapeHtml() -- same tiny helpers Account.html's own script scope has, duplicated here
+// rather than shared since this file has its own global scope on the pages that load it
+// (index.html/league.html never load Account.html's inline script).
 function _rcEP_el(tag, style, html) {
   var e = document.createElement(tag);
   if (style) {
@@ -59,10 +22,9 @@ var RC_AVATAR_FILENAMES_ = (function () {
   return list;
 })();
 
-// Same avatar-or-initials rendering as Account.html's buildAvatarCircle(),
-// including the rcAvatarSrc_/rcWireAvatarFallback_ resolve-then-default-
-// then-initials chain (both globals from header.js -- see the comment on
-// rcAvatarSrc_ there for the three avatarFilename shapes this now covers).
+// Same avatar-or-initials rendering as Account.html's buildAvatarCircle(), including the
+// rcAvatarSrc_/rcWireAvatarFallback_ resolve-then-default- then-initials chain (both globals from
+// header.js.
 function _rcEP_buildAvatarCircle(profile, extraClass) {
   var circle = _rcEP_el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
   var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
@@ -83,28 +45,16 @@ function _rcEP_buildAvatarCircle(profile, extraClass) {
   return circle;
 }
 
-// Generic modal shell, themed to whichever page this is (light .rc-modal
-// on every page except league.html, dark .rcl-modal-dialog on
-// league.html) -- same branch and manual document.createElement approach
-// _rcOpenFeedbackModal (js/header.js) already uses. Same "closable only
-// via the X button" lockdown as every modal on the site. opts.wide/narrow
-// mirror Account.html's showModal(title, {wide}) -- narrow (the default)
-// matches Account's plain .rc-modal (460px); wide matches .rc-modal-wide
-// (820px, same width as the dark shell's own default, so wide needs no
-// extra dark-side class).
+// Generic modal shell, themed to whichever page this is (light .rc-modal on every page except
+// league.html, dark .rcl-modal-dialog on league.html) -- same branch and manual
+// document.createElement approach _rcOpenFeedbackModal (js/header.js) already uses.
 function _rcEPShowModal(title, opts) {
   opts = opts || {};
   var isDark = document.body.classList.contains('rc-league-page');
 
   var backdrop = document.createElement('div');
-  // rcl-modal-overlay-over-nav (2026-09-21, Matt's ask: "only when EDIT
-  // PROFILE and FEEDBACK popups are visible on the league page, dim the
-  // navbar with the main league page... keep the other popups how they
-  // are") -- sits above .rc-fixed-header (css/style.css, z-index:1000)
-  // instead of below it, so the navbar dims along with the rest of the
-  // page. Every popup built with this shared shell (Edit Profile, Change
-  // Avatar, and the brief loading state before either) gets this, since
-  // they're all the same "Edit Profile" flow.
+  // rcl-modal-overlay-over-nav -- sits above .rc-fixed-header (css/style.css, z-index:1000) instead
+  // of below it, so the navbar dims along with the rest of the page.
   backdrop.className = isDark ? 'rcl-modal-overlay rcl-modal-overlay-over-nav' : 'rc-modal-backdrop';
   var modal = document.createElement('div');
   modal.className = isDark
@@ -150,10 +100,9 @@ function _rcEPShowModal(title, opts) {
   return { close: close, body: body, el: modal };
 }
 
-// Same fixed avatar grid as Account.html's openAvatarPickerModal(), just
-// built on _rcEPShowModal/_rcEP_el instead of showModal/el, and with no
-// reload-the-page step after saving (there's no profile page here to
-// refresh -- the header's own avatar updates immediately via
+// Same fixed avatar grid as Account.html's openAvatarPickerModal(), just built on
+// _rcEPShowModal/_rcEP_el instead of showModal/el, and with no reload-the-page step after saving
+// (there's no profile page here to refresh -- the header's own avatar updates immediately via
 // setProfileCache + renderHeader(), same as it always does).
 function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   var body = _rcEP_el('div');
@@ -190,13 +139,11 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   refreshSelection();
   body.appendChild(grid);
 
-  // Paste-your-own-image-link row -- same shape as Account.html's own copy
-  // of this popup (openAvatarPickerModal), see its comment for the full
-  // reasoning on why "https://" is a separate non-editable label rather
-  // than part of the input's own value.
-  //
-  // Margin-top added (2026-10-03, Matt's ask), same as Account.html's own
-  // copy, so this line isn't sitting right against the bottom of the grid.
+  // Paste-your-own-image-link row -- same shape as Account.html's own copy of this popup
+  // (openAvatarPickerModal), see its comment for the full reasoning on why "https://" is a separate
+  // non-editable label rather than part of the input's own value.
+  // Margin-top added, same as Account.html's own copy, so this line isn't sitting right against the
+  // bottom of the grid.
   var urlHint = _rcEP_el('p', 'rc-hint', 'Or paste a link to your own image:');
   urlHint.style.marginTop = '18px';
   body.appendChild(urlHint);
@@ -217,8 +164,8 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   });
   urlRow.appendChild(urlInput);
   body.appendChild(urlRow);
-  // Image restriction note (2026-10-03, Matt's ask), same as Account.html's
-  // own copy -- a note only for now, not enforced client- or server-side.
+  // Image restriction note, same as Account.html's own copy -- a note only for now, not enforced
+  // client- or server-side.
   body.appendChild(_rcEP_el('div', 'rc-hint', 'Image must be square and under 5MB.'));
 
   var saveBtn = _rcEP_el('button', 'rc-btn-primary', 'Save Avatar');
@@ -278,16 +225,12 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
   var pickerModal = _rcEPShowModal('Change Avatar', { bodyEl: body });
 }
 
-// Same Change Password form as Account.html's passwordChangeSection(),
-// minus the rcReloadAfterSave() call on success (that function navigates
-// to Account.html#<section>, which makes no sense to fire from index.html
-// or league.html -- a toast alone is the confirmation here).
-//
-// noOwnButton (2026-09-27, Matt's ask, mirroring the same change in
-// Account.html's passwordChangeSection) -- when true, renders just the
-// three fields with no button of its own; _rcEPOpenEditProfileModal below
-// reads them via .rc-pw-current/.rc-pw-new/.rc-pw-confirm and drives the
-// change through its own SAVE CHANGES button instead.
+// Same Change Password form as Account.html's passwordChangeSection(), minus the
+// rcReloadAfterSave() call on success (that function navigates to Account.html#<section>, which
+// makes no sense to fire from index.html or league.html -- a toast alone is the confirmation here).
+// noOwnButton -- when true, renders just the three fields with no button of its own;
+// _rcEPOpenEditProfileModal below reads them via .rc-pw-current/.rc-pw-new/.rc-pw-confirm and
+// drives the change through its own SAVE CHANGES button instead.
 function _rcEPPasswordChangeSection(token, opts) {
   opts = opts || {};
   var box = document.createElement('div');
@@ -317,13 +260,9 @@ function _rcEPPasswordChangeSection(token, opts) {
   return box;
 }
 
-// Same form as Account.html's openEditProfileModal() -- Username / First /
-// Last / Suffix / Email / Location / Time Zone, posting to
-// updateOwnProfile, plus the Change Password section embedded underneath.
-// No rcReloadAfterSave() here (nothing to reload) -- a success toast is
-// the confirmation instead, and the header's own name/avatar update
-// immediately via setProfileCache + renderHeader(), same as everywhere
-// else on the site.
+// Same form as Account.html's openEditProfileModal() -- Username / First / Last / Suffix / Email /
+// Location / Time Zone, posting to updateOwnProfile, plus the Change Password section embedded
+// underneath.
 function _rcEPOpenEditProfileModal(profile, token) {
   if (!profile || !token) return;
 
@@ -401,9 +340,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var username = _rcEP_el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
   form.appendChild(username);
 
-  // First Name / Last Name / Suffix share one row, First/Last 40% each and
-  // Suffix filling the rest (2026-09-27, Matt's ask, mirroring
-  // Account.html's own openEditProfileModal).
+  // First Name / Last Name / Suffix share one row, First/Last 40% each and Suffix filling the rest.
   var nameRow = _rcEP_el('div', 'rc-field-trio-name');
   var firstCol = _rcEP_el('div');
   firstCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'First Name'));
@@ -458,13 +395,10 @@ function _rcEPOpenEditProfileModal(profile, token) {
   });
   form.appendChild(timeZone);
 
-  // Email-notification opt-in checkbox removed (2026-09-24, Matt's call:
-  // eliminate the in-app notification system entirely, moving to an
-  // external Discord bot).
+  // Email-notification opt-in checkbox removed.
 
   body.appendChild(form);
-  // noOwnButton: true (2026-09-27, Matt's ask, mirroring Account.html) --
-  // SAVE CHANGES below drives both saves together now.
+  // noOwnButton: true -- SAVE CHANGES below drives both saves together now.
   var pwBox = _rcEPPasswordChangeSection(token, { noOwnButton: true });
   body.appendChild(pwBox);
   var pwCurrent = pwBox.querySelector('.rc-pw-current');
@@ -472,13 +406,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var pwConfirm = pwBox.querySelector('.rc-pw-confirm');
   pwCurrent.addEventListener('input', function () { pwCurrent.classList.remove('rc-field-invalid'); });
 
-  // SAVE CHANGES moved to the bottom of the popup, below Change Password
-  // (2026-10-03, Matt's ask, mirroring Account.html) -- the old divider
-  // that used to separate it from the password section above is gone now
-  // that the button itself sits below that section. Physically outside
-  // <form> but still wired to it via the HTML5 form="" attribute, so both
-  // a click here and pressing Enter in any of the fields above still fire
-  // the form's own 'submit' listener below.
+  // Physically outside <form> but still wired to it via the HTML5 form="" attribute, so both a
+  // click here and pressing Enter in any of the fields above still fire the form's own 'submit'
+  // listener below.
   form.id = form.id || ('rc-edit-profile-form-' + Date.now());
   var saveBtn = _rcEP_el('button', null, 'Save Changes');
   saveBtn.type = 'submit';
@@ -497,9 +427,6 @@ function _rcEPOpenEditProfileModal(profile, token) {
     showToast(msg, 'error');
   }
 
-  // No longer optimistic (2026-09-27, Matt's ask: the button should say
-  // "Saving Changes..." and actually wait up to a minute for the server to
-  // confirm rather than closing first and quietly reverting on failure).
   function saveProfileFieldsAndClose() {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving Changes...';
@@ -544,11 +471,9 @@ function _rcEPOpenEditProfileModal(profile, token) {
       return;
     }
 
-    // Password change folded into SAVE CHANGES (2026-09-27, Matt's ask),
-    // mirroring Account.html's own openEditProfileModal exactly -- see its
-    // comment for the full reasoning. The button waits on the server (up
-    // to RC_FETCH_TIMEOUT_MS_PROFILE) and shows "Saving Changes..." the
-    // whole time (2026-09-27, Matt's follow-up ask).
+    // Password change folded into SAVE CHANGES, mirroring Account.html's own openEditProfileModal
+    // exactly. The button waits on the server (up to RC_FETCH_TIMEOUT_MS_PROFILE) and shows "Saving
+    // Changes..." the whole time.
     var changingPassword = !!(pwNew.value || pwConfirm.value);
     if (!changingPassword) {
       saveProfileFieldsAndClose();
@@ -586,15 +511,12 @@ function _rcEPOpenEditProfileModal(profile, token) {
   });
 }
 
-// Entry point -- called by _rcOpenEditProfileFromHeader (js/header.js)
-// when window.rcOpenEditProfileModal (Account.html's own bridge) isn't
-// present, i.e. whenever Edit Profile is opened from a page other than
-// Account.html. getProfileCache() (js/auth.js) only carries
-// displayName/role/avatarFilename -- just enough for the header to render
-// -- not the full editable field set this form needs, so this always
-// fetches a fresh profile first rather than trusting that thin cache.
-// Opens the modal immediately with a small loading state so the click
-// feels instant, then swaps in the real form once the fetch resolves.
+// Entry point -- called by _rcOpenEditProfileFromHeader (js/header.js) when
+// window.rcOpenEditProfileModal (Account.html's own bridge) isn't present, i.e. whenever Edit
+// Profile is opened from a page other than Account.html. getProfileCache() (js/auth.js) only
+// carries displayName/role/avatarFilename -- just enough for the header to render -- not the full
+// editable field set this form needs, so this always fetches a fresh profile first rather than
+// trusting that thin cache.
 function rcOpenEditProfileModalInPlace() {
   var token = (typeof getToken === 'function') ? getToken() : null;
   if (!token) return;

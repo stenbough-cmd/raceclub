@@ -1,86 +1,31 @@
-/*
-  Race Club — js/api.js  (v0.2.5, GitHub Pages edition)
+// Race Club — js/api.js (v0.2.5, GitHub Pages edition)
+// WHAT CHANGED VS. THE GOOGLE SITES VERSION: The old single-file embed (Login.html) declared
+// API_BASE_URL once at the top of its one giant <script> block, because everything lived in one
+// file.
 
-  WHAT CHANGED VS. THE GOOGLE SITES VERSION:
-  The old single-file embed (Login.html) declared API_BASE_URL once at the
-  top of its one giant <script> block, because everything lived in one
-  file. Now that login/register/verify/profile are real separate .html
-  pages on the same origin, API_BASE_URL and the fetch helper live here in
-  one shared file that every page loads via <script src="js/api.js">, so
-  there's still only ONE place to paste the deployment URL, and no
-  behavior is duplicated per page.
-
-  The request pattern itself (action query param, token in the query
-  string, text/plain POST body to dodge Apps Script's lack of CORS
-  preflight support) is copied verbatim from the source file — see
-  fetchApi() below.
-*/
-
-// ---- CONFIGURE THIS ONE LINE ----
-// Paste your deployed Apps Script Web App URL here (Deploy > Manage
-// deployments > Web app > URL). Every page on this site reads it from
-// here — you only need to change it in this one place.
+// ---- CONFIGURE THIS ONE LINE ---- Paste your deployed Apps Script Web App URL here (Deploy >
+// Manage deployments > Web app > URL). Every page on this site reads it from here — you only need
+// to change it in this one place.
 var API_BASE_URL = 'https://script.google.com/macros/s/AKfycbz3jhxWDanYIywi8vn2YYQVwq2MO68tZA4RJpj5fXmUa5ckLo0QpT_lrAwqpsHPnQUV/exec';
 // ----------------------------------
 
-// True when API_BASE_URL is still the placeholder above. Pages should
-// check this and show a clear setup message instead of silently failing
-// (same degrade-gracefully behavior as the source file).
+// True when API_BASE_URL is still the placeholder above. Pages should check this and show a clear
+// setup message instead of silently failing (same degrade-gracefully behavior as the source file).
 function apiBaseUrlIsUnset() {
   return !API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') !== -1;
 }
 
-// ---- PUBLISHED-CSV CONFIG (2026-09-26, Matt's ask: run League Hub and Meet
-// The Grid off a published Google Sheets CSV instead of Apps Script) ----
-// Leave either of these blank until you've done the one-time manual step in
-// Google Sheets: open the sheet, File > Share > Publish to web, pick the
-// tab named ("PublishedLeagueHub" or "PublishedGridTeaser"), format
-// "Comma-separated values (.csv)", check "Automatically republish when
-// changes are made," then Publish -- paste the URL it gives you here. Both
-// tabs are created automatically the next time their normal Apps Script
-// cache gets refreshed (an import, a season action, a Cars catalog change,
-// etc.) -- see _rcPublishJsonToSheet_ in Website.gs -- so there's nothing to
-// create by hand, only to publish.
-//
-// Leaving either blank is completely safe: fetchPublishedJson() below
-// rejects immediately with RC_NO_CSV_URL, and every caller (league.js,
-// index.html) catches that and falls straight through to the existing
-// fetchApi() call, exactly as if this feature didn't exist yet.
+// ---- PUBLISHED-CSV CONFIG ---- Leave either of these blank until you've done the one-time manual
+// step in Google Sheets: open the sheet, File > Share > Publish to web, pick the tab named
+// ("PublishedLeagueHub" or "PublishedGridTeaser"), format "Comma-separated values (.csv)", check
+// "Automatically republish when changes are made," then Publish -- paste the URL it gives you here.
 var RC_LEAGUE_HUB_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=37344457&single=true&output=csv';
 var RC_GRID_TEASER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=1748486478&single=true&output=csv';
 
 // fetchPublishedJson(csvUrl) -> Promise<Object>
-//
-// Fetches a Google Sheets "Publish to the web" CSV URL directly -- a plain
-// static file served by Google's own servers, no Apps Script execution at
-// all -- and reassembles it back into the JSON object it was published
-// from. See _rcPublishJsonToSheet_'s long comment in Website.gs for the
-// write side of this: the payload is JSON.stringify()'d, chunked into
-// <=45,000-character pieces (Sheets' single-cell limit is 50,000), and
-// written one chunk per row in column A of a dedicated tab with no header
-// row.
-//
-// Google's CSV export wraps any cell containing a comma, quote, or newline
-// in double quotes and doubles internal quotes (standard CSV escaping).
-// Since JSON.stringify() never emits a literal newline character inside a
-// string (only the escaped two-character sequence \n), every chunk is
-// guaranteed to come back as exactly one line in the exported CSV -- so
-// reassembly is just: split on newlines, strip a wrapping pair of quotes
-// and un-double any doubled quotes on each line, concatenate, then
-// JSON.parse the result.
-//
-// Rejects (never resolves with a broken payload) on:
-//   RC_NO_CSV_URL          -- csvUrl is blank/unset (feature not turned on
-//                             yet, or Matt hasn't pasted the URL in above)
-//   RC_CSV_FETCH_FAILED_<status> -- the fetch itself failed or came back
-//                             non-OK (e.g. the tab was unpublished)
-//   RC_CSV_EMPTY            -- fetch succeeded but the body was blank
-//                             (tab exists but was never actually written,
-//                             or was cleared)
-//   (a JSON.parse SyntaxError) -- reassembled text wasn't valid JSON
-// Every caller is expected to .catch() any of these and fall back to the
-// normal fetchApi() call -- this is a pure performance optimization, never
-// the only path to the data.
+// Fetches a Google Sheets "Publish to the web" CSV URL directly -- a plain static file served by
+// Google's own servers, no Apps Script execution at all -- and reassembles it back into the JSON
+// object it was published from.
 function fetchPublishedJson(csvUrl) {
   if (!csvUrl) return Promise.reject(new Error('RC_NO_CSV_URL'));
 
@@ -107,155 +52,60 @@ function fetchPublishedJson(csvUrl) {
   });
 }
 
-// How long a single attempt is allowed to hang before it's treated as
-// failed (2026-09-14, Matt's report: "the dashboard sometimes never loads
-// anything"). Apps Script Web Apps queue same-user requests rather than
-// truly running them in parallel (see the long comment on
-// fetchDashboardData in Account.html), so a request can sit waiting on the
-// server's own queue far longer than a normal page load should ever
-// tolerate. Previously fetchApi had NO timeout at all -- a slow/stuck
-// request just left whatever was waiting on it (most visibly, the
-// Dashboard's "Loading your dashboard..." spinner) spinning forever, with
-// nothing ever resolving or rejecting to say otherwise. 20s is generous
-// (Apps Script cold starts genuinely can take several seconds) while still
-// being far short of "the driver gives up and reloads."
+// How long a single attempt is allowed to hang before it's treated as failed.
 var RC_FETCH_TIMEOUT_MS = 20000;
 
-// Longer budget for the handful of POST actions that are genuinely heavy,
-// multi-row writes rather than a normal single-row save -- createSeason/
-// updateSeason especially, which fan a single admin submit out into many
-// Rounds/Races/bye-week/special-event rows server-side (2026-09-19, Matt's
-// report: "unable to save to server, your season is saved" right after a
-// Create Season that actually went through). The default 20s budget above
-// was sized for dashboard-style reads, not this -- a full season with a
-// long calendar can genuinely take longer than that to finish writing, so
-// the client was aborting and reporting failure on writes that were still
-// quietly completing on the server. Passed as options.timeoutMs on the
-// specific fetchApi calls that need it; every other caller keeps the
-// default above.
+// Longer budget for the handful of POST actions that are genuinely heavy, multi-row writes rather
+// than a normal single-row save -- createSeason/ updateSeason especially, which fan a single admin
+// submit out into many Rounds/Races/bye-week/special-event rows server-side.
 var RC_FETCH_TIMEOUT_MS_LONG = 45000;
 
-// Import XML's own budget, longer still (2026-09-24, Matt's ask) -- a race
-// results file is the single heaviest write on the site (thousands of Lap
-// rows, plus the race report build on top of that), so it gets its own
-// timeout rather than sharing RC_FETCH_TIMEOUT_MS_LONG above with the
-// merely-heavy writes (createSeason/updateSeason, adminCreateNews/
-// adminUpdateNews). Only openImportXmlModal's own _rcFetchOnce_ call
-// (Account.html) uses this -- bumping it doesn't touch how long any other
-// action waits before giving up.
+// Import XML's own budget, longer still -- a race results file is the single heaviest write on the
+// site (thousands of Lap rows, plus the race report build on top of that), so it gets its own
+// timeout rather than sharing RC_FETCH_TIMEOUT_MS_LONG above with the merely-heavy writes
+// (createSeason/updateSeason, adminCreateNews/ adminUpdateNews).
 var RC_FETCH_TIMEOUT_MS_IMPORT = 120000;
 
-// Recompute Season's own budget (2026-09-26, Matt's report: "Recompute
-// Season says it cannot reach the server when I click on it and wait" --
-// this call had NO timeoutMs override at all, so it inherited the 20s
-// default meant for small dashboard reads. handleAdminRecomputeSeason
-// (Seasons.gs) re-runs SeasonHistory/StandingsCache for every completed
-// round in the season in sequence -- real per-round Sheets I/O, the same
-// order of magnitude as a single round import above -- so any season past
-// a couple of rounds was blowing straight through 20s: the client aborted
-// and reported failure while the script kept quietly finishing server-
-// side. 2 minutes, matching Matt's own ask for how long the "Recomputing
-// Season Standings..." popup (see openSeasonManagementSection's
-// recomputeBtn, Account.html) should be allowed to sit up.
 var RC_FETCH_TIMEOUT_MS_RECOMPUTE = 120000;
 
-// Protest submission's own budget, 1 minute (2026-09-27, Matt's ask:
-// "increase wait time when submitting a protest to 1 minute before timing
-// out and throwing a server error") -- submitProtest had no timeoutMs
-// override at all before this, so it inherited the 20s default meant for
-// small dashboard reads even though filing a protest can take longer under
-// load. Only the File Protest modal's submit call (Account.html) uses
-// this.
+// Protest submission's own budget, 1 minute -- submitProtest had no timeoutMs override at all
+// before this, so it inherited the 20s default meant for small dashboard reads even though filing a
+// protest can take longer under load.
 var RC_FETCH_TIMEOUT_MS_PROTEST = 60000;
 
-// Edit Profile's SAVE CHANGES budget, 1 minute (2026-09-27, Matt's ask:
-// "give the system up to 1 minute for server confirmation so it doesn't
-// timeout too early should the server be busy") -- updateOwnProfile and
-// changeOwnPassword both had no timeoutMs override at all before this, so
-// they inherited the 20s default meant for small dashboard reads. Used by
-// the Edit Profile popup's SAVE CHANGES button (Account.html and
-// edit-profile.js), which now waits on the server and shows "Saving
-// Changes..." instead of closing optimistically before confirmation.
+// Edit Profile's SAVE CHANGES budget, 1 minute -- updateOwnProfile and changeOwnPassword both had
+// no timeoutMs override at all before this, so they inherited the 20s default meant for small
+// dashboard reads.
 var RC_FETCH_TIMEOUT_MS_PROFILE = 60000;
 
-// Login's own budget, 1 minute (2026-09-27, Matt's ask: "as a general
-// rule, let the login screen take up to a minute to try and contact the
-// server before throwing an error") -- the login POST had no timeoutMs
-// override at all before this, so it inherited the 20s default meant for
-// small dashboard reads, even though a cold Apps Script start plus the
-// login handler's own Sheets lookup can genuinely take longer than that
-// under load. Only login.html's login form submit uses this.
+// Login's own budget, 1 minute -- the login POST had no timeoutMs override at all before this, so
+// it inherited the 20s default meant for small dashboard reads, even though a cold Apps Script
+// start plus the login handler's own Sheets lookup can genuinely take longer than that under load.
 var RC_FETCH_TIMEOUT_MS_LOGIN = 60000;
 
-// Apply Ruling's own budget, 2 minutes (2026-09-27, Matt's ask: "add 2
-// minutes timeout for applying rulings from the league tools editing
-// popup") -- adminRuleOnProtest had no timeoutMs override at all before
-// this, so a batch of rulings (openRoundReviewModal's APPLY RULING button,
-// Account.html, fires one adminRuleOnProtest call per selected protest via
-// Promise.all) inherited the 20s default meant for small dashboard reads.
-// Matching RC_FETCH_TIMEOUT_MS_RECOMPUTE/IMPORT above rather than sharing
-// either of theirs -- same reasoning: its own named budget so raising it
-// later doesn't also change how long some other action waits.
+// Apply Ruling's own budget, 2 minutes -- adminRuleOnProtest had no timeoutMs override at all
+// before this, so a batch of rulings (openRoundReviewModal's APPLY RULING button, Account.html,
+// fires one adminRuleOnProtest call per selected protest via Promise.all) inherited the 20s default
+// meant for small dashboard reads.
 var RC_FETCH_TIMEOUT_MS_RULINGS = 120000;
 
-// Integrity Check's own budget, 5 minutes (2026-09-30, Matt's explicit ask:
-// "I'd like the timeout on the refresh to be 5 minutes so I'm not getting an
-// error while the check is running") -- adminIntegrityCheck (Seasons.gs)
-// runs a full unsplit pass over the active season: every cache refresh,
-// every completed round's StandingsCache/public-round-cache rebuild, and a
-// full Registrations/Teams/Cars/StandingsCache referential scan, all in one
-// request (Matt's call against splitting it into smaller/faster buttons --
-// see the Admin section's Integrity Check button, Account.html). The
-// longest of this file's existing named budgets (RC_FETCH_TIMEOUT_MS_RULINGS/
-// _RECOMPUTE/_IMPORT) is 2 minutes; this one deliberately gets its own
-// separate, longer budget rather than sharing any of theirs, so raising it
-// later never changes how long some other action waits.
+// Integrity Check's own budget, 5 minutes -- adminIntegrityCheck (Seasons.gs) runs a full unsplit
+// pass over the active season: every cache refresh, every completed round's
+// StandingsCache/public-round-cache rebuild, and a full Registrations/Teams/Cars/StandingsCache
+// referential scan, all in one request.
 var RC_FETCH_TIMEOUT_MS_INTEGRITY = 300000;
 
-// Automatic retries after a short, then longer, pause (2026-09-14, same
-// report: "no season is currently open" shown when one genuinely was, plus
-// a follow-up report that a single retry still wasn't enough headroom
-// under real load). A transient failure -- a timeout, a dropped
-// connection, or Apps Script returning a non-JSON error page under load --
-// used to be indistinguishable from a real "no" answer by the time it
-// reached calling code, since every caller across the site treats a
-// rejected fetchApi promise as "there's nothing here" (see e.g.
-// registrationStatusCard's renderUnregistered in Account.html). Two
-// retries, backing off (700ms, then 2500ms) rather than hammering
-// immediately, gives Apps Script's own same-user request queue real time
-// to drain between attempts instead of just adding a 3rd request to the
-// same pileup that likely caused the failure in the first place.
+// Automatic retries after a short, then longer, pause.
 var RC_FETCH_RETRY_DELAYS_MS = [700, 2500];
 
-// GET-only (see fetchApi below for why) -- every GET action in this
-// codebase is a pure read, so retrying one is always safe: worst case, it
-// re-reads data that hasn't changed. A POST is never blindly retried here.
-
-// Retry-storm risk (2026-09-23, Matt's report: doGet executions kept
-// piling up in the Apps Script log continuously while just sitting on the
-// Dashboard, not clicking anything). Because "Execute as: Me" serializes
-// EVERY visitor's request through one shared queue, a 20s client-side
-// timeout can fire simply because a request sat in that queue behind
-// other traffic, not because anything is actually stuck -- the abandoned
-// attempt keeps running server-side (see the "Execute as: Me" comments
-// elsewhere in this codebase) while the retry above adds a second request
-// to the very queue that caused the delay. For a one-off user action
-// that's still the right trade (see the 2026-09-14 report above). For a
-// SILENT, UNPROMPTED BACKGROUND POLL it's pure downside: a missed tick is
-// invisible to the driver (the next poll picks up whatever changed) but
-// every retried tick compounds the exact congestion that made it slow in
-// the first place. options.noRetry (see fetchApi's own doc comment below)
-// opts a caller out of this whole retry path -- the header's old 45s
-// notification-bell poll used to be the one caller of this; the bell
-// itself is gone (2026-09-24, Matt's call: eliminate the in-app
-// notification system entirely, moving to an external Discord bot), but
-// noRetry is left in place as general infrastructure for any future
-// silent background poll.
+// GET-only (see fetchApi below for why) -- every GET action in this codebase is a pure read, so
+// retrying one is always safe: worst case, it re-reads data that hasn't changed. A POST is never
+// blindly retried here.
 
 function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
-  // AbortController -- not supported on truly ancient browsers, but every
-  // browser this site otherwise targets has it; fetchApi already assumes a
-  // modern `fetch()` exists at all, so this adds no new floor.
+  // AbortController -- not supported on truly ancient browsers, but every browser this site
+  // otherwise targets has it; fetchApi already assumes a modern `fetch()` exists at all, so this
+  // adds no new floor.
   var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var timedOut = false;
   var timer = null;
@@ -269,10 +119,9 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
   return fetch(url, fetchOpts)
     .then(function (res) {
       if (timer) clearTimeout(timer);
-      // Apps Script occasionally answers a struggling request with an HTML
-      // error page instead of JSON (not a network failure -- the request
-      // "succeeded" as far as fetch() is concerned). res.json() throws on
-      // that, which is exactly what should count as a failed attempt here
+      // Apps Script occasionally answers a struggling request with an HTML error page instead of
+      // JSON (not a network failure -- the request "succeeded" as far as fetch() is concerned).
+      // res.json() throws on that, which is exactly what should count as a failed attempt here
       // rather than an unhandled parse error further down the chain.
       return res.json();
     })
@@ -283,68 +132,8 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
     });
 }
 
-/**
- * fetchApi(action, options) -> Promise<Object>
- *
- * Wraps the fetch/text-plain/JSON pattern used throughout the source file.
- *   action:  string, e.g. 'login', 'getProfile', 'adminApproveAccount'
- *   options.method: 'GET' or 'POST' (default 'GET')
- *   options.token:  session token, appended to the URL query string
- *                   (never sent in the POST body — required by the API
- *                   contract).
- *   options.body:   plain object, JSON-stringified into the POST body.
- *   options.params: plain object of extra GET query-string params (e.g.
- *                   { seasonId: '...', carClass: 'LMGT3' } for
- *                   getAvailableTeams, v0.20). Only ever appended to the
- *                   URL, never sent for POST -- Apps Script GET handlers
- *                   read these off e.parameter, same as action/token.
- *                   Blank/null/undefined values are skipped rather than
- *                   sent as the literal string "undefined".
- *   options.timeoutMs: overrides RC_FETCH_TIMEOUT_MS for just this call --
- *                   pass RC_FETCH_TIMEOUT_MS_LONG for a heavy multi-row
- *                   write (createSeason/updateSeason). Leave unset for the
- *                   normal 20s budget.
- *   options.noRetry: GET only -- skips the automatic retry-on-timeout below
- *                   entirely (single attempt, same as a POST). For a
- *                   silent background poll a missed tick costs nothing --
- *                   another one fires on the next tick anyway -- so
- *                   retrying under load only adds a second competing
- *                   request to an already-congested queue instead of
- *                   helping (2026-09-23, see the retry-storm comment above
- *                   RC_FETCH_RETRY_DELAYS_MS). No caller passes this today
- *                   (the header's old 45s notification-bell poll was the
- *                   one caller, removed 2026-09-24 along with the whole
- *                   in-app notification system) -- left in place for the
- *                   next silent background poll that needs it.
- *
-
- * IMPORTANT: POST requests use Content-Type: text/plain;charset=utf-8, NOT
- * application/json. Apps Script Web Apps can't handle a CORS preflight
- * (OPTIONS) request, which application/json would trigger. text/plain
- * avoids the preflight; the server still parses the body as JSON
- * regardless of the declared content type. Do not change this.
- *
- * Times out after RC_FETCH_TIMEOUT_MS. GET requests then retry up to
- * twice, backing off per RC_FETCH_RETRY_DELAYS_MS, before finally
- * rejecting (2026-09-14) -- see the comments on those constants above.
- * Every existing caller already either chains .then/.catch or just awaits
- * the promise, so this is invisible to them except that a single bad round
- * trip no longer has to become a dead spinner or a wrong "nothing here"
- * render.
- *
- * POST requests are deliberately NEVER auto-retried here, timeout or not.
- * A POST is a write (joinTeam, proposeWager, chooseSponsors, an admin
- * save...) and a timeout does not mean the write failed -- Apps Script may
- * well keep running and complete it after the client gives up waiting (see
- * doJoinTeamDirect's own long comment in Account.html, which exists
- * because of exactly this ambiguity). Blindly retrying a timed-out POST
- * risks silently DOUBLE-submitting a write the first attempt actually
- * completed -- a second team purchase, a duplicate wager, a repeated
- * sponsor pick -- which would be a worse bug than the timeout itself. A
- * POST's own call site is the right place to decide how to recover from an
- * ambiguous outcome (reload and check real server state, same pattern
- * doJoinTeamDirect already uses), not this shared helper.
- */
+// fetchApi(action, options) -> Promise<Object>
+// Wraps the fetch/text-plain/JSON pattern used throughout the source file. action: string, e.g.
 function fetchApi(action, options) {
   options = options || {};
   var method = options.method || 'GET';
