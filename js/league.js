@@ -3047,11 +3047,50 @@ function _rclRenderRaceCarousel(hub) {
     track.appendChild(item);
   });
 
-  // Center the initially-active item without an animated scroll (an
-  // animated auto-scroll firing the instant the page loads would be
-  // jarring) -- rAF so layout/widths (the active item is wider than the
-  // rest) have settled first.
+  // Fixed track height (2026-10-04, Matt's bug report: "I also want to
+  // maintain a set height so that when the calendar events switch... the
+  // container below doesn't move up and back down quickly. It appears
+  // broken with that flicker happening") -- the active item's own natural
+  // height isn't constant entry to entry (a live countdown block is
+  // taller than a plain RACE RECAP button, and the race-details lines run
+  // one or two lines depending on whether weather data is set), so without
+  // this, the track's height (and everything below it on the page --
+  // Championship Standings, Manufacturer Standings, ...) reflowed every
+  // time a different entry became active. This measures every entry's
+  // height AS IF it were the active one -- toggling the active class on,
+  // reading, toggling it back off, one entry at a time -- and pins the
+  // track to the tallest result, so every item then stretches to match
+  // (align-items: stretch, css/league.css) and the track's own height
+  // never changes again no matter which entry is active.
+  //
+  // style.transition = 'none' around each toggle is required, not
+  // cosmetic: .rcl-carousel-item has a `width 0.25s ease` transition (the
+  // same one setActive's own transitionend listener below has to work
+  // around), and reading a layout property immediately after a class
+  // change that starts a transition can hand back the PRE-change value
+  // instead of the new one -- forcing the transition off makes the width
+  // change (and the text reflow it can cause) land instantly, so
+  // scrollHeight reflects the entry's real active-state height. The
+  // itemEl.offsetHeight read after reverting the class forces that
+  // reversion to actually apply before the transition is turned back on,
+  // so the item never animates a phantom trip out to the active width and
+  // back.
   requestAnimationFrame(function () {
+    var maxHeight = 0;
+    itemEls.forEach(function (itemEl) {
+      var wasActive = itemEl.classList.contains('rcl-carousel-item-active');
+      itemEl.style.transition = 'none';
+      if (!wasActive) itemEl.classList.add('rcl-carousel-item-active');
+      maxHeight = Math.max(maxHeight, itemEl.scrollHeight);
+      if (!wasActive) itemEl.classList.remove('rcl-carousel-item-active');
+      itemEl.offsetHeight; // forces the toggle above to land before transition is restored
+      itemEl.style.transition = '';
+    });
+    if (maxHeight > 0) track.style.minHeight = maxHeight + 'px';
+
+    // Center the initially-active item without an animated scroll (an
+    // animated auto-scroll firing the instant the page loads would be
+    // jarring).
     if (itemEls[activeIdx]) _rclCenterCarouselItem_(track, itemEls[activeIdx], false);
   });
 }
