@@ -1476,15 +1476,26 @@ function _rclRenderLastRace_(hub) {
   // the first class's own graphite header bar now sits directly under the
   // panel's red underline, and nothing follows the last class's mentions.
   //
-  // No season / no data -- the whole panel disappears silently (2026-10-03,
-  // second follow-up, Matt's ask: "If there is no season OR no data to
-  // display in LAST RACE, I want it to silently disappear and for LEAGUE
-  // NEWS to take over 100% of the width" -- was an in-body "No Data To
-  // Display" empty state before this). _rclRenderNews (same hub payload,
-  // same check) is what actually widens League News and drops its own
-  // 1000-char truncation to show the full story -- this function only
-  // has to hide/show the Last Race panel and flag the shared row via
+  // No season at all -- the whole panel still disappears silently so
+  // League News can take over the full row (2026-10-03, Matt's ask: "If
+  // there is no season OR no data to display in LAST RACE, I want it to
+  // silently disappear and for LEAGUE NEWS to take over 100% of the
+  // width"). _rclRenderNews (same hub payload, same hasSeason check) is
+  // what actually widens League News and drops its own 1000-char
+  // truncation to show the full story -- this function only has to hide/
+  // show the Last Race panel and flag the shared row via
   // .rcl-news-lastrace-row-newsonly, css/league.css does the rest.
+  //
+  // A season IS open/underway but hasn't posted a result yet (a season
+  // that just started registration, before its first round) -- the panel
+  // now STAYS visible for this case and shows the same circle-slash "No
+  // Data To Display" empty state Championship Standings uses, rather than
+  // disappearing (2026-10-04, Matt's ask: "When a new season is started,
+  // keep the LAST RACE container visible... make it like the
+  // CHAMPIONSHIP STANDINGS with the crossed out circle and 'NO DATA TO
+  // DISPLAY / Results fill in once a season is underway.'"). This used to
+  // be folded into the same "no season or no data" rule above (both
+  // silently hid the panel); now only a truly missing season hides it.
   // "Last Race" -> "Last Season" once the season showing has ended
   // (2026-10-03, Matt's ask: "Change Last Race to Last Season and keep
   // the podium sections for each class, but instead of the mention
@@ -1504,10 +1515,16 @@ function _rclRenderLastRace_(hub) {
   var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
   var seasonEnded = !!hub.seasonEnded;
-  var hasLastRace = hub.hasSeason && (seasonEnded ? !!hub.lastSeason : !!hub.lastRace);
-  if (panel) panel.style.display = hasLastRace ? '' : 'none';
-  if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasLastRace);
-  if (!hasLastRace) return;
+  var hasSeason = !!hub.hasSeason;
+  var hasLastRaceData = seasonEnded ? !!hub.lastSeason : !!hub.lastRace;
+  if (panel) panel.style.display = hasSeason ? '' : 'none';
+  if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasSeason);
+  if (!hasSeason) return;
+
+  if (!hasLastRaceData) {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
+    return;
+  }
 
   if (seasonEnded) {
     var ls = hub.lastSeason;
@@ -3229,12 +3246,15 @@ function _rclRenderNews(hub) {
   // at all in that case (undefined charLimit -> _rclStoryPreviewHtml
   // never truncates), so the full story shows with no "Continue
   // reading..." link, matching the wider column it now has.
-  // hub.lastSeason fallback (2026-10-03, "Last Season" redesign) -- once
-  // the season showing has ended, _rclRenderLastRace_ shows the Last
-  // Season panel off hub.lastSeason instead of hub.lastRace; this check
-  // has to agree with that one or News would wrongly widen to full-row
-  // while a Last Season panel is still visible right next to it.
-  var hasLastRace = hub.hasSeason && !!(hub.seasonEnded ? hub.lastSeason : hub.lastRace);
+  // Reads hub.hasSeason only now (2026-10-04) -- _rclRenderLastRace_ keeps
+  // its own panel visible (showing a "No Data To Display" empty state)
+  // whenever a season exists but hasn't posted a result yet, instead of
+  // disappearing the way it used to whenever there was "no season OR no
+  // data." News only widens to the full row when that panel is actually
+  // hidden, i.e. no season at all -- this check has to agree with
+  // _rclRenderLastRace_'s own hasSeason check or News would wrongly widen
+  // next to a Last Race/Season Recap panel that's still visible.
+  var hasLastRace = !!hub.hasSeason;
   var preview = _rclStoryPreviewHtml(current.body, hasLastRace ? 1000 : undefined);
   currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', preview.html));
   if (preview.truncated) {

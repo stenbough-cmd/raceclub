@@ -915,7 +915,7 @@
       // built together in this one block) with no error, no fade-in, no
       // trace. Same fallback message as asyncDashCard's own fix above.
       try {
-        var seatCard = currentSeatCard(profile, token, currentSeat);
+        var seatCard = currentSeatCard(profile, token, currentSeat, activeSeason);
         // No standalone Current Seat re-fetch here anymore (2026-09-24,
         // Matt's ask to cut redundant post-registration calls) -- see
         // registrationStatusCard's own onRegistered comment for the full
@@ -943,7 +943,7 @@
     // Used to be its own full-width row further down (see the now-removed
     // protestRow in renderDashboardSection) -- same protestCard renderer
     // and myProtestsPromise, just placed here instead.
-    resultsRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.myProtestsPromise, protestCard));
+    resultsRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.myProtestsPromise, protestCard, dashboardData.activeSeasonPromise));
 
     return { topRow: topRow, resultsRow: resultsRow };
   }
@@ -1905,7 +1905,7 @@
   // -- with blank stats -- for a driver who just locked in a seat before
   // any round has run yet. No car photo -- unlike the reference mockup,
   // there's no car-render asset in this project, logo + text only.
-  function currentSeatCard(profile, token, initialData) {
+  function currentSeatCard(profile, token, initialData, activeSeasonData) {
     var card = el('div', 'rc-panel rc-currentseat-card rc-dash-card');
     // Title + car number share one flex row now (2026-09-01, Matt's call:
     // the car number needs to be ON the same row as the header, not
@@ -2051,7 +2051,15 @@
     // one combined getDashboardData call, so a second standalone fetch
     // for the same data right before that rebuild lands was pure waste.
 
-    if (!initialData || !initialData.success || !initialData.hasSeat) {
+    // No active season at all (2026-10-04, Matt's ask: every Dashboard
+    // card should say the exact same thing -- "No season is currently
+    // open for registration." -- when there's no season open, instead of
+    // each card improvising its own wording) -- checked ahead of hasSeat,
+    // since a driver with no seat and a driver whose last season just
+    // ended both land on hasSeat:false otherwise indistinguishably.
+    if (!activeSeasonData || !activeSeasonData.success || !activeSeasonData.hasActiveSeason) {
+      renderEmpty('No season is currently open for registration.');
+    } else if (!initialData || !initialData.success || !initialData.hasSeat) {
       renderEmpty('Not on a team yet. Register for a season to lock in a seat.');
     } else {
       renderSeat(initialData);
@@ -2142,8 +2150,19 @@
     headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next Race'));
     card.appendChild(headerRow);
 
-    var registered = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason && activeSeasonData.registered);
-    if (!registered) {
+    // No active season at all vs. a season that's open but this driver
+    // isn't registered for -- two different messages (2026-10-04, Matt's
+    // ask for the standardized "No season is currently open for
+    // registration." wording whenever that's the actual reason, same as
+    // every other Dashboard card). Was one merged "not registered" check
+    // covering both cases with the team-signup wording even when there
+    // was no season to sign up for in the first place.
+    var hasActiveSeason = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason);
+    if (!hasActiveSeason) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No season is currently open for registration.'));
+      return card;
+    }
+    if (!activeSeasonData.registered) {
       card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to view the next race information.'));
       return card;
     }
@@ -2585,13 +2604,22 @@
   // '<- File or withdraw a protest'") -- it opens openProtestModal
   // instead, which is the same FILE PROTEST popup/history the old page
   // used, just reached from here.
-  function protestCard(data) {
+  function protestCard(data, activeSeasonData) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
     card.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
 
     var protests = (data && data.success && data.protests) ? data.protests : [];
+    // No active season at all (2026-10-04, Matt's ask -- same standardized
+    // wording every other Dashboard card now uses) -- handleGetMyProtests
+    // itself has no hasSeason flag of its own (it just returns an empty
+    // protests list either way, season or no season), so this reads off
+    // the same getActiveSeason payload Registration Status/Current
+    // Seat/Next Race all already check.
+    var hasActiveSeason = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason);
 
-    if (!protests.length) {
+    if (!hasActiveSeason) {
+      card.appendChild(el('p', 'rc-cs-empty', 'No season is currently open for registration.'));
+    } else if (!protests.length) {
       card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
     } else {
       var list = el('div', 'rc-protest-dash-list');
