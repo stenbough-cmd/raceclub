@@ -3064,6 +3064,11 @@
         // Dashboard rebuild -- it's the thing the driver is actually
         // looking at and waiting on.
         rcReloadAfterSave();
+        // Season commitment notice (2026-10-04, Matt's ask) -- shown right
+        // after the dashboard rebuild, once the congratulations screen is
+        // gone. Opened AFTER rcReloadAfterSave() since that call closes
+        // whatever modal is currently tracked.
+        openSeasonCommitmentNotice(team, carClass);
         // Notification-bell dismiss/refresh calls removed (2026-09-24,
         // Matt's call: eliminate the in-app notification system entirely,
         // moving to an external Discord bot) -- registration itself is
@@ -3530,6 +3535,40 @@
   function _rcSetModalTitle(modal, text) {
     var titleEl = modal.el.querySelector('.rc-modal-title-accent');
     if (titleEl) titleEl.textContent = text;
+  }
+
+  // Shown once after a driver registers for a season (2026-10-04, Matt's
+  // ask): they may only drive the registered class, car and number for the
+  // whole season, stiff penalties apply otherwise. The X is hidden on
+  // purpose so the only way out is the "I UNDERSTAND" button. That button
+  // only closes the popup (no write), so it is gray per the button rule.
+  function openSeasonCommitmentNotice(team, carClass) {
+    team = team || {};
+    var carText = [team.manufacturer, team.carModel].filter(Boolean).join(' ');
+    var parts = [];
+    if (carClass) parts.push(String(carClass));
+    if (carText) parts.push(carText);
+    if (team.carNumber) parts.push('#' + team.carNumber);
+
+    var body = el('div');
+    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;',
+      'You may only drive in the <strong>class</strong>, <strong>car</strong> and <strong>car number</strong> you registered with for the <strong>entire season</strong>, without exception.'));
+    if (parts.length) {
+      var reg = el('div', 'background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-radius:8px;padding:10px 12px;margin:12px 0;font-size:14px;font-weight:700;color:var(--rc-carbon);text-align:center;',
+        escapeHtml(parts.join('  ·  ')));
+      body.appendChild(reg);
+    }
+    body.appendChild(el('p', 'color:var(--rc-red);font-size:14px;font-weight:700;margin:12px 0 0;',
+      'Stiff penalties apply when this rule is broken.'));
+    var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:18px;');
+    var okBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'I UNDERSTAND');
+    okBtn.type = 'button';
+    btnRow.appendChild(okBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal('Season Commitment', { bodyEl: body, accentHead: true });
+    modal.closeBtn.style.display = 'none';
+    okBtn.addEventListener('click', function () { modal.close(); });
   }
 
   // Small reusable confirm popup for destructive actions (added 2026-08-30
