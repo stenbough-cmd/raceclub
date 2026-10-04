@@ -319,7 +319,6 @@ body.rc-league-page {
    .rcl-ticker-driver-name, keeping the dates as the quieter half of the
    line the way the driver number/name pairing already reads. */
 .rcl-ticker-season-dates { font-weight: 500; color: var(--rcl-ink-dim); }
-.rcl-ticker-empty { padding: 0 24px; font-size: 13.5px; color: var(--rcl-ink-faint); }
 /* Loop-seam dot (2026-09-19, Matt's ask: "a dot in between the repeated
    line") -- closes out each run before it repeats, so the ticker reads as
    a continuous "...item • item..." at the point it loops back to the
@@ -497,30 +496,6 @@ body.rc-league-page {
    runs -- stay visually separate. */
 .rcl-hero-stats-group { margin-top: 26px; }
 .rcl-hero-stats-group + .rcl-hero-stats-group { margin-top: 26px; }
-/* Standalone gray "pill" label -- same look as a Points Tables tier's own
-   pill half (.rcl-points-tier-pill-label further below), just with a full
-   border/radius on every side since nothing is fused against it here.
-   Added 2026-09-24, Matt's ask: keep the Season Details group headers
-   (This Season/League Format) and the Points Tables' own Bonus Points
-   label (see .rcl-points-bonus-label below) all reading as one
-   consistent gray-pill treatment sitewide, rather than each having its
-   own one-off look -- was plain red uppercase text here, and plain white
-   uppercase text (.rcl-points-tier-name) for Bonus Points. */
-.rcl-pill-label {
-  display: inline-flex;
-  align-items: center;
-  background: #d9dadd;
-  color: #1c1d20;
-  border: 1px solid #b6b8bd;
-  border-radius: 5px;
-  padding: 3px 10px;
-  font-family: var(--rc-font-heading);
-  font-size: 12.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 .rcl-hero-stats-label {
   display: inline-flex;
   align-items: center;
@@ -612,28 +587,6 @@ body.rc-league-page {
 /* Layout                                                                */
 /* -------------------------------------------------------------------- */
 .rcl-main { max-width: 1180px; margin: 0 auto; padding: 36px 32px 80px; }
-/* League News 1/3, Recent Results 2/3 (2026-09-20, Matt's call -- was
-   News 2fr / Results 1fr, the opposite ratio, until this swap). */
-/* align-items changed from start to stretch (2026-09-23, Matt's ask:
-   "make both containers the same height. So if RECENT RESULTS has more
-   data... have LEAGUE NEWS container stretch all the way to make it the
-   same height") -- grid's default row behavior already stretches items
-   to the row's tallest cell; align-items:start was what opted News/
-   Results OUT of that, sizing each to its own content instead. This
-   grid only ever holds these two panels (Leaderboard/Calendar below are
-   .rcl-row-full, a separate full-width block, not part of this grid),
-   so the change is scoped to exactly the pair Matt meant. */
-.rcl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 28px; align-items: stretch; }
-@media (max-width: 900px) {
-  .rcl-grid { grid-template-columns: 1fr; }
-}
-/* height: 100% + the .rcl-panel/.rcl-panel-body flex rules below turn the
-   grid's own equal-height row (from align-items:stretch above) into an
-   actual stretched panel background, not just an empty gap under the
-   shorter column's content. */
-.rcl-col { display: flex; flex-direction: column; gap: 28px; min-width: 0; height: 100%; }
-.rcl-col > .rcl-panel { flex: 1 1 auto; display: flex; flex-direction: column; }
-.rcl-col > .rcl-panel > .rcl-panel-body { flex: 1 1 auto; }
 /* Full-width rows below the two-column grid (Leaderboard/Calendar, added
    2026-09-19) -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 28px; }
@@ -1267,7 +1220,6 @@ body.rc-league-page {
   position: relative;
   top: -2px;
 }
-.rcl-panel-meta { font-size: 12px; color: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
 .rcl-panel-body { padding: 18px; }
 
 /* -------------------------------------------------------------------- */
@@ -1522,11 +1474,6 @@ body.rc-league-page {
   color: var(--rcl-ink);
   font-variant-numeric: tabular-nums;
 }
-/* .rcl-standings-pts-gap rule kept but unused as of 2026-09-23 -- the
-   "-N PTS" gap-to-leader line under each row's point total was removed
-   (see _rclBuildStandingsColumns_ in league.js) so every row is the same
-   height as P1's. */
-.rcl-standings-pts-gap { font-size: 11.5px; color: var(--rcl-ink-faint); font-variant-numeric: tabular-nums; }
 /* Driver identity block -- manufacturer logo, then everything else
    (name, flag, car number, team) on one single line (2026-09-19 follow-
    up, Matt's call: "reduce the size of the manufacturer logo, place it
@@ -1626,45 +1573,6 @@ body.rc-league-page {
 /* -------------------------------------------------------------------- */
 /* Last race results                                                    */
 /* -------------------------------------------------------------------- */
-/* Event on its own line, Winner/Pole/Fastest Lap together on the row
-   underneath (2026-09-23, Matt's ask) -- .rcl-race-headline is now a
-   column of .rcl-race-headline-row strips, each one the flex-wrap row
-   the whole headline used to be. Winner/Pole/Fastest Lap spread evenly
-   across the row, 33% each (2026-09-23 follow-up, Matt's ask: "Spread
-   the Winner, Pole and Fastest laps evenly across the header, 33% each")
-   -- flex:1 on each stat with wrap turned off does this; the Event row
-   above still uses the same two classes and just ends up as one full-
-   width "column", which is harmless. */
-.rcl-race-headline { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--rcl-line); }
-/* Recent Results panel + All Results popup (2026-09-27, Matt's ask:
-   "remove the header that says the winner/pole/fastest lap. Leave a
-   large enough gap until the graphite <class> header so it doesn't look
-   crowded") -- with the flat stat row gone (see _rclBuildRaceHeadline_'s
-   opts.hideStatRow, js/league.js) this headline is just the one
-   event-title line, so the original 26px/16px gap (sized to sit under a
-   whole extra stat row) reads cramped against whatever comes right after
-   it -- the graphite class header on Recent Results, or the new per-class
-   category breakdown on the All Results popup (_rclBuildResultsCategoryBreakdown_,
-   which also passes hideStatRow now). Bumped up on its own modifier class
-   rather than changing the base rule, since nothing on this page uses the
-   un-modified .rcl-race-headline WITH its full stat row any more, but
-   keeping this as an opt-in modifier (rather than editing the base rule)
-   still protects any future caller that brings the stat row back. */
-.rcl-race-headline-notabs { margin-bottom: 34px; padding-bottom: 22px; }
-/* Started Recent Results only (2026-09-27, Matt's ask: "move the topmost
-   class results header bar to where the gray line is below the event
-   title... and deleted the gray line"), then extended to the All Results
-   popup the same day ("remove the line above the header in between the
-   bonus points winners and the event name") -- drops .rcl-race-headline's
-   border-bottom entirely and collapses its padding, so whatever comes right
-   after (Recent Results' first .rcl-standings-class-header graphite bar, or
-   All Results' category breakdown, _rclBuildResultsCategoryBreakdown_) sits
-   right where that line used to be, with a single modest margin standing in
-   for both the old line and the old post-line gap. Left off .rcl-race-
-   headline-notabs itself (used above) so a future caller can still opt into
-   the old bigger gap/line combo -- see _rclBuildRaceHeadline_'s
-   opts.closeGapNoLine, js/league.js. */
-.rcl-race-headline-closegap { padding-bottom: 0; border-bottom: none; margin-bottom: 16px; }
 /* "Round <n>   <Event> at <Track>: <Layout>" header line (2026-09-26
    rework, Matt's ask) -- same three-piece weight/color split as the
    Calendar's own event line (.rcl-cal-event/-event-name/-event-track/
@@ -1684,22 +1592,11 @@ body.rc-league-page {
 .rcl-race-headline-event-name { font-weight: 800; }
 .rcl-race-headline-event-track { font-weight: 500; }
 .rcl-race-headline-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
-.rcl-race-headline-row { display: flex; gap: 22px; }
-.rcl-race-headline-stat { flex: 1 1 0; min-width: 0; }
-.rcl-race-headline-label { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
-.rcl-race-headline-value { font-size: 15px; font-weight: 700; color: var(--rcl-ink); margin-top: 3px; }
 /* Gold, not red (2026-09-23, Matt's ask: "make the winner a gold color
    font" -- same gold used for the Standings panel's "preliminary" status
    note, .rcl-standings-status-preliminary, so this page has one gold
    consistently rather than two different golds). */
 .rcl-race-headline-value-accent { color: #e0b64c; }
-/* Fastest Lap's name in the HEADER only (2026-09-26, Matt's correction --
-   moved here from a per-row highlight in the standings list below, which
-   Matt asked to remove: "I don't want the fastest lap driver in the
-   standings list to be purple, only the driver that is mentioned in the
-   header should be purple"). Same light purple as before, just scoped to
-   this one headline stat value now instead of a whole row's name. */
-.rcl-race-headline-value-fastestlap { color: #b388ff; }
 
 /* Per-class category breakdown -- All Results popup (2026-09-27, Matt's
    ask: replaces the old flat overall-only Winner/Pole/Fastest Lap stat
@@ -1801,7 +1698,6 @@ body.rc-league-page {
    every other driver row on this page already shows a flag with; this
    modifier just tightens the row gap slightly for the smaller flag. */
 .rcl-race-category-flag { margin-left: -2px; }
-.rcl-race-category-extra { color: var(--rcl-ink-dim); font-size: 12.5px; }
 /* Widened 18px -> 32px (2026-09-27, Matt's ask: "add a little more gap from
    the bottom of the top class leaderboard to the graphite header of the
    next class") -- shared by Recent Results and the All Results popup, both
@@ -1856,7 +1752,6 @@ body.rc-league-page {
   font-size: 14px;
 }
 .rcl-race-row:nth-child(even) { background: var(--rcl-bg-raised-2); }
-.rcl-race-row-points { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
 .rcl-race-row-num { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
 /* .rcl-race-row-totaltime/.rcl-race-row-penalty-badge (the "+Ns" badge
    next to Total Time) tried and reverted 2026-09-25, same day -- Matt
@@ -2145,16 +2040,6 @@ body.rc-league-page {
   margin-right: calc(50% - 50vw);
   width: 100vw;
   max-width: 100vw;
-}
-.rcl-carousel-heading {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px 14px;
-  font-family: var(--rc-font-heading);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: var(--rcl-ink);
 }
 .rcl-carousel-track {
   display: flex;
@@ -2543,14 +2428,7 @@ body.rc-league-page {
   .rcl-carousel-countdown-num { font-size: 22px; }
   .rcl-carousel-countdown-unit { min-width: 28px; }
 }
-.rcl-carousel-details-row {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 32px;
-  text-align: right;
-}
 @media (max-width: 640px) {
-  .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
   .rcl-carousel-track { padding: 4px 16px 20px; gap: 10px; }
   /* Side items stay 75px even on mobile (2026-10-04) -- same universal
      compact width as desktop now, so this no longer needs its own
@@ -2568,7 +2446,6 @@ body.rc-league-page {
   .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 15px; }
   .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 32px; }
   .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 15px; }
-  .rcl-carousel-details-row { padding: 0 16px; }
 }
 
 /* -------------------------------------------------------------------- */
@@ -2597,254 +2474,24 @@ body.rc-league-page {
   border-bottom: 1px solid var(--rcl-line);
   overflow: hidden;
 }
-/* Last row KEEPS its bottom border now (2026-09-19, Matt's call: "remove
-   the line above VIEW SEASON DETAILS... the line at the bottom edge of
-   the last race will suffice") -- that border now doubles as the
-   separator above the details link below, instead of the link growing
-   its own extra border-top/line underneath a removed one. */
-/* Next-race highlight -- softened from a red wash to a barely-there light
-   gray (2026-09-19, Matt's call: "the highlighting slightly lighter gray
-   instead of a red highlight") -- UP NEXT still reads red via
-   .rcl-cal-status-up, so the row is still identifiable at a glance, just
-   without the whole row glowing red. */
-.rcl-cal-row-next { background: rgba(255, 255, 255, 0.05); }
-/* Round-number bar -- silver metallic instead of solid brand red
-   (2026-09-19, Matt's call: "make the Round backgrounds silver") -- same
-   diagonal metallic-gradient treatment .rcl-cal-round-special already
-   uses for gold, just in a neutral silver tone, so a normal points round
-   reads as a deliberately different metal from a special event's gold
-   rather than the page's one loud red accent.
-   Upgraded to the full brushed-nickel treatment (2026-09-30, Matt's ask:
-   "make the calendar round container background the same metalic look as
-   the table headers with the silver bottom border") -- same three-layer
-   background as .rcl-standings-class-header above (fine repeating
-   diagonal gradient for the brushed-metal texture, plus the light-to-dark
-   satin sweep), the same inset highlight/shadow + drop-shadow pair to
-   read as raised metal, and the same steel-silver bottom rule
-   (#c9cbce, matching that header's own 2026-09-29 recolor) in place of
-   the old flat two-stop gradient. Only .rcl-cal-round's own layout
-   properties (size/flex/font/corner radius) are unchanged, so this still
-   sizes and positions exactly as before -- and since neither the mobile
-   override below nor the "finished round" opacity dim (.rcl-cal-row-
-   finished .rcl-cal-round further down) touch `background`, both mobile/
-   tablet and the dimmed-when-finished state pick this up automatically. */
-.rcl-cal-round {
-  flex: none;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background:
-    repeating-linear-gradient(100deg,
-      rgba(255, 255, 255, 0.09) 0px,
-      rgba(255, 255, 255, 0.09) 1px,
-      rgba(0, 0, 0, 0.05) 2px,
-      rgba(0, 0, 0, 0.05) 3px),
-    linear-gradient(135deg, #d9dade 0%, #b7b9be 45%, #eceef0 55%, #9a9ca1 100%);
-  font-family: var(--rc-font-heading);
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1;
-  color: #24262b;
-  text-align: center;
-  user-select: none;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4);
-  border-bottom: 2px solid #c9cbce;
-  /* Slight curve on just the top-left corner (2026-09-19, Matt's ask) --
-     the row's other three corners stay square, matching the bar's flush
-     fit against the row's left/top/bottom edges; only the one corner
-     that isn't already pinned against .rcl-panel's own rounded shell
-     gets softened. */
-  border-top-left-radius: 8px;
-}
-/* Special-event rounds (SP) get a gold accent instead of the standard
-   brand red (2026-09-19, Matt's ask, refined same day from an earlier
-   platinum treatment to "gold accents including the event and track
-   names") -- a deliberately different metal-toned accent, now carried
-   through onto the row's own event/track text too, so a special round
-   reads as distinct from a normal points round at a glance, not just on
-   its round-number bar. Dark text on the bar since gold is light. */
-.rcl-cal-round-special {
-  background: linear-gradient(135deg, #f0d879 0%, #c9a227 100%);
-  color: #241b04;
-}
-/* Short ("R1")/long ("ROUND 1") round-label pair (2026-09-27) -- long form
-   stays hidden except at the mobile breakpoint (see that media query
-   below), where the round bar itself moves to the top of the row and has
-   room to spell the word out. */
-.rcl-cal-round-long { display: none; }
-/* One combined "<event name> at <track name>: <layout>" line (2026-09-24,
-   Matt's ask), three independently-styled pieces inside .rcl-cal-event --
-   .rcl-cal-event-name bold and white/ink, .rcl-cal-event-track normal
-   weight but still white/ink, .rcl-cal-event-layout normal weight but
-   gray/dim. On a special event the whole line reads one uniform gold
-   (#e0b64c) instead -- the plain " at "/": " connector text inherits it
-   from .rcl-cal-event's own color below, and each span gets its own
-   explicit override since an explicit color always wins over an inherited
-   one. Was three separate two-tone gold rules (bright event, dimmer
-   track, dimmer-still layout) before this pass -- Matt's ask now is one
-   flat gold across all three, matching the round bar's own single gold
-   gradient rather than a graduated scheme.
-   Round-number bar (.rcl-cal-round-special above) already reads gold. */
-.rcl-cal-row-special .rcl-cal-event,
-.rcl-cal-row-special .rcl-cal-event-name,
-.rcl-cal-row-special .rcl-cal-event-track,
-.rcl-cal-row-special .rcl-cal-event-layout {
-  color: #e0b64c;
-}
-.rcl-cal-row-body { flex: 1 1 auto; min-width: 0; padding: 10px 14px 10px 0; }
-/* Day/date/time the race starts -- plain text above the event title
-   (2026-09-24, Matt's ask), not a pill. Sits above .rcl-cal-row-top. */
-.rcl-cal-datetime { font-size: 12px; font-weight: 600; color: var(--rcl-ink-dim); margin-bottom: 3px; }
-.rcl-cal-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Bumped from 16.5px (2026-09-24, Matt's ask: "increase the size of the
    event/track/layout name by a little to make it more pronounced"). */
 .rcl-cal-event { font-size: 18px; }
-.rcl-cal-event-name { font-weight: 800; color: var(--rcl-ink); }
-.rcl-cal-event-track { font-weight: 500; color: var(--rcl-ink); }
-.rcl-cal-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
-/* .rcl-cal-track still backs the Bye row's plain "Bye Week" line below
-   (_rclRenderCalendar, js/league.js) -- unrelated to the race-row event
-   line above, which no longer uses this class at all (2026-09-24, see the
-   .rcl-cal-event-* rules above). */
-.rcl-cal-track { font-size: 13.5px; font-weight: 500; color: var(--rcl-ink-dim); margin-top: 1px; }
 /* Vertically centers every meta chip against its siblings (2026-09-19,
    Matt's ask: "vertically align the pill text with the rest of the race
    details next to it") -- without this, the padded pill chips (taller,
    own box) and the site's default stretch alignment left them looking
    offset from each other on the same row. */
 .rcl-cal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
-.rcl-cal-meta-item {
-  font-size: 12.5px;
-  color: var(--rcl-ink-dim);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.rcl-cal-meta-item-label { color: var(--rcl-ink-faint); font-weight: 600; }
-/* Shared light chip -- date/time+length, in-game time, and weather all
-   use this one shape now (2026-09-19, Matt's asks across two turns: "put
-   the time next to the length tier in a light gray pill with a slightly
-   darker border", then "make the pills more rectangular" and "use icons
-   when possible for maximum aesthetics") -- a literal light-gray pill
-   (not this dark page's usual translucent-white chip treatment) so each
-   fact reads as a deliberate little tag against the dark row, with dark
-   text/icons for contrast on the light fill. Small 5px radius rather than
-   the fully round 999px this used to be -- "more rectangular" per Matt's
-   ask, while still being a pill and not a hard square. Reused as-is for
-   the Points Tables tier duration chip below (see .rcl-points-tier-head).
-   */
-.rcl-chip-light {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #d9dadd;
-  border: 1px solid #b6b8bd;
-  border-radius: 5px;
-  padding: 3px 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #1c1d20;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.rcl-chip-icon { display: flex; flex: none; line-height: 1; }
-.rcl-chip-icon svg { display: block; width: 14px; height: 14px; }
-/* Outline variant -- gray outline, no fill (2026-09-19, Matt's call: "for
-   in-game race times and weather, make them gray outline pills instead of
-   solid pills") -- same shape/sizing as .rcl-chip-light, just transparent
-   with a border instead of the solid light-gray fill, so In-Game/Weather
-   read as a lighter-weight secondary fact next to the solid date/length
-   pill. Text/icon pick up the page's own dim ink color since there's no
-   light fill to contrast against anymore. */
-.rcl-chip-outline {
-  background: transparent;
-  border-color: var(--rcl-line-bright);
-  color: var(--rcl-ink-dim);
-}
-.rcl-cal-status {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--rcl-ink-faint);
-}
-.rcl-cal-status-up { color: var(--rc-red); }
-/* Plain gray COMPLETE (2026-09-26, Matt's ask: "in the Season calendar...
-   just say COMPLETED in gray once a race is over. No need to duplicate
-   the type of results posted here since it's on every results table") --
-   the separate gold PRELIMINARY/gray OFFICIAL "...RESULTS POSTED" variants
-   this used to have (2026-09-19/2026-09-21) are removed; that distinction
-   now lives only on the Recent Results/Current Standings/All Results
-   notices (_rclBuildResultsStatusNotice_, js/league.js). */
-.rcl-cal-status-complete { color: var(--rcl-ink-dim); }
-/* "VIEW RESULTS" (2026-10-02, Matt's ask) -- a completed round with
-   results now gets a real link here instead of plain "COMPLETED" text,
-   opening the Race Details popup on that exact round
-   (_rclBuildCalStatusNode_, js/league.js). Button reset so it reads as
-   plain text like every other status, just clickable -- red like the
-   site's other "opens a popup" text links (.rcl-cal-details-link above)
-   rather than gray, so it actually reads as actionable at this small size. */
-.rcl-cal-status-link {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  cursor: pointer;
-  color: var(--rc-red);
-}
-.rcl-cal-status-link:hover { text-decoration: underline; }
-/* Mobile-only copy of the status node, living inside the round bar itself
-   (.rcl-cal-round) instead of up in the event line -- hidden on desktop,
-   where .rcl-cal-status (the original copy, appended to .rcl-cal-row-top)
-   already covers this. Shown instead of that copy under the 640px
-   breakpoint below, where .rcl-cal-status is hidden entirely. */
-.rcl-cal-round-status { display: none; }
 /* Faded row once a round's start time has passed (2026-09-21, Matt's
    ask: "have the race faded out with a COMPLETED notification") --
    dims the round bar/event/track/meta chips, but deliberately NOT
    .rcl-cal-status (the notification itself, appended alongside .rcl-cal-
    event inside .rcl-cal-row-top), so the COMPLETED/results phrase stays
    fully legible against the faded-out row around it. */
-.rcl-cal-row-finished .rcl-cal-round,
-.rcl-cal-row-finished .rcl-cal-datetime,
 .rcl-cal-row-finished .rcl-cal-event,
-.rcl-cal-row-finished .rcl-cal-track,
 .rcl-cal-row-finished .rcl-cal-meta {
   opacity: 0.5;
-}
-/* Bye week -- dashed "nothing scheduled" slot (2026-09-27, Matt's ask: match
-   the dashed/centered treatment Account's own .rc-cal-bye card uses, sized
-   and colored to fit league.html's dark theme and type scale instead of
-   copying Account's light-page values literally). No round-number bar --
-   a bye isn't a round, so it gets its own flat centered box rather than
-   the round + body split every real race row uses. */
-.rcl-cal-row-bye {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 22px 14px;
-  border: 1px dashed var(--rcl-line-bright);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-}
-.rcl-cal-bye-label {
-  font-family: var(--rc-font-heading);
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--rcl-ink);
-  text-align: center;
-}
-.rcl-cal-bye-date {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rcl-ink-dim);
-  text-align: center;
 }
 /* "View Season Details" link at the bottom of the Calendar panel
    (2026-09-19, Matt's call: season details move out of the hero band into
@@ -2882,19 +2529,6 @@ body.rc-league-page {
    Standings status footer above already uses. Both are direct children of
    the popup's .rcl-allresults-body. */
 .rcl-allresults-body > .rcl-standings-status-note { text-align: right; }
-.rcl-cal-details-link {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  cursor: pointer;
-}
-.rcl-cal-details-link:hover { text-decoration: underline; }
 
 /* Points -- race-length-tier tables + bonus points (added 2026-09-19,
    moved into their own "Points Tables" popup off the Leaderboard panel
@@ -3446,76 +3080,7 @@ body.rc-league-page {
   .rcl-report-lap { flex-direction: column; gap: 4px; }
   .rcl-report-lap-num { width: auto; padding-top: 0; }
   .rcl-report-lap-text { padding-left: 14px; }
-
-  /* Current Standings driver list -- team name hidden above (shared rule
-     with the All Results popup); no other change needed here, the class
-     column layout (.rcl-standings-columns) already stacks to one column
-     under 900px (see that rule earlier in this file).
-
-     Calendar (2026-09-27, Matt's ask: "remove the UP NEXT and COMPLETED /
-     status text. Instead of the round container/number being on the left
-     side of the race/event entries, have it placed on top of the
-     containers and have it say ROUND 1, ROUND 2, etc instead of R1, R2")
-     -- .rcl-cal-status covers all three states (UP NEXT/UPCOMING/
-     COMPLETED, see rcl-cal-status-up/-upcoming/-complete) so hiding the
-     base class removes the notification text in one rule. .rcl-cal-row
-     switches from a side-by-side row (round bar left, event body right)
-     to stacked, and the round bar itself swaps from a small fixed-width
-     square to a full-width bar sized for its now-longer "ROUND N" text
-     (.rcl-cal-round-short/-long above swap which span is visible). */
-  .rcl-cal-status { display: none; }
   .rcl-cal-row { flex-direction: column; }
-  /* Round bar follow-up (2026-09-28, Matt's ask): keep the small top-left
-     curve the desktop bar already has (border-top-left-radius:8px, base
-     rule above) -- no border-radius override here any more, so it just
-     carries over. Bigger text now that the bar has a full row's width to
-     itself (was 15px), left-justified with a little padding instead of
-     centered, and a thin border on the three edges that don't already
-     have one from the row's own layout (left/right/bottom -- top is the
-     dialog/panel's own edge for the first row, and every other row's
-     bottom border above already separates it from the one before). */
-  .rcl-cal-round {
-    width: 100%;
-    height: auto;
-    justify-content: flex-start;
-    padding: 8px 14px 8px 14px;
-    font-size: 19px;
-    border-left: 1px solid var(--rcl-line-bright);
-    border-right: 1px solid var(--rcl-line-bright);
-    /* Keep the steel-silver bottom accent at this width too (2026-09-30,
-       Matt's ask: "make mobile pc and tablet versions respect this
-       change") -- was a plain 1px var(--rcl-line-bright) line, which would
-       have quietly erased the brushed-nickel bar's silver bottom border
-       the moment the layout switched to full-width on phone. Same 2px
-       #c9cbce as the base rule above; left/right stay the plain thin line
-       since those two edges aren't part of the "silver border" ask. */
-    border-bottom: 2px solid #c9cbce;
-  }
-  .rcl-cal-round-short { display: none; }
-  .rcl-cal-round-long { display: inline; }
-  /* UPCOMING / VIEW RESULTS, right side of the round bar (2026-10-02,
-     Matt's ask: "let UPCOMING live inside the calendar round headers on
-     the right side, and when a race is completed, swap it with the VIEW
-     RESULTS link"). This is the mobile-only copy from
-     _rclBuildCalStatusNode_ -- the desktop copy stays hidden via
-     .rcl-cal-status above. margin-left:auto pushes it to the far right of
-     the bar's own flex row without needing to touch that row's
-     justify-content (still flex-start, for the ROUND N text). Smaller than
-     its desktop size (11px -> 10px) and the round bar's own ink color
-     (not red/steel) so it reads as part of the bar, not a competing
-     accent -- except the VIEW RESULTS link, which keeps its red link
-     color so it's still obviously clickable. */
-  .rcl-cal-round-status {
-    display: inline-block;
-    margin-left: auto;
-    font-size: 10px;
-  }
-  .rcl-cal-round-status.rcl-cal-status-up,
-  .rcl-cal-round-status.rcl-cal-status-upcoming,
-  .rcl-cal-round-status.rcl-cal-status-complete:not(.rcl-cal-status-link) {
-    color: inherit;
-  }
-  .rcl-cal-row-body { padding: 10px 14px; }
 }
 
 /* -------------------------------------------------------------------- */

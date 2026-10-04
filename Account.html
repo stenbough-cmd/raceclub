@@ -1118,19 +1118,6 @@
     return m ? String(parseInt(m[1], 10)) : '';
   }
 
-  // "1st"/"2nd"/"3rd"/"4th"... -- only ever fed a positive integer
-  // (season standings position), so no negative/zero handling needed.
-  function ordinal(n) {
-    n = Number(n) || 0;
-    var rem100 = n % 100;
-    if (rem100 >= 11 && rem100 <= 13) return n + 'th';
-    switch (n % 10) {
-      case 1: return n + 'st';
-      case 2: return n + 'nd';
-      case 3: return n + 'rd';
-      default: return n + 'th';
-    }
-  }
 
   // Three states, rendered directly from data the page already prefetched
   // in parallel with the profile itself (see the bottom of this script) --
@@ -2686,12 +2673,6 @@
       if (!titleEl) return;
       titleEl.textContent = t + ' ';
       if (pillNode) titleEl.appendChild(pillNode);
-    }
-    function buildClassBadge(cls) {
-      var colorVar = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) ? CAR_CLASS_BADGE_COLOR_VAR[cls] : '--rc-steel';
-      var badge = el('span', 'rc-badge-chip', escapeHtml(_rcClassPillLabel(cls)));
-      badge.style.background = 'var(' + colorVar + ')';
-      return badge;
     }
 
     function fetchAllTeams() {
@@ -4628,35 +4609,6 @@
     section.appendChild(contact);
   }
 
-  // ---------------------------------------------------------------------
-  // LEAGUE MANAGEMENT -- one panel, two buttons, for now (Matt's call:
-  // "these will be the only two buttons in League Management for now").
-  // Create a Season opens the full Season Creation Wizard below -- ported
-  // back from the pre-v0.5 archive at Matt's request ("I don't like the
-  // way this wizard looks... make it look identical to the previous
-  // iteration -- then we can go through and remove parts we don't need").
-  // The button's own label still flips to "Resume Season Draft" when a
-  // local draft exists (same as the archived version) -- that's still one
-  // button, not a third one, so it doesn't violate the two-button rule.
-  // Edit Season is a stub -- there's no season list/edit endpoint yet, so
-  // it just says so; wiring it up is future work, same shape as Create
-  // once there's something to point it at.
-  // ---------------------------------------------------------------------
-  // Status pill for the Season Tools list (added 2026-08-30, redesigned
-  // 2026-09-23). Used to color-code Draft/Scheduled/Registration/Active/
-  // Completed apart from each other, but Matt found that unclear in
-  // practice ("I don't like how it says REGISTRATION... I'm not sure
-  // what this is supposed to let the organizer or admin know"). What
-  // actually matters at a glance is simpler -- is this season still the
-  // current one, or has it wrapped up -- so this now shows a single
-  // light-gray, unobtrusive pill: LIVE for anything short of Completed
-  // (Draft/Registration/Active all read as "still going"), END once a
-  // season is Completed. Same .rc-badge-status-neutral treatment either
-  // way (see its comment in style.css) -- only the text changes.
-  function _rcSeasonStatusBadge(status) {
-    var isLive = status !== 'Completed';
-    return el('span', 'rc-badge-chip rc-badge-status-neutral', isLive ? 'LIVE' : 'END');
-  }
 
   // One row for a single season -- own row builder (2026-08-30) so it can
   // be dropped straight into Season Tools' own panel underneath a year
@@ -5534,22 +5486,7 @@
     } catch (err) { return iso; }
   }
 
-  function formatPointsList(points) {
-    return (points || []).map(function (p, i) { return 'P' + (i + 1) + ' ' + p; }).join(' · ');
-  }
 
-  // Compact "MMM D, YYYY" date, no weekday/time -- for the Season Format
-  // panel's Start/Stop pill below, where formatRaceDateTime's fuller
-  // weekday+time format would be too long for a small mini-stat pill.
-  function formatShortDate(iso, tz) {
-    if (!iso) return '';
-    try {
-      var d = new Date(iso);
-      var opts = { month: 'short', day: 'numeric', year: 'numeric' };
-      if (tz) opts.timeZone = tz;
-      return d.toLocaleString('en-US', opts);
-    } catch (err) { return ''; }
-  }
 
   // seasonDetailsPanel (the "Season Format" panel -- password/season-shape/
   // race-rules/session-length pill rows above the race list) removed
@@ -5778,9 +5715,6 @@
     return m + ':' + pad(s, 2) + ':' + pad(ms, 3);
   }
 
-  function _rcIsDnfRow_(row) {
-    return !!row && /DNF|DSQ|Disqualif/i.test(row.finishStatus || '');
-  }
 
   // Your own race summary -- position/grid/laps/best lap/total time/
   // points/pit stops/incidents-track limits-penalties, plus the pole/
@@ -7181,24 +7115,6 @@
     var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
-  }
-  // Same idea as formatDateLabel but for a <input type="datetime-local">
-  // value ("2026-09-05T20:00") -- used only for the wizard's scheduled
-  // season-release preview line. Reads in the BROWSER's local time, same
-  // as the datetime-local input itself, so the label always matches what
-  // the admin actually picked.
-  function formatDateTimeLabel(dtLocal) {
-    if (!dtLocal) return '';
-    var d = new Date(dtLocal);
-    if (isNaN(d.getTime())) return '';
-    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    var hours = d.getHours();
-    var ampm = hours >= 12 ? 'PM' : 'AM';
-    var hour12 = hours % 12 || 12;
-    var mins = String(d.getMinutes()).padStart(2, '0');
-    return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() +
-      ' at ' + hour12 + ':' + mins + ' ' + ampm;
   }
   // Wraps a plain <input type="time"> with a small static badge next to it
   // -- "Sim Time" for the In-Game Practice/Qualify/Race start times, which
@@ -11613,24 +11529,6 @@
     }
   }
 
-  // Dropdown for a standardized option list (Matt's call: "use dropdown
-  // boxes anytime there are options which are standardized and use text
-  // boxes for only custom things that do not have set options"). If the
-  // record's current value isn't already in that list (an older/one-off
-  // entry), it's prepended as an extra option so editing never silently
-  // discards it -- the dropdown always has to contain whatever's already
-  // selected.
-  function _rcBuildSelectWithFallback(options, currentValue) {
-    var select = document.createElement('select');
-    var list = options.slice();
-    if (currentValue && list.indexOf(currentValue) === -1) list = [currentValue].concat(list);
-    list.forEach(function (opt) {
-      var o = document.createElement('option'); o.value = opt; o.textContent = opt;
-      if (opt === currentValue) o.selected = true;
-      select.appendChild(o);
-    });
-    return select;
-  }
 
   // _rcCarTierBadge (the Car Objectives Low/Mid/High/Elite tier pill) was
   // removed entirely 2026-09-19 -- Matt's call: car Tier classification

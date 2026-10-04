@@ -265,29 +265,7 @@ function _rclEntryLengthMinutes(entry, hub) {
   return (tier && tier.duration) ? Number(tier.duration) : 0;
 }
 
-// Same 5-tier icon-by-rain-chance logic as Account.html's own
-// weatherIcon() (Calendar page) -- duplicated locally rather than shared
-// since league.html doesn't load Account.html (see file header comment).
-function _rclWeatherIcon(entry) {
-  var rc = entry.chanceOfRain || 0;
-  if (rc <= 0) return (entry.weather === 'Cloudy') ? _RCL_ICON_CLOUD_PARTLY : _RCL_ICON_SUN;
-  if (rc <= 25) return _RCL_ICON_CLOUD;
-  if (rc <= 75) return _RCL_ICON_RAIN;
-  return _RCL_ICON_RAIN_HEAVY;
-}
 
-// Builds one .rcl-chip-light pill (icon + text) -- shared by the Calendar
-// meta row and the Points Tables tier duration (2026-09-19, Matt's ask:
-// "use icons when possible for maximum aesthetics"). `text` is inserted
-// as a real text node, never HTML, so nothing here needs escaping.
-function _rclChip(iconSvg, text, outline) {
-  var chip = _rclEl('span', 'rcl-chip-light' + (outline ? ' rcl-chip-outline' : ''));
-  var iconSpan = _rclEl('span', 'rcl-chip-icon');
-  iconSpan.innerHTML = iconSvg;
-  chip.appendChild(iconSpan);
-  chip.appendChild(document.createTextNode(text));
-  return chip;
-}
 
 // Local copies of a handful of Account.html's ICON_* constants (same
 // viewBox/stroke-width/cap/join convention -- see the
@@ -1255,56 +1233,6 @@ function _rclBuildEventTitleLine_(entry, hideRoundNum, roundSep) {
   return eventLine;
 }
 
-// opts.hideRoundNum (2026-09-26) -- the All Results popup passes this true
-// (see _rclBuildAllResultsBody_ below); Recent Results calls this with no
-// opts at all, so its round number keeps showing.
-// opts.hideStatRow (2026-09-27, Matt's ask: "in the RECENT RESULTS
-// container, remove the header that says the winner/pole/fastest lap") --
-// Recent Results now passes this true, dropping the whole Winner/Pole/
-// Fastest Lap stat row and keeping only the event title line. The All
-// Results popup is untouched (still gets the full stat row here) -- it's
-// being replaced by its own richer per-class Winner/Most Laps Led/Pole/
-// Fastest Lap breakdown instead, see _rclBuildAllResultsBody_ below, which
-// no longer calls this function's stat row at all.
-function _rclBuildRaceHeadline_(r, opts) {
-  opts = opts || {};
-  var headlineClass = 'rcl-race-headline' + (opts.hideStatRow ? ' rcl-race-headline-notabs' : '') +
-    // Started Recent Results only (2026-09-27, Matt's ask: "move the topmost
-    // class results header bar to where the gray line is below the event
-    // title... and deleted the gray line"), then extended to the All Results
-    // popup too the same day ("remove the line above the header in between
-    // the bonus points winners and the event name") -- closes the headline's
-    // own bottom border+gap entirely so whatever comes right after it (the
-    // first .rcl-standings-class-header graphite bar in Recent Results, or
-    // the category breakdown in All Results) sits right where that line
-    // used to be, with just a small breathing-room margin in its place. Kept
-    // as its own modifier (rather than editing .rcl-race-headline-notabs
-    // directly) purely so a future caller can still opt out.
-    (opts.closeGapNoLine ? ' rcl-race-headline-closegap' : '');
-  var headline = _rclEl('div', headlineClass);
-  // variant: 'accent' (gold, Winner) or 'fastestlap' (purple, Fastest Lap
-  // -- 2026-09-26, Matt's ask: "make sure the FASTEST LAP winner in the
-  // header has their name purple, in the header only" -- distinct from
-  // Winner's gold and from the metal gold/silver/bronze position colors).
-  function stat(label, value, variant) {
-    var s = _rclEl('div', 'rcl-race-headline-stat');
-    s.appendChild(_rclEl('div', 'rcl-race-headline-label', label));
-    s.appendChild(_rclEl('div', 'rcl-race-headline-value' + (variant ? ' rcl-race-headline-value-' + variant : ''), _rclEscapeHtml(value || '--')));
-    return s;
-  }
-  // opts.roundNumSep (2026-10-01) -- passed straight through to
-  // _rclBuildEventTitleLine_; see that function's own comment above.
-  headline.appendChild(_rclBuildEventTitleLine_(r, opts.hideRoundNum, opts.roundNumSep));
-
-  if (!opts.hideStatRow) {
-    var detailRow = _rclEl('div', 'rcl-race-headline-row');
-    detailRow.appendChild(stat('Winner', r.overallWinner, 'accent'));
-    detailRow.appendChild(stat('Pole', r.overallPoleSitter));
-    detailRow.appendChild(stat('Fastest Lap', r.overallFastestLapDriver ? (r.overallFastestLapDriver + (r.overallFastestLapTime ? ' (' + _rclFormatLapTime_(r.overallFastestLapTime) + ')' : '')) : '', r.overallFastestLapDriver ? 'fastestlap' : null));
-    headline.appendChild(detailRow);
-  }
-  return headline;
-}
 
 // Icons for the All Results popup's per-class category breakdown
 // (2026-09-27, Matt's ask: "add icons in front of winner, most laps led,
@@ -2027,10 +1955,6 @@ function _rclAppendResultsStatusFooter_(body, round, seasonEnded, seasonNumber) 
   body.appendChild(footer);
 }
 
-function _rclAppendResultsStatusNotice_(body, hub) {
-  if (!hub.resultsRounds || !hub.resultsRounds.length) return;
-  _rclAppendResultsStatusFooter_(body, hub.lastRace);
-}
 
 // ---------------------------------------------------------------------
 // ALL RESULTS POPUP (added 2026-09-23) -- the FULL, uncapped result set

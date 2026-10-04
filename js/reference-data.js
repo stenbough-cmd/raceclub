@@ -470,16 +470,6 @@ function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
 // sponsorLogoSrc() removed entirely 2026-09-17 -- V1 scope cut, Sponsorship
 // system out of the site. See season-1-mvp-scope.md.
 
-// Track image file convention -- assets/images/tracks/{TrackID}.png, keyed by the
-// raw TrackID (e.g. "TRK-0001") verbatim, NOT slugified like the
-// manufacturer/sponsor logos above -- Matt's call, since TrackID is
-// already a clean, stable identifier. Admin uploads the actual image
-// files by hand; callers should always set an onerror handler to hide the
-// <img> gracefully (silently, no broken-image icon) if that track's file
-// hasn't been uploaded yet -- see raceCard() in Account.html.
-function trackImageSrc(trackId) {
-  return 'assets/images/tracks/' + String(trackId || '') + '.png';
-}
 
 // Flat (non-emoji) country flag image -- flagcdn.com, keyed by the
 // lowercase ISO 3166-1 alpha-2 code looked up from COUNTRY_CODES
