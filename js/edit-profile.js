@@ -123,10 +123,10 @@ function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
     btn.type = 'button';
     btn.setAttribute('data-filename', filename);
     var img = document.createElement('img');
-    img.src = 'assets/avatars/' + filename;
+    img.src = rcAvatarSrc_(filename);
     img.alt = 'Avatar option';
     img.loading = 'lazy';
-    img.onerror = function () { btn.style.display = 'none'; };
+    img.onerror = function () { rcAvatarNext_(img, function () { btn.style.display = 'none'; }, false); };
     btn.appendChild(img);
     btn.addEventListener('click', function () {
       selected = filename;

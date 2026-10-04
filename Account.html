@@ -2765,13 +2765,13 @@
       btn.type = 'button';
       btn.setAttribute('data-filename', filename);
       var img = document.createElement('img');
-      img.src = 'assets/avatars/' + filename;
+      img.src = rcAvatarSrc_(filename);
       img.alt = 'Avatar option';
       img.loading = 'lazy';
       // Hides the button entirely instead of showing a broken-image icon if a filename in
       // RC_AVATAR_FILENAMES_ doesn't actually exist under assets/avatars/ (e.g. a mismatched name
       // on disk).
-      img.onerror = function () { btn.style.display = 'none'; };
+      img.onerror = function () { rcAvatarNext_(img, function () { btn.style.display = 'none'; }, false); };
       btn.appendChild(img);
       btn.addEventListener('click', function () {
         selected = filename;

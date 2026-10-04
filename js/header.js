@@ -8,27 +8,59 @@ var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 // showToast/_rcHeaderInitials/renderHeader, all already called directly from
 // Account.html/edit-profile.js as globals).
 // profile.avatarFilename is now one of three shapes: '' -> no avatar; caller shows initials
-// 'avatar-NN.png' / 'avatar_default.jpg' (a preset or the default file) -> assets/avatars/<name>
+// 'avatar-NN.png' / 'avatar_default.jpg' (a preset or the default file) -> assets/avatars/<name>, .jpg tried before .png
 // 'https://...' (a driver-pasted link) -> the URL itself, unchanged
 var RC_AVATAR_DEFAULT_FILE_ = 'avatar_default.jpg';
 
-function rcAvatarSrc_(avatarFilename) {
-  if (!avatarFilename) return '';
-  return (/^https:\/\//i.test(avatarFilename)) ? avatarFilename : ('assets/avatars/' + avatarFilename);
+// Every avatar name is tried as .jpg first, then .png (so 'avatar-05.png' on file in the profile
+// still finds avatar-05.jpg if that is what is on disk). A pasted https link is used as-is.
+function rcAvatarCandidates_(avatarFilename, withDefault) {
+  var out = [];
+  if (avatarFilename) {
+    if (/^https:\/\//i.test(avatarFilename)) {
+      out.push(avatarFilename);
+    } else {
+      var base = String(avatarFilename).replace(/\.(jpe?g|png)$/i, '');
+      out.push('assets/avatars/' + base + '.jpg', 'assets/avatars/' + base + '.png');
+    }
+  }
+  if (withDefault) {
+    var dbase = RC_AVATAR_DEFAULT_FILE_.replace(/\.(jpe?g|png)$/i, '');
+    ['assets/avatars/' + dbase + '.jpg', 'assets/avatars/' + dbase + '.png'].forEach(function (p) {
+      if (out.indexOf(p) === -1) out.push(p);
+    });
+  }
+  return out;
 }
 
-// Wire onto an <img> that's already showing an avatar (img.src already set via rcAvatarSrc_ above).
-// onFinalFailure runs only once the default image ITSELF has also failed to load (or the src was
-// already the default when it failed) -- callers use it to reveal initials, same last-resort each
-// avatar circle already had before this change.
+function rcAvatarSrc_(avatarFilename) {
+  return rcAvatarCandidates_(avatarFilename, false)[0] || '';
+}
+
+// Called each time an avatar <img> fails to load: moves it to the next candidate (.jpg, then .png,
+// then the default avatar), and runs onFinalFailure once every candidate has failed. Pass
+// withDefault=false (the preset picker) to skip the default avatar.
+function rcAvatarNext_(img, onFinalFailure, withDefault) {
+  if (!img._rcAvatarQueue) {
+    var src = img.getAttribute('src') || '';
+    var m = src.match(/^assets\/avatars\/(.+)$/);
+    var all = rcAvatarCandidates_(m ? m[1] : (/^https:\/\//i.test(src) ? src : ''), withDefault !== false);
+    var i = all.indexOf(src);
+    img._rcAvatarQueue = all.slice(i + 1);
+  }
+  var next = img._rcAvatarQueue.shift();
+  if (next) {
+    img.src = next;
+  } else {
+    img.onerror = null;
+    if (onFinalFailure) onFinalFailure();
+  }
+}
+
+// Wire onto an <img> already showing an avatar. onFinalFailure runs only once every candidate has
+// failed -- callers use it to reveal initials.
 function rcWireAvatarFallback_(img, onFinalFailure) {
-  img.onerror = function () {
-    if (img.src.indexOf(RC_AVATAR_DEFAULT_FILE_) !== -1) {
-      if (onFinalFailure) onFinalFailure();
-      return;
-    }
-    img.src = 'assets/avatars/' + RC_AVATAR_DEFAULT_FILE_;
-  };
+  img.onerror = function () { rcAvatarNext_(img, onFinalFailure, true); };
 }
 
 // Hamburger icon -- same stroke-width/cap/join convention as every other inline icon on the site
@@ -248,7 +280,7 @@ function renderHeader(opts) {
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
     var avatarSrc = rcAvatarSrc_(avatarFilename);
     var avatarImgHtml = avatarSrc
-      ? '<img class="rc-header-avatar-img" src="' + escapeHtmlHeader_(avatarSrc) + '" alt="" onerror="if(this.src.indexOf(\'' + RC_AVATAR_DEFAULT_FILE_ + '\')!==-1){this.style.display=\'none\';}else{this.src=\'assets/avatars/' + RC_AVATAR_DEFAULT_FILE_ + '\';}">'
+      ? '<img class="rc-header-avatar-img" src="' + escapeHtmlHeader_(avatarSrc) + '" alt="" onerror="var i=this;rcAvatarNext_(i,function(){i.style.display=\'none\';},true);">'
       : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +
