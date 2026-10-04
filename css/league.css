@@ -2248,11 +2248,50 @@ body.rc-league-page {
   margin-bottom: 10px;
   box-shadow: 0 0 0 1px var(--rcl-line-bright);
 }
-.rcl-carousel-header { display: flex; flex-direction: column; align-items: center; }
+/* width:100% (2026-10-04, see the no-wrap rule right below) -- without
+   this, the header shrink-wraps to whatever width its text content
+   naturally wants, instead of matching the item's own (possibly
+   mid-transition, narrower) current width, which is what the no-wrap/
+   ellipsis treatment below needs to actually have something to clip
+   against. */
+.rcl-carousel-header { display: flex; flex-direction: column; align-items: center; width: 100%; }
 /* Typography spec, 2026-10-03 (Matt's exact ask, with a worked example):
    event name medium weight, white, slightly smaller than the track name;
    track name extra heavy weight, white, even larger; date/time extra
    light weight, red, same size as the event name. */
+/* No-wrap + ellipsis on every header/hero text line (2026-10-04, Matt's
+   flicker bug report: "the carousel flicker is not fixed") -- the real
+   cause of the flicker wasn't the track's own height so much as THIS: an
+   item's width animates over .25s (.rcl-carousel-item's `width 0.25s
+   ease` transition) between 75px and 400px, but its full header/hero
+   text (hidden/shown by the active class INSTANTLY, not animated) was
+   free to wrap across extra lines while the box was still narrow partway
+   through that animation -- e.g. a 46px-font track name wrapping to 2-3
+   lines at a transitional ~200px width, then dropping back to 1 line once
+   the box reaches its final 400px. That transient extra-line height is
+   exactly the spike Matt was seeing, and it happens regardless of any
+   fixed height on the track, since the ITEM's own natural content height
+   briefly exceeds whatever was pinned. Forcing every one of these lines
+   to clip with an ellipsis instead of wrapping means the content's height
+   never depends on the current (possibly transitional) width at all.
+   The one-line-only convention this enforces is intentional: the active
+   item already carries the abbreviated .rcl-carousel-compact-track
+   version for everyone BEFORE it was ever the active centered item, so an
+   unusually long track name clipping with "..." here is an acceptable
+   trade for the height never moving. */
+.rcl-carousel-eventname,
+.rcl-carousel-trackname,
+.rcl-carousel-datetime,
+.rcl-carousel-compact-track,
+.rcl-carousel-compact-month,
+.rcl-carousel-compact-day,
+.rcl-carousel-details-line,
+.rcl-carousel-countdown-label {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .rcl-carousel-eventname {
   font-family: var(--rc-font-heading);
   font-size: 15px;

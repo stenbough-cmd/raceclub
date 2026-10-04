@@ -3086,7 +3086,15 @@ function _rclRenderRaceCarousel(hub) {
       itemEl.offsetHeight; // forces the toggle above to land before transition is restored
       itemEl.style.transition = '';
     });
-    if (maxHeight > 0) track.style.minHeight = maxHeight + 'px';
+    // Explicit height, not min-height (2026-10-04 follow-up) -- a flex
+    // container's items stretch (align-items: stretch, above) to the
+    // CONTENT-derived cross size of the flex line, and min-height only
+    // clamps the container's own box AFTER that -- it never feeds back
+    // into how far the items themselves stretch. That left a dead gap
+    // below any shorter entry's content instead of it actually filling
+    // the reserved space. An explicit height is what the items stretch
+    // to fill exactly.
+    if (maxHeight > 0) track.style.height = maxHeight + 'px';
 
     // Center the initially-active item without an animated scroll (an
     // animated auto-scroll firing the instant the page loads would be
