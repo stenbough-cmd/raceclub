@@ -2338,11 +2338,9 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rc-red);
 }
-/* Special events: date/time is white, not red and not gold (2026-10-04,
-   Matt's ask: "For special event only, I want the date and time styling
-   in the calendar to be white instead of red"). Regular events keep the
-   red above. */
-.rcl-carousel-item-special .rcl-carousel-datetime { color: var(--rcl-ink); }
+/* Special events keep the same red date/time as regular events
+   (2026-10-04, Matt reverted the brief white treatment). */
+
 .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 20px; }
 .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 46px; }
 .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 20px; }
