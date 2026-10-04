@@ -2858,6 +2858,17 @@ function _rclBuildRecapButton_(hub, entry) {
   return btn;
 }
 
+// Fixed geometry constants (2026-10-04) mirroring css/league.css exactly
+// -- every non-active carousel item is this wide (.rcl-carousel-item's
+// base width) with this gap between items (.rcl-carousel-track's gap,
+// mobile override at the 640px breakpoint). Used by setActive below to
+// compute a click's scroll target by pure arithmetic instead of
+// measuring the DOM -- see that function's own comment for why. If
+// either of these ever changes in the CSS, update it here too.
+var RC_CAROUSEL_COMPACT_WIDTH_ = 75;
+var RC_CAROUSEL_GAP_DESKTOP_ = 14;
+var RC_CAROUSEL_GAP_MOBILE_ = 10;
+
 function _rclRenderRaceCarousel(hub) {
   var outer = document.getElementById('rcl-race-carousel');
   if (!outer) return;
@@ -2897,27 +2908,31 @@ function _rclRenderRaceCarousel(hub) {
   // current (compact) size, and only swap the active class -- growing
   // the now-already-centered item in place -- once that scroll has
   // actually settled.
+  //
+  // The target is now PURE ARITHMETIC (2026-10-04 follow-up, Matt's bug
+  // report in Safari: "noticeable delay, no movement... opens in place
+  // without recentering") -- this used to measure the target by
+  // toggling the active class on/off with transitions disabled, reading
+  // layout mid-toggle, then reverting, all in one synchronous pass. That
+  // "disable transition, mutate, read, revert" sequence is exactly the
+  // kind of thing WebKit/Safari is known to not always flush synchronously
+  // the way Chromium does, so the read could land on a stale (pre- or
+  // mid-toggle) layout -- a target that happens to equal the CURRENT
+  // scrollLeft reads as "no movement," and the item still opens once the
+  // (unaffected) settle timeout fires regardless, matching the report
+  // exactly. The actual geometry here turns out not to need measuring at
+  // all: every item is the same 75px compact width with a fixed gap, and
+  // the track's own side padding (css/league.css, calc(50vw - half the
+  // active width)) is deliberately sized so the active item's width and
+  // the viewport width cancel out of the centering math entirely --
+  // scrolling item N into center, with every other item compact, always
+  // comes out to exactly N * (compact width + gap), full stop. No class
+  // toggling, no reflow timing, nothing left for a browser to disagree
+  // with Chromium about.
   function setActive(idx) {
     if (idx === activeIdx) return;
-    var nextEl = itemEls[idx];
-    var prevIdx = activeIdx;
-
-    // Measures the scroll target for the FINAL layout (idx active, the
-    // current one compact again) by toggling the class instantly
-    // (transitions off) on every item, reading the layout, then
-    // reverting to the CURRENT visual state -- all inside one
-    // synchronous pass, so none of this ever actually paints. This is
-    // the same "disable transition, toggle, measure, revert" technique
-    // the initial height measurement below already relies on, for the
-    // same reason: reading layout right after a class change that would
-    // normally animate can otherwise hand back the pre-change value.
-    itemEls.forEach(function (el) { el.style.transition = 'none'; });
-    itemEls.forEach(function (el, i) { el.classList.toggle('rcl-carousel-item-active', i === idx); });
-    var target = nextEl.offsetLeft - (track.clientWidth - nextEl.offsetWidth) / 2;
-    itemEls.forEach(function (el, i) { el.classList.toggle('rcl-carousel-item-active', i === prevIdx); });
-    track.offsetHeight; // forces the revert above to land before transitions are restored
-    itemEls.forEach(function (el) { el.style.transition = ''; });
-
+    var gap = window.matchMedia('(max-width: 640px)').matches ? RC_CAROUSEL_GAP_MOBILE_ : RC_CAROUSEL_GAP_DESKTOP_;
+    var target = idx * (RC_CAROUSEL_COMPACT_WIDTH_ + gap);
     _rclScrollCarouselTo_(track, target, true, function () {
       activeIdx = idx;
       itemEls.forEach(function (el, i) {
@@ -3123,8 +3138,12 @@ function _rclRenderRaceCarousel(hub) {
 
     // Center the initially-active item without an animated scroll (an
     // animated auto-scroll firing the instant the page loads would be
-    // jarring).
-    if (itemEls[activeIdx]) _rclCenterCarouselItem_(track, itemEls[activeIdx], false);
+    // jarring). Same pure-arithmetic target as setActive above, not a
+    // DOM measurement, for the same reason.
+    if (itemEls[activeIdx]) {
+      var initialGap = window.matchMedia('(max-width: 640px)').matches ? RC_CAROUSEL_GAP_MOBILE_ : RC_CAROUSEL_GAP_DESKTOP_;
+      _rclScrollCarouselTo_(track, activeIdx * (RC_CAROUSEL_COMPACT_WIDTH_ + initialGap), false);
+    }
   });
 }
 
@@ -3185,29 +3204,16 @@ function _rclScrollCarouselTo_(track, target, smooth, onSettled) {
   track._rclScrollTimer = setTimeout(settle, smooth ? 650 : 50);
 }
 
-// Centers a carousel item horizontally WITHIN THE CAROUSEL'S OWN SCROLL
-// TRACK ONLY (2026-10-03 fix, Matt's bug report: "league.html always
-// opens up halfway down the page instead of the top"). The previous code
-// used itemEl.scrollIntoView({inline:'center', block:'nearest'}), which
-// does not only scroll the carousel track -- when the active item (set on
-// every page load, including the very first render) sits lower on the
-// page than the viewport, the browser also scrolls ancestor containers
-// (here, the whole page) vertically to bring it fully into view, even
-// with block:'nearest'. That vertical scroll is what dropped the page
-// partway down on load. Setting scrollLeft directly on .rcl-carousel-track
-// (the actual overflow-x:auto element, see css/league.css) only ever
-// moves that one horizontal track and never touches window/page scroll.
-// scroll-behavior:smooth is set on the track in CSS, so an inline
-// scrollBehavior override is used to get an instant jump for the initial
-// load (smooth=false) vs. an animated one for a user click (smooth=true).
-// Only used for the page's very first render now (2026-10-04) -- a click
-// goes through setActive/_rclScrollCarouselTo_ above instead, since that
-// needs to scroll to where an item WILL be, not where it already is.
-function _rclCenterCarouselItem_(track, itemEl, smooth, onSettled) {
-  if (!track || !itemEl) return;
-  var target = itemEl.offsetLeft - (track.clientWidth - itemEl.offsetWidth) / 2;
-  _rclScrollCarouselTo_(track, target, smooth, onSettled);
-}
+// (_rclCenterCarouselItem_, the itemEl-measuring version of the above,
+// removed 2026-10-04 -- both of its only two call sites, the initial
+// page-load center and setActive's click-to-center, now compute the
+// target by pure arithmetic instead; see setActive's own comment for
+// why. Original note on why this scrolls the track's own scrollLeft
+// rather than itemEl.scrollIntoView(), kept for context: scrollIntoView
+// was also scrolling the whole page vertically on the very first render,
+// 2026-10-03, Matt's bug report -- "league.html always opens up halfway
+// down the page instead of the top." Setting scrollLeft directly on
+// .rcl-carousel-track only ever moves that one horizontal track.)
 
 // RACE INFO popup (2026-10-02, opened from a carousel item's own RACE INFO
 // button above) -- this specific round's own track/session details up
