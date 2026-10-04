@@ -2162,12 +2162,22 @@ body.rc-league-page {
      either end of the strip still scroll all the way to a centered
      position, same purpose scroll-padding would serve, done this way
      instead because it also gives the strip real breathing room past the
-     viewport edge on wide screens, matching the reference images. */
-  padding: 4px calc(50vw - 170px) 28px;
+     viewport edge on wide screens, matching the reference images. 200px
+     is half the active item's own 400px width (2026-10-04, was 170px for
+     the old 340px active width) -- keeps that same "item can still reach
+     dead center" math correct after the active width bump. */
+  padding: 4px calc(50vw - 200px) 28px;
   -webkit-overflow-scrolling: touch;
+  /* No visible scrollbar (2026-10-04, Matt's ask: "I dont want horizontal
+     scrollbar behavior") -- the track still scrolls (clicking an item
+     still recenters it via scrollLeft, _rclCenterCarouselItem_ in
+     js/league.js), this just stops the browser from drawing a scrollbar
+     chrome for it. Firefox/IE-Edge-legacy via scrollbar-width/
+     -ms-overflow-style, WebKit/Blink via the pseudo-element below. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.rcl-carousel-track::-webkit-scrollbar { height: 6px; }
-.rcl-carousel-track::-webkit-scrollbar-thumb { background: var(--rcl-line-bright); border-radius: 3px; }
+.rcl-carousel-track::-webkit-scrollbar { display: none; }
 /* Bare, no card (2026-10-02 follow-up, Matt's ask: "I don't want the
    calendar to live in containers... make it feel grand, big, like the
    MANUFACTURERS' STANDINGS we created" -- the box/border/background this
@@ -2180,7 +2190,11 @@ body.rc-league-page {
 .rcl-carousel-item {
   position: relative;
   flex: 0 0 auto;
-  width: 240px;
+  /* 75px for every non-center item (2026-10-04, Matt's ask: "On all
+     events not in the center, make the side past and present event
+     spaces 75px wide") -- was 240px for every item regardless of active
+     state; the active item overrides this to 400px below. */
+  width: 75px;
   scroll-snap-align: center;
   cursor: pointer;
   padding: 0 4px 16px;
@@ -2196,13 +2210,15 @@ body.rc-league-page {
    entries") -- sits centered in the track's own 14px gap rather than on
    either item's own edge, so it reads as a divider between items, not a
    border that belongs to one of them. No line before the very first
-   item. */
+   item. Runs the item's full height now (2026-10-04, Matt's ask: "extend
+   the divider lines from top to bottom of event" -- was inset 14% top
+   and bottom). */
 .rcl-carousel-item:not(:first-child)::before {
   content: '';
   position: absolute;
   left: -7px;
-  top: 14%;
-  bottom: 14%;
+  top: 0;
+  bottom: 0;
   width: 1px;
   background: var(--rcl-line-bright);
 }
@@ -2257,17 +2273,25 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rc-red);
 }
-.rcl-carousel-item-special .rcl-carousel-datetime { color: var(--rcl-gold, #c9a227); }
+/* Datetime stays the normal red, special event or not (2026-10-04, Matt's
+   ask: "Style Special events identical to regular championship events,
+   except the title and track are the gold color" -- date/time isn't
+   title or track, so it was wrongly turning gold too). */
 .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 20px; }
 .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 46px; }
 .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 20px; }
 /* The expanded "hero" content -- the EXTRA detail (race details lines,
-   RACE INFO/RACE RECAP buttons) an active item reveals below its
-   already-visible flag/event-name/track-name/date-time header; hidden
-   entirely on a compact item. */
+   RACE INFO/RACE RECAP buttons) an active item reveals below its full
+   flag/event-name/track-name/date-time header; hidden entirely on a
+   compact (side) item, which shows the much smaller compact header
+   instead -- see .rcl-carousel-compact-header below. */
 .rcl-carousel-hero { display: none; }
 .rcl-carousel-item-active {
-  width: 340px;
+  /* 400px, with 15px padding (2026-10-04, Matt's exact spec: "center
+     race width 400px with 15px padding") -- was 340px with the item's
+     generic 0 4px 16px padding. */
+  width: 400px;
+  padding: 15px;
   opacity: 1;
   cursor: default;
 }
@@ -2275,6 +2299,57 @@ body.rc-league-page {
   display: block;
   margin-top: 16px;
   width: 100%;
+}
+/* Full header (flag + full event name + full track name + full date/
+   time) is active-item-only now (2026-10-04) -- was shown at a smaller
+   size on every item; a compact item shows .rcl-carousel-compact-header
+   instead (below), so the two headers swap on the active class exactly
+   like .rcl-carousel-hero already does. */
+.rcl-carousel-header { display: none; }
+.rcl-carousel-item-active .rcl-carousel-header { display: flex; }
+/* Compact header -- the ONLY thing a side (non-center) item shows now
+   (2026-10-04, Matt's exact spec: "On all events not in the center...
+   only show flag on top, under that the first 3 letters of the track,
+   under that shortform of month..., under that the day. Use the same
+   font styles that correspond to those variables."). Each line reuses
+   the font-family/weight/letter-spacing/color/transform of the full
+   header role it stands in for -- track-abbrev borrows
+   .rcl-carousel-trackname's (heavy weight, white), month borrows
+   .rcl-carousel-eventname's (medium weight, white), day borrows
+   .rcl-carousel-datetime's (extra light weight, red) -- just resized to
+   fit a 75px-wide item, at the same sizes those roles already shrink to
+   under this page's own mobile breakpoint. */
+.rcl-carousel-compact-header { display: flex; flex-direction: column; align-items: center; }
+.rcl-carousel-item-active .rcl-carousel-compact-header { display: none; }
+.rcl-carousel-compact-track {
+  margin-top: 4px;
+  font-family: var(--rc-font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  line-height: 1.05;
+}
+.rcl-carousel-item-special .rcl-carousel-compact-track { color: var(--rcl-gold, #c9a227); }
+.rcl-carousel-compact-month {
+  margin-top: 6px;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rcl-ink);
+  line-height: 1.2;
+}
+.rcl-carousel-compact-day {
+  margin-top: 2px;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 200;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rc-red);
 }
 /* Race details -- lightest weight possible, smaller, light gray, all caps
    (2026-10-03, Matt's exact ask: "EVENING RACE, SPRINT 20 MINS LONG" /
@@ -2399,12 +2474,17 @@ body.rc-league-page {
 @media (max-width: 640px) {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
   .rcl-carousel-track { padding: 4px calc(50vw - 135px) 22px; gap: 10px; }
-  .rcl-carousel-item { width: 190px; }
+  /* Side items stay 75px even on mobile (2026-10-04) -- same universal
+     compact width as desktop now, so this no longer needs its own
+     shrink. Active item keeps its own smaller 270px cap here, though
+     (unchanged) -- a fixed 400px active item would overflow a narrow
+     phone screen; the track's own padding calc above (half of 270) still
+     agrees with that cap. */
   .rcl-carousel-item:not(:first-child)::before { left: -5px; }
   .rcl-carousel-eventname { font-size: 13px; }
   .rcl-carousel-trackname { font-size: 22px; }
   .rcl-carousel-datetime { font-size: 13px; }
-  .rcl-carousel-item-active { width: 270px; }
+  .rcl-carousel-item-active { width: 270px; padding: 15px; }
   .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 15px; }
   .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 32px; }
   .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 15px; }

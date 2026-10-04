@@ -186,17 +186,25 @@ function _rclFormatDateTimeLong_(iso) {
     ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
 
-// Morning/Afternoon/Evening/Night label from a race's own local start hour
+// Morning/Midday/Evening/Night label from a race's own local start hour
 // (2026-10-03, race carousel redesign, Matt's exact example: "EVENING
-// RACE..."). Browser-local hour, same "no per-viewer timezone on this
-// public page" posture every other date/time helper here already has.
+// RACE..."; "Afternoon" renamed "Midday" 2026-10-04, Matt's ask for
+// exactly these four options). Browser-local hour, same "no per-viewer
+// timezone on this public page" posture every other date/time helper
+// here already has -- this reads entry.startUtc, the round's own
+// real-world scheduled start time, NOT its in-game lore time
+// (igRaceStart/igPracticeStart/igQualifyStart), which is a separate
+// field entirely. If every event is showing the same period here despite
+// looking different in the schedule, double check which of those two
+// times was actually set per round -- this label only ever follows
+// startUtc.
 function _rclTimeOfDayLabel_(iso) {
   if (!iso) return '';
   var d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   var h = d.getHours();
   if (h >= 5 && h < 12) return 'Morning';
-  if (h >= 12 && h < 17) return 'Afternoon';
+  if (h >= 12 && h < 17) return 'Midday';
   if (h >= 17 && h < 21) return 'Evening';
   return 'Night';
 }
@@ -2762,9 +2770,13 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
 // countdown itself hits 0:00:00:00, not just on the carousel's next full
 // re-render from a hub refresh). Stops its own interval right after
 // firing onComplete -- there's nothing left to count down.
-function _rclBuildCountdown_(startUtc, onComplete) {
+function _rclBuildCountdown_(startUtc, onComplete, isSpecial) {
   var wrap = _rclEl('div', 'rcl-carousel-countdown');
-  wrap.appendChild(_rclEl('div', 'rcl-carousel-countdown-label', 'Countdown to <strong>Event</strong>'));
+  // "Countdown to Special Event" for a special event, same label structure
+  // otherwise (2026-10-04, Matt's ask: "It says COUNTDOWN TO SPECIAL EVENT
+  // instead of just EVENT" -- style stays identical to a regular
+  // championship round's countdown, just this one word of copy differs).
+  wrap.appendChild(_rclEl('div', 'rcl-carousel-countdown-label', 'Countdown to <strong>' + (isSpecial ? 'Special Event' : 'Event') + '</strong>'));
   var unitsRow = _rclEl('div', 'rcl-carousel-countdown-units');
   wrap.appendChild(unitsRow);
 
@@ -2916,6 +2928,37 @@ function _rclRenderRaceCarousel(hub) {
     if (entry.startUtc) header.appendChild(_rclEl('div', 'rcl-carousel-datetime', _rclEscapeHtml(_rclFormatDateTimeLong_(entry.startUtc))));
     item.appendChild(header);
 
+    // Compact header -- the ONLY thing a side (non-center) item shows now
+    // (2026-10-04, Matt's exact spec: flag, then first 3 letters of the
+    // track, then the month shortform, then the day; CSS, not this code,
+    // decides which of this and `header` above actually renders, toggled
+    // by .rcl-carousel-item-active same as .rcl-carousel-hero -- built
+    // for every item, side or center, same reason the full header always
+    // was: clicking a side item to make it active needs no second render
+    // pass). Text case is left to CSS's text-transform:uppercase on each
+    // line, same convention the full header's own lines already use.
+    var compactHeader = _rclEl('div', 'rcl-carousel-compact-header');
+    if (entry.country && typeof countryFlagSrc === 'function') {
+      var compactFlagSrc = countryFlagSrc(entry.country);
+      if (compactFlagSrc) {
+        var compactFlagImg = document.createElement('img');
+        compactFlagImg.className = 'rcl-carousel-flag';
+        compactFlagImg.src = compactFlagSrc;
+        compactFlagImg.alt = entry.country;
+        compactFlagImg.onerror = function () { compactFlagImg.style.display = 'none'; };
+        compactHeader.appendChild(compactFlagImg);
+      }
+    }
+    if (entry.track) compactHeader.appendChild(_rclEl('div', 'rcl-carousel-compact-track', _rclEscapeHtml(entry.track.slice(0, 3))));
+    if (entry.startUtc) {
+      var compactDate = new Date(entry.startUtc);
+      if (!isNaN(compactDate.getTime())) {
+        compactHeader.appendChild(_rclEl('div', 'rcl-carousel-compact-month', compactDate.toLocaleDateString(undefined, { month: 'short' })));
+        compactHeader.appendChild(_rclEl('div', 'rcl-carousel-compact-day', String(compactDate.getDate())));
+      }
+    }
+    item.appendChild(compactHeader);
+
     // Race details + button -- active-item-only (CSS reveals
     // .rcl-carousel-hero only under .rcl-carousel-item-active). Built
     // every time, not just for the active item, so clicking a side item
@@ -2925,15 +2968,24 @@ function _rclRenderRaceCarousel(hub) {
     var detailLines = [];
     var timeOfDay = _rclTimeOfDayLabel_(entry.startUtc);
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
+    // raceLengthTier (e.g. "Long") dropped from this line entirely
+    // (2026-10-04, Matt's bug report -- his exact example: "LONG 80 MINS
+    // LONG" reads as a duplicate of the minutes right next to it, since
+    // the tier is just a name for a minutes range this already states
+    // directly). Was sessionBits.push(entry.raceLengthTier) ahead of the
+    // minutes.
     var sessionBits = [];
-    if (entry.raceLengthTier) sessionBits.push(entry.raceLengthTier);
     if (lengthMin) sessionBits.push(lengthMin + ' Mins Long');
     var sessionLine = (timeOfDay ? (timeOfDay + ' Race') : '') + (sessionBits.length ? ((timeOfDay ? ', ' : '') + sessionBits.join(' ')) : '');
     if (sessionLine) detailLines.push(sessionLine);
     if (entry.weather) {
       var weatherLine = entry.weather;
       if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherLine += ' & ' + entry.temperatureC + '°';
-      weatherLine += ' with ' + (entry.chanceOfRain || 0) + '% chance of rain';
+      // "No rain forecasted" instead of "with 0% chance of rain"
+      // (2026-10-04, Matt's exact example) -- a nonzero chance keeps the
+      // original "with N% chance of rain" wording unchanged.
+      var rainPct = entry.chanceOfRain || 0;
+      weatherLine += rainPct > 0 ? (' with ' + rainPct + '% chance of rain') : ', no rain forecasted';
       detailLines.push(weatherLine);
     }
     if (detailLines.length) {
@@ -2963,7 +3015,7 @@ function _rclRenderRaceCarousel(hub) {
       recapSlot.appendChild(_rclBuildCountdown_(entry.startUtc, function () {
         recapSlot.innerHTML = '';
         recapSlot.appendChild(_rclBuildRecapButton_(hub, entry));
-      }));
+      }, isSpecial));
       btnRow.appendChild(recapSlot);
     } else {
       btnRow.appendChild(_rclBuildRecapButton_(hub, entry));
