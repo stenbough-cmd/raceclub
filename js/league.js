@@ -625,7 +625,7 @@ function _rclRenderTicker(hub) {
   if (!items.length) {
     track.innerHTML = '';
     track.style.animation = 'none';
-    track.appendChild(_rclEl('div', 'rcl-ticker-empty', 'Highlights fill in once a season is underway.'));
+    // Empty-state message removed (2026-10-04, Matt's ask) -- the ticker just stays blank.
     return;
   }
 
