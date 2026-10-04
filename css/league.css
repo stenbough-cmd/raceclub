@@ -2170,7 +2170,11 @@ body.rc-league-page {
   justify-content: center;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 32px 28px;
+  /* 20px bottom padding (2026-10-04, Matt's ask: gap above the calendar
+     and gap below it should be THE SAME) -- above = .rcl-carousel-outer's
+     44px margin-top + 4px top padding = 48px; below = this bottom padding
+     + the next row's 28px .rcl-row-full margin-top, so 20 + 28 = 48. */
+  padding: 4px 32px 20px;
   -webkit-overflow-scrolling: touch;
   /* No visible scrollbar (2026-10-04, Matt's ask: "I dont want horizontal
      scrollbar behavior") -- relevant now only for the narrow-phone
@@ -2214,9 +2218,15 @@ body.rc-league-page {
      stack is meant to read top-down, not centered. */
   justify-content: center;
   text-align: center;
-  opacity: 0.55;
-  transition: opacity 0.2s ease, width 0.25s ease;
+  transition: width 0.25s ease;
 }
+/* Dimming lives on the item's CHILDREN, not the item itself (2026-10-04,
+   Matt's ask: "Stop the vertical lines in the calendar from lighting up
+   when hovering over past and future events") -- the divider is the
+   item's own ::before, so dimming the item (opacity on the parent) made
+   the divider brighten on hover along with the content. The divider now
+   has a fixed opacity of its own, below, and never reacts to hover. */
+.rcl-carousel-item > * { opacity: 0.55; transition: opacity 0.2s ease; }
 /* Light gray vertical divider between entries (2026-10-03 follow-up,
    Matt's ask: "Add a light gray vertical line seperating calendar
    entries") -- sits centered in the track's own 14px gap rather than on
@@ -2233,15 +2243,18 @@ body.rc-league-page {
   bottom: 0;
   width: 1px;
   background: var(--rcl-line-bright);
+  opacity: 0.55;
 }
+.rcl-carousel-item-finished:not(:first-child)::before { opacity: 0.4; }
+.rcl-carousel-item-active:not(:first-child)::before { opacity: 1; }
 /* Full opacity on hover, always -- including a finished (dimmed) item
    (2026-10-02 follow-up, Matt's ask: "upon hover, the calendar event
    shouldn't ever dim"). .rcl-carousel-item:hover (class + pseudo-class)
    outranks the single-class .rcl-carousel-item-finished on specificity,
    so this rule already wins over the dimmed state regardless of source
    order, for both a compact and a finished item. */
-.rcl-carousel-item:hover { opacity: 1; }
-.rcl-carousel-item-finished { opacity: 0.4; }
+.rcl-carousel-item:hover > * { opacity: 1; }
+.rcl-carousel-item-finished > * { opacity: 0.4; }
 .rcl-carousel-flag {
   width: 40px;
   height: 28px;
@@ -2324,10 +2337,11 @@ body.rc-league-page {
   text-transform: uppercase;
   color: var(--rc-red);
 }
-/* Datetime stays the normal red, special event or not (2026-10-04, Matt's
-   ask: "Style Special events identical to regular championship events,
-   except the title and track are the gold color" -- date/time isn't
-   title or track, so it was wrongly turning gold too). */
+/* Special events: date/time is white, not red and not gold (2026-10-04,
+   Matt's ask: "For special event only, I want the date and time styling
+   in the calendar to be white instead of red"). Regular events keep the
+   red above. */
+.rcl-carousel-item-special .rcl-carousel-datetime { color: var(--rcl-ink); }
 .rcl-carousel-item-active .rcl-carousel-eventname { font-size: 20px; }
 .rcl-carousel-item-active .rcl-carousel-trackname { font-size: 46px; }
 .rcl-carousel-item-active .rcl-carousel-datetime { font-size: 20px; }
@@ -2343,12 +2357,12 @@ body.rc-league-page {
      generic 0 4px 16px padding. */
   width: 400px;
   padding: 15px;
-  opacity: 1;
   cursor: default;
   /* Stays top-down (header, then hero below it) rather than the side
      items' new vertical centering above -- see .rcl-carousel-item. */
   justify-content: flex-start;
 }
+.rcl-carousel-item-active > * { opacity: 1; }
 .rcl-carousel-item-active .rcl-carousel-hero {
   display: block;
   margin-top: 16px;
@@ -2485,6 +2499,11 @@ body.rc-league-page {
 }
 .rcl-carousel-countdown-label strong,
 .rcl-carousel-countdown-label b { color: var(--rcl-ink); }
+/* "SPECIAL EVENT" in the countdown caption is gold on a special event
+   (2026-10-04, Matt's ask) -- same gold as the special item's title and
+   track. */
+.rcl-carousel-item-special .rcl-carousel-countdown-label strong,
+.rcl-carousel-item-special .rcl-carousel-countdown-label b { color: var(--rcl-gold, #c9a227); }
 .rcl-carousel-countdown-units {
   display: flex;
   align-items: center;
@@ -2527,7 +2546,7 @@ body.rc-league-page {
 }
 @media (max-width: 640px) {
   .rcl-carousel-heading { padding: 0 16px 12px; font-size: 20px; }
-  .rcl-carousel-track { padding: 4px 16px 22px; gap: 10px; }
+  .rcl-carousel-track { padding: 4px 16px 20px; gap: 10px; }
   /* Side items stay 75px even on mobile (2026-10-04) -- same universal
      compact width as desktop now, so this no longer needs its own
      shrink. Active item keeps its own smaller 270px cap here, though
