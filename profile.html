@@ -1,0 +1,50 @@
+<!-- Race Club -- profile.html (public driver profile, opened as profile.html?id=RC-00012) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Club: Driver Profile</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/profile.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+<script src="js/reference-data.js"></script>
+</head>
+<body>
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<main class="rc-profile-page">
+  <section class="rc-profile-card" id="rc-profile-card" hidden>
+    <div class="rc-profile-avatar-wrap">
+      <img class="rc-profile-avatar" id="rc-profile-avatar" alt="">
+    </div>
+    <div class="rc-profile-name-row">
+      <h1 class="rc-profile-name" id="rc-profile-name"></h1>
+      <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
+    </div>
+    <div class="rc-profile-since" id="rc-profile-since"></div>
+  </section>
+
+  <section class="rc-profile-card rc-profile-empty" id="rc-profile-empty" hidden>
+    <h1 class="rc-profile-name" id="rc-profile-empty-title">Profile Not Available</h1>
+    <p class="rc-profile-empty-text" id="rc-profile-empty-text"></p>
+    <a class="rc-btn-secondary rc-profile-back" href="league.html">Back To League Hub</a>
+  </section>
+</main>
+
+<footer class="rc-site-footer">
+  <div class="rc-site-footer-inner">
+    <div class="rc-site-footer-legal">
+      Race Club Online is an independent community-run sim racing league and is not affiliated with, endorsed by, or sponsored by Le Mans Ultimate, Studio 397, Motorsport Games, any vehicle manufacturer, race circuit, racing series, or trademark owner. All trademarks, logos, vehicle names, and circuit names are the property of their respective owners and are used for identification and informational purposes only.
+      <button type="button" class="rc-footer-legal-link" id="rc-footer-legal-link">Legal Disclaimer</button>
+    </div>
+  </div>
+</footer>
+<script>rcWireFooterLegalLink();</script>
+
+<script src="js/profile.js"></script>
+</body>
+</html>

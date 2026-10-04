@@ -20,6 +20,10 @@ function apiBaseUrlIsUnset() {
 // ("PublishedLeagueHub" or "PublishedGridTeaser"), format "Comma-separated values (.csv)", check
 // "Automatically republish when changes are made," then Publish -- paste the URL it gives you here.
 var RC_LEAGUE_HUB_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=37344457&single=true&output=csv';
+// Driver directory (profile.html + the league page's background prefetch). Leave blank until the
+// 'PublishedDriverDirectory' tab has been published to the web the same way; while blank, the
+// directory is fetched through the Apps Script API instead (slower, but identical data).
+var RC_DRIVER_DIRECTORY_CSV_URL = '';
 var RC_GRID_TEASER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=1748486478&single=true&output=csv';
 
 // fetchPublishedJson(csvUrl) -> Promise<Object>
@@ -50,6 +54,80 @@ function fetchPublishedJson(csvUrl) {
 
     return JSON.parse(jsonStr);
   });
+}
+
+// Name/username character rules -- mirrors _rcValidateIdentityFields_ in Auth.gs (the server is the
+// real gate; this just gives instant feedback). Names: Latin letters (accents OK), numbers, spaces,
+// hyphens, apostrophes, periods. Usernames: letters, numbers, underscores, hyphens, periods.
+// `original` is the saved account (or null for a new one); a field is only checked when it is new
+// or changed, so older accounts can still save other edits. Returns '' when fine, else the message.
+function rcIdentityProblem(fields, original) {
+  original = original || null;
+  function changed(key, stored) {
+    return !original || String(fields[key] || '').trim() !== String(stored || '').trim();
+  }
+  function nameProblem(label, value) {
+    var v = String(value || '').trim();
+    if (!v) return label + ' is required.';
+    if (v.length > 40) return label + ' must be 40 characters or fewer.';
+    if (!/^[\p{Script=Latin}\p{M}0-9][\p{Script=Latin}\p{M}0-9 .'\u2019-]*$/u.test(v)) {
+      return label + ' can only use Latin letters (accents are fine), numbers, spaces, hyphens, apostrophes and periods.';
+    }
+    return '';
+  }
+  var msg = '';
+  if (fields.username !== undefined && changed('username', original && original.username)) {
+    var u = String(fields.username || '').trim();
+    if (!u) msg = 'Username is required.';
+    else if (u.length > 30) msg = 'Username must be 30 characters or fewer.';
+    else if (!/^[A-Za-z0-9_.-]+$/.test(u)) msg = 'Username can only use letters, numbers, underscores, hyphens and periods (no spaces).';
+    if (msg) return msg;
+  }
+  if (fields.firstName !== undefined && changed('firstName', original && original.firstName)) {
+    msg = nameProblem('First name', fields.firstName); if (msg) return msg;
+  }
+  if (fields.lastName !== undefined && changed('lastName', original && original.lastName)) {
+    msg = nameProblem('Last name', fields.lastName); if (msg) return msg;
+  }
+  return '';
+}
+
+// ---- DRIVER DIRECTORY (public list behind profile.html) ----
+// Saved in this browser (localStorage) so a profile can draw instantly from the last copy while a
+// fresh one is fetched quietly in the background (stale-while-revalidate). Every storage call is
+// wrapped: private windows / blocked storage just mean "no saved copy".
+var RC_DRIVER_DIRECTORY_STORAGE_KEY_ = 'rc_driver_directory_v1';
+
+function rcReadSavedDriverDirectory() {
+  try {
+    var raw = localStorage.getItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_);
+    if (!raw) return null;
+    var dir = JSON.parse(raw);
+    return (dir && Array.isArray(dir.drivers)) ? dir : null;
+  } catch (err) { return null; }
+}
+
+// Fetches the current directory (published CSV first, Apps Script as the fallback), saves it, and
+// resolves with it. Rejects if both routes fail.
+function rcFetchDriverDirectory() {
+  return fetchPublishedJson(RC_DRIVER_DIRECTORY_CSV_URL).catch(function () {
+    return fetchApi('getDriverDirectory', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
+  }).then(function (dir) {
+    if (!dir || !dir.success || !Array.isArray(dir.drivers)) throw new Error('RC_DIRECTORY_BAD');
+    try {
+      localStorage.setItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_, JSON.stringify(dir));
+      localStorage.setItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_ + '_t', String(Date.now()));
+    } catch (err) { /* storage unavailable */ }
+    return dir;
+  });
+}
+
+// True when there is no saved directory, or it was saved more than maxAgeMs ago.
+function rcDriverDirectoryIsStale(maxAgeMs) {
+  try {
+    var t = Number(localStorage.getItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_ + '_t')) || 0;
+    return !rcReadSavedDriverDirectory() || (Date.now() - t) > maxAgeMs;
+  } catch (err) { return true; }
 }
 
 // How long a single attempt is allowed to hang before it's treated as failed.

@@ -470,6 +470,11 @@ function _rcEPOpenEditProfileModal(profile, token) {
       showToast('Username, first name, last name, and email are required.', 'error');
       return;
     }
+    var identityProblem = rcIdentityProblem({ username: username.value, firstName: firstName.value, lastName: lastName.value }, profile);
+    if (identityProblem) {
+      showToast(identityProblem, 'error');
+      return;
+    }
 
     // Password change folded into SAVE CHANGES, mirroring Account.html's own openEditProfileModal
     // exactly. The button waits on the server (up to RC_FETCH_TIMEOUT_MS_PROFILE) and shows "Saving

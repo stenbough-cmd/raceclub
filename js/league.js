@@ -614,6 +614,23 @@ function _rclIsDnf_(row) {
   return !!(row && (row.disqualified || row.suspended || /dnf/i.test(row.finishStatus || '')));
 }
 
+// A driver's name as a link to their public profile (profile.html?id=RC-xxxxx) when a profileId is
+// known, otherwise plain text. Built with textContent/encodeURIComponent so a name can never be
+// parsed as markup.
+function _rclBuildDriverNameEl_(className, name, profileId) {
+  var el;
+  if (profileId && /^RC-\d+$/.test(String(profileId))) {
+    el = document.createElement('a');
+    el.href = 'profile.html?id=' + encodeURIComponent(profileId);
+    el.className = className + ' rcl-driver-link';
+  } else {
+    el = document.createElement('span');
+    el.className = className;
+  }
+  el.textContent = name || '';
+  return el;
+}
+
 // logo, name, country flag, car number, team -- one identical identity block wherever a driver row
 // appears on this page.
 function _rclBuildDriverIdentity_(row, dnf) {
@@ -632,7 +649,7 @@ function _rclBuildDriverIdentity_(row, dnf) {
   identity.appendChild(logoSlot);
 
   var nameRow = _rclEl('div', 'rcl-standings-name-row');
-  nameRow.appendChild(_rclEl('span', 'rcl-standings-name', _rclEscapeHtml(row.name)));
+  nameRow.appendChild(_rclBuildDriverNameEl_('rcl-standings-name', row.name, row.profileId));
   if (row.country && typeof countryFlagSrc === 'function') {
     var flagSrc = countryFlagSrc(row.country);
     if (flagSrc) {
@@ -2569,7 +2586,9 @@ function _rclOpenMemberListModal(hub) {
       group.appendChild(_rclEl('div', 'rcl-memberlist-tier', tier === 'Admin' ? 'Admins' : tier + 's'));
       tierMembers.forEach(function (m) {
         var row = _rclEl('div', 'rcl-memberlist-row');
-        row.appendChild(_rclEl('div', 'rcl-memberlist-name', _rclEscapeHtml(m.displayName || 'Unknown Driver')));
+        var memberNameEl = _rclEl('div', 'rcl-memberlist-name');
+        memberNameEl.appendChild(_rclBuildDriverNameEl_('rcl-driver-link-inner', m.displayName || 'Unknown Driver', m.profileId));
+        row.appendChild(memberNameEl);
         row.appendChild(_rclEl('div', 'rcl-memberlist-joined', 'Joined on ' + (_rclFormatDate(m.joinedAt) || 'an unknown date')));
         group.appendChild(row);
       });
@@ -2640,7 +2659,7 @@ function _rclHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
   loader.classList.add('rcl-page-loader-hidden');
-  _rclUnlockBodyScroll();
+  if (document.body.classList.contains('rc-modal-scroll-locked')) _rclUnlockBodyScroll();
   setTimeout(function () {
     if (loader.parentNode) loader.parentNode.removeChild(loader);
   }, 450); // matches the 0.4s CSS transition, plus a hair of slack
@@ -2679,22 +2698,29 @@ function _rclPatchTimeDerivedFields_(hub) {
   return hub;
 }
 
-// _rclFetchLeagueHub_() -- tries the published CSV first, which hits Google's own static-file
+// Saved copy of the last League Hub payload, kept in this browser (localStorage) so coming back to
+// this page (e.g. from a driver profile) draws instantly from it while fresh data is fetched quietly
+// in the background (stale-while-revalidate). league.html's <head> checks the same key to skip the
+// loading overlay when a copy exists.
+var RCL_HUB_STORAGE_KEY_ = 'rc_league_hub_v1';
+
+function _rclReadSavedHubText_() {
+  try { return localStorage.getItem(RCL_HUB_STORAGE_KEY_); } catch (err) { return null; }
+}
+function _rclSaveHubText_(text) {
+  try { localStorage.setItem(RCL_HUB_STORAGE_KEY_, text); } catch (err) { /* storage full or blocked -- the page still works */ }
+}
+
+// _rclFetchLeagueHubRaw_() -- tries the published CSV first, which hits Google's own static-file
 // servers with zero Apps Script execution, and falls back to the normal fetchApi('getLeagueHub',
-// ...) call -- unchanged from before this feature existed -- on ANY failure: the CSV URL hasn't
-// been configured yet (RC_LEAGUE_HUB_CSV_URL left blank in api.js), the fetch itself failed, or the
-// reassembled text didn't parse.
-function _rclFetchLeagueHub_() {
-  return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).then(function (hub) {
-    return _rclPatchTimeDerivedFields_(hub);
-  }).catch(function () {
+// ...) call on ANY failure (CSV URL not configured, fetch failed, or the text didn't parse).
+function _rclFetchLeagueHubRaw_() {
+  return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).catch(function () {
     return fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
   });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
-
   var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderWebsiteContainers];
 
   function showHub(hub) {
@@ -2711,10 +2737,55 @@ document.addEventListener('DOMContentLoaded', function () {
     _rclHidePageLoader();
   }
 
-  _rclFetchLeagueHub_().then(showHub).catch(function () {
-    _rclRenderTicker({ lastRace: null, standings: [] });
-    RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
-    _rclRenderHero({ hasSeason: false });
-    _rclHidePageLoader();
+  // Draw the saved copy first, if there is one.
+  var currentText = null;
+  var savedText = _rclReadSavedHubText_();
+  if (savedText) {
+    try {
+      var savedHub = JSON.parse(savedText);
+      if (savedHub && savedHub.success) {
+        currentText = savedText;
+        showHub(_rclPatchTimeDerivedFields_(savedHub));
+      }
+    } catch (parseErr) { currentText = null; }
+  }
+  if (!currentText) {
+    document.documentElement.classList.remove('rcl-has-cache');
+    if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
+  }
+
+  // Fetch fresh data; only redraw when it actually differs from what is already on screen.
+  var revalidating = false;
+  function revalidate() {
+    if (revalidating) return;
+    revalidating = true;
+    _rclFetchLeagueHubRaw_().then(function (hub) {
+      if (hub && hub.success) {
+        var text = JSON.stringify(hub);
+        if (text !== currentText) {
+          currentText = text;
+          _rclSaveHubText_(text);
+          showHub(_rclPatchTimeDerivedFields_(hub));
+        }
+      } else if (!currentText) {
+        showHub(hub);
+      }
+    }).catch(function () {
+      if (!currentText) showHub(null);
+    }).then(function () { revalidating = false; });
+  }
+  revalidate();
+
+  // Coming back via the browser's back button can restore this page from memory without reloading
+  // it; refresh quietly in that case too.
+  window.addEventListener('pageshow', function (evt) {
+    if (evt.persisted) revalidate();
   });
+
+  // Quietly keep the driver directory (profile.html's data) warm so a profile opens instantly.
+  setTimeout(function () {
+    if (typeof rcDriverDirectoryIsStale === 'function' && rcDriverDirectoryIsStale(10 * 60 * 1000)) {
+      rcFetchDriverDirectory().catch(function () {});
+    }
+  }, 1500);
 });

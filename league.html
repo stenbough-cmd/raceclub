@@ -7,6 +7,9 @@
 <title>Race Club: League Hub</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/league.css">
+<!-- If a saved copy of the hub exists in this browser, js/league.js draws it immediately, so skip
+     the loading overlay entirely (it only shows on a first-ever visit or after storage is cleared). -->
+<script>try { if (localStorage.getItem('rc_league_hub_v1')) document.documentElement.classList.add('rcl-has-cache'); } catch (e) {}</script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>

@@ -1,0 +1,39 @@
+/* Race Club -- css/profile.css (public driver profile page) */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+.rc-profile-page {
+  flex: 1 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 110px 16px 48px;
+}
+.rc-profile-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 36px 24px 32px;
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 10px;
+  text-align: center;
+}
+.rc-profile-card[hidden] { display: none; }
+.rc-profile-avatar-wrap {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--rc-offwhite);
+  border: 2px solid var(--rc-silver);
+}
+.rc-profile-avatar { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rc-profile-name-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.rc-profile-name { margin: 0; font-size: 24px; letter-spacing: 0.03em; overflow-wrap: anywhere; }
+.rc-profile-flag { width: 28px; height: 20px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px var(--rc-silver); }
+.rc-profile-flag[hidden] { display: none; }
+.rc-profile-since { font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); min-height: 18px; }
+.rc-profile-empty-text { margin: 0; color: var(--rc-steel); font-size: 14px; }
+.rc-profile-back { text-decoration: none; margin-top: 6px; }

@@ -3105,6 +3105,11 @@
         showToast('Username, first name, last name, and email are required.', 'error');
         return;
       }
+      var identityProblem = rcIdentityProblem({ username: username.value, firstName: firstName.value, lastName: lastName.value }, profile);
+      if (identityProblem) {
+        showToast(identityProblem, 'error');
+        return;
+      }
 
       // Password change is folded into this same SAVE CHANGES button. An untouched password section
       // (both new- password boxes empty) skips straight to the profile-fields save.
@@ -7737,6 +7742,11 @@
         showToast('Username, first name, last name, and email are required.', 'error');
         return;
       }
+      var identityProblem = rcIdentityProblem({ username: username.value, firstName: firstName.value, lastName: lastName.value }, null);
+      if (identityProblem) {
+        showToast(identityProblem, 'error');
+        return;
+      }
 
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
@@ -7903,6 +7913,11 @@
       evt.preventDefault();
       if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !email.value.trim()) {
         showToast('Username, first name, last name, and email are required.', 'error');
+        return;
+      }
+      var identityProblem = rcIdentityProblem({ username: username.value, firstName: firstName.value, lastName: lastName.value }, { username: driver.Username, firstName: driver.FirstName, lastName: driver.LastName });
+      if (identityProblem) {
+        showToast(identityProblem, 'error');
         return;
       }
       // Instant, no wait on the server. The popup closes the moment Save Changes is submitted; the

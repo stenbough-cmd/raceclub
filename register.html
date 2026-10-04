@@ -221,6 +221,11 @@
       showToast('Please choose a username.', 'error');
       return;
     }
+    var identityProblem = rcIdentityProblem({ username: username, firstName: firstName, lastName: lastName }, null);
+    if (identityProblem) {
+      showToast(identityProblem, 'error');
+      return;
+    }
     if (!location) {
       showToast('Please select a location.', 'error');
       return;
