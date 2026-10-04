@@ -8778,50 +8778,53 @@
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
 
-    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;');
+    // Layout (2026-10-04, Matt's ask): each button sits ABOVE its own
+    // thorough description -- [BUTTON] then description, repeated -- instead
+    // of one row of buttons.
+    var list = el('div', 'display:flex;flex-direction:column;gap:22px;');
 
-    // Create a Season / End Season / Clear Season Draft moved to the
-    // League Tools page's Seasons container (2026-09-19, Matt's call:
-    // "move the CREATE SEASON and END SEASON buttons... to the SEASONS
-    // container and they only appear to admins") -- see buildSeasonsPanel
-    // above. This row is just Members/Tracks/Cars now.
-    var membersBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Members');
-    membersBtn.type = 'button';
-    membersBtn.addEventListener('click', function () { openMembersModal(token); });
-    row.appendChild(membersBtn);
+    function addItem(label, onClick, descriptionParas, tooltip) {
+      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
+      var btn = el('button', 'rc-btn-secondary rc-btn-sm', label);
+      btn.type = 'button';
+      if (tooltip) withTooltip(btn, tooltip);
+      btn.addEventListener('click', onClick);
+      item.appendChild(btn);
+      descriptionParas.forEach(function (text) {
+        item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
+      });
+      list.appendChild(item);
+    }
 
-    var tracksBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Tracks');
-    tracksBtn.type = 'button';
-    tracksBtn.addEventListener('click', function () { openTracksModal(token); });
-    row.appendChild(tracksBtn);
+    // Create a Season / End Season / Clear Season Draft live on the League
+    // Tools page's Seasons container (2026-09-19), not here.
+    addItem('Members', function () { openMembersModal(token); }, [
+      'Opens the full list of every account on the site, including prospects who have registered but not yet joined a season. From here you can add a driver yourself, open any member to change their role, disable or re-enable their account, and send them a password reset.',
+      'Use this when someone needs their access changed (for example promoting a driver to Steward or Organizer), when a driver is locked out of their account, or when you want to look someone up.'
+    ]);
 
-    var carsBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cars');
-    carsBtn.type = 'button';
-    carsBtn.addEventListener('click', function () { openCarsModal(token); });
-    row.appendChild(carsBtn);
+    addItem('Tracks', function () { openTracksModal(token); }, [
+      'Opens the list of every track and layout the league can race on. You can add a new track with its first layout, add more layouts to an existing track, edit a track\'s name, nickname, region and country, and deactivate or reactivate a track or a single layout.',
+      'Deactivating hides a track or layout from the choices used when building a season, but it is never deleted, so past rounds and results that used it keep working. The nickname is the short name shown in tight spaces such as the calendar.'
+    ]);
 
-    // INTEGRITY CHECK (2026-09-30, Matt's ask) -- see openIntegrityCheckModal's
-    // own comment further down for what this actually does. Gray like every
-    // other opener here (race-club-ui-consistency's "gray unless it saves"
-    // rule) -- this button only opens a modal; the check itself runs once
-    // the modal is up, same as every other admin action shaped this way.
-    var integrityBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Integrity Check');
-    integrityBtn.type = 'button';
-    withTooltip(integrityBtn, 'Scans the active season for anything a write path failed to keep in sync -- stale caches, broken team/car references, orphaned history -- fixing what\'s safe automatically and listing anything that needs your call.');
-    integrityBtn.addEventListener('click', function () { openIntegrityCheckModal(token); });
-    row.appendChild(integrityBtn);
+    addItem('Cars', function () { openCarsModal(token); }, [
+      'Opens the list of every car and team seat drivers can register for. Each entry holds a class, manufacturer, car model, car number, team name and the short team description drivers see on the Choose Your Team screen. You can add a car, edit any of those fields, and deactivate or reactivate it.',
+      'Deactivating takes a car out of future registrations without deleting it, so drivers already registered to it and past results are unaffected. Keep the details here accurate, since race imports and the registration mismatch check compare against them.'
+    ]);
 
-    // News button removed from here (2026-09-18 follow-up) -- League News
-    // moved to its own panel on the League Tools page (Matt's call), with
-    // a much bigger editor (scheduling, a hero image) than this popup ever
-    // had. See buildLeagueNewsPanel/openNewsPostModal further down.
+    // INTEGRITY CHECK (2026-09-30, Matt's ask) -- see openIntegrityCheckModal.
+    // Gray like every other opener (race-club-ui-consistency's "gray unless
+    // it saves" rule) -- this button only opens a modal; the check itself
+    // runs once the modal is up.
+    addItem('Integrity Check', function () { openIntegrityCheckModal(token); }, [
+      'A one-click health check for the current season (the one that is open for registration or running). It looks for anything that should be in sync across the site and the Google Sheet but is not, repairs what is safe to repair automatically, and reports anything that needs a human decision. It only ever looks at the current season, and it can take up to a few minutes on a season with many completed rounds, so leave the popup open until it finishes.',
+      'What it fixes automatically: it refreshes the League Hub (standings, calendar, ticker and news), refreshes the Meet The Grid section on the landing page, rebuilds the standings for every round that has results, and refreshes the public results and qualifying popups for each of those rounds. These rebuilds are safe to repeat and are what fix a page that looks stale or out of date, for example when an import was interrupted or someone edited the Sheet by hand.',
+      'What it only flags: a registration that points to a team or car that no longer exists, two drivers registered to the same team seat, and standings history for a driver who no longer has a registration this season. These are reported, never changed, because removing or reassigning someone\'s seat or history is a judgment call that depends on why it happened.',
+      'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
+    ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
-    // Sponsors and Economy admin buttons removed entirely (V1 scope cut,
-    // 2026-09-18) -- those systems no longer exist. Counts line (Members/
-    // Tracks/Cars totals) removed 2026-09-24 -- Matt's call, this panel is
-    // just the three buttons now.
-
-    panel.appendChild(row);
+    panel.appendChild(list);
     section.appendChild(panel);
   }
 
