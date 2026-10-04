@@ -1781,7 +1781,7 @@
     var logoBox = el('div', 'rc-team-logo-box');
     if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
       var logo = document.createElement('img');
-      logo.src = manufacturerLogoSrc(data.manufacturer);
+      logo.src = manufacturerLogoSrc(data.manufacturer, 'black');
       logo.alt = data.manufacturer;
       manufacturerLogoFallback(logo, data.manufacturer, function () { logoBox.style.display = 'none'; });
       logoBox.appendChild(logo);
@@ -2004,7 +2004,7 @@
         var logoWrap = el('div', 'rc-cs-logo-wrap');
         var logo = document.createElement('img');
         logo.className = 'rc-cs-logo';
-        logo.src = manufacturerLogoSrc(data.manufacturer);
+        logo.src = manufacturerLogoSrc(data.manufacturer, 'black');
         logo.alt = data.manufacturer;
         manufacturerLogoFallback(logo, data.manufacturer, function () { logoWrap.style.display = 'none'; });
         logoWrap.appendChild(logo);
@@ -2838,7 +2838,7 @@
         logoBtn.title = manu;
         if (typeof manufacturerLogoSrc === 'function') {
           var img = document.createElement('img');
-          img.src = manufacturerLogoSrc(manu);
+          img.src = manufacturerLogoSrc(manu, 'black');
           img.alt = manu;
           manufacturerLogoFallback(img, manu, function () { logoBtn.style.display = 'none'; });
           logoBtn.appendChild(img);
@@ -2924,7 +2924,7 @@
       var logoBox = el('div', 'rc-team-logo-box');
       if (team.manufacturer && typeof manufacturerLogoSrc === 'function') {
         var logo = document.createElement('img');
-        logo.src = manufacturerLogoSrc(team.manufacturer);
+        logo.src = manufacturerLogoSrc(team.manufacturer, 'black');
         logo.alt = team.manufacturer;
         manufacturerLogoFallback(logo, team.manufacturer, function () { logoBox.style.display = 'none'; });
         logoBox.appendChild(logo);
@@ -3299,7 +3299,7 @@
         var logo = document.createElement('img');
         logo.className = 'rc-signing-reveal-logo';
         logo.alt = team.manufacturer;
-        logo.src = manufacturerLogoSrc(team.manufacturer);
+        logo.src = manufacturerLogoSrc(team.manufacturer, 'black');
         manufacturerLogoFallback(logo, team.manufacturer, function () { logo.style.display = 'none'; });
         identity.appendChild(logo);
       }
@@ -11326,7 +11326,7 @@
             var logo = document.createElement('img');
             logo.className = 'rc-dm-car-logo';
             logo.alt = '';
-            logo.src = manufacturerLogoSrc(c.Manufacturer || '');
+            logo.src = manufacturerLogoSrc(c.Manufacturer || '', 'black');
             // Tries the same-named .svg if the .png 404s, and only then
             // hides gracefully rather than showing a broken-image icon --
             // same pattern currentSeatBlock() uses elsewhere for this exact

@@ -395,41 +395,70 @@ var CAR_CLASS_BADGE_COLOR_VAR = { LMGTE: '--rc-class-lmgte', LMGT3: '--rc-class-
 // the real-world Le Mans GTE class, not shorthand for LMGTE.
 var CAR_CLASS_ABBREV = { LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 
-// Manufacturer logo file convention -- assets/manufacturers/{slug}.png
-// (2026-09-19, Matt's call: keep manufacturer logos in their own
-// top-level assets/manufacturers/ folder, not nested under assets/images/)
-// -- keyed by manufacturer name instead of by driver, since the same
-// manufacturer (e.g. "Ford") logo is reused across every car/team that
-// drives one. Admin uploads the actual image files by hand (not built/
-// seeded here) using this exact naming -- lowercase, spaces/punctuation
-// collapsed to a single hyphen, e.g. "Aston Martin" -> "aston-martin.png".
-// Callers should always set an onerror handler to hide the <img>
-// gracefully if that file hasn't been uploaded yet (see
-// currentSeatBlock() in Account.html).
-function manufacturerLogoSrc(manufacturerName) {
-  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/manufacturers/' + slug + '.png';
+// Manufacturer logo file convention, two-color variant (2026-10-04, Matt's
+// ask: "if I have a black and white .png of the same logo, can the website
+// automatically call the correct one based off the background it's
+// against") -- assets/manufacturers/{slug}-black.png (for a light
+// background) and assets/manufacturers/{slug}-white.png (for a dark one),
+// e.g. "Toyota" -> "toyota-black.png"/"toyota-white.png". Every call site
+// is on a background that's fixed at build time, not something that
+// changes at runtime, so the caller just says which one it needs --
+// league.js's pages (league.html's own dark theme) always pass 'white';
+// Account.html's (the site's standard light card theme) always pass
+// 'black'. variant defaults to 'black' if omitted/invalid.
+//
+// Was assets/manufacturers/{slug}.png, one file per manufacturer, no
+// variant (2026-09-19 -> 2026-10-04) -- that single file is now the
+// fallback manufacturerLogoFallback() below drops back to when a
+// manufacturer's two-color pair hasn't been uploaded yet, so every
+// manufacturer still shows its one existing logo everywhere, exactly as
+// before, until Matt uploads a black/white pair for it (Toyota/Genesis/
+// Cadillac are the first three). Admin uploads the actual image files by
+// hand (not built/seeded here) using this exact naming -- lowercase,
+// spaces/punctuation collapsed to a single hyphen, e.g. "Aston Martin" ->
+// "aston-martin-black.png"/"aston-martin-white.png". Callers should always
+// set an onerror handler to hide the <img> gracefully if nothing's been
+// uploaded yet (see currentSeatBlock() in Account.html).
+function _rcMfrLogoSlug_(manufacturerName) {
+  return String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+}
+function manufacturerLogoSrc(manufacturerName, variant) {
+  var v = (variant === 'white') ? 'white' : 'black';
+  return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '-' + v + '.png';
 }
 
-// Same slug, .svg extension -- the fallback manufacturerLogoFallback() below
-// tries once the .png 404s (2026-09-27, Matt's ask: some manufacturers only
-// have vector art on hand; use it instead of hiding the logo entirely).
+// Legacy single-file convention, kept only as the fallback chain's second
+// rung now (see manufacturerLogoFallback below) -- not called directly by
+// any page any more.
+function manufacturerLogoLegacySrc_(manufacturerName) {
+  return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '.png';
+}
+
+// Same slug, .svg extension -- unchanged since 2026-09-27 (some
+// manufacturers only have vector art on hand), tried last, after both the
+// new black/white convention and the old single-file one.
 function manufacturerLogoSvgSrc(manufacturerName) {
-  var slug = String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-  return 'assets/manufacturers/' + slug + '.svg';
+  return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '.svg';
 }
 
-// Arms an <img> whose src is already set to manufacturerLogoSrc(name) with a
-// two-step fallback chain: if the .png 404s, try the same-named .svg; if
+// Arms an <img> whose src is already set to manufacturerLogoSrc(name,
+// variant) with a three-step fallback chain (2026-10-04, extended for the
+// black/white variant split -- see manufacturerLogoSrc's own comment):
+// if the new {slug}-{variant}.png 404s, try the old single {slug}.png
+// (today's logo, right color or not, for a manufacturer that hasn't been
+// split into a pair yet); if THAT also 404s, try the same-named .svg; if
 // that ALSO 404s, run onAllFailed (every existing call site passes a
 // function that hides the <img> or its wrapper, same as before this
 // fallback existed). Callers still set imgEl.src themselves first -- this
 // only wires what happens on error.
 function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
-  var triedSvg = false;
+  var step = 0;
   imgEl.onerror = function () {
-    if (!triedSvg) {
-      triedSvg = true;
+    if (step === 0) {
+      step = 1;
+      imgEl.src = manufacturerLogoLegacySrc_(manufacturerName);
+    } else if (step === 1) {
+      step = 2;
       imgEl.src = manufacturerLogoSvgSrc(manufacturerName);
     } else {
       imgEl.onerror = null;

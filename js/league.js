@@ -644,7 +644,7 @@ function _rclRenderTicker(hub) {
     if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
       var logo = document.createElement('img');
       logo.className = 'rcl-ticker-driver-logo';
-      logo.src = manufacturerLogoSrc(row.manufacturer);
+      logo.src = manufacturerLogoSrc(row.manufacturer, 'white');
       logo.alt = '';
       manufacturerLogoFallback(logo, row.manufacturer, function () { logo.style.display = 'none'; });
       entry.appendChild(logo);
@@ -696,7 +696,7 @@ function _rclRenderTicker(hub) {
     if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
       var logo = document.createElement('img');
       logo.className = 'rcl-ticker-driver-logo';
-      logo.src = manufacturerLogoSrc(row.manufacturer);
+      logo.src = manufacturerLogoSrc(row.manufacturer, 'white');
       logo.alt = '';
       manufacturerLogoFallback(logo, row.manufacturer, function () { logo.style.display = 'none'; });
       entry.appendChild(logo);
@@ -991,7 +991,7 @@ function _rclBuildDriverIdentity_(row, dnf) {
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var logoImg = document.createElement('img');
     logoImg.className = 'rcl-standings-mfr-logo';
-    logoImg.src = manufacturerLogoSrc(row.manufacturer);
+    logoImg.src = manufacturerLogoSrc(row.manufacturer, 'white');
     logoImg.alt = '';
     manufacturerLogoFallback(logoImg, row.manufacturer, function () { logoSlot.style.display = 'none'; });
     logoSlot.appendChild(logoImg);
@@ -1596,7 +1596,7 @@ function _rclBuildLastRacePodium_(cls) {
     var driverWrap = _rclEl('div', 'rcl-lr-podium-driver');
     var img = document.createElement('img');
     img.className = 'rcl-lr-podium-logo';
-    img.src = manufacturerLogoSrc(row.manufacturer);
+    img.src = manufacturerLogoSrc(row.manufacturer, 'white');
     img.alt = row.manufacturer || '';
     manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
     driverWrap.appendChild(img);
@@ -1829,7 +1829,7 @@ function _rclRenderManufacturerStandings(hub) {
     var boxInner = _rclEl('div', 'rcl-mfr-tile-box-inner');
     var img = document.createElement('img');
     img.className = 'rcl-mfr-tile-logo';
-    img.src = manufacturerLogoSrc(entry.manufacturer);
+    img.src = manufacturerLogoSrc(entry.manufacturer, 'white');
     img.alt = entry.manufacturer;
     // Same onerror-hide convention as every other manufacturer logo on
     // this page (manufacturerLogoFallback -- tries a .svg before giving
