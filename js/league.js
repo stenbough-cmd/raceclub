@@ -1521,20 +1521,29 @@ function _rclRenderLastRace_(hub) {
   // "Last Race" -> "Season Recap" once the season showing has ended
   // (2026-10-03, Matt's ask -- was "Final Results", then "Last Season"
   // before that, both the same day).
-  var titleEl = document.getElementById('rcl-last-race-title');
-  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Season Recap' : 'Last Race';
-
-  var panel = document.getElementById('rcl-last-race-panel');
-  var row = document.getElementById('rcl-news-lastrace-row');
   var seasonEnded = !!hub.seasonEnded;
   var hasSeason = !!hub.hasSeason;
   var hasLastRaceData = seasonEnded ? !!hub.lastSeason : !!hub.lastRace;
+  // SEASON PREVIEW (2026-10-04, Matt's ask: "when a new season is created
+  // and there is nothing to display in the LAST RACE container because
+  // there are no results yet, let's change the header to SEASON PREVIEW
+  // and using the same style we have for the SEASON FORMAT popup, copy/
+  // paste that into this container. Once results are posted... this
+  // changes to LAST RACE again and functions like normal until the season
+  // is ENDED"). Replaces the old "No Data To Display" empty state here.
+  var showPreview = hasSeason && !seasonEnded && !hasLastRaceData;
+  var titleEl = document.getElementById('rcl-last-race-title');
+  if (titleEl) titleEl.textContent = seasonEnded ? 'Season Recap' : (showPreview ? 'Season Preview' : 'Last Race');
+  body.classList.toggle('rcl-seasonfmt-modal-body', showPreview);
+
+  var panel = document.getElementById('rcl-last-race-panel');
+  var row = document.getElementById('rcl-news-lastrace-row');
   if (panel) panel.style.display = hasSeason ? '' : 'none';
   if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasSeason);
   if (!hasSeason) return;
 
   if (!hasLastRaceData) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Results fill in once a season is underway.'));
+    _rclAppendSeasonFormatSections_(hub, body);
     return;
   }
 
@@ -3651,6 +3660,65 @@ function _rclRenderHero(hub) {
   if (subEl) subEl.style.display = 'none';
 }
 
+// Builds the SEASON FORMAT content (Season Details / Championship Points /
+// Race Rules pill-headed sections) into `body`. Shared by the SEASON FORMAT
+// popup (_rclOpenSeasonDetailsModal) and the SEASON PREVIEW state of the
+// LAST RACE panel (_rclRenderLastRace_, 2026-10-04, Matt's ask: "using the
+// same style we have for the SEASON FORMAT popup, copy/paste that into this
+// container") so the two never drift apart. `body` needs the
+// .rcl-seasonfmt-modal-body class for the red-header styling.
+function _rclAppendSeasonFormatSections_(hub, body) {
+  function buildRow(stat) {
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
+      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+  function buildTierRow(stat) {
+    var pts = (stat.points || []).map(function (val, idx) {
+      return '<span class="rcl-seasonfmt-pos">P' + (idx + 1) + '</span> ' + _rclEscapeHtml(String(val));
+    }).join(', ');
+    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' + pts;
+    return _rclEl('div', 'rcl-seasonfmt-row', html);
+  }
+
+  // Display-only relabeling (2026-10-03, Matt's ask -- see the modal
+  // title's own comment above for why this is display text only, not a
+  // rename of section.pill itself): "Season Format" -> "Season Details",
+  // "Season Rules" -> "Race Rules". Championship Points is unchanged.
+  var pillDisplayLabel_ = { 'Season Format': 'Season Details', 'Season Rules': 'Race Rules' };
+
+  var sections = _rclBuildSeasonFormatBlocks_(hub);
+  if (sections.length) {
+    sections.forEach(function (section) {
+      var group = _rclEl('div', 'rcl-hero-stats-group');
+      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillDisplayLabel_[section.pill] || section.pill));
+      var list = _rclEl('div', 'rcl-seasonfmt-list');
+      if (section.blocks) {
+        section.blocks.forEach(function (rows) {
+          var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
+          rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
+          list.appendChild(blockEl);
+        });
+      } else {
+        if (section.tiers.length) {
+          var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
+          list.appendChild(tierBlock);
+        }
+        if (section.bonus.length) {
+          var bonusBlock = _rclEl('div', 'rcl-seasonfmt-block');
+          section.bonus.forEach(function (stat) { bonusBlock.appendChild(buildRow(stat)); });
+          list.appendChild(bonusBlock);
+        }
+      }
+      group.appendChild(list);
+      body.appendChild(group);
+    });
+  } else {
+    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
+  }
+}
+
 // Opens the season snapshot + league format stats in a popup, same
 // .rcl-modal-* shell the news story popup uses. Briefly removed entirely
 // on 2026-10-02 (Matt's ask: "get rid of view season details", its one
@@ -3714,55 +3782,7 @@ function _rclOpenSeasonDetailsModal(hub) {
   // - "Bonus Points" has no header of its own at all -- just a blank gap
   //   above its own flat rows (Matt's ask: "get rid of that and leave a
   //   space... just list the bonus point catagories and their values").
-  function buildRow(stat) {
-    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
-      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
-    return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-  function buildTierRow(stat) {
-    var pts = (stat.points || []).map(function (val, idx) {
-      return '<span class="rcl-seasonfmt-pos">P' + (idx + 1) + '</span> ' + _rclEscapeHtml(String(val));
-    }).join(', ');
-    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' + pts;
-    return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-
-  // Display-only relabeling (2026-10-03, Matt's ask -- see the modal
-  // title's own comment above for why this is display text only, not a
-  // rename of section.pill itself): "Season Format" -> "Season Details",
-  // "Season Rules" -> "Race Rules". Championship Points is unchanged.
-  var pillDisplayLabel_ = { 'Season Format': 'Season Details', 'Season Rules': 'Race Rules' };
-
-  var sections = _rclBuildSeasonFormatBlocks_(hub);
-  if (sections.length) {
-    sections.forEach(function (section) {
-      var group = _rclEl('div', 'rcl-hero-stats-group');
-      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillDisplayLabel_[section.pill] || section.pill));
-      var list = _rclEl('div', 'rcl-seasonfmt-list');
-      if (section.blocks) {
-        section.blocks.forEach(function (rows) {
-          var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
-          rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
-          list.appendChild(blockEl);
-        });
-      } else {
-        if (section.tiers.length) {
-          var tierBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.tiers.forEach(function (stat) { tierBlock.appendChild(buildTierRow(stat)); });
-          list.appendChild(tierBlock);
-        }
-        if (section.bonus.length) {
-          var bonusBlock = _rclEl('div', 'rcl-seasonfmt-block');
-          section.bonus.forEach(function (stat) { bonusBlock.appendChild(buildRow(stat)); });
-          list.appendChild(bonusBlock);
-        }
-      }
-      group.appendChild(list);
-      body.appendChild(group);
-    });
-  } else {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Season details show up here once they are set.'));
-  }
+  _rclAppendSeasonFormatSections_(hub, body);
 
   dialog.appendChild(body);
   overlay.appendChild(dialog);
