@@ -2348,18 +2348,28 @@
   // the only way out is the "I UNDERSTAND" button.
   function openSeasonCommitmentNotice(team, carClass) {
     team = team || {};
-    var carText = [team.manufacturer, team.carModel].filter(Boolean).join(' ');
-    var parts = [];
-    if (carClass) parts.push(String(carClass));
-    if (carText) parts.push(carText);
-    if (team.carNumber) parts.push('#' + team.carNumber);
+    // carModel often already starts with the manufacturer name ("Ford Mustang GT3"), so the name is
+    // built without repeating it ("Ford Ford Mustang GT3").
+    var mfr = String(team.manufacturer || '').trim();
+    var model = String(team.carModel || '').trim();
+    var carText = (mfr && model.toLowerCase().indexOf(mfr.toLowerCase()) !== 0) ? [mfr, model].filter(Boolean).join(' ') : (model || mfr);
 
     var body = el('div');
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;',
-      'You may only drive in the <strong>class</strong>, <strong>car</strong> and <strong>car number</strong> you registered with for the <strong>entire season</strong>, without exception.'));
-    if (parts.length) {
-      var reg = el('div', 'background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-radius:8px;padding:10px 12px;margin:12px 0;font-size:14px;font-weight:700;color:var(--rc-carbon);text-align:center;',
-        escapeHtml(parts.join('  ·  ')));
+      'You may only drive in the <strong>class</strong>, <strong>car</strong> and <strong>car number</strong> you registered with for the <em>entire season</em>, without exception.'));
+    if (carClass || mfr || carText || team.carNumber) {
+      var reg = el('div', 'display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;background:var(--rc-offwhite);border:1px solid var(--rc-silver);border-radius:8px;padding:10px 12px;margin:12px 0;font-size:14px;font-weight:700;color:var(--rc-carbon);text-align:center;');
+      if (mfr && typeof manufacturerLogoSrc === 'function') {
+        var logo = document.createElement('img');
+        logo.src = manufacturerLogoSrc(mfr, 'black');
+        logo.alt = mfr;
+        logo.style.cssText = 'max-height:20px;max-width:55px;width:auto;height:auto;display:block;';
+        manufacturerLogoFallback(logo, mfr, function () { logo.style.display = 'none'; });
+        reg.appendChild(logo);
+      }
+      var carLabel = [carText, team.carNumber ? '#' + team.carNumber : ''].filter(Boolean).join(' ');
+      if (carLabel) reg.appendChild(el('span', '', escapeHtml(carLabel)));
+      if (carClass) reg.appendChild(_rcClassBadge(carClass));
       body.appendChild(reg);
     }
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;font-weight:700;text-decoration:none;margin:12px 0 0;',
