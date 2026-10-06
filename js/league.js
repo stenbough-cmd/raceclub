@@ -1141,8 +1141,13 @@ function _rclRenderManufacturerStandings(hub) {
   // actually closing it up. display:none collapses that margin along with everything else; the else
   // branch below resets it back to visible for the next render once a Hypercar class does have
   // points (no full page reload needed for this to reappear).
-  var top3 = hub.hasSeason ? _rclComputeManufacturerStandings_(hub) : [];
-  if (!top3.length) {
+  // Also hidden until a race has actually been scored (same roundsCompleted gate as the Championship
+  // Standings) -- manufacturers can't be ranked before then, even though every Hypercar entrant
+  // already exists in the standings at 0 points -- and while no manufacturer has any points.
+  var hasResults = (hub.roundsCompleted || 0) > 0;
+  var top3 = (hub.hasSeason && hasResults) ? _rclComputeManufacturerStandings_(hub) : [];
+  var anyPoints = top3.some(function (m) { return m.points > 0; });
+  if (!top3.length || !anyPoints) {
     body.style.display = 'none';
     return;
   }
