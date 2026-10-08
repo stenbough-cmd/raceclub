@@ -146,6 +146,10 @@ var RC_FETCH_TIMEOUT_MS_IMPORT = 120000;
 
 var RC_FETCH_TIMEOUT_MS_RECOMPUTE = 120000;
 
+// Finalize Results' own budget, 2 minutes -- adminFinalizeRound rebuilds the League Hub payload and the
+// public round cache after its write, so it can run well past the 20s default.
+var RC_FETCH_TIMEOUT_MS_FINALIZE = 120000;
+
 // Protest submission's own budget, 1 minute -- submitProtest had no timeoutMs override at all
 // before this, so it inherited the 20s default meant for small dashboard reads even though filing a
 // protest can take longer under load.

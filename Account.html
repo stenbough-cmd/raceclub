@@ -6913,7 +6913,7 @@
               finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
               finalizeBtn.textContent = 'FINALIZING...';
               setFinalizeInProgress(true);
-              fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId } }).then(function (result) {
+              fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_FINALIZE }).then(function (result) {
                 setFinalizeInProgress(false);
                 finalizeBtn.disabled = false;
                 if (!result.success) {
@@ -6930,7 +6930,7 @@
                 setFinalizeInProgress(false);
                 finalizeBtn.disabled = false;
                 restoreFinalizeBtn();
-                showToast('Could not reach the server.', 'error');
+                showToast('Could not confirm the finalize finished. Close and reopen this popup to check the round before trying again.', 'error');
               });
             });
           });
