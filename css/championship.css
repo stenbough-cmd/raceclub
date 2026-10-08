@@ -33,6 +33,8 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
 /* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
 .rcc-page .rcl-hero::before { opacity: 0.16; }
+/* "RACE CLUB" eyebrow above the title: black here instead of the hub's red. */
+.rcc-page .rcl-hero-eyebrow { color: var(--rc-carbon); }
 /* "Season N" in the championship navy instead of the hub's gold. */
 .rcc-page .rcl-hero-season-num { color: var(--rcc-navy); }
 
