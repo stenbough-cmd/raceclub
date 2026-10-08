@@ -135,6 +135,16 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // Off-page link to the public league.html, not an in-page section, so it skips data-rc-section
   // entirely (same as before this reorder).
   var html = '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
+  // Championship (CHAMP chat, 2026-10-08) -- the driver's own offline championship page. Admin-only
+  // for now: everyone else sees it grayed out and unclickable, not hidden (same look as a disabled
+  // sidebar item, .rc-nav-item:disabled in style.css).
+  var champProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+  var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
+  if (role === 'Admin' && champId) {
+    html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">Championship</a>';
+  } else {
+    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Championship mode is admin-only for now." style="opacity:0.4;cursor:not-allowed;">Championship</span>';
+  }
   html += '<hr class="rc-header-menu-divider">';
   // The section id stays 'results' on purpose (matches data-rc-section/#results routing) -- only
   // the label text changes. Dashboard/Career are the only section links left here.

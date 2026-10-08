@@ -1,0 +1,270 @@
+/* Race Club -- css/championship.css
+   championship.html loads css/style.css + css/league.css + this file. The page uses the League
+   Hub's own markup and class names (body.rc-league-page), so the layout is identical; this file
+   only (1) swaps league.css's dark --rcl-* color tokens for the light member-page palette and
+   (2) styles the few championship-only pieces (black link bar, standings tabs, popups' forms).
+   Colors come only from the site tokens (--rc-*) and league.css's own --rcl-* tokens. */
+
+/* -------------------------------------------------------------------- */
+/* Light palette                                                         */
+/* -------------------------------------------------------------------- */
+body.rc-league-page.rcc-page {
+  --rcl-bg: var(--rc-offwhite);
+  --rcl-bg-raised: var(--rc-white);
+  --rcl-bg-raised-2: var(--rc-offwhite);
+  --rcl-line: var(--rc-silver);
+  --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white));
+  --rcl-ink: var(--rc-carbon);
+  --rcl-ink-dim: var(--rc-steel);
+  --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, var(--rc-white));
+  background: var(--rcl-bg);
+  color: var(--rcl-ink);
+}
+
+/* The few spots league.css colors directly instead of through a token. */
+.rcc-page .rcl-page-loader { background: color-mix(in srgb, var(--rc-offwhite) 94%, transparent); }
+.rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
+.rcc-page .rcl-panel-title,
+.rcc-page .rcl-hero-title { text-shadow: none; }
+.rcc-page .rcl-report-name { color: var(--rc-carbon); }
+.rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
+/* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
+.rcc-page .rcl-hero::before { opacity: 0.16; }
+/* The hub's gold season number is tuned for black; darkened here for white. */
+.rcc-page .rcl-hero-season-num { color: color-mix(in srgb, var(--rcl-gold) 62%, var(--rc-carbon)); }
+
+/* Manufacturers' podium rank numbers: the hub's pale gold/silver/bronze are tuned for black and
+   disappear on white, so they're darkened here. */
+.rcc-page .rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 70%, var(--rc-carbon)); }
+.rcc-page .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: var(--rc-steel); }
+.rcc-page .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 40%, var(--rc-red-dark)); }
+
+/* Hero meta line under "Season N / Name". */
+.rcc-hero-meta {
+  margin-top: 10px;
+  font-family: var(--rc-font-body);
+  font-size: 15px;
+  color: var(--rcl-ink-dim);
+}
+
+/* -------------------------------------------------------------------- */
+/* Black link bar under the hero                                         */
+/* -------------------------------------------------------------------- */
+.rcc-actionbar {
+  background: var(--rc-carbon);
+  border-bottom: 2px solid var(--rc-red);
+}
+.rcc-actionbar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 48px;
+}
+.rcc-actionbar-links { display: flex; flex-wrap: wrap; align-items: center; }
+.rcc-actionbar-link {
+  background: none;
+  border: none;
+  padding: 14px 14px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-white);
+  cursor: pointer;
+  position: relative;
+}
+.rcc-actionbar-link + .rcc-actionbar-link::before {
+  content: '·';
+  position: absolute;
+  left: -3px;
+  color: var(--rc-steel);
+}
+.rcc-actionbar-link:first-child { padding-left: 0; }
+.rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
+.rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
+.rcc-actionbar-season {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-silver);
+}
+.rcc-actionbar-season select {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  max-width: 320px;
+}
+
+/* -------------------------------------------------------------------- */
+/* Standings tabs (Drivers / Teams) in the panel header                  */
+/* -------------------------------------------------------------------- */
+.rcc-panel-head-tabs { flex-wrap: wrap; }
+.rcc-tabs { display: flex; gap: 6px; }
+.rcc-tab {
+  background: var(--rc-white);
+  border: 1px solid var(--rc-silver);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rc-steel);
+  cursor: pointer;
+}
+.rcc-tab:hover { background: var(--rc-offwhite); }
+.rcc-tab-active,
+.rcc-tab-active:hover { background: var(--rc-carbon); border-color: var(--rc-carbon); color: var(--rc-white); }
+
+/* The player's own rows and name, everywhere. */
+.rcc-row-me { box-shadow: inset 3px 0 0 var(--rc-red); background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
+.rcc-me-text { color: var(--rc-red); }
+
+/* -------------------------------------------------------------------- */
+/* Last Race extras                                                      */
+/* -------------------------------------------------------------------- */
+.rcc-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--rc-silver);
+  border-left: 3px solid var(--rc-red);
+  border-radius: 6px;
+  background: var(--rc-white);
+}
+.rcc-cta-text { font-size: 14px; color: var(--rc-carbon); }
+.rcc-you-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rc-silver);
+}
+.rcc-you-label {
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-steel);
+}
+.rcc-you-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); }
+.rcc-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rc-red);
+  cursor: pointer;
+}
+.rcc-link-btn:hover { text-decoration: underline; }
+
+/* -------------------------------------------------------------------- */
+/* Popups                                                                */
+/* -------------------------------------------------------------------- */
+.rcc-confirm-text, .rcc-reg-intro { font-size: 14px; color: var(--rc-steel); line-height: 1.5; margin: 0 0 16px; }
+.rcc-btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.rcc-btn-row-end { justify-content: flex-end; margin-top: 18px; }
+.rcc-error-line { color: var(--rc-red); font-size: 13px; margin-top: 8px; min-height: 0; }
+.rcc-error-line:empty { display: none; }
+/* Pending write button: gray, disabled, "...ing" label until the server answers. */
+.rc-btn-primary.rcc-btn-pending,
+.rc-btn-primary.rcc-btn-pending:hover { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
+.rcc-team-desc { color: var(--rc-steel); font-size: 13px; margin: 8px 0; }
+
+/* Season wizard */
+.rcc-wizard label { margin-top: 0; }
+.rcc-wiz-section { padding: 18px 0; border-bottom: 1px solid var(--rc-silver); }
+.rcc-wiz-section:first-child { padding-top: 0; }
+.rcc-wiz-section-title {
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rc-carbon);
+  margin-bottom: 12px;
+}
+.rcc-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rcc-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 16px; margin-bottom: 12px; }
+.rcc-class-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.rcc-class-row { display: grid; grid-template-columns: 22px 110px 140px 1fr; align-items: center; gap: 10px; }
+.rcc-class-row select { height: 36px; }
+.rcc-class-label { margin: 0; font-weight: 800; color: var(--rc-carbon); }
+.rcc-class-count { font-size: 12px; color: var(--rc-steel); }
+.rcc-points-row { display: grid; grid-template-columns: 80px 110px 1fr; gap: 12px; align-items: end; margin-bottom: 10px; }
+.rcc-points-tier { font-weight: 800; color: var(--rc-carbon); padding-bottom: 12px; }
+.rcc-rounds { display: flex; flex-direction: column; gap: 12px; margin: 12px 0; }
+.rcc-round { border: 1px solid var(--rc-silver); border-radius: 6px; padding: 12px 14px; background: var(--rc-white); }
+.rcc-round-locked { background: var(--rc-offwhite); }
+.rcc-round-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.rcc-round-num { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-carbon); }
+.rcc-round-tools { display: flex; gap: 6px; }
+.rcc-round-locked-text { font-size: 13px; color: var(--rc-steel); }
+
+/* Upload */
+.rcc-upload-out { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.rcc-upload-line { font-size: 13px; line-height: 1.45; padding: 6px 10px; border-radius: 4px; background: var(--rc-offwhite); color: var(--rc-carbon); }
+.rcc-upload-ok { border-left: 3px solid var(--rc-carbon); }
+.rcc-upload-bad { border-left: 3px solid var(--rc-red); color: var(--rc-red); }
+.rcc-upload-note, .rcc-upload-skip { color: var(--rc-steel); }
+
+/* Round tools */
+.rcc-tool-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rc-silver); flex-wrap: wrap; }
+.rcc-tool-title { font-weight: 800; color: var(--rc-carbon); }
+.rcc-tool-sub { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
+.rcc-tool-btns { display: flex; gap: 8px; }
+
+/* Team information */
+.rcc-myteam { display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
+.rcc-myteam-logo { width: 56px; height: 56px; object-fit: contain; }
+.rcc-myteam-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); }
+.rcc-myteam-name { font-size: 18px; font-weight: 800; color: var(--rc-carbon); }
+.rcc-myteam-sub { font-size: 13px; color: var(--rc-steel); }
+.rcc-myteam-desc { font-size: 13px; color: var(--rc-steel); margin: 8px 0 0; }
+.rcc-grid-row { display: flex; gap: 12px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--rc-offwhite); }
+.rcc-grid-logo { width: 34px; height: 34px; object-fit: contain; flex: 0 0 34px; }
+.rcc-grid-info { min-width: 0; }
+.rcc-grid-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rcc-grid-team { font-weight: 800; color: var(--rc-carbon); }
+.rcc-grid-model { font-size: 12px; color: var(--rc-steel); }
+.rcc-grid-crew { font-size: 13px; color: var(--rc-carbon); }
+.rcc-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--rc-silver); color: var(--rc-steel); }
+.rcc-tag-factory { border-color: var(--rc-carbon); color: var(--rc-carbon); }
+.rcc-tag-me { border-color: var(--rc-red); color: var(--rc-red); }
+
+/* My Laps table */
+.rcc-laps-table { overflow-x: auto; margin-top: 6px; }
+.rcc-laps-row { display: grid; grid-template-columns: 60px 50px 90px 76px 76px 76px 84px 56px 140px 90px; gap: 8px; padding: 5px 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-offwhite); min-width: 880px; }
+.rcc-laps-head { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); border-bottom: 1px solid var(--rc-silver); }
+.rcc-laps-best { font-weight: 800; }
+.rcc-laps-pit { color: var(--rc-steel); }
+.rcc-laps-events { margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .rcc-actionbar-inner { padding: 0 16px; }
+  .rcc-actionbar-link { padding: 10px 8px; }
+  .rcc-class-row { grid-template-columns: 22px 1fr 1fr; }
+  .rcc-class-count { grid-column: 2 / -1; }
+  .rcc-points-row { grid-template-columns: 1fr; }
+}

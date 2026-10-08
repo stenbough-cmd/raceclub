@@ -1,0 +1,1908 @@
+// Race Club -- js/championship.js
+// Backs championship.html, the single-player "offline" championship (CHAMP chat). The page is laid
+// out exactly like the League Hub (league.html) and reuses css/league.css's class names, so it
+// looks the same; css/championship.css swaps the colors to the light member-page palette.
+//
+// This is a separate file from js/league.js on purpose: league.js starts itself on load and talks
+// to the online league's endpoints, so the renderers here are adapted copies (rcc- prefix) fed by
+// the championship backend (Championship.gs, champ* actions) instead.
+//
+// Access: championship.html?id=<ProfileID>. Not logged in -> index.html. Logged in as anyone other
+// than that ProfileID (or, for now, not an Admin) -> their own Account.html dashboard. The server
+// checks the same thing on every call.
+
+// ---------------------------------------------------------------------
+// SMALL HELPERS
+// ---------------------------------------------------------------------
+function _rccEl(tag, className, html) {
+  var e = document.createElement(tag);
+  if (className) e.className = className;
+  if (html !== undefined) e.innerHTML = html;
+  return e;
+}
+function _rccText(tag, className, text) {
+  var e = document.createElement(tag);
+  if (className) e.className = className;
+  e.textContent = text == null ? '' : String(text);
+  return e;
+}
+function _rccEsc(str) {
+  var d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+function _rccSpinner(message) {
+  var wrap = _rccEl('div', 'rc-inline-spinner-wrap');
+  var lights = _rccEl('div', 'rc-startlights');
+  for (var i = 0; i < 5; i++) lights.appendChild(_rccEl('span', 'rc-startlight'));
+  wrap.appendChild(lights);
+  wrap.appendChild(_rccText('div', 'rc-loading-text', message));
+  return wrap;
+}
+function _rccEmpty(title, subtitle) {
+  var wrap = _rccEl('div', 'rcl-empty-state');
+  wrap.appendChild(_rccEl('div', 'rcl-empty-state-icon',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>'));
+  wrap.appendChild(_rccText('div', 'rcl-empty-state-title', title || 'No Data To Display'));
+  if (subtitle) wrap.appendChild(_rccText('div', 'rcl-empty-state-subtitle', subtitle));
+  return wrap;
+}
+function _rccOrdinal(n) {
+  var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function _rccToast(msg, type) {
+  if (typeof showToast === 'function') showToast(msg, type || 'info');
+}
+var RCC_CLASS_ORDER = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
+function _rccSortClasses(list, nameOf) {
+  return list.slice().sort(function (a, b) {
+    var ai = RCC_CLASS_ORDER.indexOf(nameOf(a)), bi = RCC_CLASS_ORDER.indexOf(nameOf(b));
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+function _rccClassLabel(cls) { return cls === 'Hypercar' ? 'Hypercar' : cls; }
+function _rccClassPill(cls) {
+  var colors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+  var pill = _rccText('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colors[cls] ? ' ' + colors[cls] : ''), cls === 'Hypercar' ? 'HY' : cls);
+  return pill;
+}
+function _rccLogo(className, manufacturer, onFail) {
+  var img = document.createElement('img');
+  img.className = className;
+  img.alt = manufacturer || '';
+  if (!manufacturer || typeof manufacturerLogoSrc !== 'function') { img.style.display = 'none'; return img; }
+  // Black logo variants -- this page is light, the League Hub's white logos would vanish here.
+  img.src = manufacturerLogoSrc(manufacturer, 'black');
+  manufacturerLogoFallback(img, manufacturer, onFail || function () { img.style.display = 'none'; });
+  return img;
+}
+function _rccFlag(className, country) {
+  if (!country || typeof countryFlagSrc !== 'function') return null;
+  var src = countryFlagSrc(country);
+  if (!src) return null;
+  var img = document.createElement('img');
+  img.className = className;
+  img.src = src;
+  img.alt = '';
+  img.title = country;
+  img.onerror = function () { img.style.display = 'none'; };
+  return img;
+}
+function _rccLapTime(raw) {
+  var t = Number(raw);
+  if (raw === null || raw === undefined || raw === '' || isNaN(t) || t <= 0) return '--';
+  var ms = Math.round(t * 1000);
+  var m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
+  return m + ':' + (s < 10 ? '0' : '') + s + '.' + ('00' + r).slice(-3);
+}
+function _rccTotalTime(seconds) {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '--';
+  var ms = Math.round(seconds * 1000);
+  var h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
+  return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2) + '.' + ('00' + r).slice(-3);
+}
+function _rccEventTime(seconds) {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '';
+  var total = Math.max(0, Math.floor(seconds));
+  var h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+  return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + s).slice(-2);
+}
+function _rccFormatDate(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function _rccFormat12h(hhmm) {
+  if (!hhmm) return '';
+  var p = String(hhmm).split(':');
+  var h = parseInt(p[0], 10);
+  if (isNaN(h) || p.length < 2) return hhmm;
+  return ((h % 12) || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM');
+}
+function _rccTimeOfDay(hhmm) {
+  var h = parseInt(String(hhmm || '').split(':')[0], 10);
+  if (isNaN(h)) return '';
+  if (h >= 5 && h < 12) return 'Morning';
+  if (h >= 12 && h < 17) return 'Midday';
+  if (h >= 17 && h < 21) return 'Evening';
+  return 'Night';
+}
+
+var _RCC_ICON_TROPHY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>';
+var _RCC_ICON_LAPS_LED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg>';
+var _RCC_ICON_POLE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="21" x2="6" y2="3"></line><path d="M6 4l12 4-12 4"></path></svg>';
+var _RCC_ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
+var RCC_MENTION_ICONS = {
+  hardCharger: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></svg>',
+  fallenFavorite: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"></path><path d="M15 17h6v-6"></path></svg>',
+  ironMan: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"></path><path d="M9 12l2 2 4-4"></path></svg>',
+  photoFinish: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4V8z"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg>',
+  statementLap: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"></path></svg>',
+  bounceBack: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5v6a5 5 0 0 0 5 5h11"></path><path d="M16 12l4 4-4 4"></path></svg>',
+  streakWatch: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 4-3 5-3 9a3 3 0 0 0 6 0c0-1-1-2-1-2 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 5-6 5-12z"></path></svg>',
+  closingIn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l7 6-7 6"></path><path d="M20 6l-7 6 7 6"></path></svg>',
+  positionSwap: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12"></path><path d="M4 13l3 3 3-3"></path><path d="M17 20V8"></path><path d="M20 11l-3-3-3 3"></path></svg>'
+};
+
+// ---------------------------------------------------------------------
+// PAGE STATE + ACCESS
+// ---------------------------------------------------------------------
+var RCC = { token: null, ownerId: '', page: null, standingsTab: 'drivers' };
+
+function _rccQuery(name) {
+  try { return new URLSearchParams(window.location.search).get(name) || ''; } catch (err) { return ''; }
+}
+
+// Reload this same page (same owner, same season) after a save -- the site's "reload after save"
+// rule. No timers, no polling.
+function rccReloadAfterSave() {
+  window.location.reload();
+}
+
+function _rccHidePageLoader() {
+  var loader = document.getElementById('rcl-page-loader');
+  if (!loader) return;
+  loader.classList.add('rcl-page-loader-hidden');
+  setTimeout(function () { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 450);
+}
+
+// Returns false (and navigates away) when this viewer may not see this page.
+function _rccCheckAccess() {
+  var token = getToken();
+  if (!token) { window.location.replace('index.html'); return false; }
+  RCC.token = token;
+  var me = getProfileCache() || {};
+  var id = _rccQuery('id');
+  if (!id && me.profileId) {
+    // No id in the address -- send the viewer to their own championship URL.
+    var url = 'championship.html?id=' + encodeURIComponent(me.profileId);
+    var season = _rccQuery('season');
+    if (season) url += '&season=' + encodeURIComponent(season);
+    window.location.replace(url);
+    return false;
+  }
+  if (me.profileId && (id !== me.profileId || me.role !== 'Admin')) {
+    window.location.replace('Account.html');
+    return false;
+  }
+  RCC.ownerId = id;
+  return true;
+}
+
+function _rccApi(action, params, opts) {
+  opts = opts || {};
+  var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
+  if (opts.post) return fetchApi(action, { method: 'POST', token: RCC.token, params: { ownerId: RCC.ownerId }, body: p });
+  return fetchApi(action, { token: RCC.token, params: p, timeoutMs: opts.timeoutMs || RC_FETCH_TIMEOUT_MS_LONG });
+}
+
+// Server-side refusal -> the same redirects the page itself applies.
+function _rccHandleAuthError(res) {
+  if (!res || res.success) return false;
+  if (res.error === 'NOT_AUTHENTICATED') { window.location.replace('index.html'); return true; }
+  if (res.error === 'NOT_OWNER' || res.error === 'NOT_AVAILABLE') { window.location.replace('Account.html'); return true; }
+  return false;
+}
+
+// ---------------------------------------------------------------------
+// MODAL SHELL -- the League Hub's .rcl-modal-* shell. The X is locked (and every other button in
+// the popup grayed) while a write is in flight, same rule as Account.html's showModal.
+// ---------------------------------------------------------------------
+var _rccScrollY = 0;
+function _rccLockScroll() {
+  _rccScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = '-' + _rccScrollY + 'px';
+  document.body.classList.add('rc-modal-scroll-locked');
+}
+function _rccUnlockScroll() {
+  if (document.querySelector('.rcl-modal-overlay')) return;
+  document.body.classList.remove('rc-modal-scroll-locked');
+  document.body.style.top = '';
+  window.scrollTo(0, _rccScrollY);
+}
+
+function rccOpenModal(title, opts) {
+  opts = opts || {};
+  var overlay = _rccEl('div', 'rcl-modal-overlay rcl-modal-overlay-over-nav rcc-modal-overlay');
+  var dialog = _rccEl('div', 'rcl-modal-dialog' + (opts.wide ? ' rcl-modal-dialog-wide' : '') + (opts.narrow ? ' rcl-modal-dialog-narrow' : ''));
+  var head = _rccEl('div', 'rcl-modal-head');
+  var titleEl = _rccText('div', 'rcl-modal-title', title);
+  head.appendChild(titleEl);
+  var closeBtn = _rccEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+  var body = _rccEl('div', 'rcl-modal-body');
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  _rccLockScroll();
+
+  var closed = false;
+  function onWriteState() {
+    var busy = typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0;
+    closeBtn.disabled = busy;
+    dialog.classList.toggle('rc-modal-busy', busy);
+  }
+  if (typeof rcOnWriteStateChange === 'function') rcOnWriteStateChange(onWriteState);
+  function close(force) {
+    if (closed) return;
+    if (!force && typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0) return;
+    closed = true;
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    _rccUnlockScroll();
+    if (opts.onClose) opts.onClose();
+  }
+  closeBtn.addEventListener('click', function () { close(false); });
+  return {
+    overlay: overlay, dialog: dialog, body: body, close: close,
+    setTitle: function (t, pillNode) { titleEl.textContent = t + (pillNode ? ' ' : ''); if (pillNode) titleEl.appendChild(pillNode); }
+  };
+}
+
+// Pending-button pattern: the write button goes gray/disabled with a "...ing" label and stays that
+// way until the server's real answer arrives (or Apps Script's 6 minutes run out).
+function rccRunWrite(btn, pendingLabel, fn) {
+  var original = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add('rcc-btn-pending');
+  btn.textContent = pendingLabel;
+  return Promise.resolve().then(fn).then(function (res) {
+    if (!res || !res.success) { btn.disabled = false; btn.classList.remove('rcc-btn-pending'); btn.textContent = original; }
+    return res;
+  }, function (err) {
+    btn.disabled = false; btn.classList.remove('rcc-btn-pending'); btn.textContent = original;
+    throw err;
+  });
+}
+
+// Confirm popup: gray Cancel + red commit (the commit is the button that actually writes).
+function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSuccess) {
+  var m = rccOpenModal(title, { narrow: true });
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', message));
+  var row = _rccEl('div', 'rcc-btn-row');
+  var cancel = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+  cancel.type = 'button';
+  var commit = _rccText('button', 'rc-btn-primary rc-btn-sm', commitLabel);
+  commit.type = 'button';
+  row.appendChild(cancel);
+  row.appendChild(commit);
+  m.body.appendChild(row);
+  var errLine = _rccEl('div', 'rcc-error-line');
+  m.body.appendChild(errLine);
+  cancel.addEventListener('click', function () { m.close(false); });
+  commit.addEventListener('click', function () {
+    errLine.textContent = '';
+    cancel.disabled = true;
+    rccRunWrite(commit, pendingLabel, doWrite).then(function (res) {
+      cancel.disabled = false;
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { errLine.textContent = (res && res.message) || 'That did not work. Try again.'; return; }
+      m.close(true);
+      if (onSuccess) onSuccess(res);
+    }).catch(function () {
+      cancel.disabled = false;
+      errLine.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it went through.';
+    });
+  });
+  return m;
+}
+
+// ---------------------------------------------------------------------
+// HERO + BLACK LINK BAR
+// ---------------------------------------------------------------------
+function rccRenderHero(page) {
+  var seasonEl = document.getElementById('rcl-hero-season');
+  var metaEl = document.getElementById('rcc-hero-meta');
+  seasonEl.innerHTML = '';
+  metaEl.innerHTML = '';
+  if (!page || !page.hasSeason) {
+    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', (page && page.owner ? page.owner.displayName + "'s " : '') + 'Offline Career'));
+    return;
+  }
+  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
+  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
+  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
+  var bits = [];
+  if (page.registration) bits.push(page.owner.displayName + ' · ' + page.registration.teamName + ' #' + page.registration.carNumber);
+  var diff = (page.seasonDetails.raceSettings || {}).aiDifficulty;
+  if (diff) bits.push('AI Difficulty ' + diff + '%');
+  bits.push(page.roundsCompleted + ' of ' + page.totalRounds + ' Rounds');
+  if (page.seasonEnded) bits.push('Season Ended');
+  metaEl.textContent = bits.join(' · ');
+}
+
+function rccRenderActionBar(page) {
+  var bar = document.getElementById('rcc-actionbar');
+  bar.innerHTML = '';
+  var inner = _rccEl('div', 'rcc-actionbar-inner');
+  bar.appendChild(inner);
+  var links = _rccEl('div', 'rcc-actionbar-links');
+  inner.appendChild(links);
+
+  var hasSeason = !!(page && page.hasSeason);
+  var active = hasSeason && !page.seasonEnded;
+  function add(label, enabled, onClick, why) {
+    var b = _rccText('button', 'rcc-actionbar-link', label);
+    b.type = 'button';
+    b.disabled = !enabled;
+    if (!enabled && why) b.title = why;
+    if (enabled) b.addEventListener('click', onClick);
+    links.appendChild(b);
+  }
+  add('Create Season', !(page && page.hasActiveSeason), rccOpenSeasonWizard.bind(null, null), 'End your current season first.');
+  add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.');
+  add('End Season', active, rccOpenEndSeason, 'No active season to end.');
+  if (active && !page.registration) {
+    add('Choose Your Team', true, rccOpenRegistration);
+  } else {
+    add('Team Information', hasSeason, rccOpenTeamInfo, 'No season yet.');
+  }
+  add('Upload Results', active && !!page.registration, rccOpenUpload, active ? 'Choose your team first.' : 'No active season.');
+  add('Round Tools', active && page.anyResults, rccOpenRoundTools, 'Nothing imported yet.');
+
+  // Past seasons -- a plain dropdown, shown only once there's more than one season.
+  if (page && page.seasons && page.seasons.length > 1) {
+    var pick = _rccEl('label', 'rcc-actionbar-season');
+    pick.appendChild(_rccText('span', null, 'Season'));
+    var sel = document.createElement('select');
+    page.seasons.forEach(function (s) {
+      var o = new Option('Season ' + s.seasonNumber + ' · ' + s.name + (s.status === 'Completed' ? ' (Ended)' : ''), s.seasonId);
+      if (s.seasonId === page.seasonId) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId) + '&season=' + encodeURIComponent(sel.value);
+    });
+    pick.appendChild(sel);
+    inner.appendChild(pick);
+  }
+}
+
+// ---------------------------------------------------------------------
+// TICKER (adapted from league.js's _rclBuildTickerItems/_rclRenderTicker)
+// ---------------------------------------------------------------------
+function rccRenderTicker(page) {
+  var track = document.getElementById('rcl-ticker-track');
+  if (!track) return;
+  track.innerHTML = '';
+  if (!page || !page.hasSeason) { track.style.animation = 'none'; return; }
+  var items = [];
+  items.push({ tag: 'SEASON ' + page.seasonNumber, text: page.seasonName });
+  var lr = page.lastRace;
+  if (lr) {
+    var groups = _rccSortClasses(lr.classes || [], function (c) { return c.className; }).map(function (cls) {
+      return { tag: 'TOP TEN ' + cls.className.toUpperCase() + ' RESULTS', rows: (cls.standings || []).slice(0, 10) };
+    });
+    items.push({ tag: 'ROUND ' + lr.roundNum, bold: lr.eventName, dim: lr.track ? ' at ' + lr.track + (lr.layout ? ': ' + lr.layout : '') : '', groups: groups });
+    var mfr = (page.standings.manufacturers || []).slice(0, 3);
+    if (mfr.length && mfr.some(function (m) { return m.points > 0; })) items.push({ tag: 'TOP 3 MANUFACTURER STANDINGS', mfr: mfr });
+  } else {
+    _rccSortClasses(page.standings.drivers || [], function (c) { return c.className; }).forEach(function (cls) {
+      if ((cls.standings || []).length) items.push({ tag: cls.className.toUpperCase() + ' DRIVERS', rows: cls.standings, unranked: true });
+    });
+  }
+  if (page.nextRound) {
+    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: page.nextRound.track ? ' at ' + page.nextRound.track + (page.nextRound.layout ? ': ' + page.nextRound.layout : '') : '' });
+  }
+
+  function driverEntry(row) {
+    var entry = _rccEl('span', 'rcl-ticker-driver-entry');
+    if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
+    entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (row.isPlayer ? ' rcc-me-text' : ''), row.name));
+    var flag = _rccFlag('rcl-standings-flag', row.country);
+    if (flag) entry.appendChild(flag);
+    if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + row.carNumber));
+    return entry;
+  }
+  function rowList(rows, ranked) {
+    var list = _rccEl('span', 'rcl-ticker-driver-list');
+    rows.forEach(function (row, i) {
+      if (i > 0) list.appendChild(document.createTextNode('          '));
+      if (ranked) { list.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1))); list.appendChild(document.createTextNode('  ')); }
+      list.appendChild(driverEntry(row));
+    });
+    return list;
+  }
+  function buildRun() {
+    var frag = document.createDocumentFragment();
+    items.forEach(function (item) {
+      var el = _rccEl('div', 'rcl-ticker-item');
+      el.appendChild(_rccText('span', 'rcl-ticker-item-tag', item.tag + ':'));
+      if (item.bold !== undefined) {
+        el.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', ' ' + item.bold));
+        if (item.dim) el.appendChild(_rccText('span', 'rcl-ticker-prefix-dim', item.dim));
+        if (item.groups) el.appendChild(document.createTextNode('     '));
+      } else if (item.text) {
+        el.appendChild(document.createTextNode(' ' + item.text));
+      }
+      if (item.groups) {
+        var all = _rccEl('span', 'rcl-ticker-driver-list');
+        item.groups.forEach(function (g, gi) {
+          if (gi > 0) all.appendChild(document.createTextNode('               '));
+          var sec = _rccEl('span', 'rcl-ticker-class-section');
+          sec.appendChild(_rccText('span', 'rcl-ticker-item-tag', g.tag + ':'));
+          sec.appendChild(rowList(g.rows, true));
+          all.appendChild(sec);
+        });
+        el.appendChild(all);
+      } else if (item.rows) {
+        el.appendChild(document.createTextNode(' '));
+        el.appendChild(rowList(item.rows, !item.unranked));
+      } else if (item.mfr) {
+        var ml = _rccEl('span', 'rcl-ticker-driver-list');
+        item.mfr.forEach(function (m, i) {
+          if (i > 0) ml.appendChild(document.createTextNode('        '));
+          ml.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1)));
+          ml.appendChild(document.createTextNode('  '));
+          var entry = _rccEl('span', 'rcl-ticker-driver-entry');
+          entry.appendChild(_rccLogo('rcl-ticker-driver-logo', m.manufacturer));
+          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', m.manufacturer));
+          ml.appendChild(entry);
+        });
+        el.appendChild(document.createTextNode(' '));
+        el.appendChild(ml);
+      }
+      frag.appendChild(el);
+    });
+    frag.appendChild(_rccEl('div', 'rcl-ticker-loop-dot', '&bull;'));
+    return frag;
+  }
+  track.appendChild(buildRun());
+  track.appendChild(buildRun());
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+  requestAnimationFrame(function () {
+    var viewport = track.parentElement;
+    if (!viewport) return;
+    var runWidth = track.scrollWidth / 2;
+    var mainSec = Math.max(runWidth / 64, 12);
+    track.style.setProperty('--rcl-ticker-start', viewport.clientWidth + 'px');
+    track.style.animation = 'none';
+    void track.offsetWidth;
+    track.style.animation = 'rcl-ticker-intro 1.10s linear forwards, rcl-ticker-scroll ' + mainSec.toFixed(2) + 's linear 1.10s infinite';
+  });
+}
+
+// ---------------------------------------------------------------------
+// LAST RACE / SEASON PREVIEW / SEASON RECAP
+// ---------------------------------------------------------------------
+function _rccPodium(rows) {
+  var top3 = (rows || []).slice(0, 3);
+  var podium = _rccEl('div', 'rcl-lr-podium');
+  if (!top3.length) { podium.appendChild(_rccEmpty('No Data To Display', 'No classified finishers yet.')); return podium; }
+  var order = top3.length === 3 ? [1, 0, 2] : top3.map(function (_, i) { return i; });
+  order.forEach(function (idx) {
+    var row = top3[idx];
+    var tile = _rccEl('div', 'rcl-lr-podium-tile rcl-lr-podium-tile-p' + (idx + 1));
+    var drv = _rccEl('div', 'rcl-lr-podium-driver');
+    drv.appendChild(_rccLogo('rcl-lr-podium-logo', row.manufacturer));
+    var ident = _rccEl('div', 'rcl-lr-podium-identity');
+    ident.appendChild(_rccText('span', 'rcl-lr-podium-name' + (row.isPlayer ? ' rcc-me-text' : ''), (row.name || '').toUpperCase()));
+    var flag = _rccFlag('rcl-lr-podium-flag', row.country);
+    if (flag) ident.appendChild(flag);
+    drv.appendChild(ident);
+    tile.appendChild(drv);
+    var stand = _rccEl('div', 'rcl-lr-podium-stand');
+    var wrap = _rccEl('span', 'rcl-lr-podium-standnum-wrap');
+    wrap.appendChild(_rccText('span', 'rcl-lr-podium-standnum', String(idx + 1)));
+    wrap.appendChild(_rccText('span', 'rcl-lr-podium-standsuffix', ['st', 'nd', 'rd'][idx]));
+    stand.appendChild(wrap);
+    tile.appendChild(stand);
+    podium.appendChild(tile);
+  });
+  return podium;
+}
+
+function _rccMentions(mentions) {
+  var grid = _rccEl('div', 'rcl-lr-mentions');
+  mentions.slice(0, 3).forEach(function (m) {
+    var tile = _rccEl('div', 'rcl-lr-mention-tile');
+    var head = _rccEl('div', 'rcl-lr-mention-head');
+    head.appendChild(_rccEl('span', 'rcl-lr-mention-icon', RCC_MENTION_ICONS[m.typeKey] || ''));
+    head.appendChild(_rccText('span', 'rcl-lr-mention-title', (m.title || '').toUpperCase()));
+    tile.appendChild(head);
+    tile.appendChild(_rccText('div', 'rcl-lr-mention-stat', m.stat || ''));
+    var names = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean).join(' & ');
+    if (names) tile.appendChild(_rccText('div', 'rcl-lr-mention-drivers', names));
+    tile.appendChild(_rccText('div', 'rcl-lr-mention-narrative', m.narrative || ''));
+    grid.appendChild(tile);
+  });
+  return grid;
+}
+
+// Season format rows (Season Details / Championship Points / Race Rules) -- same pill-headed
+// sections as the League Hub's Season Preview, with championship-mode content.
+function _rccSeasonFormat(page, body) {
+  var d = page.seasonDetails || {};
+  var rs = d.raceSettings || {};
+  function row(label, value) {
+    return _rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rccEsc(label) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(value) + '</span>');
+  }
+  function group(label, blocks) {
+    var g = _rccEl('div', 'rcl-hero-stats-group');
+    g.appendChild(_rccText('div', 'rcl-hero-stats-label', label));
+    var list = _rccEl('div', 'rcl-seasonfmt-list');
+    blocks.forEach(function (rows) {
+      if (!rows.length) return;
+      var b = _rccEl('div', 'rcl-seasonfmt-block');
+      rows.forEach(function (r) { b.appendChild(r); });
+      list.appendChild(b);
+    });
+    g.appendChild(list);
+    body.appendChild(g);
+  }
+  var classes = Object.keys(d.classes || {}).filter(function (c) { return d.classes[c]; });
+  classes = _rccSortClasses(classes, function (c) { return c; });
+  var details = [];
+  details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' · no team chosen yet')));
+  if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '%'));
+  details.push(row('Championship Rounds', String(page.totalRounds)));
+  if (d.dropWeeks) details.push(row(d.dropWeeks === 1 ? 'Drop Week' : 'Drop Weeks', String(d.dropWeeks)));
+  if (classes.length) details.push(row(classes.length === 1 ? 'Class' : 'Classes', classes.map(function (c) { return c + ' (' + (d.classSeasons || {})[c] + ')'; }).join(', ')));
+  details.push(row('Cars On The Grid', String((page.grid || []).length)));
+  var session = [];
+  if (rs.practiceLengthMin) session.push(row('Practice Duration', rs.practiceLengthMin + ' min'));
+  if (rs.qualifyLengthMin) session.push(row('Qualify Duration', rs.qualifyLengthMin + ' min'));
+  var tables = d.pointsTables || {};
+  var tiers = Object.keys(tables).filter(function (t) { return (tables[t].points || []).length; });
+  if (tiers.length) session.push(row('Race Durations', tiers.map(function (t) { return t + ' ' + tables[t].duration + ' mins'; }).join(', ')));
+  group('Season Details', [details, session]);
+
+  var tierRows = tiers.map(function (t) {
+    var pts = (tables[t].points || []).map(function (v, i) { return '<span class="rcl-seasonfmt-pos">P' + (i + 1) + '</span> ' + _rccEsc(v); }).join(', ');
+    return _rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rccEsc(t) + ':</span> ' + pts);
+  });
+  var b = d.bonusPoints || {};
+  var bonusRows = [];
+  if (Number(b.pole)) bonusRows.push(row('Pole Position', '+' + b.pole + ' pts'));
+  if (Number(b.fastestLap)) bonusRows.push(row('Fastest Lap', '+' + b.fastestLap + ' pts'));
+  if (Number(b.mostLapsLed)) bonusRows.push(row('Most Laps Led', '+' + b.mostLapsLed + ' pts'));
+  group('Championship Points', [tierRows, bonusRows]);
+
+  var rules = [];
+  if (rs.setupRules) rules.push(row('Setups', rs.setupRules));
+  if (rs.tireWearMultiplier) rules.push(row('Tire Wear', rs.tireWearMultiplier));
+  if (rs.tireCount) rules.push(row('Tires Allowed', String(rs.tireCount)));
+  if (rs.fuelMultiplier) rules.push(row('Fuel Multiplier', rs.fuelMultiplier));
+  if (rs.pitStopReq) rules.push(row('Pitstop Requirements', rs.pitStopReq));
+  if (d.trackLimitsPreset) rules.push(row('Track Limits', d.trackLimitsPreset));
+  if (rs.trackLimitPoints) rules.push(row('Infractions until Drive-Thru', rs.trackLimitPoints + ' pts'));
+  group('Race Rules', [rules]);
+}
+
+function rccRenderLastRace(page) {
+  var body = document.getElementById('rcl-last-race');
+  var titleEl = document.getElementById('rcl-last-race-title');
+  body.innerHTML = '';
+  body.classList.remove('rcl-seasonfmt-modal-body');
+  if (!page || !page.hasSeason) {
+    titleEl.textContent = 'Welcome';
+    body.appendChild(_rccEmpty('No Championship Yet', 'Use Create Season in the bar above to set up your first offline season: pick the classes, the rounds and the AI difficulty, then join a team.'));
+    return;
+  }
+  if (page.seasonEnded) {
+    titleEl.textContent = 'Season Recap';
+    _rccSortClasses(page.standings.drivers || [], function (c) { return c.className; }).forEach(function (cls) {
+      var w = _rccEl('div', 'rcl-lr-class');
+      var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' CHAMPIONS');
+      h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' SEASON ' + page.seasonNumber));
+      w.appendChild(h);
+      w.appendChild(_rccPodium(cls.standings));
+      body.appendChild(w);
+    });
+    return;
+  }
+  if (!page.lastRace) {
+    titleEl.textContent = 'Season Preview';
+    body.classList.add('rcl-seasonfmt-modal-body');
+    if (!page.registration) {
+      var cta = _rccEl('div', 'rcc-cta');
+      cta.appendChild(_rccText('div', 'rcc-cta-text', 'Your season is set up. Choose the team you will drive for to start racing.'));
+      var btn = _rccText('button', 'rc-btn-secondary', 'Choose Your Team');
+      btn.type = 'button';
+      btn.addEventListener('click', rccOpenRegistration);
+      cta.appendChild(btn);
+      body.appendChild(cta);
+    }
+    _rccSeasonFormat(page, body);
+    return;
+  }
+  titleEl.textContent = 'Last Race';
+  var r = page.lastRace;
+  (r.classes || []).forEach(function (cls) {
+    var w = _rccEl('div', 'rcl-lr-class');
+    var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
+    h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + r.roundNum + (r.track ? ' AT ' + r.track.toUpperCase() : '')));
+    w.appendChild(h);
+    w.appendChild(_rccPodium(cls.standings));
+    if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
+    body.appendChild(w);
+  });
+  if (r.you) {
+    var you = _rccEl('div', 'rcc-you-line');
+    you.appendChild(_rccText('span', 'rcc-you-label', 'Your Result'));
+    var bits = ['P' + (r.you.classPosition || '-') + ' in ' + r.you.carClass, (r.you.points || 0) + ' pts'];
+    if (r.you.wonPole) bits.push('Pole');
+    if (r.you.wonFastestLap) bits.push('Fastest Lap');
+    if (r.you.wonMostLapsLed) bits.push('Most Laps Led');
+    you.appendChild(_rccText('span', 'rcc-you-value', bits.join(' · ')));
+    var link = _rccText('button', 'rcc-link-btn', 'Full Results');
+    link.type = 'button';
+    link.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
+    you.appendChild(link);
+    body.appendChild(you);
+  }
+}
+
+// ---------------------------------------------------------------------
+// CALENDAR CAROUSEL (adapted from league.js -- no dates in championship mode, so the countdown is
+// replaced by round status: Race Recap once results are in, Upload Results for the next round)
+// ---------------------------------------------------------------------
+function rccRenderCarousel(page) {
+  var outer = document.getElementById('rcl-race-carousel');
+  outer.innerHTML = '';
+  var entries = (page && page.hasSeason) ? (page.calendar || []) : [];
+  if (!entries.length) {
+    outer.style.display = page && page.hasSeason ? '' : 'none';
+    if (page && page.hasSeason) outer.appendChild(_rccEmpty('No Data To Display', 'This season has no rounds yet.'));
+    return;
+  }
+  outer.style.display = '';
+  var nextIdx = -1;
+  entries.forEach(function (e, i) { if (nextIdx === -1 && !e.hasResults) nextIdx = i; });
+  var activeIdx = nextIdx === -1 ? entries.length - 1 : nextIdx;
+  var track = _rccEl('div', 'rcl-carousel-track');
+  outer.appendChild(track);
+  var items = [];
+  function setActive(idx) {
+    activeIdx = idx;
+    items.forEach(function (el, i) { el.classList.toggle('rcl-carousel-item-active', i === idx); });
+  }
+  entries.forEach(function (entry, idx) {
+    var item = _rccEl('div', 'rcl-carousel-item' + (idx === activeIdx ? ' rcl-carousel-item-active' : '') + (entry.hasResults ? ' rcl-carousel-item-finished' : ''));
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    var header = _rccEl('div', 'rcl-carousel-header');
+    var flag = _rccFlag('rcl-carousel-flag', entry.country);
+    if (flag) header.appendChild(flag);
+    header.appendChild(_rccText('div', 'rcl-carousel-eventname', entry.eventName || 'Race'));
+    if (entry.track) header.appendChild(_rccText('div', 'rcl-carousel-trackname', entry.track));
+    header.appendChild(_rccText('div', 'rcl-carousel-datetime', 'Round ' + entry.roundNum + ' of ' + entries.length + (entry.resultsFinalized ? ' · Official' : (entry.hasResults ? ' · Preliminary' : ''))));
+    item.appendChild(header);
+
+    var compact = _rccEl('div', 'rcl-carousel-compact-header');
+    var cflag = _rccFlag('rcl-carousel-flag', entry.country);
+    if (cflag) compact.appendChild(cflag);
+    if (entry.track) compact.appendChild(_rccText('div', 'rcl-carousel-compact-track', entry.track.slice(0, 3)));
+    compact.appendChild(_rccText('div', 'rcl-carousel-compact-month', 'Round'));
+    compact.appendChild(_rccText('div', 'rcl-carousel-compact-day', String(entry.roundNum)));
+    item.appendChild(compact);
+
+    var hero = _rccEl('div', 'rcl-carousel-hero');
+    var lines = [];
+    var tod = _rccTimeOfDay(entry.igRaceStart);
+    var len = entry.raceLengthMinutes ? entry.raceLengthMinutes + ' Mins Long' : '';
+    var session = (tod ? tod + ' Race' : '') + (len ? (tod ? ', ' : '') + len : '');
+    if (session) lines.push(session);
+    if (entry.weather) lines.push(entry.weather + ', ' + (entry.chanceOfRain || 0) + '% Chance Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ', ' + entry.temperatureC + '° C' : ''));
+    if (entry.hasQualifyResults && !entry.hasRaceResults) lines.push('Qualifying imported, race still to come');
+    if (lines.length) {
+      var det = _rccEl('div', 'rcl-carousel-details');
+      lines.forEach(function (l) { det.appendChild(_rccText('div', 'rcl-carousel-details-line', l)); });
+      hero.appendChild(det);
+    }
+    var btns = _rccEl('div', 'rcl-carousel-hero-btns');
+    var btn;
+    if (entry.hasRaceResults || entry.hasQualifyResults) {
+      btn = _rccText('button', 'rcl-carousel-hero-btn', entry.hasResults ? 'RACE RECAP' : 'QUALIFYING RESULTS');
+      btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenResults(entry.roundId, entry.hasRaceResults ? 'race' : 'qualifying'); });
+    } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
+      btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
+      btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId); });
+    } else {
+      btn = _rccText('button', 'rcl-carousel-hero-btn rcl-carousel-hero-btn-disabled', idx === nextIdx ? 'UP NEXT' : 'NOT YET RACED');
+      btn.disabled = true;
+    }
+    btn.type = 'button';
+    btns.appendChild(btn);
+    hero.appendChild(btns);
+    item.appendChild(hero);
+    item.addEventListener('click', function () { if (idx !== activeIdx) setActive(idx); });
+    item.addEventListener('keydown', function (evt) { if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); setActive(idx); } });
+    items.push(item);
+    track.appendChild(item);
+  });
+  requestAnimationFrame(function () {
+    var max = 0;
+    items.forEach(function (el) {
+      var was = el.classList.contains('rcl-carousel-item-active');
+      el.style.transition = 'none';
+      if (!was) el.classList.add('rcl-carousel-item-active');
+      max = Math.max(max, el.scrollHeight);
+      if (!was) el.classList.remove('rcl-carousel-item-active');
+      void el.offsetHeight;
+      el.style.transition = '';
+    });
+    if (max > 0) track.style.height = max + 'px';
+  });
+}
+
+// ---------------------------------------------------------------------
+// STANDINGS -- Drivers / Teams tabs, plus the Manufacturers' podium section below
+// ---------------------------------------------------------------------
+var RCC_METAL = ['rcl-standings-row-p1', 'rcl-standings-row-p2', 'rcl-standings-row-p3'];
+
+function _rccPosBadge(idx, text) {
+  return _rccText('div', 'rcl-standings-pos' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : ''), text !== undefined ? text : String(idx + 1));
+}
+
+function _rccIdentity(row, opts) {
+  opts = opts || {};
+  var identity = _rccEl('div', 'rcl-standings-identity' + (opts.dnf ? ' rcl-standings-identity-dnf' : ''));
+  var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
+  if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer, function () { slot.style.display = 'none'; }));
+  else slot.style.display = 'none';
+  identity.appendChild(slot);
+  var nameRow = _rccEl('div', 'rcl-standings-name-row');
+  nameRow.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
+  var flag = _rccFlag('rcl-standings-flag', row.country);
+  if (flag) nameRow.appendChild(flag);
+  if (row.carNumber && !opts.hideNumber) nameRow.appendChild(_rccText('span', 'rcl-standings-carnum', '#' + row.carNumber));
+  if (opts.sub) nameRow.appendChild(_rccText('span', 'rcl-standings-team', opts.sub));
+  else if (row.teamName) nameRow.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
+  identity.appendChild(nameRow);
+  return identity;
+}
+
+function _rccStandingsColumns(classes, kind) {
+  var columns = _rccEl('div', 'rcl-standings-columns');
+  classes.forEach(function (cls) {
+    var wrap = _rccEl('div', 'rcl-standings-class');
+    var label = kind === 'teams' ? (cls.label || cls.className + ' Teams') : cls.className + ' Drivers';
+    wrap.appendChild(_rccText('div', 'rcl-standings-class-header', label.toUpperCase()));
+    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-3');
+    head.appendChild(_rccText('div', null, 'Pos'));
+    head.appendChild(_rccText('div', null, kind === 'teams' ? 'Team' : 'Driver'));
+    head.appendChild(_rccText('div', null, 'Pts'));
+    wrap.appendChild(head);
+    (cls.standings || []).forEach(function (row, idx) {
+      var rowEl = _rccEl('div', 'rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+      rowEl.appendChild(_rccPosBadge(idx));
+      if (kind === 'teams') {
+        rowEl.appendChild(_rccIdentity(row, { nameOverride: row.teamName, sub: (row.crew || []).join(', ') }));
+      } else {
+        rowEl.appendChild(_rccIdentity(row));
+      }
+      var pts = _rccEl('div', 'rcl-standings-pts');
+      pts.appendChild(_rccText('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
+      rowEl.appendChild(pts);
+      wrap.appendChild(rowEl);
+    });
+    columns.appendChild(wrap);
+  });
+  return columns;
+}
+
+function rccRenderStandings(page) {
+  var body = document.getElementById('rcl-standings-body');
+  var tabs = document.getElementById('rcc-standings-tabs');
+  var title = document.getElementById('rcl-standings-title');
+  body.innerHTML = '';
+  tabs.innerHTML = '';
+  if (!page || !page.hasSeason) {
+    title.parentNode.parentNode.parentNode.style.display = 'none';
+    return;
+  }
+  title.parentNode.parentNode.parentNode.style.display = '';
+  title.textContent = page.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
+  var hasResults = (page.roundsCompleted || 0) > 0;
+  if (!hasResults) {
+    body.appendChild(_rccEmpty('No Data To Display', 'Standings fill in once a round has both its Qualify and Race results imported.'));
+    return;
+  }
+  var defs = [{ key: 'drivers', label: 'Drivers' }, { key: 'teams', label: 'Teams' }];
+  function draw() {
+    tabs.innerHTML = '';
+    defs.forEach(function (d) {
+      var b = _rccText('button', 'rcc-tab' + (RCC.standingsTab === d.key ? ' rcc-tab-active' : ''), d.label);
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', RCC.standingsTab === d.key ? 'true' : 'false');
+      b.addEventListener('click', function () { RCC.standingsTab = d.key; draw(); });
+      tabs.appendChild(b);
+    });
+    body.innerHTML = '';
+    var list = RCC.standingsTab === 'teams' ? page.standings.teams : page.standings.drivers;
+    if (!list || !list.length) {
+      body.appendChild(_rccEmpty('No Data To Display', 'No teams standings for this season.'));
+    } else {
+      body.appendChild(_rccStandingsColumns(_rccSortClasses(list, function (c) { return c.className; }), RCC.standingsTab));
+    }
+    var notes = [];
+    if (RCC.standingsTab === 'teams') notes.push('Hypercar teams standings count privateer entries only. Factory Hypercars score for their manufacturer.');
+    if (page.standings.dropsApplied) notes.push('Drop weeks are now applied: each entry\'s lowest round score' + (page.dropWeeks > 1 ? 's are' : ' is') + ' left out of the totals.');
+    if (page.hasUnofficialResults) notes.push('*PRELIMINARY RESULTS -- at least one scored round is not finalized yet.');
+    else notes.push('*OFFICIAL RESULTS');
+    var foot = _rccEl('div', 'rcl-results-bottom-row rcl-results-status-footer');
+    notes.forEach(function (n) { foot.appendChild(_rccText('div', 'rcl-standings-status-note rcl-standings-status-preliminary', n)); });
+    body.appendChild(foot);
+  }
+  draw();
+}
+
+function rccRenderManufacturers(page) {
+  var body = document.getElementById('rcl-manufacturer-standings');
+  body.innerHTML = '';
+  var list = (page && page.hasSeason && page.roundsCompleted > 0) ? (page.standings.manufacturers || []) : [];
+  if (!list.length || !list.some(function (m) { return m.points > 0; })) { body.style.display = 'none'; return; }
+  body.style.display = '';
+  body.appendChild(_rccText('div', 'rcl-mfr-title', page.seasonEnded ? "Final Manufacturers' Standings" : "Manufacturers' Standings"));
+  body.appendChild(_rccText('div', 'rcl-mfr-subtitle', 'Hypercar Class · Factory Entries'));
+  var top3 = list.slice(0, 3);
+  var podium = _rccEl('div', 'rcl-mfr-podium');
+  var order = top3.length === 3 ? [1, 0, 2] : top3.map(function (_, i) { return i; });
+  order.forEach(function (idx) {
+    var m = top3[idx];
+    var tile = _rccEl('div', 'rcl-mfr-tile rcl-mfr-tile-p' + (idx + 1));
+    var box = _rccEl('div', 'rcl-mfr-tile-box');
+    var inner = _rccEl('div', 'rcl-mfr-tile-box-inner');
+    inner.appendChild(_rccLogo('rcl-mfr-tile-logo', m.manufacturer));
+    box.appendChild(inner);
+    tile.appendChild(box);
+    var rl = _rccEl('div', 'rcl-mfr-tile-rankline');
+    rl.appendChild(_rccText('span', 'rcl-mfr-tile-rank', String(idx + 1)));
+    tile.appendChild(rl);
+    tile.appendChild(_rccText('div', 'rcl-mfr-tile-name', m.manufacturer.toUpperCase()));
+    tile.appendChild(_rccText('div', 'rcl-mfr-tile-points', Math.round(m.points) + ' PTS'));
+    podium.appendChild(tile);
+  });
+  body.appendChild(podium);
+  var rest = list.slice(3);
+  if (rest.length) {
+    var restList = _rccEl('div', 'rcl-mfr-rest');
+    restList.style.setProperty('--rcl-mfr-rest-rows', String(Math.ceil(rest.length / 2)));
+    rest.forEach(function (m, i) {
+      var r = _rccEl('div', 'rcl-mfr-rest-item');
+      r.appendChild(_rccText('span', 'rcl-mfr-rest-rank', (i + 4) + '.'));
+      r.appendChild(_rccText('span', 'rcl-mfr-rest-name', m.manufacturer.toUpperCase()));
+      r.appendChild(_rccText('span', 'rcl-mfr-rest-pts', Math.round(m.points) + ' PTS'));
+      restList.appendChild(r);
+    });
+    body.appendChild(restList);
+  }
+}
+
+// ---------------------------------------------------------------------
+// RESULTS POPUP -- Race / Qualifying / My Laps for any imported round
+// ---------------------------------------------------------------------
+function _rccCategoryBreakdown(cls) {
+  var wrap = _rccEl('div', 'rcl-race-categories rcl-race-categories-inclass');
+  function cat(icon, title, name, num, kind) {
+    if (!name) return;
+    var c = _rccEl('div', 'rcl-race-category');
+    var h = _rccEl('div', 'rcl-race-category-title');
+    h.appendChild(_rccEl('span', 'rcl-race-category-icon', icon));
+    h.appendChild(document.createTextNode(title));
+    c.appendChild(h);
+    var r = _rccEl('div', 'rcl-race-category-row' + (kind ? ' rcl-race-category-row-' + kind : ''));
+    r.appendChild(_rccText('span', 'rcl-race-category-name', name));
+    if (num) r.appendChild(_rccText('span', 'rcl-race-category-number', '#' + num));
+    c.appendChild(r);
+    wrap.appendChild(c);
+  }
+  cat(_RCC_ICON_TROPHY, 'Winner', cls.classWinner, cls.classWinnerCarNumber, 'winner');
+  if (cls.classMostLapsLedCount) cat(_RCC_ICON_LAPS_LED, 'Most Laps Led', cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber);
+  cat(_RCC_ICON_POLE, 'Pole Sitter', cls.classPoleSitter, cls.classPoleSitterCarNumber);
+  cat(_RCC_ICON_STOPWATCH, 'Fastest Lap', cls.classFastestLapDriver, cls.classFastestLapCarNumber);
+  return wrap;
+}
+
+function _rccGap(row, ref) {
+  if (!ref || row.finishTimeSeconds === null || ref.finishTimeSeconds === null) return '--';
+  var down = (ref.laps || 0) - (row.laps || 0);
+  if (down > 0) return '+' + down + ' Lap' + (down === 1 ? '' : 's');
+  var g = row.finishTimeSeconds - ref.finishTimeSeconds;
+  return g <= 0 ? '--' : '+' + g.toFixed(3);
+}
+
+function _rccRaceBody(result, el) {
+  el.innerHTML = '';
+  if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race result imported for this round.')); return; }
+  result.classes.forEach(function (cls) {
+    var w = _rccEl('div', 'rcl-race-class');
+    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' STANDINGS'));
+    w.appendChild(_rccCategoryBreakdown(cls));
+    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
+    ['Pos', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    w.appendChild(head);
+    var rows = cls.standings || [];
+    var leader = rows[0] || null;
+    rows.forEach(function (row, idx) {
+      var dnf = /dnf/i.test(row.finishStatus || '');
+      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+      r.appendChild(_rccPosBadge(idx, dnf ? 'DNF' : undefined));
+      r.appendChild(_rccIdentity(row, { dnf: dnf }));
+      r.appendChild(_rccText('div', 'rcl-race-row-num', String(row.laps || 0)));
+      r.appendChild(_rccText('div', 'rcl-race-row-num', _rccTotalTime(row.finishTimeSeconds)));
+      r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? '--' : _rccGap(row, rows[idx - 1])));
+      r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? 'Leader' : _rccGap(row, leader)));
+      var kmh = '--';
+      if (result.trackLengthMeters && row.laps && row.finishTimeSeconds > 0) kmh = ((result.trackLengthMeters * row.laps / 1000) / (row.finishTimeSeconds / 3600)).toFixed(1);
+      r.appendChild(_rccText('div', 'rcl-race-row-avg', kmh));
+      r.appendChild(_rccText('div', 'rcl-race-row-bestlap', _rccLapTime(row.bestLapTime)));
+      r.appendChild(_rccText('div', 'rcl-race-row-pts', row.points === null || row.points === undefined ? '--' : '+' + row.points));
+      w.appendChild(r);
+    });
+    el.appendChild(w);
+  });
+  var status = result.resultsFinalized
+    ? '*OFFICIAL RESULTS' + (result.finalizedAt ? ' (FINALIZED ' + _rccFormatDate(result.finalizedAt) + ')' : '')
+    : '*PRELIMINARY RESULTS' + (result.importedAt ? ' (IMPORTED ' + _rccFormatDate(result.importedAt) + ')' : '');
+  el.appendChild(_rccText('div', 'rcl-standings-status-note rcl-standings-status-preliminary', status));
+
+  var report = result.raceReport || [];
+  if (report.length) {
+    var sec = _rccEl('div', 'rcl-report-section');
+    sec.appendChild(_rccText('div', 'rcl-race-class-name', 'Race Report'));
+    var byLap = {}, order = [];
+    report.forEach(function (en) { if (!byLap[en.lapNum]) { byLap[en.lapNum] = []; order.push(en.lapNum); } byLap[en.lapNum].push(en); });
+    var CLAUSE = { wall: 'rcl-report-clause-wall', car: 'rcl-report-clause-car', damage: 'rcl-report-clause-damage', pit: 'rcl-report-clause-pit', position_gain: 'rcl-report-clause-gain', position_loss: 'rcl-report-clause-loss', retirement: 'rcl-report-clause-retirement', fastest_lap: 'rcl-report-clause-fastest' };
+    order.forEach(function (lapNum) {
+      var lapRow = _rccEl('div', 'rcl-report-lap');
+      lapRow.appendChild(_rccText('div', 'rcl-report-lap-num', 'Lap ' + lapNum));
+      var tw = _rccEl('div', 'rcl-report-lap-text');
+      byLap[lapNum].forEach(function (en) {
+        var line = _rccEl('p', 'rcl-report-line');
+        if (en.clauses) {
+          if (en.carClass) { var pc = _rccEl('span', 'rcl-report-pill-col'); pc.appendChild(_rccClassPill(en.carClass)); line.appendChild(pc); }
+          if (en.et !== null && en.et !== undefined) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(en.et)));
+          line.appendChild(_rccText('span', 'rcl-report-name', en.name));
+          var all = en.positionClause ? en.clauses.concat([en.positionClause]) : en.clauses;
+          all.forEach(function (c, i) {
+            line.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
+            line.appendChild(_rccText('span', CLAUSE[c.kind] || null, c.text));
+          });
+          line.appendChild(document.createTextNode('.'));
+        } else {
+          line.textContent = en.text;
+        }
+        tw.appendChild(line);
+      });
+      lapRow.appendChild(tw);
+      sec.appendChild(lapRow);
+    });
+    el.appendChild(sec);
+  }
+}
+
+function _rccQualifyingBody(result, el) {
+  el.innerHTML = '';
+  if (!result || !result.hasQualifying || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Qualifying Data', 'No qualifying session was imported for this round.')); return; }
+  result.classes.forEach(function (cls) {
+    var w = _rccEl('div', 'rcl-race-class');
+    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' QUALIFYING'));
+    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-qualifying');
+    ['Pos', 'Driver', 'Best Lap', 'Sector 1', 'Sector 2', 'Sector 3', 'Avg (KM/H)'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    w.appendChild(head);
+    (cls.standings || []).forEach(function (row, idx) {
+      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-qualifying' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+      r.appendChild(_rccPosBadge(idx));
+      r.appendChild(_rccIdentity(row));
+      r.appendChild(_rccText('div', 'rcl-race-row-bestlap', _rccLapTime(row.bestLapTime)));
+      r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector1)));
+      r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector2)));
+      r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector3)));
+      r.appendChild(_rccText('div', 'rcl-race-row-avg', row.avgKmh !== null && row.avgKmh !== undefined ? String(row.avgKmh) : '--'));
+      w.appendChild(r);
+    });
+    el.appendChild(w);
+  });
+}
+
+function _rccMyLapsBody(result, el) {
+  el.innerHTML = '';
+  var sessions = (result && result.sessions) || [];
+  if (!sessions.length) { el.appendChild(_rccEmpty('No Data To Display', 'None of your laps were imported for this round.')); return; }
+  sessions.forEach(function (s) {
+    var w = _rccEl('div', 'rcl-race-class');
+    var title = (s.kind === 'race' ? 'Race' : 'Qualifying') + ' · P' + (s.classPosition || '-') + ' in class · Best ' + _rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
+    w.appendChild(_rccText('div', 'rcl-standings-class-header', title.toUpperCase()));
+    var table = _rccEl('div', 'rcc-laps-table');
+    var head = _rccEl('div', 'rcc-laps-row rcc-laps-head');
+    ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tires (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    table.appendChild(head);
+    var best = Infinity;
+    s.laps.forEach(function (l) { var t = Number(l.lapTime); if (t > 0 && t < best) best = t; });
+    s.laps.forEach(function (l) {
+      var r = _rccEl('div', 'rcc-laps-row' + (Number(l.lapTime) === best ? ' rcc-laps-best' : '') + (l.pit ? ' rcc-laps-pit' : ''));
+      r.appendChild(_rccText('div', null, String(l.lapNum) + (l.pit ? ' PIT' : '')));
+      r.appendChild(_rccText('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '--'));
+      r.appendChild(_rccText('div', null, _rccLapTime(l.lapTime)));
+      r.appendChild(_rccText('div', null, _rccLapTime(l.sector1)));
+      r.appendChild(_rccText('div', null, _rccLapTime(l.sector2)));
+      r.appendChild(_rccText('div', null, _rccLapTime(l.sector3)));
+      r.appendChild(_rccText('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '--'));
+      r.appendChild(_rccText('div', null, l.fuel !== '' ? Math.round(Number(l.fuel) * 100) + '%' : '--'));
+      var tw = [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' ? '--' : Math.round(Number(v) * 100); }).join(' ');
+      r.appendChild(_rccText('div', null, tw));
+      r.appendChild(_rccText('div', null, String(l.frontCompound || '').replace(/^\d+,/, '')));
+      table.appendChild(r);
+    });
+    w.appendChild(table);
+    if ((s.events || []).length) {
+      var evs = _rccEl('div', 'rcc-laps-events');
+      evs.appendChild(_rccText('div', 'rcl-race-class-name', 'Your Events'));
+      s.events.forEach(function (ev) {
+        var line = _rccEl('p', 'rcl-report-line');
+        var et = Number(ev.elapsedTime);
+        if (!isNaN(et)) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(et)));
+        line.appendChild(document.createTextNode(' ' + (ev.rawText || ev.eventType)));
+        evs.appendChild(line);
+      });
+      w.appendChild(evs);
+    }
+    el.appendChild(w);
+  });
+}
+
+function rccOpenResults(roundId, kind) {
+  var page = RCC.page;
+  var rounds = page.importedRounds || [];
+  var m = rccOpenModal('Race Recap', { wide: true });
+  m.dialog.classList.add('rcl-modal-dialog-allresults');
+  if (!rounds.length) { m.body.appendChild(_rccEmpty('No Data To Display', 'No results have been imported yet.')); return; }
+  var row = _rccEl('div', 'rcl-allresults-select-row');
+  var sel = document.createElement('select');
+  sel.className = 'rcl-allresults-select';
+  rounds.forEach(function (r) { sel.appendChild(new Option('Round ' + r.roundNum + ' - ' + r.eventName + (r.track ? ': ' + r.track : ''), r.roundId)); });
+  var kindSel = document.createElement('select');
+  kindSel.className = 'rcl-allresults-session-select';
+  kindSel.appendChild(new Option('Race', 'race'));
+  kindSel.appendChild(new Option('Qualifying', 'qualifying'));
+  kindSel.appendChild(new Option('My Laps', 'mylaps'));
+  row.appendChild(sel);
+  row.appendChild(kindSel);
+  m.body.appendChild(row);
+  var out = _rccEl('div', 'rcl-allresults-body');
+  m.body.appendChild(out);
+  var cache = {};
+  function load() {
+    var key = sel.value + ':' + kindSel.value;
+    var builder = kindSel.value === 'qualifying' ? _rccQualifyingBody : (kindSel.value === 'mylaps' ? _rccMyLapsBody : _rccRaceBody);
+    if (cache[key]) { builder(cache[key], out); return; }
+    out.innerHTML = '';
+    out.appendChild(_rccSpinner('Loading results...'));
+    _rccApi('champGetRoundResults', { roundId: sel.value, kind: kindSel.value }).then(function (res) {
+      if (_rccHandleAuthError(res)) return;
+      var result = res && res.success ? res.result : null;
+      if (result) cache[key] = result;
+      builder(result, out);
+    }).catch(function () {
+      out.innerHTML = '';
+      out.appendChild(_rccEmpty('Could Not Load', 'Could not reach the server. Close this popup and try again.'));
+    });
+  }
+  sel.value = rounds.some(function (r) { return r.roundId === roundId; }) ? roundId : rounds[0].roundId;
+  kindSel.value = kind || 'race';
+  sel.addEventListener('change', load);
+  kindSel.addEventListener('change', load);
+  load();
+}
+
+// ---------------------------------------------------------------------
+// TEAM INFORMATION -- the whole grid with crews
+// ---------------------------------------------------------------------
+function rccOpenTeamInfo() {
+  var page = RCC.page;
+  var m = rccOpenModal('Team Information', { wide: true });
+  var grid = page.grid || [];
+  if (page.registration) {
+    var mine = _rccEl('div', 'rcc-myteam');
+    mine.appendChild(_rccLogo('rcc-myteam-logo', page.registration.manufacturer));
+    var col = _rccEl('div');
+    col.appendChild(_rccText('div', 'rcc-myteam-label', 'Your Team'));
+    col.appendChild(_rccText('div', 'rcc-myteam-name', page.registration.teamName + ' #' + page.registration.carNumber));
+    col.appendChild(_rccText('div', 'rcc-myteam-sub', page.registration.carModel + ' · ' + page.registration.carClass + ' · joined ' + _rccFormatDate(page.registration.joinedAt)));
+    if (page.registration.teamDesc) col.appendChild(_rccText('p', 'rcc-myteam-desc', page.registration.teamDesc));
+    mine.appendChild(col);
+    m.body.appendChild(mine);
+  }
+  var classes = [];
+  grid.forEach(function (g) { if (classes.indexOf(g.carClass) === -1) classes.push(g.carClass); });
+  _rccSortClasses(classes, function (c) { return c; }).forEach(function (cls) {
+    var w = _rccEl('div', 'rcl-race-class');
+    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.toUpperCase() + ' GRID'));
+    grid.filter(function (g) { return g.carClass === cls; }).forEach(function (g) {
+      var r = _rccEl('div', 'rcc-grid-row' + (g.isMine ? ' rcc-row-me' : ''));
+      r.appendChild(_rccLogo('rcc-grid-logo', g.manufacturer));
+      var info = _rccEl('div', 'rcc-grid-info');
+      var top = _rccEl('div', 'rcc-grid-top');
+      top.appendChild(_rccText('span', 'rcc-grid-team', g.teamName + ' #' + g.carNumber));
+      if (cls === 'Hypercar') top.appendChild(_rccText('span', 'rcc-tag' + (g.factory ? ' rcc-tag-factory' : ''), g.factory ? 'Factory' : 'Privateer'));
+      if (g.isMine) top.appendChild(_rccText('span', 'rcc-tag rcc-tag-me', 'You'));
+      info.appendChild(top);
+      info.appendChild(_rccText('div', 'rcc-grid-model', g.carModel));
+      info.appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? 'Drivers: ' + g.crew.join(', ') : 'Drivers: none listed yet (filled in from your first imported result)'));
+      r.appendChild(info);
+      w.appendChild(r);
+    });
+    m.body.appendChild(w);
+  });
+}
+
+// ---------------------------------------------------------------------
+// REGISTRATION -- class, team, signing sequence (same flow and classes as Account.html)
+// ---------------------------------------------------------------------
+function rccOpenRegistration() {
+  var page = RCC.page;
+  var grid = page.grid || [];
+  var m = rccOpenModal('Choose Your Class', { wide: true });
+  m.dialog.classList.add('rcc-light-dialog');
+
+  function classScreen() {
+    m.setTitle('Choose Your Class');
+    m.body.innerHTML = '';
+    var present = [];
+    grid.forEach(function (g) { if (present.indexOf(g.carClass) === -1) present.push(g.carClass); });
+    m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Pick the class you will race in this season. Your AI rivals fill every other seat.'));
+    var pick = _rccEl('div', 'rc-class-pick-grid');
+    (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : present).forEach(function (cls) {
+      var cars = grid.filter(function (g) { return g.carClass === cls; });
+      var can = cars.length > 0;
+      var color = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) || '--rc-steel';
+      var btn = _rccEl('button', 'rc-class-pick-btn' + (can ? '' : ' rc-class-pick-btn-locked rc-class-pick-btn-inactive'));
+      btn.type = 'button';
+      btn.disabled = !can;
+      btn.style.setProperty('--rc-class-pick-color', 'var(' + color + ')');
+      var content = _rccEl('div', 'rc-class-pick-btn-content');
+      content.appendChild(_rccText('div', 'rc-class-pick-btn-name', cls === 'Hypercar' ? 'HY' : cls));
+      content.appendChild(_rccText('div', 'rc-class-pick-btn-seats', can ? cars.length + ' car' + (cars.length === 1 ? '' : 's') : 'Inactive'));
+      btn.appendChild(content);
+      btn.appendChild(_rccEl('div', 'rc-class-pick-btn-lock', '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>'));
+      if (can) btn.addEventListener('click', function () { teamScreen(cls); });
+      pick.appendChild(btn);
+    });
+    m.body.appendChild(pick);
+  }
+
+  function teamScreen(cls) {
+    m.setTitle('Choose Your Team', _rccClassPill(cls));
+    m.body.innerHTML = '';
+    var back = _rccText('button', 'rc-link-btn', '← Choose a different class');
+    back.type = 'button';
+    back.style.cssText = 'display:block;margin-bottom:10px;';
+    back.addEventListener('click', classScreen);
+    m.body.appendChild(back);
+    var teams = grid.filter(function (g) { return g.carClass === cls; });
+    var mfrs = [];
+    teams.forEach(function (t) { if (t.manufacturer && mfrs.indexOf(t.manufacturer) === -1) mfrs.push(t.manufacturer); });
+    mfrs.sort();
+    var listSlot = _rccEl('div');
+    function renderList(filter) {
+      listSlot.innerHTML = '';
+      teams.filter(function (t) { return !filter || t.manufacturer === filter; }).forEach(function (t) { listSlot.appendChild(teamCard(t, cls)); });
+    }
+    if (mfrs.length > 1) {
+      var row = _rccEl('div', 'rc-team-manu-filter-row');
+      var entries = [];
+      var all = _rccText('button', 'rc-team-manu-filter-all', 'ALL');
+      all.type = 'button';
+      row.appendChild(all);
+      entries.push({ m: null, b: all });
+      mfrs.forEach(function (mf) {
+        var b = _rccEl('button', 'rc-team-manu-filter-logo');
+        b.type = 'button';
+        b.title = mf;
+        b.appendChild(_rccLogo('', mf, function () { b.style.display = 'none'; }));
+        row.appendChild(b);
+        entries.push({ m: mf, b: b });
+      });
+      entries.forEach(function (en) {
+        en.b.addEventListener('click', function () {
+          entries.forEach(function (x) { x.b.classList.toggle('rc-team-manu-filter-dim', en.m !== null && x.m !== en.m); });
+          renderList(en.m);
+        });
+      });
+      m.body.appendChild(row);
+    }
+    m.body.appendChild(listSlot);
+    renderList(null);
+  }
+
+  function teamCard(team, cls) {
+    var card = _rccEl('div', 'rc-team-card');
+    var head = _rccEl('div', 'rc-team-card-head');
+    var identity = _rccEl('div', 'rc-team-card-identity');
+    var logoBox = _rccEl('div', 'rc-team-logo-box');
+    logoBox.appendChild(_rccLogo('', team.manufacturer, function () { logoBox.style.display = 'none'; }));
+    identity.appendChild(logoBox);
+    var nameCol = _rccEl('div');
+    nameCol.appendChild(_rccText('div', 'rc-team-name', (team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : '')));
+    if (team.carModel) nameCol.appendChild(_rccText('div', 'rc-team-subtitle', team.carModel + (cls === 'Hypercar' ? (team.factory ? ' · Factory' : ' · Privateer') : '')));
+    identity.appendChild(nameCol);
+    head.appendChild(identity);
+    card.appendChild(head);
+    if (team.teamDesc) card.appendChild(_rccText('p', 'rcc-team-desc', team.teamDesc));
+    if (team.realCrew && team.realCrew.length) card.appendChild(_rccText('p', 'rcc-team-desc', 'You replace: ' + team.realCrew.join(', ')));
+    var footer = _rccEl('div', 'rc-team-card-footer');
+    var join = _rccText('button', 'rc-btn-primary', 'Join This Team');
+    join.type = 'button';
+    var err = _rccEl('div', 'rcc-error-line');
+    join.addEventListener('click', function () { doJoin(team, cls, join, err); });
+    footer.appendChild(join);
+    footer.appendChild(err);
+    card.appendChild(footer);
+    return card;
+  }
+
+  // Same as Account.html: the join request goes out immediately while the signing sequence plays;
+  // its real answer is only read once the driver presses Continue.
+  function doJoin(team, cls, btn, err) {
+    btn.disabled = true;
+    err.textContent = '';
+    var joinPromise = _rccApi('champJoinTeam', { seasonId: page.seasonId, teamId: team.teamId }, { post: true });
+    rccSigningSequence(team, cls, function () {
+      m.close(true);
+      joinPromise.then(function (res) {
+        if (_rccHandleAuthError(res)) return;
+        if (res && res.success) { _rccToast('You\'re registered!', 'success'); rccReloadAfterSave(); return; }
+        _rccToast((res && res.message) || 'Could not confirm this registration -- reloading to check.', 'error');
+        rccReloadAfterSave();
+      }).catch(function () {
+        _rccToast('Reloading to confirm your registration...', 'success');
+        rccReloadAfterSave();
+      });
+    });
+  }
+
+  classScreen();
+}
+
+var RCC_SIGNING_MESSAGES = ['Drafting team documents...', 'Notifying the team principal...', 'Fitting your race suit...', 'Calibrating the seat...', 'Finalizing your contract...', 'Bringing the car to pit lane...'];
+var RCC_WELCOME_LINES = [
+  'Welcome to {team}! We have been waiting for a driver like you, and we finally found one. This seat is yours, now let\'s go show everyone what we can do!',
+  'You earned this, plain and simple! {team} doesn\'t hand out seats, we award them. Buckle up, this is going to be a season to remember!',
+  'From everyone at {team}: congratulations! You\'re not just joining a team, you\'re joining a family that believes in you. Let\'s get out there and win!',
+  'This is the moment every driver dreams about, and it\'s yours! {team} is fully behind you, every lap, every race. Now go make us proud!',
+  'The whole {team} garage is buzzing about you! You\'ve got the talent, we\'ve got the car, together we\'re unstoppable. Let\'s go racing!',
+  'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in, the season starts now!'
+];
+
+// Port of Account.html's openSigningSequence (same markup and css/style.css classes).
+function rccSigningSequence(team, cls, onFinish) {
+  var overlay = _rccEl('div', 'rc-signing-overlay');
+  var stage = _rccEl('div', 'rc-signing-stage rc-signing-stage-suspense');
+  overlay.appendChild(stage);
+  document.body.appendChild(overlay);
+  var wm = document.createElement('img');
+  wm.className = 'rc-signing-wordmark-img';
+  wm.alt = 'Race Club';
+  wm.src = 'assets/images/Race Club (Full, Black).png';
+  stage.appendChild(wm);
+  var lights = _rccEl('div', 'rc-startlights');
+  for (var i = 0; i < 5; i++) lights.appendChild(_rccEl('div', 'rc-startlight'));
+  stage.appendChild(lights);
+  var msg = _rccText('div', 'rc-signing-message', RCC_SIGNING_MESSAGES[0]);
+  stage.appendChild(msg);
+  var mi = 0;
+  var msgTimer = setInterval(function () { mi = (mi + 1) % RCC_SIGNING_MESSAGES.length; msg.textContent = RCC_SIGNING_MESSAGES[mi]; }, 1400);
+
+  var img = document.createElement('img');
+  img.className = 'rc-signing-welcome-img';
+  img.alt = '';
+  var started = Date.now(), ready = false, advanced = false;
+  var failsafe = setTimeout(function () { ready = true; tryAdvance(); }, 8000);
+  img.addEventListener('load', function () { ready = true; tryAdvance(); });
+  img.addEventListener('error', function () { ready = true; tryAdvance(); });
+  img.src = (cls === 'LMGTE' || cls === 'LMGT3') ? 'assets/images/gt_welcome.jpg' : (cls === 'Hypercar' ? 'assets/images/hypercar_welcome.jpg' : 'assets/images/prototype_welcome.jpg');
+
+  function tryAdvance() {
+    if (advanced) return;
+    setTimeout(function () {
+      if (advanced || !ready) return;
+      advanced = true;
+      clearInterval(msgTimer);
+      clearTimeout(failsafe);
+      welcome();
+    }, Math.max(0, 3800 - (Date.now() - started)));
+  }
+  var revealed = false, finished = false;
+  function welcome() {
+    stage.className = 'rc-signing-stage rc-signing-stage-welcome';
+    stage.innerHTML = '';
+    stage.appendChild(img);
+    void img.offsetHeight;
+    img.classList.add('rc-signing-welcome-img-visible');
+    setTimeout(reveal, 900 + 3000);
+  }
+  function reveal() {
+    if (revealed) return;
+    revealed = true;
+    img.classList.add('rc-signing-welcome-img-dim');
+    var content = _rccEl('div', 'rc-signing-welcome-overlay');
+    var wm2 = document.createElement('img');
+    wm2.className = 'rc-signing-wordmark-img rc-signing-wordmark-img-lg';
+    wm2.alt = 'Race Club';
+    wm2.src = 'assets/images/Race Club (Full, Black).png';
+    content.appendChild(wm2);
+    content.appendChild(_rccText('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
+    var hypeWrap = _rccEl('div', 'rc-signing-hype-wrap');
+    var hype = _rccEl('div', 'rc-signing-hype');
+    hype.appendChild(_rccText('span', 'rc-signing-hype-mark rc-signing-hype-mark-open', '“'));
+    var line = RCC_WELCOME_LINES[Math.floor(Math.random() * RCC_WELCOME_LINES.length)].split('{team}').join(team.teamName || 'the team');
+    hype.appendChild(_rccText('span', 'rc-signing-hype-text', line));
+    hype.appendChild(_rccText('span', 'rc-signing-hype-mark rc-signing-hype-mark-close', '”'));
+    hypeWrap.appendChild(hype);
+    hypeWrap.appendChild(_rccText('div', 'rc-signing-hype-attribution', '· Team Principal'));
+    content.appendChild(hypeWrap);
+    var ident = _rccEl('div', 'rc-signing-reveal-identity');
+    if (team.manufacturer) ident.appendChild(_rccLogo('rc-signing-reveal-logo', team.manufacturer));
+    ident.appendChild(_rccText('div', 'rc-signing-reveal-team', (team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : '')));
+    content.appendChild(ident);
+    var row = _rccEl('div', 'rc-signing-reveal-btn-row');
+    row.style.opacity = '0';
+    var cont = _rccText('button', 'rc-btn-primary rc-signing-continue', 'Continue');
+    cont.type = 'button';
+    cont.addEventListener('click', function () {
+      if (finished) return;
+      finished = true;
+      overlay.remove();
+      onFinish();
+    });
+    row.appendChild(cont);
+    content.appendChild(row);
+    stage.appendChild(content);
+    void content.offsetHeight;
+    content.classList.add('rc-signing-welcome-overlay-visible');
+    setTimeout(function () { row.style.opacity = '1'; }, 1400);
+  }
+}
+
+// ---------------------------------------------------------------------
+// SEASON WIZARD -- Create / Edit (one popup, all sections on one scrolling form)
+// ---------------------------------------------------------------------
+var RCC_WEATHER = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
+var RCC_MULTIPLIERS = ['Off', 'Realistic', '2x', '3x'];
+
+function _rccDefaultDetails() {
+  return {
+    classes: { Hypercar: false, LMP2: false, LMP3: false, LMGT3: false, LMGTE: false },
+    classSeasons: { Hypercar: '', LMP2: '', LMP3: '', LMGT3: '', LMGTE: '' },
+    pointsTables: {
+      Sprint: { duration: 40, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+      Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
+      Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
+    },
+    bonusPoints: { pole: 1, fastestLap: 1, mostLapsLed: 1 },
+    dropWeeks: 0,
+    trackLimitsPreset: 'Default',
+    raceSettings: { aiDifficulty: 90, setupRules: 'Fixed', pitStopReq: 'None', fuelMultiplier: 'Realistic', tireWearMultiplier: 'Realistic', tireCount: 8, trackLimitPoints: 5, practiceLengthMin: 30, qualifyLengthMin: 7 }
+  };
+}
+
+function _rccField(label, input, hint) {
+  var w = _rccEl('div', 'rcc-field');
+  var l = _rccText('label', null, label);
+  w.appendChild(l);
+  w.appendChild(input);
+  if (hint) w.appendChild(_rccText('div', 'rc-hint', hint));
+  return w;
+}
+function _rccSelect(options, value, onChange) {
+  var s = document.createElement('select');
+  options.forEach(function (o) {
+    var opt = typeof o === 'object' ? new Option(o.label, o.value) : new Option(String(o), String(o));
+    s.appendChild(opt);
+  });
+  if (value !== undefined && value !== null) s.value = String(value);
+  if (onChange) s.addEventListener('change', function () { onChange(s.value); });
+  return s;
+}
+function _rccNumber(value, onChange, min, max) {
+  var i = document.createElement('input');
+  i.type = 'number';
+  if (min !== undefined) i.min = String(min);
+  if (max !== undefined) i.max = String(max);
+  i.value = value === null || value === undefined ? '' : String(value);
+  i.addEventListener('input', function () { onChange(i.value === '' ? '' : Number(i.value)); });
+  return i;
+}
+function _rccTextInput(value, onChange, maxLen) {
+  var i = document.createElement('input');
+  i.type = 'text';
+  if (maxLen) i.maxLength = maxLen;
+  i.value = value || '';
+  i.addEventListener('input', function () { onChange(i.value); });
+  return i;
+}
+function _rccSection(title) {
+  var s = _rccEl('div', 'rcc-wiz-section');
+  s.appendChild(_rccText('div', 'rcc-wiz-section-title', title));
+  return s;
+}
+
+function rccOpenSeasonWizard(seasonId) {
+  var editing = !!seasonId;
+  var m = rccOpenModal(editing ? 'Edit Season' : 'Create Season', { wide: true });
+  m.dialog.classList.add('rcc-light-dialog');
+  m.body.appendChild(_rccSpinner('Loading tracks and cars...'));
+  var loads = [
+    fetchApi('getTracks', { token: RCC.token }),
+    fetchApi('getCars', { token: RCC.token }),
+    editing ? _rccApi('champGetSeasonForEdit', { seasonId: seasonId }) : Promise.resolve(null)
+  ];
+  Promise.all(loads).then(function (res) {
+    if (res[2] && _rccHandleAuthError(res[2])) return;
+    var tracks = ((res[0] && res[0].tracks) || []).filter(function (t) { return (t.Active || 'Active') !== 'Inactive'; });
+    var cars = ((res[1] && res[1].cars) || []).filter(function (c) { return (c.Active || 'Active') !== 'Inactive'; });
+    if (!tracks.length || !cars.length) {
+      m.body.innerHTML = '';
+      m.body.appendChild(_rccEmpty('Could Not Load', 'Could not load the track and car lists. Close this popup and try again.'));
+      return;
+    }
+    _rccBuildWizard(m, tracks, cars, res[2]);
+  }).catch(function () {
+    m.body.innerHTML = '';
+    m.body.appendChild(_rccEmpty('Could Not Load', 'Could not reach the server. Close this popup and try again.'));
+  });
+}
+
+function _rccBuildWizard(m, tracks, cars, edit) {
+  var editing = !!edit;
+  var details = editing ? JSON.parse(JSON.stringify(edit.seasonDetails || {})) : _rccDefaultDetails();
+  var defaults = _rccDefaultDetails();
+  ['classes', 'classSeasons', 'pointsTables', 'bonusPoints', 'raceSettings'].forEach(function (k) { if (!details[k]) details[k] = defaults[k]; });
+  if (details.dropWeeks === undefined) details.dropWeeks = 0;
+  if (!details.trackLimitsPreset) details.trackLimitsPreset = 'Default';
+  var classesLocked = editing && edit.registered;
+  var pointsLocked = editing && edit.anyResults;
+  var state = {
+    name: editing ? edit.name : '',
+    details: details,
+    rounds: editing ? edit.rounds.map(function (r) {
+      return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weather: r.weather || 'Clear', chanceOfRain: r.chanceOfRain || 0, temperatureC: r.temperatureC === null ? '' : r.temperatureC, igRaceStart: r.igRaceStart || '14:00', locked: r.locked };
+    }) : []
+  };
+
+  // Tracks grouped by venue, layouts within.
+  var venues = [];
+  var layoutsByVenue = {};
+  tracks.forEach(function (t) {
+    if (venues.indexOf(t.TrackName) === -1) { venues.push(t.TrackName); layoutsByVenue[t.TrackName] = []; }
+    layoutsByVenue[t.TrackName].push(t);
+  });
+  venues.sort(function (a, b) { return String(a).localeCompare(String(b)); });
+  var trackById = {};
+  tracks.forEach(function (t) { trackById[t.TrackID] = t; });
+  function newRound() {
+    var t = layoutsByVenue[venues[0]][0];
+    return { roundId: '', trackId: t.TrackID, eventName: '', raceLengthTier: Object.keys(state.details.pointsTables)[0] || 'Sprint', weather: 'Clear', chanceOfRain: 0, temperatureC: 25, igRaceStart: '14:00', locked: false };
+  }
+  if (!state.rounds.length) for (var i = 0; i < 6; i++) state.rounds.push(newRound());
+
+  // Years per class from the Cars tab.
+  var yearsByClass = {};
+  cars.forEach(function (c) {
+    var y = String(c.Season);
+    var list = yearsByClass[c.Class] || (yearsByClass[c.Class] = []);
+    if (y && list.indexOf(y) === -1) list.push(y);
+  });
+  Object.keys(yearsByClass).forEach(function (k) { yearsByClass[k].sort().reverse(); });
+
+  m.body.innerHTML = '';
+  var form = _rccEl('div', 'rcc-wizard');
+  m.body.appendChild(form);
+
+  // --- Season ---
+  var sec1 = _rccSection('Season');
+  sec1.appendChild(_rccField('Season Name', _rccTextInput(state.name, function (v) { state.name = v; }, 60)));
+  form.appendChild(sec1);
+
+  // --- Classes ---
+  var sec2 = _rccSection('Classes');
+  if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'Locked: you have already joined a team, so the grid can no longer change.'));
+  var classGrid = _rccEl('div', 'rcc-class-grid');
+  RCC_CLASS_ORDER.forEach(function (cls) {
+    var years = yearsByClass[cls] || [];
+    var rowEl = _rccEl('div', 'rcc-class-row');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'rcc-class-' + cls;
+    cb.checked = !!state.details.classes[cls];
+    cb.disabled = classesLocked || !years.length;
+    var lbl = _rccText('label', 'rcc-class-label', cls);
+    lbl.htmlFor = cb.id;
+    var yearSel = _rccSelect(years.length ? years : ['No cars'], state.details.classSeasons[cls] || years[0], function (v) { state.details.classSeasons[cls] = v; updateCount(); });
+    yearSel.disabled = classesLocked || !years.length;
+    if (!state.details.classSeasons[cls] && years.length) state.details.classSeasons[cls] = years[0];
+    var count = _rccEl('span', 'rcc-class-count');
+    function updateCount() {
+      var n = cars.filter(function (c) { return c.Class === cls && String(c.Season) === String(state.details.classSeasons[cls]); }).length;
+      count.textContent = years.length ? n + ' car' + (n === 1 ? '' : 's') : 'No active cars';
+    }
+    cb.addEventListener('change', function () { state.details.classes[cls] = cb.checked; });
+    updateCount();
+    rowEl.appendChild(cb);
+    rowEl.appendChild(lbl);
+    rowEl.appendChild(yearSel);
+    rowEl.appendChild(count);
+    classGrid.appendChild(rowEl);
+  });
+  sec2.appendChild(classGrid);
+  sec2.appendChild(_rccText('div', 'rc-hint', 'Every active car in a picked class and year joins the grid. Your rivals are the real drivers listed on each car.'));
+  form.appendChild(sec2);
+
+  // --- Race settings ---
+  var rs = state.details.raceSettings;
+  var sec3 = _rccSection('Race Settings');
+  var diffOptions = [];
+  for (var d = 75; d <= 105; d++) diffOptions.push({ label: d + '%', value: d });
+  var g3 = _rccEl('div', 'rcc-field-grid');
+  g3.appendChild(_rccField('AI Difficulty', _rccSelect(diffOptions, rs.aiDifficulty || 90, function (v) { rs.aiDifficulty = Number(v); }), 'Kept with the season as a record of how hard the AI was.'));
+  g3.appendChild(_rccField('Setup Rules', _rccSelect(['Fixed', 'Open'], rs.setupRules, function (v) { rs.setupRules = v; })));
+  g3.appendChild(_rccField('Pit Stop Requirements', _rccSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], rs.pitStopReq, function (v) { rs.pitStopReq = v; })));
+  g3.appendChild(_rccField('Fuel Multiplier', _rccSelect(RCC_MULTIPLIERS, rs.fuelMultiplier, function (v) { rs.fuelMultiplier = v; })));
+  g3.appendChild(_rccField('Tire Wear Multiplier', _rccSelect(RCC_MULTIPLIERS, rs.tireWearMultiplier, function (v) { rs.tireWearMultiplier = v; })));
+  g3.appendChild(_rccField('Track Limits', _rccSelect(['Strict', 'Relaxed', 'Default'], state.details.trackLimitsPreset, function (v) { state.details.trackLimitsPreset = v; })));
+  g3.appendChild(_rccField('Tire Count Allowed', _rccNumber(rs.tireCount, function (v) { rs.tireCount = v; }, 0)));
+  g3.appendChild(_rccField('Track Limit Points Before DT', _rccNumber(rs.trackLimitPoints, function (v) { rs.trackLimitPoints = v; }, 0)));
+  g3.appendChild(_rccField('Practice Length (min)', _rccNumber(rs.practiceLengthMin, function (v) { rs.practiceLengthMin = v; }, 0)));
+  g3.appendChild(_rccField('Qualify Length (min)', _rccNumber(rs.qualifyLengthMin, function (v) { rs.qualifyLengthMin = v; }, 0)));
+  sec3.appendChild(g3);
+  form.appendChild(sec3);
+
+  // --- Points ---
+  var sec4 = _rccSection('Points');
+  if (pointsLocked) sec4.appendChild(_rccText('div', 'rc-hint', 'Locked: results have been imported, so points can no longer change.'));
+  var tables = state.details.pointsTables;
+  Object.keys(tables).forEach(function (tier) {
+    var t = tables[tier];
+    var row = _rccEl('div', 'rcc-points-row');
+    row.appendChild(_rccText('div', 'rcc-points-tier', tier));
+    var dur = _rccNumber(t.duration, function (v) { t.duration = v; }, 0);
+    dur.disabled = pointsLocked;
+    row.appendChild(_rccField('Minutes', dur));
+    var pts = _rccTextInput((t.points || []).join(', '), function (v) {
+      t.points = v.split(',').map(function (x) { return Number(String(x).trim()); }).filter(function (x) { return !isNaN(x) && String(x) !== ''; });
+    });
+    pts.disabled = pointsLocked;
+    row.appendChild(_rccField('Points for P1, P2, P3... (comma-separated)', pts));
+    sec4.appendChild(row);
+  });
+  var b = state.details.bonusPoints;
+  var g4 = _rccEl('div', 'rcc-field-grid');
+  [['pole', 'Pole Position Bonus'], ['fastestLap', 'Fastest Lap Bonus'], ['mostLapsLed', 'Most Laps Led Bonus']].forEach(function (pair) {
+    var n = _rccNumber(b[pair[0]], function (v) { b[pair[0]] = v; }, 0);
+    n.disabled = pointsLocked;
+    g4.appendChild(_rccField(pair[1], n));
+  });
+  var drop = _rccNumber(state.details.dropWeeks, function (v) { state.details.dropWeeks = v; }, 0);
+  drop.disabled = pointsLocked;
+  g4.appendChild(_rccField('Drop Weeks', drop, 'Lowest round scores left out near the end of the season.'));
+  sec4.appendChild(g4);
+  form.appendChild(sec4);
+
+  // --- Rounds ---
+  var sec5 = _rccSection('Rounds');
+  sec5.appendChild(_rccText('div', 'rc-hint', 'No dates in championship mode: run the rounds in order, whenever you like. Leave Event Name blank to use the season name.'));
+  var roundsWrap = _rccEl('div', 'rcc-rounds');
+  sec5.appendChild(roundsWrap);
+  var addBtn = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Add Round');
+  addBtn.type = 'button';
+  addBtn.addEventListener('click', function () { state.rounds.push(newRound()); drawRounds(); });
+  sec5.appendChild(addBtn);
+  form.appendChild(sec5);
+
+  function drawRounds() {
+    roundsWrap.innerHTML = '';
+    state.rounds.forEach(function (r, idx) {
+      var card = _rccEl('div', 'rcc-round' + (r.locked ? ' rcc-round-locked' : ''));
+      var head = _rccEl('div', 'rcc-round-head');
+      head.appendChild(_rccText('div', 'rcc-round-num', 'Round ' + (idx + 1) + (r.locked ? ' · results imported, locked' : '')));
+      if (!r.locked) {
+        var tools = _rccEl('div', 'rcc-round-tools');
+        var up = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Move Up');
+        up.type = 'button';
+        up.disabled = idx === 0 || state.rounds[idx - 1].locked;
+        up.addEventListener('click', function () { var x = state.rounds[idx - 1]; state.rounds[idx - 1] = r; state.rounds[idx] = x; drawRounds(); });
+        var down = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Move Down');
+        down.type = 'button';
+        down.disabled = idx === state.rounds.length - 1;
+        down.addEventListener('click', function () { var x = state.rounds[idx + 1]; state.rounds[idx + 1] = r; state.rounds[idx] = x; drawRounds(); });
+        var del = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Remove');
+        del.type = 'button';
+        del.disabled = state.rounds.length === 1;
+        del.addEventListener('click', function () { state.rounds.splice(idx, 1); drawRounds(); });
+        tools.appendChild(up); tools.appendChild(down); tools.appendChild(del);
+        head.appendChild(tools);
+      }
+      card.appendChild(head);
+      var t = trackById[r.trackId] || layoutsByVenue[venues[0]][0];
+      if (r.locked) {
+        card.appendChild(_rccText('div', 'rcc-round-locked-text', (r.eventName || 'Event') + ' · ' + (t.TrackName || '') + ': ' + (t.Layout || '') + ' · ' + r.raceLengthTier));
+        roundsWrap.appendChild(card);
+        return;
+      }
+      var g = _rccEl('div', 'rcc-field-grid');
+      var layoutSel = _rccSelect([], null);
+      function fillLayouts(venue, keepId) {
+        layoutSel.innerHTML = '';
+        (layoutsByVenue[venue] || []).forEach(function (row) { layoutSel.appendChild(new Option(row.Layout || 'Standard', row.TrackID)); });
+        layoutSel.value = keepId && trackById[keepId] && trackById[keepId].TrackName === venue ? keepId : layoutSel.options[0].value;
+        r.trackId = layoutSel.value;
+      }
+      var venueSel = _rccSelect(venues, t.TrackName, function (v) { fillLayouts(v); });
+      layoutSel.addEventListener('change', function () { r.trackId = layoutSel.value; });
+      fillLayouts(t.TrackName, r.trackId);
+      g.appendChild(_rccField('Event Name', _rccTextInput(r.eventName, function (v) { r.eventName = v; }, 60)));
+      g.appendChild(_rccField('Track', venueSel));
+      g.appendChild(_rccField('Layout', layoutSel));
+      g.appendChild(_rccField('Race Length', _rccSelect(Object.keys(state.details.pointsTables), r.raceLengthTier, function (v) { r.raceLengthTier = v; })));
+      g.appendChild(_rccField('Weather', _rccSelect(RCC_WEATHER, r.weather, function (v) { r.weather = v; })));
+      g.appendChild(_rccField('Chance of Rain (%)', _rccNumber(r.chanceOfRain, function (v) { r.chanceOfRain = v; }, 0, 100)));
+      g.appendChild(_rccField('Temperature (°C)', _rccNumber(r.temperatureC, function (v) { r.temperatureC = v; })));
+      var timeInput = document.createElement('input');
+      timeInput.type = 'time';
+      timeInput.value = r.igRaceStart || '';
+      timeInput.addEventListener('input', function () { r.igRaceStart = timeInput.value; });
+      g.appendChild(_rccField('In-Game Race Start', timeInput));
+      card.appendChild(g);
+      roundsWrap.appendChild(card);
+    });
+  }
+  drawRounds();
+
+  var saveRow = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
+  var err = _rccEl('div', 'rcc-error-line');
+  var save = _rccText('button', 'rc-btn-primary rc-btn-sm', editing ? 'Save Changes' : 'Create Season');
+  save.type = 'button';
+  saveRow.appendChild(save);
+  form.appendChild(err);
+  form.appendChild(saveRow);
+
+  save.addEventListener('click', function () {
+    err.textContent = '';
+    if (!state.name.trim()) { err.textContent = 'Give the season a name.'; return; }
+    if (!RCC_CLASS_ORDER.some(function (c) { return state.details.classes[c]; })) { err.textContent = 'Pick at least one class.'; return; }
+    if (!state.rounds.length) { err.textContent = 'Add at least one round.'; return; }
+    var payload = {
+      name: state.name.trim(),
+      seasonDetails: state.details,
+      rounds: state.rounds.map(function (r) {
+        return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weather: r.weather, chanceOfRain: r.chanceOfRain, temperatureC: r.temperatureC, igRaceStart: r.igRaceStart };
+      })
+    };
+    if (editing) payload.seasonId = edit.seasonId;
+    rccRunWrite(save, editing ? 'Saving Changes...' : 'Creating Season...', function () {
+      return _rccApi(editing ? 'champUpdateSeason' : 'champCreateSeason', payload, { post: true });
+    }).then(function (res) {
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { err.textContent = (res && res.message) || 'Could not save the season.'; return; }
+      _rccToast(editing ? 'Season updated.' : 'Season created. Now choose your team.', 'success');
+      m.close(true);
+      if (!editing) {
+        window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId);
+      } else {
+        rccReloadAfterSave();
+      }
+    }).catch(function () {
+      err.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it was saved.';
+    });
+  });
+}
+
+// ---------------------------------------------------------------------
+// END SEASON
+// ---------------------------------------------------------------------
+function rccOpenEndSeason() {
+  var page = RCC.page;
+  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized; });
+  if (open.length) {
+    var m = rccOpenModal('End Season', { narrow: true });
+    m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Every round has to be finalized before the season can end. Still open: ' + open.map(function (c) { return 'Round ' + c.roundNum; }).join(', ') + '. Use Round Tools to finalize rounds once their results are in.'));
+    return;
+  }
+  rccConfirm('End Season', 'End "' + page.seasonName + '"? The standings become final and the season can no longer be edited. You can then create your next season.',
+    'End Season', 'Ending Season...',
+    function () { return _rccApi('champEndSeason', { seasonId: page.seasonId }, { post: true }); },
+    function () { _rccToast('Season ended.', 'success'); rccReloadAfterSave(); });
+}
+
+// ---------------------------------------------------------------------
+// UPLOAD RESULTS
+// ---------------------------------------------------------------------
+function rccOpenUpload(preferRoundId) {
+  var page = RCC.page;
+  var m = rccOpenModal('Upload Results', { narrow: false });
+  m.dialog.classList.add('rcc-light-dialog');
+  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized; });
+  if (!open.length) { m.body.appendChild(_rccEmpty('Nothing To Upload', 'Every round in this season is finalized.')); return; }
+  m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Pick the round, then choose that round\'s Qualify and Race XML files from Le Mans Ultimate (you can pick both at once). Practice files are skipped.'));
+  var roundSel = _rccSelect(open.map(function (c) {
+    var have = (c.hasQualifyResults ? 'Q ✓' : 'Q –') + ' · ' + (c.hasRaceResults ? 'R ✓' : 'R –');
+    return { label: 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + ')' : '') + ' · ' + have, value: c.roundId };
+  }), null);
+  var def = preferRoundId || (page.nextRound && page.nextRound.roundId);
+  if (def && open.some(function (c) { return c.roundId === def; })) roundSel.value = def;
+  m.body.appendChild(_rccField('Round', roundSel));
+  var file = document.createElement('input');
+  file.type = 'file';
+  file.accept = '.xml,text/xml';
+  file.multiple = true;
+  m.body.appendChild(_rccField('Result Files', file, 'The files are in your LMU folder under UserData > Log > Results.'));
+  var out = _rccEl('div', 'rcc-upload-out');
+  m.body.appendChild(out);
+  var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
+  var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
+  go.type = 'button';
+  row.appendChild(go);
+  m.body.appendChild(row);
+  var anySuccess = false;
+
+  function readFile(f) {
+    return new Promise(function (resolve, reject) {
+      var rd = new FileReader();
+      rd.onload = function () { resolve({ name: f.name, text: String(rd.result || '') }); };
+      rd.onerror = function () { reject(new Error('Could not read ' + f.name)); };
+      rd.readAsText(f);
+    });
+  }
+  function line(text, cls) { out.appendChild(_rccText('div', 'rcc-upload-line ' + (cls || ''), text)); }
+
+  go.addEventListener('click', function () {
+    out.innerHTML = '';
+    var files = Array.prototype.slice.call(file.files || []);
+    if (!files.length) { line('Choose at least one XML file first.', 'rcc-upload-bad'); return; }
+    roundSel.disabled = true;
+    file.disabled = true;
+    rccRunWrite(go, 'Uploading...', function () {
+      return Promise.all(files.map(readFile)).then(function (read) {
+        // Qualify before Race, Practice dropped before anything is sent.
+        var kept = read.filter(function (f) { return !/<Practice\d*>/.test(f.text) || /<(Qualify|Race)\d*>/.test(f.text); });
+        read.filter(function (f) { return kept.indexOf(f) === -1; }).forEach(function (f) { line(f.name + ': Practice file, skipped.', 'rcc-upload-skip'); });
+        kept.sort(function (a, b) { return (/<Qualify\d*>/.test(a.text) ? 0 : 1) - (/<Qualify\d*>/.test(b.text) ? 0 : 1); });
+        var chain = Promise.resolve();
+        var lastRes = { success: false };
+        kept.forEach(function (f) {
+          chain = chain.then(function () {
+            return _rccApi('champImportXml', { seasonId: page.seasonId, roundId: roundSel.value, filename: f.name, xml: f.text }, { post: true }).then(function (res) {
+              if (_rccHandleAuthError(res)) return;
+              if (res && res.success) {
+                anySuccess = true;
+                lastRes = res;
+                line(f.name + ': ' + res.message, 'rcc-upload-ok');
+                if ((res.namesAdded || []).length) line('Added ' + res.namesAdded.length + ' driver name' + (res.namesAdded.length === 1 ? '' : 's') + ' to the Cars tab: ' + res.namesAdded.join(', '), 'rcc-upload-note');
+                (res.warnings || []).forEach(function (w) { line('Note: ' + w, 'rcc-upload-note'); });
+              } else {
+                line(f.name + ': ' + ((res && res.message) || 'Import failed.'), 'rcc-upload-bad');
+              }
+            });
+          });
+        });
+        return chain.then(function () { return anySuccess ? { success: true } : lastRes; });
+      });
+    }).then(function () {
+      if (anySuccess) {
+        go.textContent = 'Done';
+        go.className = 'rc-btn-secondary rc-btn-sm';
+        go.disabled = false;
+        var fresh = go.cloneNode(true);
+        go.parentNode.replaceChild(fresh, go);
+        fresh.addEventListener('click', function () { m.close(true); rccReloadAfterSave(); });
+      } else {
+        roundSel.disabled = false;
+        file.disabled = false;
+      }
+    }).catch(function (e) {
+      roundSel.disabled = false;
+      file.disabled = false;
+      line(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'rcc-upload-bad');
+    });
+  });
+  // Closing with the X after a successful upload still refreshes the page (the X does nothing while
+  // an upload is still running).
+  m.dialog.querySelector('.rcl-modal-close').addEventListener('click', function () {
+    if (anySuccess && !(typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0)) rccReloadAfterSave();
+  });
+}
+
+// ---------------------------------------------------------------------
+// ROUND TOOLS -- finalize / erase per round
+// ---------------------------------------------------------------------
+function rccOpenRoundTools() {
+  var page = RCC.page;
+  var m = rccOpenModal('Round Tools', { wide: true });
+  m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Finalize a round once its results are right: it becomes official and can no longer be changed. Erase removes a round\'s imported files so you can upload them again. Standings are worked out fresh from the results every time the page loads, so they never need recomputing.'));
+  (page.calendar || []).forEach(function (c) {
+    var row = _rccEl('div', 'rcc-tool-row');
+    var info = _rccEl('div', 'rcc-tool-info');
+    info.appendChild(_rccText('div', 'rcc-tool-title', 'Round ' + c.roundNum + ' · ' + c.eventName));
+    info.appendChild(_rccText('div', 'rcc-tool-sub', (c.track ? c.track + (c.layout ? ': ' + c.layout : '') + ' · ' : '') + 'Qualify ' + (c.hasQualifyResults ? 'imported' : 'missing') + ' · Race ' + (c.hasRaceResults ? 'imported' : 'missing') + (c.resultsFinalized ? ' · Finalized ' + _rccFormatDate(c.finalizedAt) : '')));
+    row.appendChild(info);
+    var btns = _rccEl('div', 'rcc-tool-btns');
+    var fin = _rccText('button', 'rc-btn-secondary rc-btn-row', c.resultsFinalized ? 'Finalized' : 'Finalize');
+    fin.type = 'button';
+    fin.disabled = c.resultsFinalized || !c.hasResults;
+    fin.addEventListener('click', function () {
+      rccConfirm('Finalize Round ' + c.roundNum, 'Make Round ' + c.roundNum + ' (' + c.eventName + ') official? Its results can no longer be erased or replaced afterwards.',
+        'Finalize Round', 'Finalizing...',
+        function () { return _rccApi('champFinalizeRound', { roundId: c.roundId }, { post: true }); },
+        function () { _rccToast('Round ' + c.roundNum + ' finalized.', 'success'); m.close(true); rccReloadAfterSave(); });
+    });
+    var er = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Erase Results');
+    er.type = 'button';
+    er.disabled = c.resultsFinalized || !(c.hasQualifyResults || c.hasRaceResults);
+    er.addEventListener('click', function () {
+      rccConfirm('Erase Round ' + c.roundNum, 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload. Driver names already added to the Cars tab stay there.',
+        'Erase Results', 'Erasing...',
+        function () { return _rccApi('champEraseRound', { roundId: c.roundId }, { post: true }); },
+        function () { _rccToast('Round ' + c.roundNum + ' erased.', 'success'); m.close(true); rccReloadAfterSave(); });
+    });
+    btns.appendChild(fin);
+    btns.appendChild(er);
+    row.appendChild(btns);
+    m.body.appendChild(row);
+  });
+}
+
+// ---------------------------------------------------------------------
+// BOOT
+// ---------------------------------------------------------------------
+function rccRenderAll(page) {
+  RCC.page = page;
+  rccRenderHero(page);
+  rccRenderActionBar(page);
+  rccRenderTicker(page);
+  rccRenderLastRace(page);
+  rccRenderCarousel(page);
+  rccRenderStandings(page);
+  rccRenderManufacturers(page);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (!_rccCheckAccess()) return;
+  _rccLockScroll();
+  _rccApi('champGetPage', { seasonId: _rccQuery('season') }).then(function (page) {
+    if (_rccHandleAuthError(page)) return;
+    if (!page || !page.success) {
+      rccRenderAll({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
+      _rccToast((page && page.message) || 'Could not load the championship.', 'error');
+    } else {
+      rccRenderAll(page);
+    }
+    _rccUnlockScroll();
+    _rccHidePageLoader();
+  }).catch(function () {
+    rccRenderAll({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
+    _rccUnlockScroll();
+    _rccHidePageLoader();
+    _rccToast('Could not reach the server. Reload the page to try again.', 'error');
+  });
+});

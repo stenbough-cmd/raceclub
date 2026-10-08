@@ -447,6 +447,14 @@
     nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
       window.location.href = 'league.html';
     }));
+    // Championship (CHAMP chat, 2026-10-08) -- off-page link to this driver's own offline
+    // championship (championship.html?id=...). Admin-only for now: setNavAccess below grays it out
+    // for everyone else instead of hiding it.
+    nav.appendChild(makeNavButton('championship', 'Championship',
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>',
+      'rc-nav-championship', false, function () {
+        if (currentProfile && currentProfile.profileId) window.location.href = 'championship.html?id=' + encodeURIComponent(currentProfile.profileId);
+      }));
     nav.appendChild(navDivider());
     // My Profile -- off-page link to this driver's own public profile page, above Dashboard.
     nav.appendChild(makeNavButton('myprofile', 'My Profile', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
@@ -7602,6 +7610,72 @@
   }
 
   // Add Car -- same field set as the Edit Car popup, minus Active (new cars always start Active).
+  // Championship fields shared by Add Car / Edit Car (CHAMP chat, 2026-10-08):
+  // - Driver: one text box per real-world driver of this car, with a + button to add another.
+  //   Saved to Cars.DriverNames as one comma-separated list.
+  // - Factory Team: checkbox saved to Cars.FactoryTeam (TRUE = factory/works car; in Hypercar only
+  //   factory cars score Manufacturers' points and only non-factory cars score Teams' points).
+  // Returns { getDriverNames(), getFactoryTeam() }.
+  function _rcBuildCarChampFields(form, car) {
+    form.appendChild(el('label', null, 'Driver'));
+    var list = el('div', 'display:flex;flex-direction:column;gap:6px;');
+    form.appendChild(list);
+    var inputs = [];
+    function addRow(value, isFirst) {
+      var row = el('div', 'display:flex;gap:6px;align-items:center;');
+      var input = el('input');
+      input.type = 'text';
+      input.value = value || '';
+      input.placeholder = 'Driver name';
+      input.style.flex = '1';
+      row.appendChild(input);
+      inputs.push(input);
+      if (isFirst) {
+        var plus = el('button', 'rc-btn-secondary rc-btn-row', '+');
+        plus.type = 'button';
+        plus.title = 'Add another driver';
+        plus.setAttribute('aria-label', 'Add another driver');
+        plus.style.cssText = 'height:44px;min-width:44px;font-size:18px;';
+        plus.addEventListener('click', function () { addRow('', false).focus(); });
+        row.appendChild(plus);
+      } else {
+        var minus = el('button', 'rc-btn-secondary rc-btn-row', '&times;');
+        minus.type = 'button';
+        minus.title = 'Remove this driver';
+        minus.setAttribute('aria-label', 'Remove this driver');
+        minus.style.cssText = 'height:44px;min-width:44px;font-size:18px;';
+        minus.addEventListener('click', function () {
+          inputs.splice(inputs.indexOf(input), 1);
+          list.removeChild(row);
+        });
+        row.appendChild(minus);
+      }
+      list.appendChild(row);
+      return input;
+    }
+    var existing = String((car && car.DriverNames) || '').split(',').map(function (n) { return n.trim(); }).filter(Boolean);
+    addRow(existing[0] || '', true);
+    existing.slice(1).forEach(function (n) { addRow(n, false); });
+    form.appendChild(el('div', 'rc-hint', 'The real drivers of this car in LMU (the championship page lists them as your AI rivals and shares the car\'s points between them). Saved as one list, separated by commas.'));
+
+    var factory = document.createElement('label');
+    factory.style.marginTop = '14px';
+    var factoryInput = document.createElement('input');
+    factoryInput.type = 'checkbox';
+    factoryInput.checked = !!(car && (car.FactoryTeam === true || String(car.FactoryTeam).toUpperCase() === 'TRUE'));
+    factory.appendChild(factoryInput);
+    factory.appendChild(document.createTextNode(' Factory Team'));
+    form.appendChild(factory);
+    form.appendChild(el('div', 'rc-hint', 'Check for a manufacturer\'s works team. In Hypercar, factory cars score Manufacturers\' points; privateer cars score Teams\' points.'));
+
+    return {
+      getDriverNames: function () {
+        return inputs.map(function (i) { return i.value.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join(', ');
+      },
+      getFactoryTeam: function () { return !!factoryInput.checked; }
+    };
+  }
+
   function openAddCarModal(token, reload) {
     var body = el('div');
     var form = el('form');
@@ -7634,6 +7708,8 @@
     form.appendChild(el('label', null, 'Team Name'));
     var teamName = el('input'); teamName.type = 'text';
     form.appendChild(teamName);
+
+    var champFields = _rcBuildCarChampFields(form, null);
 
     // Cars.Tier is now an archived column in the backend (see Core.gs's TAB_SCHEMAS), untouched but
     // never read or written going forward.
@@ -7670,6 +7746,8 @@
             CarModel: carModel.value.trim(),
             CarNumber: carNumber.value.trim(),
             TeamName: teamName.value.trim(),
+            DriverNames: champFields.getDriverNames(),
+            FactoryTeam: champFields.getFactoryTeam(),
             TeamDesc: teamDesc.value.trim()
           }
         });
@@ -8684,6 +8762,8 @@
     var teamName = el('input'); teamName.type = 'text'; teamName.value = car.TeamName || '';
     form.appendChild(teamName);
 
+    var champFields = _rcBuildCarChampFields(form, car);
+
     // Cars.Tier/ PreviousTier are now archived columns in the backend (see Core.gs's TAB_SCHEMAS),
     // untouched but never read or written going forward.
 
@@ -8724,6 +8804,8 @@
             CarModel: carModel.value.trim(),
             CarNumber: carNumber.value.trim(),
             TeamName: teamName.value.trim(),
+            DriverNames: champFields.getDriverNames(),
+            FactoryTeam: champFields.getFactoryTeam(),
             TeamDesc: teamDesc.value.trim()
           }
         });
@@ -8829,6 +8911,7 @@
     // level Protests RULING already requires server-side (Protests.gs).
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
+    setNavAccess('rc-nav-championship', profile.role === 'Admin', 'Championship mode is admin-only for now.');
     // Divider above these three is always visible from initial sidebar render now (see
     // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
 

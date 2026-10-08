@@ -1,0 +1,92 @@
+<!-- Race Club -- championship.html (single-player offline championship, opened as championship.html?id=RC-00001) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Club: Championship</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/league.css">
+<link rel="stylesheet" href="css/championship.css">
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/header.js"></script>
+<script src="js/reference-data.js"></script>
+<script src="js/edit-profile.js"></script>
+</head>
+<!-- rc-league-page gives this page the League Hub's exact layout; rcc-page (css/championship.css)
+     swaps its colors to the light member-page palette. -->
+<body class="rc-league-page rcc-page">
+
+<div class="rcl-page-loader" id="rcl-page-loader">
+  <div class="rc-startlights">
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+    <div class="rc-startlight"></div>
+  </div>
+  <div class="rc-loading-text">Loading Championship...</div>
+</div>
+
+<div id="rc-header"></div>
+<script>renderHeader();</script>
+
+<div class="rcl-ticker-wrap">
+  <div class="rcl-ticker-label">Highlights</div>
+  <div class="rcl-ticker-viewport">
+    <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
+  </div>
+</div>
+
+<section class="rcl-hero">
+  <div class="rcl-hero-inner">
+    <div class="rcl-hero-eyebrow">Race Club</div>
+    <h1 class="rcl-hero-title"><span class="rcl-hero-title-hub">Championship</span></h1>
+    <div class="rcl-hero-season" id="rcl-hero-season"></div>
+    <div class="rcc-hero-meta" id="rcc-hero-meta"></div>
+  </div>
+</section>
+
+<!-- Black link bar: every championship tool lives here (filled by js/championship.js). -->
+<nav class="rcc-actionbar" id="rcc-actionbar" aria-label="Championship tools"></nav>
+
+<main class="rcl-main">
+
+  <div class="rcl-row-full">
+    <section class="rcl-panel" id="rcl-last-race-panel">
+      <div class="rcl-panel-head">
+        <div class="rcl-panel-title" id="rcl-last-race-title">Last Race</div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-last-race"></div>
+    </section>
+  </div>
+
+  <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
+
+  <div class="rcl-row-full">
+    <section class="rcl-panel">
+      <div class="rcl-panel-head rcc-panel-head-tabs">
+        <div class="rcl-panel-title" id="rcl-standings-title">Championship Standings</div>
+        <div class="rcc-tabs" id="rcc-standings-tabs" role="tablist"></div>
+      </div>
+      <div class="rcl-panel-body" id="rcl-standings-body"></div>
+    </section>
+  </div>
+
+  <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
+</main>
+
+<footer class="rc-site-footer">
+  <div class="rc-site-footer-inner">
+    <div class="rc-site-footer-legal">
+      Race Club Online is an independent community-run sim racing league and is not affiliated with, endorsed by, or sponsored by Le Mans Ultimate, Studio 397, Motorsport Games, any vehicle manufacturer, race circuit, racing series, or trademark owner. All trademarks, logos, vehicle names, and circuit names are the property of their respective owners and are used for identification and informational purposes only.
+      <button type="button" class="rc-footer-legal-link" id="rc-footer-legal-link">Legal Disclaimer</button>
+    </div>
+  </div>
+</footer>
+<script>rcWireFooterLegalLink();</script>
+
+<script src="js/championship.js"></script>
+</body>
+</html>
