@@ -197,7 +197,15 @@ function _rccCheckAccess() {
 function _rccApi(action, params, opts) {
   opts = opts || {};
   var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
-  if (opts.post) return fetchApi(action, { method: 'POST', token: RCC.token, params: { ownerId: RCC.ownerId }, body: p });
+  if (opts.post) {
+    // Any save makes this browser's saved copies of the page out of date, so they're dropped the
+    // moment a write succeeds: the reload that follows then waits for fresh data instead of
+    // flashing the old page first.
+    return fetchApi(action, { method: 'POST', token: RCC.token, params: { ownerId: RCC.ownerId }, body: p }).then(function (res) {
+      if (res && res.success) _rccForgetSavedPages();
+      return res;
+    });
+  }
   return fetchApi(action, { token: RCC.token, params: p, timeoutMs: opts.timeoutMs || RC_FETCH_TIMEOUT_MS_LONG });
 }
 
@@ -1942,6 +1950,28 @@ function rccOpenRoundTools() {
 }
 
 // ---------------------------------------------------------------------
+// SAVED COPY (same idea as league.js's rc_league_hub_v1): the last page payload is kept in this
+// browser, drawn instantly on the next visit, then refreshed quietly in the background with one
+// Apps Script call. The screen only redraws if the fresh data differs. One copy per owner + season
+// view; championship.html's <head> checks the same key to skip the loading overlay.
+// ---------------------------------------------------------------------
+var RCC_SAVED_PREFIX = 'rc_champ_page_v1:';
+function _rccSavedKey() { return RCC_SAVED_PREFIX + RCC.ownerId + ':' + (_rccQuery('season') || ''); }
+function _rccReadSaved() { try { return localStorage.getItem(_rccSavedKey()); } catch (err) { return null; } }
+function _rccWriteSaved(text) { try { localStorage.setItem(_rccSavedKey(), text); } catch (err) { /* storage full or blocked -- the page still works */ } }
+function _rccForgetSavedPages() {
+  try {
+    var prefix = RCC_SAVED_PREFIX + RCC.ownerId + ':';
+    var drop = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf(prefix) === 0) drop.push(k);
+    }
+    drop.forEach(function (k) { localStorage.removeItem(k); });
+  } catch (err) { /* nothing saved, nothing to drop */ }
+}
+
+// ---------------------------------------------------------------------
 // BOOT
 // ---------------------------------------------------------------------
 function rccRenderAll(page) {
@@ -1957,21 +1987,57 @@ function rccRenderAll(page) {
 
 document.addEventListener('DOMContentLoaded', function () {
   if (!_rccCheckAccess()) return;
-  _rccLockScroll();
-  _rccApi('champGetPage', { seasonId: _rccQuery('season') }).then(function (page) {
-    if (_rccHandleAuthError(page)) return;
-    if (!page || !page.success) {
-      rccRenderAll({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
-      _rccToast((page && page.message) || 'Could not load the championship.', 'error');
-    } else {
-      rccRenderAll(page);
-    }
-    _rccUnlockScroll();
-    _rccHidePageLoader();
-  }).catch(function () {
-    rccRenderAll({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
-    _rccUnlockScroll();
-    _rccHidePageLoader();
-    _rccToast('Could not reach the server. Reload the page to try again.', 'error');
-  });
+  var EMPTY = { hasSeason: false, owner: { displayName: '' }, seasons: [] };
+
+  // 1. Draw the saved copy instantly, if this browser has one.
+  var currentText = null;
+  var savedText = _rccReadSaved();
+  if (savedText) {
+    try {
+      var saved = JSON.parse(savedText);
+      if (saved && saved.success) {
+        currentText = savedText;
+        rccRenderAll(saved);
+        _rccHidePageLoader();
+      }
+    } catch (parseErr) { currentText = null; }
+  }
+  if (!currentText) {
+    document.documentElement.classList.remove('rcl-has-cache');
+    _rccLockScroll();
+  }
+
+  // 2. Fetch fresh data; redraw only when it differs from what's on screen.
+  var revalidating = false;
+  function revalidate() {
+    if (revalidating) return;
+    revalidating = true;
+    var hadCopy = !!currentText;
+    _rccApi('champGetPage', { seasonId: _rccQuery('season') }).then(function (page) {
+      if (_rccHandleAuthError(page)) return;
+      if (page && page.success) {
+        var text = JSON.stringify(page);
+        if (text !== currentText) {
+          currentText = text;
+          _rccWriteSaved(text);
+          rccRenderAll(page);
+        }
+      } else if (!hadCopy) {
+        rccRenderAll(EMPTY);
+        _rccToast((page && page.message) || 'Could not load the championship.', 'error');
+      }
+    }).catch(function () {
+      if (!hadCopy) {
+        rccRenderAll(EMPTY);
+        _rccToast('Could not reach the server. Reload the page to try again.', 'error');
+      }
+    }).then(function () {
+      revalidating = false;
+      if (!hadCopy) { _rccUnlockScroll(); _rccHidePageLoader(); }
+    });
+  }
+  revalidate();
+
+  // Coming back with the browser's Back button can restore the page from memory; refresh quietly.
+  window.addEventListener('pageshow', function (evt) { if (evt.persisted) revalidate(); });
 });
