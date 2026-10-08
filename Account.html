@@ -7618,7 +7618,9 @@
   // Returns { getDriverNames(), getFactoryTeam() }.
   function _rcBuildCarChampFields(form, car) {
     form.appendChild(el('label', null, 'Driver'));
-    var list = el('div', 'display:flex;flex-direction:column;gap:6px;');
+    // margin-top:4px here (not on each box) -- style.css gives every input margin-top:4px, which inside a
+    // row pushed the text box 2px below the +/x button; the boxes zero it out below instead.
+    var list = el('div', 'display:flex;flex-direction:column;gap:6px;margin-top:4px;');
     form.appendChild(list);
     var inputs = [];
     function addRow(value, isFirst) {
@@ -7628,6 +7630,7 @@
       input.value = value || '';
       input.placeholder = 'Driver name';
       input.style.flex = '1';
+      input.style.marginTop = '0';
       row.appendChild(input);
       inputs.push(input);
       if (isFirst) {
