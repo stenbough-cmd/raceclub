@@ -89,7 +89,25 @@ function _rcEPShowModal(title, opts) {
   document.body.style.top = '-' + scrollYBeforeModal + 'px';
   document.body.classList.add('rc-modal-scroll-locked');
 
+  // While any write is in flight (js/api.js rcWritesInFlight) the X is dimmed/disabled and
+  // close() ignores user-initiated closes, same as Account.html's showModal.
+  var removeWriteListener = null;
+  function applyWriteLock(inFlight) {
+    var busy = inFlight > 0;
+    if (!isDark) modal.classList.toggle('rc-modal-busy', busy);
+    closeBtn.disabled = busy;
+    closeBtn.style.opacity = busy ? '0.35' : '';
+    closeBtn.style.cursor = busy ? 'not-allowed' : '';
+    closeBtn.title = busy ? 'Cannot close while a save is in progress' : '';
+  }
+  if (typeof rcOnWriteStateChange === 'function') {
+    removeWriteListener = rcOnWriteStateChange(applyWriteLock);
+    applyWriteLock(rcWritesInFlight);
+  }
+
   function close() {
+    if (typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0 && close.force !== true) return;
+    if (removeWriteListener) removeWriteListener();
     backdrop.remove();
     document.body.classList.remove('rc-modal-scroll-locked');
     document.body.style.top = '';
@@ -249,10 +267,17 @@ function _rcEPPasswordChangeSection(token, opts) {
         showToast('New password and confirmation don\'t match.', 'error');
         return;
       }
+      btn.disabled = true;
+      btn.textContent = 'Updating Password...';
       fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
         .then(function (data) {
+          btn.disabled = false; btn.textContent = 'Update Password';
           showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
           if (data.success) { cur.value = ''; next.value = ''; confirm.value = ''; }
+        })
+        .catch(function () {
+          btn.disabled = false; btn.textContent = 'Update Password';
+          showToast('Could not reach the server -- try again.', 'error');
         });
     });
     box.appendChild(btn);

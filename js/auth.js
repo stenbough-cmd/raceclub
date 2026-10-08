@@ -71,7 +71,7 @@ var _inactivityTimer = null;
 function _handleInactivityTimeout() {
   var token = getToken();
   if (!token) return; // nobody logged in -- nothing to do
-  fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
+  fetchApi('logout', { method: 'POST', token: token, quick: true }).catch(function () {});
   clearToken();
   sessionStorage.setItem('raceclub_login_message', 'You were logged out after 30 minutes of inactivity -- please log in again.');
   window.location.href = 'login.html';

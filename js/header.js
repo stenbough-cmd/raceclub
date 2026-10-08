@@ -421,7 +421,7 @@ function renderHeader(opts) {
     // Same fire-and-forget logout pattern as Account.html's sidebar Log Out button: clear the local
     // token and redirect immediately, fire the API call without waiting on it.
     document.getElementById('rc-header-menu-logout').addEventListener('click', function () {
-      fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
+      fetchApi('logout', { method: 'POST', token: token, quick: true }).catch(function () {});
       clearToken();
       window.location.href = 'login.html';
     });

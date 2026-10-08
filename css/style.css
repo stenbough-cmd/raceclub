@@ -3225,3 +3225,9 @@ body.rc-modal-scroll-locked {
 .rc-tier-badge.rc-tier-5 { background: #d9702e; }
 .rc-tier-badge.rc-tier-6 { background: #d9502e; }
 .rc-tier-badge.rc-tier-7 { background: #c62828; }
+
+/* While a save is in flight (rcWritesInFlight, js/api.js) every open popup is locked -- showModal adds
+   .rc-modal-busy. The X dims through its :disabled state; other buttons gray out and ignore clicks. */
+.rc-modal-busy .rc-modal-body button:not(:disabled),
+.rc-modal-busy .rc-modal-body a.rc-btn-secondary { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
+.rc-modal-busy .rc-modal-close { cursor: not-allowed; }

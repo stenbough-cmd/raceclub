@@ -130,6 +130,29 @@ function rcDriverDirectoryIsStale(maxAgeMs) {
   } catch (err) { return true; }
 }
 
+// Writes (POSTs) wait up to Apps Script's 6-minute execution limit plus slack, so an admin always gets
+// the server's real acknowledgement or error instead of guessing whether a short client timeout hid
+// a success.
+var RC_POST_TIMEOUT_MS = 370000;
+
+// Number of writes currently in flight, plus a listener hook -- Account.html uses it to lock every
+// open popup's X/Cancel/buttons until the server has answered. Listeners run AFTER the counter
+// changes and BEFORE the caller's own .then, so a popup's success handler can close itself.
+var rcWritesInFlight = 0;
+var rcWriteListeners_ = [];
+function rcOnWriteStateChange(fn) {
+  rcWriteListeners_.push(fn);
+  return function () {
+    var i = rcWriteListeners_.indexOf(fn);
+    if (i !== -1) rcWriteListeners_.splice(i, 1);
+  };
+}
+function rcNotifyWriteListeners_() {
+  rcWriteListeners_.slice().forEach(function (fn) { try { fn(rcWritesInFlight); } catch (err) { /* a listener must never break a request */ } });
+}
+function rcWriteStarted_() { rcWritesInFlight++; rcNotifyWriteListeners_(); }
+function rcWriteFinished_() { rcWritesInFlight = Math.max(0, rcWritesInFlight - 1); rcNotifyWriteListeners_(); }
+
 // How long a single attempt is allowed to hang before it's treated as failed.
 var RC_FETCH_TIMEOUT_MS = 20000;
 
@@ -235,7 +258,20 @@ function fetchApi(action, options) {
     fetchOpts.body = JSON.stringify(options.body || {});
   }
 
-  if (method === 'POST') return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
+  if (method === 'POST') {
+    // Every write waits for the server's real answer, up to Apps Script's own 6-minute execution
+    // limit (plus a little slack so the server's own failure arrives first). quick:true is for
+    // fire-and-forget calls (logout) that should never hold anything up.
+    if (options.quick) return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
+    rcWriteStarted_();
+    return _rcFetchOnce_(url, fetchOpts, RC_POST_TIMEOUT_MS).then(function (data) {
+      rcWriteFinished_();
+      return data;
+    }, function (err) {
+      rcWriteFinished_();
+      throw err;
+    });
+  }
   if (options.noRetry) return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
 
   var attempt = function (retriesLeft) {

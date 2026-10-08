@@ -102,7 +102,7 @@
   // redirects immediately, without waiting on the server-side logout call to finish -- if it never
   // completes, the token just sits unused until its normal 7-day expiry, harmless.
   function doLogout() {
-    fetchApi('logout', { method: 'POST', token: token }).catch(function () {});
+    fetchApi('logout', { method: 'POST', token: token, quick: true }).catch(function () {});
     clearToken();
     window.location.href = 'login.html';
   }
@@ -2270,12 +2270,17 @@
         // here genuinely depends on a fact only the server can check -- whether currentPassword is
         // actually correct -- and that's a common, expected way for this particular action to fail
         // (a typo, forgetting which password), not a rare edge case.
-        fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } })
+        _rcRunWrite(btn, 'Updating...', function () {
+          return fetchApi('changeOwnPassword', { method: 'POST', token: token, body: { currentPassword: cur.value, newPassword: next.value } });
+        })
           .then(function (data) {
             showToast(data.message || (data.success ? 'Updated.' : 'Failed.'), data.success ? 'success' : 'error');
             // A full reload (rather than box.remove()) drops the forced- password lock screen --
             // mustChangePassword re-checks fresh on reload and clears the lock on its own.
             if (data.success) rcReloadAfterSave();
+          })
+          .catch(function () {
+            showToast('Could not reach the server -- password not changed.', 'error');
           });
       });
       box.appendChild(btn);
@@ -2316,7 +2321,30 @@
 
     // Closable ONLY via the X button here, or a Cancel button the caller wires up itself against
     // the returned { close }.
+    // While ANY write is in flight (see rcWritesInFlight, js/api.js) every popup is locked: the X dims
+    // and stops working, .rc-modal-busy grays out the other buttons, and close() ignores
+    // user-initiated closes (X, Cancel) until the server has answered. Programmatic closes pass
+    // skipOnClose === true (page reloads) and are never blocked.
+    var lockedByWrite = false;
+    function applyWriteLock(inFlight) {
+      var busy = inFlight > 0;
+      modal.classList.toggle('rc-modal-busy', busy);
+      if (busy && !closeBtn.disabled) {
+        closeBtn.disabled = true;
+        closeBtn.title = 'Cannot close while a save is in progress';
+        lockedByWrite = true;
+      } else if (!busy && lockedByWrite) {
+        closeBtn.disabled = false;
+        closeBtn.title = '';
+        lockedByWrite = false;
+      }
+    }
+    var removeWriteListener = rcOnWriteStateChange(applyWriteLock);
+    applyWriteLock(rcWritesInFlight);
+
     function close(skipOnClose) {
+      if (rcWritesInFlight > 0 && skipOnClose !== true) return;
+      removeWriteListener();
       backdrop.remove();
       document.body.classList.remove('rc-modal-scroll-locked');
       document.body.style.top = '';
@@ -2389,7 +2417,11 @@
   // same X-button-or-Cancel-only close rule. onConfirm runs when the confirm button is clicked; the
   // modal closes itself either way (Cancel, X, or after onConfirm fires) rather than making every
   // caller remember to call .close().
-  function openConfirmModal(title, message, confirmLabel, onConfirm) {
+  // opts.waitForWrite -- onConfirm returns the write's promise; the popup then stays open with the
+  // confirm button grayed and reading "<label>..." and everything locked until the server answers,
+  // and only then closes (the caller shows the acknowledgement or error toast itself).
+  function openConfirmModal(title, message, confirmLabel, onConfirm, opts) {
+    opts = opts || {};
     var body = el('div');
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
     var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
@@ -2405,9 +2437,38 @@
     var modal = showModal(title, { bodyEl: body });
     cancelBtn.addEventListener('click', modal.close);
     confirmBtn.addEventListener('click', function () {
-      modal.close();
-      onConfirm();
+      if (!opts.waitForWrite) {
+        modal.close();
+        onConfirm();
+        return;
+      }
+      _rcShowPendingButton(confirmBtn, (confirmLabel || 'Confirm') + '...');
+      cancelBtn.disabled = true;
+      var finish = function () { modal.close(); };
+      Promise.resolve(onConfirm()).then(finish, finish);
     });
+  }
+
+  // Runs one write on behalf of a popup button: grays the button out with a "Doing the thing..."
+  // label, waits for the server's real answer (js/api.js allows up to 6 minutes), restores the button,
+  // and hands back the response. request() must return the fetchApi promise. showModal's write lock
+  // already dims the X and blocks Cancel for the duration; the caller closes the popup itself on
+  // success and shows the acknowledgement or error toast.
+  function _rcRunWrite(btn, pendingLabel, request) {
+    var originalText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = pendingLabel; }
+    function restore() { if (btn) { btn.disabled = false; btn.textContent = originalText; } }
+    return request().then(function (r) { restore(); return r; }, function (e) { restore(); throw e; });
+  }
+
+  // Grays a button out and swaps its label for a "Doing the thing..." one while a write is running.
+  // Drops any inline red override so it really reads as inactive; the popup's own close handling
+  // (showModal) takes care of locking the X.
+  function _rcShowPendingButton(btn, label) {
+    btn.disabled = true;
+    btn.className = 'rc-btn-secondary rc-btn-sm';
+    btn.style.cssText = '';
+    btn.textContent = label;
   }
 
   function openTypeToConfirmModal(title, message, requiredPhrase, confirmLabel, onConfirm, opts) {
@@ -2455,8 +2516,18 @@
     cancelBtn.addEventListener('click', modal.close);
     confirmBtn.addEventListener('click', function () {
       if (input.value !== requiredPhrase) return; // belt-and-suspenders -- button is already disabled until this matches
-      modal.close();
-      onConfirm();
+      if (!opts.waitForWrite) {
+        modal.close();
+        onConfirm();
+        return;
+      }
+      // waitForWrite -- onConfirm returns the write's promise; stay open, gray out, close when the
+      // server has answered (same convention as openConfirmModal).
+      _rcShowPendingButton(confirmBtn, (confirmLabel || 'Confirm') + '...');
+      cancelBtn.disabled = true;
+      input.disabled = true;
+      var finish = function () { modal.close(); };
+      Promise.resolve(onConfirm()).then(finish, finish);
     });
     input.focus();
   }
@@ -2501,13 +2572,20 @@
       var pw = input.value;
       if (!pw) { shakeAndFlag('Fill in current password to save changes'); return; }
       checking = true;
+      var verifyLabel = confirmBtn.textContent;
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Verifying...';
       fetchApi('verifyOwnPassword', { method: 'POST', token: token, body: { password: pw } }).then(function (data) {
         checking = false;
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = verifyLabel;
         if (!data.success) { shakeAndFlag('Incorrect current password entered'); return; }
         modal.close();
         onConfirm();
       }).catch(function () {
         checking = false;
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = verifyLabel;
         shakeAndFlag('Could not reach the server -- try again.');
       });
     });
@@ -2562,7 +2640,7 @@
           'END SEASON',
           'End Season',
           function () {
-            fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId } }).then(function (data2) {
+            return fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId } }).then(function (data2) {
               if (!data2.success) {
                 showToast(data2.message || 'Could not end this season.', 'error');
                 return;
@@ -2578,7 +2656,8 @@
             }).catch(function () {
               showToast('Could not reach the server -- season not ended.', 'error');
             });
-          }
+          },
+          { waitForWrite: true }
         );
       });
       btnRow.appendChild(cancelBtn);
@@ -2645,8 +2724,8 @@
               'PERMANENTLY ERASE',
               'Delete Season Forever',
               function () {
-                fetchApi('adminDeleteSeason', {
-                  method: 'POST', token: token, body: { seasonId: chosenId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG
+                return fetchApi('adminDeleteSeason', {
+                  method: 'POST', token: token, body: { seasonId: chosenId }
                 }).then(function (data2) {
                   if (!data2.success) {
                     showToast(data2.message || 'Could not delete this season.', 'error');
@@ -2658,7 +2737,7 @@
                   showToast('Could not reach the server -- season not deleted.', 'error');
                 });
               },
-              { iconHtml: ICON_RADIATION_SEVERE_ }
+              { iconHtml: ICON_RADIATION_SEVERE_, waitForWrite: true }
             );
           }
         );
@@ -6494,7 +6573,7 @@
       if (!file) { showToast('Choose an XML file first.', 'error'); return; }
 
       importBtn.disabled = true;
-      importBtn.textContent = 'Importing…';
+      importBtn.textContent = 'Importing...';
 
       var reader = new FileReader();
       reader.onload = function () {
@@ -6522,11 +6601,15 @@
         // Google's own infra or the network dropping the still-open connection out from under it
         // while Apps Script kept executing to completion server-side (exactly the
         // ambiguous-POST-outcome case fetchApi's own header comment describes).
+        // Waits for the server's real answer (up to RC_POST_TIMEOUT_MS = Apps Script's 6 minute
+        // cap) and registers with the shared in-flight write counter so the X stays locked.
+        rcWriteStarted_();
         _rcFetchOnce_(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: xmlText
-        }, RC_FETCH_TIMEOUT_MS_IMPORT).then(function (data) {
+        }, RC_POST_TIMEOUT_MS).then(function (data) {
+          rcWriteFinished_();
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
           setImportInProgress(false);
@@ -6542,6 +6625,7 @@
             showToast((data && data.message) || 'Could not import that file.', 'error');
           }
         }).catch(function () {
+          rcWriteFinished_();
           importBtn.disabled = false;
           importBtn.textContent = 'Import';
           // Re-enabled here too, even though the message itself says the import may still be
@@ -6585,15 +6669,10 @@
         'ERASE', 'Erase',
         function () {
           eraseBtn.disabled = true;
-          eraseBtn.textContent = 'Erasing…';
+          eraseBtn.textContent = 'Erasing...';
 
-          // Long timeout budget -- same root cause and same fix as Import
-          // XML/createSeason/updateSeason's own timeoutMs override (see RC_FETCH_TIMEOUT_MS_LONG in
-          // js/api.js): this deletes across Sessions/DriverResults/Laps/RaceEvents/ SeasonHistory
-          // in one pass, which can genuinely take longer than the default 20s budget, and the
-          // client aborting doesn't stop Apps Script from finishing the deletes server-side -- so a
-          // slow-but-successful erase was surfacing as a false failure.
-          fetchApi('adminEraseRoundIngestion', { method: 'POST', token: token, body: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG })
+          // Waits for the server's real answer (js/api.js allows writes up to 6 minutes).
+          return fetchApi('adminEraseRoundIngestion', { method: 'POST', token: token, body: { roundId: roundId } })
             .then(function (data) {
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
@@ -6611,9 +6690,10 @@
             .catch(function () {
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
-              showToast('This is taking longer than expected -- check League Tools before trying again.', 'error');
+              showToast('Could not reach the server. The erase may not have finished -- check League Tools before trying again.', 'error');
             });
-        }
+        },
+        { waitForWrite: true }
       );
     });
     btnRow.appendChild(eraseBtn);
@@ -7417,21 +7497,25 @@
         'Withdraw Post',
         'Withdraw "' + (newsRow.Title || 'this post') + '" from the public League Hub? It stays saved here and can be republished later.',
         'Withdraw This Post',
-        doToggleNewsActive_
+        doToggleNewsActive_,
+        { waitForWrite: true }
       );
     });
 
     function doToggleNewsActive_() {
-      modalHandle.close();
-      fetchApi('adminSetNewsActive', {
-        method: 'POST', token: token,
-        body: { newsId: newsRow.NewsID, active: isActive ? 'Inactive' : 'Active' }
+      return _rcRunWrite(toggleBtn, isActive ? 'Withdrawing...' : 'Republishing...', function () {
+        return fetchApi('adminSetNewsActive', {
+          method: 'POST', token: token,
+          body: { newsId: newsRow.NewsID, active: isActive ? 'Inactive' : 'Active' }
+        });
       })
         .then(function (data) {
           if (!data.success) {
             showToast(data.message || 'Could not update this post.', 'error');
             return;
           }
+          showToast(isActive ? 'Post withdrawn.' : 'Post republished.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -7494,18 +7578,21 @@
         showToast('Track name and layout are required.', 'error');
         return;
       }
-      // Instant, no wait on the server. The popup closes the moment Add Track is submitted; the
-      // actual write happens silently in the background.
-      modalHandle.close();
-      fetchApi('adminAddTrackLayout', {
-        method: 'POST', token: token,
-        body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim(), country: country.value }
+      // Waits for the server's real answer: the button grays out and reads "Adding Track...", the
+      // popup stays open (X and Cancel locked), and it closes only after a confirmed success.
+      _rcRunWrite(saveBtn, 'Adding Track...', function () {
+        return fetchApi('adminAddTrackLayout', {
+          method: 'POST', token: token,
+          body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim(), country: country.value }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not add this track -- reopen Add Track and try again.', 'error');
+            showToast(data.message || 'Could not add this track.', 'error');
             return;
           }
+          showToast('Track added.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -7572,26 +7659,28 @@
         showToast('Season is required.', 'error');
         return;
       }
-      // Instant, no wait on the server. The popup closes the moment Add Car is submitted; the
-      // actual write happens silently in the background.
-      modalHandle.close();
-      fetchApi('adminAddCar', {
-        method: 'POST', token: token,
-        body: {
-          Season: season.value.trim(),
-          Class: carClass.value,
-          Manufacturer: manufacturer.value.trim(),
-          CarModel: carModel.value.trim(),
-          CarNumber: carNumber.value.trim(),
-          TeamName: teamName.value.trim(),
-          TeamDesc: teamDesc.value.trim()
-        }
+      // Waits for the server's real answer (see Add Track above).
+      _rcRunWrite(saveBtn, 'Adding Car...', function () {
+        return fetchApi('adminAddCar', {
+          method: 'POST', token: token,
+          body: {
+            Season: season.value.trim(),
+            Class: carClass.value,
+            Manufacturer: manufacturer.value.trim(),
+            CarModel: carModel.value.trim(),
+            CarNumber: carNumber.value.trim(),
+            TeamName: teamName.value.trim(),
+            TeamDesc: teamDesc.value.trim()
+          }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not add this car -- reopen Add Car and try again.', 'error');
+            showToast(data.message || 'Could not add this car.', 'error');
             return;
           }
+          showToast('Car added.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -7935,29 +8024,31 @@
         showToast(identityProblem, 'error');
         return;
       }
-      // Instant, no wait on the server. The popup closes the moment Save Changes is submitted; the
-      // actual write happens silently in the background.
-      modalHandle.close();
-      fetchApi('adminUpdateProfile', {
-        method: 'POST',
-        token: token,
-        body: {
-          profileId: driver.ProfileID,
-          username: username.value.trim(),
-          firstName: firstName.value.trim(),
-          lastName: lastName.value.trim(),
-          suffix: suffix.value,
-          email: email.value.trim(),
-          location: location.value,
-          timeZone: timeZone.value,
-          role: role.value
-        }
+      // Waits for the server's real answer (see Add Track above).
+      _rcRunWrite(saveBtn, 'Saving Changes...', function () {
+        return fetchApi('adminUpdateProfile', {
+          method: 'POST',
+          token: token,
+          body: {
+            profileId: driver.ProfileID,
+            username: username.value.trim(),
+            firstName: firstName.value.trim(),
+            lastName: lastName.value.trim(),
+            suffix: suffix.value,
+            email: email.value.trim(),
+            location: location.value,
+            timeZone: timeZone.value,
+            role: role.value
+          }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not save changes -- reopen Edit Driver and try again.', 'error');
+            showToast(data.message || 'Could not save changes.', 'error');
             return;
           }
+          showToast('Driver updated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -7979,23 +8070,28 @@
         'Disable Account',
         'Disable ' + (driver.DisplayName || driver.ProfileID) + '\'s account? They will be signed out and unable to log back in until an admin reactivates it.',
         'Disable This Account',
-        doToggleAccountStatus_
+        doToggleAccountStatus_,
+        { waitForWrite: true }
       );
     });
 
     function doToggleAccountStatus_() {
-      // Same instant pattern as Save Changes above.
-      modalHandle.close();
-      fetchApi('adminSetUserStatus', {
-        method: 'POST',
-        token: token,
-        body: { profileId: driver.ProfileID, status: isActive ? 'Disabled' : 'Active' }
+      // Waits for the server's real answer; returns the promise so the confirm popup (waitForWrite)
+      // stays open until it settles.
+      return _rcRunWrite(toggleBtn, isActive ? 'Disabling...' : 'Reactivating...', function () {
+        return fetchApi('adminSetUserStatus', {
+          method: 'POST',
+          token: token,
+          body: { profileId: driver.ProfileID, status: isActive ? 'Disabled' : 'Active' }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not update this account -- reopen Edit Driver and try again.', 'error');
+            showToast(data.message || 'Could not update this account.', 'error');
             return;
           }
+          showToast(isActive ? 'Account disabled.' : 'Account reactivated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -8251,27 +8347,26 @@
         var toggleBtn = el('button', 'rc-btn-secondary rc-btn-sm rc-btn-row', active ? 'Deactivate' : 'Reactivate');
         toggleBtn.type = 'button';
         toggleBtn.addEventListener('click', function () {
-          // Instant, no wait on the server. The row flips to its new Active/Inactive state (and the
-          // list repaints) the instant this is clicked; the actual write happens silently in the
-          // background.
+          // Waits for the server's real answer: the button grays out ("Deactivating..."), the popup's
+          // X and buttons lock, and the row only flips once the write is confirmed.
           var newActive = active ? 'Inactive' : 'Active';
-          r.Active = newActive;
-          renderLayoutList();
-          fetchApi('adminSetTrackLayoutActive', {
-            method: 'POST', token: token,
-            body: { trackId: r.TrackID, active: newActive }
+          _rcRunWrite(toggleBtn, active ? 'Deactivating...' : 'Reactivating...', function () {
+            return fetchApi('adminSetTrackLayoutActive', {
+              method: 'POST', token: token,
+              body: { trackId: r.TrackID, active: newActive }
+            });
           })
             .then(function (data) {
               if (!data.success) {
-                r.Active = active ? 'Active' : 'Inactive';
-                renderLayoutList();
-                showToast(data.message || 'Could not update that layout -- reverted.', 'error');
+                showToast(data.message || 'Could not update that layout.', 'error');
+                return;
               }
+              r.Active = newActive;
+              renderLayoutList();
+              showToast(active ? 'Layout deactivated.' : 'Layout reactivated.', 'success');
             })
             .catch(function () {
-              r.Active = active ? 'Active' : 'Inactive';
-              renderLayoutList();
-              showToast('Could not reach the server -- layout change reverted.', 'error');
+              showToast('Could not reach the server -- layout not changed.', 'error');
             });
         });
         layoutRow.appendChild(toggleBtn);
@@ -8296,28 +8391,25 @@
         return;
       }
 
-      // Instant, no wait on the server. The quiet background reconcile below fills the real TrackID
-      // in once the write lands; a failure removes the row and explains why.
-      var provisionalRow = { TrackID: '', TrackName: venueName, Layout: layoutName, Region: (rows[0] && rows[0].Region) || '', Country: (rows[0] && rows[0].Country) || '', Active: 'Active' };
-      rows.push(provisionalRow);
-      addInput.value = '';
-      renderLayoutList();
-      fetchApi('adminAddTrackLayout', {
-        method: 'POST', token: token,
-        body: { trackName: venueName, layout: layoutName }
+      // Waits for the server's real answer: Add Layout grays out ("Adding..."), and the row is only
+      // added to the list once the write is confirmed.
+      _rcRunWrite(addBtn, 'Adding...', function () {
+        return fetchApi('adminAddTrackLayout', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, layout: layoutName }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            rows.splice(rows.indexOf(provisionalRow), 1);
-            renderLayoutList();
-            showToast(data.message || 'Could not add that layout -- removed.', 'error');
+            showToast(data.message || 'Could not add that layout.', 'error');
             return;
           }
-          provisionalRow.TrackID = data.trackId || '';
+          rows.push({ TrackID: data.trackId || '', TrackName: venueName, Layout: layoutName, Region: (rows[0] && rows[0].Region) || '', Country: (rows[0] && rows[0].Country) || '', ShortName: (rows[0] && rows[0].ShortName) || '', Active: 'Active' });
+          addInput.value = '';
+          renderLayoutList();
+          showToast('Layout added.', 'success');
         })
         .catch(function () {
-          rows.splice(rows.indexOf(provisionalRow), 1);
-          renderLayoutList();
           showToast('Could not reach the server -- layout not added.', 'error');
         });
     });
@@ -8345,9 +8437,8 @@
         modalHandle.close();
         return;
       }
-      // Instant, no wait on the server. A failure can't un-close an already-closed modal, so it
-      // just says so via toast -- the admin can reopen Edit Track and try again.
-      modalHandle.close();
+      // Waits for the server's real answer: Save Changes grays out as "Saving Changes...", the popup
+      // stays open (X and Cancel locked) and closes only after every change is confirmed.
       var tasks = [];
       if (shortNameChanged) {
         tasks.push(fetchApi('adminUpdateTrackShortName', {
@@ -8373,16 +8464,26 @@
           body: { oldName: venueName, newName: newName }
         }));
       }
+      var trackSaveOriginalText = updateTrackBtn.textContent;
+      updateTrackBtn.disabled = true;
+      updateTrackBtn.textContent = 'Saving Changes...';
       Promise.all(tasks)
         .then(function (results) {
+          updateTrackBtn.disabled = false;
+          updateTrackBtn.textContent = trackSaveOriginalText;
           var allOk = results.every(function (r) { return r && r.success; });
           if (!allOk) {
-            showToast('Could not save all changes -- reopen Edit Track and try again.', 'error');
+            var firstFail = results.filter(function (r) { return !r || !r.success; })[0];
+            showToast((firstFail && firstFail.message) || 'Could not save all changes. Some may have saved; reopen Edit Track to check.', 'error');
             return;
           }
+          showToast('Track updated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
+          updateTrackBtn.disabled = false;
+          updateTrackBtn.textContent = trackSaveOriginalText;
           showToast('Could not reach the server -- changes not saved.', 'error');
         });
     });
@@ -8398,22 +8499,25 @@
         'Deactivate Track',
         'Deactivate "' + venueName + '"? All ' + rows.length + ' of its layout' + (rows.length === 1 ? '' : 's') + ' will no longer be available for a race to use.',
         'Deactivate This Track',
-        doToggleTrackActive_
+        doToggleTrackActive_,
+        { waitForWrite: true }
       );
     });
 
     function doToggleTrackActive_() {
-      // Same instant pattern as Save Changes above.
-      modalHandle.close();
-      fetchApi('adminSetTrackActive', {
-        method: 'POST', token: token,
-        body: { trackName: venueName, active: isActive ? 'Inactive' : 'Active' }
+      return _rcRunWrite(toggleTrackBtn, isActive ? 'Deactivating...' : 'Reactivating...', function () {
+        return fetchApi('adminSetTrackActive', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, active: isActive ? 'Inactive' : 'Active' }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not update this track -- reopen Edit Track and try again.', 'error');
+            showToast(data.message || 'Could not update this track.', 'error');
             return;
           }
+          showToast(isActive ? 'Track deactivated.' : 'Track reactivated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -8608,27 +8712,29 @@
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
-      // Instant, no wait on the server. The popup closes the moment Save Changes is submitted; the
-      // actual write happens silently in the background.
-      modalHandle.close();
-      fetchApi('adminUpdateCar', {
-        method: 'POST', token: token,
-        body: {
-          carId: car.CarID,
-          Season: season.value.trim(),
-          Class: carClass.value,
-          Manufacturer: manufacturer.value.trim(),
-          CarModel: carModel.value.trim(),
-          CarNumber: carNumber.value.trim(),
-          TeamName: teamName.value.trim(),
-          TeamDesc: teamDesc.value.trim()
-        }
+      // Waits for the server's real answer (see Add Track above).
+      _rcRunWrite(saveBtn, 'Saving Changes...', function () {
+        return fetchApi('adminUpdateCar', {
+          method: 'POST', token: token,
+          body: {
+            carId: car.CarID,
+            Season: season.value.trim(),
+            Class: carClass.value,
+            Manufacturer: manufacturer.value.trim(),
+            CarModel: carModel.value.trim(),
+            CarNumber: carNumber.value.trim(),
+            TeamName: teamName.value.trim(),
+            TeamDesc: teamDesc.value.trim()
+          }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not save changes -- reopen Edit Car and try again.', 'error');
+            showToast(data.message || 'Could not save changes.', 'error');
             return;
           }
+          showToast('Car updated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
@@ -8650,22 +8756,25 @@
         'Deactivate Car',
         'Deactivate car #' + (car.CarNumber || '') + ' (' + (car.Manufacturer || '') + ' ' + (car.CarModel || '') + ', ' + (car.TeamName || '') + ')? It will no longer be available for a driver to select.',
         'Deactivate This Car',
-        doToggleCarActive_
+        doToggleCarActive_,
+        { waitForWrite: true }
       );
     });
 
     function doToggleCarActive_() {
-      // Same instant pattern as Save Changes above.
-      modalHandle.close();
-      fetchApi('adminSetCarActive', {
-        method: 'POST', token: token,
-        body: { carId: car.CarID, active: isActive ? 'Inactive' : 'Active' }
+      return _rcRunWrite(toggleBtn, isActive ? 'Deactivating...' : 'Reactivating...', function () {
+        return fetchApi('adminSetCarActive', {
+          method: 'POST', token: token,
+          body: { carId: car.CarID, active: isActive ? 'Inactive' : 'Active' }
+        });
       })
         .then(function (data) {
           if (!data.success) {
-            showToast(data.message || 'Could not update this car -- reopen Edit Car and try again.', 'error');
+            showToast(data.message || 'Could not update this car.', 'error');
             return;
           }
+          showToast(isActive ? 'Car deactivated.' : 'Car reactivated.', 'success');
+          modalHandle.close();
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
