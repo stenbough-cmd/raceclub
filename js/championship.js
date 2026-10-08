@@ -186,7 +186,7 @@ function _rccCheckAccess() {
     window.location.replace(url);
     return false;
   }
-  if (me.profileId && (id !== me.profileId || me.role !== 'Admin')) {
+  if (me.profileId && (id !== me.profileId || !(me.role === 'Admin' || me.champAccess))) {
     window.location.replace('Account.html');
     return false;
   }

@@ -140,10 +140,11 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // sidebar item, .rc-nav-item:disabled in style.css).
   var champProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
-  if (role === 'Admin' && champId) {
+  // Open to Admins and to anyone with Championship Access (the + on their role, profile.champAccess).
+  if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">Championship</a>';
   } else {
-    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Championship mode is admin-only for now." style="opacity:0.4;cursor:not-allowed;">Championship</span>';
+    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">Championship</span>';
   }
   html += '<hr class="rc-header-menu-divider">';
   // The section id stays 'results' on purpose (matches data-rc-section/#results routing) -- only
@@ -171,6 +172,17 @@ function _rcHeaderInitials(name) {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// Championship Access marker (CHAMP chat, 2026-10-08): a bold + right after the role name
+// (DRIVER+, STEWARD+, ORGANIZER+) for anyone who may run their own offline championship. Admins
+// always have access and keep a plain ADMIN pill. Takes a profile-cache object or a Users row.
+function rcRolePlusHtml(p) {
+  if (!p) return '';
+  var role = p.role || p.Role;
+  var on = p.champAccess !== undefined ? !!p.champAccess : (p.ChampAccess === true || String(p.ChampAccess).toLowerCase() === 'true');
+  if (role === 'Admin' || !on) return '';
+  return '<b style="font-weight:900;font-size:1.15em;line-height:1;margin-left:1px;">+</b>';
 }
 
 // Same Admin/Organizer/Steward/Driver/Prospect -> .rc-badge-role-* mapping as Account.html's own
@@ -313,7 +325,7 @@ function renderHeader(opts) {
               '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +
               '<span class="rc-header-account-text">' +
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
-                '<span class="rc-badge-chip rc-header-account-role ' + (RC_HEADER_ROLE_PILL_CLASS_[role] || 'rc-badge-role-driver') + '">' + escapeHtmlHeader_(role) + '</span>' +
+                '<span class="rc-badge-chip rc-header-account-role ' + (RC_HEADER_ROLE_PILL_CLASS_[role] || 'rc-badge-role-driver') + '">' + escapeHtmlHeader_(role) + rcRolePlusHtml(cached) + '</span>' +
               '</span>' +
               // 16x16 -- was 14x14, the one outlier against the 16x16 standard every other small
               // nav/menu icon on the site uses (Account.html's ICON_CHEVRON_DOWN and the rest of

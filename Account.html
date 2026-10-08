@@ -7860,6 +7860,13 @@
           var row = el('div', 'rc-group-row');
           var info = el('div', 'rc-dm-row-info');
           info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
+          // Championship Access: this person's own role pill with the bold + (e.g. STEWARD+).
+          if (typeof rcRolePlusHtml === 'function' && rcRolePlusHtml(person)) {
+            var plusPill = el('span', 'rc-badge-chip ' + (ROLE_PILL_CLASS[role] || 'rc-badge-role-driver'), escapeHtml(role.toUpperCase()) + rcRolePlusHtml(person));
+            plusPill.title = 'Championship Access';
+            plusPill.style.marginLeft = '8px';
+            info.appendChild(plusPill);
+          }
           if (person.Status && person.Status !== 'Active') {
             info.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', escapeHtml(String(person.Status).toUpperCase())));
           }
@@ -8066,6 +8073,25 @@
     });
     form.appendChild(role);
 
+    // Championship Access (CHAMP chat, 2026-10-08) -- saved to Users.ChampAccess; shows as a bold +
+    // after the role (DRIVER+, STEWARD+, ORGANIZER+). Admins always have it, so the box is locked on.
+    var champLabel = document.createElement('label');
+    champLabel.style.marginTop = '14px';
+    var champBox = document.createElement('input');
+    champBox.type = 'checkbox';
+    champBox.checked = driver.ChampAccess === true || String(driver.ChampAccess).toLowerCase() === 'true';
+    champLabel.appendChild(champBox);
+    champLabel.appendChild(document.createTextNode(' Championship Access (+)'));
+    form.appendChild(champLabel);
+    form.appendChild(el('div', 'rc-hint', 'Lets this person run their own offline championship seasons. Shown as a + after their role. Admins always have it.'));
+    function syncChampBox() {
+      var isAdmin = role.value === 'Admin';
+      champBox.disabled = isAdmin;
+      if (isAdmin) champBox.checked = true;
+    }
+    role.addEventListener('change', syncChampBox);
+    syncChampBox();
+
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -8119,7 +8145,8 @@
             email: email.value.trim(),
             location: location.value,
             timeZone: timeZone.value,
-            role: role.value
+            role: role.value,
+            champAccess: role.value === 'Admin' ? true : champBox.checked
           }
         });
       })
@@ -8914,7 +8941,7 @@
     // level Protests RULING already requires server-side (Protests.gs).
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
-    setNavAccess('rc-nav-championship', profile.role === 'Admin', 'Championship mode is admin-only for now.');
+    setNavAccess('rc-nav-championship', profile.role === 'Admin' || !!profile.champAccess, 'Needs Championship Access (the + on your role).');
     // Divider above these three is always visible from initial sidebar render now (see
     // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
 
