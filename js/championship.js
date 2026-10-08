@@ -373,7 +373,7 @@ function rccRenderActionBar(page) {
   } else {
     add('Team Information', hasSeason, rccOpenTeamInfo, 'No season yet.');
   }
-  add('Upload Results', active && !!page.registration, rccOpenUpload, active ? 'Choose your team first.' : 'No active season.');
+  add('Upload Results', active && !!page.registration, function () { rccOpenUpload(null); }, active ? 'Choose your team first.' : 'No active season.');
   add('Round Tools', active && page.anyResults, rccOpenRoundTools, 'Nothing imported yet.');
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
@@ -417,8 +417,13 @@ function rccRenderTicker(page) {
     var mfr = (page.standings.manufacturers || []).slice(0, 3);
     if (mfr.length && mfr.some(function (m) { return m.points > 0; })) items.push({ tag: 'TOP 3 MANUFACTURER STANDINGS', mfr: mfr });
   } else {
-    _rccSortClasses(page.standings.drivers || [], function (c) { return c.className; }).forEach(function (cls) {
-      if ((cls.standings || []).length) items.push({ tag: cls.className.toUpperCase() + ' DRIVERS', rows: cls.standings, unranked: true });
+    // Before any results: one entry per car, its crew together ([logo] Driver, Driver, Driver #n).
+    var byClass = {};
+    (page.grid || []).forEach(function (g) { (byClass[g.carClass] || (byClass[g.carClass] = [])).push(g); });
+    _rccSortClasses(Object.keys(byClass), function (c) { return c; }).forEach(function (cls) {
+      var cars = byClass[cls].filter(function (g) { return (g.crew || []).length; });
+      if (!cars.length) return;
+      items.push({ tag: cls.toUpperCase() + ' DRIVERS', cars: cars });
     });
   }
   if (page.nextRound) {
@@ -467,6 +472,17 @@ function rccRenderTicker(page) {
         el.appendChild(all);
       } else if (item.rows) {
         el.appendChild(rowList(item.rows, !item.unranked));
+      } else if (item.cars) {
+        var cl = _rccEl('span', 'rcl-ticker-driver-list');
+        item.cars.forEach(function (g, i) {
+          if (i > 0) cl.appendChild(_rccNbsp(10));
+          var entry = _rccEl('span', 'rcl-ticker-driver-entry');
+          if (g.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', g.manufacturer));
+          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (g.isMine ? ' rcc-me-text' : ''), g.crew.join(', ')));
+          if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + g.carNumber));
+          cl.appendChild(entry);
+        });
+        el.appendChild(cl);
       } else if (item.mfr) {
         var ml = _rccEl('span', 'rcl-ticker-driver-list');
         item.mfr.forEach(function (m, i) {
@@ -574,8 +590,8 @@ function _rccSeasonFormat(page, body) {
   var details = [];
   details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' · no team chosen yet')));
   if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '%'));
+  if (rs.aiAggression) details.push(row('AI Aggression', rs.aiAggression));
   details.push(row('Championship Rounds', String(page.totalRounds)));
-  if (d.dropWeeks) details.push(row(d.dropWeeks === 1 ? 'Drop Week' : 'Drop Weeks', String(d.dropWeeks)));
   if (classes.length) details.push(row(classes.length === 1 ? 'Class' : 'Classes', classes.map(function (c) { return c + ' (' + (d.classSeasons || {})[c] + ')'; }).join(', ')));
   details.push(row('Cars On The Grid', String((page.grid || []).length)));
   var session = [];
@@ -598,6 +614,9 @@ function _rccSeasonFormat(page, body) {
   group('Championship Points', [tierRows, bonusRows]);
 
   var rules = [];
+  if (rs.raceStart) rules.push(row('Start', rs.raceStart));
+  if (rs.flagRules) rules.push(row('Flag Rules', rs.flagRules));
+  if (rs.mechanicalFailures) rules.push(row('Mechanical Failures', rs.mechanicalFailures));
   if (rs.setupRules) rules.push(row('Setups', rs.setupRules));
   if (rs.tireWearMultiplier) rules.push(row('Tire Wear', rs.tireWearMultiplier));
   if (rs.tireCount) rules.push(row('Tires Allowed', String(rs.tireCount)));
@@ -736,7 +755,7 @@ function rccRenderCarousel(page) {
       btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenResults(entry.roundId, entry.hasRaceResults ? 'race' : 'qualifying'); });
     } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
       btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
-      btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId); });
+      btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId, true); });
     } else {
       btn = _rccText('button', 'rcl-carousel-hero-btn rcl-carousel-hero-btn-disabled', idx === nextIdx ? 'UP NEXT' : 'NOT YET RACED');
       btn.disabled = true;
@@ -1419,7 +1438,7 @@ function _rccDefaultDetails() {
     bonusPoints: { pole: 1, fastestLap: 1, mostLapsLed: 1 },
     dropWeeks: 0,
     trackLimitsPreset: 'Default',
-    raceSettings: { aiDifficulty: 90, setupRules: 'Fixed', pitStopReq: 'None', fuelMultiplier: 'Realistic', tireWearMultiplier: 'Realistic', tireCount: 8, trackLimitPoints: 5, practiceLengthMin: 30, qualifyLengthMin: 7 }
+    raceSettings: { aiDifficulty: 90, aiAggression: 'Medium', mechanicalFailures: 'Normal', flagRules: 'Full', raceStart: 'Rolling', setupRules: 'Fixed', pitStopReq: 'None', fuelMultiplier: 'Realistic', tireWearMultiplier: 'Realistic', tireCount: 8, trackLimitPoints: 5, practiceLengthMin: 30, qualifyLengthMin: 7 }
   };
 }
 
@@ -1495,7 +1514,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   var details = editing ? JSON.parse(JSON.stringify(edit.seasonDetails || {})) : _rccDefaultDetails();
   var defaults = _rccDefaultDetails();
   ['classes', 'classSeasons', 'pointsTables', 'bonusPoints', 'raceSettings'].forEach(function (k) { if (!details[k]) details[k] = defaults[k]; });
-  if (details.dropWeeks === undefined) details.dropWeeks = 0;
+  details.dropWeeks = 0;
   if (!details.trackLimitsPreset) details.trackLimitsPreset = 'Default';
   var classesLocked = editing && edit.registered;
   var pointsLocked = editing && edit.anyResults;
@@ -1581,7 +1600,11 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   var diffOptions = [];
   for (var d = 75; d <= 105; d++) diffOptions.push({ label: d + '%', value: d });
   var g3 = _rccEl('div', 'rcc-field-grid');
-  g3.appendChild(_rccField('AI Difficulty', _rccSelect(diffOptions, rs.aiDifficulty || 90, function (v) { rs.aiDifficulty = Number(v); }), 'Kept with the season as a record of how hard the AI was.'));
+  g3.appendChild(_rccField('AI Difficulty', _rccSelect(diffOptions, rs.aiDifficulty || 90, function (v) { rs.aiDifficulty = Number(v); })));
+  g3.appendChild(_rccField('AI Aggression', _rccSelect(['Low', 'Medium', 'High'], rs.aiAggression || 'Medium', function (v) { rs.aiAggression = v; })));
+  g3.appendChild(_rccField('Mechanical Failures', _rccSelect(['Off', 'Normal', 'Time Scale'], rs.mechanicalFailures || 'Normal', function (v) { rs.mechanicalFailures = v; })));
+  g3.appendChild(_rccField('Flag Rules', _rccSelect(['None', 'Black Only', 'Full', 'Full w/o DQ'], rs.flagRules || 'Full', function (v) { rs.flagRules = v; })));
+  g3.appendChild(_rccField('Start', _rccSelect(['Rolling', 'Fast'], rs.raceStart || 'Rolling', function (v) { rs.raceStart = v; })));
   g3.appendChild(_rccField('Setup Rules', _rccSelect(['Fixed', 'Open'], rs.setupRules, function (v) { rs.setupRules = v; })));
   g3.appendChild(_rccField('Pit Stop Requirements', _rccSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], rs.pitStopReq, function (v) { rs.pitStopReq = v; })));
   g3.appendChild(_rccField('Fuel Multiplier', _rccSelect(RCC_MULTIPLIERS, rs.fuelMultiplier, function (v) { rs.fuelMultiplier = v; })));
@@ -1605,23 +1628,29 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     var dur = _rccNumber(t.duration, function (v) { t.duration = v; }, 0);
     dur.disabled = pointsLocked;
     row.appendChild(_rccField('Minutes', dur));
-    var pts = _rccTextInput((t.points || []).join(', '), function (v) {
-      t.points = v.split(',').map(function (x) { return Number(String(x).trim()); }).filter(function (x) { return !isNaN(x) && String(x) !== ''; });
+    // One box per finishing position, P1 to P10.
+    var cur = (t.points || []).slice(0, 10);
+    while (cur.length < 10) cur.push(0);
+    t.points = cur;
+    var boxes = _rccEl('div', 'rcc-points-boxes');
+    cur.forEach(function (val, i) {
+      var cell = _rccEl('div', 'rcc-points-cell');
+      cell.appendChild(_rccText('span', 'rcc-points-pos', 'P' + (i + 1)));
+      var box = _rccNumber(val, function (v) { t.points[i] = v === '' ? 0 : Math.max(0, Number(v) || 0); }, 0);
+      box.disabled = pointsLocked;
+      cell.appendChild(box);
+      boxes.appendChild(cell);
     });
-    pts.disabled = pointsLocked;
-    row.appendChild(_rccField('Points for P1, P2, P3... (comma-separated)', pts));
+    row.appendChild(boxes);
     sec4.appendChild(row);
   });
   var b = state.details.bonusPoints;
   var g4 = _rccEl('div', 'rcc-field-grid');
   [['pole', 'Pole Position Bonus'], ['fastestLap', 'Fastest Lap Bonus'], ['mostLapsLed', 'Most Laps Led Bonus']].forEach(function (pair) {
-    var n = _rccNumber(b[pair[0]], function (v) { b[pair[0]] = v; }, 0);
+    var n = _rccSelect([0, 1, 2, 3, 4, 5], Math.min(5, Math.max(0, Number(b[pair[0]]) || 0)), function (v) { b[pair[0]] = Number(v); });
     n.disabled = pointsLocked;
     g4.appendChild(_rccField(pair[1], n));
   });
-  var drop = _rccNumber(state.details.dropWeeks, function (v) { state.details.dropWeeks = v; }, 0);
-  drop.disabled = pointsLocked;
-  g4.appendChild(_rccField('Drop Weeks', drop, 'Lowest round scores left out near the end of the season.'));
   sec4.appendChild(g4);
   form.appendChild(sec4);
 
@@ -1815,33 +1844,51 @@ function rccOpenDeleteSeason() {
 // ---------------------------------------------------------------------
 // UPLOAD RESULTS
 // ---------------------------------------------------------------------
-function rccOpenUpload(preferRoundId) {
+// Upload Results: two required files, 1 = Qualify, 2 = Race, sent together in one request. From a
+// calendar card the round is fixed (lockRound); from the black bar the round is picked from a
+// dropdown of rounds that have no results yet. The server checks both files belong to the same race
+// weekend and to this round's track before anything is written.
+function rccOpenUpload(roundId, lockRound) {
   var page = RCC.page;
   var m = rccOpenModal('Upload Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
-  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized; });
-  if (!open.length) { m.body.appendChild(_rccEmpty('Nothing To Upload', 'Every round in this season is finalized.')); return; }
-  m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Pick the round, then choose that round\'s Qualify and Race XML files from Le Mans Ultimate (you can pick both at once). Practice files are skipped.'));
-  var roundSel = _rccSelect(open.map(function (c) {
-    var have = (c.hasQualifyResults ? 'Q ✓' : 'Q –') + ' · ' + (c.hasRaceResults ? 'R ✓' : 'R –');
-    return { label: 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + ')' : '') + ' · ' + have, value: c.roundId };
-  }), null);
-  var def = preferRoundId || (page.nextRound && page.nextRound.roundId);
-  if (def && open.some(function (c) { return c.roundId === def; })) roundSel.value = def;
-  m.body.appendChild(_rccField('Round', roundSel));
-  var file = document.createElement('input');
-  file.type = 'file';
-  file.accept = '.xml,text/xml';
-  file.multiple = true;
-  m.body.appendChild(_rccField('Result Files', file, 'The files are in your LMU folder under UserData > Log > Results.'));
+  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized && !c.hasQualifyResults && !c.hasRaceResults; });
+  if (lockRound) open = open.filter(function (c) { return c.roundId === roundId; });
+  if (!open.length) { m.body.appendChild(_rccEmpty('Nothing To Upload', 'Every round already has its results.')); return; }
+  var roundSel = null;
+  var fixed = lockRound ? open[0] : null;
+  if (fixed) {
+    m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', 'Round ' + fixed.roundNum + ' · ' + fixed.eventName + (fixed.track ? ' (' + fixed.track + (fixed.layout ? ': ' + fixed.layout : '') + ')' : ''))));
+  } else {
+    roundSel = _rccSelect(open.map(function (c) {
+      return { label: 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + ')' : ''), value: c.roundId };
+    }), null);
+    var def = roundId || (page.nextRound && page.nextRound.roundId);
+    if (def && open.some(function (c) { return c.roundId === def; })) roundSel.value = def;
+    m.body.appendChild(_rccField('Round', roundSel));
+  }
+  function fileInput() {
+    var f = document.createElement('input');
+    f.type = 'file';
+    f.accept = '.xml,text/xml';
+    return f;
+  }
+  var qFile = fileInput();
+  var rFile = fileInput();
+  m.body.appendChild(_rccField('1. Qualify Results (XML)', qFile));
+  m.body.appendChild(_rccField('2. Race Results (XML)', rFile));
   var out = _rccEl('div', 'rcc-upload-out');
   m.body.appendChild(out);
   var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
   var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
   go.type = 'button';
+  go.disabled = true;
   row.appendChild(go);
   m.body.appendChild(row);
-  var anySuccess = false;
+  var done = false;
+  function bothChosen() { return !!(qFile.files && qFile.files[0] && rFile.files && rFile.files[0]); }
+  qFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
+  rFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
 
   function readFile(f) {
     return new Promise(function (resolve, reject) {
@@ -1852,61 +1899,45 @@ function rccOpenUpload(preferRoundId) {
     });
   }
   function line(text, cls) { out.appendChild(_rccText('div', 'rcc-upload-line ' + (cls || ''), text)); }
+  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
 
   go.addEventListener('click', function () {
     out.innerHTML = '';
-    var files = Array.prototype.slice.call(file.files || []);
-    if (!files.length) { line('Choose at least one XML file first.', 'rcc-upload-bad'); return; }
-    roundSel.disabled = true;
-    file.disabled = true;
+    if (!bothChosen()) { line('Choose both files: 1 is the Qualify results, 2 is the Race results.', 'rcc-upload-bad'); return; }
+    var targetRound = fixed ? fixed.roundId : roundSel.value;
+    lockInputs(true);
     rccRunWrite(go, 'Uploading...', function () {
-      return Promise.all(files.map(readFile)).then(function (read) {
-        // Qualify before Race, Practice dropped before anything is sent.
-        var kept = read.filter(function (f) { return !/<Practice\d*>/.test(f.text) || /<(Qualify|Race)\d*>/.test(f.text); });
-        read.filter(function (f) { return kept.indexOf(f) === -1; }).forEach(function (f) { line(f.name + ': Practice file, skipped.', 'rcc-upload-skip'); });
-        kept.sort(function (a, b) { return (/<Qualify\d*>/.test(a.text) ? 0 : 1) - (/<Qualify\d*>/.test(b.text) ? 0 : 1); });
-        var chain = Promise.resolve();
-        var lastRes = { success: false };
-        kept.forEach(function (f) {
-          chain = chain.then(function () {
-            return _rccApi('champImportXml', { seasonId: page.seasonId, roundId: roundSel.value, filename: f.name, xml: f.text }, { post: true }).then(function (res) {
-              if (_rccHandleAuthError(res)) return;
-              if (res && res.success) {
-                anySuccess = true;
-                lastRes = res;
-                line(f.name + ': ' + res.message, 'rcc-upload-ok');
-                if ((res.namesAdded || []).length) line('Added ' + res.namesAdded.length + ' driver name' + (res.namesAdded.length === 1 ? '' : 's') + ' to the Cars tab: ' + res.namesAdded.join(', '), 'rcc-upload-note');
-                (res.warnings || []).forEach(function (w) { line('Note: ' + w, 'rcc-upload-note'); });
-              } else {
-                line(f.name + ': ' + ((res && res.message) || 'Import failed.'), 'rcc-upload-bad');
-              }
-            });
-          });
-        });
-        return chain.then(function () { return anySuccess ? { success: true } : lastRes; });
+      return Promise.all([readFile(qFile.files[0]), readFile(rFile.files[0])]).then(function (read) {
+        return _rccApi('champImportXml', {
+          seasonId: page.seasonId, roundId: targetRound,
+          qualifyFilename: read[0].name, qualifyXml: read[0].text,
+          raceFilename: read[1].name, raceXml: read[1].text
+        }, { post: true });
       });
-    }).then(function () {
-      if (anySuccess) {
-        go.textContent = 'Done';
-        go.className = 'rc-btn-secondary rc-btn-sm';
-        go.disabled = false;
-        var fresh = go.cloneNode(true);
-        go.parentNode.replaceChild(fresh, go);
-        fresh.addEventListener('click', function () { m.close(true); rccReloadAfterSave(); });
-      } else {
-        roundSel.disabled = false;
-        file.disabled = false;
+    }).then(function (res) {
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) {
+        line((res && res.message) || 'Import failed.', 'rcc-upload-bad');
+        lockInputs(false);
+        return;
       }
+      done = true;
+      line('Qualify: ' + res.qualify.message, 'rcc-upload-ok');
+      line('Race: ' + res.race.message, 'rcc-upload-ok');
+      if ((res.namesAdded || []).length) line('Added ' + res.namesAdded.length + ' driver name' + (res.namesAdded.length === 1 ? '' : 's') + ' to the Cars tab: ' + res.namesAdded.join(', '), 'rcc-upload-note');
+      (res.warnings || []).forEach(function (w) { line('Note: ' + w, 'rcc-upload-note'); });
+      var fresh = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Done');
+      fresh.type = 'button';
+      go.parentNode.replaceChild(fresh, go);
+      fresh.addEventListener('click', function () { m.close(true); rccReloadAfterSave(); });
     }).catch(function (e) {
-      roundSel.disabled = false;
-      file.disabled = false;
+      lockInputs(false);
       line(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'rcc-upload-bad');
     });
   });
-  // Closing with the X after a successful upload still refreshes the page (the X does nothing while
-  // an upload is still running).
+  // Closing with the X after a successful upload still refreshes the page.
   m.dialog.querySelector('.rcl-modal-close').addEventListener('click', function () {
-    if (anySuccess && !(typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0)) rccReloadAfterSave();
+    if (done && !(typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0)) rccReloadAfterSave();
   });
 }
 

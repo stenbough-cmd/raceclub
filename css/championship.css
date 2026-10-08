@@ -33,8 +33,8 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
 /* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
 .rcc-page .rcl-hero::before { opacity: 0.16; }
-/* "RACE CLUB" eyebrow above the title: black here instead of the hub's red. */
-.rcc-page .rcl-hero-eyebrow { color: var(--rc-carbon); }
+/* "CHAMPIONSHIP" title in black (the hub's is red); the "RACE CLUB" eyebrow above it stays red. */
+.rcc-page .rcl-hero-title-hub { color: var(--rc-carbon); -webkit-text-stroke-color: var(--rc-carbon); }
 /* "Season N" in the championship navy instead of the hub's gold. */
 .rcc-page .rcl-hero-season-num { color: var(--rcc-navy); }
 
@@ -240,6 +240,12 @@ body.rc-league-page.rcc-page {
 .rcc-class-label { margin: 0; font-weight: 800; color: var(--rc-carbon); }
 .rcc-class-count { font-size: 12px; color: var(--rc-steel); }
 .rcc-points-row { display: grid; grid-template-columns: 80px 110px 1fr; gap: 12px; align-items: end; margin-bottom: 10px; }
+/* Points per finishing position: ten small boxes, P1 to P10. */
+.rcc-points-boxes { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.rcc-points-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rcc-points-pos { font-size: 11px; font-weight: 800; color: var(--rc-steel); text-align: center; }
+.rcc-points-cell input { margin-top: 0; padding: 6px 4px; text-align: center; height: 38px; }
+.rcc-upload-round { font-size: 14px; font-weight: 700; color: var(--rc-carbon); padding: 10px 0 2px; }
 .rcc-points-tier { font-weight: 800; color: var(--rc-carbon); padding-bottom: 12px; }
 .rcc-rounds { display: flex; flex-direction: column; gap: 12px; margin: 12px 0; }
 .rcc-round { border: 1px solid var(--rc-silver); border-radius: 6px; padding: 12px 14px; background: var(--rc-white); }
@@ -294,4 +300,5 @@ body.rc-league-page.rcc-page {
   .rcc-class-row { grid-template-columns: 22px 1fr 1fr; }
   .rcc-class-count { grid-column: 2 / -1; }
   .rcc-points-row { grid-template-columns: 1fr; }
+  .rcc-points-boxes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
