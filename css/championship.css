@@ -39,13 +39,25 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: var(--rc-steel); }
 .rcc-page .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 40%, var(--rc-red-dark)); }
 
-/* Hero meta line under "Season N / Name". */
+/* Hero meta line under "Season N / Name" -- tucked right under it. */
 .rcc-hero-meta {
-  margin-top: 10px;
+  margin-top: 2px;
   font-family: var(--rc-font-body);
   font-size: 15px;
   color: var(--rcl-ink-dim);
 }
+
+/* -------------------------------------------------------------------- */
+/* Highlights ticker (league.css look, light-page colors)                */
+/* -------------------------------------------------------------------- */
+/* Category labels in the theme's gray-blue instead of the hub's gold (hard to read on white). */
+.rcc-page .rcl-ticker-item-tag { color: var(--rc-steel); }
+/* The hub's ranks are white for a black ticker; dark here so they show on white. */
+.rcc-page .rcl-ticker-driver-rank { color: var(--rc-carbon); }
+
+/* Calendar card button: the hub's hover fills it with the ink color and turns the text near-black,
+   which on this page is black on black. Text goes white instead. */
+.rcc-page .rcl-carousel-hero-btn:not(:disabled):hover { color: var(--rc-white); }
 
 /* -------------------------------------------------------------------- */
 /* Black link bar under the hero                                         */
@@ -187,6 +199,13 @@ body.rc-league-page.rcc-page {
 .rcc-btn-row-end { justify-content: flex-end; margin-top: 18px; }
 .rcc-error-line { color: var(--rc-red); font-size: 13px; margin-top: 8px; min-height: 0; }
 .rcc-error-line:empty { display: none; }
+/* While a write is in flight the popup's X is locked (js sets disabled); league.css has no disabled
+   look for it, so it dims here, and every other button in the popup grays out and ignores clicks. */
+.rcc-page .rcl-modal-close:disabled,
+.rcc-page .rcl-modal-close:disabled:hover { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.rcc-page .rc-modal-busy .rcl-modal-body button:not(:disabled) { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
+.rcc-page .rc-modal-busy .rcl-modal-body select,
+.rcc-page .rc-modal-busy .rcl-modal-body input { pointer-events: none; }
 /* Pending write button: gray, disabled, "...ing" label until the server answers. */
 .rc-btn-primary.rcc-btn-pending,
 .rc-btn-primary.rcc-btn-pending:hover { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
@@ -194,6 +213,8 @@ body.rc-league-page.rcc-page {
 
 /* Season wizard */
 .rcc-wizard label { margin-top: 0; }
+/* A locked dropdown (Chance of Rain in dry weather) reads as unavailable. */
+.rcc-wizard select:disabled { opacity: 0.5; cursor: not-allowed; }
 .rcc-wiz-section { padding: 18px 0; border-bottom: 1px solid var(--rc-silver); }
 .rcc-wiz-section:first-child { padding-top: 0; }
 .rcc-wiz-section-title {

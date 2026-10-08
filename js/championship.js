@@ -388,6 +388,10 @@ function rccRenderActionBar(page) {
 // ---------------------------------------------------------------------
 // TICKER (adapted from league.js's _rclBuildTickerItems/_rclRenderTicker)
 // ---------------------------------------------------------------------
+// Gaps are runs of non-breaking spaces (league.js does the same): a run of plain spaces collapses
+// to a single space in HTML, which is what squeezed every entry together.
+function _rccNbsp(n) { return document.createTextNode(new Array(n + 1).join('\u00a0')); }
+
 function rccRenderTicker(page) {
   var track = document.getElementById('rcl-ticker-track');
   if (!track) return;
@@ -424,8 +428,8 @@ function rccRenderTicker(page) {
   function rowList(rows, ranked) {
     var list = _rccEl('span', 'rcl-ticker-driver-list');
     rows.forEach(function (row, i) {
-      if (i > 0) list.appendChild(document.createTextNode('          '));
-      if (ranked) { list.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1))); list.appendChild(document.createTextNode('  ')); }
+      if (i > 0) list.appendChild(_rccNbsp(10));
+      if (ranked) { list.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1))); list.appendChild(_rccNbsp(2)); }
       list.appendChild(driverEntry(row));
     });
     return list;
@@ -436,16 +440,16 @@ function rccRenderTicker(page) {
       var el = _rccEl('div', 'rcl-ticker-item');
       el.appendChild(_rccText('span', 'rcl-ticker-item-tag', item.tag + ':'));
       if (item.bold !== undefined) {
-        el.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', ' ' + item.bold));
+        el.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', item.bold));
         if (item.dim) el.appendChild(_rccText('span', 'rcl-ticker-prefix-dim', item.dim));
-        if (item.groups) el.appendChild(document.createTextNode('     '));
+        if (item.groups) el.appendChild(_rccNbsp(5));
       } else if (item.text) {
-        el.appendChild(document.createTextNode(' ' + item.text));
+        el.appendChild(document.createTextNode(item.text));
       }
       if (item.groups) {
         var all = _rccEl('span', 'rcl-ticker-driver-list');
         item.groups.forEach(function (g, gi) {
-          if (gi > 0) all.appendChild(document.createTextNode('               '));
+          if (gi > 0) all.appendChild(_rccNbsp(15));
           var sec = _rccEl('span', 'rcl-ticker-class-section');
           sec.appendChild(_rccText('span', 'rcl-ticker-item-tag', g.tag + ':'));
           sec.appendChild(rowList(g.rows, true));
@@ -453,20 +457,18 @@ function rccRenderTicker(page) {
         });
         el.appendChild(all);
       } else if (item.rows) {
-        el.appendChild(document.createTextNode(' '));
         el.appendChild(rowList(item.rows, !item.unranked));
       } else if (item.mfr) {
         var ml = _rccEl('span', 'rcl-ticker-driver-list');
         item.mfr.forEach(function (m, i) {
-          if (i > 0) ml.appendChild(document.createTextNode('        '));
+          if (i > 0) ml.appendChild(_rccNbsp(8));
           ml.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1)));
-          ml.appendChild(document.createTextNode('  '));
+          ml.appendChild(_rccNbsp(2));
           var entry = _rccEl('span', 'rcl-ticker-driver-entry');
           entry.appendChild(_rccLogo('rcl-ticker-driver-logo', m.manufacturer));
           entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', m.manufacturer));
           ml.appendChild(entry);
         });
-        el.appendChild(document.createTextNode(' '));
         el.appendChild(ml);
       }
       frag.appendChild(el);
@@ -1390,6 +1392,11 @@ function rccSigningSequence(team, cls, onFinish) {
 // ---------------------------------------------------------------------
 var RCC_WEATHER = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
 var RCC_MULTIPLIERS = ['Off', 'Realistic', '2x', '3x'];
+// Dry weather: no rain possible, so Chance of Rain is locked at 0% for these.
+var RCC_DRY_WEATHER = ['Clear', 'Light Clouds', 'Partially Cloudy'];
+var RCC_RAIN_CHANCES = [];
+for (var _rccR = 0; _rccR <= 100; _rccR += 5) RCC_RAIN_CHANCES.push({ label: _rccR + '%', value: _rccR });
+function _rccSnapRain(v) { var n = Math.round((Number(v) || 0) / 5) * 5; return Math.max(0, Math.min(100, n)); }
 
 function _rccDefaultDetails() {
   return {
@@ -1665,8 +1672,17 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       g.appendChild(_rccField('Track', venueSel));
       g.appendChild(_rccField('Layout', layoutSel));
       g.appendChild(_rccField('Race Length', _rccSelect(Object.keys(state.details.pointsTables), r.raceLengthTier, function (v) { r.raceLengthTier = v; })));
-      g.appendChild(_rccField('Weather', _rccSelect(RCC_WEATHER, r.weather, function (v) { r.weather = v; })));
-      g.appendChild(_rccField('Chance of Rain (%)', _rccNumber(r.chanceOfRain, function (v) { r.chanceOfRain = v; }, 0, 100)));
+      r.chanceOfRain = _rccSnapRain(r.chanceOfRain);
+      var rainSel = _rccSelect(RCC_RAIN_CHANCES, r.chanceOfRain, function (v) { r.chanceOfRain = Number(v); });
+      function syncRain() {
+        var dry = RCC_DRY_WEATHER.indexOf(r.weather) !== -1;
+        if (dry) { r.chanceOfRain = 0; rainSel.value = '0'; }
+        rainSel.disabled = dry;
+        rainSel.title = dry ? 'No rain in ' + r.weather + ' weather.' : '';
+      }
+      g.appendChild(_rccField('Weather', _rccSelect(RCC_WEATHER, r.weather, function (v) { r.weather = v; syncRain(); })));
+      g.appendChild(_rccField('Chance of Rain', rainSel));
+      syncRain();
       g.appendChild(_rccField('Temperature (°C)', _rccNumber(r.temperatureC, function (v) { r.temperatureC = v; })));
       var timeInput = document.createElement('input');
       timeInput.type = 'time';
