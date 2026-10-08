@@ -359,6 +359,7 @@ function rccRenderActionBar(page) {
   add('Create Season', !(page && page.hasActiveSeason), rccOpenSeasonWizard.bind(null, null), 'End your current season first.');
   add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.');
   add('End Season', active, rccOpenEndSeason, 'No active season to end.');
+  add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.');
   if (active && !page.registration) {
     add('Choose Your Team', true, rccOpenRegistration);
   } else {
@@ -1749,6 +1750,58 @@ function rccOpenEndSeason() {
     'End Season', 'Ending Season...',
     function () { return _rccApi('champEndSeason', { seasonId: page.seasonId }, { post: true }); },
     function () { _rccToast('Season ended.', 'success'); rccReloadAfterSave(); });
+}
+
+// ---------------------------------------------------------------------
+// DELETE SEASON -- deletes the season being shown (active or ended). The red button stays locked
+// until DELETE SEASON is typed in the box, since this can't be undone.
+// ---------------------------------------------------------------------
+var RCC_DELETE_PHRASE = 'DELETE SEASON';
+function rccOpenDeleteSeason() {
+  var page = RCC.page;
+  var m = rccOpenModal('Delete Season', { narrow: true });
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Delete Season ' + page.seasonNumber + ' "' + page.seasonName + '"? This removes its rounds, your team signing, and every imported result and lap. It cannot be undone.'));
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.placeholder = RCC_DELETE_PHRASE;
+  m.body.appendChild(_rccField('Type ' + RCC_DELETE_PHRASE + ' to confirm', input));
+  var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
+  var cancel = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+  cancel.type = 'button';
+  var commit = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Delete Season');
+  commit.type = 'button';
+  commit.disabled = true;
+  row.appendChild(cancel);
+  row.appendChild(commit);
+  m.body.appendChild(row);
+  var errLine = _rccEl('div', 'rcc-error-line');
+  m.body.appendChild(errLine);
+  function typedOk() { return input.value.replace(/\s+/g, ' ').trim().toUpperCase() === RCC_DELETE_PHRASE; }
+  input.addEventListener('input', function () { commit.disabled = !typedOk(); });
+  input.focus();
+  cancel.addEventListener('click', function () { m.close(false); });
+  commit.addEventListener('click', function () {
+    if (!typedOk()) return;
+    errLine.textContent = '';
+    cancel.disabled = true;
+    input.disabled = true;
+    rccRunWrite(commit, 'Deleting Season...', function () {
+      return _rccApi('champDeleteSeason', { seasonId: page.seasonId }, { post: true });
+    }).then(function (res) {
+      cancel.disabled = false;
+      input.disabled = false;
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { errLine.textContent = (res && res.message) || 'Could not delete the season.'; return; }
+      _rccToast('Season deleted.', 'success');
+      m.close(true);
+      window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId);
+    }).catch(function () {
+      cancel.disabled = false;
+      input.disabled = false;
+      errLine.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it was deleted.';
+    });
+  });
 }
 
 // ---------------------------------------------------------------------
