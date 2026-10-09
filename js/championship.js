@@ -356,7 +356,7 @@ function rccRenderHero(page) {
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
-  // "**Name** · [logo] Team #n · AI Difficulty N% · X of Y Rounds" (name bold, Matt).
+  // "**Name** · [logo] Team **#n** · AI Difficulty N% · X of Y Rounds" (name and car number bold, Matt).
   var bits = [];
   var diff = (page.seasonDetails.raceSettings || {}).aiDifficulty;
   if (diff) bits.push('AI Difficulty ' + diff + '%');
@@ -366,7 +366,9 @@ function rccRenderHero(page) {
     metaEl.appendChild(_rccText('strong', 'rcc-hero-meta-name', page.owner.displayName));
     metaEl.appendChild(document.createTextNode(' · '));
     if (page.registration.manufacturer) metaEl.appendChild(_rccLogo('rcc-hero-meta-logo', page.registration.manufacturer));
-    metaEl.appendChild(document.createTextNode(page.registration.teamName + ' #' + page.registration.carNumber + ' · '));
+    metaEl.appendChild(document.createTextNode(page.registration.teamName + ' '));
+    metaEl.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + page.registration.carNumber));
+    metaEl.appendChild(document.createTextNode(' · '));
   }
   metaEl.appendChild(document.createTextNode(bits.join(' · ')));
 }
