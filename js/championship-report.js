@@ -252,6 +252,8 @@ var RCR_CARS = {
     extras: [
       { tag: 'rect', a: { x: 20, y: 264, width: 120, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
+    // Front splitter (floor), square and a little past the rounded nose.
+    under: [{ tag: 'rect', a: { x: 22, y: 20, width: 116, height: 44, rx: 2 }, cls: 'rcr-car-splitter' }],
     tyres: [[28, 66], [112, 66], [28, 208], [112, 208]], tw: 20, th: 46
   },
   // Hypercar (LMH / LMDh): bigger and wider, with a long sculpted nose, tall front fenders, a
@@ -265,6 +267,7 @@ var RCR_CARS = {
     extras: [
       { tag: 'rect', a: { x: 12, y: 270, width: 136, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
+    under: [{ tag: 'rect', a: { x: 16, y: 14, width: 128, height: 46, rx: 2 }, cls: 'rcr-car-splitter' }],
     tyres: [[22, 66], [118, 66], [22, 210], [118, 210]], tw: 20, th: 48
   }
 };
@@ -272,6 +275,7 @@ var RCR_CARS = {
 function _rcrCar(shape, tread) {
   var def = RCR_CARS[shape] || RCR_CARS.gt;
   var svg = _rcrSvg('svg', { viewBox: '0 0 160 300', class: 'rcr-car rcr-car-' + (RCR_CARS[shape] ? shape : 'gt'), role: 'img', 'aria-label': 'Tyre tread on each corner' });
+  (def.under || []).forEach(function (x) { svg.appendChild(_rcrSvg(x.tag, Object.assign({ class: x.cls }, x.a))); });
   svg.appendChild(_rcrSvg('path', { d: def.body, class: 'rcr-car-body' }));
   def.lines.forEach(function (d) { svg.appendChild(_rcrSvg('path', { d: d, class: 'rcr-car-line' })); });
   def.glass.forEach(function (g) { svg.appendChild(_rcrSvg('path', { d: g.d, class: g.cls })); });

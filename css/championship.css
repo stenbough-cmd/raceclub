@@ -642,6 +642,7 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcr-car-roof { fill: #d3d8df; stroke: #8a94a3; stroke-width: 1; }
 .rcr-car-mirror { fill: #8a94a3; }
 .rcr-car-wing { fill: #4b5563; }
+.rcr-car-splitter { fill: #5b6573; stroke: #3b4656; stroke-width: 1.5; }
 .rcr-car-tyre { stroke: #1f2937; stroke-width: 2; opacity: 0.95; }
 .rcr-corners { display: flex; flex-direction: column; justify-content: space-between; gap: 46px; }
 .rcr-corner-r { text-align: left; }
