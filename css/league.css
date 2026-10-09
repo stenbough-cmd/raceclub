@@ -2198,6 +2198,9 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
    logo slot (.rcl-standings-mfr-logo-slot) plus the 8px gap after it (.rcl-standings-identity). */
 .rcl-board-name-head { text-align: left; }
 /* Car number column: "N" with a raised degree circle in the header, plain numbers below. */
+/* "MANU" over the manufacturer logo column. */
+.rcl-board-manu-head { text-align: center; white-space: nowrap; }
+@media (max-width: 640px) { .rcl-board-manu-head { font-size: 9px; letter-spacing: 0.02em; } }
 .rcl-board-num-head { text-align: center; }
 .rcl-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
 .rcl-board-num { text-align: center; font-size: 14.5px; font-weight: 400; color: var(--rcl-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }

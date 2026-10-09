@@ -860,7 +860,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
   hr.appendChild(_rclEl('div', null, 'Pos'));
-  hr.appendChild(_rclEl('div', null, ''));
+  hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Manu'));
   hr.appendChild(_rclEl('div', 'rcl-board-num-head', 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
   hr.appendChild(_rclEl('div', 'rcl-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
