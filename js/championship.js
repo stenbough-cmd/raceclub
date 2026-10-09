@@ -97,6 +97,17 @@ function _rccLogo(className, manufacturer, onFail) {
   manufacturerLogoFallback(img, manufacturer, onFail || function () { img.style.display = 'none'; });
   return img;
 }
+// The player's own name as a link to their public profile (profile.html?id=RC-xxxxx, the same link
+// the League Hub uses). Only the player has a profile; AI drivers stay plain text. The profile page
+// will show championship stats for drivers with Championship Access (Matt).
+function _rccPlayerName(className, name) {
+  var a = document.createElement('a');
+  a.className = (className ? className + ' ' : '') + 'rcl-driver-link rcc-player-link';
+  a.href = 'profile.html?id=' + encodeURIComponent(RCC.ownerId || '');
+  a.textContent = name || '';
+  return a;
+}
+
 // Country flags -- used for tracks only (calendar cards, standings round columns). Drivers never
 // show a flag on this page (Matt).
 function _rccFlag(className, country) {
@@ -363,11 +374,18 @@ function rccRenderHero(page) {
   bits.push(page.roundsCompleted + ' of ' + page.totalRounds + ' Rounds');
   if (page.seasonEnded) bits.push('Season Ended');
   if (page.registration) {
-    metaEl.appendChild(_rccText('strong', 'rcc-hero-meta-name', page.owner.displayName));
+    // Name -> the driver's public profile; "[logo] Team #n" -> Team Information.
+    var nameLink = _rccPlayerName('rcc-hero-meta-name', page.owner.displayName);
+    metaEl.appendChild(nameLink);
     metaEl.appendChild(document.createTextNode(' · '));
-    if (page.registration.manufacturer) metaEl.appendChild(_rccLogo('rcc-hero-meta-logo', page.registration.manufacturer));
-    metaEl.appendChild(document.createTextNode(page.registration.teamName + ' '));
-    metaEl.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + page.registration.carNumber));
+    var team = _rccEl('button', 'rcc-hero-meta-team');
+    team.type = 'button';
+    team.title = 'Team Information';
+    if (page.registration.manufacturer) team.appendChild(_rccLogo('rcc-hero-meta-logo', page.registration.manufacturer));
+    team.appendChild(document.createTextNode(page.registration.teamName + ' '));
+    team.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + page.registration.carNumber));
+    team.addEventListener('click', rccOpenTeamInfo);
+    metaEl.appendChild(team);
     metaEl.appendChild(document.createTextNode(' · '));
   }
   metaEl.appendChild(document.createTextNode(bits.join(' · ')));
@@ -391,21 +409,22 @@ function rccRenderActionBar(page) {
     if (enabled) b.addEventListener('click', onClick);
     links.appendChild(b);
   }
-  add('Create Season', !(page && page.hasActiveSeason), rccOpenSeasonWizard.bind(null, null), 'End your current season first.');
+  // While a season is running this link is Season Preview (that season's settings and calendar);
+  // once it ends it goes back to Create Season.
+  if (page && page.hasActiveSeason) add('Season Preview', hasSeason, rccOpenSeasonPreview);
+  else add('Create Season', true, rccOpenSeasonWizard.bind(null, null));
   add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.');
   add('End Season', active, rccOpenEndSeason, 'No active season to end.');
   add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.');
-  if (active && !page.registration) {
-    add('Choose Your Team', true, rccOpenRegistration);
-  } else {
-    add('Team Information', hasSeason, rccOpenTeamInfo, 'No season yet.');
-  }
+  // Team Information has no link of its own: the team in the header subtitle opens it.
+  if (active && !page.registration) add('Choose Your Team', true, rccOpenRegistration);
   var cal = (page && page.calendar) || [];
   var anyEmpty = cal.some(function (c) { return !c.hasQualifyResults && !c.hasRaceResults; });
   var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
   add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
     !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'));
   add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
+  add('Find A Bug?', true, rccOpenBugReport);
   add('Help', true, rccOpenHelp);
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
@@ -561,7 +580,8 @@ function _rccPodium(rows) {
     var drv = _rccEl('div', 'rcl-lr-podium-driver');
     drv.appendChild(_rccLogo('rcl-lr-podium-logo', row.manufacturer));
     var ident = _rccEl('div', 'rcl-lr-podium-identity');
-    ident.appendChild(_rccText('span', 'rcl-lr-podium-name' + (row.isPlayer ? ' rcc-me-text' : ''), (row.name || '').toUpperCase()));
+    ident.appendChild(row.isPlayer ? _rccPlayerName('rcl-lr-podium-name rcc-me-text', (row.name || '').toUpperCase())
+      : _rccText('span', 'rcl-lr-podium-name', (row.name || '').toUpperCase()));
     drv.appendChild(ident);
     tile.appendChild(drv);
     var stand = _rccEl('div', 'rcl-lr-podium-stand');
@@ -623,7 +643,6 @@ function _rccSeasonFormat(page, body) {
   if (classes.length) details.push(row(classes.length === 1 ? 'Class' : 'Classes', classes.map(function (c) { return c + ' (' + (d.classSeasons || {})[c] + ')'; }).join(', ')));
   details.push(row('Cars On The Grid', String((page.grid || []).length)));
   var session = [];
-  if (rs.practiceLengthMin) session.push(row('Practice Duration', rs.practiceLengthMin + ' min'));
   if (rs.qualifyLengthMin) session.push(row('Qualify Duration', rs.qualifyLengthMin + ' min'));
   var tables = d.pointsTables || {};
   var tiers = Object.keys(tables).filter(function (t) { return (tables[t].points || []).length; });
@@ -649,6 +668,8 @@ function _rccSeasonFormat(page, body) {
   if (rs.tireWearMultiplier) rules.push(row('Tire Wear', rs.tireWearMultiplier));
   if (rs.tireCount) rules.push(row('Tires Allowed', String(rs.tireCount)));
   if (rs.fuelMultiplier) rules.push(row('Fuel Multiplier', rs.fuelMultiplier));
+  if (rs.timeScale) rules.push(row('Time Scale', rs.timeScale));
+  if (rs.realRoadTimeScale) rules.push(row('RealRoad Time Scale', rs.realRoadTimeScale));
   if (rs.pitStopReq) rules.push(row('Pitstop Requirements', rs.pitStopReq));
   if (d.trackLimitsPreset) rules.push(row('Track Limits', d.trackLimitsPreset));
   if (rs.trackLimitPoints) rules.push(row('Infractions until Drive-Thru', rs.trackLimitPoints + ' pts'));
@@ -769,7 +790,8 @@ function rccRenderCarousel(page) {
     var len = entry.raceLengthMinutes ? entry.raceLengthMinutes + ' Mins Long' : '';
     var session = (tod ? tod + ' Race' : '') + (len ? (tod ? ', ' : '') + len : '');
     if (session) lines.push(session);
-    if (entry.weather) lines.push(entry.weather + ', ' + (entry.chanceOfRain || 0) + '% Chance Rain' + (entry.temperatureC !== null && entry.temperatureC !== undefined ? ', ' + entry.temperatureC + '° C' : ''));
+    // Weather preset in words (the results file records no weather); the time of day above gives the rest.
+    if (entry.weatherText) lines.push(entry.weatherText);
     if (entry.hasQualifyResults && !entry.hasRaceResults) lines.push('Qualifying imported, race still to come');
     if (lines.length) {
       var det = _rccEl('div', 'rcl-carousel-details');
@@ -832,7 +854,8 @@ function _rccIdentity(row, opts) {
   if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
   identity.appendChild(slot);
   var nameRow = _rccEl('div', 'rcl-standings-name-row' + (opts.wrap ? ' rcc-name-row-wrap' : ''));
-  nameRow.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
+  nameRow.appendChild(row.isPlayer && !opts.nameOverride ? _rccPlayerName('rcl-standings-name rcc-me-text', row.name)
+    : _rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
   if (row.carNumber && !opts.hideNumber) nameRow.appendChild(_rccText('span', 'rcl-standings-carnum', '#' + row.carNumber));
   if (opts.sub) nameRow.appendChild(_rccText('span', 'rcl-standings-team', opts.sub));
   else if (row.teamName && !opts.hideTeam) nameRow.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
@@ -880,12 +903,14 @@ function _rccMetalSwitch(view, onChange) {
 // Three grid cells for a board row: maker logo | car number | name. The logo slot always stays
 // (empty space when there's no logo or it fails to load) so every number and name lines up. The
 // number keeps leading zeros exactly as stored (#007). Hover on the name shows the full name + number.
-function _rccBoardCells(row, name) {
+function _rccBoardCells(row, name, kind) {
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
   var num = _rccText('div', 'rcc-board-num', row.carNumber ? '#' + row.carNumber : '');
   var nameCell = _rccEl('div', 'rcl-standings-name-row rcc-board-name-cell');
-  nameCell.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), name));
+  // The player's name (drivers board only) links to their public profile.
+  nameCell.appendChild(row.isPlayer && kind !== 'teams' ? _rccPlayerName('rcl-standings-name rcc-me-text', name)
+    : _rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), name));
   nameCell.title = name + (row.carNumber ? ' #' + row.carNumber : '');
   return [slot, num, nameCell];
 }
@@ -944,7 +969,7 @@ function _rccStandingsBoard(page, className, kind) {
     var row = line.row;
     var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
     rowEl.appendChild(_rccPosBadge(idx));
-    _rccBoardCells(row, line.names.join(', ')).forEach(function (cell) { rowEl.appendChild(cell); });
+    _rccBoardCells(row, line.names.join(', '), kind).forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rccEl('div', 'rcc-board-round');
       var i = scoredIdx[r.roundId];
@@ -1106,13 +1131,35 @@ function _rccGap(row, ref) {
   return g <= 0 ? '--' : '+' + g.toFixed(3);
 }
 
+// Race Details: what the results file says about the race (length, laps, failures, damage, fuel and
+// tyre use, your assists, any laps the AI drove your car) next to what was planned for the round.
+// Shown once, under the first class's bonus winners and above its results table.
+function _rccRaceDetails(details) {
+  if (!details || (!(details.fromFile || []).length && !(details.planned || []).length)) return null;
+  var box = _rccEl('div', 'rcc-race-details');
+  box.appendChild(_rccText('div', 'rcl-race-class-name', 'Race Details'));
+  var cols = _rccEl('div', 'rcc-race-details-cols');
+  [['From The Race File', details.fromFile], ['Planned For This Round', details.planned]].forEach(function (pair) {
+    if (!(pair[1] || []).length) return;
+    var col = _rccEl('div', 'rcc-race-details-col');
+    col.appendChild(_rccText('div', 'rcc-race-details-head', pair[0]));
+    pair[1].forEach(function (x) {
+      col.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rccEsc(x.label) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(x.value) + '</span>'));
+    });
+    cols.appendChild(col);
+  });
+  box.appendChild(cols);
+  return box;
+}
+
 function _rccRaceBody(result, el) {
   el.innerHTML = '';
   if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race result imported for this round.')); return; }
-  result.classes.forEach(function (cls) {
+  result.classes.forEach(function (cls, ci) {
     var w = _rccEl('div', 'rcl-race-class');
     w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' STANDINGS'));
     w.appendChild(_rccCategoryBreakdown(cls));
+    if (ci === 0) { var det = _rccRaceDetails(result.raceDetails); if (det) w.appendChild(det); }
     var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
     ['Pos', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
     w.appendChild(head);
@@ -1558,13 +1605,17 @@ function rccSigningSequence(team, cls, onFinish) {
 // ---------------------------------------------------------------------
 // SEASON WIZARD -- Create / Edit (one popup, all sections on one scrolling form)
 // ---------------------------------------------------------------------
-var RCC_WEATHER = ['Clear', 'Light Clouds', 'Partially Cloudy', 'Overcast', 'Cloudy & Drizzle', 'Cloudy & Light Rain', 'Overcast & Light Rain', 'Overcast & Rain', 'Overcast & Heavy Rain', 'Overcast & Storm'];
 var RCC_MULTIPLIERS = ['Off', 'Realistic', '2x', '3x'];
-// Dry weather: no rain possible, so Chance of Rain is locked at 0% for these.
-var RCC_DRY_WEATHER = ['Clear', 'Light Clouds', 'Partially Cloudy'];
-var RCC_RAIN_CHANCES = [];
-for (var _rccR = 0; _rccR <= 100; _rccR += 5) RCC_RAIN_CHANCES.push({ label: _rccR + '%', value: _rccR });
-function _rccSnapRain(v) { var n = Math.round((Number(v) || 0) / 5) * 5; return Math.max(0, Math.min(100, n)); }
+// LMU's four weather presets (Matt, 2026-10-09); the results file records no weather, so a round
+// only keeps which preset was planned.
+var RCC_WEATHER_PRESETS = ['Sunny', 'Cloudy', 'Rainy', 'Real World'];
+// LMU Advanced > Time Scale, and Sessions > RealRoad Time Scale (default Normal on both).
+var RCC_TIME_SCALES = ['None', 'Normal'];
+for (var _rccT = 2; _rccT <= 60; _rccT++) RCC_TIME_SCALES.push('x' + _rccT);
+RCC_TIME_SCALES.push('Use Race %');
+var RCC_REALROAD_SCALES = ['Normal'];
+for (var _rccQ = 2; _rccQ <= 15; _rccQ++) RCC_REALROAD_SCALES.push(_rccQ + 'x');
+RCC_REALROAD_SCALES.push('Session %', 'Static');
 
 function _rccDefaultDetails() {
   return {
@@ -1662,7 +1713,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     name: editing ? edit.name : '',
     details: details,
     rounds: editing ? edit.rounds.map(function (r) {
-      return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weather: r.weather || 'Clear', chanceOfRain: r.chanceOfRain || 0, temperatureC: r.temperatureC === null ? '' : r.temperatureC, igRaceStart: r.igRaceStart || '14:00', locked: r.locked };
+      return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weatherPreset: r.weatherPreset || 'Sunny', igRaceStart: r.igRaceStart || '14:00', locked: r.locked };
     }) : []
   };
 
@@ -1678,7 +1729,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   tracks.forEach(function (t) { trackById[t.TrackID] = t; });
   function newRound() {
     var t = layoutsByVenue[venues[0]][0];
-    return { roundId: '', trackId: t.TrackID, eventName: '', raceLengthTier: Object.keys(state.details.pointsTables)[0] || 'Sprint', weather: 'Clear', chanceOfRain: 0, temperatureC: 25, igRaceStart: '14:00', locked: false };
+    return { roundId: '', trackId: t.TrackID, eventName: '', raceLengthTier: Object.keys(state.details.pointsTables)[0] || 'Sprint', weatherPreset: 'Sunny', igRaceStart: '14:00', locked: false };
   }
   if (!state.rounds.length) for (var i = 0; i < 6; i++) state.rounds.push(newRound());
 
@@ -1703,35 +1754,50 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   // --- Classes ---
   var sec2 = _rccSection('Classes');
   if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'Locked: you have already joined a team, so the grid can no longer change.'));
+  // One year for the whole grid (LMU races one season's grid at a time, "Season YYYY" under Starting
+  // Grid). Every class takes that year; a class with no cars that year is grayed out and unticked.
+  var allYears = [];
+  Object.keys(yearsByClass).forEach(function (k) { yearsByClass[k].forEach(function (y) { if (allYears.indexOf(y) === -1) allYears.push(y); }); });
+  allYears.sort().reverse();
+  var pickedYear = '';
+  RCC_CLASS_ORDER.forEach(function (c) { if (!pickedYear && state.details.classes[c] && state.details.classSeasons[c]) pickedYear = String(state.details.classSeasons[c]); });
+  if (allYears.indexOf(pickedYear) === -1) pickedYear = allYears[0] || '';
+  var yearSel = _rccSelect(allYears.length ? allYears : ['No cars'], pickedYear, function (v) { applyYear(v); });
+  yearSel.id = 'rcc-season-year';
+  yearSel.disabled = classesLocked || !allYears.length;
+  sec2.appendChild(_rccField('Year', yearSel));
   var classGrid = _rccEl('div', 'rcc-class-grid');
+  var classRows = [];
   RCC_CLASS_ORDER.forEach(function (cls) {
-    var years = yearsByClass[cls] || [];
     var rowEl = _rccEl('div', 'rcc-class-row');
     var cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.id = 'rcc-class-' + cls;
     cb.checked = !!state.details.classes[cls];
-    cb.disabled = classesLocked || !years.length;
     var lbl = _rccText('label', 'rcc-class-label', cls);
     lbl.htmlFor = cb.id;
-    var yearSel = _rccSelect(years.length ? years : ['No cars'], state.details.classSeasons[cls] || years[0], function (v) { state.details.classSeasons[cls] = v; updateCount(); });
-    yearSel.disabled = classesLocked || !years.length;
-    if (!state.details.classSeasons[cls] && years.length) state.details.classSeasons[cls] = years[0];
     var count = _rccEl('span', 'rcc-class-count');
-    function updateCount() {
-      var n = cars.filter(function (c) { return c.Class === cls && String(c.Season) === String(state.details.classSeasons[cls]); }).length;
-      count.textContent = years.length ? n + ' car' + (n === 1 ? '' : 's') : 'No active cars';
-    }
     cb.addEventListener('change', function () { state.details.classes[cls] = cb.checked; });
-    updateCount();
     rowEl.appendChild(cb);
     rowEl.appendChild(lbl);
-    rowEl.appendChild(yearSel);
     rowEl.appendChild(count);
     classGrid.appendChild(rowEl);
+    classRows.push({ cls: cls, row: rowEl, cb: cb, count: count });
   });
+  function applyYear(year) {
+    pickedYear = String(year);
+    classRows.forEach(function (x) {
+      var n = cars.filter(function (c) { return c.Class === x.cls && String(c.Season) === pickedYear; }).length;
+      x.count.textContent = n ? n + ' car' + (n === 1 ? '' : 's') + ' in ' + pickedYear : 'No cars in ' + pickedYear;
+      x.row.classList.toggle('rcc-class-row-off', !n);
+      if (!n && !classesLocked) { x.cb.checked = false; state.details.classes[x.cls] = false; }
+      x.cb.disabled = classesLocked || !n;
+      if (!classesLocked) state.details.classSeasons[x.cls] = n ? pickedYear : '';
+    });
+  }
+  applyYear(pickedYear);
   sec2.appendChild(classGrid);
-  sec2.appendChild(_rccText('div', 'rc-hint', 'Every active car in a picked class and year joins the grid. Your rivals are the real drivers listed on each car.'));
+  sec2.appendChild(_rccText('div', 'rc-hint', 'Every active car in a picked class from that year joins the grid. Your rivals are the real drivers listed on each car.'));
   form.appendChild(sec2);
 
   // --- Race settings ---
@@ -1749,6 +1815,10 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   g3.appendChild(_rccField('Pit Stop Requirements', _rccSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], rs.pitStopReq, function (v) { rs.pitStopReq = v; })));
   g3.appendChild(_rccField('Fuel Multiplier', _rccSelect(RCC_MULTIPLIERS, rs.fuelMultiplier, function (v) { rs.fuelMultiplier = v; })));
   g3.appendChild(_rccField('Tire Wear Multiplier', _rccSelect(RCC_MULTIPLIERS, rs.tireWearMultiplier, function (v) { rs.tireWearMultiplier = v; })));
+  if (!rs.timeScale) rs.timeScale = 'Normal';
+  if (!rs.realRoadTimeScale) rs.realRoadTimeScale = 'Normal';
+  g3.appendChild(_rccField('Time Scale', _rccSelect(RCC_TIME_SCALES, rs.timeScale, function (v) { rs.timeScale = v; })));
+  g3.appendChild(_rccField('RealRoad Time Scale', _rccSelect(RCC_REALROAD_SCALES, rs.realRoadTimeScale, function (v) { rs.realRoadTimeScale = v; })));
   g3.appendChild(_rccField('Track Limits', _rccSelect(['Strict', 'Relaxed', 'Default'], state.details.trackLimitsPreset, function (v) { state.details.trackLimitsPreset = v; })));
   g3.appendChild(_rccField('Tire Count Allowed', _rccNumber(rs.tireCount, function (v) { rs.tireCount = v; }, 0)));
   g3.appendChild(_rccField('Track Limit Points Before DT', _rccNumber(rs.trackLimitPoints, function (v) { rs.trackLimitPoints = v; }, 0)));
@@ -1853,18 +1923,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       g.appendChild(_rccField('Track', venueSel));
       g.appendChild(_rccField('Layout', layoutSel));
       g.appendChild(_rccField('Race Length', _rccSelect(Object.keys(state.details.pointsTables), r.raceLengthTier, function (v) { r.raceLengthTier = v; })));
-      r.chanceOfRain = _rccSnapRain(r.chanceOfRain);
-      var rainSel = _rccSelect(RCC_RAIN_CHANCES, r.chanceOfRain, function (v) { r.chanceOfRain = Number(v); });
-      function syncRain() {
-        var dry = RCC_DRY_WEATHER.indexOf(r.weather) !== -1;
-        if (dry) { r.chanceOfRain = 0; rainSel.value = '0'; }
-        rainSel.disabled = dry;
-        rainSel.title = dry ? 'No rain in ' + r.weather + ' weather.' : '';
-      }
-      g.appendChild(_rccField('Weather', _rccSelect(RCC_WEATHER, r.weather, function (v) { r.weather = v; syncRain(); })));
-      g.appendChild(_rccField('Chance of Rain', rainSel));
-      syncRain();
-      g.appendChild(_rccField('Temperature (°C)', _rccNumber(r.temperatureC, function (v) { r.temperatureC = v; })));
+      g.appendChild(_rccField('Weather Preset', _rccSelect(RCC_WEATHER_PRESETS, r.weatherPreset || 'Sunny', function (v) { r.weatherPreset = v; })));
       var timeInput = document.createElement('input');
       timeInput.type = 'time';
       timeInput.value = r.igRaceStart || '';
@@ -1893,7 +1952,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       name: state.name.trim(),
       seasonDetails: state.details,
       rounds: state.rounds.map(function (r) {
-        return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weather: r.weather, chanceOfRain: r.chanceOfRain, temperatureC: r.temperatureC, igRaceStart: r.igRaceStart };
+        return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weatherPreset: r.weatherPreset, igRaceStart: r.igRaceStart };
       })
     };
     if (editing) payload.seasonId = edit.seasonId;
@@ -2106,6 +2165,42 @@ function rccOpenHelp() {
     grid.appendChild(link);
     m.body.appendChild(wrap);
   });
+}
+
+// ---------------------------------------------------------------------
+// SEASON PREVIEW -- the running season's settings and calendar (what to copy into the game). Same
+// Season Details / Championship Points / Race Rules rows as the pre-season panel, plus the rounds.
+// ---------------------------------------------------------------------
+function rccOpenSeasonPreview() {
+  var page = RCC.page;
+  var m = rccOpenModal('Season Preview', { wide: true });
+  m.body.classList.add('rcc-preview-body');
+  m.body.appendChild(_rccText('div', 'rcc-preview-title', 'Season ' + page.seasonNumber + ' / ' + page.seasonName));
+  _rccSeasonFormat(page, m.body);
+  var g = _rccEl('div', 'rcl-hero-stats-group');
+  g.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Rounds'));
+  var list = _rccEl('div', 'rcl-seasonfmt-list rcc-preview-rounds');
+  (page.calendar || []).forEach(function (c) {
+    var bits = [c.track + (c.layout ? ': ' + c.layout : '')];
+    var len = c.raceLengthAsRaced ? c.plannedRaceLengthMinutes + ' mins (' + c.plannedRaceLengthTier + ', raced ' + c.raceLengthMinutes + ' mins)'
+      : (c.raceLengthMinutes ? c.raceLengthMinutes + ' mins (' + c.raceLengthTier + ')' : '');
+    if (len) bits.push(len);
+    if (c.igRaceStart) bits.push('Start ' + c.igRaceStart + (_rccTimeOfDay(c.igRaceStart) ? ', ' + _rccTimeOfDay(c.igRaceStart) : ''));
+    if (c.weatherText) bits.push(c.weatherText);
+    if (c.hasResults) bits.push('Raced');
+    list.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">Round ' + c.roundNum + ' · ' + _rccEsc(c.eventName) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(bits.join(' · ')) + '</span>'));
+  });
+  g.appendChild(list);
+  m.body.appendChild(g);
+}
+
+// FIND A BUG? -- the site's own Feedback popup (js/header.js), opened on Bug Report.
+function rccOpenBugReport() {
+  if (typeof _rcOpenFeedbackModal !== 'function') { _rccToast('The feedback form could not be opened. Reload the page and try again.', 'error'); return; }
+  _rcOpenFeedbackModal();
+  var dialogs = document.querySelectorAll('.rcl-modal-dialog select, .rc-modal select');
+  var sel = dialogs.length ? dialogs[dialogs.length - 1] : null;
+  if (sel) { sel.value = 'Bug Report'; sel.dispatchEvent(new Event('change')); }
 }
 
 // ---------------------------------------------------------------------

@@ -405,7 +405,10 @@ body.rc-league-page.rcc-page {
 .rcc-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rcc-field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 16px; margin-bottom: 12px; }
 .rcc-class-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-.rcc-class-row { display: grid; grid-template-columns: 22px 110px 140px 1fr; align-items: center; gap: 10px; }
+.rcc-class-row { display: grid; grid-template-columns: 22px 110px 1fr; align-items: center; gap: 10px; }
+/* A class with no cars in the season's year: grayed out and unclickable. */
+.rcc-class-row-off { opacity: 0.45; }
+.rcc-class-row-off .rcc-class-label { cursor: not-allowed; }
 .rcc-class-row select { height: 36px; }
 .rcc-class-label { margin: 0; font-weight: 800; color: var(--rc-carbon); }
 .rcc-class-count { font-size: 12px; color: var(--rc-steel); }
@@ -469,7 +472,6 @@ body.rc-league-page.rcc-page {
   .rcc-actionbar-inner { padding: 0 16px; }
   .rcc-actionbar-link { padding: 10px 8px; }
   .rcc-class-row { grid-template-columns: 22px 1fr 1fr; }
-  .rcc-class-count { grid-column: 2 / -1; }
   .rcc-points-row { grid-template-columns: 1fr; }
   .rcc-points-boxes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .rcc-bonus-row { grid-template-columns: 1fr; }
@@ -528,3 +530,37 @@ body.rc-league-page.rcc-page {
 }
 .rcc-help-table { border-collapse: collapse; width: auto; }
 .rcc-help-table td { padding: 6px 14px 6px 0; font-size: 13px; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-silver); }
+
+/* -------------------------------------------------------------------- */
+/* Race Recap: bonus winners centered in the popup, and the Race Details */
+/* block under them (_rccRaceDetails).                                    */
+/* -------------------------------------------------------------------- */
+.rcc-page .rcl-modal-dialog-allresults .rcl-race-categories-inclass { justify-content: center; }
+.rcc-page .rcl-modal-dialog-allresults .rcl-race-category { flex: 0 1 200px; text-align: center; }
+.rcc-page .rcl-modal-dialog-allresults .rcl-race-category-title,
+.rcc-page .rcl-modal-dialog-allresults .rcl-race-category-row { justify-content: center; }
+.rcc-race-details { margin: 4px 0 22px; padding: 14px 16px; border: 1px solid var(--rc-silver); border-radius: 8px; background: var(--rc-offwhite); }
+.rcc-race-details .rcl-race-class-name { margin-bottom: 10px; }
+.rcc-race-details-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
+.rcc-race-details-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); margin-bottom: 6px; }
+.rcc-race-details .rcl-seasonfmt-row { font-size: 13px; margin-bottom: 3px; }
+
+/* Header subtitle: "[logo] Team #n" opens Team Information; the name opens the public profile. */
+.rcc-hero-meta-team {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.rcc-hero-meta-team:hover,
+.rcc-hero-meta-team:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+a.rcc-hero-meta-name { color: inherit; }
+
+/* Season Preview popup */
+.rcc-preview-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; text-transform: uppercase; color: var(--rc-carbon); margin-bottom: 14px; }
+.rcc-preview-body .rcl-hero-stats-group { margin-bottom: 18px; }
+
+/* Season wizard: the one Year dropdown above the classes. */
+#rcc-season-year { max-width: 200px; }
