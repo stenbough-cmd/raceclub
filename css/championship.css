@@ -562,5 +562,11 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcc-preview-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; text-transform: uppercase; color: var(--rc-carbon); margin-bottom: 14px; }
 .rcc-preview-body .rcl-hero-stats-group { margin-bottom: 18px; }
 
-/* Season wizard: the one Year dropdown above the classes. */
-#rcc-season-year { max-width: 200px; }
+/* Season wizard: Season Name 50% | Series 25% | Year 25%; a round's second row of settings. */
+.rcc-season-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; align-items: end; }
+.rcc-season-row .rcc-field { margin: 0; }
+.rcc-round-row2 { margin-top: 0; }
+@media (max-width: 640px) {
+  .rcc-season-row { grid-template-columns: 1fr 1fr; }
+  .rcc-season-row .rcc-field:first-child { grid-column: 1 / -1; }
+}

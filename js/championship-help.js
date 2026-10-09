@@ -22,18 +22,18 @@ var RCC_HELP_SECTIONS = [
   {
     id: 'create-season', num: '2', title: 'Creating a Season',
     html:
-      '<p>Click <strong>Create Season</strong> in the black bar. The popup has five parts:</p>' +
+      '<p>Click <strong>Create Season</strong> in the black bar. The popup has six parts:</p>' +
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Season.</strong> Give the season a name. It shows in the header and the ticker.</li>' +
-      '<li><strong>Classes.</strong> Pick the year first. That is the season of cars you will race against (the same year you will choose in the game). Then tick the classes you want. Classes with no cars in that year are grayed out, and the count next to each class shows how many cars join the grid.</li>' +
-      '<li><strong>Race Settings.</strong> AI Difficulty, AI Aggression, Mechanical Failures, Flag Rules, Start, fuel and tyre use, Time Scale, RealRoad Time Scale, track limits, tyre allowance and the Qualify length. These are the settings you will copy into the game before every round.</li>' +
+      '<li><strong>Season.</strong> Give the season a name, then pick the series (WEC or ELMS) and the year. Series and year are the season of cars you race against, the same series and year you will choose in the game.</li>' +
+      '<li><strong>Classes.</strong> Tick the classes you want. Classes with no cars in that series and year are grayed out, and the count next to each class shows how many cars join the grid.</li>' +
+      '<li><strong>Difficulty and Advanced.</strong> These match the Difficulty and Advanced tabs in the game: AI Difficulty, Damage Simulation, Tire Wear, Tire Warmers, Available Tires and Fuel Usage; then Time Scale, Flag Rules, Track Limits Rules, Mechanical Failures, AI Aggression and Track Limits Points. You copy these into the game before every round.</li>' +
       '<li><strong>Points.</strong> Set how long a Sprint, Medium and Long race is (in minutes) and the points for P1 to P10 in each. Choose 0 to 5 bonus points for Pole Position, Fastest Lap and Most Laps Led. Points are scored per class.</li>' +
-      '<li><strong>Rounds.</strong> Add your rounds in order. Each round has a track and layout, a race length (Sprint, Medium or Long), a weather preset (Sunny, Cloudy, Rainy or Real World) and the in-game start time.</li>' +
+      '<li><strong>Rounds.</strong> Add your rounds in order. Each round has a track and layout and a race length (Sprint, Medium or Long), then its session settings: weather preset (Sunny, Cloudy, Rainy or Real World), in-game start time, Start (Rolling or Fast) and RealRoad Time Scale.</li>' +
       '</ol>' +
       '<p>Click <strong>Create Season</strong> at the bottom. Then click <strong>Choose Your Team</strong> in the black bar, pick a class and a car, and click <strong>Join This Team</strong>. That is the seat you race in all season.</p>' +
       '<div class="rc-rulebook-callout"><strong>Good to know:</strong><ul>' +
       '<li>While the season runs, Create Season becomes <strong>Season Preview</strong>: it shows every setting and round of your season, so you can check them before you set up a race.</li>' +
-      '<li>Edit Season can change rounds that have not been raced yet. Once you join a team the year and classes lock, and once a round has results the points lock.</li>' +
+      '<li>Edit Season can change rounds that have not been raced yet. Once you join a team the series, year and classes lock, and once a round has results the points lock.</li>' +
       '<li>Your team choice is final for the season.</li>' +
       '</ul></div>'
   },
@@ -43,15 +43,15 @@ var RCC_HELP_SECTIONS = [
       '<p>Each round is one Race Weekend in the game. Open <strong>Season Preview</strong> here so your season’s settings and the round’s details are in front of you, then in Le Mans Ultimate:</p>' +
       '<ol class="rcc-help-steps">' +
       '<li><strong>Click Race Weekend</strong> on the main menu.</li>' +
-      '<li><strong>Choose the series and the year.</strong> WEC and ELMS are both represented in Race Club. Pick the year your season uses.</li>' +
+      '<li><strong>Choose the series and the year.</strong> WEC and ELMS are both represented in Race Club. Pick the series and year your season uses.</li>' +
       '<li><strong>Choose the track.</strong> Pick the round’s track and layout. If it is not on that year’s calendar, switch the filter to <strong>All</strong> to see every track in the game.</li>' +
       '<li><strong>Choose your class and car.</strong> Pick the class, the car and the team you signed for. This is your seat for the whole season.</li>' +
       '<li><strong>Set the Starting Grid.</strong> You are now on the Event Settings page, with a summary of the last settings used (or the defaults). Under <strong>Starting Grid</strong>, choose your season of cars (for example <strong>Season 2023</strong>). Do not choose Fill Grid: it adds cars that did not race that season, and Race Club Championship will not import results with cars that are not on your grid.</li>' +
       '<li><strong>Open the advanced options.</strong> From Event Settings, open the advanced options. Near the top are four tabs: Difficulty, Sessions, Weather and Advanced.</li>' +
-      '<li><strong>Difficulty.</strong> Set the opponent difficulty from your season. Choose any assists you like: Race Club sets no rules for assists, but the ones you use show in the race recap.</li>' +
-      '<li><strong>Sessions.</strong> Practice is optional. Always run a Qualifying and a Race, so the round has a grid and a result (practice files cannot be imported). Set Qualifying and the Race to match your season. The settings that really matter here are the <strong>race length</strong>, the <strong>start time</strong> and the <strong>RealRoad Time Scale</strong>.</li>' +
+      '<li><strong>Difficulty.</strong> Copy your season’s Difficulty settings: AI difficulty, damage simulation, tyre wear, tyre warmers, available tyres and fuel usage. Choose any assists you like: Race Club sets no rules for assists, but the ones you use show in the race recap.</li>' +
+      '<li><strong>Sessions.</strong> Practice is optional. Always run a Qualifying and a Race, so the round has a grid and a result (practice files cannot be imported). Set the Race from the round: the settings that really matter here are the <strong>race length</strong>, the <strong>start time</strong> and the <strong>RealRoad Time Scale</strong>, plus the round’s Start (Rolling or Fast).</li>' +
       '<li><strong>Weather.</strong> Pick the round’s preset for each session (Sunny, Cloudy, Rainy or Real World), or set it by hand: each session is split into five parts you can change.</li>' +
-      '<li><strong>Advanced.</strong> Set the rest of your season’s settings here, such as Time Scale, Flag Rules, Mechanical Failures and AI Aggression.</li>' +
+      '<li><strong>Advanced.</strong> Copy your season’s Advanced settings: Time Scale, Flag Rules, Track Limits Rules, Mechanical Failures, AI Aggression and Track Limits Points.</li>' +
       '<li><strong>Check and start.</strong> Go back to Event Settings at the top, look over the page to make sure it matches your season and the round, then click <strong>Start Race Weekend</strong>. Run Qualifying, then drive the Race to the chequered flag so the game saves the results.</li>' +
       '</ol>' +
       '<div class="rc-rulebook-callout"><strong>These five decide whether your results upload:</strong><ul>' +
