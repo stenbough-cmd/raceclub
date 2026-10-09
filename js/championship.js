@@ -2495,7 +2495,7 @@ function rccRenderWelcome() {
   rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
   var meta = document.getElementById('rcc-hero-meta');
   if (meta) meta.innerHTML = '';
-  rccRenderTicker({ hasSeason: false, welcomeTicker: [{ lead: 'Welcome to Race Club Championship!' }].concat(RCC_WELCOME_PERKS.map(function (p) {
+  rccRenderTicker({ hasSeason: false, welcomeTicker: [{ lead: 'WELCOME TO RACE CLUB CHAMPIONSHIP!' }].concat(RCC_WELCOME_PERKS.map(function (p) {
     return { tag: p[0].toUpperCase(), tagBold: true, text: p[1], plain: true };
   })) });
   var main = document.querySelector('.rcl-main');
