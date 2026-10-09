@@ -483,3 +483,48 @@ body.rc-league-page.rcc-page {
   .rcc-board-round { display: none; }
   .rcc-board-footer .rcl-standings-status-mobile-note { display: block; }
 }
+
+/* -------------------------------------------------------------------- */
+/* Help popup (rccOpenHelp). Section layout comes from style.css's        */
+/* .rc-rulebook-* rules (the League Hub's rulebook look); these add the   */
+/* numbered step circles, the folder path box and the file-name table.    */
+/* -------------------------------------------------------------------- */
+/* Clears the popup's sticky title bar when a Jump To link scrolls here. */
+.rcc-help-body .rc-rulebook-section { scroll-margin-top: 84px; }
+.rcc-help-steps { list-style: none; counter-reset: rcc-step; margin: 10px 0 16px; padding: 0; }
+.rcc-help-steps > li {
+  counter-increment: rcc-step;
+  position: relative;
+  min-height: 30px;
+  padding: 4px 0 0 44px;
+  margin-bottom: 12px;
+}
+.rcc-help-steps > li::before {
+  content: counter(rcc-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--rcc-navy);
+  color: var(--rc-white);
+  font-family: var(--rc-font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--rcc-navy) 35%, transparent);
+}
+.rcc-help-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px !important;
+  background: var(--rc-offwhite);
+  border: 1px solid var(--rc-silver);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+.rcc-help-table { border-collapse: collapse; width: auto; }
+.rcc-help-table td { padding: 6px 14px 6px 0; font-size: 13px; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-silver); }

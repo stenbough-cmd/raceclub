@@ -406,6 +406,7 @@ function rccRenderActionBar(page) {
   add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
     !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'));
   add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
+  add('Help', true, rccOpenHelp);
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
   if (page && page.seasons && page.seasons.length > 1) {
@@ -773,6 +774,9 @@ function rccRenderCarousel(page) {
     if (lines.length) {
       var det = _rccEl('div', 'rcl-carousel-details');
       lines.forEach(function (l) { det.appendChild(_rccText('div', 'rcl-carousel-details-line', l)); });
+      // The race ran a different length than planned: the card shows what was raced (and its points
+      // tier, server side); hovering the details shows the plan.
+      if (entry.raceLengthAsRaced) det.title = 'As raced: ' + entry.raceLengthMinutes + ' mins (' + entry.raceLengthTier + ' points). Planned: ' + entry.plannedRaceLengthMinutes + ' mins (' + entry.plannedRaceLengthTier + ').';
       hero.appendChild(det);
     }
     var btns = _rccEl('div', 'rcl-carousel-hero-btns');
@@ -2069,6 +2073,38 @@ function rccOpenUpload(roundId, lockRound) {
       lockInputs(false);
       _rccToast(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'error');
     });
+  });
+}
+
+// ---------------------------------------------------------------------
+// HELP -- the last link in the black bar. Same look as the League Hub's rulebook popup (.rc-rulebook-*
+// in css/style.css): a "Jump To A Section" box, then every section. The text lives in
+// js/championship-help.js (RCC_HELP_SECTIONS). Section links scroll inside the popup instead of
+// changing the page address.
+// ---------------------------------------------------------------------
+function rccOpenHelp() {
+  var m = rccOpenModal('Help', { wide: true });
+  m.body.classList.add('rcc-help-body');
+  var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
+  var nav = _rccEl('div', 'rc-rulebook-nav');
+  nav.appendChild(_rccText('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+  var grid = _rccEl('div', 'rc-rulebook-nav-grid');
+  nav.appendChild(grid);
+  m.body.appendChild(nav);
+  sections.forEach(function (sec) {
+    var wrap = _rccEl('div', 'rc-rulebook-section');
+    wrap.appendChild(_rccText('h3', null, sec.num + '. ' + sec.title));
+    var body = document.createElement('div');
+    body.innerHTML = sec.html || '';
+    wrap.appendChild(body);
+    var link = _rccText('a', 'rc-rulebook-nav-link', sec.num + '. ' + sec.title);
+    link.href = '#';
+    link.addEventListener('click', function (evt) {
+      evt.preventDefault();
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    grid.appendChild(link);
+    m.body.appendChild(wrap);
   });
 }
 
