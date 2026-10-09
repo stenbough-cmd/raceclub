@@ -480,8 +480,12 @@ function rccRenderTicker(page) {
       items.push({ tag: cls.toUpperCase() + ' ENTRY LIST', cars: cars });
     });
   }
-  if (page.nextRound) {
-    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: page.nextRound.track ? ' at ' + page.nextRound.track + (page.nextRound.layout ? ': ' + page.nextRound.layout : '') : '' });
+  var where = function (c) { return c.track ? ' at ' + c.track + (c.layout ? ': ' + c.layout : '') : ''; };
+  if (!page.registration && !page.seasonEnded && (page.calendar || []).length) {
+    // Season created but no seat chosen yet: the whole calendar, one entry per round (Matt, 2026-10-09).
+    page.calendar.forEach(function (c) { items.push({ tag: 'ROUND ' + c.roundNum, bold: c.eventName, dim: where(c) }); });
+  } else if (page.nextRound) {
+    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: where(page.nextRound) });
   }
 
   function driverEntry(row) {
