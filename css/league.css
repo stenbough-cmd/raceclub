@@ -2156,3 +2156,127 @@ body.rc-league-page {
 /* Driver names that link to profile.html?id=... (Standings, results popups, Member List). */
 a.rcl-driver-link { color: inherit; text-decoration: none; cursor: pointer; }
 a.rcl-driver-link:hover, a.rcl-driver-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+/* -------------------------------------------------------------------- */
+/* Championship Standings boards (one full-width panel per class)         */
+/* Copied from the single-player championship page's boards (.rcc-board*, */
+/* .rcc-metal-*), recoloured for this page's dark palette.                */
+/* -------------------------------------------------------------------- */
+/* Quieter accent for the bonus superscript and the bonus-points note: a muted sky blue that reads on
+   the near-black panels (the championship page uses navy on its light page). */
+body.rc-league-page { --rcl-bonus: #7fa8d4; }
+.rcl-board .rcl-standings-class-header { margin-bottom: 10px; }
+/* Wide boards (many rounds) scroll sideways inside the panel instead of widening the page. */
+.rcl-board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.rcl-board-table { width: 100%; }
+/* Placed after .rcl-standings-row so this grid replaces its 40px/1fr/auto columns. */
+.rcl-board-row {
+  display: grid;
+  grid-template-columns: var(--rcl-board-cols);
+  align-items: center;
+  column-gap: 6px;
+}
+.rcl-board-head {
+  /* Same 6px sides as the rows (.rcl-standings-row) so every header sits over its column. */
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--rcl-line-bright);
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rcl-ink-faint);
+}
+/* The rank badges bleed 6px into the row's left padding (.rcl-standings-pos); the "Pos" label does
+   the same so it stays centered over them. */
+.rcl-board-head > div:first-child { text-align: center; margin-left: -6px; }
+.rcl-board-round-head { display: flex; justify-content: center; align-items: center; }
+/* "Drivers" / "Teams" label left-aligned over the names, not over the maker logos: skip the 50px
+   logo slot (.rcl-standings-mfr-logo-slot) plus the 8px gap after it (.rcl-standings-identity). */
+.rcl-board-name-head { text-align: left; padding-left: 58px; }
+.rcl-board-total-head { text-align: right; }
+.rcl-board-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; border: 1px solid var(--rcl-line-bright); display: block; }
+.rcl-board-round {
+  text-align: center;
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rcl-ink);
+  font-variant-numeric: tabular-nums;
+}
+.rcl-board-bonus { font-size: 9px; font-weight: 800; color: var(--rcl-bonus); margin-left: 1px; vertical-align: super; line-height: 0; }
+/* The drop-week round: still shown, greyed and struck through. */
+.rcl-board-dropped { color: var(--rcl-ink-faint); text-decoration: line-through; }
+.rcl-board-dropped .rcl-board-bonus { color: var(--rcl-ink-faint); }
+/* Rows never wrap: the name column shrinks and cuts off with "..." first. */
+.rcl-board .rcl-standings-identity { min-width: 0; }
+.rcl-board .rcl-standings-name { min-width: 0; }
+/* Footer under each board: status line, bonus points note, phone-only "view on PC" line. */
+.rcl-board-footer .rcl-standings-status-note { margin: 0; }
+.rcl-board-footer .rcl-standings-status-note + .rcl-standings-status-note { margin-top: 4px; }
+.rcl-board-bonus-note { color: var(--rcl-bonus); }
+
+/* Metal Drivers / Teams switch in a class panel's header (not shown for Hypercar). */
+.rcl-switch-slot { display: flex; align-items: center; }
+.rcl-metal-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  width: 176px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 9px;
+  /* Light brushed silver, lighter than the class header bar under it (.rcl-standings-class-header)
+     so the switch doesn't pull the eye away from the board. */
+  border: 1px solid #aeb4ba;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px),
+    linear-gradient(180deg, #f6f7f8 0%, #e9ecee 48%, #e1e4e7 52%, #f1f3f4 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+.rcl-metal-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 6px;
+  border: 1px solid #b4bbc2;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.03) 1px 2px),
+    linear-gradient(180deg, #ffffff 0%, #eef0f2 45%, #dfe3e7 55%, #f8f9fa 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: transform 0.22s ease;
+}
+.rcl-metal-switch-teams .rcl-metal-knob { transform: translateX(100%); }
+.rcl-metal-label {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c6670;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: color 0.22s ease;
+}
+.rcl-metal-switch:not(.rcl-metal-switch-teams) .rcl-metal-label-drivers,
+.rcl-metal-switch-teams .rcl-metal-label-teams { color: #1c1e22; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
+.rcl-metal-switch:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .rcl-metal-knob, .rcl-metal-label { transition: none; }
+}
+
+@media (max-width: 640px) {
+  /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
+     board, so !important is needed to replace it. */
+  .rcl-board-table { --rcl-board-cols: 44px minmax(0, 1fr) 58px !important; min-width: 0 !important; }
+  .rcl-board-round-head,
+  .rcl-board-round { display: none; }
+  .rcl-board-footer .rcl-standings-status-mobile-note { display: block; }
+  .rcl-panel-head:has(.rcl-switch-slot) { flex-wrap: wrap; }
+}

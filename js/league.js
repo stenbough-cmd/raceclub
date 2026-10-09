@@ -719,16 +719,201 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
   return columns;
 }
 
-function _rclRenderStandings(hub) {
-  var body = document.getElementById('rcl-standings-body');
-  if (!body) return;
-  body.innerHTML = '';
+// ---------------------------------------------------------------------
+// CHAMPIONSHIP STANDINGS BOARDS (one full-width panel per class)
+// ---------------------------------------------------------------------
+// Layout/behaviour copied from the single-player championship page's boards, in this page's dark
+// colours. Per class: a silver header bar, then Pos | DRIVERS or TEAMS | one 46px column per
+// calendar round (track flag header; points scored with the round's bonus as a small superscript) |
+// PTS. Every class except Hypercar has a brushed-metal Drivers/Teams switch in the panel header
+// (each class remembers its own setting while the page is open); Hypercar shows the drivers'
+// championship only. In the league every car has one driver, and each car number is its own entry
+// on the Teams board (cars of the same team are NOT combined).
+var RCL_BOARD_CLASS_ORDER_ = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
+var rclBoardView_ = {};   // className -> 'drivers' | 'teams'
 
-  // "Championship Standings" -> "FINAL CHAMPIONSHIP STANDINGS" once the season showing has ended --
-  // hub.standings itself is unchanged either way (it's always that season's current/ final points
-  // table), just the label.
-  var titleEl = document.getElementById('rcl-standings-title');
-  if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
+function _rclBoardSortClasses_(names) {
+  return names.slice().sort(function (a, b) {
+    var ai = RCL_BOARD_CLASS_ORDER_.indexOf(a), bi = RCL_BOARD_CLASS_ORDER_.indexOf(b);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
+
+function _rclBoardMetalSwitch_(view, onChange) {
+  var sw = _rclEl('button', 'rcl-metal-switch' + (view === 'teams' ? ' rcl-metal-switch-teams' : ''));
+  sw.type = 'button';
+  sw.setAttribute('role', 'switch');
+  sw.setAttribute('aria-checked', view === 'teams' ? 'true' : 'false');
+  sw.setAttribute('aria-label', 'Show team standings');
+  sw.appendChild(_rclEl('span', 'rcl-metal-knob'));
+  sw.appendChild(_rclEl('span', 'rcl-metal-label rcl-metal-label-drivers', 'Drivers'));
+  sw.appendChild(_rclEl('span', 'rcl-metal-label rcl-metal-label-teams', 'Teams'));
+  sw.addEventListener('click', function () { onChange(view === 'teams' ? 'drivers' : 'teams'); });
+  return sw;
+}
+
+// Manufacturer logo slot ALWAYS stays (empty space when there is no logo, or it fails to load) so
+// every name in a table lines up under the column label. Drivers board: driver name (a link to
+// their public profile) + #number, no team name. Teams board: team name + #number.
+function _rclBoardIdentity_(row, kind) {
+  var identity = _rclEl('div', 'rcl-standings-identity');
+  var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
+  if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
+    var img = document.createElement('img');
+    img.className = 'rcl-standings-mfr-logo';
+    img.alt = '';
+    img.src = manufacturerLogoSrc(row.manufacturer, 'white');
+    manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
+    slot.appendChild(img);
+  }
+  identity.appendChild(slot);
+  var nameRow = _rclEl('div', 'rcl-standings-name-row');
+  if (kind === 'teams') {
+    var teamName = document.createElement('span');
+    teamName.className = 'rcl-standings-name';
+    teamName.textContent = row.teamName || '';
+    nameRow.appendChild(teamName);
+  } else {
+    nameRow.appendChild(_rclBuildDriverNameEl_('rcl-standings-name', row.name, row.profileId));
+  }
+  if (row.carNumber) nameRow.appendChild(_rclEl('span', 'rcl-standings-carnum', '#' + _rclEscapeHtml(row.carNumber)));
+  identity.appendChild(nameRow);
+  // Hover shows the full name and number when the name is cut off with "...".
+  identity.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
+  return identity;
+}
+
+// "+1 Bonus points for Pole Position, Fastest Lap, Most Laps Led" when every bonus is worth the same,
+// "+1 Bonus points for Pole Position, Most Laps Led and +2 bonus points for Fastest Lap" when they
+// differ (grouped by value, in this order). Null when the season has no bonus points.
+function _rclBoardBonusNote_(hub) {
+  var b = hub.bonusPoints || {};
+  var groups = [];
+  [['pole', 'Pole Position'], ['fastestLap', 'Fastest Lap'], ['mostLapsLed', 'Most Laps Led']].forEach(function (pair) {
+    var n = Number(b[pair[0]]) || 0;
+    if (n <= 0) return;
+    var g = groups.filter(function (x) { return x.n === n; })[0];
+    if (!g) { g = { n: n, names: [] }; groups.push(g); }
+    g.names.push(pair[1]);
+  });
+  if (!groups.length) return null;
+  return groups.map(function (g, i) {
+    return '+' + g.n + (i === 0 ? ' Bonus' : ' bonus') + ' points for ' + g.names.join(', ');
+  }).join(' and ');
+}
+
+// Footer under each board: the PRELIMINARY / OFFICIAL RESULTS line (no asterisk), the bonus points
+// note, and the phone-only "view on PC" line (hidden on desktop and tablet).
+function _rclBoardFooter_(board, hub) {
+  var foot = _rclEl('div', 'rcl-results-bottom-row rcl-results-status-footer rcl-board-footer');
+  var status = hub.lastRace ? _rclBuildResultsStatusNotice_(hub.lastRace, hub.seasonEnded, hub.seasonNumber) : null;
+  if (status) {
+    status.textContent = status.textContent.replace(/^\*+/, '');
+    foot.appendChild(status);
+  }
+  var bonus = _rclBoardBonusNote_(hub);
+  if (bonus) foot.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-board-bonus-note', _rclEscapeHtml(bonus)));
+  foot.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', 'FOR FULL RESULTS, VIEW ON PC BROWSER'));
+  board.appendChild(foot);
+}
+
+function _rclBuildStandingsBoard_(hub, cls, className, kind) {
+  var board = _rclEl('div', 'rcl-standings-class rcl-board');
+  var head = _rclEl('div', 'rcl-standings-class-header');
+  if (className === 'Hypercar') {
+    head.textContent = 'RACE CLUB HYPERCAR WORLD ENDURANCE DRIVERS CHAMPIONSHIP';
+  } else {
+    head.textContent = 'RACE CLUB ENDURANCE TROPHY';
+    head.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FOR ' + _rclEscapeHtml(className.toUpperCase()) + (kind === 'teams' ? ' TEAMS' : ' DRIVERS')));
+  }
+  board.appendChild(head);
+
+  // One column per race on the calendar (raced or not), in calendar order. Byes and special events
+  // have no points round of their own, so they get no column.
+  var rounds = (hub.calendar || []).filter(function (e) { return e.kind === 'round'; })
+    .sort(function (a, b) { return (a.roundNum || 0) - (b.roundNum || 0); });
+  var scoredIdx = {};
+  (cls.scoredRoundIds || []).forEach(function (id, i) { scoredIdx[id] = i; });
+
+  // The name column shrinks first (names cut off with "..." down to 140px); only past that does the
+  // board scroll sideways, inside the panel. min-width = the fixed columns + 140 + the 6px gaps
+  // between columns + the rows' 6px side padding.
+  var n = rounds.length;
+  var scroller = _rclEl('div', 'rcl-board-scroll');
+  var table = _rclEl('div', 'rcl-board-table');
+  table.style.setProperty('--rcl-board-cols', '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.minWidth = (44 + 140 + 46 * n + 58 + 6 * (n + 2) + 12) + 'px';
+
+  var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
+  hr.appendChild(_rclEl('div', null, 'Pos'));
+  hr.appendChild(_rclEl('div', 'rcl-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
+  rounds.forEach(function (r) {
+    var cell = _rclEl('div', 'rcl-board-round-head');
+    cell.title = 'Round ' + r.roundNum + (r.track ? ' · ' + r.track : '');
+    var flagSrc = (r.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(r.country) : '';
+    if (flagSrc) {
+      var f = document.createElement('img');
+      f.className = 'rcl-board-flag';
+      f.src = flagSrc;
+      f.alt = '';
+      f.onerror = function () { f.style.display = 'none'; cell.appendChild(_rclEl('span', null, 'R' + r.roundNum)); };
+      cell.appendChild(f);
+    } else {
+      cell.appendChild(_rclEl('span', null, 'R' + r.roundNum));
+    }
+    hr.appendChild(cell);
+  });
+  hr.appendChild(_rclEl('div', 'rcl-board-total-head', 'Pts'));
+  table.appendChild(hr);
+
+  var rows = cls.standings || [];
+  scroller.appendChild(table);
+  board.appendChild(scroller);
+  if (!rows.length) {
+    board.appendChild(_rclEmptyState('No Data To Display', 'No entries in this class.'));
+    _rclBoardFooter_(board, hub);
+    return board;
+  }
+  rows.forEach(function (row, idx) {
+    var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+    rowEl.appendChild(_rclBuildPosBadge_(idx));
+    rowEl.appendChild(_rclBoardIdentity_(row, kind));
+    rounds.forEach(function (r) {
+      var cell = _rclEl('div', 'rcl-board-round');
+      var i = scoredIdx[r.roundId];
+      // Blank for a round not raced yet; 0 for a raced round where this entry scored nothing.
+      if (i !== undefined) {
+        var total = Number((row.perRound || [])[i]) || 0;
+        var bonus = Number((row.perRoundBonus || [])[i]) || 0;
+        cell.appendChild(document.createTextNode(String(total - bonus)));
+        if (bonus) cell.appendChild(_rclEl('sup', 'rcl-board-bonus', String(bonus)));
+        // The drop-week round: still shown, greyed and struck through, so the total makes sense.
+        if ((row.perRoundDropped || [])[i]) {
+          cell.classList.add('rcl-board-dropped');
+          cell.title = 'Dropped round (not counted in the total)';
+        }
+      }
+      rowEl.appendChild(cell);
+    });
+    var pts = _rclEl('div', 'rcl-standings-pts');
+    pts.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
+    rowEl.appendChild(pts);
+    table.appendChild(rowEl);
+  });
+  _rclBoardFooter_(board, hub);
+  return board;
+}
+
+function _rclRenderStandings(hub) {
+  var emptyRow = document.getElementById('rcl-standings-empty-row');
+  var body = document.getElementById('rcl-standings-body');
+  var host = document.getElementById('rcl-standings-panels');
+  if (!body || !host) return;
+  body.innerHTML = '';
+  host.innerHTML = '';
 
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
   // Before any race has actually been run, there's nothing to rank yet -- same hasResults gate the
@@ -736,22 +921,50 @@ function _rclRenderStandings(hub) {
   var hasResults = (hub.roundsCompleted || 0) > 0;
 
   if (!hasStandings || !hasResults) {
-    var emptyMsg = !hasStandings
+    // One plain panel with the usual empty state; the per-class panels below only exist once a race
+    // has been scored.
+    if (emptyRow) emptyRow.style.display = '';
+    var titleEl = document.getElementById('rcl-standings-title');
+    if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
+    body.appendChild(_rclEmptyState('No Data To Display', !hasStandings
       ? 'Standings fill in once a season is underway.'
-      : 'Standings fill in once a race has been scored.';
-    body.appendChild(_rclEmptyState('No Data To Display', emptyMsg));
-  } else {
-    // Standings status note MOVED -- the old top-of-panel "Preliminary Results Pending League
-    // Review"/ "Official Results" note is gone; the same idea now shows at the BOTTOM of this panel
-    // instead, as "*PRELIMINARY RESULTS (date)"/"*OFFICIAL RESULTS (date)".
-    body.appendChild(_rclBuildStandingsColumns_(hub.standings, true));
+      : 'Standings fill in once a race has been scored.'));
+    return;
   }
+  if (emptyRow) emptyRow.style.display = 'none';
 
-  // Wrapped as a bordered footer.
-  if (hasResults && hub.lastRace) {
-    _rclAppendResultsStatusFooter_(body, hub.lastRace, hub.seasonEnded, hub.seasonNumber);
-  }
-
+  var byName = {};
+  hub.standings.forEach(function (c) { byName[c.className] = c; });
+  _rclBoardSortClasses_(Object.keys(byName)).forEach(function (className) {
+    var cls = byName[className];
+    var row = _rclEl('div', 'rcl-row-full');
+    var panel = _rclEl('section', 'rcl-panel');
+    var headEl = _rclEl('div', 'rcl-panel-head');
+    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + (hub.seasonEnded ? ' Final Championship Standings' : ' Championship Standings')));
+    var bodyEl = _rclEl('div', 'rcl-panel-body');
+    var switchSlot = _rclEl('div', 'rcl-switch-slot');
+    headEl.appendChild(switchSlot);
+    var hasTeams = className !== 'Hypercar' && (cls.standings || []).length > 0;
+    function draw() {
+      var view = hasTeams ? (rclBoardView_[className] || 'drivers') : 'drivers';
+      switchSlot.innerHTML = '';
+      if (hasTeams) {
+        switchSlot.appendChild(_rclBoardMetalSwitch_(view, function (next) {
+          rclBoardView_[className] = next;
+          draw();
+          var again = switchSlot.querySelector('.rcl-metal-switch');
+          if (again) again.focus();
+        }));
+      }
+      bodyEl.innerHTML = '';
+      bodyEl.appendChild(_rclBuildStandingsBoard_(hub, cls, className, view));
+    }
+    draw();
+    panel.appendChild(headEl);
+    panel.appendChild(bodyEl);
+    row.appendChild(panel);
+    host.appendChild(row);
+  });
 }
 
 // ---------------------------------------------------------------------

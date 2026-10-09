@@ -93,8 +93,10 @@
      left/right edge of the page itself, not just the content column. -->
   <div class="rcl-row-full rcl-carousel-outer" id="rcl-race-carousel"></div>
 
-  <!-- LEADERBOARD -- full width again. -->
-  <div class="rcl-row-full">
+  <!-- CHAMPIONSHIP STANDINGS -- before any race has been scored this is the one plain panel below
+     (empty state); afterwards js/league.js hides it and draws one full-width panel per class into
+     #rcl-standings-panels instead. -->
+  <div class="rcl-row-full" id="rcl-standings-empty-row">
     <section class="rcl-panel">
       <div class="rcl-panel-head">
         <div class="rcl-panel-title" id="rcl-standings-title">Championship Standings</div>
@@ -102,6 +104,7 @@
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
   </div>
+  <div id="rcl-standings-panels"></div>
 
   <!-- Manufacturers' Standings -- top 3 Hypercar-class manufacturers by championship points, as a
      plain podium. Deliberately NOT a .rcl-panel -- no card border/background, just the title +
