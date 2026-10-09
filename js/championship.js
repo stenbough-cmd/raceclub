@@ -1158,7 +1158,7 @@ function _rccGap(row, ref) {
 
 // Race Details: what the results file says about the race (length, laps, failures, damage, fuel and
 // tyre use, your assists, any laps the AI drove your car) next to what was planned for the round.
-// Shown once, under the first class's bonus winners and above its results table.
+// Shown once, under the popup's dropdowns and above the first class header.
 function _rccRaceDetails(details) {
   if (!details || (!(details.fromFile || []).length && !(details.planned || []).length)) return null;
   var box = _rccEl('div', 'rcc-race-details');
@@ -1180,11 +1180,15 @@ function _rccRaceDetails(details) {
 function _rccRaceBody(result, el) {
   el.innerHTML = '';
   if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race result imported for this round.')); return; }
+  // Race details sit right under the popup's dropdowns, above the first class header (Matt).
+  var det = _rccRaceDetails(result.raceDetails);
+  if (det) el.appendChild(det);
+  var playerName = '';
+  result.classes.forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (r.isPlayer) playerName = r.name; }); });
   result.classes.forEach(function (cls, ci) {
     var w = _rccEl('div', 'rcl-race-class');
-    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' STANDINGS'));
+    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' RESULTS'));
     w.appendChild(_rccCategoryBreakdown(cls));
-    if (ci === 0) { var det = _rccRaceDetails(result.raceDetails); if (det) w.appendChild(det); }
     var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
     ['Pos', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
     w.appendChild(head);
@@ -1227,7 +1231,8 @@ function _rccRaceBody(result, el) {
           // Race time from the green flag (the report stores session time, which includes the
           // formation lap and the start).
           if (en.et !== null && en.et !== undefined) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(en.et - (result.greenFlagEt || 0))));
-          line.appendChild(_rccText('span', 'rcl-report-name', en.name));
+          // Every name in normal weight except yours (Matt).
+          line.appendChild(_rccText('span', 'rcl-report-name' + (playerName && en.name === playerName ? ' rcc-report-me' : ''), en.name));
           var all = en.positionClause ? en.clauses.concat([en.positionClause]) : en.clauses;
           all.forEach(function (c, i) {
             line.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));

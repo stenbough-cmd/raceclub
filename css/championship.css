@@ -61,7 +61,8 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
 .rcc-page .rcl-panel-title,
 .rcc-page .rcl-hero-title { text-shadow: none; }
-.rcc-page .rcl-report-name { color: var(--rc-carbon); }
+.rcc-page .rcl-report-name { color: var(--rc-carbon); font-weight: 400; }
+.rcc-page .rcl-report-name.rcc-report-me { font-weight: 700; }
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
 /* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
 .rcc-page .rcl-hero::before { opacity: 0.16; }
@@ -539,7 +540,7 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-modal-dialog-allresults .rcl-race-category { flex: 0 1 200px; text-align: center; }
 .rcc-page .rcl-modal-dialog-allresults .rcl-race-category-title,
 .rcc-page .rcl-modal-dialog-allresults .rcl-race-category-row { justify-content: center; }
-.rcc-race-details { margin: 4px 0 22px; padding: 14px 16px; border: 1px solid var(--rc-silver); border-radius: 8px; background: var(--rc-offwhite); }
+.rcc-race-details { margin: 4px 0 22px; }
 .rcc-race-details .rcl-race-class-name { margin-bottom: 10px; }
 .rcc-race-details-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
 .rcc-race-details-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); margin-bottom: 6px; }
