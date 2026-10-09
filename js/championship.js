@@ -936,8 +936,8 @@ function _rccStandingsBoard(page, className, kind) {
   return board;
 }
 
-// "*+1 Bonus points for Pole Position, Fastest Lap" when every bonus is worth the same, or
-// "*+1 Bonus points for Pole Position and +2 bonus points for Most Laps Led" when they differ
+// "+1 Bonus points for Pole Position, Fastest Lap" when every bonus is worth the same, or
+// "+1 Bonus points for Pole Position and +2 bonus points for Most Laps Led" when they differ
 // (categories grouped by value, in the wizard's order). Null when the season has no bonus points.
 function _rccBonusNote(page) {
   var b = ((page && page.seasonDetails) || {}).bonusPoints || {};
@@ -950,7 +950,7 @@ function _rccBonusNote(page) {
     g.names.push(pair[1]);
   });
   if (!groups.length) return null;
-  return '*' + groups.map(function (g, i) {
+  return groups.map(function (g, i) {
     return '+' + g.n + (i === 0 ? ' Bonus' : ' bonus') + ' points for ' + g.names.join(', ');
   }).join(' and ');
 }
@@ -962,7 +962,7 @@ function _rccStandingsFooter(board, page) {
   var foot = _rccEl('div', 'rcl-results-bottom-row rcl-results-status-footer rcc-board-footer');
   var bonus = _rccBonusNote(page);
   if (bonus) foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note', bonus));
-  foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER'));
+  foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note rcl-standings-status-mobile-note', 'FOR FULL RESULTS, VIEW ON PC BROWSER'));
   board.appendChild(foot);
 }
 
