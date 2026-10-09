@@ -717,6 +717,8 @@ function rccRenderLastRace(page) {
   var body = document.getElementById('rcl-last-race');
   var titleEl = document.getElementById('rcl-last-race-title');
   body.innerHTML = '';
+  var oldBtn = document.getElementById('rcc-lr-recap-btn');
+  if (oldBtn) oldBtn.parentNode.removeChild(oldBtn);
   body.classList.remove('rcl-seasonfmt-modal-body');
   if (!page || !page.hasSeason) {
     titleEl.textContent = 'Welcome';
@@ -752,6 +754,16 @@ function rccRenderLastRace(page) {
   }
   titleEl.textContent = 'Last Race';
   var r = page.lastRace;
+  // RACE RECAP button at the right of the header: the Drivers / Teams switch's metal look, one side
+  // only (Matt). Opens the last race's recap.
+  if (r && r.roundId) {
+    var rb = _rccEl('button', 'rcc-metal-btn');
+    rb.id = 'rcc-lr-recap-btn';
+    rb.type = 'button';
+    rb.appendChild(_rccText('span', 'rcc-metal-btn-face', 'Race Recap'));
+    rb.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
+    titleEl.parentNode.appendChild(rb);
+  }
   (r.classes || []).forEach(function (cls) {
     var w = _rccEl('div', 'rcl-lr-class');
     var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
