@@ -778,6 +778,19 @@ function _rclBoardIdentity_(row, kind) {
     nameRow.appendChild(teamName);
   } else {
     nameRow.appendChild(_rclBuildDriverNameEl_('rcl-standings-name', row.name, row.profileId));
+    // Nationality flag right after the driver's name (drivers board only).
+    if (row.country && typeof countryFlagSrc === 'function') {
+      var flagSrc = countryFlagSrc(row.country);
+      if (flagSrc) {
+        var flagImg = document.createElement('img');
+        flagImg.className = 'rcl-standings-flag';
+        flagImg.src = flagSrc;
+        flagImg.alt = '';
+        flagImg.title = row.country;
+        flagImg.onerror = function () { flagImg.style.display = 'none'; };
+        nameRow.appendChild(flagImg);
+      }
+    }
   }
   if (row.carNumber) nameRow.appendChild(_rclEl('span', 'rcl-standings-carnum', '#' + _rclEscapeHtml(row.carNumber)));
   identity.appendChild(nameRow);
@@ -824,7 +837,8 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   var board = _rclEl('div', 'rcl-standings-class rcl-board');
   var head = _rclEl('div', 'rcl-standings-class-header');
   if (className === 'Hypercar') {
-    head.textContent = 'RACE CLUB HYPERCAR WORLD ENDURANCE DRIVERS CHAMPIONSHIP';
+    head.textContent = 'RACE CLUB WORLD ENDURANCE CHAMPIONSHIP';
+    head.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FOR HYPERCAR DRIVERS'));
   } else {
     head.textContent = 'RACE CLUB ENDURANCE TROPHY';
     head.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FOR ' + _rclEscapeHtml(className.toUpperCase()) + (kind === 'teams' ? ' TEAMS' : ' DRIVERS')));
@@ -940,7 +954,7 @@ function _rclRenderStandings(hub) {
     var row = _rclEl('div', 'rcl-row-full');
     var panel = _rclEl('section', 'rcl-panel');
     var headEl = _rclEl('div', 'rcl-panel-head');
-    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + (hub.seasonEnded ? ' Final Championship Standings' : ' Championship Standings')));
+    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + (hub.seasonEnded ? ' Final Standings' : ' Standings')));
     var bodyEl = _rclEl('div', 'rcl-panel-body');
     var switchSlot = _rclEl('div', 'rcl-switch-slot');
     headEl.appendChild(switchSlot);
@@ -1424,6 +1438,16 @@ function _rclRenderManufacturerStandings(hub) {
     rest.forEach(function (entry, i) {
       var row = _rclEl('div', 'rcl-mfr-rest-item');
       row.appendChild(_rclEl('span', 'rcl-mfr-rest-rank', String(i + 4) + '.'));
+      // Small logo (wider than tall, so short wide logos show in full); the slot stays even when a
+      // logo is missing so every name lines up.
+      var logoSlot = _rclEl('span', 'rcl-mfr-rest-logo-slot');
+      var restImg = document.createElement('img');
+      restImg.className = 'rcl-mfr-rest-logo';
+      restImg.alt = '';
+      restImg.src = manufacturerLogoSrc(entry.manufacturer, 'white');
+      manufacturerLogoFallback(restImg, entry.manufacturer, function () { restImg.style.display = 'none'; });
+      logoSlot.appendChild(restImg);
+      row.appendChild(logoSlot);
       row.appendChild(_rclEl('span', 'rcl-mfr-rest-name', _rclEscapeHtml(entry.manufacturer.toUpperCase())));
       row.appendChild(_rclEl('span', 'rcl-mfr-rest-pts', Math.round(entry.points) + ' PTS'));
       restList.appendChild(row);
