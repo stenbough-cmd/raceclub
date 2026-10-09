@@ -824,28 +824,28 @@ function _rccStandingsColumns(classes, kind) {
     head.appendChild(_rccText('div', null, kind === 'teams' ? 'Team' : 'Driver'));
     head.appendChild(_rccText('div', null, 'Pts'));
     wrap.appendChild(head);
-    // Drivers: crew-mates of the same car with equal points share one line ("Name, Name, Name").
+    // Drivers: one row per driver, but crew-mates of the same car with equal points share a rank
+    // (WEC style: P1, P1, P1, P2, P2, P3...). Teams: one row per car, ranked 1, 2, 3...
     var lines = [];
-    if (kind === 'teams') {
-      lines = (cls.standings || []).map(function (row) { return { row: row, names: null }; });
-    } else {
-      var byKey = {};
-      (cls.standings || []).forEach(function (row) {
-        var key = row.isPlayer ? null : String(row.teamName) + '|' + String(row.carNumber) + '|' + String(row.championshipPoints);
-        if (key && byKey[key]) { byKey[key].names.push(row.name); return; }
-        var line = { row: row, names: [row.name] };
-        if (key) byKey[key] = line;
-        lines.push(line);
-      });
-    }
-    lines.forEach(function (line, idx) {
+    var rank = 0;
+    var rankByKey = {};
+    (cls.standings || []).forEach(function (row) {
+      if (kind === 'teams') { lines.push({ row: row, rank: ++rank }); return; }
+      var key = row.isPlayer ? null : String(row.teamName) + '|' + String(row.carNumber) + '|' + String(row.championshipPoints);
+      if (key && rankByKey[key]) { lines.push({ row: row, rank: rankByKey[key] }); return; }
+      rank++;
+      if (key) rankByKey[key] = rank;
+      lines.push({ row: row, rank: rank });
+    });
+    lines.forEach(function (line) {
       var row = line.row;
+      var idx = line.rank - 1;
       var rowEl = _rccEl('div', 'rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
       rowEl.appendChild(_rccPosBadge(idx));
       if (kind === 'teams') {
         rowEl.appendChild(_rccIdentity(row, { nameOverride: row.teamName, sub: (row.crew || []).join(', ') }));
       } else {
-        rowEl.appendChild(_rccIdentity(row, { nameOverride: line.names.join(', '), wrap: line.names.length > 1 }));
+        rowEl.appendChild(_rccIdentity(row));
       }
       var pts = _rccEl('div', 'rcl-standings-pts');
       pts.appendChild(_rccText('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
