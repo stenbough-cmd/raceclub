@@ -330,10 +330,9 @@ function rccRenderHero(page) {
   var metaEl = document.getElementById('rcc-hero-meta');
   seasonEl.innerHTML = '';
   metaEl.innerHTML = '';
-  if (!page || !page.hasSeason) {
-    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', (page && page.owner ? page.owner.displayName + "'s " : '') + 'Offline Career'));
-    return;
-  }
+  // No season yet: the hero shows just RACE CLUB / CHAMPIONSHIP (no season line).
+  seasonEl.style.display = (page && page.hasSeason) ? '' : 'none';
+  if (!page || !page.hasSeason) return;
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
