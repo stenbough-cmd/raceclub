@@ -296,13 +296,12 @@ function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
 
 // Flat (non-emoji) country flag image -- flagcdn.com, keyed by the lowercase ISO 3166-1 alpha-2
 // code looked up from COUNTRY_CODES.
-// Points at flagcdn.com. flagcdn.com is a free, no-signup, no-API-key public CDN built exactly for
-// hot-linking flat SVG flags by ISO code -- every country in COUNTRY_CODES already has an entry
-// there, so this needs no assets of Race Club's own and no further setup.
+// Self-hosted: assets/flags/<iso code>.svg (country-flag-icons, MIT licence; one file for every
+// country in COUNTRY_CODES). Was hot-linked from flagcdn.com until flags stopped loading from there.
 function countryFlagSrc(countryName) {
   var code = COUNTRY_CODES[countryName || ''] || '';
   if (!code) return '';
-  return 'https://flagcdn.com/' + code.toLowerCase() + '.svg';
+  return 'assets/flags/' + code.toLowerCase() + '.svg';
 }
 
 // manufacturerAvatarSrc() REMOVED -- same slugging convention as manufacturerLogoSrc() above,

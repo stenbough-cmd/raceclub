@@ -2291,3 +2291,10 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-report-name,
 .rcl-memberlist-name,
 .rcl-driver-link-inner { text-transform: uppercase; }
+
+/* Class standings boards: names, car numbers, team names and round points in normal weight (not bold). */
+.rcl-board .rcl-standings-name,
+.rcl-board .rcl-standings-carnum,
+.rcl-board .rcl-standings-team,
+.rcl-board .rcl-board-round,
+.rcl-board .rcl-board-bonus { font-weight: 400; }
