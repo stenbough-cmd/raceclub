@@ -932,7 +932,38 @@ function _rccStandingsBoard(page, className, kind) {
   });
   scroller.appendChild(table);
   board.appendChild(scroller);
+  _rccStandingsFooter(board, page);
   return board;
+}
+
+// "*+1 Bonus points for Pole Position, Fastest Lap" when every bonus is worth the same, or
+// "*+1 Bonus points for Pole Position and +2 bonus points for Most Laps Led" when they differ
+// (categories grouped by value, in the wizard's order). Null when the season has no bonus points.
+function _rccBonusNote(page) {
+  var b = ((page && page.seasonDetails) || {}).bonusPoints || {};
+  var groups = [];
+  [['pole', 'Pole Position'], ['fastestLap', 'Fastest Lap'], ['mostLapsLed', 'Most Laps Led']].forEach(function (pair) {
+    var n = Number(b[pair[0]]) || 0;
+    if (n <= 0) return;
+    var g = groups.filter(function (x) { return x.n === n; })[0];
+    if (!g) { g = { n: n, names: [] }; groups.push(g); }
+    g.names.push(pair[1]);
+  });
+  if (!groups.length) return null;
+  return '*' + groups.map(function (g, i) {
+    return '+' + g.n + (i === 0 ? ' Bonus' : ' bonus') + ' points for ' + g.names.join(', ');
+  }).join(' and ');
+}
+
+// Footer under every standings board (where the old PRELIMINARY / OFFICIAL line sat): the bonus
+// points note, plus the phone-only "view on PC" note (same wording as the League Hub) since phones
+// only get Pos, Drivers/Teams and Pts.
+function _rccStandingsFooter(board, page) {
+  var foot = _rccEl('div', 'rcl-results-bottom-row rcl-results-status-footer rcc-board-footer');
+  var bonus = _rccBonusNote(page);
+  if (bonus) foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note', bonus));
+  foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER'));
+  board.appendChild(foot);
 }
 
 function rccRenderStandings(page) {

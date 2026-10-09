@@ -210,6 +210,10 @@ body.rc-league-page.rcc-page {
   font-variant-numeric: tabular-nums;
 }
 .rcc-board-bonus { font-size: 9px; font-weight: 800; color: var(--rcc-navy); margin-left: 1px; vertical-align: super; line-height: 0; }
+/* Footer under each board: bonus points note (and the phone-only "view on PC" note), in the
+   page's navy instead of the League Hub's gold. */
+.rcc-board-note { color: var(--rcc-navy); }
+.rcc-board-footer .rcc-board-note + .rcc-board-note { margin-top: 4px; }
 
 /* Metal Drivers / Teams switch in a class panel's header (not shown for Hypercar). */
 .rcc-switch-slot { display: flex; align-items: center; }
@@ -222,11 +226,13 @@ body.rc-league-page.rcc-page {
   height: 34px;
   padding: 3px;
   border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--rc-steel) 70%, var(--rc-carbon));
+  /* Light brushed silver, lighter than the class header bar under it (.rcl-standings-class-header)
+     so the switch doesn't pull the eye away from the board (Matt). */
+  border: 1px solid color-mix(in srgb, var(--rc-steel) 35%, var(--rc-silver));
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, rgba(0, 0, 0, 0.04) 1px 3px),
-    linear-gradient(180deg, #9aa3ab 0%, #6f7881 48%, #5d666f 52%, #87909a 100%);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 -1px 0 rgba(255, 255, 255, 0.25), 0 1px 0 rgba(255, 255, 255, 0.6);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px),
+    linear-gradient(180deg, #f6f7f8 0%, #e9ecee 48%, #e1e4e7 52%, #f1f3f4 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(255, 255, 255, 0.8);
   cursor: pointer;
 }
 .rcc-metal-knob {
@@ -236,11 +242,11 @@ body.rc-league-page.rcc-page {
   width: calc(50% - 3px);
   height: calc(100% - 6px);
   border-radius: 6px;
-  border: 1px solid #8d969f;
+  border: 1px solid #b4bbc2;
   background:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.03) 1px 2px),
-    linear-gradient(180deg, #fbfcfd 0%, #dfe3e7 45%, #c4cad0 55%, #eef0f2 100%);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    linear-gradient(180deg, #ffffff 0%, #eef0f2 45%, #dfe3e7 55%, #f8f9fa 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transition: transform 0.22s ease;
 }
 .rcc-metal-switch-teams .rcc-metal-knob { transform: translateX(100%); }
@@ -253,8 +259,8 @@ body.rc-league-page.rcc-page {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  color: var(--rc-steel);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: color 0.22s ease;
 }
 .rcc-metal-switch:not(.rcc-metal-switch-teams) .rcc-metal-label-drivers,
@@ -445,4 +451,10 @@ body.rc-league-page.rcc-page {
   .rcc-points-row { grid-template-columns: 1fr; }
   .rcc-points-boxes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .rcc-bonus-row { grid-template-columns: 1fr; }
+  /* Standings on a phone: Pos, Drivers/Teams and Pts only (no round columns), like the League Hub.
+     The column list is set inline per board, so !important is needed to replace it here. */
+  .rcc-board-table { --rcc-board-cols: 44px minmax(0, 1fr) 58px !important; min-width: 0; }
+  .rcc-board-round-head,
+  .rcc-board-round { display: none; }
+  .rcc-board-footer .rcl-standings-status-mobile-note { display: block; }
 }
