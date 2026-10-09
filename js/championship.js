@@ -1213,6 +1213,12 @@ function _rccRaceBody(result, el) {
     el.appendChild(w);
   });
 
+  // Driver Report (js/championship-report.js), above the Race Report (Matt).
+  if (typeof _rccDriverReport === 'function' && result.driverReport) {
+    var drEl = _rccDriverReport(result.driverReport);
+    if (drEl) el.appendChild(drEl);
+  }
+
   var report = result.raceReport || [];
   if (report.length) {
     var sec = _rccEl('div', 'rcl-report-section');
