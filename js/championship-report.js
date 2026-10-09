@@ -229,13 +229,13 @@ var RCR_CARS = {
   gt: {
     body: 'M58 26 Q80 18 102 26 Q128 32 134 52 L138 108 Q139 120 132 130 L132 190 Q139 200 138 212 L136 258 Q134 274 116 278 L44 278 Q26 274 24 258 L22 212 Q21 200 28 190 L28 130 Q21 120 22 108 L26 52 Q32 32 58 26 Z',
     glass: [
-      { d: 'M52 112 Q80 100 108 112 L104 134 Q80 128 56 134 Z', cls: 'rcr-car-glass' },
-      { d: 'M56 136 Q80 130 104 136 L104 180 Q80 184 56 180 Z', cls: 'rcr-car-roof' },
-      { d: 'M56 182 Q80 186 104 182 L100 202 Q80 206 60 202 Z', cls: 'rcr-car-glass' }
+      { d: 'M40 110 Q80 96 120 110 L116 134 Q80 127 44 134 Z', cls: 'rcr-car-glass' },
+      { d: 'M44 136 Q80 129 116 136 L116 180 Q80 185 44 180 Z', cls: 'rcr-car-roof' },
+      { d: 'M44 182 Q80 187 116 182 L110 204 Q80 209 50 204 Z', cls: 'rcr-car-glass' }
     ],
     lines: ['M60 40 Q80 34 100 40', 'M64 60 L64 98', 'M96 60 L96 98', 'M46 222 L114 222'],
     extras: [
-      { tag: 'rect', a: { x: 34, y: 118, width: 14, height: 6, rx: 3 } }, { tag: 'rect', a: { x: 112, y: 118, width: 14, height: 6, rx: 3 } },
+      { tag: 'rect', a: { x: 16, y: 118, width: 14, height: 6, rx: 3 } }, { tag: 'rect', a: { x: 130, y: 118, width: 14, height: 6, rx: 3 } },
       { tag: 'rect', a: { x: 28, y: 262, width: 104, height: 12, rx: 3 }, cls: 'rcr-car-wing' },
       { tag: 'rect', a: { x: 58, y: 250, width: 4, height: 14 }, cls: 'rcr-car-wing' }, { tag: 'rect', a: { x: 98, y: 250, width: 4, height: 14 }, cls: 'rcr-car-wing' }
     ],
@@ -244,11 +244,11 @@ var RCR_CARS = {
   // LMP2 / LMP3: a narrow tub and bubble canopy between pronounced wheel pods, a shark fin and a
   // full-width rear wing.
   prototype: {
-    body: 'M64 16 Q80 10 96 16 L104 44 Q130 44 136 64 L138 116 Q137 126 128 134 L126 184 Q136 190 138 204 L138 258 Q136 274 120 278 L40 278 Q24 274 22 258 L22 204 Q24 190 34 184 L32 134 Q23 126 22 116 L24 64 Q30 44 56 44 Z',
+    body: 'M48 36 Q80 26 112 36 Q132 42 136 64 L138 116 Q137 126 128 134 L126 184 Q136 190 138 204 L138 258 Q136 274 120 278 L40 278 Q24 274 22 258 L22 204 Q24 190 34 184 L32 134 Q23 126 22 116 L24 64 Q28 42 48 36 Z',
     glass: [
       { d: 'M68 92 Q80 78 92 92 L94 150 Q80 160 66 150 Z', cls: 'rcr-car-glass' }
     ],
-    lines: ['M80 160 L80 262', 'M62 22 Q80 16 98 22', 'M50 138 L50 182', 'M110 138 L110 182'],
+    lines: ['M80 160 L80 262', 'M56 42 Q80 34 104 42', 'M50 138 L50 182', 'M110 138 L110 182'],
     extras: [
       { tag: 'rect', a: { x: 20, y: 264, width: 120, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
@@ -257,11 +257,11 @@ var RCR_CARS = {
   // Hypercar (LMH / LMDh): bigger and wider, with a long sculpted nose, tall front fenders, a
   // central canopy, wide rear haunches, a shark fin and a full-width wing.
   hypercar: {
-    body: 'M70 8 Q80 4 90 8 L100 40 Q134 40 142 64 L144 120 Q143 132 134 140 L132 182 Q142 188 144 202 L146 262 Q144 280 124 284 L36 284 Q16 280 14 262 L16 202 Q18 188 28 182 L26 140 Q17 132 16 120 L18 64 Q26 40 60 40 Z',
+    body: 'M46 30 Q80 20 114 30 Q138 38 142 64 L144 120 Q143 132 134 140 L132 182 Q142 188 144 202 L146 262 Q144 280 124 284 L36 284 Q16 280 14 262 L16 202 Q18 188 28 182 L26 140 Q17 132 16 120 L18 64 Q22 38 46 30 Z',
     glass: [
       { d: 'M66 90 Q80 74 94 90 L96 152 Q80 164 64 152 Z', cls: 'rcr-car-glass' }
     ],
-    lines: ['M80 164 L80 268', 'M60 48 L50 112', 'M100 48 L110 112', 'M46 144 L46 180', 'M114 144 L114 180', 'M50 200 L58 262', 'M110 200 L102 262'],
+    lines: ['M80 164 L80 268', 'M56 44 Q80 36 104 44', 'M60 52 L50 112', 'M100 52 L110 112', 'M46 144 L46 180', 'M114 144 L114 180', 'M50 200 L58 262', 'M110 200 L102 262'],
     extras: [
       { tag: 'rect', a: { x: 12, y: 270, width: 136, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
