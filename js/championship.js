@@ -1851,8 +1851,8 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   // RealRoad Time Scale are per round (Rounds below).
   var sec3 = _rccSection('Difficulty');
   var diffOptions = [];
-  // Skill bands (Matt): 70-80% Rookie, 81-90% Intermediate, 91-100% Pro, 101-105% Expert.
-  for (var d = 70; d <= 105; d++) diffOptions.push({ label: d + '% (' + _rccSkillLevel(d) + ')', value: d });
+  // Skill bands (Matt): 75-80% Rookie, 81-90% Intermediate, 91-100% Pro, 101-105% Expert.
+  for (var d = 75; d <= 105; d++) diffOptions.push({ label: d + '% (' + _rccSkillLevel(d) + ')', value: d });
   var g3 = _rccEl('div', 'rcc-field-grid');
   if (!rs.damage) rs.damage = 'Realistic';
   if (!rs.tireWarmers) rs.tireWarmers = 'Off';
