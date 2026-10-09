@@ -80,7 +80,10 @@ function _rccLogo(className, manufacturer, onFail) {
   manufacturerLogoFallback(img, manufacturer, onFail || function () { img.style.display = 'none'; });
   return img;
 }
+// Flags are not shown on the championship page (Matt). Every caller already handles null.
 function _rccFlag(className, country) {
+  return null;
+  /* eslint-disable no-unreachable */
   if (!country || typeof countryFlagSrc !== 'function') return null;
   var src = countryFlagSrc(country);
   if (!src) return null;
@@ -799,7 +802,7 @@ function _rccIdentity(row, opts) {
   if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer, function () { slot.style.display = 'none'; }));
   else slot.style.display = 'none';
   identity.appendChild(slot);
-  var nameRow = _rccEl('div', 'rcl-standings-name-row');
+  var nameRow = _rccEl('div', 'rcl-standings-name-row' + (opts.wrap ? ' rcc-name-row-wrap' : ''));
   nameRow.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
   var flag = _rccFlag('rcl-standings-flag', row.country);
   if (flag) nameRow.appendChild(flag);
@@ -821,13 +824,28 @@ function _rccStandingsColumns(classes, kind) {
     head.appendChild(_rccText('div', null, kind === 'teams' ? 'Team' : 'Driver'));
     head.appendChild(_rccText('div', null, 'Pts'));
     wrap.appendChild(head);
-    (cls.standings || []).forEach(function (row, idx) {
+    // Drivers: crew-mates of the same car with equal points share one line ("Name, Name, Name").
+    var lines = [];
+    if (kind === 'teams') {
+      lines = (cls.standings || []).map(function (row) { return { row: row, names: null }; });
+    } else {
+      var byKey = {};
+      (cls.standings || []).forEach(function (row) {
+        var key = row.isPlayer ? null : String(row.teamName) + '|' + String(row.carNumber) + '|' + String(row.championshipPoints);
+        if (key && byKey[key]) { byKey[key].names.push(row.name); return; }
+        var line = { row: row, names: [row.name] };
+        if (key) byKey[key] = line;
+        lines.push(line);
+      });
+    }
+    lines.forEach(function (line, idx) {
+      var row = line.row;
       var rowEl = _rccEl('div', 'rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
       rowEl.appendChild(_rccPosBadge(idx));
       if (kind === 'teams') {
         rowEl.appendChild(_rccIdentity(row, { nameOverride: row.teamName, sub: (row.crew || []).join(', ') }));
       } else {
-        rowEl.appendChild(_rccIdentity(row));
+        rowEl.appendChild(_rccIdentity(row, { nameOverride: line.names.join(', '), wrap: line.names.length > 1 }));
       }
       var pts = _rccEl('div', 'rcl-standings-pts');
       pts.appendChild(_rccText('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
@@ -1644,13 +1662,16 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     sec4.appendChild(row);
   });
   var b = state.details.bonusPoints;
-  var g4 = _rccEl('div', 'rcc-field-grid');
+  var bonusRow = _rccEl('div', 'rcc-bonus-row');
+  bonusRow.appendChild(_rccText('div', 'rcc-points-tier', 'Bonus'));
+  var g4 = _rccEl('div', 'rcc-field-grid rcc-bonus-grid');
   [['pole', 'Pole Position Bonus'], ['fastestLap', 'Fastest Lap Bonus'], ['mostLapsLed', 'Most Laps Led Bonus']].forEach(function (pair) {
     var n = _rccSelect([0, 1, 2, 3, 4, 5], Math.min(5, Math.max(0, Number(b[pair[0]]) || 0)), function (v) { b[pair[0]] = Number(v); });
     n.disabled = pointsLocked;
     g4.appendChild(_rccField(pair[1], n));
   });
-  sec4.appendChild(g4);
+  bonusRow.appendChild(g4);
+  sec4.appendChild(bonusRow);
   form.appendChild(sec4);
 
   // --- Rounds ---
