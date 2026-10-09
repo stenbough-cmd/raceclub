@@ -755,11 +755,11 @@ function _rclBoardMetalSwitch_(view, onChange) {
   return sw;
 }
 
-// Manufacturer logo slot ALWAYS stays (empty space when there is no logo, or it fails to load) so
-// every name in a table lines up under the column label. Drivers board: driver name (a link to
-// their public profile) + #number, no team name. Teams board: team name + #number.
-function _rclBoardIdentity_(row, kind) {
-  var identity = _rclEl('div', 'rcl-standings-identity');
+// Returns three grid cells for a row: manufacturer logo | car number | name. The logo slot ALWAYS
+// stays (empty space when there is no logo, or it fails to load) so every number and name lines up.
+// Drivers board: driver name (a link to their public profile) + nationality flag. Teams board: team
+// name. The car number has its own column under the N-degree header.
+function _rclBoardIdentityCells_(row, kind) {
   var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var img = document.createElement('img');
@@ -769,8 +769,8 @@ function _rclBoardIdentity_(row, kind) {
     manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
     slot.appendChild(img);
   }
-  identity.appendChild(slot);
-  var nameRow = _rclEl('div', 'rcl-standings-name-row');
+  var num = _rclEl('div', 'rcl-board-num', row.carNumber ? _rclEscapeHtml(row.carNumber) : '');
+  var nameRow = _rclEl('div', 'rcl-standings-name-row rcl-board-name-cell');
   if (kind === 'teams') {
     var teamName = document.createElement('span');
     teamName.className = 'rcl-standings-name';
@@ -778,7 +778,6 @@ function _rclBoardIdentity_(row, kind) {
     nameRow.appendChild(teamName);
   } else {
     nameRow.appendChild(_rclBuildDriverNameEl_('rcl-standings-name', row.name, row.profileId));
-    // Nationality flag right after the driver's name (drivers board only).
     if (row.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(row.country);
       if (flagSrc) {
@@ -792,11 +791,9 @@ function _rclBoardIdentity_(row, kind) {
       }
     }
   }
-  if (row.carNumber) nameRow.appendChild(_rclEl('span', 'rcl-standings-carnum', '#' + _rclEscapeHtml(row.carNumber)));
-  identity.appendChild(nameRow);
   // Hover shows the full name and number when the name is cut off with "...".
-  identity.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
-  return identity;
+  nameRow.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
+  return [slot, num, nameRow];
 }
 
 // "+1 Bonus points for Pole Position, Fastest Lap, Most Laps Led" when every bonus is worth the same,
@@ -858,11 +855,13 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   var n = rounds.length;
   var scroller = _rclEl('div', 'rcl-board-scroll');
   var table = _rclEl('div', 'rcl-board-table');
-  table.style.setProperty('--rcl-board-cols', '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
-  table.style.minWidth = (44 + 140 + 46 * n + 58 + 6 * (n + 2) + 12) + 'px';
+  table.style.setProperty('--rcl-board-cols', '44px 50px 36px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.minWidth = (44 + 50 + 36 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
   hr.appendChild(_rclEl('div', null, 'Pos'));
+  hr.appendChild(_rclEl('div', null, ''));
+  hr.appendChild(_rclEl('div', 'rcl-board-num-head', 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
   hr.appendChild(_rclEl('div', 'rcl-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
     var cell = _rclEl('div', 'rcl-board-round-head');
@@ -894,7 +893,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   rows.forEach(function (row, idx) {
     var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
     rowEl.appendChild(_rclBuildPosBadge_(idx));
-    rowEl.appendChild(_rclBoardIdentity_(row, kind));
+    _rclBoardIdentityCells_(row, kind).forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rclEl('div', 'rcl-board-round');
       var i = scoredIdx[r.roundId];
