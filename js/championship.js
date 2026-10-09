@@ -441,14 +441,6 @@ function rccRenderActionBar(page) {
   add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
   add('Find A Bug?', true, rccOpenBugReport);
   add('Help', true, rccOpenHelp);
-  // Admin only, never in the demo: save this season as the public demo file.
-  var me = (typeof getProfileCache === 'function' && getProfileCache()) || {};
-  if (!RCC.demo && me.role === 'Admin' && hasSeason) {
-    var ex = _rccText('button', 'rcc-actionbar-link', 'Export Demo');
-    ex.type = 'button';
-    ex.addEventListener('click', function () { rccExportDemo(ex); });
-    links.appendChild(ex);
-  }
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
   if (page && page.seasons && page.seasons.length > 1) {
@@ -764,20 +756,7 @@ function rccRenderLastRace(page) {
     if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
     body.appendChild(w);
   });
-  if (r.you) {
-    var you = _rccEl('div', 'rcc-you-line');
-    you.appendChild(_rccText('span', 'rcc-you-label', 'Your Result'));
-    var bits = ['P' + (r.you.classPosition || '-') + ' in ' + r.you.carClass, (r.you.points || 0) + ' pts'];
-    if (r.you.wonPole) bits.push('Pole');
-    if (r.you.wonFastestLap) bits.push('Fastest Lap');
-    if (r.you.wonMostLapsLed) bits.push('Most Laps Led');
-    you.appendChild(_rccText('span', 'rcc-you-value', bits.join(' · ')));
-    var link = _rccText('button', 'rcc-link-btn', 'Full Results');
-    link.type = 'button';
-    link.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
-    you.appendChild(link);
-    body.appendChild(you);
-  }
+  // (The "Your Result" line under the highlights was removed, Matt 2026-10-09.)
 }
 
 // ---------------------------------------------------------------------
@@ -2461,8 +2440,8 @@ function _rccForgetSavedPages() {
 // ---------------------------------------------------------------------
 // WELCOME + DEMO (Matt, 2026-10-09). Visitors who are logged out or have no Championship Access see
 // the page header and a WELCOME box. "See The Demo" opens championship.html?demo=1, which draws a
-// frozen copy of a real season from assets/data/championship-demo.json (made with Export Demo,
-// below). The demo never calls the server: _rccApi answers from that file, and every button that
+// frozen copy of a real season from assets/data/championship-demo.json (made with Export
+// Championship Demo in the Account page's Admin section). The demo never calls the server: _rccApi answers from that file, and every button that
 // would change something is locked with a hover note. Nothing in demo mode can write anything.
 // ---------------------------------------------------------------------
 var RCC_DEMO_FILE = 'assets/data/championship-demo.json';
@@ -2568,29 +2547,7 @@ function rccStartDemo() {
   });
 }
 
-// Admin only: download the current season as the demo file (names and IDs scrubbed server side),
-// to save as assets/data/championship-demo.json in the website folder.
-function rccExportDemo(btn) {
-  btn.disabled = true;
-  var label = btn.textContent;
-  btn.textContent = 'Exporting...';
-  _rccApi('champGetPage', { seasonId: (RCC.page && RCC.page.seasonId) || '', exportDemo: '1' }, { timeoutMs: 300000 }).then(function (res) {
-    btn.disabled = false; btn.textContent = label;
-    if (_rccHandleAuthError(res)) return;
-    if (!res || !res.success || !res.demoJson) { _rccToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
-    var blob = new Blob([res.demoJson], { type: 'application/json' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'championship-demo.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
-    _rccToast('Demo file downloaded. Put it in the website folder at assets/data/championship-demo.json.', 'success');
-  }).catch(function () {
-    btn.disabled = false; btn.textContent = label;
-    _rccToast('No answer from the server. Try again.', 'error');
-  });
-}
+// Export Championship Demo lives in the Account page's Admin section (Account.html).
 
 // The site's hover bubble (.rc-tooltip-bubble in css/style.css, same as Account.html's
 // rcInitTooltips): any .rc-tooltip[data-tooltip] element shows it on hover or focus.

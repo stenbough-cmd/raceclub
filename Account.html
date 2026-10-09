@@ -6496,6 +6496,36 @@
       'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
+    // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
+    // active championship season (champGetPage with exportDemo=1, Admin only), with your name
+    // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
+    // at assets/data/ in the website, it is what the public demo (championship.html?demo=1) shows.
+    // Gray: it writes nothing to the Sheet.
+    addItem('Export Championship Demo', function () {
+      var btn = this;
+      var label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Exporting...';
+      fetchApi('champGetPage', { token: token, params: { exportDemo: '1' }, timeoutMs: 300000 }).then(function (res) {
+        btn.disabled = false; btn.textContent = label;
+        if (!res || !res.success || !res.demoJson) { showToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
+        var blob = new Blob([res.demoJson], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'championship-demo.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+        showToast('Demo file downloaded. Save it in the website folder at assets/data/championship-demo.json, then push.', 'success');
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = label;
+        showToast('No answer from the server. Try again.', 'error');
+      });
+    }, [
+      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is replaced with Max Powers and your account details are removed.',
+      'Save the downloaded file in the website folder at assets/data/championship-demo.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like.'
+    ], 'Downloads your active championship season as the public demo file.');
+
     panel.appendChild(list);
     section.appendChild(panel);
   }
