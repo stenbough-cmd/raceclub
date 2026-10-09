@@ -220,30 +220,66 @@ function _rcrBlock(title, sub) {
   return b;
 }
 
-// Top-down car outline with four tyres. shape: gt | prototype | hypercar. tread: [FL, FR, RL, RR].
+// Top-down car outline with four tyres, all closed-wheel (LMU races sports cars only). The tyres
+// are drawn on top of the bodywork, inside the wheel arches, like an x-ray. shape: gt | prototype |
+// hypercar. tread: [FL, FR, RL, RR].
+var RCR_CARS = {
+  // GT (GTE / GT3): a road-car shape. Long bonnet, glasshouse in the middle, fenders over the
+  // wheels, mirrors, and a rear wing on stands.
+  gt: {
+    body: 'M58 26 Q80 18 102 26 Q128 32 134 52 L138 108 Q139 120 132 130 L132 190 Q139 200 138 212 L136 258 Q134 274 116 278 L44 278 Q26 274 24 258 L22 212 Q21 200 28 190 L28 130 Q21 120 22 108 L26 52 Q32 32 58 26 Z',
+    glass: [
+      { d: 'M52 112 Q80 100 108 112 L104 134 Q80 128 56 134 Z', cls: 'rcr-car-glass' },
+      { d: 'M56 136 Q80 130 104 136 L104 180 Q80 184 56 180 Z', cls: 'rcr-car-roof' },
+      { d: 'M56 182 Q80 186 104 182 L100 202 Q80 206 60 202 Z', cls: 'rcr-car-glass' }
+    ],
+    lines: ['M60 40 Q80 34 100 40', 'M64 60 L64 98', 'M96 60 L96 98', 'M46 222 L114 222'],
+    extras: [
+      { tag: 'rect', a: { x: 34, y: 118, width: 14, height: 6, rx: 3 } }, { tag: 'rect', a: { x: 112, y: 118, width: 14, height: 6, rx: 3 } },
+      { tag: 'rect', a: { x: 28, y: 262, width: 104, height: 12, rx: 3 }, cls: 'rcr-car-wing' },
+      { tag: 'rect', a: { x: 58, y: 250, width: 4, height: 14 }, cls: 'rcr-car-wing' }, { tag: 'rect', a: { x: 98, y: 250, width: 4, height: 14 }, cls: 'rcr-car-wing' }
+    ],
+    tyres: [[30, 58], [110, 58], [30, 206], [110, 206]], tw: 20, th: 44
+  },
+  // LMP2 / LMP3: a narrow tub and bubble canopy between pronounced wheel pods, a shark fin and a
+  // full-width rear wing.
+  prototype: {
+    body: 'M64 16 Q80 10 96 16 L104 44 Q130 44 136 64 L138 116 Q137 126 128 134 L126 184 Q136 190 138 204 L138 258 Q136 274 120 278 L40 278 Q24 274 22 258 L22 204 Q24 190 34 184 L32 134 Q23 126 22 116 L24 64 Q30 44 56 44 Z',
+    glass: [
+      { d: 'M68 92 Q80 78 92 92 L94 150 Q80 160 66 150 Z', cls: 'rcr-car-glass' }
+    ],
+    lines: ['M80 160 L80 262', 'M62 22 Q80 16 98 22', 'M50 138 L50 182', 'M110 138 L110 182'],
+    extras: [
+      { tag: 'rect', a: { x: 20, y: 264, width: 120, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
+    ],
+    tyres: [[28, 66], [112, 66], [28, 208], [112, 208]], tw: 20, th: 46
+  },
+  // Hypercar (LMH / LMDh): bigger and wider, with a long sculpted nose, tall front fenders, a
+  // central canopy, wide rear haunches, a shark fin and a full-width wing.
+  hypercar: {
+    body: 'M70 8 Q80 4 90 8 L100 40 Q134 40 142 64 L144 120 Q143 132 134 140 L132 182 Q142 188 144 202 L146 262 Q144 280 124 284 L36 284 Q16 280 14 262 L16 202 Q18 188 28 182 L26 140 Q17 132 16 120 L18 64 Q26 40 60 40 Z',
+    glass: [
+      { d: 'M66 90 Q80 74 94 90 L96 152 Q80 164 64 152 Z', cls: 'rcr-car-glass' }
+    ],
+    lines: ['M80 164 L80 268', 'M60 48 L50 112', 'M100 48 L110 112', 'M46 144 L46 180', 'M114 144 L114 180', 'M50 200 L58 262', 'M110 200 L102 262'],
+    extras: [
+      { tag: 'rect', a: { x: 12, y: 270, width: 136, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
+    ],
+    tyres: [[22, 66], [118, 66], [22, 210], [118, 210]], tw: 20, th: 48
+  }
+};
+
 function _rcrCar(shape, tread) {
-  var svg = _rcrSvg('svg', { viewBox: '0 0 160 300', class: 'rcr-car', role: 'img', 'aria-label': 'Tyre tread on each corner' });
-  var bodies = {
-    gt: 'M52 22 Q80 8 108 22 L118 70 Q124 90 122 120 L122 236 Q122 262 112 274 L48 274 Q38 262 38 236 L38 120 Q36 90 42 70 Z',
-    prototype: 'M70 10 Q80 4 90 10 L96 60 L124 84 Q130 96 128 120 L128 232 Q128 262 114 276 L46 276 Q32 262 32 232 L32 120 Q30 96 36 84 L64 60 Z',
-    hypercar: 'M66 8 Q80 2 94 8 L102 52 Q126 64 130 92 L132 238 Q132 266 116 280 L44 280 Q28 266 28 238 L30 92 Q34 64 58 52 Z'
-  };
-  var cabin = {
-    gt: 'M56 104 Q80 92 104 104 L102 176 Q80 184 58 176 Z',
-    prototype: 'M66 112 Q80 100 94 112 L92 170 Q80 178 68 170 Z',
-    hypercar: 'M64 108 Q80 96 96 108 L94 172 Q80 180 66 172 Z'
-  };
-  svg.appendChild(_rcrSvg('path', { d: bodies[shape] || bodies.gt, class: 'rcr-car-body' }));
-  svg.appendChild(_rcrSvg('path', { d: cabin[shape] || cabin.gt, class: 'rcr-car-cabin' }));
-  // Rear wing.
-  svg.appendChild(_rcrSvg('rect', { x: shape === 'gt' ? 34 : 24, y: 280, width: shape === 'gt' ? 92 : 112, height: 10, rx: 3, class: 'rcr-car-wing' }));
-  if (shape !== 'gt') svg.appendChild(_rcrSvg('rect', { x: 46, y: 18, width: 68, height: 6, rx: 3, class: 'rcr-car-wing' }));
-  var front = shape === 'gt' ? 58 : 66, rear = shape === 'gt' ? 214 : 220;
-  var pos = [[12, front], [124, front], [12, rear], [124, rear]];
+  var def = RCR_CARS[shape] || RCR_CARS.gt;
+  var svg = _rcrSvg('svg', { viewBox: '0 0 160 300', class: 'rcr-car rcr-car-' + (RCR_CARS[shape] ? shape : 'gt'), role: 'img', 'aria-label': 'Tyre tread on each corner' });
+  svg.appendChild(_rcrSvg('path', { d: def.body, class: 'rcr-car-body' }));
+  def.lines.forEach(function (d) { svg.appendChild(_rcrSvg('path', { d: d, class: 'rcr-car-line' })); });
+  def.glass.forEach(function (g) { svg.appendChild(_rcrSvg('path', { d: g.d, class: g.cls })); });
+  def.extras.forEach(function (x) { svg.appendChild(_rcrSvg(x.tag, Object.assign({ class: x.cls || 'rcr-car-mirror' }, x.a))); });
   ['FL', 'FR', 'RL', 'RR'].forEach(function (c, i) {
     var v = tread[i];
     var g = _rcrSvg('g', {});
-    g.appendChild(_rcrSvg('rect', { x: pos[i][0], y: pos[i][1], width: 24, height: 48, rx: 7, fill: _rcrTread(v), class: 'rcr-car-tyre' }));
+    g.appendChild(_rcrSvg('rect', { x: def.tyres[i][0], y: def.tyres[i][1], width: def.tw, height: def.th, rx: 6, fill: _rcrTread(v), class: 'rcr-car-tyre' }));
     var t = _rcrSvg('title', {});
     t.textContent = c + ': ' + _rcrPct(v) + ' tread left';
     g.appendChild(t);

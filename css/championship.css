@@ -636,10 +636,13 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcr-car-box { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .rcr-car-holder { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; gap: 8px; width: 100%; }
 .rcr-car { width: 140px; height: auto; }
-.rcr-car-body { fill: #e9ecf0; stroke: #9aa3af; stroke-width: 2; }
-.rcr-car-cabin { fill: #374151; opacity: 0.85; }
+.rcr-car-body { fill: #e9ecf0; stroke: #8a94a3; stroke-width: 2; stroke-linejoin: round; }
+.rcr-car-line { fill: none; stroke: #b8c0cb; stroke-width: 1.5; stroke-linecap: round; }
+.rcr-car-glass { fill: #3b4656; }
+.rcr-car-roof { fill: #d3d8df; stroke: #8a94a3; stroke-width: 1; }
+.rcr-car-mirror { fill: #8a94a3; }
 .rcr-car-wing { fill: #4b5563; }
-.rcr-car-tyre { stroke: #1f2937; stroke-width: 2; }
+.rcr-car-tyre { stroke: #1f2937; stroke-width: 2; opacity: 0.95; }
 .rcr-corners { display: flex; flex-direction: column; justify-content: space-between; gap: 46px; }
 .rcr-corner-r { text-align: left; }
 .rcr-corner-l { text-align: right; }
@@ -681,3 +684,5 @@ a.rcc-hero-meta-name { color: inherit; }
   .rcr-contact-meter { display: none; }
   .rcr-tile-value { font-size: 20px; }
 }
+.rcr-popup-round { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcc-navy); margin: -4px 0 6px; }
+.rcc-page .rcl-carousel-hero-btns { flex-direction: row; flex-wrap: wrap; justify-content: center; }

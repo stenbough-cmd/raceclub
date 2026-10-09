@@ -826,10 +826,15 @@ function rccRenderCarousel(page) {
       hero.appendChild(det);
     }
     var btns = _rccEl('div', 'rcl-carousel-hero-btns');
-    var btn;
+    var btn, drBtn = null;
     if (entry.hasRaceResults || entry.hasQualifyResults) {
       btn = _rccText('button', 'rcl-carousel-hero-btn', entry.hasResults ? 'RACE RECAP' : 'QUALIFYING RESULTS');
       btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenResults(entry.roundId, entry.hasRaceResults ? 'race' : 'qualifying'); });
+      if (entry.hasRaceResults) {
+        drBtn = _rccText('button', 'rcl-carousel-hero-btn', 'DRIVER REPORT');
+        drBtn.type = 'button';
+        drBtn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenDriverReport(entry.roundId); });
+      }
     } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
       btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
       btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId, true); });
@@ -839,6 +844,7 @@ function rccRenderCarousel(page) {
     }
     btn.type = 'button';
     btns.appendChild(btn);
+    if (drBtn) btns.appendChild(drBtn);
     hero.appendChild(btns);
     item.appendChild(hero);
     item.addEventListener('click', function () { if (idx !== activeIdx) setActive(idx); });
@@ -1177,12 +1183,41 @@ function _rccRaceDetails(details) {
   return box;
 }
 
+// Driver Report and Race Details each have their own page in the Race Recap dropdown (Matt).
+function _rccDriverReportBody(result, el) {
+  el.innerHTML = '';
+  var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
+  if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
+  el.appendChild(drEl);
+}
+function _rccRaceDetailsBody(result, el) {
+  el.innerHTML = '';
+  var det = result ? _rccRaceDetails(result.raceDetails) : null;
+  if (!det) { el.appendChild(_rccEmpty('No Data To Display', 'No race details for this round yet.')); return; }
+  el.appendChild(det);
+}
+
+// DRIVER REPORT button on a raced round's calendar card: a popup with only the report.
+function rccOpenDriverReport(roundId) {
+  var entry = (RCC.page.calendar || []).filter(function (c) { return c.roundId === roundId; })[0] || {};
+  var m = rccOpenModal('Driver Report', { wide: true });
+  m.dialog.classList.add('rcl-modal-dialog-allresults');
+  m.body.appendChild(_rccText('div', 'rcr-popup-round', 'Round ' + (entry.roundNum || '') + ' \u00B7 ' + (entry.eventName || '') + (entry.track ? ' at ' + entry.track : '')));
+  var out = _rccEl('div', 'rcl-allresults-body');
+  m.body.appendChild(out);
+  out.appendChild(_rccSpinner('Loading your report...'));
+  _rccApi('champGetRoundResults', { roundId: roundId, kind: 'race' }).then(function (res) {
+    if (_rccHandleAuthError(res)) return;
+    _rccDriverReportBody(res && res.success ? res.result : null, out);
+  }).catch(function () {
+    out.innerHTML = '';
+    out.appendChild(_rccEmpty('Could Not Load', 'Could not reach the server. Close this popup and try again.'));
+  });
+}
+
 function _rccRaceBody(result, el) {
   el.innerHTML = '';
   if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race result imported for this round.')); return; }
-  // Race details sit right under the popup's dropdowns, above the first class header (Matt).
-  var det = _rccRaceDetails(result.raceDetails);
-  if (det) el.appendChild(det);
   var playerName = '';
   result.classes.forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (r.isPlayer) playerName = r.name; }); });
   result.classes.forEach(function (cls, ci) {
@@ -1212,12 +1247,6 @@ function _rccRaceBody(result, el) {
     });
     el.appendChild(w);
   });
-
-  // Driver Report (js/championship-report.js), above the Race Report (Matt).
-  if (typeof _rccDriverReport === 'function' && result.driverReport) {
-    var drEl = _rccDriverReport(result.driverReport);
-    if (drEl) el.appendChild(drEl);
-  }
 
   var report = result.raceReport || [];
   if (report.length) {
@@ -1341,6 +1370,8 @@ function rccOpenResults(roundId, kind) {
   kindSel.className = 'rcl-allresults-session-select';
   kindSel.appendChild(new Option('Race', 'race'));
   kindSel.appendChild(new Option('Qualifying', 'qualifying'));
+  kindSel.appendChild(new Option('Driver Report', 'driver'));
+  kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
   row.appendChild(sel);
   row.appendChild(kindSel);
@@ -1349,12 +1380,14 @@ function rccOpenResults(roundId, kind) {
   m.body.appendChild(out);
   var cache = {};
   function load() {
-    var key = sel.value + ':' + kindSel.value;
-    var builder = kindSel.value === 'qualifying' ? _rccQualifyingBody : (kindSel.value === 'mylaps' ? _rccMyLapsBody : _rccRaceBody);
+    // Driver Report and Race Details come from the same race result as the Race page.
+    var apiKind = kindSel.value === 'driver' || kindSel.value === 'details' ? 'race' : kindSel.value;
+    var key = sel.value + ':' + apiKind;
+    var builder = { qualifying: _rccQualifyingBody, mylaps: _rccMyLapsBody, driver: _rccDriverReportBody, details: _rccRaceDetailsBody }[kindSel.value] || _rccRaceBody;
     if (cache[key]) { builder(cache[key], out); return; }
     out.innerHTML = '';
     out.appendChild(_rccSpinner('Loading results...'));
-    _rccApi('champGetRoundResults', { roundId: sel.value, kind: kindSel.value }).then(function (res) {
+    _rccApi('champGetRoundResults', { roundId: sel.value, kind: apiKind }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
       var result = res && res.success ? res.result : null;
       if (result) cache[key] = result;
