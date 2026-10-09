@@ -1715,10 +1715,10 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
           // clauses can be colored independently of the rest of the line.
           // Driver names always render white.
           if (entry.carClass) lineEl.appendChild(_rclClassPill_(entry.carClass));
-          // Timestamp -- the earliest underlying event's elapsed race time, mm:ss (or h:mm:ss past
+          // Timestamp -- the earliest underlying event's race time from the green flag (et minus lap 1's et, stamped on each entry as greenFlagEt), mm:ss (or h:mm:ss past
           // the hour mark).
           if (entry.et !== null && entry.et !== undefined) {
-            lineEl.appendChild(_rclEl('span', 'rcl-report-timestamp', _rclFormatEventTime_(entry.et)));
+            lineEl.appendChild(_rclEl('span', 'rcl-report-timestamp', _rclFormatEventTime_(entry.et - (entry.greenFlagEt || 0))));
           }
           var nameEl = document.createElement('span');
           nameEl.className = 'rcl-report-name';
