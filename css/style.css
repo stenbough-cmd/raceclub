@@ -3231,3 +3231,6 @@ body.rc-modal-scroll-locked {
 .rc-modal-busy .rc-modal-body button:not(:disabled),
 .rc-modal-busy .rc-modal-body a.rc-btn-secondary { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
 .rc-modal-busy .rc-modal-close { cursor: not-allowed; }
+
+/* Single player teaser on the landing page (above the closing call to action). */
+.rc-single-section .rc-single-early { margin-top: 28px; color: var(--rc-carbon); font-weight: 600; }
