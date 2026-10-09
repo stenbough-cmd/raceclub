@@ -208,6 +208,7 @@ body.rc-league-page.rcc-page {
 .rcc-board-name-head { text-align: left; }
 /* Car number column: "N" with a raised degree circle in the header, "#007"-style numbers below. */
 .rcc-board-num-head { text-align: center; }
+.rcc-board-logo-head { text-align: center; }
 .rcc-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
 .rcc-board-num { text-align: center; font-size: 14.5px; font-weight: 400; color: var(--rc-carbon); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* The name cell holds only the name; it cuts off with "..." before the round columns shrink. */
@@ -736,3 +737,5 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcc-metal-btn:hover .rcc-metal-btn-face { filter: brightness(1.04); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 var(--rcc-navy); }
 .rcc-metal-btn:active .rcc-metal-btn-face { transform: translateY(1px); }
 .rcc-metal-btn:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
+.rcr-report-who { margin: 0 0 6px; }
+.rcc-hero-meta-team-text { white-space: nowrap; }

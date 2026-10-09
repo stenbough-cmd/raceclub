@@ -987,7 +987,7 @@ function _rccStandingsBoard(page, className, kind) {
   table.style.minWidth = (44 + 50 + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
-  hr.appendChild(_rccEl('div'));
+  hr.appendChild(_rccText('div', 'rcc-board-logo-head', 'Manu'));
   hr.appendChild(_rccEl('div', 'rcc-board-num-head', 'N<sup class="rcc-board-num-deg">&deg;</sup>'));
   hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
@@ -1201,6 +1201,18 @@ function _rccDriverReportBody(result, el) {
   el.innerHTML = '';
   var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
+  // Who the report is for, styled like the hero subtitle: Name · [logo] Team #57 (Matt).
+  var page = RCC.page || {}, reg = page.registration || null, dr = result.driverReport || {};
+  var who = _rccEl('div', 'rcc-hero-meta rcr-report-who');
+  who.appendChild(_rccText('span', 'rcc-hero-meta-name', (page.owner && page.owner.displayName) || ''));
+  who.appendChild(document.createTextNode(' \u00B7 '));
+  var team = _rccEl('span', 'rcc-hero-meta-team-text');
+  var mfr = reg && reg.manufacturer;
+  if (mfr) team.appendChild(_rccLogo('rcc-hero-meta-logo', mfr));
+  team.appendChild(document.createTextNode((dr.teamName || (reg && reg.teamName) || '') + ' '));
+  team.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + (dr.carNumber || (reg && reg.carNumber) || '')));
+  who.appendChild(team);
+  el.appendChild(who);
   el.appendChild(drEl);
 }
 function _rccRaceDetailsBody(result, el) {

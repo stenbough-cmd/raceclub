@@ -11,7 +11,7 @@ var RCC_HELP_SECTIONS = [
     id: 'what-it-is', num: '1', title: 'What Race Club Championship Is',
     html:
       '<p>Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap. You build an offline championship here, race each round in the game, and play through the season one round at a time, at your own pace.</p>' +
-      '<p>You choose the series, the year, the classes, the calendar, the race lengths and the points. You sign for a real team and car, and your rivals are the drivers the game puts in every other car on the grid. After each round, you upload the results files the game creates (Qualifying and Race, or just the Race when your season has no qualifying), and this page takes care of the rest. It keeps the class standings for drivers and teams, the manufacturers’ standings for factory Hypercars and the bonus points. Every round also gets a race recap with a lap-by-lap report and the race’s settings, a breakdown of your own laps, and a place in the Highlights ticker.</p>' +
+      '<p>You choose the series, the year, the classes, the calendar, the race lengths and the points. You sign for a real team and car, and your rivals are the drivers the game puts in every other car on the grid. After each round, you upload the results files the game creates (Qualifying and Race, or just the Race when your season has no qualifying), and this page takes care of the rest. It keeps the class standings for drivers and teams, the manufacturers’ standings for factory Hypercars and the bonus points. Every round also gets a race recap with a lap-by-lap report and the race’s settings, a Driver Report that turns your race into charts, a breakdown of your own laps, and a place in the Highlights ticker.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">In Short</strong><ul>' +
       '<li>A full season against the AI, scored the same way as the Race Club league</li>' +
       '<li>WEC and ELMS cars and tracks, as they appear in the game</li>' +
@@ -100,7 +100,25 @@ var RCC_HELP_SECTIONS = [
       '<p>If you upload the wrong files, click <strong>Erase Results</strong> in the black bar, pick the round, and upload again. The round stays on the calendar.</p>'
   },
   {
-    id: 'end-season', num: '6', title: 'Ending a Season',
+    id: 'recap', num: '6', title: 'Race Recap, Driver Report and Standings',
+    html:
+      '<p>Every round with results has its own recap. Open it with <strong>RACE RECAP</strong> on the round’s calendar card, or with the <strong>Race Recap</strong> button in the Last Race header. <strong>DRIVER REPORT</strong>, next to RACE RECAP on the calendar card, opens your Driver Report on its own. Inside the recap, the dropdown next to the round switches between five pages.</p>' +
+      '<table class="rcc-help-table"><tbody>' +
+      '<tr><td><strong>Race</strong></td><td>The results for every class, the bonus winners and the lap-by-lap Race Report.</td></tr>' +
+      '<tr><td><strong>Qualifying</strong></td><td>The qualifying order, when your season has a qualifying session.</td></tr>' +
+      '<tr><td><strong>Driver Report</strong></td><td>Your race in charts, explained below.</td></tr>' +
+      '<tr><td><strong>Race Details</strong></td><td>The settings read from the race file, such as length, laps, damage, fuel and tire use and your assists, next to what was planned for the round.</td></tr>' +
+      '<tr><td><strong>My Laps</strong></td><td>Every lap you drove, with sectors, top speed, fuel and tire wear.</td></tr>' +
+      '</tbody></table>' +
+      '<p>The <strong>Driver Report</strong> covers your race at a glance (start to finish, best lap, pit stops and contacts), your class position on every lap, a tire report with a top-down view of your car and the tread left on each corner, a fuel report, your pit strategy against everyone else’s, your pace and sector times, every contact and track limits warning, and your qualifying laps. The <strong>Whole Class</strong> and <strong>Nearest Rivals</strong> switch at the top compares you with the average of your class, or with the two cars that finished just ahead of you and the two just behind. Hover over any chart to see the exact numbers.</p>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
+      '<li>The game’s results file has no damage figures, so the Driver Report shows how hard each contact was instead.</li>' +
+      '<li>A round uploaded before the Driver Report existed shows only your own numbers. Erase that round and upload the same files again to compare yourself with the field.</li>' +
+      '<li>The standings stay empty until the first round has results. Each round’s points go to the driver the race file shows in that car, so a car that changes drivers between tracks credits each driver only for the rounds they raced.</li>' +
+      '</ul></div>'
+  },
+  {
+    id: 'end-season', num: '7', title: 'Ending a Season',
     html:
       '<ol class="rcc-help-steps">' +
       '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
