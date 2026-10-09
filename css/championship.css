@@ -572,3 +572,7 @@ a.rcc-hero-meta-name { color: inherit; }
 }
 /* Help popup: callout titles sit on their own line instead of "Label:". */
 .rcc-help-body .rcc-help-callout-title { display: block; margin-bottom: 4px; color: var(--rc-carbon); }
+
+/* Ticker round entries: flag, event and " at track" as one inline group (no flex gap inside). */
+.rcc-ticker-event { white-space: nowrap; }
+.rcc-ticker-flag { height: 12px; width: auto; vertical-align: -1px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); }

@@ -154,12 +154,17 @@ function _rccFormat12h(hhmm) {
   if (isNaN(h) || p.length < 2) return hhmm;
   return ((h % 12) || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM');
 }
-function _rccTimeOfDay(hhmm) {
-  var h = parseInt(String(hhmm || '').split(':')[0], 10);
+// In-game race start (Matt, 2026-10-09): one of RCC_RACE_STARTS. Older rounds stored a clock time
+// ("14:00"), which maps to the matching part of the day.
+var RCC_RACE_STARTS = ['Morning', 'Midday', 'Afternoon', 'Evening', 'Night'];
+function _rccTimeOfDay(v) {
+  if (RCC_RACE_STARTS.indexOf(String(v || '')) !== -1) return String(v);
+  var h = parseInt(String(v || '').split(':')[0], 10);
   if (isNaN(h)) return '';
-  if (h >= 5 && h < 12) return 'Morning';
-  if (h >= 12 && h < 17) return 'Midday';
-  if (h >= 17 && h < 21) return 'Evening';
+  if (h >= 5 && h < 11) return 'Morning';
+  if (h >= 11 && h < 14) return 'Midday';
+  if (h >= 14 && h < 17) return 'Afternoon';
+  if (h >= 17 && h < 20) return 'Evening';
   return 'Night';
 }
 
@@ -466,7 +471,7 @@ function rccRenderTicker(page) {
     var groups = _rccSortClasses(lr.classes || [], function (c) { return c.className; }).map(function (cls) {
       return { tag: 'TOP TEN ' + cls.className.toUpperCase() + ' RESULTS', rows: (cls.standings || []).slice(0, 10) };
     });
-    items.push({ tag: 'ROUND ' + lr.roundNum, bold: lr.eventName, dim: lr.track ? ' at ' + lr.track + (lr.layout ? ': ' + lr.layout : '') : '', groups: groups });
+    items.push({ tag: 'ROUND ' + lr.roundNum, bold: lr.eventName, dim: lr.track ? ' at ' + lr.track + (lr.layout ? ': ' + lr.layout : '') : '', groups: groups, country: lr.country });
     var mfr = (page.standings.manufacturers || []).slice(0, 3);
     if (mfr.length && mfr.some(function (m) { return m.points > 0; })) items.push({ tag: 'TOP 3 MANUFACTURER STANDINGS', mfr: mfr });
   } else {
@@ -483,9 +488,9 @@ function rccRenderTicker(page) {
   var where = function (c) { return c.track ? ' at ' + c.track + (c.layout ? ': ' + c.layout : '') : ''; };
   if (!page.registration && !page.seasonEnded && (page.calendar || []).length) {
     // Season created but no seat chosen yet: the whole calendar, one entry per round (Matt, 2026-10-09).
-    page.calendar.forEach(function (c) { items.push({ tag: 'ROUND ' + c.roundNum, bold: c.eventName, dim: where(c) }); });
+    page.calendar.forEach(function (c) { items.push({ tag: 'ROUND ' + c.roundNum, bold: c.eventName, dim: where(c), country: c.country }); });
   } else if (page.nextRound) {
-    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: where(page.nextRound) });
+    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: where(page.nextRound), country: page.nextRound.country });
   }
 
   function driverEntry(row) {
@@ -510,8 +515,14 @@ function rccRenderTicker(page) {
       var el = _rccEl('div', 'rcl-ticker-item');
       el.appendChild(_rccText('span', 'rcl-ticker-item-tag', item.tag + ':'));
       if (item.bold !== undefined) {
-        el.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', item.bold));
-        if (item.dim) el.appendChild(_rccText('span', 'rcl-ticker-prefix-dim', item.dim));
+        // One inline group (flag, event, " at track") so the item's flex gap doesn't add extra
+        // space between the event and the track.
+        var grp = _rccEl('span', 'rcc-ticker-event');
+        var fl = item.country ? _rccFlag('rcc-ticker-flag', item.country) : null;
+        if (fl) { grp.appendChild(fl); grp.appendChild(document.createTextNode(' ')); }
+        grp.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', item.bold));
+        if (item.dim) grp.appendChild(_rccText('span', 'rcl-ticker-prefix-dim', item.dim));
+        el.appendChild(grp);
         if (item.groups) el.appendChild(_rccNbsp(5));
       } else if (item.text) {
         el.appendChild(document.createTextNode(item.text));
@@ -974,7 +985,7 @@ function _rccStandingsBoard(page, className, kind) {
   if (!lines.length) {
     scroller.appendChild(table);
     board.appendChild(scroller);
-    board.appendChild(_rccEmpty('No Data To Display', 'No entries in this class.'));
+    board.appendChild(_rccEmpty('No Data To Display', (page.roundsCompleted || 0) ? 'No entries in this class.' : 'The standings appear once the first round has results.'));
     _rccStandingsFooter(board, page);
     return board;
   }
@@ -1047,7 +1058,8 @@ function rccRenderStandings(page) {
     var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
     headEl.appendChild(_rccText('div', 'rcl-panel-title', className + (page.seasonEnded ? ' Final Standings' : ' Standings')));
     var body = _rccEl('div', 'rcl-panel-body');
-    var hasTeams = className !== 'Hypercar' && (page.standings.teams || []).some(function (t) { return t.className === className && t.standings.length; });
+    // Every class except Hypercar has a Teams board, even before results (it shows No Data To Display).
+    var hasTeams = className !== 'Hypercar';
     var switchSlot = _rccEl('div', 'rcc-switch-slot');
     headEl.appendChild(switchSlot);
     function draw() {
@@ -1748,7 +1760,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     name: editing ? edit.name : '',
     details: details,
     rounds: editing ? edit.rounds.map(function (r) {
-      return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weatherPreset: r.weatherPreset || 'Sunny', igRaceStart: r.igRaceStart || '14:00', raceStart: r.raceStart || 'Rolling', realRoadTimeScale: r.realRoadTimeScale || 'Normal', locked: r.locked };
+      return { roundId: r.roundId, trackId: r.trackId, eventName: r.eventName, raceLengthTier: r.raceLengthTier, weatherPreset: r.weatherPreset || 'Sunny', igRaceStart: _rccTimeOfDay(r.igRaceStart) || 'Midday', raceStart: r.raceStart || 'Rolling', realRoadTimeScale: r.realRoadTimeScale || 'Normal', locked: r.locked };
     }) : []
   };
 
@@ -1764,7 +1776,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   tracks.forEach(function (t) { trackById[t.TrackID] = t; });
   function newRound() {
     var t = layoutsByVenue[venues[0]][0];
-    return { roundId: '', trackId: t.TrackID, eventName: '', raceLengthTier: Object.keys(state.details.pointsTables)[0] || 'Sprint', weatherPreset: 'Sunny', igRaceStart: '14:00', raceStart: 'Rolling', realRoadTimeScale: 'Normal', locked: false };
+    return { roundId: '', trackId: t.TrackID, eventName: '', raceLengthTier: Object.keys(state.details.pointsTables)[0] || 'Sprint', weatherPreset: 'Sunny', igRaceStart: 'Midday', raceStart: 'Rolling', realRoadTimeScale: 'Normal', locked: false };
   }
   if (!state.rounds.length) for (var i = 0; i < 6; i++) state.rounds.push(newRound());
 
@@ -2024,11 +2036,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       // Second row: the session's own settings.
       g = _rccEl('div', 'rcc-field-grid rcc-round-row2');
       g.appendChild(_rccField('Weather Preset', _rccSelect(RCC_WEATHER_PRESETS, r.weatherPreset || 'Sunny', function (v) { r.weatherPreset = v; })));
-      var timeInput = document.createElement('input');
-      timeInput.type = 'time';
-      timeInput.value = r.igRaceStart || '';
-      timeInput.addEventListener('input', function () { r.igRaceStart = timeInput.value; });
-      g.appendChild(_rccField('In-Game Race Start', timeInput));
+      g.appendChild(_rccField('In-Game Race Start', _rccSelect(RCC_RACE_STARTS, r.igRaceStart || 'Midday', function (v) { r.igRaceStart = v; })));
       card.appendChild(g);
       roundsWrap.appendChild(card);
     });
@@ -2293,7 +2301,7 @@ function rccOpenSeasonPreview() {
     var len = c.raceLengthAsRaced ? c.plannedRaceLengthMinutes + ' mins (' + c.plannedRaceLengthTier + ', raced ' + c.raceLengthMinutes + ' mins)'
       : (c.raceLengthMinutes ? c.raceLengthMinutes + ' mins (' + c.raceLengthTier + ')' : '');
     if (len) bits.push(len);
-    if (c.igRaceStart) bits.push('Start ' + c.igRaceStart + (_rccTimeOfDay(c.igRaceStart) ? ', ' + _rccTimeOfDay(c.igRaceStart) : ''));
+    if (_rccTimeOfDay(c.igRaceStart)) bits.push(_rccTimeOfDay(c.igRaceStart) + ' Start');
     if (c.weatherText) bits.push(c.weatherText);
     if (c.hasResults) bits.push('Raced');
     list.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">Round ' + c.roundNum + ' · ' + _rccEsc(c.eventName) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(bits.join(' · ')) + '</span>'));
