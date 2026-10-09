@@ -471,7 +471,7 @@ function rccRenderTicker(page) {
   var track = document.getElementById('rcl-ticker-track');
   if (!track) return;
   track.innerHTML = '';
-  if (!page || !page.hasSeason) { track.style.animation = 'none'; return; }
+  if (!page || (!page.hasSeason && !page.welcomeTicker)) { track.style.animation = 'none'; return; }
   var items = [];
   items.push({ tag: 'SEASON ' + page.seasonNumber, text: page.seasonName });
   var lr = page.lastRace;
@@ -501,6 +501,9 @@ function rccRenderTicker(page) {
     items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: where(page.nextRound), country: page.nextRound.country });
   }
 
+  // Welcome view: the welcome line and the four perks from the Welcome box (Matt).
+  if (page.welcomeTicker) items = page.welcomeTicker.slice();
+
   function driverEntry(row) {
     var entry = _rccEl('span', 'rcl-ticker-driver-entry');
     if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
@@ -521,7 +524,8 @@ function rccRenderTicker(page) {
     var frag = document.createDocumentFragment();
     items.forEach(function (item) {
       var el = _rccEl('div', 'rcl-ticker-item');
-      el.appendChild(_rccText('span', 'rcl-ticker-item-tag', item.tag + ':'));
+      if (item.lead) el.appendChild(_rccText('span', 'rcc-ticker-lead', item.lead));
+      if (item.tag) el.appendChild(_rccText('span', 'rcl-ticker-item-tag' + (item.tagBold ? ' rcc-ticker-tag-bold' : ''), item.tag + ':'));
       if (item.bold !== undefined) {
         // One inline group (flag, event, " at track") so the item's flex gap doesn't add extra
         // space between the event and the track.
@@ -533,7 +537,8 @@ function rccRenderTicker(page) {
         el.appendChild(grp);
         if (item.groups) el.appendChild(_rccNbsp(5));
       } else if (item.text) {
-        el.appendChild(document.createTextNode(item.text));
+        if (item.plain) el.appendChild(_rccText('span', 'rcc-ticker-plain', item.text));
+        else el.appendChild(document.createTextNode(item.text));
       }
       if (item.groups) {
         var all = _rccEl('span', 'rcl-ticker-driver-list');
@@ -2490,8 +2495,9 @@ function rccRenderWelcome() {
   rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
   var meta = document.getElementById('rcc-hero-meta');
   if (meta) meta.innerHTML = '';
-  var track = document.getElementById('rcl-ticker-track');
-  if (track) { track.innerHTML = ''; track.style.animation = 'none'; }
+  rccRenderTicker({ hasSeason: false, welcomeTicker: [{ lead: 'Welcome to Race Club Championship!' }].concat(RCC_WELCOME_PERKS.map(function (p) {
+    return { tag: p[0].toUpperCase(), tagBold: true, text: p[1], plain: true };
+  })) });
   var main = document.querySelector('.rcl-main');
   var old = document.getElementById('rcc-welcome-row');
   if (old) old.parentNode.removeChild(old);
@@ -2513,20 +2519,24 @@ function rccRenderWelcome() {
   main.insertBefore(row, main.firstChild);
 }
 
+// The four perks: shown in the Welcome box and scrolling in the ticker.
+var RCC_WELCOME_PERKS = [
+  ['A real seat', 'Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.'],
+  ['Your calendar, your rules', 'Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.'],
+  ['Race Recap', 'Full results, a lap-by-lap race report, the race settings and every lap you drove.'],
+  ['Driver Report', 'Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.']
+];
 var RCC_WELCOME_HTML =
   '<p class="rcc-welcome-lead">Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap.</p>' +
   '<p>You build your own offline championship on this page, race each round in the game against the AI, and upload the results files the game saves. The page does the rest. It keeps the drivers\u2019 and teams\u2019 standings for every class, the manufacturers\u2019 standings for the factory Hypercars, and the bonus points for pole, fastest lap and most laps led.</p>' +
-  '<div class="rcc-welcome-grid">' +
-    '<div><strong>A real seat</strong><span>Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.</span></div>' +
-    '<div><strong>Your calendar, your rules</strong><span>Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.</span></div>' +
-    '<div><strong>Race Recap</strong><span>Full results, a lap-by-lap race report, the race settings and every lap you drove.</span></div>' +
-    '<div><strong>Driver Report</strong><span>Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.</span></div>' +
-  '</div>' +
+  '<div class="rcc-welcome-grid">' + RCC_WELCOME_PERKS.map(function (p) { return '<div><strong>' + p[0] + '</strong><span>' + p[1] + '</span></div>'; }).join('') + '</div>' +
   '<p>Race Club Championship is open to a small group of members while it is being tested. Take a look at a real season in the demo below.</p>';
 
 function rccStartDemo() {
-  fetch(RCC_DEMO_FILE, { cache: 'no-cache' }).then(function (r) {
-    if (!r.ok) throw new Error('missing');
+  // The time stamp skips any copy a cache kept (GitHub Pages holds answers, a "not found" included,
+  // for up to 10 minutes after a push).
+  fetch(RCC_DEMO_FILE + '?v=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+    if (!r.ok) throw new Error('demo file answered ' + r.status);
     return r.json();
   }).then(function (d) {
     if (!d || !d.page || !d.page.success) throw new Error('bad');
@@ -2541,7 +2551,8 @@ function rccStartDemo() {
     pill.textContent = 'Close Demo Page \u2715';
     pill.addEventListener('click', function () { window.location.href = 'championship.html'; });
     document.body.appendChild(pill);
-  }).catch(function () {
+  }).catch(function (err) {
+    if (window.console) console.error('Demo failed:', err);
     rccRenderWelcome();
     _rccToast('The demo is not available right now. Please try again later.', 'error');
   });
