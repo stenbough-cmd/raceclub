@@ -1141,6 +1141,24 @@ function _rclRenderLastRace_(hub) {
   if (titleEl) titleEl.textContent = seasonEnded ? 'Season Recap' : (showPreview ? 'Season Preview' : 'Last Race');
   body.classList.toggle('rcl-seasonfmt-modal-body', showPreview);
 
+  // RACE RECAP button at the right end of the panel header (same graphite track + plate look as the
+  // Drivers/Teams switch, but a single plate acting as a button). Opens the same Race Recap popup
+  // the calendar's RACE RECAP buttons open, preselected to the last completed round. Re-rendered
+  // each time, so remove any copy from a previous render first.
+  var recapHead = document.querySelector('#rcl-last-race-panel .rcl-panel-head');
+  if (recapHead) {
+    var oldRecap = recapHead.querySelector('.rcl-metal-button');
+    if (oldRecap) oldRecap.parentNode.removeChild(oldRecap);
+    if (hub.lastRace && hub.lastRace.roundId && !showPreview) {
+      var recapBtn = _rclEl('button', 'rcl-metal-button');
+      recapBtn.type = 'button';
+      recapBtn.setAttribute('aria-label', 'Open the race recap');
+      recapBtn.appendChild(_rclEl('span', 'rcl-metal-button-plate', 'Race Recap'));
+      recapBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, hub.lastRace.roundId); });
+      recapHead.appendChild(recapBtn);
+    }
+  }
+
   var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
   if (panel) panel.style.display = hasSeason ? '' : 'none';

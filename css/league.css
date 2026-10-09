@@ -2274,6 +2274,44 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 }
 .rcl-metal-switch:not(.rcl-metal-switch-teams) .rcl-metal-label-drivers,
 .rcl-metal-switch-teams .rcl-metal-label-teams { color: var(--rcl-ink); }
+/* Single-plate version of the switch above: same graphite track and plate, one side only, acts as a
+   button. Sits at the right end of a .rcl-panel-head (flex, align-items:center) so it is vertically
+   centered with the title. */
+.rcl-metal-button {
+  flex: none;
+  height: 34px;
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid var(--rcl-line-bright);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0.12) 1px 3px),
+    linear-gradient(180deg, #2a2b2f 0%, #1d1e21 50%, #18191b 52%, #232427 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+.rcl-metal-button-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid #5a5d65;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(0, 0, 0, 0.06) 1px 2px),
+    linear-gradient(180deg, #55585f 0%, #3f4147 48%, #35373c 52%, #4a4c53 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-family: var(--rc-font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--rcl-ink);
+}
+.rcl-metal-button:hover .rcl-metal-button-plate { filter: brightness(1.15); }
+.rcl-metal-button:active .rcl-metal-button-plate { transform: translateY(1px); }
+.rcl-metal-button:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
 .rcl-metal-switch:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .rcl-metal-knob, .rcl-metal-label { transition: none; }
