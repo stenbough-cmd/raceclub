@@ -769,7 +769,7 @@ function _rclBoardIdentityCells_(row, kind) {
     manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
     slot.appendChild(img);
   }
-  var num = _rclEl('div', 'rcl-board-num', row.carNumber ? _rclEscapeHtml(row.carNumber) : '');
+  var num = _rclEl('div', 'rcl-board-num', row.carNumber ? '#' + _rclEscapeHtml(row.carNumber) : '');
   var nameRow = _rclEl('div', 'rcl-standings-name-row rcl-board-name-cell');
   if (kind === 'teams') {
     var teamName = document.createElement('span');
@@ -855,8 +855,8 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   var n = rounds.length;
   var scroller = _rclEl('div', 'rcl-board-scroll');
   var table = _rclEl('div', 'rcl-board-table');
-  table.style.setProperty('--rcl-board-cols', '44px 50px 36px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
-  table.style.minWidth = (44 + 50 + 36 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
+  table.style.setProperty('--rcl-board-cols', '44px 50px 44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.minWidth = (44 + 50 + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
   hr.appendChild(_rclEl('div', null, 'Pos'));

@@ -2279,7 +2279,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 @media (max-width: 640px) {
   /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
      board, so !important is needed to replace it. */
-  .rcl-board-table { --rcl-board-cols: 40px 34px 26px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
+  .rcl-board-table { --rcl-board-cols: 40px 34px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
   .rcl-board .rcl-standings-mfr-logo-slot { width: 34px; }
   .rcl-board .rcl-standings-mfr-logo { max-width: 34px; }
   .rcl-board-num { font-size: 13px; }
