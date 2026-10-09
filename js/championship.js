@@ -419,7 +419,7 @@ function rccRenderActionBar(page) {
   add('End Season', active, rccOpenEndSeason, 'No active season to end.');
   add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.');
   // Team Information has no link of its own: the team in the header subtitle opens it.
-  if (active && !page.registration) add('Choose Your Team', true, rccOpenRegistration);
+  // Choose Your Team lives only in the Season Preview container (Matt, 2026-10-09), not in this bar.
   var cal = (page && page.calendar) || [];
   var anyEmpty = cal.some(function (c) { return !c.hasResults; });
   var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
