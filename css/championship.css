@@ -196,26 +196,48 @@ body.rc-league-page.rcc-page {
    the same so it stays centered over them. */
 .rcc-board-head > div:first-child { text-align: center; margin-left: -6px; }
 .rcc-board-round-head { display: flex; justify-content: center; align-items: center; }
-/* "Drivers" / "Teams" label left-aligned over the names, not over the maker logos: skip the 50px
-   logo slot (.rcl-standings-mfr-logo-slot) plus the 8px gap after it (.rcl-standings-identity). */
-.rcc-board-name-head { text-align: left; padding-left: 58px; }
+/* "Drivers" / "Teams" label left-aligned over the names (the logo and N° have their own columns). */
+.rcc-board-name-head { text-align: left; }
+/* Car number column: "N" with a raised degree circle in the header, "#007"-style numbers below. */
+.rcc-board-num-head { text-align: center; }
+.rcc-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
+.rcc-board-num { text-align: center; font-size: 14.5px; font-weight: 400; color: var(--rc-carbon); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The name cell holds only the name; it cuts off with "..." before the round columns shrink. */
+.rcc-board-name-cell { min-width: 0; }
+.rcc-board .rcl-standings-name { min-width: 0; }
 .rcc-board-total-head { text-align: right; }
 .rcc-board-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; border: 1px solid var(--rc-silver); display: block; }
 .rcc-board-round {
   text-align: center;
   font-family: var(--rc-font-heading);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--rc-carbon);
   font-variant-numeric: tabular-nums;
 }
-.rcc-board-bonus { font-size: 9px; font-weight: 800; color: var(--rcc-navy); margin-left: 1px; vertical-align: super; line-height: 0; }
+.rcc-board-bonus { font-size: 9px; font-weight: 400; color: var(--rcc-navy); margin-left: 1px; vertical-align: super; line-height: 0; }
+/* Driver and team names in ALL CAPS. league.css already does the boards, Last Race podium and
+   mention cards, results popups and race report (.rcl-standings-name, .rcl-lr-podium-name, ...);
+   these are the championship-only spots: Team Information, Choose Your Team and the signing
+   reveal. The ticker and the hero subtitle are left as they are. */
+.rcc-myteam-name,
+.rcc-grid-team,
+.rcc-grid-crew,
+.rcc-page .rc-team-name,
+.rcc-page .rc-signing-reveal-team { text-transform: uppercase; }
+/* Names, car numbers and team names in normal weight; the PTS total and rank badges stay bold. */
+.rcc-board .rcl-standings-name,
+.rcc-board .rcl-standings-carnum,
+.rcc-board .rcl-standings-team { font-weight: 400; }
 /* Footer under each board: bonus points note (and the phone-only "view on PC" note), in the
    page's navy instead of the League Hub's gold. */
 .rcc-board-note { color: var(--rcc-navy); }
 .rcc-board-footer .rcc-board-note + .rcc-board-note { margin-top: 4px; }
 
-/* Metal Drivers / Teams switch in a class panel's header (not shown for Hypercar). */
+/* Metal Drivers / Teams switch in a class panel's header (not shown for Hypercar). Dark brushed
+   graphite like the League Hub's (.rcl-metal-*, league.css), with a lighter graphite knob, white
+   selected label and grey unselected label. The League's colour tokens are light-page values here,
+   so its dark colours are written out. Focus ring in navy so it shows on this light page. */
 .rcc-switch-slot { display: flex; align-items: center; }
 .rcc-metal-switch {
   position: relative;
@@ -226,13 +248,11 @@ body.rc-league-page.rcc-page {
   height: 34px;
   padding: 3px;
   border-radius: 9px;
-  /* Light brushed silver, lighter than the class header bar under it (.rcl-standings-class-header)
-     so the switch doesn't pull the eye away from the board (Matt). */
-  border: 1px solid color-mix(in srgb, var(--rc-steel) 35%, var(--rc-silver));
+  border: 1px solid #45474d;
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px),
-    linear-gradient(180deg, #f6f7f8 0%, #e9ecee 48%, #e1e4e7 52%, #f1f3f4 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(255, 255, 255, 0.8);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0.12) 1px 3px),
+    linear-gradient(180deg, #2a2b2f 0%, #1d1e21 50%, #18191b 52%, #232427 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
   cursor: pointer;
 }
 .rcc-metal-knob {
@@ -242,11 +262,11 @@ body.rc-league-page.rcc-page {
   width: calc(50% - 3px);
   height: calc(100% - 6px);
   border-radius: 6px;
-  border: 1px solid #b4bbc2;
+  border: 1px solid #5a5d65;
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.03) 1px 2px),
-    linear-gradient(180deg, #ffffff 0%, #eef0f2 45%, #dfe3e7 55%, #f8f9fa 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(0, 0, 0, 0.06) 1px 2px),
+    linear-gradient(180deg, #55585f 0%, #3f4147 48%, #35373c 52%, #4a4c53 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   transition: transform 0.22s ease;
 }
 .rcc-metal-switch-teams .rcc-metal-knob { transform: translateX(100%); }
@@ -259,13 +279,15 @@ body.rc-league-page.rcc-page {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rc-steel);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #7d8088;
   transition: color 0.22s ease;
 }
 .rcc-metal-switch:not(.rcc-metal-switch-teams) .rcc-metal-label-drivers,
-.rcc-metal-switch-teams .rcc-metal-label-teams { color: var(--rc-carbon); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
+.rcc-metal-switch-teams .rcc-metal-label-teams { color: var(--rc-white); }
 .rcc-metal-switch:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .rcc-metal-knob, .rcc-metal-label { transition: none; }
+}
 
 /* -------------------------------------------------------------------- */
 /* Standings tabs (Drivers / Teams) in the panel header                  */
@@ -447,7 +469,10 @@ body.rc-league-page.rcc-page {
   .rcc-bonus-row { grid-template-columns: 1fr; }
   /* Standings on a phone: Pos, Drivers/Teams and Pts only (no round columns), like the League Hub.
      The column list is set inline per board, so !important is needed to replace it here. */
-  .rcc-board-table { --rcc-board-cols: 44px minmax(0, 1fr) 58px !important; min-width: 0 !important; }
+  .rcc-board-table { --rcc-board-cols: 40px 34px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
+  .rcc-board .rcl-standings-mfr-logo-slot { width: 34px; }
+  .rcc-board .rcl-standings-mfr-logo { max-width: 34px; }
+  .rcc-board-num { font-size: 13px; }
   .rcc-board-round-head,
   .rcc-board-round { display: none; }
   .rcc-board-footer .rcl-standings-status-mobile-note { display: block; }

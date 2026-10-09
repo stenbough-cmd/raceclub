@@ -835,8 +835,8 @@ function _rccIdentity(row, opts) {
 }
 
 // One board per class (Hypercar first, then LMP2, LMP3, LMGT3, LMGTE), each in its own panel.
-// Columns: Pos | Driver or Team | one column per round (track flag header; points, bonus in
-// superscript) | Total. Drivers: crew-mates of one car with equal points share a line and a rank
+// Columns: Pos | maker logo | N° | Driver or Team | one column per round (track flag header; points,
+// bonus in superscript) | Total. Drivers: crew-mates of one car with equal points share a line and a rank
 // ("Name, Name, Name"), as the FIA prints WEC standings. Hypercar shows the drivers' world
 // championship only; every other class has a metal Drivers/Teams switch in the panel header.
 RCC.standingsView = RCC.standingsView || {};
@@ -871,13 +871,27 @@ function _rccMetalSwitch(view, onChange) {
   return sw;
 }
 
+// Three grid cells for a board row: maker logo | car number | name. The logo slot always stays
+// (empty space when there's no logo or it fails to load) so every number and name lines up. The
+// number keeps leading zeros exactly as stored (#007). Hover on the name shows the full name + number.
+function _rccBoardCells(row, name) {
+  var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
+  if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
+  var num = _rccText('div', 'rcc-board-num', row.carNumber ? '#' + row.carNumber : '');
+  var nameCell = _rccEl('div', 'rcl-standings-name-row rcc-board-name-cell');
+  nameCell.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), name));
+  nameCell.title = name + (row.carNumber ? ' #' + row.carNumber : '');
+  return [slot, num, nameCell];
+}
+
 function _rccStandingsBoard(page, className, kind) {
   var source = kind === 'teams' ? page.standings.teams : page.standings.drivers;
   var cls = (source || []).filter(function (c) { return c.className === className; })[0] || { className: className, standings: [] };
   var board = _rccEl('div', 'rcl-standings-class rcc-board');
   var head;
   if (className === 'Hypercar') {
-    head = _rccText('div', 'rcl-standings-class-header', 'RACE CLUB HYPERCAR WORLD ENDURANCE DRIVERS CHAMPIONSHIP');
+    head = _rccText('div', 'rcl-standings-class-header', 'RACE CLUB WORLD ENDURANCE CHAMPIONSHIP');
+    head.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FOR HYPERCAR DRIVERS'));
   } else {
     head = _rccText('div', 'rcl-standings-class-header', 'RACE CLUB ENDURANCE TROPHY');
     head.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FOR ' + className.toUpperCase() + (kind === 'teams' ? ' TEAMS' : ' DRIVERS')));
@@ -887,16 +901,20 @@ function _rccStandingsBoard(page, className, kind) {
   var rounds = page.calendar || [];
   var scoredIdx = {};
   (page.standings.scoredRoundIds || []).forEach(function (id, i) { scoredIdx[id] = i; });
-  // The name column shrinks first: names cut off with "..." as the round columns need the room, down
-  // to 140px. Only past that (a very long calendar) does the board scroll sideways. minWidth = the
-  // columns + 6px gaps between them + the rows' 6px side padding.
-  var cols = '44px minmax(140px, 1fr) repeat(' + rounds.length + ', 46px) 58px';
+  // Pos | logo | N° | name | one column per round | Pts. The name column shrinks first: names cut off
+  // with "..." as the round columns need the room, down to 140px. Only past that (a very long
+  // calendar) does the board scroll sideways. minWidth = the columns + the 6px gaps between them +
+  // the rows' 6px side padding.
+  var n = rounds.length;
+  var cols = '44px 50px 44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px';
   var scroller = _rccEl('div', 'rcc-board-scroll');
   var table = _rccEl('div', 'rcc-board-table');
   table.style.setProperty('--rcc-board-cols', cols);
-  table.style.minWidth = (44 + 140 + 46 * rounds.length + 58 + 6 * (rounds.length + 2) + 12) + 'px';
+  table.style.minWidth = (44 + 50 + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
+  hr.appendChild(_rccEl('div'));
+  hr.appendChild(_rccEl('div', 'rcc-board-num-head', 'N<sup class="rcc-board-num-deg">&deg;</sup>'));
   hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
     var cell = _rccEl('div', 'rcc-board-round-head');
@@ -913,15 +931,14 @@ function _rccStandingsBoard(page, className, kind) {
     scroller.appendChild(table);
     board.appendChild(scroller);
     board.appendChild(_rccEmpty('No Data To Display', 'No entries in this class.'));
+    _rccStandingsFooter(board, page);
     return board;
   }
   lines.forEach(function (line, idx) {
     var row = line.row;
     var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
     rowEl.appendChild(_rccPosBadge(idx));
-    var ident = _rccIdentity(row, { nameOverride: line.names.join(', '), hideTeam: true });
-    ident.title = line.names.join(', ') + (row.carNumber ? ' #' + row.carNumber : '');
-    rowEl.appendChild(ident);
+    _rccBoardCells(row, line.names.join(', ')).forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rccEl('div', 'rcc-board-round');
       var i = scoredIdx[r.roundId];
@@ -984,7 +1001,7 @@ function rccRenderStandings(page) {
     var row = _rccEl('div', 'rcl-row-full');
     var panel = _rccEl('section', 'rcl-panel');
     var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
-    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Championship Standings'));
+    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + (page.seasonEnded ? ' Final Standings' : ' Standings')));
     var body = _rccEl('div', 'rcl-panel-body');
     var hasTeams = className !== 'Hypercar' && (page.standings.teams || []).some(function (t) { return t.className === className && t.standings.length; });
     var switchSlot = _rccEl('div', 'rcc-switch-slot');
@@ -1038,6 +1055,10 @@ function rccRenderManufacturers(page) {
     rest.forEach(function (m, i) {
       var r = _rccEl('div', 'rcl-mfr-rest-item');
       r.appendChild(_rccText('span', 'rcl-mfr-rest-rank', (i + 4) + '.'));
+      // Small black logo (46x20 box, league.css); the box stays empty if a logo is missing so names line up.
+      var logoSlot = _rccEl('span', 'rcl-mfr-rest-logo-slot');
+      logoSlot.appendChild(_rccLogo('rcl-mfr-rest-logo', m.manufacturer));
+      r.appendChild(logoSlot);
       r.appendChild(_rccText('span', 'rcl-mfr-rest-name', m.manufacturer.toUpperCase()));
       r.appendChild(_rccText('span', 'rcl-mfr-rest-pts', Math.round(m.points) + ' PTS'));
       restList.appendChild(r);
