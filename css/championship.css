@@ -411,12 +411,6 @@ body.rc-league-page.rcc-page {
 .rcc-upload-bad { border-left: 3px solid var(--rc-red); color: var(--rc-red); }
 .rcc-upload-note, .rcc-upload-skip { color: var(--rc-steel); }
 
-/* Round tools */
-.rcc-tool-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rc-silver); flex-wrap: wrap; }
-.rcc-tool-title { font-weight: 800; color: var(--rc-carbon); }
-.rcc-tool-sub { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
-.rcc-tool-btns { display: flex; gap: 8px; }
-
 /* Team information */
 .rcc-myteam { display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
 .rcc-myteam-logo { width: 56px; height: 56px; object-fit: contain; }

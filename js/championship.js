@@ -398,7 +398,12 @@ function rccRenderActionBar(page) {
   } else {
     add('Team Information', hasSeason, rccOpenTeamInfo, 'No season yet.');
   }
-  add('Round Tools', active && !!page.registration, rccOpenRoundTools, active ? 'Choose your team first.' : 'No active season.');
+  var cal = (page && page.calendar) || [];
+  var anyEmpty = cal.some(function (c) { return !c.hasQualifyResults && !c.hasRaceResults; });
+  var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
+  add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
+    !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'));
+  add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
   if (page && page.seasons && page.seasons.length > 1) {
@@ -1954,18 +1959,38 @@ function rccOpenDeleteSeason() {
 // ---------------------------------------------------------------------
 // UPLOAD RESULTS
 // ---------------------------------------------------------------------
-// Upload Results: always for ONE round (opened from that round's calendar card or its Round Tools
-// row). Two required files, 1 = Qualify, 2 = Race, sent together; the server checks they belong to
-// the same race weekend and this round's track. Results are official as soon as they're in.
-// Errors and the success message are toasts; on success every popup closes and the page reloads.
-function rccOpenUpload(roundId, lockRound, parentModal) {
+// Upload Results. From a calendar card (lockRound) it is for that one round; from the black bar it
+// opens with a dropdown of the rounds that don't have results yet (first one picked). Two required
+// files, 1 = Qualify, 2 = Race, sent together; the server checks they belong to the same race
+// weekend and the round's track. Results are official as soon as they're in. Errors and the success
+// message are toasts; on success the popup closes and the page reloads.
+function _rccRoundLabel(c) {
+  return 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + (c.layout ? ': ' + c.layout : '') + ')' : '');
+}
+function rccOpenUpload(roundId, lockRound) {
   var page = RCC.page;
-  var c = (page.calendar || []).filter(function (x) { return x.roundId === roundId; })[0];
-  if (!c) { _rccToast('That round is not part of this season.', 'error'); return; }
-  if (c.hasQualifyResults || c.hasRaceResults) { _rccToast('Round ' + c.roundNum + ' already has results. Erase them in Round Tools first.', 'error'); return; }
+  var cal = page.calendar || [];
+  var open = cal.filter(function (x) { return !x.hasQualifyResults && !x.hasRaceResults; });
+  var c;
+  if (lockRound) {
+    c = cal.filter(function (x) { return x.roundId === roundId; })[0];
+    if (!c) { _rccToast('That round is not part of this season.', 'error'); return; }
+    if (c.hasQualifyResults || c.hasRaceResults) { _rccToast('Round ' + c.roundNum + ' already has results. Use Erase Results first.', 'error'); return; }
+  } else {
+    if (!open.length) { _rccToast('Every round already has results.', 'error'); return; }
+    c = open[0];
+  }
   var m = rccOpenModal('Upload Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
-  m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + (c.layout ? ': ' + c.layout : '') + ')' : ''))));
+  var roundSel = null;
+  if (lockRound) {
+    m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', _rccRoundLabel(c))));
+  } else {
+    roundSel = _rccSelect(open.map(function (x) { return { label: _rccRoundLabel(x), value: x.roundId }; }), c.roundId, function (v) {
+      c = open.filter(function (x) { return x.roundId === v; })[0] || c;
+    });
+    m.body.appendChild(_rccField('Round', roundSel));
+  }
   function fileInput() {
     var f = document.createElement('input');
     f.type = 'file';
@@ -1993,7 +2018,7 @@ function rccOpenUpload(roundId, lockRound, parentModal) {
       rd.readAsText(f);
     });
   }
-  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; }
+  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
 
   go.addEventListener('click', function () {
     if (!bothChosen()) { _rccToast('Choose both files: 1 is the Qualify results, 2 is the Race results.', 'error'); return; }
@@ -2016,7 +2041,6 @@ function rccOpenUpload(roundId, lockRound, parentModal) {
       (res.warnings || []).forEach(function (w) { _rccToast(w, 'info'); });
       _rccToast('Round ' + c.roundNum + ' results uploaded.', 'success');
       m.close(true);
-      if (parentModal) parentModal.close(true);
       rccReloadAfterSave();
     }).catch(function (e) {
       lockInputs(false);
@@ -2026,37 +2050,55 @@ function rccOpenUpload(roundId, lockRound, parentModal) {
 }
 
 // ---------------------------------------------------------------------
-// ROUND TOOLS -- finalize / erase per round
+// ERASE RESULTS -- pick a round that has results from a dropdown, then erase it. The round stays on
+// the calendar, ready for a new upload. Allowed until the season ends.
 // ---------------------------------------------------------------------
-function rccOpenRoundTools() {
+function rccOpenErase() {
   var page = RCC.page;
-  var m = rccOpenModal('Round Tools', { wide: true });
-  var canUpload = !page.seasonEnded && !!page.registration;
-  (page.calendar || []).forEach(function (c) {
-    var row = _rccEl('div', 'rcc-tool-row');
-    var info = _rccEl('div', 'rcc-tool-info');
-    info.appendChild(_rccText('div', 'rcc-tool-title', 'Round ' + c.roundNum + ' · ' + c.eventName));
-    info.appendChild(_rccText('div', 'rcc-tool-sub', (c.track ? c.track + (c.layout ? ': ' + c.layout : '') + ' · ' : '') + (c.hasResults ? 'Results uploaded' : (c.hasQualifyResults || c.hasRaceResults ? 'Partly uploaded' : 'No results yet'))));
-    row.appendChild(info);
-    var btns = _rccEl('div', 'rcc-tool-btns');
-    var hasAny = c.hasQualifyResults || c.hasRaceResults;
-    var up = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Upload Results');
-    up.type = 'button';
-    up.disabled = !canUpload || hasAny;
-    up.addEventListener('click', function () { rccOpenUpload(c.roundId, true, m); });
-    var er = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Erase Results');
-    er.type = 'button';
-    er.disabled = page.seasonEnded || !hasAny;
-    er.addEventListener('click', function () {
-      rccConfirm('Erase Round ' + c.roundNum, 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload. Driver names already added to the Cars tab stay there.',
-        'Erase Results', 'Erasing...',
-        function () { return _rccApi('champEraseRound', { roundId: c.roundId }, { post: true }); },
-        function () { _rccToast('Round ' + c.roundNum + ' erased.', 'success'); m.close(true); rccReloadAfterSave(); });
+  var done = (page.calendar || []).filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
+  if (!done.length) { _rccToast('No results to erase yet.', 'error'); return; }
+  var c = done[done.length - 1];
+  var m = rccOpenModal('Erase Results', { narrow: false });
+  m.dialog.classList.add('rcc-light-dialog');
+  var sel = _rccSelect(done.map(function (x) { return { label: _rccRoundLabel(x), value: x.roundId }; }), c.roundId, function (v) {
+    c = done.filter(function (x) { return x.roundId === v; })[0] || c;
+    say();
+  });
+  m.body.appendChild(_rccField('Round', sel));
+  var text = _rccEl('p', 'rcc-confirm-text');
+  m.body.appendChild(text);
+  function say() {
+    text.textContent = 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload. Driver names already added to the Cars tab stay there.';
+  }
+  say();
+  var row = _rccEl('div', 'rcc-btn-row');
+  var cancel = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+  cancel.type = 'button';
+  var commit = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Erase Results');
+  commit.type = 'button';
+  row.appendChild(cancel);
+  row.appendChild(commit);
+  m.body.appendChild(row);
+  cancel.addEventListener('click', function () { m.close(false); });
+  commit.addEventListener('click', function () {
+    var round = c;
+    cancel.disabled = true;
+    sel.disabled = true;
+    rccRunWrite(commit, 'Erasing...', function () {
+      return _rccApi('champEraseRound', { roundId: round.roundId }, { post: true });
+    }).then(function (res) {
+      cancel.disabled = false;
+      sel.disabled = false;
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { _rccToast((res && res.message) || 'That did not work. Try again.', 'error'); return; }
+      _rccToast('Round ' + round.roundNum + ' erased.', 'success');
+      m.close(true);
+      rccReloadAfterSave();
+    }).catch(function () {
+      cancel.disabled = false;
+      sel.disabled = false;
+      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it went through.', 'error');
     });
-    btns.appendChild(up);
-    btns.appendChild(er);
-    row.appendChild(btns);
-    m.body.appendChild(row);
   });
 }
 
