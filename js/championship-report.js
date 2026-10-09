@@ -244,16 +244,16 @@ var RCR_CARS = {
   // LMP2 / LMP3: a narrow tub and bubble canopy between pronounced wheel pods, a shark fin and a
   // full-width rear wing.
   prototype: {
-    body: 'M48 36 Q80 26 112 36 Q132 42 136 64 L138 116 Q137 126 128 134 L126 184 Q136 190 138 204 L138 258 Q136 274 120 278 L40 278 Q24 274 22 258 L22 204 Q24 190 34 184 L32 134 Q23 126 22 116 L24 64 Q28 42 48 36 Z',
+    body: 'M24 64 Q22 34 40 29 Q57 25 62 38 Q80 45 98 38 Q103 25 120 29 Q138 34 136 64 L138 116 Q137 126 128 134 L126 184 Q136 190 138 204 L138 258 Q136 274 120 278 L40 278 Q24 274 22 258 L22 204 Q24 190 34 184 L32 134 Q23 126 22 116 Z',
     glass: [
       { d: 'M68 92 Q80 78 92 92 L94 150 Q80 160 66 150 Z', cls: 'rcr-car-glass' }
     ],
-    lines: ['M80 160 L80 262', 'M56 42 Q80 34 104 42', 'M50 138 L50 182', 'M110 138 L110 182'],
+    lines: ['M80 160 L80 262', 'M62 40 Q61 90 56 132', 'M98 40 Q99 90 104 132', 'M50 138 L50 182', 'M110 138 L110 182'],
     extras: [
       { tag: 'rect', a: { x: 20, y: 264, width: 120, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
     // Front splitter (floor), square and a little past the rounded nose.
-    under: [{ tag: 'rect', a: { x: 22, y: 20, width: 116, height: 44, rx: 2 }, cls: 'rcr-car-splitter' }],
+    under: [{ tag: 'rect', a: { x: 22, y: 26, width: 116, height: 40, rx: 2 }, cls: 'rcr-car-splitter' }],
     tyres: [[28, 66], [112, 66], [28, 208], [112, 208]], tw: 20, th: 46
   },
   // Hypercar (LMH / LMDh): bigger and wider, with a long sculpted nose, tall front fenders, a
@@ -267,7 +267,7 @@ var RCR_CARS = {
     extras: [
       { tag: 'rect', a: { x: 12, y: 270, width: 136, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
-    under: [{ tag: 'rect', a: { x: 16, y: 14, width: 128, height: 46, rx: 2 }, cls: 'rcr-car-splitter' }],
+    under: [{ tag: 'rect', a: { x: 16, y: 21, width: 128, height: 40, rx: 2 }, cls: 'rcr-car-splitter' }],
     tyres: [[22, 66], [118, 66], [22, 210], [118, 210]], tw: 20, th: 48
   }
 };
