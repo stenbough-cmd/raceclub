@@ -262,6 +262,10 @@ function renderHeaderPending() {
       '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
         '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
       '</a>' +
+      // Championship logo (CHAMP chat, 2026-10-09): same link/logo classes as League Hub.
+      '<a class="rc-header-leaguehub-logo-link" href="championship.html" style="margin-left:18px">' +
+        '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.png" alt="Championship" draggable="false">' +
+      '</a>' +
     '</span>' +
     '<nav class="rc-header-nav"></nav>';
 }
@@ -293,6 +297,11 @@ function renderHeader(opts) {
               // (style.css) -- together they keep this reading as a clickable link, not draggable/
               // selectable image content.
               '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
+            '</a>' +
+            // Championship logo (CHAMP chat, 2026-10-09): links to championship.html, which shows
+            // your own championship, or the Welcome box and demo for everyone else.
+            '<a class="rc-header-leaguehub-logo-link" href="championship.html" style="margin-left:18px">' +
+              '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.png" alt="Championship" draggable="false">' +
             '</a>' +
           '</span>';
   html += '<nav class="rc-header-nav">';

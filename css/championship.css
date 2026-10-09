@@ -691,3 +691,20 @@ a.rcc-hero-meta-name { color: inherit; }
 }
 .rcr-popup-round { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcc-navy); margin: -4px 0 6px; }
 .rcc-page .rcl-carousel-hero-btns { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+
+/* ===================== WELCOME + DEMO ===================== */
+.rcc-welcome-body { padding: 22px 24px 26px; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
+.rcc-welcome-body p { margin: 0 0 14px; }
+.rcc-welcome-lead { font-size: 17px; font-weight: 600; }
+.rcc-welcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0 20px; }
+.rcc-welcome-grid > div { padding: 14px 16px; border-radius: 10px; background: linear-gradient(180deg, #ffffff, #f3f5f7); border: 1px solid #e3e6ea; }
+.rcc-welcome-grid strong { display: block; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); margin-bottom: 4px; }
+.rcc-welcome-grid span { font-size: 13.5px; color: #4b5563; line-height: 1.5; }
+.rcc-welcome-cta { display: flex; justify-content: center; margin-top: 8px; }
+.rcc-welcome-demo { text-decoration: none; }
+/* Locked demo buttons keep their normal look and hover colour; clicking does nothing. */
+.rcc-demo .rcc-demo-locked { cursor: not-allowed; }
+.rcc-demo-pill { position: fixed; top: 122px; right: 16px; z-index: 900; background: #111; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); cursor: pointer; }
+.rcc-demo-pill:hover { background: #2b2b2b; }
+.rcc-demo-pill:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
+@media (max-width: 640px) { .rcc-demo-pill { top: 116px; right: 10px; padding: 8px 14px; font-size: 11px; } }

@@ -101,6 +101,8 @@ function _rccLogo(className, manufacturer, onFail) {
 // the League Hub uses). Only the player has a profile; AI drivers stay plain text. The profile page
 // will show championship stats for drivers with Championship Access (Matt).
 function _rccPlayerName(className, name) {
+  // The demo's driver (Max Powers) has no public profile.
+  if (RCC.demo) return _rccText('span', (className ? className + ' ' : '') + 'rcc-player-link', name || '');
   var a = document.createElement('a');
   a.className = (className ? className + ' ' : '') + 'rcl-driver-link rcc-player-link';
   a.href = 'profile.html?id=' + encodeURIComponent(RCC.ownerId || '');
@@ -207,10 +209,12 @@ function _rccHidePageLoader() {
   setTimeout(function () { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 450);
 }
 
-// Returns false (and navigates away) when this viewer may not see this page.
+// Returns the page mode: 'owner' (your own championship), 'welcome' (logged out, or no Championship
+// Access), 'demo' (?demo=1, the read-only demo season) -- or false after navigating away.
 function _rccCheckAccess() {
+  if (_rccQuery('demo') === '1') return 'demo';
   var token = getToken();
-  if (!token) { window.location.replace('index.html'); return false; }
+  if (!token) return 'welcome';
   RCC.token = token;
   var me = getProfileCache() || {};
   var id = _rccQuery('id');
@@ -222,15 +226,17 @@ function _rccCheckAccess() {
     window.location.replace(url);
     return false;
   }
-  if (me.profileId && (id !== me.profileId || !(me.role === 'Admin' || me.champAccess))) {
-    window.location.replace('Account.html');
+  if (me.profileId && !(me.role === 'Admin' || me.champAccess)) return 'welcome';
+  if (me.profileId && id !== me.profileId) {
+    window.location.replace('championship.html?id=' + encodeURIComponent(me.profileId));
     return false;
   }
   RCC.ownerId = id;
-  return true;
+  return 'owner';
 }
 
 function _rccApi(action, params, opts) {
+  if (RCC.demo) return _rccDemoApi(action, params || {});
   opts = opts || {};
   var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
   if (opts.post) {
@@ -249,7 +255,8 @@ function _rccApi(action, params, opts) {
 function _rccHandleAuthError(res) {
   if (!res || res.success) return false;
   if (res.error === 'NOT_AUTHENTICATED') { window.location.replace('index.html'); return true; }
-  if (res.error === 'NOT_OWNER' || res.error === 'NOT_AVAILABLE') { window.location.replace('Account.html'); return true; }
+  if (res.error === 'NOT_AVAILABLE') { rccRenderWelcome(); return true; }
+  if (res.error === 'NOT_OWNER') { window.location.replace('Account.html'); return true; }
   return false;
 }
 
@@ -411,6 +418,7 @@ function rccRenderActionBar(page) {
   function add(label, enabled, onClick, why) {
     var b = _rccText('button', 'rcc-actionbar-link', label);
     b.type = 'button';
+    if (RCC.demo && RCC_DEMO_LOCKED.indexOf(label) !== -1) { _rccDemoLock(b); links.appendChild(b); return; }
     b.disabled = !enabled;
     if (!enabled && why) b.title = why;
     if (enabled) b.addEventListener('click', onClick);
@@ -433,6 +441,14 @@ function rccRenderActionBar(page) {
   add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
   add('Find A Bug?', true, rccOpenBugReport);
   add('Help', true, rccOpenHelp);
+  // Admin only, never in the demo: save this season as the public demo file.
+  var me = (typeof getProfileCache === 'function' && getProfileCache()) || {};
+  if (!RCC.demo && me.role === 'Admin' && hasSeason) {
+    var ex = _rccText('button', 'rcc-actionbar-link', 'Export Demo');
+    ex.type = 'button';
+    ex.addEventListener('click', function () { rccExportDemo(ex); });
+    links.appendChild(ex);
+  }
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
   if (page && page.seasons && page.seasons.length > 1) {
@@ -837,7 +853,8 @@ function rccRenderCarousel(page) {
       }
     } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
       btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
-      btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId, true); });
+      if (RCC.demo) _rccDemoLock(btn);
+      else btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId, true); });
     } else {
       btn = _rccText('button', 'rcl-carousel-hero-btn rcl-carousel-hero-btn-disabled', idx === nextIdx ? 'UP NEXT' : 'NOT YET RACED');
       btn.disabled = true;
@@ -2441,6 +2458,175 @@ function _rccForgetSavedPages() {
 // ---------------------------------------------------------------------
 // BOOT
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// WELCOME + DEMO (Matt, 2026-10-09). Visitors who are logged out or have no Championship Access see
+// the page header and a WELCOME box. "See The Demo" opens championship.html?demo=1, which draws a
+// frozen copy of a real season from assets/data/championship-demo.json (made with Export Demo,
+// below). The demo never calls the server: _rccApi answers from that file, and every button that
+// would change something is locked with a hover note. Nothing in demo mode can write anything.
+// ---------------------------------------------------------------------
+var RCC_DEMO_FILE = 'assets/data/championship-demo.json';
+var RCC_DEMO_NOTE = 'You are viewing a demo version of the Championship page.';
+var RCC_DEMO_LOCKED = ['Create Season', 'Edit Season', 'End Season', 'Delete Season', 'Choose Your Team', 'Upload Results', 'Erase Results', 'Find A Bug?'];
+
+function _rccDemoLock(btn) {
+  btn.disabled = false;
+  btn.classList.add('rc-tooltip', 'rcc-demo-locked');
+  btn.setAttribute('data-tooltip', RCC_DEMO_NOTE);
+  btn.setAttribute('aria-disabled', 'true');
+  btn.removeAttribute('title');
+  btn.addEventListener('click', function (evt) { evt.preventDefault(); evt.stopPropagation(); });
+}
+
+function _rccDemoApi(action, params) {
+  var d = RCC.demo || {};
+  if (action === 'champGetRoundResults') {
+    var r = (d.rounds || {})[params.roundId] || {};
+    var res = r[params.kind || 'race'];
+    return Promise.resolve(res ? { success: true, result: res } : { success: false, error: 'NO_RACE', message: 'No results for this round in the demo.' });
+  }
+  if (action === 'champGetPage') return Promise.resolve(d.page);
+  return Promise.resolve({ success: false, error: 'DEMO', message: RCC_DEMO_NOTE });
+}
+
+function _rccPageShell(showParts) {
+  _rccHidePageLoader();
+  _rccUnlockScroll();
+  ['rcl-last-race-panel', 'rcl-race-carousel', 'rcc-standings-panels', 'rcl-manufacturer-standings'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var box = id === 'rcl-last-race-panel' ? el.parentNode : el;
+    box.style.display = showParts ? '' : 'none';
+  });
+  var bar = document.getElementById('rcc-actionbar');
+  if (bar) bar.style.display = showParts ? '' : 'none';
+}
+
+function rccRenderWelcome() {
+  RCC.demo = null;
+  document.body.classList.remove('rcc-demo');
+  var pill = document.getElementById('rcc-demo-pill');
+  if (pill) pill.parentNode.removeChild(pill);
+  _rccPageShell(false);
+  rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
+  var meta = document.getElementById('rcc-hero-meta');
+  if (meta) meta.innerHTML = '';
+  var track = document.getElementById('rcl-ticker-track');
+  if (track) { track.innerHTML = ''; track.style.animation = 'none'; }
+  var main = document.querySelector('.rcl-main');
+  var old = document.getElementById('rcc-welcome-row');
+  if (old) old.parentNode.removeChild(old);
+  var row = _rccEl('div', 'rcl-row-full');
+  row.id = 'rcc-welcome-row';
+  var panel = _rccEl('section', 'rcl-panel rcc-welcome');
+  var head = _rccEl('div', 'rcl-panel-head');
+  head.appendChild(_rccText('div', 'rcl-panel-title', 'Welcome'));
+  panel.appendChild(head);
+  var body = _rccEl('div', 'rcl-panel-body rcc-welcome-body');
+  body.innerHTML = RCC_WELCOME_HTML;
+  var cta = _rccEl('div', 'rcc-welcome-cta');
+  var go = _rccText('a', 'rc-btn-secondary rcc-welcome-demo', 'See The Demo');
+  go.href = 'championship.html?demo=1';
+  cta.appendChild(go);
+  body.appendChild(cta);
+  panel.appendChild(body);
+  row.appendChild(panel);
+  main.insertBefore(row, main.firstChild);
+}
+
+var RCC_WELCOME_HTML =
+  '<p class="rcc-welcome-lead">Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap.</p>' +
+  '<p>You build your own offline championship on this page, race each round in the game against the AI, and upload the results files the game saves. The page does the rest. It keeps the drivers\u2019 and teams\u2019 standings for every class, the manufacturers\u2019 standings for the factory Hypercars, and the bonus points for pole, fastest lap and most laps led.</p>' +
+  '<div class="rcc-welcome-grid">' +
+    '<div><strong>A real seat</strong><span>Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.</span></div>' +
+    '<div><strong>Your calendar, your rules</strong><span>Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.</span></div>' +
+    '<div><strong>Race Recap</strong><span>Full results, a lap-by-lap race report, the race settings and every lap you drove.</span></div>' +
+    '<div><strong>Driver Report</strong><span>Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.</span></div>' +
+  '</div>' +
+  '<p>Race Club Championship is open to a small group of members while it is being tested. Take a look at a real season in the demo below.</p>';
+
+function rccStartDemo() {
+  fetch(RCC_DEMO_FILE, { cache: 'no-cache' }).then(function (r) {
+    if (!r.ok) throw new Error('missing');
+    return r.json();
+  }).then(function (d) {
+    if (!d || !d.page || !d.page.success) throw new Error('bad');
+    RCC.demo = d;
+    RCC.ownerId = 'DEMO';
+    document.body.classList.add('rcc-demo');
+    _rccPageShell(true);
+    rccRenderAll(d.page);
+    var pill = _rccEl('button', 'rcc-demo-pill');
+    pill.id = 'rcc-demo-pill';
+    pill.type = 'button';
+    pill.textContent = 'Close Demo Page \u2715';
+    pill.addEventListener('click', function () { window.location.href = 'championship.html'; });
+    document.body.appendChild(pill);
+  }).catch(function () {
+    rccRenderWelcome();
+    _rccToast('The demo is not available right now. Please try again later.', 'error');
+  });
+}
+
+// Admin only: download the current season as the demo file (names and IDs scrubbed server side),
+// to save as assets/data/championship-demo.json in the website folder.
+function rccExportDemo(btn) {
+  btn.disabled = true;
+  var label = btn.textContent;
+  btn.textContent = 'Exporting...';
+  _rccApi('champGetPage', { seasonId: (RCC.page && RCC.page.seasonId) || '', exportDemo: '1' }, { timeoutMs: 300000 }).then(function (res) {
+    btn.disabled = false; btn.textContent = label;
+    if (_rccHandleAuthError(res)) return;
+    if (!res || !res.success || !res.demoJson) { _rccToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
+    var blob = new Blob([res.demoJson], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'championship-demo.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+    _rccToast('Demo file downloaded. Put it in the website folder at assets/data/championship-demo.json.', 'success');
+  }).catch(function () {
+    btn.disabled = false; btn.textContent = label;
+    _rccToast('No answer from the server. Try again.', 'error');
+  });
+}
+
+// The site's hover bubble (.rc-tooltip-bubble in css/style.css, same as Account.html's
+// rcInitTooltips): any .rc-tooltip[data-tooltip] element shows it on hover or focus.
+function _rccInitTooltips() {
+  var bubble = null, current = null;
+  function show(t) {
+    if (!bubble) {
+      bubble = _rccEl('div', 'rc-tooltip-bubble');
+      bubble.appendChild(_rccEl('span', 'rc-tooltip-bubble-text'));
+      bubble.appendChild(_rccEl('span', 'rc-tooltip-bubble-arrow'));
+      document.body.appendChild(bubble);
+    }
+    current = t;
+    bubble.firstChild.textContent = t.getAttribute('data-tooltip') || '';
+    bubble.classList.add('rc-tooltip-bubble-visible');
+    place(t);
+  }
+  function place(t) {
+    var r = t.getBoundingClientRect(), bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+    var above = r.top - bh - 10 > 0;
+    var left = Math.max(8, Math.min(window.innerWidth - bw - 8, r.left + r.width / 2 - bw / 2));
+    bubble.style.left = left + 'px';
+    bubble.style.top = (above ? r.top - bh - 8 : r.bottom + 8) + 'px';
+    bubble.classList.toggle('rc-tooltip-bubble-above', above);
+    bubble.classList.toggle('rc-tooltip-bubble-below', !above);
+    bubble.lastChild.style.left = (r.left + r.width / 2 - left) + 'px';
+  }
+  function hide() { current = null; if (bubble) bubble.classList.remove('rc-tooltip-bubble-visible'); }
+  var find = function (n) { return n && n.closest ? n.closest('.rc-tooltip[data-tooltip]') : null; };
+  document.addEventListener('mouseover', function (e) { var t = find(e.target); if (t) show(t); });
+  document.addEventListener('mouseout', function (e) { var t = find(e.target); if (t && (!e.relatedTarget || !t.contains(e.relatedTarget))) hide(); });
+  document.addEventListener('focusin', function (e) { var t = find(e.target); if (t) show(t); });
+  document.addEventListener('focusout', function (e) { if (find(e.target)) hide(); });
+  document.addEventListener('scroll', function () { if (current) place(current); }, true);
+}
+
 function rccRenderAll(page) {
   RCC.page = page;
   rccRenderHero(page);
@@ -2453,7 +2639,11 @@ function rccRenderAll(page) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (!_rccCheckAccess()) return;
+  _rccInitTooltips();
+  var mode = _rccCheckAccess();
+  if (!mode) return;
+  if (mode === 'welcome') { rccRenderWelcome(); return; }
+  if (mode === 'demo') { rccStartDemo(); return; }
   _rccShowCarriedToasts();
   var EMPTY = { hasSeason: false, owner: { displayName: '' }, seasons: [] };
 
