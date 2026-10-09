@@ -421,7 +421,7 @@ function rccRenderActionBar(page) {
   // Team Information has no link of its own: the team in the header subtitle opens it.
   if (active && !page.registration) add('Choose Your Team', true, rccOpenRegistration);
   var cal = (page && page.calendar) || [];
-  var anyEmpty = cal.some(function (c) { return !c.hasQualifyResults && !c.hasRaceResults; });
+  var anyEmpty = cal.some(function (c) { return !c.hasResults; });
   var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
   add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
     !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'));
@@ -470,13 +470,14 @@ function rccRenderTicker(page) {
     var mfr = (page.standings.manufacturers || []).slice(0, 3);
     if (mfr.length && mfr.some(function (m) { return m.points > 0; })) items.push({ tag: 'TOP 3 MANUFACTURER STANDINGS', mfr: mfr });
   } else {
-    // Before any results: one entry per car, its crew together ([logo] Driver, Driver, Driver #n).
+    // Before any results: the entry list, one entry per car ([logo] Team #n). The game's driver for
+    // each car is only known once a result file is in, so only your own car shows a driver name.
     var byClass = {};
     (page.grid || []).forEach(function (g) { (byClass[g.carClass] || (byClass[g.carClass] = [])).push(g); });
     _rccSortClasses(Object.keys(byClass), function (c) { return c; }).forEach(function (cls) {
-      var cars = byClass[cls].filter(function (g) { return (g.crew || []).length; });
+      var cars = byClass[cls];
       if (!cars.length) return;
-      items.push({ tag: cls.toUpperCase() + ' DRIVERS', cars: cars });
+      items.push({ tag: cls.toUpperCase() + ' ENTRY LIST', cars: cars });
     });
   }
   if (page.nextRound) {
@@ -529,7 +530,8 @@ function rccRenderTicker(page) {
           if (i > 0) cl.appendChild(_rccNbsp(10));
           var entry = _rccEl('span', 'rcl-ticker-driver-entry');
           if (g.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', g.manufacturer));
-          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (g.isMine ? ' rcc-me-text' : ''), g.crew.join(', ')));
+          var label = g.isMine ? (g.crew || []).join(', ') : ((g.crew || []).length ? g.crew[0] : g.teamName);
+          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (g.isMine ? ' rcc-me-text' : ''), label));
           if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + g.carNumber));
           cl.appendChild(entry);
         });
@@ -638,7 +640,7 @@ function _rccSeasonFormat(page, body) {
   var classes = Object.keys(d.classes || {}).filter(function (c) { return d.classes[c]; });
   classes = _rccSortClasses(classes, function (c) { return c; });
   var details = [];
-  details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' · no team chosen yet')));
+  details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' (no team chosen yet)')));
   if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '% (' + _rccSkillLevel(rs.aiDifficulty) + ')'));
   if (rs.aiAggression) details.push(row('AI Aggression', rs.aiAggression));
   details.push(row('Championship Rounds', String(page.totalRounds)));
@@ -799,13 +801,13 @@ function rccRenderCarousel(page) {
     if (session) lines.push(session);
     // Weather preset in words (the results file records no weather); the time of day above gives the rest.
     if (entry.weatherText) lines.push(entry.weatherText);
-    if (entry.hasQualifyResults && !entry.hasRaceResults) lines.push('Qualifying imported, race still to come');
+    if (entry.hasQualifyResults && !entry.hasRaceResults) lines.push('Qualifying results uploaded. The race results are still to come.');
     if (lines.length) {
       var det = _rccEl('div', 'rcl-carousel-details');
       lines.forEach(function (l) { det.appendChild(_rccText('div', 'rcl-carousel-details-line', l)); });
-      // The race ran a different length than planned: the card shows what was raced (and its points
-      // tier, server side); hovering the details shows the plan.
-      if (entry.raceLengthAsRaced) det.title = 'As raced: ' + entry.raceLengthMinutes + ' mins (' + entry.raceLengthTier + ' points). Planned: ' + entry.plannedRaceLengthMinutes + ' mins (' + entry.plannedRaceLengthTier + ').';
+      // The race ran longer than planned: the card shows what was raced, and hovering the details
+      // shows the plan (points always follow the planned length).
+      if (entry.raceLengthAsRaced) det.title = 'Raced for ' + entry.raceLengthMinutes + ' minutes. The round is planned as a ' + entry.plannedRaceLengthTier + ' race of ' + entry.plannedRaceLengthMinutes + ' minutes, and it scores ' + entry.plannedRaceLengthTier + ' points.';
       hero.appendChild(det);
     }
     var btns = _rccEl('div', 'rcl-carousel-hero-btns');
@@ -1375,7 +1377,7 @@ function rccOpenTeamInfo() {
       if (g.isMine) top.appendChild(_rccText('span', 'rcc-tag rcc-tag-me', 'You'));
       info.appendChild(top);
       info.appendChild(_rccText('div', 'rcc-grid-model', g.carModel));
-      info.appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? 'Drivers: ' + g.crew.join(', ') : 'Drivers: none listed yet (filled in from your first imported result)'));
+      info.appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? (g.crew.length === 1 ? 'Driver: ' : 'Drivers: ') + g.crew.join(', ') : 'The driver appears after your first upload.'));
       r.appendChild(info);
       w.appendChild(r);
     });
@@ -1513,12 +1515,12 @@ function rccOpenRegistration() {
 
 var RCC_SIGNING_MESSAGES = ['Drafting team documents...', 'Notifying the team principal...', 'Fitting your race suit...', 'Calibrating the seat...', 'Finalizing your contract...', 'Bringing the car to pit lane...'];
 var RCC_WELCOME_LINES = [
-  'Welcome to {team}! We have been waiting for a driver like you, and we finally found one. This seat is yours, now let\'s go show everyone what we can do!',
-  'You earned this, plain and simple! {team} doesn\'t hand out seats, we award them. Buckle up, this is going to be a season to remember!',
-  'From everyone at {team}: congratulations! You\'re not just joining a team, you\'re joining a family that believes in you. Let\'s get out there and win!',
+  'Welcome to {team}! We have been waiting for a driver like you, and we finally found one. This seat is yours. Now let\'s go show everyone what we can do!',
+  'You earned this, plain and simple! {team} doesn\'t hand out seats. We award them. Buckle up, because this is going to be a season to remember!',
+  'Congratulations from everyone at {team}! You\'re not just joining a team. You\'re joining a family that believes in you. Let\'s get out there and win!',
   'This is the moment every driver dreams about, and it\'s yours! {team} is fully behind you, every lap, every race. Now go make us proud!',
-  'The whole {team} garage is buzzing about you! You\'ve got the talent, we\'ve got the car, together we\'re unstoppable. Let\'s go racing!',
-  'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in, the season starts now!'
+  'The whole {team} garage is buzzing about you! You\'ve got the talent and we\'ve got the car. Together, we\'re unstoppable. Let\'s go racing!',
+  'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in, because the season starts now!'
 ];
 
 // Port of Account.html's openSigningSequence (same markup and css/style.css classes).
@@ -1945,8 +1947,12 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   gS.appendChild(_rccField('RealRoad Time Scale', _rccSelect(RCC_REALROAD_SCALES, rs.realRoadTimeScale, function (v) { rs.realRoadTimeScale = v; })));
   var qualSel = _rccSelect([{ label: 'Yes', value: 'Yes' }, { label: 'No (Random start)', value: 'No' }], rs.qualifying, function (v) { rs.qualifying = v; syncPole(); });
   qualSel.id = 'rcc-qualifying';
+  // Locked once any round has results: switching it would change which rounds count as complete.
+  var qualLocked = editing && state.rounds.some(function (r) { return r.locked; });
+  qualSel.disabled = qualLocked;
   gS.appendChild(_rccField('Qualifying Session', qualSel));
   sec5.appendChild(gS);
+  if (qualLocked) sec5.appendChild(_rccText('div', 'rc-hint', 'The qualifying setting cannot be changed once a round has results.'));
   function syncPole() {
     if (!poleSel) return;
     var noQuali = rs.qualifying === 'No';
@@ -1977,11 +1983,13 @@ function _rccBuildWizard(m, tracks, cars, edit) {
         up.addEventListener('click', function () { var x = state.rounds[idx - 1]; state.rounds[idx - 1] = r; state.rounds[idx] = x; drawRounds(); });
         var down = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Move Down');
         down.type = 'button';
-        down.disabled = idx === state.rounds.length - 1;
+        // A round with results keeps its round number, so nothing can move past it or be removed
+        // from in front of it.
+        down.disabled = idx === state.rounds.length - 1 || state.rounds[idx + 1].locked;
         down.addEventListener('click', function () { var x = state.rounds[idx + 1]; state.rounds[idx + 1] = r; state.rounds[idx] = x; drawRounds(); });
         var del = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Remove');
         del.type = 'button';
-        del.disabled = state.rounds.length === 1;
+        del.disabled = state.rounds.length === 1 || state.rounds.slice(idx + 1).some(function (x) { return x.locked; });
         del.addEventListener('click', function () { state.rounds.splice(idx, 1); drawRounds(); });
         tools.appendChild(up); tools.appendChild(down); tools.appendChild(del);
         head.appendChild(tools);
@@ -2152,26 +2160,23 @@ function _rccRoundLabel(c) {
 function rccOpenUpload(roundId, lockRound) {
   var page = RCC.page;
   var cal = page.calendar || [];
-  var open = cal.filter(function (x) { return !x.hasQualifyResults && !x.hasRaceResults; });
-  var c;
-  if (lockRound) {
-    c = cal.filter(function (x) { return x.roundId === roundId; })[0];
-    if (!c) { _rccToast('That round is not part of this season.', 'error'); return; }
-    if (c.hasQualifyResults || c.hasRaceResults) { _rccToast('Round ' + c.roundNum + ' already has results. Use Erase Results first.', 'error'); return; }
-  } else {
-    if (!open.length) { _rccToast('Every round already has results.', 'error'); return; }
-    c = open[0];
+  // Rounds are uploaded in calendar order: only the first round without results can take an upload.
+  var c = cal.filter(function (x) { return !x.hasResults; })[0];
+  if (!c) { _rccToast('Every round already has results.', 'error'); return; }
+  if (lockRound && c.roundId !== roundId) {
+    var asked = cal.filter(function (x) { return x.roundId === roundId; })[0];
+    _rccToast(asked && asked.hasResults ? 'Round ' + asked.roundNum + ' already has results. Use Erase Results first.' : 'Upload the results for Round ' + c.roundNum + ' first. Rounds are uploaded in calendar order.', 'error');
+    return;
   }
+  if (c.hasQualifyResults || c.hasRaceResults) { _rccToast('Round ' + c.roundNum + ' has part of its results. Use Erase Results on it, then upload again.', 'error'); return; }
   var m = rccOpenModal('Upload Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
   var roundSel = null;
-  if (lockRound) {
-    m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', _rccRoundLabel(c))));
-  } else {
-    roundSel = _rccSelect(open.map(function (x) { return { label: _rccRoundLabel(x), value: x.roundId }; }), c.roundId, function (v) {
-      c = open.filter(function (x) { return x.roundId === v; })[0] || c;
-    });
-    m.body.appendChild(_rccField('Round', roundSel));
+  m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', _rccRoundLabel(c))));
+  // The race in the game has to be at least as long as the round's planned length.
+  if (c.plannedRaceLengthMinutes) {
+    m.body.appendChild(_rccText('div', 'rc-hint', 'This round is a ' + (c.plannedRaceLengthTier || '') + ' race of ' + c.plannedRaceLengthMinutes +
+      ' minutes. The race in the game has to be the same length or longer, or the upload is refused.'));
   }
   function fileInput() {
     var f = document.createElement('input');
@@ -2198,7 +2203,7 @@ function rccOpenUpload(roundId, lockRound) {
     return new Promise(function (resolve, reject) {
       var rd = new FileReader();
       rd.onload = function () { resolve({ name: f.name, text: String(rd.result || '') }); };
-      rd.onerror = function () { reject(new Error('Could not read ' + f.name)); };
+      rd.onerror = function () { var err = new Error('Could not read ' + f.name + '. Choose the file again.'); err.rccShow = true; reject(err); };
       rd.readAsText(f);
     });
   }
@@ -2228,7 +2233,8 @@ function rccOpenUpload(roundId, lockRound) {
       rccReloadAfterSave();
     }).catch(function (e) {
       lockInputs(false);
-      _rccToast(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'error');
+      // Only our own file-reading message is shown as is. Network and server faults get plain wording.
+      _rccToast(e && e.rccShow ? e.message : 'The upload did not get an answer from the server. Reload the page to see whether the results went in, then try again if they did not.', 'error');
     });
   });
 }
