@@ -63,6 +63,10 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-hero-title { text-shadow: none; }
 .rcc-page .rcl-report-name { color: var(--rc-carbon); font-weight: 400; }
 .rcc-page .rcl-report-name.rcc-report-me { font-weight: 700; }
+/* Race Report on the light page (Matt): no bold clauses, and the collision yellow darkened to amber
+   so it reads on white. Only the player's name stays bold. */
+.rcc-page .rcl-report-line [class^="rcl-report-clause-"] { font-weight: 400; }
+.rcc-page .rcl-report-clause-car { color: #a16207; }
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
 /* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
 .rcc-page .rcl-hero::before { opacity: 0.16; }
