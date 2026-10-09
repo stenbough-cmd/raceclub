@@ -1549,7 +1549,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    equivalent of the draggable="false" attribute already on the <img> itself (header.js) for
    browsers that don't respect the attribute alone. */
 .rc-header-leaguehub-logo {
-  height: 40px;
+  /* 30px (was 40px): League Hub and Championship logos at 0.75 size, still centred in the 70px
+     header (CHAMP chat, 2026-10-09, Matt). */
+  height: 30px;
   display: block;
   user-select: none;
   -webkit-user-drag: none;
