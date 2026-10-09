@@ -174,7 +174,7 @@ body.rc-league-page.rcc-page {
 .rcc-board .rcl-standings-class-header { margin-bottom: 10px; }
 /* Wide boards (many rounds) scroll sideways inside the panel instead of widening the page. */
 .rcc-board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.rcc-board-table { min-width: max-content; width: 100%; }
+.rcc-board-table { width: 100%; }
 .rcc-board-row {
   display: grid;
   grid-template-columns: var(--rcc-board-cols);
@@ -453,7 +453,7 @@ body.rc-league-page.rcc-page {
   .rcc-bonus-row { grid-template-columns: 1fr; }
   /* Standings on a phone: Pos, Drivers/Teams and Pts only (no round columns), like the League Hub.
      The column list is set inline per board, so !important is needed to replace it here. */
-  .rcc-board-table { --rcc-board-cols: 44px minmax(0, 1fr) 58px !important; min-width: 0; }
+  .rcc-board-table { --rcc-board-cols: 44px minmax(0, 1fr) 58px !important; min-width: 0 !important; }
   .rcc-board-round-head,
   .rcc-board-round { display: none; }
   .rcc-board-footer .rcl-standings-status-mobile-note { display: block; }

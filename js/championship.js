@@ -882,10 +882,14 @@ function _rccStandingsBoard(page, className, kind) {
   var rounds = page.calendar || [];
   var scoredIdx = {};
   (page.standings.scoredRoundIds || []).forEach(function (id, i) { scoredIdx[id] = i; });
-  var cols = '44px minmax(190px, 1fr) repeat(' + rounds.length + ', 46px) 58px';
+  // The name column shrinks first: names cut off with "..." as the round columns need the room, down
+  // to 140px. Only past that (a very long calendar) does the board scroll sideways. minWidth = the
+  // columns + 6px gaps between them + the rows' 6px side padding.
+  var cols = '44px minmax(140px, 1fr) repeat(' + rounds.length + ', 46px) 58px';
   var scroller = _rccEl('div', 'rcc-board-scroll');
   var table = _rccEl('div', 'rcc-board-table');
   table.style.setProperty('--rcc-board-cols', cols);
+  table.style.minWidth = (44 + 140 + 46 * rounds.length + 58 + 6 * (rounds.length + 2) + 12) + 'px';
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
   hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
@@ -910,9 +914,9 @@ function _rccStandingsBoard(page, className, kind) {
     var row = line.row;
     var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
     rowEl.appendChild(_rccPosBadge(idx));
-    rowEl.appendChild(_rccIdentity(row, {
-      nameOverride: line.names.join(', '), hideTeam: true, wrap: line.names.length > 1
-    }));
+    var ident = _rccIdentity(row, { nameOverride: line.names.join(', '), hideTeam: true });
+    ident.title = line.names.join(', ') + (row.carNumber ? ' #' + row.carNumber : '');
+    rowEl.appendChild(ident);
     rounds.forEach(function (r) {
       var cell = _rccEl('div', 'rcc-board-round');
       var i = scoredIdx[r.roundId];
