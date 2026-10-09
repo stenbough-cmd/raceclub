@@ -637,7 +637,7 @@ function _rccSeasonFormat(page, body) {
   classes = _rccSortClasses(classes, function (c) { return c; });
   var details = [];
   details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' · no team chosen yet')));
-  if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '%'));
+  if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '% (' + _rccSkillLevel(rs.aiDifficulty) + ')'));
   if (rs.aiAggression) details.push(row('AI Aggression', rs.aiAggression));
   details.push(row('Championship Rounds', String(page.totalRounds)));
   var yr = d.seasonYear || (classes.length ? (d.classSeasons || {})[classes[0]] : '');
@@ -1623,6 +1623,14 @@ var RCC_REALROAD_SCALES = ['Normal'];
 for (var _rccQ = 2; _rccQ <= 15; _rccQ++) RCC_REALROAD_SCALES.push(_rccQ + 'x');
 RCC_REALROAD_SCALES.push('Session %', 'Static');
 
+function _rccSkillLevel(pct) {
+  pct = Number(pct);
+  if (pct >= 101) return 'Expert';
+  if (pct >= 91) return 'Pro';
+  if (pct >= 81) return 'Intermediate';
+  return 'Rookie';
+}
+
 function _rccDefaultDetails() {
   return {
     classes: { Hypercar: false, LMP2: false, LMP3: false, LMGT3: false, LMGTE: false },
@@ -1843,7 +1851,8 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   // RealRoad Time Scale are per round (Rounds below).
   var sec3 = _rccSection('Difficulty');
   var diffOptions = [];
-  for (var d = 75; d <= 105; d++) diffOptions.push({ label: d + '%', value: d });
+  // Skill bands (Matt): 70-80% Rookie, 81-90% Intermediate, 91-100% Pro, 101-105% Expert.
+  for (var d = 70; d <= 105; d++) diffOptions.push({ label: d + '% (' + _rccSkillLevel(d) + ')', value: d });
   var g3 = _rccEl('div', 'rcc-field-grid');
   if (!rs.damage) rs.damage = 'Realistic';
   if (!rs.tireWarmers) rs.tireWarmers = 'Off';
