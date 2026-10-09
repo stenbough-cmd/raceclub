@@ -817,8 +817,8 @@ function _rccIdentity(row, opts) {
   opts = opts || {};
   var identity = _rccEl('div', 'rcl-standings-identity' + (opts.dnf ? ' rcl-standings-identity-dnf' : ''));
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
-  if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer, function () { slot.style.display = 'none'; }));
-  else slot.style.display = 'none';
+  // No logo (or it fails to load): the slot stays as empty space so every name in a table lines up.
+  if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
   identity.appendChild(slot);
   var nameRow = _rccEl('div', 'rcl-standings-name-row' + (opts.wrap ? ' rcc-name-row-wrap' : ''));
   nameRow.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
@@ -888,7 +888,7 @@ function _rccStandingsBoard(page, className, kind) {
   table.style.setProperty('--rcc-board-cols', cols);
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
-  hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Team' : 'Driver'));
+  hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
     var cell = _rccEl('div', 'rcc-board-round-head');
     cell.title = 'Round ' + r.roundNum + (r.track ? ' · ' + r.track : '');

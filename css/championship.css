@@ -182,7 +182,8 @@ body.rc-league-page.rcc-page {
   column-gap: 6px;
 }
 .rcc-board-head {
-  padding: 6px 0;
+  /* Same 6px sides as the rows (.rcl-standings-row) so every header sits over its column. */
+  padding: 6px 6px;
   border-bottom: 1px solid var(--rc-silver);
   font-family: var(--rc-font-heading);
   font-size: 11px;
@@ -191,8 +192,13 @@ body.rc-league-page.rcc-page {
   text-transform: uppercase;
   color: var(--rc-steel);
 }
-.rcc-board-head > div:first-child { text-align: center; }
+/* The rank badges bleed 6px into the row's left padding (.rcl-standings-pos); the "Pos" label does
+   the same so it stays centered over them. */
+.rcc-board-head > div:first-child { text-align: center; margin-left: -6px; }
 .rcc-board-round-head { display: flex; justify-content: center; align-items: center; }
+/* "Drivers" / "Teams" label left-aligned over the names, not over the maker logos: skip the 50px
+   logo slot (.rcl-standings-mfr-logo-slot) plus the 8px gap after it (.rcl-standings-identity). */
+.rcc-board-name-head { text-align: left; padding-left: 58px; }
 .rcc-board-total-head { text-align: right; }
 .rcc-board-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; border: 1px solid var(--rc-silver); display: block; }
 .rcc-board-round {
