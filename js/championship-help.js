@@ -30,13 +30,13 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Difficulty.</strong> Set the AI difficulty, damage simulation, tire wear, tire warmers, available tires and fuel usage. These match the Difficulty tab in the game.</li>' +
       '<li><strong>Advanced.</strong> Set the time scale, flag rules, track limits rules, mechanical failures, AI aggression and track limits points. These match the Advanced tab in the game.</li>' +
       '<li><strong>Points.</strong> Set the length of a Sprint, Medium and Long race in minutes, and the points for P1 to P10 in each. You can also award 0 to 5 bonus points for Pole Position, Fastest Lap and Most Laps Led. Points are scored within each class.</li>' +
-      '<li><strong>Rounds.</strong> Add your rounds in the order you want to race them. Each round has a track, a layout and a race length. Its second row holds the session settings, which are the weather preset (Sunny, Cloudy, Rainy or Real World), the in-game start time, the start type (Rolling or Fast) and the RealRoad time scale. If you leave the event name blank, the round uses the season name.</li>' +
+      '<li><strong>Sessions.</strong> First choose the settings every round shares, which are the start type (Rolling or Fast), the RealRoad time scale and whether there is a qualifying session. If you choose <strong>No (Random start)</strong>, the game sets a random grid, you only upload the Race file, and there is no pole bonus. Then add your rounds in the order you want to race them. Each round has a track, a layout, a race length, a weather preset (Sunny, Cloudy, Rainy or Real World) and an in-game start time. If you leave the event name blank, the round uses the season name.</li>' +
       '</ol>' +
       '<p>Click <strong>Create Season</strong> at the bottom of the popup. Next, click <strong>Choose Your Team</strong> in the black bar, pick a class and a car, and click <strong>Join This Team</strong>. That car is your seat for the whole season.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
       '<li>While a season is running, Create Season becomes <strong>Season Preview</strong>. It shows every setting and round in your season, so you can check them before you set up a race.</li>' +
-      '<li>Edit Season can change any round that has not been raced yet. The series, year and classes lock once you join a team, and the points lock once a round has results.</li>' +
-      '<li>Your choice of team is final for the season.</li>' +
+      '<li>Edit Season can change almost anything at any time, including the name, the Difficulty and Advanced settings, the session settings and any round that has not been raced yet. The series, year, classes, points and bonuses are fixed once the season is created, and rounds with results are locked.</li>' +
+      '<li>Your choice of team is final for the season, so you cannot change cars partway through.</li>' +
       '</ul></div>'
   },
   {
@@ -51,10 +51,10 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Set the starting grid.</strong> You will now see the Event Settings page, which summarizes the last settings used or the defaults. Under <strong>Starting Grid</strong>, choose your season of cars, such as <strong>Season 2023</strong>. Do not choose Fill Grid. It adds cars that did not race that season, and Race Club Championship will not import results that include cars from outside your grid.</li>' +
       '<li><strong>Open the advanced options.</strong> From Event Settings, open the advanced options. You will see four tabs near the top named Difficulty, Sessions, Weather and Advanced.</li>' +
       '<li><strong>Difficulty.</strong> Copy your season’s Difficulty settings, which are the AI difficulty, damage simulation, tire wear, tire warmers, available tires and fuel usage. You can also set any assists you like. Race Club has no rules about assists, but the ones you use appear in the race recap.</li>' +
-      '<li><strong>Sessions.</strong> Practice is optional, and practice files cannot be imported. Always run a Qualifying session and a Race, so the round has both a grid and a result. For the Race, the settings that matter most are the <strong>race length</strong>, the <strong>start time</strong> and the <strong>RealRoad time scale</strong>, along with the round’s start type.</li>' +
+      '<li><strong>Sessions.</strong> Practice is optional, and practice files cannot be imported. If your season has a qualifying session, run Qualifying and then the Race. If it does not, turn qualifying off so the race starts from a random grid. For the Race, the settings that matter most are the <strong>race length</strong>, the <strong>start time</strong>, the <strong>start type</strong> and the <strong>RealRoad time scale</strong>.</li>' +
       '<li><strong>Weather.</strong> Choose the round’s preset for each session (Sunny, Cloudy, Rainy or Real World). You can also set the weather by hand, since each session is split into five parts that you can change one at a time.</li>' +
       '<li><strong>Advanced.</strong> Copy your season’s Advanced settings, which are the time scale, flag rules, track limits rules, mechanical failures, AI aggression and track limits points.</li>' +
-      '<li><strong>Check and start.</strong> Go back to Event Settings at the top and make sure everything matches your season and the round. Then click <strong>Start Race Weekend</strong>. Run Qualifying, and drive the Race to the checkered flag so the game saves the results.</li>' +
+      '<li><strong>Check and start.</strong> Go back to Event Settings at the top and make sure everything matches your season and the round. Then click <strong>Start Race Weekend</strong>. Run Qualifying if your season has it, and drive the Race to the checkered flag so the game saves the results.</li>' +
       '</ol>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Five Settings Decide Whether Your Results Upload</strong><ul>' +
       '<li>The correct series and year</li>' +
@@ -90,11 +90,11 @@ var RCC_HELP_SECTIONS = [
       '<ol class="rcc-help-steps">' +
       '<li><strong>Click Upload Results</strong> in the black bar, or UPLOAD RESULTS on the round’s calendar card.</li>' +
       '<li><strong>Pick the round</strong> from the dropdown. Only rounds without results are listed.</li>' +
-      '<li><strong>For file 1</strong>, choose the Qualifying file (…Q1.xml).</li>' +
+      '<li><strong>For file 1</strong>, choose the Qualifying file (…Q1.xml). Seasons without a qualifying session skip this step.</li>' +
       '<li><strong>For file 2</strong>, choose the Race file (…R1.xml).</li>' +
       '<li><strong>Click Upload Results</strong> and wait. It can take up to a minute. When it finishes, the page reloads with the new standings, the race recap and the ticker.</li>' +
       '</ol>' +
-      '<p>Both files are checked before anything is saved. They must be a Qualifying file and a Race file from the same weekend, raced at the round’s track, with you in your own car and only cars from your season’s grid. If the files include a car that is not on your grid, the upload stops and names that car. Whenever something is wrong, a message in the lower right explains it and nothing is saved, so you can fix the problem and upload again.</p>' +
+      '<p>The files are checked before anything is saved. They must be a Qualifying file and a Race file from the same weekend (or just the Race file when your season has no qualifying), raced at the round’s track, with you in your own car and only cars from your season’s grid. If the files include a car that is not on your grid, the upload stops and names that car. Whenever something is wrong, a message in the lower right explains it and nothing is saved, so you can fix the problem and upload again.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Length</strong>The length you actually raced decides which points table the round uses, rounded down to the nearest race length. A race shorter than a Sprint, or between a Sprint and a Medium, scores as a Sprint. A race between a Medium and a Long scores as a Medium, and a race of Long length or more scores as a Long. The calendar card shows the length you raced.</div>' +
       '<p>If you upload the wrong files, click <strong>Erase Results</strong> in the black bar, pick the round, and upload again. The round stays on the calendar.</p>'
   },
@@ -102,12 +102,12 @@ var RCC_HELP_SECTIONS = [
     id: 'end-season', num: '6', title: 'Ending a Season',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Upload every round.</strong> A season can only end once every round on the calendar has its results.</li>' +
+      '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
       '<li><strong>Click End Season</strong> in the black bar and confirm.</li>' +
       '<li><strong>The season is complete.</strong> The standings become final, the panels change to Final Standings, and the season can no longer be edited.</li>' +
       '<li><strong>Start the next one.</strong> Season Preview turns back into Create Season, and your past seasons stay available from the Season dropdown in the black bar.</li>' +
       '</ol>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Deleting a Season</strong>Delete Season removes the season you are viewing, along with its rounds, your team signing and every result and lap. It cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Changed Your Mind?</strong>If you are unhappy with a season, you have two choices. You can click End Season before every round is raced, which saves it as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. Or you can click Delete Season, which removes the season you are viewing along with its rounds, your team signing and every result and lap. Deleting cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +
       '<p>If you find something that doesn’t work, click <strong>Find A Bug?</strong> in the black bar and let us know.</p>'
   }
 ];

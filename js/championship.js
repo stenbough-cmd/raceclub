@@ -361,9 +361,11 @@ function rccRenderHero(page) {
   var metaEl = document.getElementById('rcc-hero-meta');
   seasonEl.innerHTML = '';
   metaEl.innerHTML = '';
-  // No season yet: the hero shows just RACE CLUB / CHAMPIONSHIP (no season line).
-  seasonEl.style.display = (page && page.hasSeason) ? '' : 'none';
-  if (!page || !page.hasSeason) return;
+  // No season to show: the season line reads OFFLINE SEASON MANAGER instead (navy, same size).
+  if (!page || !page.hasSeason) {
+    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Offline Season Manager'));
+    return;
+  }
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
@@ -372,7 +374,7 @@ function rccRenderHero(page) {
   var diff = (page.seasonDetails.raceSettings || {}).aiDifficulty;
   if (diff) bits.push('AI Difficulty ' + diff + '%');
   bits.push(page.roundsCompleted + ' of ' + page.totalRounds + ' Rounds');
-  if (page.seasonEnded) bits.push('Season Ended');
+  if (page.seasonEnded) bits.push(page.seasonUnfinished ? 'Ended Unfinished' : 'Season Ended');
   if (page.registration) {
     // Name -> the driver's public profile; "[logo] Team #n" -> Team Information.
     var nameLink = _rccPlayerName('rcc-hero-meta-name', page.owner.displayName);
@@ -433,7 +435,7 @@ function rccRenderActionBar(page) {
     pick.appendChild(_rccText('span', null, 'Season'));
     var sel = document.createElement('select');
     page.seasons.forEach(function (s) {
-      var o = new Option('Season ' + s.seasonNumber + ' · ' + s.name + (s.status === 'Completed' ? ' (Ended)' : ''), s.seasonId);
+      var o = new Option('Season ' + s.seasonNumber + ' · ' + s.name + (s.status === 'Completed' ? (s.unfinished ? ' (Unfinished)' : ' (Ended)') : ''), s.seasonId);
       if (s.seasonId === page.seasonId) o.selected = true;
       sel.appendChild(o);
     });
@@ -673,7 +675,11 @@ function _rccSeasonFormat(page, body) {
   if (d.trackLimitsPreset) adv.push(row('Track Limits Rules', d.trackLimitsPreset));
   if (rs.mechanicalFailures) adv.push(row('Mechanical Failures', rs.mechanicalFailures));
   if (rs.trackLimitPoints) adv.push(row('Track Limits Points', String(rs.trackLimitPoints)));
-  var rules = diff.concat(adv);
+  var sessionRows = [];
+  if (rs.raceStart) sessionRows.push(row('Start', rs.raceStart));
+  if (rs.realRoadTimeScale) sessionRows.push(row('RealRoad Time Scale', rs.realRoadTimeScale));
+  sessionRows.push(row('Qualifying Session', rs.qualifying === 'No' ? 'No (Random start)' : 'Yes'));
+  var rules = diff.concat(adv, sessionRows);
   group('Race Rules', [rules]);
 }
 
@@ -1200,7 +1206,9 @@ function _rccRaceBody(result, el) {
         var line = _rccEl('p', 'rcl-report-line');
         if (en.clauses) {
           if (en.carClass) { var pc = _rccEl('span', 'rcl-report-pill-col'); pc.appendChild(_rccClassPill(en.carClass)); line.appendChild(pc); }
-          if (en.et !== null && en.et !== undefined) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(en.et)));
+          // Race time from the green flag (the report stores session time, which includes the
+          // formation lap and the start).
+          if (en.et !== null && en.et !== undefined) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(en.et - (result.greenFlagEt || 0))));
           line.appendChild(_rccText('span', 'rcl-report-name', en.name));
           var all = en.positionClause ? en.clauses.concat([en.positionClause]) : en.clauses;
           all.forEach(function (c, i) {
@@ -1280,7 +1288,7 @@ function _rccMyLapsBody(result, el) {
       s.events.forEach(function (ev) {
         var line = _rccEl('p', 'rcl-report-line');
         var et = Number(ev.elapsedTime);
-        if (!isNaN(et)) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(et)));
+        if (!isNaN(et)) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(et - (s.greenFlagEt || 0))));
         line.appendChild(document.createTextNode(' ' + (ev.rawText || ev.eventType)));
         evs.appendChild(line);
       });
@@ -1645,7 +1653,7 @@ function _rccDefaultDetails() {
     trackLimitsPreset: 'Default',
     series: 'WEC',
     seasonYear: '',
-    raceSettings: { aiDifficulty: 90, damage: 'Realistic', tireWearMultiplier: 'Realistic', tireWarmers: 'Off', tireCount: 8, fuelMultiplier: 'Realistic', timeScale: 'Normal', flagRules: 'Full', mechanicalFailures: 'Normal', aiAggression: 'Medium', trackLimitPoints: 5 }
+    raceSettings: { aiDifficulty: 90, damage: 'Realistic', tireWearMultiplier: 'Realistic', tireWarmers: 'Off', tireCount: 8, fuelMultiplier: 'Realistic', timeScale: 'Normal', flagRules: 'Full', mechanicalFailures: 'Normal', aiAggression: 'Medium', trackLimitPoints: 5, raceStart: 'Rolling', realRoadTimeScale: 'Normal', qualifying: 'Yes' }
   };
 }
 
@@ -1716,6 +1724,8 @@ function rccOpenSeasonWizard(seasonId) {
   });
 }
 
+function _rccQualifyingSet(details) { return details && details.raceSettings && (details.raceSettings.qualifying === 'Yes' || details.raceSettings.qualifying === 'No'); }
+
 function _rccBuildWizard(m, tracks, cars, edit) {
   var editing = !!edit;
   var details = editing ? JSON.parse(JSON.stringify(edit.seasonDetails || {})) : _rccDefaultDetails();
@@ -1723,8 +1733,11 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   ['classes', 'classSeasons', 'pointsTables', 'bonusPoints', 'raceSettings'].forEach(function (k) { if (!details[k]) details[k] = defaults[k]; });
   details.dropWeeks = 0;
   if (!details.trackLimitsPreset) details.trackLimitsPreset = 'Default';
-  var classesLocked = editing && edit.registered;
-  var pointsLocked = editing && edit.anyResults;
+  // Edit rules (Matt): once a season exists, its series, year, classes, points and bonuses never
+  // change, and rounds with results are locked. Everything else can change at any time.
+  var classesLocked = editing;
+  var pointsLocked = editing;
+  if (!_rccQualifyingSet(details)) details.raceSettings.qualifying = 'Yes';
   var state = {
     name: editing ? edit.name : '',
     details: details,
@@ -1807,7 +1820,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 
   // --- Classes ---
   var sec2 = _rccSection('Classes');
-  if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'You have already joined a team, so the series, year and classes can no longer change.'));
+  if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'The series, year and classes are set when a season is created and cannot be changed.'));
   var classGrid = _rccEl('div', 'rcc-class-grid');
   var classRows = [];
   RCC_CLASS_ORDER.forEach(function (cls) {
@@ -1880,7 +1893,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 
   // --- Points ---
   var sec4 = _rccSection('Points');
-  if (pointsLocked) sec4.appendChild(_rccText('div', 'rc-hint', 'Results have been imported, so the points can no longer change.'));
+  if (pointsLocked) sec4.appendChild(_rccText('div', 'rc-hint', 'The points and bonuses are set when a season is created and cannot be changed.'));
   var tables = state.details.pointsTables;
   Object.keys(tables).forEach(function (tier) {
     var t = tables[tier];
@@ -1906,12 +1919,14 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     sec4.appendChild(row);
   });
   var b = state.details.bonusPoints;
+  var poleSel = null;
   var bonusRow = _rccEl('div', 'rcc-bonus-row');
   bonusRow.appendChild(_rccText('div', 'rcc-points-tier', 'Bonus'));
   var g4 = _rccEl('div', 'rcc-field-grid rcc-bonus-grid');
   [['pole', 'Pole Position Bonus'], ['fastestLap', 'Fastest Lap Bonus'], ['mostLapsLed', 'Most Laps Led Bonus']].forEach(function (pair) {
     var n = _rccSelect([0, 1, 2, 3, 4, 5], Math.min(5, Math.max(0, Number(b[pair[0]]) || 0)), function (v) { b[pair[0]] = Number(v); });
     n.disabled = pointsLocked;
+    if (pair[0] === 'pole') poleSel = n;
     g4.appendChild(_rccField(pair[1], n));
   });
   bonusRow.appendChild(g4);
@@ -1919,7 +1934,27 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   form.appendChild(sec4);
 
   // --- Rounds ---
-  var sec5 = _rccSection('Rounds');
+  // Sessions: the settings shared by every round (start type, RealRoad, whether there's a
+  // qualifying session), then the rounds. Without qualifying the grid is random, uploads need only
+  // the Race file, and there is no pole bonus.
+  var sec5 = _rccSection('Sessions');
+  var gS = _rccEl('div', 'rcc-field-grid rcc-sessions-grid');
+  if (!rs.raceStart) rs.raceStart = 'Rolling';
+  if (!rs.realRoadTimeScale) rs.realRoadTimeScale = 'Normal';
+  gS.appendChild(_rccField('Start', _rccSelect(['Rolling', 'Fast'], rs.raceStart, function (v) { rs.raceStart = v; })));
+  gS.appendChild(_rccField('RealRoad Time Scale', _rccSelect(RCC_REALROAD_SCALES, rs.realRoadTimeScale, function (v) { rs.realRoadTimeScale = v; })));
+  var qualSel = _rccSelect([{ label: 'Yes', value: 'Yes' }, { label: 'No (Random start)', value: 'No' }], rs.qualifying, function (v) { rs.qualifying = v; syncPole(); });
+  qualSel.id = 'rcc-qualifying';
+  gS.appendChild(_rccField('Qualifying Session', qualSel));
+  sec5.appendChild(gS);
+  function syncPole() {
+    if (!poleSel) return;
+    var noQuali = rs.qualifying === 'No';
+    if (noQuali && !pointsLocked) { b.pole = 0; poleSel.value = '0'; }
+    poleSel.disabled = pointsLocked || noQuali;
+    poleSel.title = noQuali ? 'No pole bonus without a qualifying session.' : '';
+  }
+  syncPole();
   var roundsWrap = _rccEl('div', 'rcc-rounds');
   sec5.appendChild(roundsWrap);
   var addBtn = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Add Round');
@@ -1982,8 +2017,6 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       timeInput.value = r.igRaceStart || '';
       timeInput.addEventListener('input', function () { r.igRaceStart = timeInput.value; });
       g.appendChild(_rccField('In-Game Race Start', timeInput));
-      g.appendChild(_rccField('Start', _rccSelect(['Rolling', 'Fast'], r.raceStart || 'Rolling', function (v) { r.raceStart = v; })));
-      g.appendChild(_rccField('RealRoad Time Scale', _rccSelect(RCC_REALROAD_SCALES, r.realRoadTimeScale || 'Normal', function (v) { r.realRoadTimeScale = v; })));
       card.appendChild(g);
       roundsWrap.appendChild(card);
     });
@@ -2035,14 +2068,22 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 function rccOpenEndSeason() {
   var page = RCC.page;
   var open = (page.calendar || []).filter(function (c) { return !c.hasResults; });
-  if (open.length) {
-    _rccToast('Every round needs its results before the season can end. Still to race: ' + open.map(function (c) { return 'Round ' + c.roundNum; }).join(', ') + '.', 'error');
+  if (!open.length) {
+    rccConfirm('End Season', 'End "' + page.seasonName + '"? The standings become final and the season can no longer be edited. You can then create your next season.',
+      'End Season', 'Ending Season...',
+      function () { return _rccApi('champEndSeason', { seasonId: page.seasonId }, { post: true }); },
+      function () { _rccToast('Season ended.', 'success'); rccReloadAfterSave(); });
     return;
   }
-  rccConfirm('End Season', 'End "' + page.seasonName + '"? The standings become final and the season can no longer be edited. You can then create your next season.',
-    'End Season', 'Ending Season...',
-    function () { return _rccApi('champEndSeason', { seasonId: page.seasonId }, { post: true }); },
-    function () { _rccToast('Season ended.', 'success'); rccReloadAfterSave(); });
+  // Ending before every round is raced (Matt): allowed, but the season is marked unfinished and does
+  // not count toward a career. Deleting the season is the other way out.
+  var list = open.map(function (c) { return 'Round ' + c.roundNum; });
+  var still = list.length === 1 ? list[0] + ' has' : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] + ' have';
+  rccConfirm('End Season Unfinished',
+    still + ' not been raced yet. If you end "' + page.seasonName + '" now, it is saved as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. If you would rather remove it completely, use Delete Season instead.',
+    'End Unfinished', 'Ending Season...',
+    function () { return _rccApi('champEndSeason', { seasonId: page.seasonId, unfinished: '1' }, { post: true }); },
+    function () { _rccToast('Season ended unfinished.', 'success'); rccReloadAfterSave(); });
 }
 
 // ---------------------------------------------------------------------
@@ -2138,18 +2179,20 @@ function rccOpenUpload(roundId, lockRound) {
     f.accept = '.xml,text/xml';
     return f;
   }
-  var qFile = fileInput();
+  // Seasons without a qualifying session (random start) upload the Race file alone.
+  var noQuali = ((page.seasonDetails || {}).raceSettings || {}).qualifying === 'No';
+  var qFile = noQuali ? null : fileInput();
   var rFile = fileInput();
-  m.body.appendChild(_rccField('1. Qualify Results (XML)', qFile));
-  m.body.appendChild(_rccField('2. Race Results (XML)', rFile));
+  if (qFile) m.body.appendChild(_rccField('1. Qualify Results (XML)', qFile));
+  m.body.appendChild(_rccField(noQuali ? 'Race Results (XML)' : '2. Race Results (XML)', rFile));
   var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
   var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
   go.type = 'button';
   go.disabled = true;
   row.appendChild(go);
   m.body.appendChild(row);
-  function bothChosen() { return !!(qFile.files && qFile.files[0] && rFile.files && rFile.files[0]); }
-  qFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
+  function bothChosen() { return !!((!qFile || (qFile.files && qFile.files[0])) && rFile.files && rFile.files[0]); }
+  if (qFile) qFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
   rFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
   function readFile(f) {
     return new Promise(function (resolve, reject) {
@@ -2159,18 +2202,18 @@ function rccOpenUpload(roundId, lockRound) {
       rd.readAsText(f);
     });
   }
-  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
+  function lockInputs(on) { if (qFile) qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
 
   go.addEventListener('click', function () {
-    if (!bothChosen()) { _rccToast('Choose both files: 1 is the Qualify results, 2 is the Race results.', 'error'); return; }
+    if (!bothChosen()) { _rccToast(qFile ? 'Choose both files. File 1 is the Qualify results and file 2 is the Race results.' : 'Choose the Race results file.', 'error'); return; }
     lockInputs(true);
     rccRunWrite(go, 'Uploading...', function () {
-      return Promise.all([readFile(qFile.files[0]), readFile(rFile.files[0])]).then(function (read) {
-        return _rccApi('champImportXml', {
-          seasonId: page.seasonId, roundId: c.roundId,
-          qualifyFilename: read[0].name, qualifyXml: read[0].text,
-          raceFilename: read[1].name, raceXml: read[1].text
-        }, { post: true });
+      var reads = qFile ? [readFile(qFile.files[0]), readFile(rFile.files[0])] : [readFile(rFile.files[0])];
+      return Promise.all(reads).then(function (read) {
+        var q = qFile ? read[0] : null, r = qFile ? read[1] : read[0];
+        var body = { seasonId: page.seasonId, roundId: c.roundId, raceFilename: r.name, raceXml: r.text };
+        if (q) { body.qualifyFilename = q.name; body.qualifyXml = q.text; }
+        return _rccApi('champImportXml', body, { post: true });
       });
     }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
@@ -2242,8 +2285,6 @@ function rccOpenSeasonPreview() {
     if (len) bits.push(len);
     if (c.igRaceStart) bits.push('Start ' + c.igRaceStart + (_rccTimeOfDay(c.igRaceStart) ? ', ' + _rccTimeOfDay(c.igRaceStart) : ''));
     if (c.weatherText) bits.push(c.weatherText);
-    if (c.raceStart) bits.push(c.raceStart + ' Start');
-    if (c.realRoadTimeScale) bits.push('RealRoad ' + c.realRoadTimeScale);
     if (c.hasResults) bits.push('Raced');
     list.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">Round ' + c.roundNum + ' · ' + _rccEsc(c.eventName) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(bits.join(' · ')) + '</span>'));
   });
