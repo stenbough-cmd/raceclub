@@ -25,7 +25,39 @@ body.rc-league-page.rcc-page {
 }
 
 /* The few spots league.css colors directly instead of through a token. */
-.rcc-page .rcl-page-loader { background: color-mix(in srgb, var(--rc-offwhite) 94%, transparent); }
+/* Loading lights: identical to Account.html's. league.css restyles the lights for the hub's dark
+   page (gray pill, dim text, a see-through dark overlay, lights frozen under reduced motion); undo
+   all of that here so the page loader and popup spinners use style.css's own look. The page loader
+   is a plain off-white page with Account's white card at the same height: Account's card sits
+   70px header + 32px .rc-main padding + 180px .rc-inline-spinner-page margin from the top; this
+   overlay already starts below the 70px header, so 32px of padding puts the card at the same spot. */
+.rcc-page .rcl-page-loader {
+  background: var(--rc-offwhite);
+  justify-content: flex-start;
+  padding-top: 32px;
+}
+.rcc-page .rcl-page-loader .rc-startlights,
+.rcc-page .rcl-modal-dialog .rc-startlights {
+  background: var(--rc-offwhite);
+  border-color: #e6e9eb;
+}
+.rcc-page .rcl-page-loader .rc-loading-text,
+.rcc-page .rcl-modal-dialog .rc-loading-text { color: var(--rc-steel); }
+@media (prefers-reduced-motion: reduce) {
+  .rcc-page .rcl-page-loader .rc-startlight {
+    animation-duration: 3.2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    background: var(--rc-carbon);
+    border-color: #9a9a9a;
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6);
+  }
+  .rcc-page .rcl-page-loader .rc-startlight:nth-child(1) { animation-name: rc-startlight-1; }
+  .rcc-page .rcl-page-loader .rc-startlight:nth-child(2) { animation-name: rc-startlight-2; }
+  .rcc-page .rcl-page-loader .rc-startlight:nth-child(3) { animation-name: rc-startlight-3; }
+  .rcc-page .rcl-page-loader .rc-startlight:nth-child(4) { animation-name: rc-startlight-4; }
+  .rcc-page .rcl-page-loader .rc-startlight:nth-child(5) { animation-name: rc-startlight-5; }
+}
 .rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
 .rcc-page .rcl-panel-title,
 .rcc-page .rcl-hero-title { text-shadow: none; }
@@ -51,6 +83,17 @@ body.rc-league-page.rcc-page {
   font-family: var(--rc-font-body);
   font-size: 15px;
   color: var(--rcl-ink-dim);
+}
+.rcc-hero-meta-name { font-weight: 700; }
+/* Car maker logo in front of the team name, sized like the ticker's logos. */
+.rcc-hero-meta-logo {
+  display: inline-block;
+  height: 16px;
+  width: auto;
+  max-width: 36px;
+  object-fit: contain;
+  vertical-align: -3px;
+  margin-right: 6px;
 }
 
 /* -------------------------------------------------------------------- */

@@ -356,13 +356,19 @@ function rccRenderHero(page) {
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
+  // "**Name** · [logo] Team #n · AI Difficulty N% · X of Y Rounds" (name bold, Matt).
   var bits = [];
-  if (page.registration) bits.push(page.owner.displayName + ' · ' + page.registration.teamName + ' #' + page.registration.carNumber);
   var diff = (page.seasonDetails.raceSettings || {}).aiDifficulty;
   if (diff) bits.push('AI Difficulty ' + diff + '%');
   bits.push(page.roundsCompleted + ' of ' + page.totalRounds + ' Rounds');
   if (page.seasonEnded) bits.push('Season Ended');
-  metaEl.textContent = bits.join(' · ');
+  if (page.registration) {
+    metaEl.appendChild(_rccText('strong', 'rcc-hero-meta-name', page.owner.displayName));
+    metaEl.appendChild(document.createTextNode(' · '));
+    if (page.registration.manufacturer) metaEl.appendChild(_rccLogo('rcc-hero-meta-logo', page.registration.manufacturer));
+    metaEl.appendChild(document.createTextNode(page.registration.teamName + ' #' + page.registration.carNumber + ' · '));
+  }
+  metaEl.appendChild(document.createTextNode(bits.join(' · ')));
 }
 
 function rccRenderActionBar(page) {
