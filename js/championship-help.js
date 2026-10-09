@@ -3,109 +3,111 @@
 // one entry per section, rendered with the rulebook's own look (.rc-rulebook-nav / .rc-rulebook-
 // section in css/style.css) plus the numbered step circles in css/championship.css (.rcc-help-steps).
 // The html strings are hand-written here, never built from user input, so innerHTML is safe.
-// No em dashes in this text (site rule). Apostrophes are typographic (’) so the strings need no
-// escaping. The Le Mans Ultimate steps follow Matt's own walkthrough of the game (2026-10-09).
+// Writing rules for this text (Matt): plain, correct English in full sentences. No em dashes, and no
+// colon followed by a lowercase clause. Callout titles are their own line (.rcc-help-callout-title)
+// rather than "Label:". Apostrophes are typographic (’) so the strings need no escaping.
 var RCC_HELP_SECTIONS = [
   {
     id: 'what-it-is', num: '1', title: 'What Race Club Championship Is',
     html:
-      '<p>Le Mans Ultimate lets you run a single race weekend against the AI, but it has no way to string those weekends together into a season. Race Club Championship is the missing piece: an offline championship you build here and race in the game, one round at a time, at your own pace.</p>' +
-      '<p>You pick the year, the classes, the calendar, the race lengths and the points. You sign for a real team and car, and your rivals are the real drivers listed on every other car on the grid. After each round you upload the two results files the game writes (Qualifying and Race), and this page does the rest: class standings for drivers and teams, the manufacturers’ standings for factory Hypercars, bonus points, a race recap with a lap-by-lap report and the race’s settings, your own lap times, and the Highlights ticker.</p>' +
-      '<div class="rc-rulebook-callout"><strong>In short:</strong><ul>' +
+      '<p>Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap. You build an offline championship here, race each round in the game, and play through the season one round at a time, at your own pace.</p>' +
+      '<p>You choose the series, the year, the classes, the calendar, the race lengths and the points. You sign for a real team and car, and your rivals are the real drivers listed on every other car on the grid. After each round, you upload the two results files the game creates (Qualifying and Race), and this page takes care of the rest. It keeps the class standings for drivers and teams, the manufacturers’ standings for factory Hypercars and the bonus points. Every round also gets a race recap with a lap-by-lap report and the race’s settings, a breakdown of your own laps, and a place in the Highlights ticker.</p>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">In Short</strong><ul>' +
       '<li>A full season against the AI, scored the same way as the Race Club league</li>' +
-      '<li>WEC and ELMS cars and tracks, as they are in the game</li>' +
-      '<li>No dates and no deadlines: race the rounds in order, whenever you like</li>' +
-      '<li>Everything is worked out from the game’s own results files, so nothing is typed in by hand</li>' +
-      '<li>One season at a time; finished seasons stay on this page as a record</li>' +
+      '<li>WEC and ELMS cars and tracks, as they appear in the game</li>' +
+      '<li>No dates and no deadlines, so you can race each round whenever you like</li>' +
+      '<li>Results come straight from the game’s own files, so nothing is typed in by hand</li>' +
+      '<li>One season at a time, with finished seasons kept on this page as a record</li>' +
       '</ul></div>'
   },
   {
     id: 'create-season', num: '2', title: 'Creating a Season',
     html:
-      '<p>Click <strong>Create Season</strong> in the black bar. The popup has six parts:</p>' +
+      '<p>Click <strong>Create Season</strong> in the black bar. The popup is laid out in six parts.</p>' +
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Season.</strong> Give the season a name, then pick the series (WEC or ELMS) and the year. Series and year are the season of cars you race against, the same series and year you will choose in the game.</li>' +
-      '<li><strong>Classes.</strong> Tick the classes you want. Classes with no cars in that series and year are grayed out, and the count next to each class shows how many cars join the grid.</li>' +
-      '<li><strong>Difficulty and Advanced.</strong> These match the Difficulty and Advanced tabs in the game: AI Difficulty, Damage Simulation, Tire Wear, Tire Warmers, Available Tires and Fuel Usage; then Time Scale, Flag Rules, Track Limits Rules, Mechanical Failures, AI Aggression and Track Limits Points. You copy these into the game before every round.</li>' +
-      '<li><strong>Points.</strong> Set how long a Sprint, Medium and Long race is (in minutes) and the points for P1 to P10 in each. Choose 0 to 5 bonus points for Pole Position, Fastest Lap and Most Laps Led. Points are scored per class.</li>' +
-      '<li><strong>Rounds.</strong> Add your rounds in order. Each round has a track and layout and a race length (Sprint, Medium or Long), then its session settings: weather preset (Sunny, Cloudy, Rainy or Real World), in-game start time, Start (Rolling or Fast) and RealRoad Time Scale.</li>' +
+      '<li><strong>Season.</strong> Give the season a name, then pick the series (WEC or ELMS) and the year. Together they decide which cars you race against, and they should match the series and year you choose in the game. Only years with cars available are listed.</li>' +
+      '<li><strong>Classes.</strong> Tick the classes you want to race. Classes with no cars in that series and year are grayed out, and the number next to each class shows how many cars it adds to the grid.</li>' +
+      '<li><strong>Difficulty.</strong> Set the AI difficulty, damage simulation, tire wear, tire warmers, available tires and fuel usage. These match the Difficulty tab in the game.</li>' +
+      '<li><strong>Advanced.</strong> Set the time scale, flag rules, track limits rules, mechanical failures, AI aggression and track limits points. These match the Advanced tab in the game.</li>' +
+      '<li><strong>Points.</strong> Set the length of a Sprint, Medium and Long race in minutes, and the points for P1 to P10 in each. You can also award 0 to 5 bonus points for Pole Position, Fastest Lap and Most Laps Led. Points are scored within each class.</li>' +
+      '<li><strong>Rounds.</strong> Add your rounds in the order you want to race them. Each round has a track, a layout and a race length. Its second row holds the session settings, which are the weather preset (Sunny, Cloudy, Rainy or Real World), the in-game start time, the start type (Rolling or Fast) and the RealRoad time scale. If you leave the event name blank, the round uses the season name.</li>' +
       '</ol>' +
-      '<p>Click <strong>Create Season</strong> at the bottom. Then click <strong>Choose Your Team</strong> in the black bar, pick a class and a car, and click <strong>Join This Team</strong>. That is the seat you race in all season.</p>' +
-      '<div class="rc-rulebook-callout"><strong>Good to know:</strong><ul>' +
-      '<li>While the season runs, Create Season becomes <strong>Season Preview</strong>: it shows every setting and round of your season, so you can check them before you set up a race.</li>' +
-      '<li>Edit Season can change rounds that have not been raced yet. Once you join a team the series, year and classes lock, and once a round has results the points lock.</li>' +
-      '<li>Your team choice is final for the season.</li>' +
+      '<p>Click <strong>Create Season</strong> at the bottom of the popup. Next, click <strong>Choose Your Team</strong> in the black bar, pick a class and a car, and click <strong>Join This Team</strong>. That car is your seat for the whole season.</p>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
+      '<li>While a season is running, Create Season becomes <strong>Season Preview</strong>. It shows every setting and round in your season, so you can check them before you set up a race.</li>' +
+      '<li>Edit Season can change any round that has not been raced yet. The series, year and classes lock once you join a team, and the points lock once a round has results.</li>' +
+      '<li>Your choice of team is final for the season.</li>' +
       '</ul></div>'
   },
   {
     id: 'set-up-race', num: '3', title: 'Setting Up the Race in Le Mans Ultimate',
     html:
-      '<p>Each round is one Race Weekend in the game. Open <strong>Season Preview</strong> here so your season’s settings and the round’s details are in front of you, then in Le Mans Ultimate:</p>' +
+      '<p>Each round is one Race Weekend in the game. Before you start, open <strong>Season Preview</strong> here so your season’s settings and the round’s details are in front of you. Then follow these steps in Le Mans Ultimate.</p>' +
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Click Race Weekend</strong> on the main menu.</li>' +
-      '<li><strong>Choose the series and the year.</strong> WEC and ELMS are both represented in Race Club. Pick the series and year your season uses.</li>' +
-      '<li><strong>Choose the track.</strong> Pick the round’s track and layout. If it is not on that year’s calendar, switch the filter to <strong>All</strong> to see every track in the game.</li>' +
-      '<li><strong>Choose your class and car.</strong> Pick the class, the car and the team you signed for. This is your seat for the whole season.</li>' +
-      '<li><strong>Set the Starting Grid.</strong> You are now on the Event Settings page, with a summary of the last settings used (or the defaults). Under <strong>Starting Grid</strong>, choose your season of cars (for example <strong>Season 2023</strong>). Do not choose Fill Grid: it adds cars that did not race that season, and Race Club Championship will not import results with cars that are not on your grid.</li>' +
-      '<li><strong>Open the advanced options.</strong> From Event Settings, open the advanced options. Near the top are four tabs: Difficulty, Sessions, Weather and Advanced.</li>' +
-      '<li><strong>Difficulty.</strong> Copy your season’s Difficulty settings: AI difficulty, damage simulation, tyre wear, tyre warmers, available tyres and fuel usage. Choose any assists you like: Race Club sets no rules for assists, but the ones you use show in the race recap.</li>' +
-      '<li><strong>Sessions.</strong> Practice is optional. Always run a Qualifying and a Race, so the round has a grid and a result (practice files cannot be imported). Set the Race from the round: the settings that really matter here are the <strong>race length</strong>, the <strong>start time</strong> and the <strong>RealRoad Time Scale</strong>, plus the round’s Start (Rolling or Fast).</li>' +
-      '<li><strong>Weather.</strong> Pick the round’s preset for each session (Sunny, Cloudy, Rainy or Real World), or set it by hand: each session is split into five parts you can change.</li>' +
-      '<li><strong>Advanced.</strong> Copy your season’s Advanced settings: Time Scale, Flag Rules, Track Limits Rules, Mechanical Failures, AI Aggression and Track Limits Points.</li>' +
-      '<li><strong>Check and start.</strong> Go back to Event Settings at the top, look over the page to make sure it matches your season and the round, then click <strong>Start Race Weekend</strong>. Run Qualifying, then drive the Race to the chequered flag so the game saves the results.</li>' +
+      '<li><strong>Open Race Weekend.</strong> Click Race Weekend on the main menu.</li>' +
+      '<li><strong>Choose the series and year.</strong> Race Club includes both WEC and ELMS. Pick the series and year your season uses.</li>' +
+      '<li><strong>Choose the track.</strong> Pick the round’s track and layout. If the track is not on that year’s calendar, switch the filter to <strong>All</strong> to see every track in the game.</li>' +
+      '<li><strong>Choose your class and car.</strong> Pick the class, car and team you signed for. This is your seat for the whole season.</li>' +
+      '<li><strong>Set the starting grid.</strong> You will now see the Event Settings page, which summarizes the last settings used or the defaults. Under <strong>Starting Grid</strong>, choose your season of cars, such as <strong>Season 2023</strong>. Do not choose Fill Grid. It adds cars that did not race that season, and Race Club Championship will not import results that include cars from outside your grid.</li>' +
+      '<li><strong>Open the advanced options.</strong> From Event Settings, open the advanced options. You will see four tabs near the top named Difficulty, Sessions, Weather and Advanced.</li>' +
+      '<li><strong>Difficulty.</strong> Copy your season’s Difficulty settings, which are the AI difficulty, damage simulation, tire wear, tire warmers, available tires and fuel usage. You can also set any assists you like. Race Club has no rules about assists, but the ones you use appear in the race recap.</li>' +
+      '<li><strong>Sessions.</strong> Practice is optional, and practice files cannot be imported. Always run a Qualifying session and a Race, so the round has both a grid and a result. For the Race, the settings that matter most are the <strong>race length</strong>, the <strong>start time</strong> and the <strong>RealRoad time scale</strong>, along with the round’s start type.</li>' +
+      '<li><strong>Weather.</strong> Choose the round’s preset for each session (Sunny, Cloudy, Rainy or Real World). You can also set the weather by hand, since each session is split into five parts that you can change one at a time.</li>' +
+      '<li><strong>Advanced.</strong> Copy your season’s Advanced settings, which are the time scale, flag rules, track limits rules, mechanical failures, AI aggression and track limits points.</li>' +
+      '<li><strong>Check and start.</strong> Go back to Event Settings at the top and make sure everything matches your season and the round. Then click <strong>Start Race Weekend</strong>. Run Qualifying, and drive the Race to the checkered flag so the game saves the results.</li>' +
       '</ol>' +
-      '<div class="rc-rulebook-callout"><strong>These five decide whether your results upload:</strong><ul>' +
-      '<li>The right series and year</li>' +
-      '<li>The right track and layout</li>' +
-      '<li>The right class, car and team (the seat you signed for)</li>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Five Settings Decide Whether Your Results Upload</strong><ul>' +
+      '<li>The correct series and year</li>' +
+      '<li>The correct track and layout</li>' +
+      '<li>The correct class, car and team, which is the seat you signed for</li>' +
       '<li>Your season of cars under Starting Grid (Season YYYY), never Fill Grid</li>' +
-      '<li>The right race length</li>' +
-      '</ul>Everything else (weather, start time, time scales, AI settings) does not stop an upload, but the closer it matches your season, the truer your season’s story will be.</div>' +
-      '<div class="rc-rulebook-callout"><strong>DLC:</strong> some tracks and cars need DLC in Le Mans Ultimate. Race Club Championship lists everything in the game and does not know which DLC you own, so only pick tracks and teams you can race.</div>'
+      '<li>The correct race length</li>' +
+      '</ul>The other settings, such as weather, start time, time scales and AI settings, will not stop an upload. Matching them as closely as you can keeps your season’s records accurate.</div>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">DLC</strong>Some tracks and cars in Le Mans Ultimate require DLC. Race Club Championship includes everything in the game and cannot tell which DLC you own, so only choose tracks and teams you are able to race.</div>'
   },
   {
     id: 'find-files', num: '4', title: 'Finding Your Results Files',
     html:
-      '<p>The game saves one XML file per session in its Results folder. The quickest way there:</p>' +
+      '<p>The game saves an XML file for every session in its Results folder. This is the quickest way to find it.</p>' +
       '<ol class="rcc-help-steps">' +
       '<li><strong>Open Steam</strong> and go to your Library.</li>' +
-      '<li><strong>Right-click Le Mans Ultimate</strong>, then choose Manage, then Browse local files.</li>' +
-      '<li><strong>Open UserData</strong>, then <strong>Log</strong>, then <strong>Results</strong>.</li>' +
+      '<li><strong>Right-click Le Mans Ultimate</strong>, then choose Manage and Browse local files.</li>' +
+      '<li><strong>Open the UserData folder</strong>, then <strong>Log</strong>, then <strong>Results</strong>.</li>' +
       '</ol>' +
-      '<p>On a standard Steam install that folder is:</p>' +
+      '<p>On a standard Steam installation, the folder is located here.</p>' +
       '<p class="rcc-help-path">C:\\Program Files (x86)\\Steam\\steamapps\\common\\Le Mans Ultimate\\UserData\\Log\\Results</p>' +
-      '<p>Each file is named with the date and time the session ended, followed by the session:</p>' +
+      '<p>Each file is named with the date and time its session ended, and the ending tells you which session it is.</p>' +
       '<table class="rcc-help-table"><tbody>' +
-      '<tr><td><strong>…Q1.xml</strong></td><td>Qualifying. This is file 1.</td></tr>' +
-      '<tr><td><strong>…R1.xml</strong></td><td>Race. This is file 2.</td></tr>' +
-      '<tr><td><strong>…P1.xml</strong></td><td>Practice. Not uploaded.</td></tr>' +
+      '<tr><td><strong>…Q1.xml</strong></td><td>Qualifying, which is file 1</td></tr>' +
+      '<tr><td><strong>…R1.xml</strong></td><td>Race, which is file 2</td></tr>' +
+      '<tr><td><strong>…P1.xml</strong></td><td>Practice, which is not uploaded</td></tr>' +
       '</tbody></table>' +
-      '<div class="rc-rulebook-callout"><strong>Tip:</strong> sort the folder by date. The newest R1 file is your race, and the Q1 file just before it is the qualifying from the same weekend.</div>'
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Tip</strong>Sort the folder by date. The newest R1 file is your race, and the Q1 file just before it is the qualifying session from the same weekend.</div>'
   },
   {
     id: 'upload', num: '5', title: 'Uploading Your Results',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Click Upload Results</strong> in the black bar (or UPLOAD RESULTS on the round’s calendar card).</li>' +
+      '<li><strong>Click Upload Results</strong> in the black bar, or UPLOAD RESULTS on the round’s calendar card.</li>' +
       '<li><strong>Pick the round</strong> from the dropdown. Only rounds without results are listed.</li>' +
-      '<li><strong>File 1:</strong> choose the Qualifying file (…Q1.xml).</li>' +
-      '<li><strong>File 2:</strong> choose the Race file (…R1.xml).</li>' +
-      '<li><strong>Click Upload Results</strong> and wait. It can take a minute. When it is done the page reloads with the new standings, the race recap and the ticker.</li>' +
+      '<li><strong>For file 1</strong>, choose the Qualifying file (…Q1.xml).</li>' +
+      '<li><strong>For file 2</strong>, choose the Race file (…R1.xml).</li>' +
+      '<li><strong>Click Upload Results</strong> and wait. It can take up to a minute. When it finishes, the page reloads with the new standings, the race recap and the ticker.</li>' +
       '</ol>' +
-      '<p>Both files are checked before anything is saved: they must be a Qualifying and a Race file, from the same weekend, at the round’s track, with your car, and with only cars from your season’s grid. If a car in the file is not on your grid, the upload stops and names that car. Whenever something is off, a message in the lower right says what, and nothing is kept, so fix it and upload again.</p>' +
-      '<div class="rc-rulebook-callout"><strong>Race length:</strong> the length you actually raced decides which points table the round uses, rounded down to the nearest length. Shorter than a Sprint, or between a Sprint and a Medium, scores as a Sprint; between a Medium and a Long scores as a Medium; a Long or longer scores as a Long. The calendar card shows the length you raced.</div>' +
-      '<p>Uploaded the wrong files? Click <strong>Erase Results</strong> in the black bar, pick the round, and upload again. The round stays on the calendar.</p>'
+      '<p>Both files are checked before anything is saved. They must be a Qualifying file and a Race file from the same weekend, raced at the round’s track, with you in your own car and only cars from your season’s grid. If the files include a car that is not on your grid, the upload stops and names that car. Whenever something is wrong, a message in the lower right explains it and nothing is saved, so you can fix the problem and upload again.</p>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Length</strong>The length you actually raced decides which points table the round uses, rounded down to the nearest race length. A race shorter than a Sprint, or between a Sprint and a Medium, scores as a Sprint. A race between a Medium and a Long scores as a Medium, and a race of Long length or more scores as a Long. The calendar card shows the length you raced.</div>' +
+      '<p>If you upload the wrong files, click <strong>Erase Results</strong> in the black bar, pick the round, and upload again. The round stays on the calendar.</p>'
   },
   {
     id: 'end-season', num: '6', title: 'Ending a Season',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Upload every round.</strong> The season can only end once every round on the calendar has its results.</li>' +
+      '<li><strong>Upload every round.</strong> A season can only end once every round on the calendar has its results.</li>' +
       '<li><strong>Click End Season</strong> in the black bar and confirm.</li>' +
-      '<li><strong>That’s the season done.</strong> The standings become final, the panels switch to Final Standings, and the season can no longer be edited.</li>' +
-      '<li><strong>Start the next one.</strong> Season Preview turns back into Create Season. Past seasons stay available from the Season dropdown in the black bar.</li>' +
+      '<li><strong>The season is complete.</strong> The standings become final, the panels change to Final Standings, and the season can no longer be edited.</li>' +
+      '<li><strong>Start the next one.</strong> Season Preview turns back into Create Season, and your past seasons stay available from the Season dropdown in the black bar.</li>' +
       '</ol>' +
-      '<div class="rc-rulebook-callout"><strong>Delete Season</strong> removes the season you are looking at, with its rounds, your team signing and every result and lap. It cannot be undone, so it asks you to type DELETE SEASON first.</div>' +
-      '<p>Found something that doesn’t work? Click <strong>Find A Bug?</strong> in the black bar to tell us.</p>'
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Deleting a Season</strong>Delete Season removes the season you are viewing, along with its rounds, your team signing and every result and lap. It cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +
+      '<p>If you find something that doesn’t work, click <strong>Find A Bug?</strong> in the black bar and let us know.</p>'
   }
 ];

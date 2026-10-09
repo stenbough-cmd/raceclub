@@ -684,7 +684,7 @@ function rccRenderLastRace(page) {
   body.classList.remove('rcl-seasonfmt-modal-body');
   if (!page || !page.hasSeason) {
     titleEl.textContent = 'Welcome';
-    body.appendChild(_rccEmpty('No Championship Yet', 'Use Create Season in the bar above to set up your first offline season: pick the classes, the rounds and the AI difficulty, then join a team.'));
+    body.appendChild(_rccEmpty('No Championship Yet', 'Use Create Season in the bar above to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then join a team.'));
     return;
   }
   if (page.seasonEnded) {
@@ -1491,7 +1491,7 @@ function rccOpenRegistration() {
       joinPromise.then(function (res) {
         if (_rccHandleAuthError(res)) return;
         if (res && res.success) { _rccToast('You\'re registered!', 'success'); rccReloadAfterSave(); return; }
-        _rccToast((res && res.message) || 'Could not confirm this registration -- reloading to check.', 'error');
+        _rccToast((res && res.message) || 'We could not confirm this registration, so the page will reload to check.', 'error');
         rccReloadAfterSave();
       }).catch(function () {
         _rccToast('Reloading to confirm your registration...', 'success');
@@ -1761,30 +1761,45 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   var seasonRow = _rccEl('div', 'rcc-season-row');
   seasonRow.appendChild(_rccField('Season Name', _rccTextInput(state.name, function (v) { state.name = v; }, 60)));
   if (RCC_SERIES.indexOf(state.details.series) === -1) state.details.series = 'WEC';
-  var seriesSel = _rccSelect(RCC_SERIES, state.details.series, function (v) { state.details.series = v; applyGrid(); });
+  var seriesSel = _rccSelect(RCC_SERIES, state.details.series, function (v) { state.details.series = v; fillYears(); applyGrid(); });
   seriesSel.id = 'rcc-season-series';
   seriesSel.disabled = classesLocked;
   seasonRow.appendChild(_rccField('Series', seriesSel));
-  var nowYear = new Date().getFullYear();
-  var allYears = [];
-  for (var yy = nowYear; yy >= 2023; yy--) allYears.push(String(yy));
+  // Only years that have active cars in the chosen series, newest first. A season being edited keeps
+  // its own year in the list even if those cars have since been retired.
   var pickedYear = String(state.details.seasonYear || '');
   RCC_CLASS_ORDER.forEach(function (c) { if (!pickedYear && state.details.classes[c] && state.details.classSeasons[c]) pickedYear = String(state.details.classSeasons[c]); });
-  if (pickedYear && allYears.indexOf(pickedYear) === -1) allYears.push(pickedYear);
-  if (!pickedYear) {
-    // Newest year that has any cars in the chosen series.
-    pickedYear = allYears.filter(function (y) { return cars.some(function (c) { return String(c.Season) === y && _rccCarSeries(c) === state.details.series; }); })[0] || allYears[0];
-  }
-  var yearSel = _rccSelect(allYears, pickedYear, function (v) { pickedYear = String(v); applyGrid(); });
+  var yearSel = document.createElement('select');
   yearSel.id = 'rcc-season-year';
-  yearSel.disabled = classesLocked;
+  function yearsFor(series) {
+    var ys = [];
+    cars.forEach(function (c) { var y = String(c.Season || ''); if (y && _rccCarSeries(c) === series && ys.indexOf(y) === -1) ys.push(y); });
+    return ys.sort().reverse();
+  }
+  function fillYears() {
+    var ys = yearsFor(state.details.series);
+    if (editing && pickedYear && ys.indexOf(pickedYear) === -1) { ys.push(pickedYear); ys.sort().reverse(); }
+    yearSel.innerHTML = '';
+    if (!ys.length) {
+      yearSel.appendChild(new Option('No ' + state.details.series + ' cars yet', ''));
+      pickedYear = '';
+      yearSel.disabled = true;
+      return;
+    }
+    ys.forEach(function (y) { yearSel.appendChild(new Option(y, y)); });
+    if (ys.indexOf(pickedYear) === -1) pickedYear = ys[0];
+    yearSel.value = pickedYear;
+    yearSel.disabled = classesLocked;
+  }
+  yearSel.addEventListener('change', function () { pickedYear = yearSel.value; applyGrid(); });
+  fillYears();
   seasonRow.appendChild(_rccField('Year', yearSel));
   sec1.appendChild(seasonRow);
   form.appendChild(sec1);
 
   // --- Classes ---
   var sec2 = _rccSection('Classes');
-  if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'Locked: you have already joined a team, so the grid can no longer change.'));
+  if (classesLocked) sec2.appendChild(_rccText('div', 'rc-hint', 'You have already joined a team, so the series, year and classes can no longer change.'));
   var classGrid = _rccEl('div', 'rcc-class-grid');
   var classRows = [];
   RCC_CLASS_ORDER.forEach(function (cls) {
@@ -1810,7 +1825,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     state.details.seasonYear = pickedYear;
     classRows.forEach(function (x) {
       var n = cars.filter(function (c) { return c.Class === x.cls && String(c.Season) === pickedYear && _rccCarSeries(c) === series; }).length;
-      x.count.textContent = n ? n + ' car' + (n === 1 ? '' : 's') : 'No ' + series + ' cars in ' + pickedYear;
+      x.count.textContent = n ? n + ' car' + (n === 1 ? '' : 's') : (pickedYear ? 'No ' + series + ' cars in ' + pickedYear : 'No ' + series + ' cars');
       x.row.classList.toggle('rcc-class-row-off', !n);
       if (!n && !classesLocked) { x.cb.checked = false; state.details.classes[x.cls] = false; }
       x.cb.disabled = classesLocked || !n;
@@ -1856,7 +1871,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 
   // --- Points ---
   var sec4 = _rccSection('Points');
-  if (pointsLocked) sec4.appendChild(_rccText('div', 'rc-hint', 'Locked: results have been imported, so points can no longer change.'));
+  if (pointsLocked) sec4.appendChild(_rccText('div', 'rc-hint', 'Results have been imported, so the points can no longer change.'));
   var tables = state.details.pointsTables;
   Object.keys(tables).forEach(function (tier) {
     var t = tables[tier];
@@ -1896,7 +1911,6 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 
   // --- Rounds ---
   var sec5 = _rccSection('Rounds');
-  sec5.appendChild(_rccText('div', 'rc-hint', 'No dates in championship mode: run the rounds in order, whenever you like. Leave Event Name blank to use the season name.'));
   var roundsWrap = _rccEl('div', 'rcc-rounds');
   sec5.appendChild(roundsWrap);
   var addBtn = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Add Round');

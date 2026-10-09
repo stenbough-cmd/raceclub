@@ -570,3 +570,5 @@ a.rcc-hero-meta-name { color: inherit; }
   .rcc-season-row { grid-template-columns: 1fr 1fr; }
   .rcc-season-row .rcc-field:first-child { grid-column: 1 / -1; }
 }
+/* Help popup: callout titles sit on their own line instead of "Label:". */
+.rcc-help-body .rcc-help-callout-title { display: block; margin-bottom: 4px; color: var(--rc-carbon); }
