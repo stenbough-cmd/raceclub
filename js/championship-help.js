@@ -102,7 +102,7 @@ var RCC_HELP_SECTIONS = [
   {
     id: 'recap', num: '6', title: 'Race Recap, Driver Report and Standings',
     html:
-      '<p>Every round with results has its own recap. Open it with <strong>RACE RECAP</strong> on the round’s calendar card, or with the <strong>Race Recap</strong> button in the Last Race header. <strong>DRIVER REPORT</strong>, next to RACE RECAP on the calendar card, opens your Driver Report on its own. Inside the recap, the dropdown next to the round switches between five pages.</p>' +
+      '<p>Every round with results has its own recap. Open it with <strong>RACE RECAP</strong> on the round’s calendar card, or with the <strong>Race Recap</strong> button in the Last Race header. <strong>DRIVER REPORT</strong>, next to RACE RECAP on the calendar card, opens the same recap already showing your Driver Report. Inside the recap, the dropdown next to the round switches between five pages.</p>' +
       '<table class="rcc-help-table"><tbody>' +
       '<tr><td><strong>Race</strong></td><td>The results for every class, the bonus winners and the lap-by-lap Race Report.</td></tr>' +
       '<tr><td><strong>Qualifying</strong></td><td>The qualifying order, when your season has a qualifying session.</td></tr>' +

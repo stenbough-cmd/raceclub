@@ -845,7 +845,7 @@ function rccRenderCarousel(page) {
       if (entry.hasRaceResults) {
         drBtn = _rccText('button', 'rcl-carousel-hero-btn', 'DRIVER REPORT');
         drBtn.type = 'button';
-        drBtn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenDriverReport(entry.roundId); });
+        drBtn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenResults(entry.roundId, 'driver'); });
       }
     } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
       btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
@@ -1222,23 +1222,7 @@ function _rccRaceDetailsBody(result, el) {
   el.appendChild(det);
 }
 
-// DRIVER REPORT button on a raced round's calendar card: a popup with only the report.
-function rccOpenDriverReport(roundId) {
-  var entry = (RCC.page.calendar || []).filter(function (c) { return c.roundId === roundId; })[0] || {};
-  var m = rccOpenModal('Driver Report', { wide: true });
-  m.dialog.classList.add('rcl-modal-dialog-allresults');
-  m.body.appendChild(_rccText('div', 'rcr-popup-round', 'Round ' + (entry.roundNum || '') + ' \u00B7 ' + (entry.eventName || '') + (entry.track ? ' at ' + entry.track : '')));
-  var out = _rccEl('div', 'rcl-allresults-body');
-  m.body.appendChild(out);
-  out.appendChild(_rccSpinner('Loading your report...'));
-  _rccApi('champGetRoundResults', { roundId: roundId, kind: 'race' }).then(function (res) {
-    if (_rccHandleAuthError(res)) return;
-    _rccDriverReportBody(res && res.success ? res.result : null, out);
-  }).catch(function () {
-    out.innerHTML = '';
-    out.appendChild(_rccEmpty('Could Not Load', 'Could not reach the server. Close this popup and try again.'));
-  });
-}
+// The DRIVER REPORT card button opens the Race Recap popup on its Driver Report page (Matt).
 
 function _rccRaceBody(result, el) {
   el.innerHTML = '';
