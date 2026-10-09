@@ -51,9 +51,26 @@ function _rccOrdinal(n) {
   var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
+// Toasts (lower right, same as the rest of the site). The last few shown just before a reload or a
+// page change are carried over (sessionStorage) and shown again once the new page has loaded.
+var RCC_FLASH_KEY = 'rcc_flash_toasts';
+var _rccRecentToasts = [];
 function _rccToast(msg, type) {
+  if (!msg) return;
+  _rccRecentToasts.push({ msg: msg, type: type || 'info', at: Date.now() });
   if (typeof showToast === 'function') showToast(msg, type || 'info');
 }
+function _rccCarryToasts() {
+  var recent = _rccRecentToasts.filter(function (t) { return Date.now() - t.at < 4000; });
+  if (!recent.length) return;
+  try { sessionStorage.setItem(RCC_FLASH_KEY, JSON.stringify(recent)); } catch (err) { /* toast just won't repeat */ }
+}
+function _rccShowCarriedToasts() {
+  var list = null;
+  try { list = JSON.parse(sessionStorage.getItem(RCC_FLASH_KEY) || 'null'); sessionStorage.removeItem(RCC_FLASH_KEY); } catch (err) { list = null; }
+  (list || []).forEach(function (t) { if (typeof showToast === 'function') showToast(t.msg, t.type); });
+}
+function _rccGo(url) { _rccCarryToasts(); window.location.href = url; }
 var RCC_CLASS_ORDER = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
 function _rccSortClasses(list, nameOf) {
   return list.slice().sort(function (a, b) {
@@ -80,10 +97,9 @@ function _rccLogo(className, manufacturer, onFail) {
   manufacturerLogoFallback(img, manufacturer, onFail || function () { img.style.display = 'none'; });
   return img;
 }
-// Flags are not shown on the championship page (Matt). Every caller already handles null.
+// Country flags -- used for tracks only (calendar cards, standings round columns). Drivers never
+// show a flag on this page (Matt).
 function _rccFlag(className, country) {
-  return null;
-  /* eslint-disable no-unreachable */
   if (!country || typeof countryFlagSrc !== 'function') return null;
   var src = countryFlagSrc(country);
   if (!src) return null;
@@ -164,6 +180,7 @@ function _rccQuery(name) {
 // Reload this same page (same owner, same season) after a save -- the site's "reload after save"
 // rule. No timers, no polling.
 function rccReloadAfterSave() {
+  _rccCarryToasts();
   window.location.reload();
 }
 
@@ -314,12 +331,12 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
     rccRunWrite(commit, pendingLabel, doWrite).then(function (res) {
       cancel.disabled = false;
       if (_rccHandleAuthError(res)) return;
-      if (!res || !res.success) { errLine.textContent = (res && res.message) || 'That did not work. Try again.'; return; }
+      if (!res || !res.success) { _rccToast((res && res.message) || 'That did not work. Try again.', 'error'); return; }
       m.close(true);
       if (onSuccess) onSuccess(res);
     }).catch(function () {
       cancel.disabled = false;
-      errLine.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it went through.';
+      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it went through.', 'error');
     });
   });
   return m;
@@ -375,8 +392,7 @@ function rccRenderActionBar(page) {
   } else {
     add('Team Information', hasSeason, rccOpenTeamInfo, 'No season yet.');
   }
-  add('Upload Results', active && !!page.registration, function () { rccOpenUpload(null); }, active ? 'Choose your team first.' : 'No active season.');
-  add('Round Tools', active && page.anyResults, rccOpenRoundTools, 'Nothing imported yet.');
+  add('Round Tools', active && !!page.registration, rccOpenRoundTools, active ? 'Choose your team first.' : 'No active season.');
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
   if (page && page.seasons && page.seasons.length > 1) {
@@ -436,8 +452,6 @@ function rccRenderTicker(page) {
     var entry = _rccEl('span', 'rcl-ticker-driver-entry');
     if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
     entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (row.isPlayer ? ' rcc-me-text' : ''), row.name));
-    var flag = _rccFlag('rcl-standings-flag', row.country);
-    if (flag) entry.appendChild(flag);
     if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + row.carNumber));
     return entry;
   }
@@ -534,8 +548,6 @@ function _rccPodium(rows) {
     drv.appendChild(_rccLogo('rcl-lr-podium-logo', row.manufacturer));
     var ident = _rccEl('div', 'rcl-lr-podium-identity');
     ident.appendChild(_rccText('span', 'rcl-lr-podium-name' + (row.isPlayer ? ' rcc-me-text' : ''), (row.name || '').toUpperCase()));
-    var flag = _rccFlag('rcl-lr-podium-flag', row.country);
-    if (flag) ident.appendChild(flag);
     drv.appendChild(ident);
     tile.appendChild(drv);
     var stand = _rccEl('div', 'rcl-lr-podium-stand');
@@ -726,7 +738,7 @@ function rccRenderCarousel(page) {
     if (flag) header.appendChild(flag);
     header.appendChild(_rccText('div', 'rcl-carousel-eventname', entry.eventName || 'Race'));
     if (entry.track) header.appendChild(_rccText('div', 'rcl-carousel-trackname', entry.track));
-    header.appendChild(_rccText('div', 'rcl-carousel-datetime', 'Round ' + entry.roundNum + ' of ' + entries.length + (entry.resultsFinalized ? ' · Official' : (entry.hasResults ? ' · Preliminary' : ''))));
+    header.appendChild(_rccText('div', 'rcl-carousel-datetime', 'Round ' + entry.roundNum + ' of ' + entries.length + ''));
     item.appendChild(header);
 
     var compact = _rccEl('div', 'rcl-carousel-compact-header');
@@ -804,104 +816,146 @@ function _rccIdentity(row, opts) {
   identity.appendChild(slot);
   var nameRow = _rccEl('div', 'rcl-standings-name-row' + (opts.wrap ? ' rcc-name-row-wrap' : ''));
   nameRow.appendChild(_rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
-  var flag = _rccFlag('rcl-standings-flag', row.country);
-  if (flag) nameRow.appendChild(flag);
   if (row.carNumber && !opts.hideNumber) nameRow.appendChild(_rccText('span', 'rcl-standings-carnum', '#' + row.carNumber));
   if (opts.sub) nameRow.appendChild(_rccText('span', 'rcl-standings-team', opts.sub));
-  else if (row.teamName) nameRow.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
+  else if (row.teamName && !opts.hideTeam) nameRow.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
   identity.appendChild(nameRow);
   return identity;
 }
 
-function _rccStandingsColumns(classes, kind) {
-  var columns = _rccEl('div', 'rcl-standings-columns');
-  classes.forEach(function (cls) {
-    var wrap = _rccEl('div', 'rcl-standings-class');
-    var label = kind === 'teams' ? (cls.label || cls.className + ' Teams') : cls.className + ' Drivers';
-    wrap.appendChild(_rccText('div', 'rcl-standings-class-header', label.toUpperCase()));
-    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-3');
-    head.appendChild(_rccText('div', null, 'Pos'));
-    head.appendChild(_rccText('div', null, kind === 'teams' ? 'Team' : 'Driver'));
-    head.appendChild(_rccText('div', null, 'Pts'));
-    wrap.appendChild(head);
-    // Drivers: one row per driver, but crew-mates of the same car with equal points share a rank
-    // (WEC style: P1, P1, P1, P2, P2, P3...). Teams: one row per car, ranked 1, 2, 3...
-    var lines = [];
-    var rank = 0;
-    var rankByKey = {};
-    (cls.standings || []).forEach(function (row) {
-      if (kind === 'teams') { lines.push({ row: row, rank: ++rank }); return; }
-      var key = row.isPlayer ? null : String(row.teamName) + '|' + String(row.carNumber) + '|' + String(row.championshipPoints);
-      if (key && rankByKey[key]) { lines.push({ row: row, rank: rankByKey[key] }); return; }
-      rank++;
-      if (key) rankByKey[key] = rank;
-      lines.push({ row: row, rank: rank });
-    });
-    lines.forEach(function (line) {
-      var row = line.row;
-      var idx = line.rank - 1;
-      var rowEl = _rccEl('div', 'rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
-      rowEl.appendChild(_rccPosBadge(idx));
-      if (kind === 'teams') {
-        rowEl.appendChild(_rccIdentity(row, { nameOverride: row.teamName, sub: (row.crew || []).join(', ') }));
-      } else {
-        rowEl.appendChild(_rccIdentity(row));
-      }
-      var pts = _rccEl('div', 'rcl-standings-pts');
-      pts.appendChild(_rccText('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
-      rowEl.appendChild(pts);
-      wrap.appendChild(rowEl);
-    });
-    columns.appendChild(wrap);
+// One board per class (Hypercar first, then LMP2, LMP3, LMGT3, LMGTE), each in its own panel.
+// Columns: Pos | Driver or Team | one column per round (track flag header; points, bonus in
+// superscript) | Total. Drivers: crew-mates of one car with equal points share a line and a rank
+// ("Name, Name, Name"), as the FIA prints WEC standings. Hypercar shows the drivers' world
+// championship only; every other class has a metal Drivers/Teams switch in the panel header.
+RCC.standingsView = RCC.standingsView || {};
+
+function _rccStandingsLines(cls, kind) {
+  var lines = [];
+  if (kind === 'teams') {
+    (cls.standings || []).forEach(function (row) { lines.push({ row: row, names: [row.teamName] }); });
+    return lines;
+  }
+  var byKey = {};
+  (cls.standings || []).forEach(function (row) {
+    var key = row.isPlayer ? null : String(row.teamName) + '|' + String(row.carNumber) + '|' + String(row.championshipPoints);
+    if (key && byKey[key]) { byKey[key].names.push(row.name); return; }
+    var line = { row: row, names: [row.name] };
+    if (key) byKey[key] = line;
+    lines.push(line);
   });
-  return columns;
+  return lines;
+}
+
+function _rccMetalSwitch(view, onChange) {
+  var sw = _rccEl('button', 'rcc-metal-switch' + (view === 'teams' ? ' rcc-metal-switch-teams' : ''));
+  sw.type = 'button';
+  sw.setAttribute('role', 'switch');
+  sw.setAttribute('aria-checked', view === 'teams' ? 'true' : 'false');
+  sw.setAttribute('aria-label', 'Show team standings');
+  sw.appendChild(_rccEl('span', 'rcc-metal-knob'));
+  sw.appendChild(_rccText('span', 'rcc-metal-label rcc-metal-label-drivers', 'Drivers'));
+  sw.appendChild(_rccText('span', 'rcc-metal-label rcc-metal-label-teams', 'Teams'));
+  sw.addEventListener('click', function () { onChange(view === 'teams' ? 'drivers' : 'teams'); });
+  return sw;
+}
+
+function _rccStandingsBoard(page, className, kind) {
+  var source = kind === 'teams' ? page.standings.teams : page.standings.drivers;
+  var cls = (source || []).filter(function (c) { return c.className === className; })[0] || { className: className, standings: [] };
+  var board = _rccEl('div', 'rcl-standings-class rcc-board');
+  var head;
+  if (className === 'Hypercar') {
+    head = _rccText('div', 'rcl-standings-class-header', 'RACE CLUB HYPERCAR WORLD ENDURANCE DRIVERS CHAMPIONSHIP');
+  } else {
+    head = _rccText('div', 'rcl-standings-class-header', 'RACE CLUB ENDURANCE TROPHY');
+    head.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FOR ' + className.toUpperCase() + (kind === 'teams' ? ' TEAMS' : ' DRIVERS')));
+  }
+  board.appendChild(head);
+
+  var rounds = page.calendar || [];
+  var scoredIdx = {};
+  (page.standings.scoredRoundIds || []).forEach(function (id, i) { scoredIdx[id] = i; });
+  var cols = '44px minmax(190px, 1fr) repeat(' + rounds.length + ', 46px) 58px';
+  var scroller = _rccEl('div', 'rcc-board-scroll');
+  var table = _rccEl('div', 'rcc-board-table');
+  table.style.setProperty('--rcc-board-cols', cols);
+  var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
+  hr.appendChild(_rccText('div', null, 'Pos'));
+  hr.appendChild(_rccText('div', 'rcc-board-name-head', kind === 'teams' ? 'Team' : 'Driver'));
+  rounds.forEach(function (r) {
+    var cell = _rccEl('div', 'rcc-board-round-head');
+    cell.title = 'Round ' + r.roundNum + (r.track ? ' · ' + r.track : '');
+    var f = _rccFlag('rcc-board-flag', r.country);
+    if (f) cell.appendChild(f); else cell.appendChild(_rccText('span', null, 'R' + r.roundNum));
+    hr.appendChild(cell);
+  });
+  hr.appendChild(_rccText('div', 'rcc-board-total-head', 'Pts'));
+  table.appendChild(hr);
+
+  var lines = _rccStandingsLines(cls, kind);
+  if (!lines.length) {
+    scroller.appendChild(table);
+    board.appendChild(scroller);
+    board.appendChild(_rccEmpty('No Data To Display', 'No entries in this class.'));
+    return board;
+  }
+  lines.forEach(function (line, idx) {
+    var row = line.row;
+    var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+    rowEl.appendChild(_rccPosBadge(idx));
+    rowEl.appendChild(_rccIdentity(row, {
+      nameOverride: line.names.join(', '), hideTeam: true, wrap: line.names.length > 1
+    }));
+    rounds.forEach(function (r) {
+      var cell = _rccEl('div', 'rcc-board-round');
+      var i = scoredIdx[r.roundId];
+      if (i === undefined) { cell.textContent = ''; }
+      else {
+        var total = Number((row.perRound || [])[i]) || 0;
+        var bonus = Number((row.perRoundBonus || [])[i]) || 0;
+        cell.appendChild(document.createTextNode(String(total - bonus)));
+        if (bonus) cell.appendChild(_rccText('sup', 'rcc-board-bonus', String(bonus)));
+      }
+      rowEl.appendChild(cell);
+    });
+    var pts = _rccEl('div', 'rcl-standings-pts');
+    pts.appendChild(_rccText('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
+    rowEl.appendChild(pts);
+    table.appendChild(rowEl);
+  });
+  scroller.appendChild(table);
+  board.appendChild(scroller);
+  return board;
 }
 
 function rccRenderStandings(page) {
-  var body = document.getElementById('rcl-standings-body');
-  var tabs = document.getElementById('rcc-standings-tabs');
-  var title = document.getElementById('rcl-standings-title');
-  body.innerHTML = '';
-  tabs.innerHTML = '';
-  if (!page || !page.hasSeason) {
-    title.parentNode.parentNode.parentNode.style.display = 'none';
-    return;
-  }
-  title.parentNode.parentNode.parentNode.style.display = '';
-  title.textContent = page.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
-  var hasResults = (page.roundsCompleted || 0) > 0;
-  if (!hasResults) {
-    body.appendChild(_rccEmpty('No Data To Display', 'Standings fill in once a round has both its Qualify and Race results imported.'));
-    return;
-  }
-  var defs = [{ key: 'drivers', label: 'Drivers' }, { key: 'teams', label: 'Teams' }];
-  function draw() {
-    tabs.innerHTML = '';
-    defs.forEach(function (d) {
-      var b = _rccText('button', 'rcc-tab' + (RCC.standingsTab === d.key ? ' rcc-tab-active' : ''), d.label);
-      b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', RCC.standingsTab === d.key ? 'true' : 'false');
-      b.addEventListener('click', function () { RCC.standingsTab = d.key; draw(); });
-      tabs.appendChild(b);
-    });
-    body.innerHTML = '';
-    var list = RCC.standingsTab === 'teams' ? page.standings.teams : page.standings.drivers;
-    if (!list || !list.length) {
-      body.appendChild(_rccEmpty('No Data To Display', 'No teams standings for this season.'));
-    } else {
-      body.appendChild(_rccStandingsColumns(_rccSortClasses(list, function (c) { return c.className; }), RCC.standingsTab));
+  var host = document.getElementById('rcc-standings-panels');
+  host.innerHTML = '';
+  if (!page || !page.hasSeason) return;
+  var classes = _rccSortClasses((page.standings.drivers || []).map(function (c) { return c.className; }), function (c) { return c; });
+  classes.forEach(function (className) {
+    var row = _rccEl('div', 'rcl-row-full');
+    var panel = _rccEl('section', 'rcl-panel');
+    var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
+    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Championship Standings'));
+    var body = _rccEl('div', 'rcl-panel-body');
+    var hasTeams = className !== 'Hypercar' && (page.standings.teams || []).some(function (t) { return t.className === className && t.standings.length; });
+    var switchSlot = _rccEl('div', 'rcc-switch-slot');
+    headEl.appendChild(switchSlot);
+    function draw() {
+      var view = hasTeams ? (RCC.standingsView[className] || 'drivers') : 'drivers';
+      switchSlot.innerHTML = '';
+      if (hasTeams) switchSlot.appendChild(_rccMetalSwitch(view, function (next) { RCC.standingsView[className] = next; draw(); }));
+      body.innerHTML = '';
+      body.appendChild(_rccStandingsBoard(page, className, view));
     }
-    var notes = [];
-    if (RCC.standingsTab === 'teams') notes.push('Hypercar teams standings count privateer entries only. Factory Hypercars score for their manufacturer.');
-    if (page.standings.dropsApplied) notes.push('Drop weeks are now applied: each entry\'s lowest round score' + (page.dropWeeks > 1 ? 's are' : ' is') + ' left out of the totals.');
-    if (page.hasUnofficialResults) notes.push('*PRELIMINARY RESULTS -- at least one scored round is not finalized yet.');
-    else notes.push('*OFFICIAL RESULTS');
-    var foot = _rccEl('div', 'rcl-results-bottom-row rcl-results-status-footer');
-    notes.forEach(function (n) { foot.appendChild(_rccText('div', 'rcl-standings-status-note rcl-standings-status-preliminary', n)); });
-    body.appendChild(foot);
-  }
-  draw();
+    draw();
+    panel.appendChild(headEl);
+    panel.appendChild(body);
+    row.appendChild(panel);
+    host.appendChild(row);
+  });
 }
 
 function rccRenderManufacturers(page) {
@@ -1009,10 +1063,6 @@ function _rccRaceBody(result, el) {
     });
     el.appendChild(w);
   });
-  var status = result.resultsFinalized
-    ? '*OFFICIAL RESULTS' + (result.finalizedAt ? ' (FINALIZED ' + _rccFormatDate(result.finalizedAt) + ')' : '')
-    : '*PRELIMINARY RESULTS' + (result.importedAt ? ' (IMPORTED ' + _rccFormatDate(result.importedAt) + ')' : '');
-  el.appendChild(_rccText('div', 'rcl-standings-status-note rcl-standings-status-preliminary', status));
 
   var report = result.raceReport || [];
   if (report.length) {
@@ -1763,9 +1813,9 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 
   save.addEventListener('click', function () {
     err.textContent = '';
-    if (!state.name.trim()) { err.textContent = 'Give the season a name.'; return; }
-    if (!RCC_CLASS_ORDER.some(function (c) { return state.details.classes[c]; })) { err.textContent = 'Pick at least one class.'; return; }
-    if (!state.rounds.length) { err.textContent = 'Add at least one round.'; return; }
+    if (!state.name.trim()) { _rccToast('Give the season a name.', 'error'); return; }
+    if (!RCC_CLASS_ORDER.some(function (c) { return state.details.classes[c]; })) { _rccToast('Pick at least one class.', 'error'); return; }
+    if (!state.rounds.length) { _rccToast('Add at least one round.', 'error'); return; }
     var payload = {
       name: state.name.trim(),
       seasonDetails: state.details,
@@ -1778,16 +1828,16 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       return _rccApi(editing ? 'champUpdateSeason' : 'champCreateSeason', payload, { post: true });
     }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
-      if (!res || !res.success) { err.textContent = (res && res.message) || 'Could not save the season.'; return; }
+      if (!res || !res.success) { _rccToast((res && res.message) || 'Could not save the season.', 'error'); return; }
       _rccToast(editing ? 'Season updated.' : 'Season created. Now choose your team.', 'success');
       m.close(true);
       if (!editing) {
-        window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId);
+        _rccGo('championship.html?id=' + encodeURIComponent(RCC.ownerId));
       } else {
         rccReloadAfterSave();
       }
     }).catch(function () {
-      err.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it was saved.';
+      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it was saved.', 'error');
     });
   });
 }
@@ -1797,10 +1847,9 @@ function _rccBuildWizard(m, tracks, cars, edit) {
 // ---------------------------------------------------------------------
 function rccOpenEndSeason() {
   var page = RCC.page;
-  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized; });
+  var open = (page.calendar || []).filter(function (c) { return !c.hasResults; });
   if (open.length) {
-    var m = rccOpenModal('End Season', { narrow: true });
-    m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Every round has to be finalized before the season can end. Still open: ' + open.map(function (c) { return 'Round ' + c.roundNum; }).join(', ') + '. Use Round Tools to finalize rounds once their results are in.'));
+    _rccToast('Every round needs its results before the season can end. Still to race: ' + open.map(function (c) { return 'Round ' + c.roundNum; }).join(', ') + '.', 'error');
     return;
   }
   rccConfirm('End Season', 'End "' + page.seasonName + '"? The standings become final and the season can no longer be edited. You can then create your next season.',
@@ -1849,14 +1898,14 @@ function rccOpenDeleteSeason() {
       cancel.disabled = false;
       input.disabled = false;
       if (_rccHandleAuthError(res)) return;
-      if (!res || !res.success) { errLine.textContent = (res && res.message) || 'Could not delete the season.'; return; }
+      if (!res || !res.success) { _rccToast((res && res.message) || 'Could not delete the season.', 'error'); return; }
       _rccToast('Season deleted.', 'success');
       m.close(true);
-      window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId);
+      _rccGo('championship.html?id=' + encodeURIComponent(RCC.ownerId));
     }).catch(function () {
       cancel.disabled = false;
       input.disabled = false;
-      errLine.textContent = 'No answer from the server after 6 minutes. Reload the page to see whether it was deleted.';
+      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it was deleted.', 'error');
     });
   });
 }
@@ -1864,29 +1913,18 @@ function rccOpenDeleteSeason() {
 // ---------------------------------------------------------------------
 // UPLOAD RESULTS
 // ---------------------------------------------------------------------
-// Upload Results: two required files, 1 = Qualify, 2 = Race, sent together in one request. From a
-// calendar card the round is fixed (lockRound); from the black bar the round is picked from a
-// dropdown of rounds that have no results yet. The server checks both files belong to the same race
-// weekend and to this round's track before anything is written.
-function rccOpenUpload(roundId, lockRound) {
+// Upload Results: always for ONE round (opened from that round's calendar card or its Round Tools
+// row). Two required files, 1 = Qualify, 2 = Race, sent together; the server checks they belong to
+// the same race weekend and this round's track. Results are official as soon as they're in.
+// Errors and the success message are toasts; on success every popup closes and the page reloads.
+function rccOpenUpload(roundId, lockRound, parentModal) {
   var page = RCC.page;
+  var c = (page.calendar || []).filter(function (x) { return x.roundId === roundId; })[0];
+  if (!c) { _rccToast('That round is not part of this season.', 'error'); return; }
+  if (c.hasQualifyResults || c.hasRaceResults) { _rccToast('Round ' + c.roundNum + ' already has results. Erase them in Round Tools first.', 'error'); return; }
   var m = rccOpenModal('Upload Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
-  var open = (page.calendar || []).filter(function (c) { return !c.resultsFinalized && !c.hasQualifyResults && !c.hasRaceResults; });
-  if (lockRound) open = open.filter(function (c) { return c.roundId === roundId; });
-  if (!open.length) { m.body.appendChild(_rccEmpty('Nothing To Upload', 'Every round already has its results.')); return; }
-  var roundSel = null;
-  var fixed = lockRound ? open[0] : null;
-  if (fixed) {
-    m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', 'Round ' + fixed.roundNum + ' · ' + fixed.eventName + (fixed.track ? ' (' + fixed.track + (fixed.layout ? ': ' + fixed.layout : '') + ')' : ''))));
-  } else {
-    roundSel = _rccSelect(open.map(function (c) {
-      return { label: 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + ')' : ''), value: c.roundId };
-    }), null);
-    var def = roundId || (page.nextRound && page.nextRound.roundId);
-    if (def && open.some(function (c) { return c.roundId === def; })) roundSel.value = def;
-    m.body.appendChild(_rccField('Round', roundSel));
-  }
+  m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', 'Round ' + c.roundNum + ' · ' + c.eventName + (c.track ? ' (' + c.track + (c.layout ? ': ' + c.layout : '') + ')' : ''))));
   function fileInput() {
     var f = document.createElement('input');
     f.type = 'file';
@@ -1897,19 +1935,15 @@ function rccOpenUpload(roundId, lockRound) {
   var rFile = fileInput();
   m.body.appendChild(_rccField('1. Qualify Results (XML)', qFile));
   m.body.appendChild(_rccField('2. Race Results (XML)', rFile));
-  var out = _rccEl('div', 'rcc-upload-out');
-  m.body.appendChild(out);
   var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
   var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
   go.type = 'button';
   go.disabled = true;
   row.appendChild(go);
   m.body.appendChild(row);
-  var done = false;
   function bothChosen() { return !!(qFile.files && qFile.files[0] && rFile.files && rFile.files[0]); }
   qFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
   rFile.addEventListener('change', function () { go.disabled = !bothChosen(); });
-
   function readFile(f) {
     return new Promise(function (resolve, reject) {
       var rd = new FileReader();
@@ -1918,18 +1952,15 @@ function rccOpenUpload(roundId, lockRound) {
       rd.readAsText(f);
     });
   }
-  function line(text, cls) { out.appendChild(_rccText('div', 'rcc-upload-line ' + (cls || ''), text)); }
-  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
+  function lockInputs(on) { qFile.disabled = on; rFile.disabled = on; }
 
   go.addEventListener('click', function () {
-    out.innerHTML = '';
-    if (!bothChosen()) { line('Choose both files: 1 is the Qualify results, 2 is the Race results.', 'rcc-upload-bad'); return; }
-    var targetRound = fixed ? fixed.roundId : roundSel.value;
+    if (!bothChosen()) { _rccToast('Choose both files: 1 is the Qualify results, 2 is the Race results.', 'error'); return; }
     lockInputs(true);
     rccRunWrite(go, 'Uploading...', function () {
       return Promise.all([readFile(qFile.files[0]), readFile(rFile.files[0])]).then(function (read) {
         return _rccApi('champImportXml', {
-          seasonId: page.seasonId, roundId: targetRound,
+          seasonId: page.seasonId, roundId: c.roundId,
           qualifyFilename: read[0].name, qualifyXml: read[0].text,
           raceFilename: read[1].name, raceXml: read[1].text
         }, { post: true });
@@ -1937,27 +1968,19 @@ function rccOpenUpload(roundId, lockRound) {
     }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
       if (!res || !res.success) {
-        line((res && res.message) || 'Import failed.', 'rcc-upload-bad');
+        _rccToast((res && res.message) || 'Import failed.', 'error');
         lockInputs(false);
         return;
       }
-      done = true;
-      line('Qualify: ' + res.qualify.message, 'rcc-upload-ok');
-      line('Race: ' + res.race.message, 'rcc-upload-ok');
-      if ((res.namesAdded || []).length) line('Added ' + res.namesAdded.length + ' driver name' + (res.namesAdded.length === 1 ? '' : 's') + ' to the Cars tab: ' + res.namesAdded.join(', '), 'rcc-upload-note');
-      (res.warnings || []).forEach(function (w) { line('Note: ' + w, 'rcc-upload-note'); });
-      var fresh = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Done');
-      fresh.type = 'button';
-      go.parentNode.replaceChild(fresh, go);
-      fresh.addEventListener('click', function () { m.close(true); rccReloadAfterSave(); });
+      (res.warnings || []).forEach(function (w) { _rccToast(w, 'info'); });
+      _rccToast('Round ' + c.roundNum + ' results uploaded.', 'success');
+      m.close(true);
+      if (parentModal) parentModal.close(true);
+      rccReloadAfterSave();
     }).catch(function (e) {
       lockInputs(false);
-      line(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'rcc-upload-bad');
+      _rccToast(e && e.message ? e.message : 'No answer from the server after 6 minutes. Reload the page to see whether the files went in.', 'error');
     });
-  });
-  // Closing with the X after a successful upload still refreshes the page.
-  m.dialog.querySelector('.rcl-modal-close').addEventListener('click', function () {
-    if (done && !(typeof rcWritesInFlight === 'number' && rcWritesInFlight > 0)) rccReloadAfterSave();
   });
 }
 
@@ -1967,33 +1990,29 @@ function rccOpenUpload(roundId, lockRound) {
 function rccOpenRoundTools() {
   var page = RCC.page;
   var m = rccOpenModal('Round Tools', { wide: true });
-  m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Finalize a round once its results are right: it becomes official and can no longer be changed. Erase removes a round\'s imported files so you can upload them again. Standings are worked out fresh from the results every time the page loads, so they never need recomputing.'));
+  var canUpload = !page.seasonEnded && !!page.registration;
   (page.calendar || []).forEach(function (c) {
     var row = _rccEl('div', 'rcc-tool-row');
     var info = _rccEl('div', 'rcc-tool-info');
     info.appendChild(_rccText('div', 'rcc-tool-title', 'Round ' + c.roundNum + ' · ' + c.eventName));
-    info.appendChild(_rccText('div', 'rcc-tool-sub', (c.track ? c.track + (c.layout ? ': ' + c.layout : '') + ' · ' : '') + 'Qualify ' + (c.hasQualifyResults ? 'imported' : 'missing') + ' · Race ' + (c.hasRaceResults ? 'imported' : 'missing') + (c.resultsFinalized ? ' · Finalized ' + _rccFormatDate(c.finalizedAt) : '')));
+    info.appendChild(_rccText('div', 'rcc-tool-sub', (c.track ? c.track + (c.layout ? ': ' + c.layout : '') + ' · ' : '') + (c.hasResults ? 'Results uploaded' : (c.hasQualifyResults || c.hasRaceResults ? 'Partly uploaded' : 'No results yet'))));
     row.appendChild(info);
     var btns = _rccEl('div', 'rcc-tool-btns');
-    var fin = _rccText('button', 'rc-btn-secondary rc-btn-row', c.resultsFinalized ? 'Finalized' : 'Finalize');
-    fin.type = 'button';
-    fin.disabled = c.resultsFinalized || !c.hasResults;
-    fin.addEventListener('click', function () {
-      rccConfirm('Finalize Round ' + c.roundNum, 'Make Round ' + c.roundNum + ' (' + c.eventName + ') official? Its results can no longer be erased or replaced afterwards.',
-        'Finalize Round', 'Finalizing...',
-        function () { return _rccApi('champFinalizeRound', { roundId: c.roundId }, { post: true }); },
-        function () { _rccToast('Round ' + c.roundNum + ' finalized.', 'success'); m.close(true); rccReloadAfterSave(); });
-    });
+    var hasAny = c.hasQualifyResults || c.hasRaceResults;
+    var up = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Upload Results');
+    up.type = 'button';
+    up.disabled = !canUpload || hasAny;
+    up.addEventListener('click', function () { rccOpenUpload(c.roundId, true, m); });
     var er = _rccText('button', 'rc-btn-secondary rc-btn-row', 'Erase Results');
     er.type = 'button';
-    er.disabled = c.resultsFinalized || !(c.hasQualifyResults || c.hasRaceResults);
+    er.disabled = page.seasonEnded || !hasAny;
     er.addEventListener('click', function () {
       rccConfirm('Erase Round ' + c.roundNum, 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload. Driver names already added to the Cars tab stay there.',
         'Erase Results', 'Erasing...',
         function () { return _rccApi('champEraseRound', { roundId: c.roundId }, { post: true }); },
         function () { _rccToast('Round ' + c.roundNum + ' erased.', 'success'); m.close(true); rccReloadAfterSave(); });
     });
-    btns.appendChild(fin);
+    btns.appendChild(up);
     btns.appendChild(er);
     row.appendChild(btns);
     m.body.appendChild(row);
@@ -2038,6 +2057,7 @@ function rccRenderAll(page) {
 
 document.addEventListener('DOMContentLoaded', function () {
   if (!_rccCheckAccess()) return;
+  _rccShowCarriedToasts();
   var EMPTY = { hasSeason: false, owner: { displayName: '' }, seasons: [] };
 
   // 1. Draw the saved copy instantly, if this browser has one.
