@@ -1303,18 +1303,18 @@
 
       var row = el('div', 'rc-cs-row');
 
-      if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
-        // Wrapped in rc-cs-logo-wrap -- a narrow/ tall logo scaled down to the 50px height cap can
-        // render well under 60px wide on its own; the wrap's min-width + centering is what actually
-        // adds the padding, rather than trying to pad the <img> itself (object-fit: contain
-        // wouldn't add visible padding, just letterbox inside whatever box the img itself is
-        // given).
+      // The team's car picture (assets/cars/<car year>-<car number>, webp first via js/img-loader.js)
+      // instead of the manufacturer logo. data.carYear comes from Season setup (handleGetMyCurrentSeat,
+      // Results.gs). No picture = the slot is hidden and the text moves left.
+      if (data.carYear && data.carNumber) {
+        // Wrapped in rc-cs-logo-wrap -- the wrap's min-width + centering keeps the column steady
+        // whatever the picture's own proportions.
         var logoWrap = el('div', 'rc-cs-logo-wrap');
         var logo = document.createElement('img');
         logo.className = 'rc-cs-logo';
-        logo.src = manufacturerLogoSrc(data.manufacturer, 'black');
-        logo.alt = data.manufacturer;
-        manufacturerLogoFallback(logo, data.manufacturer, function () { logoWrap.style.display = 'none'; });
+        logo.alt = data.team || '';
+        logo.onerror = function () { logoWrap.style.display = 'none'; };
+        logo.src = 'assets/cars/' + encodeURIComponent(String(data.carYear).trim()) + '-' + encodeURIComponent(String(data.carNumber).trim()) + '.png';
         logoWrap.appendChild(logo);
         row.appendChild(logoWrap);
       }

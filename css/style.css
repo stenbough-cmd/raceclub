@@ -1255,7 +1255,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* No circle/avatar container -- the logo stands on its own, sized directly rather than cropped to
    fit a fixed box. */
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
-.rc-cs-logo { max-width: 118px; max-height: 50px; object-fit: contain; }
+.rc-cs-logo { max-width: 150px; max-height: 50px; object-fit: contain; }
+@media (max-width: 480px) { .rc-cs-logo { max-width: 100px; } }
 /* Grows to fill the row so .rc-cs-carnum (below) lands pinned to the card's right edge instead of
    sitting right after the team name text. */
 .rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
