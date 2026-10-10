@@ -646,7 +646,6 @@ body.rc-league-page {
 }
 /* Flag sits AFTER the name in source order, not before -- .rcl-lr-podium-identity is a row, so DOM
    order is visual order here. */
-.rcl-lr-podium-flag { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; flex: 0 0 auto; }
 .rcl-lr-podium-name {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -2404,3 +2403,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-board .rcl-standings-team,
 .rcl-board .rcl-board-round,
 .rcl-board .rcl-board-bonus { font-weight: 400; }
+
+/* A hidden standings board (the Drivers/Teams view not being shown) always wins over the board's own display. */
+.rcl-panel-body > [hidden] { display: none !important; }

@@ -759,6 +759,21 @@ function _rclBoardMetalSwitch_(view, onChange) {
 // stays (empty space when there is no logo, or it fails to load) so every number and name lines up.
 // Drivers board: driver name (a link to their public profile) + nationality flag. Teams board: team
 // name. The car number has its own column under the N-degree header.
+// Loads the small (300px wide) copy of a car picture, assets/cars/small/<same name>, because the
+// originals are ~1180px wide and only shown at about 110x35. If a car has no small copy the original
+// is tried; if neither exists onMissing runs (callers hide the picture and keep its slot).
+// js/img-loader.js still walks .webp, .jpg, .jpeg, .png for each of the two paths.
+function _rclCarImg(img, year, carNumber, series, onMissing) {
+  var full = rcCarImageSrc(year, carNumber, series);
+  if (!full) { if (onMissing) onMissing(); return; }
+  var triedFull = false;
+  img.onerror = function () {
+    if (!triedFull) { triedFull = true; img.src = full; return; }
+    if (onMissing) onMissing();
+  };
+  img.src = full.replace('assets/cars/', 'assets/cars/small/');
+}
+
 // Car profile picture for the CAR column: assets/cars/<season year>-<car number>.png (transparent
 // PNG, e.g. 2026-85.png). The year is the class's car year from Season setup. A missing picture
 // leaves the slot empty so the columns still line up.
@@ -768,8 +783,7 @@ function _rclCarPic_(year, carNumber, series) {
     var img = document.createElement('img');
     img.className = 'rcl-standings-mfr-logo rcl-board-car';
     img.alt = '';
-    img.src = rcCarImageSrc(year, carNumber, series);
-    img.onerror = function () { img.style.display = 'none'; };
+    _rclCarImg(img, year, carNumber, series, function () { img.style.display = 'none'; });
     slot.appendChild(img);
   }
   return slot;
@@ -978,6 +992,14 @@ function _rclRenderStandings(hub) {
     var switchSlot = _rclEl('div', 'rcl-switch-slot');
     headEl.appendChild(switchSlot);
     var hasTeams = className !== 'Hypercar' && (cls.standings || []).length > 0;
+    // Both boards are built once, up front (the hidden one's pictures load in the background), and
+    // the Drivers/Teams switch only shows/hides them -- no rebuild, so nothing reloads or flickers.
+    var boards = { drivers: _rclBuildStandingsBoard_(hub, cls, className, 'drivers') };
+    bodyEl.appendChild(boards.drivers);
+    if (hasTeams) {
+      boards.teams = _rclBuildStandingsBoard_(hub, cls, className, 'teams');
+      bodyEl.appendChild(boards.teams);
+    }
     function draw() {
       var view = hasTeams ? (rclBoardView_[className] || 'drivers') : 'drivers';
       switchSlot.innerHTML = '';
@@ -989,8 +1011,7 @@ function _rclRenderStandings(hub) {
           if (again) again.focus();
         }));
       }
-      bodyEl.innerHTML = '';
-      bodyEl.appendChild(_rclBuildStandingsBoard_(hub, cls, className, view));
+      Object.keys(boards).forEach(function (key) { boards[key].hidden = (key !== view); });
     }
     draw();
     panel.appendChild(headEl);
@@ -1268,26 +1289,14 @@ function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
       var img = document.createElement('img');
       img.className = 'rcl-lr-podium-car';
       img.alt = '';
-      img.src = rcCarImageSrc(carYear, row.carNumber, (carSeriesMap || {})[(cls.className || '') + '|' + String(row.carNumber).trim()]);
-      img.onerror = function () { img.style.display = 'none'; };
+      _rclCarImg(img, carYear, row.carNumber, (carSeriesMap || {})[(cls.className || '') + '|' + String(row.carNumber).trim()], function () { img.style.display = 'none'; });
       driverWrap.appendChild(img);
     }
 
-    // Name first, flag behind it -- not in front, and no car number here any more.
+    // Name first, no flag (removed), and no car number here any more.
     var identity = _rclEl('div', 'rcl-lr-podium-identity');
     identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
     if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-num', '#' + _rclEscapeHtml(row.carNumber)));
-    if (row.country && typeof countryFlagSrc === 'function') {
-      var flagSrc = countryFlagSrc(row.country);
-      if (flagSrc) {
-        var flagImg = document.createElement('img');
-        flagImg.className = 'rcl-lr-podium-flag';
-        flagImg.src = flagSrc;
-        flagImg.alt = row.country;
-        flagImg.onerror = function () { flagImg.style.display = 'none'; };
-        identity.appendChild(flagImg);
-      }
-    }
     driverWrap.appendChild(identity);
     tile.appendChild(driverWrap);
 
