@@ -623,6 +623,8 @@ function _rccPodium(rows, year) {
     var ident = _rccEl('div', 'rcl-lr-podium-identity');
     ident.appendChild(row.isPlayer ? _rccPlayerName('rcl-lr-podium-name rcc-me-text', (row.name || '').toUpperCase())
       : _rccText('span', 'rcl-lr-podium-name', (row.name || '').toUpperCase()));
+    // Car number right after the driver's name (Matt).
+    if (row.carNumber) ident.appendChild(_rccText('span', 'rcc-podium-num', '#' + row.carNumber));
     drv.appendChild(ident);
     tile.appendChild(drv);
     var stand = _rccEl('div', 'rcl-lr-podium-stand');
@@ -1015,11 +1017,11 @@ function _rccStandingsBoard(page, className, kind) {
   var showCar = kind === 'teams' || className === 'Hypercar';
   var sd = page.seasonDetails || {};
   var carYear = showCar ? ((sd.classSeasons || {})[className] || sd.seasonYear || '') : undefined;
-  var cols = '44px 50px ' + (showCar ? '50px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px';
+  var cols = '44px 50px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px';
   var scroller = _rccEl('div', 'rcc-board-scroll');
   var table = _rccEl('div', 'rcc-board-table' + (showCar ? ' rcc-board-has-car' : ''));
   table.style.setProperty('--rcc-board-cols', cols);
-  table.style.minWidth = (44 + 50 + (showCar ? 56 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
+  table.style.minWidth = (44 + 50 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
   hr.appendChild(_rccText('div', 'rcc-board-logo-head', 'Manu'));
