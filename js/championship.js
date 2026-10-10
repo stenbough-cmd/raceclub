@@ -1232,7 +1232,9 @@ function _rccSeatLine(page, dr, links) {
     // Header (links): TEAM NAME #57 only, bold black, no driver name (Matt). Driver Report: DRIVER
     // NAME bold, then the team in steel.
     driverName: links ? null : ((page.owner && page.owner.displayName) || ''),
-    teamLink: !!links
+    teamLink: !!links,
+    // The header shows the class pill after the car name too (Matt).
+    classPill: !!links
   });
 }
 // seat: { carNumber, carClass, teamName, manufacturer, carModel, driverName (null = team only, bold
@@ -1520,8 +1522,8 @@ function rccOpenTeamInfo() {
       var r = _rccEl('div', 'rcc-grid-row' + (g.isMine ? ' rcc-row-me' : ''));
       var tags = [];
       if (g.isMine) tags.push(_rccText('span', 'rcc-tag rcc-tag-me', 'You'));
-      var ident = _rccSeatIdentity(page, { carNumber: g.carNumber, carClass: g.carClass, teamName: g.teamName, manufacturer: g.manufacturer, carModel: g.carModel, driverName: null, classPill: true, keepSlot: true, entryType: _rccEntryType(g.carClass, g.factory), tags: tags });
-      ident.querySelector('.rc-cs-textcol').appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? (g.crew.length === 1 ? 'Driver: ' : 'Drivers: ') + g.crew.join(', ') : 'The driver appears after your first upload.'));
+      var ident = _rccSeatIdentity(page, { carNumber: g.carNumber, carClass: g.carClass, teamName: g.teamName, manufacturer: g.manufacturer, carModel: g.carModel, driverName: null, keepSlot: true, entryType: _rccEntryType(g.carClass, g.factory), tags: tags });
+      ident.querySelector('.rc-cs-textcol').appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? (g.crew.length === 1 ? 'Driver: ' : 'Drivers: ') + g.crew.join(', ') : 'The driver appears after their first race in the current season.'));
       r.appendChild(ident);
       w.appendChild(r);
     });

@@ -468,7 +468,12 @@ body.rc-league-page.rcc-page {
 .rcc-myteam .rcc-seat-line { margin: 0; }
 .rcc-myteam-desc { margin-top: 10px; }
 /* FACTORY / PRIVATEER pill after the team number: very light gray fill, white text, same size as the class pill (Matt). */
-.rcc-badge-entry { background: #c3c9d2; color: #fff; align-self: center; letter-spacing: 0.04em; }
+/* Pills in the seat line (header, Team Information): class pill a little smaller than the site's
+   default, FACTORY / PRIVATEER the same size as a light gray dashed outline (Matt). */
+.rcc-seat-line .rc-badge-chip-abbrev { padding: 1px 5px; font-size: 10.5px; line-height: 1.5; align-self: center; }
+.rcc-seat-line .rcc-badge-entry { background: none; border: 1px dashed #b4bcc6; color: #9aa3ae; padding: 0 4px; letter-spacing: 0.04em; }
+/* YOU tag centred on the team name instead of sitting on its baseline. */
+.rcc-seat-line .rcc-tag { align-self: center; line-height: 1.4; }
 /* Team Information: every car picture gets the same 150px box so the team names line up. */
 .rcc-myteam .rc-cs-logo-wrap,
 .rcc-grid-row .rc-cs-logo-wrap { width: 150px; }
