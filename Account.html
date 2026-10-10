@@ -1322,7 +1322,21 @@
       var textCol = el('div', 'rc-cs-textcol');
       textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
       var carLine = data.carModel || '';
-      if (carLine) textCol.appendChild(el('div', 'rc-cs-car-line', escapeHtml(carLine)));
+      // Manufacturer logo (max 50x24) in front of the car name, vertically centered with it.
+      var hasMakerLogo = !!(data.manufacturer && typeof manufacturerLogoSrc === 'function');
+      if (carLine || hasMakerLogo) {
+        var carLineEl = el('div', 'rc-cs-car-line rc-cs-car-line-flex');
+        if (hasMakerLogo) {
+          var makerLogo = document.createElement('img');
+          makerLogo.className = 'rc-cs-maker-logo';
+          makerLogo.alt = data.manufacturer;
+          makerLogo.src = manufacturerLogoSrc(data.manufacturer, 'black');
+          manufacturerLogoFallback(makerLogo, data.manufacturer, function () { makerLogo.style.display = 'none'; });
+          carLineEl.appendChild(makerLogo);
+        }
+        if (carLine) carLineEl.appendChild(el('span', null, escapeHtml(carLine)));
+        textCol.appendChild(carLineEl);
+      }
       // Full-name class pill (e.g.
       row.appendChild(textCol);
 

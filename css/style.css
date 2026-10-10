@@ -1264,6 +1264,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    slightly. */
 .rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
+.rc-cs-car-line-flex { display: flex; align-items: center; gap: 8px; }
+.rc-cs-maker-logo { flex: none; max-width: 50px; max-height: 24px; width: auto; height: auto; object-fit: contain; display: block; }
 /* Car number, moved out of the header corner and into this row -- the class pill stays behind in
    .rc-dash-card-corner-figure up in the header. height:50px/flex centering matches
    .rc-cs-logo-wrap's own box so the figure reads as tall as the logo; color carried over unchanged
