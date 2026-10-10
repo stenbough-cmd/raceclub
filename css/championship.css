@@ -322,7 +322,8 @@ body.rc-league-page.rcc-page {
 .rcc-tab-active:hover { background: var(--rc-carbon); border-color: var(--rc-carbon); color: var(--rc-white); }
 
 /* The player's own rows and name, everywhere. */
-.rcc-row-me { box-shadow: inset 3px 0 0 var(--rc-red); background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
+/* The player's row: a faint tint only (the red bar over the position badge was removed, Matt). */
+.rcc-row-me { background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
 .rcc-me-text { color: var(--rc-red); }
 /* On the standings boards the player's name is bold and black like the rest of the list (Matt). */
 .rcc-board .rcc-me-text { color: var(--rc-carbon); font-weight: 700; }
@@ -747,7 +748,7 @@ a.rcc-hero-meta-name { color: inherit; }
 @media (max-width: 640px) { .rcc-podium-car { max-width: 92px; max-height: 38px; } }
 
 /* Standings CAR column: pictures up to 110px wide or 35px tall (Matt). */
-.rcc-board .rcc-board-car-slot { width: 110px; height: 35px; }
+.rcc-board .rcc-board-car-slot { width: 110px; height: 40px; }
 .rcc-board .rcc-board-car { max-width: 110px; max-height: 35px; }
 /* Podium: car number after the driver's name. */
 .rcc-podium-num { font-weight: 800; color: var(--rc-carbon); }
@@ -755,8 +756,10 @@ a.rcc-hero-meta-name { color: inherit; }
   .rcc-board .rcc-board-car-slot { width: 64px; height: 24px; }
   .rcc-board .rcc-board-car { max-width: 64px; max-height: 24px; }
 }
-/* Standings maker logos: up to 34px tall, width limit unchanged (50px) (Matt). */
-.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 34px; }
+/* Standings maker logos: up to 34px tall, width limit unchanged (50px) (Matt). Their slot, like the
+   CAR slot, is 40px tall (3px above and below a full-height logo), so every row is the same height
+   whether or not the board has the CAR column. */
+.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 40px; }
 .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 34px; }
 @media (max-width: 640px) {
   .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 24px; }
