@@ -874,8 +874,8 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   var carYear = showCar ? (((hub.classSeasons || {})[className]) || '') : undefined;
   var scroller = _rclEl('div', 'rcl-board-scroll');
   var table = _rclEl('div', 'rcl-board-table' + (showCar ? ' rcl-board-has-car' : ''));
-  table.style.setProperty('--rcl-board-cols', '44px 50px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
-  table.style.minWidth = (44 + 50 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
+  table.style.setProperty('--rcl-board-cols', '44px 58px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.minWidth = (44 + 58 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
   hr.appendChild(_rclEl('div', null, 'Pos'));
@@ -1652,9 +1652,9 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE.
   (result.classes || []).forEach(function (cls) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
-    // "<CLASS> STANDINGS" -- no "(n)" count. Same shared graphite bar Recent Results and Current
+    // "<CLASS> RESULTS" -- no "(n)" count. Same shared graphite bar Recent Results and Current
     // Standings both use.
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' STANDINGS'));
+    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' RESULTS'));
 
     // Winner/Most Laps Led/Pole Sitter/Fastest Lap breakdown for THIS class only, right under its
     // own header and above its standings table.

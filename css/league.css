@@ -2194,7 +2194,13 @@ a.rcl-driver-link:hover, a.rcl-driver-link:focus-visible { text-decoration: unde
 /* Quieter accent for the bonus superscript and the bonus-points note: a muted sky blue that reads on
    the near-black panels (the championship page uses navy on its light page). */
 body.rc-league-page { --rcl-bonus: #7fa8d4; }
-.rcl-board .rcl-standings-class-header { margin-bottom: 10px; }
+.rcl-board .rcl-standings-class-header { margin-bottom: 20px; }
+/* Manufacturer column: 4px of space each side of the logo's 50px max width (58px slot). */
+.rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 58px; padding: 0 4px; box-sizing: border-box; }
+/* Extra 10px under the metal class headers in LAST RACE (<CLASS> HIGHLIGHTS) and in Race Recap
+   (<CLASS> RESULTS), same 10px the standings boards got (12px + 10px). Shared by the Championship page. */
+.rcl-lr-class > .rcl-standings-class-header,
+.rcl-race-class > .rcl-standings-class-header { margin-bottom: 22px; }
 /* Wide boards (many rounds) scroll sideways inside the panel instead of widening the page. */
 .rcl-board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .rcl-board-table { width: 100%; }
@@ -2210,7 +2216,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   padding: 6px 6px;
   border-bottom: 1px solid var(--rcl-line-bright);
   font-family: var(--rc-font-heading);
-  font-size: 11px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2226,12 +2232,12 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* Car number column: "N" with a raised degree circle in the header, plain numbers below. */
 /* "MANU" over the manufacturer logo column. */
 .rcl-board-manu-head { text-align: center; white-space: nowrap; }
-@media (max-width: 640px) { .rcl-board-manu-head { font-size: 9px; letter-spacing: 0.02em; } }
+@media (max-width: 640px) { .rcl-board-head { font-size: 13px; } .rcl-board-manu-head { font-size: 13px; letter-spacing: 0.02em; } }
 .rcl-board-num-head { text-align: center; }
 .rcl-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
 .rcl-board-num { text-align: center; font-size: 14.5px; font-weight: 400; color: var(--rcl-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rcl-board-total-head { text-align: right; }
-.rcl-board-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; border: 1px solid var(--rcl-line-bright); display: block; }
+.rcl-board-flag { width: 28px; height: 19px; object-fit: cover; border-radius: 2px; border: 1px solid var(--rcl-line-bright); display: block; }
 .rcl-board-round {
   text-align: center;
   font-family: var(--rc-font-heading);
@@ -2346,11 +2352,12 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 @media (max-width: 640px) {
   /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
      board, so !important is needed to replace it. */
-  .rcl-board-table { --rcl-board-cols: 40px 34px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
+  .rcl-board-table { --rcl-board-cols: 40px 42px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
   .rcl-board .rcl-standings-mfr-logo-slot { width: 34px; }
   .rcl-board .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
   .rcl-board .rcl-standings-mfr-logo-slot { height: 24px; }
-  .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 40px 34px 64px 34px minmax(0, 1fr) 50px !important; }
+  .rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 42px; }
+  .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 40px 42px 64px 34px minmax(0, 1fr) 50px !important; }
   .rcl-board .rcl-board-car-slot { width: 64px; height: 24px; }
   .rcl-board .rcl-board-car { max-width: 64px; max-height: 24px; }
   .rcl-board-num { font-size: 13px; }

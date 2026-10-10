@@ -1017,11 +1017,11 @@ function _rccStandingsBoard(page, className, kind) {
   var showCar = kind === 'teams' || className === 'Hypercar';
   var sd = page.seasonDetails || {};
   var carYear = showCar ? ((sd.classSeasons || {})[className] || sd.seasonYear || '') : undefined;
-  var cols = '44px 50px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px';
+  var cols = '44px 58px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px';
   var scroller = _rccEl('div', 'rcc-board-scroll');
   var table = _rccEl('div', 'rcc-board-table' + (showCar ? ' rcc-board-has-car' : ''));
   table.style.setProperty('--rcc-board-cols', cols);
-  table.style.minWidth = (44 + 50 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
+  table.style.minWidth = (44 + 58 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
   var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
   hr.appendChild(_rccText('div', null, 'Pos'));
   hr.appendChild(_rccText('div', 'rcc-board-logo-head', 'Manu'));
