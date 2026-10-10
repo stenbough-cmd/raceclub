@@ -1238,6 +1238,8 @@ function _rccSeatLine(page, dr, links) {
 // seat: { carNumber, carClass, teamName, manufacturer, carModel, driverName (null = team only, bold
 // black), teamLink (team opens Team Information), classPill (class pill after the car name),
 // tags (extra elements after the team name) }.
+// 'Factory' / 'Privateer' for Hypercar entries, '' for every other class.
+function _rccEntryType(carClass, factory) { return carClass === 'Hypercar' ? (factory ? 'Factory' : 'Privateer') : ''; }
 function _rccSeatIdentity(page, seat) {
   var carNumber = String(seat.carNumber || '');
   var carYear = _rccClassYear(page, seat.carClass);
@@ -1265,6 +1267,8 @@ function _rccSeatIdentity(page, seat) {
     if (seat.teamLink) { team.type = 'button'; team.title = 'Team Information'; team.addEventListener('click', rccOpenTeamInfo); }
     nameLine.appendChild(team);
   }
+  // Hypercar entries: a light gray FACTORY / PRIVATEER pill after the number, class pill size (Matt).
+  if (seat.entryType) nameLine.appendChild(_rccText('span', 'rc-badge-chip rc-badge-chip-abbrev rcc-badge-entry', seat.entryType.toUpperCase()));
   (seat.tags || []).forEach(function (t) { nameLine.appendChild(t); });
   textCol.appendChild(nameLine);
   if (seat.manufacturer || seat.carModel || seat.classPill) {
@@ -1502,7 +1506,7 @@ function rccOpenTeamInfo() {
     var reg = page.registration;
     var mine = _rccEl('div', 'rcc-myteam');
     mine.appendChild(_rccText('div', 'rcc-myteam-label', 'Your Team'));
-    mine.appendChild(_rccSeatIdentity(page, { carNumber: reg.carNumber, carClass: reg.carClass, teamName: reg.teamName, manufacturer: reg.manufacturer, carModel: reg.carModel, driverName: null, classPill: true, keepSlot: true }));
+    mine.appendChild(_rccSeatIdentity(page, { carNumber: reg.carNumber, carClass: reg.carClass, teamName: reg.teamName, manufacturer: reg.manufacturer, carModel: reg.carModel, driverName: null, classPill: true, keepSlot: true, entryType: _rccEntryType(reg.carClass, (grid.filter(function (g) { return g.isMine; })[0] || {}).factory) }));
     if (reg.teamDesc) mine.appendChild(_rccText('p', 'rcc-myteam-desc', reg.teamDesc));
     m.body.appendChild(mine);
   }
@@ -1516,7 +1520,7 @@ function rccOpenTeamInfo() {
       var r = _rccEl('div', 'rcc-grid-row' + (g.isMine ? ' rcc-row-me' : ''));
       var tags = [];
       if (g.isMine) tags.push(_rccText('span', 'rcc-tag rcc-tag-me', 'You'));
-      var ident = _rccSeatIdentity(page, { carNumber: g.carNumber, carClass: g.carClass, teamName: g.teamName, manufacturer: g.manufacturer, carModel: g.carModel, driverName: null, classPill: true, keepSlot: true, tags: tags });
+      var ident = _rccSeatIdentity(page, { carNumber: g.carNumber, carClass: g.carClass, teamName: g.teamName, manufacturer: g.manufacturer, carModel: g.carModel, driverName: null, classPill: true, keepSlot: true, entryType: _rccEntryType(g.carClass, g.factory), tags: tags });
       ident.querySelector('.rc-cs-textcol').appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? (g.crew.length === 1 ? 'Driver: ' : 'Drivers: ') + g.crew.join(', ') : 'The driver appears after your first upload.'));
       r.appendChild(ident);
       w.appendChild(r);

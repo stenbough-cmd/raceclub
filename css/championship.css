@@ -467,6 +467,8 @@ body.rc-league-page.rcc-page {
 .rcc-myteam-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 8px; }
 .rcc-myteam .rcc-seat-line { margin: 0; }
 .rcc-myteam-desc { margin-top: 10px; }
+/* FACTORY / PRIVATEER pill after the team number: very light gray fill, white text, same size as the class pill (Matt). */
+.rcc-badge-entry { background: #c3c9d2; color: #fff; align-self: center; letter-spacing: 0.04em; }
 /* Team Information: every car picture gets the same 150px box so the team names line up. */
 .rcc-myteam .rc-cs-logo-wrap,
 .rcc-grid-row .rc-cs-logo-wrap { width: 150px; }
