@@ -1866,8 +1866,10 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
     clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' QUALIFYING'));
 
-    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-qualifying');
+    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-recap rcl-race-grid-recap-q');
     headRow.appendChild(_rclEl('div', null, 'Pos'));
+    headRow.appendChild(_rclEl('div', null, 'Manu'));
+    headRow.appendChild(_rclEl('div', null, 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
     headRow.appendChild(_rclEl('div', null, 'Driver'));
     headRow.appendChild(_rclEl('div', null, 'Best Lap'));
     headRow.appendChild(_rclEl('div', null, 'Sector 1'));
@@ -1881,9 +1883,9 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
       clsWrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No qualifying times posted for this class.'));
     }
     standings.forEach(function (row, idx) {
-      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-qualifying' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-recap rcl-race-grid-recap-q' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       rowEl.appendChild(_rclBuildPosBadge_(idx));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row));
+      _rclBoardIdentityCells_(row, 'drivers', undefined, '').forEach(function (cell) { rowEl.appendChild(cell); });
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector1)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector2)));

@@ -1147,7 +1147,7 @@ body.rc-league-page {
 .rcl-race-grid-recap { grid-template-columns: 40px 58px 44px minmax(0, 2fr) 50px 118px 64px 78px 84px 92px 52px; }
 /* Qualifying tab -- Pos/Driver/Best Lap/Sector 1-3/Avg (KM/H), 7 columns. No Laps/Total
    Time/Pen/Gap -- a Qualify session has none of those concepts. */
-.rcl-race-grid-qualifying { grid-template-columns: 40px 2fr 92px 80px 80px 80px 84px; }
+.rcl-race-grid-recap.rcl-race-grid-recap-q { grid-template-columns: 40px 58px 44px minmax(0, 2fr) 92px 80px 80px 80px 84px; }
 .rcl-race-row {
   display: grid;
   gap: 12px;
@@ -1184,6 +1184,9 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-race-grid-recap .rcl-standings-name { min-width: 0; }
 .rcl-race-grid-recap .rcl-race-row-num,
 .rcl-race-grid-recap .rcl-race-row-pts,
+.rcl-race-grid-recap .rcl-race-row-bestlap,
+.rcl-race-grid-recap .rcl-race-row-avg,
+.rcl-race-grid-recap .rcl-race-row-gap,
 .rcl-race-grid-recap .rcl-standings-name,
 .rcl-race-grid-recap .rcl-board-num { font-weight: 400; }
 .rcl-recap-dnf { color: var(--rcl-ink-faint); }
@@ -1251,13 +1254,6 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-allresults-session-select:focus { border-color: var(--rc-red); }
 /* .rcl-allresults-select-row's own margin-bottom now supplies the breathing room before standings
    start, on both tabs. */
-/* Sector times normal weight, Best Lap bold -- scoped to rows inside the Qualifying grid only
-   (.rcl-race-grid-qualifying) so this doesn't touch .rcl-race-row-num /.rcl-race-row-bestlap's
-   shared base rules, which the Race view's results table (a different grid,
-   .rcl-race-grid-recap) also uses for Laps/Total Time/Best Lap with its own, unrelated weight
-   needs. */
-.rcl-race-grid-qualifying .rcl-race-row-num { font-weight: 500; color: var(--rcl-ink-dim); }
-.rcl-race-grid-qualifying .rcl-race-row-bestlap { font-weight: 800; color: var(--rcl-ink); }
 /* Race Report -- lap-by-lap highlights. */
 .rcl-report-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
 .rcl-report-lap {
@@ -2030,6 +2026,10 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   .rcl-race-grid-recap .rcl-standings-mfr-logo-slot { width: 42px; height: 24px; }
   .rcl-race-grid-recap .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
   .rcl-race-col-head.rcl-race-grid-recap { font-size: 13px; }
+  /* Qualifying tables (9 children: Pos, Manu, N°, Driver, Best Lap, Sector 1-3, Avg): phones keep
+     Pos, Manu, N°, Driver and Best Lap. */
+  .rcl-race-grid-recap.rcl-race-grid-recap-q { grid-template-columns: 32px 42px 34px minmax(0, 1fr) 76px; }
+  .rcl-race-grid-recap.rcl-race-grid-recap-q > div:nth-child(5) { display: block; }
   .rcl-race-grid-recap .rcl-board-num { font-size: 13px; }
   .rcl-modal-dialog-allresults .rcl-standings-team,
   #rcl-standings-body .rcl-standings-team,

@@ -1362,13 +1362,13 @@ function _rccQualifyingBody(result, el) {
   result.classes.forEach(function (cls) {
     var w = _rccEl('div', 'rcl-race-class');
     w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' QUALIFYING'));
-    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-qualifying');
-    ['Pos', 'Driver', 'Best Lap', 'Sector 1', 'Sector 2', 'Sector 3', 'Avg (KM/H)'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-recap rcl-race-grid-recap-q');
+    ['Pos', 'Manu', 'N<sup class="rcc-board-num-deg">&deg;</sup>', 'Driver', 'Best Lap', 'Sector 1', 'Sector 2', 'Sector 3', 'Avg (KM/H)'].forEach(function (t) { head.appendChild(_rccEl('div', null, t)); });
     w.appendChild(head);
     (cls.standings || []).forEach(function (row, idx) {
-      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-qualifying' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-recap rcl-race-grid-recap-q' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
       r.appendChild(_rccPosBadge(idx));
-      r.appendChild(_rccIdentity(row));
+      _rccBoardCells(row, row.name, 'drivers').forEach(function (cell) { r.appendChild(cell); });
       r.appendChild(_rccText('div', 'rcl-race-row-bestlap', _rccLapTime(row.bestLapTime)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector1)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector2)));
