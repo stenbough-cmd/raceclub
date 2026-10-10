@@ -759,7 +759,23 @@ function _rclBoardMetalSwitch_(view, onChange) {
 // stays (empty space when there is no logo, or it fails to load) so every number and name lines up.
 // Drivers board: driver name (a link to their public profile) + nationality flag. Teams board: team
 // name. The car number has its own column under the N-degree header.
-function _rclBoardIdentityCells_(row, kind) {
+// Car profile picture for the CAR column: assets/cars/<season year>-<car number>.png (transparent
+// PNG, e.g. 2026-85.png). The year is the class's car year from Season setup. A missing picture
+// leaves the slot empty so the columns still line up.
+function _rclCarPic_(year, carNumber) {
+  var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot rcl-board-car-slot');
+  if (year && carNumber) {
+    var img = document.createElement('img');
+    img.className = 'rcl-standings-mfr-logo rcl-board-car';
+    img.alt = '';
+    img.src = 'assets/cars/' + encodeURIComponent(String(year)) + '-' + encodeURIComponent(String(carNumber)) + '.png';
+    img.onerror = function () { img.style.display = 'none'; };
+    slot.appendChild(img);
+  }
+  return slot;
+}
+
+function _rclBoardIdentityCells_(row, kind, carYear) {
   var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var img = document.createElement('img');
@@ -793,7 +809,8 @@ function _rclBoardIdentityCells_(row, kind) {
   }
   // Hover shows the full name and number when the name is cut off with "...".
   nameRow.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
-  return [slot, num, nameRow];
+  // carYear is set only on boards that show the CAR column (Teams boards and Hypercar).
+  return carYear !== undefined ? [slot, _rclCarPic_(carYear, row.carNumber), num, nameRow] : [slot, num, nameRow];
 }
 
 // "+1 Bonus points for Pole Position, Fastest Lap, Most Laps Led" when every bonus is worth the same,
@@ -853,14 +870,17 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   // board scroll sideways, inside the panel. min-width = the fixed columns + 140 + the 6px gaps
   // between columns + the rows' 6px side padding.
   var n = rounds.length;
+  var showCar = kind === 'teams' || className === 'Hypercar';
+  var carYear = showCar ? (((hub.classSeasons || {})[className]) || '') : undefined;
   var scroller = _rclEl('div', 'rcl-board-scroll');
-  var table = _rclEl('div', 'rcl-board-table');
-  table.style.setProperty('--rcl-board-cols', '44px 50px 44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
-  table.style.minWidth = (44 + 50 + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
+  var table = _rclEl('div', 'rcl-board-table' + (showCar ? ' rcl-board-has-car' : ''));
+  table.style.setProperty('--rcl-board-cols', '44px 50px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.minWidth = (44 + 50 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
   hr.appendChild(_rclEl('div', null, 'Pos'));
   hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Manu'));
+  if (showCar) hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Car'));
   hr.appendChild(_rclEl('div', 'rcl-board-num-head', 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
   hr.appendChild(_rclEl('div', 'rcl-board-name-head', kind === 'teams' ? 'Teams' : 'Drivers'));
   rounds.forEach(function (r) {
@@ -893,7 +913,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   rows.forEach(function (row, idx) {
     var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
     rowEl.appendChild(_rclBuildPosBadge_(idx));
-    _rclBoardIdentityCells_(row, kind).forEach(function (cell) { rowEl.appendChild(cell); });
+    _rclBoardIdentityCells_(row, kind, carYear).forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rclEl('div', 'rcl-board-round');
       var i = scoredIdx[r.roundId];
@@ -1187,7 +1207,7 @@ function _rclRenderLastRace_(hub) {
         headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FROM SEASON ' + hub.seasonNumber));
       }
       clsWrap.appendChild(headerDiv);
-      clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
+      clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className]));
       if ((cls.mentions || []).length) {
         clsWrap.appendChild(_rclBuildLastSeasonMentions_(cls.mentions));
       }
@@ -1212,7 +1232,7 @@ function _rclRenderLastRace_(hub) {
       headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
     }
     clsWrap.appendChild(headerDiv);
-    clsWrap.appendChild(_rclBuildLastRacePodium_(cls));
+    clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className]));
     if ((cls.headlineMentions || []).length) {
       clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
     }
@@ -1225,7 +1245,7 @@ function _rclRenderLastRace_(hub) {
 // PLACE NUMBER lives inside the stand, vertically centered; the driver's identity (manufacturer
 // logo above a flag + car number + name line) sits above the stand, not inside a boxed tile like
 // Manufacturers' Standings' logo tiles.
-function _rclBuildLastRacePodium_(cls) {
+function _rclBuildLastRacePodium_(cls, carYear) {
   var top3 = (cls.standings || []).slice(0, 3);
   var podium = _rclEl('div', 'rcl-lr-podium');
   if (!top3.length) {
@@ -1243,16 +1263,20 @@ function _rclBuildLastRacePodium_(cls) {
     var tile = _rclEl('div', 'rcl-lr-podium-tile rcl-lr-podium-tile-p' + (rankIdx + 1));
 
     var driverWrap = _rclEl('div', 'rcl-lr-podium-driver');
-    var img = document.createElement('img');
-    img.className = 'rcl-lr-podium-logo';
-    img.src = manufacturerLogoSrc(row.manufacturer, 'white');
-    img.alt = row.manufacturer || '';
-    manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
-    driverWrap.appendChild(img);
+    // Car picture (assets/cars/<year>-<number>.png) instead of the maker logo; no picture = nothing.
+    if (carYear && row.carNumber) {
+      var img = document.createElement('img');
+      img.className = 'rcl-lr-podium-car';
+      img.alt = '';
+      img.src = 'assets/cars/' + encodeURIComponent(String(carYear)) + '-' + encodeURIComponent(String(row.carNumber)) + '.png';
+      img.onerror = function () { img.style.display = 'none'; };
+      driverWrap.appendChild(img);
+    }
 
     // Name first, flag behind it -- not in front, and no car number here any more.
     var identity = _rclEl('div', 'rcl-lr-podium-identity');
     identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
+    if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-num', '#' + _rclEscapeHtml(row.carNumber)));
     if (row.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(row.country);
       if (flagSrc) {

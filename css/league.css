@@ -630,6 +630,9 @@ body.rc-league-page {
   overflow: visible;
 }
 .rcl-lr-podium-logo { max-width: 50px; max-height: 30px; width: auto; height: auto; object-fit: contain; }
+/* Car profile picture above the driver name, and the car number after the name. */
+.rcl-lr-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
+.rcl-lr-podium-num { font-weight: 800; color: var(--rcl-ink); font-family: var(--rc-font-heading); font-size: 13px; white-space: nowrap; }
 /* flex-wrap: nowrap (was wrap) -- forced onto one line, overflowing the tile's fixed width rather
    than wrapping to a second line. */
 .rcl-lr-podium-identity {
@@ -692,6 +695,8 @@ body.rc-league-page {
   .rcl-lr-podium-tile { width: 33%; }
   .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
   .rcl-lr-podium-name { font-size: 11px; }
+  .rcl-lr-podium-car { max-width: 92px; max-height: 38px; }
+  .rcl-lr-podium-num { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
   .rcl-lr-podium-standsuffix { font-size: 12px; margin-top: 3px; }
   .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 74px; }
@@ -1021,6 +1026,11 @@ body.rc-league-page {
   object-fit: contain;
   display: block;
 }
+/* Championship-style board: maker logo slot 40px tall (logos up to 34px), CAR slot 110x40 (pictures up to 110x35). */
+.rcl-board .rcl-standings-mfr-logo-slot { height: 40px; }
+.rcl-board .rcl-standings-mfr-logo { max-height: 34px; }
+.rcl-board .rcl-board-car-slot { width: 110px; height: 40px; }
+.rcl-board .rcl-board-car { max-width: 110px; max-height: 35px; }
 /* Name/flag/car-number/team, all in this one row now. */
 .rcl-standings-name-row { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px 8px; min-width: 0; align-self: center; overflow: hidden; }
 .rcl-standings-flag {
@@ -2336,7 +2346,11 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
      board, so !important is needed to replace it. */
   .rcl-board-table { --rcl-board-cols: 40px 34px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
   .rcl-board .rcl-standings-mfr-logo-slot { width: 34px; }
-  .rcl-board .rcl-standings-mfr-logo { max-width: 34px; }
+  .rcl-board .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
+  .rcl-board .rcl-standings-mfr-logo-slot { height: 24px; }
+  .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 40px 34px 64px 34px minmax(0, 1fr) 50px !important; }
+  .rcl-board .rcl-board-car-slot { width: 64px; height: 24px; }
+  .rcl-board .rcl-board-car { max-width: 64px; max-height: 24px; }
   .rcl-board-num { font-size: 13px; }
   .rcl-board-round-head,
   .rcl-board-round { display: none; }
