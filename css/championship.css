@@ -760,6 +760,13 @@ a.rcc-hero-meta-name { color: inherit; }
 /* Driver Report owner line: driver name bold black, then team and number normal weight in steel. */
 .rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }
 .rcr-who-name .rcr-who-team { font-weight: 400; color: var(--rc-steel); }
+/* Header seat line (same as the Driver Report's): the name links to the profile, the team opens
+   Team Information. Links keep the line's own colors; underline on hover. */
+.rcc-hero-meta .rcc-seat-line { margin: 6px 0 0; }
+a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
+.rcc-seat-line-team { background: none; border: none; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
+.rcc-seat-line-team:hover, .rcc-seat-line-team:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 .rcc-hero-meta-team-text { white-space: nowrap; }
 /* Car profile pictures (assets/cars/<year>-<number>.png): podium tiles and the standings CAR column. */
 .rcc-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }

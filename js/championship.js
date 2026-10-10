@@ -381,28 +381,10 @@ function rccRenderHero(page) {
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
-  // "**Name** · [logo] Team **#n** · AI Difficulty N% · X of Y Rounds" (name and car number bold, Matt).
-  var bits = [];
-  var diff = (page.seasonDetails.raceSettings || {}).aiDifficulty;
-  if (diff) bits.push('AI Difficulty ' + diff + '%');
-  bits.push(page.roundsCompleted + ' of ' + page.totalRounds + ' Rounds');
-  if (page.seasonEnded) bits.push(page.seasonUnfinished ? 'Ended Unfinished' : 'Season Ended');
-  if (page.registration) {
-    // Name -> the driver's public profile; "[logo] Team #n" -> Team Information.
-    var nameLink = _rccPlayerName('rcc-hero-meta-name', page.owner.displayName);
-    metaEl.appendChild(nameLink);
-    metaEl.appendChild(document.createTextNode(' · '));
-    var team = _rccEl('button', 'rcc-hero-meta-team');
-    team.type = 'button';
-    team.title = 'Team Information';
-    if (page.registration.manufacturer) team.appendChild(_rccLogo('rcc-hero-meta-logo', page.registration.manufacturer));
-    team.appendChild(document.createTextNode(page.registration.teamName + ' '));
-    team.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + page.registration.carNumber));
-    team.addEventListener('click', rccOpenTeamInfo);
-    metaEl.appendChild(team);
-    metaEl.appendChild(document.createTextNode(' · '));
-  }
-  metaEl.appendChild(document.createTextNode(bits.join(' · ')));
+  // Same seat line as the Driver Report (Matt): car picture, DRIVER NAME + TEAM #n, maker logo +
+  // car name. No AI difficulty or round count here. The name opens the public profile and the team
+  // opens Team Information.
+  if (page.registration) metaEl.appendChild(_rccSeatLine(page, null, true));
 }
 
 function rccRenderActionBar(page) {
@@ -1235,18 +1217,18 @@ function _rccRaceDetails(details) {
   return box;
 }
 
-// Driver Report and Race Details each have their own page in the Race Recap dropdown (Matt).
-function _rccDriverReportBody(result, el) {
-  el.innerHTML = '';
-  var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
-  if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
-  // Who the report is for, laid out like the Dashboard's Current Seat card (Matt): the car picture,
-  // then DRIVER NAME (bold, black) and TEAM NAME #57 (normal weight, steel), then the maker logo in
-  // front of the car name. Uses the shared rc-cs-* styles from style.css so both stay identical.
-  var page = RCC.page || {}, reg = page.registration || {}, dr = result.driverReport || {};
+// The player's seat line, laid out like the Dashboard's Current Seat card (Matt), used in the page
+// header and on the Driver Report: the car picture (hidden if missing), then DRIVER NAME (bold,
+// black) and TEAM NAME #57 (normal weight, steel), then the maker logo in front of the car name.
+// Uses the shared rc-cs-* styles from style.css so it stays identical to the Dashboard card.
+// dr: the Driver Report's own team / number when it has them. links: name -> public profile,
+// team -> Team Information (header only).
+function _rccSeatLine(page, dr, links) {
+  var reg = page.registration || {};
+  dr = dr || {};
   var carNumber = String(dr.carNumber || reg.carNumber || '');
   var carYear = _rccClassYear(page, dr.carClass || reg.carClass);
-  var who = _rccEl('div', 'rc-cs-row rcr-report-who');
+  var row = _rccEl('div', 'rc-cs-row rcc-seat-line');
   if (carYear && carNumber) {
     var picWrap = _rccEl('div', 'rc-cs-logo-wrap');
     var pic = document.createElement('img');
@@ -1255,13 +1237,20 @@ function _rccDriverReportBody(result, el) {
     pic.onerror = function () { picWrap.style.display = 'none'; };
     pic.src = rcCarImageSrc(carYear, carNumber, (page.seasonDetails || {}).series);
     picWrap.appendChild(pic);
-    who.appendChild(picWrap);
+    row.appendChild(picWrap);
   }
   var textCol = _rccEl('div', 'rc-cs-textcol');
   var nameLine = _rccEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcr-who-name');
-  nameLine.appendChild(_rccText('span', 'rcr-who-driver', (page.owner && page.owner.displayName) || ''));
+  var driverName = (page.owner && page.owner.displayName) || '';
+  nameLine.appendChild(links ? _rccPlayerName('rcr-who-driver', driverName) : _rccText('span', 'rcr-who-driver', driverName));
   var teamName = dr.teamName || reg.teamName || '';
-  if (teamName || carNumber) nameLine.appendChild(_rccText('span', 'rcr-who-team', teamName + (carNumber ? ' #' + carNumber : '')));
+  var teamText = teamName + (carNumber ? ' #' + carNumber : '');
+  if (teamText) {
+    var team = links ? _rccEl('button', 'rcr-who-team rcc-seat-line-team') : _rccEl('span', 'rcr-who-team');
+    team.textContent = teamText;
+    if (links) { team.type = 'button'; team.title = 'Team Information'; team.addEventListener('click', rccOpenTeamInfo); }
+    nameLine.appendChild(team);
+  }
   textCol.appendChild(nameLine);
   if (reg.manufacturer || reg.carModel) {
     var carLine = _rccEl('div', 'rc-cs-car-line rc-cs-car-line-flex');
@@ -1269,7 +1258,17 @@ function _rccDriverReportBody(result, el) {
     if (reg.carModel) carLine.appendChild(_rccText('span', null, reg.carModel));
     textCol.appendChild(carLine);
   }
-  who.appendChild(textCol);
+  row.appendChild(textCol);
+  return row;
+}
+
+// Driver Report and Race Details each have their own page in the Race Recap dropdown (Matt).
+function _rccDriverReportBody(result, el) {
+  el.innerHTML = '';
+  var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
+  if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
+  var who = _rccSeatLine(RCC.page || {}, result.driverReport || {}, false);
+  who.classList.add('rcr-report-who');
   el.appendChild(who);
   el.appendChild(drEl);
 }
