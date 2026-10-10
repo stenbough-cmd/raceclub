@@ -755,9 +755,9 @@ a.rcc-hero-meta-name { color: inherit; }
   .rcc-board .rcc-board-car-slot { width: 64px; height: 24px; }
   .rcc-board .rcc-board-car { max-width: 64px; max-height: 24px; }
 }
-/* Standings maker logos: up to 30px tall, width limit unchanged (50px) (Matt). */
-.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 30px; }
-.rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 30px; }
+/* Standings maker logos: up to 34px tall, width limit unchanged (50px) (Matt). */
+.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 34px; }
+.rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 34px; }
 @media (max-width: 640px) {
   .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 24px; }
   .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 24px; }
