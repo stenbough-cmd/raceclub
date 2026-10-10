@@ -1515,7 +1515,6 @@ function rccOpenTeamInfo() {
       // Every car in the same seat-line format as Your Team (Matt), driver line underneath.
       var r = _rccEl('div', 'rcc-grid-row' + (g.isMine ? ' rcc-row-me' : ''));
       var tags = [];
-      if (cls === 'Hypercar') tags.push(_rccText('span', 'rcc-tag' + (g.factory ? ' rcc-tag-factory' : ''), g.factory ? 'Factory' : 'Privateer'));
       if (g.isMine) tags.push(_rccText('span', 'rcc-tag rcc-tag-me', 'You'));
       var ident = _rccSeatIdentity(page, { carNumber: g.carNumber, carClass: g.carClass, teamName: g.teamName, manufacturer: g.manufacturer, carModel: g.carModel, driverName: null, classPill: true, keepSlot: true, tags: tags });
       ident.querySelector('.rc-cs-textcol').appendChild(_rccText('div', 'rcc-grid-crew', g.crew.length ? (g.crew.length === 1 ? 'Driver: ' : 'Drivers: ') + g.crew.join(', ') : 'The driver appears after your first upload.'));
