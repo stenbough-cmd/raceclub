@@ -863,15 +863,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   justify-content: center;
 }
 .rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-/* Current Seat Info popup, mobile only -- scoped to .rc-seatinfo-card (buildSeatInfoPanel's own
-   modifier class, Account.html) so neither Choose Your Team's registration card (which shares
-   .rc-team-card/.rc-team-logo-box/.rc-team-name/.rc-team-subtitle) nor this popup's own
-   desktop/tablet view are touched. */
-@media (max-width: 640px) {
-  .rc-seatinfo-card .rc-team-logo-box { width: 74px; height: 45px; }
-  .rc-seatinfo-card .rc-seatinfo-carnum-desktop { display: none; }
-  .rc-seatinfo-card .rc-seatinfo-carnum-mobile { display: inline; }
-}
 /* Manufacturer filter row -- sits above the team card list, one bold "ALL" label at the left plus a
    manufacturer logo for every distinct manufacturer fielding a car in this class, spread evenly
    edge-to-edge (flex:1 on each logo button, so the row always stretches the full popup width
@@ -921,8 +912,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Car model line below it: 14px, up from 12.5px. */
 .rc-team-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; }
 .rc-team-subtitle { font-size: 14px; color: var(--rc-steel); margin-top: 2px; }
-/* Car number's mobile position.html) for the full history. */
-.rc-seatinfo-carnum-mobile { display: none; }
 .rc-team-card {
   padding: 18px 20px;
   border: 1px solid var(--rc-silver);
@@ -1257,12 +1246,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
 .rc-cs-logo { max-width: 150px; max-height: 50px; object-fit: contain; }
 @media (max-width: 480px) { .rc-cs-logo { max-width: 100px; } }
-/* Grows to fill the row so .rc-cs-carnum (below) lands pinned to the card's right edge instead of
-   sitting right after the team name text. */
 .rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
 /* Matches .rc-regstatus-headline's weight/letter-spacing/uppercase treatment, just sized up
    slightly. */
 .rc-cs-team-name { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 700; letter-spacing: 0.03em; color: var(--rc-carbon); text-transform: uppercase; }
+.rc-cs-team-name-flex { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rc-cs-team-num { color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-cs-car-line { font-size: 13.5px; color: var(--rc-steel); margin-top: 3px; }
 .rc-cs-car-line-flex { display: flex; align-items: center; gap: 8px; }
 .rc-cs-maker-logo { flex: none; max-width: 50px; max-height: 24px; width: auto; height: auto; object-fit: contain; display: block; }
@@ -1271,7 +1260,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    .rc-cs-logo-wrap's own box so the figure reads as tall as the logo; color carried over unchanged
    from the old .rc-dash-card-corner-figure treatment, weight bumped from 700 to 800 since it's now
    a much bigger standalone figure than it was sharing the header row with a title. */
-.rc-cs-carnum { flex: none; height: 50px; display: flex; align-items: center; justify-content: flex-end; font-family: var(--rc-font-heading); font-size: 34px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
 .rc-cs-empty { color: var(--rc-steel); font-size: 13px; }
 
 /* Dashboard Protest card line items. See buildDashProtestItem in Account.html. */
@@ -3241,3 +3229,6 @@ body.rc-modal-scroll-locked {
 /* Single player teaser on the landing page (above the closing call to action). */
 .rc-single-section .rc-single-early { margin-top: 28px; color: var(--rc-carbon); font-weight: 600; }
 .rc-single-section .rc-single-early a { color: var(--rc-red); text-decoration: underline; }
+
+.rc-seatinfo-card .rc-cs-row { margin-bottom: 0; }
+.rc-seatinfo-card .rc-cs-row + p { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }

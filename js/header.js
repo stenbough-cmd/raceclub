@@ -182,21 +182,16 @@ function _rcBuildAccountMenuSectionLinks(role) {
   } else {
     html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">Championship</span>';
   }
-  html += '<hr class="rc-header-menu-divider">';
-  // The section id stays 'results' on purpose (matches data-rc-section/#results routing) -- only
-  // the label text changes. Dashboard/Career are the only section links left here.
-  // My Profile -- off-page link to the driver's own public profile.html?id=..., straight from the
-  // saved login profile (no data-rc-section, same as League Hub above).
+  // My Career (was My Profile): off-page link to the driver's own public career page
+  // (profile.html?id=..., the Driver Career Page), straight under Championship. Saved login profile,
+  // no data-rc-section. The old in-account Career section has no link any more.
   var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
-    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">My Profile</a>';
+    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">My Career</a>';
   }
-  html += link('dashboard', 'Dashboard') + link('results', 'Career');
-  // A second divider between Career and the permission-gated items -- only when at least one of
-  // them actually shows for this role, so a Driver/Steward-without-Organizer account never ends up
-  // with two dividers back to back and nothing between them.
-  var hasGatedItems = role === 'Admin' || role === 'Organizer' || role === 'Steward';
-  if (hasGatedItems) html += '<hr class="rc-header-menu-divider">';
+  html += '<hr class="rc-header-menu-divider">';
+  // Dashboard, then (by role) Admin / League Tools / Stewarding with no divider between them.
+  html += link('dashboard', 'Dashboard');
   if (role === 'Admin') html += link('admin', 'Admin');
   if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools');
   if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding');

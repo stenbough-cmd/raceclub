@@ -456,24 +456,15 @@
       'rc-nav-championship', false, function () {
         if (currentProfile && currentProfile.profileId) window.location.href = 'championship.html?id=' + encodeURIComponent(currentProfile.profileId);
       }));
-    nav.appendChild(navDivider());
-    // My Profile -- off-page link to this driver's own public profile page, above Dashboard.
-    nav.appendChild(makeNavButton('myprofile', 'My Profile', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
+    // My Career (was My Profile) -- off-page link to this driver's own public Driver Career Page
+    // (profile.html?id=...), right under Championship. The old in-account Career section no longer
+    // has a link: everything a driver wants to see lives on the public career page.
+    nav.appendChild(makeNavButton('myprofile', 'My Career', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
       if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
     }));
-    NAV_ITEMS.slice(0, -1).forEach(function (item) { // everything except Settings
-      // Results, still the one lazy-fetch-on-click nav section left besides Admin/ League
-      // Tools/Stewarding below.
-      if (item.id === 'results') {
-        nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id, false, function () {
-          showLazySection('results', currentToken);
-        }));
-        return;
-      }
-      nav.appendChild(makeNavButton(item.id, item.label, item.icon, 'rc-nav-' + item.id));
-    });
-    // Always visible from the moment the sidebar first renders.
-    nav.appendChild(navDivider('rc-nav-divider-upper'));
+    nav.appendChild(navDivider());
+    // Dashboard, then Admin / League Tools / Stewarding with no divider between them.
+    nav.appendChild(makeNavButton('dashboard', 'Dashboard', ICON_DASHBOARD, 'rc-nav-dashboard'));
     // The standalone Data Management button is gone; Admin-only accounts reach the exact same tools
     // from here instead. hiddenByDefault is false for Admin/League Tools/Stewarding now -- they
     // always render; setNavAccess() (called once currentProfile is known, below) disables the ones
@@ -1151,40 +1142,55 @@
     });
   }
 
-  // Same team-card identity block (logo, team name + car number, car model, team description) the
-  // Choose Your Team screen's buildTeamCard shows during registration (see buildRegistrationModal
-  // above) -- just for the team/car this driver is actually seated in right now, with no Join
-  // button (there's nothing to join, they're already on it).
-  function buildSeatInfoPanel(data) {
-    // rc-seatinfo-card -- scoping modifier alongside the shared rc-team-card base class (also used
-    // by Choose Your Team's own buildTeamCard, registration flow) so the mobile-only tweaks below
-    // (logo size, car-number placement) hit only THIS popup, never the registration card that
-    // happens to share the same base markup.
-    var card = el('div', 'rc-team-card rc-seatinfo-card');
-    var head = el('div', 'rc-team-card-head');
-    var identity = el('div', 'rc-team-card-identity');
-    var logoBox = el('div', 'rc-team-logo-box');
-    if (data.manufacturer && typeof manufacturerLogoSrc === 'function') {
+  // _rcBuildSeatIdentity(seat) -- the one seat identity row used by BOTH the dashboard Current Seat
+  // card and the Current Seat Info popup so they always look identical: the team's car picture
+  // (assets/cars/<car year>-<car number>, webp first via js/img-loader.js; hidden when there is no
+  // picture), then the TEAM NAME with the car number on the same line at the same size/weight, then
+  // the manufacturer logo (max 50x24) in front of the car name underneath.
+  // seat = { team, carNumber, carModel, manufacturer, carYear, carSeries }
+  function _rcBuildSeatIdentity(seat) {
+    var row = el('div', 'rc-cs-row');
+    if (seat.carYear && seat.carNumber) {
+      var logoWrap = el('div', 'rc-cs-logo-wrap');
       var logo = document.createElement('img');
-      logo.src = manufacturerLogoSrc(data.manufacturer, 'black');
-      logo.alt = data.manufacturer;
-      manufacturerLogoFallback(logo, data.manufacturer, function () { logoBox.style.display = 'none'; });
-      logoBox.appendChild(logo);
+      logo.className = 'rc-cs-logo';
+      logo.alt = seat.team || '';
+      logo.onerror = function () { logoWrap.style.display = 'none'; };
+      logo.src = rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries);
+      logoWrap.appendChild(logo);
+      row.appendChild(logoWrap);
     }
-    identity.appendChild(logoBox);
-    var nameCol = el('div');
-    // Car number's position swaps by breakpoint.
-    var nameHtml = escapeHtml(data.teamName || 'Unnamed Team');
-    if (data.carNumber) nameHtml += '<span class="rc-seatinfo-carnum-desktop"> #' + escapeHtml(data.carNumber) + '</span>';
-    nameCol.appendChild(el('div', 'rc-team-name', nameHtml));
-    var subtitleHtml = data.carModel ? escapeHtml(data.carModel) : '';
-    if (data.carNumber) subtitleHtml += '<span class="rc-seatinfo-carnum-mobile">' + (data.carModel ? ' ' : '') + '#' + escapeHtml(data.carNumber) + '</span>';
-    if (subtitleHtml) nameCol.appendChild(el('div', 'rc-team-subtitle', subtitleHtml));
-    identity.appendChild(nameCol);
-    head.appendChild(identity);
-    if (data.teamDesc) head.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--rc-offwhite);';
-    card.appendChild(head);
-    if (data.teamDesc) card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:8px 0 0;', escapeHtml(data.teamDesc)));
+    var textCol = el('div', 'rc-cs-textcol');
+    var nameHtml = '<span>' + escapeHtml(seat.team || 'Unnamed Team') + '</span>';
+    if (seat.carNumber) nameHtml += '<span class="rc-cs-team-num">#' + escapeHtml(String(seat.carNumber)) + '</span>';
+    textCol.appendChild(el('div', 'rc-cs-team-name rc-cs-team-name-flex', nameHtml));
+    var hasMakerLogo = !!(seat.manufacturer && typeof manufacturerLogoSrc === 'function');
+    if (seat.carModel || hasMakerLogo) {
+      var carLineEl = el('div', 'rc-cs-car-line rc-cs-car-line-flex');
+      if (hasMakerLogo) {
+        var makerLogo = document.createElement('img');
+        makerLogo.className = 'rc-cs-maker-logo';
+        makerLogo.alt = seat.manufacturer;
+        makerLogo.src = manufacturerLogoSrc(seat.manufacturer, 'black');
+        manufacturerLogoFallback(makerLogo, seat.manufacturer, function () { makerLogo.style.display = 'none'; });
+        carLineEl.appendChild(makerLogo);
+      }
+      if (seat.carModel) carLineEl.appendChild(el('span', null, escapeHtml(seat.carModel)));
+      textCol.appendChild(carLineEl);
+    }
+    row.appendChild(textCol);
+    return row;
+  }
+
+  // Current Seat Info popup body: the shared seat identity (identical to the dashboard card) with the
+  // team description paragraph underneath.
+  function buildSeatInfoPanel(data) {
+    var card = el('div', 'rc-seatinfo-card');
+    card.appendChild(_rcBuildSeatIdentity({
+      team: data.teamName, carNumber: data.carNumber, carModel: data.carModel,
+      manufacturer: data.manufacturer, carYear: data.carYear, carSeries: data.carSeries
+    }));
+    if (data.teamDesc) card.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', escapeHtml(data.teamDesc)));
     return card;
   }
 
@@ -1210,7 +1216,9 @@
       carClass: found.carClass || '',
       manufacturer: found.manufacturer || '',
       carModel: found.carModel || '',
-      carNumber: found.carNumber || ''
+      carNumber: found.carNumber || '',
+      carYear: (hub.classSeasons && hub.classSeasons[found.carClass]) || '',
+      carSeries: (hub.carSeries && hub.carSeries[(found.carClass || '') + '|' + (found.carNumber || '')]) || ''
     };
   }
 
@@ -1301,49 +1309,12 @@
       // Class pill, top-right corner of the card header.
       setCornerPill(data.carClass);
 
-      var row = el('div', 'rc-cs-row');
-
-      // The team's car picture (assets/cars/<car year>-<car number>, webp first via js/img-loader.js)
-      // instead of the manufacturer logo. data.carYear comes from Season setup (handleGetMyCurrentSeat,
-      // Results.gs). No picture = the slot is hidden and the text moves left.
-      if (data.carYear && data.carNumber) {
-        // Wrapped in rc-cs-logo-wrap -- the wrap's min-width + centering keeps the column steady
-        // whatever the picture's own proportions.
-        var logoWrap = el('div', 'rc-cs-logo-wrap');
-        var logo = document.createElement('img');
-        logo.className = 'rc-cs-logo';
-        logo.alt = data.team || '';
-        logo.onerror = function () { logoWrap.style.display = 'none'; };
-        logo.src = rcCarImageSrc(data.carYear, data.carNumber, data.carSeries);
-        logoWrap.appendChild(logo);
-        row.appendChild(logoWrap);
-      }
-
-      var textCol = el('div', 'rc-cs-textcol');
-      textCol.appendChild(el('div', 'rc-cs-team-name', escapeHtml(data.team || 'Unnamed Team')));
-      var carLine = data.carModel || '';
-      // Manufacturer logo (max 50x24) in front of the car name, vertically centered with it.
-      var hasMakerLogo = !!(data.manufacturer && typeof manufacturerLogoSrc === 'function');
-      if (carLine || hasMakerLogo) {
-        var carLineEl = el('div', 'rc-cs-car-line rc-cs-car-line-flex');
-        if (hasMakerLogo) {
-          var makerLogo = document.createElement('img');
-          makerLogo.className = 'rc-cs-maker-logo';
-          makerLogo.alt = data.manufacturer;
-          makerLogo.src = manufacturerLogoSrc(data.manufacturer, 'black');
-          manufacturerLogoFallback(makerLogo, data.manufacturer, function () { makerLogo.style.display = 'none'; });
-          carLineEl.appendChild(makerLogo);
-        }
-        if (carLine) carLineEl.appendChild(el('span', null, escapeHtml(carLine)));
-        textCol.appendChild(carLineEl);
-      }
-      // Full-name class pill (e.g.
-      row.appendChild(textCol);
-
-      // .rc-cs-textcol's own flex:1 above is what pushes this all the way to the card's right edge;
-      // .rc-cs-carnum sizes its box to match .rc-cs-logo-wrap's height so the figure reads as tall
-      // as the manufacturer logo.
-      row.appendChild(el('div', 'rc-cs-carnum', '#' + (data.carNumber || '?')));
+      // Same identity block (car picture, TEAM #NN on one line, maker logo + car name) the Current
+      // Seat Info popup shows -- built by _rcBuildSeatIdentity (defined above buildSeatInfoPanel).
+      var row = _rcBuildSeatIdentity({
+        team: data.team, carNumber: data.carNumber, carModel: data.carModel,
+        manufacturer: data.manufacturer, carYear: data.carYear, carSeries: data.carSeries
+      });
       body.appendChild(row);
 
       var stats = el('div', 'rc-cs-stats');
@@ -3281,8 +3252,8 @@
       body: 'Your homepage: registration status, current seat, next race, most recent result, and recent protests.' },
     { icon: ICON_CALENDAR, title: 'Calendar',
       body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
-    { icon: ICON_RESULTS, title: 'Career',
-      body: 'Season standings and every completed round\'s full results, with fastest laps, DNFs/DSQs, and penalties marked.' },
+    { icon: ICON_PROFILE, title: 'Driver Career Page',
+      body: 'Placeholder -- this will explain your public Driver Career page (My Career in the menu), where your seasons, results and stats live in one place.' },
     { icon: ICON_PROTESTS, title: 'Protests',
       body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
@@ -9108,7 +9079,7 @@
     // Same-page restore after a popup save.
     var restoreSectionId = 'dashboard';
     var hashSectionId = (window.location.hash || '').replace(/^#/, '');
-    if (hashSectionId && document.getElementById('rc-section-' + hashSectionId)) {
+    if (hashSectionId && hashSectionId !== 'results' && document.getElementById('rc-section-' + hashSectionId)) {
       var hashNavBtn = document.getElementById('rc-nav-' + hashSectionId);
       if (!hashNavBtn || hashNavBtn.style.display !== 'none') restoreSectionId = hashSectionId;
     }
