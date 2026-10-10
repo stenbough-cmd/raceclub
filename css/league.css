@@ -1663,6 +1663,8 @@ body.rc-league-page {
 .rcl-news-item + .rcl-news-item { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rcl-line); }
 .rcl-news-hero { display: block; width: 100%; max-height: 220px; object-fit: cover; margin-bottom: 12px; border: 1px solid var(--rcl-line); }
 .rcl-news-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.01em; color: var(--rcl-ink); line-height: 1.25; }
+/* Story titles inside the read-story popup: ALL CAPS and a notch larger than the ## headers (17px). */
+.rcl-modal-story .rcl-news-title { font-size: 21px; text-transform: uppercase; letter-spacing: 0.03em; }
 .rcl-news-meta { margin-top: 4px; font-size: 12px; color: var(--rcl-ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .rcl-news-body { margin-top: 10px; font-size: 14px; line-height: 1.6; color: var(--rcl-ink-dim); }
 .rcl-news-body p { margin: 0 0 0.8em; }
