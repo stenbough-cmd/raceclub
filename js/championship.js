@@ -373,9 +373,9 @@ function rccRenderHero(page) {
   var metaEl = document.getElementById('rcc-hero-meta');
   seasonEl.innerHTML = '';
   metaEl.innerHTML = '';
-  // No season to show: the season line reads OFFLINE SEASON MANAGER instead (navy, same size).
+  // No season to show: the season line reads RACE SESSION MANAGER instead (navy, same size).
   if (!page || !page.hasSeason) {
-    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Offline Season Manager'));
+    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Race Session Manager'));
     return;
   }
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));

@@ -3236,3 +3236,4 @@ body.rc-modal-scroll-locked {
 
 /* Single player teaser on the landing page (above the closing call to action). */
 .rc-single-section .rc-single-early { margin-top: 28px; color: var(--rc-carbon); font-weight: 600; }
+.rc-single-section .rc-single-early a { color: var(--rc-red); text-decoration: underline; }
