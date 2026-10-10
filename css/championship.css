@@ -484,6 +484,7 @@ body.rc-league-page.rcc-page {
   /* Standings on a phone: Pos, Drivers/Teams and Pts only (no round columns), like the League Hub.
      The column list is set inline per board, so !important is needed to replace it here. */
   .rcc-board-table { --rcc-board-cols: 40px 34px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
+  .rcc-board-table.rcc-board-has-car { --rcc-board-cols: 40px 34px 34px 34px minmax(0, 1fr) 50px !important; }
   .rcc-board .rcl-standings-mfr-logo-slot { width: 34px; }
   .rcc-board .rcl-standings-mfr-logo { max-width: 34px; }
   .rcc-board-num { font-size: 13px; }
@@ -739,3 +740,6 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcc-metal-btn:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
 .rcr-report-who { margin: 0 0 6px; }
 .rcc-hero-meta-team-text { white-space: nowrap; }
+/* Car profile pictures (assets/cars/<year>-<number>.png): podium tiles and the standings CAR column. */
+.rcc-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
+@media (max-width: 640px) { .rcc-podium-car { max-width: 92px; max-height: 38px; } }
