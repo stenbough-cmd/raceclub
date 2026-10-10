@@ -11,6 +11,7 @@
 <!-- If this browser has a saved copy of this championship page, js/championship.js draws it at once,
      so the loading overlay is skipped (it only shows on a first visit or right after a save). -->
 <script>try { var q = new URLSearchParams(location.search); if (localStorage.getItem('rc_champ_page_v1:' + (q.get('id') || '') + ':' + (q.get('season') || ''))) document.documentElement.classList.add('rcl-has-cache'); } catch (e) {}</script>
+<script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>

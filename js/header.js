@@ -256,18 +256,18 @@ function renderHeaderPending() {
   // visibly gain the badge a moment later once renderHeader() takes over -- it reads as present
   // from the very first paint.
   mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
-      '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
+      '<img class="rc-header-logo" src="assets/images/race-club-header-logo.webp" alt="Race Club">' +
     '</a>' +
     '<span class="rc-header-leaguehub-badge">' +
       '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
-        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
+        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
       '</a>' +
     '</span>' +
     // Championship logo (CHAMP chat, 2026-10-09): its own badge with the League Hub classes, so it
     // gets the same responsive gap from League Hub as League Hub has from the Race Club logo.
     '<span class="rc-header-leaguehub-badge" style="padding-left:14px;position:relative;top:-3px">' +
       '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
-        '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.png" alt="Championship" draggable="false">' +
+        '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
       '</a>' +
     '</span>' +
     '<nav class="rc-header-nav"></nav>';
@@ -288,7 +288,7 @@ function renderHeader(opts) {
 
   var html = '';
   html += '<a class="rc-header-logo-link" href="index.html">' +
-            '<img class="rc-header-logo" src="assets/images/race-club-header-logo.png" alt="Race Club">' +
+            '<img class="rc-header-logo" src="assets/images/race-club-header-logo.webp" alt="Race Club">' +
           '</a>';
   // League Hub badge. Sits in the same left-hand flex cluster as the logo, not spaced apart from it
   // -- see .rc-header-nav's margin-left: auto (style.css) for how the nav still ends up pushed
@@ -299,7 +299,7 @@ function renderHeader(opts) {
               // behavior. The matching user-select/user-drag CSS is on .rc-header-leaguehub-logo
               // (style.css) -- together they keep this reading as a clickable link, not draggable/
               // selectable image content.
-              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.png" alt="League Hub" draggable="false">' +
+              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
             '</a>' +
           '</span>';
   // Championship logo (CHAMP chat, 2026-10-09): its own badge with the League Hub classes, so it
@@ -309,7 +309,7 @@ function renderHeader(opts) {
   // only match with it. top:-3px lifts the logo 3px (Matt).
   html += '<span class="rc-header-leaguehub-badge" style="padding-left:14px;position:relative;top:-3px">' +
             '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
-              '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.png" alt="Championship" draggable="false">' +
+              '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
             '</a>' +
           '</span>';
   html += '<nav class="rc-header-nav">';

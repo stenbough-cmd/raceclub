@@ -246,6 +246,7 @@ body.rc-league-page {
   /* Relative to THIS file (css/league.css), not the page -- assets/images/ is a sibling of css/,
      not a child of it, same gotcha style.css's own banner rules already have a comment for. */
   background-image: url('../assets/images/league_banner.jpg');
+  background-image: image-set(url('../assets/images/league_banner.webp') type('image/webp'), url('../assets/images/league_banner.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -808,6 +809,7 @@ body.rc-league-page {
   /* Relative to THIS file (css/league.css), not the page.rcl-hero::before above for why this needs
      the ../ prefix. Same bug was hiding this image too. */
   background-image: url('../assets/images/news_banner.jpg');
+  background-image: image-set(url('../assets/images/news_banner.webp') type('image/webp'), url('../assets/images/news_banner.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;

@@ -2942,6 +2942,8 @@ function _rclRenderWebsiteContainers(hub) {
   RCL_WEBSITE_CONTAINERS_.forEach(function (def) {
     var tile = _rclEl('div', 'rcl-wc-tile');
     tile.style.backgroundImage = "url('assets/images/" + def.image + "')";
+    // WebP first (same name, .webp); browsers that ignore image-set keep the plain url above.
+    tile.style.backgroundImage = "image-set(url('assets/images/" + def.image.replace(/\.[a-z]+$/i, '.webp') + "') type('image/webp'), url('assets/images/" + def.image + "'))";
     var img = new Image();
     img.onerror = function () { tile.style.backgroundImage = 'none'; };
     img.src = 'assets/images/' + def.image;
