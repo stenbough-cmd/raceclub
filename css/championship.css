@@ -814,3 +814,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Standings: both boards are built once; the Drivers/Teams switch hides one with the hidden attribute. */
 #rcc-standings-panels [hidden] { display: none !important; }
+/* The Teams board is the second board in the panel, so league.css's spacing between stacked class
+   boards gave it a 22px top margin and the board jumped down on the switch. Both sit at the top. */
+#rcc-standings-panels .rcl-panel-body > .rcc-board { margin-top: 0; }
