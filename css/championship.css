@@ -811,3 +811,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 24px; width: 42px; }
   .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 24px; }
 }
+
+/* Standings: both boards are built once; the Drivers/Teams switch hides one with the hidden attribute. */
+#rcc-standings-panels [hidden] { display: none !important; }

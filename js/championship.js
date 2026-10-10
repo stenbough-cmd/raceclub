@@ -598,8 +598,7 @@ function _rccPodium(rows, year, series) {
       var car = document.createElement('img');
       car.className = 'rcc-podium-car';
       car.alt = '';
-      car.src = rcCarImageSrc(year, row.carNumber, series);
-      car.onerror = function () { car.style.display = 'none'; };
+      _rccCarImg(car, year, row.carNumber, series, function () { car.style.display = 'none'; });
       drv.appendChild(car);
     }
     var ident = _rccEl('div', 'rcl-lr-podium-identity');
@@ -948,14 +947,27 @@ function _rccMetalSwitch(view, onChange) {
 // Car profile picture for the CAR column: assets/cars/<season year>-<car number>.png (transparent
 // PNG, e.g. 2023-85.png for the 2023 Iron Dames #85). No two cars share a number in one season. A
 // missing picture leaves the slot empty, so the columns still line up.
+// Car pictures on this page use the small copies in assets/cars/small/ (300px wide, a few KB each)
+// instead of the full-size originals (about 1180px wide), so they download and draw quickly (Matt).
+// If a car has no small copy yet, the original is used; if neither exists, onMissing runs.
+// js/img-loader.js still picks .webp first, then .jpg, .jpeg, .png, for both.
+function _rccCarImg(img, year, carNumber, series, onMissing) {
+  var full = rcCarImageSrc(year, carNumber, series);
+  if (!full) { if (onMissing) onMissing(); return; }
+  var triedFull = false;
+  img.onerror = function () {
+    if (!triedFull) { triedFull = true; img.src = full; return; }
+    if (onMissing) onMissing();
+  };
+  img.src = full.replace('assets/cars/', 'assets/cars/small/');
+}
 function _rccCarPic(year, carNumber, series) {
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot rcc-board-car-slot');
   if (year && carNumber) {
     var img = document.createElement('img');
     img.className = 'rcl-standings-mfr-logo rcc-board-car';
     img.alt = '';
-    img.src = rcCarImageSrc(year, carNumber, series);
-    img.onerror = function () { img.style.display = 'none'; };
+    _rccCarImg(img, year, carNumber, series, function () { img.style.display = 'none'; });
     slot.appendChild(img);
   }
   return slot;
@@ -1102,12 +1114,17 @@ function rccRenderStandings(page) {
     var hasTeams = className !== 'Hypercar';
     var switchSlot = _rccEl('div', 'rcc-switch-slot');
     headEl.appendChild(switchSlot);
+    // Both boards are built once and the switch only shows one and hides the other, so nothing is
+    // redrawn or re-loaded on a switch and the pictures don't flicker (Matt). The hidden board's
+    // pictures still load in the background.
+    var boards = { drivers: _rccStandingsBoard(page, className, 'drivers') };
+    body.appendChild(boards.drivers);
+    if (hasTeams) { boards.teams = _rccStandingsBoard(page, className, 'teams'); body.appendChild(boards.teams); }
     function draw() {
       var view = hasTeams ? (RCC.standingsView[className] || 'drivers') : 'drivers';
       switchSlot.innerHTML = '';
       if (hasTeams) switchSlot.appendChild(_rccMetalSwitch(view, function (next) { RCC.standingsView[className] = next; draw(); }));
-      body.innerHTML = '';
-      body.appendChild(_rccStandingsBoard(page, className, view));
+      Object.keys(boards).forEach(function (k) { boards[k].hidden = k !== view; });
     }
     draw();
     panel.appendChild(headEl);
@@ -1252,8 +1269,8 @@ function _rccSeatIdentity(page, seat) {
     pic.className = 'rc-cs-logo';
     pic.alt = '';
     // A missing picture: Team Information keeps the empty box so the names line up; elsewhere the box goes.
-    pic.onerror = function () { if (seat.keepSlot) pic.style.visibility = 'hidden'; else picWrap.style.display = 'none'; };
-    if (carYear && carNumber) pic.src = rcCarImageSrc(carYear, carNumber, (page.seasonDetails || {}).series);
+    var noPic = function () { if (seat.keepSlot) pic.style.visibility = 'hidden'; else picWrap.style.display = 'none'; };
+    if (carYear && carNumber) _rccCarImg(pic, carYear, carNumber, (page.seasonDetails || {}).series, noPic);
     else pic.style.visibility = 'hidden';
     picWrap.appendChild(pic);
     row.appendChild(picWrap);
