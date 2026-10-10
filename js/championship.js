@@ -1487,6 +1487,9 @@ function rccOpenResults(roundId, kind) {
   var out = _rccEl('div', 'rcl-allresults-body');
   m.body.appendChild(out);
   var cache = {};
+  // Both dropdowns are locked while a page of the recap is loading, so nothing can be picked until
+  // its data is on screen (Matt).
+  function busy(on) { sel.disabled = on; kindSel.disabled = on; }
   function load() {
     // Driver Report and Race Details come from the same race result as the Race page.
     var apiKind = kindSel.value === 'driver' || kindSel.value === 'details' ? 'race' : kindSel.value;
@@ -1495,12 +1498,15 @@ function rccOpenResults(roundId, kind) {
     if (cache[key]) { builder(cache[key], out); return; }
     out.innerHTML = '';
     out.appendChild(_rccSpinner('Loading results...'));
+    busy(true);
     _rccApi('champGetRoundResults', { roundId: sel.value, kind: apiKind }).then(function (res) {
+      busy(false);
       if (_rccHandleAuthError(res)) return;
       var result = res && res.success ? res.result : null;
       if (result) cache[key] = result;
       builder(result, out);
     }).catch(function () {
+      busy(false);
       out.innerHTML = '';
       out.appendChild(_rccEmpty('Could Not Load', 'Could not reach the server. Close this popup and try again.'));
     });

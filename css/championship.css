@@ -817,3 +817,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* The Teams board is the second board in the panel, so league.css's spacing between stacked class
    boards gave it a 22px top margin and the board jumped down on the switch. Both sit at the top. */
 #rcc-standings-panels .rcl-panel-body > .rcc-board { margin-top: 0; }
+
+/* Race Recap: dropdowns locked while a page loads. */
+.rcc-page .rcl-allresults-select:disabled,
+.rcc-page .rcl-allresults-session-select:disabled { opacity: 0.55; cursor: not-allowed; }
