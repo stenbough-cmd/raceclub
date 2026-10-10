@@ -463,9 +463,20 @@ body.rc-league-page.rcc-page {
 .rcc-upload-note, .rcc-upload-skip { color: var(--rc-steel); }
 
 /* Team information */
-.rcc-myteam { display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
-.rcc-myteam-logo { width: 56px; height: 56px; object-fit: contain; }
-.rcc-myteam-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); }
+.rcc-myteam { padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
+.rcc-myteam-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 8px; }
+.rcc-myteam .rcc-seat-line { margin: 0; }
+.rcc-myteam-sub { margin-top: 10px; }
+/* Team Information: every car picture gets the same 150px box so the team names line up. */
+.rcc-myteam .rc-cs-logo-wrap,
+.rcc-grid-row .rc-cs-logo-wrap { width: 150px; }
+.rcc-grid-row .rcc-seat-line { margin: 0; flex: 1 1 auto; min-width: 0; }
+.rcc-grid-row .rcc-grid-crew { margin-top: 3px; }
+@media (max-width: 640px) {
+  .rcc-myteam .rc-cs-logo-wrap,
+  .rcc-grid-row .rc-cs-logo-wrap { width: 100px; }
+  .rcc-myteam .rc-cs-row, .rcc-grid-row .rc-cs-row { gap: 12px; }
+}
 .rcc-myteam-name { font-size: 18px; font-weight: 800; color: var(--rc-carbon); }
 .rcc-myteam-sub { font-size: 13px; color: var(--rc-steel); }
 .rcc-myteam-desc { font-size: 13px; color: var(--rc-steel); margin: 8px 0 0; }
