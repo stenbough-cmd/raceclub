@@ -624,7 +624,8 @@ function _rccPodium(rows, year, series) {
     ident.appendChild(row.isPlayer ? _rccPlayerName('rcl-lr-podium-name rcc-me-text', (row.name || '').toUpperCase())
       : _rccText('span', 'rcl-lr-podium-name', (row.name || '').toUpperCase()));
     // Car number right after the driver's name (Matt).
-    if (row.carNumber) ident.appendChild(_rccText('span', 'rcc-podium-num', '#' + row.carNumber));
+    // Same size and weight as the name (Matt).
+    if (row.carNumber) ident.appendChild(_rccText('span', 'rcl-lr-podium-name rcc-podium-num', '#' + row.carNumber));
     drv.appendChild(ident);
     tile.appendChild(drv);
     var stand = _rccEl('div', 'rcl-lr-podium-stand');
@@ -1239,17 +1240,36 @@ function _rccDriverReportBody(result, el) {
   el.innerHTML = '';
   var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
-  // Who the report is for, styled like the hero subtitle: Name · [logo] Team #57 (Matt).
-  var page = RCC.page || {}, reg = page.registration || null, dr = result.driverReport || {};
-  var who = _rccEl('div', 'rcc-hero-meta rcr-report-who');
-  who.appendChild(_rccText('span', 'rcc-hero-meta-name', (page.owner && page.owner.displayName) || ''));
-  who.appendChild(document.createTextNode(' \u00B7 '));
-  var team = _rccEl('span', 'rcc-hero-meta-team-text');
-  var mfr = reg && reg.manufacturer;
-  if (mfr) team.appendChild(_rccLogo('rcc-hero-meta-logo', mfr));
-  team.appendChild(document.createTextNode((dr.teamName || (reg && reg.teamName) || '') + ' '));
-  team.appendChild(_rccText('strong', 'rcc-hero-meta-num', '#' + (dr.carNumber || (reg && reg.carNumber) || '')));
-  who.appendChild(team);
+  // Who the report is for, laid out like the Dashboard's Current Seat card (Matt): the car picture,
+  // then DRIVER NAME (bold, black) and TEAM NAME #57 (normal weight, steel), then the maker logo in
+  // front of the car name. Uses the shared rc-cs-* styles from style.css so both stay identical.
+  var page = RCC.page || {}, reg = page.registration || {}, dr = result.driverReport || {};
+  var carNumber = String(dr.carNumber || reg.carNumber || '');
+  var carYear = _rccClassYear(page, dr.carClass || reg.carClass);
+  var who = _rccEl('div', 'rc-cs-row rcr-report-who');
+  if (carYear && carNumber) {
+    var picWrap = _rccEl('div', 'rc-cs-logo-wrap');
+    var pic = document.createElement('img');
+    pic.className = 'rc-cs-logo';
+    pic.alt = '';
+    pic.onerror = function () { picWrap.style.display = 'none'; };
+    pic.src = rcCarImageSrc(carYear, carNumber, (page.seasonDetails || {}).series);
+    picWrap.appendChild(pic);
+    who.appendChild(picWrap);
+  }
+  var textCol = _rccEl('div', 'rc-cs-textcol');
+  var nameLine = _rccEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcr-who-name');
+  nameLine.appendChild(_rccText('span', 'rcr-who-driver', (page.owner && page.owner.displayName) || ''));
+  var teamName = dr.teamName || reg.teamName || '';
+  if (teamName || carNumber) nameLine.appendChild(_rccText('span', 'rcr-who-team', teamName + (carNumber ? ' #' + carNumber : '')));
+  textCol.appendChild(nameLine);
+  if (reg.manufacturer || reg.carModel) {
+    var carLine = _rccEl('div', 'rc-cs-car-line rc-cs-car-line-flex');
+    if (reg.manufacturer) carLine.appendChild(_rccLogo('rc-cs-maker-logo', reg.manufacturer));
+    if (reg.carModel) carLine.appendChild(_rccText('span', null, reg.carModel));
+    textCol.appendChild(carLine);
+  }
+  who.appendChild(textCol);
   el.appendChild(who);
   el.appendChild(drEl);
 }
