@@ -7187,7 +7187,7 @@
   var RC_NEWS_BODY_MAX_CHARS = 10000;
 
   // Formatting toolbar -- inserts plain-text markers around the textarea's current selection:
-  // **bold**, *italic*, ++underline++, "> " line-quote, and [Link Text](mailto:EMAIL@EXAMPLE.COM)
+  // **bold**, *italic*, ++underline++, "## " heading line, "> " line-quote, and [Link Text](mailto:EMAIL@EXAMPLE.COM)
   // for an email link.
   function _rcWrapTextareaSelection(textarea, before, after) {
     var start = textarea.selectionStart;
@@ -7227,6 +7227,7 @@
     toolBtn('B', 'Bold', function () { _rcWrapTextareaSelection(textarea, '**', '**'); }).style.fontWeight = '800';
     toolBtn('I', 'Italic', function () { _rcWrapTextareaSelection(textarea, '*', '*'); }).style.fontStyle = 'italic';
     toolBtn('U', 'Underline', function () { _rcWrapTextareaSelection(textarea, '++', '++'); }).style.textDecoration = 'underline';
+    toolBtn('H', 'Heading (puts ## at the start of the line)', function () { _rcPrefixTextareaLines(textarea, '## '); }).style.fontWeight = '800';
     toolBtn('"', 'Quote', function () { _rcPrefixTextareaLines(textarea, '> '); });
     // Email link -- new [Link Text](mailto:EMAIL@EXAMPLE.COM) marker, same family as the four
     // markers above (plain-text so it's still just a string in the Body column; js/league.js's

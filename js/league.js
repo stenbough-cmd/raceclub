@@ -2355,7 +2355,22 @@ function _rclRenderStoryBodyBlocks(container, rawBody) {
       var quote = _rclEl('blockquote', 'rcl-news-quote', quoteLines.join('<br>'));
       container.appendChild(quote);
     } else {
-      container.appendChild(_rclEl('p', null, _rclApplyInlineMarkup(para.trim()).replace(/\n/g, '<br>')));
+      // A line starting "## " is a header (<h3>); the lines around it stay ordinary paragraph text.
+      var run = [];
+      var flushRun = function () {
+        if (run.length) container.appendChild(_rclEl('p', null, run.map(_rclApplyInlineMarkup).join('<br>')));
+        run = [];
+      };
+      para.trim().split('\n').forEach(function (line) {
+        var hm = /^##\s+(.+)$/.exec(line.trim());
+        if (hm) {
+          flushRun();
+          container.appendChild(_rclEl('h3', 'rcl-news-h', _rclApplyInlineMarkup(hm[1])));
+        } else if (line.trim()) {
+          run.push(line);
+        }
+      });
+      flushRun();
     }
   });
 }
@@ -2376,7 +2391,28 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
   }
   var escaped = _rclEscapeHtml(body);
   var paragraphs = escaped.split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
-  var html = paragraphs.map(function (p) { return _rclApplyInlineMarkup(p.replace(/\n/g, '<br>')); }).join('<br><br>');
+  // "## " lines become block headers (span.rcl-news-h, display:block); they carry their own spacing,
+  // so no <br> goes next to them.
+  var html = '';
+  paragraphs.forEach(function (p, pi) {
+    var parts = [], text = [];
+    p.split('\n').forEach(function (line) {
+      var hm = /^##\s+(.+)$/.exec(line.trim());
+      if (hm) {
+        if (text.length) { parts.push({ t: 'p', h: text.map(_rclApplyInlineMarkup).join('<br>') }); text = []; }
+        parts.push({ t: 'h', h: '<span class="rcl-news-h">' + _rclApplyInlineMarkup(hm[1]) + '</span>' });
+      } else if (line.trim()) {
+        text.push(line);
+      }
+    });
+    if (text.length) parts.push({ t: 'p', h: text.map(_rclApplyInlineMarkup).join('<br>') });
+    parts.forEach(function (part, i) {
+      var prev = i === 0 ? (pi === 0 ? null : 'para') : parts[i - 1].t;
+      if (html && part.t === 'p' && prev && prev !== 'h') html += (i === 0 ? '<br><br>' : '<br>');
+      else if (html && part.t === 'h' && i === 0 && pi > 0) html += '<br>';
+      html += part.h;
+    });
+  });
   return { html: html, truncated: truncated };
 }
 

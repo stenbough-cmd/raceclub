@@ -1668,6 +1668,18 @@ body.rc-league-page {
 .rcl-news-body p { margin: 0 0 0.8em; }
 .rcl-news-body p:last-child { margin-bottom: 0; }
 .rcl-news-body strong { color: var(--rcl-ink); }
+/* "## Heading" lines in a story: <h3 class="rcl-news-h"> in the read-story popup, span.rcl-news-h in
+   the on-page preview. */
+.rcl-news-h {
+  display: block;
+  margin: 1.1em 0 0.4em;
+  font-family: var(--rc-font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: var(--rcl-ink);
+}
 /* Email link -- brand red, underlined, so it reads as a deliberate link against the page's dim
    body-text color rather than blending into the surrounding sentence. */
 .rcl-news-link { color: var(--rc-red); text-decoration: underline; }
