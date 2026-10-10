@@ -1267,11 +1267,12 @@ function _rccSeatIdentity(page, seat) {
   }
   (seat.tags || []).forEach(function (t) { nameLine.appendChild(t); });
   textCol.appendChild(nameLine);
-  if (seat.manufacturer || seat.carModel || seat.classPill) {
+  if (seat.manufacturer || seat.carModel || seat.classPill || seat.joined) {
     var carLine = _rccEl('div', 'rc-cs-car-line rc-cs-car-line-flex');
     if (seat.manufacturer) carLine.appendChild(_rccLogo('rc-cs-maker-logo', seat.manufacturer));
     if (seat.carModel) carLine.appendChild(_rccText('span', null, seat.carModel));
     if (seat.classPill && seat.carClass) carLine.appendChild(_rccClassPill(seat.carClass));
+    if (seat.joined) carLine.appendChild(_rccText('span', 'rcc-seat-joined', seat.joined));
     textCol.appendChild(carLine);
   }
   row.appendChild(textCol);
@@ -1502,8 +1503,7 @@ function rccOpenTeamInfo() {
     var reg = page.registration;
     var mine = _rccEl('div', 'rcc-myteam');
     mine.appendChild(_rccText('div', 'rcc-myteam-label', 'Your Team'));
-    mine.appendChild(_rccSeatIdentity(page, { carNumber: reg.carNumber, carClass: reg.carClass, teamName: reg.teamName, manufacturer: reg.manufacturer, carModel: reg.carModel, driverName: null, classPill: true, keepSlot: true }));
-    if (reg.joinedAt) mine.appendChild(_rccText('div', 'rcc-myteam-sub', 'Joined ' + _rccFormatDate(reg.joinedAt)));
+    mine.appendChild(_rccSeatIdentity(page, { carNumber: reg.carNumber, carClass: reg.carClass, teamName: reg.teamName, manufacturer: reg.manufacturer, carModel: reg.carModel, driverName: null, classPill: true, keepSlot: true, joined: reg.joinedAt ? 'Joined ' + _rccFormatDate(reg.joinedAt) : '' }));
     if (reg.teamDesc) mine.appendChild(_rccText('p', 'rcc-myteam-desc', reg.teamDesc));
     m.body.appendChild(mine);
   }
