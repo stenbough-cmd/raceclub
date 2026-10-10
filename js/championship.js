@@ -1271,16 +1271,19 @@ function _rccRaceBody(result, el) {
     var w = _rccEl('div', 'rcl-race-class');
     w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' RESULTS'));
     w.appendChild(_rccCategoryBreakdown(cls));
-    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
-    ['Pos', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-recap');
+    ['Pos', 'Manu', 'N<sup class="rcc-board-num-deg">&deg;</sup>', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccEl('div', null, t)); });
     w.appendChild(head);
     var rows = cls.standings || [];
     var leader = rows[0] || null;
     rows.forEach(function (row, idx) {
       var dnf = /dnf/i.test(row.finishStatus || '');
-      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
+      var r = _rccEl('div', 'rcl-race-row rcl-race-grid-recap' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
       r.appendChild(_rccPosBadge(idx, dnf ? 'DNF' : undefined));
-      r.appendChild(_rccIdentity(row, { dnf: dnf }));
+      // Same cells as the Standings board: maker logo | N° | driver name (no team name).
+      var recapCells = _rccBoardCells(row, row.name, 'drivers');
+      if (dnf) { recapCells[1].classList.add('rcc-recap-dnf'); recapCells[2].classList.add('rcl-standings-identity-dnf'); }
+      recapCells.forEach(function (cell) { r.appendChild(cell); });
       r.appendChild(_rccText('div', 'rcl-race-row-num', String(row.laps || 0)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccTotalTime(row.finishTimeSeconds)));
       r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? '--' : _rccGap(row, rows[idx - 1])));

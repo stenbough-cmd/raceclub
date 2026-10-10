@@ -1144,7 +1144,7 @@ body.rc-league-page {
 /* ON column removed entirely -- 8 columns then, driver bumped from 1.5fr to 2fr with that freed
    space. INTERVAL/PTS' column widths are otherwise unchanged from the PEN-era layout -- still 9
    columns, PTS keeps its compact 52px at the end, same idea as GAP/Best Lap's own fixed widths. */
-.rcl-race-grid-allresults { grid-template-columns: 40px 2fr 50px 118px 64px 78px 84px 92px 52px; }
+.rcl-race-grid-recap { grid-template-columns: 40px 58px 44px minmax(0, 2fr) 50px 118px 64px 78px 84px 92px 52px; }
 /* Qualifying tab -- Pos/Driver/Best Lap/Sector 1-3/Avg (KM/H), 7 columns. No Laps/Total
    Time/Pen/Gap -- a Qualify session has none of those concepts. */
 .rcl-race-grid-qualifying { grid-template-columns: 40px 2fr 92px 80px 80px 80px 84px; }
@@ -1171,6 +1171,22 @@ body.rc-league-page {
 /* The INTERVAL cell that took its slot reuses .rcl-race-row-gap (just above) rather than a
    dedicated class of its own, since it's styled identically to GAP. PTS column. */
 .rcl-race-row-pts { color: var(--rcl-ink); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+/* Race Recap results tables: same look as the Standings board -- bigger column headers (Manu, N°,
+   Driver), maker logo slot with 4px each side, entries in normal weight. */
+.rcl-race-col-head.rcl-race-grid-recap { font-size: 14.5px; }
+body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(2),
+body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(3) { text-align: center; white-space: nowrap; }
+body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(4) { text-align: left; }
+body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: right; }
+.rcl-race-grid-recap .rcl-standings-mfr-logo-slot { width: 58px; height: 40px; padding: 0 4px; box-sizing: border-box; }
+.rcl-race-grid-recap .rcl-standings-mfr-logo { max-height: 34px; }
+.rcl-race-grid-recap .rcl-standings-name-row { min-width: 0; }
+.rcl-race-grid-recap .rcl-standings-name { min-width: 0; }
+.rcl-race-grid-recap .rcl-race-row-num,
+.rcl-race-grid-recap .rcl-race-row-pts,
+.rcl-race-grid-recap .rcl-standings-name,
+.rcl-race-grid-recap .rcl-board-num { font-weight: 400; }
+.rcl-recap-dnf { color: var(--rcl-ink-faint); }
 /* Category labels, divider line BELOW them, no background fill. */
 .rcl-race-col-head {
   display: grid;
@@ -1237,8 +1253,8 @@ body.rc-league-page {
    start, on both tabs. */
 /* Sector times normal weight, Best Lap bold -- scoped to rows inside the Qualifying grid only
    (.rcl-race-grid-qualifying) so this doesn't touch .rcl-race-row-num /.rcl-race-row-bestlap's
-   shared base rules, which the Race view's All Results table (a different grid,
-   .rcl-race-grid-allresults) also uses for Laps/Total Time/Best Lap with its own, unrelated weight
+   shared base rules, which the Race view's results table (a different grid,
+   .rcl-race-grid-recap) also uses for Laps/Total Time/Best Lap with its own, unrelated weight
    needs. */
 .rcl-race-grid-qualifying .rcl-race-row-num { font-weight: 500; color: var(--rcl-ink-dim); }
 .rcl-race-grid-qualifying .rcl-race-row-bestlap { font-weight: 800; color: var(--rcl-ink); }
@@ -2000,16 +2016,21 @@ body.rc-league-page {
      flex row, the same trick that centers a block element outside of flex. */
   .rcl-hero-inner { margin: 0; }
 
-  /* ALL RESULTS popup standings tables -- .rcl-race-grid- allresults is used only by this popup's
-     Race-view standings (both the column-label row and every data row share it), and its 9 children
-     are always in this exact order: Pos, Driver, Laps, Total Time, Pen, Gap, Avg, Best Lap, Pts. */
-  .rcl-race-grid-allresults { grid-template-columns: 32px 1fr 44px; }
-  .rcl-race-grid-allresults > div:nth-child(3),
-  .rcl-race-grid-allresults > div:nth-child(4),
-  .rcl-race-grid-allresults > div:nth-child(5),
-  .rcl-race-grid-allresults > div:nth-child(6),
-  .rcl-race-grid-allresults > div:nth-child(7),
-  .rcl-race-grid-allresults > div:nth-child(8) { display: none; }
+  /* ALL RESULTS popup standings tables -- .rcl-race-grid-recap is used by the Race Recap results
+     tables (column-label row and every data row), 11 children in this order: Pos, Manu, N°,
+     Driver, Laps, Total Time, Interval, Gap, Avg, Best Lap, Pts. Phones keep Pos, Manu, N°,
+     Driver and Pts, the same set as the Standings board. */
+  .rcl-race-grid-recap { grid-template-columns: 32px 42px 34px minmax(0, 1fr) 44px; }
+  .rcl-race-grid-recap > div:nth-child(5),
+  .rcl-race-grid-recap > div:nth-child(6),
+  .rcl-race-grid-recap > div:nth-child(7),
+  .rcl-race-grid-recap > div:nth-child(8),
+  .rcl-race-grid-recap > div:nth-child(9),
+  .rcl-race-grid-recap > div:nth-child(10) { display: none; }
+  .rcl-race-grid-recap .rcl-standings-mfr-logo-slot { width: 42px; height: 24px; }
+  .rcl-race-grid-recap .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
+  .rcl-race-col-head.rcl-race-grid-recap { font-size: 13px; }
+  .rcl-race-grid-recap .rcl-board-num { font-size: 13px; }
   .rcl-modal-dialog-allresults .rcl-standings-team,
   #rcl-standings-body .rcl-standings-team,
   #rcl-results-body .rcl-standings-team { display: none; }

@@ -1662,8 +1662,10 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
 
     // Column labels, divider line BELOW them -- POS, DRIVER, LAPS, TOTAL TIME, INTERVAL, GAP, AVG
     // (KM/H), BEST LAP, PTS. PEN removed and INTERVAL put back in its slot.
-    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-allresults');
+    var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-recap');
     headRow.appendChild(_rclEl('div', null, 'Pos'));
+    headRow.appendChild(_rclEl('div', null, 'Manu'));
+    headRow.appendChild(_rclEl('div', null, 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
     headRow.appendChild(_rclEl('div', null, 'Driver'));
     headRow.appendChild(_rclEl('div', null, 'Laps'));
     headRow.appendChild(_rclEl('div', null, 'Total Time'));
@@ -1685,12 +1687,15 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       var dnf = _rclIsDnf_(row);
       // Pos badge + driver identity, identical markup to Current Standings, same metal coloring by
       // finish position.
-      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-allresults' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
+      var rowEl = _rclEl('div', 'rcl-race-row rcl-race-grid-recap' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
       // Suspended (SUS) takes precedence over DSQ/DNF -- synthetic row injected server-side
       // (Results.gs) for every round on/after a Tier 7 ruling's effective round, All Results popup
       // only.
       rowEl.appendChild(_rclBuildPosBadge_(idx, row.suspended ? 'SUS' : (row.disqualified ? 'DSQ' : (dnf ? 'DNF' : undefined))));
-      rowEl.appendChild(_rclBuildDriverIdentity_(row, dnf));
+      // Same cells as the Standings board: maker logo | N° | driver name + flag (no team name).
+      var recapCells = _rclBoardIdentityCells_(row, 'drivers', undefined, '');
+      if (dnf) { recapCells[1].classList.add('rcl-recap-dnf'); recapCells[2].classList.add('rcl-standings-identity-dnf'); }
+      recapCells.forEach(function (cell) { rowEl.appendChild(cell); });
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
       // Total Time still shows the CORRECTED time -- raw finishTimeSeconds plus this driver's own
@@ -1718,7 +1723,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   if (allResultsNotice) bodyEl.appendChild(allResultsNotice);
   // Mobile-only "view on PC" nudge (see _rclBuildMobileViewOnPcNote_ above for the full history) --
   // the standings grid above collapses down to just Pos/Driver/Pts on phone widths (see
-  // .rcl-race-grid-allresults' mobile override, league.css), so a phone visitor is told there's
+  // .rcl-race-grid-recap' mobile override, league.css), so a phone visitor is told there's
   // more detail (Laps/Total Time/Pen/Gap/Avg/Best Lap) on a bigger screen.
   bodyEl.appendChild(_rclBuildMobileViewOnPcNote_());
 

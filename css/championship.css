@@ -329,6 +329,16 @@ body.rc-league-page.rcc-page {
 .rcc-board .rcc-me-text { color: var(--rc-carbon); font-weight: 700; }
 
 /* -------------------------------------------------------------------- */
+/* Race Recap results tables: the player's own row in bold (everyone else is normal weight). */
+.rcl-race-grid-recap .rcc-board-num { font-size: 14.5px; font-weight: 400; color: var(--rc-carbon); }
+.rcl-race-grid-recap .rcc-me-text { color: var(--rc-carbon); }
+.rcl-race-grid-recap.rcc-row-me .rcl-race-row-num,
+.rcl-race-grid-recap.rcc-row-me .rcl-race-row-pts,
+.rcl-race-grid-recap.rcc-row-me .rcc-board-num,
+.rcl-race-grid-recap.rcc-row-me .rcl-standings-name { font-weight: 700; }
+.rcc-recap-dnf { color: var(--rc-steel); }
+@media (max-width: 640px) { .rcl-race-grid-recap .rcc-board-num { font-size: 13px; } }
+
 /* Last Race extras                                                      */
 /* -------------------------------------------------------------------- */
 .rcc-cta {
