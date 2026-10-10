@@ -1971,6 +1971,13 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // In-memory cache, this popup instance only.
   var resultCache = {};
 
+  // Both dropdowns are locked while a round/session is being fetched, and unlocked the moment the
+  // request ends (worked, failed or auth error). Cached rounds draw instantly and never lock them.
+  function busy(on) {
+    select.disabled = on;
+    sessionSelect.disabled = on;
+  }
+
   function loadRound(roundId, sessionKind) {
     var cacheKey = roundId + ':' + sessionKind;
     var isQualifying = sessionKind === 'qualifying';
@@ -1985,29 +1992,22 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
     resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : 'Loading round results...'));
-    if (isQualifying) {
-      // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults below, since a
-      // Qualify session's data (best lap + sectors, no finish position/gap/interval) has almost
-      // nothing in common with a Race session's row shape.
-      fetchApi('getPublicRoundQualifying', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
-        var result = (res && res.success) ? res.result : null;
-        resultCache[cacheKey] = result;
-        _rclBuildQualifyingBody_(result, resultsWrap);
-      }).catch(function () {
-        _rclBuildQualifyingBody_(null, resultsWrap);
-      });
-      return;
-    }
-    // BUG FIX: roundId was passed as a bare options field instead of inside options.params, so
-    // fetchApi never actually put it on the URL -- the server always saw a missing roundId and
-    // returned MISSING_ROUND_ID, meaning "View All Results" on league.html could never actually
-    // show a round's results.
-    fetchApi('getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+    busy(true);
+    // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
+    // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
+    // common with a Race session's row shape.
+    // BUG FIX (kept): roundId goes inside options.params so fetchApi really puts it on the URL.
+    fetchApi(isQualifying ? 'getPublicRoundQualifying' : 'getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+      busy(false);
       var result = (res && res.success) ? res.result : null;
       resultCache[cacheKey] = result;
-      _rclBuildAllResultsBody_(result, resultsWrap);
+      builder(result, resultsWrap);
+    }, function () {
+      busy(false);
+      builder(null, resultsWrap);
     }).catch(function () {
-      _rclBuildAllResultsBody_(null, resultsWrap);
+      // Anything thrown while drawing must never leave the dropdowns locked.
+      busy(false);
     });
   }
 

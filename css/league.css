@@ -2408,3 +2408,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-panel-body > [hidden] { display: none !important; }
 /* Drivers and Teams boards share one panel body; neither gets the stacked-board gap, so the switch doesn't move the board. */
 .rcl-panel-body > .rcl-board { margin-top: 0; }
+
+/* Race Recap dropdowns are locked while a round/session loads. */
+.rcl-allresults-select:disabled,
+.rcl-allresults-session-select:disabled { opacity: 0.55; cursor: not-allowed; }
