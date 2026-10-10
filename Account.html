@@ -7184,7 +7184,7 @@
   // Hero image upload was pulled back out.gs for why. May return later behind a narrower Drive
   // scope.
 
-  var RC_NEWS_BODY_MAX_CHARS = 2500;
+  var RC_NEWS_BODY_MAX_CHARS = 10000;
 
   // Formatting toolbar -- inserts plain-text markers around the textarea's current selection:
   // **bold**, *italic*, ++underline++, "> " line-quote, and [Link Text](mailto:EMAIL@EXAMPLE.COM)
@@ -7248,7 +7248,7 @@
     return bar;
   }
   // Character counter + hard cap -- textarea.maxLength stops typing/most
-  // pastes at the limit; this just keeps the "X / 2500" label current.
+  // pastes at the limit; this just keeps the "X / 10000" label current.
   function _rcAttachNewsCharCounter(textarea) {
     textarea.maxLength = RC_NEWS_BODY_MAX_CHARS;
     var counter = el('div', 'rc-hint', textarea.value.length + ' / ' + RC_NEWS_BODY_MAX_CHARS);
