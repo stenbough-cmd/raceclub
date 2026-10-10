@@ -2406,3 +2406,5 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 
 /* A hidden standings board (the Drivers/Teams view not being shown) always wins over the board's own display. */
 .rcl-panel-body > [hidden] { display: none !important; }
+/* Drivers and Teams boards share one panel body; neither gets the stacked-board gap, so the switch doesn't move the board. */
+.rcl-panel-body > .rcl-board { margin-top: 0; }
