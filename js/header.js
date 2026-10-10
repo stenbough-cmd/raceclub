@@ -1,6 +1,42 @@
 // Race Club — js/header.js (v0.4.0)
 // Shared fixed site header used on every page.
 var RC_HEADER_HEIGHT = 70;
+
+// Return-to-page after login (ECO chat, 2026-10-10). When someone starts Register / Login from the
+// home, League Hub, Championship or driver profile page, we remember that page for 30 minutes
+// (sessionStorage, this tab only). login.html sends them back to it after a successful login
+// instead of the Dashboard. Works through register -> verify -> login too, since all of that stays
+// in the same tab. Any other way into login.html (Account.html timing out, a typed address) has
+// nothing remembered, so those still go to the Dashboard.
+var RC_RETURN_PAGES_ = ['', 'index.html', 'league.html', 'championship.html', 'profile.html'];
+function rcRememberReturnPage() {
+  try {
+    var file = (location.pathname.split('/').pop() || '').toLowerCase();
+    if (RC_RETURN_PAGES_.indexOf(file) === -1) return;
+    sessionStorage.setItem('raceclub_return_to', JSON.stringify({ url: (file || 'index.html') + location.search + location.hash, t: Date.now() }));
+  } catch (e) {}
+}
+// Where login.html should go: the remembered page if it is fresh and one of the allowed pages,
+// otherwise the Dashboard. Clears the memory either way.
+function rcTakeReturnPage() {
+  var dest = 'Account.html';
+  try {
+    var raw = sessionStorage.getItem('raceclub_return_to');
+    sessionStorage.removeItem('raceclub_return_to');
+    var o = raw ? JSON.parse(raw) : null;
+    if (o && o.url && (Date.now() - o.t) < 30 * 60 * 1000 && /^[a-z0-9-]+\.html([?#][^\s]*)?$/i.test(o.url)) {
+      var f = o.url.split(/[?#]/)[0].toLowerCase();
+      if (RC_RETURN_PAGES_.indexOf(f) > 0) dest = o.url;
+    }
+  } catch (e) {}
+  return dest;
+}
+document.addEventListener('click', function (evt) {
+  var a = evt.target && evt.target.closest ? evt.target.closest('a[href]') : null;
+  if (!a) return;
+  var h = a.getAttribute('href') || '';
+  if (/^(login|register)\.html([?#]|$)/i.test(h)) rcRememberReturnPage();
+}, true);
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
 // Shared avatar helpers -- defined here, not duplicated per file, since header.js already loads on

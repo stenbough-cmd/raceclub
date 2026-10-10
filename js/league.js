@@ -2960,6 +2960,7 @@ function _rclRenderWebsiteContainers(hub) {
       } else if (def.label === 'Member List') {
         _rclOpenMemberListModal(hub);
       } else if (def.label === 'Join Race Club') {
+        if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
         window.location.href = 'register.html';
       }
     }
