@@ -119,6 +119,17 @@ var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 // as an empty cell. A pack typed in with the [+] button is saved on the car/track and appears in the
 // dropdown automatically from then on, so this list only needs a line added when you want a new pack
 // there ahead of time.
+// Car picture path (ECO chat, 2026-10-10): assets/cars/<year>-<number>.png for WEC cars and
+// assets/cars/<year>-elms-<number>.png for ELMS cars (Cars.Series = ELMS; blank = WEC). The loader
+// (js/img-loader.js) tries .webp first, then .jpg/.jpeg, then .png. '' when year or number is missing.
+function rcCarImageSrc(year, carNumber, series) {
+  var y = String(year === undefined || year === null ? '' : year).trim();
+  var n = String(carNumber === undefined || carNumber === null ? '' : carNumber).trim();
+  if (!y || !n) return '';
+  var tag = String(series || '').trim().toUpperCase() === 'ELMS' ? '-elms' : '';
+  return 'assets/cars/' + encodeURIComponent(y) + tag + '-' + encodeURIComponent(n) + '.png';
+}
+
 var DLC_PACKS = [
   '2024 Pack 1', '2024 Pack 2', '2024 Pack 3', '2024 Pack 4', '2024 Pack 5',
   'ELMS Pack 1', 'ELMS Pack 2', 'ELMS Pack 3',

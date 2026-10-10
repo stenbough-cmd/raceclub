@@ -1314,7 +1314,7 @@
         logo.className = 'rc-cs-logo';
         logo.alt = data.team || '';
         logo.onerror = function () { logoWrap.style.display = 'none'; };
-        logo.src = 'assets/cars/' + encodeURIComponent(String(data.carYear).trim()) + '-' + encodeURIComponent(String(data.carNumber).trim()) + '.png';
+        logo.src = rcCarImageSrc(data.carYear, data.carNumber, data.carSeries);
         logoWrap.appendChild(logo);
         row.appendChild(logoWrap);
       }
@@ -8876,7 +8876,7 @@
             // manufacturer logo. js/img-loader.js tries .webp, then .jpg/.jpeg, then .png. No
             // picture at all = an empty slot, so the text column still lines up.
             if (c.Season && c.CarNumber) {
-              logo.src = 'assets/cars/' + encodeURIComponent(String(c.Season).trim()) + '-' + encodeURIComponent(String(c.CarNumber).trim()) + '.png';
+              logo.src = rcCarImageSrc(c.Season, c.CarNumber, c.Series);
               logo.onerror = function () { logo.style.display = 'none'; };
             } else {
               logo.style.display = 'none';

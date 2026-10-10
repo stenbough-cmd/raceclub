@@ -603,7 +603,7 @@ function rccRenderTicker(page) {
 // ---------------------------------------------------------------------
 // Podium tiles show the car's profile picture (assets/cars/<year>-<number>.png) where the maker
 // logo used to be; a missing picture shows nothing (Matt). year: the class's season year.
-function _rccPodium(rows, year) {
+function _rccPodium(rows, year, series) {
   var top3 = (rows || []).slice(0, 3);
   var podium = _rccEl('div', 'rcl-lr-podium');
   if (!top3.length) { podium.appendChild(_rccEmpty('No Data To Display', 'No classified finishers yet.')); return podium; }
@@ -616,7 +616,7 @@ function _rccPodium(rows, year) {
       var car = document.createElement('img');
       car.className = 'rcc-podium-car';
       car.alt = '';
-      car.src = 'assets/cars/' + encodeURIComponent(String(year)) + '-' + encodeURIComponent(String(row.carNumber)) + '.png';
+      car.src = rcCarImageSrc(year, row.carNumber, series);
       car.onerror = function () { car.style.display = 'none'; };
       drv.appendChild(car);
     }
@@ -748,7 +748,7 @@ function rccRenderLastRace(page) {
       var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' CHAMPIONS');
       h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' SEASON ' + page.seasonNumber));
       w.appendChild(h);
-      w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className)));
+      w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
       body.appendChild(w);
     });
     return;
@@ -785,7 +785,7 @@ function rccRenderLastRace(page) {
     var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
     h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + r.roundNum + (r.track ? ' AT ' + r.track.toUpperCase() : '')));
     w.appendChild(h);
-    w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className)));
+    w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
     if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
     body.appendChild(w);
   });
@@ -965,20 +965,20 @@ function _rccMetalSwitch(view, onChange) {
 // Car profile picture for the CAR column: assets/cars/<season year>-<car number>.png (transparent
 // PNG, e.g. 2023-85.png for the 2023 Iron Dames #85). No two cars share a number in one season. A
 // missing picture leaves the slot empty, so the columns still line up.
-function _rccCarPic(year, carNumber) {
+function _rccCarPic(year, carNumber, series) {
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot rcc-board-car-slot');
   if (year && carNumber) {
     var img = document.createElement('img');
     img.className = 'rcl-standings-mfr-logo rcc-board-car';
     img.alt = '';
-    img.src = 'assets/cars/' + encodeURIComponent(String(year)) + '-' + encodeURIComponent(String(carNumber)) + '.png';
+    img.src = rcCarImageSrc(year, carNumber, series);
     img.onerror = function () { img.style.display = 'none'; };
     slot.appendChild(img);
   }
   return slot;
 }
 
-function _rccBoardCells(row, name, kind, carYear) {
+function _rccBoardCells(row, name, kind, carYear, series) {
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
   var num = _rccText('div', 'rcc-board-num', row.carNumber ? '#' + row.carNumber : '');
@@ -988,7 +988,7 @@ function _rccBoardCells(row, name, kind, carYear) {
     : _rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), name));
   nameCell.title = name + (row.carNumber ? ' #' + row.carNumber : '');
   // carYear is set only on boards that show the CAR column (Teams boards and Hypercar).
-  return carYear !== undefined ? [slot, _rccCarPic(carYear, row.carNumber), num, nameCell] : [slot, num, nameCell];
+  return carYear !== undefined ? [slot, _rccCarPic(carYear, row.carNumber, series), num, nameCell] : [slot, num, nameCell];
 }
 
 function _rccStandingsBoard(page, className, kind) {
@@ -1050,7 +1050,7 @@ function _rccStandingsBoard(page, className, kind) {
     var row = line.row;
     var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
     rowEl.appendChild(_rccPosBadge(idx));
-    _rccBoardCells(row, line.names.join(', '), kind, carYear).forEach(function (cell) { rowEl.appendChild(cell); });
+    _rccBoardCells(row, line.names.join(', '), kind, carYear, sd.series).forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rccEl('div', 'rcc-board-round');
       var i = scoredIdx[r.roundId];

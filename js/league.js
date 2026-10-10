@@ -762,20 +762,20 @@ function _rclBoardMetalSwitch_(view, onChange) {
 // Car profile picture for the CAR column: assets/cars/<season year>-<car number>.png (transparent
 // PNG, e.g. 2026-85.png). The year is the class's car year from Season setup. A missing picture
 // leaves the slot empty so the columns still line up.
-function _rclCarPic_(year, carNumber) {
+function _rclCarPic_(year, carNumber, series) {
   var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot rcl-board-car-slot');
   if (year && carNumber) {
     var img = document.createElement('img');
     img.className = 'rcl-standings-mfr-logo rcl-board-car';
     img.alt = '';
-    img.src = 'assets/cars/' + encodeURIComponent(String(year)) + '-' + encodeURIComponent(String(carNumber)) + '.png';
+    img.src = rcCarImageSrc(year, carNumber, series);
     img.onerror = function () { img.style.display = 'none'; };
     slot.appendChild(img);
   }
   return slot;
 }
 
-function _rclBoardIdentityCells_(row, kind, carYear) {
+function _rclBoardIdentityCells_(row, kind, carYear, carSeries) {
   var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var img = document.createElement('img');
@@ -810,7 +810,7 @@ function _rclBoardIdentityCells_(row, kind, carYear) {
   // Hover shows the full name and number when the name is cut off with "...".
   nameRow.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
   // carYear is set only on boards that show the CAR column (Teams boards and Hypercar).
-  return carYear !== undefined ? [slot, _rclCarPic_(carYear, row.carNumber), num, nameRow] : [slot, num, nameRow];
+  return carYear !== undefined ? [slot, _rclCarPic_(carYear, row.carNumber, carSeries), num, nameRow] : [slot, num, nameRow];
 }
 
 // "+1 Bonus points for Pole Position, Fastest Lap, Most Laps Led" when every bonus is worth the same,
@@ -913,7 +913,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   rows.forEach(function (row, idx) {
     var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
     rowEl.appendChild(_rclBuildPosBadge_(idx));
-    _rclBoardIdentityCells_(row, kind, carYear).forEach(function (cell) { rowEl.appendChild(cell); });
+    _rclBoardIdentityCells_(row, kind, carYear, (hub.carSeries || {})[className + '|' + String(row.carNumber === undefined ? '' : row.carNumber).trim()] || '').forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rclEl('div', 'rcl-board-round');
       var i = scoredIdx[r.roundId];
@@ -1207,7 +1207,7 @@ function _rclRenderLastRace_(hub) {
         headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FROM SEASON ' + hub.seasonNumber));
       }
       clsWrap.appendChild(headerDiv);
-      clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className]));
+      clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
       if ((cls.mentions || []).length) {
         clsWrap.appendChild(_rclBuildLastSeasonMentions_(cls.mentions));
       }
@@ -1232,7 +1232,7 @@ function _rclRenderLastRace_(hub) {
       headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
     }
     clsWrap.appendChild(headerDiv);
-    clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className]));
+    clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
     if ((cls.headlineMentions || []).length) {
       clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
     }
@@ -1245,7 +1245,7 @@ function _rclRenderLastRace_(hub) {
 // PLACE NUMBER lives inside the stand, vertically centered; the driver's identity (manufacturer
 // logo above a flag + car number + name line) sits above the stand, not inside a boxed tile like
 // Manufacturers' Standings' logo tiles.
-function _rclBuildLastRacePodium_(cls, carYear) {
+function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
   var top3 = (cls.standings || []).slice(0, 3);
   var podium = _rclEl('div', 'rcl-lr-podium');
   if (!top3.length) {
@@ -1268,7 +1268,7 @@ function _rclBuildLastRacePodium_(cls, carYear) {
       var img = document.createElement('img');
       img.className = 'rcl-lr-podium-car';
       img.alt = '';
-      img.src = 'assets/cars/' + encodeURIComponent(String(carYear)) + '-' + encodeURIComponent(String(row.carNumber)) + '.png';
+      img.src = rcCarImageSrc(carYear, row.carNumber, (carSeriesMap || {})[(cls.className || '') + '|' + String(row.carNumber).trim()]);
       img.onerror = function () { img.style.display = 'none'; };
       driverWrap.appendChild(img);
     }
