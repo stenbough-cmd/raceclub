@@ -326,13 +326,12 @@ p { margin: 0 0 0.75em; }
   justify-content: center;
   align-items: center;
 }
-/* The logo image itself -- capped at 80px wide / 40px tall (whichever the image's own aspect ratio
-   hits first) -- narrower than .rc-dm-sponsor-logo below (100px), since manufacturer marks are
-   smaller/ more square than sponsor wordmarks. */
+/* The car picture in the Cars list -- capped at 120px wide / 40px tall (whichever the image's own
+   aspect ratio hits first). */
 .rc-dm-car-logo {
   width: auto;
   height: auto;
-  max-width: 80px;
+  max-width: 120px;
   max-height: 40px;
   object-fit: contain;
   flex: none;

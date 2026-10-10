@@ -8858,12 +8858,15 @@
             var logo = document.createElement('img');
             logo.className = 'rc-dm-car-logo';
             logo.alt = '';
-            logo.src = manufacturerLogoSrc(c.Manufacturer || '', 'black');
-            // Tries the same-named .svg if the .png 404s, and only then hides gracefully rather
-            // than showing a broken-image icon -- same pattern currentSeatBlock() uses elsewhere
-            // for this exact file naming convention (see manufacturerLogoFallback()'s own comment
-            // in reference-data.js).
-            manufacturerLogoFallback(logo, c.Manufacturer || '', function () { logo.style.display = 'none'; });
+            // The car's own picture (assets/cars/<Season>-<CarNumber>, e.g. 2026-85) instead of the
+            // manufacturer logo. js/img-loader.js tries .webp, then .jpg/.jpeg, then .png. No
+            // picture at all = an empty slot, so the text column still lines up.
+            if (c.Season && c.CarNumber) {
+              logo.src = 'assets/cars/' + encodeURIComponent(String(c.Season).trim()) + '-' + encodeURIComponent(String(c.CarNumber).trim()) + '.png';
+              logo.onerror = function () { logo.style.display = 'none'; };
+            } else {
+              logo.style.display = 'none';
+            }
             logoCol.appendChild(logo);
             info.appendChild(logoCol);
 
