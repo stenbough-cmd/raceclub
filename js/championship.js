@@ -1241,12 +1241,13 @@ function _rccSeatLine(page, dr, links) {
   }
   var textCol = _rccEl('div', 'rc-cs-textcol');
   var nameLine = _rccEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcr-who-name');
-  var driverName = (page.owner && page.owner.displayName) || '';
-  nameLine.appendChild(links ? _rccPlayerName('rcr-who-driver', driverName) : _rccText('span', 'rcr-who-driver', driverName));
+  // Header (links): TEAM NAME #57 only, bold black, no driver name (Matt). Driver Report: DRIVER NAME
+  // bold, then the team in steel.
+  if (!links) nameLine.appendChild(_rccText('span', 'rcr-who-driver', (page.owner && page.owner.displayName) || ''));
   var teamName = dr.teamName || reg.teamName || '';
   var teamText = teamName + (carNumber ? ' #' + carNumber : '');
   if (teamText) {
-    var team = links ? _rccEl('button', 'rcr-who-team rcc-seat-line-team') : _rccEl('span', 'rcr-who-team');
+    var team = links ? _rccEl('button', 'rcr-who-driver rcc-seat-line-team') : _rccEl('span', 'rcr-who-team');
     team.textContent = teamText;
     if (links) { team.type = 'button'; team.title = 'Team Information'; team.addEventListener('click', rccOpenTeamInfo); }
     nameLine.appendChild(team);

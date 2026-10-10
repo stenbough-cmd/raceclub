@@ -763,6 +763,9 @@ a.rcc-hero-meta-name { color: inherit; }
 /* Header seat line (same as the Driver Report's): the name links to the profile, the team opens
    Team Information. Links keep the line's own colors; underline on hover. */
 .rcc-hero-meta .rcc-seat-line { margin: 6px 0 0; }
+/* With the seat line showing, the space under it matches the space above the eyebrow (46px, Matt).
+   Phones already match (20px each). */
+@media (min-width: 641px) { .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-bottom: 45px; } }
 a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcc-seat-line-team { background: none; border: none; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
