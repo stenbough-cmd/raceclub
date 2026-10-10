@@ -114,6 +114,17 @@ var EVENT_LENGTHS = ['Sprint', 'Endurance', 'Mixed'];
 // Cars panel's Class dropdown (Account.html) and the Create Season wizard's class checkboxes.
 var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 
+// DLC packs that already exist for Le Mans Ultimate (ECO chat, 2026-10-10). Fills the DLC dropdown in
+// the Add/Edit Track and Car popups. "Base" (the base game) is always the first choice and is saved
+// as an empty cell. A pack typed in with the [+] button is saved on the car/track and appears in the
+// dropdown automatically from then on, so this list only needs a line added when you want a new pack
+// there ahead of time.
+var DLC_PACKS = [
+  '2024 Pack 1', '2024 Pack 2', '2024 Pack 3', '2024 Pack 4', '2024 Pack 5',
+  'ELMS Pack 1', 'ELMS Pack 2', 'ELMS Pack 3',
+  'US Track Pack 1', 'US Track Pack 2'
+];
+
 // CAR OBJECTIVES SYSTEM -- a second, independent bonus layer alongside Sponsors, bound to a car for
 // one season. Unlike class, this is ONE global grouping across every class combined (a GT3 and a
 // Hypercar can both be "High" side by side) -- set by hand per car/team in Car Management

@@ -7603,6 +7603,8 @@
     });
     form.appendChild(country);
 
+    var dlcField = _rcBuildDlcField(form, '', token);
+
     var saveBtn = el('button', null, 'Add Track');
     saveBtn.type = 'submit';
     saveBtn.className = 'rc-btn-primary';
@@ -7623,7 +7625,7 @@
       _rcRunWrite(saveBtn, 'Adding Track...', function () {
         return fetchApi('adminAddTrackLayout', {
           method: 'POST', token: token,
-          body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim(), country: country.value }
+          body: { trackName: name.value.trim(), layout: layout.value.trim(), region: region.value.trim(), country: country.value, dlc: dlcField.getValue() }
         });
       })
         .then(function (data) {
@@ -7711,6 +7713,94 @@
     };
   }
 
+  // DLC pack picker for the Add/Edit Track and Car popups (ECO chat, 2026-10-10).
+  // A dropdown: "Base" (the base game, saved as an empty cell), then every DLC pack in DLC_PACKS
+  // (reference-data.js) plus any pack already saved on a car or track (action=getDlcOptions, merged
+  // in as soon as it arrives). The [+] button swaps the dropdown for a text box so a brand-new pack
+  // can be typed in; the button then becomes [x] to go back to the dropdown. Saving writes whatever
+  // is showing. On the next open the new pack is in the dropdown because it is now saved on a row.
+  // Returns { getValue() } -- '' means Base.
+  function _rcBuildDlcField(form, currentValue, token) {
+    form.appendChild(el('label', null, 'DLC'));
+    var row = el('div', 'display:flex;gap:6px;align-items:center;margin-top:4px;');
+    var select = document.createElement('select');
+    select.style.flex = '1';
+    select.style.marginTop = '0';
+    var textInput = el('input');
+    textInput.type = 'text';
+    textInput.placeholder = 'New DLC pack name, e.g. ELMS Pack 4';
+    textInput.style.flex = '1';
+    textInput.style.marginTop = '0';
+    textInput.style.display = 'none';
+    var toggle = el('button', 'rc-btn-secondary rc-btn-row', '+');
+    toggle.type = 'button';
+    toggle.title = 'Type in a new DLC pack';
+    toggle.setAttribute('aria-label', 'Type in a new DLC pack');
+    toggle.style.cssText = 'height:44px;min-width:44px;font-size:18px;';
+    row.appendChild(select);
+    row.appendChild(textInput);
+    row.appendChild(toggle);
+    form.appendChild(row);
+
+    var baseOpt = document.createElement('option');
+    baseOpt.value = ''; baseOpt.textContent = 'Base';
+    select.appendChild(baseOpt);
+    function addOption(name) {
+      name = String(name || '').replace(/\s+/g, ' ').trim();
+      if (!name || name.toLowerCase() === 'base') return;
+      for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value.toLowerCase() === name.toLowerCase()) return;
+      }
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      select.appendChild(opt);
+    }
+    (typeof DLC_PACKS !== 'undefined' ? DLC_PACKS : []).forEach(addOption);
+    addOption(currentValue);
+    select.value = '';
+    var cur = String(currentValue || '').trim();
+    for (var k = 0; k < select.options.length; k++) {
+      if (select.options[k].value.toLowerCase() === cur.toLowerCase()) { select.value = select.options[k].value; break; }
+    }
+    // Packs already saved on other cars/tracks (a pack typed in earlier). Failure just leaves the built-in list.
+    if (token) {
+      fetchApi('getDlcOptions', { token: token }).then(function (res) {
+        if (!res || !res.success) return;
+        var keep = select.value;
+        (res.options || []).forEach(addOption);
+        select.value = keep;
+      }).catch(function () {});
+    }
+
+    var typing = false;
+    toggle.addEventListener('click', function () {
+      typing = !typing;
+      select.style.display = typing ? 'none' : '';
+      textInput.style.display = typing ? '' : 'none';
+      toggle.innerHTML = typing ? '&times;' : '+';
+      toggle.title = typing ? 'Back to the list' : 'Type in a new DLC pack';
+      toggle.setAttribute('aria-label', toggle.title);
+      if (typing) textInput.focus();
+    });
+    form.appendChild(el('div', 'rc-hint', 'Pick Base for the base game. When a new DLC pack has just been released, press + and type its name; it will be in this list from then on.'));
+
+    return {
+      getValue: function () {
+        if (typing) {
+          var typed = textInput.value.replace(/\s+/g, ' ').trim();
+          if (typed) {
+            if (typed.toLowerCase() === 'base') return '';
+            for (var i = 0; i < select.options.length; i++) {
+              if (select.options[i].value.toLowerCase() === typed.toLowerCase()) return select.options[i].value;
+            }
+            return typed;
+          }
+        }
+        return select.value;
+      }
+    };
+  }
+
   function openAddCarModal(token, reload) {
     var body = el('div');
     var form = el('form');
@@ -7743,6 +7833,8 @@
     form.appendChild(el('label', null, 'Team Name'));
     var teamName = el('input'); teamName.type = 'text';
     form.appendChild(teamName);
+
+    var dlcField = _rcBuildDlcField(form, '', token);
 
     var champFields = _rcBuildCarChampFields(form, null);
 
@@ -7783,7 +7875,8 @@
             TeamName: teamName.value.trim(),
             DriverNames: champFields.getDriverNames(),
             FactoryTeam: champFields.getFactoryTeam(),
-            TeamDesc: teamDesc.value.trim()
+            TeamDesc: teamDesc.value.trim(),
+            DLC: dlcField.getValue()
           }
         });
       })
@@ -8451,6 +8544,9 @@
     countryInput.value = (rows[0] && rows[0].Country) || '';
     form.appendChild(countryInput);
 
+    var previousDlc = (rows[0] && rows[0].DLC) || '';
+    var dlcField = _rcBuildDlcField(form, previousDlc, token);
+
     var updateTrackBtn = el('button', null, 'Save Changes');
     updateTrackBtn.type = 'submit';
     updateTrackBtn.className = 'rc-btn-primary';
@@ -8565,6 +8661,7 @@
       var previousRegion = (rows[0] && rows[0].Region) || '';
       var newCountry = countryInput.value;
       var previousCountry = (rows[0] && rows[0].Country) || '';
+      var newDlc = dlcField.getValue();
       if (!newName) {
         showToast('Track name is required.', 'error');
         return;
@@ -8573,7 +8670,8 @@
       var shortNameChanged = newShortName !== previousShortName;
       var regionChanged = newRegion !== previousRegion;
       var countryChanged = newCountry !== previousCountry;
-      if (!nameChanged && !shortNameChanged && !regionChanged && !countryChanged) {
+      var dlcChanged = newDlc !== String(previousDlc).trim();
+      if (!nameChanged && !shortNameChanged && !regionChanged && !countryChanged && !dlcChanged) {
         modalHandle.close();
         return;
       }
@@ -8596,6 +8694,12 @@
         tasks.push(fetchApi('adminUpdateTrackCountry', {
           method: 'POST', token: token,
           body: { trackName: venueName, country: newCountry }
+        }));
+      }
+      if (dlcChanged) {
+        tasks.push(fetchApi('adminUpdateTrackDlc', {
+          method: 'POST', token: token,
+          body: { trackName: venueName, dlc: newDlc }
         }));
       }
       if (nameChanged) {
@@ -8824,6 +8928,8 @@
     var teamName = el('input'); teamName.type = 'text'; teamName.value = car.TeamName || '';
     form.appendChild(teamName);
 
+    var dlcField = _rcBuildDlcField(form, car.DLC || '', token);
+
     var champFields = _rcBuildCarChampFields(form, car);
 
     // Cars.Tier/ PreviousTier are now archived columns in the backend (see Core.gs's TAB_SCHEMAS),
@@ -8868,7 +8974,8 @@
             TeamName: teamName.value.trim(),
             DriverNames: champFields.getDriverNames(),
             FactoryTeam: champFields.getFactoryTeam(),
-            TeamDesc: teamDesc.value.trim()
+            TeamDesc: teamDesc.value.trim(),
+            DLC: dlcField.getValue()
           }
         });
       })
