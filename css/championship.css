@@ -781,9 +781,24 @@ a.rcc-hero-meta-name { color: inherit; }
 /* Header seat line (same as the Driver Report's): the name links to the profile, the team opens
    Team Information. Links keep the line's own colors; underline on hover. */
 .rcc-hero-meta .rcc-seat-line { margin: 6px 0 0; }
-/* With the seat line showing, the space under it matches the space above the eyebrow (46px, Matt).
-   Phones already match (20px each). */
-@media (min-width: 641px) { .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-bottom: 45px; } }
+/* Hero band the same height as league.html's (Matt), with the text block centred as a unit.
+   League Hub: eyebrow + title + season line inside 46px top / 58px bottom padding. Championship has
+   the same lines (same fonts, so the same heights at every width) plus the seat line, so its
+   padding is cut by the seat line's height and split evenly top and bottom:
+   - no seat line (welcome, no team yet): 53.4px + 53.4px (League's 104px plus the empty meta
+     line's -3px pull-up);
+   - with the seat line (about 55px taller): 24.3px + 24.3px.
+   Phones: League is a 150px centred band; the seat line's car box shrinks to 36px tall so it fits. */
+@media (min-width: 641px) {
+  .rcc-page .rcl-hero { padding-top: 53.4px; padding-bottom: 53.4px; }
+  .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 24.3px; padding-bottom: 24.3px; }
+}
+@media (max-width: 640px) {
+  .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 7.5px; padding-bottom: 7.5px; }
+  .rcc-hero-meta .rcc-seat-line { margin-top: 4px; }
+  .rcc-hero-meta .rc-cs-logo-wrap { height: 36px; min-width: 0; }
+  .rcc-hero-meta .rc-cs-logo { max-height: 36px; max-width: 90px; }
+}
 a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcc-seat-line-team { background: none; border: none; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
