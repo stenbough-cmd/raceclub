@@ -466,8 +466,6 @@ body.rc-league-page.rcc-page {
 .rcc-myteam { padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
 .rcc-myteam-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 8px; }
 .rcc-myteam .rcc-seat-line { margin: 0; }
-/* Joined date on the car line after the class pill, about three spaces away, italic (Matt). */
-.rcc-seat-joined { margin-left: 4px; font-style: italic; }
 .rcc-myteam-desc { margin-top: 10px; }
 /* Team Information: every car picture gets the same 150px box so the team names line up. */
 .rcc-myteam .rc-cs-logo-wrap,
