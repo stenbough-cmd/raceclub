@@ -3028,6 +3028,8 @@ function rccRunStoryQueue(page) {
     RCC.storyWriting = null;
     if (_rccHandleAuthError(res)) return;
     // The server's own reason shows under the notice, so a setup problem can be spotted.
+    // Another request (a retry of this one) is already writing it: wait for it instead.
+    if (res && res.success && res.already && res.status === 'writing') { RCC.storyWriting = next; rccRenderStories(page); _rccWatchStory(page, next, Date.now() + 6 * 60 * 1000); return; }
     if (!res || !res.success) { RCC.storyFailed = next; RCC.storyFailedWhy = (res && (res.message || res.error)) || 'No answer from the server.'; rccRenderStories(page); return; }
     return _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
       if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; _rccForgetSavedPages(); }
@@ -3035,9 +3037,29 @@ function rccRunStoryQueue(page) {
       if (lr && lr.success && lr.queue.length) rccRunStoryQueue(page);
     });
   }).catch(function () {
-    RCC.storyWriting = null;
-    RCC.storyFailed = next;
-    RCC.storyFailedWhy = 'No answer from the server.';
-    rccRenderStories(page);
+    // The browser can give up on a long request while Apps Script is still writing the story (a full
+    // column can take a few minutes). Keep checking the story list for up to 6 more minutes before
+    // calling it a failure, and keep the "Writing..." notice up meanwhile.
+    _rccWatchStory(page, next, Date.now() + 6 * 60 * 1000);
   });
+}
+
+function _rccWatchStory(page, item, until) {
+  setTimeout(function () {
+    _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
+      if (!lr || !lr.success) throw new Error('list');
+      var key = function (s) { return item.kind === 'preview' ? s.kind === 'preview' : s.roundId === item.roundId; };
+      var mine = (lr.stories || []).filter(key)[0];
+      if (mine && mine.status === 'writing' && Date.now() < until) { _rccWatchStory(page, item, until); return; }
+      RCC.storyWriting = null;
+      page.stories = lr.stories; page.queue = lr.queue; page.storyQueue = lr.queue;
+      if (!mine || mine.status !== 'published') { RCC.storyFailed = item; RCC.storyFailedWhy = mine && mine.status === 'failed' ? 'The writer stopped before finishing. Retry the story.' : 'No answer from the server.'; }
+      else _rccForgetSavedPages();
+      rccRenderStories(page);
+      if (mine && mine.status === 'published' && lr.queue.length) rccRunStoryQueue(page);
+    }).catch(function () {
+      if (Date.now() < until) { _rccWatchStory(page, item, until); return; }
+      RCC.storyWriting = null; RCC.storyFailed = item; RCC.storyFailedWhy = 'No answer from the server.'; rccRenderStories(page);
+    });
+  }, 20000);
 }
