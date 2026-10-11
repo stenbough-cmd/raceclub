@@ -1747,8 +1747,8 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   /* stretched or letterboxed. */
   aspect-ratio: 2 / 1;
   z-index: 1;
-  background-image: url('../assets/images/banner.jpg');
-  background-image: image-set(url('../assets/images/banner.webp') type('image/webp'), url('../assets/images/banner.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */ /* relative to THIS file (css/style.css), not the page -- assets/images/ is a sibling of css/, not a child of it */
+  background-image: url('../assets/images/home_header.jpg');
+  background-image: image-set(url('../assets/images/home_header.webp') type('image/webp'), url('../assets/images/home_header.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */ /* relative to THIS file (css/style.css), not the page -- assets/images/ is a sibling of css/, not a child of it */
   background-size: cover;
   /* left center, not plain center. banner.jpg has its own text baked into the left side of the
      photo -- with `center`, `cover` crops evenly off BOTH edges as the window narrows, so the left
@@ -2156,7 +2156,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 .rc-step-card p { font-size: 13.5px; color: var(--rc-steel); margin-top: 8px; margin-bottom: 0; line-height: 1.55; }
 
 /* -------------------------------------------------------------------- */
-/* Mid-page banner (assets/images/banner-highlights.jpg)                       */
+/* Mid-page banner (assets/images/midpage_highlights.jpg)                       */
 /*                                                                       */
 /* Plain full-bleed image in normal document flow -- NOT the top hero's */
 /* fixed/spacer scroll-cover trick. It's meant to be scrolled past like */
@@ -2170,8 +2170,8 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   width: 100%;
   min-height: 340px;
   height: 46vh;
-  background-image: url('../assets/images/banner-highlights.jpg');
-  background-image: image-set(url('../assets/images/banner-highlights.webp') type('image/webp'), url('../assets/images/banner-highlights.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
+  background-image: url('../assets/images/midpage_highlights.jpg');
+  background-image: image-set(url('../assets/images/midpage_highlights.webp') type('image/webp'), url('../assets/images/midpage_highlights.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
