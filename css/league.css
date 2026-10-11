@@ -452,7 +452,7 @@ body.rc-league-page {
 /* Rest-of-field list, ranks 4 and on, below the top-3 podium. */
 .rcl-mfr-rest {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(var(--rcl-mfr-rest-rows, 1), auto);
   grid-auto-flow: column;
   column-gap: 32px;
@@ -469,15 +469,16 @@ body.rc-league-page {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--rcl-ink-dim);
+  min-width: 0;
 }
 .rcl-mfr-rest-rank { flex: 0 0 auto; }
-/* Small manufacturer logo: box is wider than tall (46x20) so short, wide logos show in full. */
-.rcl-mfr-rest-logo-slot { flex: 0 0 46px; width: 46px; height: 20px; display: flex; align-items: center; justify-content: center; }
-.rcl-mfr-rest-logo { max-width: 46px; max-height: 20px; width: auto; height: auto; object-fit: contain; display: block; }
-.rcl-mfr-rest-name { flex: 1 1 auto; }
+/* Small manufacturer logo: box is wider than tall (46x28) so short, wide logos show in full. */
+.rcl-mfr-rest-logo-slot { flex: 0 0 46px; width: 46px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.rcl-mfr-rest-logo { max-width: 46px; max-height: 28px; width: auto; height: auto; object-fit: contain; display: block; }
+.rcl-mfr-rest-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rcl-mfr-rest-pts { flex: 0 0 auto; }
 @media (max-width: 640px) {
-  .rcl-mfr-rest { grid-template-columns: 1fr; column-gap: 0; row-gap: 10px; }
+  .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); column-gap: 0; row-gap: 10px; }
   .rcl-mfr-rest-item { font-size: 12px; }
 }
 .rcl-mfr-podium {
@@ -2161,7 +2162,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-memberlist-name {
   font-family: var(--rc-font-heading);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--rcl-ink);
 }
 .rcl-memberlist-joined {

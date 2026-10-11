@@ -187,7 +187,7 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // no data-rc-section. The old in-account Career section has no link any more.
   var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
-    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">My Career</a>';
+    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">My Career Page</a>';
   }
   html += '<hr class="rc-header-menu-divider">';
   // Dashboard, then (by role) Admin / League Tools / Stewarding with no divider between them.
@@ -392,7 +392,7 @@ function renderHeader(opts) {
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
-              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">Help</a>' +
+              '<a class="rc-header-menu-item" href="Account.html#help" data-rc-section="help">League Rules</a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">Feedback</button>' +
               // Discord link, right under Feedback, matching the sidebar's own order exactly (Edit
               // Profile, Help, Feedback, Discord -- see buildSidebarNav, Account.html) -- opens in

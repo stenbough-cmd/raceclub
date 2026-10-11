@@ -451,7 +451,7 @@
     // My Career (was My Profile) -- off-page link to this driver's own public Driver Career Page
     // (profile.html?id=...), right under Championship. The old in-account Career section no longer
     // has a link: everything a driver wants to see lives on the public career page.
-    nav.appendChild(makeNavButton('myprofile', 'My Career', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
+    nav.appendChild(makeNavButton('myprofile', 'My Career Page', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
       if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
     }));
     nav.appendChild(navDivider());
@@ -486,7 +486,7 @@
     // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
     // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
     // sidebar/nav chrome, which read as leaving the site rather than part of the account.
-    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
+    nav.appendChild(makeNavButton('help', 'League Rules', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
     // Feedback -- opens the same page-agnostic popup the header dropdown's Feedback item opens
     // (_rcOpenFeedbackModal, js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js"> tag in <head>), not an in-page section.
@@ -3245,7 +3245,7 @@
     { icon: ICON_CALENDAR, title: 'Calendar',
       body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
     { icon: ICON_PROFILE, title: 'Driver Career Page',
-      body: 'Placeholder -- this will explain your public Driver Career page (My Career in the menu), where your seasons, results and stats live in one place.' },
+      body: 'Placeholder -- this will explain your public Driver Career page (My Career Page in the menu), where your seasons, results and stats live in one place.' },
     { icon: ICON_PROTESTS, title: 'Protests',
       body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
@@ -3268,7 +3268,7 @@
     var section = document.getElementById('rc-section-help');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Help'));
+    section.appendChild(el('h2', 'margin-top:0;', 'League Rules'));
 
     // "How To Use This Site" container REMOVED entirely.
 
