@@ -918,3 +918,26 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Legend: pit stop circle; space under the pit strategy key. */
 .rcr-legend-circle { border-radius: 50%; border-width: 2px; border-style: solid; width: 10px; height: 10px; }
 .rcr-legend-gap { margin-bottom: 18px; }
+
+/* Season Stories (2026-10-11): League News layout (league.css .rcl-news-*), plus the writing notice,
+   standfirst and thumbs feedback. */
+.rcc-story-status { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #b9c6d3; border-left: 4px solid #5f7d99; border-radius: 6px; background: #f4f7fa; font-size: 13px; }
+.rcc-story-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rcc-story-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--rc-red); flex: 0 0 auto; animation: rcc-story-pulse 1s ease-in-out infinite alternate; }
+@keyframes rcc-story-pulse { from { opacity: 0.25; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .rcc-story-pulse { animation: none; } }
+.rcc-story-failed { border-left-color: var(--rc-red); }
+.rcc-story-retry { font-weight: 700; }
+.rcc-story-standfirst { margin: 8px 0 0; font-size: 15px; font-style: italic; color: var(--rc-steel); line-height: 1.5; }
+.rcc-story-dialog .rcl-news-body { font-size: 15px; line-height: 1.7; color: var(--rc-carbon); }
+.rcc-story-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
+.rcc-story-vote-q { font-size: 13px; font-weight: 700; color: var(--rc-steel); }
+.rcc-thumb { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #c9d1da; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.rcc-thumb svg { width: 18px; height: 18px; fill: #8a94a3; }
+.rcc-thumb-down svg { transform: rotate(180deg); }
+.rcc-thumb:hover svg { fill: var(--rc-carbon); }
+.rcc-thumb-up.rcc-thumb-on { background: #2e9e5b; border-color: #2e9e5b; }
+.rcc-thumb-down.rcc-thumb-on { background: var(--rc-red); border-color: var(--rc-red); }
+.rcc-thumb-on svg { fill: #fff; }
+.rcc-story-why { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 8px 10px; border: 1px solid #c9d1da; border-radius: 6px; resize: vertical; }

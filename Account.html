@@ -6016,6 +6016,42 @@
 
     panel.appendChild(list);
     section.appendChild(panel);
+    section.appendChild(buildStoryFeedbackPanel(token));
+  }
+
+  // GENERATED STORY FEEDBACK (CHAMP chat, 2026-10-11) -- read-only list of every thumbs up / thumbs
+  // down readers gave the AI-written Season Stories on the Championship page, newest first, so the
+  // default story instructions can be improved over time. Data: Championship.gs champStory
+  // op=adminFeedback (Admin only).
+  function buildStoryFeedbackPanel(token) {
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.style.marginTop = '24px';
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Generated Story Feedback'));
+    var body = el('div', 'rc-story-fb-body');
+    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'Loading feedback...'));
+    panel.appendChild(body);
+    fetchApi('champStory', { token: token, params: { op: 'adminFeedback' }, timeoutMs: 60000 }).then(function (res) {
+      body.innerHTML = '';
+      if (!res || !res.success) { body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((res && res.message) || 'Could not load the feedback.'))); return; }
+      if (!res.feedback.length) { body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'No feedback yet.')); return; }
+      var table = el('div', 'display:flex;flex-direction:column;');
+      res.feedback.forEach(function (f) {
+        var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-offwhite);font-size:13px;');
+        var up = f.vote === 'up';
+        var when = f.createdAt ? new Date(f.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        row.appendChild(el('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;',
+          '<strong style="color:' + (up ? '#2e9e5b' : 'var(--rc-red)') + ';">' + (up ? 'Thumbs Up' : 'Thumbs Down') + '</strong>' +
+          '<span style="color:var(--rc-carbon);font-weight:700;">' + escapeHtml(f.title || 'Untitled story') + '</span>' +
+          '<span style="color:var(--rc-steel);">' + escapeHtml([f.reader, f.kind, when, f.promptVersion].filter(Boolean).join(' \u00B7 ')) + '</span>'));
+        if (f.comment) row.appendChild(el('div', 'margin-top:4px;color:var(--rc-carbon);', escapeHtml(f.comment)));
+        table.appendChild(row);
+      });
+      body.appendChild(table);
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', 'No answer from the server.'));
+    });
+    return panel;
   }
 
   // ---------------------------------------------------------------------

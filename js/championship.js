@@ -2762,6 +2762,8 @@ function rccRenderAll(page) {
   rccRenderCarousel(page);
   rccRenderStandings(page);
   rccRenderManufacturers(page);
+  rccRenderStories(page);
+  rccRunStoryQueue(page);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -2825,3 +2827,214 @@ document.addEventListener('DOMContentLoaded', function () {
   // Coming back with the browser's Back button can restore the page from memory; refresh quietly.
   window.addEventListener('pageshow', function (evt) { if (evt.persisted) revalidate(); });
 });
+
+// ---------------------------------------------------------------------
+// SEASON STORIES (Matt, 2026-10-11): Gemini's Season Preview, race stories and finale wrap-up, laid
+// out like the League Hub's League News (33% next to Last Race). The page asks the server to write
+// any missing story by itself (page.storyQueue), one at a time, oldest first.
+// ---------------------------------------------------------------------
+var RCC_STORY_PREVIEW_CHARS = 1000;
+
+function _rccStoryInline(esc) {
+  return esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+}
+// Full story body: blank lines split paragraphs; "## " lines are section headings.
+function _rccStoryBlocks(container, raw) {
+  String(raw || '').split(/\n\s*\n/).forEach(function (para) {
+    var run = [];
+    var flush = function () { if (run.length) container.appendChild(_rccEl('p', null, run.map(function (l) { return _rccStoryInline(_rccEsc(l)); }).join('<br>'))); run = []; };
+    para.trim().split('\n').forEach(function (line) {
+      var hm = /^##\s+(.+)$/.exec(line.trim());
+      if (hm) { flush(); container.appendChild(_rccEl('h3', 'rcl-news-h', _rccStoryInline(_rccEsc(hm[1])))); }
+      else if (line.trim()) run.push(line.trim());
+    });
+    flush();
+  });
+}
+// On-page preview: the first ~1,000 characters, cut at a word, with headings kept as headings.
+function _rccStoryPreview(raw, limit) {
+  var full = String(raw || '');
+  var cut = full;
+  var truncated = full.length > limit;
+  if (truncated) {
+    cut = full.slice(0, limit);
+    var sp = cut.lastIndexOf(' ');
+    if (sp > limit * 0.6) cut = cut.slice(0, sp);
+    cut = cut.replace(/[\s.,;:!?-]+$/, '') + '…';
+  }
+  var box = _rccEl('div', 'rcl-news-current-body');
+  _rccStoryBlocks(box, cut);
+  return { el: box, truncated: truncated };
+}
+function _rccStoryMeta(s) {
+  var bits = [];
+  if (s.kind === 'preview') bits.push('Season Preview');
+  else bits.push((s.kind === 'finale' ? 'Season Finale · ' : '') + 'Round ' + (s.roundNum || '?') + (s.track ? ' · ' + s.track : ''));
+  var d = _rccFormatDate(s.createdAt);
+  if (d) bits.push(d);
+  return bits.join(' · ');
+}
+
+function rccRenderStories(page) {
+  var body = document.getElementById('rcc-stories-body');
+  var panel = document.getElementById('rcc-stories-panel');
+  if (!body || !panel) return;
+  body.innerHTML = '';
+  panel.style.display = page && page.hasSeason ? '' : 'none';
+  if (!page || !page.hasSeason) return;
+  var all = page.stories || [];
+  var published = all.filter(function (s) { return s.status === 'published'; });
+  RCC.storyList = published;
+  var queue = page.storyQueue || [];
+  var failed = all.filter(function (s) { return s.status === 'failed'; });
+  // Writing / failed notice above the newest story.
+  if (RCC.storyWriting) {
+    var w = _rccEl('div', 'rcc-story-status');
+    w.appendChild(_rccEl('span', 'rcc-story-pulse'));
+    w.appendChild(_rccText('span', null, RCC.storyWriting.kind === 'preview' ? 'Writing your season preview. This takes about a minute.' : 'Writing the Round ' + (RCC.storyWriting.roundNum || '') + ' story. This takes about a minute.'));
+    body.appendChild(w);
+  } else if (RCC.storyFailed && !RCC.demo) {
+    var f = _rccEl('div', 'rcc-story-status rcc-story-failed');
+    f.appendChild(_rccText('span', null, 'The story could not be written this time. '));
+    var retry = _rccText('button', 'rc-link-btn rcc-story-retry', 'Retry Story');
+    retry.type = 'button';
+    retry.addEventListener('click', function () { RCC.storyFailed = null; rccRunStoryQueue(page); });
+    f.appendChild(retry);
+    body.appendChild(f);
+  }
+  if (!published.length) {
+    if (!RCC.storyWriting && !RCC.storyFailed) {
+      body.appendChild(_rccEmpty('No Stories Yet', page.registration ? 'Your season preview is on its way.' : 'Choose your team and your season preview will be written here.'));
+    }
+    return;
+  }
+  var cur = published[0];
+  var wrap = _rccEl('div', 'rcl-news-item rcl-news-current');
+  wrap.appendChild(_rccText('div', 'rcl-news-title', cur.title));
+  wrap.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(cur)));
+  var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
+  wrap.appendChild(pv.el);
+  var more = _rccText('a', 'rcl-news-continue', 'Continue Reading');
+  more.href = 'javascript:void(0)';
+  more.addEventListener('click', function () { rccOpenStory(0); });
+  wrap.appendChild(more);
+  body.appendChild(wrap);
+  if (published.length > 1) {
+    var prev = _rccEl('div', 'rcl-news-previous');
+    prev.appendChild(_rccText('div', 'rcl-news-previous-head', 'More Stories'));
+    published.slice(1, 6).forEach(function (s, i) {
+      var b = _rccText('button', 'rcl-news-previous-title', s.title || 'Untitled');
+      b.type = 'button';
+      b.addEventListener('click', function () { rccOpenStory(i + 1); });
+      prev.appendChild(b);
+    });
+    body.appendChild(prev);
+  }
+}
+
+// Thumbs up / down under a story (owner only; a thumbs down asks why). Locked in the demo.
+function _rccStoryVote(story) {
+  var box = _rccEl('div', 'rcc-story-vote');
+  box.appendChild(_rccText('span', 'rcc-story-vote-q', 'Did you enjoy this story?'));
+  var thumb = function (dir) {
+    var b = _rccEl('button', 'rcc-thumb rcc-thumb-' + dir + (story.vote === dir ? ' rcc-thumb-on' : ''),
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v9H4v-9h3zm2 9h8.2a2 2 0 0 0 2-1.6l1.3-6.4A2 2 0 0 0 18.5 9H14l.7-3.4A1.6 1.6 0 0 0 13.1 4L9 9.6V20z"/></svg>');
+    b.type = 'button';
+    b.setAttribute('aria-label', dir === 'up' ? 'Thumbs up' : 'Thumbs down');
+    b.setAttribute('aria-pressed', story.vote === dir ? 'true' : 'false');
+    if (RCC.demo) { _rccDemoLock(b); return b; }
+    b.addEventListener('click', function () {
+      if (dir === 'up') { send('up', ''); return; }
+      form.style.display = form.style.display === 'none' ? '' : 'none';
+      if (form.style.display === '') txt.focus();
+    });
+    return b;
+  };
+  box.appendChild(thumb('up'));
+  box.appendChild(thumb('down'));
+  var form = _rccEl('div', 'rcc-story-why');
+  form.style.display = 'none';
+  var txt = document.createElement('textarea');
+  txt.maxLength = 1000;
+  txt.rows = 3;
+  txt.placeholder = 'What didn’t you like about this story?';
+  form.appendChild(txt);
+  var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Send Feedback');
+  go.type = 'button';
+  go.addEventListener('click', function () {
+    if (!txt.value.trim()) { _rccToast('Tell us what you didn’t like about the story.', 'error'); return; }
+    send('down', txt.value.trim());
+  });
+  form.appendChild(go);
+  box.appendChild(form);
+  function send(vote, comment) {
+    _rccApi('champStory', { op: 'feedback', storyId: story.storyId, vote: vote, comment: comment }, { post: true }).then(function (res) {
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { _rccToast((res && res.message) || 'Could not save your feedback.', 'error'); return; }
+      story.vote = vote;
+      box.querySelectorAll('.rcc-thumb').forEach(function (t) { var on = t.classList.contains('rcc-thumb-' + vote); t.classList.toggle('rcc-thumb-on', on); t.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      form.style.display = 'none';
+      _rccToast('Thanks for the feedback. Your next stories will take it into account.', 'success');
+    }).catch(function () { _rccToast('Could not reach the server. Try again.', 'error'); });
+  }
+  return box;
+}
+
+// Full story popup with Load More Stories, like the League Hub's news popup.
+function rccOpenStory(startIndex) {
+  var list = RCC.storyList || [];
+  if (!list.length) return;
+  var m = rccOpenModal('Season Stories', { wide: true });
+  m.dialog.classList.add('rcc-story-dialog');
+  var shownUpTo = startIndex;
+  var more = _rccEl('div', 'rcl-modal-loadmore-wrap');
+  var moreBtn = _rccText('button', 'rcl-modal-loadmore-btn', 'Load More Stories');
+  moreBtn.type = 'button';
+  more.appendChild(moreBtn);
+  function add(s) {
+    var w = _rccEl('div', 'rcl-news-item rcl-modal-story');
+    w.appendChild(_rccText('div', 'rcl-news-title', s.title));
+    w.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(s)));
+    if (s.standfirst) w.appendChild(_rccText('p', 'rcc-story-standfirst', s.standfirst));
+    var b = _rccEl('div', 'rcl-news-body');
+    _rccStoryBlocks(b, s.body);
+    w.appendChild(b);
+    w.appendChild(_rccStoryVote(s));
+    m.body.appendChild(w);
+  }
+  add(list[startIndex]);
+  m.body.appendChild(more);
+  function vis() { more.style.display = shownUpTo >= list.length - 1 ? 'none' : ''; }
+  vis();
+  moreBtn.addEventListener('click', function () {
+    m.body.removeChild(more);
+    for (var n = 0; n < 3 && shownUpTo + 1 < list.length; n++) { shownUpTo++; add(list[shownUpTo]); }
+    m.body.appendChild(more);
+    vis();
+  });
+}
+
+// Writes the next missing story, then the next, refreshing the box after each one.
+function rccRunStoryQueue(page) {
+  if (RCC.demo || !page || !page.hasSeason || RCC.storyWriting) return;
+  var q = page.storyQueue || [];
+  if (!q.length) return;
+  var next = q[0];
+  RCC.storyWriting = next;
+  RCC.storyFailed = null;
+  rccRenderStories(page);
+  _rccApi('champStory', { op: 'generate', seasonId: page.seasonId, kind: next.kind, roundId: next.roundId || '' }, { timeoutMs: 330000 }).then(function (res) {
+    RCC.storyWriting = null;
+    if (_rccHandleAuthError(res)) return;
+    if (!res || !res.success) { RCC.storyFailed = next; rccRenderStories(page); if (res && res.error === 'NO_API_KEY') _rccToast(res.message, 'error'); return; }
+    return _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
+      if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; _rccForgetSavedPages(); }
+      rccRenderStories(page);
+      if (lr && lr.success && lr.queue.length) rccRunStoryQueue(page);
+    });
+  }).catch(function () {
+    RCC.storyWriting = null;
+    RCC.storyFailed = next;
+    rccRenderStories(page);
+  });
+}
