@@ -31,6 +31,22 @@ function _rcrAvg(arr) {
   return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null;
 }
 function _rcrShort(name) { var p = String(name || '').split(' '); return p.length > 1 ? p[p.length - 1] : name; }
+// Tyre compound circle: red S (soft), yellow M (medium), white H (hard), blue W (wet) (Matt).
+function _rcrCompKey(c) { var k = String(c || '').trim().charAt(0).toUpperCase(); return 'SMHW'.indexOf(k) !== -1 && k ? k : ''; }
+function _rcrCompDot(c) {
+  var k = _rcrCompKey(c);
+  if (!k) return null;
+  var d = _rccText('span', 'rcr-comp rcr-comp-' + k.toLowerCase(), k);
+  d.title = c;
+  return d;
+}
+// Same idea as _rccTip in championship.css: lightbulb, blue-gray border.
+function _rcrTipBox(title, paras) {
+  var t = _rccEl('div', 'rcc-tip');
+  if (title) t.appendChild(_rccText('strong', 'rcc-tip-title', title));
+  paras.forEach(function (p) { t.appendChild(_rccText('p', null, p)); });
+  return t;
+}
 function _rcrTread(v) { return v === null || v === undefined ? '#c3c9d2' : v >= 0.6 ? '#2e9e5b' : v >= 0.35 ? '#d4a017' : '#d7261e'; }
 function _rcrSvg(tag, attrs) {
   var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -58,8 +74,8 @@ function _rcrLegend(items) {
   var lg = _rccEl('div', 'rcr-legend');
   items.forEach(function (it) {
     var li = _rccEl('span', 'rcr-legend-item');
-    var sw = _rccEl('span', 'rcr-legend-swatch' + (it.dash ? ' rcr-legend-dash' : ''));
-    sw.style.background = it.dash ? 'transparent' : it.color;
+    var sw = _rccEl('span', 'rcr-legend-swatch' + (it.dash ? ' rcr-legend-dash' : '') + (it.circle ? ' rcr-legend-circle' : ''));
+    sw.style.background = it.circle ? '#fff' : (it.dash ? 'transparent' : it.color);
     sw.style.borderColor = it.color;
     li.appendChild(sw);
     li.appendChild(_rccText('span', null, it.name));
@@ -145,6 +161,7 @@ function _rcrLineChart(opts) {
     if (named.length > 1 || opts.faintName) {
       var items = named.map(function (s) { return { name: s.name, color: s.color, dash: s.dash }; });
       if (opts.faintName) items.push({ name: opts.faintName, color: RCR_FIELD });
+      if (opts.pitKey) items.push({ name: 'Pit stop', color: RCR_YOU, circle: true });
       wrap.appendChild(_rcrLegend(items));
     }
   }
@@ -374,7 +391,7 @@ function _rcrDraw(body, dr, mode) {
     }
     series.push({ name: 'You', color: RCR_YOU, values: you.cp, marks: youMarks, isYou: true });
     pb.appendChild(_rcrLineChart({ title: 'Race position', series: series, labels: lapLabels, yInvert: true, yMin: 1, yMax: Math.max(g.classSize || 1, 2),
-      yStep: (g.classSize || 2) <= 10 ? 1 : 2, yFmt: function (v) { return 'P' + Math.round(v); }, faintName: mode === 'class' ? 'Every other car' : null }));
+      yStep: (g.classSize || 2) <= 10 ? 1 : 2, yFmt: function (v) { return 'P' + Math.round(v); }, faintName: mode === 'class' ? 'Every other car' : null, pitKey: true }));
     body.appendChild(pb);
   }
 
@@ -393,11 +410,18 @@ function _rcrDraw(body, dr, mode) {
     function drawCar() {
       carHolder.innerHTML = '';
       var w = snaps[cur][1].w || [];
+      var ccs = snaps[cur][1].cc || [];
       var lab = function (c, i, side) {
         var d = _rccEl('div', 'rcr-corner rcr-corner-' + side);
         d.appendChild(_rccText('div', 'rcr-corner-name', c));
-        var pc = _rccText('div', 'rcr-corner-pct', _rcrPct(w[i]));
-        pc.style.color = w[i] !== null && w[i] < 0.35 ? '#b3261e' : '';
+        // Compound circle before the % on the left side and after it on the right, for balance.
+        var pc = _rccEl('div', 'rcr-corner-pct');
+        var num = _rccText('span', null, _rcrPct(w[i]));
+        num.style.color = w[i] !== null && w[i] < 0.35 ? '#b3261e' : '';
+        var dot = _rcrCompDot(ccs[i] || snaps[cur][1].comp);
+        if (dot && side === 'l') pc.appendChild(dot);
+        pc.appendChild(num);
+        if (dot && side === 'r') pc.appendChild(dot);
         d.appendChild(pc);
         var rate = (you.wpl || [])[i];
         var comp = compArr('wpl', i);
@@ -449,6 +473,41 @@ function _rcrDraw(body, dr, mode) {
         .sort(function (a, b) { return a.value - b.value; });
       tb.appendChild(_rcrBars(wrows, function (v) { return (v * 100).toFixed(1) + '%'; }));
     }
+    // Tyre sets (Matt): compounds each car used, how many tyres it went through, and the pace and
+    // wear on each set, which explains most of the wear differences above.
+    var setRows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }));
+    if (setRows.some(function (f) { return f.sets && f.sets.length; })) {
+      tb.appendChild(_rccText('div', 'rcr-mini-title', 'Tyre sets, compounds and pace'));
+      var st = _rccEl('div', 'rcr-sets');
+      var hd = _rccEl('div', 'rcr-sets-row rcr-sets-head');
+      ['Car', 'Sets (laps, typical lap, tread used per lap)', 'Tyres'].forEach(function (h) { hd.appendChild(_rccText('div', null, h)); });
+      st.appendChild(hd);
+      setRows.forEach(function (f) {
+        var r = _rccEl('div', 'rcr-sets-row' + (f.isPlayer ? ' rcr-sets-you' : ''));
+        r.appendChild(_rccText('div', 'rcr-sets-name', (f.finish ? 'P' + f.finish + ' ' : '') + '#' + f.carNumber + ' ' + _rcrShort(f.name)));
+        var chips = _rccEl('div', 'rcr-sets-chips');
+        (f.sets || []).forEach(function (sset) {
+          var chip = _rccEl('span', 'rcr-set');
+          String(sset.comp || '').split('/').forEach(function (cp) { var dt = _rcrCompDot(cp); if (dt) chip.appendChild(dt); });
+          chip.appendChild(_rccText('span', 'rcr-set-laps', 'Laps ' + sset.from + (sset.to !== sset.from ? '-' + sset.to : '')));
+          if (sset.ml) chip.appendChild(_rccText('span', 'rcr-set-pace', _rccLapTime(sset.ml)));
+          if (sset.wpl) chip.appendChild(_rccText('span', 'rcr-set-wear', (sset.wpl * 100).toFixed(1) + '%/lap'));
+          if (sset.corners && sset.corners < 4) chip.appendChild(_rccText('span', 'rcr-set-wear', sset.corners + ' new'));
+          chip.title = (sset.comp || 'Unknown compound') + ', laps ' + sset.from + ' to ' + sset.to + (sset.ml ? ', typical lap ' + _rccLapTime(sset.ml) : '') + (sset.wpl ? ', ' + (sset.wpl * 100).toFixed(1) + '% tread per lap on the most-worn corner' : '');
+          chips.appendChild(chip);
+        });
+        if (!(f.sets || []).length) chips.appendChild(_rccText('span', 'rcr-set-none', 'No data'));
+        r.appendChild(chips);
+        r.appendChild(_rccText('div', 'rcr-sets-tyres', f.tyres ? String(f.tyres) : '--'));
+        st.appendChild(r);
+      });
+      tb.appendChild(st);
+    } else if (dr.hasField) {
+      tb.appendChild(_rccText('p', 'rcr-note', 'Tyre sets, compounds and pace per set show for rounds uploaded from today on. Erase this round and upload the same files again to see them.'));
+    }
+    tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
+      'Le Mans Ultimate adjusts the AI\u2019s tyre wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tyre sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
+    ]));
     body.appendChild(tb);
   }
 
@@ -478,6 +537,10 @@ function _rcrDraw(body, dr, mode) {
         .sort(function (a, b) { return a.value - b.value; });
       fb.appendChild(_rcrBars(frows, function (v) { return (v * 100).toFixed(1) + '%'; }));
     }
+    fb.appendChild(_rcrTipBox('Why the AI starts with more fuel', [
+      'Your own fuel numbers are accurate, but comparing them with the AI tells you very little. The AI burns more fuel per lap than a player, so the game gives AI cars more fuel to start with. That is a workaround in the game\u2019s older engine and the way the AI is coded, not an advantage.',
+      'AI cars in Le Mans Ultimate often start with different or larger fuel loads because of how the game\u2019s base car files, its practice and qualifying fuel calculations and the AI\u2019s fuel logic work together at each track. Compare your fuel use with your own earlier races instead.'
+    ]));
     if (you.vpl) fb.appendChild(_rccText('p', 'rcr-note', 'Virtual energy per lap: ' + (you.vpl * 100).toFixed(1) + '%' + (compStat('vpl') ? ' (' + compName + ' ' + (compStat('vpl') * 100).toFixed(1) + '%)' : '') + '.'));
     body.appendChild(fb);
   }
@@ -518,7 +581,9 @@ function _rcrDraw(body, dr, mode) {
     axis.appendChild(_rccEl('div', 'rcr-strat-sum'));
     tl.appendChild(axis);
     sb.appendChild(tl);
-    sb.appendChild(_rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'F+T = fuel and four tyres', color: '#1f2937' }]));
+    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'F+T = fuel and four tyres', color: '#1f2937' }]);
+    pitKey.classList.add('rcr-legend-gap');
+    sb.appendChild(pitKey);
     // Your stop against theirs.
     if ((you.pits || []).length) {
       var mine = you.pits[0];

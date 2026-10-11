@@ -397,31 +397,65 @@ function rccRenderActionBar(page) {
 
   var hasSeason = !!(page && page.hasSeason);
   var active = hasSeason && !page.seasonEnded;
-  function add(label, enabled, onClick, why) {
+  function add(label, enabled, onClick, why, into) {
+    var host = into || links;
     var b = _rccText('button', 'rcc-actionbar-link', label);
     b.type = 'button';
-    if (RCC.demo && RCC_DEMO_LOCKED.indexOf(label) !== -1) { _rccDemoLock(b); links.appendChild(b); return; }
+    if (RCC.demo && RCC_DEMO_LOCKED.indexOf(label) !== -1) { _rccDemoLock(b); host.appendChild(b); return; }
     b.disabled = !enabled;
     if (!enabled && why) b.title = why;
     if (enabled) b.addEventListener('click', onClick);
-    links.appendChild(b);
+    host.appendChild(b);
   }
   // While a season is running this link is Season Preview (that season's settings and calendar);
   // once it ends it goes back to Create Season.
   if (page && page.hasActiveSeason) add('Season Preview', hasSeason, rccOpenSeasonPreview);
   else add('Create Season', true, rccOpenSeasonWizard.bind(null, null));
-  add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.');
-  add('End Season', active, rccOpenEndSeason, 'No active season to end.');
-  add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.');
+  // Season Tools (Matt): one link that slides the season links out beside it ("Season Tools |
+  // Edit Season · End Season · ..."), pushing Help over. Click opens or closes it; moving the
+  // mouse off the whole Season Tools box (or tabbing out of it, or tapping elsewhere) closes it.
+  var tools = _rccEl('span', 'rcc-tools');
+  var toolsBtn = _rccText('button', 'rcc-actionbar-link rcc-tools-toggle', 'Season Tools');
+  toolsBtn.type = 'button';
+  toolsBtn.setAttribute('aria-expanded', 'false');
+  var menu = _rccEl('span', 'rcc-tools-menu');
+  menu.id = 'rcc-tools-menu';
+  toolsBtn.setAttribute('aria-controls', menu.id);
+  menu.appendChild(_rccText('span', 'rcc-tools-sep', '|'));
+  var menuLinks = _rccEl('span', 'rcc-tools-links');
+  menu.appendChild(menuLinks);
+  tools.appendChild(toolsBtn);
+  tools.appendChild(menu);
+  links.appendChild(tools);
+  function setOpen(on) {
+    tools.classList.toggle('rcc-tools-open', on);
+    toolsBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
+    menuLinks.querySelectorAll('button').forEach(function (b) { b.tabIndex = on ? 0 : -1; });
+  }
+  toolsBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!tools.classList.contains('rcc-tools-open')); });
+  tools.addEventListener('mouseleave', function () { setOpen(false); });
+  tools.addEventListener('focusout', function (e) { if (!e.relatedTarget || !tools.contains(e.relatedTarget)) setOpen(false); });
+  tools.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); toolsBtn.focus(); } });
+  if (!RCC.toolsDocClick) {
+    RCC.toolsDocClick = true;
+    document.addEventListener('click', function (e) {
+      var t = document.querySelector('.rcc-tools.rcc-tools-open');
+      if (t && !t.contains(e.target)) { t.classList.remove('rcc-tools-open'); var tb = t.querySelector('.rcc-tools-toggle'); if (tb) tb.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.', menuLinks);
+  add('End Season', active, rccOpenEndSeason, 'No active season to end.', menuLinks);
+  add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.', menuLinks);
   // Team Information has no link of its own: the team in the header subtitle opens it.
   // Choose Your Team lives only in the Season Preview container (Matt, 2026-10-09), not in this bar.
   var cal = (page && page.calendar) || [];
   var anyEmpty = cal.some(function (c) { return !c.hasResults; });
   var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
   add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
-    !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'));
-  add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.');
-  add('Find A Bug?', true, rccOpenBugReport);
+    !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'), menuLinks);
+  add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.', menuLinks);
+  setOpen(false);
+  // Find A Bug? removed from this bar (Matt, 2026-10-11).
   add('Help', true, rccOpenHelp);
 
   // Past seasons -- a plain dropdown, shown only once there's more than one season.
@@ -1246,12 +1280,13 @@ function _rccSeatLine(page, dr, links) {
   return _rccSeatIdentity(page, {
     carNumber: dr.carNumber || reg.carNumber, carClass: dr.carClass || reg.carClass,
     teamName: dr.teamName || reg.teamName, manufacturer: reg.manufacturer, carModel: reg.carModel,
-    // Header (links): TEAM NAME #57 only, bold black, no driver name (Matt). Driver Report: DRIVER
-    // NAME bold, then the team in steel.
-    driverName: links ? null : ((page.owner && page.owner.displayName) || ''),
+    // Header and Driver Report are identical (Matt, 2026-10-11): DRIVER NAME bold, linked to the
+    // driver's career page (profile.html), then TEAM NAME #57 in normal weight steel, then the maker
+    // logo, car name and class pill. In the header the team also opens Team Information.
+    driverName: (page.owner && page.owner.displayName) || '',
+    driverLink: true,
     teamLink: !!links,
-    // The header shows the class pill after the car name too (Matt).
-    classPill: !!links
+    classPill: true
   });
 }
 // seat: { carNumber, carClass, teamName, manufacturer, carModel, driverName (null = team only, bold
@@ -1278,7 +1313,7 @@ function _rccSeatIdentity(page, seat) {
   var textCol = _rccEl('div', 'rc-cs-textcol');
   var nameLine = _rccEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcr-who-name');
   var teamOnly = seat.driverName == null;
-  if (!teamOnly) nameLine.appendChild(_rccText('span', 'rcr-who-driver', seat.driverName));
+  if (!teamOnly) nameLine.appendChild(seat.driverLink ? _rccPlayerName('rcr-who-driver', seat.driverName) : _rccText('span', 'rcr-who-driver', seat.driverName));
   var teamText = (seat.teamName || '') + (carNumber ? ' #' + carNumber : '');
   if (teamText) {
     var team = _rccEl(seat.teamLink ? 'button' : 'span', (teamOnly ? 'rcr-who-driver' : 'rcr-who-team') + (seat.teamLink ? ' rcc-seat-line-team' : ''));
@@ -2411,7 +2446,7 @@ function rccOpenUpload(roundId, lockRound) {
 // changing the page address.
 // ---------------------------------------------------------------------
 function rccOpenHelp() {
-  var m = rccOpenModal('Help', { wide: true });
+  var m = rccOpenModal('Help: Single Player Mode', { wide: true });
   m.body.classList.add('rcc-help-body');
   var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
   var nav = _rccEl('div', 'rc-rulebook-nav');
@@ -2559,7 +2594,7 @@ function _rccForgetSavedPages() {
 // ---------------------------------------------------------------------
 var RCC_DEMO_FILE = 'assets/data/championship-demo.json';
 var RCC_DEMO_NOTE = 'You are viewing a demo version of the Championship page.';
-var RCC_DEMO_LOCKED = ['Create Season', 'Edit Season', 'End Season', 'Delete Season', 'Choose Your Team', 'Upload Results', 'Erase Results', 'Find A Bug?'];
+var RCC_DEMO_LOCKED = ['Create Season', 'Edit Season', 'End Season', 'Delete Season', 'Choose Your Team', 'Upload Results', 'Erase Results'];
 
 function _rccDemoLock(btn) {
   btn.disabled = false;

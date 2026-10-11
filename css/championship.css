@@ -158,6 +158,20 @@ body.rc-league-page.rcc-page {
 .rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
 a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
+/* Season Tools: the link plus its slide-out links. Dots separate it from its neighbours; the slide-out
+   opens to the right of a "|" and pushes Help along (Matt). */
+.rcc-tools { position: relative; display: inline-flex; align-items: center; }
+.rcc-actionbar-link + .rcc-tools::before,
+.rcc-tools + .rcc-actionbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: var(--rc-steel); }
+.rcc-tools + .rcc-actionbar-link { position: relative; }
+.rcc-tools-menu { display: inline-flex; align-items: center; max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width 0.28s ease, opacity 0.2s ease; }
+.rcc-tools-open .rcc-tools-menu { max-width: 900px; opacity: 1; }
+.rcc-tools-open .rcc-tools-toggle { color: var(--rc-red); }
+.rcc-tools-sep { color: var(--rc-steel); font-weight: 400; padding: 0 2px 0 0; }
+.rcc-tools-links { display: inline-flex; align-items: center; }
+.rcc-tools-links .rcc-actionbar-link:first-child { padding-left: 14px; }
+.rcc-tools .rcc-tools-toggle { padding-left: 14px; }
+@media (prefers-reduced-motion: reduce) { .rcc-tools-menu { transition: none; } }
 .rcc-actionbar-season {
   display: flex;
   align-items: center;
@@ -848,3 +862,59 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcl-mfr-rest-logo-slot { height: 28px; }
 .rcc-page .rcl-mfr-rest-logo { max-height: 28px; }
 @media (max-width: 640px) { .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); } }
+
+/* Tips (Matt, 2026-10-11): important, quick-to-read notes get a lightbulb, a blue-gray accent bar on
+   the left and a thinner blue-gray border all the way round. Used for .rcc-tip (Driver Report) and
+   every callout in Help. */
+.rcc-tip,
+.rcc-help-body .rc-rulebook-callout {
+  position: relative;
+  background: #f4f7fa;
+  border: 1px solid #b9c6d3;
+  border-left: 4px solid #5f7d99;
+  border-radius: 6px;
+  padding: 12px 16px 12px 46px;
+  color: var(--rc-carbon);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.rcc-tip::before,
+.rcc-help-body .rc-rulebook-callout::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f7d99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.45 1 1.16 1 1.93V17h6v-.33c0-.77.4-1.48 1-1.93A7 7 0 0 0 12 2z'/%3E%3C/svg%3E");
+}
+.rcc-tip-title { display: block; font-weight: 700; margin-bottom: 3px; color: var(--rc-carbon); }
+.rcc-tip p { margin: 0 0 6px; }
+.rcc-tip p:last-child { margin-bottom: 0; }
+.rcr-block .rcc-tip { margin: 14px 0 4px; }
+
+/* Driver Report: tyre compound circles (Matt): S red, M yellow, H white, W blue. */
+.rcr-comp { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; line-height: 1; flex: 0 0 auto; box-sizing: border-box; }
+.rcr-comp-s { background: #d7261e; color: #fff; }
+.rcr-comp-m { background: #f2c230; color: #1f2937; }
+.rcr-comp-h { background: #fff; color: #1f2937; border: 1.5px solid #8a94a3; }
+.rcr-comp-w { background: #2f6fb5; color: #fff; }
+.rcr-corner-pct { display: flex; align-items: center; gap: 8px; }
+.rcr-corner-r .rcr-corner-pct { justify-content: flex-end; }
+.rcr-corner-l .rcr-corner-pct { justify-content: flex-start; }
+/* Tyre sets table. */
+.rcr-sets { display: grid; gap: 0; margin-top: 6px; font-size: 13px; }
+.rcr-sets-row { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) 56px; gap: 12px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--rc-offwhite); }
+.rcr-sets-head { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-steel); }
+.rcr-sets-you { background: color-mix(in srgb, #d7261e 6%, transparent); font-weight: 700; }
+.rcr-sets-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rcr-sets-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rcr-set { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 3px; border: 1px solid #d5dbe2; border-radius: 999px; background: #fff; font-weight: 400; }
+.rcr-set-pace { font-variant-numeric: tabular-nums; color: var(--rc-carbon); }
+.rcr-set-laps, .rcr-set-wear { color: var(--rc-steel); }
+.rcr-set-none { color: var(--rc-steel); }
+.rcr-sets-tyres { text-align: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tyres'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
+/* Legend: pit stop circle; space under the pit strategy key. */
+.rcr-legend-circle { border-radius: 50%; border-width: 2px; border-style: solid; width: 10px; height: 10px; }
+.rcr-legend-gap { margin-bottom: 18px; }

@@ -64,6 +64,7 @@ var RCC_HELP_SECTIONS = [
       '<li>Your season of cars under Starting Grid (Season YYYY), never Fill Grid, and only your season’s classes</li>' +
       '<li>A race length that is the same as the round’s length or longer</li>' +
       '</ul>The other settings, such as weather, start time, time scales and AI settings, will not stop an upload. Matching them as closely as you can keeps your season’s records accurate.</div>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Use the Base Setup</strong>The AI drives every car on the game\u2019s base setup. For the fairest competition, use the base setup too, in qualifying and in the race. A tuned setup, such as one you bought or downloaded, can make your car faster than the AI was built to race against.</div>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">DLC</strong>Some tracks and cars in Le Mans Ultimate require DLC. Race Club Championship includes everything in the game and cannot tell which DLC you own, so only choose tracks and teams you are able to race.</div>'
   },
   {
