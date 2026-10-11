@@ -2055,18 +2055,24 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 /* Link bar under the header -- same layout as the Championship page's    */
 /* bar (.rcc-actionbar), in the header's gray (--rc-silver).              */
 /* -------------------------------------------------------------------- */
-.rcl-navbar { background: var(--rc-silver); border-bottom: 2px solid var(--rc-silver); } /* 2px border = same total height as the Championship bar */
+/* Same rules as the Championship bar (.rcc-actionbar*), copied one for one. Only the colors differ:
+   the gray of the Standings class header bars, white links, red line underneath. */
+.rcl-navbar {
+  background: #b7b9be;
+  border-bottom: 2px solid var(--rc-red);
+}
 .rcl-navbar-inner {
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 32px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   min-height: 48px;
 }
+.rcl-navbar-links { display: flex; flex-wrap: wrap; align-items: center; }
 .rcl-navbar-link {
   background: none;
   border: none;
@@ -2076,7 +2082,8 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rc-carbon);
+  color: var(--rc-white);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   cursor: pointer;
   position: relative;
 }
@@ -2087,9 +2094,12 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   color: var(--rc-steel);
 }
 .rcl-navbar-link:first-child { padding-left: 0; }
-.rcl-navbar-link:hover { color: var(--rc-red); }
-.rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-carbon); outline-offset: -2px; }
-@media (max-width: 640px) { .rcl-navbar-inner { padding: 0 16px; } }
+.rcl-navbar-link:hover { color: var(--rc-red); text-shadow: none; }
+.rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
+@media (max-width: 640px) {
+  .rcl-navbar-inner { padding: 0 16px; }
+  .rcl-navbar-link { padding: 10px 8px; }
+}
 
 /* -------------------------------------------------------------------- */
 /* LEAGUE RULES popup -- reuses Account.html's own .rc-rulebook-* markup  */

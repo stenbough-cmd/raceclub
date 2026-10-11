@@ -2953,6 +2953,8 @@ function _rclRenderNavbar_(hub) {
   if (hub) _rclNavHub_ = hub;
   nav.innerHTML = '';
   var inner = _rclEl('div', 'rcl-navbar-inner');
+  var links = _rclEl('div', 'rcl-navbar-links');
+  inner.appendChild(links);
   var signedIn = false;
   try { signedIn = !!getToken(); } catch (err) { signedIn = false; }
 
@@ -2960,7 +2962,7 @@ function _rclRenderNavbar_(hub) {
     var b = _rclEl('button', 'rcl-navbar-link', _rclEscapeHtml(label));
     b.type = 'button';
     b.addEventListener('click', onClick);
-    inner.appendChild(b);
+    links.appendChild(b);
   }
   add('Season Preview', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
   add('League Rules', function () { _rclOpenLeagueRulesModal(); });
