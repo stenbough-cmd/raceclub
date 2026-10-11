@@ -2924,8 +2924,17 @@ function rccRenderStories(page) {
     var prev = _rccEl('div', 'rcl-news-previous');
     prev.appendChild(_rccText('div', 'rcl-news-previous-head', 'More Stories'));
     published.slice(1, 6).forEach(function (s, i) {
-      var b = _rccText('button', 'rcl-news-previous-title', s.title || 'Untitled');
+      // Round badge (Matt): a small square with RD over 01, 02... or PRE for the season preview.
+      var b = _rccEl('button', 'rcl-news-previous-title rcc-story-prev');
       b.type = 'button';
+      var badge = _rccEl('span', 'rcc-story-badge' + (s.kind === 'preview' ? ' rcc-story-badge-pre' : ''));
+      if (s.kind === 'preview') badge.appendChild(_rccText('span', 'rcc-story-badge-num', 'PRE'));
+      else {
+        badge.appendChild(_rccText('span', 'rcc-story-badge-rd', 'RD'));
+        badge.appendChild(_rccText('span', 'rcc-story-badge-num', String(s.roundNum || 0).padStart(2, '0')));
+      }
+      b.appendChild(badge);
+      b.appendChild(_rccText('span', 'rcc-story-prev-title', s.title || 'Untitled'));
       b.addEventListener('click', function () { rccOpenStory(i + 1); });
       prev.appendChild(b);
     });

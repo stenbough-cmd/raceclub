@@ -945,3 +945,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Season Stories header title in white over the news banner (Matt). */
 .rcc-page #rcc-stories-panel .rcl-panel-title { color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+
+/* More Stories: round badge before each headline (RD over 01, or PRE), about 1.5 lines tall. */
+.rcc-story-prev { display: flex; align-items: center; gap: 10px; text-align: left; }
+.rcc-story-badge { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 4px; background: var(--rcc-navy); color: var(--rc-white); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--rc-font-heading); line-height: 1; box-shadow: inset 0 -2px 0 var(--rc-red); }
+.rcc-story-badge-rd { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.85; }
+.rcc-story-badge-num { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
+.rcc-story-badge-pre .rcc-story-badge-num { font-size: 10px; letter-spacing: 0.06em; margin-top: 0; }
+.rcc-story-prev-title { min-width: 0; }
