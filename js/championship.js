@@ -1414,7 +1414,9 @@ function _rccRaceBody(result, el) {
           var all = en.positionClause ? en.clauses.concat([en.positionClause]) : en.clauses;
           all.forEach(function (c, i) {
             line.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
-            line.appendChild(_rccText('span', CLAUSE[c.kind] || null, c.text));
+            // A penalty being handed out reads in bold red (Matt, 2026-10-11).
+            var cc = c.kind === 'penalty' && /^handed\b/i.test(c.text || '') ? 'rcc-report-penalty' : (CLAUSE[c.kind] || null);
+            line.appendChild(_rccText('span', cc, c.text));
           });
           line.appendChild(document.createTextNode('.'));
         } else {

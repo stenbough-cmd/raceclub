@@ -953,3 +953,4 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-badge-num { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
 .rcc-story-badge-pre .rcc-story-badge-num { font-size: 10px; letter-spacing: 0.06em; margin-top: 0; }
 .rcc-story-prev-title { min-width: 0; }
+.rcc-page .rcl-report-line .rcc-report-penalty { color: var(--rc-red); font-weight: 700; }
