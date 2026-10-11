@@ -2941,51 +2941,89 @@ function _rclOpenMemberListModal(hub) {
   _rclLockBodyScroll();
 }
 
-// WEBSITE-SPECIFIC CONTAINERS -- 4 square image tiles under the race carousel: SEASON FORMAT,
-// LEAGUE RULES, MEMBER LIST, JOIN RACE CLUB. Always rendered regardless of hasSeason (unlike the
-// podium/carousel above it) -- these are static site-navigation tiles, not season data.
-var RCL_WEBSITE_CONTAINERS_ = [
-  { label: 'Season Format', image: 'season_format.jpg' },
-  { label: 'League Rules', image: 'league_rules.jpg' },
-  { label: 'Member List', image: 'member_list.jpg' },
-  { label: 'Join Race Club', image: 'join_race_club.jpg' }
-];
-function _rclRenderWebsiteContainers(hub) {
-  var wrap = document.getElementById('rcl-website-containers');
-  if (!wrap) return;
-  wrap.innerHTML = '';
+// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | League Rules | Join Race Club
+// (signed in: Current Drivers). Same look as the Championship page's link bar (css/league.css,
+// .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
+// links replace it.
+function _rclRenderNavbar_(hub) {
+  var nav = document.getElementById('rcl-navbar');
+  if (!nav) return;
+  nav.innerHTML = '';
+  var inner = _rclEl('div', 'rcl-navbar-inner');
+  var signedIn = false;
+  try { signedIn = !!getToken(); } catch (err) { signedIn = false; }
 
-  RCL_WEBSITE_CONTAINERS_.forEach(function (def) {
-    var tile = _rclEl('div', 'rcl-wc-tile');
-    tile.style.backgroundImage = "url('assets/images/" + def.image + "')";
-    // WebP first (same name, .webp); browsers that ignore image-set keep the plain url above.
-    tile.style.backgroundImage = "image-set(url('assets/images/" + def.image.replace(/\.[a-z]+$/i, '.webp') + "') type('image/webp'), url('assets/images/" + def.image + "'))";
-    var img = new Image();
-    img.onerror = function () { tile.style.backgroundImage = 'none'; };
-    img.src = 'assets/images/' + def.image;
-
-    tile.appendChild(_rclEl('div', 'rcl-wc-tile-label', _rclEscapeHtml(def.label.toUpperCase())));
-
-    tile.setAttribute('role', 'button');
-    tile.setAttribute('tabindex', '0');
-    function activate() {
-      if (def.label === 'Season Format') {
-        _rclOpenSeasonDetailsModal(hub);
-      } else if (def.label === 'League Rules') {
-        _rclOpenLeagueRulesModal();
-      } else if (def.label === 'Member List') {
-        _rclOpenMemberListModal(hub);
-      } else if (def.label === 'Join Race Club') {
-        if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
-        window.location.href = 'register.html';
-      }
-    }
-    tile.addEventListener('click', activate);
-    tile.addEventListener('keydown', function (evt) {
-      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); activate(); }
+  function add(label, onClick) {
+    var b = _rclEl('button', 'rcl-navbar-link', _rclEscapeHtml(label));
+    b.type = 'button';
+    b.addEventListener('click', onClick);
+    inner.appendChild(b);
+  }
+  add('Season Preview', function () { _rclOpenSeasonPreviewModal_(hub); });
+  add('League Rules', function () { _rclOpenLeagueRulesModal(); });
+  if (signedIn) {
+    add('Current Drivers', function () { _rclOpenMemberListModal(hub); });
+  } else {
+    add('Join Race Club', function () {
+      if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
+      window.location.href = 'register.html';
     });
-    wrap.appendChild(tile);
-  });
+  }
+  nav.appendChild(inner);
+}
+
+// SEASON PREVIEW popup -- the Season Details / Championship Points / Race Rules sections (same
+// content as the old Season Format popup) plus a Rounds section, one line per round:
+//   Round n · Event name: Track: Layout · 60 mins (Tier) · 2:00 PM · Clear 10% Rain 22°C · Raced
+// The "Round n · Event name:" part uses the gray label style, the rest the white value style.
+// "Raced" is only added once the round has results; otherwise the line ends after the temperature.
+function _rclOpenSeasonPreviewModal_(hub) {
+  var overlay = _rclEl('div', 'rcl-modal-overlay');
+  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var head = _rclEl('div', 'rcl-modal-head');
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Preview'));
+  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+
+  var body = _rclEl('div', 'rcl-modal-body rcl-seasonfmt-modal-body');
+  _rclAppendSeasonFormatSections_(hub || { hasSeason: false }, body);
+
+  var rounds = ((hub && hub.calendar) || []).filter(function (e) { return e.kind === 'round'; })
+    .sort(function (a, b) { return (a.roundNum || 0) - (b.roundNum || 0); });
+  if (hub && hub.hasSeason && rounds.length) {
+    var group = _rclEl('div', 'rcl-hero-stats-group');
+    group.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'Rounds'));
+    var list = _rclEl('div', 'rcl-seasonfmt-list');
+    rounds.forEach(function (e) {
+      var bits = [];
+      var trackBit = (e.track || '') + (e.layout ? ': ' + e.layout : '');
+      if (trackBit) bits.push(trackBit);
+      var mins = _rclEntryLengthMinutes(e, hub);
+      if (mins || e.raceLengthTier) bits.push((mins ? mins + ' mins' : '') + (e.raceLengthTier ? (mins ? ' ' : '') + '(' + e.raceLengthTier + ')' : ''));
+      if (e.igRaceStart) bits.push(_rclFormat12h(e.igRaceStart));
+      if (e.weather) {
+        var w = e.weather + ' ' + (e.chanceOfRain || 0) + '% Rain';
+        if (e.temperatureC !== null && e.temperatureC !== undefined) w += ' ' + e.temperatureC + '\u00B0C';
+        bits.push(w);
+      }
+      if (e.hasResults) bits.push('Raced');
+      var html = '<span class="rcl-seasonfmt-row-label">Round ' + _rclEscapeHtml(String(e.roundNum || '')) + ' \u00B7 ' + _rclEscapeHtml(e.eventName || 'Race') + ':</span> ' +
+        '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(bits.join(' \u00B7 ')) + '</span>';
+      list.appendChild(_rclEl('div', 'rcl-seasonfmt-row', html));
+    });
+    group.appendChild(list);
+    body.appendChild(group);
+  }
+
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
+  closeBtn.addEventListener('click', close);
+  document.body.appendChild(overlay);
+  _rclLockBodyScroll();
 }
 
 // Full-page loading overlay -- markup/CSS live in league.html and css/league.css; this just locks
@@ -3059,7 +3097,7 @@ function _rclFetchLeagueHubRaw_() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderWebsiteContainers];
+  var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderNavbar_];
 
   function showHub(hub) {
     if (!hub || !hub.success) {

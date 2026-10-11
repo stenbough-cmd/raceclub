@@ -40,6 +40,10 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
+<!-- Link bar under the header, same style as the Championship page's bar (js/league.js,
+     _rclRenderNavbar_). Filled in once the hub data is drawn. -->
+<nav class="rcl-navbar" id="rcl-navbar" aria-label="League Hub"></nav>
+
 <div class="rcl-ticker-wrap">
   <div class="rcl-ticker-label">Highlights</div>
   <div class="rcl-ticker-viewport">
@@ -111,9 +115,6 @@
      plain podium. Deliberately NOT a .rcl-panel -- no card border/background, just the title +
      podium sitting directly on the page like the hero band above it. -->
   <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
-
-  <!-- Website-specific containers -- 4 square image tiles, under the Calendar/race carousel. -->
-  <div class="rcl-row-full rcl-wc-grid" id="rcl-website-containers"></div>
 
   <!-- Drivers section removed -- the Leaderboard panel above already lists every driver per class,
      so a separate roster panel was redundant. _rclRenderDrivers/#rcl-drivers-body removed to
