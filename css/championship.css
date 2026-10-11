@@ -900,8 +900,8 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcr-comp-h { background: #fff; color: #1f2937; border: 1.5px solid #8a94a3; }
 .rcr-comp-w { background: #2f6fb5; color: #fff; }
 .rcr-corner-pct { display: flex; align-items: center; gap: 8px; }
-.rcr-corner-r .rcr-corner-pct { justify-content: flex-end; }
-.rcr-corner-l .rcr-corner-pct { justify-content: flex-start; }
+.rcr-corner-l .rcr-corner-pct { justify-content: flex-end; }
+.rcr-corner-r .rcr-corner-pct { justify-content: flex-start; }
 /* Tyre sets table. */
 .rcr-sets { display: grid; gap: 0; margin-top: 6px; font-size: 13px; }
 .rcr-sets-row { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) 56px; gap: 12px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--rc-offwhite); }
