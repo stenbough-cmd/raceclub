@@ -2058,7 +2058,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 /* Same rules as the Championship bar (.rcc-actionbar*), copied one for one. Only the colors differ:
    the gray of the Standings column headings (--rcl-ink-faint), white links, red line underneath. */
 .rcl-navbar {
-  background: #5b5e66; /* a darker shade of the Standings column heading gray (#7d8088) */
+  background: #40434a; /* a much darker shade of the Standings column heading gray (#7d8088) */
   border-bottom: 2px solid var(--rc-red);
 }
 .rcl-navbar-inner {
@@ -2090,7 +2090,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   content: '\00B7';
   position: absolute;
   left: -3px;
-  color: var(--rc-steel);
+  color: #000;
 }
 .rcl-navbar-link:first-child { padding-left: 0; }
 .rcl-navbar-link:hover { color: var(--rc-red); }
