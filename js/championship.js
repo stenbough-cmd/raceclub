@@ -2900,6 +2900,7 @@ function rccRenderStories(page) {
     retry.type = 'button';
     retry.addEventListener('click', function () { RCC.storyFailed = null; rccRunStoryQueue(page); });
     f.appendChild(retry);
+    if (RCC.storyFailedWhy) f.appendChild(_rccText('div', 'rcc-story-why-text', RCC.storyFailedWhy));
     body.appendChild(f);
   }
   if (!published.length) {
@@ -3026,7 +3027,8 @@ function rccRunStoryQueue(page) {
   _rccApi('champStory', { op: 'generate', seasonId: page.seasonId, kind: next.kind, roundId: next.roundId || '' }, { timeoutMs: 330000 }).then(function (res) {
     RCC.storyWriting = null;
     if (_rccHandleAuthError(res)) return;
-    if (!res || !res.success) { RCC.storyFailed = next; rccRenderStories(page); if (res && res.error === 'NO_API_KEY') _rccToast(res.message, 'error'); return; }
+    // The server's own reason shows under the notice, so a setup problem can be spotted.
+    if (!res || !res.success) { RCC.storyFailed = next; RCC.storyFailedWhy = (res && (res.message || res.error)) || 'No answer from the server.'; rccRenderStories(page); return; }
     return _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
       if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; _rccForgetSavedPages(); }
       rccRenderStories(page);
@@ -3035,6 +3037,7 @@ function rccRunStoryQueue(page) {
   }).catch(function () {
     RCC.storyWriting = null;
     RCC.storyFailed = next;
+    RCC.storyFailedWhy = 'No answer from the server.';
     rccRenderStories(page);
   });
 }

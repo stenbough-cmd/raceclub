@@ -941,3 +941,4 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-thumb-on svg { fill: #fff; }
 .rcc-story-why { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 .rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 8px 10px; border: 1px solid #c9d1da; border-radius: 6px; resize: vertical; }
+.rcc-story-why-text { flex: 1 1 100%; font-size: 12px; color: var(--rc-steel); }
