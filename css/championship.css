@@ -157,6 +157,7 @@ body.rc-league-page.rcc-page {
 .rcc-actionbar-link:first-child { padding-left: 0; }
 .rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
+a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-actionbar-season {
   display: flex;
   align-items: center;
@@ -742,10 +743,11 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcc-welcome-demo { text-decoration: none; }
 /* Locked demo buttons keep their normal look and hover colour; clicking does nothing. */
 .rcc-demo .rcc-demo-locked { cursor: not-allowed; }
-.rcc-demo-pill { position: fixed; top: 122px; right: 16px; z-index: 900; background: #111; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); cursor: pointer; }
+.rcc-demo-pill { position: fixed; bottom: 16px; right: 16px; z-index: 900; background: #111; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); cursor: pointer; }
 .rcc-demo-pill:hover { background: #2b2b2b; }
 .rcc-demo-pill:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
-@media (max-width: 640px) { .rcc-demo-pill { top: 116px; right: 10px; padding: 8px 14px; font-size: 11px; } }
+/* CLOSE DEMO PAGE sits in the bottom right corner, the same gap below as to the right (Matt). */
+@media (max-width: 640px) { .rcc-demo-pill { bottom: 10px; right: 10px; padding: 8px 14px; font-size: 11px; } }
 /* Welcome ticker: bold navy welcome line; perk labels bold navy, perk text normal black. */
 .rcc-page .rcc-ticker-lead { font-weight: 800; color: var(--rcc-navy); }
 .rcc-page .rcl-ticker-item-tag.rcc-ticker-tag-bold { font-weight: 800; }
@@ -836,3 +838,13 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Race Recap: dropdowns locked while a page loads. */
 .rcc-page .rcl-allresults-select:disabled,
 .rcc-page .rcl-allresults-session-select:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Manufacturers' Standings, 4th place and on (Matt): the two columns are always exactly half each
+   (minmax(0, 1fr), so a long name can't widen one column and squeeze the other); long names end in
+   "..."; logos up to 28px tall, max width unchanged (46px). */
+.rcc-page .rcl-mfr-rest { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rcc-page .rcl-mfr-rest-item { min-width: 0; }
+.rcc-page .rcl-mfr-rest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rcc-page .rcl-mfr-rest-logo-slot { height: 28px; }
+.rcc-page .rcl-mfr-rest-logo { max-height: 28px; }
+@media (max-width: 640px) { .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); } }

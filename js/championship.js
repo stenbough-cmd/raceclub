@@ -2600,6 +2600,21 @@ function rccRenderWelcome() {
   var pill = document.getElementById('rcc-demo-pill');
   if (pill) pill.parentNode.removeChild(pill);
   _rccPageShell(false);
+  // Signed-out visitors keep the black link bar, with one link: JOIN RACE CLUB -> register.html (Matt).
+  if (!getToken()) {
+    var bar = document.getElementById('rcc-actionbar');
+    if (bar) {
+      bar.innerHTML = '';
+      var inner = _rccEl('div', 'rcc-actionbar-inner');
+      var links = _rccEl('div', 'rcc-actionbar-links');
+      var join = _rccText('a', 'rcc-actionbar-link', 'Join Race Club');
+      join.href = 'register.html';
+      links.appendChild(join);
+      inner.appendChild(links);
+      bar.appendChild(inner);
+      bar.style.display = '';
+    }
+  }
   rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
   var meta = document.getElementById('rcc-hero-meta');
   if (meta) meta.innerHTML = '';
