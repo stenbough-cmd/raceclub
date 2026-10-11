@@ -2055,7 +2055,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 /* Link bar under the header -- same layout as the Championship page's    */
 /* bar (.rcc-actionbar), in the header's gray (--rc-silver).              */
 /* -------------------------------------------------------------------- */
-.rcl-navbar { background: var(--rc-silver); }
+.rcl-navbar { background: var(--rc-silver); border-bottom: 2px solid var(--rc-silver); } /* 2px border = same total height as the Championship bar */
 .rcl-navbar-inner {
   max-width: 1180px;
   margin: 0 auto;
@@ -2063,6 +2063,8 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   min-height: 48px;
 }
 .rcl-navbar-link {

@@ -2945,9 +2945,12 @@ function _rclOpenMemberListModal(hub) {
 // (signed in: Current Drivers). Same look as the Championship page's link bar (css/league.css,
 // .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
 // links replace it.
+var _rclNavHub_ = { hasSeason: false };
 function _rclRenderNavbar_(hub) {
   var nav = document.getElementById('rcl-navbar');
   if (!nav) return;
+  // The links always open with the newest hub data, whichever draw they were built in.
+  if (hub) _rclNavHub_ = hub;
   nav.innerHTML = '';
   var inner = _rclEl('div', 'rcl-navbar-inner');
   var signedIn = false;
@@ -2959,10 +2962,10 @@ function _rclRenderNavbar_(hub) {
     b.addEventListener('click', onClick);
     inner.appendChild(b);
   }
-  add('Season Preview', function () { _rclOpenSeasonPreviewModal_(hub); });
+  add('Season Preview', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
   add('League Rules', function () { _rclOpenLeagueRulesModal(); });
   if (signedIn) {
-    add('Current Drivers', function () { _rclOpenMemberListModal(hub); });
+    add('Current Drivers', function () { _rclOpenMemberListModal(_rclNavHub_); });
   } else {
     add('Join Race Club', function () {
       if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
@@ -3097,7 +3100,9 @@ function _rclFetchLeagueHubRaw_() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews, _rclRenderNavbar_];
+  // The link bar is drawn first and on its own, so a problem in any renderer below can never keep it off the page.
+  try { _rclRenderNavbar_(null); } catch (err) { /* the page still works without it */ }
+  var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews];
 
   function showHub(hub) {
     if (!hub || !hub.success) {
@@ -3107,6 +3112,7 @@ document.addEventListener('DOMContentLoaded', function () {
       _rclHidePageLoader();
       return;
     }
+    try { _rclRenderNavbar_(hub); } catch (err) { /* keep going */ }
     _rclRenderHero(hub);
     _rclRenderTicker(hub);
     RENDERERS.forEach(function (fn) { fn(hub); });
