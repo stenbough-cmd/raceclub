@@ -2424,3 +2424,23 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* Race Recap dropdowns are locked while a round/session loads. */
 .rcl-allresults-select:disabled,
 .rcl-allresults-session-select:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* AI story is being written (League News on league.html). Same look as the Championship page. */
+.rcl-story-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--rcl-line-bright); border-left: 4px solid var(--rc-red); background: var(--rcl-bg-raised-2); color: var(--rcl-ink); font-size: 13px; }
+.rcl-story-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--rc-red); flex: 0 0 auto; animation: rcl-story-pulse 1s ease-in-out infinite alternate; }
+@keyframes rcl-story-pulse { from { opacity: 0.25; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .rcl-story-pulse { animation: none; } }
+
+/* NEWS badge: NE and WS are the same size (RD keeps its small label over a big number). */
+.rcl-news-badge-ne .rcl-news-badge-top, .rcl-news-badge-ne .rcl-news-badge-bottom { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; margin-top: 0; padding-left: 0; text-transform: uppercase; }
+.rcl-news-badge-ne .rcl-news-badge-bottom { margin-top: 2px; }
+.rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-top, .rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-bottom { font-size: 12px; }
+.rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-bottom { margin-top: 2px; }
+
+/* Badges: both lines the same size (RD over 01, NE over WS) plus a darker accent edge on the left. */
+.rcl-news-badge-rd, .rcl-news-badge-ne { box-sizing: border-box; border-left: 5px solid rgba(0,0,0,0.38); }
+.rcl-news-badge-rd .rcl-news-badge-top, .rcl-news-badge-rd .rcl-news-badge-bottom { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
+.rcl-news-badge-rd .rcl-news-badge-bottom { margin-top: 2px; }
+.rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-top, .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { font-size: 12px; }
+.rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { margin-top: 2px; }
+.rcl-news-badge-sm.rcl-news-badge-rd, .rcl-news-badge-sm.rcl-news-badge-ne { border-left-width: 4px; }

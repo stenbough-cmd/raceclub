@@ -442,6 +442,11 @@ p { margin: 0 0 0.75em; }
 .rc-news-badge-ne { background: #2f6f9f; }
 .rc-news-badge-top { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding-left: 0.12em; }
 .rc-news-badge-bottom { margin-top: 3px; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.rc-news-badge-ne .rc-news-badge-top, .rc-news-badge-ne .rc-news-badge-bottom { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
+.rc-news-badge-ne .rc-news-badge-bottom { margin-top: 2px; }
+.rc-news-badge-rd, .rc-news-badge-ne { box-sizing: border-box; border-left: 5px solid rgba(0,0,0,0.38); }
+.rc-news-badge-rd .rc-news-badge-top, .rc-news-badge-rd .rc-news-badge-bottom { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
+.rc-news-badge-rd .rc-news-badge-bottom { margin-top: 2px; }
 
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }

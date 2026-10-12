@@ -2559,11 +2559,32 @@ function _rclNewsMetaLine(item) {
 // second server round trip.gs).
 var _rclNewsList = [];
 
+// True while the AI is writing a story (hub.storyWriting) and the claim is under 6 minutes old
+// (a writer that died never leaves the light on).
+function _rclStoryWritingActive(hub) {
+  var w = hub && hub.storyWriting;
+  if (!w || !w.startedAt) return false;
+  var t = new Date(w.startedAt).getTime();
+  return !isNaN(t) && (Date.now() - t) < 6 * 60 * 1000;
+}
+
+function _rclStoryWritingNotice(hub) {
+  if (!_rclStoryWritingActive(hub)) return null;
+  var w = hub.storyWriting;
+  var what = w.kind === 'preview' ? 'the season preview' : (w.roundNum ? 'the Round ' + w.roundNum + ' story' : 'the next story');
+  var box = _rclEl('div', 'rcl-story-status');
+  box.appendChild(_rclEl('span', 'rcl-story-pulse'));
+  box.appendChild(_rclEl('span', 'rcl-story-status-text', 'Writing ' + what + '. This takes about a minute.'));
+  return box;
+}
+
 function _rclRenderNews(hub) {
   var body = document.getElementById('rcl-news-body');
   if (!body) return;
   body.innerHTML = '';
   _rclNewsList = hub.news || [];
+  var writingNotice = _rclStoryWritingNotice(hub);
+  if (writingNotice) body.appendChild(writingNotice);
 
   if (!_rclNewsList.length) {
     body.appendChild(_rclEmptyState('No News Yet', 'League news will show up here.'));
@@ -3196,6 +3217,7 @@ document.addEventListener('DOMContentLoaded', function () {
   try { _rclRenderNavbar_(null); } catch (err) { /* the page still works without it */ }
   var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews];
 
+  var storyWritingOn = false;
   function showHub(hub) {
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
@@ -3208,6 +3230,7 @@ document.addEventListener('DOMContentLoaded', function () {
     _rclRenderHero(hub);
     _rclRenderTicker(hub);
     RENDERERS.forEach(function (fn) { fn(hub); });
+    storyWritingOn = _rclStoryWritingActive(hub);
     _rclHidePageLoader();
   }
 
@@ -3249,6 +3272,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }).then(function () { revalidating = false; });
   }
   revalidate();
+
+  // While the AI is writing a story, check again every 30 seconds so the light clears (and the new
+  // story appears) without a manual refresh. Does nothing the rest of the time.
+  setInterval(function () { if (storyWritingOn) revalidate(); }, 30000);
 
   // Coming back via the browser's back button can restore this page from memory without reloading
   // it; refresh quietly in that case too.

@@ -5820,7 +5820,7 @@
       var footerButtons = Array.prototype.slice.call(footerBar.querySelectorAll('button'));
       footerButtons.forEach(function (b) { b.disabled = true; });
       var originalLabel = triggerBtn.textContent;
-      triggerBtn.textContent = 'SAVING SEASON...';
+      triggerBtn.textContent = 'SAVING SEASON AND WRITING PREVIEW...';
       // Dim and disable the popup's X while the save is in flight -- same modal.closeBtn.disabled
       // convention already used by Finalize/Un-Finalize and the other in-flight-request save flows;
       // .rc-modal-close:disabled (style.css) already gives it the dimmed, unclickable look.
@@ -5839,7 +5839,7 @@
       fetchApi('createSeason', {
         method: 'POST',
         token: token,
-        timeoutMs: RC_FETCH_TIMEOUT_MS_LONG,
+        timeoutMs: RC_FETCH_TIMEOUT_MS_FINALIZE,
         body: {
           name: state.seasonName,
           seasonDetails: JSON.stringify(seasonDetails),
@@ -5847,7 +5847,7 @@
         }
       }).then(function (data) {
         if (data && data.success) {
-          showToast(data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.'), 'success');
+          showToast(data.story === 'failed' ? ((data.message || 'Season created.') + ' The preview story could not be written; use Write Now in League Tools to retry.') : (data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.')), data.story === 'failed' ? 'error' : 'success');
           // Every lazy section is stale now (a new season ripples well beyond just Season Tools),
           // same cache-clear rcReloadAfterSave itself does -- but this always lands on Dashboard
           // specifically rather than back on whichever section the wizard was opened from.
@@ -6566,7 +6566,7 @@
               // In-progress state. The X button dims with a matching tooltip via
               // setFinalizeInProgress, same convention as the Import Results modal's close button.
               finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
-              finalizeBtn.textContent = 'FINALIZING...';
+              finalizeBtn.textContent = 'FINALIZING AND WRITING STORY...';
               setFinalizeInProgress(true);
               fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_FINALIZE }).then(function (result) {
                 setFinalizeInProgress(false);
@@ -6577,7 +6577,7 @@
                   return;
                 }
                 resultsFinalized = true;
-                showToast('Round finalized.', 'success');
+                showToast(result.story === 'failed' ? 'Round finalized, but the story could not be written. Use Write Now in League Tools to retry.' : 'Round finalized.', result.story === 'failed' ? 'error' : 'success');
                 if (typeof outerReload === 'function') outerReload();
                 // Closes the popup instead of re-rendering it in place.
                 modal.close();
@@ -6937,10 +6937,9 @@
       var cfg = res.config || {};
       var notes = [];
       if (!cfg.hasKey) notes.push('GEMINI_API_KEY is missing in Script Properties, so no stories can be written.');
-      if (!cfg.triggerInstalled) notes.push('The 5-minute story timer is not installed yet. Run leagueStoriesSetup in Apps Script.');
       notes.forEach(function (t) { body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0 0 8px;', escapeHtml(t))); });
       body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 10px;',
-        escapeHtml('Writer: ' + (cfg.model || '') + ' \u00B7 prompt ' + (cfg.promptVersion || '') + '. Stories are written automatically after a round is finalized and when a season starts, and appear in League News.')));
+        escapeHtml('Writer: ' + (cfg.model || '') + ' \u00B7 prompt ' + (cfg.promptVersion || '') + '. Stories are written automatically when a season is created and when a round is finalized, and appear in League News.')));
       var queue = res.queue || [];
       if (queue.length) {
         body.appendChild(el('div', 'font-weight:800;font-size:12px;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);margin:6px 0;', 'Waiting to be written'));
