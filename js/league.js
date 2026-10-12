@@ -2436,6 +2436,7 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
   // "## " lines become block headers (span.rcl-news-h, display:block); they carry their own spacing,
   // so no <br> goes next to them.
   var html = '';
+  var lastType = null; // type of the last part added, across paragraphs: nothing extra goes right after a header
   paragraphs.forEach(function (p, pi) {
     var parts = [], text = [];
     p.split('\n').forEach(function (line) {
@@ -2449,10 +2450,11 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
     });
     if (text.length) parts.push({ t: 'p', h: text.map(_rclApplyInlineMarkup).join('<br>') });
     parts.forEach(function (part, i) {
-      var prev = i === 0 ? (pi === 0 ? null : 'para') : parts[i - 1].t;
+      var prev = i === 0 ? (pi === 0 ? null : lastType) : parts[i - 1].t;
       if (html && part.t === 'p' && prev && prev !== 'h') html += (i === 0 ? '<br><br>' : '<br>');
       else if (html && part.t === 'h' && i === 0 && pi > 0) html += '<br>';
       html += part.h;
+      lastType = part.t;
     });
   });
   return { html: html, truncated: truncated };
