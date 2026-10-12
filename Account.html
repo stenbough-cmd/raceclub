@@ -3861,7 +3861,6 @@
       section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
       section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
       section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }, data.stories || []));
-      section.appendChild(buildLeagueStoryWriterPanel(token, function () { renderLeagueManagementSection(token); }));
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
@@ -5847,7 +5846,7 @@
         }
       }).then(function (data) {
         if (data && data.success) {
-          showToast(data.story === 'failed' ? ((data.message || 'Season created.') + ' The preview story could not be written; use Write Now in League Tools to retry.') : (data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.')), data.story === 'failed' ? 'error' : 'success');
+          showToast(data.story === 'failed' ? ((data.message || 'Season created.') + ' The preview story could not be written; use Rewrite in League News (League Tools) to retry.') : (data.message || ('Season "' + (data.seasonName || state.seasonName) + '" created.')), data.story === 'failed' ? 'error' : 'success');
           // Every lazy section is stale now (a new season ripples well beyond just Season Tools),
           // same cache-clear rcReloadAfterSave itself does -- but this always lands on Dashboard
           // specifically rather than back on whichever section the wizard was opened from.
@@ -6043,9 +6042,21 @@
     var body = el('div', 'rc-story-fb-body');
     body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'Loading feedback...'));
     panel.appendChild(body);
-    fetchApi('champStory', { token: token, params: { op: 'adminFeedback' }, timeoutMs: 60000 }).then(function (res) {
+    // Championship stories (champStory) and multiplayer League stories (leagueStory) land in one list.
+    var champReq = fetchApi('champStory', { token: token, params: { op: 'adminFeedback' }, timeoutMs: 60000 }).catch(function () { return null; });
+    var leagueReq = fetchApi('leagueStory', { token: token, params: { op: 'adminList' }, timeoutMs: 60000 }).catch(function () { return null; });
+    Promise.all([champReq, leagueReq]).then(function (both) {
+      var champRes = both[0], leagueRes = both[1];
       body.innerHTML = '';
-      if (!res || !res.success) { body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((res && res.message) || 'Could not load the feedback.'))); return; }
+      if ((!champRes || !champRes.success) && (!leagueRes || !leagueRes.success)) {
+        body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((champRes && champRes.message) || (leagueRes && leagueRes.message) || 'Could not load the feedback.')));
+        return;
+      }
+      var all = [];
+      if (champRes && champRes.success) (champRes.feedback || []).forEach(function (f) { f.source = 'Championship'; all.push(f); });
+      if (leagueRes && leagueRes.success) (leagueRes.feedback || []).forEach(function (f) { f.source = 'League'; all.push(f); });
+      all.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+      var res = { feedback: all };
       if (!res.feedback.length) { body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'No feedback yet.')); return; }
       var table = el('div', 'display:flex;flex-direction:column;');
       res.feedback.forEach(function (f) {
@@ -6055,7 +6066,7 @@
         row.appendChild(el('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;',
           '<strong style="color:' + (up ? '#2e9e5b' : 'var(--rc-red)') + ';">' + (up ? 'Thumbs Up' : 'Thumbs Down') + '</strong>' +
           '<span style="color:var(--rc-carbon);font-weight:700;">' + escapeHtml(f.title || 'Untitled story') + '</span>' +
-          '<span style="color:var(--rc-steel);">' + escapeHtml([f.reader, f.kind, when, f.promptVersion].filter(Boolean).join(' \u00B7 ')) + '</span>'));
+          '<span style="color:var(--rc-steel);">' + escapeHtml([f.source, f.reader, f.kind, when, f.promptVersion].filter(Boolean).join(' \u00B7 ')) + '</span>'));
         if (f.comment) row.appendChild(el('div', 'margin-top:4px;color:var(--rc-carbon);', escapeHtml(f.comment)));
         table.appendChild(row);
       });
@@ -6577,7 +6588,7 @@
                   return;
                 }
                 resultsFinalized = true;
-                showToast(result.story === 'failed' ? 'Round finalized, but the story could not be written. Use Write Now in League Tools to retry.' : 'Round finalized.', result.story === 'failed' ? 'error' : 'success');
+                showToast(result.story === 'failed' ? 'Round finalized, but the story could not be written. Use Rewrite in League News (League Tools) to retry.' : 'Round finalized.', result.story === 'failed' ? 'error' : 'success');
                 if (typeof outerReload === 'function') outerReload();
                 // Closes the popup instead of re-rendering it in place.
                 modal.close();
@@ -6926,61 +6937,6 @@
         else showToast((res && (res.message || res.error)) || 'The story could not be written.', 'error');
       }).catch(function () { showToast('No answer from the server. Check League Tools again in a minute.', 'error'); });
     }, { waitForWrite: true });
-  }
-
-  // Story writer status + anything still waiting + readers' feedback (admins/organizers).
-  function buildLeagueStoryWriterPanel(token, reload) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.style.marginTop = '24px';
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'AI Season Stories'));
-    var body = el('div');
-    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'Loading story writer...'));
-    panel.appendChild(body);
-    fetchApi('leagueStory', { token: token, params: { op: 'adminList' }, timeoutMs: 60000 }).then(function (res) {
-      body.innerHTML = '';
-      if (!res || !res.success) { body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((res && res.message) || 'Could not load the story writer.'))); return; }
-      var cfg = res.config || {};
-      var notes = [];
-      if (!cfg.hasKey) notes.push('GEMINI_API_KEY is missing in Script Properties, so no stories can be written.');
-      notes.forEach(function (t) { body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0 0 8px;', escapeHtml(t))); });
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0 0 10px;',
-        escapeHtml('Writer: ' + (cfg.model || '') + ' \u00B7 prompt ' + (cfg.promptVersion || '') + '. Stories are written automatically when a season is created and when a round is finalized, and appear in League News.')));
-      var queue = res.queue || [];
-      if (queue.length) {
-        body.appendChild(el('div', 'font-weight:800;font-size:12px;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);margin:6px 0;', 'Waiting to be written'));
-        queue.forEach(function (q) {
-          var row = el('div', 'display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--rc-offwhite);');
-          row.appendChild(buildNewsBadge({ isStory: true, roundNum: q.roundNum || 0 }));
-          row.appendChild(el('div', 'flex:1;min-width:0;font-size:13px;color:var(--rc-carbon);',
-            escapeHtml((q.seasonName || '') + ' \u00B7 ' + (q.kind === 'preview' ? 'Season Preview' : 'Round ' + q.roundNum) + (q.blocked ? ' \u00B7 automatic tries used up' : ''))));
-          var wb = el('button', 'rc-btn-secondary rc-btn-row', 'Write Now');
-          wb.type = 'button';
-          wb.addEventListener('click', function () {
-            openStoryWriteConfirm({ status: 'queued', kind: q.kind, roundNum: q.roundNum, seasonId: q.seasonId, roundId: q.roundId }, token, reload);
-          });
-          row.appendChild(wb);
-          body.appendChild(row);
-        });
-      }
-      var fb = res.feedback || [];
-      body.appendChild(el('div', 'font-weight:800;font-size:12px;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);margin:14px 0 6px;', 'Driver feedback'));
-      if (!fb.length) { body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'No feedback yet.')); return; }
-      fb.forEach(function (f) {
-        var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-offwhite);font-size:13px;');
-        var up = f.vote === 'up';
-        var when = f.createdAt ? new Date(f.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        row.appendChild(el('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;',
-          '<strong style="color:' + (up ? '#2e9e5b' : 'var(--rc-red)') + ';">' + (up ? 'Thumbs Up' : 'Thumbs Down') + '</strong>' +
-          '<span style="color:var(--rc-carbon);font-weight:700;">' + escapeHtml(f.title || 'Untitled story') + '</span>' +
-          '<span style="color:var(--rc-steel);">' + escapeHtml([f.reader, f.kind, when, f.promptVersion].filter(Boolean).join(' \u00B7 ')) + '</span>'));
-        if (f.comment) row.appendChild(el('div', 'margin-top:4px;color:var(--rc-carbon);', escapeHtml(f.comment)));
-        body.appendChild(row);
-      });
-    }).catch(function () {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', 'No answer from the server.'));
-    });
-    return panel;
   }
 
   function openNewsPostModal(token, reload) {
