@@ -423,6 +423,26 @@ p { margin: 0 0 0.75em; }
 }
 .rc-dm-status-pill-active { background: var(--rc-positive-bg); color: var(--rc-positive); }
 .rc-dm-status-pill-inactive { background: var(--rc-offwhite); color: var(--rc-steel); }
+
+/* League News / AI Season Story badges on Account > League Tools (same look as league.html):
+   RD over the round number on a story, NE over WS in a different color on a news post. */
+.rc-news-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  font-family: var(--rc-font-heading);
+  line-height: 1;
+}
+.rc-news-badge-rd { background: var(--rc-red); }
+.rc-news-badge-ne { background: #2f6f9f; }
+.rc-news-badge-top { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding-left: 0.12em; }
+.rc-news-badge-bottom { margin-top: 3px; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
 .rc-dm-add-row input { margin-top: 0; flex: 1; }

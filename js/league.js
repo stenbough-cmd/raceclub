@@ -1784,6 +1784,8 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
           allClauses.forEach(function (clause, i) {
             lineEl.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
             var cls = CLAUSE_CLASS[clause.kind];
+            // "handed a Drive Thru penalty" is bold red; "serves a ... penalty" stays plain (Matt, 2026-10-11).
+            if (!cls && clause.kind === 'penalty' && /^handed/i.test(clause.text)) cls = 'rcl-report-clause-penalty';
             if (cls) {
               // Built by hand rather than via _rclEl -- that helper sets innerHTML, and clause.text
               // (driver-supplied names can flow into it via "contact with X") must never be parsed
@@ -2456,6 +2458,95 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
   return { html: html, truncated: truncated };
 }
 
+// The little square beside every League News item: an AI Season Story shows "RD" over its round number
+// (01, 02, 03... the season preview is 00); a regular News post shows "NE" over "WS" in a different color.
+function _rclNewsBadgeHtml(item, small) {
+  var top, bottom, kind;
+  if (item && item.isStory) {
+    top = 'RD';
+    bottom = (item.roundNum || 0) < 10 ? '0' + (item.roundNum || 0) : String(item.roundNum);
+    kind = 'rcl-news-badge-rd';
+  } else {
+    top = 'NE'; bottom = 'WS'; kind = 'rcl-news-badge-ne';
+  }
+  return '<span class="rcl-news-badge ' + kind + (small ? ' rcl-news-badge-sm' : '') + '"><span class="rcl-news-badge-top">' + top + '</span><span class="rcl-news-badge-bottom">' + bottom + '</span></span>';
+}
+
+// Title + meta with the badge on the left.
+function _rclNewsHeadRow(item) {
+  var row = _rclEl('div', 'rcl-news-headrow');
+  row.appendChild(_rclEl('div', 'rcl-news-badge-wrap', _rclNewsBadgeHtml(item, false)));
+  var col = _rclEl('div', 'rcl-news-headtext');
+  col.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(item.title || '(untitled)')));
+  col.appendChild(_rclEl('div', 'rcl-news-meta', _rclEscapeHtml(_rclNewsMetaLine(item))));
+  row.appendChild(col);
+  return row;
+}
+
+// ---- Thumbs on AI stories: only drivers who raced in that story's season can vote. -------------
+var RCL_THUMB_UP_SVG_ = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>';
+var RCL_THUMB_DOWN_SVG_ = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>';
+var _rclVotesPromise = null;
+function _rclLoadMyStoryVotes() {
+  var token = null;
+  try { token = getToken(); } catch (err) { token = null; }
+  if (!token) return Promise.resolve({ signedIn: false, eligibleSeasonIds: [], votes: {} });
+  if (!_rclVotesPromise) {
+    _rclVotesPromise = fetchApi('leagueStory', { token: token, params: { op: 'myVotes' } }).then(function (res) {
+      if (!res || !res.success) return { signedIn: false, eligibleSeasonIds: [], votes: {} };
+      return res;
+    }).catch(function () { return { signedIn: false, eligibleSeasonIds: [], votes: {} }; });
+  }
+  return _rclVotesPromise;
+}
+
+function _rclAddStoryVoteBar(wrap, item) {
+  if (!item || !item.isStory) return;
+  _rclLoadMyStoryVotes().then(function (me) {
+    if (!me.signedIn || me.eligibleSeasonIds.indexOf(item.seasonId) === -1) return;
+    var token = getToken();
+    var bar = _rclEl('div', 'rcl-story-vote');
+    bar.appendChild(_rclEl('span', 'rcl-story-vote-label', 'Rate this story'));
+    var up = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-up', RCL_THUMB_UP_SVG_);
+    var down = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-down', RCL_THUMB_DOWN_SVG_);
+    up.type = 'button'; down.type = 'button';
+    up.setAttribute('aria-label', 'Thumbs up'); down.setAttribute('aria-label', 'Thumbs down');
+    bar.appendChild(up); bar.appendChild(down);
+    var note = _rclEl('span', 'rcl-story-vote-note', '');
+    bar.appendChild(note);
+    var form = _rclEl('div', 'rcl-story-vote-form');
+    form.style.display = 'none';
+    var ta = document.createElement('textarea');
+    ta.rows = 3; ta.maxLength = 1000; ta.placeholder = 'What did you not like about this story?';
+    var send = _rclEl('button', 'rcl-story-vote-send', 'Send Feedback');
+    send.type = 'button';
+    form.appendChild(ta); form.appendChild(send);
+    function mark(vote) {
+      up.classList.toggle('rcl-story-thumb-on', vote === 'up');
+      down.classList.toggle('rcl-story-thumb-on', vote === 'down');
+    }
+    mark(me.votes[item.newsId] || '');
+    function submit(vote, comment) {
+      note.textContent = 'Saving...';
+      fetchApi('leagueStory', { method: 'POST', token: token, body: { op: 'feedback', storyId: item.newsId, vote: vote, comment: comment || '' } }).then(function (res) {
+        if (!res || !res.success) { note.textContent = (res && res.message) || 'Could not save your feedback.'; return; }
+        me.votes[item.newsId] = vote;
+        mark(vote);
+        form.style.display = 'none';
+        note.textContent = 'Thanks for the feedback.';
+      }).catch(function () { note.textContent = 'Could not reach the server.'; });
+    }
+    up.addEventListener('click', function () { form.style.display = 'none'; submit('up', ''); });
+    down.addEventListener('click', function () { form.style.display = ''; ta.focus(); });
+    send.addEventListener('click', function () {
+      if (!ta.value.trim()) { note.textContent = 'Please say what you did not like.'; return; }
+      submit('down', ta.value.trim());
+    });
+    wrap.appendChild(bar);
+    wrap.appendChild(form);
+  });
+}
+
 function _rclNewsMetaLine(item) {
   var metaParts = [];
   if (item.authorName) metaParts.push('By ' + item.authorName);
@@ -2489,8 +2580,7 @@ function _rclRenderNews(hub) {
     heroImg.loading = 'lazy';
     currentWrap.appendChild(heroImg);
   }
-  currentWrap.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(current.title)));
-  currentWrap.appendChild(_rclEl('div', 'rcl-news-meta', _rclEscapeHtml(_rclNewsMetaLine(current))));
+  currentWrap.appendChild(_rclNewsHeadRow(current));
   // 1000-character cap, not the old fixed 14-line CSS clamp -- "Continue reading..." now only shows
   // up when the story is actually longer than that, via preview.truncated.
   // EXCEPT when Last Race has nothing to show -- same hasLastRace check _rclRenderLastRace_ makes
@@ -2513,7 +2603,7 @@ function _rclRenderNews(hub) {
     // Capped at the next 3 -- anything older than that stays reachable only through the read-story
     // popup's own "Load More News" button, not listed out here on the page.
     _rclNewsList.slice(1, 4).forEach(function (item, i) {
-      var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclEscapeHtml(item.title || '(untitled)'));
+      var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclNewsBadgeHtml(item, true) + '<span class="rcl-news-previous-text">' + _rclEscapeHtml(item.title || '(untitled)') + '</span>');
       titleBtn.type = 'button';
       titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1); });
       prevWrap.appendChild(titleBtn);
@@ -2555,8 +2645,7 @@ function _rclOpenStoryModal(startIndex) {
       heroImg.loading = 'lazy';
       wrap.appendChild(heroImg);
     }
-    wrap.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(item.title)));
-    wrap.appendChild(_rclEl('div', 'rcl-news-meta', _rclEscapeHtml(_rclNewsMetaLine(item))));
+    wrap.appendChild(_rclNewsHeadRow(item));
     var bodyEl = _rclEl('div', 'rcl-news-body');
     _rclRenderStoryBodyBlocks(bodyEl, item.body);
     wrap.appendChild(bodyEl);
@@ -2565,6 +2654,7 @@ function _rclOpenStoryModal(startIndex) {
       var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
       wrap.appendChild(_rclEl('div', 'rcl-news-editnote', _rclEscapeHtml(editText)));
     }
+    _rclAddStoryVoteBar(wrap, item);
     storiesWrap.appendChild(wrap);
   }
 

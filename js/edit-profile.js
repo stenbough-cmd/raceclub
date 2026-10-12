@@ -420,7 +420,18 @@ function _rcEPOpenEditProfileModal(profile, token) {
   });
   form.appendChild(timeZone);
 
-  // Email-notification opt-in checkbox removed.
+  // "Include my name in Season Stories" -- see Account.html's copy of this popup for the full note.
+  var storyLabel = document.createElement('label');
+  storyLabel.style.marginTop = '14px';
+  storyLabel.style.display = 'block';
+  var storyBox = document.createElement('input');
+  storyBox.type = 'checkbox';
+  storyBox.checked = !profile.storyOptOut;
+  storyLabel.appendChild(storyBox);
+  storyLabel.appendChild(document.createTextNode(' Include my name in Season Stories'));
+  form.appendChild(storyLabel);
+  form.appendChild(_rcEP_el('div', 'rc-hint', 'Season Stories are written by an AI about each race. Uncheck this to be described only by your car and team.'));
+
 
   body.appendChild(form);
   // noOwnButton: true -- SAVE CHANGES below drives both saves together now.
@@ -467,7 +478,8 @@ function _rcEPOpenEditProfileModal(profile, token) {
         suffix: suffix.value,
         email: email.value.trim(),
         location: location.value,
-        timeZone: timeZone.value
+        timeZone: timeZone.value,
+        storyOptOut: storyBox.checked ? '0' : '1'
       }
     })
       .then(function (data) {

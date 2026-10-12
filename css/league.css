@@ -13,6 +13,7 @@ body.rc-league-page {
   --rcl-ink-dim: #b4b7bd;
   --rcl-ink-faint: #7d8088;
   --rcl-gold: #e0b64c; /* special-event gold; same as the hero SEASON number */
+  --rcl-badge-news: #2f6f9f; /* the NE / WS box on a regular League News post (AI stories use the brand red) */
   /* Race Report clause colors -- damage/collision aren't in the shared --rc-red brand accent, so
      they get their own two tokens here rather than borrowing a color that means something else on
      this page. */
@@ -1301,6 +1302,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-report-clause-car { color: var(--rcl-report-collision); font-weight: 700; } /* car-to-car collision: yellow */
 .rcl-report-clause-damage { color: var(--rcl-report-damage); font-weight: 700; } /* damage reported: bold orange */
 .rcl-report-clause-pit { color: var(--rcl-report-damage); font-weight: 700; } /* pits: bold orange, same as damage reports -- was bold red */
+.rcl-report-clause-penalty { color: var(--rc-red); font-weight: 700; } /* "handed a Drive Thru penalty": bold red */
 .rcl-report-clause-gain { color: var(--rcl-report-gain); font-weight: 700; } /* position gained: bold green */
 .rcl-report-clause-loss { color: var(--rc-red); } /* position lost: red, NOT bold */
 .rcl-report-clause-retirement { color: var(--rcl-ink); font-weight: 700; } /* retires from the race: bold white */
@@ -1756,6 +1758,47 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   cursor: pointer;
 }
 .rcl-news-previous-title:hover { color: var(--rcl-ink); text-decoration: underline; }
+
+/* -------------------------------------------------------------------- */
+/* League News badges -- RD over the round number on an AI Season Story, */
+/* NE over WS (different color) on a regular news post.                  */
+/* -------------------------------------------------------------------- */
+.rcl-news-headrow { display: flex; align-items: flex-start; gap: 12px; }
+.rcl-news-headtext { min-width: 0; flex: 1 1 auto; }
+.rcl-news-badge-wrap { flex: 0 0 auto; }
+.rcl-news-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  color: #fff;
+  font-family: var(--rc-font-heading);
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.rcl-news-badge-rd { background: var(--rc-red); }
+.rcl-news-badge-ne { background: var(--rcl-badge-news); }
+.rcl-news-badge-top { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding-left: 0.12em; }
+.rcl-news-badge-bottom { margin-top: 4px; font-size: 19px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.rcl-news-badge-sm { width: 34px; height: 34px; }
+.rcl-news-badge-sm .rcl-news-badge-top { font-size: 9px; }
+.rcl-news-badge-sm .rcl-news-badge-bottom { margin-top: 3px; font-size: 14px; }
+.rcl-news-previous-title { display: flex; align-items: center; gap: 10px; }
+.rcl-news-previous-text { min-width: 0; }
+/* Thumbs on an AI story (drivers who raced that season only). */
+.rcl-story-vote { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rcl-story-vote-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-right: 4px; }
+.rcl-story-thumb { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: none; border: 1px solid var(--rcl-line-bright); color: var(--rcl-ink-dim); cursor: pointer; }
+.rcl-story-thumb:hover { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
+.rcl-story-thumb-on { color: #fff; background: var(--rc-red); border-color: var(--rc-red); }
+.rcl-story-vote-note { font-size: 12.5px; color: var(--rcl-ink-faint); }
+.rcl-story-vote-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
+.rcl-story-vote-form textarea { width: 100%; box-sizing: border-box; background: var(--rcl-bg-raised-2); color: var(--rcl-ink); border: 1px solid var(--rcl-line-bright); padding: 8px; font-family: var(--rc-font-body); font-size: 14px; }
+.rcl-story-vote-send { align-self: flex-start; background: var(--rc-red); color: #fff; border: none; padding: 8px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.rcl-story-vote-send:hover { background: var(--rc-red-dark); }
+
 
 /* -------------------------------------------------------------------- */
 /* Read-story popup -- centered card over a dimmed backdrop, opened from */
