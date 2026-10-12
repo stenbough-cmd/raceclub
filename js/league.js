@@ -3067,7 +3067,7 @@ function _rclOpenLeagueRulesModal() {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'League Rules'));
+  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Help: Online League'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -3168,7 +3168,7 @@ function _rclOpenMemberListModal(hub) {
   _rclLockBodyScroll();
 }
 
-// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | League Rules | Join Race Club
+// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Join Race Club (signed in: Current Drivers) | Help
 // (signed in: Current Drivers). Same look as the Championship page's link bar (css/league.css,
 // .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
 // links replace it.
@@ -3192,7 +3192,6 @@ function _rclRenderNavbar_(hub) {
     links.appendChild(b);
   }
   add('Season Preview', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
-  add('League Rules', function () { _rclOpenLeagueRulesModal(); });
   if (signedIn) {
     add('Current Drivers', function () { _rclOpenMemberListModal(_rclNavHub_); });
   } else {
@@ -3201,6 +3200,7 @@ function _rclRenderNavbar_(hub) {
       window.location.href = 'register.html';
     });
   }
+  add('Help', function () { _rclOpenLeagueRulesModal(); });
   nav.appendChild(inner);
 }
 
