@@ -2821,7 +2821,30 @@ function _rclBuildSeasonFormatBlocks_(hub) {
 }
 
 // ---- Signed-in driver's seat line in the hero (same content and layout as championship.html's header) ----
+var RCL_SEAT_CACHE_KEY_ = 'rc_league_seat_v1';
 var _rclSeatState = { requested: false, seat: null };
+
+// The last seat we fetched is kept in this browser (like the hub copy), so the seat line paints on the
+// very first frame and the fresh copy only redraws it if something changed. Only used when the saved
+// copy belongs to the profile that is signed in right now.
+function _rclReadSeatCache_() {
+  try {
+    var token = getToken();
+    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+    if (!token || !me || !me.profileId) return null;
+    var raw = localStorage.getItem(RCL_SEAT_CACHE_KEY_);
+    var obj = raw ? JSON.parse(raw) : null;
+    return (obj && obj.profileId === me.profileId && obj.seat) ? obj.seat : null;
+  } catch (err) { return null; }
+}
+function _rclWriteSeatCache_(seat) {
+  try {
+    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+    if (seat && seat.hasSeat && me && me.profileId) localStorage.setItem(RCL_SEAT_CACHE_KEY_, JSON.stringify({ profileId: me.profileId, seat: seat }));
+    else localStorage.removeItem(RCL_SEAT_CACHE_KEY_);
+  } catch (err) { /* storage unavailable: the seat line just waits for the fetch */ }
+}
+_rclSeatState.seat = _rclReadSeatCache_();
 
 function _rclClassPill_(cls) {
   var colors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
@@ -2896,14 +2919,17 @@ function _rclLoadHeroSeat_(hub) {
   _rclSeatState.requested = true;
   fetchApi('getDashboardData', { token: token }).then(function (data) {
     if (data && data.success && data.currentSeat && data.currentSeat.success) {
+      var changed = JSON.stringify(data.currentSeat) !== JSON.stringify(_rclSeatState.seat);
       _rclSeatState.seat = data.currentSeat;
-      _rclRenderHeroSeat_(hub);
+      _rclWriteSeatCache_(data.currentSeat);
+      if (changed) _rclRenderHeroSeat_(hub);
     }
   }).catch(function () { /* the hero just shows no seat line */ });
 }
 
 function _rclRenderHero(hub) {
-  setTimeout(function () { _rclRenderHeroSeat_(hub); _rclLoadHeroSeat_(hub); }, 0);
+  _rclRenderHeroSeat_(hub);
+  _rclLoadHeroSeat_(hub);
   // Eyebrow is static "Race Club" (set directly in league.html) -- nothing to fill in here anymore.
   // "Season N / Name" -- the "/" reads in the brand red, the season name itself in bright white,
   // "Season N" now reads gold.
