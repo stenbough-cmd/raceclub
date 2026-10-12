@@ -2462,6 +2462,10 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
 // (01, 02, 03... the season preview is 00); a regular News post shows "NE" over "WS" in a different color.
 function _rclNewsBadgeHtml(item, small) {
   var top, bottom, kind;
+  if (item && item.isStory && !(Number(item.roundNum) > 0)) {
+    // Season preview: one word, PRE, in the red box.
+    return '<span class="rcl-news-badge rcl-news-badge-rd rcl-news-badge-pre' + (small ? ' rcl-news-badge-sm' : '') + '"><span class="rcl-news-badge-top">PRE</span></span>';
+  }
   if (item && item.isStory) {
     top = 'RD';
     bottom = (item.roundNum || 0) < 10 ? '0' + (item.roundNum || 0) : String(item.roundNum);

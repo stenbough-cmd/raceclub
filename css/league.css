@@ -2444,3 +2444,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-top, .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { font-size: 12px; }
 .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { margin-top: 2px; }
 .rcl-news-badge-sm.rcl-news-badge-rd, .rcl-news-badge-sm.rcl-news-badge-ne { border-left-width: 4px; }
+/* Season preview badge: just PRE, same size as the other badge lines. */
+.rcl-news-badge-pre .rcl-news-badge-top { font-size: 16px; }
+.rcl-news-badge-sm.rcl-news-badge-pre .rcl-news-badge-top { font-size: 12px; }

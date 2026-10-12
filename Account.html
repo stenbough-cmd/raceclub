@@ -6819,6 +6819,11 @@
   // league.html's League News boxes.
   function buildNewsBadge(item) {
     var isStory = !!(item && item.isStory);
+    if (isStory && !(Number(item.roundNum) > 0)) {
+      var pre = el('span', 'rc-news-badge rc-news-badge-rd');
+      pre.appendChild(el('span', 'rc-news-badge-top', 'PRE'));
+      return pre;
+    }
     var top = isStory ? 'RD' : 'NE';
     var bottom = isStory ? (Number(item.roundNum) < 10 ? '0' + Number(item.roundNum || 0) : String(item.roundNum)) : 'WS';
     var b = el('span', 'rc-news-badge ' + (isStory ? 'rc-news-badge-rd' : 'rc-news-badge-ne'));
