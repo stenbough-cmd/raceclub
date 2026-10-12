@@ -2470,3 +2470,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   .rcl-hero-seat .rc-cs-logo-wrap { height: 36px; min-width: 0; }
   .rcl-hero-seat .rc-cs-logo { max-height: 36px; max-width: 90px; }
 }
+
+/* Subheadings inside the League News preview story only (the read-story popup keeps 17px). */
+.rcl-news-current-body .rcl-news-h { font-size: 15px; }
