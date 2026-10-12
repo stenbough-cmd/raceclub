@@ -2231,8 +2231,9 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 58px; padding: 0 4px; box-sizing: border-box; }
 /* Extra 10px under the metal class headers in LAST RACE (<CLASS> HIGHLIGHTS) and in Race Recap
    (<CLASS> RESULTS), same 10px the standings boards got (12px + 10px). Shared by the Championship page. */
-.rcl-lr-class > .rcl-standings-class-header,
 .rcl-race-class > .rcl-standings-class-header { margin-bottom: 22px; }
+/* LAST RACE (<CLASS> HIGHLIGHTS) gets a further 15px (22px + 15px). */
+.rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
 /* Wide boards (many rounds) scroll sideways inside the panel instead of widening the page. */
 .rcl-board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .rcl-board-table { width: 100%; }
@@ -2447,3 +2448,25 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* Season preview badge: just PRE, same size as the other badge lines. */
 .rcl-news-badge-pre .rcl-news-badge-top { font-size: 16px; }
 .rcl-news-badge-sm.rcl-news-badge-pre .rcl-news-badge-top { font-size: 12px; }
+
+/* League News preview: the headline story's title is ALL CAPS. */
+.rcl-news-current .rcl-news-title { text-transform: uppercase; font-size: 17px; letter-spacing: 0.02em; }
+
+/* Signed-in driver's seat line under "Season N / Name" (same content as championship.html's header,
+   recolored for the dark page). */
+.rcl-hero-seat { margin-top: 6px; }
+.rcl-hero-seat .rcl-seat-line { margin: 0; }
+.rcl-seat-name .rcl-seat-driver { font-weight: 700; color: var(--rcl-ink); text-decoration: none; }
+.rcl-seat-name a.rcl-seat-driver:hover, .rcl-seat-name a.rcl-seat-driver:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+.rcl-seat-name .rcl-seat-team { font-weight: 400; color: var(--rcl-ink-dim); }
+.rcl-hero-seat .rc-cs-car-line { color: var(--rcl-ink-dim); }
+.rcl-hero-seat .rc-badge-chip-abbrev { align-self: center; }
+@media (min-width: 641px) {
+  .rcl-hero:has(.rcl-seat-line) { padding-top: 24px; padding-bottom: 24px; }
+}
+@media (max-width: 640px) {
+  .rcl-hero:has(.rcl-seat-line) { padding-top: 7.5px; padding-bottom: 7.5px; }
+  .rcl-hero-seat { margin-top: 4px; }
+  .rcl-hero-seat .rc-cs-logo-wrap { height: 36px; min-width: 0; }
+  .rcl-hero-seat .rc-cs-logo { max-height: 36px; max-width: 90px; }
+}

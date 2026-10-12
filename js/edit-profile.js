@@ -392,6 +392,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   suffixCol.appendChild(suffix);
   nameRow.appendChild(suffixCol);
   form.appendChild(nameRow);
+  form.appendChild(_rcEP_el('div', 'rc-hint', 'This name <strong>must</strong> match your Race Control name in LMU.'));
 
   form.appendChild(_rcEP_el('label', null, 'Email Address'));
   var email = _rcEP_el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
@@ -431,6 +432,16 @@ function _rcEPOpenEditProfileModal(profile, token) {
   storyLabel.appendChild(document.createTextNode(' Include my name in Season Stories'));
   form.appendChild(storyLabel);
   form.appendChild(_rcEP_el('div', 'rc-hint', 'Season Stories are written by an AI about each race. Uncheck this to be described only by your car and team.'));
+
+  var notifLabel = document.createElement('label');
+  notifLabel.style.marginTop = '14px';
+  notifLabel.style.display = 'block';
+  var notifBox = document.createElement('input');
+  notifBox.type = 'checkbox';
+  notifBox.checked = !!profile.emailNotificationsOptIn;
+  notifLabel.appendChild(notifBox);
+  notifLabel.appendChild(document.createTextNode(' Get Race Club notifications by email'));
+  form.appendChild(notifLabel);
 
 
   body.appendChild(form);
@@ -479,7 +490,8 @@ function _rcEPOpenEditProfileModal(profile, token) {
         email: email.value.trim(),
         location: location.value,
         timeZone: timeZone.value,
-        storyOptOut: storyBox.checked ? '0' : '1'
+        storyOptOut: storyBox.checked ? '0' : '1',
+        emailNotificationsOptIn: notifBox.checked ? '1' : '0'
       }
     })
       .then(function (data) {
