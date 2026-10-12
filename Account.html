@@ -487,7 +487,7 @@
     // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
     // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
     // sidebar/nav chrome, which read as leaving the site rather than part of the account.
-    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
+    nav.appendChild(makeNavButton('help', 'League Help', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
     // Feedback -- opens the same page-agnostic popup the header dropdown's Feedback item opens
     // (_rcOpenFeedbackModal, js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js"> tag in <head>), not an in-page section.
@@ -1252,7 +1252,7 @@
     // Title + car number share one flex row now. A genuine flex row is more robust than fighting
     // the cascade with specificity tricks.
     var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current Seat'));
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current League Seat'));
     card.appendChild(headerRow);
     var body = el('div', 'rc-cs-body');
     card.appendChild(body);
@@ -1373,7 +1373,7 @@
     // Title + "Round n" share one flex row now -- same .rc-dash-card-header-row treatment as
     // Current Seat's car number, more robust than the earlier absolute-positioning attempt.
     var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next Race'));
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next League Race'));
     card.appendChild(headerRow);
 
     // No active season at all vs. a season that's open but this driver isn't registered for -- two
@@ -1670,7 +1670,7 @@
   // renders whatever comes back.
   function protestCard(data, activeSeasonData) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
+    card.appendChild(el('h3', 'rc-dash-card-title', 'League Protests'));
 
     var protests = (data && data.success && data.protests) ? data.protests : [];
     // No active season at all -- handleGetMyProtests itself has no hasSeason flag of its own (it
