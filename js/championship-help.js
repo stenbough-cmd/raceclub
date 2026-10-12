@@ -119,7 +119,29 @@ var RCC_HELP_SECTIONS = [
       '</ul></div>'
   },
   {
-    id: 'end-season', num: '7', title: 'Ending a Season',
+    id: 'stories', num: '7', title: 'Season Stories',
+    html:
+      '<p>Your season gets its own news coverage. Season Stories, next to Last Race on this page, are written for you by AI from the facts of your season: the results of every class, the standings after each round, lap-by-lap battles, pit stops, contacts, penalties and the weather. Each story reads like a motorsport news article, with a headline, a short summary and a sidebar of key facts.</p>' +
+      '<table class="rcc-help-table"><tbody>' +
+      '<tr><td><strong>Season Preview</strong></td><td>Written as soon as you sign for a team. It sets the scene for the season ahead: the calendar, the classes, the grid and your team.</td></tr>' +
+      '<tr><td><strong>Race Story</strong></td><td>Written after you upload a round\u2019s results. It covers the whole race, with the points as they stood after that round.</td></tr>' +
+      '<tr><td><strong>Season Finale</strong></td><td>The story for the last round, which also looks back on the season and its champions.</td></tr>' +
+      '</tbody></table>' +
+      '<p>The newest story shows first. Click <strong>CONTINUE READING</strong> to open the full story, and use <strong>MORE STORIES</strong> to read earlier ones. Each story is dated by the day its race was run.</p>' +
+      '<ol class="rcc-help-steps">' +
+      '<li><strong>Wait a minute or two.</strong> A new story is written in the background and the panel shows that it is being written. You can keep using the page while you wait.</li>' +
+      '<li><strong>Leave whenever you like.</strong> If you close the page before a story is finished, it is written the next time you open your season.</li>' +
+      '<li><strong>Rate it.</strong> Use the thumbs up or thumbs down under a story. A thumbs down asks what you didn\u2019t like. Your ratings and comments shape the stories written for you from then on, and they are shared with the Race Club team.</li>' +
+      '</ol>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
+      '<li>A story is written once. Editing your season later does not rewrite stories that already exist, but the next story may mention a change to your calendar.</li>' +
+      '<li>Erase Results removes that round\u2019s story too. Upload the files again and a new story is written. Delete Season removes all of that season\u2019s stories.</li>' +
+      '<li>If a story could not be written, the panel says why and tries again the next time you open the page.</li>' +
+      '<li>Stories are written by AI from your results, so the occasional detail may be off. The standings and results on this page are always the official record.</li>' +
+      '</ul></div>'
+  },
+  {
+    id: 'end-season', num: '8', title: 'Ending a Season',
     html:
       '<ol class="rcc-help-steps">' +
       '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
@@ -128,6 +150,6 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Start the next one.</strong> Season Preview turns back into Create Season, and your past seasons stay available from the Season dropdown in the black bar.</li>' +
       '</ol>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Changed Your Mind?</strong>If you are unhappy with a season, you have two choices. You can click End Season before every round is raced, which saves it as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. Or you can click Delete Season, which removes the season you are viewing along with its rounds, your team signing and every result and lap. Deleting cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +
-      '<p>If you find something that doesn’t work, click <strong>Find A Bug?</strong> in the black bar and let us know.</p>'
+      '<p>If you find something that doesn’t work, open the menu under your name at the top of the page (the menu button on a phone), choose <strong>Feedback</strong> and let us know.</p>'
   }
 ];
