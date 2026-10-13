@@ -6,7 +6,7 @@
 // Writing rules for this text (Matt): plain, correct English in full sentences. No em dashes, and no
 // colon followed by a lowercase clause. Callout titles are their own line (.rcc-help-callout-title)
 // rather than "Label:". Apostrophes are typographic (’) so the strings need no escaping.
-// Quick start (Matt, 2026-10-13): three steps shown right under Jump To A Section.
+// Quick start (Matt, 2026-10-13): three steps shown above Jump To A Section.
 var RCC_HELP_QUICKSTART =
   '<div class="rcc-quick-title">Using Race Club Championship Is as Easy as 1-2-3</div>' +
   '<ol class="rcc-quick-steps">' +

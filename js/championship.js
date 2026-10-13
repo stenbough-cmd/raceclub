@@ -2443,17 +2443,17 @@ function rccOpenHelp() {
   var m = rccOpenModal('Help: Single Player Mode', { wide: true });
   m.body.classList.add('rcc-help-body');
   var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
-  var nav = _rccEl('div', 'rc-rulebook-nav');
-  nav.appendChild(_rccText('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
-  var grid = _rccEl('div', 'rc-rulebook-nav-grid');
-  nav.appendChild(grid);
-  m.body.appendChild(nav);
-  // Quick start for new drivers (Matt, 2026-10-13), right under Jump To A Section.
+  // Quick start for new drivers (Matt, 2026-10-13), above Jump To A Section.
   if (typeof RCC_HELP_QUICKSTART !== 'undefined') {
     var qs = _rccEl('div', 'rcc-quick');
     qs.innerHTML = RCC_HELP_QUICKSTART;
     m.body.appendChild(qs);
   }
+  var nav = _rccEl('div', 'rc-rulebook-nav');
+  nav.appendChild(_rccText('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+  var grid = _rccEl('div', 'rc-rulebook-nav-grid');
+  nav.appendChild(grid);
+  m.body.appendChild(nav);
   sections.forEach(function (sec) {
     var wrap = _rccEl('div', 'rc-rulebook-section');
     wrap.appendChild(_rccText('h3', null, sec.num + '. ' + sec.title));

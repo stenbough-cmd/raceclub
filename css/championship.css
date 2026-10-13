@@ -964,8 +964,8 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* LAST RACE: 15px more space under each <CLASS> HIGHLIGHTS header (Matt, 2026-10-11): 22px + 15px. */
 .rcc-page .rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
 
-/* HELP quick start: "as easy as 1-2-3", right under Jump To A Section (Matt, 2026-10-13). */
-.rcc-quick { margin: 0 0 32px; padding: 20px 20px 18px; border-radius: 10px; background: var(--rcc-navy); color: var(--rc-white); }
+/* HELP quick start: "as easy as 1-2-3", above Jump To A Section (Matt, 2026-10-13). */
+.rcc-quick { margin: 0 0 24px; padding: 20px 20px 18px; border-radius: 10px; background: var(--rcc-navy); color: var(--rc-white); }
 .rcc-quick-title { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
 .rcc-quick-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .rcc-quick-steps > li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 16px 14px 14px; border-radius: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); }
