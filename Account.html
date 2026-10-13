@@ -8440,7 +8440,17 @@
         classHead.appendChild(_rcClassBadge(cls));
         return classHead;
       },
-      buildBody: function (cls, carsInClass, group) {
+      buildBody: function (cls, allCarsInClass, group) {
+        // WEC first, ELMS second; a blank Series counts as WEC (same rule as rcCarImageSrc). A big
+        // series label sits above each block of season (year) chips.
+        ['WEC', 'ELMS'].forEach(function (seriesName) {
+          var carsInClass = allCarsInClass.filter(function (c) {
+            var isElms = String(c.Series || '').trim().toUpperCase() === 'ELMS';
+            return seriesName === 'ELMS' ? isElms : !isElms;
+          });
+          if (!carsInClass.length) return;
+          var seriesHead = el('div', 'rc-dm-series-head', escapeHtml(seriesName));
+          group.appendChild(seriesHead);
         var bySeason = {};
         carsInClass.forEach(function (c) {
           var season = c.Season || 'Unknown Season';
@@ -8513,6 +8523,7 @@
             row.appendChild(editBtn);
             group.appendChild(row);
           });
+        });
         });
       }
     });
