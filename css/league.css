@@ -2169,8 +2169,32 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-rules-modal-body .rc-rulebook-section p,
 .rcl-rules-modal-body .rc-rulebook-section li { color: var(--rcl-ink-dim); }
 .rcl-rules-modal-body .rc-rulebook-callout {
+  /* Same format as the Championship Help tips: a lightbulb, a thick accent bar on the left and a
+     thinner border all the way round (colors adapted for the dark popup). */
+  position: relative;
   background: var(--rcl-bg-raised-2);
+  border: 1px solid #4a5a6b;
+  border-left: 4px solid #8fb0cf;
+  border-radius: 6px;
+  padding: 12px 16px 12px 46px;
   color: var(--rcl-ink-dim);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.rcl-rules-modal-body .rc-rulebook-callout::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fb0cf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.45 1 1.16 1 1.93V17h6v-.33c0-.77.4-1.48 1-1.93A7 7 0 0 0 12 2z'/%3E%3C/svg%3E");
+}
+.rcl-rules-modal-body .rc-rulebook-callout strong { color: var(--rcl-ink); }
+/* Warnings: a triangle with an exclamation point, in the special-event gold. */
+.rcl-rules-modal-body .rc-rulebook-callout-warn { border-color: #6b5a2c; border-left-color: var(--rcl-gold); }
+.rcl-rules-modal-body .rc-rulebook-callout-warn::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0b64c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
 }
 .rcl-rules-modal-body .rc-rulebook-draft-note { color: var(--rcl-ink-faint); }
 
@@ -2480,3 +2504,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-hero-seat .rcl-seat-team,
 .rcl-hero-seat .rc-cs-car-line { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.6); }
 .rcl-hero-seat .rc-cs-maker-logo, .rcl-hero-seat .rc-cs-logo { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)); }
+
+/* No drop shadow on the class pill in the driver's seat line (the shadow stays on the text). */
+.rcl-hero-seat .rc-badge-chip { text-shadow: none; }

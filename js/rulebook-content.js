@@ -61,7 +61,7 @@ var RULEBOOK_SECTIONS = [
       '<h4>4.3 Automatically Enforced (No Organizer Action Required)</h4>' +
       '<p>The following are detected and penalized automatically by LMU’s in-game systems. Stewards do not review or re-adjudicate these:</p>' +
       '<ul><li>Track limits</li><li>Pit lane speeding</li><li>Jump starts</li><li>Formation lap conduct</li></ul>' +
-      '<div class="rc-rulebook-callout"><strong>These calls are final.</strong> Any penalty or track limit point issued automatically by the game is not reviewable and cannot be appealed or overturned by stewards or organizers.</div>' +
+      '<div class="rc-rulebook-callout rc-rulebook-callout-warn"><strong>These calls are final.</strong> Any penalty or track limit point issued automatically by the game is not reviewable and cannot be appealed or overturned by stewards or organizers.</div>' +
       '<h4>4.4 Reviewed by Stewards</h4>' +
       '<p>The following require steward review after the race, since the game doesn’t reliably catch them:</p>' +
       '<ul><li>Avoidable collisions and their consequences</li><li>Unsafe rejoins</li><li>Blocking/weaving</li>' +
