@@ -993,7 +993,7 @@ function _rccCarPic(year, carNumber, series) {
   return slot;
 }
 
-function _rccBoardCells(row, name, kind, carYear, series) {
+function _rccBoardCells(row, name, kind, carYear, series, showTeam) {
   var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
   var num = _rccText('div', 'rcc-board-num', row.carNumber ? '#' + row.carNumber : '');
@@ -1001,7 +1001,9 @@ function _rccBoardCells(row, name, kind, carYear, series) {
   // The player's name (drivers board only) links to their public profile.
   nameCell.appendChild(row.isPlayer && kind !== 'teams' ? _rccPlayerName('rcl-standings-name rcc-me-text', name)
     : _rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), name));
-  nameCell.title = name + (row.carNumber ? ' #' + row.carNumber : '');
+  // GT and prototype drivers boards: the team in gray right after the driver names (Matt, 2026-10-13).
+  if (showTeam && row.teamName) nameCell.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
+  nameCell.title = name + (row.carNumber ? ' #' + row.carNumber : '') + (showTeam && row.teamName ? ', ' + row.teamName : '');
   // carYear is set only on boards that show the CAR column (Teams boards and Hypercar).
   return carYear !== undefined ? [slot, _rccCarPic(carYear, row.carNumber, series), num, nameCell] : [slot, num, nameCell];
 }
@@ -1065,7 +1067,7 @@ function _rccStandingsBoard(page, className, kind) {
     var row = line.row;
     var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : '') + (row.isPlayer ? ' rcc-row-me' : ''));
     rowEl.appendChild(_rccPosBadge(idx));
-    _rccBoardCells(row, line.names.join(', '), kind, carYear, sd.series).forEach(function (cell) { rowEl.appendChild(cell); });
+    _rccBoardCells(row, line.names.join(', '), kind, carYear, sd.series, kind !== 'teams' && className !== 'Hypercar').forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rccEl('div', 'rcc-board-round');
       var i = scoredIdx[r.roundId];
