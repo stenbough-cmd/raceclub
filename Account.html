@@ -8490,6 +8490,7 @@
           list.forEach(function (c) {
             var group = panel;
     var row = el('div', 'rc-dm-subrow-edit');
+    row.style.marginLeft = '44px'; // inset under the class pill
     var info = el('div', 'rc-dm-car-info');
 
     // Fixed-width, centered logo column -- same centered-column treatment as the Sponsors
@@ -8520,8 +8521,7 @@
     textCol.appendChild(nameLine);
     var subParts = [];
     if (c.CarNumber) subParts.push('#' + c.CarNumber);
-    var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
-    if (makeModel) subParts.push(makeModel);
+    if (c.CarModel) subParts.push(c.CarModel);
     textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
     info.appendChild(textCol);
     row.appendChild(info);
