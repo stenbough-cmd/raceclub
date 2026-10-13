@@ -1153,9 +1153,10 @@ function rccRenderStandings(page) {
   });
 }
 
-// TEAM ENDURANCE TROPHY (Matt, 2026-10-13): every class except Hypercar. Bare on the page like
-// Manufacturers' Standings, no podium: every team in a 2-column list (rank, car picture up to
-// 200x60, team name and number, points). Your team is in red. Hidden until the class has points.
+// TEAM ENDURANCE STANDINGS (Matt, 2026-10-13): every class except Hypercar. Bare on the page like
+// Manufacturers' Standings: the top 3 as a podium (P2 / P1 / P3, car picture up to 200x60, rank,
+// team name and number, points), then 4th onward in a 2-column list (rank, car picture up to
+// 175x60, team name and number, points). Your team is in red. Hidden until the class has points.
 function _rccTeamTrophy(page, className) {
   if (!page || !page.hasSeason || !(page.roundsCompleted > 0)) return null;
   var cls = (page.standings.teams || []).filter(function (c) { return c.className === className; })[0];
@@ -1164,14 +1165,11 @@ function _rccTeamTrophy(page, className) {
   var sd = page.seasonDetails || {};
   var year = (sd.classSeasons || {})[className] || sd.seasonYear || '';
   var box = _rccEl('div', 'rcl-row-full rcc-team-trophy');
-  box.appendChild(_rccText('div', 'rcl-mfr-title', 'Team Endurance Trophy'));
+  box.appendChild(_rccText('div', 'rcl-mfr-title', 'Team Endurance Standings'));
   box.appendChild(_rccText('div', 'rcl-mfr-subtitle', className + ' Class'));
-  var grid = _rccEl('div', 'rcc-tt-list');
-  grid.style.setProperty('--rcc-tt-rows', String(Math.ceil(list.length / 2)));
-  list.forEach(function (t, i) {
-    var r = _rccEl('div', 'rcc-tt-item' + (t.isPlayer ? ' rcc-tt-me' : ''));
-    r.appendChild(_rccText('span', 'rcc-tt-rank', (i + 1) + '.'));
-    var slot = _rccEl('span', 'rcc-tt-car-slot');
+  var ptsText = function (t) { return String(t.championshipPoints) + (Number(t.championshipPoints) === 1 ? ' PT' : ' PTS'); };
+  var carSlot = function (t, cls) {
+    var slot = _rccEl('span', cls);
     if (year && t.carNumber) {
       var img = document.createElement('img');
       img.className = 'rcc-tt-car';
@@ -1180,16 +1178,44 @@ function _rccTeamTrophy(page, className) {
       _rccCarImg(img, year, t.carNumber, sd.series, function () { img.remove(); });
       slot.appendChild(img);
     }
-    r.appendChild(slot);
-    var name = _rccEl('span', 'rcc-tt-name');
+    return slot;
+  };
+  var nameEl = function (t, cls) {
+    var name = _rccEl('span', cls);
     name.appendChild(_rccText('span', null, String(t.teamName || '').toUpperCase()));
     if (t.carNumber) name.appendChild(_rccText('span', 'rcc-tt-num', ' #' + t.carNumber));
     name.title = (t.teamName || '') + (t.carNumber ? ' #' + t.carNumber : '');
-    r.appendChild(name);
-    r.appendChild(_rccText('span', 'rcc-tt-pts', String(t.championshipPoints) + (Number(t.championshipPoints) === 1 ? ' PT' : ' PTS')));
-    grid.appendChild(r);
+    return name;
+  };
+  // Top 3: P2 / P1 / P3 like the Manufacturers' podium, without the boxes.
+  var top3 = list.slice(0, 3);
+  var podium = _rccEl('div', 'rcl-mfr-podium rcc-tt-podium');
+  (top3.length === 3 ? [1, 0, 2] : top3.map(function (_, i) { return i; })).forEach(function (idx) {
+    var t = top3[idx];
+    var tile = _rccEl('div', 'rcl-mfr-tile rcl-mfr-tile-p' + (idx + 1) + ' rcc-tt-tile' + (t.isPlayer ? ' rcc-tt-me' : ''));
+    tile.appendChild(carSlot(t, 'rcc-tt-podium-car'));
+    var rl = _rccEl('div', 'rcl-mfr-tile-rankline');
+    rl.appendChild(_rccText('span', 'rcl-mfr-tile-rank', String(idx + 1)));
+    tile.appendChild(rl);
+    tile.appendChild(nameEl(t, 'rcl-mfr-tile-name rcc-tt-tile-name'));
+    tile.appendChild(_rccText('div', 'rcl-mfr-tile-points', ptsText(t)));
+    podium.appendChild(tile);
   });
-  box.appendChild(grid);
+  box.appendChild(podium);
+  var rest = list.slice(3);
+  if (rest.length) {
+    var grid = _rccEl('div', 'rcc-tt-list');
+    grid.style.setProperty('--rcc-tt-rows', String(Math.ceil(rest.length / 2)));
+    rest.forEach(function (t, i) {
+      var r = _rccEl('div', 'rcc-tt-item' + (t.isPlayer ? ' rcc-tt-me' : ''));
+      r.appendChild(_rccText('span', 'rcc-tt-rank', (i + 4) + '.'));
+      r.appendChild(carSlot(t, 'rcc-tt-car-slot'));
+      r.appendChild(nameEl(t, 'rcc-tt-name'));
+      r.appendChild(_rccText('span', 'rcc-tt-pts', ptsText(t)));
+      grid.appendChild(r);
+    });
+    box.appendChild(grid);
+  }
   return box;
 }
 
