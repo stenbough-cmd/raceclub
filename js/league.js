@@ -1354,6 +1354,22 @@ function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
   return podium;
 }
 
+// Driver names under a Last Race / Last Season highlight tile, joined with " & ". Mentions carry names
+// but no profile ID, so the signed-in driver is matched by display name and shown in bold.
+function _rclMentionDriversEl_(m) {
+  var names = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean);
+  if (!names.length) return null;
+  var myName = '';
+  try { var me = (typeof getProfileCache === 'function' && getToken()) ? getProfileCache() : null; myName = me ? String(me.displayName || '').trim().toLowerCase() : ''; } catch (err) { myName = ''; }
+  var el = _rclEl('div', 'rcl-lr-mention-drivers');
+  names.forEach(function (n, i) {
+    if (i > 0) el.appendChild(document.createTextNode(' & '));
+    var span = _rclEl('span', (myName && String(n).trim().toLowerCase() === myName) ? 'rcl-me' : null, _rclEscapeHtml(n));
+    el.appendChild(span);
+  });
+  return el;
+}
+
 // 3-across "headline mention" row, sitting on the same row as the podium.
 function _rclBuildLastRaceMentions_(mentions) {
   var grid = _rclEl('div', 'rcl-lr-mentions');
@@ -1364,8 +1380,8 @@ function _rclBuildLastRaceMentions_(mentions) {
     head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
     tile.appendChild(head);
     tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
-    var driverNames = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean).join(' & ');
-    if (driverNames) tile.appendChild(_rclEl('div', 'rcl-lr-mention-drivers', _rclEscapeHtml(driverNames)));
+    var driversEl = _rclMentionDriversEl_(m);
+    if (driversEl) tile.appendChild(driversEl);
     tile.appendChild(_rclEl('div', 'rcl-lr-mention-narrative', _rclEscapeHtml(m.narrative || '')));
     grid.appendChild(tile);
   });
@@ -1384,8 +1400,8 @@ function _rclBuildLastSeasonMentions_(mentions) {
     head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
     tile.appendChild(head);
     tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
-    var driverNames = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean).join(' & ');
-    if (driverNames) tile.appendChild(_rclEl('div', 'rcl-lr-mention-drivers', _rclEscapeHtml(driverNames)));
+    var driversEl = _rclMentionDriversEl_(m);
+    if (driversEl) tile.appendChild(driversEl);
     tile.appendChild(_rclEl('div', 'rcl-lr-mention-narrative', _rclEscapeHtml(m.narrative || '')));
     grid.appendChild(tile);
   });

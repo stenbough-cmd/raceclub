@@ -651,7 +651,7 @@ body.rc-league-page {
 .rcl-lr-podium-name {
   font-family: var(--rc-font-heading);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.03em;
   color: var(--rcl-ink);
   text-align: center;
@@ -751,7 +751,7 @@ body.rc-league-page {
 .rcl-lr-mention-drivers {
   font-family: var(--rc-font-heading);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--rcl-ink);
   margin-bottom: 4px;
 }
