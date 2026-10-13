@@ -3608,7 +3608,7 @@
           addBtn.style.cssText = 'opacity:0.5;';
         } else {
           addBtn.addEventListener('click', function () {
-            openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+            openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel, roundNumber: r.roundNumber, eventLabel: (r.eventName || '') + (r.track ? ' (' + r.track + ')' : ''), hasRace: !!r.hasRaceResults, hasQuali: !!(r.hasAnySessionImported && !r.hasRaceResults) });
           });
         }
         btnGroup.appendChild(addBtn);
@@ -6154,95 +6154,103 @@
       importCloseBtn.title = inProgress ? 'Cannot close while importing' : '';
     }
 
-    var fileInput = el('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.xml';
-    // Note text says which round this import is tied to plus which file types are accepted (built
-    // via wizField's own pieces rather than the helper itself, since wizField always renders a
-    // label element).
-    var fileFieldWrap = el('div', 'rc-wiz-field');
-    fileFieldWrap.appendChild(fileInput);
-    fileFieldWrap.appendChild(el('div', 'rc-hint', 'This import is tied to ' + roundLabel + '. Qualifying and race result .xml files only.'));
-    modal.body.appendChild(fileFieldWrap);
+    // Same layout as the Championship Upload Results popup: the round, then 1. Qualify and 2. Race
+    // file boxes, then one right-aligned button that stays gray-disabled until a file is chosen.
+    // A session that is already imported for this round has no box. The server imports one file per
+    // call, so Qualify goes first and Race second, one after the other.
+    function xmlInput() {
+      var f = el('input');
+      f.type = 'file';
+      f.accept = '.xml,text/xml';
+      return f;
+    }
+    var roundNo = opts.roundNumber ? 'Round ' + opts.roundNumber : roundLabel;
+    var roundLine = el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''));
+    modal.body.appendChild(wizField(roundNo, roundLine));
+    modal.body.appendChild(el('div', 'rc-hint', 'Choose the Qualify and Race results .xml files from the game. At least one is needed.'));
+    var haveQ = !!opts.hasQuali, haveR = !!opts.hasRace;
+    var qFile = haveQ ? null : xmlInput();
+    var rFile = haveR ? null : xmlInput();
+    if (qFile) modal.body.appendChild(wizField('1. Qualify Results (XML)', qFile));
+    if (rFile) modal.body.appendChild(wizField('2. Race Results (XML)', rFile));
 
-    // No in-popup result/error message box -- every outcome (success, a rejected file, a server
-    // error) now goes through showToast only.
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
-    var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Import');
+    var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
     importBtn.type = 'button';
+    importBtn.disabled = true;
+    function chosen(f) { return !!(f && f.files && f.files[0]); }
+    function refreshBtn() { importBtn.disabled = !(chosen(qFile) || chosen(rFile)); }
+    if (qFile) qFile.addEventListener('change', refreshBtn);
+    if (rFile) rFile.addEventListener('change', refreshBtn);
+    function lockInputs(on) { if (qFile) qFile.disabled = on; if (rFile) rFile.disabled = on; }
+    function readText(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { reject(new Error('Could not read ' + file.name + '. Choose the file again.')); };
+        reader.readAsText(file);
+      });
+    }
+    // One file, one importXml call; resolves with the server answer.
+    function importOne(file, xmlText) {
+      var url = API_BASE_URL + '?action=importXml' +
+        '&token=' + encodeURIComponent(token) +
+        '&filename=' + encodeURIComponent(file.name) +
+        '&roundId=' + encodeURIComponent(roundId);
+      rcWriteStarted_();
+      return _rcFetchOnce_(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: xmlText
+      }, RC_POST_TIMEOUT_MS).then(function (data) { rcWriteFinished_(); return data; },
+        function (err) { rcWriteFinished_(); throw err; });
+    }
     importBtn.addEventListener('click', function () {
-      var file = fileInput.files && fileInput.files[0];
-      if (!file) { showToast('Choose an XML file first.', 'error'); return; }
-
+      var jobs = [];
+      if (chosen(qFile)) jobs.push({ file: qFile.files[0], want: 'Q', label: 'Qualify' });
+      if (chosen(rFile)) jobs.push({ file: rFile.files[0], want: 'R', label: 'Race' });
+      if (!jobs.length) { showToast('Choose an XML file first.', 'error'); return; }
       importBtn.disabled = true;
-      importBtn.textContent = 'Importing...';
+      importBtn.textContent = 'Uploading...';
+      lockInputs(true);
+      function reset() { importBtn.textContent = 'Upload Results'; lockInputs(false); refreshBtn(); }
 
-      var reader = new FileReader();
-      reader.onload = function () {
-        var xmlText = reader.result;
-
-        // Reject an obvious Practice file immediately, client-side, no network round trip.
-        if (_rcSniffSessionCode(xmlText) === 'P') {
-          importBtn.disabled = false;
-          importBtn.textContent = 'Import';
-          showToast('Practice session imports aren\'t supported -- only Qualify and Race results are imported.', 'error');
-          return;
+      Promise.all(jobs.map(function (j) { return readText(j.file).then(function (t) { j.text = t; j.code = _rcSniffSessionCode(t); }); })).then(function () {
+        for (var i = 0; i < jobs.length; i++) {
+          if (jobs[i].code === 'P') { throw { rcShow: 'Practice session imports aren\'t supported -- only Qualify and Race results are imported.' }; }
+          if (jobs[i].code && jobs[i].code !== jobs[i].want) { throw { rcShow: 'The ' + jobs[i].label + ' box has a ' + (jobs[i].code === 'Q' ? 'Qualify' : 'Race') + ' file in it. Put each file in its own box.' }; }
         }
-
-        // The real server-side write starts now (Ingestion.gs's
-        // importSessionXML) -- lock the X until it settles.
+        // The real server-side writes start now -- lock the X until they settle.
         setImportInProgress(true);
-
-        var url = API_BASE_URL + '?action=importXml' +
-          '&token=' + encodeURIComponent(token) +
-          '&filename=' + encodeURIComponent(file.name) +
-          '&roundId=' + encodeURIComponent(roundId);
-
-        // Routed through _rcFetchOnce_ (js/api.js), not a bare fetch() -- a bare fetch() has no
-        // timeout at all, so that ~30s failure wasn't this code giving up on purpose, it was
-        // Google's own infra or the network dropping the still-open connection out from under it
-        // while Apps Script kept executing to completion server-side (exactly the
-        // ambiguous-POST-outcome case fetchApi's own header comment describes).
-        // Waits for the server's real answer (up to RC_POST_TIMEOUT_MS = Apps Script's 6 minute
-        // cap) and registers with the shared in-flight write counter so the X stays locked.
-        rcWriteStarted_();
-        _rcFetchOnce_(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: xmlText
-        }, RC_POST_TIMEOUT_MS).then(function (data) {
-          rcWriteFinished_();
-          importBtn.disabled = false;
-          importBtn.textContent = 'Import';
-          setImportInProgress(false);
-          if (data && data.success) {
-            var msg = 'Imported ' + data.sessionId + ': ' + data.driversImported + ' driver(s), ' +
-              data.lapsImported + ' lap row(s), ' + data.raceEventsImported + ' race event(s).';
-            if (data.unmatchedDriverNames && data.unmatchedDriverNames.length) {
-              msg += ' Unmatched driver names (no ProfileID yet): ' + data.unmatchedDriverNames.join(', ') + '.';
-            }
-            showToast(msg, 'success');
-            rcReloadAfterSave();
-          } else {
-            showToast((data && data.message) || 'Could not import that file.', 'error');
-          }
-        }).catch(function () {
-          rcWriteFinished_();
-          importBtn.disabled = false;
-          importBtn.textContent = 'Import';
-          // Re-enabled here too, even though the message itself says the import may still be
-          // running server-side -- there's no signal left to wait on at this point (the connection
-          // itself dropped), so leaving the X locked forever would trap the admin in the popup with
-          // no way out.
-          setImportInProgress(false);
-          showToast('This is taking longer than expected. Apps Script may still be finishing the import -- check League Tools before trying again so you don\'t import the same file twice.', 'error');
+        var unmatched = [];
+        var chain = Promise.resolve();
+        jobs.forEach(function (j) {
+          chain = chain.then(function () {
+            return importOne(j.file, j.text).then(function (data) {
+              if (!data || !data.success) { throw { rcShow: ((data && data.message) || ('Could not import the ' + j.label + ' file.')) }; }
+              (data.unmatchedDriverNames || []).forEach(function (n) { if (unmatched.indexOf(n) === -1) unmatched.push(n); });
+            });
+          });
         });
-      };
-      reader.readAsText(file);
+        return chain.then(function () { return unmatched; });
+      }).then(function (unmatched) {
+        setImportInProgress(false);
+        if (unmatched.length) showToast('Unmatched driver names (no ProfileID yet): ' + unmatched.join(', ') + '.', 'info');
+        showToast(roundNo + ' results uploaded.', 'success');
+        rcReloadAfterSave();
+      }).catch(function (e) {
+        setImportInProgress(false);
+        reset();
+        if (e && e.rcShow) { showToast(e.rcShow, 'error'); return; }
+        if (e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) { showToast(e.message, 'error'); return; }
+        // The connection dropped, but Apps Script may still be finishing; re-enabled so the admin is not trapped.
+        showToast('This is taking longer than expected. Apps Script may still be finishing the import -- check League Tools before trying again so you don\'t import the same file twice.', 'error');
+      });
     });
     btnRow.appendChild(importBtn);
     modal.body.appendChild(btnRow);
   }
+
 
   // ERASE ROUND INGESTION DATA -- the undo for the Import modal above.
   // `opts.roundId`/`opts.roundLabel` are required, same as openImportXmlModal -- this is only ever
