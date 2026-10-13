@@ -1027,3 +1027,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
    under its buttons, so the track only needs 2px at the bottom. */
 .rcc-page .rcl-carousel-outer { margin-top: 64px; }
 .rcc-page .rcl-carousel-track { padding-bottom: 2px; }
+/* Team Endurance Standings: a team's two best cars side by side, sharing the slot's width
+   (200px on the podium, 175px in the list; Matt, 2026-10-13). */
+.rcc-tt-car-slot.rcc-tt-two, .rcc-tt-podium-car.rcc-tt-two { gap: 4px; }
+.rcc-tt-two .rcc-tt-car { max-width: calc(50% - 2px); min-width: 0; }
