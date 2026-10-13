@@ -3155,5 +3155,6 @@ body.rc-modal-scroll-locked {
 .rc-seatinfo-card .rc-cs-row { margin-bottom: 0; }
 .rc-seatinfo-card .rc-cs-row + p { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
 
-/* Cars popup: big WEC / ELMS label above each block of season (year) chips. */
-.rc-dm-series-head { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 800; letter-spacing: 0.08em; color: var(--rc-carbon); padding: 18px 0 4px 0; border-bottom: 2px solid var(--rc-red); margin-bottom: 6px; font-size: 20px; }
+/* Cars popup: WEC / ELMS pills use the dark navy from their logos; the class pill matches the year pill's size. */
+.rc-badge-navy { background: #14284b; }
+.rc-badge-chip.rc-badge-same-as-year { font-size: 11px; padding: 3px 10px; }

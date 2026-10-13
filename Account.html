@@ -8442,7 +8442,11 @@
         return seriesName === 'ELMS' ? isElms : !isElms;
       });
       if (!inSeries.length) return;
-      panel.appendChild(el('div', 'rc-dm-series-head', escapeHtml(seriesName)));
+      var seriesHead = el('div', 'rc-dm-season-head');
+      seriesHead.style.paddingLeft = '0';
+      seriesHead.style.paddingTop = '14px';
+      seriesHead.appendChild(el('span', 'rc-badge-chip rc-badge-navy', escapeHtml(seriesName)));
+      panel.appendChild(seriesHead);
 
       var bySeason = {};
       inSeries.forEach(function (c) {
@@ -8456,6 +8460,7 @@
         return String(b).localeCompare(String(a));
       }).forEach(function (season) {
         var seasonHead = el('div', 'rc-dm-season-head');
+        seasonHead.appendChild(el('span', 'rc-dm-tree', '\u2514'));
         seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(season)));
         panel.appendChild(seasonHead);
 
@@ -8470,8 +8475,11 @@
           var list = byClass[cls];
           if (!list || !list.length) return;
           var classHead = el('div', 'rc-dm-season-head');
+          classHead.style.paddingLeft = '44px';
           classHead.appendChild(el('span', 'rc-dm-tree', '\u2514'));
-          classHead.appendChild(_rcClassBadge(cls));
+          var classPill = _rcClassBadge(cls);
+          classPill.classList.add('rc-badge-same-as-year');
+          classHead.appendChild(classPill);
           panel.appendChild(classHead);
           // Manufacturer alphabetical, car number as tiebreaker (same as the Choose Your Team picker).
           list.sort(function (a, b) {
