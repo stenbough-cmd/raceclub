@@ -2156,9 +2156,9 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   border-color: var(--rcl-line);
 }
 .rcl-rules-modal-body .rc-rulebook-nav-title { color: var(--rcl-ink-dim); }
-.rcl-rules-modal-body .rc-rulebook-nav-link { color: var(--rc-red); }
+.rcl-rules-modal-body .rc-rulebook-nav-link { color: #8fb0cf; }
 .rcl-rules-modal-body .rc-rulebook-nav-link:hover {
-  color: var(--rc-red-dark);
+  color: #b9d0e6;
   background: var(--rcl-bg-raised);
 }
 .rcl-rules-modal-body .rc-rulebook-nav-link.rc-rulebook-draft { color: var(--rcl-ink-faint); }
