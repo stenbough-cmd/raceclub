@@ -156,7 +156,7 @@ var RCC_HELP_SECTIONS = [
       '<ol class="rcc-help-steps">' +
       '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
       '<li><strong>Click End Season</strong> in the black bar and confirm.</li>' +
-      '<li><strong>The season is complete.</strong> The standings become final, the panels change to Final Standings, and the season can no longer be edited.</li>' +
+      '<li><strong>The season is complete.</strong> The standings become final and the season can no longer be edited.</li>' +
       '<li><strong>Start the next one.</strong> Season Preview turns back into Create Season, and your past seasons stay available from the Season dropdown in the black bar.</li>' +
       '</ol>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Changed Your Mind?</strong>If you are unhappy with a season, you have two choices. You can click End Season before every round is raced, which saves it as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. Or you can click Delete Season, which removes the season you are viewing along with its rounds, your team signing and every result and lap. Deleting cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +

@@ -757,18 +757,8 @@ function rccRenderLastRace(page) {
     body.appendChild(_rccEmpty('No Championship Yet', 'Use Create Season in the bar above to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then join a team.'));
     return;
   }
-  if (page.seasonEnded) {
-    titleEl.textContent = 'Season Recap';
-    _rccSortClasses(page.standings.drivers || [], function (c) { return c.className; }).forEach(function (cls) {
-      var w = _rccEl('div', 'rcl-lr-class');
-      var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' CHAMPIONS');
-      h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' SEASON ' + page.seasonNumber));
-      w.appendChild(h);
-      w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
-      body.appendChild(w);
-    });
-    return;
-  }
+  // An ended season keeps showing Last Race and the last round's highlights; no Season Recap or
+  // Champions view (Matt, 2026-10-13: titles never change at season end).
   if (!page.lastRace) {
     titleEl.textContent = 'Season Preview';
     body.classList.add('rcl-seasonfmt-modal-body');
@@ -1145,7 +1135,8 @@ function rccRenderStandings(page) {
     var row = _rccEl('div', 'rcl-row-full');
     var panel = _rccEl('section', 'rcl-panel');
     var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
-    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + (page.seasonEnded ? ' Final Standings' : ' Standings')));
+    // Titles stay the same when the season ends, no "Final" (Matt, 2026-10-13).
+    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Standings'));
     var body = _rccEl('div', 'rcl-panel-body');
     // Drivers board only. The Teams board and its Drivers/Teams switch were replaced by the Team
     // Endurance Trophy section above the board (Matt, 2026-10-13).
@@ -1229,7 +1220,7 @@ function rccRenderManufacturers(page) {
   var list = (page && page.hasSeason && page.roundsCompleted > 0) ? (page.standings.manufacturers || []) : [];
   if (!list.length || !list.some(function (m) { return m.points > 0; })) { body.style.display = 'none'; return; }
   body.style.display = '';
-  body.appendChild(_rccText('div', 'rcl-mfr-title', page.seasonEnded ? "Final Manufacturers' Standings" : "Manufacturers' Standings"));
+  body.appendChild(_rccText('div', 'rcl-mfr-title', "Manufacturers' Standings"));
   body.appendChild(_rccText('div', 'rcl-mfr-subtitle', 'Hypercar Class · Factory Entries'));
   var top3 = list.slice(0, 3);
   var podium = _rccEl('div', 'rcl-mfr-podium');
