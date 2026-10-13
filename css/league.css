@@ -2507,3 +2507,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 
 /* No drop shadow on the class pill in the driver's seat line (the shadow stays on the text). */
 .rcl-hero-seat .rc-badge-chip { text-shadow: none; }
+
+/* Class pill in the seat line: same size as championship.html's (css/championship.css .rcc-seat-line). */
+.rcl-hero-seat .rc-badge-chip-abbrev { padding: 1px 5px; font-size: 10.5px; line-height: 1.5; align-self: center; }
