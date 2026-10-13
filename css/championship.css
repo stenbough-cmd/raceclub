@@ -1021,8 +1021,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 16px; }
 }
 
-/* Calendar carousel: more room above and below (Matt, 2026-10-13). Was 48px each side
-   (44px margin + 4px track padding above; 20px track padding + the next row's 28px below),
-   now 68px each side. */
+/* Calendar carousel: more room above and below (Matt, 2026-10-13), even on both sides: about 83px
+   from the panels above to the card's text, and from the card's buttons to the board below. The
+   track's height now includes its padding (championship.js), and the card already has 16px of room
+   under its buttons, so the track only needs 2px at the bottom. */
 .rcc-page .rcl-carousel-outer { margin-top: 64px; }
-.rcc-page .rcl-carousel-track { padding-bottom: 40px; }
+.rcc-page .rcl-carousel-track { padding-bottom: 2px; }

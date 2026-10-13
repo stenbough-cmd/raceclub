@@ -900,7 +900,11 @@ function rccRenderCarousel(page) {
       void el.offsetHeight;
       el.style.transition = '';
     });
-    if (max > 0) track.style.height = max + 'px';
+    // The track is border-box, so its own top and bottom padding go on top of the tallest card
+    // (otherwise the padding is eaten and the space under the carousel can't be changed).
+    var cs = getComputedStyle(track);
+    var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    if (max > 0) track.style.height = (max + padY) + 'px';
   });
 }
 
