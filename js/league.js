@@ -246,7 +246,7 @@ function _rclBuildTickerItems(hub) {
       var standings = cls.standings || [];
       if (!standings.length) return;
       var rows = standings.filter(function (row) { return row.name; }).map(function (row) {
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country, profileId: row.profileId };
       });
       if (!rows.length) return;
       items.push({ tag: 'FINAL ' + (cls.className || 'CLASS').toUpperCase() + ' CHAMPIONSHIP RESULTS', driverRows: rows, showRank: true });
@@ -301,7 +301,7 @@ function _rclBuildTickerItems(hub) {
         // carClass -- same field the in-season TOP 10 branch below already sets, just added here
         // too so buildDriverEntry's existing "if (row.carClass)" pill render (see its own comment
         // there) picks it up on the pre-season roster list as well.
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country, profileId: row.profileId };
       });
       if (!rows.length) return;
       items.push({ tag: (cls.className || 'CLASS').toUpperCase() + ' DRIVERS', driverRows: rows });
@@ -335,7 +335,7 @@ function _rclBuildTickerItems(hub) {
         // repeated per row for buildDriverEntry to key its pill color off of, not something read
         // off the row's own raw data. country -- same field buildDriverEntry now reads to render a
         // nationality flag between the name and car number.
-        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country };
+        return { name: row.name, carNumber: row.carNumber, manufacturer: row.manufacturer, carClass: cls.className, country: row.country, profileId: row.profileId };
       });
       if (!rows.length) return;
       // Tag now names the class itself -- "TOP TEN <CLASS> RESULTS" -- was the generic "TOP TEN
@@ -399,14 +399,15 @@ function _rclRenderTicker(hub) {
       manufacturerLogoFallback(logo, row.manufacturer, function () { logo.style.display = 'none'; });
       entry.appendChild(logo);
     }
-    var nameSpan = _rclEl('span', 'rcl-ticker-driver-name');
+    // Car number first, then the name (ALL CAPS, bold for the signed-in driver), then the flag.
+    if (row.carNumber) {
+      var numSpan = _rclEl('span', 'rcl-ticker-driver-num');
+      numSpan.textContent = '#' + row.carNumber;
+      entry.appendChild(numSpan);
+    }
+    var nameSpan = _rclEl('span', 'rcl-ticker-driver-name' + (row.profileId && row.profileId === _rclMyProfileId_() ? ' rcl-me' : ''));
     nameSpan.textContent = row.name;
     entry.appendChild(nameSpan);
-    // Nationality flag, between the name and car number -- same countryFlagSrc lookup +
-    // .rcl-standings-flag styling (16x12, rounded corners, thin border) the Leaderboard/Recent
-    // Results/ View All Results identity block already uses for its own flag
-    // (_rclBuildDriverIdentity_ above); onerror-hide follows that same convention for a country
-    // with no flag asset uploaded yet.
     if (row.country && typeof countryFlagSrc === 'function') {
       var flagSrc = countryFlagSrc(row.country);
       if (flagSrc) {
@@ -418,11 +419,6 @@ function _rclRenderTicker(hub) {
         flagImg.onerror = function () { flagImg.style.display = 'none'; };
         entry.appendChild(flagImg);
       }
-    }
-    if (row.carNumber) {
-      var numSpan = _rclEl('span', 'rcl-ticker-driver-num');
-      numSpan.textContent = ' #' + row.carNumber;
-      entry.appendChild(numSpan);
     }
     // Class pill removed -- each class's own "TOP TEN CLASS RESULTS:" tag (see the classGroups.tag
     // change in _rclBuildTickerItems below) now carries that information instead, so a pill on
@@ -856,7 +852,6 @@ function _rclBoardFooter_(board, hub) {
   }
   var bonus = _rclBoardBonusNote_(hub);
   if (bonus) foot.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-board-bonus-note', _rclEscapeHtml(bonus)));
-  foot.appendChild(_rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', 'FOR FULL RESULTS, VIEW ON PC BROWSER'));
   board.appendChild(foot);
 }
 
@@ -1151,63 +1146,51 @@ var RCL_SEASON_MENTION_ICON_BY_TYPE_ = {
   mrConsistency: _RCL_ICON_CHECKLIST
 };
 
-// Per-class Winner/Most Laps Led/Pole/Fastest Lap breakdown for the All Results popup.
-function _rclBuildClassCategoryBreakdown_(cls) {
-  // rcl-race-categories-inclass (css/league.css) restyles the shared .rcl-race-categories block for
-  // sitting right under a class's own header and above its standings table.
-  var wrap = _rclEl('div', 'rcl-race-categories rcl-race-categories-inclass');
-
-  // rowKind -- 'winner' still adds a color modifier class so the name AND car number pick up the
-  // gold accent together (see .rcl-race-category-row-winner, css/league.css); every other category
-  // stays the plain bold-ink color.
-  function buildRow(name, carNumber, country, rowKind) {
-    var row = _rclEl('div', 'rcl-race-category-row' + (rowKind ? ' rcl-race-category-row-' + rowKind : ''));
-    row.appendChild(_rclEl('span', 'rcl-race-category-name', _rclEscapeHtml(name)));
-    // Flag sits between the name and the car number -- was name, number, flag; now name, flag,
-    // number.
-    if (country && typeof countryFlagSrc === 'function') {
-      var flagSrc = countryFlagSrc(country);
-      if (flagSrc) {
-        var flagImg = document.createElement('img');
-        flagImg.className = 'rcl-standings-flag rcl-race-category-flag';
-        flagImg.src = flagSrc;
-        flagImg.alt = '';
-        flagImg.title = country;
-        flagImg.onerror = function () { flagImg.style.display = 'none'; };
-        row.appendChild(flagImg);
-      }
-    }
-    if (carNumber) row.appendChild(_rclEl('span', 'rcl-race-category-number', '#' + _rclEscapeHtml(carNumber)));
-    return row;
+// Race Recap icons: Most Laps Led, Pole Sitter and Fastest Lap (no Winner icon -- P1 already says
+// it). Returns the list of {key, icon, label} categories this class has, each with a matcher that
+// says whether a given standings row earned it.
+function _rclRecapAwards_(cls) {
+  function same(name, num, row) {
+    if (!name) return false;
+    if (String(row.name || '') !== String(name)) return false;
+    return !num || String(row.carNumber || '') === String(num);
   }
-
-  function buildCategory(icon, title, rows) {
-    if (!rows.length) return;
-    var cat = _rclEl('div', 'rcl-race-category');
-    var head = _rclEl('div', 'rcl-race-category-title');
-    var iconSpan = _rclEl('span', 'rcl-race-category-icon', icon);
-    head.appendChild(iconSpan);
-    head.appendChild(document.createTextNode(title));
-    cat.appendChild(head);
-    rows.forEach(function (r) { cat.appendChild(r); });
-    wrap.appendChild(cat);
-  }
-
-  var winnerRows = [], lapsLedRows = [], poleRows = [], fastestRows = [];
-  if (cls.classWinner) winnerRows.push(buildRow(cls.classWinner, cls.classWinnerCarNumber, cls.classWinnerCountry, 'winner'));
+  var list = [];
   if (cls.classMostLapsLedDriver && cls.classMostLapsLedCount) {
-    lapsLedRows.push(buildRow(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, cls.classMostLapsLedCountry));
+    list.push({ key: 'laps', icon: _RCL_ICON_LAPS_LED, label: 'Most Laps Led', has: function (r) { return same(cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber, r); } });
   }
-  if (cls.classPoleSitter) poleRows.push(buildRow(cls.classPoleSitter, cls.classPoleSitterCarNumber, cls.classPoleSitterCountry));
+  if (cls.classPoleSitter) {
+    list.push({ key: 'pole', icon: _RCL_ICON_POLE, label: 'Pole Sitter', has: function (r) { return same(cls.classPoleSitter, cls.classPoleSitterCarNumber, r); } });
+  }
   if (cls.classFastestLapDriver) {
-    fastestRows.push(buildRow(cls.classFastestLapDriver, cls.classFastestLapCarNumber, cls.classFastestLapDriverCountry));
+    list.push({ key: 'fastest', icon: _RCL_ICON_STOPWATCH, label: 'Fastest Lap', has: function (r) { return same(cls.classFastestLapDriver, cls.classFastestLapCarNumber, r); } });
   }
+  return list;
+}
 
-  buildCategory(_RCL_ICON_TROPHY, 'Winner', winnerRows);
-  buildCategory(_RCL_ICON_LAPS_LED, 'Most Laps Led', lapsLedRows);
-  buildCategory(_RCL_ICON_POLE, 'Pole Sitter', poleRows);
-  buildCategory(_RCL_ICON_STOPWATCH, 'Fastest Lap', fastestRows);
+// The key shown under a class's results board.
+function _rclBuildRecapIconKey_(awards) {
+  if (!awards.length) return null;
+  var wrap = _rclEl('div', 'rcl-recap-key');
+  awards.forEach(function (a) {
+    var item = _rclEl('span', 'rcl-recap-key-item');
+    item.appendChild(_rclEl('span', 'rcl-recap-key-icon', a.icon));
+    item.appendChild(document.createTextNode(a.label));
+    wrap.appendChild(item);
+  });
+  return wrap;
+}
 
+// The little icons shown right after a driver's name in the board.
+function _rclRecapNameIcons_(awards, row) {
+  var got = awards.filter(function (a) { return a.has(row); });
+  if (!got.length) return null;
+  var wrap = _rclEl('span', 'rcl-recap-name-icons');
+  got.forEach(function (a) {
+    var ic = _rclEl('span', 'rcl-recap-name-icon', a.icon);
+    ic.title = a.label;
+    wrap.appendChild(ic);
+  });
   return wrap;
 }
 
@@ -1722,9 +1705,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     // Standings both use.
     clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' RESULTS'));
 
-    // Winner/Most Laps Led/Pole Sitter/Fastest Lap breakdown for THIS class only, right under its
-    // own header and above its standings table.
-    clsWrap.appendChild(_rclBuildClassCategoryBreakdown_(cls));
+    var recapAwards = _rclRecapAwards_(cls);
 
     // Column labels, divider line BELOW them -- POS, DRIVER, LAPS, TOTAL TIME, INTERVAL, GAP, AVG
     // (KM/H), BEST LAP, PTS. PEN removed and INTERVAL put back in its slot.
@@ -1761,6 +1742,8 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       // Same cells as the Standings board: maker logo | N° | driver name + flag (no team name).
       var recapCells = _rclBoardIdentityCells_(row, 'drivers', undefined, '');
       if (dnf) { recapCells[1].classList.add('rcl-recap-dnf'); recapCells[2].classList.add('rcl-standings-identity-dnf'); }
+      var nameIcons = _rclRecapNameIcons_(recapAwards, row);
+      if (nameIcons) recapCells[2].appendChild(nameIcons);
       recapCells.forEach(function (cell) { rowEl.appendChild(cell); });
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', String(row.laps || 0)));
       var penSeconds = row.profileId ? (penSecondsByProfileId[row.profileId] || 0) : 0;
@@ -1782,6 +1765,8 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
       clsWrap.appendChild(rowEl);
     });
+    var recapKey = _rclBuildRecapIconKey_(recapAwards);
+    if (recapKey) clsWrap.appendChild(recapKey);
     bodyEl.appendChild(clsWrap);
   });
 

@@ -2554,3 +2554,42 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
    at the bottom. */
 body.rc-league-page:not(.rcc-page) .rcl-carousel-outer { margin-top: 64px; }
 body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 2px; }
+
+/* ===== League page: mobile + recap + report + ticker round (2026-10-13) ===== */
+/* Race Recap: key under each class board, small icons after a driver's name. */
+.rcl-recap-key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12.5px; color: var(--rcl-ink-dim); }
+.rcl-recap-key-item { display: inline-flex; align-items: center; gap: 6px; }
+.rcl-recap-key-icon, .rcl-recap-name-icon { display: inline-flex; color: var(--rcl-ink-dim); }
+.rcl-recap-key-icon svg, .rcl-recap-name-icon svg { width: 14px; height: 14px; }
+.rcl-recap-name-icons { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; flex: none; }
+
+/* Race Report: everything gray except position changes and fastest lap. */
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-wall,
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-car,
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-damage,
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-pit,
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-penalty,
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--rcl-ink-dim); font-weight: 400; }
+
+/* Ticker: driver names in ALL CAPS. */
+.rcl-ticker-driver-name { text-transform: uppercase; }
+.rcl-ticker-driver-name.rcl-me { font-weight: 900; }
+
+/* Last Race podium: car number in normal weight on PC, hidden on phones. */
+.rcl-lr-podium-num { font-weight: 400; }
+
+@media (max-width: 640px) {
+  .rcl-lr-podium-num { display: none; }
+  /* Hero seat line: no car picture, tighter lines. */
+  .rcl-hero-seat .rc-cs-logo-wrap { display: none; }
+  .rcl-hero-seat .rcl-seat-line { gap: 0; }
+  .rcl-hero-seat .rcl-seat-name { line-height: 1.15; }
+  .rcl-hero-seat .rc-cs-car-line { margin-top: 1px; line-height: 1.15; }
+  /* Manufacturers' Standings, P4 onward: one column. */
+  body.rc-league-page:not(.rcc-page) .rcl-mfr-rest {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    max-width: none;
+  }
+}

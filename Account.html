@@ -3475,7 +3475,8 @@
     // See openEndSeasonModal/renderAdminSection for the replacement (a season-picker popup there,
     // since Admin doesn't already have a specific season's row in hand the way this one did).
 
-    row.appendChild(btnGroup);
+    // Buttons live underneath the info (not beside it) so the text can use the full row width.
+    if (btnGroup.childNodes.length) { btnGroup.style.marginTop = '8px'; btnGroup.style.flexWrap = 'wrap'; textCol.appendChild(btnGroup); }
     container.appendChild(row);
     container.appendChild(racesBox);
     return container;
@@ -3659,7 +3660,8 @@
       }
     }
 
-    row.appendChild(btnGroup);
+    // Buttons live underneath the info (not beside it) so the text can use the full row width.
+    if (btnGroup.childNodes.length) { btnGroup.style.marginTop = '8px'; btnGroup.style.flexWrap = 'wrap'; textCol.appendChild(btnGroup); }
     return row;
   }
 
@@ -6909,7 +6911,8 @@
           var rewriteBtn = el('button', 'rc-btn-secondary rc-btn-row', st.status === 'published' ? 'Rewrite' : 'Retry');
           rewriteBtn.type = 'button';
           rewriteBtn.addEventListener('click', function () { openStoryWriteConfirm(st, token, reload); });
-          postRow.appendChild(rewriteBtn);
+          rewriteBtn.style.marginTop = '8px';
+          sText.appendChild(rewriteBtn);
         } else {
           var n = it.row;
           var isActive = _rcRowActive(n);
@@ -6930,7 +6933,8 @@
           var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
           editBtn.type = 'button';
           editBtn.addEventListener('click', function () { openEditNewsPostModal(n, token, reload); });
-          postRow.appendChild(editBtn);
+          editBtn.style.marginTop = '8px';
+          textCol.appendChild(editBtn);
         }
         wrap.appendChild(postRow);
       });
