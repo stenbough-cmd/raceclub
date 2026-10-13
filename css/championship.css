@@ -158,20 +158,21 @@ body.rc-league-page.rcc-page {
 .rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
 a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
-/* Season Tools: the link plus its slide-out links. Dots separate it from its neighbours; the slide-out
-   opens to the right of a "|" and pushes Help along (Matt). */
+/* Season Tools: a vertical dropdown under the link, styled like the avatar menu (Matt, 2026-10-13). */
 .rcc-tools { position: relative; display: inline-flex; align-items: center; }
 .rcc-actionbar-link + .rcc-tools::before,
 .rcc-tools + .rcc-actionbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: var(--rc-steel); }
 .rcc-tools + .rcc-actionbar-link { position: relative; }
-.rcc-tools-menu { display: inline-flex; align-items: center; max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width 0.28s ease, opacity 0.2s ease; }
-.rcc-tools-open .rcc-tools-menu { max-width: 900px; opacity: 1; }
-.rcc-tools-open .rcc-tools-toggle { color: var(--rc-red); }
-.rcc-tools-sep { color: var(--rc-steel); font-weight: 400; padding: 0 2px 0 0; }
-.rcc-tools-links { display: inline-flex; align-items: center; }
-.rcc-tools-links .rcc-actionbar-link:first-child { padding-left: 14px; }
 .rcc-tools .rcc-tools-toggle { padding-left: 14px; }
-@media (prefers-reduced-motion: reduce) { .rcc-tools-menu { transition: none; } }
+.rcc-tools-toggle::after { content: ''; display: inline-block; width: 0; height: 0; margin-left: 7px; vertical-align: 2px; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; }
+.rcc-tools-open .rcc-tools-toggle { color: var(--rc-red); }
+.rcc-tools-menu { display: none; position: absolute; top: calc(100% - 4px); left: 4px; min-width: 190px; background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14); padding: 6px; z-index: 1001; }
+.rcc-tools-open .rcc-tools-menu { display: block; }
+.rcc-tools-links { display: flex; flex-direction: column; }
+.rcc-tools-links .rcc-actionbar-link { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 5px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--rc-carbon); white-space: nowrap; }
+.rcc-tools-links .rcc-actionbar-link::before { content: none; }
+.rcc-tools-links .rcc-actionbar-link:hover:not(:disabled) { background: var(--rc-offwhite); color: var(--rc-red); }
+.rcc-tools-links .rcc-actionbar-link:disabled { color: #a3abb5; }
 .rcc-actionbar-season {
   display: flex;
   align-items: center;
@@ -953,7 +954,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-badge-num { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
 .rcc-story-badge-pre .rcc-story-badge-num { font-size: 10px; letter-spacing: 0.06em; margin-top: 0; }
 .rcc-story-prev-title { min-width: 0; }
-.rcc-page .rcl-report-line .rcc-report-penalty { color: var(--rc-red); font-weight: 700; }
+/* Race Report events (Matt, 2026-10-13): every event clause gray except position changes and the
+   fastest lap, which keep their colors. Names stay dark and capitalized; the player's name is bold. */
+.rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, #5b6573); font-weight: 400; }
 
 /* Driver Report: drive-through penalty bubble on the charts and in the key (Matt, 2026-10-11). */
 .rcr-dt-dot { fill: var(--rc-red, #c8102e); stroke: #fff; stroke-width: 1.5; }
@@ -1031,3 +1034,26 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* GT and prototype drivers boards: the team in gray after the driver names (Matt, 2026-10-13).
    Hidden on phones, where it only had room for a letter or two. */
 @media (max-width: 640px) { .rcc-board .rcc-board-name-cell .rcl-standings-team { display: none; } }
+
+/* Race Recap results: award icons after the driver name and a key under each class board
+   (Matt, 2026-10-13). */
+.rcc-recap-icons { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; flex: 0 0 auto; }
+.rcc-recap-icon { display: inline-flex; color: var(--rc-steel, #5b6573); }
+.rcc-recap-icon svg { width: 15px; height: 15px; }
+.rcc-recap-key { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 18px; margin-top: 10px; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel, #5b6573); }
+.rcc-recap-key-item { display: inline-flex; align-items: center; gap: 6px; }
+
+/* PHONES (Matt, 2026-10-13). */
+@media (max-width: 640px) {
+  /* Header and Driver Report seat line: no car picture, and the driver / team / car rows sit tighter. */
+  .rcc-hero-meta .rcc-seat-line .rc-cs-logo-wrap,
+  .rcr-report-who .rc-cs-logo-wrap { display: none; }
+  .rcc-hero-meta .rcc-seat-line .rc-cs-team-name-flex,
+  .rcr-report-who .rc-cs-team-name-flex { row-gap: 0; line-height: 1.2; }
+  .rcc-hero-meta .rcc-seat-line .rc-cs-car-line,
+  .rcr-report-who .rc-cs-car-line { margin-top: 2px; }
+  /* Last Race podium: names only, no car numbers. */
+  .rcc-page .rcc-podium-num { display: none; }
+  /* Manufacturers' Standings 4th onward: one column, top to bottom. */
+  .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
+}

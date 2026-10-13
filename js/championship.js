@@ -411,18 +411,16 @@ function rccRenderActionBar(page) {
   // once it ends it goes back to Create Season.
   if (page && page.hasActiveSeason) add('Season Preview', hasSeason, rccOpenSeasonPreview);
   else add('Create Season', true, rccOpenSeasonWizard.bind(null, null));
-  // Season Tools (Matt): one link that slides the season links out beside it ("Season Tools |
-  // Edit Season · End Season · ..."), pushing Help over. Click opens or closes it; moving the
-  // mouse off the whole Season Tools box (or tabbing out of it, or tapping elsewhere) closes it.
+  // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
+  // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
   var tools = _rccEl('span', 'rcc-tools');
   var toolsBtn = _rccText('button', 'rcc-actionbar-link rcc-tools-toggle', 'Season Tools');
   toolsBtn.type = 'button';
   toolsBtn.setAttribute('aria-expanded', 'false');
-  var menu = _rccEl('span', 'rcc-tools-menu');
+  var menu = _rccEl('div', 'rcc-tools-menu');
   menu.id = 'rcc-tools-menu';
   toolsBtn.setAttribute('aria-controls', menu.id);
-  menu.appendChild(_rccText('span', 'rcc-tools-sep', '|'));
-  var menuLinks = _rccEl('span', 'rcc-tools-links');
+  var menuLinks = _rccEl('div', 'rcc-tools-links');
   menu.appendChild(menuLinks);
   tools.appendChild(toolsBtn);
   tools.appendChild(menu);
@@ -433,7 +431,6 @@ function rccRenderActionBar(page) {
     menuLinks.querySelectorAll('button').forEach(function (b) { b.tabIndex = on ? 0 : -1; });
   }
   toolsBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!tools.classList.contains('rcc-tools-open')); });
-  tools.addEventListener('mouseleave', function () { setOpen(false); });
   tools.addEventListener('focusout', function (e) { if (!e.relatedTarget || !tools.contains(e.relatedTarget)) setOpen(false); });
   tools.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); toolsBtn.focus(); } });
   if (!RCC.toolsDocClick) {
@@ -523,8 +520,9 @@ function rccRenderTicker(page) {
   function driverEntry(row) {
     var entry = _rccEl('span', 'rcl-ticker-driver-entry');
     if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
+    // Car number before the driver name (Matt, 2026-10-13).
+    if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + row.carNumber + ' '));
     entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (row.isPlayer ? ' rcc-me-text' : ''), row.name));
-    if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + row.carNumber));
     return entry;
   }
   function rowList(rows, ranked) {
@@ -575,8 +573,8 @@ function rccRenderTicker(page) {
           var entry = _rccEl('span', 'rcl-ticker-driver-entry');
           if (g.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', g.manufacturer));
           var label = g.isMine ? (g.crew || []).join(', ') : ((g.crew || []).length ? g.crew[0] : g.teamName);
+          if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + g.carNumber + ' '));
           entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (g.isMine ? ' rcc-me-text' : ''), label));
-          if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num', ' #' + g.carNumber));
           cl.appendChild(entry);
         });
         el.appendChild(cl);
@@ -1111,13 +1109,12 @@ function _rccBonusNote(page) {
 }
 
 // Footer under every standings board (where the old PRELIMINARY / OFFICIAL line sat): the bonus
-// points note, plus the phone-only "view on PC" note (same wording as the League Hub) since phones
-// only get Pos, Drivers/Teams and Pts.
+// points note.
 function _rccStandingsFooter(board, page) {
   var foot = _rccEl('div', 'rcl-results-bottom-row rcl-results-status-footer rcc-board-footer');
   var bonus = _rccBonusNote(page);
   if (bonus) foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note', bonus));
-  foot.appendChild(_rccText('div', 'rcl-standings-status-note rcc-board-note rcl-standings-status-mobile-note', 'FOR FULL RESULTS, VIEW ON PC BROWSER'));
+  // (The phone-only "FOR FULL RESULTS, VIEW ON PC BROWSER" note was removed, Matt 2026-10-13.)
   board.appendChild(foot);
 }
 
@@ -1411,7 +1408,12 @@ function _rccRaceBody(result, el) {
   result.classes.forEach(function (cls, ci) {
     var w = _rccEl('div', 'rcl-race-class');
     w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' RESULTS'));
-    w.appendChild(_rccCategoryBreakdown(cls));
+    // Icons next to the names and a key under the board replace the Winner / Most Laps Led / Pole /
+    // Fastest Lap list (Matt, 2026-10-13). No winner icon: P1 already says it.
+    var awards = [];
+    if (cls.classMostLapsLedCount && cls.classMostLapsLedCarNumber) awards.push({ icon: _RCC_ICON_LAPS_LED, label: 'Most Laps Led', num: String(cls.classMostLapsLedCarNumber), who: cls.classMostLapsLedDriver });
+    if (cls.classPoleSitter) awards.push({ icon: _RCC_ICON_POLE, label: 'Pole Position', num: String(cls.classPoleSitterCarNumber || ''), who: cls.classPoleSitter });
+    if (cls.classFastestLapDriver) awards.push({ icon: _RCC_ICON_STOPWATCH, label: 'Fastest Lap', num: String(cls.classFastestLapCarNumber || ''), who: cls.classFastestLapDriver });
     var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-recap');
     ['Pos', 'Manu', 'N<sup class="rcc-board-num-deg">&deg;</sup>', 'Driver', 'Laps', 'Total Time', 'Interval', 'Gap', 'Avg (KM/H)', 'Best Lap', 'Pts'].forEach(function (t) { head.appendChild(_rccEl('div', null, t)); });
     w.appendChild(head);
@@ -1424,6 +1426,12 @@ function _rccRaceBody(result, el) {
       // Same cells as the Standings board: maker logo | N° | driver name (no team name).
       var recapCells = _rccBoardCells(row, row.name, 'drivers');
       if (dnf) { recapCells[1].classList.add('rcc-recap-dnf'); recapCells[2].classList.add('rcl-standings-identity-dnf'); }
+      var mine = awards.filter(function (a) { return a.num ? a.num === String(row.carNumber) : a.who === row.name; });
+      if (mine.length) {
+        var ic = _rccEl('span', 'rcc-recap-icons');
+        mine.forEach(function (a) { var i = _rccEl('span', 'rcc-recap-icon', a.icon); i.title = a.label; i.setAttribute('aria-label', a.label); ic.appendChild(i); });
+        recapCells[2].appendChild(ic);
+      }
       recapCells.forEach(function (cell) { r.appendChild(cell); });
       r.appendChild(_rccText('div', 'rcl-race-row-num', String(row.laps || 0)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccTotalTime(row.finishTimeSeconds)));
@@ -1436,6 +1444,16 @@ function _rccRaceBody(result, el) {
       r.appendChild(_rccText('div', 'rcl-race-row-pts', row.points === null || row.points === undefined ? '--' : '+' + row.points));
       w.appendChild(r);
     });
+    if (awards.length) {
+      var key = _rccEl('div', 'rcc-recap-key');
+      awards.forEach(function (a) {
+        var k = _rccEl('span', 'rcc-recap-key-item');
+        k.appendChild(_rccEl('span', 'rcc-recap-icon', a.icon));
+        k.appendChild(_rccText('span', null, a.label));
+        key.appendChild(k);
+      });
+      w.appendChild(key);
+    }
     el.appendChild(w);
   });
 
@@ -1462,8 +1480,9 @@ function _rccRaceBody(result, el) {
           var all = en.positionClause ? en.clauses.concat([en.positionClause]) : en.clauses;
           all.forEach(function (c, i) {
             line.appendChild(document.createTextNode(i === 0 ? ' ' : ', '));
-            // A penalty being handed out reads in bold red (Matt, 2026-10-11).
-            var cc = c.kind === 'penalty' && /^handed\b/i.test(c.text || '') ? 'rcc-report-penalty' : (CLAUSE[c.kind] || null);
+            // Every event is gray except position changes and fastest lap (Matt, 2026-10-13; this
+            // replaces the bold red penalty of 2026-10-11).
+            var cc = CLAUSE[c.kind] || (c.kind ? 'rcl-report-clause-' + c.kind : null);
             line.appendChild(_rccText('span', cc, c.text));
           });
           line.appendChild(document.createTextNode('.'));
@@ -1540,13 +1559,33 @@ function _rccMyLapsBody(result, el) {
         var line = _rccEl('p', 'rcl-report-line');
         var et = Number(ev.elapsedTime);
         if (!isNaN(et)) line.appendChild(_rccText('span', 'rcl-report-timestamp', _rccEventTime(et - (s.greenFlagEt || 0))));
-        line.appendChild(document.createTextNode(' ' + (ev.rawText || ev.eventType)));
+        line.appendChild(document.createTextNode(' ' + _rccMyEventText(ev)));
         evs.appendChild(line);
       });
       w.appendChild(evs);
     }
     el.appendChild(w);
   });
+}
+
+// Your Events wording (Matt, 2026-10-13): penalties and track limits in plain words; everything else
+// is the game's own text.
+function _rccMyEventText(ev) {
+  var d = ev.detail || {};
+  var who = d.DriverName || '';
+  var pen = d.PenaltyType || 'a';
+  if (ev.eventType === 'SimPenaltyIssued') return (who + ' received ' + pen + ' penalty').trim();
+  if (ev.eventType === 'SimPenaltyServed') {
+    var lost = ev.lostSeconds;
+    return (who + ' served ' + pen + ' penalty' + (lost !== null && lost !== undefined ? ' and lost ' + lost + (lost === 1 ? ' second' : ' seconds') : '')).trim();
+  }
+  if (ev.eventType === 'TrackLimit') {
+    var pts = Number(d.WarningPoints);
+    if (pts > 0) return 'Track Limit Warning: ' + pts + ' track cut penalty issued.';
+    var outcome = String(d.Outcome || ev.rawText || 'No Further Action').trim();
+    return 'Track Limit Warning: ' + outcome.replace(/\.$/, '') + '.';
+  }
+  return ev.rawText || ev.eventType;
 }
 
 function rccOpenResults(roundId, kind) {
@@ -2422,7 +2461,8 @@ function rccOpenUpload(roundId, lockRound) {
   var m = rccOpenModal('Upload Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
   var roundSel = null;
-  m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', _rccRoundLabel(c))));
+  // "Round N" is the label; the line under it is just the event and track (Matt, 2026-10-13).
+  m.body.appendChild(_rccField('Round ' + c.roundNum, _rccText('div', 'rcc-upload-round', c.eventName + (c.track ? ' (' + c.track + (c.layout ? ': ' + c.layout : '') + ')' : ''))));
   // The race in the game has to be at least as long as the round's planned length.
   if (c.plannedRaceLengthMinutes) {
     m.body.appendChild(_rccText('div', 'rc-hint', 'This round is a ' + (c.plannedRaceLengthTier || '') + ' race of ' + c.plannedRaceLengthMinutes +
