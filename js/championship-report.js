@@ -478,16 +478,8 @@ function _rcrDraw(body, dr, mode) {
     right2.appendChild(_rcrLineChart({ title: 'Tread left', series: tseries, labels: lapLabels, yMin: 0, yMax: 1, yFmt: function (v) { return Math.round(v * 100) + '%'; }, height: 230, share: 0.52, pitKey: true }));
     grid.appendChild(right2);
     tb.appendChild(grid);
-    // Tread used per lap across the field.
-    if (dr.hasField) {
-      tb.appendChild(_rccText('div', 'rcr-mini-title', 'Tread used per lap (front left), lower is gentler'));
-      var wrows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }))
-        .filter(function (f) { return f.wpl && f.wpl[0]; })
-        .map(function (f) { return { name: '#' + f.carNumber + ' ' + _rcrShort(f.name), value: f.wpl[0], isYou: f.isPlayer, color: f.isPlayer ? RCR_YOU : (mode === 'rivals' ? RCR_SERIES[rivals.map(function (r) { return r.carNumber; }).indexOf(f.carNumber) % 4] : RCR_FIELD) }; })
-        .sort(function (a, b) { return a.value - b.value; });
-      tb.appendChild(_rcrBars(wrows, function (v) { return (v * 100).toFixed(1) + '%'; }));
-    }
-    // Between the tread bars and the tyre sets table (Matt, 2026-10-11).
+    // (The "Tread used per lap (front left)" bar graph was removed, Matt 2026-10-13.)
+    // Between the tyre chart and the tyre sets table (Matt, 2026-10-11).
     tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
       'Le Mans Ultimate adjusts the AI\u2019s tyre wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tyre sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
     ]));
