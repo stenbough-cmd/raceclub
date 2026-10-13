@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/league.css">
 <link rel="stylesheet" href="css/profile.css">
+<link rel="stylesheet" href="css/profile-report.css">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -19,21 +20,59 @@
 <script>renderHeader();</script>
 
 <main class="rc-profile-page">
-  <section class="rcl-panel rc-profile-panel" id="rc-profile-card" hidden>
-    <div class="rcl-panel-head"><div class="rcl-panel-title">Driver Profile</div></div>
-    <div class="rcl-panel-body rc-profile-body">
-      <div class="rc-profile-avatar-wrap">
-        <img class="rc-profile-avatar" id="rc-profile-avatar" alt="">
+  <!-- Row 1: driver card (left third) + Notable Achievements -->
+  <div class="rdp-row rdp-row-top">
+    <section class="rcl-panel rc-profile-panel" id="rc-profile-card" hidden>
+      <div class="rcl-panel-head"><div class="rcl-panel-title">Driver Profile</div></div>
+      <div class="rcl-panel-body rc-profile-body">
+        <div class="rc-profile-avatar-wrap">
+          <img class="rc-profile-avatar" id="rc-profile-avatar" alt="">
+        </div>
+        <div class="rc-profile-name-row">
+          <h1 class="rc-profile-name" id="rc-profile-name"></h1>
+          <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
+        </div>
+        <div class="rc-profile-since" id="rc-profile-since"></div>
+        <div class="rdp-seat" id="rdp-seat" hidden></div>
       </div>
-      <div class="rc-profile-name-row">
-        <h1 class="rc-profile-name" id="rc-profile-name"></h1>
-        <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
-      </div>
-      <div class="rc-profile-since" id="rc-profile-since"></div>
-    </div>
+    </section>
+    <section class="rcl-panel rdp-panel" id="rdp-achievements" hidden>
+      <div class="rcl-panel-head"><div class="rcl-panel-title">Notable Achievements</div></div>
+      <div class="rcl-panel-body"><div class="rdp-ach-grid" id="rdp-ach-grid"></div></div>
+    </section>
+  </div>
+
+  <!-- Row 2: Form Guide (hidden when there are no races) -->
+  <section class="rcl-panel rdp-panel" id="rdp-form" hidden>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Form Guide</div><div class="rdp-panel-note">Last 20 races, oldest to newest</div></div>
+    <div class="rcl-panel-body rdp-form-body"><div class="rdp-form" id="rdp-form-squares"></div></div>
   </section>
 
-  <section class="rcl-panel rc-profile-panel" id="rc-profile-empty" hidden>
+  <!-- Row 3: Season Stats -->
+  <section class="rcl-panel rdp-panel" id="rdp-season" hidden>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Season Stats</div></div>
+    <div class="rcl-panel-body" id="rdp-season-body"></div>
+  </section>
+
+  <!-- Row 4: Story Mentions + Rivalries -->
+  <div class="rdp-row rdp-row-half" id="rdp-row-mid" hidden>
+    <section class="rcl-panel rdp-panel">
+      <div class="rcl-panel-head"><div class="rcl-panel-title">Story Mentions</div></div>
+      <div class="rcl-panel-body" id="rdp-stories"></div>
+    </section>
+    <section class="rcl-panel rdp-panel">
+      <div class="rcl-panel-head"><div class="rcl-panel-title">Rivalries</div></div>
+      <div class="rcl-panel-body" id="rdp-rivals"></div>
+    </section>
+  </div>
+
+  <!-- Row 5: Team History -->
+  <section class="rcl-panel rdp-panel" id="rdp-teams" hidden>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Team History</div><div class="rdp-panel-note">Last 5 seasons</div></div>
+    <div class="rcl-panel-body" id="rdp-teams-body"></div>
+  </section>
+
+  <section class="rcl-panel rc-profile-panel rc-profile-panel-empty" id="rc-profile-empty" hidden>
     <div class="rcl-panel-head"><div class="rcl-panel-title" id="rc-profile-empty-title">Profile Not Available</div></div>
     <div class="rcl-panel-body rc-profile-body">
       <p class="rc-profile-empty-text" id="rc-profile-empty-text"></p>
@@ -52,6 +91,8 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
+<script src="js/championship-report.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/profile-page.js"></script>
 </body>
 </html>
