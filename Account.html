@@ -8426,8 +8426,8 @@
   // -- the same canonical order used everywhere else on the site a class list appears), then by
   // Season within each class, then one row per car -- manufacturer logo, then details, then its own
   // Edit button.
-  // Two big series folders, WEC first then ELMS (blank Series = WEC, same rule as rcCarImageSrc).
-  // Inside each: the class groups, and inside each class the season (year) chips.
+  // Cars popup layout: SERIES (WEC first, ELMS second; blank Series = WEC, same rule as
+  // rcCarImageSrc) > SEASON (year, newest first) > CLASS (canonical order) > cars.
   function buildCarsPanel(cars, token, reload) {
     var activeCars = (cars || []).filter(_rcRowActive);
     var panel = el('div', 'rc-panel');
@@ -8435,6 +8435,7 @@
       panel.appendChild(el('div', 'rc-dm-empty', 'No cars yet.'));
       return panel;
     }
+    var classOrder = (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).slice();
     ['WEC', 'ELMS'].forEach(function (seriesName) {
       var inSeries = activeCars.filter(function (c) {
         var isElms = String(c.Series || '').trim().toUpperCase() === 'ELMS';
@@ -8442,101 +8443,90 @@
       });
       if (!inSeries.length) return;
       panel.appendChild(el('div', 'rc-dm-series-head', escapeHtml(seriesName)));
-      var inner = buildCarsClassList_(inSeries, token, reload);
-      while (inner.firstChild) panel.appendChild(inner.firstChild);
-    });
-    return panel;
-  }
 
-  function buildCarsClassList_(activeCars, token, reload) {
-    return buildGroupedAdminList(activeCars, {
-      emptyMessage: 'No cars yet.',
-      groupKey: function (c) { return c.Class || 'Unclassified'; },
-      canonicalOrder: (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : []).slice(),
-      buildGroupHeader: function (cls) {
-        // No divider line under the class badge itself -- the season/car rows beneath it already
-        // carry their own lighter dividers, so the heavier .rc-dm-row line here just read as a
-        // redundant rule right under the pill.
-        var classHead = el('div', 'rc-dm-row rc-dm-row-noborder');
-        classHead.appendChild(_rcClassBadge(cls));
-        return classHead;
-      },
-      buildBody: function (cls, carsInClass, group) {
-        var bySeason = {};
-        carsInClass.forEach(function (c) {
-          var season = c.Season || 'Unknown Season';
-          if (!bySeason[season]) bySeason[season] = [];
-          bySeason[season].push(c);
-        });
-        var seasonKeys = Object.keys(bySeason).sort(function (a, b) {
-          var na = parseFloat(a), nb = parseFloat(b);
-          if (!isNaN(na) && !isNaN(nb)) return nb - na; // numeric seasons, most recent first
-          return String(b).localeCompare(String(a)); // fallback: reverse alpha
-        });
+      var bySeason = {};
+      inSeries.forEach(function (c) {
+        var season = c.Season || 'Unknown Season';
+        if (!bySeason[season]) bySeason[season] = [];
+        bySeason[season].push(c);
+      });
+      Object.keys(bySeason).sort(function (a, b) {
+        var na = parseFloat(a), nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return nb - na;
+        return String(b).localeCompare(String(a));
+      }).forEach(function (season) {
+        var seasonHead = el('div', 'rc-dm-season-head');
+        seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(season)));
+        panel.appendChild(seasonHead);
 
-        // Cars within each season arranged by manufacturer, alphabetically -- car number is still
-        // the tiebreaker within the same manufacturer, same convention as the Choose Your Team
-        // picker's own sort (handleGetAvailableTeams, Seasons.gs).
-        seasonKeys.forEach(function (season) {
-          bySeason[season].sort(function (a, b) {
-            var manuCompare = String(a.Manufacturer || '').localeCompare(String(b.Manufacturer || ''));
-            if (manuCompare !== 0) return manuCompare;
+        var byClass = {};
+        bySeason[season].forEach(function (c) {
+          var k = c.Class || 'Unclassified';
+          if (!byClass[k]) byClass[k] = [];
+          byClass[k].push(c);
+        });
+        var extras = Object.keys(byClass).filter(function (k) { return classOrder.indexOf(k) === -1; }).sort();
+        classOrder.concat(extras).forEach(function (cls) {
+          var list = byClass[cls];
+          if (!list || !list.length) return;
+          var classHead = el('div', 'rc-dm-season-head');
+          classHead.appendChild(el('span', 'rc-dm-tree', '\u2514'));
+          classHead.appendChild(_rcClassBadge(cls));
+          panel.appendChild(classHead);
+          // Manufacturer alphabetical, car number as tiebreaker (same as the Choose Your Team picker).
+          list.sort(function (a, b) {
+            var m = String(a.Manufacturer || '').localeCompare(String(b.Manufacturer || ''));
+            if (m !== 0) return m;
             return (Number(a.CarNumber) || 0) - (Number(b.CarNumber) || 0);
           });
-        });
+          list.forEach(function (c) {
+            var group = panel;
+    var row = el('div', 'rc-dm-subrow-edit');
+    var info = el('div', 'rc-dm-car-info');
 
-        seasonKeys.forEach(function (season) {
-          var seasonHead = el('div', 'rc-dm-season-head');
-          seasonHead.appendChild(el('span', 'rc-dm-tree', '└'));
-          seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(season)));
-          group.appendChild(seasonHead);
+    // Fixed-width, centered logo column -- same centered-column treatment as the Sponsors
+    // popup's logo column (capped 80px wide / 40px tall here, narrower than the sponsor
+    // logos' 100px), so the text column's left edge lands in the same place row to row
+    // regardless of a given manufacturer logo's own aspect ratio.
+    var logoCol = el('div', 'rc-dm-car-logo-col');
+    var logo = document.createElement('img');
+    logo.className = 'rc-dm-car-logo';
+    logo.alt = '';
+    // The car's own picture (assets/cars/<Season>-<CarNumber>, e.g. 2026-85) instead of the
+    // manufacturer logo. js/img-loader.js tries .webp, then .jpg/.jpeg, then .png. No
+    // picture at all = an empty slot, so the text column still lines up.
+    if (c.Season && c.CarNumber) {
+      logo.src = rcCarImageSrc(c.Season, c.CarNumber, c.Series);
+      logo.onerror = function () { logo.style.display = 'none'; };
+    } else {
+      logo.style.display = 'none';
+    }
+    logoCol.appendChild(logo);
+    info.appendChild(logoCol);
 
-          bySeason[season].forEach(function (c) {
-            var row = el('div', 'rc-dm-subrow-edit');
-            var info = el('div', 'rc-dm-car-info');
-
-            // Fixed-width, centered logo column -- same centered-column treatment as the Sponsors
-            // popup's logo column (capped 80px wide / 40px tall here, narrower than the sponsor
-            // logos' 100px), so the text column's left edge lands in the same place row to row
-            // regardless of a given manufacturer logo's own aspect ratio.
-            var logoCol = el('div', 'rc-dm-car-logo-col');
-            var logo = document.createElement('img');
-            logo.className = 'rc-dm-car-logo';
-            logo.alt = '';
-            // The car's own picture (assets/cars/<Season>-<CarNumber>, e.g. 2026-85) instead of the
-            // manufacturer logo. js/img-loader.js tries .webp, then .jpg/.jpeg, then .png. No
-            // picture at all = an empty slot, so the text column still lines up.
-            if (c.Season && c.CarNumber) {
-              logo.src = rcCarImageSrc(c.Season, c.CarNumber, c.Series);
-              logo.onerror = function () { logo.style.display = 'none'; };
-            } else {
-              logo.style.display = 'none';
-            }
-            logoCol.appendChild(logo);
-            info.appendChild(logoCol);
-
-            // Two-line text column, left-justified: Team Name (black, primary), Manufacturer + Car
-            // Model below it in a lighter color.
-            var textCol = el('div', null);
-            var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-            nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
-            textCol.appendChild(nameLine);
-            var subParts = [];
-            if (c.CarNumber) subParts.push('#' + c.CarNumber);
-            var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
-            if (makeModel) subParts.push(makeModel);
-            textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
-            info.appendChild(textCol);
-            row.appendChild(info);
-            var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
-            editBtn.type = 'button';
-            editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
-            row.appendChild(editBtn);
+    // Two-line text column, left-justified: Team Name (black, primary), Manufacturer + Car
+    // Model below it in a lighter color.
+    var textCol = el('div', null);
+    var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
+    nameLine.appendChild(el('span', 'color:var(--rc-carbon);font-weight:600;', escapeHtml(c.TeamName || '(unnamed team)')));
+    textCol.appendChild(nameLine);
+    var subParts = [];
+    if (c.CarNumber) subParts.push('#' + c.CarNumber);
+    var makeModel = [c.Manufacturer, c.CarModel].filter(Boolean).join(' ');
+    if (makeModel) subParts.push(makeModel);
+    textCol.appendChild(el('div', 'rc-hint', escapeHtml(subParts.join(' · ') || '(unspecified car)')));
+    info.appendChild(textCol);
+    row.appendChild(info);
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
+    editBtn.type = 'button';
+    editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
+    row.appendChild(editBtn);
             group.appendChild(row);
           });
         });
-      }
+      });
     });
+    return panel;
   }
 
   // Car edit popup -- Season/Class/Manufacturer/Car Model/Car Number/Team Name, posting to
