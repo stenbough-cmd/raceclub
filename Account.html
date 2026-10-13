@@ -8426,8 +8426,29 @@
   // -- the same canonical order used everywhere else on the site a class list appears), then by
   // Season within each class, then one row per car -- manufacturer logo, then details, then its own
   // Edit button.
+  // Two big series folders, WEC first then ELMS (blank Series = WEC, same rule as rcCarImageSrc).
+  // Inside each: the class groups, and inside each class the season (year) chips.
   function buildCarsPanel(cars, token, reload) {
     var activeCars = (cars || []).filter(_rcRowActive);
+    var panel = el('div', 'rc-panel');
+    if (!activeCars.length) {
+      panel.appendChild(el('div', 'rc-dm-empty', 'No cars yet.'));
+      return panel;
+    }
+    ['WEC', 'ELMS'].forEach(function (seriesName) {
+      var inSeries = activeCars.filter(function (c) {
+        var isElms = String(c.Series || '').trim().toUpperCase() === 'ELMS';
+        return seriesName === 'ELMS' ? isElms : !isElms;
+      });
+      if (!inSeries.length) return;
+      panel.appendChild(el('div', 'rc-dm-series-head', escapeHtml(seriesName)));
+      var inner = buildCarsClassList_(inSeries, token, reload);
+      while (inner.firstChild) panel.appendChild(inner.firstChild);
+    });
+    return panel;
+  }
+
+  function buildCarsClassList_(activeCars, token, reload) {
     return buildGroupedAdminList(activeCars, {
       emptyMessage: 'No cars yet.',
       groupKey: function (c) { return c.Class || 'Unclassified'; },
@@ -8440,17 +8461,7 @@
         classHead.appendChild(_rcClassBadge(cls));
         return classHead;
       },
-      buildBody: function (cls, allCarsInClass, group) {
-        // WEC first, ELMS second; a blank Series counts as WEC (same rule as rcCarImageSrc). A big
-        // series label sits above each block of season (year) chips.
-        ['WEC', 'ELMS'].forEach(function (seriesName) {
-          var carsInClass = allCarsInClass.filter(function (c) {
-            var isElms = String(c.Series || '').trim().toUpperCase() === 'ELMS';
-            return seriesName === 'ELMS' ? isElms : !isElms;
-          });
-          if (!carsInClass.length) return;
-          var seriesHead = el('div', 'rc-dm-series-head', escapeHtml(seriesName));
-          group.appendChild(seriesHead);
+      buildBody: function (cls, carsInClass, group) {
         var bySeason = {};
         carsInClass.forEach(function (c) {
           var season = c.Season || 'Unknown Season';
@@ -8523,7 +8534,6 @@
             row.appendChild(editBtn);
             group.appendChild(row);
           });
-        });
         });
       }
     });
