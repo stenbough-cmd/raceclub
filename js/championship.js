@@ -786,16 +786,8 @@ function rccRenderLastRace(page) {
   }
   titleEl.textContent = 'Last Race';
   var r = page.lastRace;
-  // RACE RECAP button at the right of the header: the Drivers / Teams switch's metal look, one side
-  // only (Matt). Opens the last race's recap.
-  if (r && r.roundId) {
-    var rb = _rccEl('button', 'rcc-metal-btn');
-    rb.id = 'rcc-lr-recap-btn';
-    rb.type = 'button';
-    rb.appendChild(_rccText('span', 'rcc-metal-btn-face', 'Race Recap'));
-    rb.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
-    titleEl.parentNode.appendChild(rb);
-  }
+  // (The Race Recap button in this header was removed, Matt 2026-10-13. RACE RECAP on the round's
+  // calendar card opens the same recap.)
   (r.classes || []).forEach(function (cls) {
     var w = _rccEl('div', 'rcl-lr-class');
     var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
@@ -2456,6 +2448,12 @@ function rccOpenHelp() {
   var grid = _rccEl('div', 'rc-rulebook-nav-grid');
   nav.appendChild(grid);
   m.body.appendChild(nav);
+  // Quick start for new drivers (Matt, 2026-10-13), right under Jump To A Section.
+  if (typeof RCC_HELP_QUICKSTART !== 'undefined') {
+    var qs = _rccEl('div', 'rcc-quick');
+    qs.innerHTML = RCC_HELP_QUICKSTART;
+    m.body.appendChild(qs);
+  }
   sections.forEach(function (sec) {
     var wrap = _rccEl('div', 'rc-rulebook-section');
     wrap.appendChild(_rccText('h3', null, sec.num + '. ' + sec.title));
@@ -2929,13 +2927,7 @@ function rccRenderStories(page) {
       // Round badge (Matt): a small square with RD over 01, 02... or PRE for the season preview.
       var b = _rccEl('button', 'rcl-news-previous-title rcc-story-prev');
       b.type = 'button';
-      var badge = _rccEl('span', 'rcc-story-badge' + (s.kind === 'preview' ? ' rcc-story-badge-pre' : ''));
-      if (s.kind === 'preview') badge.appendChild(_rccText('span', 'rcc-story-badge-num', 'PRE'));
-      else {
-        badge.appendChild(_rccText('span', 'rcc-story-badge-rd', 'RD'));
-        badge.appendChild(_rccText('span', 'rcc-story-badge-num', String(s.roundNum || 0).padStart(2, '0')));
-      }
-      b.appendChild(badge);
+      b.appendChild(_rccStoryBadge(s));
       b.appendChild(_rccText('span', 'rcc-story-prev-title', s.title || 'Untitled'));
       b.addEventListener('click', function () { rccOpenStory(i + 1); });
       prev.appendChild(b);
@@ -2993,6 +2985,17 @@ function _rccStoryVote(story) {
 }
 
 // Full story popup with Load More Stories, like the League Hub's news popup.
+// Round badge (Matt): a navy square with RD over 01, 02... or PRE for the season preview.
+function _rccStoryBadge(s) {
+  var badge = _rccEl('span', 'rcc-story-badge' + (s.kind === 'preview' ? ' rcc-story-badge-pre' : ''));
+  if (s.kind === 'preview') badge.appendChild(_rccText('span', 'rcc-story-badge-num', 'PRE'));
+  else {
+    badge.appendChild(_rccText('span', 'rcc-story-badge-rd', 'RD'));
+    badge.appendChild(_rccText('span', 'rcc-story-badge-num', String(s.roundNum || 0).padStart(2, '0')));
+  }
+  return badge;
+}
+
 function rccOpenStory(startIndex) {
   var list = RCC.storyList || [];
   if (!list.length) return;
@@ -3005,8 +3008,16 @@ function rccOpenStory(startIndex) {
   more.appendChild(moreBtn);
   function add(s) {
     var w = _rccEl('div', 'rcl-news-item rcl-modal-story');
-    w.appendChild(_rccText('div', 'rcl-news-title', s.title));
-    w.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(s)));
+    // Badge to the left of the title and date, like the League News popup (Matt, 2026-10-13).
+    var row = _rccEl('div', 'rcl-news-headrow rcc-story-headrow');
+    var bw = _rccEl('div', 'rcl-news-badge-wrap');
+    bw.appendChild(_rccStoryBadge(s));
+    row.appendChild(bw);
+    var col = _rccEl('div', 'rcl-news-headtext');
+    col.appendChild(_rccText('div', 'rcl-news-title', s.title));
+    col.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(s)));
+    row.appendChild(col);
+    w.appendChild(row);
     if (s.standfirst) w.appendChild(_rccText('p', 'rcc-story-standfirst', s.standfirst));
     var b = _rccEl('div', 'rcl-news-body');
     _rccStoryBlocks(b, s.body);

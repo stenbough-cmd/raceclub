@@ -6,6 +6,16 @@
 // Writing rules for this text (Matt): plain, correct English in full sentences. No em dashes, and no
 // colon followed by a lowercase clause. Callout titles are their own line (.rcc-help-callout-title)
 // rather than "Label:". Apostrophes are typographic (’) so the strings need no escaping.
+// Quick start (Matt, 2026-10-13): three steps shown right under Jump To A Section.
+var RCC_HELP_QUICKSTART =
+  '<div class="rcc-quick-title">Using Race Club Championship Is as Easy as 1-2-3</div>' +
+  '<ol class="rcc-quick-steps">' +
+  '<li><span class="rcc-quick-num">1</span><strong>Create a Season</strong><span>Create a season here on the website and choose the car you will drive all season.</span></li>' +
+  '<li><span class="rcc-quick-num">2</span><strong>Race It</strong><span>Complete a race in Le Mans Ultimate in the car you chose, at the track your calendar shows for the round.</span></li>' +
+  '<li><span class="rcc-quick-num">3</span><strong>Upload Your Results</strong><span>Upload the .xml results file from the folder where Le Mans Ultimate is installed.</span></li>' +
+  '</ol>' +
+  '<div class="rcc-quick-done">That\u2019s it!</div>';
+
 var RCC_HELP_SECTIONS = [
   {
     id: 'what-it-is', num: '1', title: 'What Race Club Championship Is',
@@ -103,7 +113,7 @@ var RCC_HELP_SECTIONS = [
   {
     id: 'recap', num: '6', title: 'Race Recap, Driver Report and Standings',
     html:
-      '<p>Every round with results has its own recap. Open it with <strong>RACE RECAP</strong> on the round’s calendar card, or with the <strong>Race Recap</strong> button in the Last Race header. <strong>DRIVER REPORT</strong>, next to RACE RECAP on the calendar card, opens the same recap already showing your Driver Report. Inside the recap, the dropdown next to the round switches between five pages.</p>' +
+      '<p>Every round with results has its own recap. Open it with <strong>RACE RECAP</strong> on the round’s calendar card. <strong>DRIVER REPORT</strong>, next to RACE RECAP on the calendar card, opens the same recap already showing your Driver Report. Inside the recap, the dropdown next to the round switches between five pages.</p>' +
       '<table class="rcc-help-table"><tbody>' +
       '<tr><td><strong>Race</strong></td><td>The results for every class, the bonus winners and the lap-by-lap Race Report.</td></tr>' +
       '<tr><td><strong>Qualifying</strong></td><td>The qualifying order, when your season has a qualifying session.</td></tr>' +
