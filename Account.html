@@ -7337,61 +7337,6 @@
     };
   }
 
-  // Teammate Car + Team Display Name for the Edit Car popup (CHAMP chat, 2026-10-13). Championship
-  // mode's Team Endurance Standings score a PAIR of cars as one team (its best car each round); a
-  // car with no teammate is its own team. The dropdown lists the other cars with the same Season and
-  // Class as the form (it refreshes when either changes). Saved by adminUpdateCar
-  // (Website.gs _rcSaveCarTeammate_), which writes Cars.TeamCars and Cars.TeamDisplay on both cars.
-  // Returns { getPartner(), getDisplay() }.
-  function _rcBuildCarTeamFields(form, car, allCars, seasonInput, classSelect) {
-    var idsOf = function (c) { return String((c && c.TeamCars) || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); };
-    var current = idsOf(car).filter(function (id) { return id !== car.CarID; })[0] || '';
-    var byId = {};
-    allCars.forEach(function (c) { byId[c.CarID] = c; });
-    form.appendChild(el('label', null, 'Teammate Car'));
-    var select = document.createElement('select');
-    form.appendChild(select);
-    function fill() {
-      var keep = select.value || current;
-      select.innerHTML = '';
-      var none = document.createElement('option');
-      none.value = '';
-      none.textContent = 'None (this car is its own team)';
-      select.appendChild(none);
-      allCars.filter(function (c) {
-        return c.CarID !== car.CarID && String(c.Season) === String(seasonInput.value).trim() && String(c.Class) === String(classSelect.value);
-      }).sort(function (a, b) {
-        return String(a.CarNumber).localeCompare(String(b.CarNumber), undefined, { numeric: true });
-      }).forEach(function (c) {
-        var opt = document.createElement('option');
-        opt.value = c.CarID;
-        var other = idsOf(c).filter(function (id) { return id !== c.CarID && id !== car.CarID; })[0];
-        var otherCar = other && byId[other];
-        opt.textContent = '#' + (c.CarNumber || '?') + ' ' + (c.TeamName || '(unnamed team)') + (c.Manufacturer ? ' (' + c.Manufacturer + ')' : '') +
-          (otherCar ? ' [now paired with #' + (otherCar.CarNumber || '?') + ']' : '');
-        if (c.CarID === keep) opt.selected = true;
-        select.appendChild(opt);
-      });
-    }
-    fill();
-    seasonInput.addEventListener('change', fill);
-    classSelect.addEventListener('change', fill);
-    form.appendChild(el('div', 'rc-hint', 'Championship mode scores both cars as one team, using the better car each round. Picking a car that is already paired moves it to this team. Saved on both cars.'));
-
-    form.appendChild(el('label', null, 'Team Display Name'));
-    var display = el('input');
-    display.type = 'text';
-    display.value = car.TeamDisplay || '';
-    display.placeholder = car.TeamName || 'Team name';
-    form.appendChild(display);
-    form.appendChild(el('div', 'rc-hint', 'The team name shown in Team Endurance Standings, saved on both cars of the pair. Leave blank to use the Team Name.'));
-
-    return {
-      getPartner: function () { return select.value; },
-      getDisplay: function () { return display.value.replace(/\s+/g, ' ').trim(); }
-    };
-  }
-
   // DLC pack picker for the Add/Edit Track and Car popups (ECO chat, 2026-10-10).
   // A dropdown: "Base" (the base game, saved as an empty cell), then every DLC pack in DLC_PACKS
   // (reference-data.js) plus any pack already saved on a car or track (action=getDlcOptions, merged
@@ -8564,7 +8509,7 @@
             row.appendChild(info);
             var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit');
             editBtn.type = 'button';
-            editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload, cars); });
+            editBtn.addEventListener('click', function () { openEditCarModal(c, token, reload); });
             row.appendChild(editBtn);
             group.appendChild(row);
           });
@@ -8576,7 +8521,7 @@
   // Car edit popup -- Season/Class/Manufacturer/Car Model/Car Number/Team Name, posting to
   // adminUpdateCar, plus a separate Deactivate/Reactivate button (adminSetCarActive -- never
   // deletes the row), same edit-fields- vs-deactivate split as the Track popup above.
-  function openEditCarModal(car, token, reload, allCars) {
+  function openEditCarModal(car, token, reload) {
     var body = el('div');
     var form = el('form');
 
@@ -8613,7 +8558,6 @@
     var dlcField = _rcBuildDlcField(form, car.DLC || '', token);
 
     var champFields = _rcBuildCarChampFields(form, car);
-    var teamFields = _rcBuildCarTeamFields(form, car, allCars || [], season, carClass);
 
     // Cars.Tier/ PreviousTier are now archived columns in the backend (see Core.gs's TAB_SCHEMAS),
     // untouched but never read or written going forward.
@@ -8658,9 +8602,7 @@
             DriverNames: champFields.getDriverNames(),
             FactoryTeam: champFields.getFactoryTeam(),
             TeamDesc: teamDesc.value.trim(),
-            DLC: dlcField.getValue(),
-            TeamPartner: teamFields.getPartner(),
-            TeamDisplay: teamFields.getDisplay()
+            DLC: dlcField.getValue()
           }
         });
       })

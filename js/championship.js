@@ -1149,10 +1149,9 @@ function rccRenderStandings(page) {
 }
 
 // TEAM ENDURANCE STANDINGS (Matt, 2026-10-13): every class except Hypercar. Bare on the page like
-// Manufacturers' Standings: the top 3 as a podium (P2 / P1 / P3, the team's two best cars sharing
-// 200x60, rank, team name, points), then 4th onward in a 2-column list (rank, two cars sharing
-// 175x60, team name, points). Your team is in red. Hidden until the class has points. A team scores
-// its best car's points each round (Championship.gs, teamEntries).
+// Manufacturers' Standings: the top 3 as a podium (P2 / P1 / P3, car picture up to 200x60, rank,
+// team name and number, points), then 4th onward in a 2-column list (rank, car picture up to
+// 175x60, team name and number, points). Your team is in red. Hidden until the class has points.
 function _rccTeamTrophy(page, className) {
   if (!page || !page.hasSeason || !(page.roundsCompleted > 0)) return null;
   var cls = (page.standings.teams || []).filter(function (c) { return c.className === className; })[0];
@@ -1164,28 +1163,23 @@ function _rccTeamTrophy(page, className) {
   box.appendChild(_rccText('div', 'rcl-mfr-title', 'Team Endurance Standings'));
   box.appendChild(_rccText('div', 'rcl-mfr-subtitle', className + ' Class'));
   var ptsText = function (t) { return String(t.championshipPoints) + (Number(t.championshipPoints) === 1 ? ' PT' : ' PTS'); };
-  // The team's two best cars side by side, sharing the slot's width (Matt, 2026-10-13).
   var carSlot = function (t, cls) {
     var slot = _rccEl('span', cls);
-    var cars = (t.cars && t.cars.length ? t.cars : [{ carNumber: t.carNumber }]).slice(0, 2);
-    if (cars.length > 1) slot.classList.add('rcc-tt-two');
-    cars.forEach(function (car) {
-      if (!year || !car.carNumber) return;
+    if (year && t.carNumber) {
       var img = document.createElement('img');
       img.className = 'rcc-tt-car';
       img.alt = '';
-      img.title = '#' + car.carNumber;
       img.loading = 'lazy';
-      _rccCarImg(img, year, car.carNumber, sd.series, function () { img.remove(); });
+      _rccCarImg(img, year, t.carNumber, sd.series, function () { img.remove(); });
       slot.appendChild(img);
-    });
+    }
     return slot;
   };
-  // Team name only, no car number (the team scores with its best car each round).
   var nameEl = function (t, cls) {
     var name = _rccEl('span', cls);
     name.appendChild(_rccText('span', null, String(t.teamName || '').toUpperCase()));
-    name.title = t.teamName || '';
+    if (t.carNumber) name.appendChild(_rccText('span', 'rcc-tt-num', ' #' + t.carNumber));
+    name.title = (t.teamName || '') + (t.carNumber ? ' #' + t.carNumber : '');
     return name;
   };
   // Top 3: P2 / P1 / P3 like the Manufacturers' podium, without the boxes.
