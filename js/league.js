@@ -786,7 +786,7 @@ function _rclCarPic_(year, carNumber, series) {
   return slot;
 }
 
-function _rclBoardIdentityCells_(row, kind, carYear, carSeries) {
+function _rclBoardIdentityCells_(row, kind, carYear, carSeries, showTeam) {
   var slot = _rclEl('div', 'rcl-standings-mfr-logo-slot');
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var img = document.createElement('img');
@@ -817,6 +817,8 @@ function _rclBoardIdentityCells_(row, kind, carYear, carSeries) {
         nameRow.appendChild(flagImg);
       }
     }
+    // GT / prototype driver boards: the driver's team in gray right after the name.
+    if (showTeam && row.teamName) nameRow.appendChild(_rclEl('span', 'rcl-standings-team', _rclEscapeHtml(row.teamName)));
   }
   // Hover shows the full name and number when the name is cut off with "...".
   nameRow.title = (kind === 'teams' ? (row.teamName || '') : (row.name || '')) + (row.carNumber ? ' #' + row.carNumber : '');
@@ -924,7 +926,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   rows.forEach(function (row, idx) {
     var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row' + (RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : ''));
     rowEl.appendChild(_rclBuildPosBadge_(idx));
-    _rclBoardIdentityCells_(row, kind, carYear, (hub.carSeries || {})[className + '|' + String(row.carNumber === undefined ? '' : row.carNumber).trim()] || '').forEach(function (cell) { rowEl.appendChild(cell); });
+    _rclBoardIdentityCells_(row, kind, carYear, (hub.carSeries || {})[className + '|' + String(row.carNumber === undefined ? '' : row.carNumber).trim()] || '', kind !== 'teams' && className !== 'Hypercar').forEach(function (cell) { rowEl.appendChild(cell); });
     rounds.forEach(function (r) {
       var cell = _rclEl('div', 'rcl-board-round');
       var i = scoredIdx[r.roundId];
