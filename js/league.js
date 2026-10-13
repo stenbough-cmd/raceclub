@@ -617,6 +617,16 @@ function _rclIsDnf_(row) {
 // A driver's name as a link to their public profile (profile.html?id=RC-xxxxx) when a profileId is
 // known, otherwise plain text. Built with textContent/encodeURIComponent so a name can never be
 // parsed as markup.
+// The signed-in driver's profile ID (from the saved login), or '' for visitors. Used to show the
+// signed-in driver in bold everywhere their name appears (no red highlights on this page).
+function _rclMyProfileId_() {
+  try {
+    if (!getToken()) return '';
+    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+    return (me && /^RC-\d+$/.test(String(me.profileId || ''))) ? me.profileId : '';
+  } catch (err) { return ''; }
+}
+
 function _rclBuildDriverNameEl_(className, name, profileId) {
   var el;
   if (profileId && /^RC-\d+$/.test(String(profileId))) {
@@ -628,6 +638,7 @@ function _rclBuildDriverNameEl_(className, name, profileId) {
     el.className = className;
   }
   el.textContent = name || '';
+  if (profileId && profileId === _rclMyProfileId_()) el.className += ' rcl-me';
   return el;
 }
 
@@ -730,7 +741,6 @@ function _rclBuildStandingsColumns_(standings, hasResults) {
 // championship only. In the league every car has one driver, and each car number is its own entry
 // on the Teams board (cars of the same team are NOT combined).
 var RCL_BOARD_CLASS_ORDER_ = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
-var rclBoardView_ = {};   // className -> 'drivers' | 'teams'
 
 function _rclBoardSortClasses_(names) {
   return names.slice().sort(function (a, b) {
@@ -740,19 +750,6 @@ function _rclBoardSortClasses_(names) {
     if (bi === -1) return -1;
     return ai - bi;
   });
-}
-
-function _rclBoardMetalSwitch_(view, onChange) {
-  var sw = _rclEl('button', 'rcl-metal-switch' + (view === 'teams' ? ' rcl-metal-switch-teams' : ''));
-  sw.type = 'button';
-  sw.setAttribute('role', 'switch');
-  sw.setAttribute('aria-checked', view === 'teams' ? 'true' : 'false');
-  sw.setAttribute('aria-label', 'Show team standings');
-  sw.appendChild(_rclEl('span', 'rcl-metal-knob'));
-  sw.appendChild(_rclEl('span', 'rcl-metal-label rcl-metal-label-drivers', 'Drivers'));
-  sw.appendChild(_rclEl('span', 'rcl-metal-label rcl-metal-label-teams', 'Teams'));
-  sw.addEventListener('click', function () { onChange(view === 'teams' ? 'drivers' : 'teams'); });
-  return sw;
 }
 
 // Returns three grid cells for a row: manufacturer logo | car number | name. The logo slot ALWAYS
@@ -960,6 +957,10 @@ function _rclRenderStandings(hub) {
   var host = document.getElementById('rcl-standings-panels');
   if (!body || !host) return;
   body.innerHTML = '';
+  // Manufacturers' Standings is moved inside this host (right above the Hypercar board) while the
+  // boards are built, so take it back out before the host is cleared.
+  var mfr = document.getElementById('rcl-manufacturer-standings');
+  if (mfr && host.contains(mfr)) host.parentNode.insertBefore(mfr, host.nextSibling);
   host.innerHTML = '';
 
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
@@ -972,7 +973,7 @@ function _rclRenderStandings(hub) {
     // has been scored.
     if (emptyRow) emptyRow.style.display = '';
     var titleEl = document.getElementById('rcl-standings-title');
-    if (titleEl) titleEl.textContent = hub.seasonEnded ? 'Final Championship Standings' : 'Championship Standings';
+    if (titleEl) titleEl.textContent = 'Championship Standings';
     body.appendChild(_rclEmptyState('No Data To Display', !hasStandings
       ? 'Standings fill in once a season is underway.'
       : 'Standings fill in once a race has been scored.'));
@@ -984,41 +985,89 @@ function _rclRenderStandings(hub) {
   hub.standings.forEach(function (c) { byName[c.className] = c; });
   _rclBoardSortClasses_(Object.keys(byName)).forEach(function (className) {
     var cls = byName[className];
+    // Above each class board: Manufacturers' Standings (Hypercar) or Team Endurance Standings (every
+    // other class). Both stay bare on the page, no panel.
+    if (className === 'Hypercar') { if (mfr) host.appendChild(mfr); }
+    else { var trophy = _rclBuildTeamTrophy_(hub, cls, className); if (trophy) host.appendChild(trophy); }
     var row = _rclEl('div', 'rcl-row-full');
     var panel = _rclEl('section', 'rcl-panel');
     var headEl = _rclEl('div', 'rcl-panel-head');
-    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + (hub.seasonEnded ? ' Final Standings' : ' Standings')));
+    // Titles never change when a season ends (Matt, 2026-10-13).
+    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + ' Standings'));
     var bodyEl = _rclEl('div', 'rcl-panel-body');
-    var switchSlot = _rclEl('div', 'rcl-switch-slot');
-    headEl.appendChild(switchSlot);
-    var hasTeams = className !== 'Hypercar' && (cls.standings || []).length > 0;
-    // Both boards are built once, up front (the hidden one's pictures load in the background), and
-    // the Drivers/Teams switch only shows/hides them -- no rebuild, so nothing reloads or flickers.
-    var boards = { drivers: _rclBuildStandingsBoard_(hub, cls, className, 'drivers') };
-    bodyEl.appendChild(boards.drivers);
-    if (hasTeams) {
-      boards.teams = _rclBuildStandingsBoard_(hub, cls, className, 'teams');
-      bodyEl.appendChild(boards.teams);
-    }
-    function draw() {
-      var view = hasTeams ? (rclBoardView_[className] || 'drivers') : 'drivers';
-      switchSlot.innerHTML = '';
-      if (hasTeams) {
-        switchSlot.appendChild(_rclBoardMetalSwitch_(view, function (next) {
-          rclBoardView_[className] = next;
-          draw();
-          var again = switchSlot.querySelector('.rcl-metal-switch');
-          if (again) again.focus();
-        }));
-      }
-      Object.keys(boards).forEach(function (key) { boards[key].hidden = (key !== view); });
-    }
-    draw();
+    // Drivers board only. The Drivers/Teams switch and the Teams board were replaced by the Team
+    // Endurance Standings section above each non-Hypercar board.
+    bodyEl.appendChild(_rclBuildStandingsBoard_(hub, cls, className, 'drivers'));
     panel.appendChild(headEl);
     panel.appendChild(bodyEl);
     row.appendChild(panel);
     host.appendChild(row);
   });
+}
+
+// TEAM ENDURANCE STANDINGS: every class except Hypercar. Bare on the page like Manufacturers'
+// Standings. A team here is one car entry (team name + car number), the same rows the old Teams board
+// listed. Top 3 as a podium (P2 / P1 / P3), then 4th onward in two columns. The signed-in driver's
+// own team is bold. Hidden until the class has any points.
+function _rclBuildTeamTrophy_(hub, cls, className) {
+  if (!hub || !hub.hasSeason || !((hub.roundsCompleted || 0) > 0)) return null;
+  var list = (cls && cls.standings) || [];
+  if (!list.length || !list.some(function (t) { return Number(t.championshipPoints) > 0; })) return null;
+  var year = ((hub.classSeasons || {})[className]) || '';
+  var me = _rclMyProfileId_();
+  var box = _rclEl('div', 'rcl-row-full rcl-tt');
+  box.appendChild(_rclEl('div', 'rcl-mfr-title', 'Team Endurance Standings'));
+  box.appendChild(_rclEl('div', 'rcl-mfr-subtitle', _rclEscapeHtml(className) + ' Class'));
+  var ptsText = function (t) { return String(t.championshipPoints) + (Number(t.championshipPoints) === 1 ? ' PT' : ' PTS'); };
+  var isMe = function (t) { return !!me && t.profileId === me; };
+  var carSlot = function (t, slotClass) {
+    var slot = _rclEl('span', slotClass);
+    if (year && t.carNumber) {
+      var img = document.createElement('img');
+      img.className = 'rcl-tt-car';
+      img.alt = '';
+      img.loading = 'lazy';
+      _rclCarImg(img, year, t.carNumber, (hub.carSeries || {})[className + '|' + String(t.carNumber).trim()] || '', function () { img.remove(); });
+      slot.appendChild(img);
+    }
+    return slot;
+  };
+  var nameEl = function (t, nameClass) {
+    var name = _rclEl('span', nameClass);
+    name.appendChild(_rclEl('span', null, _rclEscapeHtml(String(t.teamName || '').toUpperCase())));
+    if (t.carNumber) name.appendChild(_rclEl('span', 'rcl-tt-num', ' #' + _rclEscapeHtml(String(t.carNumber))));
+    name.title = (t.teamName || '') + (t.carNumber ? ' #' + t.carNumber : '');
+    return name;
+  };
+  var top3 = list.slice(0, 3);
+  var podium = _rclEl('div', 'rcl-mfr-podium rcl-tt-podium');
+  (top3.length === 3 ? [1, 0, 2] : top3.map(function (_, i) { return i; })).forEach(function (idx) {
+    var t = top3[idx];
+    var tile = _rclEl('div', 'rcl-mfr-tile rcl-mfr-tile-p' + (idx + 1) + ' rcl-tt-tile' + (isMe(t) ? ' rcl-me' : ''));
+    tile.appendChild(carSlot(t, 'rcl-tt-podium-car'));
+    var rl = _rclEl('div', 'rcl-mfr-tile-rankline');
+    rl.appendChild(_rclEl('span', 'rcl-mfr-tile-rank', String(idx + 1)));
+    tile.appendChild(rl);
+    tile.appendChild(nameEl(t, 'rcl-mfr-tile-name rcl-tt-tile-name'));
+    tile.appendChild(_rclEl('div', 'rcl-mfr-tile-points', ptsText(t)));
+    podium.appendChild(tile);
+  });
+  box.appendChild(podium);
+  var rest = list.slice(3);
+  if (rest.length) {
+    var grid = _rclEl('div', 'rcl-tt-list');
+    grid.style.setProperty('--rcl-tt-rows', String(Math.ceil(rest.length / 2)));
+    rest.forEach(function (t, i) {
+      var r = _rclEl('div', 'rcl-tt-item' + (isMe(t) ? ' rcl-me' : ''));
+      r.appendChild(_rclEl('span', 'rcl-tt-rank', (i + 4) + '.'));
+      r.appendChild(carSlot(t, 'rcl-tt-car-slot'));
+      r.appendChild(nameEl(t, 'rcl-tt-name'));
+      r.appendChild(_rclEl('span', 'rcl-tt-pts', ptsText(t)));
+      grid.appendChild(r);
+    });
+    box.appendChild(grid);
+  }
+  return box;
 }
 
 // ---------------------------------------------------------------------
@@ -1285,7 +1334,7 @@ function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
 
     // Name first, no flag (removed), and no car number here any more.
     var identity = _rclEl('div', 'rcl-lr-podium-identity');
-    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
+    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : '') + (row.profileId && row.profileId === _rclMyProfileId_() ? ' rcl-me' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
     if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-num', '#' + _rclEscapeHtml(row.carNumber)));
     driverWrap.appendChild(identity);
     tile.appendChild(driverWrap);
@@ -1420,7 +1469,7 @@ function _rclRenderManufacturerStandings(hub) {
   }
   body.style.display = '';
 
-  body.appendChild(_rclEl('div', 'rcl-mfr-title', hub.seasonEnded ? "Final Manufacturers' Standings" : "Manufacturers' Standings"));
+  body.appendChild(_rclEl('div', 'rcl-mfr-title', "Manufacturers' Standings"));
   body.appendChild(_rclEl('div', 'rcl-mfr-subtitle', 'Hypercar Class'));
 
   var podium = _rclEl('div', 'rcl-mfr-podium');
@@ -2271,7 +2320,11 @@ function _rclRenderRaceCarousel(hub) {
     // above) to the CONTENT-derived cross size of the flex line, and min-height only clamps the
     // container's own box AFTER that -- it never feeds back into how far the items themselves
     // stretch.
-    if (maxHeight > 0) track.style.height = maxHeight + 'px';
+    // The track is border-box, so its own top and bottom padding go on top of the tallest card
+    // (otherwise the padding is eaten and the space under the carousel can't be changed).
+    var trackStyle = getComputedStyle(track);
+    var padY = (parseFloat(trackStyle.paddingTop) || 0) + (parseFloat(trackStyle.paddingBottom) || 0);
+    if (maxHeight > 0) track.style.height = (maxHeight + padY) + 'px';
   });
 }
 
