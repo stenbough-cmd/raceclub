@@ -1127,37 +1127,70 @@ function _rccStandingsFooter(board, page) {
 
 function rccRenderStandings(page) {
   var host = document.getElementById('rcc-standings-panels');
+  // Manufacturers' Standings sits right above the Hypercar board (Matt, 2026-10-13). It is moved
+  // inside this host below, so take it back out before clearing the host.
+  var mfr = document.getElementById('rcl-manufacturer-standings');
+  if (mfr && host.contains(mfr)) host.parentNode.insertBefore(mfr, host.nextSibling);
   host.innerHTML = '';
   if (!page || !page.hasSeason) return;
   var classes = _rccSortClasses((page.standings.drivers || []).map(function (c) { return c.className; }), function (c) { return c; });
   classes.forEach(function (className) {
+    // Above each class board: Manufacturers' Standings (Hypercar) or Team Endurance Trophy (others).
+    if (className === 'Hypercar') { if (mfr) host.appendChild(mfr); }
+    else { var trophy = _rccTeamTrophy(page, className); if (trophy) host.appendChild(trophy); }
     var row = _rccEl('div', 'rcl-row-full');
     var panel = _rccEl('section', 'rcl-panel');
     var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
     headEl.appendChild(_rccText('div', 'rcl-panel-title', className + (page.seasonEnded ? ' Final Standings' : ' Standings')));
     var body = _rccEl('div', 'rcl-panel-body');
-    // Every class except Hypercar has a Teams board, even before results (it shows No Data To Display).
-    var hasTeams = className !== 'Hypercar';
-    var switchSlot = _rccEl('div', 'rcc-switch-slot');
-    headEl.appendChild(switchSlot);
-    // Both boards are built once and the switch only shows one and hides the other, so nothing is
-    // redrawn or re-loaded on a switch and the pictures don't flicker (Matt). The hidden board's
-    // pictures still load in the background.
-    var boards = { drivers: _rccStandingsBoard(page, className, 'drivers') };
-    body.appendChild(boards.drivers);
-    if (hasTeams) { boards.teams = _rccStandingsBoard(page, className, 'teams'); body.appendChild(boards.teams); }
-    function draw() {
-      var view = hasTeams ? (RCC.standingsView[className] || 'drivers') : 'drivers';
-      switchSlot.innerHTML = '';
-      if (hasTeams) switchSlot.appendChild(_rccMetalSwitch(view, function (next) { RCC.standingsView[className] = next; draw(); }));
-      Object.keys(boards).forEach(function (k) { boards[k].hidden = k !== view; });
-    }
-    draw();
+    // Drivers board only. The Teams board and its Drivers/Teams switch were replaced by the Team
+    // Endurance Trophy section above the board (Matt, 2026-10-13).
+    body.appendChild(_rccStandingsBoard(page, className, 'drivers'));
     panel.appendChild(headEl);
     panel.appendChild(body);
     row.appendChild(panel);
     host.appendChild(row);
   });
+}
+
+// TEAM ENDURANCE TROPHY (Matt, 2026-10-13): every class except Hypercar. Bare on the page like
+// Manufacturers' Standings, no podium: every team in a 2-column list (rank, car picture up to
+// 200x60, team name and number, points). Your team is in red. Hidden until the class has points.
+function _rccTeamTrophy(page, className) {
+  if (!page || !page.hasSeason || !(page.roundsCompleted > 0)) return null;
+  var cls = (page.standings.teams || []).filter(function (c) { return c.className === className; })[0];
+  var list = cls ? (cls.standings || []) : [];
+  if (!list.length || !list.some(function (t) { return Number(t.championshipPoints) > 0; })) return null;
+  var sd = page.seasonDetails || {};
+  var year = (sd.classSeasons || {})[className] || sd.seasonYear || '';
+  var box = _rccEl('div', 'rcl-row-full rcc-team-trophy');
+  box.appendChild(_rccText('div', 'rcl-mfr-title', 'Team Endurance Trophy'));
+  box.appendChild(_rccText('div', 'rcl-mfr-subtitle', className + ' Class'));
+  var grid = _rccEl('div', 'rcc-tt-list');
+  grid.style.setProperty('--rcc-tt-rows', String(Math.ceil(list.length / 2)));
+  list.forEach(function (t, i) {
+    var r = _rccEl('div', 'rcc-tt-item' + (t.isPlayer ? ' rcc-tt-me' : ''));
+    r.appendChild(_rccText('span', 'rcc-tt-rank', (i + 1) + '.'));
+    var slot = _rccEl('span', 'rcc-tt-car-slot');
+    if (year && t.carNumber) {
+      var img = document.createElement('img');
+      img.className = 'rcc-tt-car';
+      img.alt = '';
+      img.loading = 'lazy';
+      _rccCarImg(img, year, t.carNumber, sd.series, function () { img.remove(); });
+      slot.appendChild(img);
+    }
+    r.appendChild(slot);
+    var name = _rccEl('span', 'rcc-tt-name');
+    name.appendChild(_rccText('span', null, String(t.teamName || '').toUpperCase()));
+    if (t.carNumber) name.appendChild(_rccText('span', 'rcc-tt-num', ' #' + t.carNumber));
+    name.title = (t.teamName || '') + (t.carNumber ? ' #' + t.carNumber : '');
+    r.appendChild(name);
+    r.appendChild(_rccText('span', 'rcc-tt-pts', String(t.championshipPoints) + (Number(t.championshipPoints) === 1 ? ' PT' : ' PTS')));
+    grid.appendChild(r);
+  });
+  box.appendChild(grid);
+  return box;
 }
 
 function rccRenderManufacturers(page) {
