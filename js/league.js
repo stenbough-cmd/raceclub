@@ -3394,6 +3394,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var storyWritingOn = false;
   function showHub(hub) {
+    // The page looks exactly the same after a season ends as it did after the last race was uploaded
+    // (Matt, 2026-10-13): Last Race, the ticker, the standings and every title stay as they were.
+    // The story tells visitors the season is over. The ended-season branches in this file are kept
+    // but no longer reached from here.
+    if (hub && hub.seasonEnded) hub.seasonEnded = false;
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
