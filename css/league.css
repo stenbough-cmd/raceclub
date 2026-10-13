@@ -2401,7 +2401,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-metal-button:hover .rcl-metal-button-plate { filter: brightness(1.15); }
 .rcl-metal-button:active .rcl-metal-button-plate { transform: translateY(1px); }
 .rcl-metal-button:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
-.rcl-metal-switch:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
+.rcl-metal-switch:focus, .rcl-metal-switch:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   .rcl-metal-knob, .rcl-metal-label { transition: none; }
 }
