@@ -2999,7 +2999,8 @@ function _rccStoryPreview(raw, limit) {
   return { el: box, truncated: truncated };
 }
 function _rccStoryMeta(s) {
-  var bits = [];
+  // Every story is written by Race Club Press (Matt, 2026-10-14).
+  var bits = ['By Race Club Press'];
   if (s.kind === 'preview') bits.push('Season Preview');
   else bits.push((s.kind === 'finale' ? 'Season Finale · ' : '') + 'Round ' + (s.roundNum || '?') + (s.track ? ' · ' + s.track : ''));
   var d = _rccFormatDate(s.createdAt);

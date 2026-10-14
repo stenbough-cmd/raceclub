@@ -14,6 +14,14 @@ var RCR_FIELD = '#c3c9d2';
 var RCR_FAST = '#2f6fb5';
 var RCR_SLOW = '#a86f12';
 
+// Phone width: lap axes show only a few labelled laps so the numbers don't run together (Matt, 2026-10-14).
+function _rcrIsPhone() { return (window.innerWidth || 1000) <= 640; }
+// What a stop actually did (League chat's fix, 2026-10-14): fuel counts as added when the tank is more
+// than 2% fuller coming out. The old labels said "fuel and tyres" for every stop that changed a tyre.
+function _rcrPitFuel(p) { return p && p.fuelIn !== null && p.fuelIn !== undefined && p.fuelOut !== null && p.fuelOut !== undefined ? (p.fuelOut - p.fuelIn) > 0.02 : true; }
+function _rcrPitWhat(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'fuel and tyres' : (f ? 'fuel only' : (t ? 'tyres only' : 'no fuel or tyre change')); }
+function _rcrPitCode(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'F+T' : (f ? 'F' : (t ? 'T' : '--')); }
+
 // Charts are drawn at roughly their on-screen width so their text stays the same size on any
 // screen (the popup is about the window width minus its margins, up to 1000px).
 function _rcrWidth(share) {
@@ -390,7 +398,7 @@ function _rcrDraw(body, dr, mode) {
     'rcr-tile-hero' + (gained > 0 ? ' rcr-up' : gained < 0 ? ' rcr-down' : '')));
   tiles.appendChild(_rcrTile('Best Lap', _rccLapTime(g.bestLap), 'Fastest possible ' + _rccLapTime(g.theoBest)));
   tiles.appendChild(_rcrTile('Laps', g.laps === null || g.laps === undefined ? '--' : String(g.laps), (g.classSize ? g.classSize + ' cars in ' + dr.carClass : '')));
-  tiles.appendChild(_rcrTile('Pit Stops', String(g.pits || 0), (you.pits || []).map(function (p) { return 'Lap ' + p.lap + (p.tires ? ', fuel and tyres' : ', fuel only'); }).join(' · ')));
+  tiles.appendChild(_rcrTile('Pit Stops', String(g.pits || 0), (you.pits || []).map(function (p) { return 'Lap ' + p.lap + ', ' + _rcrPitWhat(p); }).join(' · ')));
   tiles.appendChild(_rcrTile('Contacts', String(g.contacts || 0), g.trackLimitPoints ? 'Track limit points ' + g.trackLimitPoints : 'No track limit points'));
   body.appendChild(tiles);
 
@@ -568,10 +576,10 @@ function _rcrDraw(body, dr, mode) {
       else if (mode === 'rivals') bar.style.background = RCR_SERIES[rivals.map(function (r) { return r.carNumber; }).indexOf(f.carNumber) % 4];
       track.appendChild(bar);
       (f.pits || []).forEach(function (p) {
-        var m = _rccEl('div', 'rcr-strat-pit' + (p.tires ? ' rcr-strat-tyres' : ''));
+        var m = _rccEl('div', 'rcr-strat-pit' + (_rcrPitCode(p) === 'F+T' ? ' rcr-strat-tyres' : (_rcrPitCode(p) === 'T' ? ' rcr-strat-tonly' : '')));
         m.style.left = ((p.lap - 0.5) / maxLaps * 100) + '%';
-        m.appendChild(_rccText('span', 'rcr-strat-icon', p.tires ? 'F+T' : 'F'));
-        m.title = 'Lap ' + p.lap + ': ' + (p.tires ? 'fuel and four tyres' : 'fuel only') + (p.lost ? ', about ' + Math.round(p.lost) + ' s lost' : '') +
+        m.appendChild(_rccText('span', 'rcr-strat-icon', _rcrPitCode(p)));
+        m.title = 'Lap ' + p.lap + ': ' + _rcrPitWhat(p) + (p.lost ? ', about ' + Math.round(p.lost) + ' s lost' : '') +
           (p.wearIn ? ', tyres at ' + _rcrPct(Math.min.apply(null, p.wearIn.filter(function (v) { return v !== null; }).concat([1]))) : '');
         track.appendChild(m);
       });
@@ -583,12 +591,21 @@ function _rcrDraw(body, dr, mode) {
     var axis = _rccEl('div', 'rcr-strat-row rcr-strat-axis');
     axis.appendChild(_rccEl('div', 'rcr-strat-name'));
     var at = _rccEl('div', 'rcr-strat-track rcr-strat-ticks');
-    for (var lp = 5; lp <= maxLaps; lp += 5) { var tk = _rccText('span', null, 'Lap ' + lp); tk.style.left = (lp / maxLaps * 100) + '%'; at.appendChild(tk); }
+    if (_rcrIsPhone()) {
+      // Phones: lap 1, the middle lap and the last lap (left-aligned, centred, right-aligned so none spill off).
+      var mid = Math.round((1 + maxLaps) / 2);
+      [[1, '0%', '0'], [mid, (mid - 0.5) / maxLaps * 100 + '%', '-50%'], [maxLaps, '100%', '-100%']].forEach(function (pt) {
+        if (pt[0] === 1 && maxLaps === 1) return;
+        var tk2 = _rccText('span', null, 'Lap ' + pt[0]); tk2.style.left = pt[1]; tk2.style.transform = 'translateX(' + pt[2] + ')'; at.appendChild(tk2);
+      });
+    } else {
+      for (var lp = 5; lp <= maxLaps; lp += 5) { var tk = _rccText('span', null, 'Lap ' + lp); tk.style.left = (lp / maxLaps * 100) + '%'; at.appendChild(tk); }
+    }
     axis.appendChild(at);
     axis.appendChild(_rccEl('div', 'rcr-strat-sum'));
     tl.appendChild(axis);
     sb.appendChild(tl);
-    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'F+T = fuel and four tyres', color: '#1f2937' }]);
+    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'T = tyres only', color: '#8a94a3' }, { name: 'F+T = fuel and tyres', color: '#1f2937' }]);
     pitKey.classList.add('rcr-legend-gap');
     sb.appendChild(pitKey);
     // Your stop against theirs.
@@ -650,7 +667,16 @@ function _rcrDraw(body, dr, mode) {
       });
       r.addEventListener('mouseleave', function () { tip2.hide(); });
       svg.appendChild(r);
-      if (laps.length <= 30 || i % 2 === 0) {
+      if (_rcrIsPhone()) {
+        // Phones: Lap 1, 1/4, 1/2, 3/4 and the last lap only; the end labels are pushed inward to stay on screen.
+        var qi = [0, Math.round((laps.length - 1) / 4), Math.round((laps.length - 1) / 2), Math.round((laps.length - 1) * 3 / 4), laps.length - 1];
+        if (qi.indexOf(i) !== -1 && qi.indexOf(i) === qi.lastIndexOf(i)) {
+          var anchor = i === 0 ? 'start' : (i === laps.length - 1 ? 'end' : 'middle');
+          var lx2 = _rcrSvg('text', { x: i === 0 ? x0 : (i === laps.length - 1 ? x0 + bw - 2 : x0 + bw / 2 - 1), y: H - 8, class: 'rcr-axis', 'text-anchor': anchor });
+          lx2.textContent = 'Lap ' + l.n;
+          svg.appendChild(lx2);
+        }
+      } else if (laps.length <= 30 || i % 2 === 0) {
         var lx = _rcrSvg('text', { x: x0 + bw / 2 - 1, y: H - 8, class: 'rcr-axis', 'text-anchor': 'middle' });
         lx.textContent = l.n;
         svg.appendChild(lx);

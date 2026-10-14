@@ -719,6 +719,7 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcr-strat-bar { position: absolute; left: 0; top: 5px; height: 8px; border-radius: 4px; background: #c3c9d2; }
 .rcr-strat-pit { position: absolute; top: -1px; transform: translateX(-50%); height: 20px; min-width: 22px; padding: 0 5px; border-radius: 10px; background: #5b6573; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
 .rcr-strat-tyres { background: #1f2937; }
+.rcr-strat-tonly { background: #8a94a3; } /* T = tyres only (2026-10-14) */
 .rcr-strat-icon { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; }
 .rcr-strat-sum { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
 .rcr-strat-ticks { height: 14px; }
@@ -1090,3 +1091,12 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcc-welcome-cta { flex-wrap: wrap; gap: 10px; }
 .rcc-page .rcc-welcome-request { background: transparent; border: 1.5px solid #5f7d99; color: #4b6680; text-decoration: none; }
 .rcc-page .rcc-welcome-request:hover, .rcc-page .rcc-welcome-request:focus-visible { background: color-mix(in srgb, #5f7d99 10%, transparent); color: #3e566d; border-color: #4b6680; }
+
+/* Race Recap on phones (Matt, 2026-10-14): every column stays and each class table pans sideways
+   (league.css gives the rows their desktop width). The award key under the table stays screen-wide. */
+@media (max-width: 640px) {
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-recap-key { min-width: 0; position: sticky; left: 0; justify-content: flex-start; }
+  /* Wide enough that the driver column keeps about 160px after the fixed columns (800px left it ~0). */
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > :not(.rcc-recap-key):not(.rcl-empty-state-subtitle) { min-width: 960px; }
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcl-race-grid-recap-q { min-width: 800px; }
+}
