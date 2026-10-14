@@ -551,13 +551,6 @@
       var card = el('div', 'rdp-team');
       var top = el('div', 'rdp-team-top');
       top.appendChild(tx('div', 'rdp-team-season', t.seasonName));
-      if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
-        var logo = el('img', 'rdp-team-logo');
-        logo.alt = seat.manufacturer;
-        logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
-        manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
-        top.appendChild(logo);
-      }
       card.appendChild(top);
       var full = typeof rcCarImageSrc === 'function' ? rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries) : '';
       if (full) {
@@ -568,10 +561,22 @@
         img.src = full.replace('assets/cars/', 'assets/cars/small/');
         card.appendChild(img);
       }
-      card.appendChild(tx('div', 'rdp-team-name', seat.team || 'Team'));
+      // Team name with the car number right behind it, same size and style.
+      card.appendChild(tx('div', 'rdp-team-name', (seat.team || 'Team') + (seat.carNumber ? ' #' + seat.carNumber : '')));
+      // Maker logo in front of the car name, class pill behind it (same pill as the league.html subheader).
       var model = el('div', 'rdp-team-model');
-      model.appendChild(tx('span', '', [seat.carNumber ? '#' + seat.carNumber : '', seat.carModel || ''].filter(Boolean).join(' ')));
-      if (seat.carClass) model.appendChild(tx('span', 'rc-badge-chip rc-badge-chip-abbrev', seat.carClass === 'Hypercar' ? 'HY' : seat.carClass));
+      if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
+        var logo = el('img', 'rdp-team-logo');
+        logo.alt = seat.manufacturer;
+        logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
+        manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
+        model.appendChild(logo);
+      }
+      model.appendChild(tx('span', 'rdp-team-model-name', seat.carModel || ''));
+      if (seat.carClass) {
+        var pillColors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+        model.appendChild(tx('span', 'rc-badge-chip rc-badge-chip-abbrev' + (pillColors[seat.carClass] ? ' ' + pillColors[seat.carClass] : ''), seat.carClass === 'Hypercar' ? 'HY' : seat.carClass));
+      }
       card.appendChild(model);
       var stats = el('div', 'rdp-team-stats');
       [[t.position ? ord(t.position) : '--', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {

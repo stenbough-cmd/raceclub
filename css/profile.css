@@ -141,11 +141,12 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 /* Team History */
 .rdp-teams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .rdp-team { border: 1px solid var(--rcl-line-bright); border-radius: 8px; background: linear-gradient(170deg, #202124, #17181a); padding: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.rdp-team-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rdp-team-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .rdp-team-season { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink); }
-.rdp-team-logo { height: 22px; width: auto; max-width: 56px; object-fit: contain; }
+.rdp-team-logo { height: 22px; width: auto; max-width: 56px; object-fit: contain; flex: none; }
 .rdp-team-car { width: 100%; aspect-ratio: 900 / 260; object-fit: contain; display: block; }
-.rdp-team-name { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rcl-ink); }
+.rdp-team-name { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rcl-ink); line-height: 1.2; }
+.rdp-team-model-name { min-width: 0; }
 .rdp-team-model { font-size: 12.5px; color: var(--rcl-ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rdp-team-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; border-top: 1px solid var(--rcl-line); padding-top: 8px; }
 .rdp-team-stat { text-align: center; }
