@@ -53,6 +53,16 @@
     tip.style.left = left + 'px';
     tip.style.top = top + 'px';
   }
+  function showTipXY(x, bottomY, html) {
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.min(Math.max(8, x - w / 2), window.innerWidth - w - 8);
+    var top = bottomY - h - 6;
+    if (top < 8) top = 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
   function hideTip() { tip.style.display = 'none'; }
 
   var NO_ENTRY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/></svg>';
@@ -180,15 +190,14 @@
   }
   function chartBox(title, sub) {
     var box = el('div', 'rdp-chart');
-    box.appendChild(tx('div', 'rdp-chart-title', title));
-    box.appendChild(tx('div', 'rdp-chart-sub', sub));
+    box.appendChild(tx('div', 'rcl-standings-class-header rdp-chart-bar', String(title).toUpperCase()));
     return box;
   }
   function noChartData(box, msg) { box.appendChild(tx('div', 'rdp-chart-sub', msg)); return box; }
 
   // Points trend: cumulative championship points after each scored round.
   function pointsChart(season) {
-    var box = chartBox('Points Trend', 'Championship points after each round');
+    var box = chartBox('Points Trend');
     var t = season.trend || [];
     if (t.length < 1) return noChartData(box, 'No scored rounds yet.');
     var W = 300, H = 170, L = 30, R = 10, T = 12, B = 24;
@@ -221,7 +230,7 @@
 
   // Finish vs start: two bars per round (gray = start, colour = finish). A taller bar is a better place.
   function startFinishChart(season) {
-    var box = chartBox('Finish vs. Start', 'Gray bar: start, colored bar: finish. Taller is better');
+    var box = chartBox('Finish vs. Start');
     var rs = (season.rounds || []).filter(function (r) { return !r.dnp && r.finish !== null && r.finish !== undefined; });
     if (!rs.length) return noChartData(box, 'No finished races yet.');
     var W = 300, H = 170, L = 30, R = 10, T = 12, B = 24;
@@ -235,6 +244,8 @@
       svg.appendChild(sv('line', { x1: L, x2: W - R, y1: y, y2: y, 'class': 'rdp-grid-line' }));
       svg.appendChild(sv('text', { x: L - 4, y: y + 3, 'text-anchor': 'end', 'class': 'rdp-axis' }, 'P' + p));
     });
+    var topY = base;
+    rs.forEach(function (r) { var hh = Math.max(hOf(r.finish), r.grid !== null && r.grid !== undefined ? hOf(r.grid) : 0); topY = Math.min(topY, base - hh); });
     var slot = (W - L - R) / rs.length;
     var bw = Math.max(3, Math.min(14, slot * 0.36));
     rs.forEach(function (r, i) {
@@ -246,7 +257,10 @@
       if (hasGrid) g.appendChild(sv('rect', { x: cx - bw - 1, y: base - hOf(r.grid), width: bw, height: hOf(r.grid), rx: 1.5, fill: '#5b6470' }));
       g.appendChild(sv('rect', { x: hasGrid ? cx + 1 : cx - bw / 2, y: base - hOf(r.finish), width: bw, height: hOf(r.finish), rx: 1.5, fill: color }));
       g.appendChild(sv('rect', { x: cx - slot / 2, y: T, width: slot, height: plotH, fill: 'transparent' }));
-      g.addEventListener('mouseenter', function () { showTip(g, tipHtml); });
+      g.addEventListener('mouseenter', function () {
+        var box = svg.getBoundingClientRect(), k = box.width / W;
+        showTipXY(box.left + cx * k, box.top + topY * k, tipHtml);
+      });
       g.addEventListener('mouseleave', hideTip);
       svg.appendChild(g);
       if (rs.length <= 12 || i % 2 === 0 || i === rs.length - 1) svg.appendChild(sv('text', { x: cx, y: H - 8, 'text-anchor': 'middle', 'class': 'rdp-axis' }, 'R' + r.roundNum));
@@ -332,6 +346,47 @@
     return ev.rawText || ev.eventType;
   }
 
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function seasonLabel(s) {
+    var a = fmtDate(s.startUtc), b = fmtDate(s.endUtc);
+    var range = a && b ? (a === b ? a : a + ' - ' + b) : (a || b);
+    return (s.seasonNumber ? 'Season ' + s.seasonNumber + ' - ' : '') + s.name + (range ? ' (' + range + ')' : '');
+  }
+  // Race Details boxes: the season's race rules plus this round's length and weather.
+  function drawDetails(host, season, round) {
+    host.innerHTML = '';
+    var rs = season.raceSettings || {};
+    var weather = '';
+    if (round) {
+      var bits = [];
+      if (round.weather) bits.push(round.weather);
+      if (round.chanceOfRain) bits.push(round.chanceOfRain + '% rain');
+      if (round.temperatureC !== null && round.temperatureC !== undefined && round.temperatureC !== '') bits.push(round.temperatureC + '\u00b0C');
+      weather = bits.join(', ');
+    }
+    var items = [
+      ['Length', round && round.raceLengthMinutes ? round.raceLengthMinutes + ' min' : ''],
+      ['Weather', weather],
+      ['Setups', rs.setupRules || ''],
+      ['Tire Wear', rs.tireWearMultiplier || ''],
+      ['Tires Allowed', rs.tireCount ? String(rs.tireCount) : ''],
+      ['Fuel Multiplier', rs.fuelMultiplier || ''],
+      ['Pitstop Requirements', rs.pitStopReq || ''],
+      ['Track Limits', season.trackLimitsPreset || ''],
+      ['Limit Points', rs.trackLimitPoints ? String(rs.trackLimitPoints) : '']
+    ].filter(function (it) { return it[1]; });
+    if (!items.length) { host.hidden = true; return; }
+    host.hidden = false;
+    var grid = el('div', 'rdp-tiles rdp-details');
+    items.forEach(function (it) { grid.appendChild(tile(it[0], it[1], '')); });
+    host.appendChild(grid);
+  }
+
   function renderSeasonStats(data) {
     var panel = $('rdp-season'), body = $('rdp-season-body');
     var seasons = data.seasons || [];
@@ -344,7 +399,7 @@
     }
     var seasonSel = el('select', 'rdp-select rdp-select-full');
     seasonSel.setAttribute('aria-label', 'Season');
-    seasons.forEach(function (s, i) { seasonSel.appendChild(new Option(s.name, String(i))); });
+    seasons.forEach(function (s, i) { seasonSel.appendChild(new Option(seasonLabel(s), String(i))); });
     var raceSel = el('select', 'rdp-select rdp-select-full');
     raceSel.setAttribute('aria-label', 'Round');
     function catLine(text) {
@@ -357,6 +412,9 @@
     var summary = el('div');
     body.appendChild(summary);
     body.appendChild(raceSel);
+    body.appendChild(catLine('Race Details'));
+    var detailsHost = el('div');
+    body.appendChild(detailsHost);
     body.appendChild(catLine('Race Report'));
     var raceHost = el('div');
     body.appendChild(raceHost);
@@ -388,12 +446,13 @@
         raceSel.disabled = true;
         raceSel.appendChild(new Option('No races this season', ''));
         raceHost.innerHTML = '';
+        detailsHost.innerHTML = '';
         raceHost.appendChild(emptyBlock('No Races Yet', 'No finalized races for this driver in this season.'));
         return;
       }
       raceSel.disabled = false;
       rounds.forEach(function (r) {
-        raceSel.appendChild(new Option('Round ' + r.roundNum + ' - ' + (r.eventName || 'Race') + (r.track ? ': ' + r.track : '') + (r.dnp ? ' (did not start)' : ''), r.roundId));
+        raceSel.appendChild(new Option('Round ' + r.roundNum + ' - ' + (r.eventName || 'Race') + (r.track ? ': ' + r.track : '') + (r.dnp ? ' (did not start)' : '') + (fmtDate(r.startUtc) ? ' (' + fmtDate(r.startUtc) + ')' : ''), r.roundId));
       });
       drawRace();
     }
@@ -402,6 +461,9 @@
       var my = ++token;
       raceHost.innerHTML = '';
       if (!raceSel.value) return;
+      var curSeason = seasons[Number(seasonSel.value)];
+      var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
+      drawDetails(detailsHost, curSeason, curRound);
       raceHost.appendChild(tx('div', 'rdp-loading', 'Loading race...'));
       loadRound(raceSel.value).then(function (res) {
         if (my !== token) return;
@@ -410,12 +472,10 @@
         if (!res.hasData) { raceHost.appendChild(emptyBlock('Did Not Race', 'This driver has no laps or results for this round.')); return; }
         var split = el('div', 'rdp-race-split');
         var left = el('div', 'rdp-race-col');
-        left.appendChild(tx('div', 'rdp-race-col-title', 'My Laps'));
         var lapsHost = el('div', 'rdp-laps');
         left.appendChild(lapsHost);
         drawMyLaps((res.myLaps || {}).sessions, lapsHost);
         var right = el('div', 'rdp-race-col');
-        right.appendChild(tx('div', 'rdp-race-col-title', 'Driver Report'));
         var light = el('div', 'rdp-light');
         var rep = null;
         try { rep = res.driverReport ? window._rccDriverReport(res.driverReport) : null; } catch (err) { rep = null; }

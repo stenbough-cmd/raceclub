@@ -67,7 +67,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-form-p1 { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); color: #2b2100; border-color: #cf9f2c; }
 .rdp-form-p2 { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); color: #202327; border-color: #a7abb2; }
 .rdp-form-p3 { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); color: #2a1608; border-color: #a3653a; }
-.rdp-tip { position: fixed; z-index: 3000; pointer-events: none; display: none; background: #0f0f11; border: 1px solid var(--rcl-line-bright); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; color: var(--rcl-ink); box-shadow: 0 6px 18px rgba(0,0,0,.5); max-width: 260px; }
+.rdp-tip { position: fixed; z-index: 3000; pointer-events: none; display: none; background: #0f0f11; border: 1px solid var(--rcl-line-bright); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; color: var(--rcl-ink); box-shadow: 0 6px 18px rgba(0,0,0,.5); width: max-content; max-width: 92vw; box-sizing: border-box; }
 .rdp-tip b { color: var(--rcl-ink); font-weight: 800; }
 .rdp-tip-line { white-space: nowrap; color: var(--rcl-ink-dim); }
 
@@ -188,10 +188,18 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 /* Profile tweaks (Matt, 2026-10-14) */
 .rdp-form-spread { justify-content: space-between; }
 .rdp-select-full { display: block; width: 100%; box-sizing: border-box; }
-.rdp-catline { display: flex; align-items: center; gap: 12px; margin: 10px 0 18px; }
+.rdp-catline { display: flex; align-items: center; gap: 12px; margin: 30px 0 22px; }
 .rdp-catline::before, .rdp-catline::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rcl-line-bright); }
-.rdp-catline-text { font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-ink-faint); }
+.rdp-catline-text { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-gold, #e0b64c); }
 .rdp-dot { transition: r 0.12s ease; cursor: pointer; }
 .rdp-dot:hover { r: 5.6px; }
 .rdp-bar-pair rect { transition: opacity 0.12s ease; }
 .rdp-bar-pair:hover rect { opacity: 0.85; }
+
+/* Profile round 2 (Matt, 2026-10-14) */
+.rdp-chart-bar { margin-bottom: 16px; }
+.rdp-details { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 6px; }
+.rdp-details .rdp-tile-value { font-size: 17px; line-height: 1.25; }
+@media (min-width: 641px) {
+  .rdp-details { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}

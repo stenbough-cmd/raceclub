@@ -245,6 +245,8 @@ function _rcrTile(label, value, sub, cls) {
   return t;
 }
 
+function _rcrCol(parent) { var c = _rccEl('div', 'rcr-col'); parent.appendChild(c); return c; }
+
 function _rcrBlock(title, sub) {
   var b = _rccEl('div', 'rcr-block');
   var h = _rccEl('div', 'rcr-block-head');
@@ -332,6 +334,9 @@ function _rcrCar(shape, tread) {
 function _rccDriverReport(dr) {
   var sec = _rccEl('div', 'rcr-report');
   if (!dr) return null;
+  var head = _rccEl('div', 'rcr-head');
+  head.appendChild(_rccText('div', 'rcl-race-class-name', 'Driver Report'));
+  sec.appendChild(head);
   var body = _rccEl('div', 'rcr-body');
   sec.appendChild(body);
   var mode = 'class';
@@ -453,14 +458,16 @@ function _rcrDraw(body, dr, mode) {
     carBox.appendChild(carHolder);
     drawCar();
     grid.appendChild(carBox);
-    grid.style.gridTemplateColumns = '1fr';
     tb.appendChild(grid);
+    var setsCol = _rccEl('div', 'rcr-col');
+    grid.appendChild(setsCol);
+
     // (The "Tread used per lap (front left)" bar graph was removed, Matt 2026-10-13.)
     // Tyre sets (Matt): compounds each car used, how many tyres it went through, and the pace and
     // wear on each set, which explains most of the wear differences above.
     var setRows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }));
     if (setRows.some(function (f) { return f.sets && f.sets.length; })) {
-      tb.appendChild(_rccText('div', 'rcr-mini-title', 'Tyre sets, compounds and pace'));
+      setsCol.appendChild(_rccText('div', 'rcr-mini-title', 'Tyre sets, compounds and pace'));
       var setMax = Math.max.apply(null, setRows.map(function (f) { var ss = f.sets || []; return ss.length ? ss[ss.length - 1].to : 0; }).concat([1]));
       var st = _rccEl('div', 'rcr-sets');
       var hd = _rccEl('div', 'rcr-sets-row rcr-sets-head');
@@ -488,17 +495,18 @@ function _rcrDraw(body, dr, mode) {
         r.appendChild(_rccText('div', 'rcr-sets-tyres', f.tyres ? String(f.tyres) : '--'));
         st.appendChild(r);
       });
-      tb.appendChild(st);
+      setsCol.appendChild(st);
     } else if (dr.hasField) {
-      tb.appendChild(_rccText('p', 'rcr-note', 'Tyre sets, compounds and pace per set show for rounds uploaded from today on. Erase this round and upload the same files again to see them.'));
+      setsCol.appendChild(_rccText('p', 'rcr-note', 'Tyre sets, compounds and pace per set show for rounds uploaded from today on. Erase this round and upload the same files again to see them.'));
     }
     body.appendChild(tb);
   }
 
   // 4. Fuel.
+  var fplCol = null;
   if (laps.some(function (l) { return l.fuel !== null; })) {
     var fb = _rcrBlock('Fuel Report', 'Fuel in the tank, as a share of a full tank.');
-    var ft = _rccEl('div', 'rcr-tiles rcr-tiles-2');
+    var ft = _rccEl('div', 'rcr-tiles rcr-tiles-4');
     var endFuel = laps[laps.length - 1].fuel;
     var compSf = compStat('sf'), compFpl = compStat('fpl');
     ft.appendChild(_rcrTile('Started With', _rcrPct(you.sf), compSf ? (mode === 'rivals' ? 'Rivals' : 'Class') + ' average ' + _rcrPct(compSf) : ''));
@@ -514,12 +522,13 @@ function _rcrDraw(body, dr, mode) {
     fseries.push({ name: 'You', color: RCR_YOU, values: laps.map(function (l) { return l.fuel; }), marks: youMarks, dtMarks: youDts, isYou: true });
     fb.appendChild(_rcrLineChart({ title: 'Fuel left', series: fseries, labels: lapLabels, yMin: 0, yMax: 1, yFmt: function (v) { return Math.round(v * 100) + '%'; }, height: 293, pitKey: true }));
     if (dr.hasField) {
-      fb.appendChild(_rccText('div', 'rcr-mini-title', 'Fuel per lap, lower is more efficient'));
+      fplCol = _rccEl('div', 'rcr-col');
+      fplCol.appendChild(_rccText('div', 'rcr-mini-title', 'Fuel per lap, lower is more efficient'));
       var frows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }))
         .filter(function (f) { return f.fpl; })
         .map(function (f) { return { name: '#' + f.carNumber + ' ' + _rcrShort(f.name), value: f.fpl, isYou: f.isPlayer, color: f.isPlayer ? RCR_YOU : (mode === 'rivals' ? RCR_SERIES[rivals.map(function (r) { return r.carNumber; }).indexOf(f.carNumber) % 4] : RCR_FIELD) }; })
         .sort(function (a, b) { return a.value - b.value; });
-      fb.appendChild(_rcrBars(frows, function (v) { return (v * 100).toFixed(1) + '%'; }));
+      fplCol.appendChild(_rcrBars(frows, function (v) { return (v * 100).toFixed(1) + '%'; }));
     }
     if (you.vpl) fb.appendChild(_rccText('p', 'rcr-note', 'Virtual energy per lap: ' + (you.vpl * 100).toFixed(1) + '%' + (compStat('vpl') ? ' (' + compName + ' ' + (compStat('vpl') * 100).toFixed(1) + '%)' : '') + '.'));
     body.appendChild(fb);
@@ -560,10 +569,15 @@ function _rcrDraw(body, dr, mode) {
     axis.appendChild(at);
     axis.appendChild(_rccEl('div', 'rcr-strat-sum'));
     tl.appendChild(axis);
-    sb.appendChild(tl);
+    var pitCols = _rccEl('div', 'rcr-cols');
+    sb.appendChild(pitCols);
+    var stratCol = _rccEl('div', 'rcr-col');
+    pitCols.appendChild(stratCol);
+    if (fplCol) pitCols.appendChild(fplCol);
+    stratCol.appendChild(tl);
     var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'F+T = fuel and four tyres', color: '#1f2937' }]);
     pitKey.classList.add('rcr-legend-gap');
-    sb.appendChild(pitKey);
+    stratCol.appendChild(pitKey);
     // Your stop against theirs.
     if ((you.pits || []).length) {
       var mine = you.pits[0];
@@ -572,7 +586,7 @@ function _rcrDraw(body, dr, mode) {
           var ps = [].concat.apply([], rivals.map(function (r) { return (r.stats || {}).pits || []; }));
           return { lost: _rcrAvg(ps.map(function (p) { return p.lost; })), wear: _rcrAvg(ps.map(function (p) { return Math.min.apply(null, (p.wearIn || []).filter(function (v) { return v !== null; }).concat([1])); })), tires: ps.filter(function (p) { return p.tires; }).length + ' of ' + ps.length };
         })();
-      var st = _rccEl('div', 'rcr-tiles rcr-tiles-2 rcr-tiles-gap');
+      var st = _rccEl('div', 'rcr-tiles rcr-tiles-4 rcr-tiles-gap');
       st.appendChild(_rcrTile('Your Stop', mine.lost ? Math.round(mine.lost) + ' s' : '--', others && others.lost ? (mode === 'rivals' ? 'Rivals' : 'Class') + ' average ' + Math.round(others.lost) + ' s' : ''));
       st.appendChild(_rcrTile('Tyres At Your Stop', _rcrPct(Math.min.apply(null, (mine.wearIn || []).filter(function (v) { return v !== null; }).concat([1]))), others && others.wear ? 'Others stopped at ' + _rcrPct(others.wear) : ''));
       st.appendChild(_rcrTile('Changed Tyres', mine.tires ? 'Yes' : 'No', others ? 'Others: ' + others.tires + ' stops' : ''));
@@ -637,24 +651,29 @@ function _rcrDraw(body, dr, mode) {
     pt.appendChild(_rcrTile('Consistency', you.sd ? '±' + you.sd.toFixed(2) + ' s' : '--', compStat('sd') ? (mode === 'rivals' ? 'Rivals ' : 'Class ') + '±' + compStat('sd').toFixed(2) + ' s' : 'Spread of your racing laps'));
     pt.appendChild(_rcrTile('Top Speed', you.tsx ? Math.round(you.tsx) + ' km/h' : '--', compStat('tsx') ? (mode === 'rivals' ? 'Rivals ' : 'Class ') + Math.round(compStat('tsx')) + ' km/h' : ''));
     vb.appendChild(pt);
+    var pcols = _rccEl('div', 'rcr-cols');
+    vb.appendChild(pcols);
+    var pc;
     if ((you.ms || []).some(function (v) { return v; }) && (cls || rivals.length)) {
-      vb.appendChild(_rccText('div', 'rcr-mini-title', 'Typical sector times against ' + compName));
+      pc = _rcrCol(pcols);
+      pc.appendChild(_rccText('div', 'rcr-mini-title', 'Typical sector times against ' + compName));
       var drows = [0, 1, 2].map(function (k) {
         var c = compArr('ms', k);
         return { name: 'Sector ' + (k + 1), delta: you.ms[k] && c ? you.ms[k] - c : null };
       });
       var lapC = compStat('ml');
       drows.push({ name: 'Whole lap', delta: you.ml && lapC ? you.ml - lapC : null });
-      vb.appendChild(_rcrDiverging(drows, function (v) { return v.toFixed(2) + ' s'; }, ['quicker', 'slower']));
+      pc.appendChild(_rcrDiverging(drows, function (v) { return v.toFixed(2) + ' s'; }, ['quicker', 'slower']));
     }
     if (dr.hasField) {
-      vb.appendChild(_rccText('div', 'rcr-mini-title', 'Typical top speed'));
+      pc = _rcrCol(pcols);
+      pc.appendChild(_rccText('div', 'rcr-mini-title', 'Typical top speed'));
       var srows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }))
         .filter(function (f) { return f.tsm; })
         .map(function (f) { return { name: '#' + f.carNumber + ' ' + _rcrShort(f.name), value: f.tsm, isYou: f.isPlayer, color: f.isPlayer ? RCR_YOU : (mode === 'rivals' ? RCR_SERIES[rivals.map(function (r) { return r.carNumber; }).indexOf(f.carNumber) % 4] : RCR_FIELD) }; })
         .sort(function (a, b) { return b.value - a.value; });
       var smin = Math.min.apply(null, srows.map(function (r) { return r.value; })) - 5;
-      vb.appendChild(_rcrBars(srows, function (v) { return Math.round(v) + ' km/h'; }, { min: smin }));
+      pc.appendChild(_rcrBars(srows, function (v) { return Math.round(v) + ' km/h'; }, { min: smin }));
     }
     body.appendChild(vb);
   }
@@ -709,35 +728,42 @@ function _rcrDraw(body, dr, mode) {
   var q = dr.qualifying;
   if (q) {
     var qb = _rcrBlock('Qualifying', 'Your qualifying session, against pole and the best sectors in your class.');
-    var qt = _rccEl('div', 'rcr-tiles rcr-tiles-2');
+    var qt = _rccEl('div', 'rcr-tiles rcr-tiles-4');
     qt.appendChild(_rcrTile('Qualified', q.position ? 'P' + q.position : '--', q.classSize ? 'of ' + q.classSize + ' in ' + dr.carClass : '', 'rcr-tile-hero'));
     qt.appendChild(_rcrTile('Best Lap', _rccLapTime(q.best), q.pole && q.best ? (q.best - q.pole > 0 ? '+' + (q.best - q.pole).toFixed(3) + ' s to pole' : 'Pole position') : ''));
     var theoQ = (q.myBestSectors || []).length === 3 && q.myBestSectors.every(function (v) { return v; }) ? q.myBestSectors[0] + q.myBestSectors[1] + q.myBestSectors[2] : null;
     qt.appendChild(_rcrTile('Fastest Possible', _rccLapTime(theoQ), 'Your best three sectors added up'));
     qt.appendChild(_rcrTile('Top Speed', q.topSpeed ? Math.round(q.topSpeed) + ' km/h' : '--', q.classTopSpeed ? 'Class average ' + Math.round(q.classTopSpeed) + ' km/h' : ''));
     qb.appendChild(qt);
+    var qcols = _rccEl('div', 'rcr-cols');
+    qb.appendChild(qcols);
+    var qc;
     if ((q.mySectors || []).some(function (v) { return v; })) {
-      qb.appendChild(_rccText('div', 'rcr-mini-title', 'Your best lap’s sectors against pole (' + (q.poleName || 'pole') + ')'));
-      qb.appendChild(_rcrDiverging([0, 1, 2].map(function (k) {
+      qc = _rcrCol(qcols);
+      qc.appendChild(_rccText('div', 'rcr-mini-title', 'Your best lap’s sectors against pole (' + (q.poleName || 'pole') + ')'));
+      qc.appendChild(_rcrDiverging([0, 1, 2].map(function (k) {
         return { name: 'Sector ' + (k + 1), delta: q.mySectors[k] && q.poleSectors[k] ? q.mySectors[k] - q.poleSectors[k] : null };
       }), function (v) { return v.toFixed(3) + ' s'; }, ['quicker', 'slower']));
-      qb.appendChild(_rccText('div', 'rcr-mini-title', 'Your best sectors against the best in class'));
-      qb.appendChild(_rcrDiverging([0, 1, 2].map(function (k) {
+      qc = _rcrCol(qcols);
+      qc.appendChild(_rccText('div', 'rcr-mini-title', 'Your best sectors against the best in class'));
+      qc.appendChild(_rcrDiverging([0, 1, 2].map(function (k) {
         return { name: 'Sector ' + (k + 1), delta: (q.myBestSectors || [])[k] && q.classBestSectors[k] ? q.myBestSectors[k] - q.classBestSectors[k] : null };
       }), function (v) { return v.toFixed(3) + ' s'; }, ['quicker', 'slower']));
     }
     if ((q.field || []).length) {
-      qb.appendChild(_rccText('div', 'rcr-mini-title', 'Gap to pole'));
+      qc = _rcrCol(qcols);
+      qc.appendChild(_rccText('div', 'rcr-mini-title', 'Gap to pole'));
       var qrows = q.field.filter(function (f) { return f.best; }).map(function (f) {
         return { name: '#' + f.carNumber + ' ' + _rcrShort(f.name), value: f.best - q.pole, isYou: f.isPlayer, color: f.isPlayer ? RCR_YOU : RCR_FIELD };
       });
-      qb.appendChild(_rcrBars(qrows, function (v) { return v === 0 ? 'Pole' : '+' + v.toFixed(3) + ' s'; }));
+      qc.appendChild(_rcrBars(qrows, function (v) { return v === 0 ? 'Pole' : '+' + v.toFixed(3) + ' s'; }));
     }
     if ((q.laps || []).length) {
-      qb.appendChild(_rccText('div', 'rcr-mini-title', 'Your qualifying laps'));
+      qc = _rcrCol(qcols);
+      qc.appendChild(_rccText('div', 'rcr-mini-title', 'Your qualifying laps'));
       var qlaps = q.laps.map(function (l) { return { name: 'Lap ' + l.n + (l.pit ? ' (pit)' : ''), value: l.t, isYou: true, color: l.t && l.t === q.best ? '#8150c0' : (l.t ? RCR_YOU : RCR_FIELD) }; });
       var qmin = Math.min.apply(null, q.laps.filter(function (l) { return l.t; }).map(function (l) { return l.t; }).concat([q.best || 0])) - 2;
-      qb.appendChild(_rcrBars(qlaps, function (v) { return v ? _rccLapTime(v) : 'No time'; }, { min: qmin }));
+      qc.appendChild(_rcrBars(qlaps, function (v) { return v ? _rccLapTime(v) : 'No time'; }, { min: qmin }));
     }
     body.appendChild(qb);
   }

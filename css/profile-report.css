@@ -150,7 +150,7 @@
   font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
 
 /* ---- Profile page changes (Matt, 2026-10-14) ---- */
-.rcr-tiles-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rcr-tiles-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .rcr-tiles-gap { margin-top: 22px; }
 /* Tyre sets: one bar per car, split into a block per set. Block width = laps on the set, colour = compound. */
 .rcr-sets-row { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) 56px; }
@@ -165,3 +165,12 @@
 .rcr-setseg-pace { font-variant-numeric: tabular-nums; }
 .rcr-sets-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12px; color: #374151; }
 @media (max-width: 640px) { .rcr-sets-row { grid-template-columns: minmax(0, 1fr); } .rcr-setbar { height: 36px; } .rcr-setseg-pace { display: none; } }
+
+/* Side-by-side graphs (Matt, 2026-10-14): two columns on PC, one on phones. */
+.rcr-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 32px; align-items: start; }
+.rcr-col { min-width: 0; }
+.rcr-cols + .rcr-legend, .rcr-cols + .rcr-tiles { margin-top: 18px; }
+@media (max-width: 640px) {
+  .rcr-cols { grid-template-columns: minmax(0, 1fr); }
+  .rcr-tiles-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
