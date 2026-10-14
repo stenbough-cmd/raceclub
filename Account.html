@@ -6920,7 +6920,14 @@
           rewriteBtn.type = 'button';
           rewriteBtn.addEventListener('click', function () { openStoryWriteConfirm(st, token, reload); });
           rewriteBtn.style.marginTop = '8px';
-          sText.appendChild(rewriteBtn);
+          var storyBtns = el('div', 'display:flex;gap:8px;flex-wrap:wrap;');
+          storyBtns.appendChild(rewriteBtn);
+          var delStoryBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete');
+          delStoryBtn.type = 'button';
+          delStoryBtn.style.marginTop = '8px';
+          delStoryBtn.addEventListener('click', function () { openStoryDeleteConfirm(st, token, reload); });
+          storyBtns.appendChild(delStoryBtn);
+          sText.appendChild(storyBtns);
         } else {
           var n = it.row;
           var isActive = _rcRowActive(n);
@@ -6961,6 +6968,18 @@
       return fetchApi('leagueStory', { method: 'POST', token: token, body: { op: 'generate', seasonId: st.seasonId, kind: st.kind === 'preview' ? 'preview' : 'race', roundId: st.roundId || '' } }).then(function (res) {
         if (res && res.success) { showToast('Story written.', 'success'); reload(); }
         else showToast((res && (res.message || res.error)) || 'The story could not be written.', 'error');
+      }).catch(function () { showToast('No answer from the server. Check League Tools again in a minute.', 'error'); });
+    }, { waitForWrite: true });
+  }
+
+  // Deletes one AI Season Story (and its reader votes). The opener above is gray; this confirm
+  // popup's button is the one that actually writes, so it is the red one.
+  function openStoryDeleteConfirm(st, token, reload) {
+    var label = st.title ? ('"' + st.title + '"') : (st.kind === 'preview' ? 'the season preview' : ('the Round ' + st.roundNum + ' story'));
+    openConfirmModal('Delete Story', 'Delete ' + label + '? It disappears from the League Hub, along with its up and down votes. This cannot be undone, but you can write a new one with Write Now.', 'Delete', function () {
+      return fetchApi('leagueStory', { method: 'POST', token: token, body: { op: 'delete', storyId: st.storyId } }).then(function (res) {
+        if (res && res.success) { showToast('Story deleted.', 'success'); reload(); }
+        else showToast((res && (res.message || res.error)) || 'The story could not be deleted.', 'error');
       }).catch(function () { showToast('No answer from the server. Check League Tools again in a minute.', 'error'); });
     }, { waitForWrite: true });
   }
