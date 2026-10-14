@@ -87,7 +87,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .rdp-axis { font-size: 10px; fill: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
 .rdp-grid-line { stroke: #2c2d31; stroke-width: 1; }
-.rdp-race-split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.rdp-race-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
 .rdp-race-col { min-width: 0; }
 .rdp-race-col-title { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink); border-bottom: 1px solid var(--rcl-line-bright); padding-bottom: 6px; margin-bottom: 10px; }
 .rdp-light { background: #fff; color: #1f2937; border-radius: 8px; padding: 14px; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; min-width: 0; overflow-x: auto; }
