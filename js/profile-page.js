@@ -65,21 +65,47 @@
   }
 
   // ---- Row 1: seat line + achievements ---------------------------------------------------------
-  function seatLine(seat) {
-    if (!seat || (!seat.team && !seat.carNumber)) return '';
-    var bits = [];
-    if (seat.team) bits.push('<b>' + esc(seat.team) + '</b>');
-    var car = [seat.carNumber ? '#' + esc(seat.carNumber) : '', esc(seat.carModel || '')].filter(Boolean).join(' ');
-    if (car) bits.push(car);
-    if (seat.carClass) bits.push(esc(seat.carClass));
-    return bits.join('<br>');
+  // Car picture, "TEAM NAME #85" and the maker logo + car name + class pill line. One builder for the
+  // driver card (top left) and the Team History cards so they always match.
+  function seatCarImg(seat) {
+    var full = typeof rcCarImageSrc === 'function' ? rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries) : '';
+    if (!full) return null;
+    var img = el('img', 'rdp-team-car');
+    img.alt = '';
+    var triedFull = false;
+    img.onerror = function () { if (!triedFull) { triedFull = true; img.src = full; return; } img.style.display = 'none'; };
+    img.src = full.replace('assets/cars/', 'assets/cars/small/');
+    return img;
+  }
+  function seatNameEl(seat) {
+    return tx('div', 'rdp-team-name', (seat.team || 'Team') + (seat.carNumber ? ' #' + seat.carNumber : ''));
+  }
+  function seatModelEl(seat) {
+    var model = el('div', 'rdp-team-model');
+    if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = el('img', 'rdp-team-logo');
+      logo.alt = seat.manufacturer;
+      logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
+      manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
+      model.appendChild(logo);
+    }
+    model.appendChild(tx('span', 'rdp-team-model-name', seat.carModel || ''));
+    if (seat.carClass) {
+      var pillColors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
+      model.appendChild(tx('span', 'rc-badge-chip rc-badge-chip-abbrev' + (pillColors[seat.carClass] ? ' ' + pillColors[seat.carClass] : ''), seat.carClass === 'Hypercar' ? 'HY' : seat.carClass));
+    }
+    return model;
   }
   function renderSeat(data) {
     var box = $('rdp-seat');
     var latest = (data.seasons || [])[0];
-    var html = latest ? seatLine(latest.seat) : '';
-    if (!html) { box.hidden = true; return; }
-    box.innerHTML = html;
+    var seat = latest ? latest.seat : null;
+    if (!seat || (!seat.team && !seat.carNumber)) { box.hidden = true; return; }
+    box.innerHTML = '';
+    var img = seatCarImg(seat);
+    if (img) box.appendChild(img);
+    box.appendChild(seatNameEl(seat));
+    box.appendChild(seatModelEl(seat));
     box.hidden = false;
   }
   function renderAchievements(data) {
@@ -550,34 +576,13 @@
       var seat = t.seat || {};
       var card = el('div', 'rdp-team');
       var top = el('div', 'rdp-team-top');
-      top.appendChild(tx('div', 'rdp-team-season', t.seasonName));
+      var sn = String(t.seasonId || '').match(/(\d+)\s*$/);
+      top.appendChild(tx('div', 'rdp-team-season', (sn ? 'Season ' + parseInt(sn[1], 10) + ': ' : '') + t.seasonName));
       card.appendChild(top);
-      var full = typeof rcCarImageSrc === 'function' ? rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries) : '';
-      if (full) {
-        var img = el('img', 'rdp-team-car');
-        img.alt = '';
-        var triedFull = false;
-        img.onerror = function () { if (!triedFull) { triedFull = true; img.src = full; return; } img.style.display = 'none'; };
-        img.src = full.replace('assets/cars/', 'assets/cars/small/');
-        card.appendChild(img);
-      }
-      // Team name with the car number right behind it, same size and style.
-      card.appendChild(tx('div', 'rdp-team-name', (seat.team || 'Team') + (seat.carNumber ? ' #' + seat.carNumber : '')));
-      // Maker logo in front of the car name, class pill behind it (same pill as the league.html subheader).
-      var model = el('div', 'rdp-team-model');
-      if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
-        var logo = el('img', 'rdp-team-logo');
-        logo.alt = seat.manufacturer;
-        logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
-        manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
-        model.appendChild(logo);
-      }
-      model.appendChild(tx('span', 'rdp-team-model-name', seat.carModel || ''));
-      if (seat.carClass) {
-        var pillColors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
-        model.appendChild(tx('span', 'rc-badge-chip rc-badge-chip-abbrev' + (pillColors[seat.carClass] ? ' ' + pillColors[seat.carClass] : ''), seat.carClass === 'Hypercar' ? 'HY' : seat.carClass));
-      }
-      card.appendChild(model);
+      var cardImg = seatCarImg(seat);
+      if (cardImg) card.appendChild(cardImg);
+      card.appendChild(seatNameEl(seat));
+      card.appendChild(seatModelEl(seat));
       var stats = el('div', 'rdp-team-stats');
       [[t.position ? ord(t.position) : '--', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
         var s = el('div', 'rdp-team-stat');
