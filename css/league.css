@@ -2576,3 +2576,8 @@ body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
 
 /* Flag behind a member name in the Member List popup. */
 .rcl-memberlist-name .rcl-memberlist-flag { display: inline-block; vertical-align: middle; margin-left: 8px; }
+
+/* League Race Recap > Race Report: driver names and the green position-gain wording are regular weight
+   (Matt, 2026-10-14). Scoped away from the Championship page, which keeps its own look. */
+body.rc-league-page:not(.rcc-page) .rcl-report-name { font-weight: 400; }
+body.rc-league-page:not(.rcc-page) .rcl-report-clause-gain { font-weight: 400; }

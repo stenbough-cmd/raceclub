@@ -2014,7 +2014,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    wide logo that hits the width limit first gets even padding added above/below automatically to
    fill out the same 60px slot every card reserves, so every card's logo sits on the same baseline
    no matter its own aspect ratio. */
-.rc-grid-teaser-logo { flex: none; width: 128px; height: 60px; object-fit: contain; }
+.rc-grid-teaser-car { flex: none; width: 100%; height: 130px; object-fit: contain; }
+/* Manufacturer logo: small, beside the car name (the car picture now leads the card). */
+.rc-grid-teaser-logo { flex: none; width: 28px; height: 22px; object-fit: contain; }
 .rc-grid-teaser-identity { min-width: 0; }
 .rc-grid-teaser-name {
   font-family: var(--rc-font-heading);
@@ -2023,7 +2025,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   color: var(--rc-carbon);
   line-height: 1.25;
 }
-.rc-grid-teaser-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 2px; }
+.rc-grid-teaser-sub { font-size: 12.5px; color: var(--rc-steel); margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .rc-grid-teaser-line { font-size: 13.5px; line-height: 1.55; color: var(--rc-steel); margin: 0; }
 .rc-grid-teaser-footnote {
   margin-top: 28px;

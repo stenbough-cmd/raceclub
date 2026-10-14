@@ -20,6 +20,12 @@ var RCR_SLOW = '#a86f12';
 
 // Charts are drawn at roughly their on-screen width so their text stays the same size on any
 // screen (the popup is about the window width minus its margins, up to 1000px).
+// What a stop actually did. The old labels assumed every stop took fuel; a stop that only changed
+// tyres was reported as "fuel and tyres". Fuel counts as added when the tank is fuller coming out.
+function _rcrPitFuel(p) { return p && p.fuelIn !== null && p.fuelIn !== undefined && p.fuelOut !== null && p.fuelOut !== undefined ? (p.fuelOut - p.fuelIn) > 0.02 : true; }
+function _rcrPitWhat(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'fuel and tyres' : (f ? 'fuel only' : (t ? 'tyres only' : 'no fuel or tyre change')); }
+function _rcrPitCode(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'F+T' : (f ? 'F' : (t ? 'T' : '--')); }
+
 function _rcrWidth(share) {
   var w = Math.max(320, Math.min(1000, (window.innerWidth || 1000) - 90));
   return Math.round(share && w > 760 ? w * share : w);
@@ -377,7 +383,7 @@ function _rcrDraw(body, dr, mode) {
     'rcr-tile-hero' + (gained > 0 ? ' rcr-up' : gained < 0 ? ' rcr-down' : '')));
   tiles.appendChild(_rcrTile('Best Lap', _rccLapTime(g.bestLap), 'Fastest possible ' + _rccLapTime(g.theoBest)));
   tiles.appendChild(_rcrTile('Laps', g.laps === null || g.laps === undefined ? '--' : String(g.laps), (g.classSize ? g.classSize + ' cars in ' + dr.carClass : '')));
-  tiles.appendChild(_rcrTile('Pit Stops', String(g.pits || 0), (you.pits || []).map(function (p) { return 'Lap ' + p.lap + (p.tires ? ', fuel and tyres' : ', fuel only'); }).join(' · ')));
+  tiles.appendChild(_rcrTile('Pit Stops', String(g.pits || 0), (you.pits || []).map(function (p) { return 'Lap ' + p.lap + ', ' + _rcrPitWhat(p); }).join(' · ')));
   tiles.appendChild(_rcrTile('Contacts', String(g.contacts || 0), g.trackLimitPoints ? 'Track limit points ' + g.trackLimitPoints : 'No track limit points'));
   body.appendChild(tiles);
 
@@ -536,10 +542,10 @@ function _rcrDraw(body, dr, mode) {
       else if (mode === 'rivals') bar.style.background = RCR_SERIES[rivals.map(function (r) { return r.carNumber; }).indexOf(f.carNumber) % 4];
       track.appendChild(bar);
       (f.pits || []).forEach(function (p) {
-        var m = _rccEl('div', 'rcr-strat-pit' + (p.tires ? ' rcr-strat-tyres' : ''));
+        var m = _rccEl('div', 'rcr-strat-pit' + (_rcrPitCode(p) === 'F+T' ? ' rcr-strat-tyres' : (_rcrPitCode(p) === 'T' ? ' rcr-strat-tonly' : '')));
         m.style.left = ((p.lap - 0.5) / maxLaps * 100) + '%';
-        m.appendChild(_rccText('span', 'rcr-strat-icon', p.tires ? 'F+T' : 'F'));
-        m.title = 'Lap ' + p.lap + ': ' + (p.tires ? 'fuel and four tyres' : 'fuel only') + (p.lost ? ', about ' + Math.round(p.lost) + ' s lost' : '') +
+        m.appendChild(_rccText('span', 'rcr-strat-icon', _rcrPitCode(p)));
+        m.title = 'Lap ' + p.lap + ': ' + _rcrPitWhat(p) + (p.lost ? ', about ' + Math.round(p.lost) + ' s lost' : '') +
           (p.wearIn ? ', tyres at ' + _rcrPct(Math.min.apply(null, p.wearIn.filter(function (v) { return v !== null; }).concat([1]))) : '');
         track.appendChild(m);
       });
@@ -584,7 +590,7 @@ function _rcrDraw(body, dr, mode) {
       });
       fplCol.appendChild(fl);
     }
-    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'F+T = fuel and four tyres', color: '#1f2937' }]);
+    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'T = tyres only', color: '#8a94a3' }, { name: 'F+T = fuel and tyres', color: '#1f2937' }]);
     pitKey.classList.add('rcr-legend-gap');
     stratCol.appendChild(pitKey);
     // Your stop against theirs.

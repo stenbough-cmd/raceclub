@@ -83,6 +83,7 @@
 .rcr-strat-bar { position: absolute; left: 0; top: 5px; height: 8px; border-radius: 4px; background: #c3c9d2; }
 .rcr-strat-pit { position: absolute; top: -1px; transform: translateX(-50%); height: 20px; min-width: 22px; padding: 0 5px; border-radius: 10px; background: #5b6573; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
 .rcr-strat-tyres { background: #1f2937; }
+.rcr-strat-tonly { background: #8a94a3; }
 .rcr-strat-icon { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; }
 .rcr-strat-sum { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
 .rcr-strat-ticks { height: 14px; }

@@ -201,7 +201,7 @@
     var t = season.trend || [];
     if (t.length < 1) return noChartData(box, 'No scored rounds yet.');
     var W = 300, H = 170, L = 30, R = 10, T = 12, B = 24;
-    var maxV = Math.max.apply(null, t.map(function (p) { return p.points; })) || 1;
+    var maxV = Math.max.apply(null, t.map(function (p) { return Math.max(p.points, p.leader || 0); })) || 1;
     var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, 'class': 'rdp-svg' });
     [0, 0.5, 1].forEach(function (f) {
       var y = T + (H - T - B) * (1 - f);
@@ -213,6 +213,18 @@
       var y = T + (H - T - B) * (1 - p.points / maxV);
       return { x: x, y: y, p: p };
     });
+    // League leader (dashed gold) and field average (gray), drawn first so the driver's line sits on top.
+    function refLine(key, stroke, dash) {
+      if (!t.some(function (p) { return p[key] !== undefined && p[key] !== null; })) return;
+      var rp = pts.filter(function (q) { return q.p[key] !== undefined && q.p[key] !== null; }).map(function (q) {
+        return q.x + ',' + (T + (H - T - B) * (1 - q.p[key] / maxV));
+      });
+      var attrs = { points: rp.join(' '), fill: 'none', stroke: stroke, 'stroke-width': 1.8, 'stroke-linejoin': 'round' };
+      if (dash) attrs['stroke-dasharray'] = dash;
+      svg.appendChild(sv('polyline', attrs));
+    }
+    refLine('avg', '#8b929b', '');
+    refLine('leader', '#c9a227', '5 3');
     svg.appendChild(sv('polyline', { points: pts.map(function (q) { return q.x + ',' + q.y; }).join(' '), fill: 'none', stroke: '#d7261e', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
     pts.forEach(function (q, i) {
       var c = sv('circle', { cx: q.x, cy: q.y, r: 3.6, fill: '#d7261e', stroke: '#17181a', 'stroke-width': 1.5, 'class': 'rdp-dot' });
@@ -225,6 +237,17 @@
       if (t.length <= 12 || i % 2 === 0 || i === t.length - 1) svg.appendChild(sv('text', { x: q.x, y: H - 8, 'text-anchor': 'middle', 'class': 'rdp-axis' }, q.p.label));
     });
     box.appendChild(svg);
+    var hasRef = t.some(function (p) { return p.leader !== undefined && p.leader !== null; });
+    if (hasRef) {
+      var key = el('div', 'rdp-chart-key');
+      [['You', 'rdp-key-you'], ['League leader', 'rdp-key-leader'], ['Field average', 'rdp-key-avg']].forEach(function (k) {
+        var item = el('span', 'rdp-key-item');
+        item.appendChild(el('span', 'rdp-key-swatch ' + k[1]));
+        item.appendChild(document.createTextNode(k[0]));
+        key.appendChild(item);
+      });
+      box.appendChild(key);
+    }
     return box;
   }
 
@@ -371,7 +394,6 @@
     var items = [
       ['Length', round && round.raceLengthMinutes ? round.raceLengthMinutes + ' min' : ''],
       ['Weather', weather],
-      ['Rain %', round && round.chanceOfRain !== null && round.chanceOfRain !== undefined && round.chanceOfRain !== '' ? round.chanceOfRain + '%' : ''],
       ['Setups', rs.setupRules || ''],
       ['Tire Wear', rs.tireWearMultiplier || ''],
       ['Tires Allowed', rs.tireCount ? String(rs.tireCount) : ''],
@@ -433,7 +455,6 @@
       tiles.appendChild(tile('Avg. Finish', num(s.avgFinish, 1), ''));
       tiles.appendChild(tile('Poles', num(s.poles), ''));
       tiles.appendChild(tile('Fastest Laps', num(s.fastestLaps), ''));
-      tiles.appendChild(tile('Consistency', s.consistency === null || s.consistency === undefined ? '--' : '±' + Number(s.consistency).toFixed(1), 'spread of finishes'));
       summary.appendChild(tiles);
       var charts = el('div', 'rdp-charts');
       charts.appendChild(pointsChart(s));
@@ -730,7 +751,7 @@
     renderTeams(data);
     $('rdp-row-mid').hidden = false;
   }
-  var pageKey = 'rc_profile_page_v1_' + profileId;
+  var pageKey = 'rc_profile_page_v2_' + profileId;
   var savedPage = readLocal(pageKey);
   var rivalsStarted = false;
   function startRivals() { if (!rivalsStarted) { rivalsStarted = true; loadRivals(); } }

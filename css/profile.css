@@ -178,7 +178,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 /* PC layout (Matt, 2026-10-14): all 10 quick-stat tiles on one line, and the Season and Race
    dropdowns side by side on one line. Phones keep the wrapping grid above. */
 @media (min-width: 641px) {
-  .rdp-tiles { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .rdp-tiles { grid-template-columns: repeat(9, minmax(0, 1fr)); }
   .rdp-tile { padding: 10px 8px; min-width: 0; }
   .rdp-tile-label, .rdp-tile-sub { overflow-wrap: anywhere; }
   .rdp-selects { flex-wrap: nowrap; }
@@ -239,3 +239,10 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 /* Season and Round dropdowns are half the width of the panel (full width on phones, where half would be too narrow). */
 .rdp-select-full { width: 50%; }
 @media (max-width: 640px) { .rdp-select-full { width: 100%; } }
+
+/* Points Trend key (under the graph) */
+.rdp-chart-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 4px 8px 10px; font-size: 12px; color: var(--rcl-ink-faint); }
+.rdp-key-item { display: inline-flex; align-items: center; gap: 6px; }
+.rdp-key-swatch { display: inline-block; width: 20px; height: 0; border-top: 2.5px solid #d7261e; }
+.rdp-key-leader { border-top: 2.5px dashed #c9a227; }
+.rdp-key-avg { border-top: 2.5px solid #8b929b; }

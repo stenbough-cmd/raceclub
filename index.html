@@ -359,29 +359,44 @@
     // Builds one .rc-grid-teaser-card, shared by both the live render (real season teams off the
     // API) and the static no-season sample below -- same markup either way so the two states are
     // visually identical, just fed from different data shapes.
-    function buildCard_(name, manufacturer, carModel, carNumber, bio) {
+    function buildCard_(name, manufacturer, carModel, carNumber, bio, carYear, carSeries, imageNumber) {
       var card = document.createElement('div');
       card.className = 'rc-grid-teaser-card';
 
+      // The car itself leads the card (was the manufacturer logo). The logo now sits beside the
+      // car name underneath. If there is no picture for this car the picture slot is dropped.
       var head = document.createElement('div');
       head.className = 'rc-grid-teaser-head';
 
-      var logo = document.createElement('img');
-      logo.className = 'rc-grid-teaser-logo';
-      logo.alt = '';
-      logo.src = manufacturerLogoSrc_(manufacturer);
-      manufacturerLogoFallback_(logo, manufacturer, function () { logo.style.display = 'none'; });
-      head.appendChild(logo);
+      var carSrc = (typeof rcCarImageSrc === 'function') ? rcCarImageSrc(carYear, imageNumber || carNumber, carSeries) : '';
+      if (carSrc) {
+        var car = document.createElement('img');
+        car.className = 'rc-grid-teaser-car';
+        car.alt = (carModel || 'Car') + (carNumber ? ' #' + carNumber : '');
+        car.loading = 'lazy';
+        car.onerror = function () { car.style.display = 'none'; };
+        car.src = carSrc;
+        head.appendChild(car);
+      }
 
       var identity = document.createElement('div');
       identity.className = 'rc-grid-teaser-identity';
       var nameEl = document.createElement('div');
       nameEl.className = 'rc-grid-teaser-name';
       nameEl.textContent = name || 'Unnamed Team';
+      identity.appendChild(nameEl);
+
       var subEl = document.createElement('div');
       subEl.className = 'rc-grid-teaser-sub';
-      subEl.textContent = [carModel, carNumber ? ('#' + carNumber) : ''].filter(Boolean).join(' · ');
-      identity.appendChild(nameEl);
+      var logo = document.createElement('img');
+      logo.className = 'rc-grid-teaser-logo';
+      logo.alt = '';
+      logo.src = manufacturerLogoSrc_(manufacturer);
+      manufacturerLogoFallback_(logo, manufacturer, function () { logo.style.display = 'none'; });
+      subEl.appendChild(logo);
+      var subText = document.createElement('span');
+      subText.textContent = [carModel, carNumber ? ('#' + carNumber) : ''].filter(Boolean).join(' \u00b7 ');
+      subEl.appendChild(subText);
       identity.appendChild(subEl);
       head.appendChild(identity);
 
@@ -581,7 +596,7 @@
 
       rowEl.innerHTML = '';
       var pickCards = picks.map(function (entry) {
-        return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc);
+        return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc, STATIC_CLASS_YEAR[chosenClass], '', entry.numbers[0]);
       });
       rowEl.appendChild(buildClassGroup_(chosenClass, pickCards));
       layoutClassLabels_();
@@ -635,7 +650,7 @@
       });
       classOrder.forEach(function (cls) {
         var cardEls = teamsByClass[cls].map(function (team) {
-          return buildCard_(team.teamName, team.manufacturer, team.carModel, team.carNumber, team.bio);
+          return buildCard_(team.teamName, team.manufacturer, team.carModel, team.carNumber, team.bio, team.carYear, team.carSeries);
         });
         rowEl.appendChild(buildClassGroup_(cls, cardEls));
       });
