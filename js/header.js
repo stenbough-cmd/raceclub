@@ -192,9 +192,8 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // sidebar item, .rc-nav-item:disabled in style.css).
   var champProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
-  // Open to every signed-in driver (CHAMP chat, 2026-10-14): without Championship Access (the + on
-  // the role) the page shows its Welcome box and demo, plus a Request Access button.
-  if (champId) {
+  // Open to Admins and to anyone with Championship Access (the + on their role, profile.champAccess).
+  if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>';
   } else {
     html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">' + _rcMenuIcon_('champ') + '<span>Championship</span></span>';
@@ -447,6 +446,22 @@ function renderHeader(opts) {
       fetchApi('getProfile', { token: token }).then(function (data) {
         if (data && data.success && data.profile && data.profile.profileId) {
           setProfileCache(data.profile);
+          renderHeader(opts);
+        }
+      }).catch(function () {});
+    }
+    // Role / Championship Access are cached at login, so an admin change (DRIVER -> DRIVER+, a new
+    // role) never reached a member who stayed logged in. Re-read the profile once per page load and
+    // redraw only if something that shows in the header or menu actually changed (cannot loop).
+    if (cached && cached.profileId && typeof fetchApi === 'function' && !window._rcProfileFreshChecked_) {
+      window._rcProfileFreshChecked_ = true;
+      fetchApi('getProfile', { token: token }).then(function (data) {
+        if (!data || !data.success || !data.profile) return;
+        var f = data.profile;
+        if (String(f.role) !== String(cached.role) || !!f.champAccess !== !!cached.champAccess ||
+            String(f.displayName || '') !== String(cached.displayName || '') ||
+            String(f.avatarFilename || '') !== String(cached.avatarFilename || '')) {
+          setProfileCache(f);
           renderHeader(opts);
         }
       }).catch(function () {});
@@ -722,9 +737,7 @@ var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
 // Feedback popup -- unlike Edit Profile (_rcOpenEditProfileFromHeader above, which navigates to
 // Account.html and delegates to its own modal system), this is fully self-contained here so it
 // opens IN PLACE on whatever page the user is already on, no navigation.
-// presetCategory (optional, CHAMP chat 2026-10-14): picks that Feedback Type when the popup opens,
-// e.g. 'Request Championship Mode' from the Championship Welcome box.
-function _rcOpenFeedbackModal(presetCategory) {
+function _rcOpenFeedbackModal() {
   var isDark = document.body.classList.contains('rc-league-page');
 
   var backdrop = document.createElement('div');
@@ -774,7 +787,6 @@ function _rcOpenFeedbackModal(presetCategory) {
     opt.textContent = cat;
     categorySelect.appendChild(opt);
   });
-  if (presetCategory && _RC_FEEDBACK_CATEGORIES_.indexOf(presetCategory) !== -1) categorySelect.value = presetCategory;
   body.appendChild(categorySelect);
 
   // Name auto-filled from the logged-in driver's own profile and locked -- reads the same
