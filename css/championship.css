@@ -1039,9 +1039,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Race Recap results: award icons after the driver name and a key under each class board
    (Matt, 2026-10-13). */
 .rcc-recap-icons { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; flex: 0 0 auto; }
-.rcc-recap-icon { display: inline-flex; color: var(--rc-steel, #5b6573); }
+.rcc-recap-icon { display: inline-flex; color: #5f7d99; } /* blue-gray (Matt, 2026-10-14) */
 .rcc-recap-icon svg { width: 15px; height: 15px; }
-.rcc-recap-key { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 18px; margin-top: 10px; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel, #5b6573); }
+.rcc-recap-key { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 18px; margin-top: 10px; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5f7d99; }
 .rcc-recap-key-item { display: inline-flex; align-items: center; gap: 6px; }
 
 /* PHONES (Matt, 2026-10-13). */
