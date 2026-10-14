@@ -1441,14 +1441,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: 100%;
   margin-left: 48px;
 }
-/* Tablet -- shown again at tablet widths instead of only >=821px, with the gap to the Race Club
-   logo halved (48px -> 24px) so it sits close to the logo instead of floating toward the middle of
-   the header. */
-@media (min-width: 641px) and (max-width: 1024px) {
-  /* Moved further left -- halved again, 24px -> 12px, on top of the earlier 48px -> 24px halving
-     from the first tablet pass. */
-  .rc-header-leaguehub-badge { display: flex; margin-left: 12px; }
-}
 @media (min-width: 821px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
@@ -1461,9 +1453,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    equivalent of the draggable="false" attribute already on the <img> itself (header.js) for
    browsers that don't respect the attribute alone. */
 .rc-header-leaguehub-logo {
-  /* 30px (was 40px): League Hub and Championship logos at 0.75 size, still centred in the 70px
+  /* 22.5px (was 30px, 40px before): League Hub and Championship logos at 0.75 size again (ECO, 2026-10-14), still centred in the 70px
      header (CHAMP chat, 2026-10-09, Matt). */
-  height: 30px;
+  height: 22.5px;
   display: block;
   user-select: none;
   -webkit-user-drag: none;
@@ -1812,14 +1804,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
     /* Pulled in further -- 10px -> 6px on top of the first pass. */
     bottom: 12px;
     right: 12px;
-  }
-}
-/* Tablet -- size is untouched (still inherits the clamp() above), only the inset is roughly halved. */
-@media (min-width: 641px) and (max-width: 1024px) {
-  .rc-hero-badge {
-    /* Pulled in further -- 26px -> 14px, about half again. */
-    bottom: 14px;
-    right: 14px;
   }
 }
 /* Hero overlay text -- "YOUR CAREER" / "YOUR LEGACY" plus a small all-caps tagline, middle-left
@@ -2235,9 +2219,6 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 /* 5 columns now -- was repeat(4, 1fr) with 900px/560px breakpoints; added a 1024px breakpoint to
    drop to 3 columns before 5 get too cramped, otherwise unchanged. */
 .rc-tier-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 28px; }
-@media (max-width: 1024px) {
-  .rc-tier-row { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 640px) {
   .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
 }
