@@ -189,7 +189,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-form-spread { justify-content: space-between; }
 .rdp-select-full { display: block; width: 100%; box-sizing: border-box; }
 .rdp-catline { display: flex; align-items: center; gap: 12px; margin: 30px 0 22px; }
-.rdp-catline::before, .rdp-catline::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rcl-line-bright); }
+.rdp-catline::before, .rdp-catline::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rcl-gold, #e0b64c); }
 .rdp-catline-text { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-gold, #e0b64c); }
 .rdp-dot { transition: r 0.12s ease; cursor: pointer; }
 .rdp-dot:hover { r: 5.6px; }
@@ -198,8 +198,9 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 
 /* Profile round 2 (Matt, 2026-10-14) */
 .rdp-chart-bar { margin-bottom: 16px; }
-.rdp-details { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 6px; }
-.rdp-details .rdp-tile-value { font-size: 17px; line-height: 1.25; }
+.rdp-details { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); margin-bottom: 6px; }
+.rdp-details .rdp-tile-value { font-size: 15px; line-height: 1.25; }
 @media (min-width: 641px) {
-  .rdp-details { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .rdp-details { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
 }
+.rdp-race-split .rdp-catline { margin: 6px 0 -6px; }

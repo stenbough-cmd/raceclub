@@ -365,13 +365,13 @@
     if (round) {
       var bits = [];
       if (round.weather) bits.push(round.weather);
-      if (round.chanceOfRain) bits.push(round.chanceOfRain + '% rain');
       if (round.temperatureC !== null && round.temperatureC !== undefined && round.temperatureC !== '') bits.push(round.temperatureC + '\u00b0C');
       weather = bits.join(', ');
     }
     var items = [
       ['Length', round && round.raceLengthMinutes ? round.raceLengthMinutes + ' min' : ''],
       ['Weather', weather],
+      ['Rain %', round && round.chanceOfRain !== null && round.chanceOfRain !== undefined && round.chanceOfRain !== '' ? round.chanceOfRain + '%' : ''],
       ['Setups', rs.setupRules || ''],
       ['Tire Wear', rs.tireWearMultiplier || ''],
       ['Tires Allowed', rs.tireCount ? String(rs.tireCount) : ''],
@@ -487,6 +487,7 @@
         }
         right.appendChild(light);
         split.appendChild(left);
+        split.appendChild(catLine('Driver Report'));
         split.appendChild(right);
         raceHost.appendChild(split);
       }).catch(function () {
