@@ -2061,28 +2061,17 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
      flex row, the same trick that centers a block element outside of flex. */
   .rcl-hero-inner { margin: 0; }
 
-  /* ALL RESULTS popup standings tables -- .rcl-race-grid-recap is used by the Race Recap results
-     tables (column-label row and every data row), 11 children in this order: Pos, Manu, N°,
-     Driver, Laps, Total Time, Interval, Gap, Avg, Best Lap, Pts. Phones keep Pos, Manu, N°,
-     Driver and Pts, the same set as the Standings board. */
-  .rcl-race-grid-recap { grid-template-columns: 32px 42px 34px minmax(0, 1fr) 44px; }
-  .rcl-race-grid-recap > div:nth-child(5),
-  .rcl-race-grid-recap > div:nth-child(6),
-  .rcl-race-grid-recap > div:nth-child(7),
-  .rcl-race-grid-recap > div:nth-child(8),
-  .rcl-race-grid-recap > div:nth-child(9),
-  .rcl-race-grid-recap > div:nth-child(10) { display: none; }
-  .rcl-race-grid-recap .rcl-standings-mfr-logo-slot { width: 42px; height: 24px; }
-  .rcl-race-grid-recap .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
-  .rcl-race-col-head.rcl-race-grid-recap { font-size: 13px; }
-  /* Qualifying tables (9 children: Pos, Manu, N°, Driver, Best Lap, Sector 1-3, Avg): phones keep
-     Pos, Manu, N°, Driver and Best Lap. */
-  .rcl-race-grid-recap.rcl-race-grid-recap-q { grid-template-columns: 32px 42px 34px minmax(0, 1fr) 76px; }
-  .rcl-race-grid-recap.rcl-race-grid-recap-q > div:nth-child(5) { display: block; }
-  .rcl-race-grid-recap .rcl-board-num { font-size: 13px; }
-  .rcl-modal-dialog-allresults .rcl-standings-team,
+  /* Race Recap tables (Race and Qualifying): every column is back on phones. Each class block scrolls
+     sideways (finger pan) and its rows keep their full desktop column widths. The icon key under the
+     table stays the width of the screen. (Matt, 2026-10-14) */
+  .rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rcl-modal-dialog-allresults .rcl-race-class > :not(.rcl-recap-key):not(.rcl-empty-state-subtitle) { min-width: 800px; }
+  .rcl-modal-dialog-allresults .rcl-race-class > .rcl-race-grid-recap-q { min-width: 600px; }
+  .rcl-modal-dialog-allresults .rcl-standings-team { display: none; }
   #rcl-standings-body .rcl-standings-team,
   #rcl-results-body .rcl-standings-team { display: none; }
+  /* Driver standings boards: no team names on any class. */
+  .rcl-board .rcl-standings-team { display: none; }
 
   /* "**FOR FULL RESULTS, VIEW ON PC BROWSER" -- shown back in only here; see
      .rcl-standings-status-mobile-note's base display:none above and the comment on where it's built

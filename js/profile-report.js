@@ -20,6 +20,9 @@ var RCR_SLOW = '#a86f12';
 
 // Charts are drawn at roughly their on-screen width so their text stays the same size on any
 // screen (the popup is about the window width minus its margins, up to 1000px).
+// Phone width: lap axes show only a few labelled points so the numbers do not run together.
+function _rcrIsPhone() { return (window.innerWidth || 1000) <= 640; }
+
 // What a stop actually did. The old labels assumed every stop took fuel; a stop that only changed
 // tyres was reported as "fuel and tyres". Fuel counts as added when the tank is fuller coming out.
 function _rcrPitFuel(p) { return p && p.fuelIn !== null && p.fuelIn !== undefined && p.fuelOut !== null && p.fuelOut !== undefined ? (p.fuelOut - p.fuelIn) > 0.02 : true; }
@@ -557,7 +560,15 @@ function _rcrDraw(body, dr, mode) {
     var axis = _rccEl('div', 'rcr-strat-row rcr-strat-axis');
     axis.appendChild(_rccEl('div', 'rcr-strat-name'));
     var at = _rccEl('div', 'rcr-strat-track rcr-strat-ticks');
-    for (var lp = 5; lp <= maxLaps; lp += 5) { var tk = _rccText('span', null, 'Lap ' + lp); tk.style.left = (lp / maxLaps * 100) + '%'; at.appendChild(tk); }
+    if (_rcrIsPhone()) {
+      // Lap 1, the middle and the last lap (left-aligned, centred, right-aligned so none spill off the edges).
+      [[1, '0%', '0'], [Math.round((1 + maxLaps) / 2), (Math.round((1 + maxLaps) / 2) - 0.5) / maxLaps * 100 + '%', '-50%'], [maxLaps, '100%', '-100%']].forEach(function (p) {
+        if (p[0] === 1 && maxLaps === 1) return;
+        var tk2 = _rccText('span', null, 'Lap ' + p[0]); tk2.style.left = p[1]; tk2.style.transform = 'translateX(' + p[2] + ')'; at.appendChild(tk2);
+      });
+    } else {
+      for (var lp = 5; lp <= maxLaps; lp += 5) { var tk = _rccText('span', null, 'Lap ' + lp); tk.style.left = (lp / maxLaps * 100) + '%'; at.appendChild(tk); }
+    }
     axis.appendChild(at);
     axis.appendChild(_rccEl('div', 'rcr-strat-sum'));
     tl.appendChild(axis);
@@ -652,7 +663,16 @@ function _rcrDraw(body, dr, mode) {
       });
       r.addEventListener('mouseleave', function () { tip2.hide(); });
       svg.appendChild(r);
-      if (laps.length <= 30 || i % 2 === 0) {
+      if (_rcrIsPhone()) {
+        // Lap 1, 1/4, 1/2, 3/4 and the last lap only. The first and last labels are pushed inward so they stay on screen.
+        var qi = [0, Math.round((laps.length - 1) / 4), Math.round((laps.length - 1) / 2), Math.round((laps.length - 1) * 3 / 4), laps.length - 1];
+        if (qi.indexOf(i) !== -1 && qi.indexOf(i) === qi.lastIndexOf(i)) {
+          var anchor = i === 0 ? 'start' : (i === laps.length - 1 ? 'end' : 'middle');
+          var lx2 = _rcrSvg('text', { x: i === 0 ? x0 : (i === laps.length - 1 ? x0 + bw - 2 : x0 + bw / 2 - 1), y: H - 8, class: 'rcr-axis', 'text-anchor': anchor });
+          lx2.textContent = 'Lap ' + l.n;
+          svg.appendChild(lx2);
+        }
+      } else if (laps.length <= 30 || i % 2 === 0) {
         var lx = _rcrSvg('text', { x: x0 + bw / 2 - 1, y: H - 8, class: 'rcr-axis', 'text-anchor': 'middle' });
         lx.textContent = l.n;
         svg.appendChild(lx);

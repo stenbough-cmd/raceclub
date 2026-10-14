@@ -1790,7 +1790,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // the standings grid above collapses down to just Pos/Driver/Pts on phone widths (see
   // .rcl-race-grid-recap' mobile override, league.css), so a phone visitor is told there's
   // more detail (Laps/Total Time/Pen/Gap/Avg/Best Lap) on a bigger screen.
-  bodyEl.appendChild(_rclBuildMobileViewOnPcNote_());
+  // (The "view on PC" note was removed here: the Race Recap tables now keep every column on phones and pan sideways.)
 
   // Race Report -- lap-by-lap highlights. Built once at import time from the XML's own lap/event
   // data (_rcBuildRaceReportForSession_, Ingestion.gs) and just rendered here, grouped by lap
