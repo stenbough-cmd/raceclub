@@ -126,8 +126,8 @@
   }
 
   // ---- Row 2: Form Guide ----------------------------------------------------------------------
-  // Form guide: up to 20 squares on ONE line. When the window is too narrow the oldest squares drop
-  // off, down to the latest 5. It never wraps into rows.
+  // Form guide: 20, 10 or 5 squares on ONE line, spread evenly across the card, whichever fits the page
+  // width (never fewer than 5 unless the driver has raced fewer). It never wraps into rows.
   var formList = [];
   function fitForm() {
     var wrap = $('rdp-form-squares');
@@ -136,14 +136,17 @@
     var cs = window.getComputedStyle(body);
     var avail = body.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
     var first = wrap.firstChild;
-    var sqW = first ? first.getBoundingClientRect().width : 42;
-    var gap = parseFloat(window.getComputedStyle(wrap).columnGap) || 8;
-    var fit = Math.floor((avail + gap) / (sqW + gap));
-    var n = Math.max(5, Math.min(20, formList.length, fit));
+    var sqW = first ? first.getBoundingClientRect().width || 42 : 42;
+    var minGap = 8;
+    var fit = Math.floor((avail + minGap) / (sqW + minGap));
+    var n = formList.length;
+    var steps = [20, 10, 5];
+    var pick = 0;
+    for (var i = 0; i < steps.length; i++) { if (steps[i] <= formList.length && steps[i] <= fit) { pick = steps[i]; break; } }
+    n = pick || Math.min(formList.length, Math.max(1, fit));
     var start = formList.length - n;
     Array.prototype.forEach.call(wrap.children, function (sq, i) { sq.style.display = i < start ? 'none' : ''; });
-    var note = $('rdp-form-note');
-    if (note) note.textContent = 'Last ' + n + ' race' + (n === 1 ? '' : 's') + ', oldest to newest';
+    wrap.classList.toggle('rdp-form-spread', n >= 5);
   }
   function renderForm(data) {
     var panel = $('rdp-form');
@@ -155,7 +158,8 @@
     list.forEach(function (r) {
       var cls = 'rdp-form-sq' + (r.finish === 1 ? ' rdp-form-p1' : r.finish === 2 ? ' rdp-form-p2' : r.finish === 3 ? ' rdp-form-p3' : '');
       var sq = tx('div', cls, r.finish === null || r.finish === undefined ? '--' : r.finish);
-      var html = '<b>' + esc(r.seasonName) + '</b><span>' + esc(r.eventName || ('Round ' + r.roundNum)) + '</span><br><span>' + esc(r.track || '') + '</span>';
+      var place = (r.track || '') + (r.layout ? ': ' + r.layout : '');
+      var html = '<div><b>' + esc(r.seasonName) + '</b></div><div class="rdp-tip-line"><b>' + esc(r.eventName || ('Round ' + r.roundNum)) + '</b>' + (place ? ' ' + esc(place) : '') + '</div>';
       sq.addEventListener('mouseenter', function () { showTip(sq, html); });
       sq.addEventListener('mouseleave', hideTip);
       sq.addEventListener('click', function () { showTip(sq, html); setTimeout(hideTip, 2200); });
@@ -202,9 +206,12 @@
     });
     svg.appendChild(sv('polyline', { points: pts.map(function (q) { return q.x + ',' + q.y; }).join(' '), fill: 'none', stroke: '#d7261e', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
     pts.forEach(function (q, i) {
-      var c = sv('circle', { cx: q.x, cy: q.y, r: 3.6, fill: '#d7261e', stroke: '#17181a', 'stroke-width': 1.5 });
-      var title = sv('title', {}, q.p.label + ' ' + (q.p.eventName || '') + ': ' + q.p.points + ' pts, P' + q.p.pos);
-      c.appendChild(title);
+      var c = sv('circle', { cx: q.x, cy: q.y, r: 3.6, fill: '#d7261e', stroke: '#17181a', 'stroke-width': 1.5, 'class': 'rdp-dot' });
+      var rd = (season.rounds || []).filter(function (r) { return r.roundId === q.p.roundId; })[0];
+      var fin = rd && rd.finish ? ', P' + rd.finish : '';
+      var tipHtml = '<div><b>Round ' + esc(q.p.roundNum) + '</b> ' + esc(q.p.track || q.p.eventName || '') + ': ' + esc(q.p.points) + ' pts' + fin + '</div>' + (q.p.pos ? '<div class="rdp-tip-line">Championship: P' + esc(q.p.pos) + '</div>' : '');
+      c.addEventListener('mouseenter', function () { showTip(c, tipHtml); });
+      c.addEventListener('mouseleave', hideTip);
       svg.appendChild(c);
       if (t.length <= 12 || i % 2 === 0 || i === t.length - 1) svg.appendChild(sv('text', { x: q.x, y: H - 8, 'text-anchor': 'middle', 'class': 'rdp-axis' }, q.p.label));
     });
@@ -212,61 +219,39 @@
     return box;
   }
 
-  // Finish vs start: a dumbbell per round (hollow dot = grid, solid dot = finish). Lower is better.
+  // Finish vs start: two bars per round (gray = start, colour = finish). A taller bar is a better place.
   function startFinishChart(season) {
-    var box = chartBox('Finish vs. Start', 'Hollow dot: start, solid dot: finish');
+    var box = chartBox('Finish vs. Start', 'Gray bar: start, colored bar: finish. Taller is better');
     var rs = (season.rounds || []).filter(function (r) { return !r.dnp && r.finish !== null && r.finish !== undefined; });
     if (!rs.length) return noChartData(box, 'No finished races yet.');
     var W = 300, H = 170, L = 30, R = 10, T = 12, B = 24;
-    var maxP = 1;
+    var maxP = 2;
     rs.forEach(function (r) { maxP = Math.max(maxP, r.finish, r.grid || 0); });
     var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, 'class': 'rdp-svg' });
-    var yOf = function (p) { return T + (H - T - B) * ((p - 1) / Math.max(1, maxP - 1)); };
+    var plotH = H - T - B, base = H - B;
+    var hOf = function (p) { return plotH * (maxP - p + 1) / maxP; };
     [1, Math.ceil((maxP + 1) / 2), maxP].filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (p) {
-      svg.appendChild(sv('line', { x1: L, x2: W - R, y1: yOf(p), y2: yOf(p), 'class': 'rdp-grid-line' }));
-      svg.appendChild(sv('text', { x: L - 4, y: yOf(p) + 3, 'text-anchor': 'end', 'class': 'rdp-axis' }, 'P' + p));
+      var y = base - hOf(p);
+      svg.appendChild(sv('line', { x1: L, x2: W - R, y1: y, y2: y, 'class': 'rdp-grid-line' }));
+      svg.appendChild(sv('text', { x: L - 4, y: y + 3, 'text-anchor': 'end', 'class': 'rdp-axis' }, 'P' + p));
     });
+    var slot = (W - L - R) / rs.length;
+    var bw = Math.max(3, Math.min(14, slot * 0.36));
     rs.forEach(function (r, i) {
-      var x = rs.length === 1 ? (L + W - R) / 2 : L + (W - L - R) * i / (rs.length - 1);
+      var cx = L + slot * (i + 0.5);
       var hasGrid = r.grid !== null && r.grid !== undefined;
       var color = !hasGrid ? '#9aa0a6' : r.finish < r.grid ? '#3fae6b' : r.finish > r.grid ? '#d7261e' : '#9aa0a6';
-      if (hasGrid) svg.appendChild(sv('line', { x1: x, x2: x, y1: yOf(r.grid), y2: yOf(r.finish), stroke: color, 'stroke-width': 2 }));
-      if (hasGrid) svg.appendChild(sv('circle', { cx: x, cy: yOf(r.grid), r: 3.6, fill: '#17181a', stroke: color, 'stroke-width': 1.6 }));
-      var d = sv('circle', { cx: x, cy: yOf(r.finish), r: 3.8, fill: color });
-      d.appendChild(sv('title', {}, 'R' + r.roundNum + ' ' + (r.eventName || '') + ': started ' + (hasGrid ? 'P' + r.grid : '--') + ', finished P' + r.finish));
-      svg.appendChild(d);
-      if (rs.length <= 12 || i % 2 === 0 || i === rs.length - 1) svg.appendChild(sv('text', { x: x, y: H - 8, 'text-anchor': 'middle', 'class': 'rdp-axis' }, 'R' + r.roundNum));
+      var tipHtml = '<div><b>Round ' + esc(r.roundNum) + '</b> ' + esc(r.track || r.eventName || '') + '</div><div class="rdp-tip-line">Started ' + (hasGrid ? 'P' + esc(r.grid) : '--') + ', finished P' + esc(r.finish) + '</div>';
+      var g = sv('g', { 'class': 'rdp-bar-pair' });
+      if (hasGrid) g.appendChild(sv('rect', { x: cx - bw - 1, y: base - hOf(r.grid), width: bw, height: hOf(r.grid), rx: 1.5, fill: '#5b6470' }));
+      g.appendChild(sv('rect', { x: hasGrid ? cx + 1 : cx - bw / 2, y: base - hOf(r.finish), width: bw, height: hOf(r.finish), rx: 1.5, fill: color }));
+      g.appendChild(sv('rect', { x: cx - slot / 2, y: T, width: slot, height: plotH, fill: 'transparent' }));
+      g.addEventListener('mouseenter', function () { showTip(g, tipHtml); });
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+      if (rs.length <= 12 || i % 2 === 0 || i === rs.length - 1) svg.appendChild(sv('text', { x: cx, y: H - 8, 'text-anchor': 'middle', 'class': 'rdp-axis' }, 'R' + r.roundNum));
     });
     box.appendChild(svg);
-    return box;
-  }
-
-  // Versus the class: this driver against the class average for the same finalized rounds.
-  function versusChart(season) {
-    var box = chartBox('Versus The Class', 'You against the class average');
-    var v = season.versus || {}, me = v.me || {}, cl = v.cls || {};
-    if (me.avgFinish === null || me.avgFinish === undefined) return noChartData(box, 'No finished races yet.');
-    function pair(label, a, b, lowerBetter, d) {
-      var row = el('div', 'rdp-vs-row');
-      row.appendChild(tx('div', '', label + (lowerBetter ? ' (lower is better)' : '')));
-      var top = Math.max(Number(a) || 0, Number(b) || 0, 0.0001);
-      [['You', a, '#d7261e'], ['Class', b, '#6f7a86']].forEach(function (p) {
-        var bar = el('div', 'rdp-vs-bar');
-        bar.appendChild(tx('span', '', p[0]));
-        var track = el('div', 'rdp-vs-track');
-        var fill = el('div', 'rdp-vs-fill');
-        fill.style.width = Math.max(2, Math.round((Number(p[1]) || 0) / top * 100)) + '%';
-        fill.style.background = p[2];
-        track.appendChild(fill);
-        bar.appendChild(track);
-        bar.appendChild(tx('span', 'rdp-vs-val', p[1] === null || p[1] === undefined ? '--' : Number(p[1]).toFixed(d)));
-        row.appendChild(bar);
-      });
-      box.appendChild(row);
-    }
-    pair('Average finish', me.avgFinish, cl.avgFinish, true, 1);
-    pair('Average start', me.avgStart, cl.avgStart, true, 1);
-    pair('Points per race', me.pointsPerRace, cl.pointsPerRace, false, 1);
     return box;
   }
 
@@ -357,18 +342,23 @@
       body.appendChild(emptyBlock('No Races Yet', 'This driver has not completed a league race. Season stats will appear after their first finalized round.'));
       return;
     }
-    var selects = el('div', 'rdp-selects');
-    var seasonSel = el('select', 'rdp-select');
+    var seasonSel = el('select', 'rdp-select rdp-select-full');
     seasonSel.setAttribute('aria-label', 'Season');
     seasons.forEach(function (s, i) { seasonSel.appendChild(new Option(s.name, String(i))); });
-    var raceSel = el('select', 'rdp-select');
-    raceSel.setAttribute('aria-label', 'Race');
-    selects.appendChild(seasonSel);
-    selects.appendChild(raceSel);
-    body.appendChild(selects);
+    var raceSel = el('select', 'rdp-select rdp-select-full');
+    raceSel.setAttribute('aria-label', 'Round');
+    function catLine(text) {
+      var line = el('div', 'rdp-catline');
+      line.appendChild(tx('span', 'rdp-catline-text', text));
+      return line;
+    }
+    body.appendChild(seasonSel);
+    body.appendChild(catLine('Season Stats'));
     var summary = el('div');
-    var raceHost = el('div');
     body.appendChild(summary);
+    body.appendChild(raceSel);
+    body.appendChild(catLine('Race Report'));
+    var raceHost = el('div');
     body.appendChild(raceHost);
     var token = 0;
 
@@ -376,9 +366,9 @@
       var s = seasons[Number(seasonSel.value)];
       summary.innerHTML = '';
       var tiles = el('div', 'rdp-tiles');
-      tiles.appendChild(tile('Championship', s.position ? ord(s.position) : '--', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
-      tiles.appendChild(tile('Points', num(s.points), ''));
       tiles.appendChild(tile('Races', num(s.races), ''));
+      tiles.appendChild(tile('Rank', s.position ? ord(s.position) : '--', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
+      tiles.appendChild(tile('Points', num(s.points), ''));
       tiles.appendChild(tile('Wins', num(s.wins), ''));
       tiles.appendChild(tile('Podiums', num(s.podiums), ''));
       tiles.appendChild(tile('Best Finish', s.bestFinish ? 'P' + s.bestFinish : '--', ''));
@@ -390,7 +380,6 @@
       var charts = el('div', 'rdp-charts');
       charts.appendChild(pointsChart(s));
       charts.appendChild(startFinishChart(s));
-      charts.appendChild(versusChart(s));
       summary.appendChild(charts);
 
       raceSel.innerHTML = '';
