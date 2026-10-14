@@ -2521,7 +2521,7 @@ body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 2px; }
 
 /* ===== League page: mobile + recap + report + ticker round (2026-10-13) ===== */
 /* Race Recap: key under each class board, small icons after a driver's name. */
-.rcl-recap-key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12.5px; color: var(--rcl-bonus); }
+.rcl-recap-key { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 18px; margin-top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-bonus); } /* right side of the leaderboard, all caps (like the Championship page key) */
 .rcl-recap-key-item { display: inline-flex; align-items: center; gap: 6px; }
 .rcl-recap-key-icon, .rcl-recap-name-icon { display: inline-flex; color: var(--rcl-bonus); } /* same blue as the "+1 bonus points" note */
 .rcl-recap-key-icon svg, .rcl-recap-name-icon svg { width: 14px; height: 14px; }
