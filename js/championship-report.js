@@ -487,7 +487,7 @@ function _rcrDraw(body, dr, mode) {
     // wear on each set, which explains most of the wear differences above.
     var setRows = (mode === 'class' ? (dr.field || []) : (dr.field || []).filter(function (f) { return f.isPlayer || rivals.some(function (r) { return r.carNumber === f.carNumber; }); }));
     if (setRows.some(function (f) { return f.sets && f.sets.length; })) {
-      tb.appendChild(_rccText('div', 'rcr-mini-title', 'Tyre sets, compounds and pace'));
+      // (No "Tyre sets, compounds and pace" heading above the table, Matt 2026-10-14.)
       var st = _rccEl('div', 'rcr-sets');
       var hd = _rccEl('div', 'rcr-sets-row rcr-sets-head');
       ['Car', 'Sets (laps, typical lap, tread used per lap)', 'Tyres'].forEach(function (h) { hd.appendChild(_rccText('div', null, h)); });

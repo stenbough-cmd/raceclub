@@ -907,7 +907,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcr-sets { display: grid; gap: 0; margin-top: 6px; font-size: 13px; }
 .rcr-sets-row { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) 56px; gap: 12px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--rc-offwhite); }
 .rcr-sets-head { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-steel); }
-.rcr-sets-you { background: color-mix(in srgb, #d7261e 6%, transparent); font-weight: 700; }
+.rcr-sets-you { font-weight: 700; } /* no red tint behind your row (Matt, 2026-10-14) */
 .rcr-sets-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rcr-sets-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .rcr-set { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 3px; border: 1px solid #d5dbe2; border-radius: 999px; background: #fff; font-weight: 400; }
