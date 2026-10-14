@@ -961,6 +961,8 @@ function _rclRenderStandings(hub) {
   host.innerHTML = '';
 
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
+  // No current season and no earlier season to show: Championship Standings is hidden without a word.
+  if (!hub.hasSeason) { if (emptyRow) emptyRow.style.display = 'none'; return; }
   // Before any race has actually been run, there's nothing to rank yet -- same hasResults gate the
   // ticker already uses (roundsCompleted > 0).
   var hasResults = (hub.roundsCompleted || 0) > 0;
@@ -2165,6 +2167,9 @@ function _rclRenderRaceCarousel(hub) {
   var outer = document.getElementById('rcl-race-carousel');
   if (!outer) return;
   outer.innerHTML = '';
+  // No current season and no earlier season to show: the calendar is hidden without a word.
+  outer.style.display = hub.hasSeason ? '' : 'none';
+  if (!hub.hasSeason) { _rclCarouselCountdownTimers_.forEach(function (id) { clearInterval(id); }); _rclCarouselCountdownTimers_.length = 0; return; }
 
   // Clear every countdown interval the PREVIOUS render of this carousel started --
   // outer.innerHTML='' above already removed their DOM, but an interval keeps firing against
@@ -3214,8 +3219,8 @@ function _rclOpenMemberListModal(hub) {
   _rclLockBodyScroll();
 }
 
-// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Join Race Club (signed in: Current Drivers) | Help
-// (signed in: Current Drivers). Same look as the Championship page's link bar (css/league.css,
+// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Join Race Club (signed in: Member List) | Help
+// (signed in: Member List). Same look as the Championship page's link bar (css/league.css,
 // .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
 // links replace it.
 var _rclNavHub_ = { hasSeason: false };
@@ -3237,9 +3242,10 @@ function _rclRenderNavbar_(hub) {
     b.addEventListener('click', onClick);
     links.appendChild(b);
   }
-  add('Season Preview', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
+  // With no season at all the link reads Welcome instead of Season Preview.
+  add((_rclNavHub_ && _rclNavHub_.hasSeason) ? 'Season Preview' : 'Welcome', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
   if (signedIn) {
-    add('Current Drivers', function () { _rclOpenMemberListModal(_rclNavHub_); });
+    add('Member List', function () { _rclOpenMemberListModal(_rclNavHub_); });
   } else {
     add('Join Race Club', function () {
       if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
@@ -3259,7 +3265,7 @@ function _rclOpenSeasonPreviewModal_(hub) {
   var overlay = _rclEl('div', 'rcl-modal-overlay');
   var dialog = _rclEl('div', 'rcl-modal-dialog');
   var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Season Preview'));
+  head.appendChild(_rclEl('div', 'rcl-modal-title', (hub && hub.hasSeason) ? 'Season Preview' : 'Welcome'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close');
