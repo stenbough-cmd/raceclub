@@ -2573,3 +2573,6 @@ body.rc-league-page:not(.rcc-page) .rcl-tt-name,
 body.rc-league-page:not(.rcc-page) .rcl-tt-name .rcl-tt-num { font-weight: 400; color: var(--rcl-ink); opacity: 1; }
 body.rc-league-page:not(.rcc-page) .rcl-mfr-rest-pts,
 body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
+
+/* Flag behind a member name in the Member List popup. */
+.rcl-memberlist-name .rcl-memberlist-flag { display: inline-block; vertical-align: middle; margin-left: 8px; }

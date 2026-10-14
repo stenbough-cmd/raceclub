@@ -2875,7 +2875,7 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
   if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
   if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
-  if (rs.pitStopReq) block4.push({ label: 'Pitstop Requirements', value: rs.pitStopReq });
+  if (rs.pitStopReq) block4.push({ label: 'Pitstop Reqs', value: rs.pitStopReq });
   if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
   if (rs.trackLimitPoints) block4.push({ label: 'Infractions until Drive-Thru', value: rs.trackLimitPoints + ' pts' });
   if (block4.length) sections.push({ pill: 'Season Rules', blocks: [block4] });
@@ -3107,6 +3107,19 @@ function _rclOpenMemberListModal(hub) {
         var row = _rclEl('div', 'rcl-memberlist-row');
         var memberNameEl = _rclEl('div', 'rcl-memberlist-name');
         memberNameEl.appendChild(_rclBuildDriverNameEl_('rcl-driver-link-inner', m.displayName || 'Unknown Driver', m.profileId));
+        // Country flag right behind the name (Users.Location).
+        if (m.country && typeof countryFlagSrc === 'function') {
+          var memberFlagSrc = countryFlagSrc(m.country);
+          if (memberFlagSrc) {
+            var memberFlag = document.createElement('img');
+            memberFlag.className = 'rcl-standings-flag rcl-memberlist-flag';
+            memberFlag.src = memberFlagSrc;
+            memberFlag.alt = '';
+            memberFlag.title = m.country;
+            memberFlag.onerror = function () { memberFlag.style.display = 'none'; };
+            memberNameEl.appendChild(memberFlag);
+          }
+        }
         row.appendChild(memberNameEl);
         row.appendChild(_rclEl('div', 'rcl-memberlist-joined', 'Joined on ' + (_rclFormatDate(m.joinedAt) || 'an unknown date')));
         group.appendChild(row);

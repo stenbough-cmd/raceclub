@@ -1593,6 +1593,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   text-decoration: none;
 }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
+/* Icon in front of each account-menu item (same glyphs as the Account.html sidebar). */
+.rc-header-menu-item { display: flex; align-items: center; gap: 10px; box-sizing: border-box; }
+.rc-header-menu-icon { flex: 0 0 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.rc-header-menu-icon svg { width: 16px; height: 16px; display: block; }
+.rc-header-menu-discord-img { filter: brightness(0); display: block; }
+.rc-header-menu-item-discord:hover .rc-header-menu-discord-img { filter: none; }
 /* Specificity note: this rule must come after the plain .rc-header-menu-item:hover rule above so
    its background/color win on hover. */
 .rc-header-menu-item-discord:hover { background: #5865F2; color: var(--rc-white); }
@@ -3098,6 +3104,34 @@ body.rc-modal-scroll-locked {
    discipline incident lines, the registration-status pill) lived here. */
 
 .rc-rulebook-draft-note { font-size: 13px; color: var(--rc-steel); font-style: italic; }
+/* Help section on the dashboard: callouts look like the Help popup on league.html -- a lightbulb for tips, a
+   warning triangle for warnings, a thick accent bar on the left and a thin border all round (light theme). */
+#rc-section-help .rc-rulebook-callout {
+  position: relative;
+  background: #f4f7fa;
+  border: 1px solid #b9c6d3;
+  border-left: 4px solid #5f7d99;
+  border-radius: 6px;
+  padding: 12px 16px 12px 46px;
+  color: var(--rc-carbon);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+#rc-section-help .rc-rulebook-callout::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f7d99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.45 1 1.16 1 1.93V17h6v-.33c0-.77.4-1.48 1-1.93A7 7 0 0 0 12 2z'/%3E%3C/svg%3E");
+}
+#rc-section-help .rc-rulebook-callout-warn { background: #fbf6e8; border-color: #e3d4a0; border-left-color: #c9962b; }
+#rc-section-help .rc-rulebook-callout-warn::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9962b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+}
+#rc-section-help .rc-rulebook-callout strong { color: var(--rc-carbon); }
+
 
 /* Penalty tier badges (Rulebook Section 5.1/5.3) -- a square pill with its own container color per
    tier, escalating green (Tier 1, mildest) to red (Tier 7, most severe) so the severity reads at a

@@ -227,3 +227,11 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-see-more:hover { text-decoration: underline; }
 .rdp-load-more { display: block; margin: 16px auto 0; }
 .rdp-load-more[hidden] { display: none; }
+
+/* Round 4: every stat box (Season Stats, Race Details, Race Report) centers its label and value; bigger car names. */
+.rdp-tile { text-align: center; }
+.rdp-team-name { font-size: 21px; }
+.rdp-team-model { font-size: 17px; }
+.rdp-team-sm .rdp-team-name { font-size: 15px; }
+.rdp-team-sm .rdp-team-model { font-size: 14px; }
+@media (max-width: 640px) { .rdp-team-sm .rdp-team-name { font-size: 20px; } .rdp-team-sm .rdp-team-model { font-size: 17px; } }

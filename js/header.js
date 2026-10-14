@@ -162,15 +162,31 @@ function showToast(message, type, durationMs) {
   return { dismiss: dismiss };
 }
 
+// Icons for the account dropdown -- the same glyphs Account.html's sidebar uses for each item.
+var RC_HEADER_MENU_ICONS_ = {
+  hub: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>',
+  champ: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>',
+  profile: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></svg>',
+  dash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>',
+  admin: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>',
+  league: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>',
+  steward: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>',
+  edit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>',
+  help: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>',
+  feedback: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1-4.2A8 8 0 1 1 21 12Z"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>',
+  logout: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>'
+};
+function _rcMenuIcon_(key) { return '<span class="rc-header-menu-icon" aria-hidden="true">' + (RC_HEADER_MENU_ICONS_[key] || '') + '</span>'; }
+
 // Builds the Dashboard..Stewarding portion of the account dropdown, mirroring Account.html's
 // sidebar order/gating exactly (see the big comment at that markup's call site above).
 function _rcBuildAccountMenuSectionLinks(role) {
-  function link(section, label) {
-    return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + label + '</a>';
+  function link(section, label, iconKey) {
+    return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + _rcMenuIcon_(iconKey) + '<span>' + label + '</span></a>';
   }
   // Off-page link to the public league.html, not an in-page section, so it skips data-rc-section
   // entirely (same as before this reorder).
-  var html = '<a class="rc-header-menu-item" href="league.html">League Hub</a>';
+  var html = '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>';
   // Championship (CHAMP chat, 2026-10-08) -- the driver's own offline championship page. Admin-only
   // for now: everyone else sees it grayed out and unclickable, not hidden (same look as a disabled
   // sidebar item, .rc-nav-item:disabled in style.css).
@@ -178,25 +194,25 @@ function _rcBuildAccountMenuSectionLinks(role) {
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
   // Open to Admins and to anyone with Championship Access (the + on their role, profile.champAccess).
   if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
-    html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">Championship</a>';
+    html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>';
   } else {
-    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">Championship</span>';
+    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">' + _rcMenuIcon_('champ') + '<span>Championship</span></span>';
   }
   // My Career (was My Profile): off-page link to the driver's own public career page
   // (profile.html?id=..., the Driver Career Page), straight under Championship. Saved login profile,
   // no data-rc-section. The old in-account Career section has no link any more.
   var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
-    // My Career Page sits in its own section: a line above and a line below.
+    // My Profile Page sits in its own section: a line above and a line below.
     html += '<hr class="rc-header-menu-divider">';
-    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">My Career Page</a>';
+    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">' + _rcMenuIcon_('profile') + '<span>My Profile Page</span></a>';
   }
   html += '<hr class="rc-header-menu-divider">';
   // Dashboard, then (by role) Admin / League Tools / Stewarding with no divider between them.
-  html += link('dashboard', 'Dashboard');
-  if (role === 'Admin') html += link('admin', 'Admin');
-  if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools');
-  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding');
+  html += link('dashboard', 'Dashboard', 'dash');
+  if (role === 'Admin') html += link('admin', 'Admin', 'admin');
+  if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools', 'league');
+  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding', 'steward');
   return html;
 }
 
@@ -244,6 +260,79 @@ function _rcOpenEditProfileFromHeader() {
     sessionStorage.setItem('raceclub_open_edit_profile', '1');
     window.location.href = 'Account.html';
   }
+}
+
+// League Help from the account dropdown. On Account.html it shows the in-page Help section; everywhere else it
+// opens the Help popup (the same one league.html opens), so the driver never leaves the page.
+function _rcOpenLeagueHelpFromHeader() {
+  if (typeof window.rcNavigateToSection === 'function') {
+    window.rcNavigateToSection('help');
+  } else if (typeof window._rclOpenLeagueRulesModal === 'function') {
+    window._rclOpenLeagueRulesModal();
+  } else if (typeof RULEBOOK_SECTIONS !== 'undefined') {
+    rcOpenLeagueHelpModal_();
+  } else {
+    window.location.href = 'Account.html#help';
+  }
+}
+
+// Same Help popup as league.html's _rclOpenLeagueRulesModal (js/league.js): same classes, same
+// RULEBOOK_SECTIONS source. Used on pages that do not load league.js (the Driver Profile page).
+var _rcHelpScrollY_ = 0;
+function rcOpenLeagueHelpModal_() {
+  function mk(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+  var overlay = mk('div', 'rcl-modal-overlay rcl-modal-overlay-over-nav');
+  var dialog = mk('div', 'rcl-modal-dialog');
+  var head = mk('div', 'rcl-modal-head');
+  head.appendChild(mk('div', 'rcl-modal-title', 'Help: Race Club\'s Online League'));
+  var closeBtn = mk('button', 'rcl-modal-close', '&times;');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  head.appendChild(closeBtn);
+  dialog.appendChild(head);
+  var body = mk('div', 'rcl-modal-body rcl-rules-modal-body');
+  var rbNav = mk('div', 'rc-rulebook-nav');
+  rbNav.appendChild(mk('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+  var rbNavGrid = mk('div', 'rc-rulebook-nav-grid');
+  var rbSections = mk('div');
+  RULEBOOK_SECTIONS.forEach(function (sec) {
+    var link = document.createElement('a');
+    link.href = '#rcl-rulebook-sec-' + sec.id;
+    link.className = 'rc-rulebook-nav-link' + (sec.draft ? ' rc-rulebook-draft' : '');
+    link.textContent = sec.num + '. ' + sec.title;
+    rbNavGrid.appendChild(link);
+    var secWrap = mk('div', 'rc-rulebook-section');
+    secWrap.id = 'rcl-rulebook-sec-' + sec.id;
+    secWrap.appendChild(mk('h3', null, sec.num + '. ' + sec.title));
+    if (sec.draft) {
+      secWrap.appendChild(mk('p', 'rc-rulebook-draft-note', sec.draftNote ? ('Not yet drafted. ' + sec.draftNote) : 'Not yet drafted.'));
+    } else {
+      var secBody = mk('div');
+      secBody.innerHTML = sec.html || '';
+      secWrap.appendChild(secBody);
+    }
+    rbSections.appendChild(secWrap);
+  });
+  rbNav.appendChild(rbNavGrid);
+  body.appendChild(rbNav);
+  body.appendChild(rbSections);
+  dialog.appendChild(body);
+  overlay.appendChild(dialog);
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+    document.body.classList.remove('rc-modal-scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, _rcHelpScrollY_);
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+  _rcHelpScrollY_ = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = '-' + _rcHelpScrollY_ + 'px';
+  document.body.classList.add('rc-modal-scroll-locked');
 }
 
 // ---------------------------------------------------------------------
@@ -393,15 +482,13 @@ function renderHeader(opts) {
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
-              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">Edit Profile</button>' +
-              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">Feedback</button>' +
-              // Discord link, right under Feedback, matching the sidebar's own order exactly (Edit
-              // Profile, Help, Feedback, Discord -- see buildSidebarNav, Account.html) -- opens in
-              // a new tab so a driver never loses their place on whatever page this dropdown is
-              // open on.
-              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer">Discord</a>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></button>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-help">' + _rcMenuIcon_('help') + '<span>League Help</span></button>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">' + _rcMenuIcon_('feedback') + '<span>Feedback</span></button>' +
+              // Discord link, right under Feedback (same order as the Account.html sidebar), opening in a new tab.
+              '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer"><span class="rc-header-menu-icon" aria-hidden="true"><img class="rc-header-menu-discord-img" src="assets/images/Discord-Symbol-White.svg" alt="" width="16" height="12"></span><span>Discord</span></a>' +
               '<hr class="rc-header-menu-divider">' +
-              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">Logout</button>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-logout">' + _rcMenuIcon_('logout') + '<span>Logout</span></button>' +
             '</div>';
   } else {
     // Now mirrors the logged-in toggle's pattern: the plain link stays for desktop, hidden below
@@ -480,6 +567,13 @@ function renderHeader(opts) {
     document.getElementById('rc-header-menu-editprofile').addEventListener('click', function () {
       closeAccountMenu();
       _rcOpenEditProfileFromHeader();
+    });
+
+    // League Help -- Account.html: its in-page Help section. Any other page: the same Help popup league.html
+    // opens (rulebook-content.js), in place.
+    document.getElementById('rc-header-menu-help').addEventListener('click', function () {
+      closeAccountMenu();
+      _rcOpenLeagueHelpFromHeader();
     });
 
     // Feedback -- unlike Edit Profile, opens in place on whatever page the user is already on, no

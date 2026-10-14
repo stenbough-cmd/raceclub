@@ -376,7 +376,7 @@
       ['Tire Wear', rs.tireWearMultiplier || ''],
       ['Tires Allowed', rs.tireCount ? String(rs.tireCount) : ''],
       ['Fuel Multiplier', rs.fuelMultiplier || ''],
-      ['Pitstop Requirements', rs.pitStopReq || ''],
+      ['Pitstop Reqs', rs.pitStopReq || ''],
       ['Track Limits', season.trackLimitsPreset || ''],
       ['Limit Points', rs.trackLimitPoints ? String(rs.trackLimitPoints) : '']
     ].filter(function (it) { return it[1]; });
@@ -645,13 +645,15 @@
       mid.appendChild(tx('div', 'rdp-rival-tags', tags.join(' · ')));
       row.appendChild(mid);
       // Three head to head numbers from the current season, yours first.
-      var se = r.season || {};
+      // Uses the current season; if the two have not shared a race this season, every race together instead.
+      var seasonStats = r.season && r.season.races ? r.season : null;
+      var se = seasonStats || r.overall || r.season || {};
       var box = el('div', 'rdp-rival-season');
-      box.appendChild(tx('div', 'rdp-rival-season-title', (res.seasonName ? res.seasonName : 'This season') + ' head to head'));
+      box.appendChild(tx('div', 'rdp-rival-season-title', (seasonStats ? (res.seasonName ? res.seasonName : 'This season') : 'All races together') + ' head to head'));
       var cells = el('div', 'rdp-rival-season-cells');
       [['Finished ahead', se.finAhead, se.finBehind], ['Qualified ahead', se.qualAhead, se.qualBehind], ['Faster best lap', se.fastAhead, se.fastBehind]].forEach(function (c) {
         var cell = el('div', 'rdp-rival-season-cell');
-        cell.appendChild(tx('b', '', se.races ? (c[1] || 0) + '-' + (c[2] || 0) : '--'));
+        cell.appendChild(tx('b', '', (c[1] || 0) + '-' + (c[2] || 0)));
         cell.appendChild(tx('span', '', c[0]));
         cells.appendChild(cell);
       });
@@ -661,7 +663,7 @@
     });
   }
   function loadRivals() {
-    var key = 'rc_profile_rivals_v2_' + profileId;
+    var key = 'rc_profile_rivals_v3_' + profileId;
     var saved = readLocal(key);
     if (saved) drawRivals(saved);
     else { $('rdp-rivals').innerHTML = ''; $('rdp-rivals').appendChild(tx('div', 'rdp-loading', 'Loading rivalries...')); }
