@@ -3819,39 +3819,54 @@
         return;
       }
 
+      // One container per SEASON. Inside it, a graphite pill per round that has protests ("ROUND N: EVENT
+      // SHORTNAME"), with that round's protests listed just under it, inset a little. A round with no protests
+      // gets no pill. The only badge at the top is PENDING, shown while any ruling in the season is still open.
+      var seasonOrder = [], bySeason = {};
       data.rounds.forEach(function (r) {
+        if (!r.protests || !r.protests.length) return;
+        var key = r.seasonId || 'none';
+        if (!bySeason[key]) { bySeason[key] = []; seasonOrder.push(key); }
+        bySeason[key].push(r);
+      });
+      if (!seasonOrder.length) {
+        section.appendChild(buildEmptyStatePanel('No Protests Filed', 'Protests will appear here for review once a season begins.'));
+        return;
+      }
+      seasonOrder.forEach(function (key) {
+        var roundsInSeason = bySeason[key].slice().sort(function (a, b) { return (b.roundNumber || 0) - (a.roundNumber || 0); });
+        var first = roundsInSeason[0];
         var panel = el('div', 'rc-panel rc-dash-card');
         panel.style.cssText = 'margin-bottom:16px;';
 
-        var headerRow = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;');
-        // "SEASON <n>: <SEASON NAME>" -- was "<SEASON NAME>: <EVENT NAME>". seasonNumberLabel()
-        // pulls the number straight off the SeasonID string, same helper Registration Status' own
-        // "REGISTERED FOR SEASON N: Name" headline uses.
-        var seasonNum = seasonNumberLabel(r.seasonId);
-        var titleText = 'Season' + (seasonNum ? (' ' + seasonNum) : '') + (r.seasonName ? (': ' + r.seasonName) : '');
-        var titleWrap = el('div');
-        titleWrap.appendChild(el('h3', 'rc-dash-card-title', escapeHtml(titleText)));
-        headerRow.appendChild(titleWrap);
-
-        var badgeWrap = el('div', 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;');
-        if (r.pendingCount) {
-          badgeWrap.appendChild(el('span', 'rc-badge-chip rc-badge-race-noresults', r.pendingCount + ' Pending'));
+        // "SEASON <n>: <SEASON NAME>" -- the title itself spans the card so its red underline runs to the end.
+        var seasonNum = seasonNumberLabel(first.seasonId);
+        var titleText = 'Season' + (seasonNum ? (' ' + seasonNum) : '') + (first.seasonName ? (': ' + first.seasonName) : '');
+        var pendingTotal = roundsInSeason.reduce(function (t, r) { return t + (r.pendingCount || 0); }, 0);
+        var title = el('h3', 'rc-dash-card-title', '');
+        title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+        title.appendChild(el('span', '', escapeHtml(titleText)));
+        if (pendingTotal) {
+          title.appendChild(el('span', 'rc-badge-chip rc-badge-race-noresults', pendingTotal + ' Pending'));
         }
-        if (r.resultsFinalized) {
-          badgeWrap.appendChild(el('span', 'rc-badge-chip rc-badge-status-completed', 'Finalized'));
-        }
-        headerRow.appendChild(badgeWrap);
-        panel.appendChild(headerRow);
+        panel.appendChild(title);
 
-        // Protest rows -- same open-circle/red-X/yellow-tilde/green-check format as the Dashboard's
-        // own Protest card and the Protests popup (buildDashProtestItem), organized the same way
-        // (most recent first).
-        var sortedProtests = (r.protests || []).slice().sort(function (a, b) {
-          return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+        roundsInSeason.forEach(function (r) {
+          var pillText = 'Round ' + (r.roundNumber || '?') + ': ' + (r.eventName || '') + (r.shortName ? ' ' + r.shortName : '');
+          var head = el('div', 'rc-group-head');
+          head.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
+          panel.appendChild(head);
+
+          // Protest rows -- same open-circle/red-X/yellow-tilde/green-check format as the Dashboard's own
+          // Protest card (buildDashProtestItem), most recent first, inset a little under the pill.
+          var sortedProtests = (r.protests || []).slice().sort(function (a, b) {
+            return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+          });
+          var list = el('div', 'rc-protest-dash-list');
+          list.style.cssText = 'margin:8px 0 16px 14px;';
+          sortedProtests.forEach(function (p) { list.appendChild(buildStewardingProtestItem_(p)); });
+          panel.appendChild(list);
         });
-        var list = el('div', 'rc-protest-dash-list');
-        sortedProtests.forEach(function (p) { list.appendChild(buildStewardingProtestItem_(p)); });
-        panel.appendChild(list);
 
         section.appendChild(panel);
       });
@@ -8805,9 +8820,7 @@
     // level Protests RULING already requires server-side (Protests.gs).
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
-    // Open to every signed-in driver (CHAMP chat, 2026-10-14): without Championship Access the page
-    // shows its Welcome box and demo, plus a Request Access button.
-    setNavAccess('rc-nav-championship', true, '');
+    setNavAccess('rc-nav-championship', profile.role === 'Admin' || !!profile.champAccess, 'Needs Championship Access (the + on your role).');
     // Divider above these three is always visible from initial sidebar render now (see
     // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
 
