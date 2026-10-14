@@ -312,6 +312,7 @@ body.rc-league-page {
    step between the small eyebrow above and the body-text sub-line below. */
 .rcl-hero-season {
   margin-top: 10px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
   font-family: var(--rc-font-heading);
   /* Bumped up substantially -- its own dedicated size step above the general "one level" bump the
      rest of the League Hub text got, between the sub-line and the hero title itself. */
@@ -1778,8 +1779,13 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   line-height: 1;
   flex: 0 0 auto;
 }
-.rcl-news-badge-rd { background: var(--rc-red); }
-.rcl-news-badge-ne { background: var(--rcl-badge-news); }
+/* Same colors as the Season Stories badges on the Championship page (navy with a red bottom edge). The border sits
+   on the bottom of the icon (inset shadow keeps the icon the same size). Posts written by people use the Race Club
+   red with the darker red bottom edge. */
+.rcl-news-badge-rd { background: var(--rc-balanced); box-shadow: inset 0 -3px 0 var(--rc-red); }
+.rcl-news-badge-ne { background: var(--rc-red); box-shadow: inset 0 -3px 0 var(--rc-red-dark); }
+.rcl-news-badge-sm.rcl-news-badge-rd { box-shadow: inset 0 -2px 0 var(--rc-red); }
+.rcl-news-badge-sm.rcl-news-badge-ne { box-shadow: inset 0 -2px 0 var(--rc-red-dark); }
 .rcl-news-badge-top { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding-left: 0.12em; }
 .rcl-news-badge-bottom { margin-top: 4px; font-size: 19px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .rcl-news-badge-sm { width: 34px; height: 34px; }
@@ -2462,13 +2468,12 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-top, .rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-bottom { font-size: 12px; }
 .rcl-news-badge-sm.rcl-news-badge-ne .rcl-news-badge-bottom { margin-top: 2px; }
 
-/* Badges: both lines the same size (RD over 01, NE over WS) plus a darker accent edge on the left. */
-.rcl-news-badge-rd, .rcl-news-badge-ne { box-sizing: border-box; border-left: 5px solid rgba(0,0,0,0.38); }
+/* Badges: both lines the same size (RD over 01, NE over WS) with the colored accent edge on the bottom (set further up). */
+.rcl-news-badge-rd, .rcl-news-badge-ne { box-sizing: border-box; }
 .rcl-news-badge-rd .rcl-news-badge-top, .rcl-news-badge-rd .rcl-news-badge-bottom { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
 .rcl-news-badge-rd .rcl-news-badge-bottom { margin-top: 2px; }
 .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-top, .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { font-size: 12px; }
 .rcl-news-badge-sm.rcl-news-badge-rd .rcl-news-badge-bottom { margin-top: 2px; }
-.rcl-news-badge-sm.rcl-news-badge-rd, .rcl-news-badge-sm.rcl-news-badge-ne { border-left-width: 4px; }
 /* Season preview badge: just PRE, same size as the other badge lines. */
 .rcl-news-badge-pre .rcl-news-badge-top { font-size: 16px; }
 .rcl-news-badge-sm.rcl-news-badge-pre .rcl-news-badge-top { font-size: 12px; }

@@ -2278,6 +2278,7 @@
   // ---------------------------------------------------------------------
   // GENERIC MODAL -- backdrop + centered card, Escape/backdrop-click/X all close it.
   // ---------------------------------------------------------------------
+  var rcModalLockCount = 0, rcModalLockScrollY = 0;
   function showModal(title, opts) {
     opts = opts || {};
     var backdrop = el('div', 'rc-modal-backdrop');
@@ -2302,9 +2303,17 @@
     // (see .rc-modal-scroll-locked in style.css): pin body with position:fixed (not just
     // overflow:hidden, which doesn't reliably stop touch scrolling), remembering the scroll
     // position so it can be restored on close without a jump.
-    var scrollYBeforeModal = window.scrollY || window.pageYOffset || 0;
-    document.body.style.top = '-' + scrollYBeforeModal + 'px';
-    document.body.classList.add('rc-modal-scroll-locked');
+    // Popups can stack (Review & Finalize opens confirm popups on top of itself), so the lock is
+    // counted: only the FIRST popup pins the page and only the LAST one to close releases it.
+    // Without the count, closing a confirm popup unlocked the page while Review & Finalize was
+    // still open and the background could scroll.
+    if (rcModalLockCount === 0) {
+      rcModalLockScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.top = '-' + rcModalLockScrollY + 'px';
+      document.body.classList.add('rc-modal-scroll-locked');
+    }
+    rcModalLockCount++;
+    var modalLockHeld = true;
 
     // Closable ONLY via the X button here, or a Cancel button the caller wires up itself against
     // the returned { close }.
@@ -2333,9 +2342,15 @@
       if (rcWritesInFlight > 0 && skipOnClose !== true) return;
       removeWriteListener();
       backdrop.remove();
-      document.body.classList.remove('rc-modal-scroll-locked');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollYBeforeModal);
+      if (modalLockHeld) {
+        modalLockHeld = false;
+        rcModalLockCount = Math.max(0, rcModalLockCount - 1);
+        if (rcModalLockCount === 0) {
+          document.body.classList.remove('rc-modal-scroll-locked');
+          document.body.style.top = '';
+          window.scrollTo(0, rcModalLockScrollY);
+        }
+      }
       // Only clear the tracker if THIS modal is still the one it's pointing at -- guards against a
       // theoretical stale clear if a second modal somehow opened before this one's close() ran.
       if (rcActiveModalCloseFn === close) rcActiveModalCloseFn = null;
