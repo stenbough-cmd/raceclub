@@ -3630,6 +3630,22 @@
         btnGroup.appendChild(editFinalizeBtn);
       }
 
+      // WRITE A STORY: asks Gemini for this round's AI story. Gray (disabled) once one is written or being written.
+      if (r.hasRaceResults) {
+        var storyBtn = el('button', 'rc-btn-secondary rc-btn-row', 'WRITE A STORY');
+        storyBtn.type = 'button';
+        if (r.storyWritten) {
+          storyBtn.disabled = true;
+          storyBtn.title = 'A story is already written for this round. Use Rewrite under League News to replace it.';
+          storyBtn.style.cssText = 'opacity:0.5;';
+        } else {
+          storyBtn.addEventListener('click', function () {
+            openStoryWriteConfirm({ kind: 'race', roundNum: r.roundNumber, roundId: r.roundId, seasonId: r.seasonId, status: 'queued' }, token, reload);
+          });
+        }
+        btnGroup.appendChild(storyBtn);
+      }
+
       // Left out of the row entirely while locked or not yet raced, same as Import Results above.
       // Safe to gate on suppressUnstarted here too -- notYetRaced is only ever true when
       // hasAnySessionImported is false, and the branch below already disables this button in that
@@ -3876,7 +3892,7 @@
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
       section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
-      section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }, data.stories || []));
+      section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }, data.stories || [], data.storyQueue || []));
     }).catch(function () {
       section.innerHTML = '';
       section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
@@ -6847,9 +6863,25 @@
     return counter;
   }
 
-  function buildLeagueNewsPanel(newsRows, token, reload, stories) {
+  function buildLeagueNewsPanel(newsRows, token, reload, stories, queue) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'League News'));
+    // AI stories still waiting to be written (the season preview, finalized rounds with no story yet).
+    if (queue && queue.length) {
+      var waitBox = el('div', 'margin-bottom:16px;');
+      waitBox.appendChild(el('div', 'rc-hint', 'Waiting to be written'));
+      queue.forEach(function (q) {
+        var line = el('div', 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--rc-offwhite);');
+        var name = (q.kind === 'preview' ? 'Season Preview' : 'Round ' + q.roundNum + ' Story') + (q.seasonName ? ' \u00B7 ' + q.seasonName : '');
+        line.appendChild(el('span', 'rc-dm-row-label', escapeHtml(name) + (q.blocked ? ' (earlier tries failed)' : '')));
+        var writeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Write Now');
+        writeBtn.type = 'button';
+        writeBtn.addEventListener('click', function () { openStoryWriteConfirm({ kind: q.kind, roundNum: q.roundNum, roundId: q.roundId, seasonId: q.seasonId, status: 'queued' }, token, reload); });
+        line.appendChild(writeBtn);
+        waitBox.appendChild(line);
+      });
+      panel.appendChild(waitBox);
+    }
 
     var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
     var newPostBtn = el('button', 'rc-btn-primary rc-btn-sm', 'New Post');
@@ -6979,8 +7011,9 @@
     var label = st.kind === 'preview' ? 'the season preview' : ('the Round ' + st.roundNum + ' story');
     var msg = st.status === 'published'
       ? 'Write ' + label + ' again? The new version replaces the current one, and it can take a minute or two.'
+      : st.status === 'queued' ? 'Write ' + label + ' now? It can take a minute or two.'
       : 'Try writing ' + label + ' again? It can take a minute or two.';
-    openConfirmModal(st.status === 'published' ? 'Rewrite Story' : 'Retry Story', msg, st.status === 'published' ? 'Rewrite' : 'Retry', function () {
+    openConfirmModal(st.status === 'published' ? 'Rewrite Story' : st.status === 'queued' ? 'Write Story' : 'Retry Story', msg, st.status === 'published' ? 'Rewrite' : st.status === 'queued' ? 'Write Now' : 'Retry', function () {
       return fetchApi('leagueStory', { method: 'POST', token: token, body: { op: 'generate', seasonId: st.seasonId, kind: st.kind === 'preview' ? 'preview' : 'race', roundId: st.roundId || '' } }).then(function (res) {
         if (res && res.success) { showToast('Story written.', 'success'); reload(); }
         else showToast((res && (res.message || res.error)) || 'The story could not be written.', 'error');
