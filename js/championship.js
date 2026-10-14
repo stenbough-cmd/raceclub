@@ -101,13 +101,9 @@ function _rccLogo(className, manufacturer, onFail) {
 // the League Hub uses). Only the player has a profile; AI drivers stay plain text. The profile page
 // will show championship stats for drivers with Championship Access (Matt).
 function _rccPlayerName(className, name) {
-  // The demo's driver (Max Powers) has no public profile.
-  if (RCC.demo) return _rccText('span', (className ? className + ' ' : '') + 'rcc-player-link', name || '');
-  var a = document.createElement('a');
-  a.className = (className ? className + ' ' : '') + 'rcl-driver-link rcc-player-link';
-  a.href = 'profile.html?id=' + encodeURIComponent(RCC.ownerId || '');
-  a.textContent = name || '';
-  return a;
+  // No link for now (Matt, 2026-10-14): the career page shows online league stats only, so the
+  // player's name is plain text everywhere on this page.
+  return _rccText('span', (className ? className + ' ' : '') + 'rcc-player-link', name || '');
 }
 
 // Country flags -- used for tracks only (calendar cards, standings round columns). Drivers never
