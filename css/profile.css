@@ -235,3 +235,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-sm .rdp-team-name { font-size: 15px; }
 .rdp-team-sm .rdp-team-model { font-size: 14px; }
 @media (max-width: 640px) { .rdp-team-sm .rdp-team-name { font-size: 20px; } .rdp-team-sm .rdp-team-model { font-size: 17px; } }
+
+/* Season and Round dropdowns are half the width of the panel (full width on phones, where half would be too narrow). */
+.rdp-select-full { width: 50%; }
+@media (max-width: 640px) { .rdp-select-full { width: 100%; } }

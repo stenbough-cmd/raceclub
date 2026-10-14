@@ -3811,7 +3811,8 @@
       section.appendChild(el('h2', 'margin-top:0;', 'Stewarding'));
 
       if (!data || !data.success) {
-        section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests right now.'));
+        var feedDetail = data && (data.message || data.error) ? ' (' + escapeHtml(String(data.message || data.error)) + ')' : '';
+        section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests right now.' + feedDetail));
         return;
       }
       if (!data.rounds || !data.rounds.length) {
