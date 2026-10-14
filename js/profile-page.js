@@ -677,8 +677,12 @@
   function renderTeams(data) {
     var panel = $('rdp-teams'), body = $('rdp-teams-body');
     var all = data.teamHistory || [];
-    if (!all.length) { panel.hidden = true; return; }
     body.innerHTML = '';
+    if (!all.length) {
+      panel.hidden = false;
+      body.appendChild(emptyBlock('No Team History Yet', 'This driver has not been on a team yet. Their teams will appear here once they join a season.'));
+      return;
+    }
     function teamCard(t, small) {
       var seat = t.seat || {};
       var card = el('div', 'rdp-team' + (small ? ' rdp-team-sm' : ''));
