@@ -3013,6 +3013,10 @@ function rccRenderStories(page) {
   if (!body || !panel) return;
   body.innerHTML = '';
   panel.style.display = page && page.hasSeason ? '' : 'none';
+  // No season (a new member): Season Stories is hidden, so the Welcome / Last Race panel takes the
+  // whole row instead of the narrow left column (Matt, 2026-10-14).
+  var row = document.getElementById('rcc-stories-row');
+  if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !(page && page.hasSeason));
   if (!page || !page.hasSeason) return;
   var all = page.stories || [];
   var published = all.filter(function (s) { return s.status === 'published'; });
