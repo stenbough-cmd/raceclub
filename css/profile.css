@@ -178,3 +178,4 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-seat .rdp-team-name { text-align: center; }
 .rdp-seat .rdp-team-model { justify-content: center; }
 .rdp-seat[hidden] { display: none; }
+.rdp-seat-label { align-self: stretch; text-align: center; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-ink-faint); border-top: 1px solid var(--rcl-line); padding-top: 12px; margin-top: 4px; }

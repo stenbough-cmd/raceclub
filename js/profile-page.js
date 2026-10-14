@@ -102,6 +102,7 @@
     var seat = latest ? latest.seat : null;
     if (!seat || (!seat.team && !seat.carNumber)) { box.hidden = true; return; }
     box.innerHTML = '';
+    box.appendChild(tx('div', 'rdp-seat-label', 'Current Seat'));
     var img = seatCarImg(seat);
     if (img) box.appendChild(img);
     box.appendChild(seatNameEl(seat));
