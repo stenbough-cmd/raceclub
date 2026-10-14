@@ -2064,9 +2064,9 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   /* Race Recap tables (Race and Qualifying): every column is back on phones. Each class block scrolls
      sideways (finger pan) and its rows keep their full desktop column widths. The icon key under the
      table stays the width of the screen. (Matt, 2026-10-14) */
-  .rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .rcl-modal-dialog-allresults .rcl-race-class > :not(.rcl-recap-key):not(.rcl-empty-state-subtitle) { min-width: 800px; }
-  .rcl-modal-dialog-allresults .rcl-race-class > .rcl-race-grid-recap-q { min-width: 600px; }
+  .rcl-modal-dialog-allresults .rcl-race-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+  .rcl-modal-dialog-allresults .rcl-race-scroll-inner { min-width: 980px; }
+  .rcl-modal-dialog-allresults .rcl-race-scroll-inner:has(.rcl-race-grid-recap-q) { min-width: 860px; }
   .rcl-modal-dialog-allresults .rcl-standings-team { display: none; }
   #rcl-standings-body .rcl-standings-team,
   #rcl-results-body .rcl-standings-team { display: none; }

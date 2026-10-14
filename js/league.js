@@ -1735,7 +1735,12 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
     headRow.appendChild(_rclEl('div', null, 'Best Lap'));
     headRow.appendChild(_rclEl('div', null, 'Pts'));
-    clsWrap.appendChild(headRow);
+    // Column labels + rows sit in a scroller so phones can pan the table sideways; the class header bar above stays put.
+    var scroller = _rclEl('div', 'rcl-race-scroll');
+    var scrollInner = _rclEl('div', 'rcl-race-scroll-inner');
+    scroller.appendChild(scrollInner);
+    scrollInner.appendChild(headRow);
+    clsWrap.appendChild(scroller);
 
     var standings = cls.standings || [];
     // Class leader's finish time, for GAP -- standings arrive sorted by adjusted class position, so
@@ -1777,7 +1782,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
-      clsWrap.appendChild(rowEl);
+      scrollInner.appendChild(rowEl);
     });
     var recapKey = _rclBuildRecapIconKey_(recapAwards);
     if (recapKey) clsWrap.appendChild(recapKey);
@@ -1943,7 +1948,12 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
     headRow.appendChild(_rclEl('div', null, 'Sector 2'));
     headRow.appendChild(_rclEl('div', null, 'Sector 3'));
     headRow.appendChild(_rclEl('div', null, 'Avg (KM/H)'));
-    clsWrap.appendChild(headRow);
+    // Column labels + rows sit in a scroller so phones can pan the table sideways; the class header bar above stays put.
+    var scroller = _rclEl('div', 'rcl-race-scroll');
+    var scrollInner = _rclEl('div', 'rcl-race-scroll-inner');
+    scroller.appendChild(scrollInner);
+    scrollInner.appendChild(headRow);
+    clsWrap.appendChild(scroller);
 
     var standings = cls.standings || [];
     if (!standings.length) {
@@ -1958,7 +1968,7 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector2)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector3)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', (row.avgKmh !== null && row.avgKmh !== undefined) ? String(row.avgKmh) : '--'));
-      clsWrap.appendChild(rowEl);
+      scrollInner.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);
   });
