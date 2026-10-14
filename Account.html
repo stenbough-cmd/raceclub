@@ -4744,6 +4744,8 @@
       // deliberately pick every class this season runs.
       classes: { LMGTE: false, LMGT3: false, LMP2: false, LMP3: false, Hypercar: false },
       classSeasons: { LMGTE: '', LMGT3: '', LMP2: '', LMP3: '', Hypercar: '' },
+      series: 'WEC',
+      seasonYear: '',
       frequency: 'Weekly',
       byeWeeks: 0,
       byeWeekDates: [],
@@ -4999,85 +5001,91 @@
       container.appendChild(classLockNote);
     }
 
-    container.appendChild(wizSubhead('Car Classes'));
+    // Series and Year first (same as Create Season on the Championship page), then the classes.
+    // A class is only available when the Cars tab has active cars of that class in the picked
+    // series and year; the grid is every such car.
+    container.appendChild(wizSubhead('Series & Car Classes'));
+    function wizCarSeries(c) { return String((c && c.Series) || '').trim().toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC'; }
+    var wizCars = (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []);
+    if (state.series !== 'ELMS') state.series = 'WEC';
+    var pickedYear = String(state.seasonYear || '');
+    CAR_CLASS_LIST.forEach(function (c) { if (!pickedYear && state.classes[c] && state.classSeasons[c]) pickedYear = String(state.classSeasons[c]); });
+    function wizYearsFor(series) {
+      var ys = [];
+      wizCars.forEach(function (c) { var y = String(c.Season || ''); if (y && wizCarSeries(c) === series && ys.indexOf(y) === -1) ys.push(y); });
+      return ys.sort(function (x, y) { return (Number(y) || 0) - (Number(x) || 0); });
+    }
+    var seriesSel = wizSelect(['WEC', 'ELMS'], state.series, function (v) { state.series = v; fillYears(); applyGrid(); });
+    var yearSel = document.createElement('select');
+    seriesSel.disabled = editSeasonLock;
+    seriesSel.classList.add('rc-wiz-locked-in-edit');
+    yearSel.classList.add('rc-wiz-locked-in-edit');
+    if (editSeasonLock) { seriesSel.classList.add('rc-field-locked'); yearSel.classList.add('rc-field-locked'); }
+    function fillYears() {
+      var ys = wizYearsFor(state.series);
+      if (editSeasonLock && pickedYear && ys.indexOf(pickedYear) === -1) ys.unshift(pickedYear);
+      yearSel.innerHTML = '';
+      if (!ys.length) {
+        yearSel.appendChild(new Option('No ' + state.series + ' cars yet', ''));
+        pickedYear = '';
+        yearSel.disabled = true;
+        return;
+      }
+      ys.forEach(function (y) { yearSel.appendChild(new Option(y, y)); });
+      if (ys.indexOf(pickedYear) === -1) pickedYear = ys[0];
+      yearSel.value = pickedYear;
+      yearSel.disabled = editSeasonLock;
+    }
+    yearSel.addEventListener('change', function () { pickedYear = yearSel.value; applyGrid(); });
+    container.appendChild(fieldPairRow('Series', seriesSel, 'Year', yearSel));
+
     var classesWrap = el('div');
     var classesGroupEntry;
     function recheckClassesGroup() {
       if (classesGroupEntry && classesGroupEntry.isValid()) classesGroupEntry.clearInvalid();
     }
-    function availableSeasonsForClass(cls) {
-      var seasons = {};
-      (typeof WIZARD_CARS !== 'undefined' ? WIZARD_CARS : []).forEach(function (c) {
-        if (c && c.Class === cls && c.Season) seasons[String(c.Season)] = true;
-      });
-      return Object.keys(seasons).sort(function (a, b) { return (Number(b) || 0) - (Number(a) || 0); });
-    }
     var classRows = {};
     CAR_CLASS_LIST.forEach(function (cls) {
-      var seasons = availableSeasonsForClass(cls);
-      var available = seasons.length > 0;
-      if (!available && state.classes[cls]) { state.classes[cls] = false; state.classSeasons[cls] = ''; }
-      var row = el('div', 'padding:6px 0;' + ((available && !editSeasonLock) ? '' : 'opacity:0.55;'));
+      var row = el('div', 'padding:6px 0;');
       var topRow = el('div', 'display:flex;align-items:center;gap:12px;');
-
-      var classLabel = wizCheckboxRow(cls, state.classes[cls] && available, function (c) {
+      var classLabel = wizCheckboxRow(cls, !!state.classes[cls], function (c) {
         state.classes[cls] = c;
-        var refs = classRows[cls];
-        seasons.forEach(function (season) {
-          refs.radios[season].disabled = !c;
-        });
-        if (!c) {
-          state.classSeasons[cls] = '';
-          seasons.forEach(function (season) { refs.radios[season].checked = false; });
-        }
+        state.classSeasons[cls] = c ? pickedYear : '';
         recheckClassesGroup();
       });
       var classCb = classLabel.querySelector('input');
-      classCb.disabled = !available || editSeasonLock;
       classCb.classList.add('rc-wiz-locked-in-edit');
       if (editSeasonLock) classCb.classList.add('rc-field-locked');
       classLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:400;text-transform:none;letter-spacing:normal;font-family:var(--rc-font-body);color:var(--rc-carbon);';
       topRow.appendChild(classLabel);
-      var noCarsHint = el('span', 'font-size:12px;color:var(--rc-steel);font-style:italic;display:' + (available ? 'none' : ''), 'no cars entered for this class yet');
-      topRow.appendChild(noCarsHint);
+      var countHint = el('span', 'font-size:12px;color:var(--rc-steel);font-style:italic;', '');
+      topRow.appendChild(countHint);
       row.appendChild(topRow);
-
-      var radios = {};
-      if (available) {
-        var seasonsRow = el('div', 'display:flex;gap:16px;flex-wrap:wrap;margin-left:26px;margin-top:4px;');
-        seasons.forEach(function (season) {
-          var radioLabel = document.createElement('label');
-          radioLabel.style.cssText = 'display:flex;align-items:center;gap:5px;margin:0;font-size:13px;font-weight:400;color:var(--rc-steel);';
-          var radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'wizard-class-season-' + cls;
-          radio.checked = state.classSeasons[cls] === season;
-          radio.disabled = !state.classes[cls] || editSeasonLock;
-          radio.classList.add('rc-wiz-locked-in-edit');
-          if (editSeasonLock) radio.classList.add('rc-field-locked');
-          radio.addEventListener('change', function () {
-            if (radio.checked) { state.classSeasons[cls] = season; recheckClassesGroup(); }
-          });
-          radioLabel.appendChild(radio);
-          radioLabel.appendChild(document.createTextNode(' ' + season));
-          seasonsRow.appendChild(radioLabel);
-          radios[season] = radio;
-        });
-        row.appendChild(seasonsRow);
-      }
       classesWrap.appendChild(row);
-
-      classRows[cls] = { row: row, classCb: classCb, radios: radios, noCarsHint: noCarsHint };
+      classRows[cls] = { row: row, cb: classCb, count: countHint };
     });
+    // A class with no cars in the picked series and year is grayed out and unticked.
+    function applyGrid() {
+      state.seasonYear = pickedYear;
+      CAR_CLASS_LIST.forEach(function (cls) {
+        var x = classRows[cls];
+        var n = wizCars.filter(function (c) { return c.Class === cls && String(c.Season) === pickedYear && wizCarSeries(c) === state.series; }).length;
+        x.count.textContent = n ? n + ' car' + (n === 1 ? '' : 's') : (pickedYear ? 'no ' + state.series + ' cars in ' + pickedYear : 'no ' + state.series + ' cars');
+        x.row.style.opacity = (n && !editSeasonLock) ? '' : (editSeasonLock ? '' : '0.55');
+        if (!n && !editSeasonLock) { x.cb.checked = false; state.classes[cls] = false; }
+        x.cb.disabled = editSeasonLock || !n;
+        if (!editSeasonLock) state.classSeasons[cls] = (n && state.classes[cls]) ? pickedYear : '';
+      });
+    }
+    fillYears();
+    applyGrid();
 
     classesGroupEntry = requireGroup(classesWrap, function () {
       var anySelected = Object.keys(state.classes).some(function (c) { return state.classes[c]; });
       return anySelected && Object.keys(state.classes).every(function (c) { return !state.classes[c] || !!state.classSeasons[c]; });
     }, requiredEls);
-    // Appended directly -- the "Car Class(es)" subhead right above this already says what the group
-    // is, so the old wizField() label underneath it was just repeating the same thing a second
-    // time.
     container.appendChild(classesWrap);
+    container.appendChild(el('div', 'rc-hint', 'Every active car in a ticked class, from that series and year, joins the grid.'));
 
     // Schedule moved above Format.
     container.appendChild(wizSubhead('Schedule'));
@@ -5491,7 +5499,8 @@
     fmtPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Format & Schedule'));
     var selectedClasses = Object.keys(state.classes).filter(function (c) { return state.classes[c]; });
     fmtPanel.appendChild(previewLine('Classes', selectedClasses.length ? selectedClasses.join(', ') : 'None selected'));
-    selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c, (state.classSeasons[c] || '(season not set)') + ' Season')); });
+    fmtPanel.appendChild(previewLine('Series', (state.series || 'WEC') + (state.seasonYear ? ' ' + state.seasonYear : '')));
+    selectedClasses.forEach(function (c) { fmtPanel.appendChild(previewLine(c, (state.classSeasons[c] || '(year not set)') + ' ' + (state.series || 'WEC') + ' cars')); });
     fmtPanel.appendChild(previewLine('Frequency', state.frequency));
     fmtPanel.appendChild(previewLine('Bye Weeks', String(state.byeWeeks || 0)));
     (state.byeWeekDates || []).forEach(function (d, i) { fmtPanel.appendChild(previewLine('Bye Week ' + (i + 1) + ' Date', d ? formatDateLabel(d) : '(not set)')); });
@@ -5804,6 +5813,8 @@
         enteredTimeZone: state.enteredTimeZone,
         classes: state.classes,
         classSeasons: state.classSeasons,
+        series: state.series || 'WEC',
+        seasonYear: state.seasonYear || '',
         frequency: state.frequency,
         byeWeeks: state.byeWeeks,
         byeWeekDates: state.byeWeekDates,
