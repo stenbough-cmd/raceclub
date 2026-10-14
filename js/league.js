@@ -2889,8 +2889,11 @@ function _rclRenderHero(hub) {
   // "Season N" now reads gold.
   var seasonEl = document.getElementById('rcl-hero-season');
   if (seasonEl) {
-    seasonEl.innerHTML = '';
+    // A non-breaking space keeps the season line one full line tall when there is no season, so the hero band is
+    // the same height as championship.html's whether or not a season exists (Matt, 2026-10-14).
+    seasonEl.innerHTML = '&nbsp;';
     if (hub.hasSeason && hub.seasonNumber) {
+      seasonEl.innerHTML = '';
       var numSpan = _rclEl('span', 'rcl-hero-season-num');
       numSpan.textContent = 'Season ' + hub.seasonNumber;
       seasonEl.appendChild(numSpan);
