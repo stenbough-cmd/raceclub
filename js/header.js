@@ -192,8 +192,9 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // sidebar item, .rc-nav-item:disabled in style.css).
   var champProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
-  // Open to Admins and to anyone with Championship Access (the + on their role, profile.champAccess).
-  if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
+  // Open to every signed-in driver (CHAMP chat, 2026-10-14): without Championship Access (the + on
+  // the role) the page shows its Welcome box and demo, plus a Request Access button.
+  if (champId) {
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>';
   } else {
     html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">' + _rcMenuIcon_('champ') + '<span>Championship</span></span>';
@@ -721,7 +722,9 @@ var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
 // Feedback popup -- unlike Edit Profile (_rcOpenEditProfileFromHeader above, which navigates to
 // Account.html and delegates to its own modal system), this is fully self-contained here so it
 // opens IN PLACE on whatever page the user is already on, no navigation.
-function _rcOpenFeedbackModal() {
+// presetCategory (optional, CHAMP chat 2026-10-14): picks that Feedback Type when the popup opens,
+// e.g. 'Request Championship Mode' from the Championship Welcome box.
+function _rcOpenFeedbackModal(presetCategory) {
   var isDark = document.body.classList.contains('rc-league-page');
 
   var backdrop = document.createElement('div');
@@ -771,6 +774,7 @@ function _rcOpenFeedbackModal() {
     opt.textContent = cat;
     categorySelect.appendChild(opt);
   });
+  if (presetCategory && _RC_FEEDBACK_CATEGORIES_.indexOf(presetCategory) !== -1) categorySelect.value = presetCategory;
   body.appendChild(categorySelect);
 
   // Name auto-filled from the logged-in driver's own profile and locked -- reads the same

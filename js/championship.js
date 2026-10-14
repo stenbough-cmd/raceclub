@@ -370,6 +370,8 @@ function rccRenderHero(page) {
   seasonEl.innerHTML = '';
   metaEl.innerHTML = '';
   // No season to show: the season line reads OFFLINE SEASON MANAGER instead (navy, same size).
+  // No drop shadow on OFFLINE SEASON MANAGER (Matt, 2026-10-14).
+  seasonEl.classList.toggle('rcc-hero-offline', !page || !page.hasSeason);
   if (!page || !page.hasSeason) {
     seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Offline Season Manager'));
     return;
@@ -2788,6 +2790,16 @@ function rccRenderWelcome() {
   var go = _rccText('a', 'rc-btn-secondary rcc-welcome-demo', 'See The Demo');
   go.href = 'championship.html?demo=1';
   cta.appendChild(go);
+  // Request Access (Matt, 2026-10-14): opens Feedback with "Request Championship Mode" picked.
+  // Feedback needs a signed-in driver (it sends their name), so a visitor signs in first.
+  var ask = _rccText('a', 'rc-btn-secondary rcc-welcome-request', 'Request Access to Race Club Championship');
+  if (getToken() && typeof _rcOpenFeedbackModal === 'function') {
+    ask.href = '#';
+    ask.addEventListener('click', function (e) { e.preventDefault(); _rcOpenFeedbackModal('Request Championship Mode'); });
+  } else {
+    ask.href = 'login.html';
+  }
+  cta.appendChild(ask);
   body.appendChild(cta);
   panel.appendChild(body);
   row.appendChild(panel);

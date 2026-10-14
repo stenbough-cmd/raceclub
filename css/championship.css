@@ -1083,3 +1083,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-actionbar-links > .rcc-actionbar-link:first-child { padding-left: 0; }
   .rcc-tools-links .rcc-actionbar-link { padding: 10px 12px; font-size: 12.5px; }
 }
+
+/* OFFLINE SEASON MANAGER: no drop shadow (Matt, 2026-10-14). */
+.rcc-page .rcl-hero-season.rcc-hero-offline, .rcc-page .rcl-hero-season.rcc-hero-offline * { text-shadow: none; }
+/* Welcome: Request Access as a blue-gray bordered button next to the solid See The Demo (Matt). */
+.rcc-page .rcc-welcome-cta { flex-wrap: wrap; gap: 10px; }
+.rcc-page .rcc-welcome-request { background: transparent; border: 1.5px solid #5f7d99; color: #4b6680; text-decoration: none; }
+.rcc-page .rcc-welcome-request:hover, .rcc-page .rcc-welcome-request:focus-visible { background: color-mix(in srgb, #5f7d99 10%, transparent); color: #3e566d; border-color: #4b6680; }

@@ -8805,7 +8805,9 @@
     // level Protests RULING already requires server-side (Protests.gs).
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
-    setNavAccess('rc-nav-championship', profile.role === 'Admin' || !!profile.champAccess, 'Needs Championship Access (the + on your role).');
+    // Open to every signed-in driver (CHAMP chat, 2026-10-14): without Championship Access the page
+    // shows its Welcome box and demo, plus a Request Access button.
+    setNavAccess('rc-nav-championship', true, '');
     // Divider above these three is always visible from initial sidebar render now (see
     // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
 
