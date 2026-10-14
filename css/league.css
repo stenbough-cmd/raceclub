@@ -2560,3 +2560,11 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--
 /* Welcome popup (no season yet) */
 .rcl-welcome-text { margin: 0 0 14px; font-size: 15px; line-height: 1.65; color: var(--rcl-ink-dim); }
 .rcl-welcome-text:last-child { margin-bottom: 0; }
+
+/* Manufacturers' Standings and Team Endurance Standings, P4 onward (league.html only, Matt 2026-10-14):
+   names normal weight and white; points white, weight unchanged. */
+body.rc-league-page:not(.rcc-page) .rcl-mfr-rest-name,
+body.rc-league-page:not(.rcc-page) .rcl-tt-name,
+body.rc-league-page:not(.rcc-page) .rcl-tt-name .rcl-tt-num { font-weight: 400; color: var(--rcl-ink); opacity: 1; }
+body.rc-league-page:not(.rcc-page) .rcl-mfr-rest-pts,
+body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
