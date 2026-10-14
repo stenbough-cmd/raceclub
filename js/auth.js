@@ -36,7 +36,10 @@ function setProfileCache(profile) {
       role: profile.role || '',
       // Blank/absent means "no avatar chosen," same as Account.html's own buildAvatarCircle()
       // convention.
-      avatarFilename: profile.avatarFilename || ''
+      avatarFilename: profile.avatarFilename || '',
+      // Championship Access (the + on the role). Was missing here, so the saved copy always lost it
+      // and the header/menu/Championship link never saw it for anyone but Admins.
+      champAccess: !!profile.champAccess
     }));
   } catch (err) { /* storage full/unavailable -- header just falls back to '?' */ }
 }
