@@ -2812,7 +2812,8 @@ var RCC_WELCOME_PERKS = [
   ['Your calendar, your rules', 'Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.'],
   ['Race Recap', 'Full results, a lap-by-lap race report, the race settings and every lap you drove.'],
   ['Driver Report', 'Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.'],
-  ['Your career page', 'Every season you finish is added to your public career page, so your titles and results build up season after season.'],
+  // (Your career page replaced, Matt 2026-10-14: the career page shows online league stats only.)
+  ['Every season saved', 'Finished seasons stay here with their standings, race recaps and stories. Pick any of them from the Season dropdown to look back.'],
   ['Season Stories', 'A news story written after every round, plus a season preview and a finale, all drawn from what actually happened in your races.']
 ];
 var RCC_WELCOME_HTML =
