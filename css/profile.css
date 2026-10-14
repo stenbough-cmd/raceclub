@@ -179,3 +179,13 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-seat .rdp-team-model { justify-content: center; }
 .rdp-seat[hidden] { display: none; }
 .rdp-seat-label { align-self: stretch; text-align: center; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-ink-faint); border-top: 1px solid var(--rcl-line); padding-top: 12px; margin-top: 4px; }
+
+/* PC layout (Matt, 2026-10-14): all 10 quick-stat tiles on one line, and the Season and Race
+   dropdowns side by side on one line. Phones keep the wrapping grid above. */
+@media (min-width: 641px) {
+  .rdp-tiles { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .rdp-tile { padding: 10px 8px; min-width: 0; }
+  .rdp-tile-label, .rdp-tile-sub { overflow-wrap: anywhere; }
+  .rdp-selects { flex-wrap: nowrap; }
+  .rdp-selects .rdp-select { flex: 0 1 auto; min-width: 0; }
+}
