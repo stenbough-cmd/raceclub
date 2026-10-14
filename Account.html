@@ -7704,12 +7704,11 @@
           var row = el('div', 'rc-group-row');
           var info = el('div', 'rc-dm-row-info');
           info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-          // Championship Access: this person's own role pill with the bold + (e.g. STEWARD+).
+          // Championship Access: a plain bold (+) right after the name, no extra pill.
           if (typeof rcRolePlusHtml === 'function' && rcRolePlusHtml(person)) {
-            var plusPill = el('span', 'rc-badge-chip ' + (ROLE_PILL_CLASS[role] || 'rc-badge-role-driver'), escapeHtml(role.toUpperCase()) + rcRolePlusHtml(person));
-            plusPill.title = 'Championship Access';
-            plusPill.style.marginLeft = '8px';
-            info.appendChild(plusPill);
+            var plusMark = el('span', 'font-weight:900;margin-left:5px;color:var(--rc-carbon);', '(+)');
+            plusMark.title = 'Championship Access';
+            info.appendChild(plusMark);
           }
           if (person.Status && person.Status !== 'Active') {
             info.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', escapeHtml(String(person.Status).toUpperCase())));
