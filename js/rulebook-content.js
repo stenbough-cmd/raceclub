@@ -1,0 +1,170 @@
+// Race Club — Rulebook content (js/rulebook-content.js)
+var RULEBOOK_SECTIONS = [
+  {
+    id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
+    html: '<p>Race Club is a persistent driver career league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile: results, penalties, and history all carry forward instead of resetting each week.</p>' +
+      '<p>The League Hub is the public view of that career: standings, results, and news update as soon as a round is scored, visible to anyone without needing to log in.</p>' +
+      '<p>Race Club runs a WEC-style season: race length varies round to round, mixing shorter sprint rounds with longer endurance rounds. Cars are grouped into classes modeled on real WEC competition.</p>' +
+      '<div class="rc-rulebook-callout"><strong>Overview:</strong><ul>' +
+      '<li>Driver profile, results, and career history persist across every season</li>' +
+      '<li>Every race, penalty, and bonus is logged to your permanent record</li>' +
+      '<li>Built on real LMU league races, not a separate simulation layer</li>' +
+      '</ul></div>'
+  },
+  {
+    id: 'getting-started', num: '2', title: 'Getting Started',
+    html: '<h4>2.1 Registering For a Season</h4>' +
+      '<p>When a season is open for registration, the Dashboard’s Registration Status card shows REGISTER FOR [SEASON NAME]. Clicking it opens the registration popup:</p>' +
+      '<ol><li>Choose a class. If only one class is currently open, this step is skipped automatically.</li>' +
+      '<li>Choose a car. Cars are listed alphabetically by manufacturer.</li>' +
+      '<li>Click Join This Team. This locks the seat in immediately and cannot be undone.</li></ol>' +
+      '<div class="rc-rulebook-callout"><strong>Registering:</strong><ul>' +
+      '<li>Seats are first-come, first-served: once a driver joins a team, that seat is locked for the rest of the season</li>' +
+      '<li>Class and team choice both lock in immediately, no confirmation step after Join This Team</li>' +
+      '</ul></div>' +
+      '<h4>2.2 Classes</h4>' +
+      '<p>Race Club currently runs five classes:</p>' +
+      // Same colored class pills used everywhere else on the site (_rcClassBadge, Account.html) --
+      // hand-written here since this file is plain HTML strings, not built through that helper.
+      '<div class="rc-rulebook-pill-row">' +
+      '<span class="rc-badge-chip rc-badge-hypercar">HY</span>' +
+      '<span class="rc-badge-chip rc-badge-lmp2">LMP2</span>' +
+      '<span class="rc-badge-chip rc-badge-lmp3">LMP3</span>' +
+      '<span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span>' +
+      '<span class="rc-badge-chip rc-badge-lmgte">LMGTE</span>' +
+      '</div>' +
+      '<p>Which classes are open for a given season is set when that season is created. See the Glossary (Section 9) for a brief description of each class.</p>'
+  },
+  {
+    id: 'race-weekend-format', num: '3', title: 'Race Weekend Format',
+    html: '<h4>3.1 Session Order</h4>' +
+      '<p>A race weekend runs in one fixed order: the server opens for practice first, then qualifying, then the race. Session start times are set per round and shown on the Calendar, and vary from season to season.</p>' +
+      '<p>Be in the server before qualifying starts. A driver who isn’t in by the start of qualifying may not be able to start the race.</p>' +
+      '<h4>3.2 Qualifying Format</h4>' +
+      '<p>Qualifying is either private (each driver sets a time independently) or public (all drivers qualify together on track at the same time). Which format is used is decided at the start of the season and applies to every round that season.</p>' +
+      '<h4>3.3 Formation Lap &amp; Start</h4>' +
+      '<p>The formation lap and race start are handled automatically by the game. Drivers must follow the game’s visual cues; a jump start or formation lap violation is penalized automatically and is not reviewable (see Section 4.3).</p>' +
+      '<h4>3.4 No-Shows (Missed Races)</h4>' +
+      '<p>A driver who doesn’t take part in a round has that round recorded as a missed race. A missed race simply scores no points for that round, nothing else about it is treated differently from a race the driver could have attended. How many of a season’s worst results (including missed races) can be dropped from the championship total is listed in the season details. See Section 7 for more information on points and standings.</p>'
+  },
+  {
+    id: 'driving-standards', num: '4', title: 'Driving Standards',
+    html: '<h4>4.1 General Principles</h4>' +
+      '<p>Race Club expects competitive, yet fair, racing. Contact and incidents happen, and not every incident is a penalty. <u>The standard stewards apply is whether an action was reasonably avoidable, not simply whether contact occurred.</u> Drivers are expected to race with awareness of who’s around them and to leave room where it’s reasonably possible to do so.</p>' +
+      '<h4>4.2 On-Track Conduct</h4>' +
+      '<p>Drivers are responsible for:</p>' +
+      '<ul><li>Avoiding contact that could reasonably have been avoided</li>' +
+      '<li>Rejoining the track safely after going off, without endangering other cars</li>' +
+      '<li>Racing other drivers fairly: no blocking, weaving, or erratic defensive driving</li>' +
+      '<li>Being aware of blue flags when about to be lapped</li>' +
+      '<li>Holding the brakes when off track or after a loss of car control</li></ul>' +
+      '<h4>4.3 Automatically Enforced (No Organizer Action Required)</h4>' +
+      '<p>The following are detected and penalized automatically by LMU’s in-game systems. Stewards do not review or re-adjudicate these:</p>' +
+      '<ul><li>Track limits</li><li>Pit lane speeding</li><li>Jump starts</li><li>Formation lap conduct</li></ul>' +
+      '<div class="rc-rulebook-callout rc-rulebook-callout-warn"><strong>These calls are final.</strong> Any penalty or track limit point issued automatically by the game is not reviewable and cannot be appealed or overturned by stewards or organizers.</div>' +
+      '<h4>4.4 Reviewed by Stewards</h4>' +
+      '<p>The following require steward review after the race, since the game doesn’t reliably catch them:</p>' +
+      '<ul><li>Avoidable collisions and their consequences</li><li>Unsafe rejoins</li><li>Blocking/weaving</li>' +
+      '<li>Blue flag violations</li><li>Deliberate retaliation or unsportsmanlike conduct (on or off the track)</li></ul>' +
+      '<p>There is no live steward commentary or in-race intervention. All of the above are assessed after the fact, via replay and driver reports, and penalties are applied to the final classification (see Section 5).</p>' +
+      '<h4>4.5 Incident Reporting (Protests)</h4>' +
+      '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved. The other driver is always required, even on a self-report.</p>' +
+      '<ul><li>A protest must be filed within 24 hours of that round’s results being posted.</li>' +
+      '<li>Each driver can file up to 2 protests per race. A withdrawn protest still counts toward that limit.</li>' +
+      '<li>A protest can be edited or withdrawn any time before a steward rules on it, or before the round’s results are finalized.</li></ul>' +
+      '<p>Once filed, a protest is reviewed and ruled on by the Steward Board. See Section 5.</p>'
+  },
+  {
+    id: 'penalties', num: '5', title: 'Penalties',
+    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board rules on it and assigns a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
+      '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
+      '<h4>5.1 Penalty Tiers</h4>' +
+      '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
+      '<table class="rc-rulebook-tier-table rc-rulebook-penalty-table"><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged only, no time or position impact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (5s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (10s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. The driver’s account is also suspended: they cannot log in until an Admin reactivates it, and they score no points for the rest of the season. Requires a prior Tier 6 disqualification against the same driver this season.</td></tr></table>' +
+      '<h4>5.2 Infraction Types</h4>' +
+      '<p><strong>Contact &amp; driving standards</strong></p>' +
+      '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +
+      '<li>Unsafe rejoin: returning to the track in a way that endangers another driver</li>' +
+      '<li>Blocking/weaving: erratic defensive moves, especially under braking or on straights</li></ul>' +
+      '<p><strong>Procedural</strong></p><ul><li>Ignoring blue flags when being lapped</li></ul>' +
+      '<p class="rc-hint"><em>Note: jump starts and formation lap conduct are automatically detected and enforced by LMU, no organizer/steward action required (see Section 4). These automatic calls are final and not subject to review.</em></p>' +
+      '<p><strong>Conduct</strong></p><ul><li>Deliberate retaliation after an incident</li><li>Post-incident unsportsmanlike behavior (chat, voice comms)</li></ul>' +
+      '<p><strong>Eligibility</strong></p><ul><li>Wrong-class entry: a driver who signs up for and races in a class they aren’t eligible for is disqualified from that race and removed from the session (kicked); this is a Tier 6 (Disqualification) matter, not a graduated penalty.</li>' +
+      '<li>Wrong-team/car entry: a driver who races a car or team seat other than the one they registered for is disqualified from that race and removed from the session (kicked); this is also a Tier 6 (Disqualification) matter, not a graduated penalty.</li></ul>' +
+      '<h4>5.3 Example Incidents by Tier</h4>' +
+      '<p>For context, these are illustrative examples, not an exhaustive list. Stewards retain discretion to adjust based on circumstances.</p>' +
+      '<table class="rc-rulebook-tier-table"><tr><td><strong>Tier</strong></td><td><strong>Example Incident</strong></td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Minor, brief off-line defensive move with no contact; borderline blue flag delay with no time gained</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Light contact causing another driver to briefly run wide, no spin or position change</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Contact causing another driver to spin or lose a position; ignoring a blue flag long enough to hold up a lapping car</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Deliberate or reckless contact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>A driver already disqualified (Tier 6) this season commits another serious offense, e.g. a second intentional wreck; serious off-track conduct violations following a prior disqualification</td></tr></table>'
+  },
+  {
+    id: 'race-control', num: '6', title: 'Race Control Procedures',
+    html: '<p>Race control is handled by the game itself. Races follow LMU’s standard online multiplayer rules, with penalties and decisions applied automatically according to whatever format the season is set to.</p>' +
+      '<p>There is currently no safety car functionality, so there are no full-course caution periods.</p>' +
+      '<p>Post-race stewarding is handled entirely through protests submitted by drivers (see Section 4.5). Drivers are encouraged to join Race Club’s Discord and use the chat channel for their class.</p>'
+  },
+  {
+    id: 'points-standings', num: '7', title: 'Points & Standings',
+    html: '<p>Every round awards championship points by finishing position within your class. Longer and higher-profile rounds are worth more points than shorter ones, so the calendar isn’t weighted evenly round to round. Exact point values are set per season and can change from one season to the next.</p>' +
+      '<p>Pole position, fastest lap, and most laps led are tracked automatically each race and can add bonus points on top of finishing position.</p>' +
+      '<p>A season can allow a number of drop weeks: once enough rounds have been completed, each driver’s lowest-scoring result(s) are dropped from their championship total, up to the number of drop weeks that season allows.</p>' +
+      '<p>Special events are exhibition (“fun”) races and never count toward championship standings. They don’t count as a missed race either, and have no effect on drop weeks or anything else tied to the championship.</p>' +
+      '<p>Ties in the standings are broken by countback: the driver with the better finishing positions across the season, compared head to head, ranks higher.</p>'
+  },
+  {
+    id: 'conduct-discipline', num: '8', title: 'Conduct & Discipline (Off-Track)',
+    html: '<p>Race Club is a friendly, competitive community. Most incidents are just racing. Many times, a respectful conversation between the drivers involved solves things faster and more effectively than escalating issues to an organizer.</p>' +
+      '<h4>Expected of every driver</h4>' +
+      '<ul><li>Race hard, but race fair, treat contact and mistakes as part of racing, not a reason for retaliation</li>' +
+      '<li>Talk to other drivers the way you would if they were standing in front of you</li>' +
+      '<li>Keep race chat, voice comms, and Discord respectful, even in the heat of the moment</li>' +
+      '<li>Try to work out disagreements directly with the other driver first</li>' +
+      '<li>Contact a league organizer if a disagreement can’t be resolved between drivers, or if conduct crosses a line</li></ul>' +
+      '<h4>Not allowed</h4>' +
+      '<ul><li>Harassment, hate speech, or discrimination of any kind</li>' +
+      '<li>Personal insults, threats, or targeted abuse in race chat, voice comms, or Discord</li>' +
+      '<li>Deliberate wrecking, blocking, or retaliation against another driver</li>' +
+      '<li>Spamming, trolling, or deliberately disrupting a race or the Discord server</li>' +
+      '<li>Sharing another member’s personal information without their consent</li>' +
+      '<li>Cheating, exploiting bugs, or attempting to manipulate results</li></ul>' +
+      '<div class="rc-rulebook-callout">All race chat and Discord activity is visible to admins and league organizers. Race Club is meant to be a friendly place first, and we’d rather a disagreement get resolved quietly between drivers than turn into a bigger issue. That said, conduct that violates the rules above won’t be tolerated, and Race Club reserves the right to remove any member who can’t follow them.</div>'
+  },
+  {
+    id: 'glossary', num: '9', title: 'Glossary',
+    html: '<table>' +
+      '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all: nothing to race, nothing to score.</td></tr>' +
+      '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-hypercar">HY</span><span>The top class: purpose-built prototype race cars, the fastest and most technically advanced cars in the league, competing for the overall race win.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp2">LMP2</span><span>A spec prototype class one tier below Hypercar -- every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp3">LMP3</span><span>An entry-level prototype class below LMP2 -- a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span><span>GT3-spec grand tourer cars built on real production models, balanced against each other by Balance of Performance.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgte">LMGTE</span><span>A production-based endurance GT class, distinct from LMGT3’s own GT3 ruleset, built for close, sustained racing over a full stint.</span></div>' +
+        '</td></tr>' +
+      '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
+      '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
+      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
+      '<tr><td><strong>Preliminary Results</strong></td><td>A round’s results as posted right after the race: still open to protests, corrections, or rulings until they’re locked in as Finalized Results.</td></tr>' +
+      '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
+      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
+      '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
+      '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
+      '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
+      '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
+      '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
+      '<tr><td><strong>Steward</strong></td><td>A league role that can view every filed protest on the Stewarding page and discuss them with the other stewards in the Stewards chat on Discord. Stewards do not rule on protests. Only Admins and Organizers issue rulings.</td></tr>' +
+      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
+      '</table>'
+  }
+];
