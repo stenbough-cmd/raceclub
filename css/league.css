@@ -524,7 +524,7 @@ body.rc-league-page {
 /* Max-width 200px / max-height 150px -- a wide oval logo (Toyota) can still use the full 200px
    width, while a tall shield (Ferrari) is now capped shorter at 150px instead of stretching to the
    box's full height; object-fit:contain keeps each logo's own aspect ratio either way. */
-.rcl-mfr-tile-logo { max-width: 200px; max-height: 150px; width: 100%; height: 100%; object-fit: contain; }
+.rcl-mfr-tile-logo { max-width: 200px; max-height: 140px; width: 100%; height: 100%; object-fit: contain; }
 /* margin-top matches .rcl-mfr-tile-rankline's own padding-bottom exactly -- equal gap above and
    below the line now centers it evenly between the two. */
 /* Nothing else about this element (box, rankline, spacing) changed. */
@@ -572,7 +572,9 @@ body.rc-league-page {
   .rcl-mfr-podium { gap: 10px; }
   .rcl-mfr-tile { width: 31%; }
   .rcl-mfr-tile-p1 { margin-bottom: 16px; }
-  .rcl-mfr-tile-box-inner { padding: 10px; }
+  .rcl-mfr-tile-box-inner { padding: 16px; }
+  /* Same 200:140 width-to-height proportion as the desktop logo cap (height = 70% of the width available). */
+  .rcl-mfr-tile-logo { max-width: 100%; max-height: 70%; }
   .rcl-mfr-tile-name { font-size: 18px; margin-top: 10px; }
   .rcl-mfr-tile-points { font-size: 12px; }
   .rcl-mfr-tile-rank { font-size: 22px; }
