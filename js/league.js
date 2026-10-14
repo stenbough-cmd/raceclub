@@ -1236,6 +1236,7 @@ function _rclRenderLastRace_(hub) {
     _rclAppendSeasonFormatSections_(hub, body);
     return;
   }
+  _rclIndexLastRaceNames_(hub);
 
   if (seasonEnded) {
     var ls = hub.lastSeason;
@@ -1321,7 +1322,8 @@ function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
 
     // Name first, no flag (removed), and no car number here any more.
     var identity = _rclEl('div', 'rcl-lr-podium-identity');
-    identity.appendChild(_rclEl('span', 'rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : '') + (row.profileId && row.profileId === _rclMyProfileId_() ? ' rcl-me' : ''), _rclEscapeHtml((row.name || '').toUpperCase())));
+    // A link to the driver's profile when the profile ID is known (the helper adds the .rcl-me bold for the signed-in driver).
+    identity.appendChild(_rclBuildDriverNameEl_('rcl-lr-podium-name' + (dnf ? ' rcl-lr-podium-name-dnf' : ''), (row.name || '').toUpperCase(), row.profileId));
     if (row.carNumber) identity.appendChild(_rclEl('span', 'rcl-lr-podium-num', '#' + _rclEscapeHtml(row.carNumber)));
     driverWrap.appendChild(identity);
     tile.appendChild(driverWrap);
@@ -1343,6 +1345,19 @@ function _rclBuildLastRacePodium_(cls, carYear, carSeriesMap) {
 
 // Driver names under a Last Race / Last Season highlight tile, joined with " & ". Mentions carry names
 // but no profile ID, so the signed-in driver is matched by display name and shown in bold.
+// Display name (lower case) -> profile ID, rebuilt on every Last Race draw from the hub's standings and
+// last race rows, so a highlight tile's driver name can link to that driver's profile.
+var _rclLastRaceNameToPid_ = {};
+function _rclIndexLastRaceNames_(hub) {
+  var map = {};
+  function add(rows) {
+    (rows || []).forEach(function (r) { if (r && r.name && r.profileId) map[String(r.name).trim().toLowerCase()] = r.profileId; });
+  }
+  (hub.standings || []).forEach(function (c) { add(c.standings); });
+  ((hub.lastRace && hub.lastRace.classes) || []).forEach(function (c) { add(c.standings); });
+  ((hub.lastSeason && hub.lastSeason.classes) || []).forEach(function (c) { add(c.standings); });
+  _rclLastRaceNameToPid_ = map;
+}
 function _rclMentionDriversEl_(m) {
   var names = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean);
   if (!names.length) return null;
@@ -1351,7 +1366,8 @@ function _rclMentionDriversEl_(m) {
   var el = _rclEl('div', 'rcl-lr-mention-drivers');
   names.forEach(function (n, i) {
     if (i > 0) el.appendChild(document.createTextNode(' & '));
-    var span = _rclEl('span', (myName && String(n).trim().toLowerCase() === myName) ? 'rcl-me' : null, _rclEscapeHtml(n));
+    var pid = _rclLastRaceNameToPid_[String(n).trim().toLowerCase()] || '';
+    var span = _rclBuildDriverNameEl_((myName && String(n).trim().toLowerCase() === myName) ? 'rcl-me' : '', n, pid);
     el.appendChild(span);
   });
   return el;
