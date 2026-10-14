@@ -1102,3 +1102,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   /* Metal class bar stays at the popup's width while the table pans under it (Matt, 2026-10-14). */
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcl-standings-class-header { min-width: 0; width: 100%; position: sticky; left: 0; box-sizing: border-box; }
 }
+/* Manufacturers' podium logos (Matt, 2026-10-14): 10px shorter on PC (150 -> 140). On phones the logo keeps
+   the same width-to-height shape as PC (200:140, so height is 70% of the tile's width) and the tiles get more padding. */
+.rcc-page .rcl-mfr-tile-logo { max-height: 140px; }
+@media (max-width: 640px) {
+  .rcc-page .rcl-mfr-tile-box-inner { padding: 16px; }
+  .rcc-page .rcl-mfr-tile-logo { max-height: 70%; }
+}
