@@ -381,10 +381,21 @@ function rccRenderHero(page) {
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
-  // Same seat line as the Driver Report (Matt): car picture, DRIVER NAME + TEAM #n, maker logo +
-  // car name. No AI difficulty or round count here. The name opens the public profile and the team
-  // opens Team Information.
-  if (page.registration) metaEl.appendChild(_rccSeatLine(page, null, true));
+  // (The seat line left the header, Matt 2026-10-14: CURRENT SEAT in the black bar opens it.)
+}
+
+// CURRENT SEAT popup (Matt, 2026-10-14): the seat line exactly as the header had it (car picture,
+// DRIVER NAME linked to the career page, TEAM #n opening Team Information, maker logo, car name,
+// class pill), then the team's written description.
+function rccOpenCurrentSeat() {
+  var page = RCC.page;
+  if (!page || !page.registration) return;
+  var m = rccOpenModal('Current Seat', { wide: true });
+  m.dialog.classList.add('rcc-light-dialog');
+  var wrap = _rccEl('div', 'rcc-current-seat');
+  wrap.appendChild(_rccSeatLine(page, null, true));
+  if (page.registration.teamDesc) wrap.appendChild(_rccText('p', 'rcc-myteam-desc rcc-current-seat-desc', page.registration.teamDesc));
+  m.body.appendChild(wrap);
 }
 
 function rccRenderActionBar(page) {
@@ -411,6 +422,8 @@ function rccRenderActionBar(page) {
   // once it ends it goes back to Create Season.
   if (page && page.hasActiveSeason) add('Season Preview', hasSeason, rccOpenSeasonPreview);
   else add('Create Season', true, rccOpenSeasonWizard.bind(null, null));
+  // Current Seat (Matt, 2026-10-14): right after Season Preview, once you have signed for a team.
+  if (page && page.registration) add('Current Seat', true, rccOpenCurrentSeat);
   // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
   // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
   var tools = _rccEl('span', 'rcc-tools');
@@ -2773,12 +2786,14 @@ function rccRenderWelcome() {
   main.insertBefore(row, main.firstChild);
 }
 
-// The four perks: shown in the Welcome box and scrolling in the ticker.
+// The six perks: shown in the Welcome box and scrolling in the ticker.
 var RCC_WELCOME_PERKS = [
   ['A real seat', 'Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.'],
   ['Your calendar, your rules', 'Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.'],
   ['Race Recap', 'Full results, a lap-by-lap race report, the race settings and every lap you drove.'],
-  ['Driver Report', 'Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.']
+  ['Driver Report', 'Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.'],
+  ['Your career page', 'Every season you finish is added to your public career page, so your titles and results build up season after season.'],
+  ['Season Stories', 'A news story written after every round, plus a season preview and a finale, all drawn from what actually happened in your races.']
 ];
 var RCC_WELCOME_HTML =
   '<p class="rcc-welcome-lead">Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap.</p>' +

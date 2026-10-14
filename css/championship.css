@@ -1057,3 +1057,29 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   /* Manufacturers' Standings 4th onward: one column, top to bottom. */
   .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; }
 }
+
+/* Manufacturers' and Team Endurance Standings, 4th onward (Matt, 2026-10-14): names in normal
+   weight, names and points dark like the podium (the page is light, so not white); points keep
+   their weight. */
+.rcc-page .rcl-mfr-rest-item, .rcc-page .rcc-tt-item { color: var(--rc-carbon); }
+.rcc-page .rcl-mfr-rest-name, .rcc-page .rcc-tt-name, .rcc-page .rcc-tt-num { font-weight: 400; }
+.rcc-page .rcc-tt-me .rcc-tt-name, .rcc-page .rcc-tt-me .rcc-tt-pts { color: var(--rc-red); }
+
+/* Welcome: See The Demo as a solid blue-gray button so it stands out (Matt, 2026-10-14). */
+.rcc-page .rcc-welcome-demo { background: #5f7d99; border-color: #5f7d99; color: var(--rc-white); }
+.rcc-page .rcc-welcome-demo:hover, .rcc-page .rcc-welcome-demo:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
+
+/* Current Seat popup (Matt, 2026-10-14). */
+.rcc-current-seat .rcc-seat-line { margin: 0; }
+.rcc-current-seat-desc { margin: 16px 0 0; font-size: 14.5px; line-height: 1.6; color: #374151; }
+/* Welcome perks: 3 across on PC (Matt, 2026-10-14); one column on phones. */
+.rcc-page .rcc-welcome-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 640px) { .rcc-page .rcc-welcome-grid { grid-template-columns: minmax(0, 1fr); } }
+/* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
+@media (max-width: 640px) {
+  .rcc-actionbar-inner { padding: 0 12px; }
+  .rcc-actionbar-link, .rcc-tools .rcc-tools-toggle { padding-left: 6px; padding-right: 6px; font-size: 10.5px; letter-spacing: 0.03em; }
+  .rcc-tools-toggle::after { margin-left: 4px; }
+  .rcc-actionbar-links > .rcc-actionbar-link:first-child { padding-left: 0; }
+  .rcc-tools-links .rcc-actionbar-link { padding: 10px 12px; font-size: 12.5px; }
+}
