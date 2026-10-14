@@ -616,11 +616,8 @@ function _rclIsDnf_(row) {
 // The signed-in driver's profile ID (from the saved login), or '' for visitors. Used to show the
 // signed-in driver in bold everywhere their name appears (no red highlights on this page).
 function _rclMyProfileId_() {
-  try {
-    if (!getToken()) return '';
-    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-    return (me && /^RC-\d+$/.test(String(me.profileId || ''))) ? me.profileId : '';
-  } catch (err) { return ''; }
+  // Matt, 2026-10-14: the page looks exactly the same for everyone, so nobody is highlighted.
+  return '';
 }
 
 function _rclBuildDriverNameEl_(className, name, profileId) {
@@ -1362,7 +1359,6 @@ function _rclMentionDriversEl_(m) {
   var names = (m.drivers || []).map(function (d) { return d.name; }).filter(Boolean);
   if (!names.length) return null;
   var myName = '';
-  try { var me = (typeof getProfileCache === 'function' && getToken()) ? getProfileCache() : null; myName = me ? String(me.displayName || '').trim().toLowerCase() : ''; } catch (err) { myName = ''; }
   var el = _rclEl('div', 'rcl-lr-mention-drivers');
   names.forEach(function (n, i) {
     if (i > 0) el.appendChild(document.createTextNode(' & '));
@@ -2887,116 +2883,7 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   return sections;
 }
 
-// ---- Signed-in driver's seat line in the hero (same content and layout as championship.html's header) ----
-var RCL_SEAT_CACHE_KEY_ = 'rc_league_seat_v1';
-var _rclSeatState = { requested: false, seat: null };
-
-// The last seat we fetched is kept in this browser (like the hub copy), so the seat line paints on the
-// very first frame and the fresh copy only redraws it if something changed. Only used when the saved
-// copy belongs to the profile that is signed in right now.
-function _rclReadSeatCache_() {
-  try {
-    var token = getToken();
-    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-    if (!token || !me || !me.profileId) return null;
-    var raw = localStorage.getItem(RCL_SEAT_CACHE_KEY_);
-    var obj = raw ? JSON.parse(raw) : null;
-    return (obj && obj.profileId === me.profileId && obj.seat) ? obj.seat : null;
-  } catch (err) { return null; }
-}
-function _rclWriteSeatCache_(seat) {
-  try {
-    var me = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-    if (seat && seat.hasSeat && me && me.profileId) localStorage.setItem(RCL_SEAT_CACHE_KEY_, JSON.stringify({ profileId: me.profileId, seat: seat }));
-    else localStorage.removeItem(RCL_SEAT_CACHE_KEY_);
-  } catch (err) { /* storage unavailable: the seat line just waits for the fetch */ }
-}
-_rclSeatState.seat = _rclReadSeatCache_();
-
-function _rclClassPill_(cls) {
-  var colors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
-  return _rclEl('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colors[cls] ? ' ' + colors[cls] : ''), _rclEscapeHtml(cls === 'Hypercar' ? 'HY' : String(cls || '')));
-}
-
-// Car picture, DRIVER NAME (bold) + TEAM #57 (normal weight), then maker logo + car name + class pill.
-function _rclBuildSeatLine_(seat, displayName, profileId) {
-  var row = _rclEl('div', 'rc-cs-row rcl-seat-line');
-  if (seat.carYear && seat.carNumber && typeof rcCarImageSrc === 'function') {
-    var picWrap = _rclEl('div', 'rc-cs-logo-wrap');
-    var pic = document.createElement('img');
-    pic.className = 'rc-cs-logo';
-    pic.alt = '';
-    var full = rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries);
-    if (full) {
-      var triedFull = false;
-      pic.onerror = function () {
-        if (!triedFull) { triedFull = true; pic.src = full; return; }
-        picWrap.style.display = 'none';
-      };
-      pic.src = full.replace('assets/cars/', 'assets/cars/small/');
-      picWrap.appendChild(pic);
-      row.appendChild(picWrap);
-    }
-  }
-  var textCol = _rclEl('div', 'rc-cs-textcol');
-  var nameLine = _rclEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcl-seat-name');
-  if (displayName) nameLine.appendChild(_rclBuildDriverNameEl_('rcl-seat-driver', displayName, profileId));
-  var teamText = (seat.team || '') + (seat.carNumber ? ' #' + seat.carNumber : '');
-  if (teamText) nameLine.appendChild(_rclEl('span', 'rcl-seat-team', _rclEscapeHtml(teamText)));
-  textCol.appendChild(nameLine);
-  if (seat.manufacturer || seat.carModel || seat.carClass) {
-    var carLine = _rclEl('div', 'rc-cs-car-line rc-cs-car-line-flex');
-    if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
-      var logo = document.createElement('img');
-      logo.className = 'rc-cs-maker-logo';
-      logo.alt = seat.manufacturer;
-      logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
-      if (typeof manufacturerLogoFallback === 'function') manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
-      carLine.appendChild(logo);
-    }
-    if (seat.carModel) carLine.appendChild(_rclEl('span', null, _rclEscapeHtml(seat.carModel)));
-    if (seat.carClass) carLine.appendChild(_rclClassPill_(seat.carClass));
-    textCol.appendChild(carLine);
-  }
-  row.appendChild(textCol);
-  return row;
-}
-
-function _rclRenderHeroSeat_(hub) {
-  var seasonEl = document.getElementById('rcl-hero-season');
-  if (!seasonEl) return;
-  var host = document.getElementById('rcl-hero-seat');
-  if (!host) {
-    host = _rclEl('div', 'rcl-hero-seat');
-    host.id = 'rcl-hero-seat';
-    seasonEl.parentNode.insertBefore(host, seasonEl.nextSibling);
-  }
-  host.innerHTML = '';
-  var seat = _rclSeatState.seat;
-  var cache = null;
-  try { cache = (typeof getProfileCache === 'function') ? getProfileCache() : null; } catch (err) { cache = null; }
-  if (!hub || !hub.hasSeason || !seat || !seat.hasSeat || !cache) return;
-  host.appendChild(_rclBuildSeatLine_(seat, cache.displayName || '', cache.profileId || ''));
-}
-
-function _rclLoadHeroSeat_(hub) {
-  var token = null;
-  try { token = getToken(); } catch (err) { token = null; }
-  if (!token || _rclSeatState.requested) return;
-  _rclSeatState.requested = true;
-  fetchApi('getDashboardData', { token: token }).then(function (data) {
-    if (data && data.success && data.currentSeat && data.currentSeat.success) {
-      var changed = JSON.stringify(data.currentSeat) !== JSON.stringify(_rclSeatState.seat);
-      _rclSeatState.seat = data.currentSeat;
-      _rclWriteSeatCache_(data.currentSeat);
-      if (changed) _rclRenderHeroSeat_(hub);
-    }
-  }).catch(function () { /* the hero just shows no seat line */ });
-}
-
 function _rclRenderHero(hub) {
-  _rclRenderHeroSeat_(hub);
-  _rclLoadHeroSeat_(hub);
   // Eyebrow is static "Race Club" (set directly in league.html) -- nothing to fill in here anymore.
   // "Season N / Name" -- the "/" reads in the brand red, the season name itself in bright white,
   // "Season N" now reads gold.

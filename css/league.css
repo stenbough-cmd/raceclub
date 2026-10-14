@@ -2476,40 +2476,8 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* League News preview: the headline story's title is ALL CAPS. */
 .rcl-news-current .rcl-news-title { text-transform: uppercase; font-size: 17px; letter-spacing: 0.02em; }
 
-/* Signed-in driver's seat line under "Season N / Name" (same content as championship.html's header,
-   recolored for the dark page). */
-.rcl-hero-seat { margin-top: 6px; }
-.rcl-hero-seat .rcl-seat-line { margin: 0; }
-.rcl-seat-name .rcl-seat-driver { font-weight: 700; color: var(--rcl-ink); text-decoration: none; }
-.rcl-seat-name a.rcl-seat-driver:hover, .rcl-seat-name a.rcl-seat-driver:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
-.rcl-seat-name .rcl-seat-team { font-weight: 400; color: var(--rcl-ink-dim); }
-.rcl-hero-seat .rc-cs-car-line { color: var(--rcl-ink-dim); }
-.rcl-hero-seat .rc-badge-chip-abbrev { align-self: center; }
-@media (min-width: 641px) {
-  .rcl-hero:has(.rcl-seat-line) { padding-top: 24px; padding-bottom: 24px; }
-}
-@media (max-width: 640px) {
-  .rcl-hero:has(.rcl-seat-line) { padding-top: 7.5px; padding-bottom: 7.5px; }
-  .rcl-hero-seat { margin-top: 4px; }
-  .rcl-hero-seat .rc-cs-logo-wrap { height: 36px; min-width: 0; }
-  .rcl-hero-seat .rc-cs-logo { max-height: 36px; max-width: 90px; }
-}
-
 /* Subheadings inside the League News preview story only (the read-story popup keeps 17px). */
 .rcl-news-current-body .rcl-news-h { font-size: 15px; }
-
-/* Drop shadow on the driver's seat line in the hero so the text stands out against the banner. */
-.rcl-hero-seat .rcl-seat-name,
-.rcl-hero-seat .rcl-seat-driver,
-.rcl-hero-seat .rcl-seat-team,
-.rcl-hero-seat .rc-cs-car-line { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.6); }
-.rcl-hero-seat .rc-cs-maker-logo, .rcl-hero-seat .rc-cs-logo { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7)); }
-
-/* No drop shadow on the class pill in the driver's seat line (the shadow stays on the text). */
-.rcl-hero-seat .rc-badge-chip { text-shadow: none; }
-
-/* Class pill in the seat line: same size as championship.html's (css/championship.css .rcc-seat-line). */
-.rcl-hero-seat .rc-badge-chip-abbrev { padding: 1px 5px; font-size: 10.5px; line-height: 1.5; align-self: center; }
 
 /* ---------------------------------------------------------------------------------------------
    TEAM ENDURANCE STANDINGS (every class except Hypercar), bare on the page above each class board
@@ -2580,11 +2548,6 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--
 
 @media (max-width: 640px) {
   .rcl-lr-podium-num { display: none; }
-  /* Hero seat line: no car picture, tighter lines. */
-  .rcl-hero-seat .rc-cs-logo-wrap { display: none; }
-  .rcl-hero-seat .rcl-seat-line { gap: 0; }
-  .rcl-hero-seat .rcl-seat-name { line-height: 1.15; }
-  .rcl-hero-seat .rc-cs-car-line { margin-top: 1px; line-height: 1.15; }
   /* Manufacturers' Standings, P4 onward: one column. */
   body.rc-league-page:not(.rcc-page) .rcl-mfr-rest {
     grid-template-columns: minmax(0, 1fr);
