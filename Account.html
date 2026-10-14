@@ -6930,6 +6930,7 @@
           if (st.status === 'published') sMeta.push(st.chars + ' characters');
           if (st.up || st.down) sMeta.push(st.up + ' up / ' + st.down + ' down');
           if (st.status === 'failed' && st.error) sMeta.push('Error: ' + st.error);
+          else if (st.status === 'writing' && st.error) sMeta.push(st.error);
           sText.appendChild(el('div', 'rc-hint', escapeHtml(sMeta.join(' \u00B7 '))));
           postRow.appendChild(sText);
           var rewriteBtn = el('button', 'rc-btn-secondary rc-btn-row', st.status === 'published' ? 'Rewrite' : 'Retry');
