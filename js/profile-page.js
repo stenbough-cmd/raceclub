@@ -1,4 +1,4 @@
-// Race Club -- js/profile-page.js. The lower rows of profile.html (Notable Achievements, Form Guide,
+// Race Club -- js/profile-page.js. The lower rows of profile.html (Career Stats, Form Guide,
 // Season Stats, Story Mentions, Rivalries, Team History). League racing only. Data comes from three
 // public Apps Script ops (DriverProfilePage.gs): getDriverProfilePage, getDriverProfileRivals and
 // getDriverProfileRound. Each response is saved in this browser and redrawn instantly next visit,
@@ -97,10 +97,30 @@
   }
 
   // ---- Row 2: Form Guide ----------------------------------------------------------------------
+  // Form guide: up to 20 squares on ONE line. When the window is too narrow the oldest squares drop
+  // off, down to the latest 5. It never wraps into rows.
+  var formList = [];
+  function fitForm() {
+    var wrap = $('rdp-form-squares');
+    if (!formList.length || !wrap) return;
+    var body = wrap.parentNode;
+    var cs = window.getComputedStyle(body);
+    var avail = body.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    var first = wrap.firstChild;
+    var sqW = first ? first.getBoundingClientRect().width : 42;
+    var gap = parseFloat(window.getComputedStyle(wrap).columnGap) || 8;
+    var fit = Math.floor((avail + gap) / (sqW + gap));
+    var n = Math.max(5, Math.min(20, formList.length, fit));
+    var start = formList.length - n;
+    Array.prototype.forEach.call(wrap.children, function (sq, i) { sq.style.display = i < start ? 'none' : ''; });
+    var note = $('rdp-form-note');
+    if (note) note.textContent = 'Last ' + n + ' race' + (n === 1 ? '' : 's') + ', oldest to newest';
+  }
   function renderForm(data) {
     var panel = $('rdp-form');
-    var list = data.form || [];
+    var list = (data.form || []).slice(-20);
     if (!list.length) { panel.hidden = true; return; }
+    formList = list;
     var wrap = $('rdp-form-squares');
     wrap.innerHTML = '';
     list.forEach(function (r) {
@@ -113,7 +133,9 @@
       wrap.appendChild(sq);
     });
     panel.hidden = false;
+    fitForm();
   }
+  window.addEventListener('resize', fitForm);
 
   // ---- Row 3: Season Stats --------------------------------------------------------------------
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -409,6 +431,14 @@
     bits.push(s.kind === 'preview' ? 'Season Preview' : s.roundNum ? 'Round ' + s.roundNum : 'Story');
     return bits.join(' · ');
   }
+  // The visited driver's own name in bold wherever a story mentions it.
+  var meName = '';
+  function boldMe(text) {
+    var safe = esc(text);
+    if (!meName || meName.length < 3) return safe;
+    var re = new RegExp('(^|[^A-Za-z0-9])(' + esc(meName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![A-Za-z0-9])', 'gi');
+    return safe.replace(re, function (m, pre, nm) { return pre + '<strong class="rdp-me">' + nm + '</strong>'; });
+  }
   function plainPreview(body) {
     var t = String(body || '').replace(/^#+\s.*$/gm, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
     return t.length > 240 ? t.slice(0, 240).replace(/\s+\S*$/, '') + '...' : t;
@@ -420,7 +450,7 @@
       var h = p.match(/^##+\s+(.*)$/);
       if (h) { box.appendChild(tx('h3', '', h[1].replace(/\*\*/g, ''))); return; }
       var node = el('p');
-      node.innerHTML = esc(p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+      node.innerHTML = boldMe(p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
       box.appendChild(node);
     });
   }
@@ -437,7 +467,7 @@
     head.appendChild(x);
     var bodyBox = el('div', 'rdp-modal-body');
     bodyBox.appendChild(tx('div', 'rdp-story-meta', storyMeta(s)));
-    if (s.standfirst) bodyBox.appendChild(tx('p', '', s.standfirst));
+    if (s.standfirst) { var sfEl = el('p'); sfEl.innerHTML = boldMe(s.standfirst); bodyBox.appendChild(sfEl); }
     renderBody(bodyBox, s.body);
     modal.appendChild(head);
     modal.appendChild(bodyBox);
@@ -450,6 +480,7 @@
     document.body.appendChild(bg);
   }
   function renderStories(data) {
+    meName = String(data.name || '');
     var host = $('rdp-stories');
     host.innerHTML = '';
     var list = data.stories || [];
@@ -459,7 +490,9 @@
       var card = el('div', 'rdp-story');
       card.appendChild(tx('div', 'rdp-story-meta', storyMeta(s)));
       card.appendChild(tx('div', 'rdp-story-title', s.title));
-      card.appendChild(tx('div', 'rdp-story-text', s.standfirst || plainPreview(s.body)));
+      var prev = el('div', 'rdp-story-text');
+      prev.innerHTML = boldMe(s.standfirst || plainPreview(s.body));
+      card.appendChild(prev);
       var more = tx('button', 'rdp-story-more', 'Continue reading');
       more.type = 'button';
       more.addEventListener('click', function () { openStory(s); });
@@ -509,7 +542,7 @@
   // ---- Row 5: Team History --------------------------------------------------------------------
   function renderTeams(data) {
     var panel = $('rdp-teams'), body = $('rdp-teams-body');
-    var list = data.teamHistory || [];
+    var list = (data.teamHistory || []).slice(0, 3);
     if (!list.length) { panel.hidden = true; return; }
     body.innerHTML = '';
     var grid = el('div', 'rdp-teams');

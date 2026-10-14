@@ -20,7 +20,7 @@
 <script>renderHeader();</script>
 
 <main class="rc-profile-page">
-  <!-- Row 1: driver card (left third) + Notable Achievements -->
+  <!-- Row 1: driver card (left third) + Career Stats -->
   <div class="rdp-row rdp-row-top">
     <section class="rcl-panel rc-profile-panel" id="rc-profile-card" hidden>
       <div class="rcl-panel-head"><div class="rcl-panel-title">Driver Profile</div></div>
@@ -37,14 +37,14 @@
       </div>
     </section>
     <section class="rcl-panel rdp-panel" id="rdp-achievements" hidden>
-      <div class="rcl-panel-head"><div class="rcl-panel-title">Notable Achievements</div></div>
+      <div class="rcl-panel-head"><div class="rcl-panel-title">Career Stats</div></div>
       <div class="rcl-panel-body"><div class="rdp-ach-grid" id="rdp-ach-grid"></div></div>
     </section>
   </div>
 
   <!-- Row 2: Form Guide (hidden when there are no races) -->
   <section class="rcl-panel rdp-panel" id="rdp-form" hidden>
-    <div class="rcl-panel-head"><div class="rcl-panel-title">Form Guide</div><div class="rdp-panel-note">Last 20 races, oldest to newest</div></div>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Form Guide</div><div class="rdp-panel-note" id="rdp-form-note">Last 20 races, oldest to newest</div></div>
     <div class="rcl-panel-body rdp-form-body"><div class="rdp-form" id="rdp-form-squares"></div></div>
   </section>
 
@@ -68,7 +68,7 @@
 
   <!-- Row 5: Team History -->
   <section class="rcl-panel rdp-panel" id="rdp-teams" hidden>
-    <div class="rcl-panel-head"><div class="rcl-panel-title">Team History</div><div class="rdp-panel-note">Last 5 seasons</div></div>
+    <div class="rcl-panel-head"><div class="rcl-panel-title">Team History</div><div class="rdp-panel-note">Last 3 seasons</div></div>
     <div class="rcl-panel-body" id="rdp-teams-body"></div>
   </section>
 
