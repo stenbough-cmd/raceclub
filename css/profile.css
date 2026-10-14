@@ -111,7 +111,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-story-text { font-size: 14px; line-height: 1.55; color: var(--rcl-ink-dim); }
 .rdp-story-more { margin-top: 8px; background: none; border: 0; padding: 0; color: #8fb0cf; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
 .rdp-story-more:hover { text-decoration: underline; }
-.rdp-stories-scroll { max-height: 520px; overflow-y: auto; padding-right: 6px; }
+.rdp-stories-list { }
 .rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 8px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
 .rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--rc-red); background: var(--rcl-bg-raised-2); }
@@ -204,3 +204,26 @@ a.rdp-rival-name:hover { text-decoration: underline; }
   .rdp-details { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
 }
 .rdp-race-split .rdp-catline { margin: 6px 0 -6px; }
+
+/* Round 4 (Matt, 2026-10-14): team history rows, rival season head to head, story See More popup. */
+.rdp-teams-older { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.rdp-team-sm { padding: 9px; gap: 6px; }
+.rdp-team-sm .rdp-team-top { margin-bottom: 4px; }
+.rdp-team-sm .rdp-team-season { font-size: 10.5px; letter-spacing: 0.06em; }
+.rdp-team-sm .rdp-team-name { font-size: 13px; }
+.rdp-team-sm .rdp-team-model { font-size: 11.5px; gap: 6px; }
+.rdp-team-sm .rdp-team-car { padding: 4px 6px; }
+.rdp-team-sm .rdp-team-stat b { font-size: 14px; }
+.rdp-team-sm .rdp-team-stat span { font-size: 9px; letter-spacing: 0.05em; }
+@media (max-width: 640px) { .rdp-teams-older { grid-template-columns: 1fr; gap: 14px; } .rdp-team-sm { padding: 12px; gap: 8px; } .rdp-team-sm .rdp-team-name { font-size: 18px; } .rdp-team-sm .rdp-team-model { font-size: 14px; } .rdp-team-sm .rdp-team-season { font-size: 12px; } .rdp-team-sm .rdp-team-stat b { font-size: 17px; } .rdp-team-sm .rdp-team-stat span { font-size: 10px; } }
+.rdp-rival { grid-template-columns: 44px 1fr; }
+.rdp-rival-season { grid-column: 1 / -1; margin-top: 2px; border: 1px solid var(--rcl-line); border-radius: 8px; padding: 8px 10px; background: rgba(255,255,255,0.02); }
+.rdp-rival-season-title { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-bottom: 6px; }
+.rdp-rival-season-cells { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rdp-rival-season-cell { text-align: center; }
+.rdp-rival-season-cell b { display: block; font-family: var(--rc-font-heading); font-size: 17px; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
+.rdp-rival-season-cell span { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
+.rdp-see-more { display: block; margin: 14px auto 0; background: none; border: 0; padding: 0; color: #8fb0cf; font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.rdp-see-more:hover { text-decoration: underline; }
+.rdp-load-more { display: block; margin: 16px auto 0; }
+.rdp-load-more[hidden] { display: none; }

@@ -6594,10 +6594,7 @@
         if (!resultsFinalized) {
           var finalizeBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Finalize');
           finalizeBtn.type = 'button';
-          if (windowStillOpen) {
-            finalizeBtn.disabled = true;
-            withTooltip(finalizeBtn, 'The protest window for this round is still open. It closes ' + (data.windowDeadlineIso ? new Date(data.windowDeadlineIso).toLocaleString() : 'in 24 hours') + '.');
-          } else if (hasUnruledProtests) {
+          if (hasUnruledProtests) {
             finalizeBtn.disabled = true;
             withTooltip(finalizeBtn, 'One or more protests on this round still need a ruling. Apply a ruling to every protest above before finalizing.');
           }
@@ -6607,14 +6604,15 @@
               finalizeBtn.className = 'rc-btn-primary rc-btn-sm';
               finalizeBtn.textContent = 'Finalize';
             }
-            openConfirmModal('Finalize Results', confirmMsg, 'Finalize', function () {
+            // Finalize works before the 24 hour protest window ends too, after one extra "are you sure".
+            function startFinalize() {
               finalizeBtn.disabled = true;
               // In-progress state. The X button dims with a matching tooltip via
               // setFinalizeInProgress, same convention as the Import Results modal's close button.
               finalizeBtn.className = 'rc-btn-secondary rc-btn-sm';
               finalizeBtn.textContent = 'FINALIZING AND WRITING STORY...';
               setFinalizeInProgress(true);
-              fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_FINALIZE }).then(function (result) {
+              fetchApi('adminFinalizeRound', { method: 'POST', token: token, body: { roundId: roundId, force: windowStillOpen ? '1' : '' }, timeoutMs: RC_FETCH_TIMEOUT_MS_FINALIZE }).then(function (result) {
                 setFinalizeInProgress(false);
                 finalizeBtn.disabled = false;
                 if (!result.success) {
@@ -6633,6 +6631,13 @@
                 restoreFinalizeBtn();
                 showToast('Could not confirm the finalize finished. Close and reopen this popup to check the round before trying again.', 'error');
               });
+            }
+            openConfirmModal('Finalize Results', confirmMsg, 'Finalize', function () {
+              if (!windowStillOpen) { startFinalize(); return; }
+              var closes = data.windowDeadlineIso ? new Date(data.windowDeadlineIso).toLocaleString() : 'in 24 hours';
+              openConfirmModal('Protest Window Still Open',
+                'It has not been 24 hours yet since the race results were uploaded. The protest window closes ' + closes + '. Finalizing now ends it early and no more protests can be filed for this round. Are you sure?',
+                'Finalize Anyway', startFinalize);
             });
           });
           actionBar.appendChild(finalizeBtn);

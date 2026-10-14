@@ -552,7 +552,57 @@
     modal.appendChild(bodyBox);
     bg.appendChild(modal);
     function close() { document.removeEventListener('keydown', onKey); bg.remove(); }
-    function onKey(e) { if (e.key === 'Escape') close(); }
+    function onKey(e) { if (e.key === 'Escape' && document.body.lastElementChild === bg) close(); }
+    x.addEventListener('click', close);
+    bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(bg);
+  }
+  // Story card used on the page and in the SEE MORE popup.
+  function storyCard(s) {
+    var card = el('div', 'rdp-story');
+    card.appendChild(tx('div', 'rdp-story-meta', storyMeta(s)));
+    card.appendChild(tx('div', 'rdp-story-title', s.title));
+    var prev = el('div', 'rdp-story-text');
+    prev.innerHTML = boldMe(s.standfirst || plainPreview(s.body));
+    card.appendChild(prev);
+    var more = tx('button', 'rdp-story-more', 'Continue reading');
+    more.type = 'button';
+    more.addEventListener('click', function () { openStory(s); });
+    card.appendChild(more);
+    return card;
+  }
+  // All stories, 5 at a time.
+  function openAllStories(list) {
+    var bg = el('div', 'rdp-modal-bg');
+    var modal = el('div', 'rdp-modal');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    var head = el('div', 'rdp-modal-head');
+    head.appendChild(tx('div', 'rdp-modal-title', 'Story Mentions'));
+    var x = tx('button', 'rdp-modal-x', '\u00d7');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Close');
+    head.appendChild(x);
+    var bodyBox = el('div', 'rdp-modal-body');
+    var listHost = el('div');
+    bodyBox.appendChild(listHost);
+    var shown = 0;
+    var loadBtn = tx('button', 'rc-btn-secondary rdp-load-more', 'Load More Stories');
+    loadBtn.type = 'button';
+    function showMore() {
+      list.slice(shown, shown + 5).forEach(function (st) { listHost.appendChild(storyCard(st)); });
+      shown = Math.min(list.length, shown + 5);
+      loadBtn.hidden = shown >= list.length;
+    }
+    loadBtn.addEventListener('click', showMore);
+    bodyBox.appendChild(loadBtn);
+    showMore();
+    modal.appendChild(head);
+    modal.appendChild(bodyBox);
+    bg.appendChild(modal);
+    function close() { document.removeEventListener('keydown', onKey); bg.remove(); }
+    function onKey(e) { if (e.key === 'Escape' && document.body.lastElementChild === bg) close(); }
     x.addEventListener('click', close);
     bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
     document.addEventListener('keydown', onKey);
@@ -564,21 +614,15 @@
     host.innerHTML = '';
     var list = data.stories || [];
     if (!list.length) { host.appendChild(emptyBlock('No Story Mentions', 'No league stories have mentioned this driver yet.')); return; }
-    var scroll = el('div', 'rdp-stories-scroll');
-    list.forEach(function (s) {
-      var card = el('div', 'rdp-story');
-      card.appendChild(tx('div', 'rdp-story-meta', storyMeta(s)));
-      card.appendChild(tx('div', 'rdp-story-title', s.title));
-      var prev = el('div', 'rdp-story-text');
-      prev.innerHTML = boldMe(s.standfirst || plainPreview(s.body));
-      card.appendChild(prev);
-      var more = tx('button', 'rdp-story-more', 'Continue reading');
-      more.type = 'button';
-      more.addEventListener('click', function () { openStory(s); });
-      card.appendChild(more);
-      scroll.appendChild(card);
-    });
-    host.appendChild(scroll);
+    var wrap = el('div', 'rdp-stories-list');
+    list.slice(0, 3).forEach(function (st) { wrap.appendChild(storyCard(st)); });
+    host.appendChild(wrap);
+    if (list.length > 3) {
+      var seeMore = tx('button', 'rdp-see-more', 'See More');
+      seeMore.type = 'button';
+      seeMore.addEventListener('click', function () { openAllStories(list); });
+      host.appendChild(seeMore);
+    }
   }
 
   function drawRivals(res) {
@@ -600,15 +644,24 @@
       tags.unshift(r.shared + ' race' + (r.shared === 1 ? '' : 's') + ' together');
       mid.appendChild(tx('div', 'rdp-rival-tags', tags.join(' · ')));
       row.appendChild(mid);
-      var h2h = el('div', 'rdp-rival-h2h');
-      h2h.appendChild(document.createTextNode(r.ahead + '-' + r.behind));
-      h2h.appendChild(tx('small', '', 'Head to head'));
-      row.appendChild(h2h);
+      // Three head to head numbers from the current season, yours first.
+      var se = r.season || {};
+      var box = el('div', 'rdp-rival-season');
+      box.appendChild(tx('div', 'rdp-rival-season-title', (res.seasonName ? res.seasonName : 'This season') + ' head to head'));
+      var cells = el('div', 'rdp-rival-season-cells');
+      [['Finished ahead', se.finAhead, se.finBehind], ['Qualified ahead', se.qualAhead, se.qualBehind], ['Faster best lap', se.fastAhead, se.fastBehind]].forEach(function (c) {
+        var cell = el('div', 'rdp-rival-season-cell');
+        cell.appendChild(tx('b', '', se.races ? (c[1] || 0) + '-' + (c[2] || 0) : '--'));
+        cell.appendChild(tx('span', '', c[0]));
+        cells.appendChild(cell);
+      });
+      box.appendChild(cells);
+      row.appendChild(box);
       host.appendChild(row);
     });
   }
   function loadRivals() {
-    var key = 'rc_profile_rivals_v1_' + profileId;
+    var key = 'rc_profile_rivals_v2_' + profileId;
     var saved = readLocal(key);
     if (saved) drawRivals(saved);
     else { $('rdp-rivals').innerHTML = ''; $('rdp-rivals').appendChild(tx('div', 'rdp-loading', 'Loading rivalries...')); }
@@ -621,13 +674,12 @@
   // ---- Row 5: Team History --------------------------------------------------------------------
   function renderTeams(data) {
     var panel = $('rdp-teams'), body = $('rdp-teams-body');
-    var list = (data.teamHistory || []).slice(0, 3);
-    if (!list.length) { panel.hidden = true; return; }
+    var all = data.teamHistory || [];
+    if (!all.length) { panel.hidden = true; return; }
     body.innerHTML = '';
-    var grid = el('div', 'rdp-teams');
-    list.forEach(function (t) {
+    function teamCard(t, small) {
       var seat = t.seat || {};
-      var card = el('div', 'rdp-team');
+      var card = el('div', 'rdp-team' + (small ? ' rdp-team-sm' : ''));
       var top = el('div', 'rdp-team-top');
       var sn = String(t.seasonId || '').match(/(\d+)\s*$/);
       top.appendChild(tx('div', 'rdp-team-season', (sn ? 'Season ' + parseInt(sn[1], 10) + ': ' : '') + t.seasonName));
@@ -638,15 +690,23 @@
       card.appendChild(seatModelEl(seat));
       var stats = el('div', 'rdp-team-stats');
       [[t.position ? ord(t.position) : '--', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
-        var s = el('div', 'rdp-team-stat');
-        s.appendChild(tx('b', '', p[0]));
-        s.appendChild(tx('span', '', p[1]));
-        stats.appendChild(s);
+        var st = el('div', 'rdp-team-stat');
+        st.appendChild(tx('b', '', p[0]));
+        st.appendChild(tx('span', '', p[1]));
+        stats.appendChild(st);
       });
       card.appendChild(stats);
-      grid.appendChild(card);
-    });
-    body.appendChild(grid);
+      return card;
+    }
+    // The last 3 teams get a large row; every earlier team sits below, 5 across.
+    var big = el('div', 'rdp-teams');
+    all.slice(0, 3).forEach(function (t) { big.appendChild(teamCard(t, false)); });
+    body.appendChild(big);
+    if (all.length > 3) {
+      var small = el('div', 'rdp-teams rdp-teams-older');
+      all.slice(3).forEach(function (t) { small.appendChild(teamCard(t, true)); });
+      body.appendChild(small);
+    }
     panel.hidden = false;
   }
 
