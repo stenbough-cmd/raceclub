@@ -648,7 +648,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 4px 8px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .rc-shell { flex-direction: column; }
   /* .rc-shell's own padding-top:70px (below, sitewide) is what clears the fixed site header now. */
   .rc-sidebar { display: none; }
@@ -1402,7 +1402,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-dash-card-fade { opacity: 0; transition: opacity 0.55s ease; }
 .rc-dash-card-fade-in { opacity: 1; }
 
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .rc-field-pair, .rc-field-trio, .rc-field-trio-name { grid-template-columns: 1fr; }
 }
 
@@ -1441,7 +1441,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   height: 100%;
   margin-left: 48px;
 }
-@media (min-width: 821px) {
+@media (min-width: 641px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
 /* Logo now links to league.html -- same display:flex/height:100% pattern as .rc-header-logo-link so
@@ -1603,7 +1603,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* 480px -> 821px -- same unification as the League Hub badge above; this rule now only matters
    above the hamburger breakpoint, since .rc-header-account-text is hidden outright (along with the
    avatar and chevron) below it. */
-@media (min-width: 821px) {
+@media (min-width: 641px) {
   .rc-header-account-text { display: flex; }
 }
 
@@ -1624,7 +1624,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-hamburger-toggle:hover,
 .rc-header-hamburger-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-red); }
 
-@media (max-width: 820px) {
+@media (max-width: 640px) {
   /* Logged in: collapse the avatar/name/role/chevron stack down to just
      the hamburger icon, inside the same toggle button. */
   .rc-header-avatar,
@@ -2124,7 +2124,7 @@ a.rc-needs-item {
   transition: background 0.12s ease;
 }
 a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
-@media (max-width: 860px) {
+@media (max-width: 640px) {
   .rc-needs-list { grid-template-columns: 1fr; }
   .rc-needs-item { border-left: none !important; }
   .rc-needs-item + .rc-needs-item { border-top: 1px solid rgba(255, 255, 255, 0.12); }
@@ -2140,7 +2140,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 /* pattern .rc-tier-row and .rc-details-row already use elsewhere.      */
 /* -------------------------------------------------------------------- */
 .rc-steps-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 32px; }
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .rc-steps-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) {
@@ -2347,7 +2347,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 /* Center popups over the content area, not the whole screen. Desktop only (matches .rc-sidebar's
    own 768px breakpoint -- below that the sidebar is hidden behind the hamburger menu, so there's
    nothing to offset for). */
-@media (min-width: 769px) {
+@media (min-width: 641px) {
   .rc-modal-backdrop { padding-left: 244px; }
   /* Opt back out of the sidebar-offset centering above. Only a modal that explicitly knows there's
      no sidebar to offset for adds this class; every other .rc-modal-backdrop keeps the offset
