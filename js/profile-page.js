@@ -100,9 +100,13 @@
     var box = $('rdp-seat');
     var latest = (data.seasons || [])[0];
     var seat = latest ? latest.seat : null;
-    if (!seat || (!seat.team && !seat.carNumber)) { box.hidden = true; return; }
     box.innerHTML = '';
     box.appendChild(tx('div', 'rdp-seat-label', 'Current Seat'));
+    if (!seat || (!seat.team && !seat.carNumber)) {
+      box.appendChild(tx('div', 'rdp-team-name', 'NONE'));
+      box.hidden = false;
+      return;
+    }
     box.appendChild(seatNameEl(seat));
     box.appendChild(seatModelEl(seat));
     box.hidden = false;
