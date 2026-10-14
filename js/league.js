@@ -3273,7 +3273,13 @@ function _rclOpenSeasonPreviewModal_(hub) {
   dialog.appendChild(head);
 
   var body = _rclEl('div', 'rcl-modal-body rcl-seasonfmt-modal-body');
-  _rclAppendSeasonFormatSections_(hub || { hasSeason: false }, body);
+  if (hub && hub.hasSeason) {
+    _rclAppendSeasonFormatSections_(hub, body);
+  } else {
+    // No season yet: a welcome message instead of the season details.
+    body.appendChild(_rclEl('p', 'rcl-welcome-text', 'Welcome to Race Club, an online endurance racing league for Le Mans Ultimate. We are glad you are here.'));
+    body.appendChild(_rclEl('p', 'rcl-welcome-text', 'Sit tight. A new season will begin shortly, and the calendar, standings and news will fill in here as soon as it does.'));
+  }
 
   var rounds = ((hub && hub.calendar) || []).filter(function (e) { return e.kind === 'round'; })
     .sort(function (a, b) { return (a.roundNum || 0) - (b.roundNum || 0); });

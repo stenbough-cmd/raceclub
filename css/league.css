@@ -2593,3 +2593,7 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--
     max-width: none;
   }
 }
+
+/* Welcome popup (no season yet) */
+.rcl-welcome-text { margin: 0 0 14px; font-size: 15px; line-height: 1.65; color: var(--rcl-ink-dim); }
+.rcl-welcome-text:last-child { margin-bottom: 0; }
