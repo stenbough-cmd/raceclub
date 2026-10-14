@@ -745,7 +745,7 @@ function _rccSeasonFormat(page, body) {
   if (rs.mechanicalFailures) adv.push(row('Mechanical Failures', rs.mechanicalFailures));
   if (rs.trackLimitPoints) adv.push(row('Track Limits Points', String(rs.trackLimitPoints)));
   var sessionRows = [];
-  if (rs.raceStart) sessionRows.push(row('Start', rs.raceStart));
+  if (rs.raceStart) sessionRows.push(row('Start', rs.raceStart === 'Fast' ? 'Fast Rolling' : rs.raceStart));
   if (rs.realRoadTimeScale) sessionRows.push(row('RealRoad Time Scale', rs.realRoadTimeScale));
   sessionRows.push(row('Qualifying Session', rs.qualifying === 'No' ? 'No (Random start)' : 'Yes'));
   var rules = diff.concat(adv, sessionRows);
@@ -1314,7 +1314,8 @@ function _rccRaceDetails(details) {
     var col = _rccEl('div', 'rcc-race-details-col');
     col.appendChild(_rccText('div', 'rcc-race-details-head', pair[0]));
     pair[1].forEach(function (x) {
-      col.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rccEsc(x.label) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(x.value) + '</span>'));
+      var val = x.label === 'Start' && x.value === 'Fast' ? 'Fast Rolling' : x.value;
+      col.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rccEsc(x.label) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(val) + '</span>'));
     });
     cols.appendChild(col);
   });
@@ -2058,6 +2059,16 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     layoutsByVenue[t.TrackName].push(t);
   });
   venues.sort(function (a, b) { return String(a).localeCompare(String(b)); });
+  // Layouts (Matt, 2026-10-14): a WEC layout first (the default), then ELMS, then the rest A to Z.
+  var layoutRank = function (row) { var l = String(row.Layout || '').toUpperCase(); return /\bWEC\b/.test(l) ? 0 : /\bELMS\b/.test(l) ? 1 : 2; };
+  venues.forEach(function (v) {
+    layoutsByVenue[v].sort(function (a, b) { return layoutRank(a) - layoutRank(b) || String(a.Layout || '').localeCompare(String(b.Layout || '')); });
+  });
+  // Track dropdown labels (Matt, 2026-10-14): "TrackName (ShortName)".
+  var venueOptions = venues.map(function (v) {
+    var sn = (layoutsByVenue[v].filter(function (row) { return row.ShortName; })[0] || {}).ShortName;
+    return { label: v + (sn && sn !== v ? ' (' + sn + ')' : ''), value: v };
+  });
   var trackById = {};
   tracks.forEach(function (t) { trackById[t.TrackID] = t; });
   function newRound() {
@@ -2245,7 +2256,8 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   var gS = _rccEl('div', 'rcc-field-grid rcc-sessions-grid');
   if (!rs.raceStart) rs.raceStart = 'Rolling';
   if (!rs.realRoadTimeScale) rs.realRoadTimeScale = 'Normal';
-  gS.appendChild(_rccField('Start', _rccSelect(['Rolling', 'Fast'], rs.raceStart, function (v) { rs.raceStart = v; })));
+  // "Fast" is saved as before; it reads Fast Rolling (Matt, 2026-10-14).
+  gS.appendChild(_rccField('Start', _rccSelect([{ label: 'Rolling', value: 'Rolling' }, { label: 'Fast Rolling', value: 'Fast' }], rs.raceStart, function (v) { rs.raceStart = v; })));
   gS.appendChild(_rccField('RealRoad Time Scale', _rccSelect(RCC_REALROAD_SCALES, rs.realRoadTimeScale, function (v) { rs.realRoadTimeScale = v; })));
   var qualSel = _rccSelect([{ label: 'Yes', value: 'Yes' }, { label: 'No (Random start)', value: 'No' }], rs.qualifying, function (v) { rs.qualifying = v; syncPole(); });
   qualSel.id = 'rcc-qualifying';
@@ -2311,7 +2323,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
         layoutSel.value = keepId && trackById[keepId] && trackById[keepId].TrackName === venue ? keepId : layoutSel.options[0].value;
         r.trackId = layoutSel.value;
       }
-      var venueSel = _rccSelect(venues, t.TrackName, function (v) { fillLayouts(v); });
+      var venueSel = _rccSelect(venueOptions, t.TrackName, function (v) { fillLayouts(v); });
       layoutSel.addEventListener('change', function () { r.trackId = layoutSel.value; });
       fillLayouts(t.TrackName, r.trackId);
       g.appendChild(_rccField('Event Name', _rccTextInput(r.eventName, function (v) { r.eventName = v; }, 60)));
