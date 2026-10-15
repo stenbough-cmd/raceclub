@@ -2627,6 +2627,20 @@ function _rclAddStoryVoteBar(wrap, item) {
 }
 
 function _rclNewsMetaLine(item) {
+  // AI stories: BY RACE CLUB PRESS · ROUND N · SHORT NAME · OCT 14, 2026 (the race date), all caps.
+  // The season preview has no round or track: BY RACE CLUB PRESS · SEASON PREVIEW · date.
+  if (item && item.isStory) {
+    var sp = ['By ' + (item.authorName || 'Race Club Press')];
+    if (Number(item.roundNum) > 0) {
+      sp.push('Round ' + item.roundNum);
+      if (item.shortName) sp.push(item.shortName);
+    } else {
+      sp.push('Season Preview');
+    }
+    var sDate = _rclFormatDate(item.publishedAt);
+    if (sDate) sp.push(sDate);
+    return sp.join(' \u00b7 ').toUpperCase();
+  }
   var metaParts = [];
   if (item.authorName) metaParts.push('By ' + item.authorName);
   var dateLabel = _rclFormatDate(item.publishedAt);
