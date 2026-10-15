@@ -604,21 +604,6 @@ function _rcrDraw(body, dr, mode) {
     var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'T = tyres only', color: '#8a94a3' }, { name: 'F+T = fuel and tyres', color: '#1f2937' }]);
     pitKey.classList.add('rcr-legend-gap');
     stratCol.appendChild(pitKey);
-    // Your stop against theirs.
-    if ((you.pits || []).length) {
-      var mine = you.pits[0];
-      var others = mode === 'class' ? (cls ? { lost: cls.pitLost, wear: cls.wearAtStop, tires: cls.stops ? cls.tireStops + ' of ' + cls.stops : '--' } : null)
-        : (function () {
-          var ps = [].concat.apply([], rivals.map(function (r) { return (r.stats || {}).pits || []; }));
-          return { lost: _rcrAvg(ps.map(function (p) { return p.lost; })), wear: _rcrAvg(ps.map(function (p) { return Math.min.apply(null, (p.wearIn || []).filter(function (v) { return v !== null; }).concat([1])); })), tires: ps.filter(function (p) { return p.tires; }).length + ' of ' + ps.length };
-        })();
-      var st = _rccEl('div', 'rcr-tiles rcr-tiles-4 rcr-tiles-gap');
-      st.appendChild(_rcrTile('Your Stop', mine.lost ? Math.round(mine.lost) + ' s' : '--', others && others.lost ? (mode === 'rivals' ? 'Rivals' : 'Class') + ' average ' + Math.round(others.lost) + ' s' : ''));
-      st.appendChild(_rcrTile('Tyres At Your Stop', _rcrPct(Math.min.apply(null, (mine.wearIn || []).filter(function (v) { return v !== null; }).concat([1]))), others && others.wear ? 'Others stopped at ' + _rcrPct(others.wear) : ''));
-      st.appendChild(_rcrTile('Changed Tyres', mine.tires ? 'Yes' : 'No', others ? 'Others: ' + others.tires + ' stops' : ''));
-      st.appendChild(_rcrTile('Fuel At The Stop', _rcrPct(mine.fuelIn), 'Left with ' + _rcrPct(mine.fuelOut)));
-      sb.appendChild(st);
-    }
     body.appendChild(sb);
   }
 
