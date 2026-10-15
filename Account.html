@@ -6071,8 +6071,8 @@
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
-    // active championship season (champGetPage with exportDemo=1, Admin only), with your name
-    // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
+    // active championship season (champGetPage with exportDemo=1, Admin only), with your name kept
+    // (2026-10-14) and your IDs replaced by DEMO, and downloads it as championship-demo.json. Saved
     // at assets/data/ in the website, it is what the public demo (championship.html?demo=1) shows.
     // Gray: it writes nothing to the Sheet.
     addItem('Export Championship Demo', function () {
@@ -6096,7 +6096,7 @@
         showToast('No answer from the server. Try again.', 'error');
       });
     }, [
-      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is replaced with Max Powers and your account details are removed.',
+      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is shown as it is, so visitors see your own season. Your account details are removed.',
       'Save the downloaded file in the website folder at assets/data/championship-demo.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like.'
     ], 'Downloads your active championship season as the public demo file.');
 
