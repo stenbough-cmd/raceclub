@@ -6071,8 +6071,8 @@
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
-    // active championship season (champGetPage with exportDemo=1, Admin only), with your name kept
-    // (2026-10-14) and your IDs replaced by DEMO, and downloads it as championship-demo.json. Saved
+    // active championship season (champGetPage with exportDemo=1, Admin only), with your name
+    // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
     // at assets/data/ in the website, it is what the public demo (championship.html?demo=1) shows.
     // Gray: it writes nothing to the Sheet.
     addItem('Export Championship Demo', function () {
@@ -6096,127 +6096,15 @@
         showToast('No answer from the server. Try again.', 'error');
       });
     }, [
-      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is shown as it is, so visitors see your own season. Your account details are removed.',
+      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is replaced with Max Powers and your account details are removed.',
       'Save the downloaded file in the website folder at assets/data/championship-demo.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like.'
     ], 'Downloads your active championship season as the public demo file.');
 
     panel.appendChild(list);
     section.appendChild(panel);
-    section.appendChild(buildStoryFeedbackPanel(token));
-    section.appendChild(buildWebsiteFeedbackPanel(token));
   }
 
-  // WEBSITE FEEDBACK (CHAMP chat, 2026-10-14) -- notices about things the site did on its own, for an
-  // admin to look at: a car added to a Championship season grid during an upload, or a new Inactive
-  // Cars tab row made from an upload file (complete it in Cars, then set it Active). Acknowledge
-  // crosses a notice off; it stays in the list. Data: Championship.gs champStory op=adminNotices /
-  // op=ackNotice (Admin only).
-  function buildWebsiteFeedbackPanel(token) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.style.marginTop = '24px';
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'Website Feedback'));
-    var body = el('div', 'rc-web-fb-body');
-    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'Loading notices...'));
-    panel.appendChild(body);
-    function rowFor(n) {
-      var row = el('div', 'display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--rc-offwhite);font-size:13px;');
-      var text = el('div', 'flex:1;min-width:0;');
-      var when = n.createdAt ? new Date(n.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-      var title = n.kind === 'NewCar' ? 'New Car Added To Cars' : 'Car Added To Season Grid';
-      text.appendChild(el('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;',
-        '<strong style="color:var(--rc-carbon);">' + escapeHtml(title) + '</strong>' +
-        '<span style="color:var(--rc-steel);">' + escapeHtml(['Championship', n.driver, when].filter(Boolean).join(' \u00B7 ')) + '</span>'));
-      text.appendChild(el('div', 'margin-top:4px;color:var(--rc-carbon);', escapeHtml(n.message)));
-      row.appendChild(text);
-      if (n.acknowledgedAt) {
-        text.style.textDecoration = 'line-through';
-        text.style.opacity = '0.55';
-        row.appendChild(el('span', 'flex:0 0 auto;color:var(--rc-steel);font-size:12px;font-weight:700;padding-top:2px;', 'Acknowledged'));
-        return row;
-      }
-      var btn = el('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Acknowledge');
-      btn.style.flex = '0 0 auto';
-      btn.addEventListener('click', function () {
-        _rcShowPendingButton(btn, 'Saving...');
-        fetchApi('champStory', { method: 'POST', token: token, body: { op: 'ackNotice', noticeId: n.noticeId } }).then(function (res) {
-          if (!res || !res.success) {
-            btn.disabled = false; btn.className = 'rc-btn-primary rc-btn-sm rc-btn-row'; btn.textContent = 'Acknowledge';
-            showToast((res && res.message) || 'Could not acknowledge the notice.', 'error');
-            return;
-          }
-          n.acknowledgedAt = res.acknowledgedAt || new Date().toISOString();
-          row.parentNode.replaceChild(rowFor(n), row);
-        }).catch(function () {
-          btn.disabled = false; btn.className = 'rc-btn-primary rc-btn-sm rc-btn-row'; btn.textContent = 'Acknowledge';
-          showToast('No answer from the server. Try again.', 'error');
-        });
-      });
-      row.appendChild(btn);
-      return row;
-    }
-    fetchApi('champStory', { token: token, params: { op: 'adminNotices' }, timeoutMs: 60000 }).then(function (res) {
-      body.innerHTML = '';
-      if (!res || !res.success) {
-        body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((res && res.message) || 'Could not load the notices.')));
-        return;
-      }
-      if (!(res.notices || []).length) { body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'No notices yet.')); return; }
-      var list = el('div', 'display:flex;flex-direction:column;');
-      res.notices.forEach(function (n) { list.appendChild(rowFor(n)); });
-      body.appendChild(list);
-    }).catch(function () {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', 'No answer from the server.'));
-    });
-    return panel;
-  }
-
-  // GENERATED STORY FEEDBACK (CHAMP chat, 2026-10-11) -- read-only list of every thumbs up / thumbs
-  // down readers gave the AI-written Season Stories on the Championship page, newest first, so the
-  // default story instructions can be improved over time. Data: Championship.gs champStory
-  // op=adminFeedback (Admin only).
-  function buildStoryFeedbackPanel(token) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.style.marginTop = '24px';
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'Generated Story Feedback'));
-    var body = el('div', 'rc-story-fb-body');
-    body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'Loading feedback...'));
-    panel.appendChild(body);
-    // Championship stories (champStory) and multiplayer League stories (leagueStory) land in one list.
-    var champReq = fetchApi('champStory', { token: token, params: { op: 'adminFeedback' }, timeoutMs: 60000 }).catch(function () { return null; });
-    var leagueReq = fetchApi('leagueStory', { token: token, params: { op: 'adminList' }, timeoutMs: 60000 }).catch(function () { return null; });
-    Promise.all([champReq, leagueReq]).then(function (both) {
-      var champRes = both[0], leagueRes = both[1];
-      body.innerHTML = '';
-      if ((!champRes || !champRes.success) && (!leagueRes || !leagueRes.success)) {
-        body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', escapeHtml((champRes && champRes.message) || (leagueRes && leagueRes.message) || 'Could not load the feedback.')));
-        return;
-      }
-      var all = [];
-      if (champRes && champRes.success) (champRes.feedback || []).forEach(function (f) { f.source = 'Championship'; all.push(f); });
-      if (leagueRes && leagueRes.success) (leagueRes.feedback || []).forEach(function (f) { f.source = 'League'; all.push(f); });
-      all.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
-      var res = { feedback: all };
-      if (!res.feedback.length) { body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;margin:0;', 'No feedback yet.')); return; }
-      var table = el('div', 'display:flex;flex-direction:column;');
-      res.feedback.forEach(function (f) {
-        var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-offwhite);font-size:13px;');
-        var up = f.vote === 'up';
-        var when = f.createdAt ? new Date(f.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        row.appendChild(el('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;',
-          '<strong style="color:' + (up ? '#2e9e5b' : 'var(--rc-red)') + ';">' + (up ? 'Thumbs Up' : 'Thumbs Down') + '</strong>' +
-          '<span style="color:var(--rc-carbon);font-weight:700;">' + escapeHtml(f.title || 'Untitled story') + '</span>' +
-          '<span style="color:var(--rc-steel);">' + escapeHtml([f.source, f.reader, f.kind, when, f.promptVersion].filter(Boolean).join(' \u00B7 ')) + '</span>'));
-        if (f.comment) row.appendChild(el('div', 'margin-top:4px;color:var(--rc-carbon);', escapeHtml(f.comment)));
-        table.appendChild(row);
-      });
-      body.appendChild(table);
-    }).catch(function () {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'color:var(--rc-red);font-size:13px;margin:0;', 'No answer from the server.'));
-    });
-    return panel;
-  }
+  // (Generated Story Feedback list removed 2026-10-15: story feedback is emailed to the admin when it is submitted.)
 
   // ---------------------------------------------------------------------
   // Both modals below always open already knowing which round they're for (roundId is handed in by
