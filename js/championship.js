@@ -364,7 +364,18 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
 // ---------------------------------------------------------------------
 // HERO + BLACK LINK BAR
 // ---------------------------------------------------------------------
+// Eyebrow above CHAMPIONSHIP (Matt, 2026-10-15): "<FULL NAME> OFFLINE" for a signed-in driver,
+// "SINGLE PLAYER MODE" when nobody is signed in. The name comes from the saved sign-in profile.
+function _rccRenderEyebrow(page) {
+  var eb = document.querySelector('.rcl-hero-eyebrow');
+  if (!eb) return;
+  var me = getToken() ? (getProfileCache() || {}) : {};
+  var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
+  eb.textContent = name ? name + ' Offline' : 'Single Player Mode';
+}
+
 function rccRenderHero(page) {
+  _rccRenderEyebrow(page);
   var seasonEl = document.getElementById('rcl-hero-season');
   var metaEl = document.getElementById('rcc-hero-meta');
   seasonEl.innerHTML = '';
