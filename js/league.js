@@ -2731,7 +2731,7 @@ function _rclRenderNews(hub) {
     prevWrap.appendChild(_rclEl('div', 'rcl-news-previous-head', 'More Stories'));
     // Capped at the next 5 -- anything older than that stays reachable only through the read-story
     // popup's own "Load More News" button, not listed out here on the page.
-    _rclNewsList.slice(1, 6).forEach(function (item, i) {
+    _rclNewsList.slice(1, 7).forEach(function (item, i) {
       var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclNewsBadgeHtml(item, true) + '<span class="rcl-news-previous-text">' + _rclEscapeHtml(item.title || '(untitled)') + '</span>');
       titleBtn.type = 'button';
       titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1); });
