@@ -269,6 +269,17 @@ body.rc-league-page {
   transform: rotate(18deg);
   z-index: 0;
 }
+/* Small R badge over the lower-right of the red slant (same asset as the index hero badge, smaller).
+   z-index:1 puts it above ::after (z-index:0). */
+.rcl-hero-badge {
+  position: absolute;
+  right: 44px;
+  bottom: 22px;
+  height: 28px;
+  width: auto;
+  z-index: 1;
+  pointer-events: none;
+}
 .rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
 .rcl-hero-eyebrow {
   font-family: var(--rc-font-heading);
@@ -2040,6 +2051,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
      -6%/220px version so only a slim sliver shows on a phone-width hero instead of the bar
      dominating the whole banner. */
   .rcl-hero::after { width: 120px; right: -62px; }
+  .rcl-hero-badge { height: 18px; right: 14px; bottom: 12px; }
 
   /* RACE CLUB eyebrow + SEASON N / SEASON NAME pulled tighter around LEAGUE HUB, and both shrunk a
      touch further. LEAGUE HUB's own .rcl-hero-title is deliberately untouched -- only the two lines
