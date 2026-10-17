@@ -1140,7 +1140,8 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* A plain black band, edge to edge, behind the calendar. Inside it the League Hub's dark-page colors
    come back (the calendar's styles were made for a dark page), so the text reads on black. */
 .rcc-page #rcl-race-carousel {
-  background: #000;
+  /* Same fill as the League Hub calendar band (its navbar color, --rcl-bg-raised #141416; Matt, 2026-10-17). */
+  background: #141416;
   margin-top: 40px;
   margin-bottom: 40px;
   padding: 36px 0 38px;
