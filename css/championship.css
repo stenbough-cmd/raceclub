@@ -1165,3 +1165,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page #rcl-race-carousel .rcl-carousel-item:not(.rcl-carousel-item-active) > * { opacity: 0.75; }
 .rcc-page #rcl-race-carousel .rcl-carousel-item:hover > * { opacity: 1; }
 /* ===== END SAMPLE: BLACK CALENDAR BAND ===== */
+
+/* Calendar (Matt, 2026-10-17): round numbers on the side rounds in white; the current round keeps its red
+   "ROUND N OF N". Race lengths keep a lower case h and m ("1h 12m") inside the capitalised details line. */
+.rcc-page #rcl-race-carousel .rcl-carousel-compact-day { color: var(--rcl-ink); }
+.rcc-page .rcc-dur { text-transform: none; }
+/* Story being written: the message sits on the same row as the blinking light. */
+.rcc-story-pulse + span { flex: 1 1 0; min-width: 0; }

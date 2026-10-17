@@ -389,7 +389,8 @@ function rccRenderHero(page) {
   }
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
-  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName));
+  // An ended season reads "<NAME> (FINISHED)" (Matt, 2026-10-17).
+  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName + (page.seasonEnded ? ' (Finished)' : '')));
   // (The seat line left the header, Matt 2026-10-14: CURRENT SEAT in the black bar opens it.)
 }
 
@@ -405,6 +406,13 @@ function rccOpenCurrentSeat() {
   wrap.appendChild(_rccSeatLine(page, null, true));
   if (page.registration.teamDesc) wrap.appendChild(_rccText('p', 'rcc-myteam-desc rcc-current-seat-desc', page.registration.teamDesc));
   m.body.appendChild(wrap);
+}
+
+// WELCOME popup (no season yet): how to start (Matt, 2026-10-17).
+function rccOpenWelcomeTip() {
+  var m = rccOpenModal('Welcome', { narrow: true });
+  m.dialog.classList.add('rcc-light-dialog');
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Welcome to Race Club Championship. To start your first offline season, open the Season Tools menu in the black bar and choose Create Season.'));
 }
 
 function rccRenderActionBar(page) {
@@ -427,10 +435,10 @@ function rccRenderActionBar(page) {
     if (enabled) b.addEventListener('click', onClick);
     host.appendChild(b);
   }
-  // While a season is running this link is Season Preview (that season's settings and calendar);
-  // once it ends it goes back to Create Season.
-  if (page && page.hasActiveSeason) add('Season Preview', hasSeason, rccOpenSeasonPreview);
-  else add('Create Season', true, rccOpenSeasonWizard.bind(null, null));
+  // Season Preview for the season on screen, current or past (Matt, 2026-10-17). With no season at
+  // all it reads Welcome, and its popup points to Create Season in the Season Tools menu.
+  if (hasSeason) add('Season Preview', true, rccOpenSeasonPreview);
+  else add('Welcome', true, rccOpenWelcomeTip);
   // Current Seat (Matt, 2026-10-14): right after Season Preview, once you have signed for a team.
   if (page && page.registration) add('Current Seat', true, rccOpenCurrentSeat);
   // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
@@ -462,6 +470,9 @@ function rccRenderActionBar(page) {
       if (t && !t.contains(e.target)) { t.classList.remove('rcc-tools-open'); var tb = t.querySelector('.rcc-tools-toggle'); if (tb) tb.setAttribute('aria-expanded', 'false'); }
     });
   }
+  // Create Season always lives in Season Tools (Matt, 2026-10-17); it waits while a season is running.
+  var running = !!(page && page.hasActiveSeason);
+  add('Create Season', !running, rccOpenSeasonWizard.bind(null, null), 'End your current season before creating a new one.', menuLinks);
   add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.', menuLinks);
   add('End Season', active, rccOpenEndSeason, 'No active season to end.', menuLinks);
   add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.', menuLinks);
@@ -731,7 +742,7 @@ function _rccSeasonFormat(page, body) {
   var session = [];
   var tables = d.pointsTables || {};
   var tiers = Object.keys(tables).filter(function (t) { return (tables[t].points || []).length; });
-  if (tiers.length) session.push(row('Race Durations', tiers.map(function (t) { return t + ' ' + tables[t].duration + ' mins'; }).join(', ')));
+  if (tiers.length) session.push(row('Race Durations', tiers.map(function (t) { return t + ' ' + _rccDur(tables[t].duration); }).join(', ')));
   group('Season Details', [details, session]);
 
   var tierRows = tiers.map(function (t) {
@@ -774,7 +785,7 @@ function rccRenderLastRace(page) {
   body.classList.remove('rcl-seasonfmt-modal-body');
   if (!page || !page.hasSeason) {
     titleEl.textContent = 'Welcome';
-    body.appendChild(_rccEmpty('No Championship Yet', 'Use Create Season in the bar above to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then join a team.'));
+    body.appendChild(_rccEmpty('No Championship Yet', 'Open Season Tools in the bar above and choose Create Season to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then join a team.'));
     return;
   }
   // An ended season keeps showing Last Race and the last round's highlights; no Season Recap or
@@ -864,7 +875,7 @@ function rccRenderCarousel(page) {
     var hero = _rccEl('div', 'rcl-carousel-hero');
     var lines = [];
     var tod = _rccTimeOfDay(entry.igRaceStart);
-    var len = entry.raceLengthMinutes ? entry.raceLengthMinutes + ' Mins Long' : '';
+    var len = entry.raceLengthMinutes ? _rccDur(entry.raceLengthMinutes) + ' Long' : '';
     var session = (tod ? tod + ' Race' : '') + (len ? (tod ? ', ' : '') + len : '');
     if (session) lines.push(session);
     // Weather preset in words (the results file records no weather); the time of day above gives the rest.
@@ -872,10 +883,21 @@ function rccRenderCarousel(page) {
     if (entry.hasQualifyResults && !entry.hasRaceResults) lines.push('Qualifying results uploaded. The race results are still to come.');
     if (lines.length) {
       var det = _rccEl('div', 'rcl-carousel-details');
-      lines.forEach(function (l) { det.appendChild(_rccText('div', 'rcl-carousel-details-line', l)); });
+      lines.forEach(function (l) {
+        var lineEl = _rccText('div', 'rcl-carousel-details-line', l);
+        // Keep "1h 12m" in lower case h and m inside the capitalised line (Matt, 2026-10-17).
+        if (len && l.indexOf(len) !== -1) {
+          lineEl.textContent = '';
+          var cut = l.indexOf(len), durTxt = _rccDur(entry.raceLengthMinutes);
+          lineEl.appendChild(document.createTextNode(l.slice(0, cut)));
+          lineEl.appendChild(_rccText('span', 'rcc-dur', durTxt));
+          lineEl.appendChild(document.createTextNode(l.slice(cut + durTxt.length)));
+        }
+        det.appendChild(lineEl);
+      });
       // The race ran longer than planned: the card shows what was raced, and hovering the details
       // shows the plan (points always follow the planned length).
-      if (entry.raceLengthAsRaced) det.title = 'Raced for ' + entry.raceLengthMinutes + ' minutes. The round is planned as a ' + entry.plannedRaceLengthTier + ' race of ' + entry.plannedRaceLengthMinutes + ' minutes, and it scores ' + entry.plannedRaceLengthTier + ' points.';
+      if (entry.raceLengthAsRaced) det.title = 'Raced for ' + _rccDur(entry.raceLengthMinutes) + '. The round is planned as a ' + entry.plannedRaceLengthTier + ' race of ' + _rccDur(entry.plannedRaceLengthMinutes) + ', and it scores ' + entry.plannedRaceLengthTier + ' points.';
       hero.appendChild(det);
     }
     var btns = _rccEl('div', 'rcl-carousel-hero-btns');
@@ -1971,9 +1993,9 @@ function _rccDefaultDetails() {
     classes: { Hypercar: false, LMP2: false, LMP3: false, LMGT3: false, LMGTE: false },
     classSeasons: { Hypercar: '', LMP2: '', LMP3: '', LMGT3: '', LMGTE: '' },
     pointsTables: {
-      Sprint: { duration: 40, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+      Sprint: { duration: 45, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
       Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
-      Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
+      Long: { duration: 72, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
     },
     bonusPoints: { pole: 1, fastestLap: 1, mostLapsLed: 1 },
     dropWeeks: 0,
@@ -2002,6 +2024,15 @@ function _rccSelect(options, value, onChange) {
   if (onChange) s.addEventListener('change', function () { onChange(s.value); });
   return s;
 }
+// Race lengths (Matt, 2026-10-17): Create Season offers these minutes, shown as "45m", "1h", "1h 12m".
+var RCC_RACE_LENGTHS = [15, 20, 30, 45, 60, 72, 90, 120, 144, 180, 240, 360, 480, 600, 720, 1440];
+function _rccDur(min) {
+  var n = Math.round(Number(min) || 0);
+  if (n < 60) return n + 'm';
+  var h = Math.floor(n / 60), m = n % 60;
+  return h + 'h' + (m ? ' ' + m + 'm' : '');
+}
+
 function _rccNumber(value, onChange, min, max) {
   var i = document.createElement('input');
   i.type = 'number';
@@ -2236,9 +2267,13 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     var t = tables[tier];
     var row = _rccEl('div', 'rcc-points-row');
     row.appendChild(_rccText('div', 'rcc-points-tier', tier));
-    var dur = _rccNumber(t.duration, function (v) { t.duration = v; }, 0);
+    // Length picked from the fixed list (Matt, 2026-10-17). A season saved with another length keeps it as an extra choice.
+    var lens = RCC_RACE_LENGTHS.slice();
+    if (t.duration && lens.indexOf(Number(t.duration)) === -1) { lens.push(Number(t.duration)); lens.sort(function (a, b) { return a - b; }); }
+    if (!t.duration) t.duration = 60;
+    var dur = _rccSelect(lens.map(function (v) { return { label: _rccDur(v), value: String(v) }; }), String(t.duration), function (v) { t.duration = Number(v); });
     dur.disabled = pointsLocked;
-    row.appendChild(_rccField('Minutes', dur));
+    row.appendChild(_rccField('Length', dur));
     // One box per finishing position, P1 to P10.
     var cur = (t.points || []).slice(0, 10);
     while (cur.length < 10) cur.push(0);
@@ -2625,8 +2660,9 @@ function rccOpenSeasonPreview() {
   var list = _rccEl('div', 'rcl-seasonfmt-list rcc-preview-rounds');
   (page.calendar || []).forEach(function (c) {
     var bits = [c.track + (c.layout ? ': ' + c.layout : '')];
-    var len = c.raceLengthAsRaced ? c.plannedRaceLengthMinutes + ' mins (' + c.plannedRaceLengthTier + ', raced ' + c.raceLengthMinutes + ' mins)'
-      : (c.raceLengthMinutes ? c.raceLengthMinutes + ' mins (' + c.raceLengthTier + ')' : '');
+    // Lengths as "45m", "1h", "1h 12m" (Matt, 2026-10-17).
+    var len = c.raceLengthAsRaced ? _rccDur(c.plannedRaceLengthMinutes) + ' (' + c.plannedRaceLengthTier + ', raced ' + _rccDur(c.raceLengthMinutes) + ')'
+      : (c.raceLengthMinutes ? _rccDur(c.raceLengthMinutes) + ' (' + c.raceLengthTier + ')' : '');
     if (len) bits.push(len);
     if (_rccTimeOfDay(c.igRaceStart)) bits.push(_rccTimeOfDay(c.igRaceStart) + ' Start');
     if (c.weatherText) bits.push(c.weatherText);
