@@ -1135,3 +1135,25 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcc-lr-footer { text-align: right; }
 .rcc-page .rcc-lr-footer-link { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); text-decoration: none; }
 .rcc-page .rcc-lr-footer-link:hover, .rcc-page .rcc-lr-footer-link:focus-visible { color: var(--rc-red); text-decoration: underline; }
+
+/* ===== SAMPLE: BLACK CALENDAR BAND (Matt, 2026-10-17) -- delete this whole block to revert ===== */
+/* A plain black band, edge to edge, behind the calendar. Inside it the League Hub's dark-page colors
+   come back (the calendar's styles were made for a dark page), so the text reads on black. */
+.rcc-page #rcl-race-carousel {
+  background: #000;
+  margin-top: 40px;
+  margin-bottom: 40px;
+  padding: 36px 0 38px;
+  --rcl-bg: #0a0a0b;
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+}
+.rcc-page #rcl-race-carousel .rcl-carousel-track { padding-bottom: 2px; }
+/* The light page turns the button's hover text white; on black the hover fill is light, so dark text. */
+.rcc-page #rcl-race-carousel .rcl-carousel-hero-btn:not(:disabled):hover { color: #0a0a0b; }
+/* ===== END SAMPLE: BLACK CALENDAR BAND ===== */
