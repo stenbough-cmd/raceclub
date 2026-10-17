@@ -367,6 +367,35 @@ function _rcWireHoverAwayClose(elements, closeFn, delayMs) {
   });
 }
 
+// Which navbar logo is "current": home (Race Club, and every page that is not one of the other two),
+// league (league.html) or champ (championship.html). Drives the logo sizes in style.css.
+function _rcNavActive_() {
+  var p = (location.pathname || '').split('/').pop().toLowerCase();
+  if (p === 'league.html') return 'league';
+  if (p === 'championship.html') return 'champ';
+  return 'home';
+}
+
+// Clicking one of the three logos first flips the active size (so the logos grow and shrink, about
+// 0.22s), then goes to the page. A modified click (new tab) or reduced motion navigates straight away.
+function _rcWireNavLogos_(mount) {
+  if (!mount || mount._rcNavLogos) return;
+  mount._rcNavLogos = true;
+  mount.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a.rc-header-logo-link, a.rc-header-leaguehub-logo-link') : null;
+    if (!a || ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    if (window.innerWidth < 641) return;
+    var href = a.getAttribute('href') || '';
+    var target = href === 'league.html' ? 'league' : (href === 'championship.html' ? 'champ' : (href === 'index.html' ? 'home' : ''));
+    if (!target) return;
+    if (target === mount.getAttribute('data-nav-active')) return; // already here: normal link behavior
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    ev.preventDefault();
+    mount.setAttribute('data-nav-active', target);
+    setTimeout(function () { window.location.href = href; }, 230);
+  });
+}
+
 // Shows just the logo -- no HOME/LOGIN/ACCOUNT at all -- while a page is still waiting to find out
 // whether its own session is actually valid. Used by Account.html in place of an immediate
 // renderHeader() call, so the navbar never asserts a login state (or a logged-out state) it hasn't
@@ -375,6 +404,8 @@ function renderHeaderPending() {
   var mount = document.getElementById('rc-header');
   if (!mount) return;
   mount.className = 'rc-fixed-header';
+  mount.setAttribute('data-nav-active', _rcNavActive_());
+  _rcWireNavLogos_(mount);
   // League Hub badge included here too. Included in this pending state too so the header doesn't
   // visibly gain the badge a moment later once renderHeader() takes over -- it reads as present
   // from the very first paint.
@@ -408,6 +439,8 @@ function renderHeader(opts) {
   var token = opts.forceLoggedOut ? null : ((typeof getToken === 'function') ? getToken() : null);
   var cached = (token && typeof getProfileCache === 'function') ? getProfileCache() : null;
   mount.className = 'rc-fixed-header';
+  mount.setAttribute('data-nav-active', _rcNavActive_());
+  _rcWireNavLogos_(mount);
 
   var html = '';
   html += '<a class="rc-header-logo-link" href="index.html">' +
