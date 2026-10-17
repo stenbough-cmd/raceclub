@@ -2644,4 +2644,6 @@ body.rc-league-page:not(.rcc-page) #rcl-race-carousel {
   padding: 36px 0 38px;
 }
 body.rc-league-page:not(.rcc-page) #rcl-race-carousel .rcl-carousel-track { padding-bottom: 2px; }
+/* The navbar under the banner matches the band color. */
+body.rc-league-page:not(.rcc-page) .rcl-navbar { background: #1b1c1f; }
 /* ===== END SAMPLE ===== */
