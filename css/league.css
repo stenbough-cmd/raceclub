@@ -833,6 +833,41 @@ body.rc-league-page {
   pointer-events: none;
 }
 .rcl-panel-head-news .rcl-panel-title { position: relative; z-index: 1; }
+
+/* Class banners behind each Championship Standings title -- same layering and 0.5 opacity as the
+   League News header above. Plain "Championship Standings" (empty state) uses the GT champion image;
+   GT classes use gt_welcome, LMP2/LMP3 prototype_welcome, Hypercar hypercar_welcome (mirrored
+   horizontally, Hypercar only). */
+.rcl-panel-head-banner { position: relative; overflow: hidden; }
+.rcl-panel-head-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+.rcl-panel-head-banner .rcl-panel-title { position: relative; z-index: 1; }
+.rcl-panel-head-banner-champ::before {
+  background-image: url('../assets/images/gt_champion.jpg');
+  background-image: image-set(url('../assets/images/gt_champion.webp') type('image/webp'), url('../assets/images/gt_champion.jpg') type('image/jpeg'));
+}
+.rcl-panel-head-banner-gt::before {
+  background-image: url('../assets/images/gt_welcome.jpg');
+  background-image: image-set(url('../assets/images/gt_welcome.webp') type('image/webp'), url('../assets/images/gt_welcome.jpg') type('image/jpeg'));
+}
+.rcl-panel-head-banner-proto::before {
+  background-image: url('../assets/images/prototype_welcome.jpg');
+  background-image: image-set(url('../assets/images/prototype_welcome.webp') type('image/webp'), url('../assets/images/prototype_welcome.jpg') type('image/jpeg'));
+}
+.rcl-panel-head-banner-hyper::before {
+  background-image: url('../assets/images/hypercar_welcome.jpg');
+  background-image: image-set(url('../assets/images/hypercar_welcome.webp') type('image/webp'), url('../assets/images/hypercar_welcome.jpg') type('image/jpeg'));
+  transform: scaleX(-1);
+}
 .rcl-panel-title {
   /* Bumped to match .rc-dash-card-title's own size -- style.css's .rc-dash-card-title is 20px/800. */
   font-family: var(--rc-font-heading);

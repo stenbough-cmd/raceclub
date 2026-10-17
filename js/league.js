@@ -987,7 +987,8 @@ function _rclRenderStandings(hub) {
     else { var trophy = _rclBuildTeamTrophy_(hub, cls, className); if (trophy) host.appendChild(trophy); }
     var row = _rclEl('div', 'rcl-row-full');
     var panel = _rclEl('section', 'rcl-panel');
-    var headEl = _rclEl('div', 'rcl-panel-head');
+    var bannerKind = className === 'Hypercar' ? 'hyper' : ((className === 'LMP2' || className === 'LMP3') ? 'proto' : 'gt');
+    var headEl = _rclEl('div', 'rcl-panel-head rcl-panel-head-banner rcl-panel-head-banner-' + bannerKind);
     // Titles never change when a season ends (Matt, 2026-10-13).
     headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + ' Standings'));
     var bodyEl = _rclEl('div', 'rcl-panel-body');
