@@ -1777,11 +1777,16 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 /* League News badges -- RD over the round number on an AI Season Story, */
 /* NE over WS (different color) on a regular news post.                  */
 /* -------------------------------------------------------------------- */
-.rcl-news-headrow { display: flex; align-items: flex-start; gap: 12px; }
-.rcl-news-headtext { min-width: 0; flex: 1 1 auto; }
-.rcl-news-badge-wrap { flex: 0 0 auto; }
-/* Story popup: the badge is vertically centered against the title block. */
-.rcl-modal-story .rcl-news-headrow { align-items: center; }
+/* Grid: the badge sits beside the TITLE only (row 1, both vertically centered); the subtitle/meta line
+   drops to row 2 under the title, so the badge is never centered against title + subtitle together. */
+.rcl-news-headrow { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
+.rcl-news-headtext { display: contents; }
+.rcl-news-badge-wrap { grid-column: 1; grid-row: 1; }
+.rcl-news-headrow .rcl-news-title { grid-column: 2; grid-row: 1; min-width: 0; }
+.rcl-news-headrow .rcl-news-meta { grid-column: 2; grid-row: 2; min-width: 0; }
+.rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) { grid-template-columns: minmax(0, 1fr); }
+.rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) .rcl-news-title,
+.rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) .rcl-news-meta { grid-column: 1; }
 .rcl-news-badge {
   display: inline-flex;
   flex-direction: column;
