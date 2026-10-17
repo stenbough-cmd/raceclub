@@ -1609,6 +1609,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-menu-item:hover { background: var(--rc-offwhite); color: var(--rc-red); }
 /* Icon in front of each account-menu item (same glyphs as the Account.html sidebar). */
 .rc-header-menu-item { display: flex; align-items: center; gap: 10px; box-sizing: border-box; }
+/* Arrow on links that leave the page, and the small gray group label (matches the Account sidebar). */
+.rc-header-menu-item .rc-nav-ext { margin-left: auto; opacity: 0.55; }
+.rc-header-menu-label { padding: 6px 12px 2px; font-family: var(--rc-font-heading); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-steel); }
 .rc-header-menu-icon { flex: 0 0 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
 .rc-header-menu-icon svg { width: 16px; height: 16px; display: block; }
 .rc-header-menu-discord-img { filter: brightness(0); display: block; }

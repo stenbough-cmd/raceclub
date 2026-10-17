@@ -185,35 +185,36 @@ function _rcBuildAccountMenuSectionLinks(role) {
   function link(section, label, iconKey) {
     return '<a class="rc-header-menu-item" href="Account.html#' + section + '" data-rc-section="' + section + '">' + _rcMenuIcon_(iconKey) + '<span>' + label + '</span></a>';
   }
-  // Off-page link to the public league.html, not an in-page section, so it skips data-rc-section
-  // entirely (same as before this reorder).
-  var html = '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>';
-  // Championship (CHAMP chat, 2026-10-08) -- the driver's own offline championship page. Admin-only
-  // for now: everyone else sees it grayed out and unclickable, not hidden (same look as a disabled
-  // sidebar item, .rc-nav-item:disabled in style.css).
-  var champProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+  // Small arrow on the links that leave the current page for another page (same marker as the Account sidebar).
+  var EXT = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
+  var DIV = '<hr class="rc-header-menu-divider">';
+  // Same grouping and order as Account.html's sidebar (reorganized 2026-10-17):
+  //   Me: Dashboard, My Profile Page, Settings | The league: League Hub, Championship |
+  //   Staff (only the ones this role unlocks): League Tools, Stewarding, Admin.
+  // The caller adds a divider, then League Help / Feedback / Discord, a divider, and Logout.
+  var html = link('dashboard', 'Dashboard', 'dash');
+  // My Profile Page: off-page link to the driver's own public career page (saved login profile).
+  var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+  if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
+    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">' + _rcMenuIcon_('profile') + '<span>My Profile Page</span></a>';
+  }
+  html += '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></button>';
+  html += DIV;
+  html += '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span>' + EXT + '</a>';
+  // Championship (CHAMP chat, 2026-10-08): the driver's own offline championship page. Open to Admins and to anyone
+  // with Championship Access (the + on their role); everyone else sees it grayed out and unclickable.
+  var champProfile = myProfile;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
-  // Open to Admins and to anyone with Championship Access (the + on their role, profile.champAccess).
   if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
-    html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>';
+    html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span>' + EXT + '</a>';
   } else {
     html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">' + _rcMenuIcon_('champ') + '<span>Championship</span></span>';
   }
-  // My Career (was My Profile): off-page link to the driver's own public career page
-  // (profile.html?id=..., the Driver Career Page), straight under Championship. Saved login profile,
-  // no data-rc-section. The old in-account Career section has no link any more.
-  var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-  if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
-    // My Profile Page sits in its own section: a line above and a line below.
-    html += '<hr class="rc-header-menu-divider">';
-    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">' + _rcMenuIcon_('profile') + '<span>My Profile Page</span></a>';
-  }
-  html += '<hr class="rc-header-menu-divider">';
-  // Dashboard, then (by role) Admin / League Tools / Stewarding with no divider between them.
-  html += link('dashboard', 'Dashboard', 'dash');
-  if (role === 'Admin') html += link('admin', 'Admin', 'admin');
-  if (role === 'Admin' || role === 'Organizer') html += link('league', 'League Tools', 'league');
-  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') html += link('stewarding', 'Stewarding', 'steward');
+  var staff = '';
+  if (role === 'Admin' || role === 'Organizer') staff += link('league', 'League Tools', 'league');
+  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') staff += link('stewarding', 'Stewarding', 'steward');
+  if (role === 'Admin') staff += link('admin', 'Admin', 'admin');
+  if (staff) html += DIV + '<div class="rc-header-menu-label">Staff</div>' + staff;
   return html;
 }
 
@@ -532,7 +533,6 @@ function renderHeader(opts) {
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
-              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></button>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-help">' + _rcMenuIcon_('help') + '<span>League Help</span></button>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">' + _rcMenuIcon_('feedback') + '<span>Feedback</span></button>' +
               // Discord link, right under Feedback (same order as the Account.html sidebar), opening in a new tab.
