@@ -916,6 +916,23 @@
 
     var blocks = [];
     var block1 = [];
+    // Grid -- same grouping as league.js's _rclGridText_ (year + series + classes), above the dates.
+    (function () {
+      var cs = hub.classSeasons || {};
+      var series = String(hub.series || 'WEC').toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC';
+      var byYear = {}, years = [];
+      ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'].forEach(function (c) {
+        var y = String(cs[c] || '').trim();
+        if (!y) return;
+        if (!byYear[y]) { byYear[y] = []; years.push(y); }
+        byYear[y].push(c);
+      });
+      var txt = years.map(function (y) {
+        var l = byYear[y];
+        return y + ' ' + series + ' ' + (l.length > 2 ? l.slice(0, -1).join(', ') + ' & ' + l[l.length - 1] : l.join(' & '));
+      }).join(' / ');
+      if (txt) block1.push({ label: 'Grid', value: txt });
+    })();
     if (hub.seasonStartUtc && hub.seasonEndUtc) {
       var startLabel = formatDateLabel(String(hub.seasonStartUtc).slice(0, 10));
       var endLabel = formatDateLabel(String(hub.seasonEndUtc).slice(0, 10));

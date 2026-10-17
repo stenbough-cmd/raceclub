@@ -1780,6 +1780,8 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-news-headrow { display: flex; align-items: flex-start; gap: 12px; }
 .rcl-news-headtext { min-width: 0; flex: 1 1 auto; }
 .rcl-news-badge-wrap { flex: 0 0 auto; }
+/* Story popup: the badge is vertically centered against the title block. */
+.rcl-modal-story .rcl-news-headrow { align-items: center; }
 .rcl-news-badge {
   display: inline-flex;
   flex-direction: column;

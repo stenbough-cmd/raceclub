@@ -2694,8 +2694,7 @@ function _rclRenderNews(hub) {
     heroImg.loading = 'lazy';
     currentWrap.appendChild(heroImg);
   }
-  // No square badge on the headline story in the preview box (the badges stay on the list below and in the popup).
-  currentWrap.appendChild(_rclNewsHeadRow(current, true));
+  currentWrap.appendChild(_rclNewsHeadRow(current));
   // 1000-character cap, not the old fixed 14-line CSS clamp -- "Continue reading..." now only shows
   // up when the story is actually longer than that, via preview.truncated.
   // EXCEPT when Last Race has nothing to show -- same hasLastRace check _rclRenderLastRace_ makes
@@ -2811,6 +2810,26 @@ function _rclOpenStoryModal(startIndex) {
 // plain block is just { rows: [{label, value}, ...] }; the one points block carries its own
 // tiers/bonus shape instead, since it needs its own nested tree-sub-rows (Championship Points) and
 // flat rows (Bonus Points) rather than one flat run of label/value rows.
+// Grid line for the Season Preview: "2026 WEC LMGT3 & Hypercar", "2026 ELMS LMP3", "2023 WEC LMGTE & LMP2".
+// Classes are grouped by car year (one group per year, joined with " / "), in the fixed class order.
+function _rclGridText_(hub) {
+  var cs = (hub && hub.classSeasons) || {};
+  var series = String((hub && hub.series) || 'WEC').toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC';
+  var order = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
+  var byYear = {}, years = [];
+  order.forEach(function (c) {
+    var y = String(cs[c] || '').trim();
+    if (!y) return;
+    if (!byYear[y]) { byYear[y] = []; years.push(y); }
+    byYear[y].push(c);
+  });
+  return years.map(function (y) {
+    var list = byYear[y];
+    var names = list.length > 2 ? list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1] : list.join(' & ');
+    return y + ' ' + series + ' ' + names;
+  }).join(' / ');
+}
+
 function _rclBuildSeasonFormatBlocks_(hub) {
   var rs = hub.raceSettings || {};
   var sections = [];
@@ -2818,6 +2837,10 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   // --- Block 1: season snapshot -------------------------------------
   var blocks = [];
   var block1 = [];
+  // Grid -- "<year> <series> <class> & <class>" per year group, listed above the season dates.
+  // hub.series is WEC/ELMS (blank = WEC); hub.classSeasons maps each ticked class to its car year.
+  var gridText = _rclGridText_(hub);
+  if (gridText) block1.push({ label: 'Grid', value: gridText });
   if (hub.seasonStartUtc && hub.seasonEndUtc) {
     var startLabel = _rclFormatDate(hub.seasonStartUtc);
     var endLabel = _rclFormatDate(hub.seasonEndUtc);
