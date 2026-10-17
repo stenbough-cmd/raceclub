@@ -2638,7 +2638,7 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-gain { font-weight: 400; }
    banner (.rcl-navbar uses --rcl-bg-raised). #rcl-race-carousel is already 100vw wide, so the band runs to
    both screen edges. Colors inside the calendar stay the normal dark ones. Scoped away from the Championship page. */
 body.rc-league-page:not(.rcc-page) #rcl-race-carousel {
-  background: var(--rcl-bg-raised);
+  background: #1b1c1f;                          /* a shade or two lighter than the navbar (--rcl-bg-raised) */
   margin-top: 40px;
   margin-bottom: 40px;
   padding: 36px 0 38px;
