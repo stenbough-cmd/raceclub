@@ -1156,4 +1156,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page #rcl-race-carousel .rcl-carousel-track { padding-bottom: 2px; }
 /* The light page turns the button's hover text white; on black the hover fill is light, so dark text. */
 .rcc-page #rcl-race-carousel .rcl-carousel-hero-btn:not(:disabled):hover { color: #0a0a0b; }
+/* Raced rounds at the League Hub calendar's dimness for side rounds (55%, was 40%) so they read on black. */
+.rcc-page #rcl-race-carousel .rcl-carousel-item-finished > * { opacity: 0.55; }
+.rcc-page #rcl-race-carousel .rcl-carousel-item:hover > * { opacity: 1; }
 /* ===== END SAMPLE: BLACK CALENDAR BAND ===== */
