@@ -227,7 +227,7 @@
     refLine('leader', '#c9a227', '5 3');
     svg.appendChild(sv('polyline', { points: pts.map(function (q) { return q.x + ',' + q.y; }).join(' '), fill: 'none', stroke: '#d7261e', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }));
     pts.forEach(function (q, i) {
-      var c = sv('circle', { cx: q.x, cy: q.y, r: 3.6, fill: '#d7261e', stroke: '#17181a', 'stroke-width': 1.5, 'class': 'rdp-dot' });
+      var c = sv('circle', { cx: q.x, cy: q.y, r: 3.6, fill: '#d7261e', stroke: '#ffffff', 'stroke-width': 1.5, 'class': 'rdp-dot' });
       var rd = (season.rounds || []).filter(function (r) { return r.roundId === q.p.roundId; })[0];
       var fin = rd && rd.finish ? ', P' + rd.finish : '';
       var tipHtml = '<div><b>Round ' + esc(q.p.roundNum) + '</b> ' + esc(q.p.track || q.p.eventName || '') + ': ' + esc(q.p.points) + ' pts' + fin + '</div>' + (q.p.pos ? '<div class="rdp-tip-line">Championship: P' + esc(q.p.pos) + '</div>' : '');

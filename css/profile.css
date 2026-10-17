@@ -1,5 +1,23 @@
-/* Race Club -- css/profile.css (public driver profile page). Dark League Hub look: the page uses
-   body.rc-league-page and .rcl-panel from css/league.css, so this file only adds layout. */
+/* Race Club -- css/profile.css (public driver profile page). LIGHT Championship look (Matt,
+   2026-10-17): the page uses body.rc-league-page.rcc-page and .rcl-panel from css/league.css, and the
+   light palette block below is the same one css/championship.css uses. To go back to the dark League
+   Hub look: remove "rcc-page" from the <body> tag in profile.html and delete the block marked
+   LIGHT THEME at the end of this file. */
+body.rc-league-page.rcc-page {
+  --rcl-bg: var(--rc-offwhite);
+  --rcl-bg-raised: var(--rc-white);
+  --rcl-bg-raised-2: var(--rc-offwhite);
+  --rcl-line: var(--rc-silver);
+  --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white));
+  --rcl-ink: var(--rc-carbon);
+  --rcl-ink-dim: var(--rc-steel);
+  --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, var(--rc-white));
+  --rcc-navy: var(--rc-balanced);
+  background: var(--rcl-bg);
+  color: var(--rcl-ink);
+}
+.rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
+.rcc-page .rcl-panel-title { text-shadow: none; }
 body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; }
 .rc-profile-page {
   flex: 1 0 auto;
@@ -246,3 +264,29 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-key-swatch { display: inline-block; width: 20px; height: 0; border-top: 2.5px solid #d7261e; }
 .rdp-key-leader { border-top: 2.5px dashed #c9a227; }
 .rdp-key-avg { border-top: 2.5px solid #8b929b; }
+
+
+/* ===== LIGHT THEME (Matt, 2026-10-17): light-surface versions of the spots above that were hard-coded dark ===== */
+.rcc-page .rdp-ach { background: linear-gradient(160deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
+.rcc-page .rdp-form-sq { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
+.rcc-page .rdp-form-p1 { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); border-color: #cf9f2c; }
+.rcc-page .rdp-form-p2 { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); border-color: #a7abb2; }
+.rcc-page .rdp-form-p3 { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); border-color: #a3653a; }
+.rcc-page .rdp-tip { background: #111827; color: #f3f4f6; border-color: #111827; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.rcc-page .rdp-tip b { color: #fff; }
+.rcc-page .rdp-tip-line { color: #cbd2db; }
+.rcc-page .rdp-grid-line { stroke: #e7eaee; }
+.rcc-page .rdp-light { background: transparent; padding: 0; border-radius: 0; }
+.rcc-page .rdp-laps .rcc-laps-row { border-bottom-color: var(--rcl-line); }
+.rcc-page .rdp-laps .rcc-laps-best { color: #8150c0; }
+.rcc-page .rdp-story-more,
+.rcc-page .rdp-see-more { color: var(--rcc-navy); }
+.rcc-page .rdp-modal-bg { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
+.rcc-page .rdp-modal { box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+.rcc-page .rdp-rival-rank { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
+.rcc-page .rdp-rival-season { background: var(--rcl-bg-raised-2); }
+.rcc-page .rdp-team { background: linear-gradient(170deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
+.rcc-page .rdp-seat-label,
+.rcc-page .rdp-catline-text { color: #8a6a12; }
+.rcc-page .rdp-catline::before,
+.rcc-page .rdp-catline::after { background: #cf9f2c; }
