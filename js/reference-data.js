@@ -122,6 +122,16 @@ var CAR_CLASS_LIST = ['LMGTE', 'LMGT3', 'LMP3', 'LMP2', 'Hypercar'];
 // Car picture path (ECO chat, 2026-10-10): assets/cars/<year>-<number>.png for WEC cars and
 // assets/cars/<year>-elms-<number>.png for ELMS cars (Cars.Series = ELMS; blank = WEC). The loader
 // (js/img-loader.js) tries .webp first, then .jpg/.jpeg, then .png. '' when year or number is missing.
+// Race lengths shown as 15m, 1h, 1h 12m, 1h 30m, 2h 24m, 24h. Minutes in, short text out.
+var RC_RACE_LENGTH_OPTIONS = [15, 20, 30, 45, 60, 72, 90, 120, 144, 180, 240, 360, 480, 600, 720, 1440];
+function rcFormatRaceLength(minutes) {
+  var m = Math.round(Number(minutes));
+  if (!isFinite(m) || m <= 0) return '';
+  if (m < 60) return m + 'm';
+  var h = Math.floor(m / 60), r = m % 60;
+  return r ? (h + 'h ' + r + 'm') : (h + 'h');
+}
+
 function rcCarImageSrc(year, carNumber, series) {
   var y = String(year === undefined || year === null ? '' : year).trim();
   var n = String(carNumber === undefined || carNumber === null ? '' : carNumber).trim();

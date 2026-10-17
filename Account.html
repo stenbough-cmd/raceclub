@@ -975,7 +975,7 @@
     if (tiersWithDuration.length) {
       block2.push({
         label: 'Race Durations',
-        value: tiersWithDuration.map(function (name) { return name + ' ' + tables[name].duration + ' mins'; }).join(', ')
+        value: tiersWithDuration.map(function (name) { return name + ' ' + rcFormatRaceLength(tables[name].duration); }).join(', ')
       });
     } else {
       block2.push({ label: 'Race Duration', value: 'Varies' });
@@ -1481,7 +1481,7 @@
     // (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min'), so this card matches the
     // Calendar page's own Season Format wording instead of minutes alone.
     if (data.raceLengthMinutes) {
-      var nextRaceLengthLabel = data.raceLengthTier ? (data.raceLengthTier + ' · ' + data.raceLengthMinutes + ' min') : (data.raceLengthMinutes + ' min');
+      var nextRaceLengthLabel = data.raceLengthTier ? (data.raceLengthTier + ' · ' + rcFormatRaceLength(data.raceLengthMinutes)) : rcFormatRaceLength(data.raceLengthMinutes);
       stats.appendChild(calStat(ICON_CLOCK, nextRaceLengthLabel, 'Race length'));
     }
     // Weather pill -- same chip the Calendar page's own race cards use (weatherIcon() + "N% Rain ·
@@ -4053,7 +4053,7 @@
     // row uses.
     var metaRow = el('div', 'rc-cal-race-meta');
     if (!isSpecial && entry.raceLengthMinutes) {
-      var lengthText = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min') : (entry.raceLengthMinutes + ' min');
+      var lengthText = entry.raceLengthTier ? (entry.raceLengthTier + ' · ' + rcFormatRaceLength(entry.raceLengthMinutes)) : rcFormatRaceLength(entry.raceLengthMinutes);
       metaRow.appendChild(calStat(ICON_CALENDAR, lengthText, 'Race length'));
     }
     if (entry.igRaceStart) metaRow.appendChild(calStat(ICON_FLAG, 'In-Game Event Time ' + entry.igRaceStart, 'The in-game race start time'));
@@ -4821,9 +4821,9 @@
       // means that category pays no bonus this season.
       bonusPoints: { pole: 1, fastestLap: 1, mostLapsLed: 1 },
       pointsTables: {
-        Sprint: { duration: 40, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+        Sprint: { duration: 45, points: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
         Medium: { duration: 60, points: [38, 27, 23, 18, 15, 12, 9, 6, 3, 2] },
-        Long: { duration: 80, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
+        Long: { duration: 90, points: [50, 36, 30, 24, 20, 16, 12, 8, 4, 2] }
       },
       seasonStartDate: todayDateStr(),
       seasonStartTime: '20:00',
@@ -4988,11 +4988,23 @@
     wrap.style.marginTop = '10px';
     var head = el('div', 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;');
     head.appendChild(el('h4', 'margin:0;font-size:13px;', tier + ' Tier'));
-    var durationInput = wizNumberInput(state.pointsTables[tier].duration, function (v) { state.pointsTables[tier].duration = v; }, { min: 5 });
-    durationInput.style.cssText = 'width:70px;max-width:70px;display:inline-block;margin:0;';
+    // Dropdown of the standard race lengths; a season saved with some other length keeps it as an extra option.
+    var durationInput = document.createElement('select');
+    var durOptions = RC_RACE_LENGTH_OPTIONS.slice();
+    var curDur = Number(state.pointsTables[tier].duration);
+    if (curDur && durOptions.indexOf(curDur) === -1) { durOptions.push(curDur); durOptions.sort(function (a, b) { return a - b; }); }
+    durOptions.forEach(function (mins) {
+      var o = document.createElement('option');
+      o.value = String(mins); o.textContent = rcFormatRaceLength(mins);
+      if (mins === curDur) o.selected = true;
+      durationInput.appendChild(o);
+    });
+    if (!curDur) { durationInput.value = '45'; state.pointsTables[tier].duration = 45; }
+    durationInput.addEventListener('change', function () { state.pointsTables[tier].duration = Number(durationInput.value); });
+    durationInput.style.cssText = 'width:auto;max-width:110px;display:inline-block;margin:0;';
     requireField(durationInput, requiredEls);
     var durWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
-    durWrap.appendChild(document.createTextNode('Duration (min)'));
+    durWrap.appendChild(document.createTextNode('Race length'));
     durWrap.appendChild(durationInput);
     head.appendChild(durWrap);
     wrap.appendChild(head);
@@ -5607,7 +5619,7 @@
       state.specialEvents.forEach(function (evt, idx) {
         var trackLine = (evt.date || '(date not set)') + ' at ' + (evt.startTime || '(time not set)') +
           ' · ' + (evt.track || '(no track)') + (evt.layout ? ' · ' + evt.layout : '');
-        var detailsLine = (evt.raceLengthMinutes || '?') + ' min · ' + (evt.weather || 'Clear') +
+        var detailsLine = (evt.raceLengthMinutes ? rcFormatRaceLength(evt.raceLengthMinutes) : '?') + ' · ' + (evt.weather || 'Clear') +
           ' · ' + (evt.chanceOfRain || 0) + '% Rain / ' + (evt.temperatureC === undefined ? 20 : evt.temperatureC) + '°C' +
           ' · Race Start ' + (evt.igRaceStart || '(not set)') + ' · Fun race, no payouts';
         specialPanel.appendChild(previewLine((evt.eventName || 'Special Event ' + (idx + 1)), trackLine));

@@ -2301,7 +2301,7 @@ function _rclRenderRaceCarousel(hub) {
     var lengthMin = _rclEntryLengthMinutes(entry, hub);
     // raceLengthTier (e.g. "Long") dropped from this line entirely.
     var sessionBits = [];
-    if (lengthMin) sessionBits.push(lengthMin + ' Mins Long');
+    if (lengthMin) sessionBits.push(rcFormatRaceLength(lengthMin) + ' Long');
     var sessionLine = (timeOfDay ? (timeOfDay + ' Race') : '') + (sessionBits.length ? ((timeOfDay ? ', ' : '') + sessionBits.join(' ')) : '');
     if (sessionLine) detailLines.push(sessionLine);
     // Weather line reformatted -- one fixed template every time now (condition, then rain chance,
@@ -2402,7 +2402,7 @@ function _rclOpenRaceInfoModal(hub, entry) {
   if (entry.track) roundRows.push({ label: 'Track', value: entry.track + (entry.layout ? (': ' + entry.layout) : '') });
   if (entry.startUtc) roundRows.push({ label: 'Date', value: _rclFormatDateTime(entry.startUtc) });
   if (entry.raceLengthTier) {
-    roundRows.push({ label: 'Race Length', value: entry.raceLengthTier + (entry.raceLengthMinutes ? (' (' + entry.raceLengthMinutes + ' mins)') : '') });
+    roundRows.push({ label: 'Race Length', value: entry.raceLengthTier + (entry.raceLengthMinutes ? (' (' + rcFormatRaceLength(entry.raceLengthMinutes) + ')') : '') });
   }
   if (entry.igRaceStart) roundRows.push({ label: 'In-Game Event Time', value: _rclFormat12h(entry.igRaceStart) });
   if (entry.weather) {
@@ -2905,7 +2905,7 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   if (tiersWithDuration.length) {
     block2.push({
       label: 'Race Durations',
-      value: tiersWithDuration.map(function (name) { return name + ' ' + tables[name].duration + ' mins'; }).join(', ')
+      value: tiersWithDuration.map(function (name) { return name + ' ' + rcFormatRaceLength(tables[name].duration); }).join(', ')
     });
   } else {
     block2.push({ label: 'Race Duration', value: 'Varies' });
@@ -2957,14 +2957,14 @@ function _rclRenderHero(hub) {
     if (hub.hasSeason && hub.seasonNumber) {
       seasonEl.innerHTML = '';
       var numSpan = _rclEl('span', 'rcl-hero-season-num');
-      numSpan.textContent = 'Season ' + hub.seasonNumber;
+      numSpan.textContent = 'Season ' + hub.seasonNumber + ((hub.seasonFinished && !hub.seasonName) ? ' (FINISHED)' : '');
       seasonEl.appendChild(numSpan);
       if (hub.seasonName) {
         var sep = _rclEl('span', 'rcl-hero-season-sep');
         sep.textContent = ' / ';
         seasonEl.appendChild(sep);
         var nameSpan = _rclEl('span', 'rcl-hero-season-name');
-        nameSpan.textContent = hub.seasonName;
+        nameSpan.textContent = hub.seasonName + (hub.seasonFinished ? ' (FINISHED)' : '');
         seasonEl.appendChild(nameSpan);
       }
     }
@@ -3273,7 +3273,7 @@ function _rclOpenSeasonPreviewModal_(hub) {
       var trackBit = (e.track || '') + (e.layout ? ': ' + e.layout : '');
       if (trackBit) bits.push(trackBit);
       var mins = _rclEntryLengthMinutes(e, hub);
-      if (mins || e.raceLengthTier) bits.push((mins ? mins + ' mins' : '') + (e.raceLengthTier ? (mins ? ' ' : '') + '(' + e.raceLengthTier + ')' : ''));
+      if (mins || e.raceLengthTier) bits.push((mins ? rcFormatRaceLength(mins) : '') + (e.raceLengthTier ? (mins ? ' ' : '') + '(' + e.raceLengthTier + ')' : ''));
       if (e.igRaceStart) bits.push(_rclFormat12h(e.igRaceStart));
       if (e.weather) {
         var w = e.weather + ' ' + (e.chanceOfRain || 0) + '% Rain';
@@ -3378,7 +3378,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // (Matt, 2026-10-13): Last Race, the ticker, the standings and every title stay as they were.
     // The story tells visitors the season is over. The ended-season branches in this file are kept
     // but no longer reached from here.
-    if (hub && hub.seasonEnded) hub.seasonEnded = false;
+    if (hub && hub.seasonEnded) { hub.seasonFinished = true; hub.seasonEnded = false; }
     if (!hub || !hub.success) {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });

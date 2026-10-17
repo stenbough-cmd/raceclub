@@ -2570,6 +2570,8 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
    at the bottom. */
 body.rc-league-page:not(.rcc-page) .rcl-carousel-outer { margin-top: 64px; }
 body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 21px; }
+/* Date numbers on the side (previous / future) rounds are white; the active round keeps its red date line. */
+body.rc-league-page:not(.rcc-page) .rcl-carousel-compact-day { color: var(--rcl-ink); }
 /* League calendar: rounds that are not the active one are less dim (side rounds 55% -> 80%, raced rounds 40% -> 65%).
    Active and hover stay at 100%. Scoped to the League page; the Championship page keeps its own dimness. */
 body.rc-league-page:not(.rcc-page) .rcl-carousel-item > * { opacity: 0.8; }
