@@ -2624,7 +2624,9 @@ body.rc-league-page:not(.rcc-page) .rcl-mfr-rest-pts,
 body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
 
 /* Flag behind a member name in the Member List popup. */
-.rcl-memberlist-name .rcl-memberlist-flag { display: inline-block; vertical-align: middle; margin-left: 8px; }
+/* The name and flag sit in a row centered on each other (the name text's line box and the flag's middle line up). */
+.rcl-memberlist-name { display: flex; align-items: center; }
+.rcl-memberlist-name .rcl-memberlist-flag { display: block; flex: none; margin: 0 0 0 8px; }
 
 /* League Race Recap > Race Report: driver names and the green position-gain wording are regular weight
    (Matt, 2026-10-14). Scoped away from the Championship page, which keeps its own look. */
