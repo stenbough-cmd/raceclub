@@ -2570,6 +2570,12 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
    at the bottom. */
 body.rc-league-page:not(.rcc-page) .rcl-carousel-outer { margin-top: 64px; }
 body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 21px; }
+/* League calendar: rounds that are not the active one are less dim (side rounds 55% -> 80%, raced rounds 40% -> 65%).
+   Active and hover stay at 100%. Scoped to the League page; the Championship page keeps its own dimness. */
+body.rc-league-page:not(.rcc-page) .rcl-carousel-item > * { opacity: 0.8; }
+body.rc-league-page:not(.rcc-page) .rcl-carousel-item-finished > * { opacity: 0.65; }
+body.rc-league-page:not(.rcc-page) .rcl-carousel-item:hover > *,
+body.rc-league-page:not(.rcc-page) .rcl-carousel-item-active > * { opacity: 1; }
 
 /* ===== League page: mobile + recap + report + ticker round (2026-10-13) ===== */
 /* Race Recap: key under each class board, small icons after a driver's name. */
