@@ -1111,3 +1111,16 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-mfr-tile-box-inner { padding: 16px; }
   .rcc-page .rcl-mfr-tile-logo { max-height: 70%; }
 }
+
+/* Class standings headers (Matt, 2026-10-17): each class's photo behind its title, in the same style
+   and opacity as the Season Stories header (league.css .rcl-panel-head-news): cover, centered, 50%.
+   GT = LMGT3/LMGTE, Hypercar, Prototype = LMP2/LMP3 (the same photos the seat pages use). */
+.rcc-page .rcc-class-head { position: relative; overflow: hidden; }
+.rcc-page .rcc-class-head::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-repeat: no-repeat; background-position: center; background-size: cover; opacity: 0.5;
+}
+.rcc-page .rcc-class-head-gt::before { background-image: url('../assets/images/gt_welcome.jpg'); background-image: image-set(url('../assets/images/gt_welcome.webp') type('image/webp'), url('../assets/images/gt_welcome.jpg') type('image/jpeg')); }
+.rcc-page .rcc-class-head-hyper::before { background-image: url('../assets/images/hypercar_welcome.jpg'); background-image: image-set(url('../assets/images/hypercar_welcome.webp') type('image/webp'), url('../assets/images/hypercar_welcome.jpg') type('image/jpeg')); }
+.rcc-page .rcc-class-head-proto::before { background-image: url('../assets/images/prototype_welcome.jpg'); background-image: image-set(url('../assets/images/prototype_welcome.webp') type('image/webp'), url('../assets/images/prototype_welcome.jpg') type('image/jpeg')); }
+.rcc-page .rcc-class-head .rcl-panel-title { position: relative; z-index: 1; color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }

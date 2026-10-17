@@ -1155,7 +1155,9 @@ function rccRenderStandings(page) {
     else { var trophy = _rccTeamTrophy(page, className); if (trophy) host.appendChild(trophy); }
     var row = _rccEl('div', 'rcl-row-full');
     var panel = _rccEl('section', 'rcl-panel');
-    var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs');
+    // Class photo behind the title, like the Season Stories header (Matt, 2026-10-17).
+    var banner = (className === 'LMGTE' || className === 'LMGT3') ? 'gt' : (className === 'Hypercar' ? 'hyper' : 'proto');
+    var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs rcc-class-head rcc-class-head-' + banner);
     // Titles stay the same when the season ends, no "Final" (Matt, 2026-10-13).
     headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Standings'));
     var body = _rccEl('div', 'rcl-panel-body');
