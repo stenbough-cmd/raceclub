@@ -227,7 +227,7 @@ body.rc-league-page {
 /* -------------------------------------------------------------------- */
 .rcl-hero {
   position: relative;
-  padding: 46px 32px 58px;
+  padding: 51px 32px 53px;
   background: linear-gradient(135deg, var(--rcl-bg-raised) 0%, var(--rcl-bg) 70%);
   border-bottom: 1px solid var(--rcl-line);
   overflow: hidden;
