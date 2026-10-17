@@ -303,6 +303,7 @@
   var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line></svg>';
   var ICON_FUEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12z"></path></svg>';
   var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
+  var ICON_EXTERNAL = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
   var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
   var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
   var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
@@ -435,6 +436,19 @@
   function buildSidebarNav() {
     var nav = document.getElementById('rc-sidebar-nav');
     nav.innerHTML = '';
+    // Small arrow on the two links that leave this page for another page.
+    function markExternal(id) { var b = document.getElementById(id); if (b) b.insertAdjacentHTML('beforeend', ICON_EXTERNAL); }
+    // ORDER (reorganized 2026-10-17): 1) Me: Dashboard, My Profile Page, Settings. 2) The league (these two leave
+    // this page, marked with a small arrow): League Hub, Championship. 3) Staff: League Tools, Stewarding, Admin
+    // (always shown, grayed for roles that cannot use them). 4) Help and community: League Help, Feedback, Discord.
+    // Then Log Out on its own at the bottom.
+    nav.appendChild(makeNavButton('dashboard', 'Dashboard', ICON_DASHBOARD, 'rc-nav-dashboard'));
+    nav.appendChild(makeNavButton('myprofile', 'My Profile Page', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
+      if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
+    }));
+    var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
+    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
+    nav.appendChild(navDivider());
     // Links off-page to the public league.html, not another in-page section, so it navigates
     // directly instead of going through showSection/ showLazySection.
     nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
@@ -448,24 +462,13 @@
       'rc-nav-championship', false, function () {
         if (currentProfile && currentProfile.profileId) window.location.href = 'championship.html?id=' + encodeURIComponent(currentProfile.profileId);
       }));
-    // My Career (was My Profile) -- off-page link to this driver's own public Driver Career Page
-    // (profile.html?id=...), right under Championship. The old in-account Career section no longer
-    // has a link: everything a driver wants to see lives on the public career page.
+    markExternal('rc-nav-leaguehub');
+    markExternal('rc-nav-championship');
     nav.appendChild(navDivider());
-    nav.appendChild(makeNavButton('myprofile', 'My Profile Page', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
-      if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
-    }));
-    nav.appendChild(navDivider());
-    // Dashboard, then Admin / League Tools / Stewarding with no divider between them.
-    nav.appendChild(makeNavButton('dashboard', 'Dashboard', ICON_DASHBOARD, 'rc-nav-dashboard'));
-    // The standalone Data Management button is gone; Admin-only accounts reach the exact same tools
-    // from here instead. hiddenByDefault is false for Admin/League Tools/Stewarding now -- they
-    // always render; setNavAccess() (called once currentProfile is known, below) disables the ones
-    // this driver's role can't use instead of removing them from the sidebar.
-    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', false, function () {
-      showLazySection('admin', currentToken);
-    });
-    nav.appendChild(adminBtn);
+    var staffLabel = document.createElement('div');
+    staffLabel.className = 'rc-nav-group-label';
+    staffLabel.textContent = 'Staff';
+    nav.appendChild(staffLabel);
     // League Management is real content now (renderLeagueManagementSection), same
     // lazy-fetch-on-click pattern as Admin.
     var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', false, function () {
@@ -479,11 +482,11 @@
       showLazySection('stewarding', currentToken);
     });
     nav.appendChild(stewardingBtn);
+    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', false, function () {
+      showLazySection('admin', currentToken);
+    });
+    nav.appendChild(adminBtn);
     nav.appendChild(navDivider());
-    // Same reorder applied to the header dropdown's own last section (see
-    // _rcBuildAccountMenuSectionLinks callers, js/header.js).
-    var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
-    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
     // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
     // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
     // sidebar/nav chrome, which read as leaving the site rather than part of the account.
