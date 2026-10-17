@@ -1467,17 +1467,18 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-leaguehub-logo { transition: transform 0.18s ease; }
 .rc-header-logo-link:hover .rc-header-logo,
 .rc-header-leaguehub-logo-link:hover .rc-header-leaguehub-logo { transform: scale(1.06); }
-/* Navbar logos (desktop): the logo for the page you are on is full size (58px, the Race Club logo's
-   size) and the other two shrink to 22.5px. #rc-header[data-nav-active] is set by header.js (home,
+/* Navbar logos (desktop): balanced by WIDTH, not height, since the images have different shapes. Active
+   widths are about 215px (Race Club 58px tall; League Hub and Championship 36px tall) and inactive
+   widths about 133px (Race Club 36px tall; the other two 22.5px tall, their usual size). #rc-header[data-nav-active] is set by header.js (home,
    league or champ); clicking a logo flips it first so the sizes animate (about 0.22s) before the page
    changes. Phones keep the single Race Club logo as is. */
 @media (min-width: 641px) {
   .rc-header-logo,
   .rc-header-leaguehub-logo { transition: transform 0.18s ease, height 0.22s ease; }
-  #rc-header[data-nav-active] .rc-header-logo { height: 22.5px; }
+  #rc-header[data-nav-active] .rc-header-logo { height: 36px; }
   #rc-header[data-nav-active="home"] .rc-header-logo { height: 58px; }
   #rc-header[data-nav-active="league"] a[href="league.html"] .rc-header-leaguehub-logo,
-  #rc-header[data-nav-active="champ"] a[href="championship.html"] .rc-header-leaguehub-logo { height: 58px; }
+  #rc-header[data-nav-active="champ"] a[href="championship.html"] .rc-header-leaguehub-logo { height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rc-header-logo,
