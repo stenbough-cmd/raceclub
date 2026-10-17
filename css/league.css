@@ -2624,3 +2624,16 @@ body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
    (Matt, 2026-10-14). Scoped away from the Championship page, which keeps its own look. */
 body.rc-league-page:not(.rcc-page) .rcl-report-name { font-weight: 400; }
 body.rc-league-page:not(.rcc-page) .rcl-report-clause-gain { font-weight: 400; }
+
+/* ===== SAMPLE: CALENDAR BAND -- delete this whole block to revert ===== */
+/* League Hub calendar sits on a plain filled band, edge to edge, in the same color as the navbar under the
+   banner (.rcl-navbar uses --rcl-bg-raised). #rcl-race-carousel is already 100vw wide, so the band runs to
+   both screen edges. Colors inside the calendar stay the normal dark ones. Scoped away from the Championship page. */
+body.rc-league-page:not(.rcc-page) #rcl-race-carousel {
+  background: var(--rcl-bg-raised);
+  margin-top: 40px;
+  margin-bottom: 40px;
+  padding: 36px 0 38px;
+}
+body.rc-league-page:not(.rcc-page) #rcl-race-carousel .rcl-carousel-track { padding-bottom: 2px; }
+/* ===== END SAMPLE ===== */
