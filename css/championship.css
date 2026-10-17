@@ -1032,8 +1032,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
    track's height now includes its padding (championship.js), and the card already has 16px of room
    under its buttons, so the track only needs 2px at the bottom. */
 .rcc-page .rcl-carousel-outer { margin-top: 64px; }
-/* 40px under the track (was 2px) so the gap below the calendar matches the 68px above it (Matt, 2026-10-17). */
-.rcc-page .rcl-carousel-track { padding-bottom: 40px; }
+/* 21px under the track: about 49px from the calendar's divider lines to the next section (Matt, 2026-10-17;
+   2px gave 30px and read too tight, 40px gave 68px and read too loose). */
+.rcc-page .rcl-carousel-track { padding-bottom: 21px; }
 
 /* GT and prototype drivers boards: the team in gray after the driver names (Matt, 2026-10-13).
    Hidden on phones, where it only had room for a letter or two. */
