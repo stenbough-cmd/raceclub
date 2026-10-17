@@ -1126,3 +1126,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Hypercar photo mirrored left to right (Matt, 2026-10-17); only the image layer flips, not the title. */
 .rcc-page .rcc-class-head-hyper::before { transform: scaleX(-1); }
 .rcc-page .rcc-class-head .rcl-panel-title { position: relative; z-index: 1; color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+
+
+/* Last Race footer (Matt, 2026-10-17): a link to this round's Race Recap under a gray line, in the
+   standings board footers' small heading style. */
+.rcc-page .rcc-lr-footer { text-align: right; }
+.rcc-page .rcc-lr-footer-link { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); text-decoration: none; }
+.rcc-page .rcc-lr-footer-link:hover, .rcc-page .rcc-lr-footer-link:focus-visible { color: var(--rc-red); text-decoration: underline; }
