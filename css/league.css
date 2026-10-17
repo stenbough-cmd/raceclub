@@ -601,13 +601,13 @@ body.rc-league-page {
 /* -------------------------------------------------------------------- */
 .rcl-lr-class { margin-top: 32px; }
 /* Last Race footer -- a line, then the Race Recap link. */
-.rcl-lr-footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--rcl-line-bright); }
+.rcl-lr-footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--rcl-line-bright); text-align: right; }
 .rcl-lr-footer-link {
   background: none; border: none; padding: 0; cursor: pointer;
   font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--rcl-ink-dim); text-align: left;
+  text-transform: uppercase; color: var(--rcl-ink-dim); text-align: right;
 }
-.rcl-lr-footer-link:hover { color: var(--rcl-ink); }
+.rcl-lr-footer-link:hover { color: var(--rcl-ink); text-decoration: underline; }
 .rcl-lr-footer-arrow { display: inline-block; margin-left: 6px; transition: transform .15s ease; }
 .rcl-lr-footer-link:hover .rcl-lr-footer-arrow { transform: translateX(3px); }
 /* First class's header sits the same distance below the panel's red underline as Championship
@@ -2569,7 +2569,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
    padding (js/league.js), and the card already has 16px under its buttons, so only 2px is needed
    at the bottom. */
 body.rc-league-page:not(.rcc-page) .rcl-carousel-outer { margin-top: 64px; }
-body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 2px; }
+body.rc-league-page:not(.rcc-page) .rcl-carousel-track { padding-bottom: 21px; }
 
 /* ===== League page: mobile + recap + report + ticker round (2026-10-13) ===== */
 /* Race Recap: key under each class board, small icons after a driver's name. */

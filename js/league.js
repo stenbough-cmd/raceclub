@@ -1292,7 +1292,7 @@ function _rclRenderLastRace_(hub) {
     var match = null;
     recapRounds.forEach(function (rr) { if (!match && r.roundNum && Number(rr.roundNum) === Number(r.roundNum)) match = rr; });
     var footer = _rclEl('div', 'rcl-lr-footer');
-    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP FROM THIS RACE <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
+    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP AND DRIVER REPORT FROM THIS RACE <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
     footBtn.type = 'button';
     footBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, match ? match.roundId : undefined); });
     footer.appendChild(footBtn);
