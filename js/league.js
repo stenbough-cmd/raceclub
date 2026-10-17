@@ -1284,6 +1284,20 @@ function _rclRenderLastRace_(hub) {
     }
     body.appendChild(clsWrap);
   });
+
+  // Footer under a line: opens the Race Recap popup on this race. hub.lastRace carries no roundId, so the
+  // round is matched by round number against hub.resultsRounds (falls back to the popup's default round).
+  var recapRounds = hub.resultsRounds || [];
+  if (recapRounds.length) {
+    var match = null;
+    recapRounds.forEach(function (rr) { if (!match && r.roundNum && Number(rr.roundNum) === Number(r.roundNum)) match = rr; });
+    var footer = _rclEl('div', 'rcl-lr-footer');
+    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP FROM THIS RACE <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
+    footBtn.type = 'button';
+    footBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, match ? match.roundId : undefined); });
+    footer.appendChild(footBtn);
+    body.appendChild(footer);
+  }
 }
 
 // Podium-STAND graphic for one class's top 3: classic left-to-right P2/P1/P3 order, P1's stand
