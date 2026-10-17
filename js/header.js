@@ -721,15 +721,18 @@ function rcOpenLegalModal() {
   // Static, trusted, hand-authored content -- no escaping needed, this never includes any
   // user-supplied data.
   body.innerHTML =
-    '<p class="rc-legal-updated">Last Updated: September 2026</p>' +
+    '<p class="rc-legal-updated">Last Updated: October 2026</p>' +
     '<h4>Independent Community</h4>' +
-    '<p>Race Club Online is an independent community-operated sim racing league and informational platform. Race Club Online is not affiliated with, endorsed by, sponsored by, or otherwise associated with any game developer, game publisher, motorsport organization, racing series, vehicle manufacturer, race circuit operator, trademark owner, or governing body unless explicitly stated otherwise.</p>' +
+    '<p>Race Club Online is an independent community-operated sim racing league and informational platform. Race Club Online is not affiliated with, endorsed by, sponsored by, or otherwise associated with any game developer, game publisher, motorsport organization, racing team, racing series, vehicle manufacturer, race circuit operator, trademark owner, or governing body unless explicitly stated otherwise.</p>' +
     '<h4>Trademarks and Intellectual Property</h4>' +
-    '<p>All trademarks, service marks, trade names, logos, vehicle names, team names, circuit names, series names, and other intellectual property displayed on this website are the property of their respective owners.</p>' +
+    '<p>All trademarks, service marks, trade names, logos, vehicle names, team names, team liveries, car designs, circuit names, series names, and other intellectual property displayed on this website are the property of their respective owners.</p>' +
     '<p>Any such references are used solely for identification, informational, educational, commentary, statistical, historical, or community-related purposes. The use of these marks does not imply any affiliation, sponsorship, endorsement, approval, or partnership with Race Club Online.</p>' +
     '<h4>Le Mans Ultimate</h4>' +
     '<p>Race Club Online may reference the Le Mans Ultimate racing simulation, its content, events, vehicles, classes, and tracks for purposes related to league organization, competition, statistics, and community discussion.</p>' +
     '<p>Race Club Online is an independent community and is not affiliated with, endorsed by, sponsored by, or otherwise associated with Le Mans Ultimate, Studio 397, Motorsport Games, the Automobile Club de l’Ouest (ACO), FIA World Endurance Championship (WEC), or any related organizations.</p>' +
+    '<h4>Racing Teams and Liveries</h4>' +
+    '<p>Race Club Online displays the names of real-world racing teams, along with images of the cars and team liveries as they appear in Le Mans Ultimate, so that drivers can recognize the entries on the grid, in standings, and in results. Team descriptions and story content on this website are written by Race Club Online for informational and entertainment purposes.</p>' +
+    '<p>Race Club Online is not affiliated with, endorsed by, or sponsored by any of the racing teams shown, and no team, driver, or sponsor has reviewed or approved the content on this website. Team names, logos, liveries, and car designs remain the property of their respective owners. Any in-league team, sponsor, or story content is fictional or community-created and does not represent the views, actions, or statements of any real team or person.</p>' +
     '<h4>Vehicle Manufacturers and Racing Circuits</h4>' +
     '<p>References to real-world vehicle manufacturers, race circuits, racing series, and motorsport organizations are provided solely to identify content used within league competition and statistical reporting.</p>' +
     '<p>All manufacturer logos, vehicle names, circuit names, and related trademarks remain the property of their respective owners.</p>' +
