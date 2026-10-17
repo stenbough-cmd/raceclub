@@ -432,21 +432,19 @@ p { margin: 0 0 0.75em; }
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 42px;
-  height: 42px;
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
   color: #fff;
   font-family: var(--rc-font-heading);
   line-height: 1;
 }
-.rc-news-badge-rd { background: var(--rc-red); }
-.rc-news-badge-ne { background: #2f6f9f; }
-.rc-news-badge-top { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding-left: 0.12em; }
-.rc-news-badge-bottom { margin-top: 3px; font-size: 17px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
-.rc-news-badge-ne .rc-news-badge-top, .rc-news-badge-ne .rc-news-badge-bottom { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
-.rc-news-badge-ne .rc-news-badge-bottom { margin-top: 2px; }
-.rc-news-badge-rd, .rc-news-badge-ne { box-sizing: border-box; border-left: 5px solid rgba(0,0,0,0.38); }
-.rc-news-badge-rd .rc-news-badge-top, .rc-news-badge-rd .rc-news-badge-bottom { font-size: 15px; font-weight: 800; letter-spacing: 0.04em; padding-left: 0; }
-.rc-news-badge-rd .rc-news-badge-bottom { margin-top: 2px; }
+/* Same colors and size as the League Hub's League News boxes (css/league.css .rcl-news-badge): navy with a red
+   bottom edge for a story, red with a darker red bottom edge for a news post. */
+.rc-news-badge-rd { background: var(--rc-balanced); box-shadow: inset 0 -3px 0 var(--rc-red); }
+.rc-news-badge-ne { background: var(--rc-red); box-shadow: inset 0 -3px 0 var(--rc-red-dark); }
+.rc-news-badge-top, .rc-news-badge-bottom { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.rc-news-badge-bottom { margin-top: 2px; }
 
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
