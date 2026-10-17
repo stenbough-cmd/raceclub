@@ -3088,7 +3088,8 @@ function rccRenderStories(page) {
   if (published.length > 1) {
     var prev = _rccEl('div', 'rcl-news-previous');
     prev.appendChild(_rccText('div', 'rcl-news-previous-head', 'More Stories'));
-    published.slice(1, 6).forEach(function (s, i) {
+    // Up to 6 under the preview (Matt, 2026-10-17; was 5).
+    published.slice(1, 7).forEach(function (s, i) {
       // Round badge (Matt): a small square with RD over 01, 02... or PRE for the season preview.
       var b = _rccEl('button', 'rcl-news-previous-title rcc-story-prev');
       b.type = 'button';
