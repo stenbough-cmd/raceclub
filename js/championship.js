@@ -3059,8 +3059,16 @@ function rccRenderStories(page) {
   }
   var cur = published[0];
   var wrap = _rccEl('div', 'rcl-news-item rcl-news-current');
-  wrap.appendChild(_rccText('div', 'rcl-news-title', cur.title));
-  wrap.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(cur)));
+  // Story badge back beside the title (Matt, 2026-10-17); league.css centers it against the title only.
+  var head = _rccEl('div', 'rcl-news-headrow rcc-story-headrow');
+  var hbw = _rccEl('div', 'rcl-news-badge-wrap');
+  hbw.appendChild(_rccStoryBadge(cur));
+  head.appendChild(hbw);
+  var htx = _rccEl('div', 'rcl-news-headtext');
+  htx.appendChild(_rccText('div', 'rcl-news-title', cur.title));
+  htx.appendChild(_rccText('div', 'rcl-news-meta', _rccStoryMeta(cur)));
+  head.appendChild(htx);
+  wrap.appendChild(head);
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
   wrap.appendChild(pv.el);
   var more = _rccText('a', 'rcl-news-continue', 'Continue Reading');
