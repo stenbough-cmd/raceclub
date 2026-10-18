@@ -120,7 +120,13 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var im = new Image();
         im.onload = function () { res(im); };
         im.onerror = function () { delete imgCache[url]; rej(new Error('missing ' + url)); };
+        // The site's js/img-loader.js rewrites every image address to .webp first and only walks back
+        // to .png/.jpg through the page-wide error event, which never fires for pictures that are not
+        // on the page. That made every .png design and logo "missing". __rcSetting tells the loader to
+        // leave this one alone (harmless on pages without the loader).
+        im.__rcSetting = true;
         im.src = url;
+        im.__rcSetting = false;
       });
     }
     return imgCache[url];
