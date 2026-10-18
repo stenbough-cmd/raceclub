@@ -41,7 +41,11 @@
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
     if (!cfg.designs.length) {
+      var t = ctx.tried || [];
       body.appendChild(mk('p', 'rch-hint', 'No helmet designs are available yet. Ask an admin to check the design files and the HelmetAssets sheet tab.'));
+      body.appendChild(mk('p', 'rch-hint', t.length
+        ? 'Admin details: the sheet listed ' + t.length + ' design(s), but these picture files could not be loaded: ' + t.map(function (d) { return 'assets/helmets/images/' + d.file; }).join(', ')
+        : 'Admin details: the server sent no designs. Each design row in HelmetAssets needs Type = Design, a Slot from 1 to 10, and Active = Active (or blank).'));
       return;
     }
     var grid = mk('div', 'rch-grid');

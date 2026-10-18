@@ -100,16 +100,18 @@
   /* ---- Customize Helmet: open the popup, save the result ---- */
   function customize(o) {
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
+    var tried = [];
     loadCss('css/helmet.css?v=3');
-    return Promise.all([ensure(), loadScript('js/helmet-player.js?v=2')]).then(function (res) {
+    return Promise.all([ensure(), loadScript('js/helmet-player.js?v=3')]).then(function (res) {
       var H = res[0];
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
       return freshAssets().then(function (a) {
         H.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
-      }).catch(function () {}).then(function () { return H.pruneDesigns(); }).then(function () {
+      }).catch(function () {}).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
         window.RCHelmetPlayer.open({
           recipe: recipeOf(profile.avatarFilename),
+          tried: tried,
           showModal: showModal,
           showToast: toast,
           onSave: function (recipe) { save(recipe ? valueOf(recipe) : ''); }
