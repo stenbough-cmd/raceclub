@@ -1,0 +1,86 @@
+/* Race Club helmet designer (css/helmet.css). Admin Helmet Designer popup only.
+   Uses the site's --rc-* tokens. Every class starts with rch- so nothing else on the site is touched. */
+
+.rc-modal.rch-modal { max-width: 1120px; }
+.rch-designer { font-family: var(--rc-font-body); color: var(--rc-carbon); }
+.rch-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .rch-grid { grid-template-columns: 1fr; } }
+.rch-left { position: sticky; top: 0; }
+@media (max-width: 860px) { .rch-left { position: static; } }
+
+.rch-label { display: block; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); margin-bottom: 5px; }
+.rch-mt { margin-top: 14px; }
+.rch-hint { font-size: 12px; line-height: 1.45; color: var(--rc-steel); margin: 6px 0 0; }
+.rch-status { font-size: 12.5px; color: var(--rc-carbon); margin: 8px 0 10px; }
+.rch-section { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; background: var(--rc-white); }
+.rch-row2 { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+.rch-row3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+.rch-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.rch-tools { justify-content: flex-end; }
+.rch-addrow { margin-top: 10px; }
+
+.rch-input, .rch-select-wide, .rch-finish, .rch-text {
+  font: inherit; font-size: 13px; color: var(--rc-carbon); background: var(--rc-white);
+  border: 1px solid var(--rc-silver); border-radius: 6px; box-sizing: border-box;
+}
+.rch-input { width: 100%; padding: 7px 9px; }
+.rch-select-wide { width: 100%; padding: 6px 8px; min-width: 0; }
+.rch-addrow .rch-select-wide { width: auto; flex: 1 1 130px; }
+/* finish drop-downs: about half the size they were */
+.rch-finish { width: 62px; padding: 1px 2px; font-size: 11px; height: 22px; }
+.rch-text { width: 100%; min-height: 90px; padding: 8px; font-family: monospace; font-size: 12px; margin: 8px 0; }
+
+/* preview */
+.rch-stage { border-radius: 8px; min-height: 360px; display: flex; align-items: center; justify-content: center; padding: 16px; touch-action: none; cursor: crosshair; border: 1px solid var(--rc-silver); }
+.rch-stage.light, .rch-sizes.light { background: #ffffff; }
+.rch-stage.grey, .rch-sizes.grey { background: #d9dde2; }
+.rch-stage.dark, .rch-sizes.dark { background: #1a1d24; }
+.rch-stage canvas { max-width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 7px rgba(0, 0, 0, 0.38)); }
+.rch-bgrow { margin-top: 10px; }
+.rch-bgrow .rch-label { margin: 0; }
+.rch-sizes { display: flex; align-items: flex-end; gap: 22px; margin-top: 12px; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--rc-silver); }
+.rch-sizes canvas { display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.38)); }
+.rch-sizes .rch-lbl { font-size: 11px; color: var(--rc-steel); text-align: center; margin-top: 4px; }
+
+/* colour rows */
+.rch-slot { margin-top: 12px; }
+.rch-slot-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.rch-slot-head .rch-label { margin: 0; }
+.rch-swatches { display: grid; grid-template-columns: repeat(17, 1fr); gap: 4px; align-items: center; }
+@media (max-width: 520px) { .rch-swatches { grid-template-columns: repeat(9, 1fr); } }
+.rch-sw, .rch-sw-custom { aspect-ratio: 1; width: 100%; min-width: 0; border-radius: 50%; border: 2px solid var(--rc-silver); cursor: pointer; padding: 0; }
+.rch-sw.sel, .rch-sw-custom.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rc-white), 0 0 0 3.5px var(--rc-red); }
+.rch-sw-custom { position: relative; display: block; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); overflow: hidden; }
+.rch-sw-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: 0; }
+.rch-visors { display: flex; gap: 6px; flex-wrap: wrap; }
+.rch-visor { display: flex; gap: 5px; align-items: center; padding: 3px 9px 3px 3px; border: 2px solid var(--rc-silver); border-radius: 16px; background: var(--rc-white); cursor: pointer; font: inherit; font-size: 12px; color: var(--rc-carbon); }
+.rch-visor.sel { border-color: var(--rc-red); }
+.rch-visor i { width: 16px; height: 16px; border-radius: 50%; display: block; }
+
+/* layer list */
+.rch-layers { display: flex; flex-direction: column; gap: 5px; }
+.rch-layer { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 5px 8px; background: var(--rc-white); cursor: grab; font-size: 13px; user-select: none; }
+.rch-layer.sel { border-color: var(--rc-red); background: var(--rc-offwhite); }
+.rch-layer.dragging { opacity: 0.45; }
+.rch-layer.over { box-shadow: 0 -3px 0 0 var(--rc-red); }
+.rch-grip { color: var(--rc-steel); letter-spacing: -2px; font-size: 14px; line-height: 1; }
+.rch-layer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rch-miss { color: var(--rc-red); font-size: 11px; font-weight: 700; margin-left: 8px; }
+.rch-icon { border: 0; background: none; color: var(--rc-steel); cursor: pointer; padding: 2px 5px; font-size: 12px; line-height: 1; }
+.rch-icon:hover { color: var(--rc-red); }
+.rch-detail { margin-top: 12px; }
+.rch-sliders { display: grid; grid-template-columns: 82px 1fr 40px; gap: 6px 10px; align-items: center; font-size: 12px; }
+.rch-sliders input[type=range] { width: 100%; }
+.rch-check { font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; }
+.rch-detail .rch-btns { margin-top: 10px; }
+.rch-detail .rch-select-wide { width: auto; }
+.rch-details summary { cursor: pointer; font-size: 12.5px; color: var(--rc-steel); }
+
+/* load popup */
+.rch-loadbody { min-width: 280px; }
+.rch-loadrow { display: flex; gap: 12px; align-items: center; border: 1px solid var(--rc-silver); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.rch-thumb { width: 84px; flex: none; }
+.rch-thumb canvas { width: 100%; height: auto; display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3)); }
+.rch-info { flex: 1; min-width: 0; }
+.rch-pname { font-weight: 700; font-size: 14px; }
+.rch-psub { font-size: 12px; color: var(--rc-steel); }

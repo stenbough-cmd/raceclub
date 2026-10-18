@@ -125,6 +125,15 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     }
     return imgCache[url];
   }
+  // Drops any design whose picture file is missing, so a sheet row without a file silently does not show.
+  function pruneDesigns() {
+    return Promise.all(cfg.designs.map(function (d) {
+      return loadImg(ASSET_BASE + 'images/' + d.file).then(function () { return true; }, function () { return false; });
+    })).then(function (ok) {
+      cfg.designs = cfg.designs.filter(function (d, i) { return ok[i]; });
+      return cfg.designs;
+    });
+  }
   function slug(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, ''); }
   // Tries the site's existing manufacturer files in order, same naming the rest of the site uses:
   // {slug}-white / {slug}-black (if asked for) then plain {slug}; .webp first, then .png, then .svg.
@@ -387,7 +396,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
 
   window.RCHelmet = {
     PALETTE: PALETTE, FINISHES: FINISHES, VISORS: VISORS, CROP: CROP,
-    configure: configure, defaultRecipe: defaultRecipe, randomRecipe: randomRecipe, normalizeRecipe: normalizeRecipe,
+    configure: configure, pruneDesigns: pruneDesigns, defaultRecipe: defaultRecipe, randomRecipe: randomRecipe, normalizeRecipe: normalizeRecipe,
     hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }
   };
 })();
