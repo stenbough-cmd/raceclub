@@ -62,7 +62,7 @@
   var SPEC_K = { gloss: 1.0, matte: 0.2, satin: 0.6, metallic: 1.0, pearl: 1.0, candy: 1.1, carbon: 1.0 };
 
   var MFR_BASE = 'assets/manufacturers/';   // the site's existing manufacturer logos -- not copied anywhere
-var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, name, file}]  manufacturers: ['Ford', ...]  logos: [{name, file}] (extra non-manufacturer logos in assets/helmets/logos/)
+var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, name, file}]  manufacturers: ['Ford', ...]  logos: [{name, file}] (custom logos such as the Race Club logo, files in assets/helmets/images/)
   function configure(o) {
     o = o || {};
     if (o.assetBase) ASSET_BASE = o.assetBase;
@@ -129,7 +129,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   // Tries the site's existing manufacturer files in order, same naming the rest of the site uses:
   // {slug}-white / {slug}-black (if asked for) then plain {slug}; .webp first, then .png, then .svg.
   function logoCandidates(l) {
-    if (!l.m) return [ASSET_BASE + 'logos/' + l.f];
+    if (!l.m) return [ASSET_BASE + 'images/' + l.f];   // custom logos live beside the designs, listed in the HelmetAssets tab
     var sg = slug(l.m), names = [];
     if (l.v === 'white' || l.v === 'black') names.push(sg + '-' + l.v);
     names.push(sg);

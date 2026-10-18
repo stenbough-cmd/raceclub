@@ -115,6 +115,8 @@
     ],
     // STAND-IN for the manufacturer names the site already knows (Cars tab). Logo images come from
     // the existing assets/manufacturers/ folder -- nothing is copied into the helmets folders.
+    // STAND-IN for Logo rows of the HelmetAssets tab (custom logos saved in assets/helmets/images/)
+    logos: [{ name: 'Race Club', file: 'race_club.png' }],
     manufacturers: ['Alpine', 'Aston Martin', 'Audi', 'Bentley', 'BMW', 'Cadillac', 'Chevrolet', 'Corvette', 'Duqueine', 'Ferrari', 'Ford', 'Genesis', 'Ginetta', 'Glickenhaus', 'Honda', 'Hyundai', 'Isotta', 'Lamborghini', 'Lexus', 'Ligier', 'Mazda', 'McLaren', 'Mercedes-AMG', 'Oreca', 'Peugeot', 'Porsche', 'Toyota', 'Vanwall']
   });
   var cfg = RCHelmet.getConfig();
@@ -170,9 +172,16 @@
 
   // ---- studio
   $('studioToggle').onchange = function () { studio = this.checked; $('studio').hidden = !studio; $('stage').classList.toggle('studio', studio); syncUI(); };
-  var lp = $('logoPick'); cfg.manufacturers.forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; lp.appendChild(o); });
+  var lp = $('logoPick');
+  var gC = document.createElement('optgroup'); gC.label = 'Custom logos';
+  cfg.logos.forEach(function (l) { var o = document.createElement('option'); o.value = 'f:' + l.file; o.textContent = l.name; gC.appendChild(o); });
+  if (cfg.logos.length) lp.appendChild(gC);
+  var gM = document.createElement('optgroup'); gM.label = 'Manufacturers';
+  cfg.manufacturers.forEach(function (n) { var o = document.createElement('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
+  lp.appendChild(gM);
   $('logoAdd').onclick = function () {
-    R.logos.push({ m: lp.value, v: $('logoVar').value, f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 }); selLogo = R.logos.length - 1; draw();
+    var isM = lp.value.indexOf('m:') === 0, val = lp.value.substr(2);
+    R.logos.push({ m: isM ? val : '', v: isM ? $('logoVar').value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 }); selLogo = R.logos.length - 1; draw();
   };
   $('logoDel').onclick = function () { if (selLogo >= 0) { R.logos.splice(selLogo, 1); selLogo = -1; draw(); } };
   var SL = [['x', 'X', 0, 1254, 1], ['y', 'Y', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -30, 30, 0.5]];
