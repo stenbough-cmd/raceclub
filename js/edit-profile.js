@@ -14,37 +14,6 @@ function _rcEP_el(tag, style, html) {
   return e;
 }
 
-// Same fixed 18-image set as RC_AVATAR_FILENAMES_ in Account.html --
-// keep these two in sync if that range ever changes again.
-var RC_AVATAR_FILENAMES_ = (function () {
-  var list = [];
-  for (var i = 1; i <= 18; i++) list.push('avatar-' + (i < 10 ? '0' + i : i) + '.png');
-  return list;
-})();
-
-// Same avatar-or-initials rendering as Account.html's buildAvatarCircle(), including the
-// rcAvatarSrc_/rcWireAvatarFallback_ resolve-then-default- then-initials chain (both globals from
-// header.js.
-function _rcEP_buildAvatarCircle(profile, extraClass) {
-  var circle = _rcEP_el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
-  var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
-  var avatarSrc = (typeof rcAvatarSrc_ === 'function' && profile) ? rcAvatarSrc_(profile.avatarFilename) : '';
-  if (avatarSrc) {
-    var img = document.createElement('img');
-    img.className = 'rc-avatar-circle-img';
-    img.alt = '';
-    img.src = avatarSrc;
-    rcWireAvatarFallback_(img, function () {
-      img.remove();
-      circle.textContent = initials;
-    });
-    circle.appendChild(img);
-  } else {
-    circle.textContent = initials;
-  }
-  return circle;
-}
-
 // Generic modal shell, themed to whichever page this is (light .rc-modal on every page except
 // league.html, dark .rcl-modal-dialog on league.html) -- same branch and manual
 // document.createElement approach _rcOpenFeedbackModal (js/header.js) already uses.
@@ -118,131 +87,6 @@ function _rcEPShowModal(title, opts) {
   return { close: close, body: body, el: modal };
 }
 
-// Same fixed avatar grid as Account.html's openAvatarPickerModal(), just built on
-// _rcEPShowModal/_rcEP_el instead of showModal/el, and with no reload-the-page step after saving
-// (there's no profile page here to refresh -- the header's own avatar updates immediately via
-// setProfileCache + renderHeader(), same as it always does).
-function _rcEPOpenAvatarPickerModal(profile, token, onSaved) {
-  var body = _rcEP_el('div');
-  body.appendChild(_rcEP_el('p', 'rc-hint', 'Choose from one of our AI generated profile pictures. You can change this again any time.'));
-
-  var grid = _rcEP_el('div', 'rc-avatar-picker-grid');
-  var selected = profile.avatarFilename || null;
-  var itemButtons = [];
-
-  function refreshSelection() {
-    itemButtons.forEach(function (btn) {
-      btn.classList.toggle('rc-avatar-picker-item-selected', btn.getAttribute('data-filename') === selected);
-    });
-  }
-
-  RC_AVATAR_FILENAMES_.forEach(function (filename) {
-    var btn = _rcEP_el('button', 'rc-avatar-picker-item');
-    btn.type = 'button';
-    btn.setAttribute('data-filename', filename);
-    var img = document.createElement('img');
-    img.src = rcAvatarSrc_(filename);
-    img.alt = 'Avatar option';
-    img.loading = 'lazy';
-    img.onerror = function () { rcAvatarNext_(img, function () { btn.style.display = 'none'; }, false); };
-    btn.appendChild(img);
-    btn.addEventListener('click', function () {
-      selected = filename;
-      urlInput.value = ''; // picking a preset clears any pasted link so the two can't fight at Save
-      refreshSelection();
-    });
-    grid.appendChild(btn);
-    itemButtons.push(btn);
-  });
-  refreshSelection();
-  body.appendChild(grid);
-
-  // Paste-your-own-image-link row -- same shape as Account.html's own copy of this popup
-  // (openAvatarPickerModal), see its comment for the full reasoning on why "https://" is a separate
-  // non-editable label rather than part of the input's own value.
-  // Margin-top added, same as Account.html's own copy, so this line isn't sitting right against the
-  // bottom of the grid.
-  var urlHint = _rcEP_el('p', 'rc-hint', 'Or paste a link to your own image:');
-  urlHint.style.marginTop = '18px';
-  body.appendChild(urlHint);
-  var urlRow = _rcEP_el('div', 'rc-avatar-url-row');
-  urlRow.appendChild(_rcEP_el('span', 'rc-avatar-url-prefix', 'https://'));
-  var urlInput = document.createElement('input');
-  urlInput.type = 'text';
-  urlInput.className = 'rc-avatar-url-input';
-  urlInput.placeholder = 'yoursite.com/your-image.jpg';
-  if (profile.avatarFilename && /^https:\/\//i.test(profile.avatarFilename)) {
-    urlInput.value = profile.avatarFilename.replace(/^https:\/\//i, '');
-  }
-  urlInput.addEventListener('input', function () {
-    if (urlInput.value.trim()) {
-      selected = null;
-      refreshSelection();
-    }
-  });
-  urlRow.appendChild(urlInput);
-  body.appendChild(urlRow);
-  // Image restriction note, same as Account.html's own copy -- a note only for now, not enforced
-  // client- or server-side.
-  body.appendChild(_rcEP_el('div', 'rc-hint', 'Image must be square and under 1MB.'));
-
-  var saveBtn = _rcEP_el('button', 'rc-btn-primary', 'Save Avatar');
-  saveBtn.type = 'button';
-  saveBtn.style.marginTop = '18px';
-  saveBtn.addEventListener('click', function () {
-    var typedUrl = urlInput.value.trim();
-    var finalSelection = typedUrl ? ('https://' + typedUrl) : selected;
-    if (!finalSelection) {
-      showToast('Pick an avatar or paste an image link first.', 'error');
-      return;
-    }
-
-    var previousAvatarFilename = profile.avatarFilename;
-    profile.avatarFilename = finalSelection;
-    if (onSaved) onSaved(profile);
-    setProfileCache(profile);
-    if (typeof renderHeader === 'function') renderHeader();
-    if (pickerModal) pickerModal.close();
-
-    fetchApi('updateOwnProfile', {
-      method: 'POST',
-      token: token,
-      body: {
-        username: profile.username,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        suffix: profile.suffix || '',
-        email: profile.email,
-        location: profile.location || '',
-        timeZone: profile.timeZone || '',
-        avatarFilename: finalSelection
-      }
-    })
-      .then(function (data) {
-        if (!data.success) {
-          profile.avatarFilename = previousAvatarFilename;
-          if (onSaved) onSaved(profile);
-          setProfileCache(profile);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast(data.message || 'Could not save your avatar -- reverted.', 'error');
-          return;
-        }
-        setProfileCache(data.profile);
-        if (typeof renderHeader === 'function') renderHeader();
-      })
-      .catch(function () {
-        profile.avatarFilename = previousAvatarFilename;
-        if (onSaved) onSaved(profile);
-        setProfileCache(profile);
-        if (typeof renderHeader === 'function') renderHeader();
-        showToast('Could not reach the server -- avatar change reverted.', 'error');
-      });
-  });
-  body.appendChild(saveBtn);
-
-  var pickerModal = _rcEPShowModal('Change Avatar', { bodyEl: body });
-}
-
 // Same Change Password form as Account.html's passwordChangeSection(), minus the
 // rcReloadAfterSave() call on success (that function navigates to Account.html#<section>, which
 // makes no sense to fire from index.html or league.html -- a toast alone is the confirmation here).
@@ -293,71 +137,20 @@ function _rcEPOpenEditProfileModal(profile, token) {
 
   var body = _rcEP_el('div');
 
-  var avatarRow = _rcEP_el('div', 'rc-avatar-edit-row');
-  var avatarCircle = _rcEP_buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-  avatarRow.appendChild(avatarCircle);
-  var changeAvatarLink = _rcEP_el('a', 'rc-avatar-change-link', 'Change Avatar');
-  changeAvatarLink.href = '#';
-  changeAvatarLink.addEventListener('click', function (evt) {
-    evt.preventDefault();
-    _rcEPOpenAvatarPickerModal(profile, token, function (newProfile) {
-      profile = newProfile;
-      var freshCircle = _rcEP_buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-      avatarRow.replaceChild(freshCircle, avatarCircle);
-      avatarCircle = freshCircle;
+  // The driver's helmet, with a Customize Helmet link under it (replaces the old Change/Delete Avatar).
+  var avatarRow = _rcEP_el('div', 'rc-helmet-edit-row');
+  function drawHelmet() {
+    avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
+    var link = _rcEP_el('a', 'rc-helmet-edit-link', 'Customize Helmet');
+    link.href = '#';
+    link.addEventListener('click', function (evt) {
+      evt.preventDefault();
+      rcHelmetCustomize_({ profile: profile, token: token, showModal: _rcEPShowModal, showToast: showToast, onChange: drawHelmet });
     });
-  });
-  avatarRow.appendChild(changeAvatarLink);
-
-  var deleteAvatarLink = _rcEP_el('a', 'rc-avatar-delete-link', 'Delete Avatar');
-  deleteAvatarLink.href = '#';
-  deleteAvatarLink.addEventListener('click', function (evt) {
-    evt.preventDefault();
-    if (!profile.avatarFilename) return;
-
-    var previousAvatarFilename = profile.avatarFilename;
-    profile.avatarFilename = '';
-    var freshCircle = _rcEP_buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-    avatarRow.replaceChild(freshCircle, avatarCircle);
-    avatarCircle = freshCircle;
-    setProfileCache(profile);
-    if (typeof renderHeader === 'function') renderHeader();
-
-    fetchApi('updateOwnProfile', {
-      method: 'POST',
-      token: token,
-      body: {
-        username: profile.username, firstName: profile.firstName, lastName: profile.lastName,
-        suffix: profile.suffix || '', email: profile.email,
-        location: profile.location || '', timeZone: profile.timeZone || '',
-        avatarFilename: ''
-      }
-    })
-      .then(function (data) {
-        if (!data.success) {
-          profile.avatarFilename = previousAvatarFilename;
-          var revertedCircle = _rcEP_buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-          avatarRow.replaceChild(revertedCircle, avatarCircle);
-          avatarCircle = revertedCircle;
-          setProfileCache(profile);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast(data.message || 'Could not remove your avatar -- reverted.', 'error');
-          return;
-        }
-        setProfileCache(data.profile);
-        if (typeof renderHeader === 'function') renderHeader();
-      })
-      .catch(function () {
-        profile.avatarFilename = previousAvatarFilename;
-        var revertedCircle2 = _rcEP_buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-        avatarRow.replaceChild(revertedCircle2, avatarCircle);
-        avatarCircle = revertedCircle2;
-        setProfileCache(profile);
-        if (typeof renderHeader === 'function') renderHeader();
-        showToast('Could not reach the server -- avatar removal reverted.', 'error');
-      });
-  });
-  avatarRow.appendChild(deleteAvatarLink);
+    avatarRow.appendChild(link);
+    rcHelmetHydrate_(avatarRow);
+  }
+  drawHelmet();
   body.appendChild(avatarRow);
 
   var form = _rcEP_el('form');

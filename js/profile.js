@@ -1,4 +1,4 @@
-// Race Club -- js/profile.js. Backs profile.html?id=RC-00012: avatar, display name, country flag and
+// Race Club -- js/profile.js. Backs profile.html?id=RC-00012: helmet, display name, country flag and
 // member-since date for one driver, read from the public driver directory (api.js). Draws instantly
 // from the copy saved in this browser, then quietly refreshes it; no loading screen.
 (function () {
@@ -48,11 +48,8 @@
     document.title = (driver.n || 'Driver') + ' | Race Club';
     sinceEl.textContent = formatSince(driver.j);
 
-    avatar.onerror = function () {
-      rcAvatarNext_(avatar, function () { avatar.style.visibility = 'hidden'; }, true);
-    };
-    avatar.style.visibility = '';
-    avatar.src = rcAvatarCandidates_(driver.a, true)[0];
+    avatar.innerHTML = rcHelmetHtml_(driver.a, 220, 'rc-profile-helmet');
+    rcHelmetHydrate_(avatar);
 
     var flagSrc = driver.c ? countryFlagSrc(driver.c) : '';
     if (flagSrc) {

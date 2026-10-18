@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=1">
+<link rel="stylesheet" href="css/helmet.css?v=2">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -2826,181 +2826,6 @@
     return row;
   }
 
-  // Fixed set of 15 preset avatar images a driver can pick from -- assets/avatars/avatar-01.png
-  // through avatar-15.png, zero-padded to 2 digits to match the files on disk.
-  var RC_AVATAR_FILENAMES_ = (function () {
-    // Range bumped 15 -> 18.
-    var list = [];
-    for (var i = 1; i <= 18; i++) list.push('avatar-' + (i < 10 ? '0' + i : i) + '.png');
-    return list;
-  })();
-
-  // Shared avatar circle -- a picked preset, the default avatar, or a driver-pasted image link
-  // (profile.avatarFilename, resolved by rcAvatarSrc_, global from header.js.js -- loaded before
-  // this script, so both are safe to call directly here without duplicating that logic). onerror
-  // falls back to the default avatar first, then initials as the last resort if the default image
-  // itself is unreachable too.
-  function buildAvatarCircle(profile, extraClass) {
-    var circle = el('div', 'rc-avatar-circle' + (extraClass ? ' ' + extraClass : ''));
-    var initials = (typeof _rcHeaderInitials === 'function') ? _rcHeaderInitials(profile && profile.displayName) : '?';
-    var avatarSrc = (typeof rcAvatarSrc_ === 'function' && profile) ? rcAvatarSrc_(profile.avatarFilename) : '';
-    if (avatarSrc) {
-      var img = document.createElement('img');
-      img.className = 'rc-avatar-circle-img';
-      img.alt = '';
-      img.src = avatarSrc;
-      rcWireAvatarFallback_(img, function () {
-        img.remove();
-        circle.textContent = initials;
-      });
-      circle.appendChild(img);
-    } else {
-      circle.textContent = initials;
-    }
-    return circle;
-  }
-
-  // ---------------------------------------------------------------------
-  // CHANGE AVATAR POPUP -- a fixed grid of the 15 preset images (5 rows of 3), opened from a link
-  // inside Edit Profile.
-  // ---------------------------------------------------------------------
-  function openAvatarPickerModal(profile, token, onSaved) {
-    var body = el('div');
-    // Fixed to the intended 2-arg call.
-    body.appendChild(el('p', 'rc-hint', 'Choose from one of our AI generated profile pictures. You can change this again any time.'));
-
-    var grid = el('div', 'rc-avatar-picker-grid');
-    var selected = profile.avatarFilename || null;
-    var itemButtons = [];
-
-    function refreshSelection() {
-      itemButtons.forEach(function (btn) {
-        btn.classList.toggle('rc-avatar-picker-item-selected', btn.getAttribute('data-filename') === selected);
-      });
-    }
-
-    RC_AVATAR_FILENAMES_.forEach(function (filename) {
-      var btn = el('button', 'rc-avatar-picker-item');
-      btn.type = 'button';
-      btn.setAttribute('data-filename', filename);
-      var img = document.createElement('img');
-      img.src = rcAvatarSrc_(filename);
-      img.alt = 'Avatar option';
-      img.loading = 'lazy';
-      // Hides the button entirely instead of showing a broken-image icon if a filename in
-      // RC_AVATAR_FILENAMES_ doesn't actually exist under assets/avatars/ (e.g. a mismatched name
-      // on disk).
-      img.onerror = function () { rcAvatarNext_(img, function () { btn.style.display = 'none'; }, false); };
-      btn.appendChild(img);
-      btn.addEventListener('click', function () {
-        selected = filename;
-        urlInput.value = ''; // picking a preset clears any pasted link so the two can't fight at Save
-        refreshSelection();
-      });
-      grid.appendChild(btn);
-      itemButtons.push(btn);
-    });
-    refreshSelection();
-    body.appendChild(grid);
-
-    // Paste-your-own-image-link row -- the "https://" prefix is a separate, non-editable label
-    // (.rc-avatar-url- prefix, style.css) sitting beside a plain text input rather than part of the
-    // input's own value, so there's nothing for a driver to even try to delete: it's simply not
-    // there to select.
-    // Margin-top added so this line isn't sitting right against the bottom of the grid above.
-    var urlHint = el('p', 'rc-hint', 'Or paste a link to your own image:');
-    urlHint.style.marginTop = '18px';
-    body.appendChild(urlHint);
-    var urlRow = el('div', 'rc-avatar-url-row');
-    urlRow.appendChild(el('span', 'rc-avatar-url-prefix', 'https://'));
-    var urlInput = document.createElement('input');
-    urlInput.type = 'text';
-    urlInput.className = 'rc-avatar-url-input';
-    urlInput.placeholder = 'yoursite.com/your-image.jpg';
-    // Prefills with whatever's already there if the current avatar IS a pasted link (rcAvatarSrc_'s
-    // https:// shape, header.js), so reopening this popup to tweak an existing link doesn't look
-    // like it forgot it.
-    if (profile.avatarFilename && /^https:\/\//i.test(profile.avatarFilename)) {
-      urlInput.value = profile.avatarFilename.replace(/^https:\/\//i, '');
-    }
-    // Typing a link visually deselects the grid above (no preset and a pasted link can't both be
-    // "the" selection at once) -- the actual value used at Save time is computed fresh from
-    // urlInput/selected right there, this is just the grid's own highlight staying honest about
-    // which one currently wins.
-    urlInput.addEventListener('input', function () {
-      if (urlInput.value.trim()) {
-        selected = null;
-        refreshSelection();
-      }
-    });
-    urlRow.appendChild(urlInput);
-    body.appendChild(urlRow);
-    // Image restriction note -- a note only for now, not enforced client- or server-side.
-    body.appendChild(el('div', 'rc-hint', 'Image must be square and under 1MB.'));
-
-    var saveBtn = el('button', 'rc-btn-primary', 'Save Avatar');
-    saveBtn.type = 'button';
-    saveBtn.style.marginTop = '18px';
-    saveBtn.addEventListener('click', function () {
-      // A pasted link wins over a grid pick if both are somehow present (shouldn't happen given the
-      // mutual-clear wiring above, but this is the actual source of truth either way) -- trimmed so
-      // whitespace alone doesn't count as "a link was pasted."
-      var typedUrl = urlInput.value.trim();
-      var finalSelection = typedUrl ? ('https://' + typedUrl) : selected;
-      if (!finalSelection) {
-        showToast('Pick an avatar or paste an image link first.', 'error');
-        return;
-      }
-
-      // Instant, no wait on the server. The picker closes and the new avatar shows up everywhere on
-      // screen the instant it's picked; the actual write to the sheet happens silently in the
-      // background below.
-      var previousAvatarFilename = profile.avatarFilename;
-      profile.avatarFilename = finalSelection;
-      if (onSaved) onSaved(profile);
-      setProfileCache(profile);
-      if (typeof renderHeader === 'function') renderHeader();
-      if (pickerModal) pickerModal.close();
-
-      fetchApi('updateOwnProfile', {
-        method: 'POST',
-        token: token,
-        body: {
-          username: profile.username,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          suffix: profile.suffix || '',
-          email: profile.email,
-          location: profile.location || '',
-          timeZone: profile.timeZone || '',
-          avatarFilename: finalSelection
-        }
-      })
-        .then(function (data) {
-          if (!data.success) {
-            profile.avatarFilename = previousAvatarFilename;
-            if (onSaved) onSaved(profile);
-            setProfileCache(profile);
-            if (typeof renderHeader === 'function') renderHeader();
-            showToast(data.message || 'Could not save your avatar -- reverted.', 'error');
-            return;
-          }
-          setProfileCache(data.profile);
-          if (typeof renderHeader === 'function') renderHeader();
-        })
-        .catch(function () {
-          profile.avatarFilename = previousAvatarFilename;
-          if (onSaved) onSaved(profile);
-          setProfileCache(profile);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast('Could not reach the server -- avatar change reverted.', 'error');
-        });
-    });
-    body.appendChild(saveBtn);
-
-    var pickerModal = showModal('Change Avatar', { bodyEl: body });
-  }
-
   // ---------------------------------------------------------------------
   // EDIT PROFILE POPUP -- Username / First / Last / Suffix / Email / Location / Time Zone, posting
   // to the `updateOwnProfile` action, plus the existing passwordChangeSection() embedded underneath
@@ -3011,78 +2836,20 @@
 
     var body = el('div');
 
-    // Avatar circle with "Change Avatar" then "Delete Avatar" stacked underneath it.
-    var avatarRow = el('div', 'rc-avatar-edit-row');
-    var avatarCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-    avatarRow.appendChild(avatarCircle);
-    var changeAvatarLink = el('a', 'rc-avatar-change-link', 'Change Avatar');
-    changeAvatarLink.href = '#';
-    changeAvatarLink.addEventListener('click', function (evt) {
-      evt.preventDefault();
-      openAvatarPickerModal(profile, token, function (newProfile) {
-        profile = newProfile;
-        var freshCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-        avatarRow.replaceChild(freshCircle, avatarCircle);
-        avatarCircle = freshCircle;
+    // The driver's helmet, with a Customize Helmet link under it (replaces the old Change/Delete Avatar).
+    var avatarRow = el('div', 'rc-helmet-edit-row');
+    function drawHelmet() {
+      avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
+      var link = el('a', 'rc-helmet-edit-link', 'Customize Helmet');
+      link.href = '#';
+      link.addEventListener('click', function (evt) {
+        evt.preventDefault();
+        rcHelmetCustomize_({ profile: profile, token: token, showModal: showModal, showToast: showToast, onChange: drawHelmet });
       });
-    });
-    avatarRow.appendChild(changeAvatarLink);
-
-    // Delete Avatar -- sends avatarFilename: '' rather than omitting the field, which is what
-    // actually clears the stored filename instead of leaving it untouched (see
-    // handleUpdateOwnProfile, Auth.gs).
-    var deleteAvatarLink = el('a', 'rc-avatar-delete-link', 'Delete Avatar');
-    deleteAvatarLink.href = '#';
-    deleteAvatarLink.addEventListener('click', function (evt) {
-      evt.preventDefault();
-      if (!profile.avatarFilename) return; // nothing to delete
-
-      // Instant, no wait on the server -- the avatar drops back to initials on screen (here and in
-      // the header) the moment this is clicked; the actual clear happens silently in the
-      // background.
-      var previousAvatarFilename = profile.avatarFilename;
-      profile.avatarFilename = '';
-      var freshCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-      avatarRow.replaceChild(freshCircle, avatarCircle);
-      avatarCircle = freshCircle;
-      setProfileCache(profile);
-      if (typeof renderHeader === 'function') renderHeader();
-
-      fetchApi('updateOwnProfile', {
-        method: 'POST',
-        token: token,
-        body: {
-          username: profile.username, firstName: profile.firstName, lastName: profile.lastName,
-          suffix: profile.suffix || '', email: profile.email,
-          location: profile.location || '', timeZone: profile.timeZone || '',
-          avatarFilename: ''
-        }
-      })
-        .then(function (data) {
-          if (!data.success) {
-            profile.avatarFilename = previousAvatarFilename;
-            var revertedCircle = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-            avatarRow.replaceChild(revertedCircle, avatarCircle);
-            avatarCircle = revertedCircle;
-            setProfileCache(profile);
-            if (typeof renderHeader === 'function') renderHeader();
-            showToast(data.message || 'Could not remove your avatar -- reverted.', 'error');
-            return;
-          }
-          setProfileCache(data.profile);
-          if (typeof renderHeader === 'function') renderHeader();
-        })
-        .catch(function () {
-          profile.avatarFilename = previousAvatarFilename;
-          var revertedCircle2 = buildAvatarCircle(profile, 'rc-avatar-circle-xl');
-          avatarRow.replaceChild(revertedCircle2, avatarCircle);
-          avatarCircle = revertedCircle2;
-          setProfileCache(profile);
-          if (typeof renderHeader === 'function') renderHeader();
-          showToast('Could not reach the server -- avatar removal reverted.', 'error');
-        });
-    });
-    avatarRow.appendChild(deleteAvatarLink);
+      avatarRow.appendChild(link);
+      rcHelmetHydrate_(avatarRow);
+    }
+    drawHelmet();
     body.appendChild(avatarRow);
 
     var form = el('form');

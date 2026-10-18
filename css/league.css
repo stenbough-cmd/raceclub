@@ -2002,14 +2002,6 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
 .rcl-modal-dialog textarea:focus {
   border-color: var(--rc-red);
 }
-/* The avatar-URL "https://" prefix label (style.css .rc-avatar-url-prefix) is a <span>, not an
-   <input>, so the generic input override above doesn't touch it -- give it its own dark-theme
-   colors. */
-.rcl-modal-dialog .rc-avatar-url-prefix {
-  background: var(--rcl-bg);
-  border-color: var(--rcl-line-bright);
-  color: var(--rcl-ink-dim);
-}
 /* Same dark-theme override, extended for the Edit Profile popup: .rc-panel (the Change Password
    box) is a plain white card everywhere else on the site -- it needs a scoped dark version here or
    it'd render light-on-dark inside this shell. */

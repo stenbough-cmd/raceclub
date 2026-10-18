@@ -84,3 +84,12 @@
 .rch-info { flex: 1; min-width: 0; }
 .rch-pname { font-weight: 700; font-size: 14px; }
 .rch-psub { font-size: 12px; color: var(--rc-steel); }
+
+/* ---- player Customize Helmet popup (js/helmet-player.js) ---- */
+.rc-modal.rch-pmodal, .rcl-modal-dialog.rch-pmodal { max-width: 880px; }
+/* a light panel so the popup reads the same on the dark League Hub pages too */
+.rch-player { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 14px; }
+.rch-player .rch-stage { min-height: 300px; }
+.rch-swatches16 { grid-template-columns: repeat(16, 1fr); }
+@media (max-width: 520px) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
+.rch-pbtns { margin-top: 4px; }

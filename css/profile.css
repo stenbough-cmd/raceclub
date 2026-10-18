@@ -40,15 +40,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
   padding: 32px 24px 30px;
   text-align: center;
 }
-.rc-profile-avatar-wrap {
-  width: 132px;
-  height: 132px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--rcl-bg-raised-2);
-  border: 2px solid var(--rcl-line-bright);
-}
-.rc-profile-avatar { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rc-profile-avatar-wrap { min-height: 190px; display: flex; align-items: center; justify-content: center; }
 .rc-profile-name-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .rc-profile-name { margin: 0; font-size: 26px; letter-spacing: 0.03em; color: var(--rcl-ink); overflow-wrap: anywhere; }
 .rc-profile-flag { width: 28px; height: 20px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px var(--rcl-line-bright); }

@@ -674,59 +674,16 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-field-trio-name:first-child { margin-top: 0; }
 
 /* -------------------------------------------------------------------- */
-/* Edit Profile -- avatar circle + Change Avatar picker. */
-/* .rc-avatar-circle is the shared building block -- same shape/colors   */
-/* as the header's .rc-header-avatar, just sized per context via the     */
-/* -lg modifier, so an image or initials always reads as "the same       */
-/* avatar" wherever it shows up.                                         */
+/* Helmet avatars (js/helmet-avatar.js). A driver's avatar is a custom   */
+/* helmet drawn on a canvas: no circle or square, just a drop shadow.    */
 /* -------------------------------------------------------------------- */
-.rc-avatar-circle {
-  position: relative;
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--rc-carbon);
-  color: var(--rc-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--rc-font-heading);
-  font-weight: 700;
-  font-size: 14px;
-  overflow: hidden;
-}
-.rc-avatar-circle-lg { width: 72px; height: 72px; font-size: 22px; }
-/* 2x the -lg size -- Edit Profile's own avatar, centered above its Change/Delete links rather than
-   sitting beside them. */
-.rc-avatar-circle-xl { width: 144px; height: 144px; font-size: 44px; }
-/* Edit Profile's avatar circle only -- scoped to .rc-avatar-edit-row (only ever used by
-   openEditProfileModal) rather than the shared .rc-avatar-circle base, so the header avatar and
-   every other place this class shows up are untouched. */
-.rc-avatar-edit-row .rc-avatar-circle {
-  box-shadow:
-    0 0 0 3px transparent,
-    0 0 0 5px #55575c,
-    0 0 0 8px #26272b,
-    0 0 0 9px rgba(255, 255, 255, 0.14);
-}
-.rc-avatar-circle-img { width: 100%; height: 100%; object-fit: cover; }
-.rc-avatar-edit-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Zeroed here; both real gaps now live as margins on the specific elements below instead. */
-  gap: 0;
-  margin-bottom: 20px;
-}
-/* Circle-to-links gap: roughly one extra text row below the (now thicker, see .rc-avatar-edit-row
-   .rc-avatar-circle above) metallic ring, in place of the old 10px. */
-.rc-avatar-edit-row .rc-avatar-circle-xl { margin-bottom: 24px; }
-/* Change-to-Delete gap: tightened well below that, so the two links read
-   as one grouped control under the photo. */
-.rc-avatar-change-link { margin-bottom: 6px; }
-.rc-avatar-change-link,
-.rc-avatar-delete-link {
+.rc-helmet-slot { display: inline-block; line-height: 0; }
+.rc-helmet-slot canvas,
+.rc-helmet-slot img.rc-helmet,
+canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.38)); }
+/* Edit Profile: the helmet sits centered above the Customize Helmet link. */
+.rc-helmet-edit-row { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 20px; }
+.rc-helmet-edit-link {
   font-family: var(--rc-font-heading);
   font-size: 12.5px;
   font-weight: 700;
@@ -734,65 +691,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   letter-spacing: 0.04em;
   color: var(--rc-red);
 }
-.rc-avatar-change-link:hover { color: var(--rc-red-dark); }
-/* Muted red-then-darker-red hover, same family as the Change link but visually secondary -- steel
-   by default so it doesn't compete with Change Avatar for attention. */
-.rc-avatar-delete-link { color: var(--rc-steel); }
-.rc-avatar-delete-link:hover { color: var(--rc-red); }
-/* Change Avatar popup -- 15 presets, 5 rows of 3. */
-.rc-avatar-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.rc-avatar-picker-item {
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  /* Gray, not off-white -- the preset avatar art is circular on a transparent background, so this
-     cell's own fill shows through as a ring around each one; --rc-offwhite (#F5F5F3) read as white
-     against the page, --rc-silver (#D8DDE1) is a clear step darker/grayer. */
-  background: var(--rc-silver);
-  cursor: pointer;
-  overflow: hidden;
-  line-height: 0;
-  transition: border-color 0.15s ease;
-}
-.rc-avatar-picker-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
-/* --rc-steel, not --rc-silver -- now that the cell's own fill is --rc-silver (above), a --rc-silver
-   border would blend invisibly into it and the hover state would lose its ring entirely. */
-.rc-avatar-picker-item:hover { border-color: var(--rc-steel); }
-.rc-avatar-picker-item-selected,
-.rc-avatar-picker-item-selected:hover { border-color: var(--rc-red); }
-/* Paste-your-own-image-link row, below the preset grid. The "https://" prefix is a separate
-   non-editable label, not part of the input's value -- that's what makes it structurally impossible
-   to remove/edit, rather than something we have to keep re-validating. */
-.rc-avatar-url-row {
-  display: flex;
-  align-items: stretch;
-  margin-top: 4px;
-}
-.rc-avatar-url-prefix {
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  height: 44px;
-  border: 1px solid var(--rc-silver);
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  background: var(--rc-offwhite);
-  color: var(--rc-steel);
-  font-size: 14px;
-  font-family: var(--rc-font-body);
-  white-space: nowrap;
-  flex: none;
-}
-.rc-avatar-url-row input {
-  margin-top: 0;
-  border-radius: 0 4px 4px 0;
-  flex: 1;
-  min-width: 0;
-}
+.rc-helmet-edit-link:hover { color: var(--rc-red-dark); }
 /* Choose Your Class screen -- colored buttons, one per class, always all four regardless of whether
    this season fields cars in them. */
 /* Sized down -- smaller min column width, tighter gap/padding, smaller type, while keeping the same
@@ -1522,8 +1421,6 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 /* Red on hover for immediate feedback before a click, AND for as long as the dropdown is actually
    open (aria-expanded) -- not just on :hover -- so it stays red while you're reading the menu with
    your mouse resting somewhere inside it. */
-.rc-header-account-toggle:hover .rc-header-avatar,
-.rc-header-account-toggle[aria-expanded="true"] .rc-header-avatar { background: var(--rc-red); }
 .rc-header-account-chevron {
   flex: none;
   color: var(--rc-steel);
@@ -1533,23 +1430,12 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-header-avatar {
   position: relative;
   flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--rc-carbon);
-  color: var(--rc-white);
+  width: 52px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--rc-font-heading);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  overflow: hidden;
 }
-/* Sits on top of the initials text underneath -- its onerror just hides the <img> itself, same
-   "silently fall back to initials" convention as Account.html's own buildAvatarCircle(). */
-.rc-header-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 /* Notification bell CSS (.rc-notif-dot, .rc-header-bell-icon-wrap, .rc-header-bell-toggle,
    .rc-header-notif-menu and everything else .rc-header-notif-* below) removed in full. */
 .rc-header-account-text {

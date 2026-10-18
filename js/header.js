@@ -39,64 +39,47 @@ document.addEventListener('click', function (evt) {
 }, true);
 var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 
-// Shared avatar helpers -- defined here, not duplicated per file, since header.js already loads on
-// every page before any other inline script runs (same pattern as
-// showToast/_rcHeaderInitials/renderHeader, all already called directly from
-// Account.html/edit-profile.js as globals).
-// profile.avatarFilename is now one of three shapes: '' -> no avatar; caller shows initials
-// 'avatar-NN.png' / 'avatar_default.jpg' (a preset or the default file) -> assets/avatars/<name>, .jpg tried before .png
-// 'https://...' (a driver-pasted link) -> the URL itself, unchanged
-var RC_AVATAR_DEFAULT_FILE_ = 'avatar_default.jpg';
+// Shared helmet-avatar helpers -- defined here (not per file) because header.js loads on every
+// page before any other script runs. A driver's avatar is now a custom helmet: profile.avatarFilename
+// holds "helmet:" + a small JSON recipe (anything else = no helmet designed yet = default helmet).
+// The heavy drawing code lives in js/helmet-avatar.js + js/helmet.js and is loaded only when a
+// helmet actually has to be drawn; a drawn helmet is remembered for the browser session, so the next
+// page paints it instantly.
+var RC_HELMET_CACHE_V_ = 'rch6';
+function rcHelmetCacheKey_(value, w) { return RC_HELMET_CACHE_V_ + ':' + w + ':' + (value || 'default'); }
+function _rcHelmetEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
-// Every avatar name is tried as .jpg first, then .png (so 'avatar-05.png' on file in the profile
-// still finds avatar-05.jpg if that is what is on disk). A pasted https link is used as-is.
-function rcAvatarCandidates_(avatarFilename, withDefault) {
-  var out = [];
-  if (avatarFilename) {
-    if (/^https:\/\//i.test(avatarFilename)) {
-      out.push(avatarFilename);
-    } else {
-      var base = String(avatarFilename).replace(/\.(jpe?g|png)$/i, '');
-      out.push('assets/avatars/' + base + '.jpg', 'assets/avatars/' + base + '.png');
-    }
-  }
-  if (withDefault) {
-    var dbase = RC_AVATAR_DEFAULT_FILE_.replace(/\.(jpe?g|png)$/i, '');
-    ['assets/avatars/' + dbase + '.jpg', 'assets/avatars/' + dbase + '.png'].forEach(function (p) {
-      if (out.indexOf(p) === -1) out.push(p);
+// HTML for one helmet placeholder. Already-drawn helmets come back as a finished <img>.
+function rcHelmetHtml_(value, width, cls) {
+  var src = '';
+  try { src = sessionStorage.getItem(rcHelmetCacheKey_(value, width)) || ''; } catch (e) {}
+  var inner = src ? '<img class="rc-helmet" alt="" style="width:' + width + 'px;height:auto" src="' + _rcHelmetEsc_(src) + '">' : '';
+  return '<span class="rc-helmet-slot ' + _rcHelmetEsc_(cls || '') + '" data-rc-helmet="' + _rcHelmetEsc_(value || '') + '" data-w="' + width + '"' +
+    (src ? ' data-rc-done="1"' : '') + ' style="width:' + width + 'px">' + inner + '</span>';
+}
+
+var _rcHelmetModuleP_ = null;
+function _rcHelmetModule_() {
+  if (!_rcHelmetModuleP_) {
+    _rcHelmetModuleP_ = new Promise(function (res, rej) {
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=1'; s.async = true;
+      s.onload = function () { res(); };
+      s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
+      document.head.appendChild(s);
     });
   }
-  return out;
+  return _rcHelmetModuleP_;
 }
-
-function rcAvatarSrc_(avatarFilename) {
-  return rcAvatarCandidates_(avatarFilename, false)[0] || '';
+// Draws every helmet placeholder inside root (default: the whole page).
+function rcHelmetHydrate_(root) {
+  var r = root || document;
+  if (!r.querySelector('[data-rc-helmet]:not([data-rc-done])')) return Promise.resolve();
+  return _rcHelmetModule_().then(function () { return window.rcHelmetHydrateNow_(r); }).catch(function () {});
 }
-
-// Called each time an avatar <img> fails to load: moves it to the next candidate (.jpg, then .png,
-// then the default avatar), and runs onFinalFailure once every candidate has failed. Pass
-// withDefault=false (the preset picker) to skip the default avatar.
-function rcAvatarNext_(img, onFinalFailure, withDefault) {
-  if (!img._rcAvatarQueue) {
-    var src = img.getAttribute('src') || '';
-    var m = src.match(/^assets\/avatars\/(.+)$/);
-    var all = rcAvatarCandidates_(m ? m[1] : (/^https:\/\//i.test(src) ? src : ''), withDefault !== false);
-    var i = all.indexOf(src);
-    img._rcAvatarQueue = all.slice(i + 1);
-  }
-  var next = img._rcAvatarQueue.shift();
-  if (next) {
-    img.src = next;
-  } else {
-    img.onerror = null;
-    if (onFinalFailure) onFinalFailure();
-  }
-}
-
-// Wire onto an <img> already showing an avatar. onFinalFailure runs only once every candidate has
-// failed -- callers use it to reveal initials.
-function rcWireAvatarFallback_(img, onFinalFailure) {
-  img.onerror = function () { rcAvatarNext_(img, onFinalFailure, true); };
+// Opens the Customize Helmet popup. o = { profile, token, showModal, showToast, onChange }.
+function rcHelmetCustomize_(o) {
+  return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o); })
+    .catch(function () { showToast('Could not open the helmet customizer. Check your connection and try again.', 'error'); });
 }
 
 // Hamburger icon -- same stroke-width/cap/join convention as every other inline icon on the site
@@ -501,18 +484,13 @@ function renderHeader(opts) {
         }
       }).catch(function () {});
     }
-    var initials = _rcHeaderInitials(displayName);
     var role = cached ? (cached.role || 'Driver') : 'Driver';
 
     // MY ACCOUNT restores a one-click path back to the account/dashboard page from anywhere on the
     // site, sitting above Logout in the dropdown itself.
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
-    var avatarSrc = rcAvatarSrc_(avatarFilename);
-    var avatarImgHtml = avatarSrc
-      ? '<img class="rc-header-avatar-img" src="' + escapeHtmlHeader_(avatarSrc) + '" alt="" onerror="var i=this;rcAvatarNext_(i,function(){i.style.display=\'none\';},true);">'
-      : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
-              '<span class="rc-header-avatar">' + initials + avatarImgHtml + '</span>' +
+              '<span class="rc-header-avatar">' + rcHelmetHtml_(avatarFilename, 52, 'rc-helmet-header') + '</span>' +
               '<span class="rc-header-account-text">' +
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
                 '<span class="rc-badge-chip rc-header-account-role ' + (RC_HEADER_ROLE_PILL_CLASS_[role] || 'rc-badge-role-driver') + '">' + escapeHtmlHeader_(role) + rcRolePlusHtml(cached) + '</span>' +
@@ -561,6 +539,7 @@ function renderHeader(opts) {
   mount.innerHTML = html;
 
   if (token) {
+    rcHelmetHydrate_(mount);
     var toggle = document.getElementById('rc-header-account-toggle');
     var menu = document.getElementById('rc-header-account-menu');
 
