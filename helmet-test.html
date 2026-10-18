@@ -120,6 +120,11 @@
     manufacturers: ['Alpine', 'Aston Martin', 'Audi', 'Bentley', 'BMW', 'Cadillac', 'Chevrolet', 'Corvette', 'Duqueine', 'Ferrari', 'Ford', 'Genesis', 'Ginetta', 'Glickenhaus', 'Honda', 'Hyundai', 'Isotta', 'Lamborghini', 'Lexus', 'Ligier', 'Mazda', 'McLaren', 'Mercedes-AMG', 'Oreca', 'Peugeot', 'Porsche', 'Toyota', 'Vanwall']
   });
   var cfg = RCHelmet.getConfig();
+  if (location.protocol === 'file:') {
+    var warn = document.createElement('div'); warn.className = 'ht-note'; warn.style.borderColor = 'var(--rc-red)'; warn.style.color = 'var(--rc-red)';
+    warn.textContent = 'This page was opened straight from a file on your computer, and browsers block the helmet drawing in that case ("Operation is insecure"). Open it from the live site address instead (after pushing), or from a local server at http://localhost:8000/helmet-test.html.';
+    document.querySelector('.ht-wrap').insertBefore(warn, document.querySelector('.ht-note'));
+  }
   var R = RCHelmet.normalizeRecipe(RCHelmet.defaultRecipe());
   var selLogo = -1, studio = false;
   var $ = function (id) { return document.getElementById(id); };
