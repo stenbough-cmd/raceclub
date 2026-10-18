@@ -58,6 +58,15 @@
     return fresh;
   }
 
+  function freshAssets() {
+    return fetchApi('getHelmetAssets', {}).then(function (res) {
+      if (!res || !res.success) throw new Error('no assets');
+      var slim = { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [] };
+      try { localStorage.setItem('rcHelmetAssets', JSON.stringify(slim)); } catch (e) {}
+      return slim;
+    });
+  }
+
   var readyP = null;
   function ensure() {
     if (!readyP) {
@@ -91,10 +100,14 @@
   /* ---- Customize Helmet: open the popup, save the result ---- */
   function customize(o) {
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
-    loadCss('css/helmet.css?v=2');
-    return Promise.all([ensure(), loadScript('js/helmet-player.js?v=1')]).then(function (res) {
+    loadCss('css/helmet.css?v=3');
+    return Promise.all([ensure(), loadScript('js/helmet-player.js?v=2')]).then(function (res) {
       var H = res[0];
-      return H.pruneDesigns().then(function () {
+      // The popup always asks the server for the current design list (the saved copy used for the
+      // header can be out of date, for example after a design file or sheet row changes).
+      return freshAssets().then(function (a) {
+        H.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
+      }).catch(function () {}).then(function () { return H.pruneDesigns(); }).then(function () {
         window.RCHelmetPlayer.open({
           recipe: recipeOf(profile.avatarFilename),
           showModal: showModal,

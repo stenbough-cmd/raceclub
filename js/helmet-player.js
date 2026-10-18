@@ -40,6 +40,10 @@
     var modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true });
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
+    if (!cfg.designs.length) {
+      body.appendChild(mk('p', 'rch-hint', 'No helmet designs are available yet. Ask an admin to check the design files and the HelmetAssets sheet tab.'));
+      return;
+    }
     var grid = mk('div', 'rch-grid');
     var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
     grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);

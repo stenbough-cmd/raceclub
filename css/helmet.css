@@ -86,7 +86,7 @@
 .rch-psub { font-size: 12px; color: var(--rc-steel); }
 
 /* ---- player Customize Helmet popup (js/helmet-player.js) ---- */
-.rc-modal.rch-pmodal, .rcl-modal-dialog.rch-pmodal { max-width: 880px; }
+.rc-modal.rch-pmodal, .rcl-modal-dialog.rch-pmodal { max-width: 900px; }
 /* a light panel so the popup reads the same on the dark League Hub pages too */
 .rch-player { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 14px; }
 .rch-player .rch-stage { min-height: 300px; }
