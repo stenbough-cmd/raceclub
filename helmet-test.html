@@ -8,101 +8,124 @@
 <style>
   /* Test page only. Not part of the live site. */
   body { background: var(--rc-offwhite); color: var(--rc-carbon); font-family: var(--rc-font-body); margin: 0; }
-  .ht-wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 60px; }
+  .ht-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
   .ht-note { background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--rc-steel); margin-bottom: 18px; }
-  .ht-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-  @media (max-width: 900px) { .ht-grid { grid-template-columns: 1fr; } }
-  .ht-card { background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 10px; padding: 18px; }
+  .ht-card { background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 10px; padding: 18px; margin-bottom: 20px; }
   .ht-title { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--rc-red); }
-  .ht-stage { border-radius: 8px; min-height: 360px; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; touch-action: none; }
-  .ht-stage.light { background: #ffffff; }
-  .ht-stage.dark { background: #1a1d24; }
-  .ht-stage.grey { background: #d9dde2; }
-  .ht-stage canvas { max-width: 100%; height: auto; filter: drop-shadow(0 6px 7px rgba(0,0,0,0.38)); }
-  .ht-stage.studio canvas { cursor: crosshair; }
-  .ht-bg { display: flex; gap: 8px; margin: 10px 0 0; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--rc-steel); }
-  .ht-sizes { display: flex; align-items: flex-end; gap: 22px; margin-top: 16px; padding: 14px; border-radius: 8px; flex-wrap: wrap; }
-  .ht-sizes canvas { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.38)); display: block; }
+  .ht-label { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); display: block; margin-bottom: 5px; }
+  select, input[type=text], textarea { font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); color: var(--rc-carbon); }
+  textarea { width: 100%; min-height: 80px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+  .ht-link { font-family: var(--rc-font-heading); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--rc-red); cursor: pointer; background: none; border: 0; padding: 0; }
+  .ht-link:hover { color: var(--rc-red-dark, #a30b1f); }
+  .ht-btn { font: inherit; font-size: 13px; padding: 7px 14px; border: 1px solid var(--rc-silver); background: var(--rc-white); color: var(--rc-steel); border-radius: 6px; cursor: pointer; }
+  .ht-btn.primary { background: var(--rc-red); border-color: var(--rc-red); color: #fff; font-weight: 700; }
+  .ht-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  canvas.rc-helmet { max-width: 100%; height: auto; display: block; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.38)); }
+
+  /* the sample "profile" spot where the helmet avatar would live */
+  .ht-profile { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .ht-avatar { width: 190px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .ht-sizes { display: flex; align-items: flex-end; gap: 22px; padding: 12px 16px; border-radius: 8px; background: #fff; border: 1px solid var(--rc-silver); }
   .ht-sizes .lbl { font-size: 11px; color: var(--rc-steel); text-align: center; margin-top: 4px; }
-  .ht-row { margin-top: 16px; }
-  .ht-row:first-child { margin-top: 0; }
-  .ht-label { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); display: block; margin-bottom: 6px; }
-  .ht-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
-  .ht-sw { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--rc-silver); cursor: pointer; padding: 0; }
-  .ht-sw.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rc-white), 0 0 0 4px var(--rc-red); }
-  .ht-slot-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .ht-slot-head select, .ht-card select, .ht-card input[type=text], .ht-card textarea { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); color: var(--rc-carbon); }
-  .ht-card textarea { width: 100%; min-height: 90px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
-  .ht-visors { display: flex; gap: 8px; flex-wrap: wrap; }
-  .ht-visor { display: flex; gap: 8px; align-items: center; padding: 6px 12px 6px 6px; border: 2px solid var(--rc-silver); border-radius: 20px; background: var(--rc-white); cursor: pointer; font: inherit; font-size: 13px; }
+
+  /* ---------- the popup ---------- */
+  .ht-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  .ht-overlay.open { display: flex; }
+  .ht-modal { background: var(--rc-white); border-radius: 12px; width: 100%; max-width: 540px; max-height: 94vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .ht-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 2px solid var(--rc-red); }
+  .ht-modal-head h3 { margin: 0; font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+  .ht-x { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--rc-steel); }
+  .ht-modal-body { padding: 16px 18px 6px; }
+  .ht-modal-foot { padding: 12px 18px 16px; display: flex; gap: 8px; justify-content: flex-end; }
+  .ht-top { display: grid; grid-template-columns: 250px 1fr; gap: 16px; align-items: center; margin-bottom: 14px; }
+  @media (max-width: 520px) { .ht-top { grid-template-columns: 1fr; } }
+  .ht-pv { display: flex; align-items: center; justify-content: center; min-height: 190px; border-radius: 8px; background: linear-gradient(#f4f5f7, #e6e9ed); padding: 8px; }
+  .ht-side { display: flex; flex-direction: column; gap: 12px; }
+  .ht-visors { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ht-visor { display: flex; gap: 5px; align-items: center; padding: 3px 9px 3px 3px; border: 2px solid var(--rc-silver); border-radius: 16px; background: var(--rc-white); cursor: pointer; font: inherit; font-size: 12px; }
   .ht-visor.sel { border-color: var(--rc-red); }
-  .ht-visor i { width: 22px; height: 22px; border-radius: 50%; display: block; }
-  .ht-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-  .ht-sliders { display: grid; grid-template-columns: 70px 1fr 48px; gap: 6px 10px; align-items: center; font-size: 12px; }
-  .ht-sliders input[type=range] { width: 100%; }
+  .ht-visor i { width: 16px; height: 16px; border-radius: 50%; display: block; }
+  .ht-slot { margin-top: 10px; }
+  .ht-slot-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .ht-slot-head select { padding: 3px 6px; font-size: 12px; }
+  .ht-swatches { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; }
+  @media (max-width: 520px) { .ht-swatches { grid-template-columns: repeat(8, 1fr); } }
+  .ht-sw { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--rc-silver); cursor: pointer; padding: 0; min-width: 0; }
+  .ht-sw.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rc-white), 0 0 0 3.5px var(--rc-red); }
+
+  /* ---------- admin studio (page section, admin only on the real site) ---------- */
+  .ht-studio-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .ht-studio-grid { grid-template-columns: 1fr; } }
+  .ht-stage { border-radius: 8px; min-height: 340px; display: flex; align-items: center; justify-content: center; padding: 16px; touch-action: none; cursor: crosshair; }
+  .ht-stage.light { background: #fff; } .ht-stage.dark { background: #1a1d24; } .ht-stage.grey { background: #d9dde2; }
   .ht-logo-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
   .ht-logo-item { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
   .ht-logo-item.sel { border-color: var(--rc-red); }
-  .ht-studio { margin-top: 20px; border-top: 2px dashed var(--rc-silver); padding-top: 16px; }
-  .ht-studio[hidden] { display: none; }
-  .ht-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--rc-carbon); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .ht-logo-item .miss { color: var(--rc-red); font-size: 11px; font-weight: 700; }
+  .ht-sliders { display: grid; grid-template-columns: 76px 1fr 44px; gap: 6px 10px; align-items: center; font-size: 12px; }
+  .ht-sliders input[type=range] { width: 100%; }
+  .ht-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--rc-carbon); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 99; }
   .ht-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div class="ht-wrap">
   <h1 style="font-family:var(--rc-font-heading);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 12px;">Helmet Test Page</h1>
-  <div class="ht-note">Stand-alone test page. Nothing here saves anywhere and nothing on the live site uses it yet. The left card is the driver view (what a driver would see). Tick "Admin Studio tools" to see the extra controls only you would get (exact colours, logos, copy/paste recipe).</div>
+  <div class="ht-note" id="topNote">Stand-alone test page. Nothing here saves anywhere and nothing on the live site uses it yet. Section 1 shows where a driver's helmet would sit and the popup they get from "Customize Helmet". Section 2 is the admin-only Helmet Studio.</div>
 
-  <div class="ht-grid">
-    <div class="ht-card">
-      <h2 class="ht-title">Preview</h2>
-      <div class="ht-stage light" id="stage"><span id="loading" style="color:#888;font-size:13px;">Loading helmet...</span></div>
-      <div class="ht-bg">Backdrop:
-        <button class="rc-btn-secondary rc-btn-row" data-bg="light" type="button">White</button>
-        <button class="rc-btn-secondary rc-btn-row" data-bg="grey" type="button">Grey</button>
-        <button class="rc-btn-secondary rc-btn-row" data-bg="dark" type="button">Dark</button>
+  <div class="ht-card">
+    <h2 class="ht-title">1. Driver view</h2>
+    <div class="ht-profile">
+      <div class="ht-avatar"><div id="avatarSlot"></div><button class="ht-link" id="openModal" type="button">Customize Helmet</button></div>
+      <div>
+        <span class="ht-label">How it looks at avatar sizes (on a white page)</span>
+        <div class="ht-sizes" id="sizes"></div>
       </div>
-      <div class="ht-sizes light" id="sizes"></div>
     </div>
+  </div>
 
-    <div class="ht-card">
-      <h2 class="ht-title">Customize Helmet</h2>
-      <div class="ht-row"><span class="ht-label">Design</span><select id="design"></select></div>
-      <div id="slots"></div>
-      <div class="ht-row"><span class="ht-label">Visor</span><div class="ht-visors" id="visors"></div></div>
-      <div class="ht-row ht-btns">
-        <button class="rc-btn-secondary" id="rand" type="button">Randomize</button>
-        <button class="rc-btn-secondary" id="reset" type="button">Reset</button>
+  <div class="ht-card">
+    <h2 class="ht-title">2. Admin Helmet Studio</h2>
+    <div class="ht-studio-grid">
+      <div>
+        <div class="ht-stage light" id="stage"></div>
+        <div class="ht-btns" style="margin-top:8px;font-size:12px;color:var(--rc-steel);">Backdrop:
+          <button class="ht-btn" data-bg="light" type="button">White</button><button class="ht-btn" data-bg="grey" type="button">Grey</button><button class="ht-btn" data-bg="dark" type="button">Dark</button>
+          <button class="ht-btn" id="studioEdit" type="button">Colors and finishes...</button>
+        </div>
       </div>
-      <div class="ht-row"><label style="font-size:13px;"><input type="checkbox" id="studioToggle"> Admin Studio tools</label></div>
-
-      <div class="ht-studio" id="studio" hidden>
-        <div class="ht-label">Studio: logos on the helmet</div>
+      <div>
+        <span class="ht-label">Logos on the helmet</span>
         <div class="ht-logo-list" id="logoList"></div>
         <div class="ht-btns" style="margin-bottom:12px;">
           <select id="logoPick"></select>
           <select id="logoVar" title="Which logo file to use"><option value="std">Standard logo</option><option value="black">Black version</option><option value="white">White version</option></select>
-          <button class="rc-btn-secondary" id="logoAdd" type="button">Add logo</button>
-          <button class="rc-btn-secondary" id="logoDel" type="button">Remove selected</button>
+          <button class="ht-btn" id="logoAdd" type="button">Add logo</button>
+          <button class="ht-btn" id="logoDel" type="button">Remove selected</button>
         </div>
         <div class="ht-sliders" id="logoSliders"></div>
-        <p style="font-size:12px;color:var(--rc-steel);margin:8px 0 0;">Tip: with a logo selected, click or drag on the helmet to move it.</p>
-        <div class="ht-label" style="margin-top:18px;">Exact colours (Studio only)</div>
+        <p style="font-size:12px;color:var(--rc-steel);margin:8px 0 0;">With a logo selected, click or drag on the helmet to move it.</p>
+        <span class="ht-label" style="margin-top:16px;">Exact colors (Studio only)</span>
         <div id="hexRow" style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;"></div>
-        <div class="ht-label" style="margin-top:18px;">Recipe text</div>
+        <span class="ht-label" style="margin-top:16px;">Recipe text</span>
         <textarea id="recipeText" spellcheck="false"></textarea>
-        <div class="ht-btns" style="margin-top:8px;">
-          <button class="rc-btn-secondary" id="copyRecipe" type="button">Copy Recipe</button>
-          <button class="rc-btn-secondary" id="pasteRecipe" type="button">Load Recipe from box</button>
-        </div>
+        <div class="ht-btns" style="margin-top:8px;"><button class="ht-btn" id="copyRecipe" type="button">Copy Recipe</button><button class="ht-btn" id="pasteRecipe" type="button">Load Recipe from box</button></div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- the popup a driver gets from "Customize Helmet" -->
+<div class="ht-overlay" id="overlay">
+  <div class="ht-modal" role="dialog" aria-label="Customize Helmet">
+    <div class="ht-modal-head"><h3>Customize Helmet</h3><button class="ht-x" id="closeModal" type="button" aria-label="Close">&times;</button></div>
+    <div class="ht-modal-body" id="modalBody"></div>
+    <div class="ht-modal-foot"><button class="ht-btn" id="cancelModal" type="button">Cancel</button><button class="ht-btn primary" id="saveModal" type="button">Save Helmet</button></div>
+  </div>
+</div>
 <div class="ht-toast" id="toast"></div>
 
-<script src="js/helmet.js"></script>
+<script src="js/helmet.js?v=3"></script>
 <script>
 (function () {
   // STAND-IN for the HelmetAssets sheet tab: Slot + Display Name -> file 01-name_of_design.png
@@ -113,164 +136,173 @@
       { slot: 3, name: 'Modern',      file: '03-modern.png' },
       { slot: 4, name: 'Simple',      file: '04-simple.png' }
     ],
-    // STAND-IN for the manufacturer names the site already knows (Cars tab). Logo images come from
-    // the existing assets/manufacturers/ folder -- nothing is copied into the helmets folders.
     // STAND-IN for Logo rows of the HelmetAssets tab (custom logos saved in assets/helmets/images/)
     logos: [{ name: 'Race Club', file: 'race_club.png' }],
+    // STAND-IN for the manufacturer names the site already knows (Cars tab). Logo images come from
+    // the existing assets/manufacturers/ folder -- nothing is copied into the helmets folders.
     manufacturers: ['Alpine', 'Aston Martin', 'Audi', 'Bentley', 'BMW', 'Cadillac', 'Chevrolet', 'Corvette', 'Duqueine', 'Ferrari', 'Ford', 'Genesis', 'Ginetta', 'Glickenhaus', 'Honda', 'Hyundai', 'Isotta', 'Lamborghini', 'Lexus', 'Ligier', 'Mazda', 'McLaren', 'Mercedes-AMG', 'Oreca', 'Peugeot', 'Porsche', 'Toyota', 'Vanwall']
   });
   var cfg = RCHelmet.getConfig();
-  if (location.protocol === 'file:') {
-    var warn = document.createElement('div'); warn.className = 'ht-note'; warn.style.borderColor = 'var(--rc-red)'; warn.style.color = 'var(--rc-red)';
-    warn.textContent = 'This page was opened straight from a file on your computer, and browsers block the helmet drawing in that case ("Operation is insecure"). Open it from the live site address instead (after pushing), or from a local server at http://localhost:8000/helmet-test.html.';
-    document.querySelector('.ht-wrap').insertBefore(warn, document.querySelector('.ht-note'));
-  }
-  var R = RCHelmet.normalizeRecipe(RCHelmet.defaultRecipe());
-  var selLogo = -1, studio = false;
   var $ = function (id) { return document.getElementById(id); };
-
+  if (location.protocol === 'file:') {
+    var n = $('topNote'); n.style.borderColor = 'var(--rc-red)'; n.style.color = 'var(--rc-red)';
+    n.textContent = 'This page was opened straight from a file on your computer, and browsers block the helmet drawing in that case ("Operation is insecure"). Open it from the live site address instead (after pushing), or from a local server at http://localhost:8000/helmet-test.html.';
+  }
   function toast(t) { var e = $('toast'); e.textContent = t; e.classList.add('show'); setTimeout(function () { e.classList.remove('show'); }, 1600); }
 
-  // ---- design dropdown
-  var dsel = $('design');
-  cfg.designs.forEach(function (d) { var o = document.createElement('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; dsel.appendChild(o); });
-  dsel.onchange = function () { R.d = parseInt(dsel.value, 10); draw(); };
+  var R = RCHelmet.normalizeRecipe(RCHelmet.defaultRecipe());   // what is saved
+  var W = R;                                                      // working copy while the popup is open
+  var selLogo = -1, modalOpen = false;
 
-  // ---- colour slots
+  // ---------------- compact editor (used inside the popup and in the Studio's popup) -------------
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
-  var slotsEl = $('slots');
-  SLOTS.forEach(function (s) {
-    var row = document.createElement('div'); row.className = 'ht-row'; row.id = 'slot-' + s[0];
-    var head = document.createElement('div'); head.className = 'ht-slot-head';
-    var lab = document.createElement('span'); lab.className = 'ht-label'; lab.style.margin = 0; lab.textContent = s[1];
-    var sel = document.createElement('select');
-    RCHelmet.FINISHES.forEach(function (f) { var o = document.createElement('option'); o.value = f.id; o.textContent = f.name; sel.appendChild(o); });
-    sel.onchange = function () { R[s[0]][1] = sel.value; draw(); };
-    head.appendChild(lab); head.appendChild(sel); row.appendChild(head);
-    var sw = document.createElement('div'); sw.className = 'ht-swatches';
-    RCHelmet.PALETTE.forEach(function (p) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'ht-sw'; b.style.background = p.hex; b.title = p.name; b.dataset.id = p.id;
-      b.onclick = function () { R[s[0]][0] = p.id; draw(); };
-      sw.appendChild(b);
+  function buildEditor(host) {
+    host.innerHTML = '';
+    var top = document.createElement('div'); top.className = 'ht-top';
+    var pv = document.createElement('div'); pv.className = 'ht-pv'; pv.id = 'popPreview'; top.appendChild(pv);
+    var side = document.createElement('div'); side.className = 'ht-side';
+    var dWrap = document.createElement('div'); dWrap.innerHTML = '<span class="ht-label">Design</span>';
+    var dsel = document.createElement('select'); dsel.style.width = '100%'; dsel.id = 'edDesign';
+    cfg.designs.forEach(function (d) { var o = document.createElement('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; dsel.appendChild(o); });
+    dsel.onchange = function () { W.d = parseInt(dsel.value, 10); draw(); };
+    dWrap.appendChild(dsel); side.appendChild(dWrap);
+    var vWrap = document.createElement('div'); vWrap.innerHTML = '<span class="ht-label">Visor</span>';
+    var vs = document.createElement('div'); vs.className = 'ht-visors'; vs.id = 'edVisors';
+    RCHelmet.VISORS.forEach(function (v) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ht-visor'; b.dataset.id = v.id;
+      b.innerHTML = '<i style="background:linear-gradient(135deg,' + v.c1 + ',' + v.c2 + ')"></i>' + v.name;
+      b.onclick = function () { W.v = v.id; draw(); }; vs.appendChild(b);
     });
-    row.appendChild(sw); slotsEl.appendChild(row);
-  });
+    vWrap.appendChild(vs); side.appendChild(vWrap);
+    var bt = document.createElement('div'); bt.className = 'ht-btns';
+    var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'ht-btn'; rb.textContent = 'Randomize';
+    rb.onclick = function () { var lg = W.logos; var n = RCHelmet.randomRecipe(W.d); n.logos = lg; Object.assign(W, n); draw(); };
+    var rs = document.createElement('button'); rs.type = 'button'; rs.className = 'ht-btn'; rs.textContent = 'Reset';
+    rs.onclick = function () { var n = RCHelmet.normalizeRecipe(RCHelmet.defaultRecipe()); n.logos = W.logos; Object.assign(W, n); draw(); };
+    bt.appendChild(rb); bt.appendChild(rs); side.appendChild(bt);
+    top.appendChild(side); host.appendChild(top);
+    SLOTS.forEach(function (s) {
+      var row = document.createElement('div'); row.className = 'ht-slot'; row.dataset.slot = s[0];
+      var head = document.createElement('div'); head.className = 'ht-slot-head';
+      var lab = document.createElement('span'); lab.className = 'ht-label'; lab.style.margin = 0; lab.textContent = s[1];
+      var sel = document.createElement('select');
+      RCHelmet.FINISHES.forEach(function (f) { var o = document.createElement('option'); o.value = f.id; o.textContent = f.name; sel.appendChild(o); });
+      sel.onchange = function () { W[s[0]][1] = sel.value; draw(); };
+      head.appendChild(lab); head.appendChild(sel); row.appendChild(head);
+      var sw = document.createElement('div'); sw.className = 'ht-swatches';
+      RCHelmet.PALETTE.forEach(function (p) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'ht-sw'; b.style.background = p.hex; b.title = p.name; b.dataset.id = p.id;
+        b.onclick = function () { W[s[0]][0] = p.id; draw(); }; sw.appendChild(b);
+      });
+      row.appendChild(sw); host.appendChild(row);
+    });
+  }
+  function syncEditor() {
+    var host = $('modalBody'); if (!host.firstChild) return;
+    $('edDesign').value = W.d;
+    host.querySelectorAll('.ht-slot').forEach(function (row) {
+      var k = row.dataset.slot;
+      row.querySelector('select').value = W[k][1];
+      row.querySelectorAll('.ht-sw').forEach(function (b) { b.classList.toggle('sel', b.dataset.id === W[k][0]); });
+    });
+    host.querySelectorAll('.ht-visor').forEach(function (b) { b.classList.toggle('sel', b.dataset.id === W.v); });
+  }
 
-  // ---- visors
-  var vEl = $('visors');
-  RCHelmet.VISORS.forEach(function (v) {
-    var b = document.createElement('button'); b.type = 'button'; b.className = 'ht-visor'; b.dataset.id = v.id;
-    b.innerHTML = '<i style="background:linear-gradient(135deg,' + v.c1 + ',' + v.c2 + ')"></i>' + v.name;
-    b.onclick = function () { R.v = v.id; draw(); };
-    vEl.appendChild(b);
-  });
+  // ---------------- popup open / close ----------------
+  function openModal() { W = JSON.parse(JSON.stringify(R)); buildEditor($('modalBody')); $('overlay').classList.add('open'); modalOpen = true; syncEditor(); draw(); }
+  function closeModal(save) {
+    $('overlay').classList.remove('open'); modalOpen = false;
+    if (save) { R = RCHelmet.normalizeRecipe(W); toast('Saved (test page only: nothing is stored)'); }
+    W = R; draw();
+  }
+  $('openModal').onclick = openModal; $('studioEdit').onclick = openModal;
+  $('closeModal').onclick = function () { closeModal(false); }; $('cancelModal').onclick = function () { closeModal(false); };
+  $('saveModal').onclick = function () { closeModal(true); };
+  $('overlay').addEventListener('mousedown', function (e) { if (e.target === $('overlay')) closeModal(false); });
 
-  $('rand').onclick = function () { var d = R.d, lg = R.logos; R = RCHelmet.randomRecipe(d); R.logos = lg; draw(); };
-  $('reset').onclick = function () { R = RCHelmet.normalizeRecipe(RCHelmet.defaultRecipe()); selLogo = -1; draw(); };
-
-  // ---- backdrop buttons
-  document.querySelectorAll('[data-bg]').forEach(function (b) {
-    b.onclick = function () {
-      ['stage', 'sizes'].forEach(function (id) { var e = $(id); e.className = e.className.replace(/\b(light|dark|grey)\b/, b.dataset.bg); });
-    };
-  });
-
-  // ---- studio
-  $('studioToggle').onchange = function () { studio = this.checked; $('studio').hidden = !studio; $('stage').classList.toggle('studio', studio); syncUI(); };
+  // ---------------- Studio (logos, exact colors, recipe) ----------------
+  document.querySelectorAll('[data-bg]').forEach(function (b) { b.onclick = function () { var e = $('stage'); e.className = 'ht-stage ' + b.dataset.bg; }; });
   var lp = $('logoPick');
-  var gC = document.createElement('optgroup'); gC.label = 'Custom logos';
-  cfg.logos.forEach(function (l) { var o = document.createElement('option'); o.value = 'f:' + l.file; o.textContent = l.name; gC.appendChild(o); });
-  if (cfg.logos.length) lp.appendChild(gC);
   var gM = document.createElement('optgroup'); gM.label = 'Manufacturers';
   cfg.manufacturers.forEach(function (n) { var o = document.createElement('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
   lp.appendChild(gM);
+  var gC = document.createElement('optgroup'); gC.label = 'Custom logos';
+  cfg.logos.forEach(function (l) { var o = document.createElement('option'); o.value = 'f:' + l.file; o.textContent = l.name; gC.appendChild(o); });
+  if (cfg.logos.length) lp.appendChild(gC);
   $('logoAdd').onclick = function () {
     var isM = lp.value.indexOf('m:') === 0, val = lp.value.substr(2);
-    R.logos.push({ m: isM ? val : '', v: isM ? $('logoVar').value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 }); selLogo = R.logos.length - 1; draw();
+    R.logos.push({ m: isM ? val : '', v: isM ? $('logoVar').value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 });
+    selLogo = R.logos.length - 1; draw();
   };
   $('logoDel').onclick = function () { if (selLogo >= 0) { R.logos.splice(selLogo, 1); selLogo = -1; draw(); } };
   var SL = [['x', 'X', 0, 1254, 1], ['y', 'Y', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -30, 30, 0.5]];
-  var slEl = $('logoSliders');
   SL.forEach(function (s) {
     var l = document.createElement('span'); l.textContent = s[1];
     var inp = document.createElement('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; inp.id = 'sl-' + s[0];
     var v = document.createElement('span'); v.id = 'slv-' + s[0];
     inp.oninput = function () { if (selLogo < 0) return; R.logos[selLogo][s[0]] = parseFloat(inp.value); v.textContent = inp.value; draw(true); };
-    slEl.appendChild(l); slEl.appendChild(inp); slEl.appendChild(v);
+    $('logoSliders').appendChild(l); $('logoSliders').appendChild(inp); $('logoSliders').appendChild(v);
   });
-  var hexRow = $('hexRow');
   SLOTS.forEach(function (s) {
     var w = document.createElement('label'); w.textContent = s[1] + ' ';
     var c = document.createElement('input'); c.type = 'color'; c.id = 'hex-' + s[0];
     c.oninput = function () { R[s[0]][0] = c.value; draw(true); };
-    w.appendChild(c); hexRow.appendChild(w);
+    w.appendChild(c); $('hexRow').appendChild(w);
   });
   $('copyRecipe').onclick = function () {
-    var t = $('recipeText'); t.select();
-    var done = function () { toast('Recipe copied'); };
+    var t = $('recipeText'); t.select(); var done = function () { toast('Recipe copied'); };
     if (navigator.clipboard) navigator.clipboard.writeText(t.value).then(done, function () { document.execCommand('copy'); done(); }); else { document.execCommand('copy'); done(); }
   };
-  $('pasteRecipe').onclick = function () {
-    try { R = RCHelmet.normalizeRecipe(JSON.parse($('recipeText').value)); selLogo = -1; draw(); toast('Recipe loaded'); } catch (e) { toast('That is not a valid recipe'); }
-  };
-
-  // click / drag on the preview moves the selected logo
-  var stage = $('stage'), dragging = false;
+  $('pasteRecipe').onclick = function () { try { R = RCHelmet.normalizeRecipe(JSON.parse($('recipeText').value)); W = R; selLogo = -1; draw(); toast('Recipe loaded'); } catch (e) { toast('That is not a valid recipe'); } };
+  var dragging = false;
   function moveTo(ev) {
-    if (!studio || selLogo < 0) return;
-    var cv = stage.querySelector('canvas'); if (!cv) return;
+    if (selLogo < 0) return; var cv = $('stage').querySelector('canvas'); if (!cv) return;
     var rc = cv.getBoundingClientRect(), C = RCHelmet.CROP;
-    var x = C.x + (ev.clientX - rc.left) / rc.width * C.w, y = C.y + (ev.clientY - rc.top) / rc.height * C.h;
-    R.logos[selLogo].x = Math.round(x); R.logos[selLogo].y = Math.round(y); draw(true);
+    R.logos[selLogo].x = Math.round(C.x + (ev.clientX - rc.left) / rc.width * C.w); R.logos[selLogo].y = Math.round(C.y + (ev.clientY - rc.top) / rc.height * C.h); draw(true);
   }
-  stage.addEventListener('pointerdown', function (e) { dragging = true; moveTo(e); });
+  $('stage').addEventListener('pointerdown', function (e) { dragging = true; moveTo(e); });
   window.addEventListener('pointermove', function (e) { if (dragging) moveTo(e); });
   window.addEventListener('pointerup', function () { dragging = false; });
 
-  // ---- sync controls to the recipe
-  function syncUI() {
-    dsel.value = R.d;
-    SLOTS.forEach(function (s) {
-      var row = $('slot-' + s[0]);
-      row.querySelector('select').value = R[s[0]][1];
-      row.querySelectorAll('.ht-sw').forEach(function (b) { b.classList.toggle('sel', b.dataset.id === R[s[0]][0]); });
-      var hx = $('hex-' + s[0]); if (hx) hx.value = RCHelmet.hexOf(R[s[0]][0]);
-    });
-    vEl.querySelectorAll('.ht-visor').forEach(function (b) { b.classList.toggle('sel', b.dataset.id === R.v); });
+  function syncStudio(missing) {
     var list = $('logoList'); list.innerHTML = '';
     R.logos.forEach(function (l, i) {
-      var d = document.createElement('div'); d.className = 'ht-logo-item' + (i === selLogo ? ' sel' : ''); d.textContent = (l.m || l.f) + (l.m ? ' (' + (l.v === 'std' ? 'standard' : l.v) + ')' : '');
-      d.onclick = function () { selLogo = i; syncUI(); };
-      list.appendChild(d);
+      var d = document.createElement('div'); d.className = 'ht-logo-item' + (i === selLogo ? ' sel' : '');
+      var nm = document.createElement('span'); nm.textContent = (l.m || l.f) + (l.m ? ' (' + (l.v === 'std' ? 'standard' : l.v) + ')' : '');
+      d.appendChild(nm);
+      if (missing && missing[i]) { var m = document.createElement('span'); m.className = 'miss'; m.textContent = 'FILE NOT FOUND'; d.appendChild(m); }
+      d.onclick = function () { selLogo = i; syncStudio(missing); }; list.appendChild(d);
     });
     SL.forEach(function (s) {
       var inp = $('sl-' + s[0]), v = $('slv-' + s[0]);
       inp.disabled = selLogo < 0; if (selLogo >= 0) { inp.value = R.logos[selLogo][s[0]]; v.textContent = inp.value; } else v.textContent = '';
     });
+    SLOTS.forEach(function (s) { $('hex-' + s[0]).value = RCHelmet.hexOf(R[s[0]][0]); });
     if (document.activeElement !== $('recipeText')) $('recipeText').value = JSON.stringify(R);
   }
 
-  // ---- drawing (latest request wins)
-  var token = 0, busy = false, again = false, quick = false;
+  // ---------------- drawing ----------------
+  var busy = false, again = false, lastQuick = false;
+  function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
   function draw(isQuick) {
-    syncUI();
-    if (busy) { again = true; return; }
+    syncEditor(); syncStudio();
+    if (busy) { again = true; lastQuick = !!isQuick; return; }
     busy = true;
-    var my = ++token;
-    var small = [[40, '40 px'], [72, '72 px'], [144, '144 px']];
-    RCHelmet.render(R, { width: isQuick ? 520 : 760 }).then(function (cv) {
-      if ($('loading')) $('loading').remove();
-      stage.querySelectorAll('canvas').forEach(function (c) { c.remove(); });
-      stage.appendChild(cv);
-      return Promise.all(small.map(function (s) { return RCHelmet.render(R, { width: s[0] * 2 }); }));
-    }).then(function (cvs) {
+    var recipe = modalOpen ? W : R, jobs = [];
+    var sizes = [[40, '40 px'], [72, '72 px'], [144, '144 px']];
+    jobs.push(RCHelmet.render(R, { width: 380 }).then(function (cv) { put($('avatarSlot'), cv); }));
+    jobs.push(RCHelmet.render(R, { width: isQuick ? 560 : 800 }).then(function (cv) { put($('stage'), cv); syncStudio(cv.missingLogos); }));
+    sizes.forEach(function (s) { jobs.push(RCHelmet.render(R, { width: s[0] * 2 })); });
+    if (modalOpen) jobs.push(RCHelmet.render(W, { width: 460 }).then(function (cv) { var p = $('popPreview'); if (p) put(p, cv); }));
+    Promise.all(jobs).then(function (res) {
       var box = $('sizes'); box.innerHTML = '';
-      cvs.forEach(function (c, i) {
-        var w = document.createElement('div'); c.style.width = small[i][0] + 'px'; c.style.height = 'auto';
-        w.appendChild(c); var l = document.createElement('div'); l.className = 'lbl'; l.textContent = small[i][1] + ' avatar'; w.appendChild(l); box.appendChild(w);
+      sizes.forEach(function (s, i) {
+        var c = res[2 + i]; c.style.width = s[0] + 'px'; c.style.height = 'auto';
+        var w = document.createElement('div'); w.appendChild(c); var l = document.createElement('div'); l.className = 'lbl'; l.textContent = s[1]; w.appendChild(l); box.appendChild(w);
       });
+      var av = $('avatarSlot').firstChild; if (av) av.style.width = '170px';
     }).catch(function (e) { console.error(e); toast('Render problem: ' + e.message); }).then(function () {
-      busy = false; if (again) { again = false; draw(); }
+      busy = false; if (again) { again = false; draw(lastQuick); }
     });
   }
   draw();
