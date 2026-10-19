@@ -101,3 +101,14 @@
 /* Design drop-down on its own full-width row, Randomize / Reset colors on the row below it */
 .rch-dstack { display: flex; flex-direction: column; gap: 10px; }
 .rch-dstack .rch-tools { justify-content: flex-start; }
+
+/* player popup: Helmet Options checkboxes; controls are locked while "match my team" is ticked */
+.rch-options { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 8px; }
+.rch-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--rc-carbon); cursor: pointer; }
+.rch-check.off { color: var(--rc-steel); cursor: default; }
+.rch-check input { margin: 0; }
+.rch-locked .rch-section { opacity: 0.45; pointer-events: none; }
+.rch-check { text-transform: none; letter-spacing: 0; font-weight: 600; margin: 0; }
+.rch-check span { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.rch-options > .rch-label { margin: 0; }
+.rch-options .rch-hint { margin: 0; }

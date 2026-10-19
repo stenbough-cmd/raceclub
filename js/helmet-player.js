@@ -5,10 +5,12 @@
      ctx = { recipe, showModal, showToast, onSave(recipeOrNull) }
        recipe     the driver's current helmet recipe object, or null for the default helmet
        showModal  the page's own popup function: showModal(title, {bodyEl, wide})
-       onSave     called with a plain recipe {d,b,a1,a2,v} (Save Helmet) or null (Use Default Helmet)
+       onSave     called with a recipe {d,b,a1,a2,v,logos?,t?} (Save Helmet) or null (Use Default)
    Needs js/helmet.js (configured with the design list) and css/helmet.css.
    Players only get: design, 3 colors from the 16-color set, a finish per color, a visor, Randomize.
-   No logos and no exact colors (those are admin-only, see js/helmet-editor.js).
+   No logo editing and no exact colors (those are admin-only, see js/helmet-editor.js). Logos that come with the
+   default helmet (ctx.logos, for design ctx.logoD) are shown read-only and vanish if another design is picked.
+   "Helmet Options" checkboxes: match current team (ctx.teamInfo / ctx.teamOn); award dress-ups will be added there.
    ===================================================================== */
 (function () {
   'use strict';
@@ -30,11 +32,22 @@
     r.logos = [];
     return r;
   }
+  function copy(o) { return JSON.parse(JSON.stringify(o)); }
 
   function open(ctx) {
     var toast = ctx.showToast || function () {};
     var R = clean(ctx.recipe);
     var cfg = H.getConfig();
+    var baseLogos = ctx.logos || [], logoD = ctx.logoD;
+    var info = ctx.teamInfo || null;
+    var teamRecipe = (info && info.recipe) ? H.normalizeRecipe(info.recipe) : null;
+    var teamOn = !!(ctx.teamOn && teamRecipe);
+    // what is actually drawn / saved: the team helmet, or the player's choices plus the read-only default logos
+    function effective() {
+      if (teamOn) { var t = copy(teamRecipe); t.t = 1; return t; }
+      var o = copy(R); o.logos = (R.d === logoD) ? copy(baseLogos) : [];
+      return o;
+    }
 
     // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
     var body, modal;
@@ -113,19 +126,38 @@
     style.appendChild(vs);
     right.appendChild(style);
 
+    /* ---- helmet options (checkboxes) ---- */
+    var opts = mk('div', 'rch-options');
+    opts.appendChild(mk('div', 'rch-label', 'Helmet Options'));
+    var teamLab = mk('label', 'rch-check');
+    var teamBox = mk('input'); teamBox.type = 'checkbox';
+    teamLab.appendChild(teamBox);
+    teamLab.appendChild(mk('span', null, 'Match my helmet to my current team' + ((info && info.team) ? ' (' + info.team.replace(/&/g, '&amp;').replace(/</g, '&lt;') + ')' : '')));
+    opts.appendChild(teamLab);
+    if (!teamRecipe) {
+      teamBox.disabled = true; teamLab.classList.add('off');
+      opts.appendChild(mk('p', 'rch-hint', (info && info.hasTeam === false) ? 'Join a team this season to turn this on.' : 'No team helmet has been set up for your car yet.'));
+    }
+    teamBox.checked = teamOn;
+    teamBox.onchange = function () { teamOn = teamBox.checked && !!teamRecipe; draw(); };
+    // Season-award dress-up checkboxes will be added here as more rch-check labels.
+    right.appendChild(opts);
+
     /* ---- buttons ---- */
     var btns = mk('div', 'rch-btns rch-pbtns');
     var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save Helmet'); saveB.type = 'button';
-    var defB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Use Default Helmet'); defB.type = 'button';
+    var defB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Use Default'); defB.type = 'button';
     var canB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); canB.type = 'button';
     btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(canB);
     right.appendChild(btns);
-    saveB.onclick = function () { var out = clean(R); modal.close(); ctx.onSave(out); };
+    saveB.onclick = function () { var out = effective(); modal.close(); ctx.onSave(out); };
     defB.onclick = function () { modal.close(); ctx.onSave(null); };
     canB.onclick = function () { modal.close(); };
 
     /* ---- drawing ---- */
     function syncControls() {
+      body.classList.toggle('rch-locked', teamOn);
+      teamBox.checked = teamOn;
       if (!cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
       dSel.value = String(R.d);
       SLOTS.forEach(function (s) {
@@ -139,7 +171,7 @@
       syncControls();
       if (busy) { again = true; return; }
       busy = true;
-      H.render(R, { width: 640 }).then(function (cv) {
+      H.render(effective(), { width: 640 }).then(function (cv) {
         stage.innerHTML = ''; cv.style.maxWidth = '100%'; cv.style.height = 'auto'; stage.appendChild(cv);
       }).catch(function (e) { toast('Could not draw the helmet: ' + e.message, 'error'); })
         .then(function () { busy = false; if (again) { again = false; draw(); } });

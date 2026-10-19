@@ -13,13 +13,23 @@
   'use strict';
   var PREFIX = 'helmet:';
 
+  // Stored text: {d,b,a1,a2,v} plus optional  l = logos carried by the default / team helmet (players cannot edit them)
+  // and  t = 1 when "Match my helmet to my current team" is ticked.
   function recipeOf(v) {
     if (typeof v !== 'string' || v.indexOf(PREFIX) !== 0) return null;
-    try { var r = JSON.parse(v.slice(PREFIX.length)); return (r && typeof r === 'object') ? r : null; } catch (e) { return null; }
+    try {
+      var r = JSON.parse(v.slice(PREFIX.length));
+      if (!r || typeof r !== 'object') return null;
+      if (r.l && r.l.length) r.logos = r.l;
+      return r;
+    } catch (e) { return null; }
   }
   function valueOf(r) {
     if (!r) return '';
-    return PREFIX + JSON.stringify({ d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v });
+    var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
+    if (r.logos && r.logos.length) o.l = r.logos.slice(0, 20);
+    if (r.t) o.t = 1;
+    return PREFIX + JSON.stringify(o);
   }
 
   /* ---- loading ---- */
@@ -118,15 +128,21 @@
   /* ---- Customize Helmet: open the popup, save the result ---- */
   function customize(o, shell) {
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
-    var tried = [];
+    var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=6').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=7').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
-      return freshAssets().catch(function () {}).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
+      var teamP = fetchApi('getMyTeamHelmet', { token: token }).then(function (res) { teamInfo = (res && res.success) ? res : null; }).catch(function () {});
+      return Promise.all([freshAssets().catch(function () {}), teamP]).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
+        var own = recipeOf(profile.avatarFilename), base = own || defaultRecipe();
         window.RCHelmetPlayer.open({
-          recipe: recipeOf(profile.avatarFilename) || defaultRecipe(),
+          recipe: base,
+          logos: (base.logos && base.logos.length) ? base.logos : [],   // shown only while the design is the one they belong to
+          logoD: base.d,
+          teamInfo: teamInfo,
+          teamOn: !!(own && own.t),
           tried: tried,
           showModal: showModal,
           shell: shell,
