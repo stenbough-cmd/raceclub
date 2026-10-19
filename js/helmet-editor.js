@@ -40,7 +40,8 @@
       if (!res || !res.success) { body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }
       H.configure({ designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [] });
       return H.pruneDesigns().then(function () { build(res); });
-    }).catch(function () {
+    }).catch(function (err) {
+      if (window.console) console.error('Helmet designer:', err);
       body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'No answer from the server. Close this and try again.'));
     });
 
@@ -156,25 +157,38 @@
 
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
-      lg.appendChild(mk('div', 'rch-label', 'Logos (layers)'));
-      lg.appendChild(mk('p', 'rch-hint', 'The top of the list sits in front. Drag a row up or down, or use the arrows, to change which logo is on top.'));
+      lg.appendChild(mk('div', 'rch-label', 'Logos and shapes (layers)'));
+      lg.appendChild(mk('p', 'rch-hint', 'The top of the list sits in front. Drag a row up or down, or use the arrows, to change which layer is on top.'));
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
-      if (cfg.logos.length) {
-        var gC = mk('optgroup'); gC.label = 'Custom logos';
-        cfg.logos.forEach(function (l) { var o = mk('option'); o.value = 'f:' + l.file; o.textContent = l.name; gC.appendChild(o); });
-        lpick.appendChild(gC);
-      }
+      var gS = mk('optgroup'); gS.label = 'Basic shapes';
+      H.SHAPES.forEach(function (sh) { var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+      lpick.appendChild(gS);
+      // custom logos, grouped by the Category column of the HelmetAssets tab (blank = "Custom logos")
+      var cats = {}, catOrder = [];
+      cfg.logos.forEach(function (l) {
+        var c = String(l.category || '').trim() || 'Custom logos';
+        if (!cats[c]) { cats[c] = []; catOrder.push(c); }
+        cats[c].push(l);
+      });
+      catOrder.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
+      catOrder.forEach(function (c) {
+        var g = mk('optgroup'); g.label = c;
+        cats[c].forEach(function (l) { var o = mk('option'); o.value = 'f:' + l.file; o.textContent = l.name; g.appendChild(o); });
+        lpick.appendChild(g);
+      });
       var gM = mk('optgroup'); gM.label = 'Manufacturers';
       cfg.manufacturers.forEach(function (n) { var o = mk('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
       lpick.appendChild(gM);
       var lvar = mk('select', 'rch-select-wide');
       [['std', 'Standard logo'], ['black', 'Black version'], ['white', 'White version']].forEach(function (v) { var o = mk('option'); o.value = v[0]; o.textContent = v[1]; lvar.appendChild(o); });
-      var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add logo'); addB.type = 'button';
+      var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
-        var isM = lpick.value.indexOf('m:') === 0, val = lpick.value.substr(2);
-        var n = { m: isM ? val : '', v: isM ? lvar.value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 };
+        var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
+        var n = kind === 's'
+          ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
+          : { m: isM ? val : '', v: isM ? lvar.value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 };
         R.logos.push(n); sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(lvar); addRow.appendChild(addB);
@@ -201,11 +215,15 @@
       right.appendChild(rec);
 
       /* ---------------- behaviour ---------------- */
-      function logoName(l) { return l.m ? (l.m + (l.v === 'std' ? '' : ' (' + l.v + ')')) : (l.f || 'logo'); }
+      function shapeName(id) { var f = H.SHAPES.filter(function (x) { return x.id === id; })[0]; return f ? f.name : id; }
+      function logoName(l) {
+        if (l.s) return shapeName(l.s) + ' (' + (String(l.c).charAt(0) === '#' ? l.c : ((H.PALETTE.filter(function (p) { return p.id === l.c; })[0] || {}).name || l.c)) + ')';
+        return l.m ? (l.m + (l.v === 'std' ? '' : ' (' + l.v + ')')) : (l.f || 'logo');
+      }
 
       function renderLayers(missing) {
         layers.innerHTML = '';
-        if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos yet. Pick one below and press Add logo.'));
+        if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one below and press Add layer.'));
         var order = []; for (var i = R.logos.length - 1; i >= 0; i--) order.push(i);   // top of list = front
         order.forEach(function (idx, pos) {
           var l = R.logos[idx];
@@ -216,7 +234,7 @@
           row.appendChild(nm);
           var up = mk('button', 'rch-icon', '&#9650;'); up.type = 'button'; up.title = 'Bring forward';
           var dn = mk('button', 'rch-icon', '&#9660;'); dn.type = 'button'; dn.title = 'Send back';
-          var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove logo';
+          var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove layer';
           up.onclick = function (e) { e.stopPropagation(); if (idx < R.logos.length - 1) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx + 1]; R.logos[idx + 1] = t; draw(); } };
           dn.onclick = function (e) { e.stopPropagation(); if (idx > 0) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx - 1]; R.logos[idx - 1] = t; draw(); } };
           rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (sel === l) sel = null; draw(); };
@@ -255,6 +273,26 @@
         var shl = mk('label', 'rch-check'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!sel.sh;
         shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; draw(true); };
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
+        if (sel.s) {
+          var cw = mk('div', 'rch-shapecolor');
+          cw.appendChild(mk('div', 'rch-label', 'Shape color'));
+          var sw2 = mk('div', 'rch-swatches');
+          var isHexC = String(sel.c).charAt(0) === '#';
+          H.PALETTE.forEach(function (p) {
+            var b = mk('button', 'rch-sw' + (!isHexC && sel.c === p.id ? ' sel' : '')); b.type = 'button'; b.style.background = p.hex; b.title = p.name;
+            b.onclick = function () { sel.c = p.id; draw(); };
+            sw2.appendChild(b);
+          });
+          var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = 'Exact color';
+          if (isHexC) cpw2.style.background = sel.c;
+          var cp2 = mk('input'); cp2.type = 'color'; cp2.value = H.hexOf(sel.c);
+          cp2.oninput = function () { sel.c = cp2.value; draw(true); };
+          cp2.onchange = function () { draw(); };
+          cpw2.appendChild(cp2); sw2.appendChild(cpw2);
+          cw.appendChild(sw2);
+          detail.appendChild(cw);
+          if (sel.s === 'checker') cw.appendChild(mk('p', 'rch-hint', 'The checkered strip uses this color and white.'));
+        }
         if (sel.m) {
           var vsel = mk('select', 'rch-select-wide'); [['std', 'Standard logo'], ['black', 'Black version'], ['white', 'White version']].forEach(function (v) { var o = mk('option'); o.value = v[0]; o.textContent = v[1]; vsel.appendChild(o); });
           vsel.value = sel.v || 'std'; vsel.onchange = function () { sel.v = vsel.value; draw(); }; opts.appendChild(vsel);

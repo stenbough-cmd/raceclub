@@ -61,6 +61,37 @@
   // how strongly the shared highlight layer shows on each finish
   var SPEC_K = { gloss: 1.0, matte: 0.2, satin: 0.6, metallic: 1.0, pearl: 1.0, candy: 1.1, carbon: 1.0 };
 
+  // ---- basic shapes (drawn with code, no picture files) ---------------------------------------
+  // Each path draws centred on 0,0 inside a w x h box.
+  function poly(c, pts) { c.beginPath(); pts.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); }
+  function rrect(c, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+  }
+  var SHAPES = [
+    { id: 'rect', name: 'Rectangle', draw: function (c, w, h) { c.beginPath(); c.rect(-w / 2, -h / 2, w, h); c.fill(); } },
+    { id: 'round', name: 'Rounded rectangle', draw: function (c, w, h) { rrect(c, -w / 2, -h / 2, w, h, Math.min(w, h) * 0.25); c.fill(); } },
+    { id: 'pill', name: 'Pill', draw: function (c, w, h) { rrect(c, -w / 2, -h / 2, w, h, Math.min(w, h) / 2); c.fill(); } },
+    { id: 'circle', name: 'Circle / oval', draw: function (c, w, h) { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); } },
+    { id: 'ring', name: 'Ring', draw: function (c, w, h) { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.ellipse(0, 0, w * 0.32, h * 0.32, 0, 0, Math.PI * 2, true); c.fill('evenodd'); } },
+    { id: 'triangle', name: 'Triangle', draw: function (c, w, h) { poly(c, [[0, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]); c.fill(); } },
+    { id: 'diamond', name: 'Diamond', draw: function (c, w, h) { poly(c, [[0, -h / 2], [w / 2, 0], [0, h / 2], [-w / 2, 0]]); c.fill(); } },
+    { id: 'hexagon', name: 'Hexagon', draw: function (c, w, h) { poly(c, [[-w * 0.25, -h / 2], [w * 0.25, -h / 2], [w / 2, 0], [w * 0.25, h / 2], [-w * 0.25, h / 2], [-w / 2, 0]]); c.fill(); } },
+    { id: 'star', name: 'Star', draw: function (c, w, h) {
+        var pts = [], i; for (i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, k = (i % 2) ? 0.4 : 1; pts.push([Math.cos(a) * w / 2 * k, Math.sin(a) * h / 2 * k]); }
+        poly(c, pts); c.fill(); } },
+    { id: 'chevron', name: 'Chevron', draw: function (c, w, h) { poly(c, [[-w / 2, -h / 2], [w * 0.15, -h / 2], [w / 2, 0], [w * 0.15, h / 2], [-w / 2, h / 2], [-w * 0.15, 0]]); c.fill(); } },
+    { id: 'stripe', name: 'Slanted stripe', draw: function (c, w, h) { poly(c, [[-w / 2 + w * 0.25, -h / 2], [w / 2, -h / 2], [w / 2 - w * 0.25, h / 2], [-w / 2, h / 2]]); c.fill(); } },
+    { id: 'cross', name: 'Cross', draw: function (c, w, h) { var a = w * 0.17, b = h * 0.17; poly(c, [[-a, -h / 2], [a, -h / 2], [a, -b], [w / 2, -b], [w / 2, b], [a, b], [a, h / 2], [-a, h / 2], [-a, b], [-w / 2, b], [-w / 2, -b], [-a, -b]]); c.fill(); } },
+    { id: 'checker', name: 'Checkered strip', draw: function (c, w, h) {
+        var cols = 8, rows = 2, cw = w / cols, ch = h / rows, x, y, fillStyle = c.fillStyle;
+        for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? '#ffffff' : fillStyle; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
+        c.fillStyle = fillStyle; } }
+  ];
+  function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
+
   var MFR_BASE = 'assets/manufacturers/';   // the site's existing manufacturer logos -- not copied anywhere
 var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, name, file}]  manufacturers: ['Ford', ...]  logos: [{name, file}] (custom logos such as the Race Club logo, files in assets/helmets/images/)
   function configure(o) {
@@ -94,6 +125,10 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       logos: []
     };
     (r.logos || []).forEach(function (l) {
+      if (l && l.s && shapeById(l.s)) {
+        out.logos.push({ s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : 1 });
+        return;
+      }
       if (!l || !(l.f || l.m)) return;
       out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : 1 });
     });
@@ -282,7 +317,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var scale = Wt / CROP.w;
     var Ht = Math.round(CROP.h * scale);
     var patUrl = designUrl(recipe.d);
-    var logoLoads = recipe.logos.map(function (l) { return loadFirst(logoCandidates(l)); });
+    var logoLoads = recipe.logos.map(function (l) { return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
     var patLoad = patUrl ? loadImg(patUrl).catch(function () { return null; }) : Promise.resolve(null);
 
     return Promise.all([engine(), patLoad, Promise.all(logoLoads)]).then(function (res) {
@@ -358,14 +393,19 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var lx = lc.getContext('2d', { willReadFrequently: true });
         recipe.logos.forEach(function (l, idx) {
           var im = logoImgs[idx]; if (!im) return;
-          var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
-          var fit = Math.min(l.w / nw, l.h / nh);
-          var dw = nw * fit * scale, dh = nh * fit * scale;
           lx.save();
           lx.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           lx.rotate(-l.r * Math.PI / 180);
           if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
-          lx.drawImage(im, -dw / 2, -dh / 2, dw, dh);
+          if (l.s) {
+            lx.fillStyle = hexOf(l.c);
+            shapeById(l.s).draw(lx, l.w * scale, l.h * scale);
+          } else {
+            var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
+            var fit = Math.min(l.w / nw, l.h / nh);
+            var dw = nw * fit * scale, dh = nh * fit * scale;
+            lx.drawImage(im, -dw / 2, -dh / 2, dw, dh);
+          }
           lx.restore();
         });
         var ld = lx.getImageData(0, 0, Wt, Ht).data;
@@ -401,7 +441,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   }
 
   window.RCHelmet = {
-    PALETTE: PALETTE, FINISHES: FINISHES, VISORS: VISORS, CROP: CROP,
+    PALETTE: PALETTE, SHAPES: SHAPES, FINISHES: FINISHES, VISORS: VISORS, CROP: CROP,
     configure: configure, pruneDesigns: pruneDesigns, defaultRecipe: defaultRecipe, randomRecipe: randomRecipe, normalizeRecipe: normalizeRecipe,
     hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }
   };

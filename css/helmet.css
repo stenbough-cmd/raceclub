@@ -93,3 +93,4 @@
 .rch-swatches16 { grid-template-columns: repeat(16, 1fr); }
 @media (max-width: 520px) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
 .rch-pbtns { margin-top: 4px; }
+.rch-shapecolor { margin-top: 10px; width: 100%; }

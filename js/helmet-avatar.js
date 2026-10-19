@@ -70,7 +70,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=6')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=7')).then(assetsPromise).then(function (a) {
         window.RCHelmet.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
         return window.RCHelmet;
       });
@@ -101,7 +101,7 @@
   function customize(o) {
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [];
-    loadCss('css/helmet.css?v=3');
+    loadCss('css/helmet.css?v=4');
     return Promise.all([ensure(), loadScript('js/helmet-player.js?v=3')]).then(function (res) {
       var H = res[0];
       // The popup always asks the server for the current design list (the saved copy used for the
