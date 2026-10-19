@@ -100,7 +100,7 @@ function _rcEPPasswordChangeSection(token, opts) {
   box.style.borderColor = 'var(--rc-red)';
   box.appendChild(_rcEP_el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
   var cur = _rcEP_el('input'); cur.type = 'password'; cur.placeholder = 'Current password'; cur.className = 'rc-pw-current';
-  var next = _rcEP_el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)'; next.className = 'rc-pw-new';
+  var next = _rcEP_el('input'); next.type = 'password'; next.placeholder = 'New password (6+ characters)'; next.className = 'rc-pw-new';
   var confirm = _rcEP_el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password'; confirm.className = 'rc-pw-confirm';
   box.appendChild(cur); box.appendChild(next); box.appendChild(confirm);
 
@@ -190,7 +190,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   form.appendChild(_rcEP_el('label', null, 'Email Address'));
   var email = _rcEP_el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
   form.appendChild(email);
-  form.appendChild(_rcEP_el('div', 'rc-hint', 'Only used for verification and password resets.'));
+  form.appendChild(_rcEP_el('div', 'rc-hint', 'Used for verification and password resets. League emails are only sent if you tick the box below.'));
 
   form.appendChild(_rcEP_el('label', null, 'Location'));
   var location = document.createElement('select');

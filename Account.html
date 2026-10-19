@@ -2265,7 +2265,7 @@
     box.style.borderColor = 'var(--rc-red)';
     box.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Change Password'));
     var cur = el('input'); cur.type = 'password'; cur.placeholder = 'Current password'; cur.className = 'rc-pw-current';
-    var next = el('input'); next.type = 'password'; next.placeholder = 'New password (8+ characters)'; next.className = 'rc-pw-new';
+    var next = el('input'); next.type = 'password'; next.placeholder = 'New password (6+ characters)'; next.className = 'rc-pw-new';
     var confirm = el('input'); confirm.type = 'password'; confirm.placeholder = 'Confirm new password'; confirm.className = 'rc-pw-confirm';
     box.appendChild(cur); box.appendChild(next); box.appendChild(confirm);
 
@@ -2891,7 +2891,7 @@
     form.appendChild(el('label', null, 'Email Address'));
     var email = el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
     form.appendChild(email);
-    form.appendChild(el('div', 'rc-hint', 'Only used for verification and password resets.'));
+    form.appendChild(el('div', 'rc-hint', 'Used for verification and password resets. League emails are only sent if you tick the box below.'));
 
     form.appendChild(el('label', null, 'Location'));
     var location = document.createElement('select');

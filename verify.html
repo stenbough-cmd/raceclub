@@ -126,12 +126,30 @@
     fetchApi('verifyEmailCode', { method: 'POST', body: { profileId: pendingProfileId, code: code } })
       .then(function (data) {
         if (!data.success) {
+          if (data.error === 'TOO_MANY_ATTEMPTS' || data.error === 'NO_PENDING_CODE' || data.error === 'SIGNUP_EXPIRED') {
+            // That code is gone for good (or the sign-up expired). Leave the boxes locked and point
+            // the driver at the Resend button instead of letting them keep typing into a dead code.
+            codeBoxes.forEach(function (box) {
+              box.disabled = true;
+              box.classList.add('rc-code-error');
+              box.value = '';
+            });
+            showToast(data.error === 'NO_PENDING_CODE'
+              ? 'There is no active code. Use Resend code to get a new one.'
+              : (data.message || 'Too many incorrect codes. Use Resend code to get a new one.'), 'error');
+            return;
+          }
           codeBoxes.forEach(function (box) {
             box.disabled = false;
             box.classList.add('rc-code-error');
             box.value = '';
           });
-          showToast(data.message || 'That code did not work. Try again.', 'error');
+          var triesNote = (typeof data.attemptsLeft === 'number')
+            ? ' ' + data.attemptsLeft + ' ' + (data.attemptsLeft === 1 ? 'try' : 'tries') + ' left.'
+            : '';
+          showToast(data.error === 'CODE_EXPIRED'
+            ? 'That code has expired. Use Resend code to get a new one.'
+            : (data.message || 'That code did not work. Try again.') + triesNote, 'error');
           codeBoxes[0].focus();
           return;
         }
@@ -164,13 +182,15 @@
         btn.disabled = false;
         btn.textContent = originalText;
         showToast(data.message || (data.success ? 'Sent.' : 'Could not resend.'), data.success ? 'success' : 'error');
+        // Fresh boxes only when a new code really went out; a refused resend (too soon, or a daily
+        // limit) leaves the boxes exactly as they were.
+        if (data.success) resetCodeBoxes();
       })
       .catch(function () {
         btn.disabled = false;
         btn.textContent = originalText;
         showToast('Could not reach the server. Try again in a moment.', 'error');
       });
-    resetCodeBoxes();
   });
 })();
 </script>

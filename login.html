@@ -121,12 +121,36 @@
           passwordField.classList.remove('rc-field-locked');
           var resendBtn = document.getElementById('rc-login-resend');
           resendBtn.style.display = 'none';
-          if (data.error === 'ACCOUNT_DISABLED' && data.contactEmail) {
-            // Keeps its mailto link inline rather than a toast -- a
-            // driver needs to still be able to click it after reading it.
+          if (data.contactEmail && (data.error === 'ACCOUNT_DISABLED' || data.error === 'ACCOUNT_REJECTED' || data.error === 'ACCOUNT_SUSPENDED')) {
+            // Stays inline (not a toast) with a mailto link -- a driver needs to still be able to
+            // click it after reading it. Built with DOM nodes so nothing from the server is
+            // ever treated as HTML.
             msg.className = 'rc-message rc-error';
-            msg.innerHTML = (data.message || 'This account has been disabled.') +
-              ' <a href="mailto:' + data.contactEmail + '?subject=Race%20Club%20account">Contact administrator</a>';
+            msg.textContent = (data.message || 'This account cannot log in right now.') + ' ';
+            var contactLink = document.createElement('a');
+            contactLink.href = 'mailto:' + encodeURIComponent(data.contactEmail).replace(/%40/g, '@') + '?subject=Race%20Club%20account';
+            contactLink.textContent = 'Contact administrator';
+            msg.appendChild(contactLink);
+            var contactAddr = document.createElement('div');
+            contactAddr.style.cssText = 'margin-top:6px;font-size:12px;';
+            contactAddr.textContent = data.contactEmail;
+            msg.appendChild(contactAddr);
+          } else if (data.error === 'ACCOUNT_LOCKED') {
+            // Too many wrong passwords: stays inline so the countdown text is still readable.
+            msg.className = 'rc-message rc-error';
+            msg.textContent = data.message || 'Too many incorrect passwords. Try again in a few minutes.';
+          } else if (data.error === 'SIGNUP_EXPIRED') {
+            msg.className = 'rc-message rc-error';
+            msg.textContent = (data.message || 'This sign-up has expired.') + ' ';
+            var regLink = document.createElement('a');
+            regLink.href = 'register.html';
+            regLink.textContent = 'Register again';
+            msg.appendChild(regLink);
+          } else if (data.error === 'INVALID_CREDENTIALS') {
+            var tail = (typeof data.attemptsLeft === 'number')
+              ? (data.attemptsLeft === 0 ? ' The next wrong password will lock this login for a while.' : ' ' + data.attemptsLeft + ' ' + (data.attemptsLeft === 1 ? 'try' : 'tries') + ' left before this login locks.')
+              : '';
+            showToast((data.message || 'Incorrect username or password.') + tail, 'error');
           } else if (data.error === 'EMAIL_NOT_VERIFIED') {
             // Stays inline too -- it explains the Resend button that appears right under it, which
             // needs to still be legible after a toast would have already faded.

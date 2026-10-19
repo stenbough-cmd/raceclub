@@ -681,6 +681,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-helmet-slot canvas,
 .rc-helmet-slot img.rc-helmet,
 canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.38)); }
+/* Header helmet only: a slightly lighter shadow than the profile/editor helmets (ECO, 2026-10-19). */
+.rc-header-avatar canvas.rc-helmet,
+.rc-header-avatar img.rc-helmet { filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.26)); }
 /* Edit Profile: the helmet sits centered above the Customize Helmet link. */
 /* Logged-out menu button: the default helmet, grayed out (not signed in yet). */
 .rc-helmet-off { filter: grayscale(1); opacity: 0.5; transition: opacity 0.15s ease; }
