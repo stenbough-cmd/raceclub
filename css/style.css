@@ -682,6 +682,11 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-helmet-slot img.rc-helmet,
 canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.38)); }
 /* Edit Profile: the helmet sits centered above the Customize Helmet link. */
+/* Logged-out menu button: the default helmet, grayed out (not signed in yet). */
+.rc-helmet-off { filter: grayscale(1); opacity: 0.5; transition: opacity 0.15s ease; }
+.rc-header-hamburger-toggle:hover .rc-helmet-off,
+.rc-header-hamburger-toggle[aria-expanded="true"] .rc-helmet-off { opacity: 0.8; }
+.rc-header-hamburger-toggle { padding: 6px 8px; }
 .rc-helmet-edit-row { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 28px 0 22px; margin-bottom: 20px; }
 .rc-helmet-edit-link {
   font-family: var(--rc-font-heading);

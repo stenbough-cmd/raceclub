@@ -552,7 +552,8 @@ function renderHeader(opts) {
     // reach it on mobile while logged out) and Register/Login.
     html += '<a class="rc-header-link" id="rc-header-login-link" href="login.html">REGISTER / LOGIN</a>' +
             '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
-              RC_HEADER_ICON_HAMBURGER +
+              // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)
+              rcHelmetHtml_('helmet:{"d":1,"b":["white","gloss"],"a1":["white","gloss"],"a2":["white","gloss"],"v":"smoke"}', 52, 'rc-helmet-header rc-helmet-off') +
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
               '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
@@ -565,8 +566,9 @@ function renderHeader(opts) {
 
   mount.innerHTML = html;
 
+  rcHelmetHydrate_(mount);
+
   if (token) {
-    rcHelmetHydrate_(mount);
     var toggle = document.getElementById('rc-header-account-toggle');
     var menu = document.getElementById('rc-header-account-menu');
 
