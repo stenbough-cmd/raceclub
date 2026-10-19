@@ -46,7 +46,11 @@ var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 // helmet actually has to be drawn; a drawn helmet is remembered for the browser session, so the next
 // page paints it instantly.
 var RC_HELMET_CACHE_V_ = 'rch6';
-function rcHelmetCacheKey_(value, w) { return RC_HELMET_CACHE_V_ + ':' + w + ':' + (value || 'default'); }
+function rcHelmetCacheKey_(value, w) {
+  var d = '';
+  if (!value) { try { d = localStorage.getItem('rcHelmetDefSig') || ''; } catch (e) {} }   // changes whenever the default helmet or design list changes
+  return RC_HELMET_CACHE_V_ + ':' + w + ':' + (value || ('default' + d));
+}
 function _rcHelmetEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
 
 // HTML for one helmet placeholder. Already-drawn helmets come back as a finished <img>.
@@ -62,7 +66,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=6'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=7'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);

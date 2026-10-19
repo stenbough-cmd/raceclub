@@ -41,37 +41,55 @@
     document.head.appendChild(l);
   }
 
+  // ---- design list + default helmet (from the HelmetAssets / HelmetPresets sheet tabs) ----
+  var assets = null;   // { designs, logos, manufacturers, def }  def = the saved "Website Default" helmet, or null
+  function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null }; }
+  function sigOf(a) { return JSON.stringify([a.designs, a.def]); }
+  function hash(str) { var h = 0, i; for (i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0; return String(h); }
+  function apply(a) {
+    assets = a;
+    window.RCHelmet.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
+    try { localStorage.setItem('rcHelmetDefSig', hash(sigOf(a))); } catch (e) {}
+  }
+  function store(a) { try { localStorage.setItem('rcHelmetAssets', JSON.stringify(a)); } catch (e) {} }
+  function fetchAssets() {
+    if (typeof fetchApi !== 'function') return Promise.reject(new Error('no fetchApi'));
+    return fetchApi('getHelmetAssets', {}).then(function (res) {
+      if (!res || !res.success) throw new Error('no assets');
+      return slimOf(res);
+    });
+  }
+  function defaultRecipe() { return (assets && assets.def) ? assets.def : window.RCHelmet.defaultRecipe(); }
+
+  // Throws away every drawn helmet and draws them again (used when the design list or default helmet changed).
+  function redrawAll() {
+    try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('rch') === 0) sessionStorage.removeItem(k); }); } catch (e) {}
+    Array.prototype.forEach.call(document.querySelectorAll('[data-rc-helmet]'), function (n) { n.removeAttribute('data-rc-done'); n.innerHTML = ''; });
+    hydrate(document);
+  }
+
   function assetsPromise() {
     var cached = null;
     try { cached = JSON.parse(localStorage.getItem('rcHelmetAssets') || 'null'); } catch (e) { cached = null; }
-    var fresh = (typeof fetchApi === 'function')
-      ? fetchApi('getHelmetAssets', {}).then(function (res) {
-          if (res && res.success) {
-            var slim = { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [] };
-            try { localStorage.setItem('rcHelmetAssets', JSON.stringify(slim)); } catch (e2) {}
-            return slim;
-          }
-          throw new Error('no assets');
-        })
-      : Promise.reject(new Error('no fetchApi'));
-    if (cached && cached.designs && cached.designs.length) { fresh.catch(function () {}); return Promise.resolve(cached); }   // paint now, refresh for next time
+    var haveCache = !!(cached && cached.designs && cached.designs.length);
+    var fresh = fetchAssets().then(function (a) {
+      store(a);
+      if (haveCache && sigOf(a) !== sigOf(cached) && window.RCHelmet) { apply(a); redrawAll(); }   // the saved copy was out of date
+      return a;
+    });
+    if (haveCache) { fresh.catch(function () {}); return Promise.resolve(cached); }   // paint now, refresh in the background
     return fresh;
   }
 
   function freshAssets() {
-    return fetchApi('getHelmetAssets', {}).then(function (res) {
-      if (!res || !res.success) throw new Error('no assets');
-      var slim = { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [] };
-      try { localStorage.setItem('rcHelmetAssets', JSON.stringify(slim)); } catch (e) {}
-      return slim;
-    });
+    return fetchAssets().then(function (a) { store(a); apply(a); return a; });
   }
 
   var readyP = null;
   function ensure() {
     if (!readyP) {
       readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=7')).then(assetsPromise).then(function (a) {
-        window.RCHelmet.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
+        apply(a);
         return window.RCHelmet;
       });
       readyP.catch(function () { readyP = null; });
@@ -87,7 +105,7 @@
     return ensure().then(function (H) {
       return Promise.all(nodes.map(function (n) {
         var value = n.getAttribute('data-rc-helmet'), w = parseInt(n.getAttribute('data-w'), 10) || 60;
-        var rec = recipeOf(value) || H.defaultRecipe();
+        var rec = recipeOf(value) || defaultRecipe();
         return H.render(rec, { width: w * 2 }).then(function (cv) {
           cv.style.width = w + 'px'; cv.style.height = 'auto';
           n.innerHTML = ''; n.appendChild(cv);
@@ -106,11 +124,9 @@
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
-      return freshAssets().then(function (a) {
-        H.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
-      }).catch(function () {}).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
+      return freshAssets().catch(function () {}).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
         window.RCHelmetPlayer.open({
-          recipe: recipeOf(profile.avatarFilename),
+          recipe: recipeOf(profile.avatarFilename) || defaultRecipe(),
           tried: tried,
           showModal: showModal,
           shell: shell,
