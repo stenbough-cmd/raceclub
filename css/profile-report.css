@@ -148,6 +148,11 @@
 .rcr-dt-text { fill: #fff; font-size: 8px; font-weight: 700; pointer-events: none; }
 .rcr-legend-swatch.rcr-legend-dt { width: 18px; height: 18px; border-radius: 50%; border: 0; background: var(--rc-red, #c8102e); color: #fff;
   font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
+/* Stop/Go penalty bubble on the charts and in the key (Matt, 2026-10-19): solid orange, white SG label. */
+.rcr-sg-dot { fill: var(--rc-orange, #e8892b); stroke: #fff; stroke-width: 1.5; }
+.rcr-sg-text { fill: #fff; font-size: 8px; font-weight: 700; pointer-events: none; }
+.rcr-legend-swatch.rcr-legend-sg { width: 18px; height: 18px; border-radius: 50%; border: 0; background: var(--rc-orange, #e8892b); color: #fff;
+  font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
 
 /* ---- Profile page changes (Matt, 2026-10-14) ---- */
 .rcr-tiles-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }

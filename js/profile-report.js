@@ -87,8 +87,9 @@ function _rcrLegend(items) {
   var lg = _rccEl('div', 'rcr-legend');
   items.forEach(function (it) {
     var li = _rccEl('span', 'rcr-legend-item');
-    var sw = _rccEl('span', 'rcr-legend-swatch' + (it.dash ? ' rcr-legend-dash' : '') + (it.circle ? ' rcr-legend-circle' : '') + (it.dt ? ' rcr-legend-dt' : ''));
+    var sw = _rccEl('span', 'rcr-legend-swatch' + (it.dash ? ' rcr-legend-dash' : '') + (it.circle ? ' rcr-legend-circle' : '') + (it.dt ? ' rcr-legend-dt' : '') + (it.sg ? ' rcr-legend-sg' : ''));
     if (it.dt) sw.textContent = 'DT';
+    else if (it.sg) sw.textContent = 'SG';
     else {
       sw.style.background = it.circle ? '#fff' : (it.dash ? 'transparent' : it.color);
       sw.style.borderColor = it.color;
@@ -158,6 +159,15 @@ function _rcrLineChart(opts) {
       dtx.textContent = 'DT';
       svg.appendChild(dtx);
     });
+    // Stop/Go penalties (Matt, 2026-10-19): a solid orange circle with a white SG label.
+    (s.sgMarks || []).forEach(function (j) {
+      var v = s.values[j];
+      if (v === null || v === undefined) return;
+      svg.appendChild(_rcrSvg('circle', { cx: x(j), cy: y(v), r: 8.5, class: 'rcr-sg-dot' }));
+      var sgx = _rcrSvg('text', { x: x(j), y: y(v) + 3, class: 'rcr-sg-text', 'text-anchor': 'middle' });
+      sgx.textContent = 'SG';
+      svg.appendChild(sgx);
+    });
   });
   // Hover: crosshair + tooltip with every named series at that lap.
   var cross = _rcrSvg('line', { x1: 0, x2: 0, y1: T, y2: H - B, class: 'rcr-cross' });
@@ -188,6 +198,7 @@ function _rcrLineChart(opts) {
       if (opts.faintName) items.push({ name: opts.faintName, color: RCR_FIELD });
       if (opts.pitKey) items.push({ name: 'Pit stop', color: RCR_YOU, circle: true });
       if (opts.pitKey) items.push({ name: 'Drive-through penalty', dt: true });
+      if (opts.pitKey) items.push({ name: 'Stop/Go penalty', sg: true });
       wrap.appendChild(_rcrLegend(items));
     }
   }
@@ -358,11 +369,12 @@ function _rcrDraw(body, dr, mode) {
   var lapLabels = (dr.laps || []).map(function (l) { return l.n; });
   var rivalSeries = function (key) {
     return rivals.map(function (r, i) {
-      return { name: '#' + r.carNumber + ' ' + _rcrShort(r.name), color: RCR_SERIES[i % 4], values: (r.stats || {})[key] || [], marks: ((r.stats || {}).pits || []).map(function (p) { return p.lap - 1; }), dtMarks: ((r.stats || {}).dts || []).map(function (p) { return p.lap - 1; }) };
+      return { name: '#' + r.carNumber + ' ' + _rcrShort(r.name), color: RCR_SERIES[i % 4], values: (r.stats || {})[key] || [], marks: ((r.stats || {}).pits || []).map(function (p) { return p.lap - 1; }), dtMarks: ((r.stats || {}).dts || []).map(function (p) { return p.lap - 1; }), sgMarks: ((r.stats || {}).sgs || []).map(function (p) { return p.lap - 1; }) };
     });
   };
   var youMarks = (you.pits || []).map(function (p) { return p.lap - 1; });
   var youDts = (you.dts || []).map(function (p) { return p.lap - 1; });
+  var youSgs = (you.sgs || []).map(function (p) { return p.lap - 1; });
   var compName = mode === 'rivals' ? 'nearest rivals' : 'the class';
   var compStat = function (key) {
     if (mode === 'rivals') return _rcrAvg(rivals.map(function (r) { return (r.stats || {})[key]; }));
@@ -392,14 +404,14 @@ function _rcrDraw(body, dr, mode) {
 
   // 2. Position chart.
   if ((you.cp || []).length) {
-    var pb = _rcrBlock('Race Position', 'Class position at the end of every lap. Open circles mark pit stops and red DT circles mark drive-through penalties.');
+    var pb = _rcrBlock('Race Position', 'Class position at the end of every lap. Open circles mark pit stops, red DT circles mark drive-through penalties and orange SG circles mark stop/go penalties.');
     var series = [];
     if (mode === 'class') {
       (dr.field || []).forEach(function (f) { if (!f.isPlayer && (f.cp || []).length) series.push({ name: f.name, faint: true, values: f.cp }); });
     } else {
       series = series.concat(rivalSeries('cp'));
     }
-    series.push({ name: 'You', color: RCR_YOU, values: you.cp, marks: youMarks, dtMarks: youDts, isYou: true });
+    series.push({ name: 'You', color: RCR_YOU, values: you.cp, marks: youMarks, dtMarks: youDts, sgMarks: youSgs, isYou: true });
     pb.appendChild(_rcrLineChart({ title: 'Race position', series: series, labels: lapLabels, yInvert: true, yMin: 1, yMax: Math.max(g.classSize || 1, 2),
       yStep: (g.classSize || 2) <= 10 ? 1 : 2, yFmt: function (v) { return 'P' + Math.round(v); }, faintName: mode === 'class' ? 'Every other car' : null, pitKey: true, height: 320 }));
     body.appendChild(pb);
@@ -469,7 +481,7 @@ function _rcrDraw(body, dr, mode) {
     var tseries = [];
     if (mode === 'class' && cls) tseries.push({ name: 'Class average', color: RCR_SERIES[0], values: cls.tw || [], dash: true });
     if (mode === 'rivals') tseries = tseries.concat(rivalSeries('tw'));
-    tseries.push({ name: 'You', color: RCR_YOU, values: you.tw || laps.map(function (l) { return Math.min.apply(null, (l.w || []).filter(function (v) { return v !== null; }).concat([1])); }), marks: youMarks, dtMarks: youDts, isYou: true });
+    tseries.push({ name: 'You', color: RCR_YOU, values: you.tw || laps.map(function (l) { return Math.min.apply(null, (l.w || []).filter(function (v) { return v !== null; }).concat([1])); }), marks: youMarks, dtMarks: youDts, sgMarks: youSgs, isYou: true });
     right2.appendChild(_rcrLineChart({ title: 'Tread left', series: tseries, labels: lapLabels, yMin: 0, yMax: 1, yFmt: function (v) { return Math.round(v * 100) + '%'; }, height: 230, share: 0.52, pitKey: true }));
     grid.appendChild(right2);
     tb.appendChild(grid);
@@ -523,7 +535,7 @@ function _rcrDraw(body, dr, mode) {
     var fseries = [];
     if (mode === 'class' && cls) fseries.push({ name: 'Class average', color: RCR_SERIES[0], values: cls.fl || [], dash: true });
     if (mode === 'rivals') fseries = fseries.concat(rivalSeries('fl'));
-    fseries.push({ name: 'You', color: RCR_YOU, values: laps.map(function (l) { return l.fuel; }), marks: youMarks, dtMarks: youDts, isYou: true });
+    fseries.push({ name: 'You', color: RCR_YOU, values: laps.map(function (l) { return l.fuel; }), marks: youMarks, dtMarks: youDts, sgMarks: youSgs, isYou: true });
     fb.appendChild(_rcrLineChart({ title: 'Fuel left', series: fseries, labels: lapLabels, yMin: 0, yMax: 1, yFmt: function (v) { return Math.round(v * 100) + '%'; }, height: 293, pitKey: true }));
     if (you.vpl) fb.appendChild(_rccText('p', 'rcr-note', 'Virtual energy per lap: ' + (you.vpl * 100).toFixed(1) + '%' + (compStat('vpl') ? ' (' + compName + ' ' + (compStat('vpl') * 100).toFixed(1) + '%)' : '') + '.'));
     body.appendChild(fb);
