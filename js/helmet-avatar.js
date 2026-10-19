@@ -14,7 +14,7 @@
   var PREFIX = 'helmet:';
 
   // Stored text: {d,b,a1,a2,v} plus optional  l = logos carried by the default / team helmet (players cannot edit them)
-  // and  t = 1 when "Match my helmet to my current team" is ticked.
+  // p = the award helmet's id (used exactly as designed), and  t = 1 when "Match my helmet to my current team" is ticked.
   function recipeOf(v) {
     if (typeof v !== 'string' || v.indexOf(PREFIX) !== 0) return null;
     try {
@@ -29,6 +29,7 @@
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
     if (r.logos && r.logos.length) o.l = r.logos.slice(0, 20);
     if (r.t) o.t = 1;
+    if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
     return PREFIX + JSON.stringify(o);
   }
 
@@ -54,7 +55,7 @@
   // ---- design list + default helmet (from the HelmetAssets / HelmetPresets sheet tabs) ----
   var assets = null;   // { designs, logos, manufacturers, def }  def = the saved "Website Default" helmet, or null
   function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null }; }
-  function sigOf(a) { return JSON.stringify([a.designs, a.def]); }
+  function sigOf(a) { return JSON.stringify([a.designs, a.def, (a.logos || []).map(function (l) { return [l.id || l.file, l.active, (l.data || '').length]; })]); }
   function hash(str) { var h = 0, i; for (i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0; return String(h); }
   function apply(a) {
     assets = a;
@@ -98,7 +99,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=7')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=8')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -130,7 +131,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=7').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=8').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -141,6 +142,8 @@
           recipe: base,
           logos: (base.logos && base.logos.length) ? base.logos : [],   // shown only while the design is the one they belong to
           logoD: base.d,
+          own: own,
+          awarded: (teamInfo && teamInfo.awarded) || [],
           teamInfo: teamInfo,
           teamOn: !!(own && own.t),
           tried: tried,

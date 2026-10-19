@@ -179,6 +179,11 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   // Tries the site's existing manufacturer files in order, same naming the rest of the site uses:
   // {slug}-white / {slug}-black (if asked for) then plain {slug}; .webp first, then .png, then .svg.
   function logoCandidates(l) {
+    if (!l.m && String(l.f).indexOf('u:') === 0) {   // a logo uploaded in the Logo Manager: its picture travels with the logo list
+      var uid = String(l.f).slice(2);
+      for (var ui = 0; ui < cfg.logos.length; ui++) if (cfg.logos[ui].id === uid && cfg.logos[ui].data) return [cfg.logos[ui].data];
+      return [];
+    }
     if (!l.m) return [ASSET_BASE + 'images/' + l.f];   // custom logos live beside the designs, listed in the HelmetAssets tab
     var sg = slug(l.m), names = [];
     if (l.v === 'white' || l.v === 'black') names.push(sg + '-' + l.v);

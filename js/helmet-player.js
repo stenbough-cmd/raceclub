@@ -2,15 +2,19 @@
    Race Club -- player helmet customizer  (js/helmet-player.js)
    ---------------------------------------------------------------------
    RCHelmetPlayer.open(ctx)
-     ctx = { recipe, showModal, showToast, onSave(recipeOrNull) }
-       recipe     the driver's current helmet recipe object, or null for the default helmet
-       showModal  the page's own popup function: showModal(title, {bodyEl, wide})
-       onSave     called with a recipe {d,b,a1,a2,v,logos?,t?} (Save Helmet) or null (Use Default)
-   Needs js/helmet.js (configured with the design list) and css/helmet.css.
-   Players only get: design, 3 colors from the 16-color set, a finish per color, a visor, Randomize.
-   No logo editing and no exact colors (those are admin-only, see js/helmet-editor.js). Logos that come with the
-   default helmet (ctx.logos, for design ctx.logoD) are shown read-only and vanish if another design is picked.
-   "Helmet Options" checkboxes: match current team (ctx.teamInfo / ctx.teamOn); award dress-ups will be added there.
+     ctx = { recipe, own, logos, awarded, teamInfo, teamOn, showModal, showToast, onSave(recipeOrNull) }
+       recipe     the helmet to start from (the member's saved helmet, else the Website Default)
+       own        the member's saved helmet (with .p / .t), or null when they never designed one
+       logos      layers that come with the starting helmet (default-helmet logos); shown read-only
+       awarded    award / special helmets this member was given: [{presetId, name, category, recipe}]
+       onSave     called with a recipe {d,b,a1,a2,v,logos?,t?,p?} (Save Helmet) or null (Use Default)
+   Needs js/helmet.js (configured) and css/helmet.css.
+   Members get: a design (Generic ones, plus any Awards they were given), 3 colors + finishes, a visor,
+   "Match my team", Randomize, and a restore arrow that puts
+   everything back to how it was when the popup opened. Logos cannot be moved or edited.
+   An award helmet is a complete design: picking one shows it exactly as designed and every control except the
+   Design list is locked. Only admins can change an award helmet (in the admin Helmet Designer).
+   The default helmet's logos disappear the moment anything is changed.
    ===================================================================== */
 (function () {
   'use strict';
@@ -24,28 +28,52 @@
     return e;
   }
 
-  // keeps only what a player is allowed to have: palette colors, no logos
+  // keeps colors to the palette (an exact "#rrggbb" that came with an award helmet is allowed) and removes layers
   function clean(r) {
     r = H.normalizeRecipe(r || H.defaultRecipe());
     var ids = {}; H.PALETTE.forEach(function (p) { ids[p.id] = 1; });
-    SLOTS.forEach(function (s) { if (!ids[r[s[0]][0]]) r[s[0]][0] = H.defaultRecipe()[s[0]][0]; });
+    SLOTS.forEach(function (s) { var c = r[s[0]][0]; if (!ids[c] && String(c).charAt(0) !== '#') r[s[0]][0] = H.defaultRecipe()[s[0]][0]; });
     r.logos = [];
     return r;
   }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
+  function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  var UNDO_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><polyline points="4 3.5 4 8.5 9 8.5"/></svg>';
 
   function open(ctx) {
     var toast = ctx.showToast || function () {};
-    var R = clean(ctx.recipe);
+    var own = ctx.own || null;
     var cfg = H.getConfig();
-    var baseLogos = ctx.logos || [], logoD = ctx.logoD;
+    var awarded = (ctx.awarded || []).slice();
     var info = ctx.teamInfo || null;
     var teamRecipe = (info && info.recipe) ? H.normalizeRecipe(info.recipe) : null;
     var teamOn = !!(ctx.teamOn && teamRecipe);
-    // what is actually drawn / saved: the team helmet, or the player's choices plus the read-only default logos
+
+    // ---- where the helmet starts ----
+    var R = clean(ctx.recipe);
+    var presetId = '', stash = null;               // stash = the member's own colors, kept while an award helmet is shown
+    var baseLogos = ctx.logos || [];                 // the default helmet's own logos: visible only until something is changed
+    if (own && own.p) {
+      var found = awarded.filter(function (a) { return a.presetId === own.p; })[0];
+      if (!found) {                                  // no longer offered (archived or taken back): keep what they had
+        found = { presetId: own.p, name: 'My awarded helmet', category: 'Awards', recipe: { d: own.d, b: own.b, a1: own.a1, a2: own.a2, v: own.v, logos: own.logos || [] } };
+        awarded.push(found);
+      }
+      presetId = found.presetId;
+    }
+    function presetOf(id) { return awarded.filter(function (a) { return a.presetId === id; })[0] || null; }
+    var init = { R: copy(R), presetId: presetId, teamOn: teamOn };
+
+    // dirty = anything differs from how the popup opened
+    function dirty() { return JSON.stringify(R) !== JSON.stringify(init.R) || presetId !== init.presetId; }
+    // what is actually drawn / saved
     function effective() {
-      if (teamOn) { var t = copy(teamRecipe); t.t = 1; return t; }
-      var o = copy(R); o.logos = (R.d === logoD) ? copy(baseLogos) : [];
+      var o;
+      if (teamOn) { o = copy(teamRecipe); o.t = 1; return o; }
+      if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
+      o = copy(R);
+      o.logos = dirty() ? [] : copy(baseLogos);
       return o;
     }
 
@@ -67,9 +95,14 @@
     var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
     grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
 
-    /* ---- preview ---- */
+    /* ---- preview (with the restore arrow in its top right corner) ---- */
+    var wrap = mk('div', 'rch-stagewrap');
     var stage = mk('div', 'rch-stage light');
-    left.appendChild(stage);
+    wrap.appendChild(stage);
+    var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
+    undoB.title = 'Restore my helmet to how it was when I opened this window'; undoB.setAttribute('aria-label', undoB.title);
+    wrap.appendChild(undoB);
+    left.appendChild(wrap);
     var bgRow = mk('div', 'rch-btns rch-bgrow');
     bgRow.appendChild(mk('span', 'rch-label', 'Backdrop'));
     ['light', 'grey', 'dark'].forEach(function (b) {
@@ -79,21 +112,47 @@
     });
     left.appendChild(bgRow);
 
-    /* ---- design + randomize ---- */
+    /* ---- design (Generic + Awards groups) + randomize ---- */
     var style = mk('div', 'rch-section');
     var dRow = mk('div', 'rch-dstack');
     var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
-    cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = d.name; dSel.appendChild(o); });
-    dSel.onchange = function () { R.d = parseInt(dSel.value, 10); draw(); };
+    var gGen = mk('optgroup'); gGen.label = 'Generic';
+    cfg.designs.forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
+    dSel.appendChild(gGen);
+    var cats = {}, catOrder = [];
+    awarded.forEach(function (a) { var c = a.category || 'Awards'; if (!cats[c]) { cats[c] = []; catOrder.push(c); } cats[c].push(a); });
+    catOrder.sort(function (x, y) { return x === 'Awards' ? -1 : (y === 'Awards' ? 1 : x.localeCompare(y)); });
+    catOrder.forEach(function (c) {
+      var g = mk('optgroup'); g.label = c;
+      cats[c].forEach(function (a) { var o = mk('option'); o.value = 'p:' + a.presetId; o.textContent = a.name; g.appendChild(o); });
+      dSel.appendChild(g);
+    });
+    dSel.onchange = function () {
+      var v = dSel.value;
+      if (v.indexOf('p:') === 0) {
+        var a = presetOf(v.slice(2)); if (!a) return;
+        if (!presetId) stash = copy(R);
+        presetId = a.presetId;
+      } else {
+        if (presetId && stash) R = stash;
+        presetId = ''; R.d = parseInt(v.slice(2), 10);
+      }
+      draw();
+    };
     dWrap.appendChild(dSel); dRow.appendChild(dWrap);
     var tools = mk('div', 'rch-btns rch-tools');
     var rb = mk('button', 'rc-btn-secondary rc-btn-row', 'Randomize'); rb.type = 'button';
     rb.onclick = function () { R = clean(H.randomRecipe()); draw(); };
     var rs = mk('button', 'rc-btn-secondary rc-btn-row', 'Reset colors'); rs.type = 'button';
-    rs.onclick = function () { var d = R.d; R = clean(H.defaultRecipe()); R.d = d; draw(); };
+    rs.onclick = function () {
+      var d = R.d;
+      R = clean(H.defaultRecipe());
+      R.d = d; draw();
+    };
     tools.appendChild(rb); tools.appendChild(rs); dRow.appendChild(tools);
     style.appendChild(dRow);
+    var awardNote = mk('p', 'rch-hint', 'This is an award helmet. It is used exactly as designed and cannot be changed.'); awardNote.style.display = 'none'; style.appendChild(awardNote);
 
     /* ---- colors ---- */
     var rows = {};
@@ -112,10 +171,10 @@
         sw.appendChild(b);
       });
       row.appendChild(sw); style.appendChild(row);
-      rows[s[0]] = { fs: fs, sw: sw };
+      rows[s[0]] = { fs: fs, sw: sw, row: row };
     });
 
-    style.appendChild(mk('div', 'rch-label rch-mt', 'Visor'));
+    var visorLabel = mk('div', 'rch-label rch-mt', 'Visor'); style.appendChild(visorLabel);
     var vs = mk('div', 'rch-visors');
     H.VISORS.forEach(function (v) {
       var b = mk('button', 'rch-visor'); b.type = 'button'; b.dataset.id = v.id;
@@ -132,7 +191,7 @@
     var teamLab = mk('label', 'rch-check');
     var teamBox = mk('input'); teamBox.type = 'checkbox';
     teamLab.appendChild(teamBox);
-    teamLab.appendChild(mk('span', null, 'Match my helmet to my current team' + ((info && info.team) ? ' (' + info.team.replace(/&/g, '&amp;').replace(/</g, '&lt;') + ')' : '')));
+    teamLab.appendChild(mk('span', null, 'Match my helmet to my current team' + ((info && info.team) ? ' (' + esc(info.team) + ')' : '')));
     opts.appendChild(teamLab);
     if (!teamRecipe) {
       teamBox.disabled = true; teamLab.classList.add('off');
@@ -140,7 +199,6 @@
     }
     teamBox.checked = teamOn;
     teamBox.onchange = function () { teamOn = teamBox.checked && !!teamRecipe; draw(); };
-    // Season-award dress-up checkboxes will be added here as more rch-check labels.
     right.appendChild(opts);
 
     /* ---- buttons ---- */
@@ -153,18 +211,28 @@
     saveB.onclick = function () { var out = effective(); modal.close(); ctx.onSave(out); };
     defB.onclick = function () { modal.close(); ctx.onSave(null); };
     canB.onclick = function () { modal.close(); };
+    undoB.onclick = function () {
+      R = copy(init.R); presetId = init.presetId; teamOn = init.teamOn; stash = null;
+      draw();
+    };
 
     /* ---- drawing ---- */
     function syncControls() {
-      body.classList.toggle('rch-locked', teamOn);
-      teamBox.checked = teamOn;
-      if (!cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
-      dSel.value = String(R.d);
+      if (!presetId && !cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
+      dSel.value = presetId ? 'p:' + presetId : 'd:' + R.d;
       SLOTS.forEach(function (s) {
         rows[s[0]].fs.value = R[s[0]][1];
         Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === R[s[0]][0]); });
       });
       Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === R.v); });
+      body.classList.toggle('rch-locked', teamOn);
+      teamBox.checked = teamOn;
+      // award helmets are used as is: the colors, visor, Randomize and Reset are locked (the Design list stays open)
+      var fixed = !!presetId && !teamOn;
+      [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
+      awardNote.style.display = fixed ? '' : 'none';
+      var changed = dirty() || teamOn !== init.teamOn;
+      undoB.disabled = !changed;
     }
     var busy = false, again = false;
     function draw() {

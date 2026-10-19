@@ -4,6 +4,9 @@
    RCHelmetEditor.openDesigner(ctx)  -- the large admin "Helmet Designer" popup
      ctx = { token, fetchApi, showModal, showToast }   (all supplied by Account.html)
    Needs js/helmet.js and css/helmet.css.
+   Award helmets are complete designs: members use them exactly as designed.
+   Also holds: Manage Helmet Designs (edit / archive / delete / give to members), Give Helmet (groups and members),
+   and the Logo Manager (upload, edit, archive, delete logos).
    ===================================================================== */
 (function () {
   'use strict';
@@ -12,9 +15,9 @@
   var KIND_HINTS = {
     'Website Default': 'The helmet drivers start with before they design their own. Only one exists: saving replaces the old one.',
     'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer and class: saving replaces the old one.',
-    'Special Event': 'A helmet to give to drivers who take part in a special event.',
-    'Label': 'A helmet a driver can earn as a label, such as a nickname or achievement.',
-    'Other': 'Any other helmet you want to keep for later.'
+    'Special Event': 'A helmet to give to members for a special event (use Manage Helmet Designs > Give to choose who).',
+    'Label': 'A helmet a member can earn as a label, such as a nickname or achievement.',
+    'Other': 'Any other helmet, for example a season winner design. Give it to members from Manage Helmet Designs.'
   };
 
   function mk(tag, cls, html) {
@@ -26,6 +29,7 @@
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  var GROUPS = [['Drivers', 'All drivers (every tier: drivers, stewards, organizers and admins)'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
   var SLIDERS = [['x', 'Left / right', 0, 1254, 1], ['y', 'Up / down', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -30, 30, 0.5]];
 
@@ -49,7 +53,8 @@
       body.innerHTML = '';
       var cfg = H.getConfig();
       var R = H.normalizeRecipe(H.defaultRecipe());
-      var cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '' };
+      var cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' };
+      var knownCats = ['Awards'];
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
       var dragFrom = -1;
 
@@ -92,6 +97,26 @@
       kindRow.appendChild(kindWrap); kindRow.appendChild(mfrWrap); kindRow.appendChild(clsWrap);
       bar.appendChild(kindRow);
       var kindHint = mk('p', 'rch-hint'); bar.appendChild(kindHint);
+      // category: where members find an award helmet in their design list (pick one or make a new one)
+      var catRow = mk('div', 'rch-catrow');
+      catRow.appendChild(mk('div', 'rch-label', 'Category (the group this helmet is listed under for members)'));
+      var catSel = mk('select', 'rch-select-wide');
+      var catNew = mk('input', 'rch-input'); catNew.type = 'text'; catNew.maxLength = 40; catNew.placeholder = 'New category name, e.g. Season Champions'; catNew.style.display = 'none'; catNew.style.marginTop = '6px';
+      catRow.appendChild(catSel); catRow.appendChild(catNew);
+      bar.appendChild(catRow);
+      function fillCats(chosen) {
+        var list = knownCats.slice(); if (chosen && list.indexOf(chosen) < 0) list.push(chosen);
+        list.sort(function (a, b) { return a === 'Awards' ? -1 : (b === 'Awards' ? 1 : a.localeCompare(b)); });
+        catSel.innerHTML = '';
+        list.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+        var on = mk('option'); on.value = '__new__'; on.textContent = '+ New category...'; catSel.appendChild(on);
+        catSel.value = chosen || 'Awards'; catNew.style.display = 'none';
+      }
+      catSel.onchange = function () {
+        if (catSel.value === '__new__') { catNew.style.display = ''; catNew.focus(); cur.category = catNew.value.trim(); }
+        else { catNew.style.display = 'none'; cur.category = catSel.value; }
+      };
+      catNew.oninput = function () { cur.category = catNew.value.trim(); };
       kindSel.onchange = function () { cur.kind = kindSel.value; syncMeta(); };
       mfrSel.onchange = function () { cur.mfr = mfrSel.value; };
       clsSel.onchange = function () { cur.cls = clsSel.value; };
@@ -103,6 +128,11 @@
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Start New'); newBtn.type = 'button';
       btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(loadBtn); btns.appendChild(newBtn);
       bar.appendChild(btns);
+      var btns2 = mk('div', 'rch-btns');
+      var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Helmet Designs'); manageBtn.type = 'button';
+      var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
+      btns2.appendChild(manageBtn); btns2.appendChild(logosBtn);
+      bar.appendChild(btns2);
       right.appendChild(bar);
 
       /* ---------------- right: style ---------------- */
@@ -162,33 +192,41 @@
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
-      var gS = mk('optgroup'); gS.label = 'Basic shapes';
-      H.SHAPES.forEach(function (sh) { var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
-      lpick.appendChild(gS);
-      // custom logos, grouped by the Category column of the HelmetAssets tab (blank = "Custom logos")
-      var cats = {}, catOrder = [];
-      cfg.logos.forEach(function (l) {
-        var c = String(l.category || '').trim() || 'Custom logos';
-        if (!cats[c]) { cats[c] = []; catOrder.push(c); }
-        cats[c].push(l);
-      });
-      catOrder.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
-      catOrder.forEach(function (c) {
-        var g = mk('optgroup'); g.label = c;
-        cats[c].forEach(function (l) { var o = mk('option'); o.value = 'f:' + l.file; o.textContent = l.name; g.appendChild(o); });
-        lpick.appendChild(g);
-      });
-      var gM = mk('optgroup'); gM.label = 'Manufacturers';
-      cfg.manufacturers.forEach(function (n) { var o = mk('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
-      lpick.appendChild(gM);
+      function buildPicker() {
+        var keep = lpick.value;
+        lpick.innerHTML = '';
+        var gS = mk('optgroup'); gS.label = 'Basic shapes';
+        H.SHAPES.forEach(function (sh) { var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        lpick.appendChild(gS);
+        // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
+        var cats = {}, catOrder = [];
+        H.getConfig().logos.forEach(function (l) {
+          if (l.active === false) return;
+          var c = String(l.category || '').trim() || 'Custom logos';
+          if (!cats[c]) { cats[c] = []; catOrder.push(c); }
+          cats[c].push(l);
+        });
+        catOrder.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
+        catOrder.forEach(function (c) {
+          var g = mk('optgroup'); g.label = c;
+          cats[c].forEach(function (l) { var o = mk('option'); o.value = 'f:' + l.file; o.textContent = l.name; g.appendChild(o); });
+          lpick.appendChild(g);
+        });
+        var gM = mk('optgroup'); gM.label = 'Manufacturers';
+        H.getConfig().manufacturers.forEach(function (n) { var o = mk('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
+        lpick.appendChild(gM);
+        if (keep) lpick.value = keep;
+      }
+      buildPicker();
       var lvar = mk('select', 'rch-select-wide');
       [['std', 'Standard logo'], ['black', 'Black version'], ['white', 'White version']].forEach(function (v) { var o = mk('option'); o.value = v[0]; o.textContent = v[1]; lvar.appendChild(o); });
       var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
+        var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
         var n = kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
-          : { m: isM ? val : '', v: isM ? lvar.value : 'std', f: isM ? '' : val, x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 };
+          : { m: isM ? val : '', v: isM ? lvar.value : 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
         R.logos.push(n); sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(lvar); addRow.appendChild(addB);
@@ -304,6 +342,9 @@
         kindSel.value = cur.kind; mfrSel.value = cur.mfr || ''; clsSel.value = cur.cls || '';
         mfrWrap.style.visibility = clsWrap.style.visibility = (cur.kind === 'Manufacturer') ? 'visible' : 'hidden';
         kindHint.textContent = KIND_HINTS[cur.kind] || '';
+        var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
+        catRow.style.display = givable ? '' : 'none';
+        if (givable && cur.category !== undefined && catSel.value !== '__new__') fillCats(cur.category || 'Awards');
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
         status.innerHTML = cur.id ? ('Editing the saved helmet <strong>' + esc(cur.name) + '</strong>. Save updates it, Save as New makes a copy.') : 'This helmet has not been saved yet.';
         saveNewBtn.style.display = cur.id ? '' : 'none';
@@ -364,21 +405,33 @@
         var name = (cur.name || '').trim();
         if (!name) { toast('Give the helmet a name first.', 'error'); nameIn.focus(); return; }
         if (cur.kind === 'Manufacturer' && (!cur.mfr || !cur.cls)) { toast('Choose a manufacturer and a class for a Manufacturer helmet.', 'error'); return; }
+        var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
+        var category = givable ? (catSel.value === '__new__' ? catNew.value.trim() : (catSel.value || 'Awards')) : '';
+        if (givable && !category) { toast('Type a name for the new category, or pick an existing one.', 'error'); catNew.focus(); return; }
         saveBtn.disabled = saveNewBtn.disabled = true;
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: asNew ? '' : cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', carClass: cur.kind === 'Manufacturer' ? cur.cls : '', recipe: JSON.stringify(R) }
+          body: { presetId: asNew ? '' : cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', carClass: cur.kind === 'Manufacturer' ? cur.cls : '', category: category, recipe: JSON.stringify(R) }
         }).then(function (res) {
           saveBtn.disabled = saveNewBtn.disabled = false;
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
-          cur.id = res.presetId; cur.name = name; syncMeta();
+          cur.id = res.presetId; cur.name = name; cur.category = category;
+          if (category && knownCats.indexOf(category) < 0) knownCats.push(category);
+          fillCats(category || 'Awards'); syncMeta();
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
         }).catch(function () { saveBtn.disabled = saveNewBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
       }
       saveBtn.onclick = function () { doSave(false); };
       saveNewBtn.onclick = function () { doSave(true); };
-      newBtn.onclick = function () { cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '' }; R = H.normalizeRecipe(H.defaultRecipe()); sel = null; syncMeta(); draw(); };
+      newBtn.onclick = function () { cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' }; R = H.normalizeRecipe(H.defaultRecipe()); sel = null; syncMeta(); draw(); };
 
+      function loadPreset(p) {
+        R = H.normalizeRecipe(p.recipe); sel = null;
+        cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '', category: p.category || 'Awards' };
+        if (cur.category && knownCats.indexOf(cur.category) < 0) knownCats.push(cur.category);
+        fillCats(cur.category);
+        syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
+      }
       loadBtn.onclick = function () {
         var lb = mk('div', 'rch-loadbody');
         lb.appendChild(mk('p', 'rch-hint', 'Loading saved helmets...'));
@@ -403,11 +456,7 @@
               row.appendChild(info);
               var act = mk('div', 'rch-btns');
               var lo = mk('button', 'rc-btn-secondary rc-btn-row', 'Load'); lo.type = 'button';
-              lo.onclick = function () {
-                R = H.normalizeRecipe(p.recipe); sel = null;
-                cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '' };
-                syncMeta(); draw(); lm.close(); toast('Loaded "' + p.name + '".', 'success');
-              };
+              lo.onclick = function () { loadPreset(p); lm.close(); };
               var rm = mk('button', 'rc-btn-secondary rc-btn-row', 'Remove'); rm.type = 'button';
               rm.onclick = function () {
                 act.innerHTML = '';
@@ -431,6 +480,323 @@
         }).catch(function () { lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
       };
 
+      /* ---------------- shared bits for the manager popups ---------------- */
+      function btn(label, cls) { var b = mk('button', cls || 'rc-btn-secondary rc-btn-row', label); b.type = 'button'; return b; }
+      function renderThumb(host, recipe, w) { H.render(recipe, { width: w || 140 }).then(function (cv) { host.appendChild(cv); }).catch(function () {}); }
+      // a category select with "+ New category..." (used by the logo form)
+      function catPicker(list, chosen) {
+        var wrap = mk('div'); var sel2 = mk('select', 'rch-select-wide'); var nw = mk('input', 'rch-input'); nw.type = 'text'; nw.maxLength = 40; nw.placeholder = 'New category name'; nw.style.display = 'none'; nw.style.marginTop = '6px';
+        var items = list.filter(function (c, i, a) { return c && a.indexOf(c) === i; }).sort();
+        if (chosen && items.indexOf(chosen) < 0) items.push(chosen);
+        var none = mk('option'); none.value = ''; none.textContent = 'Custom logos (no category)'; sel2.appendChild(none);
+        items.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; sel2.appendChild(o); });
+        var on = mk('option'); on.value = '__new__'; on.textContent = '+ New category...'; sel2.appendChild(on);
+        sel2.value = chosen || '';
+        sel2.onchange = function () { nw.style.display = sel2.value === '__new__' ? '' : 'none'; if (sel2.value === '__new__') nw.focus(); };
+        wrap.appendChild(sel2); wrap.appendChild(nw);
+        return { el: wrap, get: function () { return sel2.value === '__new__' ? nw.value.trim() : sel2.value; } };
+      }
+      function reloadLogoAssets() {
+        return fetchApi('getHelmetAssets', {}).then(function (res) {
+          if (res && res.success) { H.configure({ logos: res.logos || [] }); try { localStorage.removeItem('rcHelmetAssets'); } catch (e) {} buildPicker(); }
+        }).catch(function () {});
+      }
+
+      /* ---------------- Manage Helmet Designs ---------------- */
+      function openManage() {
+        var mb = mk('div', 'rch-loadbody');
+        var mm = ctx.showModal('Manage Helmet Designs', { bodyEl: mb, wide: true, accentHead: true });
+        function load() {
+          mb.innerHTML = ''; mb.appendChild(mk('p', 'rch-hint', 'Loading saved helmets...'));
+          fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
+            mb.innerHTML = '';
+            if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
+            var list = res.presets || [];
+            list.forEach(function (p) { if (p.category && knownCats.indexOf(p.category) < 0) knownCats.push(p.category); });
+            mb.appendChild(mk('p', 'rch-hint', 'Edit opens the helmet in the designer. Give to members chooses who can use it. Archive hides it from new use without losing it. A helmet that has ever been given to members cannot be deleted, only edited or archived.'));
+            if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
+            KINDS.forEach(function (k) {
+              var rows = list.filter(function (p) { return p.kind === k; });
+              if (!rows.length) return;
+              mb.appendChild(mk('div', 'rch-label rch-mt', esc(k)));
+              rows.forEach(function (p) {
+                var row = mk('div', 'rch-loadrow' + (p.active ? '' : ' rch-archived'));
+                var th = mk('div', 'rch-thumb'); row.appendChild(th); renderThumb(th, p.recipe, 140);
+                var info = mk('div', 'rch-info');
+                info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)')));
+                var bits = [];
+                if (p.kind === 'Manufacturer') bits.push([p.manufacturer, p.carClass].filter(Boolean).join(' / '));
+                if (p.kind !== 'Website Default' && p.kind !== 'Manufacturer') { bits.push('Category: ' + (p.category || 'Awards')); bits.push(p.grantCount ? ('given to ' + p.grantCount + (p.grantCount === 1 ? ' group or member' : ' groups and members')) : (p.everGiven ? 'access taken back' : 'not given to anyone yet')); }
+                info.appendChild(mk('div', 'rch-psub', esc(bits.filter(Boolean).join(' - '))));
+                row.appendChild(info);
+                var act = mk('div', 'rch-btns');
+                function home() {
+                  act.innerHTML = '';
+                  var ed = btn('Edit'); ed.onclick = function () { loadPreset(p); mm.close(); };
+                  act.appendChild(ed);
+                  var givable = p.kind !== 'Website Default' && p.kind !== 'Manufacturer';
+                  if (givable) { var gv = btn('Give to...'); gv.onclick = function () { openAssign(p, load); }; act.appendChild(gv); }
+                  if (p.active) {
+                    var ar = btn('Archive'); ar.onclick = function () { confirmRow('Archive it?', 'Yes, archive', function (done) {
+                      fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Inactive' } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); load(); }).catch(function () { done(false); });
+                    }); };
+                    act.appendChild(ar);
+                  } else {
+                    var rs2 = btn('Restore', 'rc-btn-primary rc-btn-sm rc-btn-row');
+                    rs2.onclick = function () { rs2.disabled = true; fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Active' } }).then(function (r2) { if (r2 && r2.success) { toast('Restored.', 'success'); load(); } else { rs2.disabled = false; toast((r2 && r2.message) || 'Could not restore it.', 'error'); } }).catch(function () { rs2.disabled = false; toast('No answer from the server.', 'error'); }); };
+                    act.appendChild(rs2);
+                  }
+                  var dl = btn('Delete');
+                  if (p.everGiven) { dl.disabled = true; dl.title = 'This helmet has been given to members, so it can only be edited or archived.'; }
+                  else dl.onclick = function () { confirmRow('Delete it for good?', 'Yes, delete', function (done) {
+                    fetchApi('adminDeleteHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); if (r2 && r2.success) { if (cur.id === p.presetId) { cur.id = ''; syncMeta(); } load(); } }).catch(function () { done(false); });
+                  }); };
+                  act.appendChild(dl);
+                }
+                function confirmRow(question, yesLabel, run) {
+                  act.innerHTML = ''; act.appendChild(mk('span', 'rch-psub', question));
+                  var yes = btn(yesLabel, 'rc-btn-primary rc-btn-sm rc-btn-row'), no = btn('Keep');
+                  yes.onclick = function () { yes.disabled = true; run(function (ok, msg) { if (!ok) { yes.disabled = false; toast(msg || 'That did not work.', 'error'); } else toast('Done.', 'success'); }); };
+                  no.onclick = home;
+                  act.appendChild(yes); act.appendChild(no);
+                }
+                home(); row.appendChild(act); mb.appendChild(row);
+              });
+            });
+          }).catch(function () { mb.innerHTML = ''; mb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
+        }
+        load();
+      }
+      manageBtn.onclick = openManage;
+
+      /* ---------------- Give a helmet to groups and members ---------------- */
+      function openAssign(p, after) {
+        var ab = mk('div', 'rch-assign');
+        ab.appendChild(mk('p', 'rch-hint', 'Loading...'));
+        var am = ctx.showModal('Give Helmet: ' + p.name, { bodyEl: ab, accentHead: true });
+        Promise.all([fetchApi('adminListHelmetMembers', { token: token }), fetchApi('adminListHelmetGrants', { token: token, params: { presetId: p.presetId } })]).then(function (rr) {
+          ab.innerHTML = '';
+          var mres = rr[0], gres = rr[1];
+          if (!mres || !mres.success || !gres || !gres.success) { ab.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc(((mres && !mres.success && mres.message) || (gres && gres.message)) || 'no answer.'))); return; }
+          var groupsOn = {}; (gres.groups || []).forEach(function (g) { groupsOn[g] = true; });
+          var profOn = {}; (gres.profiles || []).forEach(function (x) { profOn[x] = true; });
+          ab.appendChild(mk('p', 'rch-hint', 'Members who have this helmet will find it in their Design list under the category "' + esc(p.category || 'Awards') + '".'));
+          ab.appendChild(mk('div', 'rch-label', 'Groups'));
+          GROUPS.forEach(function (g) {
+            var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!groupsOn[g[0]];
+            cb.onchange = function () { groupsOn[g[0]] = cb.checked; };
+            lab.appendChild(cb); lab.appendChild(mk('span', null, esc(g[1]))); ab.appendChild(lab);
+          });
+          ab.appendChild(mk('div', 'rch-label rch-mt', 'Individual members'));
+          var q = mk('input', 'rch-input'); q.type = 'text'; q.placeholder = 'Search by name or username'; ab.appendChild(q);
+          var cnt = mk('p', 'rch-hint'); ab.appendChild(cnt);
+          var listEl = mk('div', 'rch-memberlist'); ab.appendChild(listEl);
+          function renderMembers() {
+            var term = q.value.trim().toLowerCase(); listEl.innerHTML = '';
+            var n = Object.keys(profOn).filter(function (k) { return profOn[k]; }).length;
+            cnt.textContent = n + ' member' + (n === 1 ? '' : 's') + ' selected';
+            (mres.members || []).filter(function (m) { return !term || (m.name + ' ' + m.username).toLowerCase().indexOf(term) >= 0; }).forEach(function (m) {
+              var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!profOn[m.profileId];
+              cb.onchange = function () { profOn[m.profileId] = cb.checked; var n2 = Object.keys(profOn).filter(function (k) { return profOn[k]; }).length; cnt.textContent = n2 + ' member' + (n2 === 1 ? '' : 's') + ' selected'; };
+              lab.appendChild(cb); lab.appendChild(mk('span', null, esc(m.name) + ' <span class="rch-psub">' + esc(m.role) + (m.username ? ' - ' + esc(m.username) : '') + '</span>')); listEl.appendChild(lab);
+            });
+            if (!listEl.children.length) listEl.appendChild(mk('p', 'rch-hint', 'No members match.'));
+          }
+          q.oninput = renderMembers; renderMembers();
+          var bt = mk('div', 'rch-btns rch-mt');
+          var sv = btn('Save Access', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
+          sv.onclick = function () {
+            sv.disabled = true;
+            fetchApi('adminSaveHelmetGrants', { method: 'POST', token: token, body: {
+              presetId: p.presetId,
+              groups: JSON.stringify(GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return groupsOn[g]; })),
+              profiles: JSON.stringify(Object.keys(profOn).filter(function (k) { return profOn[k]; }))
+            } }).then(function (r) {
+              if (r && r.success) { toast('Saved who has "' + p.name + '".', 'success'); am.close(); if (after) after(); }
+              else { sv.disabled = false; toast((r && r.message) || 'Could not save.', 'error'); }
+            }).catch(function () { sv.disabled = false; toast('No answer from the server.', 'error'); });
+          };
+          cn.onclick = function () { am.close(); };
+          bt.appendChild(sv); bt.appendChild(cn); ab.appendChild(bt);
+        }).catch(function () { ab.innerHTML = ''; ab.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
+      }
+
+      /* ---------------- Logo Manager ---------------- */
+      function openLogoManager() {
+        var lb = mk('div', 'rch-loadbody');
+        var lm = ctx.showModal('Logo Manager', { bodyEl: lb, wide: true, accentHead: true });
+        var all = [];
+        function load() {
+          lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'Loading logos...'));
+          fetchApi('adminListHelmetLogos', { token: token }).then(function (res) {
+            lb.innerHTML = '';
+            if (!res || !res.success) { lb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
+            all = res.logos || [];
+            var top = mk('div', 'rch-btns');
+            var up = btn('Upload New Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
+            top.appendChild(up); lb.appendChild(top);
+            lb.appendChild(mk('p', 'rch-hint', 'Archive hides a logo from the designer but keeps it working on helmets that already use it. A logo that a saved helmet uses cannot be deleted.'));
+            if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Upload New Logo.')); return; }
+            var cats = {}, order = [];
+            all.forEach(function (l) { var c = l.category || 'Custom logos'; if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(l); });
+            order.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
+            order.forEach(function (c) {
+              lb.appendChild(mk('div', 'rch-label rch-mt', esc(c)));
+              cats[c].forEach(function (l) {
+                var row = mk('div', 'rch-loadrow' + (l.active ? '' : ' rch-archived'));
+                var th = mk('div', 'rch-thumb rch-logothumb'); var im = new Image(); im.__rcSetting = true; im.src = l.data || ('assets/helmets/images/' + l.file); im.alt = ''; th.appendChild(im); row.appendChild(th);
+                var info = mk('div', 'rch-info');
+                info.appendChild(mk('div', 'rch-pname', esc(l.name) + (l.active ? '' : ' (archived)')));
+                info.appendChild(mk('div', 'rch-psub', esc((l.uploaded ? 'Uploaded' : 'File: ' + l.file) + ' - size ' + l.defW + ' x ' + l.defH + ' - tilt ' + l.defR + (l.shadow ? ' - shadow' : '') + (l.used ? ' - used by a saved helmet' : ''))));
+                row.appendChild(info);
+                var act = mk('div', 'rch-btns');
+                function home() {
+                  act.innerHTML = '';
+                  var ed = btn('Edit'); ed.onclick = function () { openLogoForm(l, all, function () { load(); reloadLogoAssets(); }); }; act.appendChild(ed);
+                  if (l.active) {
+                    var ar = btn('Archive'); ar.onclick = function () { ask('Archive it?', 'Yes, archive', function (d) { fetchApi('adminSetHelmetLogoActive', { method: 'POST', token: token, body: { logoId: l.id, active: 'Inactive' } }).then(function (r) { d(r && r.success, r && r.message); if (r && r.success) { load(); reloadLogoAssets(); } }).catch(function () { d(false); }); }); }; act.appendChild(ar);
+                  } else {
+                    var rs3 = btn('Restore', 'rc-btn-primary rc-btn-sm rc-btn-row');
+                    rs3.onclick = function () { rs3.disabled = true; fetchApi('adminSetHelmetLogoActive', { method: 'POST', token: token, body: { logoId: l.id, active: 'Active' } }).then(function (r) { if (r && r.success) { load(); reloadLogoAssets(); } else { rs3.disabled = false; toast((r && r.message) || 'Could not restore it.', 'error'); } }).catch(function () { rs3.disabled = false; }); };
+                    act.appendChild(rs3);
+                  }
+                  var dl = btn('Delete');
+                  if (l.used) { dl.disabled = true; dl.title = 'A saved helmet uses this logo. Archive it instead.'; }
+                  else dl.onclick = function () { ask('Delete it for good?', 'Yes, delete', function (d) { fetchApi('adminDeleteHelmetLogo', { method: 'POST', token: token, body: { logoId: l.id } }).then(function (r) { d(r && r.success, r && r.message); if (r && r.success) { load(); reloadLogoAssets(); } }).catch(function () { d(false); }); }); };
+                  act.appendChild(dl);
+                }
+                function ask(q2, yesLabel, run) {
+                  act.innerHTML = ''; act.appendChild(mk('span', 'rch-psub', q2));
+                  var yes = btn(yesLabel, 'rc-btn-primary rc-btn-sm rc-btn-row'), no = btn('Keep');
+                  yes.onclick = function () { yes.disabled = true; run(function (ok, msg) { if (!ok) { yes.disabled = false; toast(msg || 'That did not work.', 'error'); } }); };
+                  no.onclick = home; act.appendChild(yes); act.appendChild(no);
+                }
+                home(); row.appendChild(act); lb.appendChild(row);
+              });
+            });
+          }).catch(function () { lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
+        }
+        load();
+      }
+      logosBtn.onclick = openLogoManager;
+
+      // Shrinks a picked picture to a small WebP (or PNG) text string that fits in one sheet cell.
+      function processImage(file) {
+        return new Promise(function (resolve, reject) {
+          var rd = new FileReader();
+          rd.onerror = function () { reject(new Error('Could not read that file.')); };
+          rd.onload = function () {
+            var im = new Image();
+            im.onerror = function () { reject(new Error('That file is not a picture the browser can open.')); };
+            im.onload = function () {
+              var sizes = [480, 400, 320, 256, 200, 160, 128], quals = [0.92, 0.85, 0.75, 0.65, 0.5];
+              for (var si = 0; si < sizes.length; si++) {
+                var k = Math.min(1, sizes[si] / Math.max(im.naturalWidth, im.naturalHeight));
+                var cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(im.naturalWidth * k)); cv.height = Math.max(1, Math.round(im.naturalHeight * k));
+                cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+                for (var qi = 0; qi < quals.length; qi++) {
+                  var out = cv.toDataURL('image/webp', quals[qi]);
+                  if (out.indexOf('data:image/webp') !== 0) out = cv.toDataURL('image/png');
+                  if (out.length <= 46000) { resolve(out); return; }
+                  if (out.indexOf('data:image/png') === 0) break;   // quality does not apply to PNG
+                }
+              }
+              reject(new Error('That picture is too detailed to shrink small enough. Try a simpler or smaller image.'));
+            };
+            im.src = rd.result;
+          };
+          rd.readAsDataURL(file);
+        });
+      }
+
+      // Upload / edit one logo, with every attribute: name, category, default position, size, tilt and shadow.
+      function openLogoForm(logo, existing, done) {
+        var isNew = !logo;
+        var d = logo ? { name: logo.name, category: logo.category || '', defX: logo.defX, defY: logo.defY, defW: logo.defW, defH: logo.defH, defR: logo.defR, shadow: logo.shadow === 0 ? 0 : 1 }
+                     : { name: '', category: '', defX: 640, defY: 770, defW: 240, defH: 170, defR: 0, shadow: 1 };
+        var data = '';                          // a newly picked picture
+        var fb = mk('div', 'rch-logoform');
+        var fm = ctx.showModal(isNew ? 'Upload New Logo' : 'Edit Logo', { bodyEl: fb, wide: true, accentHead: true });
+        var g = mk('div', 'rch-grid'); var gl = mk('div', 'rch-left'), gr = mk('div', 'rch-right'); g.appendChild(gl); g.appendChild(gr); fb.appendChild(g);
+        var prev = mk('div', 'rch-stage light'); gl.appendChild(prev);
+        gl.appendChild(mk('p', 'rch-hint', 'The helmet shows where this logo will land when you add it in the designer.'));
+
+        var sec = mk('div', 'rch-section'); gr.appendChild(sec);
+        sec.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
+        var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; sec.appendChild(fi);
+        var fstat = mk('p', 'rch-hint'); sec.appendChild(fstat);
+        sec.appendChild(mk('div', 'rch-label rch-mt', 'Name'));
+        var nm = mk('input', 'rch-input'); nm.type = 'text'; nm.maxLength = 60; nm.value = d.name; nm.placeholder = 'e.g. Race Club logo'; nm.oninput = function () { d.name = nm.value; };
+        sec.appendChild(nm);
+        sec.appendChild(mk('div', 'rch-label rch-mt', 'Category (the group it is listed under in the designer)'));
+        var cp = catPicker((existing || []).map(function (l) { return l.category; }), d.category); sec.appendChild(cp.el);
+
+        var sec2 = mk('div', 'rch-section'); gr.appendChild(sec2);
+        sec2.appendChild(mk('div', 'rch-label', 'Starting position and size when added to a helmet'));
+        var sl = mk('div', 'rch-sliders');
+        var map = [['defX', 'Left / right', 0, 1254, 1], ['defY', 'Up / down', 0, 1254, 1], ['defW', 'Max width', 20, 700, 1], ['defH', 'Max height', 20, 700, 1], ['defR', 'Tilt (deg)', -30, 30, 0.5]];
+        map.forEach(function (s2) {
+          sl.appendChild(mk('span', '', s2[1]));
+          var inp = mk('input'); inp.type = 'range'; inp.min = s2[2]; inp.max = s2[3]; inp.step = s2[4]; inp.value = d[s2[0]];
+          var v = mk('span', 'rch-sv'); v.textContent = inp.value;
+          inp.oninput = function () { d[s2[0]] = parseFloat(inp.value); v.textContent = inp.value; drawPrev(); };
+          sl.appendChild(inp); sl.appendChild(v);
+        });
+        sec2.appendChild(sl);
+        var shl = mk('label', 'rch-check'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!d.shadow; shc.onchange = function () { d.shadow = shc.checked ? 1 : 0; drawPrev(); };
+        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); sec2.appendChild(shl);
+
+        var bt = mk('div', 'rch-btns');
+        var sv = btn('Save Logo', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
+        bt.appendChild(sv); bt.appendChild(cn); gr.appendChild(bt);
+
+        var TMP = { id: '__tmp__', data: '', active: true };
+        var logosCfg = H.getConfig().logos;
+        function dropTmp() { var i = logosCfg.indexOf(TMP); if (i >= 0) logosCfg.splice(i, 1); }
+        var pbusy = false, pagain = false;
+        function drawPrev() {
+          var f = data ? 'u:__tmp__' : (logo ? logo.file : '');
+          if (!f) { prev.innerHTML = ''; prev.appendChild(mk('p', 'rch-hint', 'Choose a picture to see it on a helmet.')); return; }
+          if (data) { TMP.data = data; if (logosCfg.indexOf(TMP) < 0) logosCfg.push(TMP); }
+          if (pbusy) { pagain = true; return; }
+          pbusy = true;
+          var rec = H.normalizeRecipe(H.defaultRecipe());
+          rec.logos = [{ m: '', v: 'std', f: f, x: d.defX, y: d.defY, w: d.defW, h: d.defH, r: d.defR, sh: d.shadow }];
+          H.render(rec, { width: 420 }).then(function (cv) { prev.innerHTML = ''; cv.style.maxWidth = '100%'; cv.style.height = 'auto'; prev.appendChild(cv); }).catch(function () {}).then(function () { pbusy = false; if (pagain) { pagain = false; drawPrev(); } });
+        }
+        fm.closeBtn.addEventListener('click', dropTmp);
+        cn.onclick = function () { dropTmp(); fm.close(); };
+        fi.onchange = function () {
+          var f = fi.files && fi.files[0]; if (!f) return;
+          fstat.textContent = 'Shrinking the picture...';
+          processImage(f).then(function (out) {
+            data = out; fstat.textContent = 'Ready (' + Math.round(out.length / 1024) + ' KB after shrinking).';
+            if (!d.name) { d.name = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '); nm.value = d.name; }
+            drawPrev();
+          }).catch(function (e) { data = ''; fstat.textContent = e.message; });
+        };
+        sv.onclick = function () {
+          if (!d.name.trim()) { toast('Give the logo a name.', 'error'); nm.focus(); return; }
+          if (isNew && !data) { toast('Choose a picture first.', 'error'); return; }
+          var cat = cp.get();
+          sv.disabled = true;
+          fetchApi('adminSaveHelmetLogo', { method: 'POST', token: token, body: {
+            logoId: logo ? logo.id : '', name: d.name.trim(), category: cat, data: data,
+            defX: String(d.defX), defY: String(d.defY), defW: String(d.defW), defH: String(d.defH), defR: String(d.defR), shadow: String(d.shadow)
+          } }).then(function (r) {
+            if (r && r.success) { dropTmp(); toast('Logo saved.', 'success'); fm.close(); if (done) done(); }
+            else { sv.disabled = false; toast((r && r.message) || 'Could not save the logo.', 'error'); }
+          }).catch(function () { sv.disabled = false; toast('No answer from the server.', 'error'); });
+        };
+        drawPrev();
+      }
+
+      // categories already used by saved helmets (so the Category list is full from the start)
+      fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
+        if (res && res.success) { (res.presets || []).forEach(function (p) { if (p.category && knownCats.indexOf(p.category) < 0) knownCats.push(p.category); }); fillCats(cur.category || 'Awards'); }
+      }).catch(function () {});
+
+      fillCats('Awards');
       syncMeta(); draw();
     }
   }
