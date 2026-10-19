@@ -27,7 +27,7 @@
 .rch-select-wide { width: 100%; padding: 6px 8px; min-width: 0; }
 .rch-addrow .rch-select-wide { width: auto; flex: 1 1 130px; }
 /* finish drop-downs: about half the size they were */
-.rch-finish { width: 62px; padding: 1px 2px; font-size: 11px; height: 22px; }
+.rch-finish { width: 124px; padding: 1px 2px; font-size: 11px; height: 22px; }
 .rch-text { width: 100%; min-height: 90px; padding: 8px; font-family: monospace; font-size: 12px; margin: 8px 0; }
 
 /* preview */
@@ -94,3 +94,6 @@
 @media (max-width: 520px) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
 .rch-pbtns { margin-top: 4px; }
 .rch-shapecolor { margin-top: 10px; width: 100%; }
+
+/* every swatch circle (including the exact-color one) is the same box size and sits on the same line */
+.rch-sw, .rch-sw-custom { box-sizing: border-box; margin: 0; align-self: center; }
