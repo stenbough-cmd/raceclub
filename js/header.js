@@ -92,7 +92,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=5'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=6'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
@@ -101,7 +101,7 @@ function rcHelmetCustomize_(o) {
   _rcHelmetCss_();
   var body = document.createElement('div'); body.className = 'rch-designer rch-player';
   body.appendChild(rcHelmetSpinner_('Loading your helmet designer...'));
-  var modal = o.showModal('Customize Helmet', { bodyEl: body, wide: true });
+  var modal = o.showModal('Helmet Designer', { bodyEl: body, wide: true });
   var shell = { body: body, modal: modal };
   return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o, shell); })
     .catch(function () {
@@ -430,7 +430,7 @@ function renderHeaderPending() {
     '</span>' +
     // Championship logo (CHAMP chat, 2026-10-09): its own badge with the League Hub classes, so it
     // gets the same responsive gap from League Hub as League Hub has from the Race Club logo.
-    '<span class="rc-header-leaguehub-badge" style="padding-left:10.5px;position:relative;top:-1px">' +
+    '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
       '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
         '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
       '</a>' +
@@ -474,7 +474,7 @@ function renderHeader(opts) {
   // on tablets). Links to championship.html: your own championship, or the Welcome box and demo.
   // padding-left 14px: the League Hub image has more blank edge than this one, so the visible gaps
   // only match with it. top:-1px lifts the logo 1px so it sits centred in the bar (Matt).
-  html += '<span class="rc-header-leaguehub-badge" style="padding-left:10.5px;position:relative;top:-1px">' +
+  html += '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
             '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
               '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
             '</a>' +

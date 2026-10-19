@@ -39,7 +39,7 @@
     // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
     var body, modal;
     if (ctx.shell) { body = ctx.shell.body; modal = ctx.shell.modal; body.innerHTML = ''; }
-    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true }); }
+    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true }); }
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
     if (!cfg.designs.length) {
@@ -68,7 +68,7 @@
 
     /* ---- design + randomize ---- */
     var style = mk('div', 'rch-section');
-    var dRow = mk('div', 'rch-row2');
+    var dRow = mk('div', 'rch-dstack');
     var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
     cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = d.name; dSel.appendChild(o); });

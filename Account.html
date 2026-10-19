@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=5">
+<link rel="stylesheet" href="css/helmet.css?v=6">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -14,7 +14,7 @@
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=7"></script>
-<script src="js/helmet-editor.js?v=4"></script>
+<script src="js/helmet-editor.js?v=5"></script>
 </head>
 <body>
 
@@ -623,7 +623,7 @@
     var section = document.getElementById('rc-section-dashboard');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', null, 'League Dashboard'));
+    section.appendChild(el('h2', null, 'Online League Dashboard'));
 
     // Two rows of cards: Row 1: Registration Status, Current Seat Row 2: Next Race, Protest (last 3
     // filed protests, same asyncDashCard treatment as every other data-driven card)
@@ -1275,7 +1275,7 @@
     // Title + car number share one flex row now. A genuine flex row is more robust than fighting
     // the cascade with specificity tricks.
     var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current League Seat'));
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current Seat'));
     card.appendChild(headerRow);
     var body = el('div', 'rc-cs-body');
     card.appendChild(body);
@@ -1396,7 +1396,7 @@
     // Title + "Round n" share one flex row now -- same .rc-dash-card-header-row treatment as
     // Current Seat's car number, more robust than the earlier absolute-positioning attempt.
     var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next League Race'));
+    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next Race'));
     card.appendChild(headerRow);
 
     // No active season at all vs. a season that's open but this driver isn't registered for -- two
@@ -1693,7 +1693,7 @@
   // renders whatever comes back.
   function protestCard(data, activeSeasonData) {
     var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'League Protests'));
+    card.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
 
     var protests = (data && data.success && data.protests) ? data.protests : [];
     // No active season at all -- handleGetMyProtests itself has no hasSeason flag of its own (it

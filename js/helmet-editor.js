@@ -107,7 +107,7 @@
 
       /* ---------------- right: style ---------------- */
       var style = mk('div', 'rch-section');
-      var dRow = mk('div', 'rch-row2');
+      var dRow = mk('div', 'rch-dstack');
       var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; dSel.appendChild(o); });

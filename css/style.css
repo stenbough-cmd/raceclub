@@ -1339,7 +1339,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   display: none;
   align-items: center;
   height: 100%;
-  margin-left: 36px;
+  margin-left: 18px;   /* was 36px: logos sit half as far apart (Matt, 2026-10-19) */
 }
 @media (min-width: 641px) {
   .rc-header-leaguehub-badge { display: flex; }
@@ -1536,10 +1536,9 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (max-width: 640px) {
   /* Logged in: collapse the avatar/name/role/chevron stack down to just
      the hamburger icon, inside the same toggle button. */
-  .rc-header-avatar,
+  /* The helmet avatar is the menu button on phones now (the logged-in hamburger icon is gone). */
   .rc-header-account-text,
   .rc-header-account-chevron { display: none; }
-  .rc-header-hamburger-icon { display: inline-flex; }
   .rc-header-account-toggle { padding: 8px; }
 
   /* Logged out: swap the plain REGISTER/LOGIN link for the hamburger

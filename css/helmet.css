@@ -97,3 +97,7 @@
 
 /* every swatch circle (including the exact-color one) is the same box size and sits on the same line */
 .rch-sw, .rch-sw-custom { box-sizing: border-box; margin: 0; align-self: center; }
+
+/* Design drop-down on its own full-width row, Randomize / Reset colors on the row below it */
+.rch-dstack { display: flex; flex-direction: column; gap: 10px; }
+.rch-dstack .rch-tools { justify-content: flex-start; }
