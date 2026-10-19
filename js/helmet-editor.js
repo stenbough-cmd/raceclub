@@ -34,7 +34,7 @@
     var body = mk('div', 'rch-designer');
     var modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
     modal.el.classList.add('rch-modal');
-    body.appendChild(mk('p', 'rch-hint', 'Loading the helmet designer...'));
+    body.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading the helmet designer...') : mk('p', 'rch-hint', 'Loading the helmet designer...'));
 
     fetchApi('getHelmetAssets', {}).then(function (res) {
       if (!res || !res.success) { body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }

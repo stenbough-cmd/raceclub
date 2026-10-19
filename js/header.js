@@ -62,7 +62,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=5'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=6'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -76,10 +76,33 @@ function rcHelmetHydrate_(root) {
   if (!r.querySelector('[data-rc-helmet]:not([data-rc-done])')) return Promise.resolve();
   return _rcHelmetModule_().then(function () { return window.rcHelmetHydrateNow_(r); }).catch(function () {});
 }
-// Opens the Customize Helmet popup. o = { profile, token, showModal, showToast, onChange }.
+// The site's start-lights loading block, for popups that must open before their content is ready.
+function rcHelmetSpinner_(message) {
+  var wrap = document.createElement('div'); wrap.className = 'rc-inline-spinner-wrap';
+  var lights = document.createElement('div'); lights.className = 'rc-startlights';
+  for (var i = 0; i < 5; i++) { var l = document.createElement('span'); l.className = 'rc-startlight'; lights.appendChild(l); }
+  wrap.appendChild(lights);
+  var t = document.createElement('div'); t.className = 'rc-loading-text'; t.textContent = message || 'Loading...';
+  wrap.appendChild(t);
+  return wrap;
+}
+function _rcHelmetCss_() {
+  if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=4'; l.setAttribute('data-rch-css', '1');
+  document.head.appendChild(l);
+}
+// Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
+// has loaded. o = { profile, token, showModal, showToast, onChange }.
 function rcHelmetCustomize_(o) {
-  return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o); })
-    .catch(function () { showToast('Could not open the helmet customizer. Check your connection and try again.', 'error'); });
+  _rcHelmetCss_();
+  var body = document.createElement('div'); body.className = 'rch-designer rch-player';
+  body.appendChild(rcHelmetSpinner_('Loading your helmet designer...'));
+  var modal = o.showModal('Customize Helmet', { bodyEl: body, wide: true });
+  var shell = { body: body, modal: modal };
+  return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o, shell); })
+    .catch(function () {
+      body.innerHTML = '<p class="rch-hint">Could not open the helmet customizer. Close this and try again.</p>';
+    });
 }
 
 // Hamburger icon -- same stroke-width/cap/join convention as every other inline icon on the site

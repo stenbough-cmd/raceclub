@@ -36,8 +36,10 @@
     var R = clean(ctx.recipe);
     var cfg = H.getConfig();
 
-    var body = mk('div', 'rch-designer rch-player');
-    var modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true });
+    // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
+    var body, modal;
+    if (ctx.shell) { body = ctx.shell.body; modal = ctx.shell.modal; body.innerHTML = ''; }
+    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true }); }
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
     if (!cfg.designs.length) {

@@ -98,12 +98,12 @@
   }
 
   /* ---- Customize Helmet: open the popup, save the result ---- */
-  function customize(o) {
+  function customize(o, shell) {
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [];
-    loadCss('css/helmet.css?v=4');
-    return Promise.all([ensure(), loadScript('js/helmet-player.js?v=3')]).then(function (res) {
-      var H = res[0];
+    return ensure().then(function (H) {
+      return loadScript('js/helmet-player.js?v=5').then(function () { return H; });
+    }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
       return freshAssets().then(function (a) {
@@ -113,11 +113,15 @@
           recipe: recipeOf(profile.avatarFilename),
           tried: tried,
           showModal: showModal,
+          shell: shell,
           showToast: toast,
           onSave: function (recipe) { save(recipe ? valueOf(recipe) : ''); }
         });
       });
-    }).catch(function () { toast('Could not open the helmet customizer. Check your connection and try again.', 'error'); });
+    }).catch(function () {
+      if (shell && shell.body) { shell.body.innerHTML = ''; var p = document.createElement('p'); p.className = 'rch-hint'; p.textContent = 'Could not open the helmet customizer. Close this and try again.'; shell.body.appendChild(p); }
+      else toast('Could not open the helmet customizer. Check your connection and try again.', 'error');
+    });
 
     function save(newValue) {
       var previous = profile.avatarFilename;
