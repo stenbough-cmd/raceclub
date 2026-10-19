@@ -956,3 +956,33 @@ function _rcOpenFeedbackModal() {
     });
   });
 }
+
+// ---------------------------------------------------------------------
+// Header clicks while a popup is open. The popup's dark backdrop sits over the navbar (so it dims with
+// the page), which used to swallow clicks on the avatar menu and the logos. A click on the dimmed
+// navbar now closes the open popup(s) and then passes the click on to the avatar menu / logo under the
+// pointer. A popup that is busy saving refuses to close, and then the click is simply ignored.
+// ---------------------------------------------------------------------
+document.addEventListener('click', function (e) {
+  var back = e.target;
+  if (!back || !back.classList || !(back.classList.contains('rc-modal-backdrop') || back.classList.contains('rcl-modal-overlay'))) return;
+  var header = document.getElementById('rc-header');
+  if (!header) return;
+  var r = header.getBoundingClientRect();
+  if (e.clientY < r.top || e.clientY > r.bottom) return;
+  var target = null, stack = document.elementsFromPoint(e.clientX, e.clientY);
+  for (var i = 0; i < stack.length; i++) {
+    if (header.contains(stack[i]) && stack[i] !== header) {
+      var c = stack[i].closest ? stack[i].closest('a, button') : null;
+      if (c && header.contains(c)) { target = c; break; }
+    }
+  }
+  if (!target) return;
+  var popups = document.querySelectorAll('.rc-modal-backdrop, .rcl-modal-overlay');
+  Array.prototype.forEach.call(popups, function (p) {
+    var x = p.querySelector('.rc-modal-close, .rcl-modal-close');
+    if (x && !x.disabled) x.click();
+  });
+  if (document.querySelector('.rc-modal-backdrop, .rcl-modal-overlay')) return;   // one refused to close (saving)
+  setTimeout(function () { target.click(); }, 0);
+}, true);
