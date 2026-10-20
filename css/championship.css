@@ -1205,7 +1205,3 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-select,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }
 }
-/* Race Recap > Race Results: no red tint on your row (Matt, 2026-10-20); it takes the table's normal row
-   striping and keeps its bold. Qualify Results and the standings boards keep the tint. */
-.rcc-page .rcl-allresults-body .rcl-race-row.rcl-race-grid-recap.rcc-row-me:not(.rcl-race-grid-recap-q) { background: transparent; }
-.rcc-page .rcl-allresults-body .rcl-race-row.rcl-race-grid-recap.rcc-row-me:not(.rcl-race-grid-recap-q):nth-child(even) { background: var(--rcl-bg-raised-2); }
