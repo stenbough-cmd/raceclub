@@ -1669,9 +1669,10 @@ function rccOpenResults(roundId, kind) {
   rounds.forEach(function (r) { sel.appendChild(new Option('Round ' + r.roundNum + ' - ' + r.eventName + (r.track ? ': ' + r.track : ''), r.roundId)); });
   var kindSel = document.createElement('select');
   kindSel.className = 'rcl-allresults-session-select';
+  // Highlights first in the list (Matt, 2026-10-19); the recap still opens on Race unless asked otherwise.
+  kindSel.appendChild(new Option('Highlights', 'highlights'));
   kindSel.appendChild(new Option('Race', 'race'));
   kindSel.appendChild(new Option('Qualifying', 'qualifying'));
-  kindSel.appendChild(new Option('Highlights', 'highlights'));
   kindSel.appendChild(new Option('Driver Report', 'driver'));
   kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
