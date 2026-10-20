@@ -2669,7 +2669,7 @@
           'END SEASON',
           'End Season',
           function () {
-            return fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId } }).then(function (data2) {
+            return fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data2) {
               if (!data2.success) {
                 showToast(data2.message || 'Could not end this season.', 'error');
                 return;

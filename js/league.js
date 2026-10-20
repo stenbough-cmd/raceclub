@@ -2145,7 +2145,11 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
     // common with a Race session's row shape.
     // BUG FIX (kept): roundId goes inside options.params so fetchApi really puts it on the URL.
-    fetchApi(isQualifying ? 'getPublicRoundQualifying' : 'getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+    // A past season loaded from its archive file already carries every round's recap data.
+    var archivedPart = _rclArchivedRoundPart_(roundId, isQualifying);
+    var roundRequest = archivedPart ? Promise.resolve(archivedPart)
+      : fetchApi(isQualifying ? 'getPublicRoundQualifying' : 'getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
+    roundRequest.then(function (res) {
       busy(false);
       var result = (res && res.success) ? res.result : null;
       resultCache[cacheKey] = result;
@@ -3270,6 +3274,43 @@ function _rclOpenMemberListModal(hub) {
 // .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
 // links replace it.
 var _rclNavHub_ = { hasSeason: false };
+
+// ---- SEASON PICKER (right end of the navbar) ----
+// _rclSeasonList_ comes from the default (current) hub's `seasons`. _rclViewSeasonId_ is '' while the
+// default season is showing, else the past season being viewed. _rclArchivedRounds_ holds a loaded
+// archive file's per-round recap data, so the Race Recap popup needs no server call for it.
+var _rclSeasonList_ = [];
+var _rclDefaultSeasonId_ = '';
+var _rclViewSeasonId_ = '';
+var _rclArchivedRounds_ = null;
+var _rclOnSeasonPick_ = null;
+
+function _rclArchivedRoundPart_(roundId, isQualifying) {
+  if (!_rclArchivedRounds_ || !Object.prototype.hasOwnProperty.call(_rclArchivedRounds_, roundId)) return null;
+  var part = _rclArchivedRounds_[roundId];
+  var res = part && (isQualifying ? part.qualifying : part.results);
+  return (res && res.success) ? res : null;
+}
+
+// "Oct 10 - Dec 5, 2026" (same year), "Dec 27, 2026 - Feb 14, 2027" (across years), "" with no dates.
+function _rclSeasonRange_(s) {
+  var a = s.startUtc ? new Date(s.startUtc) : null;
+  var b = s.endUtc ? new Date(s.endUtc) : null;
+  if (a && isNaN(a.getTime())) a = null;
+  if (b && isNaN(b.getTime())) b = null;
+  if (!a && !b) return '';
+  if (!a) a = b;
+  if (!b) b = a;
+  var md = { month: 'short', day: 'numeric' }, mdy = { month: 'short', day: 'numeric', year: 'numeric' };
+  if (a.getTime() === b.getTime()) return a.toLocaleDateString(undefined, mdy);
+  if (a.getFullYear() === b.getFullYear()) return a.toLocaleDateString(undefined, md) + ' \u2013 ' + b.toLocaleDateString(undefined, mdy);
+  return a.toLocaleDateString(undefined, mdy) + ' \u2013 ' + b.toLocaleDateString(undefined, mdy);
+}
+function _rclSeasonLabel_(s) {
+  var head = s.seasonNumber ? ('Season ' + s.seasonNumber + (s.name ? ': ' + s.name : '')) : (s.name || s.seasonId);
+  var range = _rclSeasonRange_(s);
+  return range ? head + ' (' + range + ')' : head;
+}
 function _rclRenderNavbar_(hub) {
   var nav = document.getElementById('rcl-navbar');
   if (!nav) return;
@@ -3299,6 +3340,26 @@ function _rclRenderNavbar_(hub) {
     });
   }
   add('Help', function () { _rclOpenLeagueRulesModal(); });
+
+  // Season picker: every season ever created, newest first, right end of the bar, centered vertically.
+  if (hub && Array.isArray(hub.seasons) && hub.seasons.length && !_rclViewSeasonId_) {
+    _rclSeasonList_ = hub.seasons;
+    _rclDefaultSeasonId_ = hub.seasonId || '';
+  }
+  if (_rclSeasonList_.length) {
+    var pick = document.createElement('select');
+    pick.className = 'rcl-navbar-season';
+    pick.setAttribute('aria-label', 'Season');
+    _rclSeasonList_.forEach(function (sn) {
+      var opt = document.createElement('option');
+      opt.value = sn.seasonId;
+      opt.textContent = _rclSeasonLabel_(sn);
+      pick.appendChild(opt);
+    });
+    pick.value = _rclViewSeasonId_ || _rclDefaultSeasonId_ || _rclSeasonList_[0].seasonId;
+    pick.addEventListener('change', function () { if (_rclOnSeasonPick_) _rclOnSeasonPick_(pick.value); });
+    inner.appendChild(pick);
+  }
   nav.appendChild(inner);
 }
 
@@ -3425,14 +3486,14 @@ function _rclClearLoadError_() {
   var old = document.getElementById('rcl-load-error');
   if (old && old.parentNode) old.parentNode.removeChild(old);
 }
-function _rclShowLoadError_(onRetry) {
+function _rclShowLoadError_(onRetry, title) {
   _rclClearLoadError_();
   _rclHidePageLoader();
   var main = document.querySelector('.rcl-main');
   if (!main) return;
   var box = _rclEl('div', 'rcl-row-full rcl-load-error');
   box.id = 'rcl-load-error';
-  box.appendChild(_rclEmptyState('Could Not Load The League Hub', 'Check your connection and try again.'));
+  box.appendChild(_rclEmptyState(title || 'Could Not Load The League Hub', 'Check your connection and try again.'));
   var btn = _rclEl('button', 'rcl-load-error-btn', 'RETRY');
   btn.type = 'button';
   btn.addEventListener('click', function () {
@@ -3506,6 +3567,68 @@ document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
   }
 
+  // ---- Season picker: load a past season (from its archive file when it has one) ----
+  function plainPastHub(res) {
+    if (res && res.success && !res.archived && res.hasSeason) return { hub: res, rounds: null };
+    throw new Error('RCL_BAD_SEASON');
+  }
+  function fetchSeasonHub(seasonId, noArchive) {
+    var params = { seasonId: seasonId };
+    if (noArchive) params.noArchive = '1';
+    return fetchApi('getLeagueHub', { params: params, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
+  }
+  // The file is accepted only if it is the season the server named and the version the server saved.
+  function fetchArchiveFile(info, seasonId) {
+    if (!/^https:\/\//.test(String(info.archiveUrl || ''))) return Promise.reject(new Error('RCL_BAD_URL'));
+    return fetch(info.archiveUrl, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('RCL_ARCHIVE_' + r.status);
+      return r.json();
+    }).then(function (b) {
+      var a = b && b.archive;
+      if (!a || a.kind !== 'leaguehub' || a.seasonId !== seasonId || a.archivedAt !== info.archivedAt) throw new Error('RCL_ARCHIVE_MISMATCH');
+      if (!b.hub || !b.hub.success || b.hub.seasonId !== seasonId) throw new Error('RCL_ARCHIVE_BAD_HUB');
+      return { hub: b.hub, rounds: b.rounds || {} };
+    });
+  }
+  function loadPastSeason(seasonId) {
+    return fetchSeasonHub(seasonId, false).then(function (res) {
+      if (res && res.archived && res.seasonId === seasonId) {
+        return fetchArchiveFile(res, seasonId).catch(function () {
+          // File not readable (GitHub may still be publishing it): ask the server to build it instead.
+          return fetchSeasonHub(seasonId, true).then(plainPastHub);
+        });
+      }
+      return plainPastHub(res);
+    });
+  }
+  var pickToken = 0;
+  _rclOnSeasonPick_ = function (seasonId) {
+    _rclClearLoadError_();
+    var myToken = ++pickToken;
+    if (!seasonId || seasonId === _rclDefaultSeasonId_) {
+      _rclViewSeasonId_ = '';
+      _rclArchivedRounds_ = null;
+      if (currentText) {
+        try { showHub(_rclPatchTimeDerivedFields_(JSON.parse(currentText))); } catch (err) { /* keep what is shown */ }
+      }
+      return;
+    }
+    document.body.classList.add('rcl-season-loading');
+    loadPastSeason(seasonId).then(function (loaded) {
+      if (myToken !== pickToken) return;
+      _rclViewSeasonId_ = seasonId;
+      _rclArchivedRounds_ = loaded.rounds;
+      showHub(_rclPatchTimeDerivedFields_(loaded.hub));
+    }).catch(function () {
+      if (myToken !== pickToken) return;
+      // Put the picker back on the season that is still showing, and offer a retry.
+      try { _rclRenderNavbar_(null); } catch (err) { /* ignore */ }
+      _rclShowLoadError_(function () { _rclOnSeasonPick_(seasonId); }, 'Could Not Load That Season');
+    }).then(function () {
+      if (myToken === pickToken) document.body.classList.remove('rcl-season-loading');
+    });
+  };
+
   // Fetch fresh data; only redraw when it actually differs from what is already on screen.
   var revalidating = false;
   function revalidate() {
@@ -3517,7 +3640,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (text !== currentText) {
           currentText = text;
           _rclSaveHubText_(text);
-          showHub(_rclPatchTimeDerivedFields_(hub));
+          // While a past season is showing, only the saved current-season copy is refreshed.
+          if (!_rclViewSeasonId_) showHub(_rclPatchTimeDerivedFields_(hub));
         }
         _rclClearLoadError_();
       } else if (!currentText) {

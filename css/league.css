@@ -2656,3 +2656,29 @@ body.rc-league-page .rcl-load-error-btn {
 }
 body.rc-league-page .rcl-load-error-btn:hover { color: var(--rc-carbon); border-color: var(--rc-steel); }
 body.rc-league-page .rcl-load-error-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Season picker at the right end of the navbar (League Hub) */
+body.rc-league-page .rcl-navbar-season {
+  margin-left: auto;
+  align-self: center;
+  max-width: min(420px, 100%);
+  min-width: 0;
+  padding: 6px 28px 6px 10px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rc-white);
+  background-color: var(--rcl-bg, #111);
+  border: 1px solid var(--rcl-line-bright, #555);
+  border-radius: 4px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+body.rc-league-page .rcl-navbar-season:hover { border-color: var(--rc-red); }
+body.rc-league-page .rcl-navbar-season option { color: var(--rc-carbon); background: var(--rc-white); }
+body.rc-league-page.rcl-season-loading .rcl-main { opacity: 0.45; pointer-events: none; transition: opacity 0.15s; }
+@media (max-width: 640px) {
+  body.rc-league-page .rcl-navbar-inner { padding-bottom: 8px; }
+  body.rc-league-page .rcl-navbar-season { margin-left: 0; width: 100%; max-width: 100%; }
+}
