@@ -2677,7 +2677,6 @@ body.rc-league-page .rcl-navbar-season {
 }
 body.rc-league-page .rcl-navbar-season:hover { border-color: var(--rc-red); }
 body.rc-league-page .rcl-navbar-season option { color: var(--rc-carbon); background: var(--rc-white); }
-body.rc-league-page.rcl-season-loading .rcl-main { opacity: 0.45; pointer-events: none; transition: opacity 0.15s; }
 @media (max-width: 640px) {
   body.rc-league-page .rcl-navbar-inner { padding-bottom: 8px; }
   body.rc-league-page .rcl-navbar-season { margin-left: 0; width: 100%; max-width: 100%; }

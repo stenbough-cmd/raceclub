@@ -3428,6 +3428,22 @@ function _rclOpenSeasonPreviewModal_(hub) {
 // uses) and fades + removes it once the initial fetch below resolves, success or failure either
 // way, so a fetch error still reveals the page's own "No Data To Display" states instead of leaving
 // the overlay up forever.
+// Shows the same full-page loading overlay league.html starts with (starting lights + text) again,
+// for a season switch. _rclHidePageLoader() fades it out and removes it.
+function _rclShowPageLoader_(text) {
+  var old = document.getElementById('rcl-page-loader');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+  document.documentElement.classList.remove('rcl-has-cache');
+  var loader = _rclEl('div', 'rcl-page-loader');
+  loader.id = 'rcl-page-loader';
+  var lights = _rclEl('div', 'rc-startlights');
+  for (var i = 0; i < 5; i++) lights.appendChild(_rclEl('div', 'rc-startlight'));
+  loader.appendChild(lights);
+  loader.appendChild(_rclEl('div', 'rc-loading-text', _rclEscapeHtml(text || 'Loading...')));
+  document.body.appendChild(loader);
+  if (!document.body.classList.contains('rc-modal-scroll-locked')) _rclLockBodyScroll();
+}
+
 function _rclHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
@@ -3613,7 +3629,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       return;
     }
-    document.body.classList.add('rcl-season-loading');
+    var pickedInfo = _rclSeasonList_.filter(function (x) { return x.seasonId === seasonId; })[0];
+    _rclShowPageLoader_(pickedInfo && pickedInfo.seasonNumber ? 'Loading Season ' + pickedInfo.seasonNumber + '...' : 'Loading Season...');
     loadPastSeason(seasonId).then(function (loaded) {
       if (myToken !== pickToken) return;
       _rclViewSeasonId_ = seasonId;
@@ -3623,9 +3640,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (myToken !== pickToken) return;
       // Put the picker back on the season that is still showing, and offer a retry.
       try { _rclRenderNavbar_(null); } catch (err) { /* ignore */ }
+      _rclHidePageLoader();
       _rclShowLoadError_(function () { _rclOnSeasonPick_(seasonId); }, 'Could Not Load That Season');
-    }).then(function () {
-      if (myToken === pickToken) document.body.classList.remove('rcl-season-loading');
     });
   };
 
