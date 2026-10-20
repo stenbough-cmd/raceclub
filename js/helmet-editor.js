@@ -57,6 +57,8 @@
       // a plain white helmet with no design (the way the designer opens and what Reset returns to)
       function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }
       var R = blankRecipe();
+      var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
+      var RESET_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
       var cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' };
       var knownCats = ['Awards'];
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
@@ -141,10 +143,13 @@
       var btns = mk('div', 'rch-btns');
       var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
       var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
-      var resetBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Reset'); resetBtn.type = 'button';
-      resetBtn.title = 'Back to a plain white helmet with no design and no logos';
-      resetBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
-      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(resetBtn);
+      var clearBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearBtn.type = 'button';
+      clearBtn.title = 'Clear to a plain white helmet with no design and no logos';
+      clearBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
+      var resetBtn = mk('button', 'rc-btn-secondary rch-iconbtn', RESET_ICON); resetBtn.type = 'button';
+      resetBtn.title = 'Reset to the last saved or loaded version of this helmet'; resetBtn.setAttribute('aria-label', 'Reset');
+      resetBtn.onclick = function () { R = H.normalizeRecipe(JSON.parse(JSON.stringify(baseline))); sel = null; draw(); };
+      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(resetBtn);
       bar.appendChild(btns);
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
       right.appendChild(bar);
@@ -416,6 +421,7 @@
           saveBtn.disabled = false;
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
           cur.id = res.presetId; cur.name = name; cur.category = category;
+          baseline = JSON.parse(JSON.stringify(R));
           if (category && knownCats.indexOf(category) < 0) knownCats.push(category);
           fillCats(category || 'Awards'); syncMeta();
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
@@ -423,7 +429,7 @@
       }
       saveBtn.onclick = function () { doSave(); };
       function loadPreset(p) {
-        R = H.normalizeRecipe(p.recipe); sel = null;
+        R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
         cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '', category: p.category || 'Awards' };
         if (cur.category && knownCats.indexOf(cur.category) < 0) knownCats.push(cur.category);
         fillCats(cur.category);

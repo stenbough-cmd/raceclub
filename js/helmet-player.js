@@ -10,8 +10,8 @@
        onSave     called with a recipe {d,b,a1,a2,v,logos?,t?,p?} (Save Helmet) or null (Use Default)
    Needs js/helmet.js (configured) and css/helmet.css.
    Members get: a design (Generic ones, plus any Awards they were given), 3 colors + finishes, a visor,
-   a "Match Current Team" button (loads the team helmet, manufacturer logo included), Randomize, and a Reset
-   button that clears the helmet to plain white. Logos cannot be moved or edited.
+   Randomize, a Clear button (plain white helmet) and a circle-arrow Reset
+   button (back to the helmet the window opened with). Logos cannot be moved or edited.
    An award helmet is a complete design: picking one shows it exactly as designed and every control except the
    Design list is locked. Only admins can change an award helmet (in the admin Helmet Designer).
    The default helmet's logos disappear the moment anything is changed.
@@ -37,6 +37,7 @@
     return r;
   }
   // a plain white helmet with no design at all: the whole shell takes the Base Color
+  var RESET_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
   function blank() { var r = H.normalizeRecipe(H.defaultRecipe()); r.d = 0; r.logos = []; return clean(r); }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -112,20 +113,6 @@
 
     // Editing anything while the team helmet is showing starts from the team helmet's colors and design.
     function leaveTeam() { if (teamOn) { R = clean(teamRecipe); teamOn = false; } }
-
-    /* ---- Match Current Team (loads the team helmet with its manufacturer logo) ---- */
-    var teamWrap = mk('div', 'rch-teamrow');
-    var teamTip = mk('span', 'rch-tipwrap');
-    var teamB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Match Current Team'); teamB.type = 'button';
-    teamTip.appendChild(teamB); teamWrap.appendChild(teamTip);
-    if (!teamRecipe) {
-      teamB.disabled = true;
-      teamTip.classList.add('rch-tipped');
-      teamTip.setAttribute('data-tip', (info && info.hasTeam === false) ? 'You must be on a team to use this.' : 'No team helmet has been set up for your car yet.');
-      teamTip.tabIndex = 0;
-    }
-    teamB.onclick = function () { if (!teamRecipe) return; teamOn = true; draw(); };
-    right.appendChild(teamWrap);
 
     /* ---- design (Generic + Awards groups) + randomize ---- */
     var style = mk('div', 'rch-section');
@@ -207,12 +194,16 @@
     var btns = mk('div', 'rch-btns rch-pbtns');
     var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveB.type = 'button';
     var defB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Use Default'); defB.type = 'button';
-    var resetB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Reset'); resetB.type = 'button';
-    btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(resetB);
+    var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearB.type = 'button';
+    clearB.title = 'Clear to a plain white helmet with no design';
+    var resetB = mk('button', 'rc-btn-secondary rch-iconbtn', RESET_ICON); resetB.type = 'button';
+    resetB.title = 'Reset to the helmet you opened this window with'; resetB.setAttribute('aria-label', 'Reset');
+    btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(clearB); btns.appendChild(resetB);
     right.appendChild(btns);
     saveB.onclick = function () { var out = effective(); modal.close(); ctx.onSave(out); };
     defB.onclick = function () { modal.close(); ctx.onSave(null); };
-    resetB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; draw(); };
+    clearB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; draw(); };
+    resetB.onclick = function () { R = copy(init.R); presetId = init.presetId; stash = null; teamOn = init.teamOn; draw(); };
 
     /* ---- drawing ---- */
     function syncControls() {

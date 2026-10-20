@@ -143,6 +143,6 @@
 /* admin: helmet name + kind share the top row; manufacturer + class sit under it */
 .rch-row-nk { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; align-items: end; }
 .rch-row-mc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-/* player: Match Current Team button row (tooltip shows when it is grayed out) */
-.rch-teamrow { margin: 0 0 12px; }
-.rch-tipwrap { display: inline-block; }
+
+/* circle-arrow Reset button: last in the button row, square, icon only */
+.rch-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; min-width: 0; }
