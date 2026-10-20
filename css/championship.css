@@ -182,10 +182,11 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-page .rcc-actionbar-season {
   margin-left: auto;
   align-self: center;
-  max-width: min(420px, 100%);
+  width: 210px;
+  max-width: 100%;
   min-width: 0;
-  height: auto;
-  padding: 6px 28px 6px 10px;
+  height: 44px;
+  padding: 0 28px 0 12px;
   font-family: var(--rc-font-heading);
   font-size: 12px;
   font-weight: 800;
