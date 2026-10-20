@@ -1301,6 +1301,7 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   padding: 8px 10px;
 }
 .rcl-allresults-session-select:focus { border-color: var(--rc-red); }
+body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 170px; }
 /* .rcl-allresults-select-row's own margin-bottom now supplies the breathing room before standings
    start, on both tabs. */
 /* Race Report -- lap-by-lap highlights. */
@@ -2075,6 +2076,10 @@ body .rcl-race-col-head.rcl-race-grid-recap > div:nth-child(n+5) { text-align: r
   .rcl-modal-head { margin: 0 -16px 20px; padding: 20px 16px 16px; }
   .rcl-allresults-select,
   .rcl-allresults-session-select { min-width: 0; width: 100%; }
+  /* League Hub recap: the page names are longer now (Race Results, Qualify Results), so on phones the two dropdowns stack, each full width. */
+  body.rc-league-page:not(.rcc-page) .rcl-allresults-select-row { flex-direction: column; }
+  body.rc-league-page:not(.rcc-page) .rcl-allresults-select-row > .rcl-allresults-select,
+  body.rc-league-page:not(.rcc-page) .rcl-allresults-select-row > .rcl-allresults-session-select { flex: none; }
 
   /* Ticker label -- the label's shape comes from its clip-path, unchanged: a rectangle with the
      trailing (right) edge cut diagonally in by 14px (.rcl-ticker-label above). */

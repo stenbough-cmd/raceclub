@@ -1196,6 +1196,20 @@ function _rclRecapNameIcons_(awards, row) {
 
 // One sub-section per class: a top-3 podium-STAND graphic, then a 3-across row of "headline
 // mention" tiles sitting on the same row as the podium.
+// ONE header for every Race Recap page (Highlights, Race Results, Qualify Results, Race Report,
+// Penalties Assessed): the metal bar, the title, then the lighter "FROM ROUND N AT <TRACK>" (the
+// track is the Tracks ShortName the round payload already carries). `r` is a round payload (or
+// hub.lastRace); with no round number or track the bar shows the title alone.
+function _rclRecapHeader_(title, r) {
+  var headerDiv = _rclEl('div', 'rcl-standings-class-header');
+  headerDiv.appendChild(document.createTextNode(String(title || '').toUpperCase()));
+  if (r && (r.roundNum || r.track)) {
+    var fromBits = 'FROM ROUND ' + (r.roundNum || '') + (r.track ? (' AT ' + String(r.track).toUpperCase()) : '');
+    headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
+  }
+  return headerDiv;
+}
+
 // ONE shared builder for a race's per-class highlights (header bar, podium, headline-mention cards).
 // Used by BOTH the Last Race box (raceResult = hub.lastRace) and the Race Recap popup's Highlights
 // page (raceResult = that round's getPublicRoundResults payload, the same payload and cache entry
@@ -1215,12 +1229,7 @@ function _rclBuildRaceHighlightBlocks_(hub, raceResult, container) {
     var clsWrap = _rclEl('div', 'rcl-lr-class');
     // Same graphite header bar Current Standings uses, but reads "<CLASS> HIGHLIGHTS": the podium
     // plus headline-mention story for the class, not a standings table.
-    var headerDiv = _rclEl('div', 'rcl-standings-class-header');
-    headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
-    if (r.roundNum || r.track) {
-      var fromBits = 'FROM ROUND ' + (r.roundNum || '') + (r.track ? (' AT ' + r.track.toUpperCase()) : '');
-      headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
-    }
+    var headerDiv = _rclRecapHeader_((cls.className || 'CLASS') + ' HIGHLIGHTS', r);
     clsWrap.appendChild(headerDiv);
     clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
     if ((cls.headlineMentions || []).length) {
@@ -1308,7 +1317,7 @@ function _rclRenderLastRace_(hub) {
     var match = null;
     recapRounds.forEach(function (rr) { if (!match && r.roundNum && Number(rr.roundNum) === Number(r.roundNum)) match = rr; });
     var footer = _rclEl('div', 'rcl-lr-footer');
-    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP AND DRIVER REPORT FROM THIS RACE <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
+    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
     footBtn.type = 'button';
     footBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, match ? match.roundId : undefined); });
     footer.appendChild(footBtn);
@@ -1758,7 +1767,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
     // "<CLASS> RESULTS" -- no "(n)" count. Same shared graphite bar Recent Results and Current
     // Standings both use.
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' RESULTS'));
+    clsWrap.appendChild(_rclRecapHeader_((cls.className || 'CLASS') + ' RESULTS', result));
 
     var recapAwards = _rclRecapAwards_(cls);
 
@@ -1837,14 +1846,30 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // .rcl-race-grid-recap' mobile override, league.css), so a phone visitor is told there's
   // more detail (Laps/Total Time/Pen/Gap/Avg/Best Lap) on a bigger screen.
   // (The "view on PC" note was removed here: the Race Recap tables now keep every column on phones and pan sideways.)
+}
 
+// Race Report page of the Race Recap: the lap-by-lap report, then Penalties Assessed (steward
+// penalties) when the round has any. Uses the same round payload as the Race Results page.
+// In-game Drive Thrus and Stop and Gos are lines inside the report itself (clause kind 'penalty').
+function _rclBuildRaceReportBody_(result, bodyEl) {
+  bodyEl.innerHTML = '';
+  if (!result || !(result.classes || []).length) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
+    return;
+  }
+  // profileId -> display name from this round's standings: steward penalties only carry a profileId.
+  var namesByProfileId = {};
+  (result.classes || []).forEach(function (c) {
+    (c.standings || []).forEach(function (row) { if (row && row.profileId) namesByProfileId[row.profileId] = row.name; });
+  });
   // Race Report -- lap-by-lap highlights. Built once at import time from the XML's own lap/event
   // data (_rcBuildRaceReportForSession_, Ingestion.gs) and just rendered here, grouped by lap
   // number for readability.
   var report = result.raceReport || [];
   if (report.length) {
-    var reportSection = _rclEl('div', 'rcl-report-section');
-    reportSection.appendChild(_rclEl('div', 'rcl-race-class-name', 'Race Report'));
+    // Metal header bar, no red heading and no divider line above (the .rcl-race-class wrapper has neither).
+    var reportSection = _rclEl('div', 'rcl-race-class');
+    reportSection.appendChild(_rclRecapHeader_('Race Report', result));
     var byLap = {};
     var lapOrder = [];
     report.forEach(function (entry) {
@@ -1916,12 +1941,11 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
 
   // Penalties Assessed -- this round's Adjustments, resolved to driver names. This is the one and
   // only place a round's penalties render on the League Hub.
-  var penSection = _rclEl('div', 'rcl-penalties-section');
-  penSection.appendChild(_rclEl('div', 'rcl-race-class-name', 'Penalties Assessed'));
+  // Shown only when the round has penalties, under the report, with the same metal header bar.
   var penalties = result.penalties || [];
-  if (!penalties.length) {
-    penSection.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No penalties were assessed for this round.'));
-  } else {
+  if (penalties.length) {
+    var penSection = _rclEl('div', 'rcl-race-class');
+    penSection.appendChild(_rclRecapHeader_('Penalties Assessed', result));
     penalties.forEach(function (p) {
       var row = _rclEl('div', 'rcl-report-lap');
       // "Pre"/"Post" or "Lap N" for a normal numeric lap; "-" for a pre-existing Adjustments row
@@ -1956,8 +1980,11 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       row.appendChild(textWrap);
       penSection.appendChild(row);
     });
+    bodyEl.appendChild(penSection);
   }
-  bodyEl.appendChild(penSection);
+  if (!report.length && !penalties.length) {
+    bodyEl.appendChild(_rclEmptyState('No Race Report', 'No race report was recorded for that round.'));
+  }
 }
 
 // Qualifying tab of "All Results".
@@ -1977,7 +2004,7 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
   // (CAR_CLASS_CANONICAL_ORDER_, Website.gs), same convention as the Race view above.
   result.classes.forEach(function (cls) {
     var clsWrap = _rclEl('div', 'rcl-race-class');
-    clsWrap.appendChild(_rclEl('div', 'rcl-standings-class-header', (cls.className || 'CLASS').toUpperCase() + ' QUALIFYING'));
+    clsWrap.appendChild(_rclRecapHeader_((cls.className || 'CLASS') + ' QUALIFY RESULTS', result));
 
     var headRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-recap rcl-race-grid-recap-q');
     headRow.appendChild(_rclEl('div', null, 'Pos'));
@@ -2066,9 +2093,12 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
+  // Order and names match the Championship recap: Highlights, Race Results, Qualify Results, Race Report.
+  // Race Results is the page the recap opens on.
   sessionSelect.appendChild(new Option('Highlights', 'highlights'));
-  sessionSelect.appendChild(new Option('Race', 'race'));
-  sessionSelect.appendChild(new Option('Qualifying', 'qualifying'));
+  sessionSelect.appendChild(new Option('Race Results', 'race'));
+  sessionSelect.appendChild(new Option('Qualify Results', 'qualifying'));
+  sessionSelect.appendChild(new Option('Race Report', 'report'));
   sessionSelect.value = 'race';
   selectRow.appendChild(sessionSelect);
   body.appendChild(selectRow);
@@ -2089,14 +2119,14 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   }
 
   function loadRound(roundId, sessionKind) {
-    // Highlights reuses the Race page's data: same endpoint, same cache entry ('race'), only the
-    // drawing differs.
-    var isHighlights = sessionKind === 'highlights';
-    var dataKind = isHighlights ? 'race' : sessionKind;
-    var cacheKey = roundId + ':' + dataKind;
+    // Highlights, Race Results and Race Report all draw from the same race payload: one
+    // getPublicRoundResults call and one cache entry ('race'); only Qualify Results has its own.
     var isQualifying = sessionKind === 'qualifying';
+    var dataKind = isQualifying ? 'qualifying' : 'race';
+    var cacheKey = roundId + ':' + dataKind;
     var builder = isQualifying ? _rclBuildQualifyingBody_
-      : (isHighlights ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); } : _rclBuildAllResultsBody_);
+      : (sessionKind === 'highlights' ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); }
+      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_));
     if (Object.prototype.hasOwnProperty.call(resultCache, cacheKey)) {
       builder(resultCache[cacheKey], resultsWrap);
       return;
@@ -2106,7 +2136,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // loader (.rcl-page-loader in league.html) and the Edit Profile popup on this same page
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : 'Loading round results...'));
+    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : 'Loading round results...'))));
     busy(true);
     // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
