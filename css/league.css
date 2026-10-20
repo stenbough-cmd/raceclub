@@ -2646,3 +2646,13 @@ body.rc-league-page:not(.rcc-page) #rcl-race-carousel .rcl-carousel-track { padd
 /* The navbar under the banner matches the band color. */
 body.rc-league-page:not(.rcc-page) .rcl-navbar { background: #1b1c1f; }
 /* ===== END SAMPLE ===== */
+
+/* Load-failure panel with RETRY (League Hub) */
+body.rc-league-page .rcl-load-error { text-align: center; padding: 24px 16px 40px; }
+body.rc-league-page .rcl-load-error-btn {
+  margin-top: 4px; min-width: 120px; padding: 9px 22px; cursor: pointer;
+  font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em;
+  color: var(--rc-steel); background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 4px;
+}
+body.rc-league-page .rcl-load-error-btn:hover { color: var(--rc-carbon); border-color: var(--rc-steel); }
+body.rc-league-page .rcl-load-error-btn:disabled { opacity: 0.6; cursor: default; }

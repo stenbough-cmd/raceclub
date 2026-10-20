@@ -1074,6 +1074,8 @@
 
     hub.calendar.forEach(function (entry) {
       entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
+      // raceOver = start + 3 hours has passed; used only to pick the next race (matches Seasons.gs).
+      entry.raceOver = !!(entry.startUtc && (new Date(entry.startUtc).getTime() + 3 * 60 * 60 * 1000) <= nowMs);
     });
 
     var completedEntries = hub.calendar.filter(function (entry) {
@@ -1083,7 +1085,7 @@
     hub.hasUnofficialResults = completedEntries.some(function (entry) { return !entry.resultsFinalized; });
 
     var nextEntry = hub.calendar.filter(function (entry) {
-      return entry.kind !== 'bye' && !entry.finished;
+      return entry.kind !== 'bye' && !entry.raceOver;
     })[0];
     hub.nextRace = nextEntry ? {
       kind: nextEntry.kind,
@@ -1140,12 +1142,12 @@
         calGroup.appendChild(el('div', 'rc-seasonfmt-group-label', 'Race Calendar'));
         var driverTz = '';
         try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
-        // First not-yet-finished round/special gets the "UP NEXT" status, same rule the old popup
+        // First round/special not yet over (start + 3 hours) gets the "UP NEXT" status, same rule the old popup
         // and league.html's own calendar use -- byes never do, nothing to point a driver toward on
         // a week off.
         var nextIdx = -1;
         hub.calendar.forEach(function (entry, idx) {
-          if (nextIdx === -1 && entry.kind !== 'bye' && !entry.finished) nextIdx = idx;
+          if (nextIdx === -1 && entry.kind !== 'bye' && !entry.raceOver) nextIdx = idx;
         });
         var calList = el('div', 'rc-cal-race-list');
         hub.calendar.forEach(function (entry, idx) { calList.appendChild(raceCard(entry, driverTz, null, idx === nextIdx)); });
@@ -6873,30 +6875,7 @@
     form.appendChild(_rcBuildNewsFormattingToolbar(post));
     form.appendChild(post);
     form.appendChild(_rcAttachNewsCharCounter(post));
-    form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Leave a blank line between paragraphs.'));
-
-    // Post Now vs. Schedule -- radio pair, the datetime field only shows
-    // (and is only required) once Schedule is picked.
-    var scheduleWrap = el('div', 'margin-top:16px;');
-    scheduleWrap.appendChild(el('label', 'margin-top:0;', 'When should this post go live?'));
-    var radioRow = el('div', 'display:flex;gap:16px;align-items:center;flex-wrap:wrap;');
-    var radioNowLabel = el('label', 'display:flex;gap:6px;align-items:center;font-weight:normal;');
-    var radioNow = el('input'); radioNow.type = 'radio'; radioNow.name = 'rc-news-when'; radioNow.value = 'now'; radioNow.checked = true;
-    radioNowLabel.appendChild(radioNow);
-    radioNowLabel.appendChild(document.createTextNode('Post right away'));
-    var radioLaterLabel = el('label', 'display:flex;gap:6px;align-items:center;font-weight:normal;');
-    var radioLater = el('input'); radioLater.type = 'radio'; radioLater.name = 'rc-news-when'; radioLater.value = 'later';
-    radioLaterLabel.appendChild(radioLater);
-    radioLaterLabel.appendChild(document.createTextNode('Schedule for later'));
-    radioRow.appendChild(radioNowLabel);
-    radioRow.appendChild(radioLaterLabel);
-    scheduleWrap.appendChild(radioRow);
-    var scheduleWhen = el('input'); scheduleWhen.type = 'datetime-local'; scheduleWhen.style.marginTop = '8px'; scheduleWhen.style.display = 'none';
-    scheduleWrap.appendChild(scheduleWhen);
-    form.appendChild(scheduleWrap);
-
-    radioNow.addEventListener('change', function () { scheduleWhen.style.display = 'none'; });
-    radioLater.addEventListener('change', function () { scheduleWhen.style.display = ''; });
+    form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Posts go live the moment you publish. Leave a blank line between paragraphs.'));
 
     var saveBtn = el('button', null, 'Publish Post');
     saveBtn.type = 'submit';
@@ -6915,20 +6894,6 @@
         showToast('Title and post text are required.', 'error');
         return;
       }
-      var publishedAtIso = null;
-      if (radioLater.checked) {
-        if (!scheduleWhen.value) {
-          showToast('Pick a date and time to schedule this post, or choose "Post right away."', 'error');
-          return;
-        }
-        var scheduledDate = new Date(scheduleWhen.value);
-        if (isNaN(scheduledDate.getTime())) {
-          showToast('That scheduled date and time is not valid.', 'error');
-          return;
-        }
-        publishedAtIso = scheduledDate.toISOString();
-      }
-
       // Deliberately NOT the site's usual "close now, save in the background" pattern: the button
       // goes gray and reads "Saving..." (free from .rc-btn-primary:disabled's existing style, no
       // new CSS needed) and the popup stays open until the save actually finishes, THEN it closes
@@ -6938,7 +6903,6 @@
       saveBtn.textContent = 'Saving...';
 
       var reqBody = { title: title.value.trim(), body: post.value.trim() };
-      if (publishedAtIso) reqBody.publishedAt = publishedAtIso;
 
       // Long timeout budget -- same root cause and same fix as createSeason/updateSeason's own
       // timeoutMs override (see RC_FETCH_TIMEOUT_MS_LONG in js/api.js): the client aborting at 20s

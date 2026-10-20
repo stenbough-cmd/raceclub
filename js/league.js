@@ -272,7 +272,7 @@ function _rclBuildTickerItems(hub) {
   var nextRaceItem = null;
   var nextEntry = null;
   (hub.calendar || []).forEach(function (entry) {
-    if (!nextEntry && entry.kind !== 'bye' && !entry.finished) nextEntry = entry;
+    if (!nextEntry && entry.kind !== 'bye' && !entry.raceOver) nextEntry = entry;
   });
   if (nextEntry) {
     // Same prefixBoldText/prefixDimText/prefixDatesText shape as the ROUND n results item below --
@@ -2283,7 +2283,7 @@ function _rclRenderRaceCarousel(hub) {
   }
 
   var nextIdx = -1;
-  raceEntries.forEach(function (entry, idx) { if (nextIdx === -1 && !entry.finished) nextIdx = idx; });
+  raceEntries.forEach(function (entry, idx) { if (nextIdx === -1 && !entry.raceOver) nextIdx = idx; });
   var activeIdx = nextIdx === -1 ? (raceEntries.length - 1) : nextIdx;
 
   var track = _rclEl('div', 'rcl-carousel-track');
@@ -2529,7 +2529,7 @@ function _rclApplyInlineMarkup(escapedText) {
     // Run last, and its own capture groups are matched against the ALREADY-escaped text, so this
     // can't be tricked into matching across an entity like &amp; the way an earlier, greedier pass
     // might.
-    .replace(/\[([^\]]+)\]\(mailto:([^)]+)\)/g, '<a class="rcl-news-link" href="mailto:$2">$1</a>');
+    .replace(/\[([^\]]+)\]\(mailto:([^)\s"'<>]+)\)/g, '<a class="rcl-news-link" href="mailto:$2">$1</a>');
 }
 
 // Renders a story's Body into `container` as real paragraph/blockquote elements -- used inside the
@@ -3382,6 +3382,9 @@ function _rclPatchTimeDerivedFields_(hub) {
 
   hub.calendar.forEach(function (entry) {
     entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
+    // raceOver = start time + 3 hours has passed. Used ONLY to pick the next race (the dashboard and
+    // hub keep showing an event as "next" for 3 hours after it starts). finished still gates results.
+    entry.raceOver = !!(entry.startUtc && (new Date(entry.startUtc).getTime() + 3 * 60 * 60 * 1000) <= nowMs);
   });
 
   var completedEntries = hub.calendar.filter(function (entry) {
@@ -3391,7 +3394,7 @@ function _rclPatchTimeDerivedFields_(hub) {
   hub.hasUnofficialResults = completedEntries.some(function (entry) { return !entry.resultsFinalized; });
 
   var nextEntry = hub.calendar.filter(function (entry) {
-    return entry.kind !== 'bye' && !entry.finished;
+    return entry.kind !== 'bye' && !entry.raceOver;
   })[0];
   hub.nextRace = nextEntry ? {
     kind: nextEntry.kind,
@@ -3412,6 +3415,33 @@ function _rclPatchTimeDerivedFields_(hub) {
 // in the background (stale-while-revalidate). league.html's <head> checks the same key to skip the
 // loading overlay when a copy exists.
 var RCL_HUB_STORAGE_KEY_ = 'rc_league_hub_v1';
+
+// Load-failure panel with a RETRY button. Shown only when the first load fails and there is no saved
+// copy to draw from (a saved copy means the page is already showing something, so no panel).
+function _rclClearLoadError_() {
+  var old = document.getElementById('rcl-load-error');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+}
+function _rclShowLoadError_(onRetry) {
+  _rclClearLoadError_();
+  _rclHidePageLoader();
+  var main = document.querySelector('.rcl-main');
+  if (!main) return;
+  var box = _rclEl('div', 'rcl-row-full rcl-load-error');
+  box.id = 'rcl-load-error';
+  box.appendChild(_rclEmptyState('Could Not Load The League Hub', 'Check your connection and try again.'));
+  var btn = _rclEl('button', 'rcl-load-error-btn', 'RETRY');
+  btn.type = 'button';
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = 'LOADING...';
+    onRetry();
+    // revalidate() redraws the page on success; if it fails again the panel is rebuilt.
+    setTimeout(function () { if (btn.parentNode) { btn.disabled = false; btn.textContent = 'RETRY'; } }, 4000);
+  });
+  box.appendChild(btn);
+  main.insertBefore(box, main.firstChild);
+}
 
 function _rclReadSavedHubText_() {
   try { return localStorage.getItem(RCL_HUB_STORAGE_KEY_); } catch (err) { return null; }
@@ -3486,11 +3516,13 @@ document.addEventListener('DOMContentLoaded', function () {
           _rclSaveHubText_(text);
           showHub(_rclPatchTimeDerivedFields_(hub));
         }
+        _rclClearLoadError_();
       } else if (!currentText) {
-        showHub(hub);
+        // The server answered but said no (not a real "no season" reply): let the visitor try again.
+        _rclShowLoadError_(revalidate);
       }
     }).catch(function () {
-      if (!currentText) showHub(null);
+      if (!currentText) _rclShowLoadError_(revalidate);
     }).then(function () { revalidating = false; });
   }
   revalidate();
