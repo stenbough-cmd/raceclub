@@ -203,6 +203,8 @@ function rccReloadAfterSave() {
 function _rccShowPageLoader(message) {
   var old = document.getElementById('rcl-page-loader');
   if (old && old.parentNode) old.parentNode.removeChild(old);
+  // league.css hides the loader while this class is on (a saved copy was drawn at page open).
+  document.documentElement.classList.remove('rcl-has-cache');
   var loader = _rccEl('div', 'rcl-page-loader');
   loader.id = 'rcl-page-loader';
   var card = _rccSpinner(message || 'Loading Championship\u2026');
@@ -3170,13 +3172,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!seasonId || seasonId === defaultId) {
       RCC.viewSeasonId = '';
       RCC.archive = defaultArchive;
-      document.body.classList.remove('rcc-season-loading');
+      _rccHidePageLoader();
+      _rccUnlockScroll();
       if (currentText) { try { rccRenderAll(JSON.parse(currentText)); } catch (err) { /* keep what is shown */ } }
       return;
     }
     var shownArchive = RCC.archive;
     var picked = ((RCC.page && RCC.page.seasons) || []).filter(function (x) { return x.seasonId === seasonId; })[0];
-    document.body.classList.add('rcc-season-loading');
     _rccShowPageLoader('Loading ' + (picked && picked.seasonNumber ? 'Season ' + picked.seasonNumber : 'Season') + '\u2026');
     _rccGetPage(seasonId).then(function (page) {
       if (myToken !== pickToken) return;
@@ -3191,7 +3193,6 @@ document.addEventListener('DOMContentLoaded', function () {
       _rccShowLoadError(function () { RCC.onSeasonPick(seasonId); });
     }).then(function () {
       if (myToken !== pickToken) return;
-      document.body.classList.remove('rcc-season-loading');
       _rccHidePageLoader();
       _rccUnlockScroll();
     });

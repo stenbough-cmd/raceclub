@@ -199,7 +199,6 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 }
 .rcc-page .rcc-actionbar-season:hover { border-color: var(--rc-red); }
 .rcc-page .rcc-actionbar-season option { color: var(--rc-carbon); background: var(--rc-white); }
-.rcc-page.rcc-season-loading .rcl-main { opacity: 0.45; pointer-events: none; transition: opacity 0.15s; }
 .rcc-page .rcc-load-error { text-align: center; padding: 24px 16px 40px; }
 .rcc-page .rcc-load-error-btn {
   padding: 8px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; cursor: pointer;
