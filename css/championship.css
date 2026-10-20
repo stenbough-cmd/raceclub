@@ -1177,3 +1177,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcc-dur { text-transform: none; }
 /* Story being written: the message sits on the same row as the blinking light. */
 .rcc-story-pulse + span { flex: 1 1 0; min-width: 0; }
+
+/* Race Recap > Race Report page (Matt, 2026-10-20): the recap header sits right above the report, so the
+   divider line that used to separate it from the race tables is dropped. */
+.rcc-page .rcl-allresults-body > .rcl-standings-class-header + .rcl-report-section { margin-top: 18px; padding-top: 0; border-top: 0; }

@@ -778,12 +778,19 @@ function _rccSeasonFormat(page, body) {
 
 // Each class's highlights for one race: header, podium and highlight cards. Shared by Last Race and
 // the Race Recap's Highlights page (Matt, 2026-10-19).
+// Race Recap page header (Matt, 2026-10-20): the metal bar with "<TITLE>" in bold and
+// "FROM ROUND N AT <TRACK SHORT NAME>" in light, on every page that has one.
+function _rccRecapHeader(title, r) {
+  var h = _rccText('div', 'rcl-standings-class-header', title.toUpperCase());
+  r = r || {};
+  if (r.roundNum || r.track) h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + (r.roundNum || '') + (r.track ? ' AT ' + String(r.track).toUpperCase() : '')));
+  return h;
+}
+
 function _rccHighlightBlocks(page, r, body) {
   (r.classes || []).forEach(function (cls) {
     var w = _rccEl('div', 'rcl-lr-class');
-    var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
-    h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + r.roundNum + (r.track ? ' AT ' + r.track.toUpperCase() : '')));
-    w.appendChild(h);
+    w.appendChild(_rccRecapHeader(cls.className + ' Highlights', r));
     w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
     if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
     body.appendChild(w);
@@ -1455,6 +1462,7 @@ function _rccDriverReportBody(result, el) {
   el.innerHTML = '';
   var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
+  el.appendChild(_rccRecapHeader('Driver Report', result));
   var who = _rccSeatLine(RCC.page || {}, result.driverReport || {}, false);
   who.classList.add('rcr-report-who');
   el.appendChild(who);
@@ -1476,7 +1484,7 @@ function _rccRaceBody(result, el) {
   result.classes.forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (r.isPlayer) playerName = r.name; }); });
   result.classes.forEach(function (cls, ci) {
     var w = _rccEl('div', 'rcl-race-class');
-    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' RESULTS'));
+    w.appendChild(_rccRecapHeader(cls.className + ' Results', result));
     // Icons next to the names and a key under the board replace the Winner / Most Laps Led / Pole /
     // Fastest Lap list (Matt, 2026-10-13). No winner icon: P1 already says it.
     var awards = [];
@@ -1526,10 +1534,20 @@ function _rccRaceBody(result, el) {
     el.appendChild(w);
   });
 
+  // (The Race Report has its own page in the recap since 2026-10-20: _rccRaceReportBody.)
+}
+
+// Race Recap > Race Report: every lap's events for the whole field, on its own page with the recap
+// header and no red "Race Report" heading (Matt, 2026-10-20).
+function _rccRaceReportBody(result, el) {
+  el.innerHTML = '';
+  if (!result || !(result.raceReport || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race report for this round yet.')); return; }
+  var playerName = null;
+  (result.classes || []).forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (r.isPlayer) playerName = r.name; }); });
+  el.appendChild(_rccRecapHeader('Race Report', result));
   var report = result.raceReport || [];
   if (report.length) {
     var sec = _rccEl('div', 'rcl-report-section');
-    sec.appendChild(_rccText('div', 'rcl-race-class-name', 'Race Report'));
     var byLap = {}, order = [];
     report.forEach(function (en) { if (!byLap[en.lapNum]) { byLap[en.lapNum] = []; order.push(en.lapNum); } byLap[en.lapNum].push(en); });
     var CLAUSE = { wall: 'rcl-report-clause-wall', car: 'rcl-report-clause-car', damage: 'rcl-report-clause-damage', pit: 'rcl-report-clause-pit', position_gain: 'rcl-report-clause-gain', position_loss: 'rcl-report-clause-loss', retirement: 'rcl-report-clause-retirement', fastest_lap: 'rcl-report-clause-fastest' };
@@ -1572,7 +1590,7 @@ function _rccQualifyingBody(result, el) {
   if (!result || !result.hasQualifying || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Qualifying Data', 'No qualifying session was imported for this round.')); return; }
   result.classes.forEach(function (cls) {
     var w = _rccEl('div', 'rcl-race-class');
-    w.appendChild(_rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' QUALIFYING'));
+    w.appendChild(_rccRecapHeader(cls.className + ' Qualify Results', result));
     var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-recap rcl-race-grid-recap-q');
     ['Pos', 'Manu', 'N<sup class="rcc-board-num-deg">&deg;</sup>', 'Driver', 'Best Lap', 'Sector 1', 'Sector 2', 'Sector 3', 'Avg (KM/H)'].forEach(function (t) { head.appendChild(_rccEl('div', null, t)); });
     w.appendChild(head);
@@ -1671,9 +1689,10 @@ function rccOpenResults(roundId, kind) {
   kindSel.className = 'rcl-allresults-session-select';
   // Highlights first in the list (Matt, 2026-10-19); the recap still opens on Race unless asked otherwise.
   kindSel.appendChild(new Option('Highlights', 'highlights'));
-  kindSel.appendChild(new Option('Race', 'race'));
-  kindSel.appendChild(new Option('Qualifying', 'qualifying'));
+  kindSel.appendChild(new Option('Race Results', 'race'));
+  kindSel.appendChild(new Option('Qualify Results', 'qualifying'));
   kindSel.appendChild(new Option('Driver Report', 'driver'));
+  kindSel.appendChild(new Option('Race Report', 'report'));
   kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
   row.appendChild(sel);
@@ -1687,9 +1706,9 @@ function rccOpenResults(roundId, kind) {
   function busy(on) { sel.disabled = on; kindSel.disabled = on; }
   function load() {
     // Highlights, Driver Report and Race Details come from the same race result as the Race page.
-    var apiKind = kindSel.value === 'driver' || kindSel.value === 'details' || kindSel.value === 'highlights' ? 'race' : kindSel.value;
+    var apiKind = ['driver', 'details', 'highlights', 'report'].indexOf(kindSel.value) !== -1 ? 'race' : kindSel.value;
     var key = sel.value + ':' + apiKind;
-    var builder = { qualifying: _rccQualifyingBody, mylaps: _rccMyLapsBody, driver: _rccDriverReportBody, details: _rccRaceDetailsBody, highlights: _rccHighlightsBody }[kindSel.value] || _rccRaceBody;
+    var builder = { qualifying: _rccQualifyingBody, mylaps: _rccMyLapsBody, driver: _rccDriverReportBody, details: _rccRaceDetailsBody, highlights: _rccHighlightsBody, report: _rccRaceReportBody }[kindSel.value] || _rccRaceBody;
     if (cache[key]) { builder(cache[key], out); return; }
     out.innerHTML = '';
     out.appendChild(_rccSpinner('Loading results...'));
