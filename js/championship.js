@@ -1625,14 +1625,15 @@ function _rccMyLapsBody(result, el) {
     table.appendChild(head);
     var best = Infinity;
     s.laps.forEach(function (l) { var t = Number(l.lapTime); if (t > 0 && t < best) best = t; });
+    // Fastest lap time bold purple, fastest time in each sector purple (Matt, 2026-10-20).
+    var bestSec = [Infinity, Infinity, Infinity];
+    s.laps.forEach(function (l) { [l.sector1, l.sector2, l.sector3].forEach(function (v, i) { var t = Number(v); if (t > 0 && t < bestSec[i]) bestSec[i] = t; }); });
     s.laps.forEach(function (l) {
       var r = _rccEl('div', 'rcc-laps-row' + (Number(l.lapTime) === best ? ' rcc-laps-best' : '') + (l.pit ? ' rcc-laps-pit' : ''));
       r.appendChild(_rccText('div', null, String(l.lapNum) + (l.pit ? ' PIT' : '')));
       r.appendChild(_rccText('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '--'));
-      r.appendChild(_rccText('div', null, _rccLapTime(l.lapTime)));
-      r.appendChild(_rccText('div', null, _rccLapTime(l.sector1)));
-      r.appendChild(_rccText('div', null, _rccLapTime(l.sector2)));
-      r.appendChild(_rccText('div', null, _rccLapTime(l.sector3)));
+      r.appendChild(_rccText('div', Number(l.lapTime) === best ? 'rcc-laps-fastest' : null, _rccLapTime(l.lapTime)));
+      [l.sector1, l.sector2, l.sector3].forEach(function (v, i) { r.appendChild(_rccText('div', Number(v) > 0 && Number(v) === bestSec[i] ? 'rcc-laps-fastsec' : null, _rccLapTime(v))); });
       r.appendChild(_rccText('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '--'));
       r.appendChild(_rccText('div', null, l.fuel !== '' ? Math.round(Number(l.fuel) * 100) + '%' : '--'));
       var tw = [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' ? '--' : Math.round(Number(v) * 100); }).join(' ');
