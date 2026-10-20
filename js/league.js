@@ -1256,7 +1256,10 @@ function _rclRenderLastRace_(hub) {
   var hasLastRaceData = seasonEnded ? !!hub.lastSeason : !!hub.lastRace;
   var showPreview = hasSeason && !seasonEnded && !hasLastRaceData;
   var titleEl = document.getElementById('rcl-last-race-title');
-  if (titleEl) titleEl.textContent = seasonEnded ? 'Season Recap' : (showPreview ? 'Season Preview' : 'Last Race');
+  if (titleEl) {
+    var lastRoundNum = (hub.lastRace && Number(hub.lastRace.roundNum)) || 0;
+    titleEl.textContent = seasonEnded ? 'Season Recap' : (showPreview ? 'Season Preview' : (lastRoundNum ? 'Round ' + lastRoundNum + ' Highlights' : 'Last Race'));
+  }
   body.classList.toggle('rcl-seasonfmt-modal-body', showPreview);
 
   // (The RACE RECAP button that used to sit at the right end of this header was removed; the Race Recap
