@@ -2066,9 +2066,9 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
+  sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.appendChild(new Option('Race', 'race'));
   sessionSelect.appendChild(new Option('Qualifying', 'qualifying'));
-  sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.value = 'race';
   selectRow.appendChild(sessionSelect);
   body.appendChild(selectRow);
