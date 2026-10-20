@@ -26,7 +26,6 @@
     if (html !== undefined) e.innerHTML = html;
     return e;
   }
-  var UNDO_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><polyline points="4 3.5 4 8.5 9 8.5"/></svg>';
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
@@ -55,7 +54,9 @@
     function build(assets) {
       body.innerHTML = '';
       var cfg = H.getConfig();
-      var R = H.normalizeRecipe(H.defaultRecipe());
+      // a plain white helmet with no design (the way the designer opens and what Reset returns to)
+      function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }
+      var R = blankRecipe();
       var cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' };
       var knownCats = ['Awards'];
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
@@ -66,10 +67,6 @@
       grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
 
       /* ---------------- left: preview ---------------- */
-      var undoBar = mk('div', 'rch-prevbar');
-      var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
-      undoB.title = 'Restore the helmet to how it was when it was opened'; undoB.setAttribute('aria-label', undoB.title);
-      undoBar.appendChild(undoB); left.appendChild(undoBar);
       var stage = mk('div', 'rch-stage light');
       left.appendChild(stage);
       var bgRow = mk('div', 'rch-btns rch-bgrow');
@@ -94,18 +91,18 @@
         sizeRow.appendChild(x);
       });
       left.appendChild(sizeRow);
-      left.appendChild(mk('p', 'rch-hint', 'With a logo selected, click or drag on the helmet to move it.'));
 
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
-      bar.appendChild(mk('div', 'rch-label', 'Helmet name'));
+      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label', 'Helmet name'));
       var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Ford Hypercar';
       nameIn.oninput = function () { cur.name = nameIn.value; };
-      bar.appendChild(nameIn);
-      var kindRow = mk('div', 'rch-row3');
+      nameWrap.appendChild(nameIn);
       var kindWrap = mk('div'); kindWrap.appendChild(mk('div', 'rch-label', 'Kind'));
       var kindSel = mk('select', 'rch-select-wide'); KINDS.forEach(function (k) { var o = mk('option'); o.value = k; o.textContent = k; kindSel.appendChild(o); });
       kindWrap.appendChild(kindSel);
+      var nkRow = mk('div', 'rch-row-nk'); nkRow.appendChild(nameWrap); nkRow.appendChild(kindWrap);
+      bar.appendChild(nkRow);
       var mfrWrap = mk('div'); mfrWrap.appendChild(mk('div', 'rch-label', 'Manufacturer'));
       var mfrSel = mk('select', 'rch-select-wide'); mfrSel.appendChild(mk('option', '', '')); mfrSel.firstChild.value = ''; mfrSel.firstChild.textContent = 'Choose...';
       (assets.manufacturers || []).forEach(function (m) { var o = mk('option'); o.value = m; o.textContent = m; mfrSel.appendChild(o); });
@@ -114,8 +111,8 @@
       var clsSel = mk('select', 'rch-select-wide'); clsSel.appendChild(mk('option')); clsSel.firstChild.value = ''; clsSel.firstChild.textContent = 'Choose...';
       (assets.classes || []).forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; clsSel.appendChild(o); });
       clsWrap.appendChild(clsSel);
-      kindRow.appendChild(kindWrap); kindRow.appendChild(mfrWrap); kindRow.appendChild(clsWrap);
-      bar.appendChild(kindRow);
+      var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap); mcRow.appendChild(clsWrap);
+      bar.appendChild(mcRow);
       var kindHint = mk('p', 'rch-hint'); bar.appendChild(kindHint);
       // category: where members find an award helmet in their design list (pick one or make a new one)
       var catRow = mk('div', 'rch-catrow');
@@ -144,7 +141,10 @@
       var btns = mk('div', 'rch-btns');
       var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
       var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
-      btns.appendChild(saveBtn); btns.appendChild(manageBtn);
+      var resetBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Reset'); resetBtn.type = 'button';
+      resetBtn.title = 'Back to a plain white helmet with no design and no logos';
+      resetBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
+      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(resetBtn);
       bar.appendChild(btns);
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
       right.appendChild(bar);
@@ -154,6 +154,7 @@
       var dRow = mk('div', 'rch-dstack');
       var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
+      var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain white (no design)'; dSel.appendChild(plainO);
       cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; dSel.appendChild(o); });
       dSel.onchange = function () { R.d = parseInt(dSel.value, 10); draw(); };
       dWrap.appendChild(dSel); dRow.appendChild(dWrap);
@@ -348,7 +349,7 @@
 
       function syncMeta() {
         kindSel.value = cur.kind; mfrSel.value = cur.mfr || ''; clsSel.value = cur.cls || '';
-        mfrWrap.style.visibility = clsWrap.style.visibility = (cur.kind === 'Manufacturer') ? 'visible' : 'hidden';
+        mcRow.style.display = (cur.kind === 'Manufacturer') ? '' : 'none';
         kindHint.textContent = KIND_HINTS[cur.kind] || '';
         var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
         catRow.style.display = givable ? '' : 'none';
@@ -376,7 +377,6 @@
       function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
       function draw(quick) {
         syncControls();
-        undoB.disabled = snapshot() === baseline;
         if (!quick) { renderLayers(); renderDetail(); }
         if (busy) { again = true; lastQuick = !!quick; return; }
         busy = true;
@@ -417,28 +417,17 @@
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
           cur.id = res.presetId; cur.name = name; cur.category = category;
           if (category && knownCats.indexOf(category) < 0) knownCats.push(category);
-          fillCats(category || 'Awards'); syncMeta(); baseline = snapshot(); undoB.disabled = true;
+          fillCats(category || 'Awards'); syncMeta();
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
         }).catch(function () { saveBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
       }
       saveBtn.onclick = function () { doSave(); };
-      // Restore arrow: puts the helmet back to how it was when it was opened (a blank helmet in a new
-      // designer, or the saved design as it was loaded).
-      var baseline = '';
-      function snapshot() { return JSON.stringify({ R: R, cur: { id: cur.id, name: cur.name, kind: cur.kind, mfr: cur.mfr, cls: cur.cls, category: cur.category } }); }
-      var baseState = null;
-      function setBase() { baseState = JSON.parse(snapshot()); baseline = snapshot(); }
-      undoB.onclick = function () {
-        R = H.normalizeRecipe(clone(baseState.R)); cur = clone(baseState.cur); sel = null;
-        nameIn.value = cur.name; fillCats(cur.category || 'Awards'); syncMeta(); draw();
-      };
-
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null;
         cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '', category: p.category || 'Awards' };
         if (cur.category && knownCats.indexOf(cur.category) < 0) knownCats.push(cur.category);
         fillCats(cur.category);
-        syncMeta(); draw(); setBase(); undoB.disabled = true; toast('Loaded "' + p.name + '".', 'success');
+        syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
       }
       /* ---------------- shared bits for the manager popups ---------------- */
       function btn(label, cls) { var b = mk('button', cls || 'rc-btn-secondary rc-btn-row', label); b.type = 'button'; return b; }
@@ -755,7 +744,7 @@
       }).catch(function () {});
 
       fillCats('Awards');
-      syncMeta(); setBase(); draw();
+      syncMeta(); draw();
     }
   }
 

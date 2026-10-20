@@ -10,8 +10,8 @@
        onSave     called with a recipe {d,b,a1,a2,v,logos?,t?,p?} (Save Helmet) or null (Use Default)
    Needs js/helmet.js (configured) and css/helmet.css.
    Members get: a design (Generic ones, plus any Awards they were given), 3 colors + finishes, a visor,
-   "Match my team", Randomize, and a restore arrow that puts
-   everything back to how it was when the popup opened. Logos cannot be moved or edited.
+   a "Match Current Team" button (loads the team helmet, manufacturer logo included), Randomize, and a Reset
+   button that clears the helmet to plain white. Logos cannot be moved or edited.
    An award helmet is a complete design: picking one shows it exactly as designed and every control except the
    Design list is locked. Only admins can change an award helmet (in the admin Helmet Designer).
    The default helmet's logos disappear the moment anything is changed.
@@ -36,10 +36,11 @@
     r.logos = [];
     return r;
   }
+  // a plain white helmet with no design at all: the whole shell takes the Base Color
+  function blank() { var r = H.normalizeRecipe(H.defaultRecipe()); r.d = 0; r.logos = []; return clean(r); }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
   function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-  var UNDO_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><polyline points="4 3.5 4 8.5 9 8.5"/></svg>';
 
   function open(ctx) {
     var toast = ctx.showToast || function () {};
@@ -95,12 +96,7 @@
     var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
     grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
 
-    /* ---- preview (the restore arrow sits above it, on the right) ---- */
-    var undoBar = mk('div', 'rch-prevbar');
-    var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
-    undoB.title = 'Restore my helmet to how it was when I opened this window'; undoB.setAttribute('aria-label', undoB.title);
-    undoBar.appendChild(undoB);
-    left.appendChild(undoBar);
+    /* ---- preview ---- */
     var wrap = mk('div', 'rch-stagewrap');
     var stage = mk('div', 'rch-stage light');
     wrap.appendChild(stage);
@@ -114,12 +110,30 @@
     });
     left.appendChild(bgRow);
 
+    // Editing anything while the team helmet is showing starts from the team helmet's colors and design.
+    function leaveTeam() { if (teamOn) { R = clean(teamRecipe); teamOn = false; } }
+
+    /* ---- Match Current Team (loads the team helmet with its manufacturer logo) ---- */
+    var teamWrap = mk('div', 'rch-teamrow');
+    var teamTip = mk('span', 'rch-tipwrap');
+    var teamB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Match Current Team'); teamB.type = 'button';
+    teamTip.appendChild(teamB); teamWrap.appendChild(teamTip);
+    if (!teamRecipe) {
+      teamB.disabled = true;
+      teamTip.classList.add('rch-tipped');
+      teamTip.setAttribute('data-tip', (info && info.hasTeam === false) ? 'You must be on a team to use this.' : 'No team helmet has been set up for your car yet.');
+      teamTip.tabIndex = 0;
+    }
+    teamB.onclick = function () { if (!teamRecipe) return; teamOn = true; draw(); };
+    right.appendChild(teamWrap);
+
     /* ---- design (Generic + Awards groups) + randomize ---- */
     var style = mk('div', 'rch-section');
     var dRow = mk('div', 'rch-dstack');
     var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
     var gGen = mk('optgroup'); gGen.label = 'Generic';
+    var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain white (no design)'; gGen.appendChild(plainO);
     cfg.designs.forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
     dSel.appendChild(gGen);
     var cats = {}, catOrder = [];
@@ -131,6 +145,7 @@
       dSel.appendChild(g);
     });
     dSel.onchange = function () {
+      leaveTeam();
       var v = dSel.value;
       if (v.indexOf('p:') === 0) {
         var a = presetOf(v.slice(2)); if (!a) return;
@@ -145,9 +160,10 @@
     dWrap.appendChild(dSel); dRow.appendChild(dWrap);
     var tools = mk('div', 'rch-btns rch-tools');
     var rb = mk('button', 'rc-btn-secondary rc-btn-row', 'Randomize'); rb.type = 'button';
-    rb.onclick = function () { R = clean(H.randomRecipe()); draw(); };
+    rb.onclick = function () { leaveTeam(); R = clean(H.randomRecipe()); draw(); };
     var rs = mk('button', 'rc-btn-secondary rc-btn-row', 'Reset colors'); rs.type = 'button';
     rs.onclick = function () {
+      leaveTeam();
       var d = R.d;
       R = clean(H.defaultRecipe());
       R.d = d; draw();
@@ -164,12 +180,12 @@
       head.appendChild(mk('span', 'rch-label', s[1]));
       var fs = mk('select', 'rch-finish');
       H.FINISHES.forEach(function (f) { var o = mk('option'); o.value = f.id; o.textContent = f.name; fs.appendChild(o); });
-      fs.onchange = function () { R[s[0]][1] = fs.value; draw(); };
+      fs.onchange = function () { leaveTeam(); R[s[0]][1] = fs.value; draw(); };
       head.appendChild(fs); row.appendChild(head);
       var sw = mk('div', 'rch-swatches rch-swatches16');
       H.PALETTE.forEach(function (p) {
         var b = mk('button', 'rch-sw'); b.type = 'button'; b.style.background = p.hex; b.title = p.name; b.dataset.id = p.id;
-        b.onclick = function () { R[s[0]][0] = p.id; draw(); };
+        b.onclick = function () { leaveTeam(); R[s[0]][0] = p.id; draw(); };
         sw.appendChild(b);
       });
       row.appendChild(sw); style.appendChild(row);
@@ -181,63 +197,36 @@
     H.VISORS.forEach(function (v) {
       var b = mk('button', 'rch-visor'); b.type = 'button'; b.dataset.id = v.id;
       b.innerHTML = '<i style="background:linear-gradient(135deg,' + v.c1 + ',' + v.c2 + ')"></i>' + v.name;
-      b.onclick = function () { R.v = v.id; draw(); };
+      b.onclick = function () { leaveTeam(); R.v = v.id; draw(); };
       vs.appendChild(b);
     });
     style.appendChild(vs);
     right.appendChild(style);
 
-    /* ---- helmet options (checkboxes) ---- */
-    var opts = mk('div', 'rch-options');
-    opts.appendChild(mk('div', 'rch-label', 'Helmet Options'));
-    var teamLab = mk('label', 'rch-check');
-    var teamBox = mk('input'); teamBox.type = 'checkbox';
-    teamLab.appendChild(teamBox);
-    teamLab.appendChild(mk('span', null, 'Match my helmet to my current team' + ((info && info.team) ? ' (' + esc(info.team) + ')' : '')));
-    opts.appendChild(teamLab);
-    if (!teamRecipe) {
-      teamBox.disabled = true; teamLab.classList.add('off');
-      // The reason shows as a tooltip while hovering the checkbox line (normal weight text).
-      teamLab.classList.add('rch-tipped');
-      teamLab.setAttribute('data-tip', (info && info.hasTeam === false) ? 'Join a team this season to turn this on.' : 'No team helmet has been set up for your car yet.');
-      teamLab.tabIndex = 0;
-    }
-    teamBox.checked = teamOn;
-    teamBox.onchange = function () { teamOn = teamBox.checked && !!teamRecipe; draw(); };
-    right.appendChild(opts);
-
     /* ---- buttons ---- */
     var btns = mk('div', 'rch-btns rch-pbtns');
-    var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save Helmet'); saveB.type = 'button';
+    var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveB.type = 'button';
     var defB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Use Default'); defB.type = 'button';
-    var canB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); canB.type = 'button';
-    btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(canB);
+    var resetB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Reset'); resetB.type = 'button';
+    btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(resetB);
     right.appendChild(btns);
     saveB.onclick = function () { var out = effective(); modal.close(); ctx.onSave(out); };
     defB.onclick = function () { modal.close(); ctx.onSave(null); };
-    canB.onclick = function () { modal.close(); };
-    undoB.onclick = function () {
-      R = copy(init.R); presetId = init.presetId; teamOn = init.teamOn; stash = null;
-      draw();
-    };
+    resetB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; draw(); };
 
     /* ---- drawing ---- */
     function syncControls() {
-      if (!presetId && !cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
+      if (!presetId && R.d !== 0 && !cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
       dSel.value = presetId ? 'p:' + presetId : 'd:' + R.d;
       SLOTS.forEach(function (s) {
         rows[s[0]].fs.value = R[s[0]][1];
         Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === R[s[0]][0]); });
       });
       Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === R.v); });
-      body.classList.toggle('rch-locked', teamOn);
-      teamBox.checked = teamOn;
       // award helmets are used as is: the colors, visor, Randomize and Reset are locked (the Design list stays open)
       var fixed = !!presetId && !teamOn;
       [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
       awardNote.style.display = fixed ? '' : 'none';
-      var changed = dirty() || teamOn !== init.teamOn;
-      undoB.disabled = !changed;
     }
     var busy = false, again = false;
     function draw() {

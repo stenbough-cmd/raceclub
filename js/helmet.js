@@ -119,7 +119,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var def = defaultRecipe(); r = r || {};
     function slot(x, dflt) { x = x || dflt; return [x[0] || dflt[0], okFinish(x[1])]; }
     var out = {
-      d: parseInt(r.d, 10) || 1,
+      d: isNaN(parseInt(r.d, 10)) ? 1 : parseInt(r.d, 10),   // 0 = plain white helmet, no design
       b: slot(r.b, def.b), a1: slot(r.a1, def.a1), a2: slot(r.a2, def.a2),
       v: findVisor(r.v).id,
       logos: []
@@ -142,8 +142,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     do { a2 = pick(ids); } while (a2 === base || a2 === a1);
     // weight towards gloss so most random helmets look classic
     var fin = ['gloss', 'gloss', 'gloss', 'satin', 'metallic', 'metallic', 'matte', 'pearl', 'candy', 'carbon'];
-    var d = keepDesign || 1;
-    if (!keepDesign && cfg.designs.length) d = pick(cfg.designs).slot;
+    var d = keepDesign === 0 ? 0 : (keepDesign || 1);
+    if (!keepDesign && keepDesign !== 0 && cfg.designs.length) d = pick(cfg.designs).slot;
     return { d: d, b: [base, pick(fin)], a1: [a1, pick(fin)], a2: [a2, pick(fin)], v: pick(VISORS).id, logos: [] };
   }
 
