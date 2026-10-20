@@ -1183,13 +1183,18 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcl-allresults-body > .rcl-standings-class-header + .rcl-report-section { margin-top: 18px; padding-top: 0; border-top: 0; }
 /* My Laps: the session's class position, best lap and stops under the recap header. */
 .rcc-laps-summary { margin: 2px 0 12px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
-/* My Laps: fastest lap time bold purple, fastest time in each sector purple (Matt, 2026-10-20). Same purple as
+/* My Laps: fastest lap time bold purple (Matt, 2026-10-20; no sector purples). Same purple as
    the best lap in the Driver Report's pace chart. */
 .rcc-laps-row .rcc-laps-fastest { color: #8150c0; font-weight: 800; }
-.rcc-laps-row .rcc-laps-fastsec { color: #8150c0; }
 /* Race Recap on phones: each class table pans sideways with a finger. This used to come from league.css
    (.rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto }), which the League page dropped for its own
    scroll wrappers on 2026-10-19, so the Championship recap keeps its own copy (Matt, 2026-10-20). */
 @media (max-width: 640px) {
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+/* My Laps: MY EVENTS bar under each laps table; on phones the event lines stay the popup's width. */
+.rcc-page .rcc-laps-events-head { margin-top: 22px; }
+@media (max-width: 640px) {
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events-head { min-width: 0; width: 100%; position: sticky; left: 0; box-sizing: border-box; }
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events { min-width: 0; position: sticky; left: 0; }
 }
