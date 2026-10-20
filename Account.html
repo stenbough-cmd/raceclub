@@ -14,7 +14,7 @@
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=9"></script>
-<script src="js/helmet-editor.js?v=8"></script>
+<script src="js/helmet-editor.js?v=9"></script>
 </head>
 <body>
 
@@ -158,7 +158,7 @@
   function escapeHtml(str) {
     var d = document.createElement('div');
     d.textContent = str;
-    return d.innerHTML;
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');   // quotes too, so text is safe inside attributes
   }
 
   function _rcProtestLapLabel(lapNumber) {
@@ -2448,7 +2448,9 @@
   function openConfirmModal(title, message, confirmLabel, onConfirm, opts) {
     opts = opts || {};
     var body = el('div');
-    body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;', message));
+    // plain text on purpose: the message often contains a driver, team or post name
+    var confirmP = el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;'); confirmP.textContent = message;
+    body.appendChild(confirmP);
     var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
     var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
     cancelBtn.type = 'button';

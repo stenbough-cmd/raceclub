@@ -12,7 +12,7 @@
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
   function tx(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; e.textContent = text == null ? '' : String(text); return e; }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function num(v, d) { return v === null || v === undefined || isNaN(v) ? '--' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
   function saveLocal(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { /* storage blocked: fine */ } }
   function readLocal(key) { try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { return null; } }

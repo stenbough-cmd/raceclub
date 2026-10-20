@@ -26,7 +26,7 @@
     if (html !== undefined) e.innerHTML = html;
     return e;
   }
-  function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   // Championship first, then a blank row, then the rest (a null entry is the blank row).

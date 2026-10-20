@@ -39,7 +39,7 @@
   // a plain white helmet with no design at all: the whole shell takes the Base Color
   function blank() { var r = H.normalizeRecipe(H.defaultRecipe()); r.d = 0; r.logos = []; return clean(r); }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
-  function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
 
   function open(ctx) {

@@ -51,7 +51,7 @@ function rcHelmetCacheKey_(value, w) {
   if (!value) { try { d = localStorage.getItem('rcHelmetDefSig') || ''; } catch (e) {} }   // changes whenever the default helmet or design list changes
   return RC_HELMET_CACHE_V_ + ':' + w + ':' + (value || ('default' + d));
 }
-function _rcHelmetEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function _rcHelmetEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 // HTML for one helmet placeholder. Already-drawn helmets come back as a finished <img>.
 function rcHelmetHtml_(value, width, cls) {
@@ -66,7 +66,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=9'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=10'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -693,7 +693,7 @@ function renderHeader(opts) {
 function escapeHtmlHeader_(str) {
   var d = document.createElement('div');
   d.textContent = str || '';
-  return d.innerHTML;
+  return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ---------------------------------------------------------------------
