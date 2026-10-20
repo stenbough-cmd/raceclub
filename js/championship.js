@@ -835,7 +835,8 @@ function rccRenderLastRace(page) {
     _rccSeasonFormat(page, body);
     return;
   }
-  titleEl.textContent = 'Last Race';
+  // "Round N Highlights" instead of "Last Race" (Matt, 2026-10-20).
+  titleEl.textContent = 'Round ' + page.lastRace.roundNum + ' Highlights';
   var r = page.lastRace;
   // (The Race Recap button in this header was removed, Matt 2026-10-13. RACE RECAP on the round's
   // calendar card opens the same recap.)
