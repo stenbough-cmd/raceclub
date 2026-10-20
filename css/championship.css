@@ -1198,3 +1198,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events-head { min-width: 0; width: 100%; position: sticky; left: 0; box-sizing: border-box; }
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events { min-width: 0; position: sticky; left: 0; }
 }
+/* Race Recap on phones: the round and page dropdowns stack, each full width, now the page names are
+   longer (Matt, 2026-10-20). */
+@media (max-width: 640px) {
+  .rcc-page .rcl-allresults-select-row { flex-direction: column; gap: 8px; }
+  .rcc-page .rcl-allresults-select-row .rcl-allresults-select,
+  .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }
+}
