@@ -198,6 +198,20 @@ function rccReloadAfterSave() {
   window.location.reload();
 }
 
+// The start-lights page loader again (Matt, 2026-10-20: switching seasons shows the site's loading
+// sequence while the season loads). Same markup as championship.html's #rcl-page-loader.
+function _rccShowPageLoader(message) {
+  var old = document.getElementById('rcl-page-loader');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+  var loader = _rccEl('div', 'rcl-page-loader');
+  loader.id = 'rcl-page-loader';
+  var card = _rccSpinner(message || 'Loading Championship\u2026');
+  card.classList.add('rc-inline-spinner-page');
+  loader.appendChild(card);
+  document.body.insertBefore(loader, document.body.firstChild);
+  _rccLockScroll();
+}
+
 function _rccHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
@@ -3161,7 +3175,9 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     var shownArchive = RCC.archive;
+    var picked = ((RCC.page && RCC.page.seasons) || []).filter(function (x) { return x.seasonId === seasonId; })[0];
     document.body.classList.add('rcc-season-loading');
+    _rccShowPageLoader('Loading ' + (picked && picked.seasonNumber ? 'Season ' + picked.seasonNumber : 'Season') + '\u2026');
     _rccGetPage(seasonId).then(function (page) {
       if (myToken !== pickToken) return;
       if (_rccHandleAuthError(page)) return;
@@ -3174,7 +3190,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (RCC.page) rccRenderActionBar(RCC.page);
       _rccShowLoadError(function () { RCC.onSeasonPick(seasonId); });
     }).then(function () {
-      if (myToken === pickToken) document.body.classList.remove('rcc-season-loading');
+      if (myToken !== pickToken) return;
+      document.body.classList.remove('rcc-season-loading');
+      _rccHidePageLoader();
+      _rccUnlockScroll();
     });
   };
 
