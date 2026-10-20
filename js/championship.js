@@ -544,22 +544,48 @@ function rccRenderActionBar(page) {
   // Find A Bug? removed from this bar (Matt, 2026-10-11).
   add('Help', true, rccOpenHelp);
 
-  // Past seasons -- a plain dropdown, shown only once there's more than one season.
-  if (page && page.seasons && page.seasons.length > 1) {
-    var pick = _rccEl('label', 'rcc-actionbar-season');
-    pick.appendChild(_rccText('span', null, 'Season'));
+  // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
+  // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
+  // have no calendar dates in championship mode). Picking one swaps the page in place.
+  if (page && page.seasons && page.seasons.length) {
     var sel = document.createElement('select');
-    page.seasons.forEach(function (s) {
-      var o = new Option('Season ' + s.seasonNumber + ' · ' + s.name + (s.status === 'Completed' ? (s.unfinished ? ' (Unfinished)' : ' (Ended)') : ''), s.seasonId);
-      if (s.seasonId === page.seasonId) o.selected = true;
-      sel.appendChild(o);
-    });
+    sel.className = 'rcc-actionbar-season';
+    sel.setAttribute('aria-label', 'Season');
+    page.seasons.forEach(function (s) { sel.appendChild(new Option(_rccSeasonLabel(s), s.seasonId)); });
+    sel.value = page.seasonId || page.seasons[0].seasonId;
     sel.addEventListener('change', function () {
-      window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId) + '&season=' + encodeURIComponent(sel.value);
+      if (RCC.onSeasonPick) RCC.onSeasonPick(sel.value);
+      else window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId) + '&season=' + encodeURIComponent(sel.value);
     });
-    pick.appendChild(sel);
-    inner.appendChild(pick);
+    inner.appendChild(sel);
   }
+}
+
+function _rccSeasonLabel(s) {
+  return s.seasonNumber ? 'Season ' + s.seasonNumber + (s.name ? ': ' + s.name : '') : (s.name || s.seasonId);
+}
+
+// A season that failed to load: a RETRY panel at the top of the page (same as the League Hub's).
+function _rccClearLoadError() {
+  var old = document.getElementById('rcc-load-error');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+}
+function _rccShowLoadError(onRetry, title) {
+  _rccClearLoadError();
+  var main = document.querySelector('.rcl-main');
+  if (!main) return;
+  var box = _rccEl('div', 'rcl-row-full rcc-load-error');
+  box.id = 'rcc-load-error';
+  box.appendChild(_rccEmpty(title || 'Could Not Load That Season', 'Check your connection and try again.'));
+  var btn = _rccText('button', 'rcc-load-error-btn', 'RETRY');
+  btn.type = 'button';
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = 'LOADING...';
+    onRetry();
+  });
+  box.appendChild(btn);
+  main.insertBefore(box, main.firstChild);
 }
 
 // ---------------------------------------------------------------------
@@ -3082,19 +3108,26 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // 2. Fetch fresh data; redraw only when it differs from what's on screen.
+  // The season the page opened on stays in memory (currentText + defaultArchive), so picking it again
+  // in the season picker is instant, and a background refresh never switches away from a past season.
+  var defaultArchive = null;
   var revalidating = false;
   function revalidate() {
     if (revalidating) return;
     revalidating = true;
     var hadCopy = !!currentText;
+    var shownArchive = RCC.archive;
     _rccGetPage(_rccQuery('season')).then(function (page) {
+      var gotArchive = RCC.archive;
+      if (RCC.viewSeasonId) RCC.archive = shownArchive;
       if (_rccHandleAuthError(page)) return;
       if (page && page.success) {
+        defaultArchive = gotArchive;
         var text = JSON.stringify(page);
         if (text !== currentText) {
           currentText = text;
           _rccWriteSaved(text);
-          rccRenderAll(page);
+          if (!RCC.viewSeasonId) rccRenderAll(page);
         }
       } else if (!hadCopy) {
         rccRenderAll(EMPTY);
@@ -3111,6 +3144,39 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
   revalidate();
+
+  // Season picker: load another season in place. The page dims while it loads; a failed load puts the
+  // picker back on the season still showing and offers RETRY.
+  var pickToken = 0;
+  RCC.onSeasonPick = function (seasonId) {
+    _rccClearLoadError();
+    var myToken = ++pickToken;
+    var defaultId = '';
+    try { defaultId = currentText ? (JSON.parse(currentText).seasonId || '') : ''; } catch (err) { defaultId = ''; }
+    if (!seasonId || seasonId === defaultId) {
+      RCC.viewSeasonId = '';
+      RCC.archive = defaultArchive;
+      document.body.classList.remove('rcc-season-loading');
+      if (currentText) { try { rccRenderAll(JSON.parse(currentText)); } catch (err) { /* keep what is shown */ } }
+      return;
+    }
+    var shownArchive = RCC.archive;
+    document.body.classList.add('rcc-season-loading');
+    _rccGetPage(seasonId).then(function (page) {
+      if (myToken !== pickToken) return;
+      if (_rccHandleAuthError(page)) return;
+      if (!page || !page.success || page.seasonId !== seasonId) throw new Error('season load failed');
+      RCC.viewSeasonId = seasonId;
+      rccRenderAll(page);
+    }).catch(function () {
+      if (myToken !== pickToken) return;
+      RCC.archive = shownArchive;
+      if (RCC.page) rccRenderActionBar(RCC.page);
+      _rccShowLoadError(function () { RCC.onSeasonPick(seasonId); });
+    }).then(function () {
+      if (myToken === pickToken) document.body.classList.remove('rcc-season-loading');
+    });
+  };
 
   // Coming back with the browser's Back button can restore the page from memory; refresh quietly.
   window.addEventListener('pageshow', function (evt) { if (evt.persisted) revalidate(); });

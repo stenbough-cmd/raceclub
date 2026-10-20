@@ -178,23 +178,38 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-tools-links .rcc-actionbar-link::before { content: none; }
 .rcc-tools-links .rcc-actionbar-link:hover:not(:disabled) { background: var(--rc-offwhite); color: var(--rc-red); }
 .rcc-tools-links .rcc-actionbar-link:disabled { color: #a3abb5; }
-.rcc-actionbar-season {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
+/* Season picker at the right end of the black bar (Matt, 2026-10-20, same look as the League Hub's). */
+.rcc-page .rcc-actionbar-season {
+  margin-left: auto;
+  align-self: center;
+  max-width: min(420px, 100%);
+  min-width: 0;
+  height: auto;
+  padding: 6px 28px 6px 10px;
   font-family: var(--rc-font-heading);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-silver);
+  letter-spacing: 0.04em;
+  color: var(--rc-white);
+  background-color: var(--rc-carbon);
+  border: 1px solid #555a62;
+  border-radius: 4px;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
-.rcc-actionbar-season select {
-  height: 32px;
-  padding: 0 10px;
-  font-size: 13px;
-  max-width: 320px;
+.rcc-page .rcc-actionbar-season:hover { border-color: var(--rc-red); }
+.rcc-page .rcc-actionbar-season option { color: var(--rc-carbon); background: var(--rc-white); }
+.rcc-page.rcc-season-loading .rcl-main { opacity: 0.45; pointer-events: none; transition: opacity 0.15s; }
+.rcc-page .rcc-load-error { text-align: center; padding: 24px 16px 40px; }
+.rcc-page .rcc-load-error-btn {
+  padding: 8px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; cursor: pointer;
+  color: var(--rc-steel); background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 4px;
+}
+.rcc-page .rcc-load-error-btn:hover { color: var(--rc-carbon); border-color: var(--rc-steel); }
+.rcc-page .rcc-load-error-btn:disabled { opacity: 0.6; cursor: default; }
+@media (max-width: 640px) {
+  .rcc-page .rcc-actionbar-inner:has(.rcc-actionbar-season) { padding-bottom: 8px; }
+  .rcc-page .rcc-actionbar-season { margin-left: 0; width: 100%; max-width: 100%; }
 }
 
 /* -------------------------------------------------------------------- */
