@@ -54,8 +54,9 @@
   var VISORS = [
     { id: 'smoke', name: 'Smoke',       c1: '#3b424d', c2: '#0a0c10' },
     { id: 'clear', name: 'Clear',       c1: '#aebdc9', c2: '#4b5d6b' },
-    { id: 'gold',  name: 'Gold Mirror', c1: '#fcd34d', c2: '#92400e' },
-    { id: 'blue',  name: 'Blue Mirror', c1: '#5b9bff', c2: '#0b2a6b' }
+    { id: 'gold',  name: 'Gold',        c1: '#fcd34d', c2: '#92400e' },
+    { id: 'blue',  name: 'Blue',        c1: '#5b9bff', c2: '#0b2a6b' },
+    { id: 'green', name: 'Green',       c1: '#4ade80', c2: '#0f5132' }
   ];
 
   // how strongly the shared highlight layer shows on each finish
