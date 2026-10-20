@@ -1615,8 +1615,10 @@ function _rccMyLapsBody(result, el) {
   if (!sessions.length) { el.appendChild(_rccEmpty('No Data To Display', 'None of your laps were imported for this round.')); return; }
   sessions.forEach(function (s) {
     var w = _rccEl('div', 'rcl-race-class');
-    var title = (s.kind === 'race' ? 'Race' : 'Qualifying') + ' · P' + (s.classPosition || '-') + ' in class · Best ' + _rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
-    w.appendChild(_rccText('div', 'rcl-standings-class-header', title.toUpperCase()));
+    // Same recap header as every other page (Matt, 2026-10-20); the session's numbers move to a line under it.
+    w.appendChild(_rccRecapHeader(s.kind === 'race' ? 'My Race Laps' : 'My Qualifying Laps', result));
+    var sum = 'P' + (s.classPosition || '-') + ' in class · Best ' + _rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
+    w.appendChild(_rccText('div', 'rcc-laps-summary', sum));
     var table = _rccEl('div', 'rcc-laps-table');
     var head = _rccEl('div', 'rcc-laps-row rcc-laps-head');
     ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tires (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
