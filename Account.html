@@ -2063,9 +2063,9 @@
   // ---------------------------------------------------------------------
   var SIGNING_MESSAGES_ = [
     'Drafting team documents...',
-    'Securing season entry fees...',
+    'Confirming your car and number...',
     'Notifying the team principal...',
-    'Verifying sponsorship terms...',
+    'Reviewing the season rules...',
     'Fitting your race suit...',
     'Calibrating the seat...',
     'Finalizing your contract...',
@@ -2426,7 +2426,7 @@
       body.appendChild(reg);
     }
     body.appendChild(el('p', 'color:var(--rc-carbon);font-size:14px;font-weight:700;text-decoration:none;margin:12px 0 0;',
-      'Severe penalties will apply when this rule is broken, up to, disqualification and suspension from the league.'));
+      'Severe penalties will apply when this rule is broken, up to disqualification and suspension from the league.'));
     var btnRow = el('div', 'display:flex;justify-content:flex-end;margin-top:18px;');
     var okBtn = el('button', 'rc-btn-primary rc-btn-sm', 'I UNDERSTAND');
     okBtn.type = 'button';
@@ -4477,6 +4477,31 @@
     }
   }
 
+  // Turns a wall-clock date + time that was typed IN the time zone `tz` (an IANA id such as
+  // "America/New_York") into the real UTC instant, no matter which time zone this browser is in.
+  // Falls back to the browser's own zone when tz is blank or not recognised.
+  function wallTimeToUtcIso_(dateStr, timeStr, tz) {
+    if (!dateStr) return '';
+    var dp = String(dateStr).split('-'), tp = String(timeStr || '00:00').split(':');
+    var y = +dp[0], mo = +dp[1], d = +dp[2], h = +tp[0] || 0, mi = +tp[1] || 0;
+    if (!y || !mo || !d) return '';
+    if (tz) {
+      try {
+        var fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        var wanted = Date.UTC(y, mo - 1, d, h, mi, 0);
+        var guess = wanted;
+        for (var i = 0; i < 3; i++) {   // two passes settle the offset, a third covers daylight-saving edges
+          var o = {}; fmt.formatToParts(new Date(guess)).forEach(function (p) { o[p.type] = +p.value; });
+          var shown = Date.UTC(o.year, o.month - 1, o.day, o.hour, o.minute, o.second);
+          guess += wanted - shown;
+        }
+        return new Date(guess).toISOString();
+      } catch (err) { /* unknown zone: fall through to the browser's zone */ }
+    }
+    var local = new Date(dateStr + 'T' + (timeStr || '00:00'));
+    return isNaN(local.getTime()) ? '' : local.toISOString();
+  }
+
   // Local-timezone YYYY-MM-DD for today -- used to default date pickers to
   // today instead of leaving them blank.
   function todayDateStr() {
@@ -4947,7 +4972,9 @@
     var startTime = el('input'); startTime.type = 'time'; startTime.value = state.seasonStartTime || '';
     startTime.addEventListener('input', function () { state.seasonStartTime = startTime.value; });
     requireField(startTime, requiredEls);
-    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time', startTime));
+    container.appendChild(fieldPairRow('Season Start Date', startDate, 'Event Start Time (' + (_rcTzAbbrev_(state.enteredTimeZone) || 'local') + ')', startTime));
+    // The zone these times are in, listed right after the time (the creating admin's own zone).
+    container.appendChild(el('div', 'rc-hint', 'All times are in ' + escapeHtml(_rcTzAbbrev_(state.enteredTimeZone) || 'your browser\'s time zone') + (state.enteredTimeZone ? ' (' + escapeHtml(state.enteredTimeZone.replace(/_/g, ' ')) + ')' : '') + '. Drivers see them converted to their own time zone.'));
 
     container.appendChild(wizSubhead('Format'));
     var byeWeeksInput = wizNumberInput(state.byeWeeks, function (v) { state.byeWeeks = v; }, { min: 0, max: maxByeDropForRaces(state.numRaces) });
@@ -5272,7 +5299,7 @@
         var evtStartTime = el('input'); evtStartTime.type = 'time'; evtStartTime.value = evt.startTime || '';
         evtStartTime.addEventListener('input', function () { evt.startTime = evtStartTime.value; });
         requireField(evtStartTime, requiredEls);
-        card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time', evtStartTime));
+        card.appendChild(fieldPairRow('Event Date', evtDate, 'Start Time (' + (_rcTzAbbrev_(state.enteredTimeZone) || 'local') + ')', evtStartTime));
 
         if (!evt.layout || trackLayoutOptions(evt.track).indexOf(evt.layout) === -1) {
           evt.layout = trackLayoutOptions(evt.track)[0];
@@ -5359,7 +5386,7 @@
     fmtPanel.appendChild(previewLine('Number Of Races', String(state.numRaces || 0)));
     fmtPanel.appendChild(previewLine('Drop Weeks Allowed', String(state.dropWeeks || 0)));
     fmtPanel.appendChild(previewLine('Special Events This Season', String(state.specialEventsCount || 0)));
-    fmtPanel.appendChild(previewLine('Season Start', (state.seasonStartDate || '(date not set)') + ' at ' + (state.seasonStartTime || '(time not set)')));
+    fmtPanel.appendChild(previewLine('Season Start', (state.seasonStartDate || '(date not set)') + ' at ' + (state.seasonStartTime ? (state.seasonStartTime + ' ' + (_rcTzAbbrev_(state.enteredTimeZone) || '')) : '(time not set)')));
     fmtPanel.appendChild(previewLine('Bonus Points', 'Pole +' + state.bonusPoints.pole + ' · Fastest Lap +' + state.bonusPoints.fastestLap + ' · Most Laps Led +' + state.bonusPoints.mostLapsLed));
     container.appendChild(fmtPanel);
 
@@ -5616,9 +5643,9 @@
 
     // Wired to the real backend (action=createSeason, handleCreateSeason in Seasons.gs).
     function localDateTimeToUtcIso(dateStr, timeStr) {
-      if (!dateStr) return '';
-      var d = new Date(dateStr + 'T' + (timeStr || '00:00'));
-      return isNaN(d.getTime()) ? '' : d.toISOString();
+      // Race times are entered in the time zone shown next to the time field (the creating admin's
+      // own zone, kept with the season when it is edited), not the browser's zone.
+      return wallTimeToUtcIso_(dateStr, timeStr, state.enteredTimeZone);
     }
 
     // Shared by finishWizard (createSeason) and finishEditWizard (updateSeason) -- both send the
