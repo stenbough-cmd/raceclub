@@ -233,6 +233,12 @@ function _rccCheckAccess() {
 
 function _rccApi(action, params, opts) {
   if (RCC.demo) return _rccDemoApi(action, params || {});
+  // An ended season loaded from its archived file answers its Race Recap from the same file.
+  if (action === 'champGetRoundResults' && RCC.archive && params) {
+    var ar = (RCC.archive.rounds || {})[params.roundId];
+    var arRes = ar && ar[params.kind || 'race'];
+    if (arRes) return Promise.resolve({ success: true, result: arRes });
+  }
   opts = opts || {};
   var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
   if (opts.post) {
@@ -245,6 +251,56 @@ function _rccApi(action, params, opts) {
     });
   }
   return fetchApi(action, { token: RCC.token, params: p, timeoutMs: opts.timeoutMs || RC_FETCH_TIMEOUT_MS_LONG });
+}
+
+// ---------------------------------------------------------------------
+// SEASON ARCHIVE (2026-10-20). An ended season is saved by the server as one JSON file in the Race
+// Club data repository on GitHub. For an ended season the server answers { archived, archiveUrl,
+// archivedAt, seasons, ... } instead of the whole page; the page reads the file, checks it is this
+// player's season in its latest version, and keeps the Race Recap rounds from it. Anything off (file
+// not published yet, an older copy, a network error) falls back to building the page from the sheet.
+// ---------------------------------------------------------------------
+var RCC_ARCHIVE_TIMEOUT_MS = 15000;
+
+function _rccLoadArchive(res) {
+  var url = String(res.archiveUrl || '');
+  if (!/^https:\/\/[^\s"'<>]+\.json$/.test(url)) return Promise.reject(new Error('bad archive url'));
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  var timer = ctl ? setTimeout(function () { ctl.abort(); }, RCC_ARCHIVE_TIMEOUT_MS) : null;
+  return fetch(url + '?v=' + encodeURIComponent(res.archivedAt || ''), {
+    cache: 'no-store', credentials: 'omit', mode: 'cors', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined
+  }).then(function (r) {
+    if (!r.ok) throw new Error('archive ' + r.status);
+    return r.json();
+  }).then(function (b) {
+    if (timer) clearTimeout(timer);
+    var a = b && b.archive;
+    if (!a || a.kind !== 'championship' || a.seasonId !== res.seasonId || a.archivedAt !== res.archivedAt ||
+        String(a.ownerId) !== String(RCC.ownerId) || !b.page || b.page.seasonId !== res.seasonId || !b.page.seasonEnded) {
+      throw new Error('archive mismatch');
+    }
+    var page = b.page;
+    // Always current: the season list, active-season flag and season number come from the server.
+    page.success = true;
+    page.seasons = res.seasons || page.seasons || [];
+    page.hasActiveSeason = !!res.hasActiveSeason;
+    if (res.seasonNumber) page.seasonNumber = res.seasonNumber;
+    page.build = res.build || page.build;
+    page.archivedAt = res.archivedAt;
+    RCC.archive = { seasonId: res.seasonId, rounds: (b.rounds && typeof b.rounds === 'object') ? b.rounds : {} };
+    return page;
+  }, function (err) { if (timer) clearTimeout(timer); throw err; });
+}
+
+// champGetPage, reading an ended season from its archived file when the server points to one.
+function _rccGetPage(seasonId) {
+  return _rccApi('champGetPage', { seasonId: seasonId }).then(function (res) {
+    if (!res || !res.success || !res.archived) { RCC.archive = null; return res; }
+    return _rccLoadArchive(res).catch(function () {
+      RCC.archive = null;
+      return _rccApi('champGetPage', { seasonId: seasonId || res.seasonId, noArchive: '1' });
+    });
+  });
 }
 
 // Server-side refusal -> the same redirects the page itself applies.
@@ -3031,7 +3087,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (revalidating) return;
     revalidating = true;
     var hadCopy = !!currentText;
-    _rccApi('champGetPage', { seasonId: _rccQuery('season') }).then(function (page) {
+    _rccGetPage(_rccQuery('season')).then(function (page) {
       if (_rccHandleAuthError(page)) return;
       if (page && page.success) {
         var text = JSON.stringify(page);
