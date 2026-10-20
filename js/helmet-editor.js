@@ -232,18 +232,16 @@
         if (keep) lpick.value = keep;
       }
       buildPicker();
-      var lvar = mk('select', 'rch-select-wide');
-      [['std', 'Standard logo'], ['black', 'Black version'], ['white', 'White version']].forEach(function (v) { var o = mk('option'); o.value = v[0]; o.textContent = v[1]; lvar.appendChild(o); });
       var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
         var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
         var n = kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
-          : { m: isM ? val : '', v: isM ? lvar.value : 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
+          : { m: isM ? val : '', v: 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
         R.logos.push(n); sel = n; draw();
       };
-      addRow.appendChild(lpick); addRow.appendChild(lvar); addRow.appendChild(addB);
+      addRow.appendChild(lpick); addRow.appendChild(addB);
       lg.appendChild(addRow);
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
       right.appendChild(lg);
@@ -344,10 +342,6 @@
           cw.appendChild(sw2);
           detail.appendChild(cw);
           if (sel.s === 'checker') cw.appendChild(mk('p', 'rch-hint', 'The checkered strip uses this color and white.'));
-        }
-        if (sel.m) {
-          var vsel = mk('select', 'rch-select-wide'); [['std', 'Standard logo'], ['black', 'Black version'], ['white', 'White version']].forEach(function (v) { var o = mk('option'); o.value = v[0]; o.textContent = v[1]; vsel.appendChild(o); });
-          vsel.value = sel.v || 'std'; vsel.onchange = function () { sel.v = vsel.value; draw(); }; opts.appendChild(vsel);
         }
         detail.appendChild(opts);
       }
