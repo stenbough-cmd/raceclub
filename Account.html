@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=6">
+<link rel="stylesheet" href="css/helmet.css?v=7">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -14,7 +14,7 @@
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=7"></script>
-<script src="js/helmet-editor.js?v=5"></script>
+<script src="js/helmet-editor.js?v=6"></script>
 </head>
 <body>
 
@@ -2840,8 +2840,8 @@
     var avatarRow = el('div', 'rc-helmet-edit-row');
     function drawHelmet() {
       avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
-      var link = el('a', 'rc-helmet-edit-link', 'Customize Helmet');
-      link.href = '#';
+      var link = el('button', 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
+      link.type = 'button';
       link.addEventListener('click', function (evt) {
         evt.preventDefault();
         rcHelmetCustomize_({ profile: profile, token: token, showModal: showModal, showToast: showToast, onChange: drawHelmet });
@@ -2850,6 +2850,7 @@
       rcHelmetHydrate_(avatarRow);
     }
     drawHelmet();
+    body.appendChild(el('h3', 'margin-top:0;font-size:15px;', 'Avatar'));
     body.appendChild(avatarRow);
 
     var form = el('form');

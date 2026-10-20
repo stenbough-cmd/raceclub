@@ -115,7 +115,7 @@
 
 /* player popup: preview wrapper with the restore arrow in its top right; text-color section */
 .rch-stagewrap { position: relative; }
-.rch-undo { position: absolute; top: 8px; right: 8px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--rc-silver); background: var(--rc-white); color: var(--rc-steel); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+.rch-undo { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--rc-silver); background: var(--rc-white); color: var(--rc-steel); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
 .rch-undo:hover:not(:disabled) { color: var(--rc-carbon); border-color: var(--rc-steel); }
 .rch-undo:disabled { opacity: 0.35; cursor: default; }
 
@@ -129,3 +129,14 @@
 .rch-assign > .rch-label { margin-top: 12px; }
 
 .rch-dim { opacity: 0.45; pointer-events: none; }
+
+/* restore arrow above the preview, right aligned */
+.rch-prevbar { display: flex; justify-content: flex-end; margin-bottom: 8px; min-height: 32px; }
+/* tooltip on the disabled "match my team" line (normal weight) */
+.rch-tipped { position: relative; }
+.rch-tipped::after { content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 6px); width: max-content; max-width: 260px; padding: 6px 10px; border-radius: 6px; background: var(--rc-carbon); color: #fff; font-size: 12px; font-weight: 400; line-height: 1.4; text-transform: none; letter-spacing: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease; z-index: 5; }
+.rch-tipped:hover::after, .rch-tipped:focus::after { opacity: 1; visibility: visible; }
+/* selected size button, blank row in the Give Helmet list, Logo Manager row in the designer */
+.rch-bgrow .rc-btn-secondary.rch-on { border-color: var(--rc-steel); color: var(--rc-carbon); background: var(--rc-offwhite); }
+.rch-gap { height: 14px; }
+.rch-lmrow { margin: 0 0 6px; }

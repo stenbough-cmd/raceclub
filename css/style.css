@@ -690,7 +690,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-header-hamburger-toggle:hover .rc-helmet-off,
 .rc-header-hamburger-toggle[aria-expanded="true"] .rc-helmet-off { opacity: 0.8; }
 .rc-header-hamburger-toggle { padding: 6px 8px; }
-.rc-helmet-edit-row { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 28px 0 22px; margin-bottom: 20px; }
+.rc-helmet-edit-row { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 14px 0 22px; margin-bottom: 20px; }
 .rc-helmet-edit-link {
   font-family: var(--rc-font-heading);
   font-size: 12.5px;

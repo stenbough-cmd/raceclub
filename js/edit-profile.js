@@ -141,8 +141,8 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var avatarRow = _rcEP_el('div', 'rc-helmet-edit-row');
   function drawHelmet() {
     avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
-    var link = _rcEP_el('a', 'rc-helmet-edit-link', 'Customize Helmet');
-    link.href = '#';
+    var link = _rcEP_el('button', 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
+    link.type = 'button';
     link.addEventListener('click', function (evt) {
       evt.preventDefault();
       rcHelmetCustomize_({ profile: profile, token: token, showModal: _rcEPShowModal, showToast: showToast, onChange: drawHelmet });
@@ -151,6 +151,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
     rcHelmetHydrate_(avatarRow);
   }
   drawHelmet();
+  body.appendChild(_rcEP_el('h3', 'margin-top:0;font-size:15px;', 'Avatar'));
   body.appendChild(avatarRow);
 
   var form = _rcEP_el('form');

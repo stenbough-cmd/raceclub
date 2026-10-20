@@ -14,8 +14,8 @@
   var KINDS = ['Website Default', 'Manufacturer', 'Special Event', 'Label', 'Other'];
   var KIND_HINTS = {
     'Website Default': 'The helmet drivers start with before they design their own. Only one exists: saving replaces the old one.',
-    'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer and class: saving replaces the old one.',
-    'Special Event': 'A helmet to give to members for a special event (use Manage Helmet Designs > Give to choose who).',
+    'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer and class.',
+    'Special Event': 'A helmet to give to members for a special event.',
     'Label': 'A helmet a member can earn as a label, such as a nickname or achievement.',
     'Other': 'Any other helmet, for example a season winner design. Give it to members from Manage Helmet Designs.'
   };
@@ -26,10 +26,13 @@
     if (html !== undefined) e.innerHTML = html;
     return e;
   }
+  var UNDO_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><polyline points="4 3.5 4 8.5 9 8.5"/></svg>';
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  var GROUPS = [['Drivers', 'All drivers (every tier: drivers, stewards, organizers and admins)'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
+  // Championship first, then a blank row, then the rest (a null entry is the blank row).
+  var GROUPS = [['Championship', 'Championship (single player members with a +)'], null, ['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
+  function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
   var SLIDERS = [['x', 'Left / right', 0, 1254, 1], ['y', 'Up / down', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -30, 30, 0.5]];
 
@@ -63,17 +66,34 @@
       grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
 
       /* ---------------- left: preview ---------------- */
+      var undoBar = mk('div', 'rch-prevbar');
+      var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
+      undoB.title = 'Restore the helmet to how it was when it was opened'; undoB.setAttribute('aria-label', undoB.title);
+      undoBar.appendChild(undoB); left.appendChild(undoBar);
       var stage = mk('div', 'rch-stage light');
       left.appendChild(stage);
       var bgRow = mk('div', 'rch-btns rch-bgrow');
       bgRow.appendChild(mk('span', 'rch-label', 'Backdrop'));
       ['light', 'grey', 'dark'].forEach(function (b) {
         var x = mk('button', 'rc-btn-secondary rc-btn-row', b === 'light' ? 'White' : (b === 'grey' ? 'Grey' : 'Dark')); x.type = 'button';
-        x.onclick = function () { stage.className = 'rch-stage ' + b; sizes.className = 'rch-sizes ' + b; };
+        x.onclick = function () { stage.className = 'rch-stage ' + b; };
         bgRow.appendChild(x);
       });
       left.appendChild(bgRow);
-      var sizes = mk('div', 'rch-sizes light'); left.appendChild(sizes);
+      // Size: shows the helmet at the avatar sizes used around the site (40, 72, 144 px) or full size.
+      var prevSize = 0;   // 0 = Full
+      var sizeRow = mk('div', 'rch-btns rch-bgrow');
+      sizeRow.appendChild(mk('span', 'rch-label', 'Size'));
+      [[40, '40px'], [72, '72px'], [144, '144px'], [0, 'Full']].forEach(function (z) {
+        var x = mk('button', 'rc-btn-secondary rc-btn-row' + (z[0] === 0 ? ' rch-on' : ''), z[1]); x.type = 'button';
+        x.onclick = function () {
+          prevSize = z[0];
+          [].forEach.call(sizeRow.querySelectorAll('button'), function (n) { n.classList.toggle('rch-on', n === x); });
+          draw();
+        };
+        sizeRow.appendChild(x);
+      });
+      left.appendChild(sizeRow);
       left.appendChild(mk('p', 'rch-hint', 'With a logo selected, click or drag on the helmet to move it.'));
 
       /* ---------------- right: save bar ---------------- */
@@ -123,16 +143,10 @@
       var status = mk('p', 'rch-status'); bar.appendChild(status);
       var btns = mk('div', 'rch-btns');
       var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
-      var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button';
-      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Load...'); loadBtn.type = 'button';
-      var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Start New'); newBtn.type = 'button';
-      btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(loadBtn); btns.appendChild(newBtn);
+      var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
+      btns.appendChild(saveBtn); btns.appendChild(manageBtn);
       bar.appendChild(btns);
-      var btns2 = mk('div', 'rch-btns');
-      var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Helmet Designs'); manageBtn.type = 'button';
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
-      btns2.appendChild(manageBtn); btns2.appendChild(logosBtn);
-      bar.appendChild(btns2);
       right.appendChild(bar);
 
       /* ---------------- right: style ---------------- */
@@ -188,7 +202,7 @@
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
       lg.appendChild(mk('div', 'rch-label', 'Logos and shapes (layers)'));
-      lg.appendChild(mk('p', 'rch-hint', 'The top of the list sits in front. Drag a row up or down, or use the arrows, to change which layer is on top.'));
+      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(logosBtn); lg.appendChild(lmRow);
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -346,8 +360,7 @@
         catRow.style.display = givable ? '' : 'none';
         if (givable && cur.category !== undefined && catSel.value !== '__new__') fillCats(cur.category || 'Awards');
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
-        status.innerHTML = cur.id ? ('Editing the saved helmet <strong>' + esc(cur.name) + '</strong>. Save updates it, Save as New makes a copy.') : 'This helmet has not been saved yet.';
-        saveNewBtn.style.display = cur.id ? '' : 'none';
+        status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
       }
 
       function syncControls() {
@@ -369,21 +382,14 @@
       function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
       function draw(quick) {
         syncControls();
+        undoB.disabled = snapshot() === baseline;
         if (!quick) { renderLayers(); renderDetail(); }
         if (busy) { again = true; lastQuick = !!quick; return; }
         busy = true;
-        var jobs = [H.render(R, { width: quick ? 560 : 760 }).then(function (cv) { put(stage, cv); if (!quick) renderLayers(cv.missingLogos); })];
-        var sz = [[40, '40'], [72, '72'], [144, '144']];
-        if (!quick) sz.forEach(function (s) { jobs.push(H.render(R, { width: s[0] * 2 })); });
-        Promise.all(jobs).then(function (res) {
-          if (!quick) {
-            sizes.innerHTML = '';
-            sz.forEach(function (s, i) {
-              var c = res[1 + i]; c.style.width = s[0] + 'px'; c.style.height = 'auto';
-              var w = mk('div'); w.appendChild(c); w.appendChild(mk('div', 'rch-lbl', s[1] + ' px')); sizes.appendChild(w);
-            });
-          }
-        }).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
+        // A small size is drawn at twice its size and shown at its size, the way the avatars around the site are.
+        var rw = prevSize ? prevSize * 2 : (quick ? 560 : 760);
+        var jobs = [H.render(R, { width: rw }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); if (!quick) renderLayers(cv.missingLogos); })];
+        Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
       }
 
       // click / drag on the preview moves the selected logo
@@ -401,85 +407,45 @@
       modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); });
 
       /* ---------------- save / load ---------------- */
-      function doSave(asNew) {
+      function doSave() {
         var name = (cur.name || '').trim();
         if (!name) { toast('Give the helmet a name first.', 'error'); nameIn.focus(); return; }
         if (cur.kind === 'Manufacturer' && (!cur.mfr || !cur.cls)) { toast('Choose a manufacturer and a class for a Manufacturer helmet.', 'error'); return; }
         var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
         var category = givable ? (catSel.value === '__new__' ? catNew.value.trim() : (catSel.value || 'Awards')) : '';
         if (givable && !category) { toast('Type a name for the new category, or pick an existing one.', 'error'); catNew.focus(); return; }
-        saveBtn.disabled = saveNewBtn.disabled = true;
+        saveBtn.disabled = true;
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: asNew ? '' : cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', carClass: cur.kind === 'Manufacturer' ? cur.cls : '', category: category, recipe: JSON.stringify(R) }
+          body: { presetId: cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', carClass: cur.kind === 'Manufacturer' ? cur.cls : '', category: category, recipe: JSON.stringify(R) }
         }).then(function (res) {
-          saveBtn.disabled = saveNewBtn.disabled = false;
+          saveBtn.disabled = false;
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
           cur.id = res.presetId; cur.name = name; cur.category = category;
           if (category && knownCats.indexOf(category) < 0) knownCats.push(category);
-          fillCats(category || 'Awards'); syncMeta();
+          fillCats(category || 'Awards'); syncMeta(); baseline = snapshot(); undoB.disabled = true;
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
-        }).catch(function () { saveBtn.disabled = saveNewBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
+        }).catch(function () { saveBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
       }
-      saveBtn.onclick = function () { doSave(false); };
-      saveNewBtn.onclick = function () { doSave(true); };
-      newBtn.onclick = function () { cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' }; R = H.normalizeRecipe(H.defaultRecipe()); sel = null; syncMeta(); draw(); };
+      saveBtn.onclick = function () { doSave(); };
+      // Restore arrow: puts the helmet back to how it was when it was opened (a blank helmet in a new
+      // designer, or the saved design as it was loaded).
+      var baseline = '';
+      function snapshot() { return JSON.stringify({ R: R, cur: { id: cur.id, name: cur.name, kind: cur.kind, mfr: cur.mfr, cls: cur.cls, category: cur.category } }); }
+      var baseState = null;
+      function setBase() { baseState = JSON.parse(snapshot()); baseline = snapshot(); }
+      undoB.onclick = function () {
+        R = H.normalizeRecipe(clone(baseState.R)); cur = clone(baseState.cur); sel = null;
+        nameIn.value = cur.name; fillCats(cur.category || 'Awards'); syncMeta(); draw();
+      };
 
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null;
         cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '', category: p.category || 'Awards' };
         if (cur.category && knownCats.indexOf(cur.category) < 0) knownCats.push(cur.category);
         fillCats(cur.category);
-        syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
+        syncMeta(); draw(); setBase(); undoB.disabled = true; toast('Loaded "' + p.name + '".', 'success');
       }
-      loadBtn.onclick = function () {
-        var lb = mk('div', 'rch-loadbody');
-        lb.appendChild(mk('p', 'rch-hint', 'Loading saved helmets...'));
-        var lm = ctx.showModal('Load Helmet', { bodyEl: lb, accentHead: true });
-        fetchApi('adminListHelmetPresets', { token: token }).then(function (res) {
-          lb.innerHTML = '';
-          if (!res || !res.success) { lb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
-          var list = res.presets || [];
-          if (!list.length) { lb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
-          KINDS.forEach(function (k) {
-            var rows = list.filter(function (p) { return p.kind === k; });
-            if (!rows.length) return;
-            lb.appendChild(mk('div', 'rch-label rch-mt', esc(k)));
-            rows.forEach(function (p) {
-              var row = mk('div', 'rch-loadrow');
-              var th = mk('div', 'rch-thumb'); row.appendChild(th);
-              H.render(p.recipe, { width: 140 }).then(function (cv) { th.appendChild(cv); }).catch(function () {});
-              var info = mk('div', 'rch-info');
-              info.appendChild(mk('div', 'rch-pname', esc(p.name)));
-              var sub = [p.manufacturer, p.carClass].filter(Boolean).join(' / ');
-              info.appendChild(mk('div', 'rch-psub', esc((sub ? sub + ' - ' : '') + (p.updatedAt ? 'saved ' + String(p.updatedAt).slice(0, 10) : ''))));
-              row.appendChild(info);
-              var act = mk('div', 'rch-btns');
-              var lo = mk('button', 'rc-btn-secondary rc-btn-row', 'Load'); lo.type = 'button';
-              lo.onclick = function () { loadPreset(p); lm.close(); };
-              var rm = mk('button', 'rc-btn-secondary rc-btn-row', 'Remove'); rm.type = 'button';
-              rm.onclick = function () {
-                act.innerHTML = '';
-                act.appendChild(mk('span', 'rch-psub', 'Remove it?'));
-                var yes = mk('button', 'rc-btn-primary rc-btn-sm rc-btn-row', 'Yes, remove'); yes.type = 'button';
-                var no = mk('button', 'rc-btn-secondary rc-btn-row', 'Keep'); no.type = 'button';
-                yes.onclick = function () {
-                  yes.disabled = true;
-                  fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Inactive' } }).then(function (r2) {
-                    if (r2 && r2.success) { row.remove(); toast('Removed. It is hidden, not deleted, so it can be restored in the sheet.', 'success'); if (cur.id === p.presetId) { cur.id = ''; syncMeta(); } }
-                    else { yes.disabled = false; toast((r2 && r2.message) || 'Could not remove it.', 'error'); }
-                  }).catch(function () { yes.disabled = false; toast('No answer from the server.', 'error'); });
-                };
-                no.onclick = function () { act.innerHTML = ''; act.appendChild(lo); act.appendChild(rm); };
-                act.appendChild(yes); act.appendChild(no);
-              };
-              act.appendChild(lo); act.appendChild(rm); row.appendChild(act);
-              lb.appendChild(row);
-            });
-          });
-        }).catch(function () { lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
-      };
-
       /* ---------------- shared bits for the manager popups ---------------- */
       function btn(label, cls) { var b = mk('button', cls || 'rc-btn-secondary rc-btn-row', label); b.type = 'button'; return b; }
       function renderThumb(host, recipe, w) { H.render(recipe, { width: w || 140 }).then(function (cv) { host.appendChild(cv); }).catch(function () {}); }
@@ -507,7 +473,7 @@
         var mb = mk('div', 'rch-loadbody');
         var mm = ctx.showModal('Manage Helmet Designs', { bodyEl: mb, wide: true, accentHead: true });
         function load() {
-          mb.innerHTML = ''; mb.appendChild(mk('p', 'rch-hint', 'Loading saved helmets...'));
+          mb.innerHTML = ''; mb.appendChild(spin('Loading...'));
           fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
@@ -572,8 +538,8 @@
       /* ---------------- Give a helmet to groups and members ---------------- */
       function openAssign(p, after) {
         var ab = mk('div', 'rch-assign');
-        ab.appendChild(mk('p', 'rch-hint', 'Loading...'));
-        var am = ctx.showModal('Give Helmet: ' + p.name, { bodyEl: ab, accentHead: true });
+        ab.appendChild(spin('Loading...'));
+        var am = ctx.showModal('Give Helmet', { bodyEl: ab, accentHead: true });
         Promise.all([fetchApi('adminListHelmetMembers', { token: token }), fetchApi('adminListHelmetGrants', { token: token, params: { presetId: p.presetId } })]).then(function (rr) {
           ab.innerHTML = '';
           var mres = rr[0], gres = rr[1];
@@ -583,21 +549,19 @@
           ab.appendChild(mk('p', 'rch-hint', 'Members who have this helmet will find it in their Design list under the category "' + esc(p.category || 'Awards') + '".'));
           ab.appendChild(mk('div', 'rch-label', 'Groups'));
           GROUPS.forEach(function (g) {
+            if (!g) { ab.appendChild(mk('div', 'rch-gap')); return; }
             var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!groupsOn[g[0]];
             cb.onchange = function () { groupsOn[g[0]] = cb.checked; };
             lab.appendChild(cb); lab.appendChild(mk('span', null, esc(g[1]))); ab.appendChild(lab);
           });
           ab.appendChild(mk('div', 'rch-label rch-mt', 'Individual members'));
           var q = mk('input', 'rch-input'); q.type = 'text'; q.placeholder = 'Search by name or username'; ab.appendChild(q);
-          var cnt = mk('p', 'rch-hint'); ab.appendChild(cnt);
           var listEl = mk('div', 'rch-memberlist'); ab.appendChild(listEl);
           function renderMembers() {
             var term = q.value.trim().toLowerCase(); listEl.innerHTML = '';
-            var n = Object.keys(profOn).filter(function (k) { return profOn[k]; }).length;
-            cnt.textContent = n + ' member' + (n === 1 ? '' : 's') + ' selected';
             (mres.members || []).filter(function (m) { return !term || (m.name + ' ' + m.username).toLowerCase().indexOf(term) >= 0; }).forEach(function (m) {
               var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!profOn[m.profileId];
-              cb.onchange = function () { profOn[m.profileId] = cb.checked; var n2 = Object.keys(profOn).filter(function (k) { return profOn[k]; }).length; cnt.textContent = n2 + ' member' + (n2 === 1 ? '' : 's') + ' selected'; };
+              cb.onchange = function () { profOn[m.profileId] = cb.checked; };
               lab.appendChild(cb); lab.appendChild(mk('span', null, esc(m.name) + ' <span class="rch-psub">' + esc(m.role) + (m.username ? ' - ' + esc(m.username) : '') + '</span>')); listEl.appendChild(lab);
             });
             if (!listEl.children.length) listEl.appendChild(mk('p', 'rch-hint', 'No members match.'));
@@ -609,7 +573,7 @@
             sv.disabled = true;
             fetchApi('adminSaveHelmetGrants', { method: 'POST', token: token, body: {
               presetId: p.presetId,
-              groups: JSON.stringify(GROUPS.map(function (g) { return g[0]; }).filter(function (g) { return groupsOn[g]; })),
+              groups: JSON.stringify(GROUPS.filter(Boolean).map(function (g) { return g[0]; }).filter(function (g) { return groupsOn[g]; })),
               profiles: JSON.stringify(Object.keys(profOn).filter(function (k) { return profOn[k]; }))
             } }).then(function (r) {
               if (r && r.success) { toast('Saved who has "' + p.name + '".', 'success'); am.close(); if (after) after(); }
@@ -627,7 +591,7 @@
         var lm = ctx.showModal('Logo Manager', { bodyEl: lb, wide: true, accentHead: true });
         var all = [];
         function load() {
-          lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'Loading logos...'));
+          lb.innerHTML = ''; lb.appendChild(spin('Loading...'));
           fetchApi('adminListHelmetLogos', { token: token }).then(function (res) {
             lb.innerHTML = '';
             if (!res || !res.success) { lb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
@@ -797,7 +761,7 @@
       }).catch(function () {});
 
       fillCats('Awards');
-      syncMeta(); draw();
+      syncMeta(); setBase(); draw();
     }
   }
 

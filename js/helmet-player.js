@@ -95,13 +95,15 @@
     var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
     grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
 
-    /* ---- preview (with the restore arrow in its top right corner) ---- */
+    /* ---- preview (the restore arrow sits above it, on the right) ---- */
+    var undoBar = mk('div', 'rch-prevbar');
+    var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
+    undoB.title = 'Restore my helmet to how it was when I opened this window'; undoB.setAttribute('aria-label', undoB.title);
+    undoBar.appendChild(undoB);
+    left.appendChild(undoBar);
     var wrap = mk('div', 'rch-stagewrap');
     var stage = mk('div', 'rch-stage light');
     wrap.appendChild(stage);
-    var undoB = mk('button', 'rch-undo', UNDO_SVG); undoB.type = 'button';
-    undoB.title = 'Restore my helmet to how it was when I opened this window'; undoB.setAttribute('aria-label', undoB.title);
-    wrap.appendChild(undoB);
     left.appendChild(wrap);
     var bgRow = mk('div', 'rch-btns rch-bgrow');
     bgRow.appendChild(mk('span', 'rch-label', 'Backdrop'));
@@ -195,7 +197,10 @@
     opts.appendChild(teamLab);
     if (!teamRecipe) {
       teamBox.disabled = true; teamLab.classList.add('off');
-      opts.appendChild(mk('p', 'rch-hint', (info && info.hasTeam === false) ? 'Join a team this season to turn this on.' : 'No team helmet has been set up for your car yet.'));
+      // The reason shows as a tooltip while hovering the checkbox line (normal weight text).
+      teamLab.classList.add('rch-tipped');
+      teamLab.setAttribute('data-tip', (info && info.hasTeam === false) ? 'Join a team this season to turn this on.' : 'No team helmet has been set up for your car yet.');
+      teamLab.tabIndex = 0;
     }
     teamBox.checked = teamOn;
     teamBox.onchange = function () { teamOn = teamBox.checked && !!teamRecipe; draw(); };
