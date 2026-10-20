@@ -1187,3 +1187,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
    the best lap in the Driver Report's pace chart. */
 .rcc-laps-row .rcc-laps-fastest { color: #8150c0; font-weight: 800; }
 .rcc-laps-row .rcc-laps-fastsec { color: #8150c0; }
+/* Race Recap on phones: each class table pans sideways with a finger. This used to come from league.css
+   (.rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto }), which the League page dropped for its own
+   scroll wrappers on 2026-10-19, so the Championship recap keeps its own copy (Matt, 2026-10-20). */
+@media (max-width: 640px) {
+  .rcc-page .rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
