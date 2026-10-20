@@ -776,6 +776,29 @@ function _rccSeasonFormat(page, body) {
   group('Race Rules', [rules]);
 }
 
+// Each class's highlights for one race: header, podium and highlight cards. Shared by Last Race and
+// the Race Recap's Highlights page (Matt, 2026-10-19).
+function _rccHighlightBlocks(page, r, body) {
+  (r.classes || []).forEach(function (cls) {
+    var w = _rccEl('div', 'rcl-lr-class');
+    var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
+    h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + r.roundNum + (r.track ? ' AT ' + r.track.toUpperCase() : '')));
+    w.appendChild(h);
+    w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
+    if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
+    body.appendChild(w);
+  });
+}
+
+// Race Recap > Highlights: the Last Race container for the chosen round.
+function _rccHighlightsBody(result, el) {
+  el.innerHTML = '';
+  if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'The highlights appear once this round\u2019s race results are uploaded.')); return; }
+  var wrap = _rccEl('div', 'rcc-recap-highlights');
+  _rccHighlightBlocks(RCC.page, result, wrap);
+  el.appendChild(wrap);
+}
+
 function rccRenderLastRace(page) {
   var body = document.getElementById('rcl-last-race');
   var titleEl = document.getElementById('rcl-last-race-title');
@@ -809,15 +832,7 @@ function rccRenderLastRace(page) {
   var r = page.lastRace;
   // (The Race Recap button in this header was removed, Matt 2026-10-13. RACE RECAP on the round's
   // calendar card opens the same recap.)
-  (r.classes || []).forEach(function (cls) {
-    var w = _rccEl('div', 'rcl-lr-class');
-    var h = _rccText('div', 'rcl-standings-class-header', cls.className.toUpperCase() + ' HIGHLIGHTS');
-    h.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FROM ROUND ' + r.roundNum + (r.track ? ' AT ' + r.track.toUpperCase() : '')));
-    w.appendChild(h);
-    w.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
-    if ((cls.headlineMentions || []).length) w.appendChild(_rccMentions(cls.headlineMentions));
-    body.appendChild(w);
-  });
+  _rccHighlightBlocks(page, r, body);
   // (The "Your Result" line under the highlights was removed, Matt 2026-10-09.)
   // Footer under a gray line: opens this round's Race Recap (Matt, 2026-10-17).
   var foot = _rccEl('div', 'rcl-results-bottom-row rcc-lr-footer');
@@ -1656,6 +1671,7 @@ function rccOpenResults(roundId, kind) {
   kindSel.className = 'rcl-allresults-session-select';
   kindSel.appendChild(new Option('Race', 'race'));
   kindSel.appendChild(new Option('Qualifying', 'qualifying'));
+  kindSel.appendChild(new Option('Highlights', 'highlights'));
   kindSel.appendChild(new Option('Driver Report', 'driver'));
   kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
@@ -1669,10 +1685,10 @@ function rccOpenResults(roundId, kind) {
   // its data is on screen (Matt).
   function busy(on) { sel.disabled = on; kindSel.disabled = on; }
   function load() {
-    // Driver Report and Race Details come from the same race result as the Race page.
-    var apiKind = kindSel.value === 'driver' || kindSel.value === 'details' ? 'race' : kindSel.value;
+    // Highlights, Driver Report and Race Details come from the same race result as the Race page.
+    var apiKind = kindSel.value === 'driver' || kindSel.value === 'details' || kindSel.value === 'highlights' ? 'race' : kindSel.value;
     var key = sel.value + ':' + apiKind;
-    var builder = { qualifying: _rccQualifyingBody, mylaps: _rccMyLapsBody, driver: _rccDriverReportBody, details: _rccRaceDetailsBody }[kindSel.value] || _rccRaceBody;
+    var builder = { qualifying: _rccQualifyingBody, mylaps: _rccMyLapsBody, driver: _rccDriverReportBody, details: _rccRaceDetailsBody, highlights: _rccHighlightsBody }[kindSel.value] || _rccRaceBody;
     if (cache[key]) { builder(cache[key], out); return; }
     out.innerHTML = '';
     out.appendChild(_rccSpinner('Loading results...'));
