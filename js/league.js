@@ -1196,6 +1196,40 @@ function _rclRecapNameIcons_(awards, row) {
 
 // One sub-section per class: a top-3 podium-STAND graphic, then a 3-across row of "headline
 // mention" tiles sitting on the same row as the podium.
+// ONE shared builder for a race's per-class highlights (header bar, podium, headline-mention cards).
+// Used by BOTH the Last Race box (raceResult = hub.lastRace) and the Race Recap popup's Highlights
+// page (raceResult = that round's getPublicRoundResults payload, the same payload and cache entry
+// the Race page uses). Both shapes carry roundNum, track and classes[].standings/headlineMentions.
+// Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE.
+function _rclBuildRaceHighlightBlocks_(hub, raceResult, container) {
+  var r = raceResult || {};
+  // Name -> profile link lookup for the mention cards: the hub-wide index first, then this
+  // race's own standings (a past round can include drivers who are not in today's tables).
+  _rclIndexLastRaceNames_(hub);
+  (r.classes || []).forEach(function (c) {
+    (c.standings || []).forEach(function (row) {
+      if (row && row.name && row.profileId) _rclLastRaceNameToPid_[String(row.name).trim().toLowerCase()] = row.profileId;
+    });
+  });
+  (r.classes || []).forEach(function (cls) {
+    var clsWrap = _rclEl('div', 'rcl-lr-class');
+    // Same graphite header bar Current Standings uses, but reads "<CLASS> HIGHLIGHTS": the podium
+    // plus headline-mention story for the class, not a standings table.
+    var headerDiv = _rclEl('div', 'rcl-standings-class-header');
+    headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
+    if (r.roundNum || r.track) {
+      var fromBits = 'FROM ROUND ' + (r.roundNum || '') + (r.track ? (' AT ' + r.track.toUpperCase()) : '');
+      headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
+    }
+    clsWrap.appendChild(headerDiv);
+    clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
+    if ((cls.headlineMentions || []).length) {
+      clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
+    }
+    container.appendChild(clsWrap);
+  });
+}
+
 function _rclRenderLastRace_(hub) {
   var body = document.getElementById('rcl-last-race');
   if (!body) return;
@@ -1264,26 +1298,8 @@ function _rclRenderLastRace_(hub) {
 
   var r = hub.lastRace;
 
-  // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE.
-  (r.classes || []).forEach(function (cls) {
-    var clsWrap = _rclEl('div', 'rcl-lr-class');
-    // Same graphite header bar Current Standings uses, but reads "<CLASS> HIGHLIGHTS" here, not
-    // "STANDINGS" -- this section isn't a standings table any more (that's the plain POS/DRIVER/PTS
-    // row list Current Standings itself shows), it's the podium + headline-mention story for the
-    // class, so "HIGHLIGHTS" reads more accurately than reusing "STANDINGS".
-    var headerDiv = _rclEl('div', 'rcl-standings-class-header');
-    headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
-    if (r.roundNum || r.track) {
-      var fromBits = 'FROM ROUND ' + (r.roundNum || '') + (r.track ? (' AT ' + r.track.toUpperCase()) : '');
-      headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' ' + fromBits));
-    }
-    clsWrap.appendChild(headerDiv);
-    clsWrap.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
-    if ((cls.headlineMentions || []).length) {
-      clsWrap.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
-    }
-    body.appendChild(clsWrap);
-  });
+  // Same per-class highlights blocks the Race Recap popup's Highlights page draws (one shared function).
+  _rclBuildRaceHighlightBlocks_(hub, r, body);
 
   // Footer under a line: opens the Race Recap popup on this race. hub.lastRace carries no roundId, so the
   // round is matched by round number against hub.resultsRounds (falls back to the popup's default round).
@@ -1702,6 +1718,16 @@ function _rclFormatAvgSpeed_(row, trackLengthMeters) {
 
 // Renders one round's full result data (from handleGetPublicRoundResults) into `bodyEl` -- the
 // popup's own content area, rebuilt fresh every time the round dropdown changes.
+// Race Recap popup, "Highlights" page: the chosen round's Last Race view.
+function _rclBuildHighlightsBody_(hub, result, bodyEl) {
+  bodyEl.innerHTML = '';
+  if (!result || !(result.classes || []).length) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
+    return;
+  }
+  _rclBuildRaceHighlightBlocks_(hub, result, bodyEl);
+}
+
 function _rclBuildAllResultsBody_(result, bodyEl) {
   bodyEl.innerHTML = '';
   if (!result || !(result.classes || []).length) {
@@ -2042,6 +2068,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   sessionSelect.className = 'rcl-allresults-session-select';
   sessionSelect.appendChild(new Option('Race', 'race'));
   sessionSelect.appendChild(new Option('Qualifying', 'qualifying'));
+  sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.value = 'race';
   selectRow.appendChild(sessionSelect);
   body.appendChild(selectRow);
@@ -2062,9 +2089,14 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   }
 
   function loadRound(roundId, sessionKind) {
-    var cacheKey = roundId + ':' + sessionKind;
+    // Highlights reuses the Race page's data: same endpoint, same cache entry ('race'), only the
+    // drawing differs.
+    var isHighlights = sessionKind === 'highlights';
+    var dataKind = isHighlights ? 'race' : sessionKind;
+    var cacheKey = roundId + ':' + dataKind;
     var isQualifying = sessionKind === 'qualifying';
-    var builder = isQualifying ? _rclBuildQualifyingBody_ : _rclBuildAllResultsBody_;
+    var builder = isQualifying ? _rclBuildQualifyingBody_
+      : (isHighlights ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); } : _rclBuildAllResultsBody_);
     if (Object.prototype.hasOwnProperty.call(resultCache, cacheKey)) {
       builder(resultCache[cacheKey], resultsWrap);
       return;
