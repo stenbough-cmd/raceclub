@@ -3928,7 +3928,7 @@
         });
       });
     } else {
-      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- a protest can be filed from the moment a round starts until 24 hours after it, and no round is inside that window for you.');
+      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
     }
     actionRow.appendChild(fileBtn);
     container.appendChild(actionRow);
@@ -4155,9 +4155,6 @@
       // handed in here so buildProtestFormFields renders it as its own full-width row, ahead of the
       // Driver Involved / Lap Number row.
       fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {}, wizField('Race', roundSelect, null));
-      if (round.resultsImported === false) {
-        fieldsContainer.appendChild(el('div', 'rc-hint', 'Results are not posted yet, so the driver list shows everyone registered this season and any lap number can be chosen.'));
-      }
     }
     populateForRound(rounds[0].roundId);
     roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
@@ -6509,7 +6506,7 @@
               if (!windowStillOpen) { startFinalize(); return; }
               var closes = data.windowDeadlineIso ? new Date(data.windowDeadlineIso).toLocaleString() : 'in 24 hours';
               openConfirmModal('Protest Window Still Open',
-                'It has not been 24 hours yet since this round started. The protest window closes ' + closes + '. Finalizing now ends it early and no more protests can be filed for this round. Are you sure?',
+                'It has not been 24 hours yet since the race results were uploaded. The protest window closes ' + closes + '. Finalizing now ends it early and no more protests can be filed for this round. Are you sure?',
                 'Finalize Anyway', startFinalize);
             });
           });

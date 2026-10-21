@@ -85,7 +85,7 @@ var RULEBOOK_SECTIONS = [
       '<p>There is no live steward commentary or in-race intervention. All of the above are assessed after the fact, via replay and driver reports, and penalties are applied to the final classification (see Section 5).</p>' +
       '<h4>4.5 Incident Reporting (Protests)</h4>' +
       '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved. The other driver is always required, even on a self-report.</p>' +
-      '<ul><li>A protest can be filed once the round’s scheduled start time has passed, and up to 24 hours after that start. Results do not need to be posted first: if you remember the incident, you can file it right away.</li>' +
+      '<ul><li>A protest can be filed once the round’s Qualify and Race results have been uploaded, and must be filed within 24 hours of the Race results being posted.</li>' +
       '<li>Each driver can file up to 2 protests per race. A withdrawn protest still counts toward that limit.</li>' +
       '<li>A protest can be edited or withdrawn any time before a steward rules on it, or before the round’s results are finalized.</li></ul>' +
       '<p><strong>Self-reports.</strong> A driver can report themself for an avoidable collision they caused, using the “Avoidable Collision (Self Report)” type. The other driver involved must still be named. If the Steward Board upholds a self-report, the penalty lands on the driver who filed it and is one tier lower than the tier it would otherwise receive (never lower than Tier 1).</p>' +
@@ -167,10 +167,10 @@ var RULEBOOK_SECTIONS = [
         '</td></tr>' +
       '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
       '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
-      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window (24 hours after its scheduled start) has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
+      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window (24 hours after its results were posted) has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
       '<tr><td><strong>Preliminary Results</strong></td><td>A round’s results as posted right after the race: still open to protests, corrections, or rulings until they’re locked in as Finalized Results.</td></tr>' +
       '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
-      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, filed from the round’s start until 24 hours after it, and reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
+      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, filed within 24 hours of the Race results being posted, and reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
       '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
       '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
       '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
