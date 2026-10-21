@@ -170,9 +170,9 @@
 
 /* ---- League Hub Driver Reports page: white card, driver block + driver dropdown row ---- */
 .rcl-dr-light { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; }
-.rcl-dr-top { display: flex; align-items: center; gap: 16px; justify-content: space-between; margin: 0 0 14px; }
+.rcl-dr-top { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; margin: 0 0 14px; }
 .rcl-dr-top .rcr-report-who { flex: 1 1 auto; min-width: 0; margin: 0; }
-.rcl-dr-pick { flex: none; display: flex; flex-direction: column; gap: 4px; width: 315px; max-width: 100%; margin-left: auto; }
+.rcl-dr-pick { flex: none; display: flex; flex-direction: column; width: 315px; max-width: 100%; margin-left: auto; }
 .rcl-dr-pick-label { font-family: var(--rc-font-heading); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-steel); }
 .rcl-dr-pick select { width: 100%; height: 38px; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: normal; background-color: #fff; color: #171717; border: 1px solid #D8DDE1; border-radius: 4px; }
 .rcl-dr-light .rcr-report { margin-top: 8px; }

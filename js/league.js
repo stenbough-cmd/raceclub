@@ -1924,9 +1924,9 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
   top.appendChild(whoHost);
 
   var pickWrap = _rclEl('div', 'rcl-dr-pick');
-  pickWrap.appendChild(_rclEl('label', 'rcl-dr-pick-label', 'Driver'));
   var sel = document.createElement('select');
-  sel.setAttribute('aria-label', 'Driver');
+  sel.setAttribute('aria-label', 'Choose a driver');
+  sel.appendChild(new Option('Choose a driver', ''));
   var byClass = {}, order = [];
   drivers.forEach(function (d) {
     if (!byClass[d.carClass]) { byClass[d.carClass] = []; order.push(d.carClass); }
@@ -1950,12 +1950,12 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
   el.appendChild(card);
 
   function draw(profileId) {
-    var d = drivers.filter(function (x) { return x.profileId === profileId; })[0] || drivers[0];
     var my = ++_rclDriverReportToken_;
-    _rclDriverReportPick_[roundId] = d.profileId;
     whoHost.innerHTML = '';
-    whoHost.appendChild(_rclDriverReportWho_(hub, d, null));
     reportHost.innerHTML = '';
+    var d = drivers.filter(function (x) { return x.profileId === profileId; })[0];
+    if (!d) { reportHost.appendChild(_rclEmptyState('Choose A Driver', 'Pick a driver above to see their report for this round.')); return; }
+    whoHost.appendChild(_rclDriverReportWho_(hub, d, null));
     var key = d.profileId + '|' + roundId;
     function show(res) {
       if (my !== _rclDriverReportToken_) return;
@@ -1982,11 +1982,10 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
     }).catch(function () { sel.disabled = false; });
   }
 
-  var start = _rclDriverReportPick_[roundId];
-  if (!start || !drivers.some(function (x) { return x.profileId === start; })) start = drivers[0].profileId;
-  sel.value = start;
+  // Always opens on "Choose a driver".
+  sel.value = '';
   sel.addEventListener('change', function () { draw(sel.value); });
-  draw(start);
+  draw('');
 }
 
 // Race Report page of the Race Recap: the lap-by-lap report, then Penalties Assessed (steward
