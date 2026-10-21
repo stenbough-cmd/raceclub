@@ -12,7 +12,7 @@
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
   function tx(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; e.textContent = text == null ? '' : String(text); return e; }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function num(v, d) { return v === null || v === undefined || isNaN(v) ? '--' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
   function saveLocal(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { /* storage blocked: fine */ } }
   function readLocal(key) { try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
@@ -472,16 +472,22 @@
         return;
       }
       raceSel.disabled = false;
+      raceSel.appendChild(new Option('Choose a round', ''));
       rounds.forEach(function (r) {
         raceSel.appendChild(new Option('Round ' + r.roundNum + ' - ' + (r.eventName || 'Race') + (r.track ? ': ' + r.track : '') + (r.dnp ? ' (did not start)' : '') + (fmtDate(r.startUtc) ? ' (' + fmtDate(r.startUtc) + ')' : ''), r.roundId));
       });
+      raceSel.value = '';
       drawRace();
     }
 
     function drawRace() {
       var my = ++token;
       raceHost.innerHTML = '';
-      if (!raceSel.value) return;
+      if (!raceSel.value) {
+        detailsHost.innerHTML = '';
+        raceHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
+        return;
+      }
       var curSeason = seasons[Number(seasonSel.value)];
       var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
       drawDetails(detailsHost, curSeason, curRound);

@@ -1954,7 +1954,7 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
     whoHost.innerHTML = '';
     reportHost.innerHTML = '';
     var d = drivers.filter(function (x) { return x.profileId === profileId; })[0];
-    if (!d) { reportHost.appendChild(_rclEmptyState('Choose A Driver', 'Pick a driver above to see their report for this round.')); return; }
+    if (!d) { reportHost.appendChild(_rclEmptyState('No Data To Display', 'Choose a driver above to see their report for this round.')); return; }
     whoHost.appendChild(_rclDriverReportWho_(hub, d, null));
     var key = d.profileId + '|' + roundId;
     function show(res) {
@@ -1963,7 +1963,7 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
       if (!res || !res.success) { reportHost.appendChild(_rclEmptyState('Driver Report Unavailable', (res && res.message) || 'Could not load this report right now.')); return; }
       var rep = null;
       try { rep = res.driverReport ? _rccDriverReport(res.driverReport) : null; } catch (err) { rep = null; }
-      if (!rep) { reportHost.appendChild(_rclEmptyState('No Driver Report', 'There is no lap data for this driver in this round.')); return; }
+      if (!rep) { reportHost.appendChild(_rclEmptyState('No Data To Display', 'There is no lap data for this driver in this round.')); return; }
       whoHost.innerHTML = '';
       whoHost.appendChild(_rclDriverReportWho_(hub, d, res.driverReport));
       reportHost.appendChild(rep);
