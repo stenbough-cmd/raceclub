@@ -2659,11 +2659,11 @@ body.rc-league-page .rcl-load-error-btn:disabled { opacity: 0.6; cursor: default
 
 /* Season picker at the right end of the navbar (League Hub). Looks like the site's default dropdown
    (style.css: white, silver border, 14px body font) and matches the Championship's; only the position
-   and size are set here. margin-top 0 undoes style.css's 4px so it sits centered in the bar. */
+   and size are set here (315px wide). margin-top 0 undoes style.css's 4px so it sits centered in the bar. */
 body.rc-league-page .rcl-navbar-season {
   margin: 0 0 0 auto;
   align-self: center;
-  width: 210px;
+  width: 315px;
   max-width: 100%;
   min-width: 0;
   height: 38px;
