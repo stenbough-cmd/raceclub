@@ -1298,6 +1298,8 @@ function rccRenderStandings(page) {
   if (mfr && host.contains(mfr)) host.parentNode.insertBefore(mfr, host.nextSibling);
   host.innerHTML = '';
   if (!page || !page.hasSeason) return;
+  // No standings boards at all until a round has results (Matt, 2026-10-20): hidden without a word.
+  if (!(page.roundsCompleted > 0)) return;
   var classes = _rccSortClasses((page.standings.drivers || []).map(function (c) { return c.className; }), function (c) { return c; });
   classes.forEach(function (className) {
     // Above each class board: Manufacturers' Standings (Hypercar) or Team Endurance Trophy (others).
