@@ -567,7 +567,8 @@ function rccRenderActionBar(page) {
     var sel = document.createElement('select');
     sel.className = 'rcc-actionbar-season';
     sel.setAttribute('aria-label', 'Season');
-    page.seasons.forEach(function (s) { sel.appendChild(new Option(_rccSeasonLabel(s), s.seasonId)); });
+    // All caps (Matt, 2026-10-20), set in the text itself: browsers ignore text-transform on options.
+    page.seasons.forEach(function (s) { sel.appendChild(new Option(_rccSeasonLabel(s).toUpperCase(), s.seasonId)); });
     sel.value = page.seasonId || page.seasons[0].seasonId;
     sel.addEventListener('change', function () {
       if (RCC.onSeasonPick) RCC.onSeasonPick(sel.value);
