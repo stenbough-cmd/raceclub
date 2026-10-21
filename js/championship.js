@@ -942,7 +942,7 @@ function rccRenderLastRace(page) {
   // (The "Your Result" line under the highlights was removed, Matt 2026-10-09.)
   // Footer under a gray line: opens this round's Race Recap (Matt, 2026-10-17).
   var foot = _rccEl('div', 'rcl-results-bottom-row rcc-lr-footer');
-  var link = _rccText('a', 'rcc-lr-footer-link', 'See The Full Race Recap And Driver Report');
+  var link = _rccText('a', 'rcc-lr-footer-link', 'See The Full Race Recap And Driver Report \u2192');
   link.href = 'javascript:void(0)';
   link.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
   foot.appendChild(link);
