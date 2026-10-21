@@ -1988,9 +1988,9 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
   draw('');
 }
 
-// Race Report page of the Race Recap: the lap-by-lap report, then Penalties Assessed (steward
-// penalties) when the round has any. Uses the same round payload as the Race Results page.
-// In-game Drive Thrus and Stop and Gos are lines inside the report itself (clause kind 'penalty').
+// Race Report page of the Race Recap: the lap-by-lap report. Uses the same round payload as the
+// Race Results page. In-game Drive Thrus and Stop and Gos are lines inside the report itself
+// (clause kind 'penalty'); they and the steward penalties are also listed on the Penalties page.
 function _rclBuildRaceReportBody_(result, bodyEl) {
   bodyEl.innerHTML = '';
   if (!result || !(result.classes || []).length) {
@@ -2079,31 +2079,83 @@ function _rclBuildRaceReportBody_(result, bodyEl) {
     bodyEl.appendChild(reportSection);
   }
 
-  // Penalties Assessed -- this round's Adjustments, resolved to driver names. This is the one and
-  // only place a round's penalties render on the League Hub.
-  // Shown only when the round has penalties, under the report, with the same metal header bar.
-  var penalties = result.penalties || [];
-  if (penalties.length) {
-    var penSection = _rclEl('div', 'rcl-race-class');
-    penSection.appendChild(_rclRecapHeader_('Penalties Assessed', result));
-    penalties.forEach(function (p) {
-      var row = _rclEl('div', 'rcl-report-lap');
-      // "Pre"/"Post" or "Lap N" for a normal numeric lap; "-" for a pre-existing Adjustments row
-      // from before LapNumber was tracked.
-      var lapVal = p.lapNumber;
-      var posLabel = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' :
-        (lapVal ? ('Lap ' + lapVal) : '-');
-      row.appendChild(_rclEl('div', 'rcl-report-lap-num', posLabel));
-      var textWrap = _rclEl('div', 'rcl-report-lap-text');
-      var lineEl = _rclEl('p', 'rcl-report-line');
-      if (p.carClass) lineEl.appendChild(_rclClassPill_(p.carClass));
-      var name = (p.against && namesByProfileId[p.against]) || 'Unknown Driver';
-      var nameEl = document.createElement('span');
-      nameEl.className = 'rcl-report-name';
-      nameEl.textContent = name;
+  if (!report.length) {
+    bodyEl.appendChild(_rclEmptyState('No Race Report', 'No race report was recorded for that round.'));
+  }
+}
+
+// In-game penalties handed out during the race: the Race Report's 'penalty' clauses that start with
+// "handed" ("serves a ..." lines are the same penalty being served, so they are not listed).
+function _rclInGamePenalties_(result) {
+  var out = [];
+  (result && result.raceReport || []).forEach(function (entry) {
+    (entry.clauses || []).forEach(function (clause) {
+      if (clause && clause.kind === 'penalty' && /^handed/i.test(clause.text || '')) {
+        out.push({ lapNum: entry.lapNum, name: entry.name, carClass: entry.carClass, text: clause.text });
+      }
+    });
+  });
+  return out;
+}
+
+// True when the round has steward penalties or in-game penalties (decides if the Penalties page can be picked).
+function _rclRoundHasPenalties_(result) {
+  if (!result) return false;
+  return (result.penalties || []).length > 0 || _rclInGamePenalties_(result).length > 0;
+}
+
+// Penalties page of the Race Recap: in-game penalties handed out plus steward penalties
+// (Adjustments rows), in race order (Pre-race, lap by lap, Post-race).
+function _rclBuildPenaltiesBody_(result, bodyEl) {
+  bodyEl.innerHTML = '';
+  if (!result || !(result.classes || []).length) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No posted results for that round.'));
+    return;
+  }
+  var namesByProfileId = {};
+  (result.classes || []).forEach(function (c) {
+    (c.standings || []).forEach(function (row) { if (row && row.profileId) namesByProfileId[row.profileId] = row.name; });
+  });
+  var items = [];
+  _rclInGamePenalties_(result).forEach(function (g) {
+    items.push({ order: Number(g.lapNum) || 0, label: 'Lap ' + g.lapNum, game: g });
+  });
+  (result.penalties || []).forEach(function (p) {
+    var lapVal = p.lapNumber;
+    var label = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' : (lapVal ? ('Lap ' + lapVal) : '-');
+    var order = (lapVal === 'Pre-race') ? -1 : (lapVal === 'Post-race') ? 999999 : (lapVal ? (Number(lapVal) || 0) : 1000000);
+    items.push({ order: order, label: label, steward: p });
+  });
+  if (!items.length) {
+    bodyEl.appendChild(_rclEmptyState('No Penalties', 'No penalties were handed out in that race.'));
+    return;
+  }
+  items = items.map(function (it, i) { it.idx = i; return it; }).sort(function (x, y) { return (x.order - y.order) || (x.idx - y.idx); });
+  var section = _rclEl('div', 'rcl-race-class');
+  section.appendChild(_rclRecapHeader_('Penalties', result));
+  items.forEach(function (it) {
+    var row = _rclEl('div', 'rcl-report-lap');
+    row.appendChild(_rclEl('div', 'rcl-report-lap-num', it.label));
+    var textWrap = _rclEl('div', 'rcl-report-lap-text');
+    var lineEl = _rclEl('p', 'rcl-report-line');
+    var nameEl = document.createElement('span');
+    nameEl.className = 'rcl-report-name';
+    if (it.game) {
+      var g = it.game;
+      if (g.carClass) lineEl.appendChild(_rclClassPill_(g.carClass));
+      nameEl.textContent = g.name;
       lineEl.appendChild(nameEl);
-      // "Tier 3: Time Penalty (10s)", so pairing that as-is with the effect span produced a
-      // redundant "Time Penalty (10s) (+10s)".
+      lineEl.appendChild(document.createTextNode(' '));
+      var gs = document.createElement('span');
+      gs.className = 'rcl-report-clause-penalty';
+      gs.textContent = g.text;
+      lineEl.appendChild(gs);
+      lineEl.appendChild(document.createTextNode('.'));
+    } else {
+      var p = it.steward;
+      if (p.carClass) lineEl.appendChild(_rclClassPill_(p.carClass));
+      nameEl.textContent = (p.against && namesByProfileId[p.against]) || 'Unknown Driver';
+      lineEl.appendChild(nameEl);
       var tierInfo = (typeof penaltyTierByNumber === 'function') ? penaltyTierByNumber(p.penaltyTier) : null;
       var tierPhrase = tierInfo
         ? tierInfo.label.replace(/^Tier (\d+): /, 'Tier $1 ').replace(/\s*\([^)]*\)\s*$/, '')
@@ -2116,15 +2168,12 @@ function _rclBuildRaceReportBody_(result, bodyEl) {
       effectSpan.className = 'rcl-penalty-effect';
       effectSpan.textContent = '(' + _rclDescribePenaltyEffect_(p.effectType, p.effectSeconds) + ')';
       lineEl.appendChild(effectSpan);
-      textWrap.appendChild(lineEl);
-      row.appendChild(textWrap);
-      penSection.appendChild(row);
-    });
-    bodyEl.appendChild(penSection);
-  }
-  if (!report.length && !penalties.length) {
-    bodyEl.appendChild(_rclEmptyState('No Race Report', 'No race report was recorded for that round.'));
-  }
+    }
+    textWrap.appendChild(lineEl);
+    row.appendChild(textWrap);
+    section.appendChild(row);
+  });
+  bodyEl.appendChild(section);
 }
 
 // Qualifying tab of "All Results".
@@ -2233,13 +2282,17 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
-  // Order: Highlights, Race Results, Qualify Results, Driver Reports, Race Report.
+  // Order: Highlights, Race Results, Qualify Results, Driver Reports, Race Report, Penalties.
   // Race Results is the page the recap opens on.
   sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.appendChild(new Option('Race Results', 'race'));
   sessionSelect.appendChild(new Option('Qualify Results', 'qualifying'));
   sessionSelect.appendChild(new Option('Driver Reports', 'driver'));
   sessionSelect.appendChild(new Option('Race Report', 'report'));
+  // Penalties: greyed out until the round's race data shows at least one penalty (in-game or steward).
+  var penOpt = new Option('Penalties', 'penalties');
+  penOpt.disabled = true;
+  sessionSelect.appendChild(penOpt);
   sessionSelect.value = 'race';
   selectRow.appendChild(sessionSelect);
   body.appendChild(selectRow);
@@ -2259,6 +2312,33 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     sessionSelect.disabled = on;
   }
 
+  // Enables/greys the Penalties option from a round's race payload. If the Penalties page is open
+  // on a round with no penalties, falls back to Race Results (already cached, so instant).
+  function applyPenOption(roundId, result) {
+    if (select.value !== roundId) return;
+    var has = _rclRoundHasPenalties_(result);
+    penOpt.disabled = !has;
+    if (!has && sessionSelect.value === 'penalties') {
+      sessionSelect.value = 'race';
+      loadRound(select.value, 'race');
+    }
+  }
+  // On the Qualify page the race payload is not otherwise loaded: fetch it quietly (no spinner, no
+  // lock) just to decide whether Penalties can be picked.
+  function syncPenOption(roundId) {
+    var key = roundId + ':race';
+    if (Object.prototype.hasOwnProperty.call(resultCache, key)) { applyPenOption(roundId, resultCache[key]); return; }
+    penOpt.disabled = true;
+    var archived = _rclArchivedRoundPart_(roundId, false);
+    var req = archived ? Promise.resolve(archived)
+      : fetchApi('getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
+    req.then(function (res) {
+      var result = (res && res.success) ? res.result : null;
+      if (!Object.prototype.hasOwnProperty.call(resultCache, key)) resultCache[key] = result;
+      applyPenOption(roundId, resultCache[key]);
+    }, function () {}).catch(function () {});
+  }
+
   function loadRound(roundId, sessionKind) {
     // Highlights, Race Results, Driver Reports and Race Report all draw from the same race payload: one
     // getPublicRoundResults call and one cache entry ('race'); only Qualify Results has its own.
@@ -2268,9 +2348,12 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     var builder = isQualifying ? _rclBuildQualifyingBody_
       : (sessionKind === 'highlights' ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); }
       : (sessionKind === 'driver' ? function (res, el) { _rclBuildDriverReportBody_(hub, roundId, res, el); }
-      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_)));
+      : (sessionKind === 'penalties' ? _rclBuildPenaltiesBody_
+      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_))));
+    if (isQualifying) syncPenOption(roundId);
     if (Object.prototype.hasOwnProperty.call(resultCache, cacheKey)) {
       builder(resultCache[cacheKey], resultsWrap);
+      if (!isQualifying) applyPenOption(roundId, resultCache[cacheKey]);
       return;
     }
     resultsWrap.innerHTML = '';
@@ -2278,7 +2361,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // loader (.rcl-page-loader in league.html) and the Edit Profile popup on this same page
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : 'Loading round results...')))));
+    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : (sessionKind === 'penalties' ? 'Loading penalties...' : 'Loading round results...'))))));
     busy(true);
     // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
@@ -2293,6 +2376,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
       var result = (res && res.success) ? res.result : null;
       resultCache[cacheKey] = result;
       builder(result, resultsWrap);
+      if (!isQualifying) applyPenOption(roundId, result);
     }, function () {
       busy(false);
       builder(null, resultsWrap);
