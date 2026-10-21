@@ -485,6 +485,7 @@
       raceHost.innerHTML = '';
       if (!raceSel.value) {
         detailsHost.innerHTML = '';
+        detailsHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
         raceHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
         return;
       }
