@@ -224,23 +224,35 @@ var CAR_OBJECTIVE_DESCRIPTIONS = {
 // PROTESTS -- backs the driver-facing Protest submission page, the Dashboard's Protest card, and
 // League Management's EDIT (penalty-tier assessment) popup.
 
-var PROTEST_INFRACTION_TYPES = [
-  'Intentional Wrecking',
-  'Unsafe Rejoin',
-  'Avoidable Contact (Other Driver)',
-  'Avoidable Contact (Self Report)',
-  'Unsportsmanlike Behavior'
+// ONE shared infraction list: feeds the File/Edit Protest dropdown AND rulebook Section 5.2
+// (rulebook-content.js reads PROTEST_INFRACTIONS). Keep the names in sync with PROTEST_INFRACTION_TYPES_
+// in Protests.gs. 'group' is the rulebook heading each one sits under.
+var PROTEST_INFRACTIONS = [
+  { name: 'Avoidable Collision', group: 'Contact & driving standards', rule: 'causing contact that could reasonably have been avoided' },
+  { name: 'Unsafe Rejoin', group: 'Contact & driving standards', rule: 'returning to the track in a way that endangers another driver' },
+  { name: 'Blocking / Weaving', group: 'Contact & driving standards', rule: 'erratic defensive moves, especially under braking or on straights' },
+  { name: 'Blue Flag Violation', group: 'Procedural', rule: 'ignoring blue flags when being lapped' },
+  { name: 'Deliberate Retaliation', group: 'Conduct', rule: 'retaliating against another driver after an incident' },
+  { name: 'Unsportsmanlike Conduct', group: 'Conduct', rule: 'unsportsmanlike behavior on or off the track (chat, voice comms)' },
+  { name: 'Avoidable Collision (Self Report)', group: 'Self-report', rule: 'reporting yourself for an avoidable collision you caused (see Section 4.5)' }
 ];
+var PROTEST_INFRACTION_TYPES = PROTEST_INFRACTIONS.map(function (i) { return i.name; });
+
+// True for the current self-report type and the older name still stored on protests filed before
+// 2026-10-21.
+function isSelfReportInfraction(t) {
+  return t === 'Avoidable Collision (Self Report)' || t === 'Avoidable Contact (Self Report)';
+}
 
 // Race Club Rulebook.md Section 5.1 Penalty Tiers, mirrored here as data so the EDIT popup's
 // penalty-tier dropdown and its resulting time-penalty/ disqualification effect can never drift
 // from the published rulebook text.
 var PENALTY_TIERS = [
-  { tier: 1, label: 'Tier 1: Warning', effect: 'Logged only, no time or position impact', effectType: null, effectSeconds: 0 },
+  { tier: 1, label: 'Tier 1: Warning', effect: 'Logged on the driver\'s record, no time or position impact', effectType: 'Warning', effectSeconds: 0 },
   { tier: 2, label: 'Tier 2: Time Penalty', effect: '+5s added to final race time', effectType: 'Time', effectSeconds: 5 },
   { tier: 3, label: 'Tier 3: Time Penalty', effect: '+10s added to final race time', effectType: 'Time', effectSeconds: 10 },
-  { tier: 4, label: 'Tier 4: Drive-Through Equivalent', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
-  { tier: 5, label: 'Tier 5: Stop-and-Go Equivalent', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
+  { tier: 4, label: 'Tier 4: Time Penalty', effect: '+20s added to final race time', effectType: 'Time', effectSeconds: 20 },
+  { tier: 5, label: 'Tier 5: Time Penalty', effect: '+40s added to final race time', effectType: 'Time', effectSeconds: 40 },
   { tier: 6, label: 'Tier 6: Disqualification', effect: 'Removed from session results', effectType: 'DSQ', effectSeconds: 0 },
   // Suspension now also removes the driver from THIS race's own classification -- on top of sitting
   // out the rest of the season. Requires a prior Upheld Tier 6 for this driver this season

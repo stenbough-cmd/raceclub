@@ -1,4 +1,20 @@
 // Race Club — Rulebook content (js/rulebook-content.js)
+// Section 5.2's infraction list, built from the same PROTEST_INFRACTIONS list (reference-data.js) that
+// fills the File Protest dropdown, so the two can never drift apart.
+function _rcRulebookInfractionHtml_() {
+  if (typeof PROTEST_INFRACTIONS === 'undefined') return '';
+  var groups = [], byGroup = {};
+  PROTEST_INFRACTIONS.forEach(function (i) {
+    if (!byGroup[i.group]) { byGroup[i.group] = []; groups.push(i.group); }
+    byGroup[i.group].push(i);
+  });
+  return groups.map(function (g) {
+    return '<p><strong>' + g + '</strong></p><ul>' + byGroup[g].map(function (i) {
+      return '<li>' + i.name + ': ' + i.rule + '</li>';
+    }).join('') + '</ul>';
+  }).join('');
+}
+
 var RULEBOOK_SECTIONS = [
   {
     id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
@@ -69,33 +85,30 @@ var RULEBOOK_SECTIONS = [
       '<p>There is no live steward commentary or in-race intervention. All of the above are assessed after the fact, via replay and driver reports, and penalties are applied to the final classification (see Section 5).</p>' +
       '<h4>4.5 Incident Reporting (Protests)</h4>' +
       '<p>A driver can file a protest from the Dashboard’s Protests card. Filing one asks for the round, the lap it happened on (or Pre-race/Post-race), an infraction type, and the other driver involved. The other driver is always required, even on a self-report.</p>' +
-      '<ul><li>A protest must be filed within 24 hours of that round’s results being posted.</li>' +
+      '<ul><li>A protest can be filed once the round’s scheduled start time has passed, and up to 24 hours after that start. Results do not need to be posted first: if you remember the incident, you can file it right away.</li>' +
       '<li>Each driver can file up to 2 protests per race. A withdrawn protest still counts toward that limit.</li>' +
       '<li>A protest can be edited or withdrawn any time before a steward rules on it, or before the round’s results are finalized.</li></ul>' +
-      '<p>Once filed, a protest is reviewed and ruled on by the Steward Board. See Section 5.</p>'
+      '<p><strong>Self-reports.</strong> A driver can report themself for an avoidable collision they caused, using the “Avoidable Collision (Self Report)” type. The other driver involved must still be named. If the Steward Board upholds a self-report, the penalty lands on the driver who filed it and is one tier lower than the tier it would otherwise receive (never lower than Tier 1).</p>' +
+      '<p>The Steward Board (Stewards, Organizers and Admins) reviews each protest. Organizers and Admins make the final ruling. See Section 5.</p>'
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board rules on it and assigns a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
+    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board (Stewards, Organizers and Admins) reviews it. Organizers and Admins make the final ruling and assign a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
       '<table class="rc-rulebook-tier-table rc-rulebook-penalty-table"><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged only, no time or position impact</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (5s)</td><td>Added to final race time</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (10s)</td><td>Added to final race time</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Drive-Through Equivalent</td><td>+20s added to final race time</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Stop-and-Go Equivalent</td><td>+40s added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged on the driver’s record and shown on the Race Report, no time or position impact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (+5s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (+10s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Time Penalty (+20s)</td><td>Added to final race time</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Time Penalty (+40s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. The driver’s account is also suspended: they cannot log in until an Admin reactivates it, and they score no points for the rest of the season. Requires a prior Tier 6 disqualification against the same driver this season.</td></tr></table>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. The driver’s account is also suspended while the season runs: they cannot log in, and they score no points for the rest of the season. When the season ends, the account is reactivated automatically so the driver can return for the next one. Requires a prior Tier 6 disqualification against the same driver in the same season; that requirement starts over every season.</td></tr></table>' +
+      '<p>Steward penalties stack with penalties the game applies on its own (Section 4.3). A driver can receive both for the same incident, and a steward penalty is added on top of any in-game penalty.</p>' +
       '<h4>5.2 Infraction Types</h4>' +
-      '<p><strong>Contact &amp; driving standards</strong></p>' +
-      '<ul><li>Avoidable collision: causing contact that could reasonably have been avoided</li>' +
-      '<li>Unsafe rejoin: returning to the track in a way that endangers another driver</li>' +
-      '<li>Blocking/weaving: erratic defensive moves, especially under braking or on straights</li></ul>' +
-      '<p><strong>Procedural</strong></p><ul><li>Ignoring blue flags when being lapped</li></ul>' +
+      _rcRulebookInfractionHtml_() +
       '<p class="rc-hint"><em>Note: jump starts and formation lap conduct are automatically detected and enforced by LMU, no organizer/steward action required (see Section 4). These automatic calls are final and not subject to review.</em></p>' +
-      '<p><strong>Conduct</strong></p><ul><li>Deliberate retaliation after an incident</li><li>Post-incident unsportsmanlike behavior (chat, voice comms)</li></ul>' +
       '<p><strong>Eligibility</strong></p><ul><li>Wrong-class entry: a driver who signs up for and races in a class they aren’t eligible for is disqualified from that race and removed from the session (kicked); this is a Tier 6 (Disqualification) matter, not a graduated penalty.</li>' +
       '<li>Wrong-team/car entry: a driver who races a car or team seat other than the one they registered for is disqualified from that race and removed from the session (kicked); this is also a Tier 6 (Disqualification) matter, not a graduated penalty.</li></ul>' +
       '<h4>5.3 Example Incidents by Tier</h4>' +
@@ -107,7 +120,7 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Contact causing another driver to retire or lose significant time/positions</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Deliberate or reckless contact</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Intentional dangerous driving; deliberate race manipulation; severe unsporting conduct; wrong-class or wrong-team/car entry (driver removed from session)</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>A driver already disqualified (Tier 6) this season commits another serious offense, e.g. a second intentional wreck; serious off-track conduct violations following a prior disqualification</td></tr></table>'
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>A driver already disqualified (Tier 6) this season commits another serious offense, e.g. a second act of deliberate retaliation; serious off-track conduct violations following a prior disqualification</td></tr></table>'
   },
   {
     id: 'race-control', num: '6', title: 'Race Control Procedures',
@@ -154,17 +167,18 @@ var RULEBOOK_SECTIONS = [
         '</td></tr>' +
       '<tr><td><strong>Countback</strong></td><td>The tie-break method used in the standings: compares drivers’ best finishes head to head.</td></tr>' +
       '<tr><td><strong>Drop Week</strong></td><td>A per-season setting that drops a driver’s lowest-scoring round(s) from their championship point total once enough rounds are complete (see Section 7).</td></tr>' +
-      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
+      '<tr><td><strong>Finalized Results</strong></td><td>A round whose protest window (24 hours after its scheduled start) has closed, whose protests have all been ruled on, and whose results are locked in. Finalized results can no longer be protested, erased, or changed.</td></tr>' +
       '<tr><td><strong>Preliminary Results</strong></td><td>A round’s results as posted right after the race: still open to protests, corrections, or rulings until they’re locked in as Finalized Results.</td></tr>' +
       '<tr><td><strong>Private Qualifying</strong></td><td>A qualifying format where each driver sets their lap time independently, not on track with the rest of the grid at once.</td></tr>' +
-      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
+      '<tr><td><strong>Protest</strong></td><td>A driver-submitted report of an on-track incident, filed from the round’s start until 24 hours after it, and reviewed by the Steward Board (Sections 4.5 and 5).</td></tr>' +
       '<tr><td><strong>Public Qualifying</strong></td><td>A qualifying format where every driver qualifies together on track at the same time.</td></tr>' +
       '<tr><td><strong>Round</strong></td><td>One scheduled race weekend within a season: Practice, then Qualifying, then the Race.</td></tr>' +
       '<tr><td><strong>Seat</strong></td><td>A driver’s registered car and team for a season. Seats are first-come, first-served and lock in once claimed.</td></tr>' +
       '<tr><td><strong>Season</strong></td><td>A defined period of racing with its own calendar, standings, and registrations, from an opening round through its final round.</td></tr>' +
       '<tr><td><strong>Special Event</strong></td><td>An exhibition (“fun”) round on the calendar that never affects championship standings, drop weeks, or missed-race counts.</td></tr>' +
       '<tr><td><strong>Steward</strong></td><td>A league role that can view every filed protest on the Stewarding page and discuss them with the other stewards in the Stewards chat on Discord. Stewards do not rule on protests. Only Admins and Organizers issue rulings.</td></tr>' +
-      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, a steward assigns when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
+      '<tr><td><strong>Steward Board</strong></td><td>The group that reviews each protest: Stewards, Organizers and Admins. Stewards give their input; Organizers and Admins make the final ruling.</td></tr>' +
+      '<tr><td><strong>Tier</strong></td><td>The penalty level, 1 through 7, set by an Organizer or Admin when upholding a protest, from a Warning up to Suspension (Section 5.1).</td></tr>' +
       '</table>'
   }
 ];

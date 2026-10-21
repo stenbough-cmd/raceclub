@@ -1578,7 +1578,7 @@
     // Self-report wording -- checked ahead of the auto-flagged/isMine branches below, since a
     // self-report is still isMine (the filer names the OTHER driver who was involved, but the
     // penalty is always the filer's own -- see PROTEST_SELF_REPORT_INFRACTION_, Protests.gs).
-    var isSelfReport = p.infractionType === 'Avoidable Contact (Self Report)';
+    var isSelfReport = isSelfReportInfraction(p.infractionType);
     // Auto-flagged wording -- takes priority over the usual isMine/filed-against-you phrasing,
     // since an auto-flagged protest has no human filer at all.
     var whoText = isSelfReport
@@ -1651,7 +1651,7 @@
 
     var body = el('div', 'rc-protest-dash-item-body');
     var against = _rcProtestAccusedNames_(p).join(' and ');
-    var isSelfReport = p.infractionType === 'Avoidable Contact (Self Report)';
+    var isSelfReport = isSelfReportInfraction(p.infractionType);
     var whoText = isSelfReport
       ? ((p.filerName || 'A driver') + ' self-reported an incident with ' + (against || 'another driver') + '.')
       : (p.isAutoFlagged
@@ -3928,7 +3928,7 @@
         });
       });
     } else {
-      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
+      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- a protest can be filed from the moment a round starts until 24 hours after it, and no round is inside that window for you.');
     }
     actionRow.appendChild(fileBtn);
     container.appendChild(actionRow);
@@ -4155,6 +4155,9 @@
       // handed in here so buildProtestFormFields renders it as its own full-width row, ahead of the
       // Driver Involved / Lap Number row.
       fields = buildProtestFormFields(fieldsContainer, round.laps, round.driverRoster, myProfileId, {}, wizField('Race', roundSelect, null));
+      if (round.resultsImported === false) {
+        fieldsContainer.appendChild(el('div', 'rc-hint', 'Results are not posted yet, so the driver list shows everyone registered this season and any lap number can be chosen.'));
+      }
     }
     populateForRound(rounds[0].roundId);
     roundSelect.addEventListener('change', function () { populateForRound(roundSelect.value); });
@@ -6259,7 +6262,7 @@
           var titleRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
           // Self-report wording takes priority over both the auto-flagged and default phrasing
           // below.
-          var introText = (p.infractionType === 'Avoidable Contact (Self Report)')
+          var introText = isSelfReportInfraction(p.infractionType)
             ? ((p.filerName || 'A driver') + ' self-reported an incident with ' + (against || 'another driver') + '.')
             : (p.isAutoFlagged
               ? ('Auto-flagged against a driver, ' + (against || 'a driver') + '.')
@@ -6337,7 +6340,16 @@
               return Number(select.value.split(':')[1]) !== suggestedTier;
             }
 
+            // Heads-up for Tiers 2-5 (time penalties) against a driver with no classified finish: the
+            // penalty adds seconds to a finish time that does not exist. The steward can still rule.
+            var noFinishHint = el('div', 'rc-hint');
+            noFinishHint.style.cssText = 'margin-top:8px;color:var(--rc-red);display:none;';
+            noFinishHint.textContent = 'This driver has no classified finish in this race, so a time penalty will not change the results. You can still rule.';
+            noteBody.appendChild(noFinishHint);
+
             select.addEventListener('change', function () {
+              var chosenTier = select.value.indexOf('uphold:') === 0 ? Number(select.value.split(':')[1]) : 0;
+              noFinishHint.style.display = (p.targetHasClassifiedFinish === false && chosenTier >= 2 && chosenTier <= 5) ? '' : 'none';
               if (!overrideWrap) return;
               overrideWrap.style.display = currentIsOverride_() ? '' : 'none';
             });
@@ -6360,7 +6372,7 @@
             // the site.
             var outcomeText;
             if (p.status === 'Upheld') {
-              var isSelfReportRow = p.infractionType === 'Avoidable Contact (Self Report)';
+              var isSelfReportRow = isSelfReportInfraction(p.infractionType);
               outcomeText = 'Upheld: Tier ' + p.penaltyTier + ' penalty applied to ' +
                 (isSelfReportRow ? (p.filerName || 'the reporting driver') : (against || 'the accused driver')) + '.';
             } else if (p.status === 'Denied') {
@@ -6437,7 +6449,9 @@
                 applyAllBtn.textContent = 'APPLY RULING';
                 return;
               }
-              showToast(toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.', 'success');
+              var ruleNotice = '';
+              results.forEach(function (r) { if (r && r.notice && !ruleNotice) ruleNotice = r.notice; });
+              showToast(ruleNotice || (toSubmit.length > 1 ? 'Rulings saved.' : 'Ruling saved.'), 'success');
               // Stays open and reloads itself in place -- was outerReload() + modal.close(), which
               // sent the admin back to the League Tools page instead of letting them see the
               // now-ruled protests and click Finalize right here.
@@ -6495,7 +6509,7 @@
               if (!windowStillOpen) { startFinalize(); return; }
               var closes = data.windowDeadlineIso ? new Date(data.windowDeadlineIso).toLocaleString() : 'in 24 hours';
               openConfirmModal('Protest Window Still Open',
-                'It has not been 24 hours yet since the race results were uploaded. The protest window closes ' + closes + '. Finalizing now ends it early and no more protests can be filed for this round. Are you sure?',
+                'It has not been 24 hours yet since this round started. The protest window closes ' + closes + '. Finalizing now ends it early and no more protests can be filed for this round. Are you sure?',
                 'Finalize Anyway', startFinalize);
             });
           });

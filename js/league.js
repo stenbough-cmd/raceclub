@@ -1646,6 +1646,7 @@ function _rclDescribePenaltyEffect_(effectType, effectSeconds) {
   if (effectType === 'Time') return '+' + (Number(effectSeconds) || 0) + 's';
   if (effectType === 'DSQ') return 'Disqualified';
   if (effectType === 'Suspension') return 'Suspended';
+  if (effectType === 'Warning') return 'No time or position change';
   return 'Logged';
 }
 
@@ -1966,7 +1967,7 @@ function _rclBuildRaceReportBody_(result, bodyEl) {
       var tierPhrase = tierInfo
         ? tierInfo.label.replace(/^Tier (\d+): /, 'Tier $1 ').replace(/\s*\([^)]*\)\s*$/, '')
         : ('Tier ' + (p.penaltyTier || '?'));
-      var infractionPhrase = (p.infractionType === 'Avoidable Contact (Self Report)')
+      var infractionPhrase = (typeof isSelfReportInfraction === 'function' && isSelfReportInfraction(p.infractionType))
         ? 'self-reported an incident'
         : (p.infractionType || 'Infraction');
       lineEl.appendChild(document.createTextNode(' ' + infractionPhrase + ': ' + tierPhrase + ' '));
