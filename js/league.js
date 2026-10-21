@@ -958,21 +958,16 @@ function _rclRenderStandings(hub) {
   host.innerHTML = '';
 
   var hasStandings = hub.hasSeason && hub.standings && hub.standings.length;
-  // No current season and no earlier season to show: Championship Standings is hidden without a word.
+  // No season at all: Championship Standings is hidden without a word.
   if (!hub.hasSeason) { if (emptyRow) emptyRow.style.display = 'none'; return; }
   // Before any race has actually been run, there's nothing to rank yet -- same hasResults gate the
   // ticker already uses (roundsCompleted > 0).
   var hasResults = (hub.roundsCompleted || 0) > 0;
 
+  // No standings yet (a season with no scored race): the Standings area is hidden without a word, as
+  // Manufacturers' Standings and the Team Endurance sections already are (Matt, 2026-10-21).
   if (!hasStandings || !hasResults) {
-    // One plain panel with the usual empty state; the per-class panels below only exist once a race
-    // has been scored.
-    if (emptyRow) emptyRow.style.display = '';
-    var titleEl = document.getElementById('rcl-standings-title');
-    if (titleEl) titleEl.textContent = 'Championship Standings';
-    body.appendChild(_rclEmptyState('No Data To Display', !hasStandings
-      ? 'Standings fill in once a season is underway.'
-      : 'Standings fill in once a race has been scored.'));
+    if (emptyRow) emptyRow.style.display = 'none';
     return;
   }
   if (emptyRow) emptyRow.style.display = 'none';
