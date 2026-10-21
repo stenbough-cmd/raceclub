@@ -98,14 +98,13 @@ var RULEBOOK_SECTIONS = [
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
       '<table class="rc-rulebook-tier-table rc-rulebook-penalty-table"><tr><td><strong>Tier</strong></td><td><strong>Penalty</strong></td><td><strong>Effect</strong></td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged on the driver’s record and shown on the Race Report, no time or position impact</td></tr>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-1">1</span></td><td>Warning</td><td>Logged on the driver’s record and shown on the Race Recap Penalties page, no time or position impact</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-2">2</span></td><td>Time Penalty (+5s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-3">3</span></td><td>Time Penalty (+10s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-4">4</span></td><td>Time Penalty (+20s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-5">5</span></td><td>Time Penalty (+40s)</td><td>Added to final race time</td></tr>' +
       '<tr><td><span class="rc-tier-badge rc-tier-6">6</span></td><td>Disqualification</td><td>Removed from session results</td></tr>' +
-      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season. The driver’s account is also suspended while the season runs: they cannot log in, and they score no points for the rest of the season. When the season ends, the account is reactivated automatically so the driver can return for the next one. Requires a prior Tier 6 disqualification against the same driver in the same season; that requirement starts over every season.</td></tr></table>' +
-      '<p>Steward penalties stack with penalties the game applies on its own (Section 4.3). A driver can receive both for the same incident, and a steward penalty is added on top of any in-game penalty.</p>' +
+      '<tr><td><span class="rc-tier-badge rc-tier-7">7</span></td><td>Suspension</td><td>Removed from that race’s results (same as a Tier 6 disqualification), plus suspended from every round for the rest of the season.</td></tr></table>' +
       '<h4>5.2 Infraction Types</h4>' +
       _rcRulebookInfractionHtml_() +
       '<p class="rc-hint"><em>Note: jump starts and formation lap conduct are automatically detected and enforced by LMU, no organizer/steward action required (see Section 4). These automatic calls are final and not subject to review.</em></p>' +

@@ -341,7 +341,9 @@
       w.appendChild(table);
       if ((s.events || []).length) {
         var evs = el('div', 'rcc-laps-events');
-        evs.appendChild(tx('div', 'rcl-race-class-name', 'Your Events'));
+        var evLine = el('div', 'rdp-catline');
+        evLine.appendChild(tx('span', 'rdp-catline-text', 'Events'));
+        evs.appendChild(evLine);
         s.events.forEach(function (ev) {
           var line = el('p', 'rcl-report-line');
           var et = Number(ev.elapsedTime);
@@ -434,7 +436,10 @@
     var summary = el('div');
     body.appendChild(summary);
     body.appendChild(raceSel);
-    body.appendChild(catLine('Race Details'));
+    // Race Details heading + boxes stay hidden (no placeholder) until a round is chosen.
+    var detailsLine = catLine('Race Details');
+    detailsLine.style.display = 'none';
+    body.appendChild(detailsLine);
     var detailsHost = el('div');
     body.appendChild(detailsHost);
     body.appendChild(catLine('Race Report'));
@@ -468,6 +473,7 @@
         raceSel.appendChild(new Option('No races this season', ''));
         raceHost.innerHTML = '';
         detailsHost.innerHTML = '';
+        detailsLine.style.display = 'none';
         raceHost.appendChild(emptyBlock('No Races Yet', 'No finalized races for this driver in this season.'));
         return;
       }
@@ -485,12 +491,13 @@
       raceHost.innerHTML = '';
       if (!raceSel.value) {
         detailsHost.innerHTML = '';
-        detailsHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
+        detailsLine.style.display = 'none';
         raceHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
         return;
       }
       var curSeason = seasons[Number(seasonSel.value)];
       var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
+      detailsLine.style.display = '';
       drawDetails(detailsHost, curSeason, curRound);
       raceHost.appendChild(tx('div', 'rdp-loading', 'Loading race...'));
       loadRound(raceSel.value).then(function (res) {

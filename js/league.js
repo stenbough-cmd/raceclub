@@ -3539,9 +3539,17 @@ function _rclSeasonRange_(s) {
   return a.toLocaleDateString(undefined, mdy) + ' \u2013 ' + b.toLocaleDateString(undefined, mdy);
 }
 function _rclSeasonLabel_(s) {
-  var head = s.seasonNumber ? ('Season ' + s.seasonNumber + (s.name ? ': ' + s.name : '')) : (s.name || s.seasonId);
-  // The date range was dropped from the dropdown label (2026-10-21). _rclSeasonRange_ is kept in case it comes back.
-  return head;
+  // Same label as the Season dropdown on the Driver Profile page: "Season 2 - Name (Oct 10, 2026 - Dec 5, 2026)".
+  function fmt(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  var a = fmt(s.startUtc), b = fmt(s.endUtc);
+  var range = a && b ? (a === b ? a : a + ' - ' + b) : (a || b);
+  var head = s.seasonNumber ? ('Season ' + s.seasonNumber + ' - ' + (s.name || '')) : (s.name || s.seasonId);
+  return head + (range ? ' (' + range + ')' : '');
 }
 function _rclRenderNavbar_(hub) {
   var nav = document.getElementById('rcl-navbar');

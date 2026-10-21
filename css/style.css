@@ -1215,6 +1215,21 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-statuscircle-green { background: var(--rc-positive-bg); border-color: var(--rc-positive-border); color: var(--rc-positive); }
 .rc-statuscircle-yellow { background: #fdf6e3; border-color: #e8b93a; color: var(--rc-warning); }
 .rc-statuscircle-red { background: var(--rc-negative-bg); border-color: var(--rc-negative-border); color: var(--rc-negative); }
+/* Solid protest outcome circles (Dashboard Protests card, Protests popup, Stewarding page):
+   red solid X = denied, yellow solid check = Tier 1 warning, green solid check = upheld (Tier 2+). */
+.rc-statuscircle-solid-red,
+.rc-statuscircle-solid-yellow,
+.rc-statuscircle-solid-green { color: #fff; font-size: 11px; font-weight: 800; line-height: 1; border: 0; }
+.rc-statuscircle-solid-red { background: var(--rc-negative); }
+.rc-statuscircle-solid-yellow { background: #e8b93a; }
+.rc-statuscircle-solid-green { background: var(--rc-positive); }
+/* A round pill with its protests listed just under it (same look as the Stewarding page). */
+.rc-protest-round-list { margin: 8px 0 16px 14px; }
+@media (max-width: 640px) {
+  /* Phones: Edit / Withdraw drop under the protest text instead of sitting at the right edge. */
+  .rc-protest-dash-item { flex-wrap: wrap; }
+  .rc-protest-popup-item-actions { flex-basis: 100%; margin-left: 28px; margin-top: 4px; order: 3; }
+}
 .rc-protest-dash-line { font-size: 13px; color: var(--rc-carbon); line-height: 1.5; }
 .rc-protest-dash-date { color: var(--rc-steel); font-weight: 700; margin-right: 2px; }
 /* .rc-protest-dash-outcome/.rc-protest-dash-pending removed -- the pending/ruled note under each

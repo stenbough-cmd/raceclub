@@ -1529,11 +1529,11 @@
 
   // Ruling-outcome status circle -- replaces the old single "solid gray + white check" look above
   // with an outcome- colored circle for the two real rulings: green+check for Upheld (any tier but
-  // 1), red+X for Denied, yellow+tilde for Upheld specifically at Tier 1 (Warning).
+  // 1), red+X for Denied, yellow+check for Upheld specifically at Tier 1 (Warning). All solid circles.
   function _rcProtestOutcomeIcon_(status, penaltyTier) {
-    if (status === 'Denied') return { cls: 'rc-statuscircle-red', glyph: '✕' };
-    if (status === 'Upheld' && Number(penaltyTier) === 1) return { cls: 'rc-statuscircle-yellow', glyph: '~' };
-    if (status === 'Upheld') return { cls: 'rc-statuscircle-green', glyph: '✓' };
+    if (status === 'Denied') return { cls: 'rc-statuscircle-solid-red', glyph: '✕' };
+    if (status === 'Upheld' && Number(penaltyTier) === 1) return { cls: 'rc-statuscircle-solid-yellow', glyph: '✓' };
+    if (status === 'Upheld') return { cls: 'rc-statuscircle-solid-green', glyph: '✓' };
     return null;
   }
 
@@ -1542,6 +1542,29 @@
   function _rcProtestAccusedNames_(p) {
     var names = p.involvedNames || [];
     return p.isAutoFlagged ? names : names.slice(1);
+  }
+
+  // Round pill ("ROUND N: EVENT SHORTNAME", graphite, same as the Stewarding page) with that round's
+  // protests listed just under it. Rounds keep the order the protests arrive in (newest first).
+  function buildProtestsByRound_(protests, itemBuilder) {
+    var wrap = el('div');
+    var order = [], byRound = {};
+    protests.forEach(function (p) {
+      var k = p.roundId || ('n' + p.roundNumber);
+      if (!byRound[k]) { byRound[k] = { first: p, items: [] }; order.push(k); }
+      byRound[k].items.push(p);
+    });
+    order.forEach(function (k) {
+      var g = byRound[k], r = g.first;
+      var pillText = 'Round ' + (r.roundNumber || '?') + ': ' + (r.eventName || '') + (r.shortName ? ' ' + r.shortName : '');
+      var head = el('div', 'rc-group-head');
+      head.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
+      wrap.appendChild(head);
+      var list = el('div', 'rc-protest-dash-list rc-protest-round-list');
+      g.items.forEach(function (p) { list.appendChild(itemBuilder(p)); });
+      wrap.appendChild(list);
+    });
+    return wrap;
   }
 
   // One line item in the Dashboard Protest card.
@@ -1708,9 +1731,7 @@
     } else if (!protests.length) {
       card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
     } else {
-      var list = el('div', 'rc-protest-dash-list');
-      protests.forEach(function (p) { list.appendChild(buildDashProtestItem(p)); });
-      card.appendChild(list);
+      card.appendChild(buildProtestsByRound_(protests, buildDashProtestItem));
     }
 
     // Link text updated -- "File, withdraw, and review" (Oxford comma added to match) plus a
@@ -3653,7 +3674,7 @@
           head.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
           panel.appendChild(head);
 
-          // Protest rows -- same open-circle/red-X/yellow-tilde/green-check format as the Dashboard's own
+          // Protest rows -- same open-circle/red-X/yellow-check/green-check format as the Dashboard's own
           // Protest card (buildDashProtestItem), most recent first, inset a little under the pill.
           var sortedProtests = (r.protests || []).slice().sort(function (a, b) {
             return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
@@ -3942,9 +3963,7 @@
     } else {
       // Newest first (the backend, handleGetMyProtests, already returns it sorted that way), capped
       // to the most recent 10 -- oldest silently drops off, no "load more"/pagination.
-      var list = el('div', 'rc-protest-dash-list');
-      visible.slice(0, 10).forEach(function (p) { list.appendChild(buildProtestPopupHistoryItem(p, token, modal, refreshPopup)); });
-      historyBox.appendChild(list);
+      historyBox.appendChild(buildProtestsByRound_(visible.slice(0, 10), function (p) { return buildProtestPopupHistoryItem(p, token, modal, refreshPopup); }));
     }
     container.appendChild(historyBox);
   }

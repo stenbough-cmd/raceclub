@@ -282,3 +282,6 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-catline-text { color: #8a6a12; }
 .rcc-page .rdp-catline::before,
 .rcc-page .rdp-catline::after { background: #cf9f2c; }
+
+/* EVENTS subheading inside My Laps: same gold centered look as Driver Report, with its own spacing. */
+.rdp-race-split .rcc-laps-events .rdp-catline { margin: 22px 0 14px; }

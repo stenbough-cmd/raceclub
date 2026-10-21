@@ -2657,18 +2657,24 @@ body.rc-league-page .rcl-load-error-btn {
 body.rc-league-page .rcl-load-error-btn:hover { color: var(--rc-carbon); border-color: var(--rc-steel); }
 body.rc-league-page .rcl-load-error-btn:disabled { opacity: 0.6; cursor: default; }
 
-/* Season picker at the right end of the navbar (League Hub). Looks like the site's default dropdown
-   (style.css: white, silver border, 14px body font) and matches the Championship's; only the position
-   and size are set here (315px wide). margin-top 0 undoes style.css's 4px so it sits centered in the bar. */
+/* Season picker at the right end of the navbar (League Hub). Same look as the Season dropdown on the
+   Driver Profile page (.rdp-select, css/profile.css): raised background, light text, bright line,
+   6px corners, 14px text. The label carries the date range, so it is wide (400px). */
 body.rc-league-page .rcl-navbar-season {
   margin: 0 0 0 auto;
   align-self: center;
-  width: 315px;
+  width: 400px;
   max-width: 100%;
   min-width: 0;
   height: 38px;
-  padding-top: 0;
-  padding-bottom: 0;
+  box-sizing: border-box;
+  background: var(--rcl-bg-raised-2);
+  color: var(--rcl-ink);
+  border: 1px solid var(--rcl-line-bright);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: var(--rc-font-body);
   text-overflow: ellipsis;
   cursor: pointer;
 }
