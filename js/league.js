@@ -1847,6 +1847,148 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
   // (The "view on PC" note was removed here: the Race Recap tables now keep every column on phones and pan sideways.)
 }
 
+// Driver Reports page of the Race Recap (2026-10-21). Looks like the Championship's Driver Report: the
+// driver block (car picture, driver, team and number, maker and car), then the same charts, drawn by
+// js/league-report.js on a white card. The driver dropdown sits at the right end of the block's row and
+// lists every league driver in the race. Each report is fetched from getDriverProfileRound (the same feed the
+// driver profile pages use) the first time a driver is picked, then kept for the rest of the visit.
+var _rclDriverReportCache_ = {};
+var _rclDriverReportPick_ = {};
+var _rclDriverReportToken_ = 0;
+
+function _rclDriverReportDrivers_(result) {
+  var out = [];
+  (result.classes || []).forEach(function (cls) {
+    (cls.standings || []).forEach(function (row) {
+      if (!row || !row.profileId || !/^RC-\d+$/.test(String(row.profileId))) return;
+      out.push({ profileId: row.profileId, name: row.name || row.profileId, carNumber: row.carNumber, teamName: row.teamName || '',
+        manufacturer: row.manufacturer || '', carClass: cls.className || row.carClass || '', classPosition: row.classPosition });
+    });
+  });
+  return out;
+}
+
+function _rclDriverReportWho_(hub, d, dr) {
+  var who = _rccEl('div', 'rc-cs-row rcr-report-who');
+  var carNumber = String((dr && dr.carNumber) || d.carNumber || '');
+  var year = (hub.classSeasons || {})[d.carClass] || '';
+  var series = (hub.carSeries || {})[d.carClass + '|' + carNumber.trim()] || '';
+  if (year && carNumber) {
+    var picWrap = _rccEl('div', 'rc-cs-logo-wrap');
+    var pic = document.createElement('img');
+    pic.className = 'rc-cs-logo';
+    pic.alt = '';
+    pic.onerror = function () { picWrap.style.display = 'none'; };
+    pic.src = rcCarImageSrc(year, carNumber, series);
+    picWrap.appendChild(pic);
+    who.appendChild(picWrap);
+  }
+  var textCol = _rccEl('div', 'rc-cs-textcol');
+  var nameLine = _rccEl('div', 'rc-cs-team-name rc-cs-team-name-flex rcr-who-name');
+  var nameEl = document.createElement('a');
+  nameEl.className = 'rcr-who-driver';
+  nameEl.href = 'profile.html?id=' + encodeURIComponent(d.profileId);
+  nameEl.textContent = d.name;
+  nameLine.appendChild(nameEl);
+  var teamName = (dr && dr.teamName) || d.teamName || '';
+  if (teamName || carNumber) nameLine.appendChild(_rccText('span', 'rcr-who-team', teamName + (carNumber ? ' #' + carNumber : '')));
+  textCol.appendChild(nameLine);
+  var carType = (dr && dr.carType) || '';
+  if (d.manufacturer || carType) {
+    var carLine = _rccEl('div', 'rc-cs-car-line rc-cs-car-line-flex');
+    if (d.manufacturer && typeof manufacturerLogoSrc === 'function') {
+      var logo = document.createElement('img');
+      logo.className = 'rc-cs-maker-logo';
+      logo.alt = d.manufacturer;
+      logo.src = manufacturerLogoSrc(d.manufacturer, 'black');
+      if (typeof manufacturerLogoFallback === 'function') manufacturerLogoFallback(logo, d.manufacturer, function () { logo.style.display = 'none'; });
+      carLine.appendChild(logo);
+    }
+    if (carType) carLine.appendChild(_rccText('span', null, carType));
+    textCol.appendChild(carLine);
+  }
+  who.appendChild(textCol);
+  return who;
+}
+
+function _rclBuildDriverReportBody_(hub, roundId, result, el) {
+  el.innerHTML = '';
+  if (typeof _rccDriverReport !== 'function') { el.appendChild(_rclEmptyState('Driver Reports Unavailable', 'The report could not be loaded. Reload the page and try again.')); return; }
+  var drivers = result ? _rclDriverReportDrivers_(result) : [];
+  if (!drivers.length) { el.appendChild(_rclEmptyState('No Data To Display', 'Driver reports appear once this round\u2019s race results are uploaded.')); return; }
+
+  var card = _rclEl('div', 'rcl-dr-light');
+  var top = _rclEl('div', 'rcl-dr-top');
+  var whoHost = _rclEl('div', 'rcl-dr-who');
+  whoHost.style.cssText = 'flex:1 1 auto;min-width:0;';
+  top.appendChild(whoHost);
+
+  var pickWrap = _rclEl('div', 'rcl-dr-pick');
+  pickWrap.appendChild(_rclEl('label', 'rcl-dr-pick-label', 'Driver'));
+  var sel = document.createElement('select');
+  sel.setAttribute('aria-label', 'Driver');
+  var byClass = {}, order = [];
+  drivers.forEach(function (d) {
+    if (!byClass[d.carClass]) { byClass[d.carClass] = []; order.push(d.carClass); }
+    byClass[d.carClass].push(d);
+  });
+  var showGroups = order.length > 1;
+  order.forEach(function (c) {
+    var parent = sel;
+    if (showGroups) { parent = document.createElement('optgroup'); parent.label = c; sel.appendChild(parent); }
+    byClass[c].forEach(function (d) {
+      var o = new Option((d.classPosition ? 'P' + d.classPosition + '  ' : '') + d.name + (d.carNumber !== '' && d.carNumber != null ? ' (#' + d.carNumber + ')' : ''), d.profileId);
+      parent.appendChild(o);
+    });
+  });
+  pickWrap.appendChild(sel);
+  top.appendChild(pickWrap);
+  card.appendChild(top);
+
+  var reportHost = _rclEl('div', 'rcl-dr-report');
+  card.appendChild(reportHost);
+  el.appendChild(card);
+
+  function draw(profileId) {
+    var d = drivers.filter(function (x) { return x.profileId === profileId; })[0] || drivers[0];
+    var my = ++_rclDriverReportToken_;
+    _rclDriverReportPick_[roundId] = d.profileId;
+    whoHost.innerHTML = '';
+    whoHost.appendChild(_rclDriverReportWho_(hub, d, null));
+    reportHost.innerHTML = '';
+    var key = d.profileId + '|' + roundId;
+    function show(res) {
+      if (my !== _rclDriverReportToken_) return;
+      reportHost.innerHTML = '';
+      if (!res || !res.success) { reportHost.appendChild(_rclEmptyState('Driver Report Unavailable', (res && res.message) || 'Could not load this report right now.')); return; }
+      var rep = null;
+      try { rep = res.driverReport ? _rccDriverReport(res.driverReport) : null; } catch (err) { rep = null; }
+      if (!rep) { reportHost.appendChild(_rclEmptyState('No Driver Report', 'There is no lap data for this driver in this round.')); return; }
+      whoHost.innerHTML = '';
+      whoHost.appendChild(_rclDriverReportWho_(hub, d, res.driverReport));
+      reportHost.appendChild(rep);
+      if (res.driverReport.pitNote) reportHost.appendChild(_rccText('p', 'rcr-note', res.driverReport.pitNote));
+    }
+    if (Object.prototype.hasOwnProperty.call(_rclDriverReportCache_, key)) { show(_rclDriverReportCache_[key]); return; }
+    reportHost.appendChild(_rclBuildInlineSpinner_('Loading driver report...'));
+    sel.disabled = true;
+    fetchApi('getDriverProfileRound', { params: { profileId: d.profileId, roundId: roundId }, timeoutMs: 60000 }).then(function (res) {
+      if (res && res.success) _rclDriverReportCache_[key] = res;
+      sel.disabled = false;
+      show(res);
+    }, function () {
+      sel.disabled = false;
+      show(null);
+    }).catch(function () { sel.disabled = false; });
+  }
+
+  var start = _rclDriverReportPick_[roundId];
+  if (!start || !drivers.some(function (x) { return x.profileId === start; })) start = drivers[0].profileId;
+  sel.value = start;
+  sel.addEventListener('change', function () { draw(sel.value); });
+  draw(start);
+}
+
 // Race Report page of the Race Recap: the lap-by-lap report, then Penalties Assessed (steward
 // penalties) when the round has any. Uses the same round payload as the Race Results page.
 // In-game Drive Thrus and Stop and Gos are lines inside the report itself (clause kind 'penalty').
@@ -2092,11 +2234,12 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
-  // Order and names match the Championship recap: Highlights, Race Results, Qualify Results, Race Report.
+  // Order: Highlights, Race Results, Qualify Results, Driver Reports, Race Report.
   // Race Results is the page the recap opens on.
   sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.appendChild(new Option('Race Results', 'race'));
   sessionSelect.appendChild(new Option('Qualify Results', 'qualifying'));
+  sessionSelect.appendChild(new Option('Driver Reports', 'driver'));
   sessionSelect.appendChild(new Option('Race Report', 'report'));
   sessionSelect.value = 'race';
   selectRow.appendChild(sessionSelect);
@@ -2118,14 +2261,15 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   }
 
   function loadRound(roundId, sessionKind) {
-    // Highlights, Race Results and Race Report all draw from the same race payload: one
+    // Highlights, Race Results, Driver Reports and Race Report all draw from the same race payload: one
     // getPublicRoundResults call and one cache entry ('race'); only Qualify Results has its own.
     var isQualifying = sessionKind === 'qualifying';
     var dataKind = isQualifying ? 'qualifying' : 'race';
     var cacheKey = roundId + ':' + dataKind;
     var builder = isQualifying ? _rclBuildQualifyingBody_
       : (sessionKind === 'highlights' ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); }
-      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_));
+      : (sessionKind === 'driver' ? function (res, el) { _rclBuildDriverReportBody_(hub, roundId, res, el); }
+      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_)));
     if (Object.prototype.hasOwnProperty.call(resultCache, cacheKey)) {
       builder(resultCache[cacheKey], resultsWrap);
       return;
@@ -2135,7 +2279,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // loader (.rcl-page-loader in league.html) and the Edit Profile popup on this same page
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : 'Loading round results...'))));
+    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : 'Loading round results...')))));
     busy(true);
     // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
@@ -3304,8 +3448,8 @@ function _rclSeasonRange_(s) {
 }
 function _rclSeasonLabel_(s) {
   var head = s.seasonNumber ? ('Season ' + s.seasonNumber + (s.name ? ': ' + s.name : '')) : (s.name || s.seasonId);
-  var range = _rclSeasonRange_(s);
-  return range ? head + ' (' + range + ')' : head;
+  // The date range was dropped from the dropdown label (2026-10-21). _rclSeasonRange_ is kept in case it comes back.
+  return head;
 }
 function _rclRenderNavbar_(hub) {
   var nav = document.getElementById('rcl-navbar');
