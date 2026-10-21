@@ -187,6 +187,9 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
   width: 210px;
   max-width: 100%;
   min-width: 0;
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
   text-overflow: ellipsis;
   cursor: pointer;
 }
