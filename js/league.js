@@ -1315,7 +1315,7 @@ function _rclRenderLastRace_(hub) {
     var match = null;
     recapRounds.forEach(function (rr) { if (!match && r.roundNum && Number(rr.roundNum) === Number(r.roundNum)) match = rr; });
     var footer = _rclEl('div', 'rcl-lr-footer');
-    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAP <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
+    var footBtn = _rclEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAPS AND DRIVER REPORTS <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
     footBtn.type = 'button';
     footBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, match ? match.roundId : undefined); });
     footer.appendChild(footBtn);
@@ -2898,7 +2898,16 @@ function _rclRenderNews(hub) {
   var body = document.getElementById('rcl-news-body');
   if (!body) return;
   body.innerHTML = '';
-  _rclNewsList = hub.news || [];
+  // Newest first: index 0 is the previewed story, the rest list below it newest to oldest.
+  // Stable sort: publishedAt desc, then round number desc, then original server order.
+  _rclNewsList = (hub.news || []).map(function (n, idx) { return { n: n, idx: idx }; }).sort(function (a, b) {
+    var ta = new Date(a.n.publishedAt).getTime() || 0;
+    var tb = new Date(b.n.publishedAt).getTime() || 0;
+    if (tb !== ta) return tb - ta;
+    var ra = Number(a.n.roundNum) || 0, rb = Number(b.n.roundNum) || 0;
+    if (rb !== ra) return rb - ra;
+    return a.idx - b.idx;
+  }).map(function (w) { return w.n; });
   var writingNotice = _rclStoryWritingNotice(hub);
   if (writingNotice) body.appendChild(writingNotice);
 
