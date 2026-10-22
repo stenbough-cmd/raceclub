@@ -238,7 +238,9 @@ function _rccCheckAccess() {
     window.location.replace(url);
     return false;
   }
-  if (me.profileId && !(me.role === 'Admin' || me.champAccess)) return 'welcome';
+  // No Championship Access in the saved profile: ask the server anyway (audit A13, Matt 2026-10-22).
+  // Access given since the last login loads right away; without access the server answers
+  // NOT_AVAILABLE and the page shows Welcome (_rccHandleAuthError).
   if (me.profileId && id !== me.profileId) {
     window.location.replace('championship.html?id=' + encodeURIComponent(me.profileId));
     return false;
@@ -427,7 +429,7 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
       if (onSuccess) onSuccess(res);
     }).catch(function () {
       cancel.disabled = false;
-      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it went through.', 'error');
+      _rccToast('No answer from the server. Reload the page to see whether it went through.', 'error');
     });
   });
   return m;
@@ -2576,7 +2578,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
         rccReloadAfterSave();
       }
     }).catch(function () {
-      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it was saved.', 'error');
+      _rccToast('No answer from the server. Reload the page to see whether it was saved.', 'error');
     });
   });
 }
@@ -2652,7 +2654,7 @@ function rccOpenDeleteSeason() {
     }).catch(function () {
       cancel.disabled = false;
       input.disabled = false;
-      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it was deleted.', 'error');
+      _rccToast('No answer from the server. Reload the page to see whether it was deleted.', 'error');
     });
   });
 }
@@ -2868,7 +2870,7 @@ function rccOpenErase() {
   var text = _rccEl('p', 'rcc-confirm-text');
   m.body.appendChild(text);
   function say() {
-    text.textContent = 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload. Driver names already added to the Cars tab stay there.';
+    text.textContent = 'Erase every imported result for Round ' + c.roundNum + ' (' + c.eventName + ')? The round itself stays on the calendar, ready for a new upload.';
   }
   say();
   var row = _rccEl('div', 'rcc-btn-row');
@@ -2897,7 +2899,7 @@ function rccOpenErase() {
     }).catch(function () {
       cancel.disabled = false;
       sel.disabled = false;
-      _rccToast('No answer from the server after 6 minutes. Reload the page to see whether it went through.', 'error');
+      _rccToast('No answer from the server. Reload the page to see whether it went through.', 'error');
     });
   });
 }
@@ -3469,7 +3471,7 @@ function rccRunStoryQueue(page) {
     // The server's own reason shows under the notice, so a setup problem can be spotted.
     // Another request (a retry of this one) is already writing it: wait for it instead.
     if (res && res.success && res.already && res.status === 'writing') { RCC.storyWriting = next; rccRenderStories(page); _rccWatchStory(page, next, Date.now() + 6 * 60 * 1000); return; }
-    if (!res || !res.success) { RCC.storyFailed = next; RCC.storyFailedWhy = (res && (res.message || res.error)) || 'No answer from the server.'; rccRenderStories(page); return; }
+    if (!res || !res.success) { RCC.storyFailed = next; RCC.storyFailedWhy = (res && res.message) || (res ? 'The story could not be written this time.' : 'No answer from the server.'); rccRenderStories(page); return; }
     return _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
       if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; _rccForgetSavedPages(); }
       rccRenderStories(page);
