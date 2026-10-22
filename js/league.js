@@ -3869,8 +3869,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       return;
     }
-    var pickedInfo = _rclSeasonList_.filter(function (x) { return x.seasonId === seasonId; })[0];
-    _rclShowPageLoader_(pickedInfo && pickedInfo.seasonNumber ? 'Loading Season ' + pickedInfo.seasonNumber + '...' : 'Loading Season...');
+    _rclShowPageLoader_('Loading Season...');
     loadPastSeason(seasonId).then(function (loaded) {
       if (myToken !== pickToken) return;
       _rclViewSeasonId_ = seasonId;
