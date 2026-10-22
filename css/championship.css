@@ -860,11 +860,12 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Standings maker logos: up to 34px tall, width limit unchanged (50px) (Matt). Their slot, like the
    CAR slot, is 40px tall (3px above and below a full-height logo), so every row is the same height
    whether or not the board has the CAR column. */
-.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 40px; width: 58px; padding: 0 4px; box-sizing: border-box; } /* 4px each side of the logo's 50px max width */
-.rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 34px; }
+/* PC: logos up to 70px wide (Matt, 2026-10-22; was 50px), slot 78px = 4px each side. Phones keep 34 x 24. */
+.rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 40px; width: 78px; padding: 0 4px; box-sizing: border-box; }
+.rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 34px; max-width: 70px; }
 @media (max-width: 640px) {
   .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 24px; width: 42px; }
-  .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 24px; }
+  .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 24px; max-width: 34px; }
 }
 
 /* Standings: both boards are built once; the Drivers/Teams switch hides one with the hidden attribute. */
