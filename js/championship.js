@@ -2115,6 +2115,10 @@ var RCC_DAMAGE = ['Off', 'Low', 'Medium', 'High', 'Realistic'];
 var RCC_TRACK_LIMITS = ['None', 'Relaxed', 'Default', 'Strict'];
 // A car's series from the Cars tab's Series column; blank means WEC (every car before ELMS was added).
 function _rccCarSeries(car) { var v = String((car && car.Series) || '').trim().toUpperCase(); return v === 'ELMS' ? 'ELMS' : 'WEC'; }
+// A Cars row's class, with an _ELMS ending dropped (LMP2_ELMS -> LMP2), same rule as Championship.gs's
+// _champClassKey_ (Matt, 2026-10-22).
+var RCC_CLASS_ALIASES = { Hyper: 'Hypercar', HYPER: 'Hypercar', GT3: 'LMGT3', GTE: 'LMGTE' };
+function _rccClassKey(raw) { var k = String(raw || '').trim().replace(/_ELMS$/i, ''); return RCC_CLASS_ALIASES[k] || k; }
 // LMU's four weather presets (Matt, 2026-10-09); the results file records no weather, so a round
 // only keeps which preset was planned.
 var RCC_WEATHER_PRESETS = ['Sunny', 'Cloudy', 'Rainy', 'Real World'];
@@ -2280,7 +2284,8 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   var yearsByClass = {};
   cars.forEach(function (c) {
     var y = String(c.Season);
-    var list = yearsByClass[c.Class] || (yearsByClass[c.Class] = []);
+    var ck = _rccClassKey(c.Class);
+    var list = yearsByClass[ck] || (yearsByClass[ck] = []);
     if (y && list.indexOf(y) === -1) list.push(y);
   });
   Object.keys(yearsByClass).forEach(function (k) { yearsByClass[k].sort().reverse(); });
@@ -2359,7 +2364,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
     var series = state.details.series;
     state.details.seasonYear = pickedYear;
     classRows.forEach(function (x) {
-      var n = cars.filter(function (c) { return c.Class === x.cls && String(c.Season) === pickedYear && _rccCarSeries(c) === series; }).length;
+      var n = cars.filter(function (c) { return _rccClassKey(c.Class) === x.cls && String(c.Season) === pickedYear && _rccCarSeries(c) === series; }).length;
       x.count.textContent = n ? n + ' car' + (n === 1 ? '' : 's') : (pickedYear ? 'No ' + series + ' cars in ' + pickedYear : 'No ' + series + ' cars');
       x.row.classList.toggle('rcc-class-row-off', !n);
       if (!n && !classesLocked) { x.cb.checked = false; state.details.classes[x.cls] = false; }
