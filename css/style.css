@@ -504,6 +504,9 @@ label {
 .rc-hint { color: var(--rc-steel); font-size: 12px; margin-top: 4px; }
 .rc-hint.rc-ok { color: var(--rc-ok); }
 .rc-hint.rc-error { color: var(--rc-red); }
+/* A form field that failed validation: red border (register page marks every bad field at once). */
+input.rc-field-error, select.rc-field-error, textarea.rc-field-error,
+input.rc-field-error:focus, select.rc-field-error:focus, textarea.rc-field-error:focus { border-color: var(--rc-red); }
 
 .rc-message { margin-top: 14px; font-size: 14px; }
 .rc-message.rc-error { color: var(--rc-red); }

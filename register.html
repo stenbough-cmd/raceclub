@@ -40,7 +40,7 @@
     <div id="rc-setup-warning" class="rc-message rc-error" style="display:none;text-align:center;"></div>
 
     <div class="rc-card" style="margin-top:24px;">
-      <form id="rc-register-form">
+      <form id="rc-register-form" novalidate>
         <div class="rc-section">
           <label style="margin-top:0;">Username</label>
           <input id="rc-reg-username" type="text" autocomplete="username" required>
@@ -59,6 +59,12 @@
           <label>Email Address</label>
           <input id="rc-reg-email" type="email" autocomplete="email" required>
           <div class="rc-hint">We'll email you a 6-digit code to verify your account.</div>
+
+          <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
+            <input id="rc-reg-notify" type="checkbox">
+            Get Race Club notifications by email
+          </label>
+          <div class="rc-hint">Race news and league updates. You can change this any time in Edit Profile.</div>
 
           <label>Location</label>
           <select id="rc-reg-location" required></select>
@@ -79,8 +85,6 @@
         </div>
 
         <p class="rc-hint" style="margin-top:18px;text-align:left;">Once you verify your email you can log in and use your profile. When a season is open for registration, pick your class and team from your Dashboard to join it.</p>
-
-        <!-- Email-notification opt-in checkbox removed. -->
 
         <button id="rc-register-btn" type="submit" class="rc-btn-primary">Create Account</button>
       </form>
@@ -194,6 +198,13 @@
   regPassword.addEventListener('input', checkPasswordMatch);
   regPassword2.addEventListener('input', checkPasswordMatch);
 
+  // A field's red border clears as soon as the person edits it.
+  ['input', 'change'].forEach(function (evtName) {
+    document.getElementById('rc-register-form').addEventListener(evtName, function (e) {
+      if (e.target && e.target.classList) e.target.classList.remove('rc-field-error');
+    });
+  });
+
   // v0.3 NEW -- clears the EMAIL_TAKEN hard-stop panel back to hidden.
   function clearEmailTakenPanel() {
     document.getElementById('rc-register-email-taken').style.display = 'none';
@@ -218,28 +229,31 @@
     var timeZone = document.getElementById('rc-reg-timezone').value;
     var password = document.getElementById('rc-reg-password').value;
 
-    if (!username) {
-      showToast('Please choose a username.', 'error');
-      return;
-    }
-    var identityProblem = rcIdentityProblem({ username: username, firstName: firstName, lastName: lastName }, null);
-    if (identityProblem) {
-      showToast(identityProblem, 'error');
-      return;
-    }
-    if (!location) {
-      showToast('Please select a location.', 'error');
-      return;
-    }
-    if (!timeZone) {
-      showToast('Please select a time zone.', 'error');
-      return;
-    }
-    if (!checkPasswordMatch()) {
-      return;
-    }
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters.', 'error');
+    // Check every field at once so ALL the ones that need fixing get a red border together
+    // (not just the next one). The toast shows the first problem in form order.
+    var password2 = document.getElementById('rc-reg-password2').value;
+    var problems = [];   // { id, message }
+    function flag(id, message) { problems.push({ id: id, message: message }); }
+    if (!username) flag('rc-reg-username', 'Please choose a username.');
+    else { var uMsg = rcIdentityProblem({ username: username }, null); if (uMsg) flag('rc-reg-username', uMsg); }
+    if (!firstName) flag('rc-reg-firstname', 'First name is required.');
+    else { var fMsg = rcIdentityProblem({ firstName: firstName }, null); if (fMsg) flag('rc-reg-firstname', fMsg); }
+    if (!lastName) flag('rc-reg-lastname', 'Last name is required.');
+    else { var lMsg = rcIdentityProblem({ lastName: lastName }, null); if (lMsg) flag('rc-reg-lastname', lMsg); }
+    if (!email) flag('rc-reg-email', 'Please enter your email address.');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) flag('rc-reg-email', 'Enter a valid email address.');
+    if (!location) flag('rc-reg-location', 'Please select a location.');
+    if (!timeZone) flag('rc-reg-timezone', 'Please select a time zone.');
+    if (!password) flag('rc-reg-password', 'Please choose a password.');
+    else if (password.length < 6) flag('rc-reg-password', 'Password must be at least 6 characters.');
+    if (!password2) flag('rc-reg-password2', 'Please confirm your password.');
+    else if (password !== password2) flag('rc-reg-password2', 'Passwords do not match.');
+
+    document.querySelectorAll('#rc-register-form .rc-field-error').forEach(function (n) { n.classList.remove('rc-field-error'); });
+    if (problems.length) {
+      problems.forEach(function (p) { document.getElementById(p.id).classList.add('rc-field-error'); });
+      document.getElementById(problems[0].id).focus();
+      showToast(problems.length > 1 ? problems[0].message + ' (' + (problems.length - 1) + ' more highlighted in red.)' : problems[0].message, 'error');
       return;
     }
 
@@ -251,7 +265,8 @@
       body: {
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
         email: email, location: location, timeZone: timeZone,
-        password: password
+        password: password,
+        emailNotificationsOptIn: document.getElementById('rc-reg-notify').checked ? '1' : '0'
       }
     })
       .then(function (data) {
