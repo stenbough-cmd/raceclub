@@ -545,10 +545,13 @@
   // Every card still gets its own promise, exactly as before -- they all just resolve (or reject)
   // together off that one underlying fetch, instead of off 8 independent ones.
   function fetchDashboardData(token) {
-    var combined = fetchApi('getDashboardData', { token: token }).catch(function () { return { success: false }; });
+    // A dropped connection or timeout is marked error NETWORK so the page can tell it apart from a
+    // real "session expired" answer (NOT_AUTHENTICATED) and from "no data".
+    var combined = fetchApi('getDashboardData', { token: token }).catch(function () { return { success: false, error: 'NETWORK' }; });
     function slice(key) {
       return combined.then(function (data) {
-        return (data && data.success && data[key]) ? data[key] : { success: false };
+        if (data && data.success && data[key]) return data[key];
+        return { success: false, error: (data && data.error) || 'LOAD_FAILED' };
       });
     }
     return {
@@ -1287,7 +1290,7 @@
     // description), just for the team/car this driver is actually seated in right now.
     var seatInfoBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View current seat info');
     seatInfoBtn.type = 'button';
-    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token, profile.ProfileID); });
+    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token, profile.profileId); });
     card.appendChild(seatInfoBtn);
 
     function setCornerPill(carClass) {
@@ -1372,7 +1375,18 @@
     ]).then(function (results) {
       var built;
       try {
-        built = buildFn(results[0], results[1]);
+        // The server (or the connection) failed, which is not the same as "no data": say so and
+        // offer a Retry instead of showing an empty card.
+        if (results[0] && results[0].success === false && results[0].error) {
+          built = el('div');
+          built.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
+          var retryBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Retry');
+          retryBtn.type = 'button';
+          retryBtn.addEventListener('click', function () { window.location.reload(); });
+          built.appendChild(retryBtn);
+        } else {
+          built = buildFn(results[0], results[1]);
+        }
       } catch (err) {
         // Every OTHER promise in this chain was already defensively .catch()-guarded; the actual
         // card-building step was the one place that wasn't. Logs to the console for debugging
@@ -2684,13 +2698,14 @@
         // skipOnClose (true) -- the second popup opens right behind this
         // one, no need to fire this modal's (nonexistent) onClose.
         modal.close(true);
+        var openTyped = function (force) {
         openTypeToConfirmModal(
           'End Season',
           'End "' + (chosen ? (chosen.name || chosenId) : chosenId) + '"? Ending a season is irreversible.',
           'END SEASON',
           'End Season',
           function () {
-            return fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data2) {
+            return fetchApi('adminArchiveSeason', { method: 'POST', token: token, body: { seasonId: chosenId, force: force ? '1' : '' }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data2) {
               if (!data2.success) {
                 showToast(data2.message || 'Could not end this season.', 'error');
                 return;
@@ -2709,6 +2724,21 @@
           },
           { waitForWrite: true }
         );
+        };
+        // Ending early: name the rounds that are not finalized yet and ask first, then the usual
+        // typed END SEASON box.
+        var open = (chosen && chosen.notFinalizedRounds) || [];
+        if (open.length) {
+          var labels = open.map(function (n) { return 'Round ' + n; }).join(', ');
+          openConfirmModal(
+            'End Season Early?',
+            labels + (open.length === 1 ? ' is' : ' are') + ' not finalized yet. Ending the season now leaves ' + (open.length === 1 ? 'it' : 'them') + ' as they are.',
+            'End Anyway',
+            function () { openTyped(true); }
+          );
+        } else {
+          openTyped(false);
+        }
       });
       btnRow.appendChild(cancelBtn);
       btnRow.appendChild(continueBtn);
@@ -5787,11 +5817,26 @@
         }
       }).catch(function (err) {
         restoreButtons();
-        if (err && err.message === 'RC_FETCH_TIMEOUT') {
-          showToast('This is taking longer than expected. Apps Script may still be finishing the write -- check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
-        } else {
-          showToast('Could not reach the server -- check your connection and try again. Nothing was saved.', 'error');
-        }
+        // No answer came back, so find out for sure: look for the season in the list instead of
+        // leaving the admin guessing.
+        fetchApi('adminListSeasons', { token: token }).then(function (list) {
+          var found = list && list.success && (list.seasons || []).some(function (x) { return x.name === state.seasonName && x.status === 'Registration'; });
+          if (found) {
+            showToast('Season "' + state.seasonName + '" was created.', 'success');
+            Object.keys(RC_LAZY_SECTION_RENDERERS).forEach(function (id) { rcLoadedLazySections[id] = false; });
+            showSection('dashboard');
+            if (currentProfile && currentToken) renderDashboardSection(currentProfile, currentToken, fetchDashboardData(currentToken));
+            modal.close();
+          } else {
+            showToast('The season was not created. Nothing was saved, so it is safe to try again.', 'error');
+          }
+        }).catch(function () {
+          if (err && err.message === 'RC_FETCH_TIMEOUT') {
+            showToast('This is taking longer than expected. Apps Script may still be finishing the write -- check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
+          } else {
+            showToast('Could not reach the server -- check your connection and try again.', 'error');
+          }
+        });
       });
     }
 
@@ -8791,6 +8836,23 @@
       // handling either way -- no silent yank to login.html.
       var profileResult = data && data.success ? data.profile : null;
       if (!profileResult || !profileResult.success) {
+        // Only a real "not logged in" answer ends the session. A timeout, a dropped connection or
+        // a server hiccup keeps the driver logged in and offers a Retry.
+        var sessionReallyExpired = (data && data.error === 'NOT_AUTHENTICATED') || (profileResult && profileResult.error === 'NOT_AUTHENTICATED');
+        if (!sessionReallyExpired) {
+          document.getElementById('rc-loading').style.display = 'none';
+          var loadErr = document.getElementById('rc-error');
+          loadErr.style.display = 'block';
+          loadErr.innerHTML = '';
+          loadErr.appendChild(document.createTextNode('Could not load your account right now. '));
+          var loadRetry = document.createElement('button');
+          loadRetry.type = 'button';
+          loadRetry.className = 'rc-btn-secondary rc-btn-sm';
+          loadRetry.textContent = 'Retry';
+          loadRetry.addEventListener('click', function () { window.location.reload(); });
+          loadErr.appendChild(loadRetry);
+          return;
+        }
         clearToken();
         renderHeader({ forceLoggedOut: true });
         document.getElementById('rc-loading').style.display = 'none';
@@ -8811,7 +8873,7 @@
       document.getElementById('rc-loading').style.display = 'none';
       var err = document.getElementById('rc-error');
       err.style.display = 'block';
-      err.textContent = 'Could not reach the server. Check API_BASE_URL and try again.';
+      err.textContent = 'Could not reach the server. Check your connection and reload the page.';
     });
   }
 })();
