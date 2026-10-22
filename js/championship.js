@@ -3317,8 +3317,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     var shownArchive = RCC.archive;
-    var picked = ((RCC.page && RCC.page.seasons) || []).filter(function (x) { return x.seasonId === seasonId; })[0];
-    _rccShowPageLoader('Loading ' + (picked && picked.seasonNumber ? 'Season ' + picked.seasonNumber : 'Season') + '\u2026');
+    _rccShowPageLoader('Loading Season\u2026');
     _rccGetPage(seasonId).then(function (page) {
       if (myToken !== pickToken) return;
       if (_rccHandleAuthError(page)) return;
