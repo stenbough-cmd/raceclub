@@ -218,6 +218,13 @@
       var fixed = !!presetId && !teamOn;
       [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
       awardNote.style.display = fixed ? '' : 'none';
+      // Plain white (no design) has no accent areas: both accent rows, their swatches and finish lists are grayed out and disabled
+      var plain = !presetId && R.d === 0;
+      ['a1', 'a2'].forEach(function (k) {
+        rows[k].row.classList.toggle('rch-dim', fixed || plain);
+        rows[k].fs.disabled = plain;
+        Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = plain; });
+      });
     }
     var busy = false, again = false;
     function draw() {
