@@ -109,19 +109,16 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   function visibleDesigns() { return cfg.designs.filter(function (d) { return !d.locked || cfg.showLocked; }); }
 
   // ---- recipes -------------------------------------------------------------------------------
-  // Reads one pixel of a design's pattern picture. Accent 2 is painted lime #9BF20C (kept well away from the magenta
-  // shell color); designs painted with the older pure red are still read correctly. Returns [accent2, accent1] weights.
+  // Reads one pixel of a design's pattern picture. Only two accent colors exist: lime #9BF20C = Accent 2 and pure blue =
+  // Accent 1. Everything else (magenta shell color, transparent, and the old pure red) is the base color.
+  // Returns [accent2, accent1] weights. Each pixel is split into lime + blue + magenta shares so soft edges blend.
   var LIME_ = [155 / 255, 242 / 255, 12 / 255];
   function patternWeights(pr, pg, pb, al) {
-    var gL = pg / LIME_[1];                                     // how much lime: only lime has green
-    if (gL > 0.03) {
-      if (gL > 1) gL = 1;
-      var wM = pr - LIME_[0] * gL; if (wM < 0) wM = 0;           // magenta (shell) share
-      var wB = pb - LIME_[2] * gL - wM; if (wB < 0) wB = 0;      // blue (accent 1) share
-      return [al * gL, al * (wB > 1 ? 1 : wB)];
-    }
-    if (pr > 0.85 && pb > 0.85 && pg < 0.1 && al > 0.5) return [0, 0];   // solid magenta = base
-    return [al * pr, al * pb];                                   // older art: red = accent 2, blue = accent 1
+    var wL = pg / LIME_[1]; if (wL > 1) wL = 1;                  // only lime has green
+    var wM = pr - LIME_[0] * wL; if (wM < 0) wM = 0;             // magenta (shell) share
+    var wB = pb - LIME_[2] * wL - wM; if (wB < 0) wB = 0;        // blue (accent 1) share
+    if (wB > 1) wB = 1;
+    return [al * wL, al * wB];
   }
 
   function findColor(id) { for (var i = 0; i < PALETTE.length; i++) if (PALETTE[i].id === id) return PALETTE[i]; return null; }
@@ -377,7 +374,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           var r = bR, g = bG, b = bB;
 
           if (sm > 0.001) {
-            // pattern weights: lime (#9BF20C) or the older pure red = accent 2, blue = accent 1, transparent / pink (magenta) = base
+            // pattern weights: lime (#9BF20C) = accent 2, blue = accent 1, anything else (magenta, transparent, old red) = base
             var wS = 0, wA = 0;
             if (pd) {
               var al = pd[o + 3] / 255;
