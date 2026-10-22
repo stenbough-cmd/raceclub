@@ -786,6 +786,11 @@ var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
 // opens IN PLACE on whatever page the user is already on, no navigation.
 function _rcOpenFeedbackModal() {
   var isDark = document.body.classList.contains('rc-league-page');
+  // Feedback needs a login (the server fills in the name and email from the account).
+  if (!((typeof getToken === 'function') && getToken())) {
+    window.location.href = 'login.html';
+    return;
+  }
 
   var backdrop = document.createElement('div');
   // rcl-modal-overlay-over-nav -- sits above .rc-fixed-header (css/style.css, z-index:1000) instead
@@ -921,6 +926,7 @@ function _rcOpenFeedbackModal() {
     submitBtn.textContent = 'Sending...';
     fetchApi('submitFeedback', {
       method: 'POST',
+      token: (typeof getToken === 'function') ? getToken() : null,
       body: {
         category: categorySelect.value,
         name: nameInput.value.trim(),
@@ -928,7 +934,11 @@ function _rcOpenFeedbackModal() {
         pageUrl: window.location.href
       }
     }).then(function (result) {
-      if (!result || !result.success) throw new Error((result && result.message) || 'Send failed');
+      if (!result || !result.success) {
+        var fbErr = new Error((result && result.message) || 'Send failed');
+        fbErr.userMessage = result && result.message;
+        throw fbErr;
+      }
       // Swap the body's contents in place for a confirmation view -- no navigation, no reload.
       // Closing just removes the backdrop, same close() as the form view above, so the driver lands
       // back on whatever page/section they were already looking at.
@@ -954,10 +964,10 @@ function _rcOpenFeedbackModal() {
       closeConfirmBtn.textContent = 'Close';
       closeConfirmBtn.addEventListener('click', close);
       body.appendChild(closeConfirmBtn);
-    }).catch(function () {
+    }).catch(function (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Send Feedback';
-      errorMsg.textContent = 'Could not send feedback -- try again.';
+      errorMsg.textContent = (err && err.userMessage) || 'Could not send feedback -- try again.';
       errorMsg.style.display = 'block';
     });
   });
