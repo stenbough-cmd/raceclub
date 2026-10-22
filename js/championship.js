@@ -3128,7 +3128,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (mode === 'welcome') { rccRenderWelcome(); return; }
   if (mode === 'demo') { rccStartDemo(); return; }
   _rccShowCarriedToasts();
-  var EMPTY = { hasSeason: false, owner: { displayName: '' }, seasons: [] };
 
   // 1. Draw the saved copy instantly, if this browser has one.
   var currentText = null;
@@ -3153,6 +3152,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // in the season picker is instant, and a background refresh never switches away from a past season.
   var defaultArchive = null;
   var revalidating = false;
+  // The first load failed and this browser has no saved copy (audit A4, Matt 2026-10-22): show "Could
+  // Not Load The Championship" with RETRY instead of an empty page that looks like no season. The
+  // player stays logged in; only a real "please log in" answer goes to the login page.
+  function showLoadFailed() {
+    _rccPageShell(false);
+    _rccShowLoadError(function () { revalidate(); }, 'Could Not Load The Championship');
+  }
   function revalidate() {
     if (revalidating) return;
     revalidating = true;
@@ -3165,20 +3171,18 @@ document.addEventListener('DOMContentLoaded', function () {
       if (page && page.success) {
         defaultArchive = gotArchive;
         var text = JSON.stringify(page);
+        // A RETRY that worked: take the error panel away and bring the page back.
+        if (document.getElementById('rcc-load-error')) { _rccClearLoadError(); _rccPageShell(true); }
         if (text !== currentText) {
           currentText = text;
           _rccWriteSaved(text);
           if (!RCC.viewSeasonId) rccRenderAll(page);
         }
       } else if (!hadCopy) {
-        rccRenderAll(EMPTY);
-        _rccToast((page && page.message) || 'Could not load the championship.', 'error');
+        showLoadFailed();
       }
     }).catch(function () {
-      if (!hadCopy) {
-        rccRenderAll(EMPTY);
-        _rccToast('Could not reach the server. Reload the page to try again.', 'error');
-      }
+      if (!hadCopy) showLoadFailed();
     }).then(function () {
       revalidating = false;
       if (!hadCopy) { _rccUnlockScroll(); _rccHidePageLoader(); }
