@@ -6081,11 +6081,12 @@
       });
     }
     // One file, one importXml call; resolves with the server answer.
-    function importOne(file, xmlText) {
+    function importOne(file, xmlText, confirmed) {
       var url = API_BASE_URL + '?action=importXml' +
         '&token=' + encodeURIComponent(token) +
         '&filename=' + encodeURIComponent(file.name) +
-        '&roundId=' + encodeURIComponent(roundId);
+        '&roundId=' + encodeURIComponent(roundId) +
+        (confirmed ? '&confirm=true' : '');
       rcWriteStarted_();
       return _rcFetchOnce_(url, {
         method: 'POST',
@@ -6093,6 +6094,32 @@
         body: xmlText
       }, RC_POST_TIMEOUT_MS).then(function (data) { rcWriteFinished_(); return data; },
         function (err) { rcWriteFinished_(); throw err; });
+    }
+    // Popup that lists what the server flagged and resolves true (Import Anyway) or false (Cancel/X).
+    function askImportConfirm(label, warnings) {
+      return new Promise(function (resolve) {
+        var body = el('div');
+        warnings.forEach(function (w) {
+          var p = el('p', 'color:var(--rc-carbon);font-size:14px;margin-top:0;');
+          p.textContent = w;
+          body.appendChild(p);
+        });
+        var q = el('p', 'color:var(--rc-carbon);font-size:14px;font-weight:700;');
+        q.textContent = 'Import the ' + label + ' file anyway?';
+        body.appendChild(q);
+        var row = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+        var cancel = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+        cancel.type = 'button';
+        var go = el('button', 'rc-btn-primary rc-btn-sm', 'Import Anyway');
+        go.type = 'button';
+        row.appendChild(cancel);
+        row.appendChild(go);
+        body.appendChild(row);
+        var answered = false;
+        var m = showModal('Check Before Importing', { bodyEl: body, onClose: function () { if (!answered) { answered = true; resolve(false); } } });
+        cancel.addEventListener('click', function () { m.close(); });
+        go.addEventListener('click', function () { answered = true; m.close(); resolve(true); });
+      });
     }
     importBtn.addEventListener('click', function () {
       var jobs = [];
@@ -6115,7 +6142,17 @@
         var chain = Promise.resolve();
         jobs.forEach(function (j) {
           chain = chain.then(function () {
-            return importOne(j.file, j.text).then(function (data) {
+            return importOne(j.file, j.text).then(function (first) {
+              // The server found something worth a second look (different track, or drivers who
+              // are not league members) and wrote nothing yet. Ask, then send it again as confirmed.
+              if (first && first.needsConfirm) {
+                return askImportConfirm(j.label, first.warnings || [first.message]).then(function (ok) {
+                  if (!ok) { throw { rcShow: 'Nothing was imported.' }; }
+                  return importOne(j.file, j.text, true);
+                });
+              }
+              return first;
+            }).then(function (data) {
               if (!data || !data.success) { throw { rcShow: ((data && data.message) || ('Could not import the ' + j.label + ' file.')) }; }
               (data.unmatchedDriverNames || []).forEach(function (n) { if (unmatched.indexOf(n) === -1) unmatched.push(n); });
             });
