@@ -2721,28 +2721,51 @@ function rccOpenUpload(roundId, lockRound) {
   }
   function lockInputs(on) { if (qFile) qFile.disabled = on; rFile.disabled = on; if (roundSel) roundSel.disabled = on; }
 
+  // send(extra): reads the chosen files and uploads them; extra adds { confirmTrack: true } after the
+  // player answers Upload Anyway in the "Different Track?" popup.
+  function send(extra) {
+    var reads = qFile ? [readFile(qFile.files[0]), readFile(rFile.files[0])] : [readFile(rFile.files[0])];
+    return Promise.all(reads).then(function (read) {
+      var q = qFile ? read[0] : null, r = qFile ? read[1] : read[0];
+      var body = { seasonId: page.seasonId, roundId: c.roundId, raceFilename: r.name, raceXml: r.text };
+      if (q) { body.qualifyFilename = q.name; body.qualifyXml = q.text; }
+      if (extra) Object.keys(extra).forEach(function (k) { body[k] = extra[k]; });
+      return _rccApi('champImportXml', body, { post: true });
+    });
+  }
+  function uploaded(res) {
+    (res.warnings || []).forEach(function (w) { _rccToast(w, 'info'); });
+    _rccToast('Round ' + c.roundNum + ' results uploaded.', 'success');
+    m.close(true);
+    rccReloadAfterSave();
+  }
+  // The track names in the files look different from the round's (Matt, 2026-10-22): ask instead of
+  // refusing. Meant for the same track under a slightly different name in the game; Cancel goes back
+  // to the upload window with the files still chosen, so they can be swapped.
+  function askTrack(res) {
+    var cm = rccConfirm('Different Track?',
+      (qFile ? 'These files were' : 'This file was') + ' raced at ' + (res.fileTrack || 'another track') + ', but Round ' + (res.roundNum || c.roundNum) + ' is at ' + (res.roundTrack || 'another track') + '.',
+      'Upload Anyway', 'Uploading...', function () { return send({ confirmTrack: true }); }, uploaded);
+    var first = cm.body.querySelector('.rcc-confirm-text');
+    first.parentNode.insertBefore(_rccText('p', 'rcc-confirm-text', qFile ? 'Upload them to this round anyway?' : 'Upload it to this round anyway?'), first.nextSibling);
+  }
+
   go.addEventListener('click', function () {
     if (!bothChosen()) { _rccToast(qFile ? 'Choose both files. File 1 is the Qualify results and file 2 is the Race results.' : 'Choose the Race results file.', 'error'); return; }
     lockInputs(true);
-    rccRunWrite(go, 'Uploading...', function () {
-      var reads = qFile ? [readFile(qFile.files[0]), readFile(rFile.files[0])] : [readFile(rFile.files[0])];
-      return Promise.all(reads).then(function (read) {
-        var q = qFile ? read[0] : null, r = qFile ? read[1] : read[0];
-        var body = { seasonId: page.seasonId, roundId: c.roundId, raceFilename: r.name, raceXml: r.text };
-        if (q) { body.qualifyFilename = q.name; body.qualifyXml = q.text; }
-        return _rccApi('champImportXml', body, { post: true });
-      });
-    }).then(function (res) {
+    rccRunWrite(go, 'Uploading...', function () { return send(null); }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
+      if (res && res.needsConfirm && res.confirmKind === 'track') {
+        lockInputs(false);
+        askTrack(res);
+        return;
+      }
       if (!res || !res.success) {
         _rccToast((res && res.message) || 'Import failed.', 'error');
         lockInputs(false);
         return;
       }
-      (res.warnings || []).forEach(function (w) { _rccToast(w, 'info'); });
-      _rccToast('Round ' + c.roundNum + ' results uploaded.', 'success');
-      m.close(true);
-      rccReloadAfterSave();
+      uploaded(res);
     }).catch(function (e) {
       lockInputs(false);
       // Only our own file-reading message is shown as is. Network and server faults get plain wording.
