@@ -269,11 +269,11 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var cell = Math.max(2, Math.round(2 / Math.max(scale, 0.25)));
       var u = hash2(Math.floor(sx / cell), Math.floor(sy / cell));
       var nz = (u - 0.5) * 3.46;
-      var sp = u > 0.985 ? (u - 0.985) / 0.015 : 0;
-      k = clamp(SH * 1.12, 0, 1.12) * (0.92 + 0.07 * nz * (scale < 0.4 ? 0.3 : 1));
+      var sp = u > 0.992 ? (u - 0.992) / 0.008 : 0;
+      k = clamp(SH * 1.12, 0, 1.12) * (0.94 + 0.03 * nz * (scale < 0.4 ? 0.3 : 1));
       r *= k; g *= k; b *= k;
-      w = HL;
-      if (scale >= 0.4 && sp > 0) { r += (255 - r) * sp * 0.9; g += (255 - g) * sp * 0.9; b += (255 - b) * sp * 0.9; }
+      w = HL * 0.7;
+      if (scale >= 0.4 && sp > 0) { r += (255 - r) * sp * 0.4; g += (255 - g) * sp * 0.4; b += (255 - b) * sp * 0.4; }
     } else if (kind === 'pearl') {
       var a = 0.5 + 0.5 * Math.sin((sx * 0.7 + sy * 0.9) / 110);
       var m1 = 0.30 * a, m2 = 0.30 * 0.85;

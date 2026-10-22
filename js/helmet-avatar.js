@@ -54,7 +54,7 @@
 
   // ---- design list + default helmet (from the HelmetAssets / HelmetPresets sheet tabs) ----
   var assets = null;   // { designs, logos, manufacturers, def }  def = the saved "Website Default" helmet, or null
-  function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null }; }
+  function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null, defName: res.defaultName || '' }; }
   function sigOf(a) { return JSON.stringify([a.designs, a.def, (a.logos || []).map(function (l) { return [l.id || l.file, l.active, (l.data || '').length]; })]); }
   function hash(str) { var h = 0, i; for (i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0; return String(h); }
   function apply(a) {
@@ -99,7 +99,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=14')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=15')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -131,7 +131,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=15').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=16').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -144,6 +144,7 @@
           logoD: base.d,
           own: own,
           awarded: (teamInfo && teamInfo.awarded) || [],
+          websiteDefault: (assets && assets.def) ? { name: assets.defName || 'Website helmet', recipe: assets.def } : null,   // listed under Website while the member has not saved their own helmet
           teamInfo: teamInfo,
           teamOn: !!(own && own.t),
           tried: tried,

@@ -160,8 +160,8 @@
       var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain';
-      // Grouped like the layer picker below: unlocked designs under "Default", locked ones under "Admin" (HelmetAssets.Locked)
-      var gDef = mk('optgroup'); gDef.label = 'Default'; var gAdm = mk('optgroup'); gAdm.label = 'Admin';
+      // Grouped like the layer picker below: unlocked designs under "Basic", locked ones under "Admin" (HelmetAssets.Locked)
+      var gDef = mk('optgroup'); gDef.label = 'Basic'; var gAdm = mk('optgroup'); gAdm.label = 'Admin';
       cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; (d.locked ? gAdm : gDef).appendChild(o); });
       gDef.insertBefore(plainO, gDef.firstChild);   // Plain is a Default design, open to every member
       dSel.appendChild(gDef);

@@ -119,10 +119,17 @@
     var dRow = mk('div', 'rch-dstack');
     var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
-    var gGen = mk('optgroup'); gGen.label = 'Default';
+    var gGen = mk('optgroup'); gGen.label = 'Basic';
     var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain'; gGen.appendChild(plainO);
     H.visibleDesigns().forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
     dSel.appendChild(gGen);
+    // The website's default helmet is listed under "Website" while this member has not saved a helmet of their own
+    var wd = (!own && ctx.websiteDefault) ? ctx.websiteDefault : null;
+    if (wd) {
+      var gWeb = mk('optgroup'); gWeb.label = 'Website';
+      var wo = mk('option'); wo.value = 'w:default'; wo.textContent = wd.name + ' (default)'; gWeb.appendChild(wo);
+      dSel.appendChild(gWeb);
+    }
     var cats = {}, catOrder = [];
     awarded.forEach(function (a) { var c = a.category || 'Awards'; if (!cats[c]) { cats[c] = []; catOrder.push(c); } cats[c].push(a); });
     catOrder.sort(function (x, y) { return x === 'Awards' ? -1 : (y === 'Awards' ? 1 : x.localeCompare(y)); });
@@ -134,7 +141,10 @@
     dSel.onchange = function () {
       leaveTeam();
       var v = dSel.value;
-      if (v.indexOf('p:') === 0) {
+      if (v === 'w:default') {
+        if (presetId && stash) R = stash;
+        presetId = ''; R = copy(init.R);                   // back to the website helmet exactly as it opened
+      } else if (v.indexOf('p:') === 0) {
         var a = presetOf(v.slice(2)); if (!a) return;
         if (!presetId) stash = copy(R);
         presetId = a.presetId;
@@ -207,8 +217,8 @@
 
     /* ---- drawing ---- */
     function syncControls() {
-      if (!presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
-      dSel.value = presetId ? 'p:' + presetId : 'd:' + R.d;
+      if (!(wd && !own) && !presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
+      dSel.value = presetId ? 'p:' + presetId : ((wd && !teamOn && !dirty()) ? 'w:default' : 'd:' + R.d);
       SLOTS.forEach(function (s) {
         rows[s[0]].fs.value = R[s[0]][1];
         Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === R[s[0]][0]); });
