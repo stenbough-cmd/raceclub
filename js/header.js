@@ -517,7 +517,7 @@ function renderHeader(opts) {
     // site, sitting above Logout in the dropdown itself.
     var avatarFilename = cached ? (cached.avatarFilename || '') : '';
     html += '<button type="button" class="rc-header-account-toggle" id="rc-header-account-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">' +
-              '<span class="rc-header-avatar">' + rcHelmetHtml_(avatarFilename, 52, 'rc-helmet-header') + '</span>' +
+              '<span class="rc-header-avatar">' + rcHelmetHtml_(avatarFilename, 46, 'rc-helmet-header') + '</span>' +
               '<span class="rc-header-account-text">' +
                 '<span class="rc-header-account-name">' + escapeHtmlHeader_(displayName).toUpperCase() + '</span>' +
                 '<span class="rc-badge-chip rc-header-account-role ' + (RC_HEADER_ROLE_PILL_CLASS_[role] || 'rc-badge-role-driver') + '">' + escapeHtmlHeader_(role) + rcRolePlusHtml(cached) + '</span>' +
@@ -553,7 +553,7 @@ function renderHeader(opts) {
     html += '<a class="rc-header-link" id="rc-header-login-link" href="login.html">REGISTER / LOGIN</a>' +
             '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
               // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)
-              rcHelmetHtml_('helmet:{"d":1,"b":["white","gloss"],"a1":["white","gloss"],"a2":["white","gloss"],"v":"smoke"}', 52, 'rc-helmet-header rc-helmet-off') +
+              rcHelmetHtml_('helmet:{"d":1,"b":["white","gloss"],"a1":["white","gloss"],"a2":["white","gloss"],"v":"smoke"}', 46, 'rc-helmet-header rc-helmet-off') +
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
               '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
