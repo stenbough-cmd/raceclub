@@ -110,6 +110,8 @@
 .rch-locked .rch-section { opacity: 0.45; pointer-events: none; }
 .rch-check { text-transform: none; letter-spacing: 0; font-weight: 600; margin: 0; }
 .rch-check span { text-transform: none; letter-spacing: 0; font-weight: 600; }
+/* Soft shadow (admin designer): normal weight, not bold */
+.rch-check.rch-plain, .rch-check.rch-plain span { font-weight: 400; }
 .rch-options > .rch-label { margin: 0; }
 .rch-options .rch-hint { margin: 0; }
 
@@ -142,7 +144,17 @@
 .rch-lmrow { margin: 0 0 6px; }
 /* admin: helmet name + kind share the top row; manufacturer + class sit under it */
 .rch-row-nk { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; align-items: end; }
-.rch-row-mc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.rch-row-mc { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
 
 /* circle-arrow Reset button: last in the button row, square, icon only */
 .rch-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; min-width: 0; }
+
+/* Admin Helmet Designer on a computer: the helmet side is locked in place and only the controls side scrolls. */
+@media (min-width: 861px) {
+  .rc-modal.rch-modal { height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
+  .rc-modal.rch-modal .rc-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .rch-designer:not(.rch-player) { height: 100%; }
+  .rch-designer:not(.rch-player) .rch-grid { height: 100%; }
+  .rch-designer:not(.rch-player) .rch-left { position: static; align-self: start; }
+  .rch-designer:not(.rch-player) .rch-right { height: 100%; overflow-y: auto; padding-right: 8px; }
+}

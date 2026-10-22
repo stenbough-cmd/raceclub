@@ -51,6 +51,10 @@
     var info = ctx.teamInfo || null;
     var teamRecipe = (info && info.recipe) ? H.normalizeRecipe(info.recipe) : null;
     var teamOn = !!(ctx.teamOn && teamRecipe);
+    // The member's own customized helmet is remembered inside the saved team helmet (field k). If they later lose access to the
+    // team's manufacturer helmet (new season with a team of a different manufacturer) the site puts k back, and with no k the
+    // Race Club default helmet is used.
+    var lastCustom = (own && own.t) ? (own.k || null) : null;
 
     // ---- where the helmet starts ----
     var R = clean(ctx.recipe);
@@ -72,11 +76,19 @@
     // what is actually drawn / saved
     function effective() {
       var o;
-      if (teamOn) { o = copy(teamRecipe); o.t = 1; return o; }
+      if (teamOn) { o = copy(teamRecipe); o.t = 1; if (lastCustom) o.k = copy(lastCustom); return o; }
       if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
       o = copy(R);
       o.logos = dirty() ? [] : copy(baseLogos);
       return o;
+    }
+    // the member's current own design, kept small, to be restored later (null = they had nothing of their own: default helmet)
+    function customSlim() {
+      if (!own && !dirty() && !presetId) return null;
+      var e = effective(), k = { d: e.d, b: e.b, a1: e.a1, a2: e.a2, v: e.v };
+      if (e.logos && e.logos.length) k.l = e.logos.slice(0, 20);
+      if (e.p) k.p = e.p;
+      return k;
     }
 
     // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
@@ -123,6 +135,12 @@
     var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain'; gGen.appendChild(plainO);
     H.visibleDesigns().forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
     dSel.appendChild(gGen);
+    // The team's manufacturer helmet, unlocked while the member has a seat (and kept after the season ends)
+    if (teamRecipe) {
+      var gTeam = mk('optgroup'); gTeam.label = 'Team';
+      var to = mk('option'); to.value = 't:team'; to.textContent = (info && info.manufacturer) ? info.manufacturer : 'Team helmet'; gTeam.appendChild(to);
+      dSel.appendChild(gTeam);
+    }
     // The website's default helmet is listed under "Website" while this member has not saved a helmet of their own
     var wd = (!own && ctx.websiteDefault) ? ctx.websiteDefault : null;
     if (wd) {
@@ -139,8 +157,12 @@
       dSel.appendChild(g);
     });
     dSel.onchange = function () {
-      leaveTeam();
       var v = dSel.value;
+      if (v === 't:team') {
+        if (!teamOn) lastCustom = customSlim();      // null when they had no helmet of their own
+        presetId = ''; stash = null; teamOn = true; draw(); return;
+      }
+      leaveTeam();
       if (v === 'w:default') {
         if (presetId && stash) R = stash;
         presetId = ''; R = copy(init.R);                   // back to the website helmet exactly as it opened
@@ -217,19 +239,20 @@
 
     /* ---- drawing ---- */
     function syncControls() {
-      if (!(wd && !own) && !presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
-      dSel.value = presetId ? 'p:' + presetId : ((wd && !teamOn && !dirty()) ? 'w:default' : 'd:' + R.d);
+      var V = teamOn ? clean(teamRecipe) : R;      // what the controls show
+      if (!teamOn && !(wd && !own) && !presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
+      dSel.value = teamOn ? 't:team' : presetId ? 'p:' + presetId : ((wd && !teamOn && !dirty()) ? 'w:default' : 'd:' + R.d);
       SLOTS.forEach(function (s) {
-        rows[s[0]].fs.value = R[s[0]][1];
-        Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === R[s[0]][0]); });
+        rows[s[0]].fs.value = V[s[0]][1];
+        Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === V[s[0]][0]); });
       });
-      Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === R.v); });
+      Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === V.v); });
       // award helmets are used as is: the colors, visor, Randomize and Reset are locked (the Design list stays open)
       var fixed = !!presetId && !teamOn;
       [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
       awardNote.style.display = fixed ? '' : 'none';
       // Plain white (no design) has no accent areas: both accent rows, their swatches and finish lists are grayed out and disabled
-      var plain = !presetId && R.d === 0;
+      var plain = !presetId && V.d === 0;
       ['a1', 'a2'].forEach(function (k) {
         rows[k].row.classList.toggle('rch-dim', fixed || plain);
         rows[k].fs.disabled = plain;

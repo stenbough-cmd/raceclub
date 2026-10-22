@@ -11,13 +11,13 @@
 (function () {
   'use strict';
   var H = window.RCHelmet;
-  var KINDS = ['Website Default', 'Manufacturer', 'Special Event', 'Label', 'Other'];
+  var KINDS = ['Website Default', 'Manufacturer', 'Special Event', 'Premium', 'Awards'];
   var KIND_HINTS = {
     'Website Default': 'The helmet drivers start with before they design their own. Only one exists: saving replaces the old one.',
-    'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer and class.',
-    'Special Event': 'A helmet to give to members for a special event.',
-    'Label': 'A helmet a member can earn as a label, such as a nickname or achievement.',
-    'Other': 'Any other helmet, for example a season winner design. Give it to members from Manage Helmet Designs.'
+    'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer.',
+    'Special Event': 'A helmet to give to members for a special event. Members find it under "Special Event" in their Design list.',
+    'Premium': 'A premium helmet to give to members. Members find it under "Premium" in their Design list.',
+    'Awards': 'An award helmet, for example a season winner design. Members find it under "Awards" in their Design list.'
   };
 
   function mk(tag, cls, html) {
@@ -33,7 +33,12 @@
   var GROUPS = [['Championship', 'Championship (single player members with a +)'], null, ['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
   function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
-  var SLIDERS = [['x', 'Left / right', 0, 1254, 1], ['y', 'Up / down', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -30, 30, 0.5]];
+  var SLIDERS = [['x', 'Left / right', 0, 1254, 1], ['y', 'Up / down', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -45, 45, 0.5]];
+  // Tilt slider: sliding right turns the layer clockwise. r (the stored angle) counts counter-clockwise, so the slider shows the
+  // opposite sign, and only the part of r left over after whole 90 degree turns (the rotate buttons make those).
+  var ROT_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
+  function turnBase(r) { return Math.round((Number(r) || 0) / 90) * 90; }
+  function wrapAngle(r) { r = ((r % 360) + 360) % 360; return r > 180 ? r - 360 : r; }
 
   function openDesigner(ctx) {
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
@@ -59,8 +64,8 @@
       var R = blankRecipe();
       var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
       var RESET_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
-      var cur = { id: '', name: '', kind: 'Other', mfr: '', cls: '', category: 'Awards' };
-      var knownCats = ['Awards'];
+      var cur = { id: '', name: '', kind: 'Awards', mfr: '' };
+      var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
       var dragFrom = -1;
 
@@ -97,7 +102,7 @@
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
       var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label', 'Helmet name'));
-      var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Ford Hypercar';
+      var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Season 1 Champion';
       nameIn.oninput = function () { cur.name = nameIn.value; };
       nameWrap.appendChild(nameIn);
       var kindWrap = mk('div'); kindWrap.appendChild(mk('div', 'rch-label', 'Kind'));
@@ -107,38 +112,19 @@
       bar.appendChild(nkRow);
       var mfrWrap = mk('div'); mfrWrap.appendChild(mk('div', 'rch-label', 'Manufacturer'));
       var mfrSel = mk('select', 'rch-select-wide'); mfrSel.appendChild(mk('option', '', '')); mfrSel.firstChild.value = ''; mfrSel.firstChild.textContent = 'Choose...';
-      (assets.manufacturers || []).forEach(function (m) { var o = mk('option'); o.value = m; o.textContent = m; mfrSel.appendChild(o); });
+      function fillMfrs() {
+        var keep = mfrSel.value;
+        while (mfrSel.options.length > 1) mfrSel.remove(1);
+        (assets.manufacturers || []).forEach(function (m) { var o = mk('option'); o.value = m; o.textContent = m + (mfrDesigns[m] ? ' *' : ''); mfrSel.appendChild(o); });   // * = this manufacturer already has a helmet
+        mfrSel.value = keep;
+      }
+      fillMfrs();
       mfrWrap.appendChild(mfrSel);
-      var clsWrap = mk('div'); clsWrap.appendChild(mk('div', 'rch-label', 'Class'));
-      var clsSel = mk('select', 'rch-select-wide'); clsSel.appendChild(mk('option')); clsSel.firstChild.value = ''; clsSel.firstChild.textContent = 'Choose...';
-      (assets.classes || []).forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; clsSel.appendChild(o); });
-      clsWrap.appendChild(clsSel);
-      var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap); mcRow.appendChild(clsWrap);
+      var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap);
       bar.appendChild(mcRow);
       var kindHint = mk('p', 'rch-hint'); bar.appendChild(kindHint);
-      // category: where members find an award helmet in their design list (pick one or make a new one)
-      var catRow = mk('div', 'rch-catrow');
-      catRow.appendChild(mk('div', 'rch-label', 'Category (the group this helmet is listed under for members)'));
-      var catSel = mk('select', 'rch-select-wide');
-      var catNew = mk('input', 'rch-input'); catNew.type = 'text'; catNew.maxLength = 40; catNew.placeholder = 'New category name, e.g. Season Champions'; catNew.style.display = 'none'; catNew.style.marginTop = '6px';
-      catRow.appendChild(catSel); catRow.appendChild(catNew);
-      bar.appendChild(catRow);
-      function fillCats(chosen) {
-        var list = knownCats.slice(); if (chosen && list.indexOf(chosen) < 0) list.push(chosen);
-        list.sort(function (a, b) { return a === 'Awards' ? -1 : (b === 'Awards' ? 1 : a.localeCompare(b)); });
-        catSel.innerHTML = '';
-        list.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
-        var on = mk('option'); on.value = '__new__'; on.textContent = '+ New category...'; catSel.appendChild(on);
-        catSel.value = chosen || 'Awards'; catNew.style.display = 'none';
-      }
-      catSel.onchange = function () {
-        if (catSel.value === '__new__') { catNew.style.display = ''; catNew.focus(); cur.category = catNew.value.trim(); }
-        else { catNew.style.display = 'none'; cur.category = catSel.value; }
-      };
-      catNew.oninput = function () { cur.category = catNew.value.trim(); };
       kindSel.onchange = function () { cur.kind = kindSel.value; syncMeta(); };
-      mfrSel.onchange = function () { cur.mfr = mfrSel.value; };
-      clsSel.onchange = function () { cur.cls = clsSel.value; };
+      mfrSel.onchange = function () { cur.mfr = mfrSel.value; if (cur.kind === 'Manufacturer') { cur.name = cur.mfr; } syncMeta(); };
       var status = mk('p', 'rch-status'); bar.appendChild(status);
       var btns = mk('div', 'rch-btns');
       var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
@@ -221,8 +207,11 @@
         var keep = lpick.value;
         lpick.innerHTML = '';
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
-        H.SHAPES.forEach(function (sh) { var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
+        var gP = mk('optgroup'); gP.label = 'Premium shapes';
+        H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
+        lpick.appendChild(gP);
         // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
         var cats = {}, catOrder = [];
         H.getConfig().logos.forEach(function (l) {
@@ -324,16 +313,26 @@
         var g = mk('div', 'rch-sliders');
         SLIDERS.forEach(function (s) {
           g.appendChild(mk('span', '', s[1]));
-          var inp = mk('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; inp.value = sel[s[0]];
+          var isTilt = s[0] === 'r';
+          var base = isTilt ? turnBase(sel.r) : 0;                       // whole 90 degree turns already applied
+          var inp = mk('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4];
+          inp.value = isTilt ? (-((Number(sel.r) || 0) - base)) : sel[s[0]];
           var v = mk('span', 'rch-sv'); v.textContent = inp.value;
-          inp.oninput = function () { sel[s[0]] = parseFloat(inp.value); v.textContent = inp.value; draw(true); };
+          inp.oninput = function () { sel[s[0]] = isTilt ? wrapAngle(base - parseFloat(inp.value)) : parseFloat(inp.value); v.textContent = inp.value; draw(true); };
           g.appendChild(inp); g.appendChild(v);
         });
         detail.appendChild(g);
         var opts = mk('div', 'rch-btns');
-        var shl = mk('label', 'rch-check'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!sel.sh;
+        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!sel.sh;
         shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; draw(true); };
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
+        // turn the layer a quarter turn (r counts counter-clockwise, so left = +90, right = -90)
+        var rotL = mk('button', 'rc-btn-secondary rch-iconbtn', ROT_ICON); rotL.type = 'button'; rotL.title = 'Rotate left 90 degrees'; rotL.setAttribute('aria-label', 'Rotate left 90 degrees');
+        var rotR = mk('button', 'rc-btn-secondary rch-iconbtn', ROT_ICON); rotR.type = 'button'; rotR.title = 'Rotate right 90 degrees'; rotR.setAttribute('aria-label', 'Rotate right 90 degrees');
+        rotR.firstChild.style.transform = 'scaleX(-1)';
+        rotL.onclick = function () { sel.r = wrapAngle((Number(sel.r) || 0) + 90); draw(); };
+        rotR.onclick = function () { sel.r = wrapAngle((Number(sel.r) || 0) - 90); draw(); };
+        opts.appendChild(rotL); opts.appendChild(rotR);
         if (sel.s) {
           var cw = mk('div', 'rch-shapecolor');
           cw.appendChild(mk('div', 'rch-label', 'Shape color'));
@@ -358,12 +357,14 @@
       }
 
       function syncMeta() {
-        kindSel.value = cur.kind; mfrSel.value = cur.mfr || ''; clsSel.value = cur.cls || '';
-        mcRow.style.display = (cur.kind === 'Manufacturer') ? '' : 'none';
+        var isMfr = cur.kind === 'Manufacturer';
+        kindSel.value = cur.kind; mfrSel.value = cur.mfr || '';
+        mcRow.style.display = isMfr ? '' : 'none';
         kindHint.textContent = KIND_HINTS[cur.kind] || '';
-        var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
-        catRow.style.display = givable ? '' : 'none';
-        if (givable && cur.category !== undefined && catSel.value !== '__new__') fillCats(cur.category || 'Awards');
+        // a manufacturer helmet is named after its manufacturer, so the name box is switched off
+        if (isMfr) { cur.name = cur.mfr || ''; }
+        nameIn.disabled = isMfr;
+        nameIn.placeholder = isMfr ? 'Named after the manufacturer' : 'e.g. Season 1 Champion';
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
         status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
       }
@@ -411,33 +412,63 @@
       modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); });
 
       /* ---------------- save / load ---------------- */
-      function doSave() {
-        var name = (cur.name || '').trim();
+      // The saved helmets (active ones) decide which manufacturers get a * and whether a save would replace one.
+      function refreshPresets() {
+        return fetchApi('adminListHelmetPresets', { token: token }).then(function (res) {
+          if (!res || !res.success) return null;
+          mfrDesigns = {};
+          (res.presets || []).forEach(function (p) { if (p.kind === 'Manufacturer' && p.active && p.manufacturer) mfrDesigns[p.manufacturer] = p; });
+          fillMfrs();
+          return res.presets || [];
+        }).catch(function () { return null; });
+      }
+      // Popup: ask before a save replaces the helmet that is already there. onYes runs the save.
+      function askReplace(title, msg, onYes) {
+        var cb = mk('div', 'rch-assign');
+        cb.appendChild(mk('p', 'rch-hint', msg));
+        var row = mk('div', 'rch-btns');
+        var yes = mk('button', 'rc-btn-primary rc-btn-sm', 'Save over it'); yes.type = 'button';
+        var no = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); no.type = 'button';
+        row.appendChild(yes); row.appendChild(no); cb.appendChild(row);
+        var cm = ctx.showModal(title, { bodyEl: cb, accentHead: true });
+        yes.onclick = function () { cm.close(); onYes(); };
+        no.onclick = function () { cm.close(); };
+      }
+      function doSave(skipAsk) {
+        var name = (cur.kind === 'Manufacturer' ? cur.mfr : (cur.name || '')).trim();
+        if (cur.kind === 'Manufacturer' && !cur.mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
         if (!name) { toast('Give the helmet a name first.', 'error'); nameIn.focus(); return; }
-        if (cur.kind === 'Manufacturer' && (!cur.mfr || !cur.cls)) { toast('Choose a manufacturer and a class for a Manufacturer helmet.', 'error'); return; }
-        var givable = (cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer');
-        var category = givable ? (catSel.value === '__new__' ? catNew.value.trim() : (catSel.value || 'Awards')) : '';
-        if (givable && !category) { toast('Type a name for the new category, or pick an existing one.', 'error'); catNew.focus(); return; }
+        if (!skipAsk && (cur.kind === 'Website Default' || cur.kind === 'Manufacturer')) {
+          saveBtn.disabled = true;
+          refreshPresets().then(function (list) {
+            saveBtn.disabled = false;
+            var old = (list || []).filter(function (p) {
+              return p.active && p.kind === cur.kind && p.presetId !== cur.id && (cur.kind === 'Website Default' || p.manufacturer === cur.mfr);
+            })[0];
+            if (!old) { doSave(true); return; }
+            askReplace(cur.kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + cur.mfr + ' helmet?',
+              (cur.kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + cur.mfr + ' helmet already exists.') + ' Do you want to save over the previous design? The older one will be archived.',
+              function () { doSave(true); });
+          });
+          return;
+        }
         saveBtn.disabled = true;
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', carClass: cur.kind === 'Manufacturer' ? cur.cls : '', category: category, recipe: JSON.stringify(R) }
+          body: { presetId: cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
         }).then(function (res) {
           saveBtn.disabled = false;
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
-          cur.id = res.presetId; cur.name = name; cur.category = category;
+          cur.id = res.presetId; cur.name = name;
           baseline = JSON.parse(JSON.stringify(R));
-          if (category && knownCats.indexOf(category) < 0) knownCats.push(category);
-          fillCats(category || 'Awards'); syncMeta();
+          syncMeta(); refreshPresets();
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
         }).catch(function () { saveBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
       }
-      saveBtn.onclick = function () { doSave(); };
+      saveBtn.onclick = function () { doSave(false); };
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
-        cur = { id: p.presetId, name: p.name, kind: p.kind, mfr: p.manufacturer || '', cls: p.carClass || '', category: p.category || 'Awards' };
-        if (cur.category && knownCats.indexOf(cur.category) < 0) knownCats.push(cur.category);
-        fillCats(cur.category);
+        cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '' };
         syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
       }
       /* ---------------- shared bits for the manager popups ---------------- */
@@ -472,8 +503,7 @@
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             var list = res.presets || [];
-            list.forEach(function (p) { if (p.category && knownCats.indexOf(p.category) < 0) knownCats.push(p.category); });
-            mb.appendChild(mk('p', 'rch-hint', 'Edit opens the helmet in the designer. Give to members chooses who can use it. Archive hides it from new use without losing it. A helmet that has ever been given to members cannot be deleted, only edited or archived.'));
+                        mb.appendChild(mk('p', 'rch-hint', 'Edit opens the helmet in the designer. Give to members chooses who can use it. Archive hides it from new use without losing it. A helmet that has ever been given to members cannot be deleted, only edited or archived.'));
             if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
             KINDS.forEach(function (k) {
               var rows = list.filter(function (p) { return p.kind === k; });
@@ -485,7 +515,7 @@
                 var info = mk('div', 'rch-info');
                 info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)')));
                 var bits = [];
-                if (p.kind === 'Manufacturer') bits.push([p.manufacturer, p.carClass].filter(Boolean).join(' / '));
+                if (p.kind === 'Manufacturer') bits.push(p.manufacturer);
                 if (p.kind !== 'Website Default' && p.kind !== 'Manufacturer') { bits.push('Category: ' + (p.category || 'Awards')); bits.push(p.grantCount ? ('given to ' + p.grantCount + (p.grantCount === 1 ? ' group or member' : ' groups and members')) : (p.everGiven ? 'access taken back' : 'not given to anyone yet')); }
                 info.appendChild(mk('div', 'rch-psub', esc(bits.filter(Boolean).join(' - '))));
                 row.appendChild(info);
@@ -692,16 +722,17 @@
         var sec2 = mk('div', 'rch-section'); gr.appendChild(sec2);
         sec2.appendChild(mk('div', 'rch-label', 'Starting position and size when added to a helmet'));
         var sl = mk('div', 'rch-sliders');
-        var map = [['defX', 'Left / right', 0, 1254, 1], ['defY', 'Up / down', 0, 1254, 1], ['defW', 'Max width', 20, 700, 1], ['defH', 'Max height', 20, 700, 1], ['defR', 'Tilt (deg)', -30, 30, 0.5]];
+        var map = [['defX', 'Left / right', 0, 1254, 1], ['defY', 'Up / down', 0, 1254, 1], ['defW', 'Max width', 20, 700, 1], ['defH', 'Max height', 20, 700, 1], ['defR', 'Tilt (deg)', -45, 45, 0.5]];
         map.forEach(function (s2) {
           sl.appendChild(mk('span', '', s2[1]));
-          var inp = mk('input'); inp.type = 'range'; inp.min = s2[2]; inp.max = s2[3]; inp.step = s2[4]; inp.value = d[s2[0]];
+          var tilt2 = s2[0] === 'defR';                                   // same direction as the layer tilt: sliding right turns clockwise
+          var inp = mk('input'); inp.type = 'range'; inp.min = s2[2]; inp.max = s2[3]; inp.step = s2[4]; inp.value = tilt2 ? -(Number(d.defR) || 0) : d[s2[0]];
           var v = mk('span', 'rch-sv'); v.textContent = inp.value;
-          inp.oninput = function () { d[s2[0]] = parseFloat(inp.value); v.textContent = inp.value; drawPrev(); };
+          inp.oninput = function () { d[s2[0]] = tilt2 ? -parseFloat(inp.value) : parseFloat(inp.value); v.textContent = inp.value; drawPrev(); };
           sl.appendChild(inp); sl.appendChild(v);
         });
         sec2.appendChild(sl);
-        var shl = mk('label', 'rch-check'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!d.shadow; shc.onchange = function () { d.shadow = shc.checked ? 1 : 0; drawPrev(); };
+        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!d.shadow; shc.onchange = function () { d.shadow = shc.checked ? 1 : 0; drawPrev(); };
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); sec2.appendChild(shl);
 
         var bt = mk('div', 'rch-btns');
@@ -749,12 +780,7 @@
         drawPrev();
       }
 
-      // categories already used by saved helmets (so the Category list is full from the start)
-      fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
-        if (res && res.success) { (res.presets || []).forEach(function (p) { if (p.category && knownCats.indexOf(p.category) < 0) knownCats.push(p.category); }); fillCats(cur.category || 'Awards'); }
-      }).catch(function () {});
-
-      fillCats('Awards');
+      refreshPresets();
       syncMeta(); draw();
     }
   }
