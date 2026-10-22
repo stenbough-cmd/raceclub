@@ -2298,7 +2298,9 @@ a.rcl-driver-link:hover, a.rcl-driver-link:focus-visible { text-decoration: unde
 body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-board .rcl-standings-class-header { margin-bottom: 20px; }
 /* Manufacturer column: 4px of space each side of the logo's 50px max width (58px slot). */
-.rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 58px; padding: 0 4px; box-sizing: border-box; }
+/* PC: logos up to 70px wide (Matt, 2026-10-22; was 50px), slot 78px = 4px each side. Max height stays 34px. */
+.rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 78px; padding: 0 4px; box-sizing: border-box; }
+.rcl-board .rcl-standings-mfr-logo:not(.rcl-board-car) { max-width: 70px; max-height: 34px; }
 /* Extra 10px under the metal class headers in LAST RACE (<CLASS> HIGHLIGHTS) and in Race Recap
    (<CLASS> RESULTS), same 10px the standings boards got (12px + 10px). Shared by the Championship page. */
 .rcl-race-class > .rcl-standings-class-header { margin-bottom: 22px; }
@@ -2459,6 +2461,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   .rcl-board .rcl-standings-mfr-logo-slot { width: 34px; }
   .rcl-board .rcl-standings-mfr-logo { max-width: 34px; max-height: 24px; }
   .rcl-board .rcl-standings-mfr-logo-slot { height: 24px; }
+  .rcl-board .rcl-standings-mfr-logo:not(.rcl-board-car) { max-width: 34px; max-height: 24px; }
   .rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 42px; }
   .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 40px 42px 64px 34px minmax(0, 1fr) 50px !important; }
   /* Driver list (before the first results): no Pos and Pts columns. */

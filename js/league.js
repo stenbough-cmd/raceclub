@@ -879,7 +879,7 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   var carYear = showCar ? (((hub.classSeasons || {})[className]) || '') : undefined;
   var scroller = _rclEl('div', 'rcl-board-scroll');
   var table = _rclEl('div', 'rcl-board-table' + (showCar ? ' rcl-board-has-car' : ''));
-  table.style.setProperty('--rcl-board-cols', '44px 58px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
+  table.style.setProperty('--rcl-board-cols', '44px 78px ' + (showCar ? '110px ' : '') + '44px minmax(140px, 1fr) repeat(' + n + ', 46px) 58px');
   table.style.minWidth = (44 + 58 + (showCar ? 116 : 0) + 44 + 140 + 46 * n + 58 + 6 * (n + 4) + 12) + 'px';
 
   var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
@@ -974,7 +974,7 @@ function _rclRenderDriverLists_(hub, host) {
     var carYear = ((hub.classSeasons || {})[className]) || '';
     var scroller = _rclEl('div', 'rcl-board-scroll');
     var table = _rclEl('div', 'rcl-board-table rcl-board-has-car');
-    table.style.setProperty('--rcl-board-cols', '58px 110px 44px minmax(140px, 1fr)');
+    table.style.setProperty('--rcl-board-cols', '78px 110px 44px minmax(140px, 1fr)');
     table.style.minWidth = (58 + 116 + 44 + 140 + 6 * 3 + 12) + 'px';
     var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
     hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Manu'));
