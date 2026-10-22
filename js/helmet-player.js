@@ -119,8 +119,8 @@
     var dRow = mk('div', 'rch-dstack');
     var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
-    var gGen = mk('optgroup'); gGen.label = 'Generic';
-    var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain white (no design)'; gGen.appendChild(plainO);
+    var gGen = mk('optgroup'); gGen.label = 'Default';
+    var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain'; gGen.appendChild(plainO);
     H.visibleDesigns().forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
     dSel.appendChild(gGen);
     var cats = {}, catOrder = [];
