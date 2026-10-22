@@ -2461,6 +2461,8 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   .rcl-board .rcl-standings-mfr-logo-slot { height: 24px; }
   .rcl-board .rcl-standings-mfr-logo-slot:not(.rcl-board-car-slot) { width: 42px; }
   .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 40px 42px 64px 34px minmax(0, 1fr) 50px !important; }
+  /* Driver list (before the first results): no Pos and Pts columns. */
+  .rcl-driverlist .rcl-board-table.rcl-board-has-car { --rcl-board-cols: 42px 64px 34px minmax(0, 1fr) !important; }
   .rcl-board .rcl-board-car-slot { width: 64px; height: 24px; }
   .rcl-board .rcl-board-car { max-width: 64px; max-height: 24px; }
   .rcl-board-num { font-size: 13px; }

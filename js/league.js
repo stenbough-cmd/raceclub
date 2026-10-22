@@ -945,6 +945,60 @@ function _rclBuildStandingsBoard_(hub, cls, className, kind) {
   return board;
 }
 
+// DRIVER LIST (Matt, 2026-10-22): before the first round has results, one panel per class listing the
+// season's registrations, laid out like the standings board without the position, round and points
+// columns: manufacturer logo, car picture, car number, then the member registered to the car (full
+// display name, country flag) with the team in gray. Cars in car-number order. Only cars that have a
+// registered driver appear, so the list grows with every registration. hub.driverList comes from the
+// server (_rcBuildHubDriverList_, Website.gs) and is only sent while no round has results.
+function _rclRenderDriverLists_(hub, host) {
+  var list = hub.driverList || [];
+  var classes = [];
+  list.forEach(function (d) { if (d.className && classes.indexOf(d.className) === -1) classes.push(d.className); });
+  _rclBoardSortClasses_(classes).forEach(function (className) {
+    var entries = list.filter(function (d) { return d.className === className; }).sort(function (a, b) {
+      return (Number(a.carNumber) || 0) - (Number(b.carNumber) || 0) || String(a.carNumber).localeCompare(String(b.carNumber));
+    });
+    if (!entries.length) return;
+    var row = _rclEl('div', 'rcl-row-full');
+    var panel = _rclEl('section', 'rcl-panel');
+    var bannerKind = className === 'Hypercar' ? 'hyper' : ((className === 'LMP2' || className === 'LMP3') ? 'proto' : 'gt');
+    var headEl = _rclEl('div', 'rcl-panel-head rcl-panel-head-banner rcl-panel-head-banner-' + bannerKind);
+    headEl.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(className) + ' Driver List'));
+    var bodyEl = _rclEl('div', 'rcl-panel-body');
+    var board = _rclEl('div', 'rcl-standings-class rcl-board rcl-driverlist');
+    var head = _rclEl('div', 'rcl-standings-class-header');
+    head.textContent = className.toUpperCase() + ' DRIVER LIST';
+    if (hub.seasonNumber) head.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FOR SEASON ' + _rclEscapeHtml(String(hub.seasonNumber))));
+    board.appendChild(head);
+    var carYear = ((hub.classSeasons || {})[className]) || '';
+    var scroller = _rclEl('div', 'rcl-board-scroll');
+    var table = _rclEl('div', 'rcl-board-table rcl-board-has-car');
+    table.style.setProperty('--rcl-board-cols', '58px 110px 44px minmax(140px, 1fr)');
+    table.style.minWidth = (58 + 116 + 44 + 140 + 6 * 3 + 12) + 'px';
+    var hr = _rclEl('div', 'rcl-board-row rcl-board-head');
+    hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Manu'));
+    hr.appendChild(_rclEl('div', 'rcl-board-manu-head', 'Car'));
+    hr.appendChild(_rclEl('div', 'rcl-board-num-head', 'N<sup class="rcl-board-num-deg">&deg;</sup>'));
+    hr.appendChild(_rclEl('div', 'rcl-board-name-head', 'Drivers'));
+    table.appendChild(hr);
+    entries.forEach(function (d) {
+      var rowEl = _rclEl('div', 'rcl-board-row rcl-standings-row');
+      var line = { manufacturer: d.manufacturer, carNumber: d.carNumber, name: d.name, profileId: d.profileId, country: d.country, teamName: d.teamName };
+      var series = (hub.carSeries || {})[className + '|' + String(d.carNumber === undefined ? '' : d.carNumber).trim()] || '';
+      _rclBoardIdentityCells_(line, 'drivers', carYear, series, true).forEach(function (cell) { rowEl.appendChild(cell); });
+      table.appendChild(rowEl);
+    });
+    scroller.appendChild(table);
+    board.appendChild(scroller);
+    bodyEl.appendChild(board);
+    panel.appendChild(headEl);
+    panel.appendChild(bodyEl);
+    row.appendChild(panel);
+    host.appendChild(row);
+  });
+}
+
 function _rclRenderStandings(hub) {
   var emptyRow = document.getElementById('rcl-standings-empty-row');
   var body = document.getElementById('rcl-standings-body');
@@ -965,8 +1019,14 @@ function _rclRenderStandings(hub) {
   var hasResults = (hub.roundsCompleted || 0) > 0;
 
   // No standings yet (a season with no scored race): the Standings area is hidden without a word, as
-  // Manufacturers' Standings and the Team Endurance sections already are (Matt, 2026-10-21).
-  if (!hasStandings || !hasResults) {
+  // Manufacturers' Standings and the Team Endurance sections already are (Matt, 2026-10-21). Until the
+  // first round has results, the same spot shows one DRIVER LIST panel per class instead (Matt, 2026-10-22).
+  if (!hasResults) {
+    if (emptyRow) emptyRow.style.display = 'none';
+    _rclRenderDriverLists_(hub, host);
+    return;
+  }
+  if (!hasStandings) {
     if (emptyRow) emptyRow.style.display = 'none';
     return;
   }
