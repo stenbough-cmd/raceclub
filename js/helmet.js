@@ -187,9 +187,12 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     }
     if (!l.m) return [ASSET_BASE + 'images/' + l.f];   // custom logos live beside the designs, listed in the HelmetAssets tab
     var sg = slug(l.m), names = [];
-    if (l.v === 'white' || l.v === 'black') names.push(sg + '-' + l.v);
+    // RC_MFR_VARIANTS (js/reference-data.js) lists the manufacturers that really have -black / -white files;
+    // when the list is not loaded on this page, every variant is tried as before.
+    var hasPair = (typeof RC_MFR_VARIANTS !== 'object') || !!RC_MFR_VARIANTS[sg];
+    if (hasPair && (l.v === 'white' || l.v === 'black')) names.push(sg + '-' + l.v);
     names.push(sg);
-    if (l.v === 'std') { names.push(sg + '-black'); names.push(sg + '-white'); }
+    if (hasPair && l.v === 'std') { names.push(sg + '-black'); names.push(sg + '-white'); }
     var urls = [];
     names.forEach(function (n) { ['webp', 'png', 'svg'].forEach(function (e) { urls.push(MFR_BASE + n + '.' + e); }); });
     return urls;

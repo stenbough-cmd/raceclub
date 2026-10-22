@@ -300,9 +300,17 @@ var CAR_CLASS_ABBREV = { LMP3: 'P3', LMP2: 'P2', Hypercar: 'HY' };
 function _rcMfrLogoSlug_(manufacturerName) {
   return String(manufacturerName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
 }
+// Manufacturers that really have a two-color pair of files in assets/manufacturers/ ({slug}-black and
+// {slug}-white). Every other manufacturer has one plain {slug} file. Asking for a pair that does not
+// exist cost 4 missing-file requests per logo (.webp, .jpg, .jpeg, .png) before the plain file was tried.
+// ADD A SLUG HERE whenever a new -black / -white pair is uploaded.
+var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'toyota': true };
+
 function manufacturerLogoSrc(manufacturerName, variant) {
   var v = (variant === 'white') ? 'white' : 'black';
-  return 'assets/manufacturers/' + _rcMfrLogoSlug_(manufacturerName) + '-' + v + '.png';
+  var slug = _rcMfrLogoSlug_(manufacturerName);
+  if (!RC_MFR_VARIANTS[slug]) return 'assets/manufacturers/' + slug + '.png';   // no pair: go straight to the plain file
+  return 'assets/manufacturers/' + slug + '-' + v + '.png';
 }
 
 // Legacy single-file convention, kept only as the fallback chain's second rung now (see
@@ -321,7 +329,8 @@ function manufacturerLogoSvgSrc(manufacturerName) {
 // also 404s, try the same-named .svg; if that ALSO 404s, run onAllFailed (every existing call site
 // passes a function that hides the <img> or its wrapper, same as before this fallback existed).
 function manufacturerLogoFallback(imgEl, manufacturerName, onAllFailed) {
-  var step = 0;
+  // Already pointing at the plain file (no two-color pair exists): skip the retry of that same file.
+  var step = /-(black|white)\.[a-z]+(\?.*)?$/i.test(imgEl.getAttribute('src') || '') ? 0 : 1;
   imgEl.onerror = function () {
     if (step === 0) {
       step = 1;
