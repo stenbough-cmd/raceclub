@@ -2678,7 +2678,7 @@ function rccOpenEndSeason() {
   // Ending early also asks for END SEASON typed in the box (audit A11, Matt 2026-10-22: only when
   // ending early). Same pattern as Delete Season.
   var m = rccOpenModal('End Season Unfinished', { narrow: true });
-  m.body.appendChild(_rccText('p', 'rcc-confirm-text', still + ' not been raced yet. If you end "' + page.seasonName + '" now, it is saved as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. If you would rather remove it completely, use Delete Season instead.'));
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', still + ' not been raced yet. If you end "' + page.seasonName + '" now, it is saved as an unfinished season. If you would rather remove it completely, use Delete Season instead.'));
   var input = document.createElement('input');
   input.type = 'text';
   input.autocomplete = 'off';
