@@ -2935,7 +2935,7 @@ function rccOpenSeasonPreview() {
   var page = RCC.page;
   var m = rccOpenModal('Season Preview', { wide: true });
   m.body.classList.add('rcc-preview-body');
-  m.body.appendChild(_rccText('div', 'rcc-preview-title', 'Season ' + page.seasonNumber + ' / ' + page.seasonName));
+  // No "Season N / Name" line at the top (Matt, 2026-10-22); the page hero already names the season.
   _rccSeasonFormat(page, m.body);
   var g = _rccEl('div', 'rcl-hero-stats-group');
   g.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Rounds'));
