@@ -109,6 +109,21 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   function visibleDesigns() { return cfg.designs.filter(function (d) { return !d.locked || cfg.showLocked; }); }
 
   // ---- recipes -------------------------------------------------------------------------------
+  // Reads one pixel of a design's pattern picture. Accent 2 is painted lime #9BF20C (kept well away from the magenta
+  // shell color); designs painted with the older pure red are still read correctly. Returns [accent2, accent1] weights.
+  var LIME_ = [155 / 255, 242 / 255, 12 / 255];
+  function patternWeights(pr, pg, pb, al) {
+    var gL = pg / LIME_[1];                                     // how much lime: only lime has green
+    if (gL > 0.03) {
+      if (gL > 1) gL = 1;
+      var wM = pr - LIME_[0] * gL; if (wM < 0) wM = 0;           // magenta (shell) share
+      var wB = pb - LIME_[2] * gL - wM; if (wB < 0) wB = 0;      // blue (accent 1) share
+      return [al * gL, al * (wB > 1 ? 1 : wB)];
+    }
+    if (pr > 0.85 && pb > 0.85 && pg < 0.1 && al > 0.5) return [0, 0];   // solid magenta = base
+    return [al * pr, al * pb];                                   // older art: red = accent 2, blue = accent 1
+  }
+
   function findColor(id) { for (var i = 0; i < PALETTE.length; i++) if (PALETTE[i].id === id) return PALETTE[i]; return null; }
   function hexOf(v) {
     if (typeof v === 'string' && v.charAt(0) === '#' && /^#[0-9a-fA-F]{6}$/.test(v)) return v;
@@ -362,13 +377,13 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           var r = bR, g = bG, b = bB;
 
           if (sm > 0.001) {
-            // pattern weights: red = accent 2, blue = accent 1, transparent / pink = base
+            // pattern weights: lime (#9BF20C) or the older pure red = accent 2, blue = accent 1, transparent / pink (magenta) = base
             var wS = 0, wA = 0;
             if (pd) {
               var al = pd[o + 3] / 255;
               if (al > 0.004) {
-                var pr = pd[o] / 255, pg = pd[o + 1] / 255, pb = pd[o + 2] / 255;
-                if (!(pr > 0.85 && pb > 0.85 && pg < 0.1 && al > 0.5)) { wS = al * pr; wA = al * pb; }
+                var pw = patternWeights(pd[o] / 255, pd[o + 1] / 255, pd[o + 2] / 255, al);
+                wS = pw[0]; wA = pw[1];
               }
             }
             wS = wS > 1 ? 1 : wS; wA = wA > 1 ? 1 : wA; wA *= (1 - wS);
