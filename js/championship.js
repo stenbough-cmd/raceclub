@@ -2600,12 +2600,50 @@ function rccOpenEndSeason() {
   // not count toward a career. Deleting the season is the other way out.
   var list = open.map(function (c) { return 'Round ' + c.roundNum; });
   var still = list.length === 1 ? list[0] + ' has' : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] + ' have';
-  rccConfirm('End Season Unfinished',
-    still + ' not been raced yet. If you end "' + page.seasonName + '" now, it is saved as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. If you would rather remove it completely, use Delete Season instead.',
-    'End Unfinished', 'Ending Season...',
-    function () { return _rccApi('champEndSeason', { seasonId: page.seasonId, unfinished: '1' }, { post: true }); },
-    function () { _rccToast('Season ended unfinished.', 'success'); rccReloadAfterSave(); });
+  // Ending early also asks for END SEASON typed in the box (audit A11, Matt 2026-10-22: only when
+  // ending early). Same pattern as Delete Season.
+  var m = rccOpenModal('End Season Unfinished', { narrow: true });
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', still + ' not been raced yet. If you end "' + page.seasonName + '" now, it is saved as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. If you would rather remove it completely, use Delete Season instead.'));
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.placeholder = RCC_END_PHRASE;
+  m.body.appendChild(_rccField('Type ' + RCC_END_PHRASE + ' to confirm', input));
+  var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
+  var cancel = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+  cancel.type = 'button';
+  var commit = _rccText('button', 'rc-btn-primary rc-btn-sm', 'End Unfinished');
+  commit.type = 'button';
+  commit.disabled = true;
+  row.appendChild(cancel);
+  row.appendChild(commit);
+  m.body.appendChild(row);
+  function typedOk() { return input.value.replace(/\s+/g, ' ').trim().toUpperCase() === RCC_END_PHRASE; }
+  input.addEventListener('input', function () { commit.disabled = !typedOk(); });
+  input.focus();
+  cancel.addEventListener('click', function () { m.close(false); });
+  commit.addEventListener('click', function () {
+    if (!typedOk()) return;
+    cancel.disabled = true;
+    input.disabled = true;
+    rccRunWrite(commit, 'Ending Season...', function () {
+      return _rccApi('champEndSeason', { seasonId: page.seasonId, unfinished: '1' }, { post: true });
+    }).then(function (res) {
+      cancel.disabled = false;
+      input.disabled = false;
+      if (_rccHandleAuthError(res)) return;
+      if (!res || !res.success) { _rccToast((res && res.message) || 'That did not work. Try again.', 'error'); return; }
+      _rccToast('Season ended unfinished.', 'success');
+      m.close(true);
+      rccReloadAfterSave();
+    }).catch(function () {
+      cancel.disabled = false;
+      input.disabled = false;
+      _rccToast('No answer from the server. Reload the page to see whether it went through.', 'error');
+    });
+  });
 }
+var RCC_END_PHRASE = 'END SEASON';
 
 // ---------------------------------------------------------------------
 // DELETE SEASON -- deletes the season being shown (active or ended). The red button stays locked
@@ -2859,14 +2897,12 @@ function rccOpenErase() {
   var page = RCC.page;
   var done = (page.calendar || []).filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
   if (!done.length) { _rccToast('No results to erase yet.', 'error'); return; }
+  // Only the latest round with results can be erased (audit A12, Matt 2026-10-22), so later rounds'
+  // results and stories never point at a round that is gone.
   var c = done[done.length - 1];
   var m = rccOpenModal('Erase Results', { narrow: false });
   m.dialog.classList.add('rcc-light-dialog');
-  var sel = _rccSelect(done.map(function (x) { return { label: _rccRoundLabel(x), value: x.roundId }; }), c.roundId, function (v) {
-    c = done.filter(function (x) { return x.roundId === v; })[0] || c;
-    say();
-  });
-  m.body.appendChild(_rccField('Round', sel));
+  m.body.appendChild(_rccField('Round', _rccText('div', 'rcc-upload-round', _rccRoundLabel(c))));
   var text = _rccEl('p', 'rcc-confirm-text');
   m.body.appendChild(text);
   function say() {
@@ -2885,12 +2921,10 @@ function rccOpenErase() {
   commit.addEventListener('click', function () {
     var round = c;
     cancel.disabled = true;
-    sel.disabled = true;
     rccRunWrite(commit, 'Erasing...', function () {
       return _rccApi('champEraseRound', { roundId: round.roundId }, { post: true });
     }).then(function (res) {
       cancel.disabled = false;
-      sel.disabled = false;
       if (_rccHandleAuthError(res)) return;
       if (!res || !res.success) { _rccToast((res && res.message) || 'That did not work. Try again.', 'error'); return; }
       _rccToast('Round ' + round.roundNum + ' erased.', 'success');
@@ -2898,7 +2932,6 @@ function rccOpenErase() {
       rccReloadAfterSave();
     }).catch(function () {
       cancel.disabled = false;
-      sel.disabled = false;
       _rccToast('No answer from the server. Reload the page to see whether it went through.', 'error');
     });
   });
