@@ -60,18 +60,24 @@
           <input id="rc-reg-email" type="email" autocomplete="email" required>
           <div class="rc-hint">We'll email you a 6-digit code to verify your account.</div>
 
-          <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
-            <input id="rc-reg-notify" type="checkbox">
-            Get Race Club notifications by email
-          </label>
-          <div class="rc-hint">Race news and league updates. You can change this any time in Edit Profile.</div>
-
           <label>Location</label>
           <select id="rc-reg-location" required></select>
 
           <label>Time Zone</label>
           <select id="rc-reg-timezone" required></select>
           <div class="rc-hint">Used to show the race schedule in your local time.</div>
+
+          <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
+            <input id="rc-reg-story" type="checkbox" checked>
+            Include my name in Season Stories
+          </label>
+          <div class="rc-hint">Season Stories are written by an AI about each race. Uncheck this to be described only by your car and team.</div>
+
+          <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
+            <input id="rc-reg-notify" type="checkbox">
+            Get Race Club notifications by email
+          </label>
+          <div class="rc-hint">Race news and league updates. You can change this any time in Edit Profile.</div>
         </div>
 
         <div class="rc-section">
@@ -266,6 +272,7 @@
         username: username, firstName: firstName, lastName: lastName, suffix: suffix,
         email: email, location: location, timeZone: timeZone,
         password: password,
+        storyOptOut: document.getElementById('rc-reg-story').checked ? '0' : '1',
         emailNotificationsOptIn: document.getElementById('rc-reg-notify').checked ? '1' : '0'
       }
     })

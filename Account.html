@@ -1291,7 +1291,7 @@
     var seatInfoBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View current seat info');
     seatInfoBtn.type = 'button';
     seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token, profile.profileId); });
-    card.appendChild(seatInfoBtn);
+    // The link is added at the bottom of this function, and only for a driver who has a seat.
 
     function setCornerPill(carClass) {
       var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
@@ -1359,6 +1359,7 @@
       renderEmpty('Not on a team yet. Register for a season to lock in a seat.');
     } else {
       renderSeat(initialData);
+      card.appendChild(seatInfoBtn);
     }
 
     return card;
@@ -1742,7 +1743,13 @@
 
     if (!hasActiveSeason) {
       card.appendChild(el('p', 'rc-cs-empty', 'No season is currently open for registration.'));
-    } else if (!protests.length) {
+      return card;   // no link: nothing to file or review without a season
+    }
+    if (!activeSeasonData.registered) {
+      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to unlock this section.'));
+      return card;   // no File, withdraw, and review link until the driver has a seat
+    }
+    if (!protests.length) {
       card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
     } else {
       card.appendChild(buildProtestsByRound_(protests, buildDashProtestItem));
