@@ -578,7 +578,7 @@ function rccRenderActionBar(page) {
 }
 
 function _rccSeasonLabel(s) {
-  return s.seasonNumber ? 'Season ' + s.seasonNumber + (s.name ? ': ' + s.name : '') : (s.name || s.seasonId);
+  return s.seasonNumber ? 'Season ' + s.seasonNumber + (s.name ? ' - ' + s.name : '') : (s.name || s.seasonId);
 }
 
 // A season that failed to load: a RETRY panel at the top of the page (same as the League Hub's).
