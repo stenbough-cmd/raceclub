@@ -160,7 +160,11 @@
       var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain white (no design)'; dSel.appendChild(plainO);
-      cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name + (d.locked ? '  \uD83D\uDD12' : ''); dSel.appendChild(o); });
+      // Grouped like the layer picker below: unlocked designs under "Default", locked ones under "Admin" (HelmetAssets.Locked)
+      var gDef = mk('optgroup'); gDef.label = 'Default'; var gAdm = mk('optgroup'); gAdm.label = 'Admin';
+      cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; (d.locked ? gAdm : gDef).appendChild(o); });
+      if (gDef.children.length) dSel.appendChild(gDef);
+      if (gAdm.children.length) dSel.appendChild(gAdm);
       dSel.onchange = function () { R.d = parseInt(dSel.value, 10); draw(); };
       dWrap.appendChild(dSel); dRow.appendChild(dWrap);
       var tools = mk('div', 'rch-btns rch-tools');
