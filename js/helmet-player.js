@@ -121,7 +121,7 @@
     var dSel = mk('select', 'rch-select-wide');
     var gGen = mk('optgroup'); gGen.label = 'Generic';
     var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain white (no design)'; gGen.appendChild(plainO);
-    cfg.designs.forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
+    H.visibleDesigns().forEach(function (d) { var o = mk('option'); o.value = 'd:' + d.slot; o.textContent = d.name; gGen.appendChild(o); });
     dSel.appendChild(gGen);
     var cats = {}, catOrder = [];
     awarded.forEach(function (a) { var c = a.category || 'Awards'; if (!cats[c]) { cats[c] = []; catOrder.push(c); } cats[c].push(a); });
@@ -207,7 +207,7 @@
 
     /* ---- drawing ---- */
     function syncControls() {
-      if (!presetId && R.d !== 0 && !cfg.designs.some(function (d) { return d.slot === R.d; }) && cfg.designs.length) R.d = cfg.designs[0].slot;
+      if (!presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
       dSel.value = presetId ? 'p:' + presetId : 'd:' + R.d;
       SLOTS.forEach(function (s) {
         rows[s[0]].fs.value = R[s[0]][1];

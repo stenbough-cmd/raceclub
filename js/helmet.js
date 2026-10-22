@@ -102,7 +102,11 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     if (o.manufacturers) cfg.manufacturers = o.manufacturers.slice();
     if (o.logos) cfg.logos = o.logos.slice();
     if (o.mfrBase) MFR_BASE = o.mfrBase;
+    if (o.showLocked !== undefined) cfg.showLocked = !!o.showLocked;
   }
+  // Designs a person may pick: locked designs (HelmetAssets.Locked) are for admins only. cfg.designs keeps ALL of
+  // them so a helmet that already uses a locked design still draws.
+  function visibleDesigns() { return cfg.designs.filter(function (d) { return !d.locked || cfg.showLocked; }); }
 
   // ---- recipes -------------------------------------------------------------------------------
   function findColor(id) { for (var i = 0; i < PALETTE.length; i++) if (PALETTE[i].id === id) return PALETTE[i]; return null; }
@@ -144,7 +148,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     // weight towards gloss so most random helmets look classic
     var fin = ['gloss', 'gloss', 'gloss', 'satin', 'metallic', 'metallic', 'matte', 'pearl', 'candy', 'carbon'];
     var d = keepDesign === 0 ? 0 : (keepDesign || 1);
-    if (!keepDesign && keepDesign !== 0 && cfg.designs.length) d = pick(cfg.designs).slot;
+    if (!keepDesign && keepDesign !== 0 && visibleDesigns().length) d = pick(visibleDesigns()).slot;
     return { d: d, b: [base, pick(fin)], a1: [a1, pick(fin)], a2: [a2, pick(fin)], v: pick(VISORS).id, logos: [] };
   }
 
@@ -452,6 +456,6 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   window.RCHelmet = {
     PALETTE: PALETTE, SHAPES: SHAPES, FINISHES: FINISHES, VISORS: VISORS, CROP: CROP,
     configure: configure, pruneDesigns: pruneDesigns, defaultRecipe: defaultRecipe, randomRecipe: randomRecipe, normalizeRecipe: normalizeRecipe,
-    hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }
+    hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }, visibleDesigns: visibleDesigns
   };
 })();

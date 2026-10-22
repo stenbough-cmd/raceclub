@@ -44,7 +44,7 @@
 
     fetchApi('getHelmetAssets', {}).then(function (res) {
       if (!res || !res.success) { body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }
-      H.configure({ designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [] });
+      H.configure({ designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], showLocked: true });
       return H.pruneDesigns().then(function () { build(res); });
     }).catch(function (err) {
       if (window.console) console.error('Helmet designer:', err);
@@ -160,7 +160,7 @@
       var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain white (no design)'; dSel.appendChild(plainO);
-      cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name; dSel.appendChild(o); });
+      cfg.designs.forEach(function (d) { var o = mk('option'); o.value = d.slot; o.textContent = String(d.slot).padStart(2, '0') + '  ' + d.name + (d.locked ? '  (locked, admins only)' : ''); dSel.appendChild(o); });
       dSel.onchange = function () { R.d = parseInt(dSel.value, 10); draw(); };
       dWrap.appendChild(dSel); dRow.appendChild(dWrap);
       var tools = mk('div', 'rch-btns rch-tools');

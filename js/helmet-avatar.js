@@ -99,7 +99,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=11')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=12')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -131,12 +131,12 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=12').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=13').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
       var teamP = fetchApi('getMyTeamHelmet', { token: token }).then(function (res) { teamInfo = (res && res.success) ? res : null; }).catch(function () {});
-      return Promise.all([freshAssets().catch(function () {}), teamP]).then(function () { tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
+      return Promise.all([freshAssets().catch(function () {}), teamP]).then(function () { H.configure({ showLocked: profile && profile.role === 'Admin' }); tried = H.getConfig().designs.slice(); return H.pruneDesigns(); }).then(function () {
         var own = recipeOf(profile.avatarFilename), base = own || defaultRecipe();
         window.RCHelmetPlayer.open({
           recipe: base,
