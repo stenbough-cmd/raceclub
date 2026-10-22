@@ -443,6 +443,8 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
 function _rccRenderEyebrow(page) {
   var eb = document.querySelector('.rcl-hero-eyebrow');
   if (!eb) return;
+  // The Welcome page always reads SINGLE PLAYER MODE, even for a signed-in member without access (Matt, 2026-10-22).
+  if (page && page.welcome) { eb.textContent = 'Single Player Mode'; return; }
   var me = getToken() ? (getProfileCache() || {}) : {};
   var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
   eb.textContent = name ? name + '\u2019s Offline' : 'Single Player Mode';
@@ -3102,7 +3104,7 @@ function rccRenderWelcome() {
       bar.style.display = '';
     }
   }
-  rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
+  rccRenderHero({ welcome: true, hasSeason: false, owner: { displayName: '' }, seasons: [] });
   var meta = document.getElementById('rcc-hero-meta');
   if (meta) meta.innerHTML = '';
   rccRenderTicker({ hasSeason: false, welcomeTicker: [{ lead: 'WELCOME TO RACE CLUB CHAMPIONSHIP!' }].concat(RCC_WELCOME_PERKS.map(function (p) {

@@ -359,7 +359,10 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 
 /* The player's own rows and name, everywhere. */
 /* The player's row: a faint tint only (the red bar over the position badge was removed, Matt). */
-.rcc-row-me { background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
+/* The striped rows (league.css nth-child(even)) must not cover the tint (Matt, 2026-10-22). */
+.rcc-row-me,
+.rcc-page .rcl-standings-row.rcc-row-me,
+.rcc-page .rcl-race-row.rcc-row-me { background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
 .rcc-me-text { color: var(--rc-red); }
 /* On the standings boards the player's name is bold and black like the rest of the list (Matt). */
 .rcc-board .rcc-me-text { color: var(--rc-carbon); font-weight: 700; }
@@ -1028,11 +1031,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-tt-podium-car { width: 200px; max-width: 100%; height: 60px; display: flex; align-items: flex-end; justify-content: center; }
 .rcc-tt-tile .rcl-mfr-tile-rankline { margin-top: 8px; }
 .rcc-tt-tile-name { font-size: 18px; line-height: 1.25; }
-.rcc-tt-tile.rcc-tt-me .rcl-mfr-tile-name, .rcc-tt-tile.rcc-tt-me .rcl-mfr-tile-points { color: var(--rc-red); }
+/* Your team: only the team name and number are red, not the rank or points (Matt, 2026-10-22). */
+.rcc-tt-tile.rcc-tt-me .rcl-mfr-tile-name { color: var(--rc-red); }
 .rcc-tt-name { flex: 1 1 auto; min-width: 0; line-height: 1.3; overflow-wrap: anywhere; }
 .rcc-tt-num { font-weight: 700; opacity: 0.8; }
 .rcc-tt-pts { flex: 0 0 auto; }
-.rcc-tt-me { color: var(--rc-red); }
 @media (max-width: 640px) {
   .rcc-tt-list { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
 }
@@ -1094,7 +1097,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
    their weight. */
 .rcc-page .rcl-mfr-rest-item, .rcc-page .rcc-tt-item { color: var(--rc-carbon); }
 .rcc-page .rcl-mfr-rest-name, .rcc-page .rcc-tt-name, .rcc-page .rcc-tt-num { font-weight: 400; }
-.rcc-page .rcc-tt-me .rcc-tt-name, .rcc-page .rcc-tt-me .rcc-tt-pts { color: var(--rc-red); }
+.rcc-page .rcc-tt-me .rcc-tt-name { color: var(--rc-red); }
 
 /* Welcome: See The Demo as a solid blue-gray button so it stands out (Matt, 2026-10-14). */
 .rcc-page .rcc-welcome-demo { background: #5f7d99; border-color: #5f7d99; color: var(--rc-white); }
