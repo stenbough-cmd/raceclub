@@ -553,6 +553,8 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
      The column list is set inline per board, so !important is needed to replace it here. */
   .rcc-board-table { --rcc-board-cols: 40px 42px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
   .rcc-board-table.rcc-board-has-car { --rcc-board-cols: 40px 42px 64px 34px minmax(0, 1fr) 50px !important; }
+  /* Driver list (before the first results): no Pos and Pts columns (Matt, 2026-10-22). */
+  .rcc-driverlist .rcc-board-table.rcc-board-has-car { --rcc-board-cols: 42px 64px 34px minmax(0, 1fr) !important; }
   .rcc-board .rcc-board-car-slot { width: 64px; height: 24px; }
   .rcc-board .rcc-board-car { max-width: 64px; max-height: 24px; }
   .rcc-board .rcl-standings-mfr-logo-slot { width: 34px; }

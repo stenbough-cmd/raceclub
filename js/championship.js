@@ -1180,6 +1180,75 @@ function _rccBoardCells(row, name, kind, carYear, series, showTeam) {
   return carYear !== undefined ? [slot, _rccCarPic(carYear, row.carNumber, series), num, nameCell] : [slot, num, nameCell];
 }
 
+// DRIVER LIST (Matt, 2026-10-22). Before the first results, one panel per class on the grid, laid out
+// like the standings board without the position, round and points columns: manufacturer logo, car
+// picture, car number, then the car's drivers ("S. Buemi, B. Hartley, R. Hirakawa") with the team in
+// gray. Cars in car-number order. Your car shows your name. Header: "<CLASS> DRIVER LIST" in bold and
+// "FOR SEASON N" in normal weight.
+function _rccDriverInitials(full) {
+  // First and middle names become initials; the last name stays whole, with particles like "de" or
+  // "van" kept on it ("Reshad de Gerus" -> "R. de Gerus").
+  var parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts.join(' ');
+  var particles = ['de', 'da', 'di', 'do', 'dos', 'du', 'del', 'della', 'der', 'den', 'van', 'von', 'la', 'le', 'ten', 'ter', 'bin', 'al'];
+  var lastStart = parts.length - 1;
+  while (lastStart > 1 && particles.indexOf(parts[lastStart - 1].toLowerCase()) !== -1) lastStart--;
+  var initials = parts.slice(0, lastStart).map(function (p) {
+    return p.split('-').map(function (bit) { return bit.charAt(0).toUpperCase() + '.'; }).join('-');
+  });
+  return initials.join(' ') + ' ' + parts.slice(lastStart).join(' ');
+}
+
+function _rccRenderDriverLists(page, host) {
+  var grid = page.grid || [];
+  var classes = [];
+  grid.forEach(function (g) { if (g.carClass && classes.indexOf(g.carClass) === -1) classes.push(g.carClass); });
+  classes = _rccSortClasses(classes, function (c) { return c; });
+  var sd = page.seasonDetails || {};
+  classes.forEach(function (className) {
+    var cars = grid.filter(function (g) { return g.carClass === className; }).sort(function (a, b) {
+      return (Number(a.carNumber) || 0) - (Number(b.carNumber) || 0) || String(a.carNumber).localeCompare(String(b.carNumber));
+    });
+    var row = _rccEl('div', 'rcl-row-full');
+    var panel = _rccEl('section', 'rcl-panel');
+    var banner = (className === 'LMGTE' || className === 'LMGT3') ? 'gt' : (className === 'Hypercar' ? 'hyper' : 'proto');
+    var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs rcc-class-head rcc-class-head-' + banner);
+    headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Driver List'));
+    var body = _rccEl('div', 'rcl-panel-body');
+    var board = _rccEl('div', 'rcl-standings-class rcc-board rcc-driverlist');
+    var head = _rccText('div', 'rcl-standings-class-header', className.toUpperCase() + ' DRIVER LIST');
+    if (page.seasonNumber) head.appendChild(_rccText('span', 'rcl-lr-class-header-sub', ' FOR SEASON ' + page.seasonNumber));
+    board.appendChild(head);
+    var carYear = (sd.classSeasons || {})[className] || sd.seasonYear || '';
+    var scroller = _rccEl('div', 'rcc-board-scroll');
+    var table = _rccEl('div', 'rcc-board-table rcc-board-has-car');
+    table.style.setProperty('--rcc-board-cols', '58px 110px 44px minmax(140px, 1fr)');
+    table.style.minWidth = (58 + 116 + 44 + 140 + 6 * 3 + 12) + 'px';
+    var hr = _rccEl('div', 'rcc-board-row rcc-board-head');
+    hr.appendChild(_rccText('div', 'rcc-board-logo-head', 'Manu'));
+    hr.appendChild(_rccText('div', 'rcc-board-logo-head', 'Car'));
+    hr.appendChild(_rccEl('div', 'rcc-board-num-head', 'N<sup class="rcc-board-num-deg">&deg;</sup>'));
+    hr.appendChild(_rccText('div', 'rcc-board-name-head', 'Drivers'));
+    table.appendChild(hr);
+    cars.forEach(function (g) {
+      var crew = g.isMine ? (g.crew || []) : (g.realCrew || []);
+      var names = crew.map(_rccDriverInitials).join(', ');
+      var line = { manufacturer: g.manufacturer, carNumber: g.carNumber, teamName: g.teamName, isPlayer: !!g.isMine };
+      var rowEl = _rccEl('div', 'rcc-board-row rcl-standings-row' + (g.isMine ? ' rcc-row-me' : ''));
+      // A car with no driver names on the Cars tab shows its team once, in the name spot.
+      _rccBoardCells(line, names || g.teamName || '', 'drivers', carYear, sd.series, !!names).forEach(function (cell) { rowEl.appendChild(cell); });
+      table.appendChild(rowEl);
+    });
+    scroller.appendChild(table);
+    board.appendChild(scroller);
+    body.appendChild(board);
+    panel.appendChild(headEl);
+    panel.appendChild(body);
+    row.appendChild(panel);
+    host.appendChild(row);
+  });
+}
+
 function _rccStandingsBoard(page, className, kind) {
   var source = kind === 'teams' ? page.standings.teams : page.standings.drivers;
   var cls = (source || []).filter(function (c) { return c.className === className; })[0] || { className: className, standings: [] };
@@ -1300,8 +1369,9 @@ function rccRenderStandings(page) {
   if (mfr && host.contains(mfr)) host.parentNode.insertBefore(mfr, host.nextSibling);
   host.innerHTML = '';
   if (!page || !page.hasSeason) return;
-  // No standings boards at all until a round has results (Matt, 2026-10-20): hidden without a word.
-  if (!(page.roundsCompleted > 0)) return;
+  // No standings boards until a round has results (Matt, 2026-10-20). Until then each class shows its
+  // DRIVER LIST instead (Matt, 2026-10-22).
+  if (!(page.roundsCompleted > 0)) { _rccRenderDriverLists(page, host); return; }
   var classes = _rccSortClasses((page.standings.drivers || []).map(function (c) { return c.className; }), function (c) { return c; });
   classes.forEach(function (className) {
     // Above each class board: Manufacturers' Standings (Hypercar) or Team Endurance Trophy (others).
