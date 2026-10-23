@@ -205,3 +205,7 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-
 
 /* ---- member popup: a locked design (manufacturer, website default, award, special) turns every color and button gray and dead ---- */
 .rch-grayed { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
+
+/* "no background" swatch: a see-through checker with a slash */
+.rch-sw-none { background: repeating-conic-gradient(#d8dde1 0% 25%, #fff 0% 50%) 50% / 10px 10px !important; position: relative; }
+.rch-sw-none::after { content: ''; position: absolute; left: 3px; right: 3px; top: 50%; border-top: 2px solid var(--rc-red); transform: rotate(-45deg); }

@@ -29,7 +29,7 @@
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
     if (r.logos && r.logos.length) o.l = r.logos.slice(0, 25);
     if (r.t) { o.t = 1; if (r.m) o.m = r.m; }
-    if (r.pl && r.pl.n) o.pl = { n: String(r.pl.n).slice(0, 40), c: String(r.pl.c || '').slice(0, 60) };   // name + country for the Player Name and Flag box
+    if (r.pl && r.pl.n) o.pl = { n: String(r.pl.n).slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };   // name + country for the Player Name and Flag box
     if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
     if (r.t && r.k && typeof r.k === 'object') o.k = r.k;   // their own customized helmet, restored if they lose the team helmet
     return PREFIX + JSON.stringify(o);
@@ -115,7 +115,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=18')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=22')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -147,7 +147,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=22').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=23').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -159,7 +159,7 @@
           logos: (base.logos && base.logos.length) ? base.logos : [],   // shown only while the design is the one they belong to
           logoD: base.d,
           own: own,
-          player: { n: profile.displayName || profile.username || '', c: profile.location || '' },
+          player: { n: profile.displayName || profile.username || '', c: profile.location || '', u: (teamInfo && teamInfo.carNumber) || '' },
           awarded: (teamInfo && teamInfo.awarded) || [],
           websiteDefault: (assets && assets.def) ? { name: assets.defName || 'Website helmet', recipe: assets.def } : null,   // listed under Website while the member has not saved their own helmet
           teamInfo: teamInfo,

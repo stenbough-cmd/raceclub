@@ -83,8 +83,8 @@
     function dirty() { return JSON.stringify(R) !== JSON.stringify(init.R) || presetId !== init.presetId; }
     // what is actually drawn / saved
     function effective() {
-      var o = effective0(), hasBox = (o.logos || []).some(function (l) { return l && l.s === 'player'; });
-      if (hasBox && ctx.player) o.pl = { n: ctx.player.n, c: ctx.player.c };   // the Player Name and Flag box: this member's name and country, saved into their helmet once
+      var o = effective0(), hasBox = (o.logos || []).some(function (l) { return l && /^player/.test(l.s || ''); });
+      if (hasBox && ctx.player) o.pl = { n: ctx.player.n, c: ctx.player.c, u: ctx.player.u || '' };   // the Player Name and Flag box: this member's name and country, saved into their helmet once
       else delete o.pl;
       return o;
     }

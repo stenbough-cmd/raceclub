@@ -111,12 +111,12 @@
   function makeRotateButtons(getObj, key, after) {
     function one(label, dir) {
       var b = mk('button', 'rc-btn-secondary rch-rotbtn', ROT_ICON + '<span>' + label + '</span>'); b.type = 'button';
-      b.title = label + ' 90 degrees'; b.setAttribute('aria-label', label + ' 90 degrees');
+      b.title = 'Rotate ' + label.toLowerCase() + ' 90 degrees'; b.setAttribute('aria-label', 'Rotate ' + label.toLowerCase() + ' 90 degrees');
       if (dir < 0) b.firstChild.style.transform = 'scaleX(-1)';
       b.onclick = function () { var oo = getObj(); oo[key] = wrapAngle((Number(oo[key]) || 0) + dir * 90); after(); };
       return b;
     }
-    return [one('Rotate Left', 1), one('Rotate Right', -1)];
+    return [one('Left', 1), one('Right', -1)];
   }
 
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
@@ -125,7 +125,7 @@
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
     // the Player Name and Flag box shows the admin's own name and country in the preview (members get theirs when they pick the helmet)
     var me = (typeof getProfileCache === 'function') ? (getProfileCache() || {}) : {};
-    var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || '' };
+    var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || 'United States', u: '12' };
     var body = mk('div', 'rch-designer');
     var modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
     modal.el.classList.add('rch-modal');
@@ -301,7 +301,8 @@
         H.SHAPES.forEach(function (sh) { if (!sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gW.appendChild(o); });
         lpick.appendChild(gW);
         var gD = mk('optgroup'); gD.label = 'Dynamic';
-        var oD = mk('option'); oD.value = 's:player'; oD.textContent = 'Player name and flag'; gD.appendChild(oD); lpick.appendChild(gD);
+        ['player_name', 'player', 'player_num'].forEach(function (id) { var oD = mk('option'); oD.value = 's:' + id; oD.textContent = shapeName(id); gD.appendChild(oD); });
+        lpick.appendChild(gD);
         // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
         var cats = {}, catOrder = [];
         H.getConfig().logos.forEach(function (l) {
@@ -329,7 +330,7 @@
         var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
-        var n = val === 'player' && kind === 's' ? { s: 'player', c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 56, r: 0, sh: 1 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
+        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 56, r: 0, sh: 1 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : { m: isM ? val : '', v: 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
         R.logos.push(n); sel = n; draw();
@@ -432,7 +433,7 @@
         makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }).forEach(function (bn) { opts.appendChild(bn); });
         if (sel.s) {
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
-          var pickColor = function (key, label, hint) {
+          var pickColor = function (key, label, hint, withNone) {
             var cw = mk('div', 'rch-shapecolor');
             cw.appendChild(mk('div', 'rch-label', label));
             var sw2 = mk('div', 'rch-swatches');
@@ -442,12 +443,19 @@
               b.onclick = function () { sel[key] = p.id; draw(); };
               sw2.appendChild(b);
             });
+            if (withNone) {
+              // the last option is "no background" (see-through) instead of the exact-color picker
+              var nb = mk('button', 'rch-sw rch-sw-none' + (!sel[key] ? ' sel' : '')); nb.type = 'button'; nb.title = 'No background (transparent)';
+              nb.onclick = function () { delete sel[key]; draw(); };
+              sw2.appendChild(nb);
+            } else {
             var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = 'Exact color';
             if (isHexC) cpw2.style.background = sel[key];
             var cp2 = mk('input'); cp2.type = 'color'; cp2.value = H.hexOf(sel[key]);
             cp2.oninput = function () { sel[key] = cp2.value; draw(true); };
             cp2.onchange = function () { draw(); };
             cpw2.appendChild(cp2); sw2.appendChild(cpw2);
+            }
             cw.appendChild(sw2);
             if (hint) cw.appendChild(mk('p', 'rch-hint', hint));
             detail.appendChild(cw);
@@ -456,11 +464,8 @@
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
             else pickColor('c', 'Gradient color', 'This one fades from the color to see-through.');
           } else if (gdef.player) {
-            pickColor('c', 'Name color', 'Shows each driver\'s own name and flag. Here you see yours.');
-            var bgl = mk('label', 'rch-check rch-plain'); var bgc = mk('input'); bgc.type = 'checkbox'; bgc.checked = !!sel.bg;
-            bgc.onchange = function () { if (bgc.checked) sel.bg = sel.bg || 'white'; else delete sel.bg; draw(); };
-            bgl.appendChild(bgc); bgl.appendChild(document.createTextNode(' Background behind the name')); detail.appendChild(bgl);
-            if (sel.bg) pickColor('bg', 'Background color', 'Use the shadow boxes below for a drop shadow behind it.');
+            pickColor('c', 'Name color');
+            pickColor('bg', 'Name background color', '', true);
           } else pickColor('c', gdef.weathering ? 'Mark color' : (gdef.player ? 'Name color' : 'Shape color'), sel.s === 'checker' ? 'The checkered strip uses this color and white.' : (sel.s === 'player' ? 'Shows each driver\'s own name and flag. Here you see yours.' : ''));
         }
         detail.appendChild(opts);

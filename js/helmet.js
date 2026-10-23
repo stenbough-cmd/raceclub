@@ -56,7 +56,8 @@
     { id: 'clear', name: 'Clear',       c1: '#aebdc9', c2: '#4b5d6b' },
     { id: 'gold',  name: 'Gold',        c1: '#fcd34d', c2: '#92400e' },
     { id: 'blue',  name: 'Blue',        c1: '#5b9bff', c2: '#0b2a6b' },
-    { id: 'green', name: 'Green',       c1: '#4ade80', c2: '#0f5132' }
+    { id: 'green', name: 'Green',       c1: '#4ade80', c2: '#0f5132' },
+    { id: 'red',   name: 'Red',         c1: '#f87171', c2: '#7f1d1d' }
   ];
 
   // how strongly the shared highlight layer shows on each finish
@@ -221,10 +222,14 @@
   Array.prototype.push.apply(SHAPES, WEATHERING);
   // The dynamic Player Name + Flag box. The text and flag are not part of the design: they come from recipe.pl = { n: name, c: country name }
   // (saved once into the member's helmet when they pick it) or, in the admin preview, from opts.player.
+  SHAPES.push({ id: 'player_name', name: 'Player name', player: true, draw: function () {} });
   SHAPES.push({ id: 'player', name: 'Player name and flag', player: true, draw: function () {} });
+  SHAPES.push({ id: 'player_num', name: 'Player name, flag and number', player: true, draw: function () {} });
+  function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num'; }
   function flagUrlOf(country) { return (country && typeof countryFlagSrc === 'function') ? countryFlagSrc(country) : ''; }
   function drawPlayerBox(c, l, w, h, pl, flagImg) {
-    var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg;
+    var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name';
+    if (l.s === 'player_num' && pl && pl.u) name += '  #' + pl.u;
     var fh = Math.min(h, w * 0.4 / 1.5), fw = fh * 1.5, gap = hasFlag ? Math.max(2, h * 0.14) : 0;
     var tw = w - (hasFlag ? fw + gap : 0), size = h * 0.8;
     c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
@@ -293,7 +298,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     (r.logos || []).forEach(function (l) {
       if (l && l.s && shapeById(l.s)) {
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
-        if (l.s === 'player' && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
+        if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
         if (shapeById(l.s).gradient) sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : 'black';
         out.logos.push(sl);
         return;
@@ -301,7 +306,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (!l || !(l.f || l.m)) return;
       out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) });
     });
-    if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60) };
+    if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };
     return out;
   }
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -496,7 +501,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var Ht = Math.round(CROP.h * scale);
     var patUrl = designUrl(recipe.d);
     var plInfo = recipe.pl || opts.player || null;
-    var logoLoads = recipe.logos.map(function (l) { if (l.s === 'player') { var fu = flagUrlOf(plInfo && plInfo.c); return fu ? loadFirst([fu]).then(function (im) { return im || true; }) : Promise.resolve(true); } return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
+    var logoLoads = recipe.logos.map(function (l) { if (isPlayerId(l.s)) { if (l.s === 'player_name') return Promise.resolve(true); var fu = flagUrlOf(plInfo && plInfo.c); return fu ? loadFirst([fu]).then(function (im) { return im || true; }) : Promise.resolve(true); } return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
     var patLoad = patUrl ? loadImg(patUrl).catch(function () { return null; }) : Promise.resolve(null);
 
     return Promise.all([engine(), patLoad, Promise.all(logoLoads)]).then(function (res) {
@@ -607,7 +612,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           lx.rotate(-l.r * Math.PI / 180);
           if (l.sh === 2) { lx.shadowColor = 'rgba(0,0,0,0.85)'; lx.shadowBlur = Math.max(3, 13 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
-          if (l.s === 'player') {
+          if (isPlayerId(l.s)) {
             drawPlayerBox(lx, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null);
           } else if (l.s) {
             lx.fillStyle = hexOf(l.c);
