@@ -347,7 +347,11 @@
       function shapeName(id) { var f = H.SHAPES.filter(function (x) { return x.id === id; })[0]; return f ? f.name : id; }
       function logoName(l) {
         if (l.s) return shapeName(l.s) + ' (' + (String(l.c).charAt(0) === '#' ? l.c : ((H.PALETTE.filter(function (p) { return p.id === l.c; })[0] || {}).name || l.c)) + ')';
-        return l.m ? (l.m + (l.v === 'std' ? '' : ' (' + l.v + ')')) : (l.f || 'logo');
+        if (l.m) return l.m + (l.v === 'std' ? '' : ' (' + l.v + ')');
+        // an uploaded logo is stored as u:<id> (or by file name): show the name it was given in the Logo Manager
+        var f = String(l.f || ''), uid = f.indexOf('u:') === 0 ? f.slice(2) : null, all = H.getConfig().logos || [];
+        for (var i = 0; i < all.length; i++) if ((uid !== null && all[i].id === uid) || (uid === null && f && all[i].file === f)) return all[i].name || f;
+        return f || 'logo';
       }
 
       function renderLayers(missing) {
