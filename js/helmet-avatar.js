@@ -28,7 +28,7 @@
     if (!r) return '';
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
     if (r.logos && r.logos.length) o.l = r.logos.slice(0, 20);
-    if (r.t) o.t = 1;
+    if (r.t) { o.t = 1; if (r.m) o.m = r.m; }
     if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
     if (r.t && r.k && typeof r.k === 'object') o.k = r.k;   // their own customized helmet, restored if they lose the team helmet
     return PREFIX + JSON.stringify(o);
@@ -55,13 +55,13 @@
 
   // ---- design list + default helmet (from the HelmetAssets / HelmetPresets sheet tabs) ----
   var assets = null;   // { designs, logos, manufacturers, def }  def = the saved "Website Default" helmet, or null
-  function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null, defName: res.defaultName || '' }; }
-  function sigOf(a) { return JSON.stringify([a.designs, a.def, (a.logos || []).map(function (l) { return [l.id || l.file, l.active, (l.data || '').length]; })]); }
+  function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null, defName: res.defaultName || '', ver: res.helmetVersion || '', byId: res.presetsById || {}, byMaker: res.presetsByMaker || {} }; }
+  function sigOf(a) { return JSON.stringify([a.ver, a.designs, a.def, (a.logos || []).map(function (l) { return [l.id || l.file, l.active, (l.data || '').length]; })]); }
   function hash(str) { var h = 0, i; for (i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0; return String(h); }
   function apply(a) {
     assets = a;
     window.RCHelmet.configure({ designs: a.designs, logos: a.logos, manufacturers: a.manufacturers });
-    try { localStorage.setItem('rcHelmetDefSig', hash(sigOf(a))); } catch (e) {}
+    try { localStorage.setItem('rcHelmetDefSig', hash(sigOf(a))); localStorage.setItem('rcHelmetVer', a.ver || ''); } catch (e) {}
   }
   function store(a) { try { localStorage.setItem('rcHelmetAssets', JSON.stringify(a)); } catch (e) {} }
   function fetchAssets() {
@@ -70,6 +70,19 @@
       if (!res || !res.success) throw new Error('no assets');
       return slimOf(res);
     });
+  }
+  // An award or team helmet saved on a member keeps the design it had when chosen. If that helmet has since been edited, draw the
+  // newest design instead (the member's saved text is not touched).
+  function liveRecipe(r) {
+    if (!r || !assets) return r;
+    var cur = null;
+    if (r.p && assets.byId) cur = assets.byId[r.p];
+    else if (r.t && r.m && assets.byMaker) cur = assets.byMaker[r.m];
+    if (!cur) return r;
+    var o = {}, k;
+    for (k in cur) if (Object.prototype.hasOwnProperty.call(cur, k)) o[k] = cur[k];
+    if (r.l && !o.logos) o.logos = r.l;
+    return window.RCHelmet && window.RCHelmet.normalizeRecipe ? window.RCHelmet.normalizeRecipe(o) : o;
   }
   function defaultRecipe() { return (assets && assets.def) ? assets.def : window.RCHelmet.defaultRecipe(); }
 
@@ -117,7 +130,7 @@
     return ensure().then(function (H) {
       return Promise.all(nodes.map(function (n) {
         var value = n.getAttribute('data-rc-helmet'), w = parseInt(n.getAttribute('data-w'), 10) || 60;
-        var rec = recipeOf(value) || defaultRecipe();
+        var rec = liveRecipe(recipeOf(value)) || defaultRecipe();
         return H.render(rec, { width: w * 2 }).then(function (cv) {
           cv.style.width = w + 'px'; cv.style.height = 'auto';
           n.innerHTML = ''; n.appendChild(cv);
@@ -132,7 +145,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=19').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=20').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).

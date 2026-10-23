@@ -142,7 +142,6 @@
       function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }
       var R = blankRecipe();
       var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
-      var RESET_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
       var cur = { id: '', name: '', kind: 'Awards', mfr: '' };
       var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
@@ -211,10 +210,9 @@
       var clearBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearBtn.type = 'button';
       clearBtn.title = 'Clear to a plain white helmet with no design and no logos';
       clearBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
-      var resetBtn = mk('button', 'rc-btn-secondary rch-iconbtn', RESET_ICON); resetBtn.type = 'button';
-      resetBtn.title = 'Reset to the last saved or loaded version of this helmet'; resetBtn.setAttribute('aria-label', 'Reset');
-      resetBtn.onclick = function () { R = H.normalizeRecipe(JSON.parse(JSON.stringify(baseline))); sel = null; draw(); };
-      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(resetBtn);
+      var cancelBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelBtn.type = 'button';
+      cancelBtn.onclick = function () { modal.close(); };
+      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
       right.appendChild(bar);
@@ -530,7 +528,7 @@
       }
       // while a save is running the button reads Saving... and the X in the corner is switched off
       function setSaving(on) {
-        saveBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
+        saveBtn.disabled = on; cancelBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
         modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
       }
       function doSave(skipAsk) {

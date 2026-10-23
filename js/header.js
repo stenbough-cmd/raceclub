@@ -47,9 +47,10 @@ var RC_TOAST_CONTAINER_ID = 'rc-toast-container';
 // page paints it instantly.
 var RC_HELMET_CACHE_V_ = 'rch6';
 function rcHelmetCacheKey_(value, w) {
-  var d = '';
+  var d = '', ver = '';
+  try { ver = localStorage.getItem('rcHelmetVer') || ''; } catch (e) {}   // the helmet version number: a new number means every saved picture is stale
   if (!value) { try { d = localStorage.getItem('rcHelmetDefSig') || ''; } catch (e) {} }   // changes whenever the default helmet or design list changes
-  return RC_HELMET_CACHE_V_ + ':' + w + ':' + (value || ('default' + d));
+  return RC_HELMET_CACHE_V_ + ':' + w + ':' + ver + ':' + (value || ('default' + d));
 }
 function _rcHelmetEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
@@ -66,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=17'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=18'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -92,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=15'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=16'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything

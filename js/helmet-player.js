@@ -84,7 +84,7 @@
     // what is actually drawn / saved
     function effective() {
       var o;
-      if (teamOn) { o = copy(teamRecipe); o.t = 1; if (lastCustom) o.k = copy(lastCustom); return o; }
+      if (teamOn) { o = copy(teamRecipe); o.t = 1; if (info && info.manufacturer) o.m = info.manufacturer; if (lastCustom) o.k = copy(lastCustom); return o; }
       if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
       if (webOn && wdRec) return H.normalizeRecipe(wdRec.recipe);
       if (ownOn && customRec) return H.normalizeRecipe(customRec);
@@ -201,13 +201,6 @@
     };
     tools.appendChild(rb); tools.appendChild(rs); dRow.appendChild(tools);
     style.appendChild(dRow);
-    // A locked design (an award, special or premium helmet, or the team's manufacturer helmet) is used exactly as designed:
-    // a gray shroud with a lock covers the controls, and only the Design list stays usable.
-    var shroud = mk('div', 'rch-shroud');
-    shroud.innerHTML = '<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
-    shroud.title = 'This design is locked. Pick another design to change the colors.';
-    style.appendChild(shroud);
-
     /* ---- colors ---- */
     var rows = {};
     SLOTS.forEach(function (s) {
@@ -263,17 +256,15 @@
       });
       Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === V.v); });
       // a locked design (award / special / premium helmet, or the team's manufacturer helmet) is used as is: everything but the Design list is grayed out
-      var fixed = teamOn || !!presetId;
-      [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
-      style.classList.toggle('rch-shrouded', fixed);
-      if (fixed) shroud.style.paddingTop = (dRow.offsetTop + dRow.offsetHeight + 22) + 'px';
+      var fixed = teamOn || webOn || !!presetId;
+      [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-grayed', fixed); });
       Array.prototype.forEach.call(rows ? Object.keys(rows) : [], function (k) { rows[k].fs.disabled = fixed; Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = fixed; }); });
       Array.prototype.forEach.call(vs.children, function (b) { b.disabled = fixed; });
       rb.disabled = fixed; rs.disabled = fixed;
       // Plain white (no design) has no accent areas: both accent rows, their swatches and finish lists are grayed out and disabled
       var plain = !presetId && V.d === 0;
       ['a1', 'a2'].forEach(function (k) {
-        rows[k].row.classList.toggle('rch-dim', fixed || plain);
+        rows[k].row.classList.toggle('rch-dim', !fixed && plain);
         rows[k].fs.disabled = plain || fixed;
         Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = plain || fixed; });
       });
