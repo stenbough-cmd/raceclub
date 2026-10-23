@@ -223,13 +223,16 @@
   // The dynamic Player Name + Flag box. The text and flag are not part of the design: they come from recipe.pl = { n: name, c: country name }
   // (saved once into the member's helmet when they pick it) or, in the admin preview, from opts.player.
   SHAPES.push({ id: 'player_name', name: 'Player name', player: true, draw: function () {} });
+  SHAPES.push({ id: 'player_number', name: 'Player number', player: true, draw: function () {} });
   SHAPES.push({ id: 'player', name: 'Player name and flag', player: true, draw: function () {} });
   SHAPES.push({ id: 'player_num', name: 'Player name, flag and number', player: true, draw: function () {} });
-  function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num'; }
+  function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num' || id === 'player_number'; }
   function flagUrlOf(country) { return (country && typeof countryFlagSrc === 'function') ? countryFlagSrc(country) : ''; }
   function drawPlayerBox(c, l, w, h, pl, flagImg) {
-    var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name';
+    var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name' && l.s !== 'player_number';
+    if (l.s === 'player_number') name = String((pl && pl.u) || '').toUpperCase();   // the car number alone
     if (l.s === 'player_num' && pl && pl.u) name += '  #' + pl.u;
+    if (!name) return;
     // the flag is exactly as tall as the capital letters of the name (cap height is about 0.72 of the font size)
     var CAP = 0.72, size = h * 0.8, fh = 0, fw = 0, gap = 0, mw = 0, it;
     for (it = 0; it < 3; it++) {
@@ -507,7 +510,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var Ht = Math.round(CROP.h * scale);
     var patUrl = designUrl(recipe.d);
     var plInfo = recipe.pl || opts.player || null;
-    var logoLoads = recipe.logos.map(function (l) { if (isPlayerId(l.s)) { if (l.s === 'player_name') return Promise.resolve(true); var fu = flagUrlOf(plInfo && plInfo.c); return fu ? loadFirst([fu]).then(function (im) { return im || true; }) : Promise.resolve(true); } return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
+    var logoLoads = recipe.logos.map(function (l) { if (isPlayerId(l.s)) { if (l.s === 'player_name' || l.s === 'player_number') return Promise.resolve(true); var fu = flagUrlOf(plInfo && plInfo.c); return fu ? loadFirst([fu]).then(function (im) { return im || true; }) : Promise.resolve(true); } return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
     var patLoad = patUrl ? loadImg(patUrl).catch(function () { return null; }) : Promise.resolve(null);
 
     return Promise.all([engine(), patLoad, Promise.all(logoLoads)]).then(function (res) {

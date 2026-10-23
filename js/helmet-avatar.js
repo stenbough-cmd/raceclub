@@ -29,9 +29,10 @@
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
     if (r.logos && r.logos.length) o.l = r.logos.slice(0, 25);
     if (r.t) { o.t = 1; if (r.m) o.m = r.m; }
+    if (r.w) o.w = 1;                         // the website default helmet, chosen while the member also has their own design saved (k)
     if (r.pl && r.pl.n) o.pl = { n: String(r.pl.n).slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };   // name + country for the Player Name and Flag box
     if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
-    if (r.t && r.k && typeof r.k === 'object') o.k = r.k;   // their own customized helmet, restored if they lose the team helmet
+    if ((r.t || r.p || r.w) && r.k && typeof r.k === 'object') o.k = r.k;   // their own customized helmet, restored if they lose the team helmet
     return PREFIX + JSON.stringify(o);
   }
 
@@ -79,6 +80,7 @@
     var cur = null;
     if (r.p && assets.byId) cur = assets.byId[r.p];
     else if (r.t && r.m && assets.byMaker) cur = assets.byMaker[r.m];
+    else if (r.w && assets.def) cur = assets.def;
     if (!cur) return r;
     var o = {}, k;
     for (k in cur) if (Object.prototype.hasOwnProperty.call(cur, k)) o[k] = cur[k];
@@ -115,7 +117,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=23')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=24')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -147,7 +149,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=23').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=24').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -212,7 +214,7 @@
   window.rcHelmetHydrateNow_ = hydrate;
   // The helmet list changed: fetch the new designs (this also stores the new version number) and draw every helmet again.
   window.rcHelmetRefreshNow_ = function () {
-    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=23')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
+    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=24')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
   };
   // Older team-helmet avatars have no manufacturer saved in them, so they cannot pick up later edits to that manufacturer's helmet. Ask the
   // server which manufacturer the member's seat belongs to and save it into the avatar (once).

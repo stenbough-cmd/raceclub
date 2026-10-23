@@ -54,7 +54,7 @@
     // The member's own customized helmet is remembered inside the saved team helmet (field k). If they later lose access to the
     // team's manufacturer helmet (new season with a team of a different manufacturer) the site puts k back, and with no k the
     // Race Club default helmet is used.
-    var lastCustom = (own && own.t) ? (own.k || null) : null;
+    var lastCustom = (own && (own.t || own.p || own.w)) ? (own.k || null) : null;
 
     // ---- where the helmet starts ----
     var R = clean(ctx.recipe);
@@ -71,11 +71,11 @@
     // The member's own saved custom design (listed as "Your Design"), if they have one: either what is saved now, or what was
     // remembered inside a saved team helmet (own.k).
     var customRec = null;
-    if (own && !own.t && !own.p) customRec = own;
-    else if (own && own.t && own.k && !own.k.p) customRec = { d: own.k.d, b: own.k.b, a1: own.k.a1, a2: own.k.a2, v: own.k.v, logos: own.k.l || [] };
+    if (own && !own.t && !own.p && !own.w) customRec = own;
+    else if (own && (own.t || own.p || own.w) && own.k && !own.k.p) customRec = { d: own.k.d, b: own.k.b, a1: own.k.a1, a2: own.k.a2, v: own.k.v, logos: own.k.l || [] };
     var wdRec = ctx.websiteDefault ? ctx.websiteDefault : null;
-    var webOn = !own && !!wdRec;                      // the website default is the selected design (saving it clears the member's own helmet)
-    var ownOn = !!(own && !own.t && !own.p);          // "Your Design" is the selected design
+    var webOn = (!own || !!own.w) && !!wdRec;                      // the website default is the selected design (saving it clears the member's own helmet)
+    var ownOn = !!(own && !own.t && !own.p && !own.w);          // "Your Design" is the selected design
     function presetOf(id) { return awarded.filter(function (a) { return a.presetId === id; })[0] || null; }
     var init = { R: copy(R), presetId: presetId, teamOn: teamOn };
 
@@ -91,8 +91,8 @@
     function effective0() {
       var o;
       if (teamOn) { o = copy(teamRecipe); o.t = 1; if (info && info.manufacturer) o.m = info.manufacturer; if (lastCustom) o.k = copy(lastCustom); return o; }
-      if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
-      if (webOn && wdRec) return H.normalizeRecipe(wdRec.recipe);
+      if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; if (lastCustom) o.k = copy(lastCustom); return o; }   // used exactly as designed
+      if (webOn && wdRec) { o = H.normalizeRecipe(wdRec.recipe); if (lastCustom) { o.w = 1; o.k = copy(lastCustom); } return o; }   // the member's own design is kept inside, so Your Design stays in the list
       if (ownOn && customRec) return H.normalizeRecipe(customRec);
       o = copy(R);
       o.logos = dirty() ? [] : copy(baseLogos);
@@ -176,8 +176,8 @@
     });
     dSel.onchange = function () {
       var v = dSel.value;
+      if (!teamOn && !presetId && !webOn) lastCustom = customSlim();   // remember their own design before leaving it (null = they had none)
       if (v === 't:team') {
-        if (!teamOn) lastCustom = customSlim();      // null when they had no helmet of their own
         presetId = ''; stash = null; teamOn = true; draw(); return;
       }
       leaveTeam();
@@ -248,7 +248,7 @@
     btns.appendChild(saveB); btns.appendChild(clearB); btns.appendChild(cancelB);
     right.appendChild(btns);
     // Saving the website default clears the member's own helmet (they get the default again)
-    saveB.onclick = function () { var useDefault = webOn && !teamOn && !presetId; var out = effective(); modal.close(); ctx.onSave(useDefault ? null : out); };
+    saveB.onclick = function () { var useDefault = webOn && !teamOn && !presetId && !lastCustom; var out = effective(); modal.close(); ctx.onSave(useDefault ? null : out); };
     clearB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; webOn = false; ownOn = false; draw(); };
     cancelB.onclick = function () { modal.close(); };
 
