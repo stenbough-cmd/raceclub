@@ -6335,6 +6335,8 @@
         var protests = data.protests || [];
         var hasUnruledProtests = protests.some(function (p) { return p.status === 'Pending'; });
         var windowStillOpen = !!data.windowOpen;
+        var roundContext = data.context || null;          // the organizer's rivalry + note for this race
+        var contextRoster = data.driverRoster || [];
 
         // Rulable rows -- each still-Pending, not-locked protest below pushes its own {protestId,
         // select, overrideBox, currentIsOverride} entry here instead of getting its own Apply
@@ -6498,9 +6500,36 @@
           listPanel.appendChild(el('div', 'rc-dm-empty', 'No protests filed for this round.'));
         }
 
+        // Race context (rivalry + note) the organizer saved for this race: a bordered box at the top of the same container as the protests.
+        if (roundContext) {
+          var ctxBox = el('div', 'border:1px solid var(--rc-silver);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--rc-offwhite);');
+          ctxBox.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);margin-bottom:6px;', 'Race Context'));
+          if (roundContext.rivalAName && roundContext.rivalBName) {
+            var rivLine = el('div', 'font-size:13.5px;color:var(--rc-carbon);margin-bottom:4px;');
+            rivLine.innerHTML = '<strong>Rivalry:</strong> ' + escapeHtml(roundContext.rivalAName) + ' vs ' + escapeHtml(roundContext.rivalBName);
+            ctxBox.appendChild(rivLine);
+          }
+          if (roundContext.note) {
+            var noteLine = el('div', 'font-size:13.5px;color:var(--rc-carbon);white-space:pre-wrap;');
+            noteLine.textContent = roundContext.note;
+            ctxBox.appendChild(noteLine);
+          }
+          listPanel.insertBefore(ctxBox, listPanel.firstChild);
+        }
+
         // Action bar -- Apply Ruling (only when there's at least one open protest to rule on) and
         // Finalize/Un-Finalize, right-aligned, in its own row above the list.
         var actionBar = el('div', 'display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;');
+
+        // ADD CONTEXT / EDIT CONTEXT: opens a popup for a rivalry and a short note that go to the story writer at Finalize.
+        if (!resultsFinalized) {
+          var contextBtn = el('button', 'rc-btn-secondary rc-btn-sm', roundContext ? 'EDIT CONTEXT' : 'ADD CONTEXT');
+          contextBtn.type = 'button';
+          contextBtn.addEventListener('click', function () {
+            openRoundContextModal(token, { roundId: roundId, roundLabel: roundLabel, context: roundContext, driverRoster: contextRoster }, render);
+          });
+          actionBar.appendChild(contextBtn);
+        }
 
         if (rulableRows.length) {
           // Walks rulableRows, submits only the rows where the steward actually picked something
@@ -6565,6 +6594,13 @@
             });
           });
           actionBar.appendChild(applyAllBtn);
+        } else if (protests.length && !resultsFinalized) {
+          // Every protest has a ruling: keep the button, grayed out and switched off, instead of removing it.
+          var doneApplyBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'APPLY RULING');
+          doneApplyBtn.type = 'button';
+          doneApplyBtn.disabled = true;
+          withTooltip(doneApplyBtn, 'Every protest on this round already has a ruling.');
+          actionBar.appendChild(doneApplyBtn);
         }
 
         // Finalize only -- no Un-Finalize any more. Every protest on this round still needs a
@@ -6622,6 +6658,11 @@
         }
 
         modal.body.appendChild(actionBar);
+        // Same graphite round pill the Stewarding page uses, above the protests.
+        var pillHead = el('div', 'rc-group-head');
+        var pillText = 'Round ' + (data.roundNumber || '?') + ': ' + (data.eventName || '') + (data.shortName ? ' ' + data.shortName : '');
+        pillHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
+        modal.body.appendChild(pillHead);
         modal.body.appendChild(listPanel);
       }).catch(function () {
         modal.body.innerHTML = '';
@@ -6630,6 +6671,75 @@
     }
 
     render();
+  }
+
+  // ADD / EDIT CONTEXT popup (Review & Finalize): a rivalry between two drivers in the race and a short note (500 characters).
+  // Both go to the AI story writer when the round is finalized. opts: {roundId, roundLabel, context, driverRoster}.
+  var RC_ROUND_CONTEXT_NOTE_MAX = 500;
+  function openRoundContextModal(token, opts, onSaved) {
+    var existing = opts.context || null;
+    var roster = (opts.driverRoster || []).filter(function (d) { return d.profileId; });
+    var body = el('div');
+    body.appendChild(el('div', 'rc-hint', 'Extra background for the story writer. It is used when you finalize this round.'));
+
+    function driverSelect(value) {
+      var s = document.createElement('select');
+      s.appendChild(new Option('Choose Driver', ''));
+      _rcAppendGroupedDriverOptions_(s, roster);
+      s.value = value || '';
+      return s;
+    }
+    var selA = driverSelect(existing && existing.rivalA);
+    var selB = driverSelect(existing && existing.rivalB);
+    body.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);margin:14px 0 4px;', 'Rivalry (optional)'));
+    var rivalRow = el('div', 'rc-wiz-field-row');
+    rivalRow.appendChild(wizField('Driver 1', selA, null));
+    rivalRow.appendChild(wizField('Driver 2', selB, null));
+    body.appendChild(rivalRow);
+
+    var noteBox = document.createElement('textarea');
+    noteBox.rows = 5;
+    noteBox.maxLength = RC_ROUND_CONTEXT_NOTE_MAX;
+    noteBox.value = (existing && existing.note) || '';
+    body.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);margin:14px 0 4px;', 'More context (optional)'));
+    body.appendChild(noteBox);
+    var counter = el('div', 'font-size:12px;color:var(--rc-steel);text-align:right;margin-top:4px;');
+    function updateCounter() { counter.textContent = noteBox.value.length + ' / ' + RC_ROUND_CONTEXT_NOTE_MAX; }
+    noteBox.addEventListener('input', updateCounter);
+    updateCounter();
+    body.appendChild(counter);
+
+    var btnRow = el('div', 'display:flex;gap:10px;justify-content:flex-end;margin-top:16px;');
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
+    var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Context');
+    saveBtn.type = 'button';
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    body.appendChild(btnRow);
+
+    var modal = showModal(existing ? 'Edit Context' : 'Add Context', { bodyEl: body });
+    cancelBtn.addEventListener('click', modal.close);
+
+    saveBtn.addEventListener('click', function () {
+      if ((selA.value && !selB.value) || (!selA.value && selB.value)) { showToast('Choose both drivers for the rivalry, or leave both empty.', 'error'); return; }
+      if (selA.value && selA.value === selB.value) { showToast('Choose two different drivers for the rivalry.', 'error'); return; }
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'SAVING...';
+      cancelBtn.disabled = true;
+      if (modal.closeBtn) modal.closeBtn.disabled = true;
+      function restore() {
+        saveBtn.disabled = false; saveBtn.textContent = 'Save Context'; cancelBtn.disabled = false;
+        if (modal.closeBtn) modal.closeBtn.disabled = false;
+      }
+      fetchApi('adminSaveRoundContext', { method: 'POST', token: token, body: { roundId: opts.roundId, rivalA: selA.value, rivalB: selB.value, note: noteBox.value.trim() } }).then(function (data) {
+        if (!data || !data.success) { restore(); showToast((data && data.message) || 'Could not save the context.', 'error'); return; }
+        showToast(data.context ? 'Context saved.' : 'Context cleared.', 'success');
+        modal.close();
+        if (typeof onSaved === 'function') onSaved();
+      }).catch(function () { restore(); showToast('Could not reach the server. Try again.', 'error'); });
+    });
+    return modal;
   }
 
   // Generic "open a popup, show the loading lights, then fetch and render its content" helper --
