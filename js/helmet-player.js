@@ -83,6 +83,12 @@
     function dirty() { return JSON.stringify(R) !== JSON.stringify(init.R) || presetId !== init.presetId; }
     // what is actually drawn / saved
     function effective() {
+      var o = effective0(), hasBox = (o.logos || []).some(function (l) { return l && l.s === 'player'; });
+      if (hasBox && ctx.player) o.pl = { n: ctx.player.n, c: ctx.player.c };   // the Player Name and Flag box: this member's name and country, saved into their helmet once
+      else delete o.pl;
+      return o;
+    }
+    function effective0() {
       var o;
       if (teamOn) { o = copy(teamRecipe); o.t = 1; if (info && info.manufacturer) o.m = info.manufacturer; if (lastCustom) o.k = copy(lastCustom); return o; }
       if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
@@ -98,6 +104,7 @@
       var e = effective(), k = { d: e.d, b: e.b, a1: e.a1, a2: e.a2, v: e.v };
       if (e.logos && e.logos.length) k.l = e.logos.slice(0, 25);
       if (e.p) k.p = e.p;
+      if (e.pl) k.pl = e.pl;
       return k;
     }
 

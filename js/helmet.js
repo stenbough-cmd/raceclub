@@ -219,6 +219,27 @@
     } }
   ];
   Array.prototype.push.apply(SHAPES, WEATHERING);
+  // The dynamic Player Name + Flag box. The text and flag are not part of the design: they come from recipe.pl = { n: name, c: country name }
+  // (saved once into the member's helmet when they pick it) or, in the admin preview, from opts.player.
+  SHAPES.push({ id: 'player', name: 'Player name and flag', player: true, draw: function () {} });
+  function flagUrlOf(country) { return (country && typeof countryFlagSrc === 'function') ? countryFlagSrc(country) : ''; }
+  function drawPlayerBox(c, l, w, h, pl, flagImg) {
+    var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg;
+    var fh = Math.min(h, w * 0.4 / 1.5), fw = fh * 1.5, gap = hasFlag ? Math.max(2, h * 0.14) : 0;
+    var tw = w - (hasFlag ? fw + gap : 0), size = h * 0.8;
+    c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
+    var mw = c.measureText(name).width; if (mw > tw) size = size * tw / mw;
+    c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
+    mw = c.measureText(name).width;
+    var total = (hasFlag ? fw + gap : 0) + mw, x0 = -total / 2;
+    if (l.bg) {   // optional background rectangle with a little padding around the flag and name
+      var pad = Math.max(2, h * 0.22), bh = Math.max(fh, size) + pad * 1.4;
+      c.fillStyle = hexOf(l.bg); rrect(c, x0 - pad, -bh / 2, total + pad * 2, bh, Math.max(1, bh * 0.1)); c.fill();
+    }
+    if (hasFlag) c.drawImage(flagImg, x0, -fh / 2, fw, fh);
+    c.fillStyle = hexOf(l.c); c.textBaseline = 'middle'; c.textAlign = 'left';
+    c.fillText(name, x0 + (hasFlag ? fw + gap : 0), 0);
+  }
   function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
 
   var MFR_BASE = 'assets/manufacturers/';   // the site's existing manufacturer logos -- not copied anywhere
@@ -272,6 +293,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     (r.logos || []).forEach(function (l) {
       if (l && l.s && shapeById(l.s)) {
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
+        if (l.s === 'player' && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
         if (shapeById(l.s).gradient) sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : 'black';
         out.logos.push(sl);
         return;
@@ -279,6 +301,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (!l || !(l.f || l.m)) return;
       out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) });
     });
+    if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60) };
     return out;
   }
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
@@ -472,7 +495,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var scale = Wt / CROP.w;
     var Ht = Math.round(CROP.h * scale);
     var patUrl = designUrl(recipe.d);
-    var logoLoads = recipe.logos.map(function (l) { return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
+    var plInfo = recipe.pl || opts.player || null;
+    var logoLoads = recipe.logos.map(function (l) { if (l.s === 'player') { var fu = flagUrlOf(plInfo && plInfo.c); return fu ? loadFirst([fu]).then(function (im) { return im || true; }) : Promise.resolve(true); } return l.s ? Promise.resolve(true) : loadFirst(logoCandidates(l)); });
     var patLoad = patUrl ? loadImg(patUrl).catch(function () { return null; }) : Promise.resolve(null);
 
     return Promise.all([engine(), patLoad, Promise.all(logoLoads)]).then(function (res) {
@@ -583,7 +607,9 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           lx.rotate(-l.r * Math.PI / 180);
           if (l.sh === 2) { lx.shadowColor = 'rgba(0,0,0,0.85)'; lx.shadowBlur = Math.max(3, 13 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
-          if (l.s) {
+          if (l.s === 'player') {
+            drawPlayerBox(lx, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null);
+          } else if (l.s) {
             lx.fillStyle = hexOf(l.c);
             shapeById(l.s).draw(lx, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black'));
           } else {

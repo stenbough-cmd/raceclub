@@ -123,6 +123,9 @@
 
   function openDesigner(ctx) {
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
+    // the Player Name and Flag box shows the admin's own name and country in the preview (members get theirs when they pick the helmet)
+    var me = (typeof getProfileCache === 'function') ? (getProfileCache() || {}) : {};
+    var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || '' };
     var body = mk('div', 'rch-designer');
     var modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
     modal.el.classList.add('rch-modal');
@@ -286,7 +289,7 @@
         var keep = lpick.value;
         lpick.innerHTML = '';
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
-        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering || sh.player) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
         var gP = mk('optgroup'); gP.label = 'Premium shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
@@ -297,6 +300,8 @@
         var gW = mk('optgroup'); gW.label = 'Weathering';
         H.SHAPES.forEach(function (sh) { if (!sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gW.appendChild(o); });
         lpick.appendChild(gW);
+        var gD = mk('optgroup'); gD.label = 'Dynamic';
+        var oD = mk('option'); oD.value = 's:player'; oD.textContent = 'Player name and flag'; gD.appendChild(oD); lpick.appendChild(gD);
         // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
         var cats = {}, catOrder = [];
         H.getConfig().logos.forEach(function (l) {
@@ -324,7 +329,7 @@
         var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
-        var n = isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
+        var n = val === 'player' && kind === 's' ? { s: 'player', c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 56, r: 0, sh: 1 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : { m: isM ? val : '', v: 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
         R.logos.push(n); sel = n; draw();
@@ -450,7 +455,13 @@
           if (gdef.gradient) {
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
             else pickColor('c', 'Gradient color', 'This one fades from the color to see-through.');
-          } else pickColor('c', gdef.weathering ? 'Mark color' : 'Shape color', sel.s === 'checker' ? 'The checkered strip uses this color and white.' : '');
+          } else if (gdef.player) {
+            pickColor('c', 'Name color', 'Shows each driver\'s own name and flag. Here you see yours.');
+            var bgl = mk('label', 'rch-check rch-plain'); var bgc = mk('input'); bgc.type = 'checkbox'; bgc.checked = !!sel.bg;
+            bgc.onchange = function () { if (bgc.checked) sel.bg = sel.bg || 'white'; else delete sel.bg; draw(); };
+            bgl.appendChild(bgc); bgl.appendChild(document.createTextNode(' Background behind the name')); detail.appendChild(bgl);
+            if (sel.bg) pickColor('bg', 'Background color', 'Use the shadow boxes below for a drop shadow behind it.');
+          } else pickColor('c', gdef.weathering ? 'Mark color' : (gdef.player ? 'Name color' : 'Shape color'), sel.s === 'checker' ? 'The checkered strip uses this color and white.' : (sel.s === 'player' ? 'Shows each driver\'s own name and flag. Here you see yours.' : ''));
         }
         detail.appendChild(opts);
       }
@@ -492,7 +503,7 @@
         busy = true;
         // A small size is drawn at twice its size and shown at its size, the way the avatars around the site are.
         var rw = prevSize ? prevSize * 2 : (quick ? 560 : 760);
-        var jobs = [H.render(R, { width: rw }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
+        var jobs = [H.render(R, { width: rw, player: previewPlayer }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
         Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
       }
 
@@ -602,7 +613,7 @@
       }
       /* ---------------- shared bits for the manager popups ---------------- */
       function btn(label, cls) { var b = mk('button', cls || 'rc-btn-secondary rc-btn-row', label); b.type = 'button'; return b; }
-      function renderThumb(host, recipe, w) { H.render(recipe, { width: w || 140 }).then(function (cv) { host.appendChild(cv); }).catch(function () {}); }
+      function renderThumb(host, recipe, w) { H.render(recipe, { width: w || 140, player: previewPlayer }).then(function (cv) { host.appendChild(cv); }).catch(function () {}); }
       // a category select with "+ New category..." (used by the logo form)
       function catPicker(list, chosen) {
         var wrap = mk('div'); var sel2 = mk('select', 'rch-select-wide'); var nw = mk('input', 'rch-input'); nw.type = 'text'; nw.maxLength = 40; nw.placeholder = 'New category name'; nw.style.display = 'none'; nw.style.marginTop = '6px';
