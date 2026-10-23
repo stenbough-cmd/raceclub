@@ -33,12 +33,91 @@
   var GROUPS = [['Championship', 'Championship (single player members with a +)'], null, ['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
   function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
-  var SLIDERS = [['x', 'Left / right', 0, 1254, 1], ['y', 'Up / down', 0, 1254, 1], ['w', 'Max width', 20, 700, 1], ['h', 'Max height', 20, 700, 1], ['r', 'Tilt (deg)', -45, 45, 0.5]];
-  // Tilt slider: sliding right turns the layer clockwise. r (the stored angle) counts counter-clockwise, so the slider shows the
-  // opposite sign, and only the part of r left over after whole 90 degree turns (the rotate buttons make those).
+  // Slider directions (Matt): Left / right slides right = right. Up / down slides right = UP (the stored y counts down, so the slider shows 1254 - y).
+  // Tilt: sliding right turns the layer clockwise. r (the stored angle) counts counter-clockwise, so the slider shows the opposite sign,
+  // and only the part of r left over after whole 90 degree turns (the rotate buttons make those).
   var ROT_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
+  var LINK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
   function turnBase(r) { return Math.round((Number(r) || 0) / 90) * 90; }
   function wrapAngle(r) { r = ((r % 360) + 360) % 360; return r > 180 ? r - 360 : r; }
+
+
+  // The slider block shared by the layer editor and the Logo Manager form.
+  // o.keys names the stored fields {x,y,w,h,r}; o.obj() returns the object that holds them; o.changed() redraws;
+  // o.layer() returns a layer-like {f,m,v,s} so the picture's real proportions can be looked up.
+  // Each slider has a typed number box on its right. The link button (between Max width and Max height) keeps the
+  // picture's proportions while either one changes.
+  var linkOn = true;     // remembered for the session
+  function makeGrid(o) {
+    var K = o.keys, g = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;
+    function obj() { return o.obj(); }
+    function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+    function fmt(d) { return String(Math.round(d * 10) / 10); }
+    function ratio() { if (nat) return nat; if (!fixedRatio) { var oo = obj(); fixedRatio = (Number(oo[K.w]) || 1) / (Number(oo[K.h]) || 1); } return fixedRatio; }
+    function sizeFrom(field) {
+      if (!linkOn) return;
+      var oo = obj(), r = ratio(), w = Number(oo[K.w]), h = Number(oo[K.h]);
+      if (field === 'w') { h = w / r; if (h < 20) { h = 20; w = h * r; } if (h > 700) { h = 700; w = h * r; } }
+      else { w = h * r; if (w < 20) { w = 20; h = w / r; } if (w > 700) { w = 700; h = w / r; } }
+      oo[K.w] = Math.round(clamp(w, 20, 700)); oo[K.h] = Math.round(clamp(h, 20, 700));
+      rows.w.sync(); rows.h.sync();
+    }
+    function addRow(field, label, min, max, step, toDisp, fromDisp) {
+      var lab = mk('span', '', label); g.appendChild(lab);
+      var rng = mk('input'); rng.type = 'range'; rng.min = min; rng.max = max; rng.step = step;
+      var num = mk('input', 'rch-num'); num.type = 'number'; num.min = min; num.max = max; num.step = step; num.setAttribute('aria-label', label);
+      var row = { lab: lab, sync: function () { var d = toDisp(obj()[K[field]]); rng.value = d; num.value = fmt(d); } };
+      function apply(d) {
+        obj()[K[field]] = fromDisp(clamp(d, min, max));
+        if (field === 'w' || field === 'h') sizeFrom(field);
+        o.changed();
+      }
+      rng.oninput = function () { var d = parseFloat(rng.value); num.value = fmt(d); apply(d); };
+      num.oninput = function () { var d = parseFloat(num.value); if (!isFinite(d) || d < min || d > max) return; rng.value = d; apply(d); };   // live while typing, as long as the number is in range
+      num.onchange = function () { var d = parseFloat(num.value); if (!isFinite(d)) { row.sync(); return; } d = clamp(d, min, max); apply(d); row.sync(); };
+      g.appendChild(rng); g.appendChild(num);
+      rows[field] = row; row.sync();
+      return row;
+    }
+    addRow('x', 'Left / right', 0, 1254, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    addRow('y', 'Up / down', 0, 1254, 1, function (v) { return 1254 - (Number(v) || 0); }, function (d) { return 1254 - d; });
+    addRow('w', 'Max width', 20, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    var hr = addRow('h', 'Max height', 20, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    addRow('r', 'Tilt (deg)', -45, 45, 0.5,
+      function (v) { v = Number(v) || 0; return -(v - turnBase(v)) || 0; },
+      function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); });
+    // link button, centered between the Max width and Max height labels
+    var lk = mk('button', 'rch-link', LINK_ICON); lk.type = 'button';
+    function lkState() { lk.className = 'rch-link' + (linkOn ? ' on' : ''); lk.setAttribute('aria-pressed', linkOn ? 'true' : 'false'); lk.title = linkOn ? 'Linked: width and height keep the picture\'s proportions. Click to unlink.' : 'Unlinked. Click to keep the picture\'s proportions.'; lk.setAttribute('aria-label', lk.title); }
+    lkState();
+    lk.onclick = function () {
+      linkOn = !linkOn; lkState();
+      if (linkOn) { fixedRatio = 0; if (nat) { sizeFrom('w'); o.changed(); } }
+    };
+    hr.lab.appendChild(lk);
+    return {
+      el: g,
+      sync: function () { for (var k in rows) rows[k].sync(); },
+      loadAspect: function () {
+        nat = null; fixedRatio = 0;
+        if (!o.layer || !H.imageAspect) return;
+        H.imageAspect(o.layer()).then(function (a) { nat = a; });
+      }
+    };
+  }
+
+  // "Rotate Left" and "Rotate Right" buttons: quarter turns of the layer (r counts counter-clockwise, so left = +90, right = -90).
+  // The object's own width and height turn with it, so nothing is stretched. after() redraws and refreshes the sliders.
+  function makeRotateButtons(getObj, key, after) {
+    function one(label, dir) {
+      var b = mk('button', 'rc-btn-secondary rch-rotbtn', ROT_ICON + '<span>' + label + '</span>'); b.type = 'button';
+      b.title = label + ' 90 degrees'; b.setAttribute('aria-label', label + ' 90 degrees');
+      if (dir < 0) b.firstChild.style.transform = 'scaleX(-1)';
+      b.onclick = function () { var oo = getObj(); oo[key] = wrapAngle((Number(oo[key]) || 0) + dir * 90); after(); };
+      return b;
+    }
+    return [one('Rotate Left', 1), one('Rotate Right', -1)];
+  }
 
   function openDesigner(ctx) {
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
@@ -310,29 +389,14 @@
       function renderDetail() {
         detail.innerHTML = '';
         if (!sel || R.logos.indexOf(sel) < 0) return;
-        var g = mk('div', 'rch-sliders');
-        SLIDERS.forEach(function (s) {
-          g.appendChild(mk('span', '', s[1]));
-          var isTilt = s[0] === 'r';
-          var base = isTilt ? turnBase(sel.r) : 0;                       // whole 90 degree turns already applied
-          var inp = mk('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4];
-          inp.value = isTilt ? (-((Number(sel.r) || 0) - base)) : sel[s[0]];
-          var v = mk('span', 'rch-sv'); v.textContent = inp.value;
-          inp.oninput = function () { sel[s[0]] = isTilt ? wrapAngle(base - parseFloat(inp.value)) : parseFloat(inp.value); v.textContent = inp.value; draw(true); };
-          g.appendChild(inp); g.appendChild(v);
-        });
-        detail.appendChild(g);
+        var grid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
+        grid.loadAspect();
+        detail.appendChild(grid.el);
         var opts = mk('div', 'rch-btns');
         var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!sel.sh;
         shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; draw(true); };
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
-        // turn the layer a quarter turn (r counts counter-clockwise, so left = +90, right = -90)
-        var rotL = mk('button', 'rc-btn-secondary rch-iconbtn', ROT_ICON); rotL.type = 'button'; rotL.title = 'Rotate left 90 degrees'; rotL.setAttribute('aria-label', 'Rotate left 90 degrees');
-        var rotR = mk('button', 'rc-btn-secondary rch-iconbtn', ROT_ICON); rotR.type = 'button'; rotR.title = 'Rotate right 90 degrees'; rotR.setAttribute('aria-label', 'Rotate right 90 degrees');
-        rotR.firstChild.style.transform = 'scaleX(-1)';
-        rotL.onclick = function () { sel.r = wrapAngle((Number(sel.r) || 0) + 90); draw(); };
-        rotR.onclick = function () { sel.r = wrapAngle((Number(sel.r) || 0) - 90); draw(); };
-        opts.appendChild(rotL); opts.appendChild(rotR);
+        makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }).forEach(function (bn) { opts.appendChild(bn); });
         if (sel.s) {
           var cw = mk('div', 'rch-shapecolor');
           cw.appendChild(mk('div', 'rch-label', 'Shape color'));
@@ -721,19 +785,14 @@
 
         var sec2 = mk('div', 'rch-section'); gr.appendChild(sec2);
         sec2.appendChild(mk('div', 'rch-label', 'Starting position and size when added to a helmet'));
-        var sl = mk('div', 'rch-sliders');
-        var map = [['defX', 'Left / right', 0, 1254, 1], ['defY', 'Up / down', 0, 1254, 1], ['defW', 'Max width', 20, 700, 1], ['defH', 'Max height', 20, 700, 1], ['defR', 'Tilt (deg)', -45, 45, 0.5]];
-        map.forEach(function (s2) {
-          sl.appendChild(mk('span', '', s2[1]));
-          var tilt2 = s2[0] === 'defR';                                   // same direction as the layer tilt: sliding right turns clockwise
-          var inp = mk('input'); inp.type = 'range'; inp.min = s2[2]; inp.max = s2[3]; inp.step = s2[4]; inp.value = tilt2 ? -(Number(d.defR) || 0) : d[s2[0]];
-          var v = mk('span', 'rch-sv'); v.textContent = inp.value;
-          inp.oninput = function () { d[s2[0]] = tilt2 ? -parseFloat(inp.value) : parseFloat(inp.value); v.textContent = inp.value; drawPrev(); };
-          sl.appendChild(inp); sl.appendChild(v);
-        });
-        sec2.appendChild(sl);
+        var lgrid = makeGrid({ keys: { x: 'defX', y: 'defY', w: 'defW', h: 'defH', r: 'defR' }, obj: function () { return d; },
+          layer: function () { return { m: '', v: 'std', f: data ? 'u:__tmp__' : (logo ? logo.file : '') }; }, changed: function () { drawPrev(); } });
+        sec2.appendChild(lgrid.el);
         var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!d.shadow; shc.onchange = function () { d.shadow = shc.checked ? 1 : 0; drawPrev(); };
-        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); sec2.appendChild(shl);
+        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow'));
+        var lopts = mk('div', 'rch-btns'); lopts.appendChild(shl);
+        makeRotateButtons(function () { return d; }, 'defR', function () { lgrid.sync(); drawPrev(); }).forEach(function (bn) { lopts.appendChild(bn); });
+        sec2.appendChild(lopts);
 
         var bt = mk('div', 'rch-btns');
         var sv = btn('Save Logo', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
@@ -761,7 +820,7 @@
           processImage(f).then(function (out) {
             data = out; fstat.textContent = 'Ready (' + Math.round(out.length / 1024) + ' KB after shrinking).';
             if (!d.name) { d.name = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '); nm.value = d.name; }
-            drawPrev();
+            drawPrev(); lgrid.loadAspect();
           }).catch(function (e) { data = ''; fstat.textContent = e.message; });
         };
         sv.onclick = function () {
@@ -777,7 +836,7 @@
             else { sv.disabled = false; toast((r && r.message) || 'Could not save the logo.', 'error'); }
           }).catch(function () { sv.disabled = false; toast('No answer from the server.', 'error'); });
         };
-        drawPrev();
+        drawPrev(); lgrid.loadAspect();
       }
 
       refreshPresets();

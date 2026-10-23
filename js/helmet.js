@@ -424,6 +424,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var N = Wt * Ht;
       var out = new Float32Array(N * 4);
       var specK = new Float32Array(N);
+      var accCov = new Float32Array(N);            // how much of each pixel is accent 1 or 2 paint (drives the soft shadow below the accents)
       var cOut = [0, 0, 0];
 
       for (var py = 0; py < Ht; py++) {
@@ -455,6 +456,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             g = g * (1 - sm) + clamp(pg_, 0, 255) * sm;
             b = b * (1 - sm) + clamp(pb_, 0, 255) * sm;
             specK[i] = sk;
+            accCov[i] = (wA + wS) * sm;
           }
           if (gl > 0.001) {
             var t2 = clamp(((sx - 80) + (sy - 420) * 0.6) / 700, 0, 1);
@@ -470,6 +472,34 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           out[o] = clamp(r, 0, 255); out[o + 1] = clamp(g, 0, 255); out[o + 2] = clamp(b, 0, 255); out[o + 3] = m2[o] ;
         }
       }
+      // soft shadow cast by the accent paint onto the base paint below it (same look as the logo shadow)
+      (function () {
+        var any = false, q0;
+        for (q0 = 0; q0 < N; q0++) if (accCov[q0] > 0.01) { any = true; break; }
+        if (!any) return;
+        var dy = Math.max(1, Math.round(2.5 * scale)), rad = Math.max(1, Math.round(3.5 * scale));
+        var tmp = new Float32Array(N), blur = new Float32Array(N), x, y, k, acc2, cnt;
+        for (y = 0; y < Ht; y++) {                       // horizontal box blur, two passes
+          for (x = 0; x < Wt; x++) {
+            acc2 = 0; cnt = 0;
+            for (k = -rad; k <= rad; k++) { var xx = x + k; if (xx >= 0 && xx < Wt) { acc2 += accCov[y * Wt + xx]; cnt++; } }
+            tmp[y * Wt + x] = acc2 / (2 * rad + 1);
+          }
+        }
+        for (x = 0; x < Wt; x++) {                       // vertical blur, read from dy rows above so the shadow lands below
+          for (y = 0; y < Ht; y++) {
+            acc2 = 0;
+            for (k = -rad; k <= rad; k++) { var yy = y - dy + k; if (yy >= 0 && yy < Ht) acc2 += tmp[yy * Wt + x]; }
+            blur[y * Wt + x] = acc2 / (2 * rad + 1);
+          }
+        }
+        for (q0 = 0; q0 < N; q0++) {
+          var sa = blur[q0] * (1 - accCov[q0]) * 0.5 * (m1[q0 * 4] / 255);
+          if (sa <= 0.003) continue;
+          var f = 1 - sa, oq = q0 * 4;
+          out[oq] *= f; out[oq + 1] *= f; out[oq + 2] *= f;
+        }
+      })();
       if (scale >= 0.45) sharpen(out, Wt, Ht, 1.2 * scale / 1.0, 0.9, 3);
 
       // logos (clipped to the shell so they never float off the helmet)
@@ -527,9 +557,15 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     });
   }
 
+  // width / height of a logo's picture (null for shapes or a missing picture), so the editor can scale it proportionally
+  function imageAspect(l) {
+    if (!l || l.s) return Promise.resolve(null);
+    return loadFirst(logoCandidates(l)).then(function (im) { return im && im.naturalWidth && im.naturalHeight ? im.naturalWidth / im.naturalHeight : null; }).catch(function () { return null; });
+  }
+
   window.RCHelmet = {
     PALETTE: PALETTE, SHAPES: SHAPES, FINISHES: FINISHES, VISORS: VISORS, CROP: CROP,
     configure: configure, pruneDesigns: pruneDesigns, defaultRecipe: defaultRecipe, randomRecipe: randomRecipe, normalizeRecipe: normalizeRecipe,
-    hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }, visibleDesigns: visibleDesigns
+    hexOf: hexOf, render: render, mount: mount, getConfig: function () { return cfg; }, visibleDesigns: visibleDesigns, imageAspect: imageAspect
   };
 })();
