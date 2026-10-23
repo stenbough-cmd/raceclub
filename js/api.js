@@ -263,12 +263,13 @@ function fetchApi(action, options) {
     // limit (plus a little slack so the server's own failure arrives first). quick:true is for
     // fire-and-forget calls (logout) that should never hold anything up.
     if (options.quick) return _rcFetchOnce_(url, fetchOpts, options.timeoutMs);
-    rcWriteStarted_();
+    var rcLocks_ = options.background !== true;   // background:true = a save that must not lock the popup (instant-feeling toggles)
+    if (rcLocks_) rcWriteStarted_();
     return _rcFetchOnce_(url, fetchOpts, RC_POST_TIMEOUT_MS).then(function (data) {
-      rcWriteFinished_();
+      if (rcLocks_) rcWriteFinished_();
       return data;
     }, function (err) {
-      rcWriteFinished_();
+      if (rcLocks_) rcWriteFinished_();
       throw err;
     });
   }

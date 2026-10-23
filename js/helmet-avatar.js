@@ -221,7 +221,7 @@
     function put(value) {
       var previous = profile.avatarFilename;
       profile.avatarFilename = value;
-      return fetchApi('updateOwnProfile', { method: 'POST', token: token, body: {
+      return fetchApi('updateOwnProfile', { method: 'POST', background: true, token: token, body: {
         username: profile.username, firstName: profile.firstName, lastName: profile.lastName, suffix: profile.suffix || '', email: profile.email,
         location: profile.location || '', timeZone: profile.timeZone || '', avatarFilename: value } }).then(function (d) {
         if (!d || !d.success) { profile.avatarFilename = previous; toast((d && d.message) || 'Could not save your helmet.', 'error'); return null; }
