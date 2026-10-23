@@ -372,7 +372,7 @@
           dn.onclick = function (e) { e.stopPropagation(); if (idx > 0) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx - 1]; R.logos[idx - 1] = t; draw(); } };
           rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (sel === l) sel = null; draw(); };
           row.appendChild(up); row.appendChild(dn); row.appendChild(rm);
-          row.onclick = function () { sel = l; renderLayers(missing); renderDetail(); };
+          row.onclick = function () { sel = l; renderLayers(missing); renderDetail(); updateSelBox(); };
           row.addEventListener('dragstart', function (e) { dragFrom = pos; row.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', String(pos)); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
           row.addEventListener('dragend', function () { row.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
           row.addEventListener('dragover', function (e) { e.preventDefault(); row.classList.add('over'); });
@@ -462,8 +462,33 @@
         busy = true;
         // A small size is drawn at twice its size and shown at its size, the way the avatars around the site are.
         var rw = prevSize ? prevSize * 2 : (quick ? 560 : 760);
-        var jobs = [H.render(R, { width: rw }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); if (!quick) renderLayers(cv.missingLogos); })];
+        var jobs = [H.render(R, { width: rw }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
         Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
+      }
+
+      // A red outline on the helmet around the layer that is selected, so you can see which one you are moving.
+      var aspectCache = {};
+      function updateSelBox() {
+        var old = stage.querySelector('.rch-selbox'); if (old) old.remove();
+        if (!sel || R.logos.indexOf(sel) < 0) return;
+        var cv = stage.querySelector('canvas'); if (!cv) return;
+        var C = H.CROP, k = cv.clientWidth / C.w;
+        var bw = Number(sel.w) || 0, bh = Number(sel.h) || 0;
+        var box = mk('div', 'rch-selbox'); box.style.pointerEvents = 'none';
+        function place(w, h) {
+          box.style.width = (w * k) + 'px'; box.style.height = (h * k) + 'px';
+          box.style.left = (cv.offsetLeft + (sel.x - C.x) * k) + 'px'; box.style.top = (cv.offsetTop + (sel.y - C.y) * k) + 'px';
+          box.style.transform = 'translate(-50%, -50%) rotate(' + (-(Number(sel.r) || 0)) + 'deg)';
+        }
+        if (!sel.s) {                       // a picture is drawn "contained" in its box: outline the picture itself
+          var key = (sel.m || '') + '|' + (sel.v || '') + '|' + (sel.f || ''), asp = aspectCache[key], layer = sel;
+          if (asp) { var fit = Math.min(bw / asp, bh); place(fit * asp, fit); }
+          else {
+            place(bw, bh);
+            H.imageAspect(layer).then(function (a) { if (a) { aspectCache[key] = a; if (sel === layer) updateSelBox(); } });
+          }
+        } else place(bw, bh);
+        stage.appendChild(box);
       }
 
       // click / drag on the preview moves the selected logo

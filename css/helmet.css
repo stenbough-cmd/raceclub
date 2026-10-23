@@ -197,3 +197,7 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-undo:hover:not(:disabled) { 
 body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary { background: transparent; color: var(--rcl-ink-dim); border-color: var(--rcl-line-bright); }
 body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary:hover:not(:disabled) { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
 body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-on { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); background: var(--rcl-bg-raised-2); }
+
+/* admin designer: red outline around the selected layer on the helmet */
+.rch-stage { position: relative; }
+.rch-selbox { position: absolute; box-sizing: border-box; border: 2px solid var(--rc-red); border-radius: 2px; pointer-events: none; z-index: 2; }
