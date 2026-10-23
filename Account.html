@@ -2909,6 +2909,7 @@
         rcHelmetCustomize_({ profile: profile, token: token, showModal: showModal, showToast: showToast, onChange: drawHelmet });
       });
       avatarRow.appendChild(link);
+      avatarRow.appendChild(rcHelmetTeamToggle_(profile, token, 'rc-btn-secondary rc-btn-row', showToast, drawHelmet));
       rcHelmetHydrate_(avatarRow);
     }
     drawHelmet();

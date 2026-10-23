@@ -148,6 +148,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
       rcHelmetCustomize_({ profile: profile, token: token, showModal: _rcEPShowModal, showToast: showToast, onChange: drawHelmet });
     });
     avatarRow.appendChild(link);
+    avatarRow.appendChild(rcHelmetTeamToggle_(profile, token, (document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page')) ? 'rc-btn-primary rc-btn-sm rc-btn-row' : 'rc-btn-secondary rc-btn-row', showToast, drawHelmet));
     rcHelmetHydrate_(avatarRow);
   }
   drawHelmet();

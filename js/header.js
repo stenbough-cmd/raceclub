@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=25'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=26'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -1028,3 +1028,23 @@ function rcHelmetVersionCheck_() {
   } catch (e) {}
 }
 window.addEventListener('load', function () { setTimeout(rcHelmetVersionCheck_, 1200); });
+
+
+// "Always use team helmet" button for the Edit Profile popup: same look as Customize Helmet, with a light that is green when it is on.
+// Returns the button. cls = the same classes the Customize Helmet button uses.
+function rcHelmetTeamToggle_(profile, token, cls, showToast, onChange) {
+  var b = document.createElement('button'); b.type = 'button'; b.className = cls + ' rc-team-toggle';
+  var light = document.createElement('span'); light.className = 'rc-team-light';
+  var label = document.createElement('span'); label.textContent = 'Always use team helmet';
+  b.appendChild(light); b.appendChild(label);
+  function isOn() { var v = String(profile.avatarFilename || ''); return v.indexOf('helmet:') === 0 && /"t":1/.test(v) && /"a":1/.test(v); }
+  function paint() { b.classList.toggle('rc-team-on', isOn()); b.setAttribute('aria-pressed', isOn() ? 'true' : 'false'); }
+  paint();
+  b.addEventListener('click', function (evt) {
+    evt.preventDefault(); b.disabled = true;
+    _rcHelmetModule_().then(function () {
+      return window.rcHelmetToggleTeamNow_({ profile: profile, token: token, toast: showToast, onChange: onChange });
+    }).catch(function () { if (showToast) showToast('Could not change your helmet.', 'error'); }).then(function () { b.disabled = false; paint(); });
+  });
+  return b;
+}

@@ -28,7 +28,7 @@
     if (!r) return '';
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
     if (r.logos && r.logos.length) o.l = r.logos.slice(0, 25);
-    if (r.t) { o.t = 1; if (r.m) o.m = r.m; }
+    if (r.t) { o.t = 1; if (r.m) o.m = r.m; if (r.a) o.a = 1; }   // a = "always use my team's helmet" is switched on
     if (r.w) o.w = 1;                         // the website default helmet, chosen while the member also has their own design saved (k)
     if (r.pl && r.pl.n) o.pl = { n: String(r.pl.n).slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };   // name + country for the Player Name and Flag box
     if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
@@ -149,7 +149,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=26').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=27').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -213,6 +213,40 @@
   window.rcHelmetRecipeOf_ = recipeOf;
   window.rcHelmetValue_ = valueOf;
   window.rcHelmetHydrateNow_ = hydrate;
+  // "Always use team helmet" button: on = the member's helmet is their manufacturer's helmet and follows them to a new manufacturer.
+  // Resolves to true (now on), false (now off) or null (could not change it). o = { profile, token, toast, onChange }.
+  window.rcHelmetToggleTeamNow_ = function (o) {
+    var profile = o.profile, token = o.token, toast = o.toast || function () {};
+    var cur = recipeOf(profile.avatarFilename), turningOn = !(cur && cur.t && cur.a);
+    function put(value) {
+      var previous = profile.avatarFilename;
+      profile.avatarFilename = value;
+      return fetchApi('updateOwnProfile', { method: 'POST', token: token, body: {
+        username: profile.username, firstName: profile.firstName, lastName: profile.lastName, suffix: profile.suffix || '', email: profile.email,
+        location: profile.location || '', timeZone: profile.timeZone || '', avatarFilename: value } }).then(function (d) {
+        if (!d || !d.success) { profile.avatarFilename = previous; toast((d && d.message) || 'Could not save your helmet.', 'error'); return null; }
+        if (typeof setProfileCache === 'function') setProfileCache(d.profile);
+        if (typeof renderHeader === 'function') renderHeader();
+        if (o.onChange) o.onChange(profile);
+        return turningOn;
+      }).catch(function () { profile.avatarFilename = previous; toast('Could not reach the server.', 'error'); return null; });
+    }
+    if (!turningOn) { cur.a = 0; return put(valueOf(cur)); }
+    return ensure().then(function (H) {
+      return fetchApi('getMyTeamHelmet', { token: token }).then(function (res) {
+        if (!res || !res.success || !res.recipe || !res.manufacturer) { toast('You need a team seat with a manufacturer helmet to use this.', 'error'); return null; }
+        var rec = H.normalizeRecipe(res.recipe);
+        rec.t = 1; rec.m = res.manufacturer; rec.a = 1;
+        // keep their own design so it is not lost (it comes back under "Your Design")
+        var k = null;
+        if (cur && !cur.t && !cur.p && !cur.w) { k = { d: cur.d, b: cur.b, a1: cur.a1, a2: cur.a2, v: cur.v }; if (cur.logos && cur.logos.length) k.l = cur.logos.slice(0, 25); if (cur.pl) k.pl = cur.pl; }
+        else if (cur && cur.k) k = cur.k;
+        if (k) rec.k = k;
+        if ((rec.logos || []).some(function (l) { return l && /^player/.test(l.s || ''); })) rec.pl = { n: profile.displayName || profile.username || '', c: profile.location || '', u: res.carNumber || '' };
+        return put(valueOf(rec));
+      });
+    }).catch(function () { toast('Could not reach the server.', 'error'); return null; });
+  };
   // The helmet list changed: fetch the new designs (this also stores the new version number) and draw every helmet again.
   window.rcHelmetRefreshNow_ = function () {
     return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=24')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });

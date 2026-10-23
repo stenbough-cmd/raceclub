@@ -90,7 +90,7 @@
     }
     function effective0() {
       var o;
-      if (teamOn) { o = copy(teamRecipe); o.t = 1; if (info && info.manufacturer) o.m = info.manufacturer; if (lastCustom) o.k = copy(lastCustom); return o; }
+      if (teamOn) { o = copy(teamRecipe); o.t = 1; if (info && info.manufacturer) o.m = info.manufacturer; if (lastCustom) o.k = copy(lastCustom); if (own && own.a) o.a = 1; return o; }
       if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; if (lastCustom) o.k = copy(lastCustom); return o; }   // used exactly as designed
       if (webOn && wdRec) { o = H.normalizeRecipe(wdRec.recipe); if (lastCustom) { o.w = 1; o.k = copy(lastCustom); } return o; }   // the member's own design is kept inside, so Your Design stays in the list
       if (ownOn && customRec) return H.normalizeRecipe(customRec);
@@ -242,8 +242,8 @@
     /* ---- buttons ---- */
     var btns = mk('div', 'rch-btns rch-pbtns');
     var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveB.type = 'button';
-    var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear Design'); clearB.type = 'button';
-    clearB.title = 'Clear to a plain white helmet with no design';
+    var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Start Over'); clearB.type = 'button';
+    clearB.title = 'Start over with a plain white helmet';
     var cancelB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelB.type = 'button';
     btns.appendChild(saveB); btns.appendChild(clearB); btns.appendChild(cancelB);
     right.appendChild(btns);
