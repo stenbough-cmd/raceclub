@@ -141,7 +141,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   var avatarRow = _rcEP_el('div', 'rc-helmet-edit-row');
   function drawHelmet() {
     avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
-    var link = _rcEP_el('button', 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
+    var link = _rcEP_el('button', (document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page')) ? 'rc-btn-primary rc-btn-sm rc-btn-row' : 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
     link.type = 'button';
     link.addEventListener('click', function (evt) {
       evt.preventDefault();

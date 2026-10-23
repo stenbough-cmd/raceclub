@@ -166,3 +166,34 @@
   .rch-designer:not(.rch-player) .rch-left { position: static; align-self: start; }
   .rch-designer:not(.rch-player) .rch-right { height: 100%; overflow-y: auto; padding-right: 8px; }
 }
+
+/* ---- League Hub only: the player's Customize Helmet popup wears the page's dark theme (tokens from css/league.css) ---- */
+body.rc-league-page:not(.rcc-page) .rch-player { background: transparent; color: var(--rcl-ink); padding: 0; }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-label,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-hint,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-psub,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-details summary { color: var(--rcl-ink-dim); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-section { background: var(--rcl-bg-raised-2); border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-input,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-select-wide,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-finish,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-text,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-num { background: var(--rcl-bg); color: var(--rcl-ink); border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-stage { border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-sw,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-sw-custom { border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-sw.sel,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-sw-custom.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rcl-bg-raised-2), 0 0 0 3.5px var(--rc-red); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-visor { background: var(--rcl-bg); color: var(--rcl-ink); border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-visor.sel { border-color: var(--rc-red); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-check { color: var(--rcl-ink); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-check.off { color: var(--rcl-ink-faint); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-options { border-top-color: var(--rcl-line); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-layer { background: var(--rcl-bg); border-color: var(--rcl-line-bright); color: var(--rcl-ink); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-layer.sel { background: var(--rcl-bg-raised-2); border-color: var(--rc-red); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-undo,
+body.rc-league-page:not(.rcc-page) .rch-player .rch-link { background: var(--rcl-bg); color: var(--rcl-ink-dim); border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-undo:hover:not(:disabled) { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
+body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary { background: transparent; color: var(--rcl-ink-dim); border-color: var(--rcl-line-bright); }
+body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary:hover:not(:disabled) { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-on { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); background: var(--rcl-bg-raised-2); }

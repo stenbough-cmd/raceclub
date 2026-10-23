@@ -111,7 +111,8 @@
 
     /* ---- preview ---- */
     var wrap = mk('div', 'rch-stagewrap');
-    var stage = mk('div', 'rch-stage light');
+    var onLeague = document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page');   // League Hub: dark theme, grey backdrop to start
+    var stage = mk('div', 'rch-stage ' + (onLeague ? 'grey' : 'light'));
     wrap.appendChild(stage);
     left.appendChild(wrap);
     var bgRow = mk('div', 'rch-btns rch-bgrow');
