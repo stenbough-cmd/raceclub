@@ -6658,11 +6658,11 @@
         }
 
         modal.body.appendChild(actionBar);
-        // Same graphite round pill the Stewarding page uses, above the protests.
+        // Same graphite round pill the Stewarding page uses: inside the bordered container, on top of the protests.
         var pillHead = el('div', 'rc-group-head');
         var pillText = 'Round ' + (data.roundNumber || '?') + ': ' + (data.eventName || '') + (data.shortName ? ' ' + data.shortName : '');
         pillHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
-        modal.body.appendChild(pillHead);
+        listPanel.insertBefore(pillHead, listPanel.firstChild);
         modal.body.appendChild(listPanel);
       }).catch(function () {
         modal.body.innerHTML = '';
