@@ -201,3 +201,10 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-
 /* admin designer: red outline around the selected layer on the helmet */
 .rch-stage { position: relative; }
 .rch-selbox { position: absolute; box-sizing: border-box; border: 2px solid var(--rc-red); border-radius: 2px; pointer-events: none; z-index: 2; }
+
+/* ---- member popup: locked design shroud (gray veil + lock over the controls; the Design list stays on top and usable) ---- */
+.rch-player .rch-section { position: relative; }
+.rch-shroud { display: none; position: absolute; inset: 0; z-index: 2; border-radius: 8px; background: rgba(110, 116, 124, 0.55); color: #fff; align-items: flex-start; justify-content: center; box-sizing: border-box; cursor: not-allowed; }
+.rch-section.rch-shrouded .rch-shroud { display: flex; }
+.rch-shroud svg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45)); }
+body.rc-league-page:not(.rcc-page) .rch-player .rch-shroud { background: rgba(10, 10, 11, 0.6); }

@@ -68,6 +68,14 @@
       }
       presetId = found.presetId;
     }
+    // The member's own saved custom design (listed as "Your Design"), if they have one: either what is saved now, or what was
+    // remembered inside a saved team helmet (own.k).
+    var customRec = null;
+    if (own && !own.t && !own.p) customRec = own;
+    else if (own && own.t && own.k && !own.k.p) customRec = { d: own.k.d, b: own.k.b, a1: own.k.a1, a2: own.k.a2, v: own.k.v, logos: own.k.l || [] };
+    var wdRec = ctx.websiteDefault ? ctx.websiteDefault : null;
+    var webOn = !own && !!wdRec;                      // the website default is the selected design (saving it clears the member's own helmet)
+    var ownOn = !!(own && !own.t && !own.p);          // "Your Design" is the selected design
     function presetOf(id) { return awarded.filter(function (a) { return a.presetId === id; })[0] || null; }
     var init = { R: copy(R), presetId: presetId, teamOn: teamOn };
 
@@ -78,6 +86,8 @@
       var o;
       if (teamOn) { o = copy(teamRecipe); o.t = 1; if (lastCustom) o.k = copy(lastCustom); return o; }
       if (presetId) { o = H.normalizeRecipe(presetOf(presetId).recipe); o.p = presetId; return o; }   // used exactly as designed
+      if (webOn && wdRec) return H.normalizeRecipe(wdRec.recipe);
+      if (ownOn && customRec) return H.normalizeRecipe(customRec);
       o = copy(R);
       o.logos = dirty() ? [] : copy(baseLogos);
       return o;
@@ -125,12 +135,12 @@
     left.appendChild(bgRow);
 
     // Editing anything while the team helmet is showing starts from the team helmet's colors and design.
-    function leaveTeam() { if (teamOn) { R = clean(teamRecipe); teamOn = false; } }
+    function leaveTeam() { if (teamOn) { R = clean(teamRecipe); teamOn = false; } webOn = false; ownOn = false; }
 
     /* ---- design (Generic + Awards groups) + randomize ---- */
     var style = mk('div', 'rch-section');
     var dRow = mk('div', 'rch-dstack');
-    var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
+    var dWrap = mk('div'); dWrap.style.position = 'relative'; dWrap.style.zIndex = '3'; dWrap.appendChild(mk('div', 'rch-label', 'Design'));
     var dSel = mk('select', 'rch-select-wide');
     var gGen = mk('optgroup'); gGen.label = 'Basic';
     var plainO = mk('option'); plainO.value = 'd:0'; plainO.textContent = 'Plain'; gGen.appendChild(plainO);
@@ -139,14 +149,14 @@
     // The team's manufacturer helmet, unlocked while the member has a seat (and kept after the season ends)
     if (teamRecipe) {
       var gTeam = mk('optgroup'); gTeam.label = 'Team';
-      var to = mk('option'); to.value = 't:team'; to.textContent = (info && info.manufacturer) ? info.manufacturer : 'Team helmet'; gTeam.appendChild(to);
+      var to = mk('option'); to.value = 't:team'; to.textContent = ((info && info.manufacturer) ? info.manufacturer : 'Team helmet') + ' (current seat)'; gTeam.appendChild(to);
       dSel.appendChild(gTeam);
     }
-    // The website's default helmet is listed under "Website" while this member has not saved a helmet of their own
-    var wd = (!own && ctx.websiteDefault) ? ctx.websiteDefault : null;
-    if (wd) {
+    // "Website": the website's default helmet, and the member's own saved custom design ("Your Design")
+    if (wdRec || customRec) {
       var gWeb = mk('optgroup'); gWeb.label = 'Website';
-      var wo = mk('option'); wo.value = 'w:default'; wo.textContent = wd.name + ' (default)'; gWeb.appendChild(wo);
+      if (wdRec) { var wo = mk('option'); wo.value = 'w:default'; wo.textContent = wdRec.name + ' (default)'; gWeb.appendChild(wo); }
+      if (customRec) { var yo = mk('option'); yo.value = 'y:own'; yo.textContent = 'Your Design'; gWeb.appendChild(yo); }
       dSel.appendChild(gWeb);
     }
     var cats = {}, catOrder = [];
@@ -165,15 +175,16 @@
       }
       leaveTeam();
       if (v === 'w:default') {
-        if (presetId && stash) R = stash;
-        presetId = ''; R = copy(init.R);                   // back to the website helmet exactly as it opened
+        presetId = ''; stash = null; R = clean(wdRec.recipe); webOn = true; ownOn = false;
+      } else if (v === 'y:own') {
+        presetId = ''; stash = null; R = clean(customRec); webOn = false; ownOn = true;
       } else if (v.indexOf('p:') === 0) {
         var a = presetOf(v.slice(2)); if (!a) return;
         if (!presetId) stash = copy(R);
-        presetId = a.presetId;
+        presetId = a.presetId; webOn = false; ownOn = false;
       } else {
         if (presetId && stash) R = stash;
-        presetId = ''; R.d = parseInt(v.slice(2), 10);
+        presetId = ''; R.d = parseInt(v.slice(2), 10); webOn = false; ownOn = false;
       }
       draw();
     };
@@ -190,7 +201,12 @@
     };
     tools.appendChild(rb); tools.appendChild(rs); dRow.appendChild(tools);
     style.appendChild(dRow);
-    var awardNote = mk('p', 'rch-hint', 'This is an award helmet. It is used exactly as designed and cannot be changed.'); awardNote.style.display = 'none'; style.appendChild(awardNote);
+    // A locked design (an award, special or premium helmet, or the team's manufacturer helmet) is used exactly as designed:
+    // a gray shroud with a lock covers the controls, and only the Design list stays usable.
+    var shroud = mk('div', 'rch-shroud');
+    shroud.innerHTML = '<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+    shroud.title = 'This design is locked. Pick another design to change the colors.';
+    style.appendChild(shroud);
 
     /* ---- colors ---- */
     var rows = {};
@@ -226,38 +242,40 @@
     /* ---- buttons ---- */
     var btns = mk('div', 'rch-btns rch-pbtns');
     var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveB.type = 'button';
-    var defB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Use Default'); defB.type = 'button';
-    var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearB.type = 'button';
+    var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear Design'); clearB.type = 'button';
     clearB.title = 'Clear to a plain white helmet with no design';
-    var resetB = mk('button', 'rc-btn-secondary rch-iconbtn', RESET_ICON); resetB.type = 'button';
-    resetB.title = 'Reset to the helmet you opened this window with'; resetB.setAttribute('aria-label', 'Reset');
-    btns.appendChild(saveB); btns.appendChild(defB); btns.appendChild(clearB); btns.appendChild(resetB);
+    var cancelB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelB.type = 'button';
+    btns.appendChild(saveB); btns.appendChild(clearB); btns.appendChild(cancelB);
     right.appendChild(btns);
-    saveB.onclick = function () { var out = effective(); modal.close(); ctx.onSave(out); };
-    defB.onclick = function () { modal.close(); ctx.onSave(null); };
-    clearB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; draw(); };
-    resetB.onclick = function () { R = copy(init.R); presetId = init.presetId; stash = null; teamOn = init.teamOn; draw(); };
+    // Saving the website default clears the member's own helmet (they get the default again)
+    saveB.onclick = function () { var useDefault = webOn && !teamOn && !presetId; var out = effective(); modal.close(); ctx.onSave(useDefault ? null : out); };
+    clearB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; webOn = false; ownOn = false; draw(); };
+    cancelB.onclick = function () { modal.close(); };
 
     /* ---- drawing ---- */
     function syncControls() {
       var V = teamOn ? clean(teamRecipe) : R;      // what the controls show
-      if (!teamOn && !(wd && !own) && !presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
-      dSel.value = teamOn ? 't:team' : presetId ? 'p:' + presetId : ((wd && !teamOn && !dirty()) ? 'w:default' : 'd:' + R.d);
+      if (!teamOn && !webOn && !ownOn && !presetId && R.d !== 0 && !H.visibleDesigns().some(function (d) { return d.slot === R.d; }) && H.visibleDesigns().length) R.d = H.visibleDesigns()[0].slot;
+      dSel.value = teamOn ? 't:team' : presetId ? 'p:' + presetId : (webOn ? 'w:default' : (ownOn ? 'y:own' : 'd:' + R.d));
       SLOTS.forEach(function (s) {
         rows[s[0]].fs.value = V[s[0]][1];
         Array.prototype.forEach.call(rows[s[0]].sw.children, function (b) { b.classList.toggle('sel', b.dataset.id === V[s[0]][0]); });
       });
       Array.prototype.forEach.call(vs.children, function (b) { b.classList.toggle('sel', b.dataset.id === V.v); });
-      // award helmets are used as is: the colors, visor, Randomize and Reset are locked (the Design list stays open)
-      var fixed = !!presetId && !teamOn;
+      // a locked design (award / special / premium helmet, or the team's manufacturer helmet) is used as is: everything but the Design list is grayed out
+      var fixed = teamOn || !!presetId;
       [tools, visorLabel, vs].concat(Object.keys(rows).map(function (k) { return rows[k].row; })).forEach(function (n) { n.classList.toggle('rch-dim', fixed); });
-      awardNote.style.display = fixed ? '' : 'none';
+      style.classList.toggle('rch-shrouded', fixed);
+      if (fixed) shroud.style.paddingTop = (dRow.offsetTop + dRow.offsetHeight + 22) + 'px';
+      Array.prototype.forEach.call(rows ? Object.keys(rows) : [], function (k) { rows[k].fs.disabled = fixed; Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = fixed; }); });
+      Array.prototype.forEach.call(vs.children, function (b) { b.disabled = fixed; });
+      rb.disabled = fixed; rs.disabled = fixed;
       // Plain white (no design) has no accent areas: both accent rows, their swatches and finish lists are grayed out and disabled
       var plain = !presetId && V.d === 0;
       ['a1', 'a2'].forEach(function (k) {
         rows[k].row.classList.toggle('rch-dim', fixed || plain);
-        rows[k].fs.disabled = plain;
-        Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = plain; });
+        rows[k].fs.disabled = plain || fixed;
+        Array.prototype.forEach.call(rows[k].sw.children, function (b) { b.disabled = plain || fixed; });
       });
     }
     var busy = false, again = false;
