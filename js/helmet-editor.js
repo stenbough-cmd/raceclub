@@ -347,9 +347,10 @@
         R.logos.push(n); sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(addB);
-      lg.appendChild(addRow);
+      lg.insertBefore(addRow, layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
-      lg.appendChild(lmRow);   // the Add Logo / Manage Logos buttons sit at the bottom of this section, under a divider line
+      lg.appendChild(mk('div', 'rch-label rch-subhead rch-lmhead', 'Logo library'));
+      lg.appendChild(lmRow);   // the Add Logo / Manage Logos buttons sit at the bottom of this section, under their own subheading
       right.appendChild(lg);
 
       /* ---------------- right: recipe text ---------------- */
@@ -417,7 +418,7 @@
           el.addEventListener('dragend', function () { el.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
         }
         var topEdge = edgeLine('Outer Shell'); dropOn(topEdge, 0); layers.appendChild(topEdge);
-        if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one below and press Add layer.'));
+        if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one above and press Add layer.'));
         items.forEach(function (it, pos) {
           if (it.acc) {
             var ar = edgeLine('Accents', 'rch-edge-acc'); dragStart(ar, pos); dropOn(ar, pos);
@@ -618,17 +619,22 @@
           return res.presets || [];
         }).catch(function () { return null; });
       }
+      // One look for every "are you sure" popup in the designer: centered message, centered buttons.
+      // buttons = [{ label, primary, fn }]  (a button always closes the popup, then runs fn)
+      function confirmBox(title, msg, buttons) {
+        var cb = mk('div', 'rch-confirm');
+        cb.appendChild(mk('p', 'rch-confirm-msg')); cb.firstChild.textContent = msg;
+        var row = mk('div', 'rch-btns'); cb.appendChild(row);
+        var cm = ctx.showModal(title, { bodyEl: cb, accentHead: true });
+        buttons.forEach(function (bd) {
+          var bt = mk('button', bd.primary ? 'rc-btn-primary rc-btn-sm' : 'rc-btn-secondary rc-btn-sm', bd.label); bt.type = 'button';
+          bt.onclick = function () { cm.close(); if (bd.fn) bd.fn(); };
+          row.appendChild(bt);
+        });
+      }
       // Popup: ask before a save replaces the helmet that is already there. onYes runs the save.
       function askReplace(title, msg, onYes) {
-        var cb = mk('div', 'rch-assign');
-        cb.appendChild(mk('p', 'rch-hint', msg));
-        var row = mk('div', 'rch-btns');
-        var yes = mk('button', 'rc-btn-primary rc-btn-sm', 'Save over it'); yes.type = 'button';
-        var no = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); no.type = 'button';
-        row.appendChild(yes); row.appendChild(no); cb.appendChild(row);
-        var cm = ctx.showModal(title, { bodyEl: cb, accentHead: true });
-        yes.onclick = function () { cm.close(); onYes(); };
-        no.onclick = function () { cm.close(); };
+        confirmBox(title, msg, [{ label: 'Save over it', primary: true, fn: onYes }, { label: 'Cancel' }]);
       }
       // while a save is running the button reads Saving... and the X in the corner is switched off
       function setSaving(on) {
@@ -636,37 +642,51 @@
         modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
       }
       // Save / Save as New. forceNew = save this as a separate helmet and leave the one that was loaded alone.
-      function doSave(skipAsk, forceNew, skipChange) {
+      // skipAsk = the "already exists" checks were answered; skipChange = the new-or-old question was answered; confirmed = overwrite confirmed.
+      function doSave(skipAsk, forceNew, skipChange, confirmed) {
         var pid = forceNew ? '' : cur.id;
         var name = (cur.kind === 'Manufacturer' ? cur.mfr : (cur.name || '')).trim();
         if (cur.kind === 'Manufacturer' && !cur.mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
         if (!name) { toast('Give the helmet a name first.', 'error'); nameIn.focus(); return; }
-        // the helmet that was loaded or saved is being changed into something different: ask whether this is a new helmet or an edit of that one
+        // 1. the helmet that was loaded or saved is being changed into something different: new helmet, or change the old one?
         if (!skipChange && !forceNew && cur.id && cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== name)) {
-          var qb = mk('div', 'rch-assign');
-          qb.appendChild(mk('p', 'rch-hint', 'You changed the name or kind of "' + cur.saved.name + '". Is this a brand new helmet, or do you want to change the one you opened? A new helmet leaves the old one exactly as it was.'));
-          var qr = mk('div', 'rch-btns');
-          var qNew = mk('button', 'rc-btn-primary rc-btn-sm', 'Save as new helmet'); qNew.type = 'button';
-          var qOld = mk('button', 'rc-btn-secondary rc-btn-sm', 'Change the old one'); qOld.type = 'button';
-          var qNo = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); qNo.type = 'button';
-          qr.appendChild(qNew); qr.appendChild(qOld); qr.appendChild(qNo); qb.appendChild(qr);
-          var qm = ctx.showModal('Save as a new helmet?', { bodyEl: qb, accentHead: true });
-          qNew.onclick = function () { qm.close(); doSave(false, true, true); };
-          qOld.onclick = function () { qm.close(); doSave(false, false, true); };
-          qNo.onclick = function () { qm.close(); };
+          confirmBox('Save as a new helmet?', 'You changed the name or kind of "' + cur.saved.name + '". Is this a brand new helmet, or do you want to change the one you opened? A new helmet leaves the old one exactly as it was.', [
+            { label: 'Save as new helmet', primary: true, fn: function () { doSave(false, true, true); } },
+            { label: 'Change the old one', fn: function () { doSave(false, false, true, true); } },
+            { label: 'Cancel' }]);
           return;
         }
-        if (!skipAsk && (cur.kind === 'Website Default' || cur.kind === 'Manufacturer')) {
-          saveBtn.disabled = true;
+        // 2. saving onto a helmet that already exists always asks first
+        if (pid && !confirmed) {
+          confirmBox('Save over this helmet?', 'The ' + name + ' helmet already exists. Do you want to save over the previous design? The older one will be overwritten.', [
+            { label: 'Save over it', primary: true, fn: function () { doSave(skipAsk, forceNew, true, true); } },
+            { label: 'Cancel' }]);
+          return;
+        }
+        // 3. a different helmet would be replaced (Website Default / one per manufacturer), or the name is already taken
+        if (!skipAsk) {
+          saveBtn.disabled = true; saveNewBtn.disabled = true;
           refreshPresets().then(function (list) {
-            saveBtn.disabled = false;
-            var old = (list || []).filter(function (p) {
-              return p.active && p.kind === cur.kind && p.presetId !== pid && (cur.kind === 'Website Default' || p.manufacturer === cur.mfr);
+            saveBtn.disabled = false; saveNewBtn.disabled = false;
+            if (!list) { toast('Could not check the saved helmets. Try again.', 'error'); return; }
+            list = list.filter(function (p) { return p.active && p.presetId !== pid; });
+            var old = list.filter(function (p) {
+              return p.kind === cur.kind && (cur.kind === 'Website Default' || (cur.kind === 'Manufacturer' && p.manufacturer === cur.mfr));
             })[0];
-            if (!old) { doSave(true, forceNew, true); return; }
-            askReplace(cur.kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + cur.mfr + ' helmet?',
-              (cur.kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + cur.mfr + ' helmet already exists.') + ' Do you want to save over the previous design? The older one will be archived.',
-              function () { doSave(true, forceNew, true); });
+            if (old) {
+              askReplace(cur.kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + cur.mfr + ' helmet?',
+                (cur.kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + cur.mfr + ' helmet already exists.') + ' Do you want to save over the previous design? The older one will be archived.',
+                function () { doSave(true, forceNew, true, true); });
+              return;
+            }
+            var same = cur.kind !== 'Website Default' && cur.kind !== 'Manufacturer' && list.filter(function (p) { return String(p.name || '').trim().toLowerCase() === name.toLowerCase(); })[0];
+            if (same) {
+              confirmBox('Name already used', 'A helmet named "' + name + '" already exists. Save this as another helmet with the same name? The existing one is not changed.', [
+                { label: 'Save as another', primary: true, fn: function () { doSave(true, forceNew, true, true); } },
+                { label: 'Cancel' }]);
+              return;
+            }
+            doSave(true, forceNew, true, true);
           });
           return;
         }

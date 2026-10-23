@@ -17,7 +17,7 @@
 .rch-row3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-top: 10px; }
 .rch-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .rch-tools { justify-content: flex-end; }
-.rch-addrow { margin-top: 10px; }
+.rch-addrow { margin-top: 10px; margin-bottom: 4px; }
 
 .rch-input, .rch-select-wide, .rch-finish, .rch-text {
   font: inherit; font-size: 13px; color: var(--rc-carbon); background: var(--rc-white);
@@ -150,8 +150,8 @@
 /* selected size button, blank row in the Give Helmet list, Logo Manager row in the designer */
 .rch-bgrow .rc-btn-secondary.rch-on { border-color: var(--rc-steel); color: var(--rc-carbon); background: var(--rc-offwhite); }
 .rch-gap { height: 14px; }
-.rch-lmrow { margin: 14px 0 6px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
-body.rc-league-page:not(.rcc-page) .rch-lmrow { border-top-color: var(--rcl-line-bright); }
+.rch-lmrow { margin: 0 0 6px; }
+.rch-lmhead { margin-top: 18px; }
 /* admin: helmet name + kind share the top row; manufacturer + class sit under it */
 .rch-row-nk { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; align-items: end; }
 .rch-row-mc { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
@@ -226,3 +226,9 @@ body.rc-league-page:not(.rcc-page) { --rch-edge: #5b9cf5; }
 .rch-edge.dragging { opacity: 0.45; }
 
 .rch-btns.rch-btns-second { margin-top: 10px; }
+
+/* "Are you sure" popups in the designer: centered message and buttons, even space above and below */
+.rch-confirm { text-align: center; padding: 2px 0; }
+.rch-confirm-msg { margin: 0 auto 18px; max-width: 440px; font-size: 14px; line-height: 1.55; color: var(--rc-carbon); }
+.rch-confirm .rch-btns { justify-content: center; }
+body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
