@@ -223,7 +223,8 @@
       cancelBtn.onclick = function () { modal.close(); };
       btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
-      var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Logo Manager'); logosBtn.type = 'button';
+      var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
+      var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
       right.appendChild(bar);
 
       /* ---------------- right: style ---------------- */
@@ -285,7 +286,7 @@
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
       lg.appendChild(mk('div', 'rch-label', 'Logos and shapes (layers)'));
-      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(logosBtn);
+      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(addLogoBtn); lmRow.appendChild(logosBtn);
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -342,7 +343,7 @@
       addRow.appendChild(lpick); addRow.appendChild(addB);
       lg.appendChild(addRow);
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
-      lg.appendChild(lmRow);   // the Logo Manager button sits at the bottom of this section
+      lg.appendChild(lmRow);   // the Add Logo / Manage Logos buttons sit at the bottom of this section, under a divider line
       right.appendChild(lg);
 
       /* ---------------- right: recipe text ---------------- */
@@ -866,6 +867,8 @@
         load();
       }
       logosBtn.onclick = openLogoManager;
+      // Add Logo goes straight to the upload form; when the logo is saved the form closes and the designer is right there again
+      addLogoBtn.onclick = function () { openLogoForm(null, H.getConfig().logos || [], function () { reloadLogoAssets(); }); };
 
       // Shrinks a picked picture to a small WebP (or PNG) text string that fits in one sheet cell.
       function processImage(file) {
