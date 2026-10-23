@@ -164,6 +164,61 @@
     { id: 'g_glow', name: 'Glow (fades to clear)', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
   ];
   Array.prototype.push.apply(SHAPES, GRADIENTS);
+  // Weathering layers: scratches, scuffs and wear drawn in one color (the same marks every time: they use a fixed seed).
+  function rng(seed) { return function () { seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  var WEATHERING = [
+    { id: 'w_scratches', name: 'Fine scratches', weathering: true, draw: function (c, w, h, col) {
+      var R = rng(11), i; c.strokeStyle = col; c.lineCap = 'round';
+      for (i = 0; i < 26; i++) {
+        var x = (R() - 0.5) * w, y = (R() - 0.5) * h, len = (0.15 + R() * 0.4) * w, a = -0.5 + R() * 0.3 + (i % 5 === 0 ? 0.9 : 0);
+        c.globalAlpha = 0.25 + R() * 0.5; c.lineWidth = Math.max(0.5, (0.3 + R() * 0.9) * w / 220);
+        c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + Math.cos(a) * len * 0.5 + (R() - 0.5) * len * 0.1, y + Math.sin(a) * len * 0.5 + (R() - 0.5) * len * 0.1, x + Math.cos(a) * len, y + Math.sin(a) * len); c.stroke();
+      }
+      c.globalAlpha = 1;
+    } },
+    { id: 'w_scuffs', name: 'Scuff marks', weathering: true, draw: function (c, w, h, col) {
+      var R = rng(23), i; c.fillStyle = col;
+      for (i = 0; i < 9; i++) {
+        var x = (R() - 0.5) * w * 0.8, y = (R() - 0.5) * h * 0.8, rx = (0.08 + R() * 0.16) * w, ry = rx * (0.12 + R() * 0.18), a = -0.4 + R() * 0.3;
+        c.save(); c.translate(x, y); c.rotate(a);
+        for (var k = 0; k < 4; k++) { c.globalAlpha = 0.09 + R() * 0.1; c.beginPath(); c.ellipse((R() - 0.5) * rx * 0.4, (R() - 0.5) * ry * 0.6, rx * (1 - k * 0.18), ry * (1 - k * 0.15), 0, 0, Math.PI * 2); c.fill(); }
+        c.restore();
+      }
+      c.globalAlpha = 1;
+    } },
+    { id: 'w_chips', name: 'Paint chips', weathering: true, draw: function (c, w, h, col) {
+      var R = rng(37), i, j; c.fillStyle = col;
+      for (i = 0; i < 34; i++) {
+        var x = (R() - 0.5) * w, y = (R() - 0.5) * h, r = (0.008 + R() * R() * 0.035) * w, n = 5 + Math.floor(R() * 3);
+        c.globalAlpha = 0.55 + R() * 0.4; c.beginPath();
+        for (j = 0; j < n; j++) { var ang = j / n * Math.PI * 2, rr = r * (0.55 + R() * 0.7); c[j ? 'lineTo' : 'moveTo'](x + Math.cos(ang) * rr, y + Math.sin(ang) * rr * 0.8); }
+        c.closePath(); c.fill();
+      }
+      c.globalAlpha = 1;
+    } },
+    { id: 'w_gouge', name: 'Heavy scrape', weathering: true, draw: function (c, w, h, col) {
+      var R = rng(51), i; c.fillStyle = col;
+      for (i = 0; i < 7; i++) {
+        var y0 = (i - 3) * h * 0.09 + (R() - 0.5) * h * 0.03, th = h * (0.012 + R() * 0.03), x = -w / 2 + R() * w * 0.1, end = w / 2 - R() * w * 0.2;
+        c.globalAlpha = 0.35 + R() * 0.5; c.beginPath(); c.moveTo(x, y0);
+        while (x < end) { x += w * (0.02 + R() * 0.05); c.lineTo(x, y0 + (R() - 0.5) * th * 1.4 - th / 2); }
+        for (x = x; x > -w / 2 + w * 0.05; x -= w * (0.02 + R() * 0.05)) c.lineTo(x, y0 + th / 2 + (R() - 0.5) * th * 0.9);
+        c.closePath(); c.fill();
+      }
+      c.globalAlpha = 1;
+    } },
+    { id: 'w_grime', name: 'Dust and grime', weathering: true, draw: function (c, w, h, col) {
+      var R = rng(77), i; c.fillStyle = col;
+      for (i = 0; i < 260; i++) {
+        var x = (R() - 0.5) * w, y = (R() - 0.5) * h, edge = Math.abs(x) / (w / 2);
+        if (R() > 0.25 + edge * 0.6) continue;
+        var r = (0.002 + R() * R() * 0.012) * w; c.globalAlpha = 0.12 + R() * 0.4;
+        c.beginPath(); c.arc(x, y, Math.max(0.4, r), 0, Math.PI * 2); c.fill();
+      }
+      c.globalAlpha = 1;
+    } }
+  ];
+  Array.prototype.push.apply(SHAPES, WEATHERING);
   function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
 
   var MFR_BASE = 'assets/manufacturers/';   // the site's existing manufacturer logos -- not copied anywhere
