@@ -96,7 +96,7 @@
     function customSlim() {
       if (!own && !dirty() && !presetId) return null;
       var e = effective(), k = { d: e.d, b: e.b, a1: e.a1, a2: e.a2, v: e.v };
-      if (e.logos && e.logos.length) k.l = e.logos.slice(0, 20);
+      if (e.logos && e.logos.length) k.l = e.logos.slice(0, 25);
       if (e.p) k.p = e.p;
       return k;
     }
@@ -104,7 +104,7 @@
     // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
     var body, modal;
     if (ctx.shell) { body = ctx.shell.body; modal = ctx.shell.modal; body.innerHTML = ''; }
-    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true }); }
+    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true }); }
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
     if (!cfg.designs.length) {

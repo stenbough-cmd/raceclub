@@ -119,6 +119,8 @@
     return [one('Rotate Left', 1), one('Rotate Right', -1)];
   }
 
+  var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
+
   function openDesigner(ctx) {
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
     var body = mk('div', 'rch-designer');
@@ -276,7 +278,7 @@
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
       lg.appendChild(mk('div', 'rch-label', 'Logos and shapes (layers)'));
-      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(logosBtn); lg.appendChild(lmRow);
+      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(logosBtn);
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -284,11 +286,14 @@
         var keep = lpick.value;
         lpick.innerHTML = '';
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
-        H.SHAPES.forEach(function (sh) { if (sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
         var gP = mk('optgroup'); gP.label = 'Premium shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
         lpick.appendChild(gP);
+        var gG = mk('optgroup'); gG.label = 'Gradients';
+        H.SHAPES.forEach(function (sh) { if (!sh.gradient) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gG.appendChild(o); });
+        lpick.appendChild(gG);
         // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
         var cats = {}, catOrder = [];
         H.getConfig().logos.forEach(function (l) {
@@ -311,9 +316,11 @@
       buildPicker();
       var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
+        if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
         var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
-        var n = kind === 's'
+        var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
+        var n = isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : { m: isM ? val : '', v: 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
         R.logos.push(n); sel = n; draw();
@@ -321,6 +328,7 @@
       addRow.appendChild(lpick); addRow.appendChild(addB);
       lg.appendChild(addRow);
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
+      lg.appendChild(lmRow);   // the Logo Manager button sits at the bottom of this section
       right.appendChild(lg);
 
       /* ---------------- right: recipe text ---------------- */
@@ -352,6 +360,7 @@
         return f || 'logo';
       }
 
+      var MAX_LAYERS = 25;
       function renderLayers(missing) {
         layers.innerHTML = '';
         if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one below and press Add layer.'));
@@ -365,11 +374,18 @@
           row.appendChild(nm);
           var up = mk('button', 'rch-icon', '&#9650;'); up.type = 'button'; up.title = 'Bring forward';
           var dn = mk('button', 'rch-icon', '&#9660;'); dn.type = 'button'; dn.title = 'Send back';
+          var cp = mk('button', 'rch-icon', COPY_ICON); cp.type = 'button'; cp.title = 'Copy this layer (the copy goes directly above it)';
           var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove layer';
           up.onclick = function (e) { e.stopPropagation(); if (idx < R.logos.length - 1) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx + 1]; R.logos[idx + 1] = t; draw(); } };
           dn.onclick = function (e) { e.stopPropagation(); if (idx > 0) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx - 1]; R.logos[idx - 1] = t; draw(); } };
           rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (sel === l) sel = null; draw(); };
-          row.appendChild(up); row.appendChild(dn); row.appendChild(rm);
+          cp.onclick = function (e) {
+            e.stopPropagation();
+            if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
+            var dup = JSON.parse(JSON.stringify(l)); dup.x = (+dup.x || 0) + 20; dup.y = (+dup.y || 0) - 20;
+            R.logos.splice(idx + 1, 0, dup); sel = dup; draw();
+          };
+          row.appendChild(up); row.appendChild(dn); row.appendChild(cp); row.appendChild(rm);
           row.onclick = function () { sel = l; renderLayers(missing); renderDetail(); updateSelBox(); };
           row.addEventListener('dragstart', function (e) { dragFrom = pos; row.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', String(pos)); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
           row.addEventListener('dragend', function () { row.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
@@ -394,31 +410,43 @@
         if (!sel || R.logos.indexOf(sel) < 0) return;
         var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
+        detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer manipulation'));
         detail.appendChild(grid.el);
         var opts = mk('div', 'rch-btns');
-        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!sel.sh;
-        shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; draw(true); };
+        // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
+        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = sel.sh === 1 || sel.sh === true;
+        var sgl = mk('label', 'rch-check rch-plain'); var sgc = mk('input'); sgc.type = 'checkbox'; sgc.checked = sel.sh === 2;
+        shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; sgc.checked = false; draw(true); };
+        sgc.onchange = function () { sel.sh = sgc.checked ? 2 : 0; shc.checked = false; draw(true); };
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
+        sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
         makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }).forEach(function (bn) { opts.appendChild(bn); });
         if (sel.s) {
-          var cw = mk('div', 'rch-shapecolor');
-          cw.appendChild(mk('div', 'rch-label', 'Shape color'));
-          var sw2 = mk('div', 'rch-swatches');
-          var isHexC = String(sel.c).charAt(0) === '#';
-          H.PALETTE.forEach(function (p) {
-            var b = mk('button', 'rch-sw' + (!isHexC && sel.c === p.id ? ' sel' : '')); b.type = 'button'; b.style.background = p.hex; b.title = p.name;
-            b.onclick = function () { sel.c = p.id; draw(); };
-            sw2.appendChild(b);
-          });
-          var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = 'Exact color';
-          if (isHexC) cpw2.style.background = sel.c;
-          var cp2 = mk('input'); cp2.type = 'color'; cp2.value = H.hexOf(sel.c);
-          cp2.oninput = function () { sel.c = cp2.value; draw(true); };
-          cp2.onchange = function () { draw(); };
-          cpw2.appendChild(cp2); sw2.appendChild(cpw2);
-          cw.appendChild(sw2);
-          detail.appendChild(cw);
-          if (sel.s === 'checker') cw.appendChild(mk('p', 'rch-hint', 'The checkered strip uses this color and white.'));
+          var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
+          var pickColor = function (key, label, hint) {
+            var cw = mk('div', 'rch-shapecolor');
+            cw.appendChild(mk('div', 'rch-label', label));
+            var sw2 = mk('div', 'rch-swatches');
+            var isHexC = String(sel[key]).charAt(0) === '#';
+            H.PALETTE.forEach(function (p) {
+              var b = mk('button', 'rch-sw' + (!isHexC && sel[key] === p.id ? ' sel' : '')); b.type = 'button'; b.style.background = p.hex; b.title = p.name;
+              b.onclick = function () { sel[key] = p.id; draw(); };
+              sw2.appendChild(b);
+            });
+            var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = 'Exact color';
+            if (isHexC) cpw2.style.background = sel[key];
+            var cp2 = mk('input'); cp2.type = 'color'; cp2.value = H.hexOf(sel[key]);
+            cp2.oninput = function () { sel[key] = cp2.value; draw(true); };
+            cp2.onchange = function () { draw(); };
+            cpw2.appendChild(cp2); sw2.appendChild(cpw2);
+            cw.appendChild(sw2);
+            if (hint) cw.appendChild(mk('p', 'rch-hint', hint));
+            detail.appendChild(cw);
+          };
+          if (gdef.gradient) {
+            if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
+            else pickColor('c', 'Gradient color', 'This one fades from the color to see-through.');
+          } else pickColor('c', 'Shape color', sel.s === 'checker' ? 'The checkered strip uses this color and white.' : '');
         }
         detail.appendChild(opts);
       }

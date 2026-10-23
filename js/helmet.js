@@ -153,6 +153,17 @@
     pshape('skull', 'Skull', [['M', 0, -1], ['C', 0.6, -1, 0.95, -0.6, 0.95, -0.1], ['C', 0.95, 0.3, 0.7, 0.45, 0.55, 0.55], ['L', 0.55, 0.95], ['L', -0.55, 0.95], ['L', -0.55, 0.55], ['C', -0.7, 0.45, -0.95, 0.3, -0.95, -0.1], ['C', -0.95, -0.6, -0.6, -1, 0, -1], ['Z']].concat(circ(-0.36, -0.1, 0.24), circ(0.36, -0.1, 0.24), [['M', 0, 0.2], ['L', 0.12, 0.45], ['L', -0.12, 0.45], ['Z']]), true)
   ];
   Array.prototype.push.apply(SHAPES, PREMIUM_SHAPES);
+  // Gradient layers: draw(c, w, h, color1, color2). 'colors: 2' shapes use both colors; 'colors: 1' shapes fade the one color out to see-through.
+  function grad(c, x0, y0, x1, y1, a, b) { var g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
+  function clear(hex) { var h = String(hex).replace('#', ''); var n = parseInt(h, 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',0)'; }
+  var GRADIENTS = [
+    { id: 'g_linear', name: 'Two-color fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_fade', name: 'Fade to clear', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_band', name: 'Soft band', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, clear(a)); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_radial', name: 'Two-color radial', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
+    { id: 'g_glow', name: 'Glow (fades to clear)', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
+  ];
+  Array.prototype.push.apply(SHAPES, GRADIENTS);
   function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
 
   var MFR_BASE = 'assets/manufacturers/';   // the site's existing manufacturer logos -- not copied anywhere
@@ -205,11 +216,13 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     };
     (r.logos || []).forEach(function (l) {
       if (l && l.s && shapeById(l.s)) {
-        out.logos.push({ s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : 1 });
+        var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
+        if (shapeById(l.s).gradient) sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : 'black';
+        out.logos.push(sl);
         return;
       }
       if (!l || !(l.f || l.m)) return;
-      out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : 1 });
+      out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) });
     });
     return out;
   }
@@ -513,10 +526,11 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           lx.save();
           lx.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           lx.rotate(-l.r * Math.PI / 180);
-          if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
+          if (l.sh === 2) { lx.shadowColor = 'rgba(0,0,0,0.85)'; lx.shadowBlur = Math.max(3, 13 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
+          else if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
           if (l.s) {
             lx.fillStyle = hexOf(l.c);
-            shapeById(l.s).draw(lx, l.w * scale, l.h * scale);
+            shapeById(l.s).draw(lx, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black'));
           } else {
             var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
             var fit = Math.min(l.w / nw, l.h / nh);

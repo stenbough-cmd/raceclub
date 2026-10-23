@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=18'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=19'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=16'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=17'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
@@ -102,7 +102,7 @@ function rcHelmetCustomize_(o) {
   _rcHelmetCss_();
   var body = document.createElement('div'); body.className = 'rch-designer rch-player';
   body.appendChild(rcHelmetSpinner_('Loading your helmet designer...'));
-  var modal = o.showModal('Helmet Designer', { bodyEl: body, wide: true });
+  var modal = o.showModal('Customize Helmet', { bodyEl: body, wide: true });
   var shell = { body: body, modal: modal };
   return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o, shell); })
     .catch(function () {

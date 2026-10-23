@@ -27,7 +27,7 @@
   function valueOf(r) {
     if (!r) return '';
     var o = { d: r.d, b: r.b, a1: r.a1, a2: r.a2, v: r.v };
-    if (r.logos && r.logos.length) o.l = r.logos.slice(0, 20);
+    if (r.logos && r.logos.length) o.l = r.logos.slice(0, 25);
     if (r.t) { o.t = 1; if (r.m) o.m = r.m; }
     if (r.p) o.p = r.p;                       // an award / special helmet design the member was given
     if (r.t && r.k && typeof r.k === 'object') o.k = r.k;   // their own customized helmet, restored if they lose the team helmet
@@ -113,7 +113,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=17')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=19')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -145,7 +145,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=20').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=21').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
