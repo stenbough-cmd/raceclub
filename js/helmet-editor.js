@@ -223,8 +223,9 @@
       clearBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
       var cancelBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelBtn.type = 'button';
       cancelBtn.onclick = function () { modal.close(); };
-      btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
+      btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
+      var btns2 = mk('div', 'rch-btns rch-btns-second'); btns2.appendChild(manageBtn); bar.appendChild(btns2);   // Manage Designs sits on its own row under the others
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
       var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
       right.appendChild(bar);
@@ -417,12 +418,7 @@
         items.forEach(function (it, pos) {
           if (it.acc) {
             var ar = edgeLine('Accents', 'rch-edge-acc'); dragStart(ar, pos); dropOn(ar, pos);
-            ar.title = 'Drag the Accents line (or use the arrows) to choose which layers sit under the accent paint.';
-            var aUp = mk('button', 'rch-icon', '&#9650;'); aUp.type = 'button'; aUp.title = 'Move the Accents line up';
-            var aDn = mk('button', 'rch-icon', '&#9660;'); aDn.type = 'button'; aDn.title = 'Move the Accents line down';
-            aUp.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos - 1); };
-            aDn.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos + 1); };
-            ar.appendChild(aUp); ar.appendChild(aDn);
+            ar.title = 'Drag this line, or move layers above and below it, to choose which layers sit under the accent paint.';
             layers.appendChild(ar);
             return;
           }
