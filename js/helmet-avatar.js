@@ -149,7 +149,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=24').then(function () { return H; });
+      return loadScript('js/helmet-player.js?v=25').then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -170,7 +170,7 @@
           showModal: showModal,
           shell: shell,
           showToast: toast,
-          onSave: function (recipe) { save(recipe ? valueOf(recipe) : ''); }
+          onSave: function (recipe) { return save(recipe ? valueOf(recipe) : ''); }   // a promise: true when saved
         });
       });
     }).catch(function () {
@@ -185,7 +185,7 @@
       if (o.onChange) o.onChange(profile);
       if (typeof setProfileCache === 'function') setProfileCache(profile);
       if (typeof renderHeader === 'function') renderHeader();
-      fetchApi('updateOwnProfile', {
+      return fetchApi('updateOwnProfile', {
         method: 'POST', token: token,
         body: {
           username: profile.username, firstName: profile.firstName, lastName: profile.lastName,
@@ -193,11 +193,12 @@
           timeZone: profile.timeZone || '', avatarFilename: newValue
         }
       }).then(function (data) {
-        if (!data || !data.success) { revert((data && data.message) || 'Could not save your helmet -- reverted.'); return; }
+        if (!data || !data.success) { revert((data && data.message) || 'Could not save your helmet -- reverted.'); return false; }
         if (typeof setProfileCache === 'function') setProfileCache(data.profile);
         if (typeof renderHeader === 'function') renderHeader();
         toast('Helmet saved.', 'success');
-      }).catch(function () { revert('Could not reach the server -- helmet change reverted.'); });
+        return true;
+      }).catch(function () { revert('Could not reach the server -- helmet change reverted.'); return false; });
 
       function revert(msg) {
         profile.avatarFilename = previous;

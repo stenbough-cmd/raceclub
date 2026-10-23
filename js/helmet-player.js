@@ -248,7 +248,20 @@
     btns.appendChild(saveB); btns.appendChild(clearB); btns.appendChild(cancelB);
     right.appendChild(btns);
     // Saving the website default clears the member's own helmet (they get the default again)
-    saveB.onclick = function () { var useDefault = webOn && !teamOn && !presetId && !lastCustom; var out = effective(); modal.close(); ctx.onSave(useDefault ? null : out); };
+    saveB.onclick = function () {
+      var useDefault = webOn && !teamOn && !presetId && !lastCustom; var out = effective();
+      var res = ctx.onSave(useDefault ? null : out);
+      if (!res || !res.then) { modal.close(); return; }
+      // stay open while the helmet saves; the buttons and the X are switched off, then back to the Edit Profile popup
+      var cb = modal.closeBtn, was = saveB.textContent;
+      function busy(on) {
+        saveB.disabled = on; clearB.disabled = on; cancelB.disabled = on; dSel.disabled = on;
+        saveB.textContent = on ? 'Saving Helmet...' : was;
+        if (cb) { cb.disabled = on; cb.style.opacity = on ? '0.35' : ''; cb.style.pointerEvents = on ? 'none' : ''; }
+      }
+      busy(true);
+      res.then(function (ok) { if (ok === false) busy(false); else modal.close(); }).catch(function () { busy(false); });
+    };
     clearB.onclick = function () { R = blank(); presetId = ''; stash = null; teamOn = false; webOn = false; ownOn = false; draw(); };
     cancelB.onclick = function () { modal.close(); };
 
