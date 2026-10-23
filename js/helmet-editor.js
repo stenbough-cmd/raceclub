@@ -390,10 +390,11 @@
         });
       }
 
+      var curGrid = null;           // the slider block of the selected layer (the preview drag keeps it in step)
       function renderDetail() {
-        detail.innerHTML = '';
+        detail.innerHTML = ''; curGrid = null;
         if (!sel || R.logos.indexOf(sel) < 0) return;
-        var grid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
+        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
         detail.appendChild(grid.el);
         var opts = mk('div', 'rch-btns');
@@ -471,7 +472,7 @@
         if (!sel) return; var cv = stage.querySelector('canvas'); if (!cv) return;
         var rc = cv.getBoundingClientRect(), C = H.CROP;
         sel.x = Math.round(C.x + (ev.clientX - rc.left) / rc.width * C.w); sel.y = Math.round(C.y + (ev.clientY - rc.top) / rc.height * C.h);
-        var xs = detail.querySelectorAll('input[type=range]'); if (xs.length >= 2) { xs[0].value = sel.x; xs[1].value = sel.y; var sv = detail.querySelectorAll('.rch-sv'); sv[0].textContent = sel.x; sv[1].textContent = sel.y; }
+        if (curGrid) curGrid.sync();
         draw(true);
       }
       stage.addEventListener('pointerdown', function (e) { dragging = true; moveTo(e); });
@@ -502,6 +503,11 @@
         yes.onclick = function () { cm.close(); onYes(); };
         no.onclick = function () { cm.close(); };
       }
+      // while a save is running the button reads Saving... and the X in the corner is switched off
+      function setSaving(on) {
+        saveBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
+        modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
+      }
       function doSave(skipAsk) {
         var name = (cur.kind === 'Manufacturer' ? cur.mfr : (cur.name || '')).trim();
         if (cur.kind === 'Manufacturer' && !cur.mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
@@ -520,18 +526,18 @@
           });
           return;
         }
-        saveBtn.disabled = true;
+        setSaving(true);
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
           body: { presetId: cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
         }).then(function (res) {
-          saveBtn.disabled = false;
+          setSaving(false);
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
           cur.id = res.presetId; cur.name = name;
           baseline = JSON.parse(JSON.stringify(R));
           syncMeta(); refreshPresets();
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
-        }).catch(function () { saveBtn.disabled = false; toast('No answer from the server. Try again.', 'error'); });
+        }).catch(function () { setSaving(false); toast('No answer from the server. Try again.', 'error'); });
       }
       saveBtn.onclick = function () { doSave(false); };
       function loadPreset(p) {
@@ -831,14 +837,15 @@
           if (!d.name.trim()) { toast('Give the logo a name.', 'error'); nm.focus(); return; }
           if (isNew && !data) { toast('Choose a picture first.', 'error'); return; }
           var cat = cp.get();
-          sv.disabled = true;
+          function setBusy(on) { sv.disabled = on; sv.textContent = on ? 'Saving...' : 'Save Logo'; cn.disabled = on; fm.closeBtn.disabled = on; fm.closeBtn.style.opacity = on ? '0.35' : ''; fm.closeBtn.style.pointerEvents = on ? 'none' : ''; }
+          setBusy(true);
           fetchApi('adminSaveHelmetLogo', { method: 'POST', token: token, body: {
             logoId: logo ? logo.id : '', name: d.name.trim(), category: cat, data: data,
             defX: String(d.defX), defY: String(d.defY), defW: String(d.defW), defH: String(d.defH), defR: String(d.defR), shadow: String(d.shadow)
           } }).then(function (r) {
             if (r && r.success) { dropTmp(); toast('Logo saved.', 'success'); fm.close(); if (done) done(); }
-            else { sv.disabled = false; toast((r && r.message) || 'Could not save the logo.', 'error'); }
-          }).catch(function () { sv.disabled = false; toast('No answer from the server.', 'error'); });
+            else { setBusy(false); toast((r && r.message) || 'Could not save the logo.', 'error'); }
+          }).catch(function () { setBusy(false); toast('No answer from the server.', 'error'); });
         };
         drawPrev(); lgrid.loadAspect();
       }
