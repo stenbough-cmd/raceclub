@@ -1035,22 +1035,27 @@ window.addEventListener('load', function () { setTimeout(rcHelmetVersionCheck_, 
 function rcHelmetTeamToggle_(profile, token, cls, showToast, onChange) {
   var b = document.createElement('button'); b.type = 'button'; b.className = cls + ' rc-team-toggle';
   var light = document.createElement('span'); light.className = 'rc-team-light';
-  var label = document.createElement('span'); label.textContent = 'Always use team helmet';
+  var label = document.createElement('span'); label.textContent = 'Always use team design';
   b.appendChild(light); b.appendChild(label);
   function isOn() { var v = String(profile.avatarFilename || ''); return v.indexOf('helmet:') === 0 && /"t":1/.test(v) && /"a":1/.test(v); }
   function show(on) { b.classList.toggle('rc-team-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
-  var pending = false;
-  show(isOn());
-  // The button reacts at once; the save happens in the background and the button goes back if it did not work.
+  var shown = isOn(), inflight = 0, chain = Promise.resolve();
+  show(shown);
+  // The button reacts at once (on or off); the saves happen one after another in the background, and the button goes back if one did not work.
   b.addEventListener('click', function (evt) {
     evt.preventDefault();
-    if (pending) return;
-    pending = true;
-    var before = isOn();
-    show(!before);
-    _rcHelmetModule_().then(function () {
-      return window.rcHelmetToggleTeamNow_({ profile: profile, token: token, toast: showToast, onChange: onChange });
-    }).catch(function () { if (showToast) showToast('Could not change your helmet.', 'error'); }).then(function () { pending = false; show(isOn()); });
+    shown = !shown; show(shown);
+    var want = shown;
+    inflight++;
+    chain = chain.then(function () {
+      if (isOn() === want) return;
+      return _rcHelmetModule_().then(function () {
+        return window.rcHelmetToggleTeamNow_({ profile: profile, token: token, toast: showToast, onChange: onChange });
+      });
+    }).catch(function () { if (showToast) showToast('Could not change your helmet.', 'error'); }).then(function () {
+      inflight--;
+      if (inflight === 0) { shown = isOn(); show(shown); }
+    });
   });
   return b;
 }
