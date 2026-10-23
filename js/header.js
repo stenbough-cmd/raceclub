@@ -1038,13 +1038,19 @@ function rcHelmetTeamToggle_(profile, token, cls, showToast, onChange) {
   var label = document.createElement('span'); label.textContent = 'Always use team helmet';
   b.appendChild(light); b.appendChild(label);
   function isOn() { var v = String(profile.avatarFilename || ''); return v.indexOf('helmet:') === 0 && /"t":1/.test(v) && /"a":1/.test(v); }
-  function paint() { b.classList.toggle('rc-team-on', isOn()); b.setAttribute('aria-pressed', isOn() ? 'true' : 'false'); }
-  paint();
+  function show(on) { b.classList.toggle('rc-team-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  var pending = false;
+  show(isOn());
+  // The button reacts at once; the save happens in the background and the button goes back if it did not work.
   b.addEventListener('click', function (evt) {
-    evt.preventDefault(); b.disabled = true;
+    evt.preventDefault();
+    if (pending) return;
+    pending = true;
+    var before = isOn();
+    show(!before);
     _rcHelmetModule_().then(function () {
       return window.rcHelmetToggleTeamNow_({ profile: profile, token: token, toast: showToast, onChange: onChange });
-    }).catch(function () { if (showToast) showToast('Could not change your helmet.', 'error'); }).then(function () { b.disabled = false; paint(); });
+    }).catch(function () { if (showToast) showToast('Could not change your helmet.', 'error'); }).then(function () { pending = false; show(isOn()); });
   });
   return b;
 }
