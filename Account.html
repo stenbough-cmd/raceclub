@@ -6504,11 +6504,12 @@
         if (roundContext) {
           var ctxBox = el('div', 'border:1px solid var(--rc-silver);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--rc-offwhite);');
           ctxBox.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);margin-bottom:6px;', 'Race Context'));
-          if (roundContext.rivalAName && roundContext.rivalBName) {
+          (roundContext.rivalries || []).forEach(function (r) {
+            if (!r.aName || !r.bName) return;
             var rivLine = el('div', 'font-size:13.5px;color:var(--rc-carbon);margin-bottom:4px;');
-            rivLine.innerHTML = '<strong>Rivalry:</strong> ' + escapeHtml(roundContext.rivalAName) + ' vs ' + escapeHtml(roundContext.rivalBName);
+            rivLine.innerHTML = '<strong>Rivalry:</strong> ' + escapeHtml(r.aName) + ' vs ' + escapeHtml(r.bName);
             ctxBox.appendChild(rivLine);
-          }
+          });
           if (roundContext.note) {
             var noteLine = el('div', 'font-size:13.5px;color:var(--rc-carbon);white-space:pre-wrap;');
             noteLine.textContent = roundContext.note;
@@ -6680,7 +6681,7 @@
     var existing = opts.context || null;
     var roster = (opts.driverRoster || []).filter(function (d) { return d.profileId; });
     var body = el('div');
-    body.appendChild(el('div', 'rc-hint', 'Extra background for the story writer. It is used when you finalize this round.'));
+    body.appendChild(el('div', 'rc-hint', 'Extra background for the story writer.'));
 
     function driverSelect(value) {
       var s = document.createElement('select');
@@ -6689,13 +6690,41 @@
       s.value = value || '';
       return s;
     }
-    var selA = driverSelect(existing && existing.rivalA);
-    var selB = driverSelect(existing && existing.rivalB);
-    body.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);margin:14px 0 4px;', 'Rivalry (optional)'));
-    var rivalRow = el('div', 'rc-wiz-field-row');
-    rivalRow.appendChild(wizField('Driver 1', selA, null));
-    rivalRow.appendChild(wizField('Driver 2', selB, null));
-    body.appendChild(rivalRow);
+    // Rivalries: rows of two driver boxes, 50/50 across the popup. The plus button adds another row (up to 5).
+    var RC_MAX_RIVALRIES = 5;
+    var PLUS_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+    var CLOSE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+    var rivalRows = [];
+    var headRow = el('div', 'display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px;');
+    headRow.appendChild(el('div', 'font-size:10.5px;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);', 'Rivalries (optional)'));
+    var plusBtn = el('button', 'rc-icon-btn', PLUS_ICON);
+    plusBtn.type = 'button';
+    plusBtn.title = 'Add another rivalry';
+    plusBtn.setAttribute('aria-label', 'Add another rivalry');
+    headRow.appendChild(plusBtn);
+    body.appendChild(headRow);
+    var rivalWrap = el('div', 'display:flex;flex-direction:column;gap:8px;');
+    body.appendChild(rivalWrap);
+    function refreshPlus() { plusBtn.disabled = rivalRows.length >= RC_MAX_RIVALRIES; plusBtn.style.opacity = plusBtn.disabled ? '0.4' : ''; }
+    function addRivalRow(a, b) {
+      var row = el('div', 'display:grid;grid-template-columns:1fr 1fr 34px;gap:10px;align-items:center;');
+      var sa = driverSelect(a), sb = driverSelect(b);
+      sa.style.width = '100%'; sb.style.width = '100%';
+      var rm = el('button', 'rc-icon-btn', CLOSE_ICON);
+      rm.type = 'button'; rm.title = 'Remove this rivalry'; rm.setAttribute('aria-label', 'Remove this rivalry');
+      var entry = { sa: sa, sb: sb, row: row };
+      rm.addEventListener('click', function () {
+        if (rivalRows.length === 1) { sa.value = ''; sb.value = ''; return; }   // keep one empty row
+        rivalRows.splice(rivalRows.indexOf(entry), 1);
+        row.remove(); refreshPlus();
+      });
+      row.appendChild(sa); row.appendChild(sb); row.appendChild(rm);
+      rivalWrap.appendChild(row);
+      rivalRows.push(entry); refreshPlus();
+    }
+    var startRivs = (existing && existing.rivalries && existing.rivalries.length) ? existing.rivalries : [{ a: '', b: '' }];
+    startRivs.forEach(function (r) { addRivalRow(r.a, r.b); });
+    plusBtn.addEventListener('click', function () { if (rivalRows.length < RC_MAX_RIVALRIES) addRivalRow('', ''); });
 
     var noteBox = document.createElement('textarea');
     noteBox.rows = 5;
@@ -6722,8 +6751,14 @@
     cancelBtn.addEventListener('click', modal.close);
 
     saveBtn.addEventListener('click', function () {
-      if ((selA.value && !selB.value) || (!selA.value && selB.value)) { showToast('Choose both drivers for the rivalry, or leave both empty.', 'error'); return; }
-      if (selA.value && selA.value === selB.value) { showToast('Choose two different drivers for the rivalry.', 'error'); return; }
+      var rivalries = [];
+      for (var i = 0; i < rivalRows.length; i++) {
+        var va = rivalRows[i].sa.value, vb = rivalRows[i].sb.value;
+        if (!va && !vb) continue;
+        if (!va || !vb) { showToast('Choose both drivers for each rivalry, or leave both empty.', 'error'); return; }
+        if (va === vb) { showToast('Choose two different drivers for a rivalry.', 'error'); return; }
+        rivalries.push({ a: va, b: vb });
+      }
       saveBtn.disabled = true;
       saveBtn.textContent = 'SAVING...';
       cancelBtn.disabled = true;
@@ -6732,7 +6767,7 @@
         saveBtn.disabled = false; saveBtn.textContent = 'Save Context'; cancelBtn.disabled = false;
         if (modal.closeBtn) modal.closeBtn.disabled = false;
       }
-      fetchApi('adminSaveRoundContext', { method: 'POST', token: token, body: { roundId: opts.roundId, rivalA: selA.value, rivalB: selB.value, note: noteBox.value.trim() } }).then(function (data) {
+      fetchApi('adminSaveRoundContext', { method: 'POST', token: token, body: { roundId: opts.roundId, rivalries: JSON.stringify(rivalries), note: noteBox.value.trim() } }).then(function (data) {
         if (!data || !data.success) { restore(); showToast((data && data.message) || 'Could not save the context.', 'error'); return; }
         showToast(data.context ? 'Context saved.' : 'Context cleared.', 'success');
         modal.close();
