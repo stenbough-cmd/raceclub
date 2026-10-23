@@ -256,7 +256,7 @@
       var cb = modal.closeBtn, was = saveB.textContent;
       function busy(on) {
         saveB.disabled = on; clearB.disabled = on; cancelB.disabled = on; dSel.disabled = on;
-        saveB.textContent = on ? 'Saving Helmet...' : was;
+        saveB.textContent = on ? 'Saving...' : was;
         if (cb) { cb.disabled = on; cb.style.opacity = on ? '0.35' : ''; cb.style.pointerEvents = on ? 'none' : ''; }
       }
       busy(true);
