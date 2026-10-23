@@ -1006,7 +1006,7 @@ document.addEventListener('click', function (e) {
 
 
 // Keeps drawn helmets in step with the helmet list. A helmet picture is saved in this tab so pages load fast, so when an admin edits a helmet
-// the saved pictures are out of date. On each page load (at most every 30 seconds) one tiny request asks the server for the current helmet
+// the saved pictures are out of date. On each page load (at most every 10 minutes) one tiny request asks the server for the current helmet
 // version number; only when it differs from the one this browser has does the helmet code load, fetch the new designs and draw the helmets again.
 function rcHelmetVersionCheck_() {
   try {
@@ -1018,7 +1018,7 @@ function rcHelmetVersionCheck_() {
       _rcHelmetModule_().then(function () { return window.rcHelmetHealNow_ && window.rcHelmetHealNow_(); }).catch(function () {});
     }
     var last = Number(localStorage.getItem('rcHelmetVerChecked')) || 0;
-    if (Date.now() - last < 30000) return;
+    if (Date.now() - last < 600000) return;
     localStorage.setItem('rcHelmetVerChecked', String(Date.now()));
     fetchApi('getHelmetVersion', {}).then(function (res) {
       if (!res || !res.success) return;
