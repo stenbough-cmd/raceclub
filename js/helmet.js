@@ -230,20 +230,26 @@
   function drawPlayerBox(c, l, w, h, pl, flagImg) {
     var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name';
     if (l.s === 'player_num' && pl && pl.u) name += '  #' + pl.u;
-    var fh = Math.min(h, w * 0.4 / 1.5), fw = fh * 1.5, gap = hasFlag ? Math.max(2, h * 0.14) : 0;
-    var tw = w - (hasFlag ? fw + gap : 0), size = h * 0.8;
-    c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
-    var mw = c.measureText(name).width; if (mw > tw) size = size * tw / mw;
+    // the flag is exactly as tall as the capital letters of the name (cap height is about 0.72 of the font size)
+    var CAP = 0.72, size = h * 0.8, fh = 0, fw = 0, gap = 0, mw = 0, it;
+    for (it = 0; it < 3; it++) {
+      fh = size * CAP; fw = fh * 1.5; gap = hasFlag ? Math.max(2, size * 0.18) : 0;
+      c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
+      mw = c.measureText(name).width;
+      var tw = w - (hasFlag ? fw + gap : 0);
+      if (mw > tw) size = size * tw / mw; else break;
+    }
+    fh = size * CAP; fw = fh * 1.5; gap = hasFlag ? Math.max(2, size * 0.18) : 0;
     c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
     mw = c.measureText(name).width;
     var total = (hasFlag ? fw + gap : 0) + mw, x0 = -total / 2;
     if (l.bg) {   // optional background rectangle with a little padding around the flag and name
-      var pad = Math.max(2, h * 0.22), bh = Math.max(fh, size) + pad * 1.4;
+      var pad = Math.max(2, h * 0.22), bh = size * CAP + pad * 2;
       c.fillStyle = hexOf(l.bg); rrect(c, x0 - pad, -bh / 2, total + pad * 2, bh, Math.max(1, bh * 0.1)); c.fill();
     }
     if (hasFlag) c.drawImage(flagImg, x0, -fh / 2, fw, fh);
-    c.fillStyle = hexOf(l.c); c.textBaseline = 'middle'; c.textAlign = 'left';
-    c.fillText(name, x0 + (hasFlag ? fw + gap : 0), 0);
+    c.fillStyle = hexOf(l.c); c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+    c.fillText(name, x0 + (hasFlag ? fw + gap : 0), fh / 2);   // baseline at the bottom of the flag, so the capitals line up with it
   }
   function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
 
