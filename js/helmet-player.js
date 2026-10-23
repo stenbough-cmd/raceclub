@@ -63,7 +63,7 @@
     if (own && own.p) {
       var found = awarded.filter(function (a) { return a.presetId === own.p; })[0];
       if (!found) {                                  // no longer offered (archived or taken back): keep what they had
-        found = { presetId: own.p, name: 'My awarded helmet', category: 'Awards', recipe: { d: own.d, b: own.b, a1: own.a1, a2: own.a2, v: own.v, logos: own.logos || [] } };
+        found = { presetId: own.p, name: 'My awarded helmet', category: 'Awards', recipe: { d: own.d, b: own.b, a1: own.a1, a2: own.a2, v: own.v, logos: own.logos || [], ac: own.ac || 0 } };
         awarded.push(found);
       }
       presetId = found.presetId;
@@ -72,7 +72,7 @@
     // remembered inside a saved team helmet (own.k).
     var customRec = null;
     if (own && !own.t && !own.p && !own.w) customRec = own;
-    else if (own && (own.t || own.p || own.w) && own.k && !own.k.p) customRec = { d: own.k.d, b: own.k.b, a1: own.k.a1, a2: own.k.a2, v: own.k.v, logos: own.k.l || [] };
+    else if (own && (own.t || own.p || own.w) && own.k && !own.k.p) customRec = { d: own.k.d, b: own.k.b, a1: own.k.a1, a2: own.k.a2, v: own.k.v, logos: own.k.l || [], ac: own.k.ac || 0 };
     var wdRec = ctx.websiteDefault ? ctx.websiteDefault : null;
     var webOn = (!own || !!own.w) && !!wdRec;                      // the website default is the selected design (saving it clears the member's own helmet)
     var ownOn = !!(own && !own.t && !own.p && !own.w);          // "Your Design" is the selected design
@@ -102,7 +102,7 @@
     function customSlim() {
       if (!own && !dirty() && !presetId) return null;
       var e = effective(), k = { d: e.d, b: e.b, a1: e.a1, a2: e.a2, v: e.v };
-      if (e.logos && e.logos.length) k.l = e.logos.slice(0, 25);
+      if (e.logos && e.logos.length) { k.l = e.logos.slice(0, 25); if (e.ac > 0) k.ac = e.ac; }
       if (e.p) k.p = e.p;
       if (e.pl) k.pl = e.pl;
       return k;

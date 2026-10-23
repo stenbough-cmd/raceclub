@@ -316,6 +316,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (!l || !(l.f || l.m)) return;
       out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) });
     });
+    var acN = Math.floor(+r.ac); if (acN > 0 && out.logos.length) out.ac = Math.min(acN, out.logos.length);   // ac = how many layers sit UNDER the accent paint (0 = all layers are on top of the accents)
     if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };
     return out;
   }
@@ -533,6 +534,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var specK = new Float32Array(N);
       var accCov = new Float32Array(N);            // how much of each pixel is accent 1 or 2 paint (drives the soft shadow below the accents)
       var cOut = [0, 0, 0];
+      var staged = recipe.ac > 0;                  // some layers sit between the base paint and the accent paint
+      var baseOnly = staged ? new Float32Array(N * 3) : null, accC = staged ? new Float32Array(N * 3) : null, accA = staged ? new Float32Array(N) : null;
 
       for (var py = 0; py < Ht; py++) {
         var sy = CROP.y + (py + 0.5) / scale;
@@ -555,10 +558,17 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             }
             wS = wS > 1 ? 1 : wS; wA = wA > 1 ? 1 : wA; wA *= (1 - wS);
             var wB = 1 - wS - wA; if (wB < 0) wB = 0;
-            var pr_ = 0, pg_ = 0, pb_ = 0, sk = 0;
-            if (wB > 0.002) { finishPx(kB, cB, SH, HL, sx, sy, scale); pr_ += T[0] * wB; pg_ += T[1] * wB; pb_ += T[2] * wB; sk += sB * wB; }
-            if (wA > 0.002) { finishPx(kA1, cA1, SH, HL, sx, sy, scale); pr_ += T[0] * wA; pg_ += T[1] * wA; pb_ += T[2] * wA; sk += sA1 * wA; }
-            if (wS > 0.002) { finishPx(kA2, cA2, SH, HL, sx, sy, scale); pr_ += T[0] * wS; pg_ += T[1] * wS; pb_ += T[2] * wS; sk += sA2 * wS; }
+            var pr_ = 0, pg_ = 0, pb_ = 0, sk = 0, fb0 = 0, fb1 = 0, fb2 = 0, fbOk = false, ac0 = 0, ac1 = 0, ac2 = 0;
+            if (wB > 0.002) { finishPx(kB, cB, SH, HL, sx, sy, scale); pr_ += T[0] * wB; pg_ += T[1] * wB; pb_ += T[2] * wB; sk += sB * wB; fb0 = T[0]; fb1 = T[1]; fb2 = T[2]; fbOk = true; }
+            if (wA > 0.002) { finishPx(kA1, cA1, SH, HL, sx, sy, scale); pr_ += T[0] * wA; pg_ += T[1] * wA; pb_ += T[2] * wA; sk += sA1 * wA; ac0 += T[0] * wA; ac1 += T[1] * wA; ac2 += T[2] * wA; }
+            if (wS > 0.002) { finishPx(kA2, cA2, SH, HL, sx, sy, scale); pr_ += T[0] * wS; pg_ += T[1] * wS; pb_ += T[2] * wS; sk += sA2 * wS; ac0 += T[0] * wS; ac1 += T[1] * wS; ac2 += T[2] * wS; }
+            if (staged) {
+              // what this pixel looks like with base paint only, and the accent paint on its own (so layers can sit in between)
+              if (!fbOk) { finishPx(kB, cB, SH, HL, sx, sy, scale); fb0 = T[0]; fb1 = T[1]; fb2 = T[2]; }
+              baseOnly[i * 3] = bR * (1 - sm) + clamp(fb0, 0, 255) * sm; baseOnly[i * 3 + 1] = bG * (1 - sm) + clamp(fb1, 0, 255) * sm; baseOnly[i * 3 + 2] = bB * (1 - sm) + clamp(fb2, 0, 255) * sm;
+              var wac = wA + wS;
+              if (wac > 0.002) { accC[i * 3] = clamp(ac0 / wac, 0, 255); accC[i * 3 + 1] = clamp(ac1 / wac, 0, 255); accC[i * 3 + 2] = clamp(ac2 / wac, 0, 255); accA[i] = wac * sm; }
+            }
             r = r * (1 - sm) + clamp(pr_, 0, 255) * sm;
             g = g * (1 - sm) + clamp(pg_, 0, 255) * sm;
             b = b * (1 - sm) + clamp(pb_, 0, 255) * sm;
@@ -580,7 +590,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         }
       }
       // soft shadow cast by the accent paint onto the base paint below it (same look as the logo shadow)
-      (function () {
+      function applyAccShadow(buf) {
         var any = false, q0;
         for (q0 = 0; q0 < N; q0++) if (accCov[q0] > 0.01) { any = true; break; }
         if (!any) return;
@@ -604,18 +614,19 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           var sa = blur[q0] * (1 - accCov[q0]) * 0.5 * (m1[q0 * 4] / 255);
           if (sa <= 0.003) continue;
           var f = 1 - sa, oq = q0 * 4;
-          out[oq] *= f; out[oq + 1] *= f; out[oq + 2] *= f;
+          buf[oq] *= f; buf[oq + 1] *= f; buf[oq + 2] *= f;
         }
-      })();
-      if (scale >= 0.45) sharpen(out, Wt, Ht, 1.2 * scale / 1.0, 0.9, 3);
+      }
 
       // logos (clipped to the shell so they never float off the helmet)
+      function layersPass(lo, hi, target) {
       var hasLogo = false, li;
-      for (li = 0; li < logoImgs.length; li++) if (logoImgs[li]) hasLogo = true;
+      for (li = lo; li < hi; li++) if (logoImgs[li]) hasLogo = true;
       if (hasLogo) {
         var lc = document.createElement('canvas'); lc.width = Wt; lc.height = Ht;
         var lx = lc.getContext('2d', { willReadFrequently: true });
         recipe.logos.forEach(function (l, idx) {
+          if (idx < lo || idx >= hi) return;
           var im = logoImgs[idx]; if (!im) return;
           var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null;
           if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); }   // draw on a spare canvas, then lay it over at the chosen see-through amount
@@ -643,10 +654,29 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           var la = ld[q * 4 + 3] / 255; if (la <= 0) continue;
           la *= m1[q * 4] / 255;
           var oo = q * 4;
-          out[oo] = out[oo] * (1 - la) + ld[oo] * la;
-          out[oo + 1] = out[oo + 1] * (1 - la) + ld[oo + 1] * la;
-          out[oo + 2] = out[oo + 2] * (1 - la) + ld[oo + 2] * la;
+          target[oo] = target[oo] * (1 - la) + ld[oo] * la;
+          target[oo + 1] = target[oo + 1] * (1 - la) + ld[oo + 1] * la;
+          target[oo + 2] = target[oo + 2] * (1 - la) + ld[oo + 2] * la;
         }
+      }
+      }
+      if (!staged) {
+        applyAccShadow(out);
+        if (scale >= 0.45) sharpen(out, Wt, Ht, 1.2 * scale / 1.0, 0.9, 3);
+        layersPass(0, recipe.logos.length, out);
+      } else {
+        // layers under the accents: base paint, then those layers (and the accent shadow falling on them), then the accent paint, then the rest
+        var outB = new Float32Array(out), qb;
+        for (qb = 0; qb < N; qb++) if (accA[qb] > 0.001) { outB[qb * 4] = baseOnly[qb * 3]; outB[qb * 4 + 1] = baseOnly[qb * 3 + 1]; outB[qb * 4 + 2] = baseOnly[qb * 3 + 2]; }
+        layersPass(0, recipe.ac, outB);
+        applyAccShadow(outB);
+        for (qb = 0; qb < N; qb++) {
+          var aa = accA[qb], ob = qb * 4;
+          if (aa > 0.001) { out[ob] = outB[ob] * (1 - aa) + accC[qb * 3] * aa; out[ob + 1] = outB[ob + 1] * (1 - aa) + accC[qb * 3 + 1] * aa; out[ob + 2] = outB[ob + 2] * (1 - aa) + accC[qb * 3 + 2] * aa; }
+          else { out[ob] = outB[ob]; out[ob + 1] = outB[ob + 1]; out[ob + 2] = outB[ob + 2]; }
+        }
+        if (scale >= 0.45) sharpen(out, Wt, Ht, 1.2 * scale / 1.0, 0.9, 3);
+        layersPass(recipe.ac, recipe.logos.length, out);
       }
       // shared highlight layer (same for everyone, sits on top of paint and logos)
       for (var z = 0; z < N; z++) {

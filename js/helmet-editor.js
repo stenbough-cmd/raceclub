@@ -375,13 +375,56 @@
       }
 
       var MAX_LAYERS = 25;
+      function edgeLine(label, extra) { var e = mk('div', 'rch-edge' + (extra ? ' ' + extra : '')); e.appendChild(mk('span', 'rch-edge-line')); e.appendChild(mk('span', 'rch-edge-label', label)); e.appendChild(mk('span', 'rch-edge-line')); return e; }
       function renderLayers(missing) {
         layers.innerHTML = '';
+        var ac = Math.max(0, Math.min(R.logos.length, Math.floor(+R.ac) || 0));   // layers under the accent paint
+        // display list, front to back: layers above the Accents line, the Accents line, layers under it
+        var items = [], accIn = false, accItem = { acc: true };
+        for (var i = R.logos.length - 1; i >= 0; i--) {
+          if (!accIn && i < ac) { items.push(accItem); accIn = true; }
+          items.push({ idx: i });
+        }
+        if (!accIn) items.push(accItem);
+        function applyOrder() {
+          var ai = items.indexOf(accItem), below = 0, k;
+          for (k = ai + 1; k < items.length; k++) if (!items[k].acc) below++;
+          R.logos = items.filter(function (it) { return !it.acc; }).map(function (it) { return R.logos[it.idx]; }).reverse();
+          if (below > 0) R.ac = below; else delete R.ac;
+          dragFrom = -1; draw();
+        }
+        function moveItem(from, to) {
+          if (from < 0 || from === to || to < 0 || to > items.length) return;
+          var moved = items.splice(from, 1)[0];
+          items.splice(Math.max(0, Math.min(items.length, to)), 0, moved);
+          applyOrder();
+        }
+        function dropOn(el, pos) {
+          el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('over'); });
+          el.addEventListener('dragleave', function () { el.classList.remove('over'); });
+          el.addEventListener('drop', function (e) { e.preventDefault(); el.classList.remove('over'); moveItem(dragFrom, pos); });
+        }
+        function dragStart(el, pos) {
+          el.draggable = true;
+          el.addEventListener('dragstart', function (e) { dragFrom = pos; el.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', String(pos)); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
+          el.addEventListener('dragend', function () { el.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
+        }
+        var topEdge = edgeLine('Outer Shell'); dropOn(topEdge, 0); layers.appendChild(topEdge);
         if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one below and press Add layer.'));
-        var order = []; for (var i = R.logos.length - 1; i >= 0; i--) order.push(i);   // top of list = front
-        order.forEach(function (idx, pos) {
-          var l = R.logos[idx];
-          var row = mk('div', 'rch-layer' + (l === sel ? ' sel' : '')); row.draggable = true; row.dataset.pos = pos;
+        items.forEach(function (it, pos) {
+          if (it.acc) {
+            var ar = edgeLine('Accents', 'rch-edge-acc'); dragStart(ar, pos); dropOn(ar, pos);
+            ar.title = 'Drag the Accents line (or use the arrows) to choose which layers sit under the accent paint.';
+            var aUp = mk('button', 'rch-icon', '&#9650;'); aUp.type = 'button'; aUp.title = 'Move the Accents line up';
+            var aDn = mk('button', 'rch-icon', '&#9660;'); aDn.type = 'button'; aDn.title = 'Move the Accents line down';
+            aUp.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos - 1); };
+            aDn.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos + 1); };
+            ar.appendChild(aUp); ar.appendChild(aDn);
+            layers.appendChild(ar);
+            return;
+          }
+          var idx = it.idx, l = R.logos[idx];
+          var row = mk('div', 'rch-layer' + (l === sel ? ' sel' : '')); row.dataset.pos = pos;
           row.appendChild(mk('span', 'rch-layer-no', String(idx + 1)));   // layer number: 1 is the back layer, the highest number is in front
           row.appendChild(mk('span', 'rch-grip', '&#8942;&#8942;'));
           var nm = mk('span', 'rch-layer-name'); nm.textContent = logoName(l);
@@ -391,32 +434,22 @@
           var dn = mk('button', 'rch-icon', '&#9660;'); dn.type = 'button'; dn.title = 'Send back';
           var cp = mk('button', 'rch-icon', COPY_ICON); cp.type = 'button'; cp.title = 'Copy this layer (the copy goes directly above it)';
           var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove layer';
-          up.onclick = function (e) { e.stopPropagation(); if (idx < R.logos.length - 1) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx + 1]; R.logos[idx + 1] = t; draw(); } };
-          dn.onclick = function (e) { e.stopPropagation(); if (idx > 0) { var t = R.logos[idx]; R.logos[idx] = R.logos[idx - 1]; R.logos[idx - 1] = t; draw(); } };
-          rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (sel === l) sel = null; draw(); };
+          // the arrows move a layer one step in the list, across the Accents line when it is next to it
+          up.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos - 1); };
+          dn.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos + 1); };
+          rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (idx < ac) { if (ac - 1 > 0) R.ac = ac - 1; else delete R.ac; } if (sel === l) sel = null; draw(); };
           cp.onclick = function (e) {
             e.stopPropagation();
             if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
             var dup = JSON.parse(JSON.stringify(l)); dup.x = (+dup.x || 0) + 20; dup.y = (+dup.y || 0) - 20;
-            R.logos.splice(idx + 1, 0, dup); sel = dup; draw();
+            R.logos.splice(idx + 1, 0, dup); if (idx < ac) R.ac = ac + 1; sel = dup; draw();
           };
           row.appendChild(up); row.appendChild(dn); row.appendChild(cp); row.appendChild(rm);
           row.onclick = function () { sel = l; renderLayers(missing); renderDetail(); updateSelBox(); };
-          row.addEventListener('dragstart', function (e) { dragFrom = pos; row.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', String(pos)); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
-          row.addEventListener('dragend', function () { row.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
-          row.addEventListener('dragover', function (e) { e.preventDefault(); row.classList.add('over'); });
-          row.addEventListener('dragleave', function () { row.classList.remove('over'); });
-          row.addEventListener('drop', function (e) {
-            e.preventDefault(); row.classList.remove('over');
-            if (dragFrom < 0 || dragFrom === pos) return;
-            var disp = order.map(function (k) { return R.logos[k]; });      // front-to-back
-            var moved = disp.splice(dragFrom, 1)[0];
-            disp.splice(pos, 0, moved);
-            R.logos = disp.slice().reverse();                                  // back to array order (last = front)
-            dragFrom = -1; draw();
-          });
+          dragStart(row, pos); dropOn(row, pos);
           layers.appendChild(row);
         });
+        var baseEdge = edgeLine('Base'); dropOn(baseEdge, items.length); layers.appendChild(baseEdge);
       }
 
       var curGrid = null;           // the slider block of the selected layer (the preview drag keeps it in step)
