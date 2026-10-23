@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=21'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=22'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -1003,3 +1003,28 @@ document.addEventListener('click', function (e) {
   if (document.querySelector('.rc-modal-backdrop, .rcl-modal-overlay')) return;   // one refused to close (saving)
   setTimeout(function () { target.click(); }, 0);
 }, true);
+
+
+// Keeps drawn helmets in step with the helmet list. A helmet picture is saved in this tab so pages load fast, so when an admin edits a helmet
+// the saved pictures are out of date. On each page load (at most every 30 seconds) one tiny request asks the server for the current helmet
+// version number; only when it differs from the one this browser has does the helmet code load, fetch the new designs and draw the helmets again.
+function rcHelmetVersionCheck_() {
+  try {
+    if (typeof fetchApi !== 'function' || !document.querySelector('[data-rc-helmet]')) return;
+    var pc = (typeof getProfileCache === 'function') ? getProfileCache() : null, av = (pc && pc.avatarFilename) || '';
+    // an older team-helmet avatar does not know which manufacturer it follows: fix that once per session
+    if (av.indexOf('helmet:') === 0 && av.indexOf('"t":1') > 0 && av.indexOf('"m":') < 0 && !sessionStorage.getItem('rcHelmetHealed')) {
+      sessionStorage.setItem('rcHelmetHealed', '1');
+      _rcHelmetModule_().then(function () { return window.rcHelmetHealNow_ && window.rcHelmetHealNow_(); }).catch(function () {});
+    }
+    var last = Number(localStorage.getItem('rcHelmetVerChecked')) || 0;
+    if (Date.now() - last < 30000) return;
+    localStorage.setItem('rcHelmetVerChecked', String(Date.now()));
+    fetchApi('getHelmetVersion', {}).then(function (res) {
+      if (!res || !res.success) return;
+      if (String(res.version) === (localStorage.getItem('rcHelmetVer') || '')) return;
+      return _rcHelmetModule_().then(function () { return window.rcHelmetRefreshNow_(); });
+    }).catch(function () {});
+  } catch (e) {}
+}
+window.addEventListener('load', function () { setTimeout(rcHelmetVersionCheck_, 1200); });

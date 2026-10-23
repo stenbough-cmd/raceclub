@@ -210,5 +210,27 @@
   window.rcHelmetRecipeOf_ = recipeOf;
   window.rcHelmetValue_ = valueOf;
   window.rcHelmetHydrateNow_ = hydrate;
+  // The helmet list changed: fetch the new designs (this also stores the new version number) and draw every helmet again.
+  window.rcHelmetRefreshNow_ = function () {
+    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=23')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
+  };
+  // Older team-helmet avatars have no manufacturer saved in them, so they cannot pick up later edits to that manufacturer's helmet. Ask the
+  // server which manufacturer the member's seat belongs to and save it into the avatar (once).
+  window.rcHelmetHealNow_ = function () {
+    var prof = (typeof getProfileCache === 'function') ? getProfileCache() : null, token = (typeof getToken === 'function') ? getToken() : null;
+    if (!prof || !token) return Promise.resolve();
+    var r = recipeOf(prof.avatarFilename);
+    if (!r || !r.t || r.m) return Promise.resolve();
+    return fetchApi('getMyTeamHelmet', { token: token }).then(function (res) {
+      if (!res || !res.success || !res.manufacturer) return;
+      r.m = res.manufacturer;
+      var nv = valueOf(r);
+      return fetchApi('updateOwnProfile', { method: 'POST', token: token, body: {
+        username: prof.username, firstName: prof.firstName, lastName: prof.lastName, suffix: prof.suffix || '', email: prof.email,
+        location: prof.location || '', timeZone: prof.timeZone || '', avatarFilename: nv } }).then(function (d) {
+        if (d && d.success) { if (typeof setProfileCache === 'function') setProfileCache(d.profile); redrawAll(); }
+      });
+    }).catch(function () {});
+  };
   window.rcHelmetCustomizeNow_ = customize;
 })();

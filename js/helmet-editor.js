@@ -129,7 +129,11 @@
     var body = mk('div', 'rch-designer');
     var modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
     modal.el.classList.add('rch-modal');
-    body.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading the helmet designer...') : mk('p', 'rch-hint', 'Loading the helmet designer...'));
+    // the loading lights sit in the middle of the popup
+    var loadBox = mk('div'); loadBox.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:62vh';
+    loadBox.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading the helmet designer...') : mk('p', 'rch-hint', 'Loading the helmet designer...'));
+    body.appendChild(loadBox);
+    try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e0) {}   // helmets may change here: every page checks for the new version next time
 
     fetchApi('getHelmetAssets', {}).then(function (res) {
       if (!res || !res.success) { body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }
@@ -607,6 +611,7 @@
           cur.id = res.presetId; cur.name = name;
           baseline = JSON.parse(JSON.stringify(R));
           syncMeta(); refreshPresets();
+          try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e1) {}
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
         }).catch(function () { setSaving(false); toast('No answer from the server. Try again.', 'error'); });
       }
