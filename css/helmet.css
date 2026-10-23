@@ -209,3 +209,7 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-
 /* "no background" swatch: a see-through checker with a slash */
 .rch-sw-none { background: repeating-conic-gradient(#d8dde1 0% 25%, #fff 0% 50%) 50% / 10px 10px !important; position: relative; }
 .rch-sw-none::after { content: ''; position: absolute; left: 3px; right: 3px; top: 50%; border-top: 2px solid var(--rc-red); transform: rotate(-45deg); }
+
+/* Layer numbers (1 = back layer) on the left of each layer row, and the single-row transparency slider */
+.rch-layer-no { min-width: 18px; text-align: right; color: var(--rc-steel); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rch-sliders.rch-sliders-one { grid-template-columns: 1fr 62px; grid-auto-rows: 30px; margin-top: 4px; }

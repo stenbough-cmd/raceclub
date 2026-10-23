@@ -308,6 +308,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (l && l.s && shapeById(l.s)) {
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
         if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
+        if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         if (shapeById(l.s).gradient) sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : 'black';
         out.logos.push(sl);
         return;
@@ -616,23 +617,26 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var lx = lc.getContext('2d', { willReadFrequently: true });
         recipe.logos.forEach(function (l, idx) {
           var im = logoImgs[idx]; if (!im) return;
-          lx.save();
-          lx.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
-          lx.rotate(-l.r * Math.PI / 180);
-          if (l.sh === 2) { lx.shadowColor = 'rgba(0,0,0,0.85)'; lx.shadowBlur = Math.max(3, 13 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
-          else if (l.sh) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
+          var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null;
+          if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); }   // draw on a spare canvas, then lay it over at the chosen see-through amount
+          g.save();
+          g.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
+          g.rotate(-l.r * Math.PI / 180);
+          if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
+          else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           if (isPlayerId(l.s)) {
-            drawPlayerBox(lx, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null);
+            drawPlayerBox(g, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null);
           } else if (l.s) {
-            lx.fillStyle = hexOf(l.c);
-            shapeById(l.s).draw(lx, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black'));
+            g.fillStyle = hexOf(l.c);
+            shapeById(l.s).draw(g, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black'));
           } else {
             var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
             var fit = Math.min(l.w / nw, l.h / nh);
             var dw = nw * fit * scale, dh = nh * fit * scale;
-            lx.drawImage(im, -dw / 2, -dh / 2, dw, dh);
+            g.drawImage(im, -dw / 2, -dh / 2, dw, dh);
           }
-          lx.restore();
+          g.restore();
+          if (tcv) { lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1; }
         });
         var ld = lx.getImageData(0, 0, Wt, Ht).data;
         for (var q = 0; q < N; q++) {

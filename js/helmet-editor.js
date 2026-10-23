@@ -382,6 +382,7 @@
         order.forEach(function (idx, pos) {
           var l = R.logos[idx];
           var row = mk('div', 'rch-layer' + (l === sel ? ' sel' : '')); row.draggable = true; row.dataset.pos = pos;
+          row.appendChild(mk('span', 'rch-layer-no', String(idx + 1)));   // layer number: 1 is the back layer, the highest number is in front
           row.appendChild(mk('span', 'rch-grip', '&#8942;&#8942;'));
           var nm = mk('span', 'rch-layer-name'); nm.textContent = logoName(l);
           if (missing && missing[idx]) { var miss = mk('span', 'rch-miss', 'FILE NOT FOUND'); nm.appendChild(miss); }
@@ -436,6 +437,7 @@
         sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
         makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }).forEach(function (bn) { opts.appendChild(bn); });
         if (sel.s) {
+          var tailHint = '';
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
           var pickColor = function (key, label, hint, withNone) {
             var cw = mk('div', 'rch-shapecolor');
@@ -466,11 +468,25 @@
           };
           if (gdef.gradient) {
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
-            else pickColor('c', 'Gradient color', 'This one fades from the color to see-through.');
+            else { pickColor('c', 'Gradient color'); tailHint = 'This one fades from the color to see-through.'; }
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else pickColor('c', gdef.weathering ? 'Mark color' : (gdef.player ? 'Name color' : 'Shape color'), sel.s === 'checker' ? 'The checkered strip uses this color and white.' : (sel.s === 'player' ? 'Shows each driver\'s own name and flag. Here you see yours.' : ''));
+          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.player ? 'Name color' : 'Shape color')); if (sel.s === 'checker') tailHint = 'The checkered strip uses this color and white.'; }
+          // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
+          var tw = mk('div', 'rch-shapecolor');
+          tw.appendChild(mk('div', 'rch-label', 'Transparency'));
+          var tg = mk('div', 'rch-sliders rch-sliders-one');
+          var tr = mk('input'); tr.type = 'range'; tr.min = 0; tr.max = 90; tr.step = 1;
+          var tn = mk('input', 'rch-num'); tn.type = 'number'; tn.min = 0; tn.max = 90; tn.step = 1; tn.setAttribute('aria-label', 'Transparency percent');
+          function curT() { var ov = Number(sel.o); return (ov > 0 && ov < 100) ? Math.round(100 - ov) : 0; }
+          function setT(t) { t = Math.max(0, Math.min(90, Math.round(t))); if (t === 0) delete sel.o; else sel.o = 100 - t; tr.value = t; draw(true); }
+          tr.value = curT(); tn.value = curT();
+          tr.oninput = function () { tn.value = tr.value; setT(parseFloat(tr.value)); };
+          tn.oninput = function () { var d = parseFloat(tn.value); if (isFinite(d) && d >= 0 && d <= 90) setT(d); };
+          tn.onchange = function () { var d = parseFloat(tn.value); setT(isFinite(d) ? d : 0); tn.value = curT(); };
+          tg.appendChild(tr); tg.appendChild(tn); tw.appendChild(tg); detail.appendChild(tw);
+          if (tailHint) detail.appendChild(mk('p', 'rch-hint', tailHint));
         }
         detail.appendChild(opts);
       }

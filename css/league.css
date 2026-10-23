@@ -2687,3 +2687,9 @@ body.rc-league-page .rcl-navbar-season {
   body.rc-league-page .rcl-navbar-inner:has(.rcl-navbar-season) { padding-bottom: 8px; }
   body.rc-league-page .rcl-navbar-season { margin: 0; width: 100%; max-width: 100%; }
 }
+
+/* Dark Edit Profile popup: the Customize Helmet and Always use team design (off) buttons are light-gray outlines with no fill.
+   The "on" state of the team button keeps its own green style (css/style.css .rc-team-toggle.rc-team-on). */
+.rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on) { background: transparent; border: 1px solid var(--rcl-ink-dim); color: var(--rcl-ink-dim); }
+.rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on):hover { background: transparent; border-color: var(--rcl-ink); color: var(--rcl-ink); }
+.rcl-modal-dialog .rc-helmet-edit-row .rc-team-toggle.rc-team-on { color: var(--rcl-ink); }
