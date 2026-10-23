@@ -215,13 +215,15 @@
       var status = mk('p', 'rch-status'); bar.appendChild(status);
       var btns = mk('div', 'rch-btns');
       var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
+      var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
+      saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
       var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
       var clearBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearBtn.type = 'button';
       clearBtn.title = 'Clear to a plain white helmet with no design and no logos';
       clearBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
       var cancelBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelBtn.type = 'button';
       cancelBtn.onclick = function () { modal.close(); };
-      btns.appendChild(saveBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
+      btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(manageBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
       var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
@@ -536,6 +538,7 @@
         nameIn.placeholder = isMfr ? 'Named after the manufacturer' : 'e.g. Season 1 Champion';
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
         status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
+        saveNewBtn.style.display = cur.id ? '' : 'none';
       }
 
       function syncControls() {
@@ -630,35 +633,52 @@
       }
       // while a save is running the button reads Saving... and the X in the corner is switched off
       function setSaving(on) {
-        saveBtn.disabled = on; cancelBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
+        saveBtn.disabled = on; saveNewBtn.disabled = on; cancelBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
         modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
       }
-      function doSave(skipAsk) {
+      // Save / Save as New. forceNew = save this as a separate helmet and leave the one that was loaded alone.
+      function doSave(skipAsk, forceNew, skipChange) {
+        var pid = forceNew ? '' : cur.id;
         var name = (cur.kind === 'Manufacturer' ? cur.mfr : (cur.name || '')).trim();
         if (cur.kind === 'Manufacturer' && !cur.mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
         if (!name) { toast('Give the helmet a name first.', 'error'); nameIn.focus(); return; }
+        // the helmet that was loaded or saved is being changed into something different: ask whether this is a new helmet or an edit of that one
+        if (!skipChange && !forceNew && cur.id && cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== name)) {
+          var qb = mk('div', 'rch-assign');
+          qb.appendChild(mk('p', 'rch-hint', 'You changed the name or kind of "' + cur.saved.name + '". Is this a brand new helmet, or do you want to change the one you opened? A new helmet leaves the old one exactly as it was.'));
+          var qr = mk('div', 'rch-btns');
+          var qNew = mk('button', 'rc-btn-primary rc-btn-sm', 'Save as new helmet'); qNew.type = 'button';
+          var qOld = mk('button', 'rc-btn-secondary rc-btn-sm', 'Change the old one'); qOld.type = 'button';
+          var qNo = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); qNo.type = 'button';
+          qr.appendChild(qNew); qr.appendChild(qOld); qr.appendChild(qNo); qb.appendChild(qr);
+          var qm = ctx.showModal('Save as a new helmet?', { bodyEl: qb, accentHead: true });
+          qNew.onclick = function () { qm.close(); doSave(false, true, true); };
+          qOld.onclick = function () { qm.close(); doSave(false, false, true); };
+          qNo.onclick = function () { qm.close(); };
+          return;
+        }
         if (!skipAsk && (cur.kind === 'Website Default' || cur.kind === 'Manufacturer')) {
           saveBtn.disabled = true;
           refreshPresets().then(function (list) {
             saveBtn.disabled = false;
             var old = (list || []).filter(function (p) {
-              return p.active && p.kind === cur.kind && p.presetId !== cur.id && (cur.kind === 'Website Default' || p.manufacturer === cur.mfr);
+              return p.active && p.kind === cur.kind && p.presetId !== pid && (cur.kind === 'Website Default' || p.manufacturer === cur.mfr);
             })[0];
-            if (!old) { doSave(true); return; }
+            if (!old) { doSave(true, forceNew, true); return; }
             askReplace(cur.kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + cur.mfr + ' helmet?',
               (cur.kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + cur.mfr + ' helmet already exists.') + ' Do you want to save over the previous design? The older one will be archived.',
-              function () { doSave(true); });
+              function () { doSave(true, forceNew, true); });
           });
           return;
         }
         setSaving(true);
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: cur.id, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
+          body: { presetId: pid, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
         }).then(function (res) {
           setSaving(false);
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
-          cur.id = res.presetId; cur.name = name;
+          cur.id = res.presetId; cur.name = name; cur.saved = { name: name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '' };
           baseline = JSON.parse(JSON.stringify(R));
           syncMeta(); refreshPresets();
           try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e1) {}
@@ -666,9 +686,11 @@
         }).catch(function () { setSaving(false); toast('No answer from the server. Try again.', 'error'); });
       }
       saveBtn.onclick = function () { doSave(false); };
+      saveNewBtn.onclick = function () { doSave(false, true, true); };
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
         cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '' };
+        cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '' };
         syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
       }
       /* ---------------- shared bits for the manager popups ---------------- */
