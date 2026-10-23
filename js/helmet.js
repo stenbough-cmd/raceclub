@@ -220,6 +220,86 @@
     } }
   ];
   Array.prototype.push.apply(SHAPES, WEATHERING);
+  // Patterns: tiles that fit edge to edge. Copy a pattern layer and set the copy next to the first (same width and height) and the
+  // pattern carries on without a seam, so several copies cover as large a canvas as you like. Each one repeats a whole number of
+  // times inside its box, and is drawn a hair past its edges (same color) so neighbouring tiles never show a hairline.
+  function patTile(c, w, h, fn) {
+    c.save(); c.beginPath(); c.rect(-w / 2 - 0.75, -h / 2 - 0.75, w + 1.5, h + 1.5); c.clip();
+    c.translate(-w / 2, -h / 2); fn(w, h); c.restore();
+  }
+  var PATTERNS = [
+    { id: 'pat_dots', name: 'Dots', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var u = w / 4, v = h / 4, i, j; c.fillStyle = col;
+      for (i = -1; i < 5; i++) for (j = -1; j < 5; j++) { c.beginPath(); c.ellipse((i + 0.5) * u, (j + 0.5) * v, u * 0.3, v * 0.3, 0, 0, Math.PI * 2); c.fill(); }
+    }); } },
+    { id: 'pat_diag', name: 'Diagonal stripes', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      c.fillStyle = col;
+      for (var k = -2; k < 5; k++) {
+        var a = k * 0.5, b = a + 0.25;
+        c.beginPath(); c.moveTo(a * w + 2 * w, -2 * h); c.lineTo(a * w - 3 * w, 3 * h); c.lineTo(b * w - 3 * w, 3 * h); c.lineTo(b * w + 2 * w, -2 * h); c.closePath(); c.fill();
+      }
+    }); } },
+    { id: 'pat_check', name: 'Checkerboard', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var u = w / 4, v = h / 4, i, j; c.fillStyle = col;
+      for (i = -1; i < 5; i++) for (j = -1; j < 5; j++) if (((i + j) % 2 + 2) % 2 === 0) c.fillRect(i * u, j * v, u, v);
+    }); } },
+    { id: 'pat_chevron', name: 'Chevrons', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var v = h / 4, d = v * 0.45, t = v * 0.3, r, k; c.fillStyle = col;
+      for (r = -1; r < 5; r++) {
+        var y0 = r * v + v * 0.1;
+        c.beginPath(); c.moveTo(0, y0);
+        for (k = 1; k <= 4; k++) c.lineTo(k * w / 4, y0 + (k % 2 ? d : 0));
+        for (k = 4; k >= 0; k--) c.lineTo(k * w / 4, y0 + t + (k % 2 ? d : 0));
+        c.closePath(); c.fill();
+      }
+    }); } },
+    { id: 'pat_hex', name: 'Hexagon mesh', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var dx = w / 3, dy = h / 4, W = dx * 0.88, H = dy / 0.75 * 0.88, r, k; c.fillStyle = col;
+      for (r = -1; r < 5; r++) for (k = -1; k < 4; k++) {
+        var cx = (k + 0.5 + (((r % 2) + 2) % 2) * 0.5) * dx, cy = (r + 0.5) * dy;
+        c.beginPath();
+        c.moveTo(cx, cy - H / 2); c.lineTo(cx + W / 2, cy - H / 4); c.lineTo(cx + W / 2, cy + H / 4); c.lineTo(cx, cy + H / 2); c.lineTo(cx - W / 2, cy + H / 4); c.lineTo(cx - W / 2, cy - H / 4);
+        c.closePath(); c.fill();
+      }
+    }); } },
+    { id: 'pat_waves', name: 'Waves', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var v = h / 4, A = v * 0.22, t = v * 0.3, r, x, N = 48; c.fillStyle = col;
+      for (r = -1; r < 5; r++) {
+        var y0 = (r + 0.35) * v;
+        c.beginPath();
+        for (x = 0; x <= N; x++) c[x ? 'lineTo' : 'moveTo'](x / N * w, y0 + A * Math.sin(x / N * Math.PI * 4));
+        for (x = N; x >= 0; x--) c.lineTo(x / N * w, y0 + t + A * Math.sin(x / N * Math.PI * 4));
+        c.closePath(); c.fill();
+      }
+    }); } },
+    { id: 'pat_tri', name: 'Triangles', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var u = w / 4, v = h / 4, i, j; c.fillStyle = col;
+      for (i = -1; i < 5; i++) for (j = -1; j < 5; j++) { c.beginPath(); c.moveTo(i * u, (j + 1) * v); c.lineTo((i + 0.5) * u, j * v); c.lineTo((i + 1) * u, (j + 1) * v); c.closePath(); c.fill(); }
+    }); } },
+    { id: 'pat_diamond', name: 'Diamonds', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var u = w / 4, v = h / 4, i, j; c.fillStyle = col;
+      for (i = -1; i < 5; i++) for (j = -1; j < 5; j++) {
+        var cx = (i + 0.5) * u, cy = (j + 0.5) * v;
+        c.beginPath(); c.moveTo(cx, cy - v * 0.42); c.lineTo(cx + u * 0.42, cy); c.lineTo(cx, cy + v * 0.42); c.lineTo(cx - u * 0.42, cy); c.closePath(); c.fill();
+      }
+    }); } },
+    { id: 'pat_weave', name: 'Carbon weave', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var u = w / 4, v = h / 4, i, j; c.fillStyle = col;
+      for (i = -1; i < 5; i++) for (j = -1; j < 5; j++) {
+        var horiz = (((i + j) % 2) + 2) % 2 === 0, x = i * u, y = j * v;
+        if (horiz) { c.fillRect(x + u * 0.04, y + v * 0.08, u * 0.92, v * 0.38); c.fillRect(x + u * 0.04, y + v * 0.54, u * 0.92, v * 0.38); }
+        else { c.fillRect(x + u * 0.08, y + v * 0.04, u * 0.38, v * 0.92); c.fillRect(x + u * 0.54, y + v * 0.04, u * 0.38, v * 0.92); }
+      }
+    }); } },
+    { id: 'pat_scales', name: 'Scales', pattern: true, draw: function (c, w, h, col) { patTile(c, w, h, function (w, h) {
+      var rx = w / 8, ry = h / 8, r, k; c.strokeStyle = col; c.lineWidth = Math.max(1, Math.min(rx, ry) * 0.22);
+      for (r = -1; r < 9; r++) for (k = -1; k < 5; k++) {
+        var cx = (k + (((r % 2) + 2) % 2) * 0.5) * 2 * rx + rx * (((r % 2) + 2) % 2 ? 0 : 0), cy = r * ry;
+        c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI); c.stroke();
+      }
+    }); } }
+  ];
+  Array.prototype.push.apply(SHAPES, PATTERNS);
   // The dynamic Player Name + Flag box. The text and flag are not part of the design: they come from recipe.pl = { n: name, c: country name }
   // (saved once into the member's helmet when they pick it) or, in the admin preview, from opts.player.
   SHAPES.push({ id: 'player_name', name: 'Player name', player: true, draw: function () {} });

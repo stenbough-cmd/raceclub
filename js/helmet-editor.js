@@ -297,7 +297,7 @@
         var keep = lpick.value;
         lpick.innerHTML = '';
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
-        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering || sh.player) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering || sh.player || sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
         var gP = mk('optgroup'); gP.label = 'Premium shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
@@ -308,6 +308,9 @@
         var gW = mk('optgroup'); gW.label = 'Weathering';
         H.SHAPES.forEach(function (sh) { if (!sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gW.appendChild(o); });
         lpick.appendChild(gW);
+        var gT = mk('optgroup'); gT.label = 'Patterns';
+        H.SHAPES.forEach(function (sh) { if (!sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gT.appendChild(o); });
+        lpick.appendChild(gT);
         var gD = mk('optgroup'); gD.label = 'Dynamic';
         ['player_name', 'player_number', 'player', 'player_num'].forEach(function (id) { var oD = mk('option'); oD.value = 's:' + id; oD.textContent = shapeName(id); gD.appendChild(oD); });
         lpick.appendChild(gD);
@@ -504,7 +507,7 @@
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.player ? 'Name color' : 'Shape color')); if (sel.s === 'checker') tailHint = 'The checkered strip uses this color and white.'; }
+          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); if (sel.s === 'checker') tailHint = 'The checkered strip uses this color and white.';  if (gdef.pattern) tailHint = 'A pattern tile. Copy the layer and set the copy right beside it, with the same width and height, and the pattern carries on with no seam.'; }
           // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
           var tw = mk('div', 'rch-shapecolor');
           tw.appendChild(mk('div', 'rch-label', 'Transparency'));
