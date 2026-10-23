@@ -152,6 +152,20 @@
       var R = blankRecipe();
       var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
       var cur = { id: '', name: '', kind: 'Awards', mfr: '' };
+      var afterOk = null;                                      // runs once after the next successful save (Save changes, then New)
+      // The file tab above the Save box: the loaded helmet as "Name (ID)", an asterisk when it has unsaved changes, or "New".
+      var FILE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      var tab = mk('div', 'rch-tab'); tab.appendChild(mk('span', 'rch-tab-icon', FILE_ICON));
+      var tabLabel = mk('span', 'rch-tab-label'); tab.appendChild(tabLabel);
+      function isDirty() {
+        if (JSON.stringify(R) !== JSON.stringify(baseline)) return true;
+        if (!cur.id) return !!String(cur.name || '').trim();
+        return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
+      }
+      function updateTab() {
+        var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' + (isDirty() ? '*' : '') : 'New';
+        tabLabel.textContent = t; tab.title = t;
+      }
       var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
       var dragFrom = -1;
@@ -190,7 +204,7 @@
       var bar = mk('div', 'rch-section');
       var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label', 'Helmet name'));
       var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Season 1 Champion';
-      nameIn.oninput = function () { cur.name = nameIn.value; };
+      nameIn.oninput = function () { cur.name = nameIn.value; updateTab(); };
       nameWrap.appendChild(nameIn);
       var kindWrap = mk('div'); kindWrap.appendChild(mk('div', 'rch-label', 'Kind'));
       var kindSel = mk('select', 'rch-select-wide'); KINDS.forEach(function (k) { var o = mk('option'); o.value = k; o.textContent = k; kindSel.appendChild(o); });
@@ -218,16 +232,28 @@
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
       var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
-      var clearBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Clear'); clearBtn.type = 'button';
-      clearBtn.title = 'Clear to a plain white helmet with no design and no logos';
-      clearBtn.onclick = function () { R = blankRecipe(); sel = null; draw(); };
+      var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'New'); newBtn.type = 'button';
+      newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
+      function startNew() {
+        R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '' }; baseline = JSON.parse(JSON.stringify(R));
+        nameIn.value = ''; syncMeta(); draw();
+      }
+      newBtn.onclick = function () {
+        afterOk = null;
+        if (!isDirty()) { startNew(); return; }
+        confirmBox('Save changes first?', 'This helmet has changes that have not been saved. Do you want to save them before you start a new helmet?', [
+          { label: 'Save changes', primary: true, fn: function () { afterOk = startNew; doSave(false); } },
+          { label: 'Don\'t save', fn: startNew },
+          { label: 'Cancel' }]);
+      };
       var cancelBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelBtn.type = 'button';
       cancelBtn.onclick = function () { modal.close(); };
-      btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(clearBtn); btns.appendChild(cancelBtn);
+      btns.appendChild(newBtn); btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
       var btns2 = mk('div', 'rch-btns rch-btns-second'); btns2.appendChild(manageBtn); bar.appendChild(btns2);   // Manage Designs sits on its own row under the others
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
       var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
+      right.appendChild(tab);
       right.appendChild(bar);
 
       /* ---------------- right: style ---------------- */
@@ -539,6 +565,7 @@
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
         status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
         saveNewBtn.style.display = cur.id ? '' : 'none';
+        updateTab();
       }
 
       function syncControls() {
@@ -559,7 +586,7 @@
       var busy = false, again = false, lastQuick = false;
       function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
       function draw(quick) {
-        syncControls();
+        syncControls(); updateTab();
         if (!quick) { renderLayers(); renderDetail(); }
         if (busy) { again = true; lastQuick = !!quick; return; }
         busy = true;
@@ -702,10 +729,11 @@
           syncMeta(); refreshPresets();
           try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e1) {}
           toast(res.replaced ? ('Saved. It replaced the older helmet "' + res.replaced + '".') : 'Helmet saved.', 'success');
+          var nextStep = afterOk; afterOk = null; if (nextStep) nextStep();
         }).catch(function () { setSaving(false); toast('No answer from the server. Try again.', 'error'); });
       }
-      saveBtn.onclick = function () { doSave(false); };
-      saveNewBtn.onclick = function () { doSave(false, true, true); };
+      saveBtn.onclick = function () { afterOk = null; doSave(false); };
+      saveNewBtn.onclick = function () { afterOk = null; doSave(false, true, true); };
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
         cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '' };

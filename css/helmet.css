@@ -232,3 +232,8 @@ body.rc-league-page:not(.rcc-page) { --rch-edge: #5b9cf5; }
 .rch-confirm-msg { margin: 0 auto 18px; max-width: 440px; font-size: 14px; line-height: 1.55; color: var(--rc-carbon); }
 .rch-confirm .rch-btns { justify-content: center; }
 body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
+
+/* File tab above the Save box (top of a folder tab: open at the bottom, then a gap, then the box) */
+.rch-tab { display: flex; align-items: flex-start; gap: 8px; height: 44px; box-sizing: border-box; padding: 11px 14px 0; margin-bottom: 8px; border: 1px solid var(--rc-silver); border-bottom: 0; border-radius: 8px 8px 0 0; color: var(--rc-carbon); font-size: 13px; font-weight: 700; line-height: 1.3; }
+.rch-tab-icon { display: inline-flex; flex: 0 0 auto; color: var(--rc-steel); padding-top: 1px; }
+.rch-tab-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
