@@ -392,6 +392,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
         if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
         if (l.fx) sl.fx = 1;   // fx = mirrored left to right
+        if (+l.bw >= 1 && borderOk(l.s)) { sl.bw = Math.min(20, Math.round(+l.bw)); sl.bc = (typeof l.bc === 'string' && l.bc) ? l.bc : 'black'; }   // border size (px) and color
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : (l.s === 'checker' ? 'white' : 'black');
         out.logos.push(sl);
@@ -408,6 +409,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };
     return out;
   }
+  // shapes that can have a border: basic and advanced shapes and the player number (not gradients, weathering, patterns or the name boxes)
+  function borderOk(id) { var sh = shapeById(id); return !!sh && !sh.gradient && !sh.weathering && !sh.pattern && (!isPlayerId(id) || id === 'player_number'); }
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function randomRecipe(keepDesign) {
     var ids = PALETTE.map(function (p) { return p.id; });
@@ -726,11 +729,25 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           if (l.fx) g.scale(-1, 1);   // mirrored left to right
           if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
-          if (isPlayerId(l.s)) {
-            drawPlayerBox(g, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null);
-          } else if (l.s) {
-            g.fillStyle = hexOf(l.c);
-            shapeById(l.s).draw(g, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black'));
+          if (l.s) {
+            var paintShape = function (gg) {
+              if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null); }
+              else { gg.fillStyle = hexOf(l.c); shapeById(l.s).draw(gg, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black')); }
+            };
+            var bwPx = (+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0;
+            if (bwPx > 0) {
+              // border: the shape's outline is flattened to the border color, spread outward all around, then the shape is drawn on top
+              var pad = Math.ceil(bwPx) + 4, cw = Math.ceil(l.w * scale) + pad * 2, ch = Math.ceil(l.h * scale) + pad * 2;
+              var sil = document.createElement('canvas'); sil.width = cw; sil.height = ch;
+              var sg = sil.getContext('2d'); sg.translate(cw / 2, ch / 2); paintShape(sg);
+              sg.setTransform(1, 0, 0, 1, 0, 0); sg.globalCompositeOperation = 'source-in'; sg.fillStyle = hexOf(l.bc || 'black'); sg.fillRect(0, 0, cw, ch);
+              var comp = document.createElement('canvas'); comp.width = cw; comp.height = ch;
+              var cg = comp.getContext('2d'), rings = [1, 0.66, 0.33], ri, ki;
+              for (ri = 0; ri < rings.length; ri++) for (ki = 0; ki < 32; ki++) { var an = ki / 32 * Math.PI * 2; cg.drawImage(sil, Math.cos(an) * bwPx * rings[ri], Math.sin(an) * bwPx * rings[ri]); }
+              cg.drawImage(sil, 0, 0);
+              cg.translate(cw / 2, ch / 2); paintShape(cg);
+              g.drawImage(comp, -cw / 2, -ch / 2);
+            } else paintShape(g);
           } else {
             var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
             var fit = Math.min(l.w / nw, l.h / nh);

@@ -6,15 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=28">
+<link rel="stylesheet" href="css/helmet.css?v=29">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/reference-data.js"></script>
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
-<script src="js/helmet.js?v=30"></script>
-<script src="js/helmet-editor.js?v=42"></script>
+<script src="js/helmet.js?v=31"></script>
+<script src="js/helmet-editor.js?v=43"></script>
 </head>
 <body>
 
@@ -1467,6 +1467,7 @@
     var nameWrap = el('div', 'rc-nextrace-name');
     var nameText = data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum));
     nameWrap.appendChild(document.createTextNode(nameText));
+    if (isSpecial) nameWrap.style.color = 'var(--rc-gold)';
     // Space before the star -- .rc-nextrace-name isn't a flex row with its own gap the way
     // Calendar's .rc-cal-race-name is, so the plain text node and the star span were sitting flush
     // against each other with nothing between them.
@@ -1517,11 +1518,7 @@
     if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password', 'rc-nextrace-password-gold'));
     info.appendChild(stats);
 
-    // Round X of Y pill removed -- Special Event's gold pill stays, since that one's flagging
-    // something the round count alone doesn't say (no championship points).
-    if (isSpecial) {
-      info.appendChild(el('span', 'rc-nextrace-pill rc-nextrace-pill-gold', 'SPECIAL EVENT'));
-    }
+    // The SPECIAL EVENT pill is gone: a special event's title is dark gold instead (Matt, 2026-10-24).
     body.appendChild(info);
 
     // Track image removed entirely.
@@ -5950,11 +5947,7 @@
     helmetOpener('Manage Logos', 'logos');
     helmetBox.appendChild(helmetBtnRow);
     [
-      'Opens a large popup where you design the racing helmets the site uses: the default helmet new drivers start with, each manufacturer\'s team helmet, and special event or label helmets. Drivers will get a simpler version of this later, with the colors and finishes but without logos.',
-      'How it works: pick a design, then choose the Base, Accent 1 and Accent 2 colors, a finish for each (gloss, matte, satin, metallic, pearl, candy or carbon) and a visor. The small rainbow circle at the end of each color row lets you pick any exact color, which drivers cannot do.',
-      'Logos and shapes: add a basic shape (circle, star, stripe, chevron, checkered strip and more) in any color, a manufacturer logo from the ones the site already has, or a custom logo listed on the HelmetAssets sheet tab (give a logo a Category there and it gets its own heading in the list). Every logo and shape is a layer. Drag the layers up or down in the list, or use the arrows, to choose which one sits in front, and click or drag on the helmet to move the selected logo. Size, tilt and a soft shadow are set with the sliders.',
-      'Saving: give the helmet a name and a kind, then press Save. A Manufacturer helmet is saved per manufacturer and class, and saving one replaces the older one. Load brings back any saved helmet so you can change it, and Save as New keeps the original. Saved helmets live on the HelmetPresets sheet tab and are hidden, never deleted, when you remove them.',
-      'Designs are the numbered picture files in assets/helmets/images (01-name_of_design.png up to 10), listed on the HelmetAssets sheet tab. A design with no row in the sheet, or no file, is simply left out of the list.'
+      'Design the helmets the site uses: the default helmet, each manufacturer\'s team helmet, and special event, premium and award helmets. Manage Designs handles details, access, archiving and deleting. Manage Logos handles the logo library.'
     ].forEach(function (text) {
       helmetBox.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
     });

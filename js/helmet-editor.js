@@ -232,8 +232,11 @@
         return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
       }
       function updateTab() {
-        var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' + (isDirty() ? '*' : '') : 'New';
-        tabLabel.textContent = t; tab.title = t;
+        var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' : 'New';
+        var dirty = !!cur.id && isDirty();
+        tabLabel.textContent = t;
+        if (dirty) { var em = mk('em', 'rch-tab-unsaved', ' (unsaved changes)'); tabLabel.appendChild(em); }
+        tab.title = t + (dirty ? ' (unsaved changes)' : '');
       }
       var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
@@ -293,7 +296,7 @@
       var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap);
       bar.appendChild(mcRow);
       // Category (Season 1, Limited Edition...): only for Special Event, Premium and Awards helmets; groups them in the Load and Manage lists
-      var collWrap = mk('div'); collWrap.appendChild(mk('div', 'rch-label', 'Category'));
+      var collWrap = mk('div', 'rch-collwrap'); collWrap.appendChild(mk('div', 'rch-label', 'Category'));
       var collPick = makeCollPicker(function (v) { cur.coll = v; updateTab(); });
       collWrap.appendChild(collPick.el); bar.appendChild(collWrap);
       // optional description (200 characters at most); the note about the chosen Kind sits under it
@@ -445,9 +448,9 @@
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
-        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 1 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
+        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
-          : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 }
+          : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
         R.logos.push(n); sel = n; draw();
       };
@@ -577,16 +580,19 @@
         detail.appendChild(grid.el);
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
+        var nsl = mk('label', 'rch-check rch-plain'); var nsc = mk('input'); nsc.type = 'checkbox'; nsc.checked = !(sel.sh === 1 || sel.sh === true || sel.sh === 2);
         var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = sel.sh === 1 || sel.sh === true;
         var sgl = mk('label', 'rch-check rch-plain'); var sgc = mk('input'); sgc.type = 'checkbox'; sgc.checked = sel.sh === 2;
-        shc.onchange = function () { sel.sh = shc.checked ? 1 : 0; sgc.checked = false; draw(true); };
-        sgc.onchange = function () { sel.sh = sgc.checked ? 2 : 0; shc.checked = false; draw(true); };
+        function shadowSet(v) { sel.sh = v; nsc.checked = v === 0; shc.checked = v === 1; sgc.checked = v === 2; draw(true); }
+        nsc.onchange = function () { shadowSet(0); };                          // No shadow: always one of the three is on
+        shc.onchange = function () { shadowSet(shc.checked ? 1 : 0); };
+        sgc.onchange = function () { shadowSet(sgc.checked ? 2 : 0); };
+        nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl);
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
         sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
         var rotRow = mk('div', 'rch-btns rch-rotrow'); opts.appendChild(rotRow);   // Left, Mirror and Right stay together on their own line
         makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, 'fx').forEach(function (bn) { rotRow.appendChild(bn); });
         if (sel.s) {
-          var tailHint = '';
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
           var pickColor = function (key, label, hint, withNone) {
             var cw = mk('div', 'rch-shapecolor');
@@ -615,14 +621,30 @@
             if (hint) cw.appendChild(mk('p', 'rch-hint', hint));
             detail.appendChild(cw);
           };
-          if (sel.s === 'checker') { if (!sel.c2) sel.c2 = 'white'; pickColor('c', 'Color 1'); pickColor('c2', 'Color 2'); }
-          else if (gdef.gradient) {
+          if (gdef.gradient) {
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
-            else { pickColor('c', 'Gradient color'); tailHint = 'This one fades from the color to see-through.'; }
+            else { pickColor('c', 'Gradient color'); }
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); if (gdef.pattern) tailHint = 'A pattern tile. Copy the layer and set the copy right beside it, with the same width and height, and the pattern carries on with no seam.'; }
+          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); }
+          // Border (basic and advanced shapes and the player number): a color picker under the shape color, then a 0 to 20 px size slider
+          if (!gdef.gradient && !gdef.weathering && !gdef.pattern && (!gdef.player || sel.s === 'player_number')) {
+            if (!sel.bc) sel.bc = 'black';
+            pickColor('bc', 'Border color');
+            var bwr = mk('div', 'rch-shapecolor');
+            bwr.appendChild(mk('div', 'rch-label', 'Border size'));
+            var bg2 = mk('div', 'rch-sliders rch-sliders-one');
+            var br = mk('input'); br.type = 'range'; br.min = 0; br.max = 20; br.step = 1;
+            var bn = mk('input', 'rch-num'); bn.type = 'number'; bn.min = 0; bn.max = 20; bn.step = 1; bn.setAttribute('aria-label', 'Border size in pixels');
+            function curB() { return Math.max(0, Math.min(20, Math.round(Number(sel.bw) || 0))); }
+            function setB(v) { v = Math.max(0, Math.min(20, Math.round(v))); if (v === 0) delete sel.bw; else sel.bw = v; br.value = v; draw(true); }
+            br.value = curB(); bn.value = curB();
+            br.oninput = function () { bn.value = br.value; setB(parseFloat(br.value)); };
+            bn.oninput = function () { var d = parseFloat(bn.value); if (isFinite(d) && d >= 0 && d <= 20) setB(d); };
+            bn.onchange = function () { var d = parseFloat(bn.value); setB(isFinite(d) ? d : 0); bn.value = curB(); };
+            bg2.appendChild(br); bg2.appendChild(bn); bwr.appendChild(bg2); detail.appendChild(bwr);
+          }
           // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
           var tw = mk('div', 'rch-shapecolor');
           tw.appendChild(mk('div', 'rch-label', 'Transparency'));
@@ -636,7 +658,6 @@
           tn.oninput = function () { var d = parseFloat(tn.value); if (isFinite(d) && d >= 0 && d <= 90) setT(d); };
           tn.onchange = function () { var d = parseFloat(tn.value); setT(isFinite(d) ? d : 0); tn.value = curT(); };
           tg.appendChild(tr); tg.appendChild(tn); tw.appendChild(tg); detail.appendChild(tw);
-          if (tailHint) detail.appendChild(mk('p', 'rch-hint', tailHint));
         }
         detail.appendChild(opts);
       }
@@ -726,6 +747,16 @@
       var onMove = function (e) { if (dragging) moveTo(e); }, onUp = function () { dragging = false; };
       window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
       modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); });
+      // Closing the designer with unsaved changes asks first (the same question the New button asks)
+      if (!only) modal.closeBtn.addEventListener('click', function (ev) {
+        if (!isDirty()) return;
+        ev.stopImmediatePropagation();
+        function closeNow() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); modal.close(); }
+        confirmBox('Save changes first?', 'This helmet has changes that have not been saved. Do you want to save them before you close the designer?', [
+          { label: 'Save changes', primary: true, fn: function () { afterOk = closeNow; doSave(false); } },
+          { label: 'Don\'t save', fn: closeNow },
+          { label: 'Cancel' }]);
+      }, true);
 
       /* ---------------- save / load ---------------- */
       // The saved helmets (active ones) decide which manufacturers get a * and whether a save would replace one.
