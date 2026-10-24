@@ -15,9 +15,9 @@
   var KIND_HINTS = {
     'Website Default': 'The helmet drivers start with before they design their own. Only one exists: saving replaces the old one.',
     'Manufacturer': 'The team helmet drivers get when they use "Team Helmet". One per manufacturer.',
-    'Special Event': 'A helmet to give to members for a special event. Members find it under "Special Event" in their Design list.',
-    'Premium': 'A premium helmet to give to members. Members find it under "Premium" in their Design list.',
-    'Awards': 'An award helmet, for example a season winner design. Members find it under "Awards" in their Design list.'
+    'Special Event': 'A helmet to give to members for a special event.',
+    'Premium': 'A premium helmet to give to members.',
+    'Awards': 'An award helmet, for example a season winner design.'
   };
 
   function mk(tag, cls, html) {
@@ -29,8 +29,8 @@
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  // Championship first, then a blank row, then the rest (a null entry is the blank row).
-  var GROUPS = [['Championship', 'Championship (single player members with a +)'], null, ['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
+  // The groups a helmet can be given to.
+  var GROUPS = [['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
   function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
   // Slider directions (Matt): Left / right slides right = right. Up / down slides right = UP (the stored y counts down, so the slider shows 1254 - y).
@@ -57,9 +57,9 @@
     function sizeFrom(field) {
       if (!linkOn) return;
       var oo = obj(), r = ratio(), w = Number(oo[K.w]), h = Number(oo[K.h]);
-      if (field === 'w') { h = w / r; if (h < 20) { h = 20; w = h * r; } if (h > 700) { h = 700; w = h * r; } }
-      else { w = h * r; if (w < 20) { w = 20; h = w / r; } if (w > 700) { w = 700; h = w / r; } }
-      oo[K.w] = Math.round(clamp(w, 20, 700)); oo[K.h] = Math.round(clamp(h, 20, 700));
+      if (field === 'w') { h = w / r; if (h < 5) { h = 5; w = h * r; } if (h > 700) { h = 700; w = h * r; } }
+      else { w = h * r; if (w < 5) { w = 5; h = w / r; } if (w > 700) { w = 700; h = w / r; } }
+      oo[K.w] = Math.round(clamp(w, 5, 700)); oo[K.h] = Math.round(clamp(h, 5, 700));
       rows.w.sync(); rows.h.sync();
     }
     function addRow(field, label, min, max, step, toDisp, fromDisp) {
@@ -85,8 +85,8 @@
     }
     addRow('x', 'Left / right', 0, 1254, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('y', 'Up / down', 0, 1254, 1, function (v) { return 1254 - (Number(v) || 0); }, function (d) { return 1254 - d; });
-    addRow('w', 'Max width', 20, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
-    var hr = addRow('h', 'Max height', 20, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    addRow('w', 'Max width', 5, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    var hr = addRow('h', 'Max height', 5, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('r', 'Tilt (deg)', -45, 45, 0.5,
       function (v) { v = Number(v) || 0; return -(v - turnBase(v)) || 0; },
       function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); });
@@ -134,14 +134,17 @@
 
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 
-  function openDesigner(ctx) {
-    var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast;
+  function openDesigner(ctx, opts) {
+    opts = opts || {};
+    var only = opts.only || '';   // 'manage' or 'logos': open just that manager (from the admin page), no designer window
+    var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast, toast_ = ctx.showToast;
     // the Player Name and Flag box shows the admin's own name and country in the preview (members get theirs when they pick the helmet)
     var me = (typeof getProfileCache === 'function') ? (getProfileCache() || {}) : {};
     var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || 'United States', u: '12' };
     var body = mk('div', 'rch-designer');
-    var modal = ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
+    var modal = only ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
     modal.el.classList.add('rch-modal');
+    if (only && ctx.showToast) ctx.showToast('Loading...', 'success');
     // the loading lights sit in the middle of the popup
     var loadBox = mk('div'); loadBox.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:62vh';
     loadBox.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading the helmet designer...') : mk('p', 'rch-hint', 'Loading the helmet designer...'));
@@ -149,11 +152,12 @@
     try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e0) {}   // helmets may change here: every page checks for the new version next time
 
     fetchApi('getHelmetAssets', {}).then(function (res) {
-      if (!res || !res.success) { body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }
+      if (!res || !res.success) { if (only) toast_('Could not load: ' + ((res && res.message) || 'no answer.'), 'error'); body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'Could not load the helmet designer: ' + esc((res && res.message) || 'no answer from the server.'))); return; }
       H.configure({ designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], showLocked: true });
       return H.pruneDesigns().then(function () { build(res); });
     }).catch(function (err) {
       if (window.console) console.error('Helmet designer:', err);
+      if (only) toast_('No answer from the server. Try again.', 'error');
       body.innerHTML = ''; body.appendChild(mk('p', 'rch-hint', 'No answer from the server. Close this and try again.'));
     });
 
@@ -252,6 +256,8 @@
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
       var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
+      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Load Design'); loadBtn.type = 'button';
+      loadBtn.title = 'Open a saved helmet design in the designer';
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'New'); newBtn.type = 'button';
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
@@ -270,7 +276,7 @@
       cancelBtn.onclick = function () { modal.close(); };
       btns.appendChild(newBtn); btns.appendChild(saveBtn); btns.appendChild(saveNewBtn); btns.appendChild(cancelBtn);
       bar.appendChild(btns);
-      var btns2 = mk('div', 'rch-btns rch-btns-second'); btns2.appendChild(manageBtn); bar.appendChild(btns2);   // Manage Designs sits on its own row under the others
+      var btns2 = mk('div', 'rch-btns rch-btns-second'); btns2.appendChild(loadBtn); btns2.appendChild(manageBtn); bar.appendChild(btns2);   // Load Design and Manage Designs sit on their own row under the others
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
       var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
       right.appendChild(tab);
@@ -345,7 +351,7 @@
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
         H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering || sh.player || sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
-        var gP = mk('optgroup'); gP.label = 'Premium shapes';
+        var gP = mk('optgroup'); gP.label = 'Advanced shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
         lpick.appendChild(gP);
         var gG = mk('optgroup'); gG.label = 'Gradients';
@@ -384,12 +390,12 @@
       addB.onclick = function () {
         if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
-        var def = (kind === 'f') ? (H.getConfig().logos.filter(function (l) { return l.file === val; })[0] || {}) : {};
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
         var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 1 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
-          : { m: isM ? val : '', v: 'std', f: isM ? '' : val, x: def.defX != null ? def.defX : 640, y: def.defY != null ? def.defY : 770, w: def.defW != null ? def.defW : 240, h: def.defH != null ? def.defH : 170, r: def.defR != null ? def.defR : 3, sh: def.shadow === 0 ? 0 : 1 };
+          : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 1 }
+          : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
         R.logos.push(n); sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(addB);
@@ -447,10 +453,18 @@
           if (below > 0) R.ac = below; else delete R.ac;
           dragFrom = -1; draw();
         }
-        function moveItem(from, to) {
+        function stepItem(from, to) {   // arrow buttons: one step up or down the list
           if (from < 0 || from === to || to < 0 || to > items.length) return;
           var moved = items.splice(from, 1)[0];
           items.splice(Math.max(0, Math.min(items.length, to)), 0, moved);
+          applyOrder();
+        }
+        function moveItem(from, to) {   // drag and drop: the dragged item always lands directly above the one it is dropped on
+          if (from < 0 || from === to || to < 0 || to > items.length) return;
+          var moved = items[from], target = items[to];
+          items.splice(from, 1);
+          var ti = target ? items.indexOf(target) : items.length;
+          items.splice(ti, 0, moved);
           applyOrder();
         }
         function dropOn(el, pos) {
@@ -464,7 +478,6 @@
           el.addEventListener('dragend', function () { el.classList.remove('dragging'); layers.querySelectorAll('.over').forEach(function (n) { n.classList.remove('over'); }); });
         }
         var topEdge = edgeLine('Outer Shell'); dropOn(topEdge, 0); layers.appendChild(topEdge);
-        if (!R.logos.length) layers.appendChild(mk('p', 'rch-hint', 'No logos or shapes yet. Pick one above and press Add layer.'));
         items.forEach(function (it, pos) {
           if (it.acc) {
             var ar = edgeLine('Accents', 'rch-edge-acc'); dragStart(ar, pos); dropOn(ar, pos);
@@ -484,8 +497,8 @@
           var cp = mk('button', 'rch-icon', COPY_ICON); cp.type = 'button'; cp.title = 'Copy this layer (the copy goes directly above it)';
           var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove layer';
           // the arrows move a layer one step in the list, across the Accents line when it is next to it
-          up.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos - 1); };
-          dn.onclick = function (e) { e.stopPropagation(); moveItem(pos, pos + 1); };
+          up.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos - 1); };
+          dn.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos + 1); };
           rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (idx < ac) { if (ac - 1 > 0) R.ac = ac - 1; else delete R.ac; } if (sel === l) sel = null; draw(); };
           cp.onclick = function (e) {
             e.stopPropagation();
@@ -548,13 +561,14 @@
             if (hint) cw.appendChild(mk('p', 'rch-hint', hint));
             detail.appendChild(cw);
           };
-          if (gdef.gradient) {
+          if (sel.s === 'checker') { if (!sel.c2) sel.c2 = 'white'; pickColor('c', 'Color 1'); pickColor('c2', 'Color 2'); }
+          else if (gdef.gradient) {
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
             else { pickColor('c', 'Gradient color'); tailHint = 'This one fades from the color to see-through.'; }
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); if (sel.s === 'checker') tailHint = 'The checkered strip uses this color and white.';  if (gdef.pattern) tailHint = 'A pattern tile. Copy the layer and set the copy right beside it, with the same width and height, and the pattern carries on with no seam.'; }
+          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); if (gdef.pattern) tailHint = 'A pattern tile. Copy the layer and set the copy right beside it, with the same width and height, and the pattern carries on with no seam.'; }
           // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
           var tw = mk('div', 'rch-shapecolor');
           tw.appendChild(mk('div', 'rch-label', 'Transparency'));
@@ -583,7 +597,7 @@
         nameIn.disabled = isMfr;
         nameIn.placeholder = isMfr ? 'Named after the manufacturer' : 'e.g. Season 1 Champion';
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
-        status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
+        status.innerHTML = '';
         if (document.activeElement !== descIn) descIn.value = cur.desc || '';
         descCount.textContent = (cur.desc || '').length + ' / 200';
         saveNewBtn.style.display = cur.id ? '' : 'none';
@@ -785,7 +799,91 @@
         }).catch(function () {});
       }
 
-      /* ---------------- Manage Helmet Designs ---------------- */
+      /* ---------------- Load Design: opens a saved design in the designer (nothing else) ---------------- */
+      function loadWithCheck(p, closeFn) {
+        function go() { if (closeFn) closeFn(); loadPreset(p); }
+        if (!isDirty()) { go(); return; }
+        confirmBox('Save changes first?', 'The helmet in the designer has changes that have not been saved. Do you want to save them before you load "' + p.name + '"?', [
+          { label: 'Save changes', primary: true, fn: function () { if (closeFn) closeFn(); afterOk = function () { loadPreset(p); }; doSave(false); } },
+          { label: 'Don\'t save', fn: go },
+          { label: 'Cancel' }]);
+      }
+      function openLoad() {
+        var lb2 = mk('div', 'rch-loadbody');
+        var lm2 = ctx.showModal('Load Helmet Design', { bodyEl: lb2, wide: true, accentHead: true });
+        lb2.appendChild(spin('Loading...'));
+        fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
+          lb2.innerHTML = '';
+          if (!res || !res.success) { lb2.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
+          var list = res.presets || [];
+          if (!list.length) { lb2.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
+          lb2.appendChild(mk('p', 'rch-hint', 'Pick a design to open it in the designer.'));
+          KINDS.forEach(function (k) {
+            var rows = list.filter(function (p) { return p.kind === k; });
+            if (!rows.length) return;
+            lb2.appendChild(mk('div', 'rch-label rch-mt', esc(k)));
+            rows.forEach(function (p) {
+              var row = mk('div', 'rch-loadrow' + (p.active ? '' : ' rch-archived'));
+              var th = mk('div', 'rch-thumb'); row.appendChild(th); renderThumb(th, p.recipe, 140);
+              var info = mk('div', 'rch-info');
+              info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)')));
+              if (p.kind === 'Manufacturer') info.appendChild(mk('div', 'rch-psub', esc(p.manufacturer || '')));
+              row.appendChild(info);
+              var act = mk('div', 'rch-btns');
+              var lb3 = btn('Load'); lb3.onclick = function () { loadWithCheck(p, function () { lm2.close(); }); };
+              act.appendChild(lb3); row.appendChild(act); lb2.appendChild(row);
+            });
+          });
+        }).catch(function () { lb2.innerHTML = ''; lb2.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
+      }
+      loadBtn.onclick = openLoad;
+
+      /* ---------------- Edit details: name, kind, manufacturer, description (never the design itself) ---------------- */
+      function openDetails(p, list, after) {
+        var db = mk('div', 'rch-logoform');
+        var dm = ctx.showModal('Edit Helmet Details', { bodyEl: db, accentHead: true });
+        db.appendChild(mk('div', 'rch-label', 'Helmet name'));
+        var n = mk('input', 'rch-input'); n.type = 'text'; n.maxLength = 60; n.value = p.name || ''; db.appendChild(n);
+        db.appendChild(mk('div', 'rch-label rch-mt', 'Kind'));
+        var k = mk('select', 'rch-select-wide'); KINDS.forEach(function (x) { var o = mk('option'); o.value = x; o.textContent = x; k.appendChild(o); });
+        k.value = KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'; db.appendChild(k);
+        var mw = mk('div'); mw.appendChild(mk('div', 'rch-label rch-mt', 'Manufacturer'));
+        var m = mk('select', 'rch-select-wide'); var m0 = mk('option'); m0.value = ''; m0.textContent = 'Choose...'; m.appendChild(m0);
+        (assets.manufacturers || []).forEach(function (x) { var o = mk('option'); o.value = x; o.textContent = x; m.appendChild(o); });
+        m.value = p.manufacturer || ''; mw.appendChild(m); db.appendChild(mw);
+        db.appendChild(mk('div', 'rch-label rch-mt', 'Helmet description'));
+        var ds = mk('textarea', 'rch-desc'); ds.maxLength = 200; ds.rows = 3; ds.value = p.description || ''; ds.placeholder = 'Optional. A short note about this helmet (200 characters at most).'; db.appendChild(ds);
+        var dc = mk('p', 'rch-desc-count'); db.appendChild(dc);
+        var kh = mk('p', 'rch-hint'); db.appendChild(kh);
+        function sync() { var isM = k.value === 'Manufacturer'; mw.style.display = isM ? '' : 'none'; n.disabled = isM; if (isM) n.value = m.value; kh.textContent = KIND_HINTS[k.value] || ''; dc.textContent = ds.value.length + ' / 200'; }
+        k.onchange = sync; m.onchange = sync; ds.oninput = sync; sync();
+        var bt2 = mk('div', 'rch-btns rch-mt');
+        var sv2 = btn('Save Details', 'rc-btn-primary rc-btn-sm'), cn2 = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
+        bt2.appendChild(sv2); bt2.appendChild(cn2); db.appendChild(bt2);
+        cn2.onclick = function () { dm.close(); };
+        sv2.onclick = function () {
+          var kind = k.value, mfr = kind === 'Manufacturer' ? m.value : '', name = kind === 'Manufacturer' ? mfr : n.value.trim(), desc = ds.value.slice(0, 200);
+          if (kind === 'Manufacturer' && !mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
+          if (!name) { toast('Give the helmet a name first.', 'error'); n.focus(); return; }
+          var slotChanged = (kind === 'Website Default' || kind === 'Manufacturer') && (kind !== p.kind || mfr !== (p.manufacturer || ''));
+          var old = slotChanged ? (list || []).filter(function (x) { return x.active && x.presetId !== p.presetId && x.kind === kind && (kind === 'Website Default' || x.manufacturer === mfr); })[0] : null;
+          function run() {
+            sv2.disabled = true; cn2.disabled = true; sv2.textContent = 'Saving...';
+            fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(H.normalizeRecipe(p.recipe)) } }).then(function (r) {
+              if (r && r.success) {
+                if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc }; syncMeta(); }
+                refreshPresets(); toast('Details saved.', 'success'); dm.close(); if (after) after();
+              } else { sv2.disabled = false; cn2.disabled = false; sv2.textContent = 'Save Details'; toast((r && r.message) || 'Could not save.', 'error'); }
+            }).catch(function () { sv2.disabled = false; cn2.disabled = false; sv2.textContent = 'Save Details'; toast('No answer from the server.', 'error'); });
+          }
+          if (old) confirmBox(kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + mfr + ' helmet?',
+            (kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + mfr + ' helmet already exists.') + ' Do you want to make this one the replacement? The older one will be archived.',
+            [{ label: 'Replace it', primary: true, fn: run }, { label: 'Cancel' }]);
+          else run();
+        };
+      }
+
+      /* ---------------- Manage Helmet Designs: details, access, archive, delete ---------------- */
       function openManage() {
         var mb = mk('div', 'rch-loadbody');
         var mm = ctx.showModal('Manage Helmet Designs', { bodyEl: mb, wide: true, accentHead: true });
@@ -795,7 +893,7 @@
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             var list = res.presets || [];
-                        mb.appendChild(mk('p', 'rch-hint', 'Edit opens the helmet in the designer. Give to members chooses who can use it. Archive hides it from new use without losing it. A helmet that has ever been given to members cannot be deleted, only edited or archived.'));
+            mb.appendChild(mk('p', 'rch-hint', 'Edit changes the name, kind, manufacturer and description (not the design). Give to... chooses who can use a helmet. Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles. To open a design in the designer, use Load Design.'));
             if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
             KINDS.forEach(function (k) {
               var rows = list.filter(function (p) { return p.kind === k; });
@@ -814,26 +912,26 @@
                 var act = mk('div', 'rch-btns');
                 function home() {
                   act.innerHTML = '';
-                  var ed = btn('Edit'); ed.onclick = function () { loadPreset(p); mm.close(); };
-                  act.appendChild(ed);
-                  var givable = p.kind !== 'Website Default' && p.kind !== 'Manufacturer';
-                  if (givable) { var gv = btn('Give to...'); gv.onclick = function () { openAssign(p, load); }; act.appendChild(gv); }
                   if (p.active) {
+                    var ed = btn('Edit'); ed.onclick = function () { openDetails(p, list, load); };
+                    act.appendChild(ed);
+                    var givable = p.kind !== 'Website Default' && p.kind !== 'Manufacturer';
+                    if (givable) { var gv = btn('Give to...'); gv.onclick = function () { openAssign(p, load); }; act.appendChild(gv); }
                     var ar = btn('Archive'); ar.onclick = function () { confirmRow('Archive it?', 'Yes, archive', function (done) {
                       fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Inactive' } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); load(); }).catch(function () { done(false); });
                     }); };
                     act.appendChild(ar);
                   } else {
+                    // archived: Restore or Delete Forever (both fully usable)
                     var rs2 = btn('Restore', 'rc-btn-primary rc-btn-sm rc-btn-row');
                     rs2.onclick = function () { rs2.disabled = true; fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Active' } }).then(function (r2) { if (r2 && r2.success) { toast('Restored.', 'success'); load(); } else { rs2.disabled = false; toast((r2 && r2.message) || 'Could not restore it.', 'error'); } }).catch(function () { rs2.disabled = false; toast('No answer from the server.', 'error'); }); };
                     act.appendChild(rs2);
+                    var dl = btn('Delete Forever');
+                    dl.onclick = function () { confirmRow('Delete it forever? It will disappear from every profile.', 'Yes, delete forever', function (done) {
+                      fetchApi('adminDeleteHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); if (r2 && r2.success) { if (cur.id === p.presetId) { cur.id = ''; cur.saved = null; syncMeta(); } try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e3) {} load(); } }).catch(function () { done(false); });
+                    }); };
+                    act.appendChild(dl);
                   }
-                  var dl = btn('Delete');
-                  if (p.everGiven) { dl.disabled = true; dl.title = 'This helmet has been given to members, so it can only be edited or archived.'; }
-                  else dl.onclick = function () { confirmRow('Delete it for good?', 'Yes, delete', function (done) {
-                    fetchApi('adminDeleteHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); if (r2 && r2.success) { if (cur.id === p.presetId) { cur.id = ''; syncMeta(); } load(); } }).catch(function () { done(false); });
-                  }); };
-                  act.appendChild(dl);
                 }
                 function confirmRow(question, yesLabel, run) {
                   act.innerHTML = ''; act.appendChild(mk('span', 'rch-psub', question));
@@ -862,7 +960,6 @@
           if (!mres || !mres.success || !gres || !gres.success) { ab.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc(((mres && !mres.success && mres.message) || (gres && gres.message)) || 'no answer.'))); return; }
           var groupsOn = {}; (gres.groups || []).forEach(function (g) { groupsOn[g] = true; });
           var profOn = {}; (gres.profiles || []).forEach(function (x) { profOn[x] = true; });
-          ab.appendChild(mk('p', 'rch-hint', 'Members who have this helmet will find it in their Design list under the category "' + esc(p.category || 'Awards') + '".'));
           ab.appendChild(mk('div', 'rch-label', 'Groups'));
           GROUPS.forEach(function (g) {
             if (!g) { ab.appendChild(mk('div', 'rch-gap')); return; }
@@ -886,15 +983,15 @@
           var bt = mk('div', 'rch-btns rch-mt');
           var sv = btn('Save Access', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
           sv.onclick = function () {
-            sv.disabled = true;
+            sv.disabled = true; cn.disabled = true; sv.textContent = 'Saving access...';
             fetchApi('adminSaveHelmetGrants', { method: 'POST', token: token, body: {
               presetId: p.presetId,
               groups: JSON.stringify(GROUPS.filter(Boolean).map(function (g) { return g[0]; }).filter(function (g) { return groupsOn[g]; })),
               profiles: JSON.stringify(Object.keys(profOn).filter(function (k) { return profOn[k]; }))
             } }).then(function (r) {
               if (r && r.success) { toast('Saved who has "' + p.name + '".', 'success'); am.close(); if (after) after(); }
-              else { sv.disabled = false; toast((r && r.message) || 'Could not save.', 'error'); }
-            }).catch(function () { sv.disabled = false; toast('No answer from the server.', 'error'); });
+              else { sv.disabled = false; cn.disabled = false; sv.textContent = 'Save Access'; toast((r && r.message) || 'Could not save.', 'error'); }
+            }).catch(function () { sv.disabled = false; cn.disabled = false; sv.textContent = 'Save Access'; toast('No answer from the server.', 'error'); });
           };
           cn.onclick = function () { am.close(); };
           bt.appendChild(sv); bt.appendChild(cn); ab.appendChild(bt);
@@ -913,10 +1010,10 @@
             if (!res || !res.success) { lb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             all = res.logos || [];
             var top = mk('div', 'rch-btns');
-            var up = btn('Upload New Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
+            var up = btn('Add Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
             top.appendChild(up); lb.appendChild(top);
-            lb.appendChild(mk('p', 'rch-hint', 'Archive hides a logo from the designer but keeps it working on helmets that already use it. A logo that a saved helmet uses cannot be deleted.'));
-            if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Upload New Logo.')); return; }
+            lb.appendChild(mk('p', 'rch-hint', 'Archive hides a logo from the designer but keeps it on helmets that already use it. Delete Forever removes it from every helmet and profile.'));
+            if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Add Logo.')); return; }
             var cats = {}, order = [];
             all.forEach(function (l) { var c = l.category || 'Custom logos'; if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(l); });
             order.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
@@ -927,23 +1024,22 @@
                 var th = mk('div', 'rch-thumb rch-logothumb'); var im = new Image(); im.__rcSetting = true; im.src = l.data || ('assets/helmets/images/' + l.file); im.alt = ''; th.appendChild(im); row.appendChild(th);
                 var info = mk('div', 'rch-info');
                 info.appendChild(mk('div', 'rch-pname', esc(l.name) + (l.active ? '' : ' (archived)')));
-                info.appendChild(mk('div', 'rch-psub', esc((l.uploaded ? 'Uploaded' : 'File: ' + l.file) + ' - size ' + l.defW + ' x ' + l.defH + ' - tilt ' + l.defR + (l.shadow ? ' - shadow' : '') + (l.used ? ' - used by a saved helmet' : ''))));
+                info.appendChild(mk('div', 'rch-psub', esc((l.uploaded ? 'Uploaded' : 'File: ' + l.file))));
                 row.appendChild(info);
                 var act = mk('div', 'rch-btns');
                 function home() {
                   act.innerHTML = '';
-                  var ed = btn('Edit'); ed.onclick = function () { openLogoForm(l, all, function () { load(); reloadLogoAssets(); }); }; act.appendChild(ed);
                   if (l.active) {
+                    var ed = btn('Edit'); ed.onclick = function () { openLogoForm(l, all, function () { load(); reloadLogoAssets(); }); }; act.appendChild(ed);
                     var ar = btn('Archive'); ar.onclick = function () { ask('Archive it?', 'Yes, archive', function (d) { fetchApi('adminSetHelmetLogoActive', { method: 'POST', token: token, body: { logoId: l.id, active: 'Inactive' } }).then(function (r) { d(r && r.success, r && r.message); if (r && r.success) { load(); reloadLogoAssets(); } }).catch(function () { d(false); }); }); }; act.appendChild(ar);
                   } else {
                     var rs3 = btn('Restore', 'rc-btn-primary rc-btn-sm rc-btn-row');
                     rs3.onclick = function () { rs3.disabled = true; fetchApi('adminSetHelmetLogoActive', { method: 'POST', token: token, body: { logoId: l.id, active: 'Active' } }).then(function (r) { if (r && r.success) { load(); reloadLogoAssets(); } else { rs3.disabled = false; toast((r && r.message) || 'Could not restore it.', 'error'); } }).catch(function () { rs3.disabled = false; }); };
                     act.appendChild(rs3);
+                    var dl = btn('Delete Forever');
+                    dl.onclick = function () { ask('Delete it forever? It will disappear from every helmet.', 'Yes, delete forever', function (d) { fetchApi('adminDeleteHelmetLogo', { method: 'POST', token: token, body: { logoId: l.id } }).then(function (r) { d(r && r.success, r && r.message); if (r && r.success) { try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e4) {} load(); reloadLogoAssets(); } }).catch(function () { d(false); }); }); };
+                    act.appendChild(dl);
                   }
-                  var dl = btn('Delete');
-                  if (l.used) { dl.disabled = true; dl.title = 'A saved helmet uses this logo. Archive it instead.'; }
-                  else dl.onclick = function () { ask('Delete it for good?', 'Yes, delete', function (d) { fetchApi('adminDeleteHelmetLogo', { method: 'POST', token: token, body: { logoId: l.id } }).then(function (r) { d(r && r.success, r && r.message); if (r && r.success) { load(); reloadLogoAssets(); } }).catch(function () { d(false); }); }); };
-                  act.appendChild(dl);
                 }
                 function ask(q2, yesLabel, run) {
                   act.innerHTML = ''; act.appendChild(mk('span', 'rch-psub', q2));
@@ -991,87 +1087,64 @@
         });
       }
 
-      // Upload / edit one logo, with every attribute: name, category, default position, size, tilt and shadow.
+      // Add / edit one logo: picture, name and category. A logo always lands on a helmet the same way a shape does.
       function openLogoForm(logo, existing, done) {
         var isNew = !logo;
-        var d = logo ? { name: logo.name, category: logo.category || '', defX: logo.defX, defY: logo.defY, defW: logo.defW, defH: logo.defH, defR: logo.defR, shadow: logo.shadow === 0 ? 0 : 1 }
-                     : { name: '', category: '', defX: 640, defY: 770, defW: 240, defH: 170, defR: 0, shadow: 1 };
+        var d = { name: logo ? logo.name : '', category: logo ? (logo.category || '') : '' };
         var data = '';                          // a newly picked picture
         var fb = mk('div', 'rch-logoform');
-        var fm = ctx.showModal(isNew ? 'Upload New Logo' : 'Edit Logo', { bodyEl: fb, wide: true, accentHead: true });
-        var g = mk('div', 'rch-grid'); var gl = mk('div', 'rch-left'), gr = mk('div', 'rch-right'); g.appendChild(gl); g.appendChild(gr); fb.appendChild(g);
-        var prev = mk('div', 'rch-stage light'); gl.appendChild(prev);
-        gl.appendChild(mk('p', 'rch-hint', 'The helmet shows where this logo will land when you add it in the designer.'));
-
-        var sec = mk('div', 'rch-section'); gr.appendChild(sec);
-        sec.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
-        var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; sec.appendChild(fi);
-        var fstat = mk('p', 'rch-hint'); sec.appendChild(fstat);
-        sec.appendChild(mk('div', 'rch-label rch-mt', 'Name'));
+        var fm = ctx.showModal(isNew ? 'Add Logo' : 'Edit Logo', { bodyEl: fb, accentHead: true });
+        fb.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
+        var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; fb.appendChild(fi);
+        var fstat = mk('p', 'rch-hint'); fb.appendChild(fstat);
+        fb.appendChild(mk('div', 'rch-label rch-mt', 'Name'));
         var nm = mk('input', 'rch-input'); nm.type = 'text'; nm.maxLength = 60; nm.value = d.name; nm.placeholder = 'e.g. Race Club logo'; nm.oninput = function () { d.name = nm.value; };
-        sec.appendChild(nm);
-        sec.appendChild(mk('div', 'rch-label rch-mt', 'Category (the group it is listed under in the designer)'));
-        var cp = catPicker((existing || []).map(function (l) { return l.category; }), d.category); sec.appendChild(cp.el);
+        fb.appendChild(nm);
+        fb.appendChild(mk('div', 'rch-label rch-mt', 'Category (the group it is listed under in the designer)'));
+        var cp = catPicker((existing || []).map(function (l) { return l.category; }), d.category); fb.appendChild(cp.el);
 
-        var sec2 = mk('div', 'rch-section'); gr.appendChild(sec2);
-        sec2.appendChild(mk('div', 'rch-label', 'Starting position and size when added to a helmet'));
-        var lgrid = makeGrid({ keys: { x: 'defX', y: 'defY', w: 'defW', h: 'defH', r: 'defR' }, obj: function () { return d; },
-          layer: function () { return { m: '', v: 'std', f: data ? 'u:__tmp__' : (logo ? logo.file : '') }; }, changed: function () { drawPrev(); } });
-        sec2.appendChild(lgrid.el);
-        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = !!d.shadow; shc.onchange = function () { d.shadow = shc.checked ? 1 : 0; drawPrev(); };
-        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow'));
-        var lopts = mk('div', 'rch-btns'); lopts.appendChild(shl);
-        makeRotateButtons(function () { return d; }, 'defR', function () { lgrid.sync(); drawPrev(); }).forEach(function (bn) { lopts.appendChild(bn); });
-        sec2.appendChild(lopts);
-
-        var bt = mk('div', 'rch-btns');
+        var bt = mk('div', 'rch-btns rch-mt');
         var sv = btn('Save Logo', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
-        bt.appendChild(sv); bt.appendChild(cn); gr.appendChild(bt);
-
-        var TMP = { id: '__tmp__', data: '', active: true };
-        var logosCfg = H.getConfig().logos;
-        function dropTmp() { var i = logosCfg.indexOf(TMP); if (i >= 0) logosCfg.splice(i, 1); }
-        var pbusy = false, pagain = false;
-        function drawPrev() {
-          var f = data ? 'u:__tmp__' : (logo ? logo.file : '');
-          if (!f) { prev.innerHTML = ''; prev.appendChild(mk('p', 'rch-hint', 'Choose a picture to see it on a helmet.')); return; }
-          if (data) { TMP.data = data; if (logosCfg.indexOf(TMP) < 0) logosCfg.push(TMP); }
-          if (pbusy) { pagain = true; return; }
-          pbusy = true;
-          var rec = H.normalizeRecipe(H.defaultRecipe());
-          rec.logos = [{ m: '', v: 'std', f: f, x: d.defX, y: d.defY, w: d.defW, h: d.defH, r: d.defR, sh: d.shadow }];
-          H.render(rec, { width: 420 }).then(function (cv) { prev.innerHTML = ''; cv.style.maxWidth = '100%'; cv.style.height = 'auto'; prev.appendChild(cv); }).catch(function () {}).then(function () { pbusy = false; if (pagain) { pagain = false; drawPrev(); } });
-        }
-        fm.closeBtn.addEventListener('click', dropTmp);
-        cn.onclick = function () { dropTmp(); fm.close(); };
+        var arB = (!isNew && logo.active) ? btn('Archive', 'rc-btn-secondary rc-btn-sm') : null;
+        bt.appendChild(sv); if (arB) bt.appendChild(arB); bt.appendChild(cn); fb.appendChild(bt);
+        function setBusy(on, label) { sv.disabled = on; sv.textContent = on ? (label || 'Saving...') : 'Save Logo'; cn.disabled = on; if (arB) arB.disabled = on; fm.closeBtn.disabled = on; fm.closeBtn.style.opacity = on ? '0.35' : ''; fm.closeBtn.style.pointerEvents = on ? 'none' : ''; }
+        cn.onclick = function () { fm.close(); };
         fi.onchange = function () {
           var f = fi.files && fi.files[0]; if (!f) return;
           fstat.textContent = 'Shrinking the picture...';
           processImage(f).then(function (out) {
             data = out; fstat.textContent = 'Ready (' + Math.round(out.length / 1024) + ' KB after shrinking).';
             if (!d.name) { d.name = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '); nm.value = d.name; }
-            drawPrev(); lgrid.loadAspect();
           }).catch(function (e) { data = ''; fstat.textContent = e.message; });
+        };
+        if (arB) arB.onclick = function () {
+          confirmBox('Archive this logo?', 'It will no longer be offered in the designer, but helmets that already use it keep it. You can restore it later in Manage Logos.', [
+            { label: 'Archive', primary: true, fn: function () {
+              setBusy(true, 'Archiving...');
+              fetchApi('adminSetHelmetLogoActive', { method: 'POST', token: token, body: { logoId: logo.id, active: 'Inactive' } }).then(function (r) {
+                if (r && r.success) { toast('Logo archived.', 'success'); fm.close(); if (done) done(); }
+                else { setBusy(false); toast((r && r.message) || 'Could not archive it.', 'error'); }
+              }).catch(function () { setBusy(false); toast('No answer from the server.', 'error'); });
+            } },
+            { label: 'Cancel' }]);
         };
         sv.onclick = function () {
           if (!d.name.trim()) { toast('Give the logo a name.', 'error'); nm.focus(); return; }
           if (isNew && !data) { toast('Choose a picture first.', 'error'); return; }
-          var cat = cp.get();
-          function setBusy(on) { sv.disabled = on; sv.textContent = on ? 'Saving...' : 'Save Logo'; cn.disabled = on; fm.closeBtn.disabled = on; fm.closeBtn.style.opacity = on ? '0.35' : ''; fm.closeBtn.style.pointerEvents = on ? 'none' : ''; }
           setBusy(true);
           fetchApi('adminSaveHelmetLogo', { method: 'POST', token: token, body: {
-            logoId: logo ? logo.id : '', name: d.name.trim(), category: cat, data: data,
-            defX: String(d.defX), defY: String(d.defY), defW: String(d.defW), defH: String(d.defH), defR: String(d.defR), shadow: String(d.shadow)
+            logoId: logo ? logo.id : '', name: d.name.trim(), category: cp.get(), data: data,
+            defX: '640', defY: '770', defW: '220', defH: '220', defR: '0', shadow: '0'
           } }).then(function (r) {
-            if (r && r.success) { dropTmp(); toast('Logo saved.', 'success'); fm.close(); if (done) done(); }
+            if (r && r.success) { toast('Logo saved.', 'success'); fm.close(); if (done) done(); }
             else { setBusy(false); toast((r && r.message) || 'Could not save the logo.', 'error'); }
           }).catch(function () { setBusy(false); toast('No answer from the server.', 'error'); });
         };
-        drawPrev(); lgrid.loadAspect();
       }
 
       refreshPresets();
       syncMeta(); draw();
+      if (only === 'manage') openManage(); else if (only === 'logos') openLogoManager();
     }
   }
 

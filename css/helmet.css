@@ -132,7 +132,7 @@
 
 /* admin: category row, manager popups */
 .rch-catrow { margin-top: 10px; }
-.rch-archived { opacity: 0.6; }
+.rch-archived .rch-thumb, .rch-archived .rch-info { opacity: 0.5; }
 .rch-logothumb { display: flex; align-items: center; justify-content: center; background: var(--rc-offwhite); border-radius: 6px; min-width: 90px; }
 .rch-logothumb img { max-width: 80px; max-height: 70px; }
 .rch-memberlist { max-height: 260px; overflow-y: auto; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--rc-white); }

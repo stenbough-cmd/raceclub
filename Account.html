@@ -6,15 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=26">
+<link rel="stylesheet" href="css/helmet.css?v=27">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/reference-data.js"></script>
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
-<script src="js/helmet.js?v=28"></script>
-<script src="js/helmet-editor.js?v=40"></script>
+<script src="js/helmet.js?v=29"></script>
+<script src="js/helmet-editor.js?v=41"></script>
 </head>
 <body>
 
@@ -5934,13 +5934,20 @@
     var helmetPanel = el('div', 'rc-panel rc-dash-card');
     helmetPanel.appendChild(el('h3', 'rc-dash-card-title', 'Helmet Designer'));
     var helmetBox = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
-    var helmetBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Open Helmet Designer');
-    helmetBtn.type = 'button';
-    helmetBtn.addEventListener('click', function () {
-      if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-      window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast });
-    });
-    helmetBox.appendChild(helmetBtn);
+    var helmetBtnRow = el('div', 'display:flex;flex-wrap:wrap;gap:8px;');
+    function helmetOpener(label, only) {
+      var hb = el('button', 'rc-btn-secondary rc-btn-sm', label);
+      hb.type = 'button';
+      hb.addEventListener('click', function () {
+        if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
+        window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, only ? { only: only } : null);
+      });
+      helmetBtnRow.appendChild(hb);
+    }
+    helmetOpener('Open Helmet Designer', '');
+    helmetOpener('Manage Designs', 'manage');
+    helmetOpener('Manage Logos', 'logos');
+    helmetBox.appendChild(helmetBtnRow);
     [
       'Opens a large popup where you design the racing helmets the site uses: the default helmet new drivers start with, each manufacturer\'s team helmet, and special event or label helmets. Drivers will get a simpler version of this later, with the colors and finishes but without logos.',
       'How it works: pick a design, then choose the Base, Accent 1 and Accent 2 colors, a finish for each (gloss, matte, satin, metallic, pearl, candy or carbon) and a visor. The small rainbow circle at the end of each color row lets you pick any exact color, which drivers cannot do.',

@@ -53,11 +53,12 @@
 
   var VISORS = [
     { id: 'smoke', name: 'Smoke',       c1: '#3b424d', c2: '#0a0c10' },
-    { id: 'clear', name: 'Clear',       c1: '#aebdc9', c2: '#4b5d6b' },
+    { id: 'clear', name: 'Clear',       c1: '#e4eef5', c2: '#7d93a3', a: 0.42 },   // a = how solid it is: a clear visor lets the dark inside of the helmet show through
     { id: 'gold',  name: 'Gold',        c1: '#fcd34d', c2: '#92400e' },
     { id: 'blue',  name: 'Blue',        c1: '#5b9bff', c2: '#0b2a6b' },
     { id: 'green', name: 'Green',       c1: '#4ade80', c2: '#0f5132' },
-    { id: 'red',   name: 'Red',         c1: '#f87171', c2: '#7f1d1d' }
+    { id: 'red',   name: 'Red',         c1: '#f87171', c2: '#7f1d1d' },
+    { id: 'purple', name: 'Purple',     c1: '#c084fc', c2: '#3b0764' }
   ];
 
   // how strongly the shared highlight layer shows on each finish
@@ -76,7 +77,7 @@
     { id: 'rect', name: 'Rectangle', draw: function (c, w, h) { c.beginPath(); c.rect(-w / 2, -h / 2, w, h); c.fill(); } },
     { id: 'round', name: 'Rounded rectangle', draw: function (c, w, h) { rrect(c, -w / 2, -h / 2, w, h, Math.min(w, h) * 0.25); c.fill(); } },
     { id: 'pill', name: 'Pill', draw: function (c, w, h) { rrect(c, -w / 2, -h / 2, w, h, Math.min(w, h) / 2); c.fill(); } },
-    { id: 'circle', name: 'Circle / oval', draw: function (c, w, h) { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); } },
+    { id: 'circle', name: 'Circle', draw: function (c, w, h) { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.fill(); } },
     { id: 'ring', name: 'Ring', draw: function (c, w, h) { c.beginPath(); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); c.ellipse(0, 0, w * 0.32, h * 0.32, 0, 0, Math.PI * 2, true); c.fill('evenodd'); } },
     { id: 'triangle', name: 'Triangle', draw: function (c, w, h) { poly(c, [[0, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]); c.fill(); } },
     { id: 'diamond', name: 'Diamond', draw: function (c, w, h) { poly(c, [[0, -h / 2], [w / 2, 0], [0, h / 2], [-w / 2, 0]]); c.fill(); } },
@@ -87,9 +88,9 @@
     { id: 'chevron', name: 'Chevron', draw: function (c, w, h) { poly(c, [[-w / 2, -h / 2], [w * 0.15, -h / 2], [w / 2, 0], [w * 0.15, h / 2], [-w / 2, h / 2], [-w * 0.15, 0]]); c.fill(); } },
     { id: 'stripe', name: 'Slanted stripe', draw: function (c, w, h) { poly(c, [[-w / 2 + w * 0.25, -h / 2], [w / 2, -h / 2], [w / 2 - w * 0.25, h / 2], [-w / 2, h / 2]]); c.fill(); } },
     { id: 'cross', name: 'Cross', draw: function (c, w, h) { var a = w * 0.17, b = h * 0.17; poly(c, [[-a, -h / 2], [a, -h / 2], [a, -b], [w / 2, -b], [w / 2, b], [a, b], [a, h / 2], [-a, h / 2], [-a, b], [-w / 2, b], [-w / 2, -b], [-a, -b]]); c.fill(); } },
-    { id: 'checker', name: 'Checkered strip', draw: function (c, w, h) {
+    { id: 'checker', name: 'Checkered strip', colors: 2, draw: function (c, w, h, a, b2) {
         var cols = 8, rows = 2, cw = w / cols, ch = h / rows, x, y, fillStyle = c.fillStyle;
-        for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? '#ffffff' : fillStyle; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
+        for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? (b2 || '#ffffff') : fillStyle; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
         c.fillStyle = fillStyle; } }
   ];
 
@@ -128,13 +129,12 @@
     pshape('flame_swept', 'Flame streaks', [['M', 1, -0.86], ['C', 0.5, -0.9, 0.1, -0.7, -0.45, -1.02], ['C', -0.05, -0.62, 0.5, -0.3, 1, -0.34], ['Z'], ['M', 1, -0.24], ['C', 0.5, -0.28, 0.1, -0.08, -1, -0.4], ['C', -0.6, 0.0, 0.5, 0.32, 1, 0.28], ['Z'], ['M', 1, 0.36], ['C', 0.5, 0.32, 0.1, 0.52, -0.6, 0.2], ['C', -0.2, 0.6, 0.5, 0.92, 1, 0.88], ['Z']]),
     pshape('flame_trio', 'Triple flame', [['M', -1, 1], ['C', -1, 0.3, -0.75, 0.1, -0.7, -0.35], ['C', -0.6, -0.05, -0.45, 0.05, -0.4, 0.4], ['C', -0.35, -0.2, -0.1, -0.5, -0.05, -1], ['C', 0.15, -0.55, 0.3, -0.3, 0.3, 0.35], ['C', 0.4, 0.15, 0.5, -0.1, 0.5, -0.4], ['C', 0.85, -0.05, 1, 0.4, 1, 1], ['Z']]),
     pshape('lightning', 'Lightning bolt', [['M', 0.2, -1], ['L', -0.7, 0.15], ['L', -0.1, 0.15], ['L', -0.35, 1], ['L', 0.75, -0.2], ['L', 0.1, -0.2], ['Z']]),
-    pshape('wing', 'Wing', [['M', -1, 0.9], ['C', -1, 0.1, -0.5, -0.5, 0.3, -0.75], ['C', 0.55, -0.85, 0.85, -0.85, 1, -0.75], ['C', 0.7, -0.65, 0.6, -0.55, 0.65, -0.45], ['C', 0.45, -0.5, 0.3, -0.4, 0.3, -0.3], ['C', 0.5, -0.3, 0.55, -0.15, 0.45, 0], ['C', 0.3, -0.05, 0.15, 0.05, 0.1, 0.2], ['C', 0.3, 0.2, 0.3, 0.35, 0.15, 0.5], ['C', -0.1, 0.45, -0.3, 0.6, -0.35, 0.8], ['C', -0.55, 0.75, -0.8, 0.8, -1, 0.9], ['Z']]),
     pshape('shield', 'Shield', [['M', 0, -1], ['C', 0.3, -0.8, 0.65, -0.7, 0.9, -0.7], ['C', 0.9, 0.1, 0.7, 0.65, 0, 1], ['C', -0.7, 0.65, -0.9, 0.1, -0.9, -0.7], ['C', -0.65, -0.7, -0.3, -0.8, 0, -1], ['Z']]),
     pshape('crown', 'Crown', [['M', -1, 0.8], ['L', -1, -0.5], ['L', -0.5, 0], ['L', 0, -0.9], ['L', 0.5, 0], ['L', 1, -0.5], ['L', 1, 0.8], ['Z']]),
     pshape('starburst', 'Starburst', ngon(16, 1, 0.62)),
     pshape('arrow', 'Arrow', [['M', -1, -0.3], ['L', 0.2, -0.3], ['L', 0.2, -1], ['L', 1, 0], ['L', 0.2, 1], ['L', 0.2, 0.3], ['L', -1, 0.3], ['Z']]),
     pshape('double_chevron', 'Double chevron', [['M', -1, -1], ['L', -0.5, -1], ['L', 0, 0], ['L', -0.5, 1], ['L', -1, 1], ['L', -0.5, 0], ['Z'], ['M', 0.05, -1], ['L', 0.55, -1], ['L', 1.05, 0], ['L', 0.55, 1], ['L', 0.05, 1], ['L', 0.55, 0], ['Z']]),
-    pshape('speed_lines', 'Speed lines', [['M', -0.3, -1], ['L', 1, -1], ['L', 0.8, -0.65], ['L', -0.5, -0.65], ['Z'], ['M', -1, -0.2], ['L', 0.7, -0.2], ['L', 0.5, 0.15], ['L', -1, 0.15], ['Z'], ['M', -0.1, 0.65], ['L', 1, 0.65], ['L', 0.8, 1], ['L', -0.3, 1], ['Z']]),
+    pshape('speed_lines', 'Speed lines', [['M', -0.3, -0.875], ['L', 1.0, -0.875], ['L', 0.9, -0.7250000000000001], ['L', -0.4, -0.7250000000000001], ['Z'], ['M', -1.0, -0.47500000000000003], ['L', 0.7, -0.47500000000000003], ['L', 0.6, -0.325], ['L', -1.1, -0.325], ['Z'], ['M', -0.6, -0.075], ['L', 1.0, -0.075], ['L', 0.9, 0.075], ['L', -0.7, 0.075], ['Z'], ['M', -1.0, 0.325], ['L', 0.55, 0.325], ['L', 0.45, 0.47500000000000003], ['L', -1.1, 0.47500000000000003], ['Z'], ['M', -0.2, 0.7250000000000001], ['L', 1.0, 0.7250000000000001], ['L', 0.9, 0.875], ['L', -0.3, 0.875], ['Z']]),
     pshape('claw', 'Claw marks', [['M', -0.85, -1], ['C', -0.55, -0.4, -0.5, 0.3, -0.7, 1], ['C', -0.95, 0.4, -1, -0.4, -0.85, -1], ['Z'], ['M', -0.15, -1], ['C', 0.2, -0.4, 0.25, 0.3, 0.05, 1], ['C', -0.25, 0.4, -0.3, -0.4, -0.15, -1], ['Z'], ['M', 0.6, -1], ['C', 0.95, -0.4, 1, 0.3, 0.8, 1], ['C', 0.5, 0.4, 0.45, -0.4, 0.6, -1], ['Z']]),
     pshape('swoosh', 'Swoosh', [['M', -1, 0.6], ['C', -0.4, 0.55, 0.3, 0.1, 1, -0.8], ['C', 0.6, -0.2, 0.1, 0.45, -0.35, 0.75], ['C', -0.6, 0.9, -0.85, 0.85, -1, 0.6], ['Z']]),
     pshape('crescent', 'Crescent', [['M', 0.35, -0.95], ['C', -0.55, -0.95, -1, -0.45, -1, 0.05], ['C', -1, 0.6, -0.55, 1, 0.1, 1], ['C', 0.5, 1, 0.8, 0.85, 0.95, 0.65], ['C', 0.2, 0.7, -0.35, 0.3, -0.35, -0.15], ['C', -0.35, -0.5, -0.05, -0.8, 0.35, -0.95], ['Z']]),
@@ -149,9 +149,8 @@
     })(), true),
     pshape('target', 'Target', circ(0, 0, 1).concat(circ(0, 0, 0.78), circ(0, 0, 0.5), circ(0, 0, 0.24)), true),
     pshape('spikes', 'Spikes', [['M', -1, 1], ['L', -0.85, -0.2], ['L', -0.7, 1], ['L', -0.55, -0.6], ['L', -0.4, 1], ['L', -0.25, -1], ['L', -0.1, 1], ['L', 0.05, -0.6], ['L', 0.2, 1], ['L', 0.35, -0.3], ['L', 0.5, 1], ['L', 0.65, -0.1], ['L', 0.8, 1], ['L', 0.9, 0.2], ['L', 1, 1], ['Z']]),
-    pshape('droplet', 'Droplet', [['M', 0, -1], ['C', 0.25, -0.55, 0.9, 0.05, 0.9, 0.45], ['C', 0.9, 0.8, 0.5, 1, 0, 1], ['C', -0.5, 1, -0.9, 0.8, -0.9, 0.45], ['C', -0.9, 0.05, -0.25, -0.55, 0, -1], ['Z']]),
+    pshape('droplet', 'Droplet', [['M', 0, -1], ['C', 0.3, -0.55, 0.9, -0.2, 0.9, 0.1], ['C', 0.9, 0.597, 0.497, 1, 0, 1], ['C', -0.497, 1, -0.9, 0.597, -0.9, 0.1], ['C', -0.9, -0.2, -0.3, -0.55, 0, -1], ['Z']]),
     pshape('paw', 'Paw print', [['M', 0, 0.05], ['C', 0.4, 0.05, 0.75, 0.45, 0.65, 0.8], ['C', 0.55, 1, 0.25, 0.85, 0, 0.85], ['C', -0.25, 0.85, -0.55, 1, -0.65, 0.8], ['C', -0.75, 0.45, -0.4, 0.05, 0, 0.05], ['Z']].concat(circ(-0.72, -0.1, 0.2), circ(-0.28, -0.55, 0.22), circ(0.28, -0.55, 0.22), circ(0.72, -0.1, 0.2))),
-    pshape('skull', 'Skull', [['M', 0, -1], ['C', 0.6, -1, 0.95, -0.6, 0.95, -0.1], ['C', 0.95, 0.3, 0.7, 0.45, 0.55, 0.55], ['L', 0.55, 0.95], ['L', -0.55, 0.95], ['L', -0.55, 0.55], ['C', -0.7, 0.45, -0.95, 0.3, -0.95, -0.1], ['C', -0.95, -0.6, -0.6, -1, 0, -1], ['Z']].concat(circ(-0.36, -0.1, 0.24), circ(0.36, -0.1, 0.24), [['M', 0, 0.2], ['L', 0.12, 0.45], ['L', -0.12, 0.45], ['Z']]), true)
   ];
   Array.prototype.push.apply(SHAPES, PREMIUM_SHAPES);
   // Gradient layers: draw(c, w, h, color1, color2). 'colors: 2' shapes use both colors; 'colors: 1' shapes fade the one color out to see-through.
@@ -162,7 +161,7 @@
     { id: 'g_fade', name: 'Fade to clear', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_band', name: 'Soft band', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, clear(a)); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_radial', name: 'Two-color radial', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
-    { id: 'g_glow', name: 'Glow (fades to clear)', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
+    { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
   ];
   Array.prototype.push.apply(SHAPES, GRADIENTS);
   // Weathering layers: scratches, scuffs and wear drawn in one color (the same marks every time: they use a fixed seed).
@@ -389,7 +388,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
         if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
-        if (shapeById(l.s).gradient) sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : 'black';
+        if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : (l.s === 'checker' ? 'white' : 'black');
         out.logos.push(sl);
         return;
       }
@@ -667,7 +666,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             vr += (255 - vr) * glint; vg += (255 - vg) * glint; vb += (255 - vb) * glint;
             var lm = 0.75 + 0.35 * ((bR + bG + bB) / 765);
             vr *= lm; vg *= lm; vb *= lm;
-            r = r * (1 - gl) + vr * gl; g = g * (1 - gl) + vg * gl; b = b * (1 - gl) + vb * gl;
+            var va = vis.a == null ? 1 : vis.a, ga = gl * (va + (1 - va) * glint);   // a see-through visor keeps its glare solid
+            r = r * (1 - ga) + vr * ga; g = g * (1 - ga) + vg * ga; b = b * (1 - ga) + vb * ga;
           }
           out[o] = clamp(r, 0, 255); out[o + 1] = clamp(g, 0, 255); out[o + 2] = clamp(b, 0, 255); out[o + 3] = m2[o] ;
         }
