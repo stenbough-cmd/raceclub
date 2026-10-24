@@ -242,3 +242,6 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-desc { display: block; width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); color: var(--rc-carbon); }
 .rch-desc-count { margin: 4px 0 0; text-align: right; font-size: 11px; color: var(--rc-steel); }
 .rch-descwrap { margin-top: 10px; }
+.rch-collhead { margin: 10px 0 0 2px; font-weight: 700; color: var(--rc-carbon); }
+.rch-mirror.rch-on { border-color: var(--rc-red); color: var(--rc-red); }
+.rch-rotrow { flex-basis: 100%; flex-wrap: nowrap; }

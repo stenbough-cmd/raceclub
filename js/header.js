@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=32'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=33'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=27'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=28'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
@@ -213,14 +213,13 @@ function _rcBuildAccountMenuSectionLinks(role) {
   html += DIV;
   html += '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span>' + EXT + '</a>';
   // Championship (CHAMP chat, 2026-10-08): the driver's own offline championship page. Open to Admins and to anyone
-  // with Championship Access (the + on their role); everyone else sees it grayed out and unclickable.
+  // with Championship Access (the + on their role); everyone else does not see it at all.
   var champProfile = myProfile;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
   if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span>' + EXT + '</a>';
-  } else {
-    html += '<span class="rc-header-menu-item" aria-disabled="true" title="Needs Championship Access (the + on your role)." style="opacity:0.4;cursor:not-allowed;">' + _rcMenuIcon_('champ') + '<span>Championship</span></span>';
   }
+  // no Championship access (no +): the link is simply not there (Matt, 2026-10-24)
   var staff = '';
   if (role === 'Admin' || role === 'Organizer') staff += link('league', 'League Tools', 'league');
   if (role === 'Admin' || role === 'Organizer' || role === 'Steward') staff += link('stewarding', 'Stewarding', 'steward');
@@ -408,6 +407,20 @@ function _rcWireNavLogos_(mount) {
   });
 }
 
+// The Championship logo badge (CHAMP chat, 2026-10-09): its own badge with the League Hub classes so it sits the same distance from
+// League Hub as League Hub sits from the Race Club logo. Returned only when the saved login profile is an Admin or has Championship
+// Access (the +); otherwise an empty string, so everyone else never sees the Championship at all.
+function _rcChampBadgeHtml_() {
+  var p = null;
+  try { p = (typeof getToken === 'function' && getToken() && typeof getProfileCache === 'function') ? getProfileCache() : null; } catch (e) { p = null; }
+  if (!p || !(p.role === 'Admin' || p.champAccess)) return '';
+  return '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
+           '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
+             '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
+           '</a>' +
+         '</span>';
+}
+
 // Shows just the logo -- no HOME/LOGIN/ACCOUNT at all -- while a page is still waiting to find out
 // whether its own session is actually valid. Used by Account.html in place of an immediate
 // renderHeader() call, so the navbar never asserts a login state (or a logged-out state) it hasn't
@@ -429,13 +442,8 @@ function renderHeaderPending() {
         '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
       '</a>' +
     '</span>' +
-    // Championship logo (CHAMP chat, 2026-10-09): its own badge with the League Hub classes, so it
-    // gets the same responsive gap from League Hub as League Hub has from the Race Club logo.
-    '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
-      '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
-        '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
-      '</a>' +
-    '</span>' +
+    // Championship logo: only for accounts with the + (Championship Access) and Admins, judged from the saved login profile.
+    _rcChampBadgeHtml_() +
     '<nav class="rc-header-nav"></nav>';
 }
 
@@ -470,16 +478,8 @@ function renderHeader(opts) {
               '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
             '</a>' +
           '</span>';
-  // Championship logo (CHAMP chat, 2026-10-09): its own badge with the League Hub classes, so it
-  // sits the same distance from League Hub as League Hub sits from the Race Club logo (48px, 12px
-  // on tablets). Links to championship.html: your own championship, or the Welcome box and demo.
-  // padding-left 14px: the League Hub image has more blank edge than this one, so the visible gaps
-  // only match with it. top:-1px lifts the logo 1px so it sits centred in the bar (Matt).
-  html += '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
-            '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
-              '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
-            '</a>' +
-          '</span>';
+  // Championship logo: only for accounts with the + (Championship Access) and Admins; nobody else sees it (Matt, 2026-10-24).
+  html += (token ? _rcChampBadgeHtml_() : '');
   html += '<nav class="rc-header-nav">';
   // Logged-in behavior is unchanged -- League Hub still lives in the account dropdown (see the menu
   // markup below), never duplicated in the top bar either way.
@@ -558,7 +558,6 @@ function renderHeader(opts) {
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
               '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
-              '<a class="rc-header-menu-item" href="championship.html">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>' +
               '<hr class="rc-header-menu-divider">' +
               '<a class="rc-header-menu-item" href="login.html">' + _rcMenuIcon_('login') + '<span>Register / Login</span></a>' +
             '</div>';

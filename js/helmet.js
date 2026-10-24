@@ -58,7 +58,11 @@
     { id: 'blue',  name: 'Blue',        c1: '#5b9bff', c2: '#0b2a6b' },
     { id: 'green', name: 'Green',       c1: '#4ade80', c2: '#0f5132' },
     { id: 'red',   name: 'Red',         c1: '#f87171', c2: '#7f1d1d' },
-    { id: 'purple', name: 'Purple',     c1: '#c084fc', c2: '#3b0764' }
+    { id: 'purple', name: 'Purple',     c1: '#c084fc', c2: '#3b0764' },
+    // gradient lenses in the style of Oakley bi-color / tri-color visors: stops run from the top of the visor to the bottom
+    { id: 'sunset', name: 'Sunset',     c1: '#ffcf6b', c2: '#3d1a78', stops: ['#ffcf6b', '#f0527e', '#3d1a78'] },
+    { id: 'ocean',  name: 'Ocean',      c1: '#66f0d6', c2: '#0b2766', stops: ['#66f0d6', '#2a8fe0', '#0b2766'] },
+    { id: 'fire',   name: 'Fire',       c1: '#ffe14a', c2: '#d62a1a', stops: ['#ffe14a', '#d62a1a'] }
   ];
 
   // how strongly the shared highlight layer shows on each finish
@@ -387,6 +391,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (l && l.s && shapeById(l.s)) {
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
         if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
+        if (l.fx) sl.fx = 1;   // fx = mirrored left to right
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : (l.s === 'checker' ? 'white' : 'black');
         out.logos.push(sl);
@@ -394,6 +399,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       }
       if (!l || !(l.f || l.m)) return;
       var il = { m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
+      if (l.fx) il.fx = 1;
       if (l.st) il.st = 1;   // width and height set apart: the picture is stretched to the box
       if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
       out.logos.push(il);
@@ -609,7 +615,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var cB = hexRgb(recipe.b[0]), cA1 = hexRgb(recipe.a1[0]), cA2 = hexRgb(recipe.a2[0]);
       var kB = recipe.b[1], kA1 = recipe.a1[1], kA2 = recipe.a2[1];
       var sB = SPEC_K[kB], sA1 = SPEC_K[kA1], sA2 = SPEC_K[kA2];
-      var vis = findVisor(recipe.v), v1 = hexRgb(vis.c1), v2 = hexRgb(vis.c2);
+      var vis = findVisor(recipe.v), v1 = hexRgb(vis.c1), v2 = hexRgb(vis.c2), vst = vis.stops ? vis.stops.map(hexRgb) : null;
 
       var N = Wt * Ht;
       var out = new Float32Array(N * 4);
@@ -660,6 +666,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           if (gl > 0.001) {
             var t2 = clamp(((sx - 80) + (sy - 420) * 0.6) / 700, 0, 1);
             var vr = v1[0] * (1 - t2) + v2[0] * t2, vg = v1[1] * (1 - t2) + v2[1] * t2, vb = v1[2] * (1 - t2) + v2[2] * t2;
+            if (vst) { var tv = clamp((sy - 440) / 250, 0, 1), sp = tv * (vst.length - 1), si = Math.min(vst.length - 2, Math.floor(sp)), sf = sp - si; vr = vst[si][0] * (1 - sf) + vst[si + 1][0] * sf; vg = vst[si][1] * (1 - sf) + vst[si + 1][1] * sf; vb = vst[si][2] * (1 - sf) + vst[si + 1][2] * sf; }
             var gdx = sx - (230 + (sy - 420) * -0.30), gdx2 = sx - (330 + (sy - 420) * -0.30);
             var glint = (Math.exp(-(gdx / 38) * (gdx / 38)) * 0.55 + Math.exp(-(gdx2 / 10) * (gdx2 / 10)) * 0.5) * 0.8;
             glint = glint > 1 ? 1 : glint;
@@ -716,6 +723,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           g.save();
           g.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           g.rotate(-l.r * Math.PI / 180);
+          if (l.fx) g.scale(-1, 1);   // mirrored left to right
           if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           if (isPlayerId(l.s)) {
