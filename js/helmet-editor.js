@@ -151,7 +151,7 @@
       function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }
       var R = blankRecipe();
       var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
-      var cur = { id: '', name: '', kind: 'Awards', mfr: '' };
+      var cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '' };
       var afterOk = null;                                      // runs once after the next successful save (Save changes, then New)
       // The file tab above the Save box: the loaded helmet as "Name (ID)", an asterisk when it has unsaved changes, or "New".
       var FILE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
@@ -159,7 +159,8 @@
       var tabLabel = mk('span', 'rch-tab-label'); tab.appendChild(tabLabel);
       function isDirty() {
         if (JSON.stringify(R) !== JSON.stringify(baseline)) return true;
-        if (!cur.id) return !!String(cur.name || '').trim();
+        if (!cur.id) return !!String(cur.name || '').trim() || !!String(cur.desc || '').trim();
+        if (cur.saved && String(cur.saved.desc || '') !== String(cur.desc || '')) return true;
         return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
       }
       function updateTab() {
@@ -223,6 +224,12 @@
       mfrWrap.appendChild(mfrSel);
       var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap);
       bar.appendChild(mcRow);
+      // optional description (200 characters at most); the note about the chosen Kind sits under it
+      var descWrap = mk('div', 'rch-descwrap'); descWrap.appendChild(mk('div', 'rch-label', 'Helmet description'));
+      var descIn = mk('textarea', 'rch-desc'); descIn.maxLength = 200; descIn.rows = 3; descIn.placeholder = 'Optional. A short note about this helmet (200 characters at most).';
+      var descCount = mk('p', 'rch-desc-count');
+      descIn.oninput = function () { cur.desc = descIn.value; descCount.textContent = descIn.value.length + ' / 200'; updateTab(); };
+      descWrap.appendChild(descIn); descWrap.appendChild(descCount); bar.appendChild(descWrap);
       var kindHint = mk('p', 'rch-hint'); bar.appendChild(kindHint);
       kindSel.onchange = function () { cur.kind = kindSel.value; syncMeta(); };
       mfrSel.onchange = function () { cur.mfr = mfrSel.value; if (cur.kind === 'Manufacturer') { cur.name = cur.mfr; } syncMeta(); };
@@ -235,7 +242,7 @@
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'New'); newBtn.type = 'button';
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
-        R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '' }; baseline = JSON.parse(JSON.stringify(R));
+        R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '' }; baseline = JSON.parse(JSON.stringify(R));
         nameIn.value = ''; syncMeta(); draw();
       }
       newBtn.onclick = function () {
@@ -564,6 +571,8 @@
         nameIn.placeholder = isMfr ? 'Named after the manufacturer' : 'e.g. Season 1 Champion';
         if (document.activeElement !== nameIn) nameIn.value = cur.name;
         status.innerHTML = cur.id ? '' : 'This helmet has not been saved yet.';
+        if (document.activeElement !== descIn) descIn.value = cur.desc || '';
+        descCount.textContent = (cur.desc || '').length + ' / 200';
         saveNewBtn.style.display = cur.id ? '' : 'none';
         updateTab();
       }
@@ -720,11 +729,11 @@
         setSaving(true);
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: pid, name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
+          body: { presetId: pid, description: String(cur.desc || '').slice(0, 200), name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
         }).then(function (res) {
           setSaving(false);
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
-          cur.id = res.presetId; cur.name = name; cur.saved = { name: name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '' };
+          cur.id = res.presetId; cur.name = name; cur.saved = { name: name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: String(cur.desc || '') };
           baseline = JSON.parse(JSON.stringify(R));
           syncMeta(); refreshPresets();
           try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e1) {}
@@ -736,8 +745,8 @@
       saveNewBtn.onclick = function () { afterOk = null; doSave(false, true, true); };
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
-        cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '' };
-        cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '' };
+        cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '', desc: p.description || '' };
+        cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: p.description || '' };
         syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
       }
       /* ---------------- shared bits for the manager popups ---------------- */
