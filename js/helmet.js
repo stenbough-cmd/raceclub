@@ -394,7 +394,10 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         return;
       }
       if (!l || !(l.f || l.m)) return;
-      out.logos.push({ m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) });
+      var il = { m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
+      if (l.st) il.st = 1;   // width and height set apart: the picture is stretched to the box
+      if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
+      out.logos.push(il);
     });
     var acN = Math.floor(+r.ac); if (acN > 0 && out.logos.length) out.ac = Math.min(acN, out.logos.length);   // ac = how many layers sit UNDER the accent paint (0 = all layers are on top of the accents)
     if (r.pl && typeof r.pl === 'object') out.pl = { n: String(r.pl.n || '').slice(0, 40), c: String(r.pl.c || '').slice(0, 60), u: String(r.pl.u || '').slice(0, 4) };
@@ -724,6 +727,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             var nw = im.naturalWidth || 300, nh = im.naturalHeight || 300;
             var fit = Math.min(l.w / nw, l.h / nh);
             var dw = nw * fit * scale, dh = nh * fit * scale;
+            if (l.st) { dw = l.w * scale; dh = l.h * scale; }   // stretched on purpose (width and height set apart)
             g.drawImage(im, -dw / 2, -dh / 2, dw, dh);
           }
           g.restore();

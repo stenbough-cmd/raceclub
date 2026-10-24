@@ -69,7 +69,11 @@
       var row = { lab: lab, sync: function () { var d = toDisp(obj()[K[field]]); rng.value = d; num.value = fmt(d); } };
       function apply(d) {
         obj()[K[field]] = fromDisp(clamp(d, min, max));
-        if (field === 'w' || field === 'h') sizeFrom(field);
+        if (field === 'w' || field === 'h') {
+          // unlinked: the picture is stretched to the box (width and height move on their own); linked: back to its own proportions
+          if (o.stretchKey) { if (linkOn) delete obj()[o.stretchKey]; else obj()[o.stretchKey] = 1; }
+          sizeFrom(field);
+        }
         o.changed();
       }
       rng.oninput = function () { var d = parseFloat(rng.value); num.value = fmt(d); apply(d); };
@@ -92,7 +96,16 @@
     lkState();
     lk.onclick = function () {
       linkOn = !linkOn; lkState();
-      if (linkOn) { fixedRatio = 0; if (nat) { sizeFrom('w'); o.changed(); } }
+      var oo = obj();
+      if (linkOn) {
+        fixedRatio = 0;
+        if (o.stretchKey) delete oo[o.stretchKey];
+        if (nat) { sizeFrom('w'); rows.w.sync(); rows.h.sync(); o.changed(); }
+      } else if (o.stretchKey && nat && !oo[o.stretchKey]) {
+        // the box becomes exactly the size the picture is drawn at now, so nothing jumps when it starts to stretch
+        var bw = Number(oo[K.w]) || 1, bh = Number(oo[K.h]) || 1, fit = Math.min(bw / nat, bh);
+        oo[K.w] = Math.round(fit * nat); oo[K.h] = Math.round(fit); rows.w.sync(); rows.h.sync(); o.changed();
+      }
     };
     hr.lab.appendChild(lk);
     return {
@@ -492,7 +505,7 @@
       function renderDetail() {
         detail.innerHTML = ''; curGrid = null;
         if (!sel || R.logos.indexOf(sel) < 0) return;
-        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
+        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
         detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer manipulation'));
         detail.appendChild(grid.el);
@@ -621,7 +634,8 @@
         }
         if (!sel.s) {                       // a picture is drawn "contained" in its box: outline the picture itself
           var key = (sel.m || '') + '|' + (sel.v || '') + '|' + (sel.f || ''), asp = aspectCache[key], layer = sel;
-          if (asp) { var fit = Math.min(bw / asp, bh); place(fit * asp, fit); }
+          if (asp && sel.st) place(bw, bh);   // stretched on purpose: the box is the picture
+          else if (asp) { var fit = Math.min(bw / asp, bh); place(fit * asp, fit); }
           else {
             place(bw, bh);
             H.imageAspect(layer).then(function (a) { if (a) { aspectCache[key] = a; if (sel === layer) updateSelBox(); } });
