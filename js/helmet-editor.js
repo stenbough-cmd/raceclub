@@ -743,15 +743,19 @@
         if (curGrid) curGrid.sync();
         draw(true);
       }
-      stage.addEventListener('pointerdown', function (e) { dragging = true; moveTo(e); });
-      var onMove = function (e) { if (dragging) moveTo(e); }, onUp = function () { dragging = false; };
+      // While a layer is being dragged on the preview, text selection is switched off (so slipping the pointer off the picture never
+      // highlights the page). Only the preview drag does this: the layer list's own drag and drop is untouched.
+      function noSelect(e) { if (dragging) e.preventDefault(); }
+      document.addEventListener('selectstart', noSelect);
+      stage.addEventListener('pointerdown', function (e) { dragging = true; body.classList.add('rch-nosel'); try { window.getSelection().removeAllRanges(); } catch (x) {} moveTo(e); });
+      var onMove = function (e) { if (dragging) moveTo(e); }, onUp = function () { dragging = false; body.classList.remove('rch-nosel'); };
       window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-      modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); });
+      modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); document.removeEventListener('selectstart', noSelect); });
       // Closing the designer with unsaved changes asks first (the same question the New button asks)
       if (!only) modal.closeBtn.addEventListener('click', function (ev) {
         if (!isDirty()) return;
         ev.stopImmediatePropagation();
-        function closeNow() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); modal.close(); }
+        function closeNow() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); document.removeEventListener('selectstart', noSelect); modal.close(); }
         confirmBox('Save changes first?', 'This helmet has changes that have not been saved. Do you want to save them before you close the designer?', [
           { label: 'Save changes', primary: true, fn: function () { afterOk = closeNow; doSave(false); } },
           { label: 'Don\'t save', fn: closeNow },

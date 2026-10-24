@@ -76,7 +76,7 @@
 .rch-num { width: 62px; height: 30px; margin: 0; box-sizing: border-box; padding: 0 6px; line-height: 28px; font-size: 12px; font-family: var(--rc-font-body); color: var(--rc-carbon); border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); text-align: right; }
 .rch-num:focus { outline: none; border-color: var(--rc-steel); }
 /* link button: sits on the right edge of the label column, centered in the gap between Max width and Max height */
-.rch-link { position: absolute; right: 0; top: -15px; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--rc-silver); border-radius: 50%; background: var(--rc-white); color: var(--rc-silver); cursor: pointer; z-index: 1; }
+.rch-link { position: absolute; right: 0; top: -20px; width: 22px; height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--rc-silver); border-radius: 50%; background: var(--rc-white); color: var(--rc-silver); cursor: pointer; z-index: 1; }
 .rch-link.on { color: var(--rc-carbon); border-color: var(--rc-steel); background: var(--rc-offwhite); }
 .rch-link:hover { border-color: var(--rc-steel); }
 .rch-rotbtn { display: inline-flex; align-items: center; gap: 6px; }
@@ -255,7 +255,9 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-sliders.rch-sliders-one { margin-top: 0; }
 .rch-tab-unsaved { font-style: italic; font-weight: 400; color: var(--rc-steel); }
 /* the link button reaches back to the Max width and Max height labels with a square corner line */
-.rch-link::before, .rch-link::after { content: ''; position: absolute; right: 50%; width: 12px; height: 8px; border: 0 solid var(--rc-silver); pointer-events: none; }
+.rch-link::before, .rch-link::after { content: ''; position: absolute; right: 50%; width: 14px; height: 8px; border: 0 solid var(--rc-silver); pointer-events: none; }
 .rch-link::before { top: -8px; border-top-width: 1px; border-right-width: 1px; }
 .rch-link::after { bottom: -8px; border-bottom-width: 1px; border-right-width: 1px; }
 .rch-link.on::before, .rch-link.on::after { border-color: var(--rc-steel); }
+
+.rch-nosel, .rch-nosel * { -webkit-user-select: none; user-select: none; }
