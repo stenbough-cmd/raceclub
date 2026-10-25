@@ -563,6 +563,7 @@ function renderHeader(opts) {
             '</button>' +
             '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
               '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
+              '<a class="rc-header-menu-item" href="championship.html">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>' +
               '<hr class="rc-header-menu-divider">' +
               '<a class="rc-header-menu-item" href="login.html">' + _rcMenuIcon_('login') + '<span>Register / Login</span></a>' +
             '</div>';

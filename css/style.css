@@ -3253,17 +3253,10 @@ body.rc-modal-scroll-locked {
 .rc-btn-champ:hover, .rc-btn-champ:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
 .rc-path-btn.rc-btn-champ { display: block; padding: 15px 18px; }
 
-/* Welcome box copied from championship.html (same look as its light Welcome panel). */
-.rc-cw-panel { background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 8px; overflow: hidden; text-align: left; box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
-.rc-cw-head { padding: 14px 18px; border-bottom: 2px solid var(--rc-red); background: var(--rc-offwhite); }
-.rc-cw-title { display: flex; align-items: center; gap: 10px; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-carbon); }
-.rc-cw-title::before { content: "/"; color: var(--rc-red); font-weight: 1000; font-size: 24px; line-height: 1; position: relative; top: -2px; }
-.rc-cw-body { padding: 22px 24px 26px; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
-.rc-cw-body p { margin: 0 0 14px; }
-.rc-cw-lead { font-size: 17px; font-weight: 600; }
-.rc-cw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 20px; }
-.rc-cw-grid > div { padding: 14px 16px; border-radius: 10px; background: linear-gradient(180deg, #ffffff, #f3f5f7); border: 1px solid #e3e6ea; }
-.rc-cw-grid strong { display: block; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-balanced); margin-bottom: 4px; }
-.rc-cw-grid span { font-size: 13.5px; color: #4b5563; line-height: 1.5; }
-.rc-cw-cta { display: flex; justify-content: center; margin-top: 8px; }
-@media (max-width: 640px) { .rc-cw-grid { grid-template-columns: minmax(0, 1fr); } }
+/* Championship card on the index: top border and checkmarks in the Championship blue. */
+.rc-path-card.rc-path-card-champ { border-top-color: #5f7d99; }
+.rc-path-card-champ .rc-path-list li::before { border-color: #5f7d99; }
+/* Intro section reads left-justified like the rest of the page. */
+.rc-intro-inner { text-align: left; }
+.rc-intro-inner .rc-landing-tagline { margin-left: 0; margin-right: 0; }
+.rc-intro-inner h2 { text-wrap: pretty; }

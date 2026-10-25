@@ -38,6 +38,7 @@
   <!-- Intro + the two modes combined: one headline, then one card per way to race, each with its own jump button. -->
   <section class="rc-landing-section rc-intro-section">
     <div class="rc-landing-inner rc-intro-inner">
+      <p class="rc-eyebrow">What Is Race Club</p>
       <h2>Every Race Has A Bigger Purpose</h2>
       <p class="rc-landing-tagline">Build your racing career in Le Mans Ultimate. Compete in a persistent online league or run your own championship against AI rivals. Your results, racing history, and progress become part of a career that grows with every season.</p>
 
@@ -57,12 +58,12 @@
           </ul>
           <a class="rc-path-btn" href="#league-experience">Explore the Online League <span aria-hidden="true">&rarr;</span></a>
         </div>
-        <div class="rc-path-card">
+        <div class="rc-path-card rc-path-card-champ">
           <div class="rc-path-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"></path><path d="M5 4h13l-2.5 4L18 12H5"></path></svg>
           </div>
           <div class="rc-path-kicker">Single Player</div>
-          <h3>Race Club Championship</h3>
+          <h3>Race Club's Offline Championship</h3>
           <p>Build your own endurance racing season in Le Mans Ultimate's single-player mode. Race against AI opponents, follow a championship calendar of your choosing, and track your results at your own pace.</p>
           <ul class="rc-path-list">
             <li>Race whenever it suits you</li>
@@ -292,15 +293,6 @@
     </div>
   </section>
 
-  <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top hero uses -- that effect is
-     specifically for covering a banner pinned at the very top of the page as content scrolls up
-     over it. -->
-  <div class="rc-mid-banner" role="img" aria-label="Race Club: the career, on and off track">
-    <div class="rc-mid-banner-inner">
-      <h2>This Is Your Legacy.</h2>
-      <p>Every race, every choice, every season: it all becomes part of the record you're building.</p>
-    </div>
-  </div>
 
 
   <!-- End of the online league part of the page: same dark call-to-action band as the closing "Ready To Race?" section. -->
@@ -315,7 +307,7 @@
   <!-- Single player (Race Club Championship) anchor. -->
   <section class="rc-landing-section rc-single-section" id="championship">
     <div class="rc-landing-inner">
-      <p class="rc-eyebrow">Race Club Championship</p>
+      <p class="rc-eyebrow">Race Club's Offline Championship</p>
       <h2>Your Championship. Your Calendar. Your Career.</h2>
       <p class="rc-landing-tagline">Can't commit to a regular online league schedule? Race Club Championship brings the structure of an endurance racing season to your own single-player experience in Le Mans Ultimate.</p>
       <p class="rc-landing-tagline">Choose between WEC and ELMS-inspired grids, build your calendar, select your team and car, and race against AI opponents on your own schedule. Follow your results as each round shapes your championship.</p>
@@ -323,24 +315,48 @@
       <h3 class="rc-single-sub">Create Your Season. Live The Dream.</h3>
       <p class="rc-landing-tagline">Experience your own version of endurance racing. Build a season around the teams, cars, and liveries you recognize, then take to the track and see how your championship unfolds.</p>
       <p class="rc-landing-tagline">As your season progresses, Race Club's story generator turns race results, rivalries, and dramatic swings of fortune into a developing championship narrative.</p>
+
+      <div class="rc-highlight-grid">
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="15" height="11" rx="2"></rect><path d="M18 10l3-2v8l-3-2"></path></svg></div>
+          <h3>A real seat</h3>
+          <p>Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.</p>
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></div>
+          <h3>Your calendar, your rules</h3>
+          <p>Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.</p>
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 12h7M9 16h7"></path></svg></div>
+          <h3>Race Recap</h3>
+          <p>Full results, a lap-by-lap race report, the race settings and every lap you drove.</p>
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"></path></svg></div>
+          <h3>Driver Report</h3>
+          <p>Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.</p>
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3z"></path><path d="M3 7l3-4h12l3 4M9 12h6"></path></svg></div>
+          <h3>Every season saved</h3>
+          <p>Finished seasons stay here with their standings, race recaps and stories. Pick any of them from the Season dropdown to look back.</p>
+        </div>
+
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h8M8 16h5"></path></svg></div>
+          <h3>Season Stories</h3>
+          <p>A news story written after every round, plus a season preview and a finale, all drawn from what actually happened in your races.</p>
+        </div>
+      </div>
+      <div class="rc-single-demo"><a class="rc-btn-champ" href="championship.html?demo=1&amp;from=index">See The Championship Demo</a></div>
     </div>
   </section>
 
-  <!-- Copy of the Welcome box on championship.html (js/championship.js RCC_WELCOME_HTML / RCC_WELCOME_PERKS). Keep the text in step with that page. -->
-  <section class="rc-landing-section rc-champ-welcome-section">
-    <div class="rc-landing-inner">
-      <div class="rc-cw-panel">
-        <div class="rc-cw-head"><div class="rc-cw-title">Welcome</div></div>
-        <div class="rc-cw-body">
-          <p class="rc-cw-lead">Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap.</p>
-          <p>You build your own offline championship on this page, race each round in the game against the AI, and upload the results files the game saves. The page does the rest. It keeps the drivers’ and teams’ standings for every class, the manufacturers’ standings for the factory Hypercars, and the bonus points for pole, fastest lap and most laps led.</p>
-          <div class="rc-cw-grid"><div><strong>A real seat</strong><span>Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.</span></div><div><strong>Your calendar, your rules</strong><span>Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.</span></div><div><strong>Race Recap</strong><span>Full results, a lap-by-lap race report, the race settings and every lap you drove.</span></div><div><strong>Driver Report</strong><span>Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.</span></div><div><strong>Every season saved</strong><span>Finished seasons stay here with their standings, race recaps and stories. Pick any of them from the Season dropdown to look back.</span></div><div><strong>Season Stories</strong><span>A news story written after every round, plus a season preview and a finale, all drawn from what actually happened in your races.</span></div></div>
-          <p>Race Club Championship is open to a small group of members while it is being tested. Take a look at a real season in the demo below.</p>
-          <div class="rc-cw-cta"><a class="rc-btn-champ" href="championship.html?demo=1&amp;from=index">See The Demo</a></div>
-        </div>
-      </div>
-    </div>
-  </section>
 
 
   <section class="rc-landing-section">
@@ -674,6 +690,16 @@
   </script>
 
 
+  <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top hero uses -- that effect is
+     specifically for covering a banner pinned at the very top of the page as content scrolls up
+     over it. -->
+  <div class="rc-mid-banner" role="img" aria-label="Race Club: the career, on and off track">
+    <div class="rc-mid-banner-inner">
+      <h2>This Is Your Legacy.</h2>
+      <p>Every race, every choice, every season: it all becomes part of the record you're building.</p>
+    </div>
+  </div>
+
   <!-- Closing call to action. Dark band on purpose -- visual bookend to the mid-banner and the
      dark tier cards above it, and a clear last stop before the footer. -->
   <section class="rc-cta-section">
@@ -689,7 +715,7 @@
         <div class="rc-cta-option">
           <h3>Prefer to race on your own schedule?</h3>
           <p>Build your own season and take on the AI grid with Race Club Championship.</p>
-          <a class="rc-btn-primary rc-cta-btn rc-btn-champ" href="register.html?championship=1">Explore Race Club Championship</a>
+          <a class="rc-btn-primary rc-cta-btn rc-btn-champ" href="register.html?championship=1">Join Race Club Championship</a>
         </div>
       </div>
     </div>
