@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=35'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=36'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
@@ -551,7 +551,12 @@ function renderHeader(opts) {
     // 820px in favor of a hamburger button that opens a small panel with League Hub (since
     // .rc-header-leaguehub-badge next to the logo hides at this same width, this is the only way to
     // reach it on mobile while logged out) and Register/Login.
-    html += '<a class="rc-header-link" id="rc-header-login-link" href="login.html">REGISTER / LOGIN</a>' +
+    // Signed out (desktop): the "helmet unavailable" picture where the avatar goes, with LOGIN OR / REGISTER where the name goes, highlighted
+    // light gray on hover exactly like the signed-in account button. Phones keep the hamburger below.
+    html += '<a class="rc-header-account-toggle rc-header-login-box" id="rc-header-login-link" href="login.html" aria-label="Login or register">' +
+              '<span class="rc-header-avatar"><img class="rc-helmet" alt="" style="width:46px;height:auto" src="assets/images/helmet_unavailable.webp" draggable="false"></span>' +
+              '<span class="rc-header-login-text">LOGIN OR<br>REGISTER</span>' +
+            '</a>' +
             '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
               // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)
               rcHelmetHtml_('helmet:{"d":1,"b":["white","gloss"],"a1":["white","gloss"],"a2":["white","gloss"],"v":"smoke"}', 46, 'rc-helmet-header rc-helmet-off') +

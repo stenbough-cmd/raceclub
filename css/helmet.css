@@ -291,3 +291,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-layerlist-head { margin-top: 18px; }
 .rch-iconlabel { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .rch-iconlabel svg { flex: 0 0 auto; }
+
+.rch-filterrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; }
+.rch-filterlabel { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); }
+.rch-filterrow + .rch-addrow { margin-top: 6px; }

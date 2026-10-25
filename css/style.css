@@ -1446,6 +1446,17 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 }
 .rc-header-account-toggle:hover,
 .rc-header-account-toggle[aria-expanded="true"] { background: var(--rc-offwhite); }
+/* Signed-out version of the account button: a link with the helmet-unavailable picture and LOGIN OR / REGISTER in place of the name. */
+.rc-header-login-box { text-decoration: none; color: var(--rc-carbon); }
+.rc-header-login-text {
+  font-family: var(--rc-font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  text-align: left;
+  color: var(--rc-carbon);
+}
 /* Red on hover for immediate feedback before a click, AND for as long as the dropdown is actually
    open (aria-expanded) -- not just on :hover -- so it stays red while you're reading the menu with
    your mouse resting somewhere inside it. */

@@ -116,8 +116,8 @@
       rows[field] = row; row.sync();
       return row;
     }
-    addRow('x', 'Left / right', 0, 1254, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('y', 'Up / down', 0, 1254, 1, function (v) { return 1254 - (Number(v) || 0); }, function (d) { return 1254 - d; });
+    addRow('x', 'Left / right', 0, 1254, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('w', 'Max width', 5, 1000, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g3);
     var hr = addRow('h', 'Max height', 5, 1000, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g3);
     addRow('r', 'Tilt (deg)', -45, 45, 0.5,
@@ -413,25 +413,25 @@
       function buildPicker() {
         var keep = lpick.value;
         lpick.innerHTML = '';
-        var gS = mk('optgroup'); gS.label = 'Basic shapes';
+        var gS = mk('optgroup'); gS.setAttribute('data-cat', 'shapes'); gS.label = 'Basic shapes';
         H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.light || sh.weathering || sh.player || sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
-        var gP = mk('optgroup'); gP.label = 'Advanced shapes';
+        var gP = mk('optgroup'); gP.setAttribute('data-cat', 'shapes'); gP.label = 'Advanced shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
         lpick.appendChild(gP);
-        var gG = mk('optgroup'); gG.label = 'Gradients';
+        var gG = mk('optgroup'); gG.setAttribute('data-cat', 'shapes'); gG.label = 'Gradients';
         H.SHAPES.forEach(function (sh) { if (!sh.gradient) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gG.appendChild(o); });
         lpick.appendChild(gG);
-        var gL = mk('optgroup'); gL.label = 'Light effects';
+        var gL = mk('optgroup'); gL.setAttribute('data-cat', 'effects'); gL.label = 'Light effects';
         H.SHAPES.forEach(function (sh) { if (!sh.light) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gL.appendChild(o); });
         lpick.appendChild(gL);
-        var gW = mk('optgroup'); gW.label = 'Weathering';
+        var gW = mk('optgroup'); gW.setAttribute('data-cat', 'effects'); gW.label = 'Weathering';
         H.SHAPES.forEach(function (sh) { if (!sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gW.appendChild(o); });
         lpick.appendChild(gW);
-        var gT = mk('optgroup'); gT.label = 'Patterns';
+        var gT = mk('optgroup'); gT.setAttribute('data-cat', 'shapes'); gT.label = 'Patterns';
         H.SHAPES.forEach(function (sh) { if (!sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gT.appendChild(o); });
         lpick.appendChild(gT);
-        var gD = mk('optgroup'); gD.label = 'Dynamic';
+        var gD = mk('optgroup'); gD.setAttribute('data-cat', 'text'); gD.label = 'Dynamic';
         ['player_name', 'player_number', 'player', 'player_num'].forEach(function (id) { var oD = mk('option'); oD.value = 's:' + id; oD.textContent = shapeName(id); gD.appendChild(oD); });
         lpick.appendChild(gD);
         // custom logos, grouped by their Category (blank = "Custom logos"); archived logos are not offered
@@ -444,15 +444,33 @@
         });
         catOrder.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
         catOrder.forEach(function (c) {
-          var g = mk('optgroup'); g.label = c;
+          var g = mk('optgroup'); g.setAttribute('data-cat', 'logos'); g.label = c;
           cats[c].forEach(function (l) { var o = mk('option'); o.value = 'f:' + l.file; o.textContent = l.name; g.appendChild(o); });
           lpick.appendChild(g);
         });
-        var gM = mk('optgroup'); gM.label = 'Manufacturers';
+        var gM = mk('optgroup'); gM.setAttribute('data-cat', 'logos'); gM.label = 'Manufacturers';
         H.getConfig().manufacturers.forEach(function (n) { var o = mk('option'); o.value = 'm:' + n; o.textContent = n; gM.appendChild(o); });
         lpick.appendChild(gM);
+        // the Filter checkboxes above the list hide the groups that are not wanted
+        var kids = Array.prototype.slice.call(lpick.children);
+        kids.forEach(function (g) { var c = g.getAttribute('data-cat'); if (!filt.all && !filt[c]) lpick.removeChild(g); });
         if (keep) lpick.value = keep;
+        if (!lpick.value && lpick.options.length) lpick.selectedIndex = 0;
       }
+      // Filter: All (default) or any mix of Shapes, Effects, Text and Logos
+      var filt = { all: true, shapes: false, effects: false, text: false, logos: false };
+      var filterRow = mk('div', 'rch-filterrow'); filterRow.appendChild(mk('span', 'rch-filterlabel', 'Filter'));
+      var filterBoxes = {};
+      [['all', 'All'], ['shapes', 'Shapes'], ['effects', 'Effects'], ['text', 'Text'], ['logos', 'Logos']].forEach(function (f) {
+        var lb = mk('label', 'rch-check rch-plain'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!filt[f[0]]; filterBoxes[f[0]] = cb;
+        cb.onchange = function () {
+          if (f[0] === 'all') { filt.all = true; ['shapes', 'effects', 'text', 'logos'].forEach(function (k) { filt[k] = false; }); }
+          else { filt[f[0]] = cb.checked; filt.all = !(filt.shapes || filt.effects || filt.text || filt.logos); }
+          Object.keys(filterBoxes).forEach(function (k) { filterBoxes[k].checked = !!filt[k]; });
+          buildPicker();
+        };
+        lb.appendChild(cb); lb.appendChild(document.createTextNode(' ' + f[1])); filterRow.appendChild(lb);
+      });
       buildPicker();
       var addB = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
@@ -474,7 +492,7 @@
         sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(addB); addRow.appendChild(addLogoBtn); addRow.appendChild(logosBtn);
-      lg.insertBefore(addRow, layers);
+      lg.insertBefore(addRow, layers); lg.insertBefore(filterRow, addRow);
       lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
       right.appendChild(lg);
@@ -500,7 +518,7 @@
       /* ---------------- behaviour ---------------- */
       function shapeName(id) { var f = H.SHAPES.filter(function (x) { return x.id === id; })[0]; return f ? f.name : id; }
       function logoName(l) {
-        if (l.s) return shapeName(l.s) + ' (' + (String(l.c).charAt(0) === '#' ? l.c : ((H.PALETTE.filter(function (p) { return p.id === l.c; })[0] || {}).name || l.c)) + ')';
+        if (l.s) return shapeName(l.s) + ' (' + (String(l.c).charAt(0) === '#' ? l.c : ((H.PALETTE.filter(function (p) { return p.id === l.c; })[0] || {}).name || l.c)) + (+l.bw >= 1 && l.bc ? ', ' + H.hexOf(l.bc) : '') + ')';
         if (l.m) return l.m + (l.v === 'std' ? '' : ' (' + l.v + ')');
         // an uploaded logo is stored as u:<id> (or by file name): show the name it was given in the Logo Manager
         var f = String(l.f || ''), uid = f.indexOf('u:') === 0 ? f.slice(2) : null, all = H.getConfig().logos || [];
@@ -668,7 +686,7 @@
             var br = mk('input'); br.type = 'range'; br.min = 0; br.max = 20; br.step = 1;
             var bn = mk('input', 'rch-num'); bn.type = 'number'; bn.min = 0; bn.max = 20; bn.step = 1; bn.setAttribute('aria-label', 'Border size in pixels');
             function curB() { return Math.max(0, Math.min(20, Math.round(Number(sel.bw) || 0))); }
-            function setB(v) { v = Math.max(0, Math.min(20, Math.round(v))); if (v === 0) delete sel.bw; else sel.bw = v; br.value = v; draw(true); }
+            function setB(v) { v = Math.max(0, Math.min(20, Math.round(v))); if (v === 0) delete sel.bw; else sel.bw = v; br.value = v; draw(true); renderLayers(); }
             br.value = curB(); bn.value = curB();
             br.oninput = function () { bn.value = br.value; setB(parseFloat(br.value)); };
             bn.oninput = function () { var d = parseFloat(bn.value); if (isFinite(d) && d >= 0 && d <= 20) setB(d); };

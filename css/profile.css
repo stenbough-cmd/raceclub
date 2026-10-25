@@ -285,3 +285,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 
 /* EVENTS subheading inside My Laps: same gold centered look as Driver Report, with its own spacing. */
 .rdp-race-split .rcc-laps-events .rdp-catline { margin: 22px 0 14px; }
+
+.rc-profile-helmet-fallback { width: 220px; max-width: 100%; height: auto; display: block; }
+#rdp-ach-loading:empty { display: none; }
+#rdp-ach-loading { padding: 12px 0; }

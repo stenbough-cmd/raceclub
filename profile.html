@@ -24,10 +24,10 @@
 <main class="rc-profile-page">
   <!-- Row 1: driver card (left third) + Career Stats -->
   <div class="rdp-row rdp-row-top">
-    <section class="rcl-panel rc-profile-panel" id="rc-profile-card" hidden>
+    <section class="rcl-panel rc-profile-panel" id="rc-profile-card">
       <div class="rcl-panel-head"><div class="rcl-panel-title">Driver Profile</div></div>
       <div class="rcl-panel-body rc-profile-body">
-        <div class="rc-profile-avatar-wrap" id="rc-profile-avatar"></div>
+        <div class="rc-profile-avatar-wrap" id="rc-profile-avatar"><img class="rc-profile-helmet-fallback" src="assets/images/helmet_unavailable.webp" alt="" width="220"></div>
         <div class="rc-profile-name-row">
           <h1 class="rc-profile-name" id="rc-profile-name"></h1>
           <img class="rc-profile-flag" id="rc-profile-flag" alt="" hidden>
@@ -36,26 +36,26 @@
         <div class="rdp-seat" id="rdp-seat" hidden></div>
       </div>
     </section>
-    <section class="rcl-panel rdp-panel" id="rdp-achievements" hidden>
+    <section class="rcl-panel rdp-panel" id="rdp-achievements">
       <div class="rcl-panel-head"><div class="rcl-panel-title">Career Stats</div></div>
-      <div class="rcl-panel-body"><div class="rdp-ach-grid" id="rdp-ach-grid"></div></div>
+      <div class="rcl-panel-body"><div id="rdp-ach-loading"></div><div class="rdp-ach-grid" id="rdp-ach-grid"></div></div>
     </section>
   </div>
 
   <!-- Row 2: Form Guide (hidden when there are no races) -->
-  <section class="rcl-panel rdp-panel" id="rdp-form" hidden>
+  <section class="rcl-panel rdp-panel" id="rdp-form">
     <div class="rcl-panel-head"><div class="rcl-panel-title">Form Guide</div><div class="rdp-panel-note" id="rdp-form-note">Arranged oldest to newest</div></div>
     <div class="rcl-panel-body rdp-form-body"><div class="rdp-form" id="rdp-form-squares"></div></div>
   </section>
 
   <!-- Row 3: Season Stats -->
-  <section class="rcl-panel rdp-panel" id="rdp-season" hidden>
+  <section class="rcl-panel rdp-panel" id="rdp-season">
     <div class="rcl-panel-head"><div class="rcl-panel-title">Season Stats</div></div>
     <div class="rcl-panel-body" id="rdp-season-body"></div>
   </section>
 
   <!-- Row 4: Story Mentions + Rivalries -->
-  <div class="rdp-row rdp-row-half" id="rdp-row-mid" hidden>
+  <div class="rdp-row rdp-row-half" id="rdp-row-mid">
     <section class="rcl-panel rdp-panel">
       <div class="rcl-panel-head"><div class="rcl-panel-title">Story Mentions</div></div>
       <div class="rcl-panel-body" id="rdp-stories"></div>
@@ -67,7 +67,7 @@
   </div>
 
   <!-- Row 5: Team History -->
-  <section class="rcl-panel rdp-panel" id="rdp-teams" hidden>
+  <section class="rcl-panel rdp-panel" id="rdp-teams">
     <div class="rcl-panel-head"><div class="rcl-panel-title">Team History</div><div class="rdp-panel-note">Newest first</div></div>
     <div class="rcl-panel-body" id="rdp-teams-body"></div>
   </section>

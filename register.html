@@ -221,6 +221,58 @@
     window.location.href = 'login.html';
   });
 
+
+  // ---------------------------------------------------------------------
+  // USER AGREEMENT -- shown after the form checks out and before the account is created.
+  // I AGREE continues with registration; CANCEL closes it and leaves the form as it was.
+  // ---------------------------------------------------------------------
+  function openAgreement(onAgree) {
+    var backdrop = document.createElement('div');
+    backdrop.className = 'rc-modal-backdrop rc-modal-backdrop-centered';
+    var modal = document.createElement('div');
+    modal.className = 'rc-modal rc-modal-wide';
+    var head = document.createElement('div');
+    head.className = 'rc-modal-head rc-modal-head-accent';
+    var title = document.createElement('h3');
+    title.className = 'rc-modal-title-accent';
+    title.textContent = 'Before You Join';
+    head.appendChild(title);
+    var body = document.createElement('div');
+    body.className = 'rc-modal-body rc-legal-text';
+    body.innerHTML =
+      '<p class="rc-legal-updated">Please read this before creating your account.</p>' +
+      '<h4>This Is For Fun</h4>' +
+      '<p>Race Club Online is a free, community-run sim racing league made for entertainment only. The sponsorships, team finances, wagers, prizes, rankings, penalties and everything else that makes the league feel like a real championship are part of the game. Nothing here has any real-world monetary value, and nothing here is financial, legal or professional advice.</p>' +
+      '<h4>Using The Website Means Agreeing To How It Works</h4>' +
+      '<p>By creating an account and using this website, you agree to take part in the league the way the website runs it. That includes the Race Club rulebook, the way points, standings, penalties and protests are decided, and the decisions of the league organizers and stewards. You also understand that your driver name, country, helmet, results and stats are shown to other members and visitors on the league pages and on your driver profile.</p>' +
+      '<p>League decisions are made by volunteers, results are built from race data, and mistakes can happen. The website and everything on it is provided as-is, with no promises that it will always be available or error-free, and the league may change or end at any time. Please be respectful to other drivers, and race clean.</p>' +
+      '<h4>AI And Season Stories</h4>' +
+      '<p>The Season Stories and race recaps on this website are written by an AI from the race results. To write about you by name, your driver name is sent to the AI service along with the race results. You can opt out: leave the box that says <b>Include my name in Season Stories</b> unchecked on the sign-up form, or switch it off later in Edit Profile, and the stories will describe you only by your car and team. AI-written stories can contain errors, and they are not an official record.</p>' +
+      '<h4>Your Information</h4>' +
+      '<p>This is a hobby project, not a business. The only information the website keeps is what you give it to join and take part: your username, name, email address, country, time zone, helmet and the race data from your league events. It is used to run the league and to send you the emails you ask for, such as your verification code. It is not sold, and it is not used for advertising. Please do not use a password here that you use anywhere else.</p>' +
+      '<h4>Independent Community</h4>' +
+      '<p>Race Club Online is not affiliated with Le Mans Ultimate, any racing series, team or manufacturer. See the Legal Disclaimer at the bottom of every page for details.</p>' +
+      '<p><b>By clicking I Agree, you confirm that you have read this and agree to it.</b></p>';
+    var btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-top:18px;';
+    var cancel = document.createElement('button');
+    cancel.type = 'button'; cancel.className = 'rc-btn-secondary rc-btn-sm'; cancel.textContent = 'Cancel';
+    var agree = document.createElement('button');
+    agree.type = 'button'; agree.className = 'rc-btn-primary rc-btn-sm'; agree.textContent = 'I Agree';
+    btns.appendChild(cancel); btns.appendChild(agree);
+    body.appendChild(btns);
+    modal.appendChild(head);
+    modal.appendChild(body);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    function close() { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    cancel.addEventListener('click', close);
+    agree.addEventListener('click', function () { close(); onAgree(); });
+    agree.focus();
+  }
+
   document.getElementById('rc-register-form').addEventListener('submit', function (evt) {
     evt.preventDefault();
     var btn = document.getElementById('rc-register-btn');
@@ -263,6 +315,8 @@
       return;
     }
 
+    // Before anything is sent, the person reads and accepts (or cancels) the agreement.
+    openAgreement(function () {
     btn.disabled = true;
     btn.textContent = 'Creating account...';
 
@@ -306,6 +360,7 @@
         btn.textContent = 'Create Account';
         showToast('Could not reach the server. Check API_BASE_URL and try again.', 'error');
       });
+    });
   });
 })();
 </script>

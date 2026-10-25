@@ -133,6 +133,7 @@
       grid.appendChild(box);
     });
     $('rdp-achievements').hidden = false;
+    $('rdp-ach-loading').innerHTML = '';
   }
 
   // ---- Row 2: Form Guide ----------------------------------------------------------------------
@@ -499,7 +500,7 @@
       var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
       detailsLine.style.display = '';
       drawDetails(detailsHost, curSeason, curRound);
-      raceHost.appendChild(tx('div', 'rdp-loading', 'Loading race...'));
+      raceHost.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading race...') : tx('div', 'rdp-loading', 'Loading race...'));
       loadRound(raceSel.value).then(function (res) {
         if (my !== token) return;
         raceHost.innerHTML = '';
@@ -770,7 +771,8 @@
   var rivalsStarted = false;
   function startRivals() { if (!rivalsStarted) { rivalsStarted = true; loadRivals(); } }
   if (savedPage && savedPage.success) { renderAll(savedPage); startRivals(); }
+  else if (window.rcHelmetSpinner_) { $('rdp-ach-loading').appendChild(window.rcHelmetSpinner_('Loading career stats...')); }   // the other containers show up empty with just their headers
   fetchApi('getDriverProfilePage', { params: { profileId: profileId }, timeoutMs: 60000 }).then(function (res) {
     if (res && res.success) { saveLocal(pageKey, res); renderAll(res); startRivals(); }
-  }).catch(function () { /* the top card (profile.js) already explains a missing profile */ });
+  }).catch(function () { if (!savedPage) { $('rdp-ach-loading').innerHTML = ''; $('rdp-ach-loading').appendChild(emptyBlock('Stats Unavailable', 'Could not load this profile right now.')); } });
 })();
