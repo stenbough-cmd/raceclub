@@ -3231,3 +3231,24 @@ body.rc-modal-scroll-locked {
 .rc-cta-option .rc-cta-btn { margin-top: auto; }
 .rc-cta-option p + .rc-cta-btn { margin-top: 22px; }
 @media (max-width: 760px) { .rc-cta-options { grid-template-columns: 1fr; } }
+
+/* Championship blue-gray buttons (same blue as the Championship welcome page's See The Demo button). */
+.rc-single-demo { display: flex; justify-content: center; margin-top: 22px; }
+.rc-btn-champ {
+  display: inline-block;
+  padding: 14px 36px;
+  font-family: var(--rc-font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-decoration: none;
+  color: var(--rc-white);
+  background: #5f7d99;
+  border: 1px solid #5f7d99;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+.rc-btn-champ:hover, .rc-btn-champ:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
+.rc-path-btn.rc-btn-champ { display: block; padding: 15px 18px; }
