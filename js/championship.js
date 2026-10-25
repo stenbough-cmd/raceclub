@@ -3174,7 +3174,8 @@ function rccStartDemo() {
     pill.id = 'rcc-demo-pill';
     pill.type = 'button';
     pill.textContent = 'Close Demo Page \u2715';
-    pill.addEventListener('click', function () { window.location.href = 'championship.html'; });
+    // Opened from the index page's See The Demo button (?from=index): Close Demo goes back there.
+    pill.addEventListener('click', function () { window.location.href = (_rccQuery('from') === 'index') ? 'index.html' : 'championship.html'; });
     document.body.appendChild(pill);
   }).catch(function (err) {
     if (window.console) console.error('Demo failed:', err);
