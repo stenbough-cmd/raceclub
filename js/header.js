@@ -555,7 +555,7 @@ function renderHeader(opts) {
     // light gray on hover exactly like the signed-in account button. Phones keep the hamburger below.
     html += '<a class="rc-header-account-toggle rc-header-login-box" id="rc-header-login-link" href="login.html" aria-label="Login or register">' +
               '<span class="rc-header-avatar"><img class="rc-helmet" alt="" style="width:46px;height:auto" src="assets/images/helmet_unavailable.webp" draggable="false"></span>' +
-              '<span class="rc-header-login-text">LOGIN OR<br>REGISTER</span>' +
+              '<span class="rc-header-login-text">LOGIN OR REGISTER</span>' +
             '</a>' +
             '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
               // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)

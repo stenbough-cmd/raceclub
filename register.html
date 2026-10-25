@@ -240,9 +240,8 @@
     var body = document.createElement('div');
     body.className = 'rc-modal-body rc-legal-text';
     body.innerHTML =
-      '<p class="rc-legal-updated">Please read this before creating your account.</p>' +
       '<h4>This Is For Fun</h4>' +
-      '<p>Race Club Online is a free, community-run sim racing league made for entertainment only. The sponsorships, team finances, wagers, prizes, rankings, penalties and everything else that makes the league feel like a real championship are part of the game. Nothing here has any real-world monetary value, and nothing here is financial, legal or professional advice.</p>' +
+      '<p>Race Club Online is a free, community-run sim racing league made for entertainment only. The sponsorships, awards, rankings, penalties and everything else that makes the league feel like a real championship are part of the game. Nothing here has any real-world monetary value, and nothing here is financial, legal or professional advice.</p>' +
       '<h4>Using The Website Means Agreeing To How It Works</h4>' +
       '<p>By creating an account and using this website, you agree to take part in the league the way the website runs it. That includes the Race Club rulebook, the way points, standings, penalties and protests are decided, and the decisions of the league organizers and stewards. You also understand that your driver name, country, helmet, results and stats are shown to other members and visitors on the league pages and on your driver profile.</p>' +
       '<p>League decisions are made by volunteers, results are built from race data, and mistakes can happen. The website and everything on it is provided as-is, with no promises that it will always be available or error-free, and the league may change or end at any time. Please be respectful to other drivers, and race clean.</p>' +
@@ -254,7 +253,7 @@
       '<p>Race Club Online is not affiliated with Le Mans Ultimate, any racing series, team or manufacturer. See the Legal Disclaimer at the bottom of every page for details.</p>' +
       '<p><b>By clicking I Agree, you confirm that you have read this and agree to it.</b></p>';
     var btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-top:18px;';
+    btns.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-top:22px;';
     var cancel = document.createElement('button');
     cancel.type = 'button'; cancel.className = 'rc-btn-secondary rc-btn-sm'; cancel.textContent = 'Cancel';
     var agree = document.createElement('button');
@@ -265,12 +264,21 @@
     modal.appendChild(body);
     backdrop.appendChild(modal);
     document.body.appendChild(backdrop);
-    function close() { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); document.removeEventListener('keydown', onKey); }
+    // Lock the page behind the popup so only the agreement scrolls.
+    var prevBodyOverflow = document.body.style.overflow, prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden';
+    function close() {
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+      document.body.style.overflow = prevBodyOverflow; document.documentElement.style.overflow = prevHtmlOverflow;
+      document.removeEventListener('keydown', onKey);
+    }
     function onKey(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', onKey);
     cancel.addEventListener('click', close);
     agree.addEventListener('click', function () { close(); onAgree(); });
-    agree.focus();
+    agree.focus({ preventScroll: true });
+    // Always start at the top of the statement.
+    modal.scrollTop = 0; body.scrollTop = 0; backdrop.scrollTop = 0;
   }
 
   document.getElementById('rc-register-form').addEventListener('submit', function (evt) {

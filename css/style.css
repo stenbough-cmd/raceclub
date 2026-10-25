@@ -1456,6 +1456,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   line-height: 1.25;
   text-align: left;
   color: var(--rc-carbon);
+  max-width: 90px;
+  align-self: center;
 }
 /* Red on hover for immediate feedback before a click, AND for as long as the dropdown is actually
    open (aria-expanded) -- not just on :hover -- so it stays red while you're reading the menu with
