@@ -1226,3 +1226,12 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-select,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }
 }
+
+/* No Access popup (Matt, 2026-10-25): both buttons in the Championship blue-gray, centered, with the
+   "Return to previous page" link under them. */
+.rcc-noaccess-overlay .rcl-modal-title { padding-right: 0; }
+.rcc-noaccess-btns { justify-content: center; margin-top: 18px; }
+.rcc-page .rcc-noaccess-btn { background: #5f7d99; border-color: #5f7d99; color: var(--rc-white); text-decoration: none; }
+.rcc-page .rcc-noaccess-btn:hover, .rcc-page .rcc-noaccess-btn:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
+.rcc-noaccess-back { display: block; margin-top: 16px; text-align: center; font-size: 14px; color: #4b6680; text-decoration: underline; }
+.rcc-noaccess-back:hover, .rcc-noaccess-back:focus-visible { color: #3e566d; }

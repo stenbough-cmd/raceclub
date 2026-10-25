@@ -3083,79 +3083,67 @@ function _rccPageShell(showParts) {
   if (bar) bar.style.display = showParts ? '' : 'none';
 }
 
+// NO ACCESS (Matt, 2026-10-25; replaced the Welcome page). Signed-out visitors and members without
+// Championship Access see the page header only, with a popup in the middle of the page. It has no X:
+// signed out = JOIN RACE CLUB + SEE THE DEMO, signed in = REQUEST ACCESS + SEE THE DEMO, and a
+// "Return to previous page" link under the buttons.
 function rccRenderWelcome() {
   RCC.demo = null;
   document.body.classList.remove('rcc-demo');
   var pill = document.getElementById('rcc-demo-pill');
   if (pill) pill.parentNode.removeChild(pill);
   _rccPageShell(false);
-  // Signed-out visitors keep the black link bar, with one link: JOIN RACE CLUB -> register.html (Matt).
-  if (!getToken()) {
-    var bar = document.getElementById('rcc-actionbar');
-    if (bar) {
-      bar.innerHTML = '';
-      var inner = _rccEl('div', 'rcc-actionbar-inner');
-      var links = _rccEl('div', 'rcc-actionbar-links');
-      var join = _rccText('a', 'rcc-actionbar-link', 'Join Race Club');
-      join.href = 'register.html';
-      links.appendChild(join);
-      inner.appendChild(links);
-      bar.appendChild(inner);
-      bar.style.display = '';
-    }
-  }
   rccRenderHero({ welcome: true, hasSeason: false, owner: { displayName: '' }, seasons: [] });
   var meta = document.getElementById('rcc-hero-meta');
   if (meta) meta.innerHTML = '';
-  rccRenderTicker({ hasSeason: false, welcomeTicker: [{ lead: 'WELCOME TO RACE CLUB CHAMPIONSHIP!' }].concat(RCC_WELCOME_PERKS.map(function (p) {
-    return { tag: p[0].toUpperCase(), tagBold: true, text: p[1], plain: true };
-  })) });
-  var main = document.querySelector('.rcl-main');
-  var old = document.getElementById('rcc-welcome-row');
+  rccRenderTicker({ hasSeason: false });
+  var tickerWrap = document.querySelector('.rcl-ticker-wrap');
+  if (tickerWrap) tickerWrap.style.display = 'none';
+  var old = document.querySelector('.rcc-noaccess-overlay');
   if (old) old.parentNode.removeChild(old);
-  var row = _rccEl('div', 'rcl-row-full');
-  row.id = 'rcc-welcome-row';
-  var panel = _rccEl('section', 'rcl-panel rcc-welcome');
-  var head = _rccEl('div', 'rcl-panel-head');
-  head.appendChild(_rccText('div', 'rcl-panel-title', 'Welcome'));
-  panel.appendChild(head);
-  var body = _rccEl('div', 'rcl-panel-body rcc-welcome-body');
-  body.innerHTML = RCC_WELCOME_HTML;
-  var cta = _rccEl('div', 'rcc-welcome-cta');
-  var go = _rccText('a', 'rc-btn-secondary rcc-welcome-demo', 'See The Demo');
-  go.href = 'championship.html?demo=1';
-  cta.appendChild(go);
-  // Request Access (Matt, 2026-10-14): opens Feedback with "Request Championship Mode" picked.
-  // Feedback needs a signed-in driver (it sends their name), so a visitor signs in first.
-  var ask = _rccText('a', 'rc-btn-secondary rcc-welcome-request', 'Request Access to Race Club Championship');
-  if (getToken() && typeof _rcOpenFeedbackModal === 'function') {
-    ask.href = '#';
-    ask.addEventListener('click', function (e) { e.preventDefault(); _rcOpenFeedbackModal('Request Championship Mode'); });
+  var signedIn = !!getToken();
+  var m = rccOpenModal('Championship Access Needed', { narrow: true });
+  m.overlay.classList.add('rcc-noaccess-overlay');
+  var x = m.dialog.querySelector('.rcl-modal-close');
+  if (x) x.parentNode.removeChild(x);
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', signedIn
+    ? 'Your account does not have access to Race Club Championship. You can still look around a real season in the demo.'
+    : 'Race Club Championship is for Race Club members with access. Join Race Club to ask for it, or look around a real season in the demo.'));
+  var row = _rccEl('div', 'rcc-btn-row rcc-noaccess-btns');
+  var first;
+  if (signedIn) {
+    first = _rccText('button', 'rc-btn-secondary rcc-noaccess-btn', 'Request Access');
+    first.type = 'button';
+    first.addEventListener('click', function () {
+      if (typeof _rcOpenFeedbackModal !== 'function') return;
+      _rcOpenFeedbackModal();
+      // Pick "Request Championship Mode" in the Feedback popup that just opened.
+      var boxes = document.querySelectorAll('.rcl-modal-overlay select');
+      var sel = boxes[boxes.length - 1];
+      if (sel && Array.prototype.some.call(sel.options, function (o) { return o.value === 'Request Championship Mode'; })) sel.value = 'Request Championship Mode';
+    });
   } else {
-    ask.href = 'login.html';
+    // register.html ticks "Request access to offline Championship Mode" when it gets ?championship=1.
+    first = _rccText('a', 'rc-btn-secondary rcc-noaccess-btn', 'Join Race Club');
+    first.href = 'register.html?championship=1';
   }
-  cta.appendChild(ask);
-  body.appendChild(cta);
-  panel.appendChild(body);
-  row.appendChild(panel);
-  main.insertBefore(row, main.firstChild);
+  var demo = _rccText('a', 'rc-btn-secondary rcc-noaccess-btn', 'See The Demo');
+  demo.href = 'championship.html?demo=1';
+  row.appendChild(first);
+  row.appendChild(demo);
+  m.body.appendChild(row);
+  var back = _rccText('a', 'rcc-noaccess-back', 'Return to previous page');
+  back.href = 'index.html';
+  back.addEventListener('click', function (e) {
+    // Back to the page they came from on this site; the index page when there is none.
+    var ref = document.referrer || '';
+    if (ref && ref.indexOf(window.location.origin) === 0 && ref.indexOf('championship.html') === -1 && window.history.length > 1) {
+      e.preventDefault();
+      window.history.back();
+    }
+  });
+  m.body.appendChild(back);
 }
-
-// The six perks: shown in the Welcome box and scrolling in the ticker.
-var RCC_WELCOME_PERKS = [
-  ['A real seat', 'Sign for a real team and car from the WEC or ELMS grid, and race the drivers the game puts in every other car.'],
-  ['Your calendar, your rules', 'Pick the series, year, classes, tracks, race lengths, weather and points. Race each round whenever you like.'],
-  ['Race Recap', 'Full results, a lap-by-lap race report, the race settings and every lap you drove.'],
-  ['Driver Report', 'Your race in charts: position, tyre wear, fuel, pit strategy, pace and contacts, against the whole class and your nearest rivals.'],
-  // (Your career page replaced, Matt 2026-10-14: the career page shows online league stats only.)
-  ['Every season saved', 'Finished seasons stay here with their standings, race recaps and stories. Pick any of them from the Season dropdown to look back.'],
-  ['Season Stories', 'A news story written after every round, plus a season preview and a finale, all drawn from what actually happened in your races.']
-];
-var RCC_WELCOME_HTML =
-  '<p class="rcc-welcome-lead">Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap.</p>' +
-  '<p>You build your own offline championship on this page, race each round in the game against the AI, and upload the results files the game saves. The page does the rest. It keeps the drivers\u2019 and teams\u2019 standings for every class, the manufacturers\u2019 standings for the factory Hypercars, and the bonus points for pole, fastest lap and most laps led.</p>' +
-  '<div class="rcc-welcome-grid">' + RCC_WELCOME_PERKS.map(function (p) { return '<div><strong>' + p[0] + '</strong><span>' + p[1] + '</span></div>'; }).join('') + '</div>' +
-  '<p>Race Club Championship is open to a small group of members while it is being tested. Take a look at a real season in the demo below.</p>';
 
 function rccStartDemo() {
   // The time stamp skips any copy a cache kept (GitHub Pages holds answers, a "not found" included,
@@ -3174,8 +3162,8 @@ function rccStartDemo() {
     pill.id = 'rcc-demo-pill';
     pill.type = 'button';
     pill.textContent = 'Close Demo Page \u2715';
-    // Opened from the index page's See The Demo button (?from=index): Close Demo goes back there.
-    pill.addEventListener('click', function () { window.location.href = (_rccQuery('from') === 'index') ? 'index.html' : 'championship.html'; });
+    // Close Demo always goes to the index page (Matt, 2026-10-25).
+    pill.addEventListener('click', function () { window.location.href = 'index.html'; });
     document.body.appendChild(pill);
   }).catch(function (err) {
     if (window.console) console.error('Demo failed:', err);
