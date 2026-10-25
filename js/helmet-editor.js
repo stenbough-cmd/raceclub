@@ -43,6 +43,14 @@
   // The Category box for Special Event, Premium and Awards helmets: pick one already used or type a new one (Season 1, Limited Edition...).
   // onChange(value) runs when the choice changes; fill(list, chosen) rebuilds the choices.
   var COLL_KINDS = ['Special Event', 'Premium', 'Awards'];
+  // Prestige tier (admin classification only; members never see it). Shown next to Category, same kinds only.
+  var TIERS = ['Legendary', 'Rare', 'Uncommon', 'Common'];
+  function makeTierSel() {
+    var t = mk('select', 'rch-select-wide');
+    TIERS.forEach(function (x) { var o = mk('option'); o.value = x; o.textContent = x; t.appendChild(o); });
+    t.value = 'Common';
+    return t;
+  }
   function makeCollPicker(onChange) {
     var wrap = mk('div'), sel2 = mk('select', 'rch-select-wide'), nw = mk('input', 'rch-input');
     nw.type = 'text'; nw.maxLength = 40; nw.placeholder = 'New category name, e.g. Season 1'; nw.style.display = 'none'; nw.style.marginTop = '6px';
@@ -222,7 +230,7 @@
       function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }
       var R = blankRecipe();
       var baseline = JSON.parse(JSON.stringify(R));   // what Reset returns to: the helmet as last loaded or saved
-      var cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '' };
+      var cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '', tier: 'Common' };
       var collList = [];   // every Category already used, for the Category box
       var afterOk = null;                                      // runs once after the next successful save (Save changes, then New)
       // The file tab above the Save box: the loaded helmet as "Name (ID)", an asterisk when it has unsaved changes, or "New".
@@ -235,6 +243,7 @@
         if (!cur.id) return !!String(cur.name || '').trim() || !!String(cur.desc || '').trim() || !!String(cur.coll || '').trim();
         if (cur.saved && String(cur.saved.desc || '') !== String(cur.desc || '')) return true;
         if (cur.saved && String(cur.saved.coll || '') !== String(COLL_KINDS.indexOf(cur.kind) >= 0 ? (cur.coll || '') : '')) return true;
+        if (cur.saved && String(cur.saved.tier || 'Common') !== String(COLL_KINDS.indexOf(cur.kind) >= 0 ? (cur.tier || 'Common') : 'Common')) return true;
         return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
       }
       dirtyFn = isDirty;
@@ -306,7 +315,10 @@
       // Category (Season 1, Limited Edition...): only for Special Event, Premium and Awards helmets; groups them in the Load and Manage lists
       var collWrap = mk('div', 'rch-collwrap'); collWrap.appendChild(mk('div', 'rch-label', 'Category'));
       var collPick = makeCollPicker(function (v) { cur.coll = v; updateTab(); });
-      collWrap.appendChild(collPick.el); bar.appendChild(collWrap);
+      collWrap.appendChild(collPick.el);
+      collWrap.appendChild(mk('div', 'rch-label rch-mt', 'Tier'));
+      var tierSel = makeTierSel(); tierSel.onchange = function () { cur.tier = tierSel.value; updateTab(); };
+      collWrap.appendChild(tierSel); bar.appendChild(collWrap);
       // optional description (200 characters at most); the note about the chosen Kind sits under it
       var descWrap = mk('div', 'rch-descwrap'); descWrap.appendChild(mk('div', 'rch-label', 'Helmet description'));
       var descIn = mk('textarea', 'rch-desc'); descIn.maxLength = 200; descIn.rows = 3; descIn.placeholder = 'Optional. A short note about this helmet (200 characters at most).';
@@ -329,7 +341,7 @@
       withIcon(loadBtn, 'OPEN', 'Open'); withIcon(newBtn, 'NEW', 'New');
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
-        R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '' }; baseline = JSON.parse(JSON.stringify(R));
+        R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '', tier: 'Common' }; baseline = JSON.parse(JSON.stringify(R));
         nameIn.value = ''; syncMeta(); draw();
       }
       newBtn.onclick = function () {
@@ -716,6 +728,7 @@
         mcRow.style.display = isMfr ? '' : 'none';
         collWrap.style.display = COLL_KINDS.indexOf(cur.kind) >= 0 ? '' : 'none';
         collPick.fill(collList, cur.coll || '');
+        tierSel.value = cur.tier || 'Common';
         kindHint.textContent = KIND_HINTS[cur.kind] || '';
         // a manufacturer helmet is named after its manufacturer, so the name box is switched off
         if (isMfr) { cur.name = cur.mfr || ''; }
@@ -904,11 +917,11 @@
         setSaving(true);
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
-          body: { presetId: pid, collection: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.coll || '') : '', description: String(cur.desc || '').slice(0, 200), name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
+          body: { presetId: pid, collection: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.coll || '') : '', tier: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.tier || 'Common') : 'Common', description: String(cur.desc || '').slice(0, 200), name: name, kind: cur.kind, manufacturer: cur.kind === 'Manufacturer' ? cur.mfr : '', recipe: JSON.stringify(R) }
         }).then(function (res) {
           setSaving(false);
           if (!res || !res.success) { toast((res && res.message) || 'Could not save the helmet.', 'error'); return; }
-          cur.id = res.presetId; cur.name = name; cur.saved = { name: name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: String(cur.desc || ''), coll: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.coll || '') : '' };
+          cur.id = res.presetId; cur.name = name; cur.saved = { name: name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: String(cur.desc || ''), coll: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.coll || '') : '', tier: COLL_KINDS.indexOf(cur.kind) >= 0 ? String(cur.tier || 'Common') : 'Common' };
           baseline = JSON.parse(JSON.stringify(R));
           syncMeta(); refreshPresets();
           try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e1) {}
@@ -920,8 +933,8 @@
       saveNewBtn.onclick = function () { afterOk = null; doSave(false, true, true); };
       function loadPreset(p) {
         R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
-        cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '', desc: p.description || '', coll: p.collection || '' };
-        cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: p.description || '', coll: COLL_KINDS.indexOf(cur.kind) >= 0 ? (p.collection || '') : '' };
+        cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '', desc: p.description || '', coll: p.collection || '', tier: p.tier || 'Common' };
+        cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: p.description || '', coll: COLL_KINDS.indexOf(cur.kind) >= 0 ? (p.collection || '') : '', tier: COLL_KINDS.indexOf(cur.kind) >= 0 ? (p.tier || 'Common') : 'Common' };
         syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
       }
       /* ---------------- shared bits for the manager popups ---------------- */
@@ -970,7 +983,9 @@
         (assets.manufacturers || []).forEach(function (x) { var o = mk('option'); o.value = x; o.textContent = x; m.appendChild(o); });
         m.value = p.manufacturer || ''; mw.appendChild(m); db.appendChild(mw);
         var cw = mk('div'); cw.appendChild(mk('div', 'rch-label rch-mt', 'Category'));
-        var cpk = makeCollPicker(null); cpk.fill(collList, p.collection || ''); cw.appendChild(cpk.el); db.appendChild(cw);
+        var cpk = makeCollPicker(null); cpk.fill(collList, p.collection || ''); cw.appendChild(cpk.el);
+        cw.appendChild(mk('div', 'rch-label rch-mt', 'Tier'));
+        var tsel = makeTierSel(); tsel.value = p.tier || 'Common'; cw.appendChild(tsel); db.appendChild(cw);
         db.appendChild(mk('div', 'rch-label rch-mt', 'Helmet description'));
         var ds = mk('textarea', 'rch-desc'); ds.maxLength = 200; ds.rows = 3; ds.value = p.description || ''; ds.placeholder = 'Optional. A short note about this helmet (200 characters at most).'; db.appendChild(ds);
         var kh = mk('p', 'rch-hint'); db.appendChild(kh);
@@ -1001,16 +1016,16 @@
         cn2.onclick = function () { dm.close(); };
         function busy(on) { sv2.disabled = on; cn2.disabled = on; sv2.textContent = on ? 'Saving...' : 'Save'; dm.closeBtn.disabled = on; dm.closeBtn.style.opacity = on ? '0.35' : ''; dm.closeBtn.style.pointerEvents = on ? 'none' : ''; }
         sv2.onclick = function () {
-          var kind = k.value, mfr = kind === 'Manufacturer' ? m.value : '', name = kind === 'Manufacturer' ? mfr : n.value.trim(), desc = ds.value.slice(0, 200), coll = COLL_KINDS.indexOf(kind) >= 0 ? cpk.get() : '';
+          var kind = k.value, mfr = kind === 'Manufacturer' ? m.value : '', name = kind === 'Manufacturer' ? mfr : n.value.trim(), desc = ds.value.slice(0, 200), coll = COLL_KINDS.indexOf(kind) >= 0 ? cpk.get() : '', tier = COLL_KINDS.indexOf(kind) >= 0 ? tsel.value : 'Common';
           if (kind === 'Manufacturer' && !mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
           if (!name) { toast('Give the helmet a name first.', 'error'); n.focus(); return; }
           var slotChanged = (kind === 'Website Default' || kind === 'Manufacturer') && (kind !== p.kind || mfr !== (p.manufacturer || ''));
           var old = slotChanged ? (list || []).filter(function (x) { return x.active && x.presetId !== p.presetId && x.kind === kind && (kind === 'Website Default' || x.manufacturer === mfr); })[0] : null;
           function run() {
             busy(true);
-            fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, collection: coll, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(H.normalizeRecipe(p.recipe)) } }).then(function (r) {
+            fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, collection: coll, tier: tier, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(H.normalizeRecipe(p.recipe)) } }).then(function (r) {
               if (!r || !r.success) { busy(false); toast((r && r.message) || 'Could not save.', 'error'); return; }
-              if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll }; syncMeta(); }
+              if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.tier = tier; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll, tier: tier }; syncMeta(); }
               refreshPresets();
               function finish() { toast('Saved.', 'success'); dm.close(); if (after) after(); }
               if (!(grantsLoaded && COLL_KINDS.indexOf(kind) >= 0)) { finish(); return; }

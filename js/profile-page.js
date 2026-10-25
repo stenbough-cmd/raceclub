@@ -136,6 +136,39 @@
     $('rdp-ach-loading').innerHTML = '';
   }
 
+  // ---- Helmet shelf (between Career Stats and Form Guide) -------------------------------------------
+  // data.helmets arrives already sorted highest prestige first; the prestige itself is never sent or shown.
+  function renderHelmets(data) {
+    var panel = $('rdp-helmets'), track = $('rdp-hc-track'), view = $('rdp-hc-view');
+    var list = (data && data.helmets) || [];
+    if (!panel || !list.length || typeof rcHelmetHtml_ !== 'function') { if (panel) panel.hidden = true; return; }
+    track.innerHTML = '';
+    list.forEach(function (h) {
+      var item = el('div', 'rdp-hitem');
+      var stage = el('div', 'rdp-hitem-stage', rcHelmetHtml_('helmet:' + JSON.stringify(h.recipe), 150, 'rdp-hhelmet'));
+      item.appendChild(stage);
+      item.appendChild(tx('div', 'rdp-hitem-name', h.name));
+      if (h.description) item.appendChild(tx('div', 'rdp-hitem-desc', h.description));
+      track.appendChild(item);
+    });
+    $('rdp-helmets-count').textContent = list.length === 1 ? '1 helmet' : list.length + ' helmets';
+    panel.hidden = false;
+    rcHelmetHydrate_(track);
+    var prev = $('rdp-hc-prev'), next = $('rdp-hc-next');
+    function step() { var it = track.firstChild; return it ? it.getBoundingClientRect().width + 20 : 240; }
+    function sync() {
+      var overflow = view.scrollWidth > view.clientWidth + 2;
+      prev.hidden = next.hidden = !overflow;
+      prev.disabled = view.scrollLeft <= 2;
+      next.disabled = view.scrollLeft + view.clientWidth >= view.scrollWidth - 2;
+    }
+    prev.onclick = function () { view.scrollBy({ left: -step() * 2, behavior: 'smooth' }); };
+    next.onclick = function () { view.scrollBy({ left: step() * 2, behavior: 'smooth' }); };
+    view.onscroll = sync;
+    window.addEventListener('resize', sync);
+    setTimeout(sync, 60);
+  }
+
   // ---- Row 2: Form Guide ----------------------------------------------------------------------
   // Form guide: 20, 10 or 5 squares on ONE line, spread evenly across the card, whichever fits the page
   // width (never fewer than 5 unless the driver has raced fewer). It never wraps into rows.
@@ -760,6 +793,7 @@
     shownSig = sig;
     renderSeat(data);
     renderAchievements(data);
+    renderHelmets(data);
     renderForm(data);
     renderSeasonStats(data);
     renderStories(data);

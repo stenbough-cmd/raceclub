@@ -36,7 +36,7 @@
     document.title = 'Race Club: Driver Profile';
     shownKey = null;
     // nothing to show: the empty containers on the page go away too
-    Array.prototype.forEach.call(document.querySelectorAll('.rdp-panel, .rdp-row'), function (n) { n.hidden = true; });
+    Array.prototype.forEach.call(document.querySelectorAll('.rdp-panel, .rdp-row, .rdp-helmets'), function (n) { n.hidden = true; });
   }
 
   function showDriver(driver) {
