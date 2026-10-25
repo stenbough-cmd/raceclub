@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race Club: Account</title>
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/helmet.css?v=31">
+<link rel="stylesheet" href="css/helmet.css?v=32">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -14,7 +14,7 @@
 <script src="js/rulebook-content.js"></script>
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=32"></script>
-<script src="js/helmet-editor.js?v=47"></script>
+<script src="js/helmet-editor.js?v=48"></script>
 </head>
 <body>
 
@@ -64,6 +64,7 @@
 
     <div id="rc-profile-root" style="display:none;">
       <section id="rc-section-dashboard" class="rc-content-section"></section>
+      <section id="rc-section-studio" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-league" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-stewarding" class="rc-content-section" style="display:none;"></section>
       <section id="rc-section-admin" class="rc-content-section" style="display:none;"></section>
@@ -278,6 +279,7 @@
   // here.
   var ICON_CHEVRON_DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
+  var ICON_STUDIO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
   var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
@@ -362,6 +364,7 @@
   // unconditionally up front, so they don't need an entry here).
   var RC_LAZY_SECTION_RENDERERS = {
     admin: function (token) { renderAdminSection(token); },
+    studio: function (token) { renderStudioSection(token); },
     league: function (token) { renderLeagueManagementSection(token); },
     stewarding: function (token) { renderStewardingSection(token); }
   };
@@ -475,6 +478,10 @@
     nav.appendChild(staffLabel);
     // League Management is real content now (renderLeagueManagementSection), same
     // lazy-fetch-on-click pattern as Admin.
+    var studioBtn = makeNavButton('studio', 'Design Studio', ICON_STUDIO, 'rc-nav-studio', false, function () {
+      showLazySection('studio', currentToken);
+    });
+    nav.appendChild(studioBtn);
     var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', false, function () {
       showLazySection('league', currentToken);
     });
@@ -3730,6 +3737,25 @@
     });
   }
 
+  // DESIGN STUDIO (ECO chat, 2026-10-25) -- the helmet designer as its own page, Admin only. Built once and kept alive
+  // so unsaved work survives switching sections.
+  function renderStudioSection(token) {
+    var section = document.getElementById('rc-section-studio');
+    if (!section) return;
+    section.innerHTML = '';
+    if (!(currentProfile && currentProfile.role === 'Admin')) {
+      section.appendChild(buildEmptyStatePanel('Access Restricted', 'Design Studio requires Admin access.'));
+      return;
+    }
+    var panel = el('div', 'rc-panel rc-dash-card');
+    panel.appendChild(el('h3', 'rc-dash-card-title', 'Design Studio'));
+    var host = el('div', '');
+    panel.appendChild(host);
+    section.appendChild(panel);
+    if (!window.RCHelmetEditor) { host.appendChild(el('p', 'color:var(--rc-steel);', 'The design studio did not load. Refresh the page and try again.')); return; }
+    window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, { host: host });
+  }
+
   function renderLeagueManagementSection(token) {
     var section = document.getElementById('rc-section-league');
     if (!section) return;
@@ -5927,33 +5953,6 @@
   }
 
   function renderAdminSectionBody(section, token) {
-    // HELMET DESIGNER (ECO chat, 2026-10-18) -- container ABOVE Data Management. The button opens the
-    // large admin designer popup (js/helmet-editor.js); saving and loading go through Helmets.gs.
-    var helmetPanel = el('div', 'rc-panel rc-dash-card');
-    helmetPanel.appendChild(el('h3', 'rc-dash-card-title', 'Helmet Designer'));
-    var helmetBox = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
-    var helmetBtnRow = el('div', 'display:flex;flex-wrap:wrap;gap:8px;');
-    function helmetOpener(label, only) {
-      var hb = el('button', 'rc-btn-secondary rc-btn-sm', label);
-      hb.type = 'button';
-      hb.addEventListener('click', function () {
-        if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-        window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, only ? { only: only } : null);
-      });
-      helmetBtnRow.appendChild(hb);
-    }
-    helmetOpener('Open Helmet Designer', '');
-    helmetOpener('Manage Designs', 'manage');
-    helmetOpener('Manage Logos', 'logos');
-    helmetBox.appendChild(helmetBtnRow);
-    [
-      'Design the helmets the site uses: the default helmet, each manufacturer\'s team helmet, and special event, premium and award helmets. Manage Designs handles details, access, archiving and deleting. Manage Logos handles the logo library.'
-    ].forEach(function (text) {
-      helmetBox.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
-    });
-    helmetPanel.appendChild(helmetBox);
-    section.appendChild(helmetPanel);
-
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
 
@@ -8855,6 +8854,7 @@
     // These three items always render now; this block only decides which ones are clickable for
     // this driver, via disabled + a tooltip explaining why, instead of removing them from the
     // sidebar.
+    setNavAccess('rc-nav-studio', profile.role === 'Admin', 'Requires Admin access.');
     setNavAccess('rc-nav-league', profile.role === 'Admin' || profile.role === 'Organizer', 'Requires Organizer or Admin access.');
     // Stewarding -- Steward and above (cumulative hierarchy: Steward < Organizer < Admin), same
     // level Protests RULING already requires server-side (Protests.gs).

@@ -261,3 +261,14 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-link.on::before, .rch-link.on::after { border-color: var(--rc-steel); }
 
 .rch-nosel, .rch-nosel * { -webkit-user-select: none; user-select: none; }
+
+/* ---- Design Studio page (Account > Design Studio): the designer sits on the page instead of in a popup ---- */
+.rch-designer.rch-studio:not(.rch-player), .rch-designer.rch-studio:not(.rch-player) .rch-grid { height: auto; }
+.rch-designer.rch-studio:not(.rch-player) .rch-right { height: auto; overflow: visible; padding-right: 0; }
+.rch-designer.rch-studio:not(.rch-player) .rch-left { position: sticky; top: 12px; align-self: start; }
+.rch-studio .rch-section { border-top: 3px solid var(--rc-silver); background: #fcfcfc; }
+.rch-studio .rch-layers { background: #fff; }
+.rch-filename { width: 100%; box-sizing: border-box; margin: 0 0 12px; background: #fcfcfc; color: var(--rc-carbon); cursor: default; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; letter-spacing: 0; }
+.rch-tab-unsaved { margin-left: 6px; }
+.rch-loadrow { flex-wrap: wrap; }
+.rch-loadrow .rch-info { flex: 1 1 150px; }

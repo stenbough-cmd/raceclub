@@ -29,8 +29,6 @@
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  // The groups a helmet can be given to.
-  var GROUPS = [['Drivers', 'All Members'], ['Organizers', 'Organizers only'], ['Stewards', 'Stewards only'], ['Admins', 'Admins only']];
   function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
   // Slider directions (Matt): Left / right slides right = right. Up / down slides right = UP (the stored y counts down, so the slider shows 1254 - y).
@@ -192,7 +190,9 @@
     var me = (typeof getProfileCache === 'function') ? (getProfileCache() || {}) : {};
     var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || 'United States', u: '12' };
     var body = mk('div', 'rch-designer');
-    var modal = only ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
+    var inline = !!opts.host, dirtyFn = null;
+    var modal = (only || inline) ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
+    if (inline) { body.classList.add('rch-studio'); opts.host.appendChild(body); window.addEventListener('beforeunload', function (e) { if (dirtyFn && dirtyFn()) { e.preventDefault(); e.returnValue = ''; } }); }
     modal.el.classList.add('rch-modal');
     var stub = null;
     if (only) {   // the manager popup opens straight away with its own loading lights; the real one replaces it once the designer data is ready
@@ -236,17 +236,21 @@
         if (cur.saved && String(cur.saved.coll || '') !== String(COLL_KINDS.indexOf(cur.kind) >= 0 ? (cur.coll || '') : '')) return true;
         return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
       }
+      dirtyFn = isDirty;
       function updateTab() {
-        var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' : 'New';
-        var dirty = !!cur.id && isDirty();
+        var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' : 'Untitled';
+        var dirty = isDirty();
         tabLabel.textContent = t;
-        if (dirty) { var em = mk('em', 'rch-tab-unsaved', ' (unsaved changes)'); tabLabel.appendChild(em); }
-        tab.title = t + (dirty ? ' (unsaved changes)' : '');
+        if (dirty) { var em = mk('em', 'rch-tab-unsaved', 'unsaved changes'); tabLabel.appendChild(em); }
+        tab.title = t + (dirty ? ' - unsaved changes' : '');
+        if (typeof fnBox !== 'undefined') fnBox.value = t;
       }
       var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
       var dragFrom = -1;
 
+      var fnBox = mk('input', 'rch-input rch-filename'); fnBox.type = 'text'; fnBox.readOnly = true; fnBox.tabIndex = -1; fnBox.setAttribute('aria-label', 'File name'); fnBox.value = 'Untitled';
+      body.appendChild(fnBox);
       var grid = mk('div', 'rch-grid');
       var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
       grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);
@@ -314,12 +318,11 @@
       mfrSel.onchange = function () { cur.mfr = mfrSel.value; if (cur.kind === 'Manufacturer') { cur.name = cur.mfr; } syncMeta(); };
       var status = mk('p', 'rch-status'); bar.appendChild(status);
       var btns = mk('div', 'rch-btns');
-      var saveBtn = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveBtn.type = 'button';
+      var saveBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save'); saveBtn.type = 'button';
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
-      var manageBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Designs'); manageBtn.type = 'button';
-      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Load'); loadBtn.type = 'button';
-      loadBtn.title = 'Open a saved helmet design in the designer';
+      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Open'); loadBtn.type = 'button';
+      loadBtn.title = 'Open a saved helmet design (and manage the saved designs)';
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'New'); newBtn.type = 'button';
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
@@ -337,9 +340,8 @@
       btns.appendChild(newBtn); btns.appendChild(loadBtn); btns.appendChild(saveBtn); btns.appendChild(saveNewBtn);
       bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'File options'));
       bar.appendChild(btns);
-      var btns2 = mk('div', 'rch-btns rch-btns-second'); btns2.appendChild(manageBtn); bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Design library')); bar.appendChild(btns2);   // Load Design and Manage Designs sit on their own row under the others
-      var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage Logos'); logosBtn.type = 'button';
-      var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add Logo'); addLogoBtn.type = 'button';
+      var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage'); logosBtn.title = 'Manage logos'; logosBtn.type = 'button';
+      var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Upload'); addLogoBtn.title = 'Upload a logo'; addLogoBtn.type = 'button';
       right.appendChild(tab);
       right.appendChild(bar);
 
@@ -401,8 +403,7 @@
 
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
-      lg.appendChild(mk('div', 'rch-label', 'Logos and shapes (layers)'));
-      var lmRow = mk('div', 'rch-btns rch-lmrow'); lmRow.appendChild(addLogoBtn); lmRow.appendChild(logosBtn);
+      lg.appendChild(mk('div', 'rch-label', 'Logos and shapes'));
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -464,11 +465,10 @@
         } else R.logos.push(n);
         sel = n; draw();
       };
-      addRow.appendChild(lpick); addRow.appendChild(addB);
-      lg.insertBefore(addRow, layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
+      addRow.appendChild(lpick); addRow.appendChild(addB); addRow.appendChild(addLogoBtn); addRow.appendChild(logosBtn);
+      lg.insertBefore(addRow, layers);
+      lg.insertBefore(mk('div', 'rch-label rch-subhead', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
-      lg.appendChild(mk('div', 'rch-label rch-subhead rch-lmhead', 'Logo library'));
-      lg.appendChild(lmRow);   // the Add Logo / Manage Logos buttons sit at the bottom of this section, under their own subheading
       right.appendChild(lg);
 
       /* ---------------- right: recipe text ---------------- */
@@ -779,7 +779,7 @@
       window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
       modal.closeBtn.addEventListener('click', function () { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); document.removeEventListener('selectstart', noSelect); });
       // Closing the designer with unsaved changes asks first (the same question the New button asks)
-      if (!only) modal.closeBtn.addEventListener('click', function (ev) {
+      if (!only && !inline) modal.closeBtn.addEventListener('click', function (ev) {
         if (!isDirty()) return;
         ev.stopImmediatePropagation();
         function closeNow() { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); document.removeEventListener('selectstart', noSelect); modal.close(); }
@@ -917,46 +917,17 @@
         }).catch(function () {});
       }
 
-      /* ---------------- Load Design: opens a saved design in the designer (nothing else) ---------------- */
+      /* ---------------- Open: loading a design into the studio, plus managing the library (details, access, archive, delete) ---------------- */
       function loadWithCheck(p, closeFn) {
         function go() { if (closeFn) closeFn(); loadPreset(p); }
         if (!isDirty()) { go(); return; }
-        confirmBox('Save changes first?', 'The helmet in the designer has changes that have not been saved. Do you want to save them before you load "' + p.name + '"?', [
+        confirmBox('Save changes first?', 'The helmet in the studio has changes that have not been saved. Do you want to save them before you open "' + p.name + '"?', [
           { label: 'Save changes', primary: true, fn: function () { if (closeFn) closeFn(); afterOk = function () { loadPreset(p); }; doSave(false); } },
           { label: 'Don\'t save', fn: go },
           { label: 'Cancel' }]);
       }
-      function openLoad() {
-        var lb2 = mk('div', 'rch-loadbody');
-        var lm2 = ctx.showModal('Load Helmet Design', { bodyEl: lb2, wide: true, accentHead: true });
-        lb2.appendChild(spin('Loading...'));
-        fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
-          lb2.innerHTML = '';
-          if (!res || !res.success) { lb2.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
-          var list = (res.presets || []).filter(function (p) { return p.active; });   // archived designs cannot be loaded (restore them in Manage Designs first)
-          if (!list.length) { lb2.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
-          lb2.appendChild(mk('p', 'rch-hint', 'Pick a design to open it in the designer.'));
-          KINDS.forEach(function (k) {
-            var rows = list.filter(function (p) { return p.kind === k; });
-            if (!rows.length) return;
-            lb2.appendChild(mk('div', 'rch-label rch-mt', esc(k)));
-            eachGroup(rows, function (gl, grp) { if (gl) lb2.appendChild(mk('div', 'rch-psub rch-collhead', esc(gl))); grp.forEach(function (p) {
-              var row = mk('div', 'rch-loadrow' + (p.active ? '' : ' rch-archived'));
-              var th = mk('div', 'rch-thumb'); row.appendChild(th); renderThumb(th, p.recipe, 140);
-              var info = mk('div', 'rch-info');
-              info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)')));
-              if (p.kind === 'Manufacturer') info.appendChild(mk('div', 'rch-psub', esc(p.manufacturer || '')));
-              row.appendChild(info);
-              var act = mk('div', 'rch-btns');
-              var lb3 = btn('Load'); lb3.onclick = function () { loadWithCheck(p, function () { lm2.close(); }); };
-              act.appendChild(lb3); row.appendChild(act); lb2.appendChild(row);
-            }); });
-          });
-        }).catch(function () { lb2.innerHTML = ''; lb2.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
-      }
-      loadBtn.onclick = openLoad;
 
-      /* ---------------- Edit details: name, kind, manufacturer, description (never the design itself) ---------------- */
+      /* ---------------- Edit details: name, kind, manufacturer, category, description, and who it is given to (never the design itself) ---------------- */
       function openDetails(p, list, after) {
         var db = mk('div', 'rch-logoform');
         var dm = ctx.showModal('Edit Helmet Details', { bodyEl: db, accentHead: true });
@@ -974,12 +945,32 @@
         db.appendChild(mk('div', 'rch-label rch-mt', 'Helmet description'));
         var ds = mk('textarea', 'rch-desc'); ds.maxLength = 200; ds.rows = 3; ds.value = p.description || ''; ds.placeholder = 'Optional. A short note about this helmet (200 characters at most).'; db.appendChild(ds);
         var kh = mk('p', 'rch-hint'); db.appendChild(kh);
-        function sync() { cw.style.display = COLL_KINDS.indexOf(k.value) >= 0 ? '' : 'none'; var isM = k.value === 'Manufacturer'; mw.style.display = isM ? '' : 'none'; n.disabled = isM; if (isM) n.value = m.value; kh.textContent = KIND_HINTS[k.value] || ''; }
-        k.onchange = sync; m.onchange = sync; ds.oninput = sync; sync();
+        // Give to: every member with a checkbox (special event, premium and award helmets only). Group access that is already set is kept as it is.
+        var gw = mk('div'); gw.appendChild(mk('div', 'rch-label rch-mt', 'Give to'));
+        var gbody = mk('div'); gbody.appendChild(spin('Loading...')); gw.appendChild(gbody); db.appendChild(gw);
+        var groupsKeep = [], profOn = {}, grantsLoaded = false;
+        Promise.all([fetchApi('adminListHelmetMembers', { token: token }), fetchApi('adminListHelmetGrants', { token: token, params: { presetId: p.presetId } })]).then(function (rr) {
+          gbody.innerHTML = '';
+          var mres = rr[0], gres = rr[1];
+          if (!mres || !mres.success || !gres || !gres.success) { gbody.appendChild(mk('p', 'rch-hint', 'Could not load the member list, so access will not be changed.')); return; }
+          groupsKeep = gres.groups || [];
+          (gres.profiles || []).forEach(function (x) { profOn[x] = true; });
+          var listEl = mk('div', 'rch-memberlist'); gbody.appendChild(listEl);
+          (mres.members || []).forEach(function (mem) {
+            var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!profOn[mem.profileId];
+            cb.onchange = function () { profOn[mem.profileId] = cb.checked; };
+            lab.appendChild(cb); lab.appendChild(mk('span', null, esc(mem.name) + ' <span class="rch-psub">' + esc(mem.role) + (mem.username ? ' - ' + esc(mem.username) : '') + '</span>')); listEl.appendChild(lab);
+          });
+          if (!listEl.children.length) listEl.appendChild(mk('p', 'rch-hint', 'No members yet.'));
+          grantsLoaded = true;
+        }).catch(function () { gbody.innerHTML = ''; gbody.appendChild(mk('p', 'rch-hint', 'No answer from the server, so access will not be changed.')); });
+        function sync() { cw.style.display = COLL_KINDS.indexOf(k.value) >= 0 ? '' : 'none'; gw.style.display = COLL_KINDS.indexOf(k.value) >= 0 ? '' : 'none'; var isM = k.value === 'Manufacturer'; mw.style.display = isM ? '' : 'none'; n.disabled = isM; if (isM) n.value = m.value; kh.textContent = KIND_HINTS[k.value] || ''; }
+        k.onchange = sync; m.onchange = sync; sync();
         var bt2 = mk('div', 'rch-btns rch-mt');
-        var sv2 = btn('Save Details', 'rc-btn-primary rc-btn-sm'), cn2 = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
+        var sv2 = btn('Save', 'rc-btn-primary rc-btn-sm'), cn2 = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
         bt2.appendChild(sv2); bt2.appendChild(cn2); db.appendChild(bt2);
         cn2.onclick = function () { dm.close(); };
+        function busy(on) { sv2.disabled = on; cn2.disabled = on; sv2.textContent = on ? 'Saving...' : 'Save'; dm.closeBtn.disabled = on; dm.closeBtn.style.opacity = on ? '0.35' : ''; dm.closeBtn.style.pointerEvents = on ? 'none' : ''; }
         sv2.onclick = function () {
           var kind = k.value, mfr = kind === 'Manufacturer' ? m.value : '', name = kind === 'Manufacturer' ? mfr : n.value.trim(), desc = ds.value.slice(0, 200), coll = COLL_KINDS.indexOf(kind) >= 0 ? cpk.get() : '';
           if (kind === 'Manufacturer' && !mfr) { toast('Choose a manufacturer for a Manufacturer helmet.', 'error'); return; }
@@ -987,13 +978,21 @@
           var slotChanged = (kind === 'Website Default' || kind === 'Manufacturer') && (kind !== p.kind || mfr !== (p.manufacturer || ''));
           var old = slotChanged ? (list || []).filter(function (x) { return x.active && x.presetId !== p.presetId && x.kind === kind && (kind === 'Website Default' || x.manufacturer === mfr); })[0] : null;
           function run() {
-            sv2.disabled = true; cn2.disabled = true; sv2.textContent = 'Saving...';
+            busy(true);
             fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, collection: coll, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(H.normalizeRecipe(p.recipe)) } }).then(function (r) {
-              if (r && r.success) {
-                if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll }; syncMeta(); }
-                refreshPresets(); toast('Details saved.', 'success'); dm.close(); if (after) after();
-              } else { sv2.disabled = false; cn2.disabled = false; sv2.textContent = 'Save Details'; toast((r && r.message) || 'Could not save.', 'error'); }
-            }).catch(function () { sv2.disabled = false; cn2.disabled = false; sv2.textContent = 'Save Details'; toast('No answer from the server.', 'error'); });
+              if (!r || !r.success) { busy(false); toast((r && r.message) || 'Could not save.', 'error'); return; }
+              if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll }; syncMeta(); }
+              refreshPresets();
+              function finish() { toast('Saved.', 'success'); dm.close(); if (after) after(); }
+              if (!(grantsLoaded && COLL_KINDS.indexOf(kind) >= 0)) { finish(); return; }
+              fetchApi('adminSaveHelmetGrants', { method: 'POST', token: token, body: {
+                presetId: p.presetId, groups: JSON.stringify(groupsKeep),
+                profiles: JSON.stringify(Object.keys(profOn).filter(function (x) { return profOn[x]; }))
+              } }).then(function (g) {
+                if (g && g.success) finish();
+                else { busy(false); toast('The details were saved, but access could not be saved: ' + ((g && g.message) || 'try again.'), 'error'); }
+              }).catch(function () { busy(false); toast('The details were saved, but access could not be saved (no answer from the server).', 'error'); });
+            }).catch(function () { busy(false); toast('No answer from the server.', 'error'); });
           }
           if (old) confirmBox(kind === 'Website Default' ? 'Replace the Website Default?' : 'Replace the ' + mfr + ' helmet?',
             (kind === 'Website Default' ? 'A Website Default helmet ("' + old.name + '") already exists.' : 'The ' + mfr + ' helmet already exists.') + ' Do you want to make this one the replacement? The older one will be archived.',
@@ -1002,17 +1001,17 @@
         };
       }
 
-      /* ---------------- Manage Helmet Designs: details, access, archive, delete ---------------- */
+      /* ---------------- Open popup: every saved design, with Open, Edit Details, Archive (and Restore, Delete Forever for archived ones) ---------------- */
       function openManage() {
         var mb = mk('div', 'rch-loadbody');
-        var mm = ctx.showModal('Manage Helmet Designs', { bodyEl: mb, wide: true, accentHead: true });
+        var mm = ctx.showModal(only ? 'Manage Helmet Designs' : 'Open Helmet Design', { bodyEl: mb, wide: true, accentHead: true });
         function load() {
           mb.innerHTML = ''; mb.appendChild(spin('Loading...'));
           fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             var list = res.presets || [];
-            mb.appendChild(mk('p', 'rch-hint', 'Edit Details changes the name, kind, manufacturer, category and description (not the design). Give to... chooses who can use a helmet. Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles. To open a design in the designer, use Load Design.'));
+            mb.appendChild(mk('p', 'rch-hint', 'Open loads a design into the studio. Edit Details changes its name, category, description and who it is given to (not the design). Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles.'));
             if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
             KINDS.forEach(function (k) {
               var rows = list.filter(function (p) { return p.kind === k; });
@@ -1032,10 +1031,9 @@
                 function home() {
                   act.innerHTML = '';
                   if (p.active) {
+                    if (!only) { var op = btn('Open'); op.onclick = function () { loadWithCheck(p, function () { mm.close(); }); }; act.appendChild(op); }
                     var ed = btn('Edit Details'); ed.onclick = function () { openDetails(p, list, load); };
                     act.appendChild(ed);
-                    var givable = p.kind !== 'Website Default' && p.kind !== 'Manufacturer';
-                    if (givable) { var gv = btn('Give to...'); gv.onclick = function () { openAssign(p, load); }; act.appendChild(gv); }
                     var ar = btn('Archive'); ar.onclick = function () { confirmRow('Archive it?', 'Yes, archive', function (done) {
                       fetchApi('adminSetHelmetPresetActive', { method: 'POST', token: token, body: { presetId: p.presetId, active: 'Inactive' } }).then(function (r2) { done(r2 && r2.success, r2 && r2.message); load(); }).catch(function () { done(false); });
                     }); };
@@ -1066,56 +1064,7 @@
         }
         load();
       }
-      manageBtn.onclick = openManage;
-
-      /* ---------------- Give a helmet to groups and members ---------------- */
-      function openAssign(p, after) {
-        var ab = mk('div', 'rch-assign');
-        ab.appendChild(spin('Loading...'));
-        var am = ctx.showModal('Give Helmet', { bodyEl: ab, accentHead: true });
-        Promise.all([fetchApi('adminListHelmetMembers', { token: token }), fetchApi('adminListHelmetGrants', { token: token, params: { presetId: p.presetId } })]).then(function (rr) {
-          ab.innerHTML = '';
-          var mres = rr[0], gres = rr[1];
-          if (!mres || !mres.success || !gres || !gres.success) { ab.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc(((mres && !mres.success && mres.message) || (gres && gres.message)) || 'no answer.'))); return; }
-          var groupsOn = {}; (gres.groups || []).forEach(function (g) { groupsOn[g] = true; });
-          var profOn = {}; (gres.profiles || []).forEach(function (x) { profOn[x] = true; });
-          ab.appendChild(mk('div', 'rch-label', 'Groups'));
-          GROUPS.forEach(function (g) {
-            if (!g) { ab.appendChild(mk('div', 'rch-gap')); return; }
-            var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!groupsOn[g[0]];
-            cb.onchange = function () { groupsOn[g[0]] = cb.checked; };
-            lab.appendChild(cb); lab.appendChild(mk('span', null, esc(g[1]))); ab.appendChild(lab);
-          });
-          ab.appendChild(mk('div', 'rch-label rch-mt', 'Individual members'));
-          var q = mk('input', 'rch-input'); q.type = 'text'; q.placeholder = 'Search by name or username'; ab.appendChild(q);
-          var listEl = mk('div', 'rch-memberlist'); ab.appendChild(listEl);
-          function renderMembers() {
-            var term = q.value.trim().toLowerCase(); listEl.innerHTML = '';
-            (mres.members || []).filter(function (m) { return !term || (m.name + ' ' + m.username).toLowerCase().indexOf(term) >= 0; }).forEach(function (m) {
-              var lab = mk('label', 'rch-check'); var cb = mk('input'); cb.type = 'checkbox'; cb.checked = !!profOn[m.profileId];
-              cb.onchange = function () { profOn[m.profileId] = cb.checked; };
-              lab.appendChild(cb); lab.appendChild(mk('span', null, esc(m.name) + ' <span class="rch-psub">' + esc(m.role) + (m.username ? ' - ' + esc(m.username) : '') + '</span>')); listEl.appendChild(lab);
-            });
-            if (!listEl.children.length) listEl.appendChild(mk('p', 'rch-hint', 'No members match.'));
-          }
-          q.oninput = renderMembers; renderMembers();
-          var bt = mk('div', 'rch-btns rch-mt');
-          var sv = btn('Save Access', 'rc-btn-primary rc-btn-sm'), cn = btn('Cancel', 'rc-btn-secondary rc-btn-sm');
-          sv.onclick = function () {
-            sv.disabled = true; cn.disabled = true; sv.textContent = 'Saving access...';
-            fetchApi('adminSaveHelmetGrants', { method: 'POST', token: token, body: {
-              presetId: p.presetId,
-              groups: JSON.stringify(GROUPS.filter(Boolean).map(function (g) { return g[0]; }).filter(function (g) { return groupsOn[g]; })),
-              profiles: JSON.stringify(Object.keys(profOn).filter(function (k) { return profOn[k]; }))
-            } }).then(function (r) {
-              if (r && r.success) { toast('Saved who has "' + p.name + '".', 'success'); am.close(); if (after) after(); }
-              else { sv.disabled = false; cn.disabled = false; sv.textContent = 'Save Access'; toast((r && r.message) || 'Could not save.', 'error'); }
-            }).catch(function () { sv.disabled = false; cn.disabled = false; sv.textContent = 'Save Access'; toast('No answer from the server.', 'error'); });
-          };
-          cn.onclick = function () { am.close(); };
-          bt.appendChild(sv); bt.appendChild(cn); ab.appendChild(bt);
-        }).catch(function () { ab.innerHTML = ''; ab.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
-      }
+      loadBtn.onclick = openManage;
 
       /* ---------------- Logo Manager ---------------- */
       function openLogoManager() {
@@ -1129,10 +1078,10 @@
             if (!res || !res.success) { lb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             all = res.logos || [];
             var top = mk('div', 'rch-btns');
-            var up = btn('Add Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
+            var up = btn('Upload Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
             top.appendChild(up); lb.appendChild(top);
             lb.appendChild(mk('p', 'rch-hint', 'Archive hides a logo from the designer but keeps it on helmets that already use it. Delete Forever removes it from every helmet and profile.'));
-            if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Add Logo.')); return; }
+            if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Upload Logo.')); return; }
             var cats = {}, order = [];
             all.forEach(function (l) { var c = l.category || 'Custom logos'; if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(l); });
             order.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
@@ -1212,7 +1161,7 @@
         var d = { name: logo ? logo.name : '', category: logo ? (logo.category || '') : '' };
         var data = '';                          // a newly picked picture
         var fb = mk('div', 'rch-logoform');
-        var fm = ctx.showModal(isNew ? 'Add Logo' : 'Edit Logo', { bodyEl: fb, accentHead: true });
+        var fm = ctx.showModal(isNew ? 'Upload Logo' : 'Edit Logo', { bodyEl: fb, accentHead: true });
         fb.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
         var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; fb.appendChild(fi);
         var fstat = mk('p', 'rch-hint'); fb.appendChild(fstat);
