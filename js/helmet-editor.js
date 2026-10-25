@@ -82,7 +82,7 @@
   // picture's proportions while either one changes.
   var linkOn = true;     // remembered for the session
   function makeGrid(o) {
-    var K = o.keys, g = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;
+    var K = o.keys, g = mk('div', 'rch-sliders'), g2 = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;   // g = position sliders, g2 = tilt and skew
     function obj() { return o.obj(); }
     function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
     function fmt(d) { return String(Math.round(d * 10) / 10); }
@@ -95,13 +95,15 @@
       oo[K.w] = Math.round(clamp(w, 5, 700)); oo[K.h] = Math.round(clamp(h, 5, 700));
       rows.w.sync(); rows.h.sync();
     }
-    function addRow(field, label, min, max, step, toDisp, fromDisp) {
-      var lab = mk('span', '', label); g.appendChild(lab);
+    function addRow(field, label, min, max, step, toDisp, fromDisp, host) {
+      host = host || g;
+      var lab = mk('span', '', label); host.appendChild(lab);
       var rng = mk('input'); rng.type = 'range'; rng.min = min; rng.max = max; rng.step = step;
       var num = mk('input', 'rch-num'); num.type = 'number'; num.min = min; num.max = max; num.step = step; num.setAttribute('aria-label', label);
       var row = { lab: lab, sync: function () { var d = toDisp(obj()[K[field]]); rng.value = d; num.value = fmt(d); } };
       function apply(d) {
         obj()[K[field]] = fromDisp(clamp(d, min, max));
+        if (field === 'sk' && !obj()[K[field]]) delete obj()[K[field]];
         if (field === 'w' || field === 'h') {
           // unlinked: the picture is stretched to the box (width and height move on their own); linked: back to its own proportions
           if (o.stretchKey) { if (linkOn) delete obj()[o.stretchKey]; else obj()[o.stretchKey] = 1; }
@@ -112,7 +114,7 @@
       rng.oninput = function () { var d = parseFloat(rng.value); num.value = fmt(d); apply(d); };
       num.oninput = function () { var d = parseFloat(num.value); if (!isFinite(d) || d < min || d > max) return; rng.value = d; apply(d); };   // live while typing, as long as the number is in range
       num.onchange = function () { var d = parseFloat(num.value); if (!isFinite(d)) { row.sync(); return; } d = clamp(d, min, max); apply(d); row.sync(); };
-      g.appendChild(rng); g.appendChild(num);
+      host.appendChild(rng); host.appendChild(num);
       rows[field] = row; row.sync();
       return row;
     }
@@ -122,7 +124,9 @@
     var hr = addRow('h', 'Max height', 5, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('r', 'Tilt (deg)', -45, 45, 0.5,
       function (v) { v = Number(v) || 0; return -(v - turnBase(v)) || 0; },
-      function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); });
+      function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); }, g2);
+    // Skew: slide left and the top leans left while the bottom leans right; slide right for the opposite
+    if (K.sk) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g2);
     // link button, centered between the Max width and Max height labels
     var lk = mk('button', 'rch-link', LINK_ICON); lk.type = 'button';
     function lkState() { lk.className = 'rch-link' + (linkOn ? ' on' : ''); lk.setAttribute('aria-pressed', linkOn ? 'true' : 'false'); lk.title = linkOn ? 'Linked: width and height keep the picture\'s proportions. Click to unlink.' : 'Unlinked. Click to keep the picture\'s proportions.'; lk.setAttribute('aria-label', lk.title); }
@@ -142,7 +146,7 @@
     };
     hr.lab.appendChild(lk);
     return {
-      el: g,
+      el: g, el2: g2,
       sync: function () { for (var k in rows) rows[k].sync(); },
       loadAspect: function () {
         nat = null; fixedRatio = 0;
@@ -154,7 +158,7 @@
 
   // "Rotate Left" and "Rotate Right" buttons: quarter turns of the layer (r counts counter-clockwise, so left = +90, right = -90).
   // The object's own width and height turn with it, so nothing is stretched. after() redraws and refreshes the sliders.
-  function makeRotateButtons(getObj, key, after, mirrorKey) {
+  function makeRotateButtons(getObj, key, after, mirrorKeys) {
     function one(label, dir) {
       // Left reads "Left" then its arrow, Right reads its arrow then "Right", so the two mirror each other around the Mirror button
       var b = mk('button', 'rc-btn-secondary rch-rotbtn', dir > 0 ? '<span>' + label + '</span>' + ROT_ICON : ROT_ICON + '<span>' + label + '</span>'); b.type = 'button';
@@ -163,18 +167,19 @@
       b.onclick = function () { var oo = getObj(); oo[key] = wrapAngle((Number(oo[key]) || 0) + dir * 90); after(); };
       return b;
     }
-    var out = [one('Left', 1)];
-    if (mirrorKey) {
-      // Mirror: flips the layer left to right (an icon only button between Left and Right)
-      var mb = mk('button', 'rc-btn-secondary rch-rotbtn rch-mirror', MIRROR_ICON); mb.type = 'button';
-      mb.title = 'Mirror left to right'; mb.setAttribute('aria-label', 'Mirror left to right');
-      function mstate() { mb.classList.toggle('rch-on', !!getObj()[mirrorKey]); }
-      mb.onclick = function () { var oo = getObj(); if (oo[mirrorKey]) delete oo[mirrorKey]; else oo[mirrorKey] = 1; mstate(); after(); };
+    var out = [one('Rotate Left', 1)];
+    (mirrorKeys || []).forEach(function (mk2) {
+      // Mirror buttons (icon only) between the two rotate buttons: fx flips left to right, fy flips top to bottom
+      var mb = mk('button', 'rc-btn-secondary rch-rotbtn rch-mirror', mk2[1]); mb.type = 'button';
+      mb.title = mk2[2]; mb.setAttribute('aria-label', mk2[2]);
+      function mstate() { mb.classList.toggle('rch-on', !!getObj()[mk2[0]]); }
+      mb.onclick = function () { var oo = getObj(); if (oo[mk2[0]]) delete oo[mk2[0]]; else oo[mk2[0]] = 1; mstate(); after(); };
       mstate(); out.push(mb);
-    }
-    out.push(one('Right', -1));
+    });
+    out.push(one('Rotate Right', -1));
     return out;
   }
+  var MIRROR_V_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18" stroke-dasharray="2 3"/><path d="M7 9 17 3v6z" transform="translate(0 0)"/><path d="M7 15h10l-5 6z"/></svg>';
   var MIRROR_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7 3 17h6z"/><path d="M15 7l6 10h-6z"/></svg>';
 
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
@@ -452,7 +457,12 @@
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
-        R.logos.push(n); sel = n; draw();
+        var selIdx = sel ? R.logos.indexOf(sel) : -1;
+        if (selIdx >= 0) {   // a layer is selected: the new one goes directly above it (and under the accents when the selected one is)
+          var acN = Math.max(0, Math.min(R.logos.length, Math.floor(+R.ac) || 0));
+          R.logos.splice(selIdx + 1, 0, n); if (selIdx < acN) R.ac = acN + 1;
+        } else R.logos.push(n);
+        sel = n; draw();
       };
       addRow.appendChild(lpick); addRow.appendChild(addB);
       lg.insertBefore(addRow, layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
@@ -574,10 +584,15 @@
       function renderDetail() {
         detail.innerHTML = ''; curGrid = null;
         if (!sel || R.logos.indexOf(sel) < 0) return;
-        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
+        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r', sk: 'sk' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
-        detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer manipulation'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer position'));
         detail.appendChild(grid.el);
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Layer transform'));
+        var rotRow = mk('div', 'rch-btns rch-rotrow'); detail.appendChild(rotRow);   // Rotate Left, the two mirrors, Rotate Right
+        makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, [['fx', MIRROR_ICON, 'Mirror left to right'], ['fy', MIRROR_V_ICON, 'Mirror top to bottom']]).forEach(function (bn) { rotRow.appendChild(bn); });
+        grid.el2.style.marginTop = '10px'; detail.appendChild(grid.el2);
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
         var nsl = mk('label', 'rch-check rch-plain'); var nsc = mk('input'); nsc.type = 'checkbox'; nsc.checked = !(sel.sh === 1 || sel.sh === true || sel.sh === 2);
@@ -590,8 +605,6 @@
         nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl);
         shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
         sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
-        var rotRow = mk('div', 'rch-btns rch-rotrow'); opts.appendChild(rotRow);   // Left, Mirror and Right stay together on their own line
-        makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, 'fx').forEach(function (bn) { rotRow.appendChild(bn); });
         if (sel.s) {
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
           var pickColor = function (key, label, hint, withNone) {
@@ -720,7 +733,7 @@
         function place(w, h) {
           box.style.width = (w * k) + 'px'; box.style.height = (h * k) + 'px';
           box.style.left = (cv.offsetLeft + (sel.x - C.x) * k) + 'px'; box.style.top = (cv.offsetTop + (sel.y - C.y) * k) + 'px';
-          box.style.transform = 'translate(-50%, -50%) rotate(' + (-(Number(sel.r) || 0)) + 'deg)';
+          box.style.transform = 'translate(-50%, -50%) rotate(' + (-(Number(sel.r) || 0)) + 'deg)' + (Number(sel.sk) ? ' skewX(' + (-Number(sel.sk)) + 'deg)' : '');
         }
         if (!sel.s) {                       // a picture is drawn "contained" in its box: outline the picture itself
           var key = (sel.m || '') + '|' + (sel.v || '') + '|' + (sel.f || ''), asp = aspectCache[key], layer = sel;
@@ -733,6 +746,14 @@
         } else place(bw, bh);
         stage.appendChild(box);
       }
+
+      // Clicking on a blank part of the popup (not a button, field, layer row, layer settings or the preview) lets go of the selected layer
+      body.addEventListener('click', function (e) {
+        if (!sel) return;
+        var t = e.target;
+        if (t.closest && t.closest('button, input, select, textarea, label, a, summary, .rch-layer, .rch-detail, .rch-stage, .rch-edge')) return;
+        sel = null; renderLayers(); renderDetail(); updateSelBox();
+      });
 
       // click / drag on the preview moves the selected logo
       var dragging = false;
@@ -985,7 +1006,7 @@
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             var list = res.presets || [];
-            mb.appendChild(mk('p', 'rch-hint', 'Edit changes the name, kind, manufacturer and description (not the design). Give to... chooses who can use a helmet. Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles. To open a design in the designer, use Load Design.'));
+            mb.appendChild(mk('p', 'rch-hint', 'Edit Details changes the name, kind, manufacturer, category and description (not the design). Give to... chooses who can use a helmet. Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles. To open a design in the designer, use Load Design.'));
             if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
             KINDS.forEach(function (k) {
               var rows = list.filter(function (p) { return p.kind === k; });
@@ -1005,7 +1026,7 @@
                 function home() {
                   act.innerHTML = '';
                   if (p.active) {
-                    var ed = btn('Edit'); ed.onclick = function () { openDetails(p, list, load); };
+                    var ed = btn('Edit Details'); ed.onclick = function () { openDetails(p, list, load); };
                     act.appendChild(ed);
                     var givable = p.kind !== 'Website Default' && p.kind !== 'Manufacturer';
                     if (givable) { var gv = btn('Give to...'); gv.onclick = function () { openAssign(p, load); }; act.appendChild(gv); }

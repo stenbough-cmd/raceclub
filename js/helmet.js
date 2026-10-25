@@ -391,7 +391,9 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (l && l.s && shapeById(l.s)) {
         var sl = { s: l.s, c: (typeof l.c === 'string' && l.c) ? l.c : 'red', m: '', v: 'std', f: '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
         if (isPlayerId(l.s) && typeof l.bg === 'string' && l.bg) sl.bg = l.bg;
-        if (l.fx) sl.fx = 1;   // fx = mirrored left to right
+        if (l.fx) sl.fx = 1;   // fx = mirrored left to right, fy = top to bottom, sk = skew degrees
+        if (l.fy) sl.fy = 1;
+        if (+l.sk) sl.sk = Math.max(-45, Math.min(45, Math.round(+l.sk * 2) / 2));
         if (+l.bw >= 1 && borderOk(l.s)) { sl.bw = Math.min(20, Math.round(+l.bw)); sl.bc = (typeof l.bc === 'string' && l.bc) ? l.bc : 'black'; }   // border size (px) and color
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : (l.s === 'checker' ? 'white' : 'black');
@@ -401,6 +403,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (!l || !(l.f || l.m)) return;
       var il = { m: l.m ? String(l.m) : '', v: (l.v === 'white' || l.v === 'black') ? l.v : 'std', f: l.f ? String(l.f) : '', x: +l.x || 0, y: +l.y || 0, w: +l.w || 200, h: +l.h || 200, r: +l.r || 0, sh: l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1) };
       if (l.fx) il.fx = 1;
+      if (l.fy) il.fy = 1;
+      if (+l.sk) il.sk = Math.max(-45, Math.min(45, Math.round(+l.sk * 2) / 2));
       if (l.st) il.st = 1;   // width and height set apart: the picture is stretched to the box
       if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
       out.logos.push(il);
@@ -726,7 +730,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           g.save();
           g.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           g.rotate(-l.r * Math.PI / 180);
-          if (l.fx) g.scale(-1, 1);   // mirrored left to right
+          if (l.sk) g.transform(1, 0, -Math.tan(l.sk * Math.PI / 180), 1, 0, 0);   // skew: a negative sk leans the top left and the bottom right
+          if (l.fx || l.fy) g.scale(l.fx ? -1 : 1, l.fy ? -1 : 1);   // mirrored left to right and / or top to bottom
           if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           if (l.s) {
