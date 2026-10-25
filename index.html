@@ -34,37 +34,41 @@
 
 <div class="rc-hero-content">
 
-  <!-- Intro: one clear question answered up front, then two big buttons that jump to the matching
-       explanation further down this same page (#league-experience / #championship). -->
+  <!-- Intro + the two modes combined: one headline, then one card per way to race, each with its own jump button. -->
   <section class="rc-landing-section rc-intro-section">
     <div class="rc-landing-inner rc-intro-inner">
       <h2>Every Race Has A Bigger Purpose</h2>
       <p class="rc-landing-tagline">Build your racing career in Le Mans Ultimate. Compete in a persistent online league or run your own championship against AI rivals. Your results, history, and progress follow you from season to season.</p>
-      <div class="rc-intro-buttons">
-        <a class="rc-intro-btn" href="#league-experience">Explore the Online League <span aria-hidden="true">&rarr;</span></a>
-        <a class="rc-intro-btn" href="#championship">Explore Race Club Championship <span aria-hidden="true">&rarr;</span></a>
-      </div>
-    </div>
-  </section>
 
-  <section class="rc-landing-section rc-modes-section">
-    <div class="rc-landing-inner">
-      <div class="rc-eyebrow">Choose Your Path</div>
-      <h2>Two Ways To Race</h2>
-      <div class="rc-highlight-grid rc-modes-grid">
-        <div class="rc-highlight-card">
-          <div class="rc-highlight-icon">
+      <div class="rc-path-heading">Two Ways To Race</div>
+      <div class="rc-path-grid">
+        <div class="rc-path-card">
+          <div class="rc-path-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"></path><circle cx="17" cy="9" r="2.4"></circle><path d="M17 14.2a4 4 0 0 1 4 3.8v1"></path></svg>
           </div>
+          <div class="rc-path-kicker">Multiplayer</div>
           <h3>Online League</h3>
           <p>Race other drivers, claim a team seat, compete on a schedule, win awards and follow the championship with individual stats and accomplishments.</p>
+          <ul class="rc-path-list">
+            <li>Claim a real WEC or ELMS team seat</li>
+            <li>Scheduled rounds with live standings</li>
+            <li>Earn awards, helmets and a career record</li>
+          </ul>
+          <a class="rc-path-btn" href="#league-experience">Explore the Online League <span aria-hidden="true">&rarr;</span></a>
         </div>
-        <div class="rc-highlight-card">
-          <div class="rc-highlight-icon">
+        <div class="rc-path-card">
+          <div class="rc-path-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"></path><path d="M5 4h13l-2.5 4L18 12H5"></path></svg>
           </div>
+          <div class="rc-path-kicker">Single Player</div>
           <h3>Race Club Championship</h3>
           <p>Build a solo season, race AI opponents, and track your results at your own pace. Seasons are built using real WEC or ELMS grids that are already built into Le Mans Ultimate.</p>
+          <ul class="rc-path-list">
+            <li>No schedule. Race whenever you like</li>
+            <li>Real grids, real teams, real liveries</li>
+            <li>A season story written as you race</li>
+          </ul>
+          <a class="rc-path-btn" href="#championship">Explore Race Club Championship <span aria-hidden="true">&rarr;</span></a>
         </div>
       </div>
     </div>
@@ -91,7 +95,7 @@
      of copy. -->
   <section class="rc-landing-section rc-why-section" id="league-experience">
     <div class="rc-landing-inner">
-      <div class="rc-eyebrow">The Experience</div>
+      <div class="rc-eyebrow">Race Club's Online League</div>
       <h2>This Isn't Just A Lobby. It's A Sim Racing Career.</h2>
       <p class="rc-landing-tagline">
         Every system underneath Race Club exists to make one thing feel
@@ -199,7 +203,7 @@
     var stages = document.querySelectorAll('[data-helmet]');
     for (var i = 0; i < stages.length; i++) {
       var r = RECIPES[stages[i].getAttribute('data-helmet')];
-      if (r) stages[i].innerHTML = rcHelmetHtml_('helmet:' + JSON.stringify(r), 240, 'rc-helmet-show');
+      if (r) stages[i].innerHTML = rcHelmetHtml_('helmet:' + JSON.stringify(r), 190, 'rc-helmet-show');
     }
     rcHelmetHydrate_(document.getElementById('rc-helmet-showcase'));
   })();
@@ -650,8 +654,7 @@
       var perClass = isPhoneWidth_() ? 3 : 6;
       var year = 2026;
 
-      taglineEl.textContent = 'The ' + year + ' ' + pick.name + ' field, ready for you to race against in Le Mans Ultimate. ' +
-        'Refresh the page for another look at the grid.';
+      taglineEl.textContent = 'The ' + year + ' ' + pick.name + ' field, ready for you to race against in Le Mans Ultimate.';
 
       rowEl.innerHTML = '';
       pick.groups.forEach(function (g) {
@@ -700,7 +703,7 @@
   <section class="rc-cta-section">
     <div class="rc-landing-inner rc-cta-inner">
       <h2>Ready To Race?</h2>
-      <p>Seats available are based on real WEC and ELMS entries so there's a limited number to choose from. Sign up, pick a team, and claim a seat. Let's race!</p>
+      <p>Pick WEC or ELMS, build your season and take on the AI grid at your own pace. No schedule, no lobby, just you and the next green flag. Let's race!</p>
       <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Profile</a>
     </div>
   </section>
