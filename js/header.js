@@ -96,13 +96,21 @@ function _rcHelmetCss_() {
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=36'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
+// Popup title reads HELMET DESIGNER with "lite" in italic, normal weight (every page's showModal takes plain text for the title).
+function rcHelmetTitleLite_(modal) {
+  try {
+    var t = modal && modal.el && modal.el.querySelector('h3, .rcl-modal-title');
+    if (t) t.innerHTML = 'Helmet Designer <span style="font-style:italic;font-weight:400;">lite</span>';
+  } catch (e) {}
+}
 // Opens the Customize Helmet popup AT ONCE with the loading lights, then fills it in once everything
 // has loaded. o = { profile, token, showModal, showToast, onChange }.
 function rcHelmetCustomize_(o) {
   _rcHelmetCss_();
   var body = document.createElement('div'); body.className = 'rch-designer rch-player';
   body.appendChild(rcHelmetSpinner_('Loading your helmet designer...'));
-  var modal = o.showModal('Customize Helmet', { bodyEl: body, wide: true });
+  var modal = o.showModal('Helmet Designer lite', { bodyEl: body, wide: true });
+  rcHelmetTitleLite_(modal);
   var shell = { body: body, modal: modal };
   return _rcHelmetModule_().then(function () { return window.rcHelmetCustomizeNow_(o, shell); })
     .catch(function () {

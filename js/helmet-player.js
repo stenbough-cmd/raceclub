@@ -111,7 +111,7 @@
     // The popup is already open showing the loading lights (js/header.js rcHelmetCustomize_); fill it.
     var body, modal;
     if (ctx.shell) { body = ctx.shell.body; modal = ctx.shell.modal; body.innerHTML = ''; }
-    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Customize Helmet', { bodyEl: body, wide: true }); }
+    else { body = mk('div', 'rch-designer rch-player'); modal = ctx.showModal('Helmet Designer lite', { bodyEl: body, wide: true }); if (typeof rcHelmetTitleLite_ === 'function') rcHelmetTitleLite_(modal); }
     if (modal && modal.el) modal.el.classList.add('rch-pmodal');
 
     if (!cfg.designs.length) {

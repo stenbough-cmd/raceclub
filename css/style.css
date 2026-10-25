@@ -1951,7 +1951,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   gap: 10px;
   padding-bottom: 14px;
   margin-bottom: 14px;
-  border-bottom: 2px solid var(--rc-red);
+  border-bottom: 2px solid #5f7d99;
 }
 /* Fixed width AND height (not max-width/max-height) so object-fit:contain actually letterboxes -- a
    wide logo that hits the width limit first gets even padding added above/below automatically to
@@ -2202,16 +2202,16 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 }
 /* LMGTE -- matches --rc-class-lmgte (#e0791b), the same orange used for this class's pill
    everywhere else on the site. */
-.rc-tier-orange { background: linear-gradient(160deg, #e0791b, #a8570f); }
-.rc-tier-orange .rc-tier-difficulty { color: #ffdcb0; }
-.rc-tier-bronze { background: linear-gradient(160deg, #a05a2c, #7c4420); }
-.rc-tier-bronze .rc-tier-difficulty { color: #f0c9a3; }
-.rc-tier-platinum { background: linear-gradient(160deg, #7d92a3, #4f6373); }
-.rc-tier-platinum .rc-tier-difficulty { color: #e3ebf0; }
-.rc-tier-silver { background: linear-gradient(160deg, #536575, #313d47); }
-.rc-tier-silver .rc-tier-difficulty { color: #d8dde1; }
-.rc-tier-gold { background: linear-gradient(160deg, #1f1f1f, #000000); }
-.rc-tier-gold .rc-tier-difficulty { color: #e6c15c; }
+.rc-tier-orange { background: linear-gradient(160deg, #86a2bb, #6a879f); }
+.rc-tier-orange .rc-tier-difficulty { color: #eef3f7; }
+.rc-tier-bronze { background: linear-gradient(160deg, #6f8ca7, #58738d); }
+.rc-tier-bronze .rc-tier-difficulty { color: #e6edf3; }
+.rc-tier-platinum { background: linear-gradient(160deg, #587691, #435c74); }
+.rc-tier-platinum .rc-tier-difficulty { color: #dde6ee; }
+.rc-tier-silver { background: linear-gradient(160deg, #3b5268, #293a4b); }
+.rc-tier-silver .rc-tier-difficulty { color: #d3dde6; }
+.rc-tier-gold { background: linear-gradient(160deg, #1e2a36, #10171e); }
+.rc-tier-gold .rc-tier-difficulty { color: #c9d6e2; }
 
 /* -------------------------------------------------------------------- */
 /* Closing CTA band — dark bookend to the mid-banner/tier cards above   */
@@ -3260,3 +3260,11 @@ body.rc-modal-scroll-locked {
 .rc-intro-inner { text-align: left; }
 .rc-intro-inner .rc-landing-tagline { margin-left: 0; margin-right: 0; }
 .rc-intro-inner h2 { text-wrap: pretty; }
+
+/* Index tweaks (Matt, 2026-10-25) */
+.rc-path-heading { color: var(--rc-carbon); }
+.rc-eyebrow-blue { color: #5f7d99; }
+.rc-cta-option { border-top-width: 4px; }
+.rc-cta-option-league { border-top-color: var(--rc-red); }
+.rc-cta-option-champ { border-top-color: #5f7d99; }
+.rc-mid-banner-inner h2 { color: #d4af37; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
