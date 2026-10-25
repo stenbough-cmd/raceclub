@@ -1370,6 +1370,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (min-width: 641px) {
   .rc-header-leaguehub-badge { display: flex; }
 }
+/* League Hub gets the same extra 5.25px of left padding the Championship badge has (set inline in header.js), so the Race Club to League Hub gap matches the League Hub to Championship gap. */
+.rc-header-logo-link + .rc-header-leaguehub-badge { padding-left: 5.25px; }
 /* Logo now links to league.html -- same display:flex/height:100% pattern as .rc-header-logo-link so
    the image inside it still centers vertically against the 70px header. */
 .rc-header-leaguehub-logo-link { display: flex; align-items: center; height: 100%; cursor: pointer; }
