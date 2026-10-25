@@ -478,8 +478,8 @@ function renderHeader(opts) {
               '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_header.webp" alt="League Hub" draggable="false">' +
             '</a>' +
           '</span>';
-  // Championship logo: only for accounts with the + (Championship Access) and Admins; nobody else sees it (Matt, 2026-10-24).
-  html += (token ? _rcChampBadgeHtml_() : '');
+  // Championship logo: shown to everyone, logged in or not (Matt, 2026-10-25).
+  html += _rcChampBadgeHtml_();
   html += '<nav class="rc-header-nav">';
   // Logged-in behavior is unchanged -- League Hub still lives in the account dropdown (see the menu
   // markup below), never duplicated in the top bar either way.
