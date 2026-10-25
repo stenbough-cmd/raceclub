@@ -228,7 +228,8 @@
       // The file tab above the Save box: the loaded helmet as "Name (ID)", an asterisk when it has unsaved changes, or "New".
       var FILE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
       var tab = mk('div', 'rch-tab'); tab.appendChild(mk('span', 'rch-tab-icon', FILE_ICON));
-      var tabLabel = mk('span', 'rch-tab-label'); tab.appendChild(tabLabel);
+      var fnBox = mk('input', 'rch-filename'); fnBox.type = 'text'; fnBox.readOnly = true; fnBox.tabIndex = -1; fnBox.setAttribute('aria-label', 'File name'); fnBox.value = 'Untitled';
+      var tabLabel = mk('span', 'rch-tab-label'); tabLabel.appendChild(fnBox); var tabNote = mk('em', 'rch-tab-unsaved'); tab.appendChild(tabLabel); tab.appendChild(tabNote);
       function isDirty() {
         if (JSON.stringify(R) !== JSON.stringify(baseline)) return true;
         if (!cur.id) return !!String(cur.name || '').trim() || !!String(cur.desc || '').trim() || !!String(cur.coll || '').trim();
@@ -240,17 +241,15 @@
       function updateTab() {
         var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' : 'Untitled';
         var dirty = isDirty();
-        tabLabel.textContent = t;
-        if (dirty) { var em = mk('em', 'rch-tab-unsaved', 'unsaved changes'); tabLabel.appendChild(em); }
+        tabNote.textContent = dirty ? 'unsaved changes' : '';
+        fnBox.style.width = Math.max(8, t.length + 1) + 'ch';
         tab.title = t + (dirty ? ' - unsaved changes' : '');
-        if (typeof fnBox !== 'undefined') fnBox.value = t;
+        fnBox.value = t;
       }
       var mfrDesigns = {};          // manufacturer -> its saved helmet (shown as * in the Manufacturer list)
       var sel = null;               // the selected logo object (by reference, so reordering keeps it)
       var dragFrom = -1;
 
-      var fnBox = mk('input', 'rch-input rch-filename'); fnBox.type = 'text'; fnBox.readOnly = true; fnBox.tabIndex = -1; fnBox.setAttribute('aria-label', 'File name'); fnBox.value = 'Untitled';
-      body.appendChild(fnBox);
       var grid = mk('div', 'rch-grid');
       var left = mk('div', 'rch-left'), right = mk('div', 'rch-right');
       grid.appendChild(left); grid.appendChild(right); body.appendChild(grid);

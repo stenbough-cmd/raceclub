@@ -262,13 +262,13 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 
 .rch-nosel, .rch-nosel * { -webkit-user-select: none; user-select: none; }
 
-/* ---- Design Studio page (Account > Design Studio): the designer sits on the page instead of in a popup ---- */
-.rch-designer.rch-studio:not(.rch-player), .rch-designer.rch-studio:not(.rch-player) .rch-grid { height: auto; }
-.rch-designer.rch-studio:not(.rch-player) .rch-right { height: auto; overflow: visible; padding-right: 0; }
-.rch-designer.rch-studio:not(.rch-player) .rch-left { position: sticky; top: 12px; align-self: start; }
-.rch-studio .rch-section { border-top: 3px solid var(--rc-silver); background: #fcfcfc; }
-.rch-studio .rch-layers { background: #fff; }
-.rch-filename { width: 100%; box-sizing: border-box; margin: 0 0 12px; background: #fcfcfc; color: var(--rc-carbon); cursor: default; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; letter-spacing: 0; }
+/* ---- Helmet Designer popup: light gray sections with a silver top border, white layer list ---- */
+.rch-designer:not(.rch-player) .rch-section { border-top: 3px solid var(--rc-silver); background: #fcfcfc; }
+.rch-designer:not(.rch-player) .rch-layers { background: #fff; }
+.rch-filename { border: 0; background: transparent; padding: 0; margin: 0; outline: 0; color: inherit; cursor: default; max-width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; font-weight: 700; }
 .rch-tab-unsaved { margin-left: 6px; }
 .rch-loadrow { flex-wrap: wrap; }
 .rch-loadrow .rch-info { flex: 1 1 150px; }
+.rch-filename { display: block; height: 18px; line-height: 18px; box-sizing: content-box; }
+.rch-tab-label { flex: 0 0 auto; max-width: 70%; }
+.rch-tab-unsaved { line-height: 18px; font-size: 13px; margin-left: 0; }
