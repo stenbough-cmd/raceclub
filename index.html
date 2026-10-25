@@ -637,10 +637,11 @@
     // ELMS field: the LMP2 and LMP3 teams, each with its own 2026 ELMS livery picture (one car per
     // card so no two cards ask for the same picture).
     var ELMS_LMP2 = STATIC_CARS_BY_CLASS.LMP2.filter(function (e) { return e.team !== 'Team WRT'; }).map(function (e) {
-      return e.team === 'United Autosports' ? Object.assign({}, e, { numbers: ['22'] }) : e;
+      // Each card shows only the one ELMS LMP2 car whose picture exists (United's #23 and Prema's #63 are GT cars in the 2026 ELMS).
+      if (e.team === 'United Autosports') return Object.assign({}, e, { numbers: ['22'] });
+      if (e.team === 'Prema Racing') return Object.assign({}, e, { numbers: ['9'] });
+      return e;
     });
-    var united23 = STATIC_CARS_BY_CLASS.LMP2.filter(function (e) { return e.team === 'United Autosports'; })[0];
-    ELMS_LMP2.push(Object.assign({}, united23, { numbers: ['23'] }));
     var ELMS_LMP3 = STATIC_CARS_BY_CLASS.LMP3.filter(function (e) { return e.team !== 'Racing Spirit of Leman'; });
 
     var SERIES = [
