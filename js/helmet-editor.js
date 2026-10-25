@@ -590,7 +590,13 @@
         detail.appendChild(grid.el);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Layer transform'));
         var rotRow = mk('div', 'rch-btns rch-rotrow'); detail.appendChild(rotRow);   // Rotate Left, the two mirrors, Rotate Right
-        makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, [['fx', MIRROR_ICON, 'Mirror left to right'], ['fy', MIRROR_V_ICON, 'Mirror top to bottom']]).forEach(function (bn) { rotRow.appendChild(bn); });
+        var tbtns = makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, [['fx', MIRROR_ICON, 'Mirror left to right'], ['fy', MIRROR_V_ICON, 'Mirror top to bottom']]);
+        // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
+        [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
+        var resetT = mk('button', 'rc-btn-secondary rch-rotbtn', 'Reset'); resetT.type = 'button';
+        resetT.title = 'Put tilt, skew, rotation and mirroring back to normal (size and position stay)';
+        resetT.onclick = function () { sel.r = 0; delete sel.sk; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
+        rotRow.appendChild(resetT);
         grid.el2.style.marginTop = '10px'; detail.appendChild(grid.el2);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
