@@ -80,7 +80,7 @@
   // picture's proportions while either one changes.
   var linkOn = true;     // remembered for the session
   function makeGrid(o) {
-    var K = o.keys, g = mk('div', 'rch-sliders'), g2 = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;   // g = position sliders, g2 = tilt and skew
+    var K = o.keys, g = mk('div', 'rch-sliders'), g2 = mk('div', 'rch-sliders'), g3 = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;   // g = position sliders, g2 = tilt and skew
     function obj() { return o.obj(); }
     function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
     function fmt(d) { return String(Math.round(d * 10) / 10); }
@@ -88,9 +88,9 @@
     function sizeFrom(field) {
       if (!linkOn) return;
       var oo = obj(), r = ratio(), w = Number(oo[K.w]), h = Number(oo[K.h]);
-      if (field === 'w') { h = w / r; if (h < 5) { h = 5; w = h * r; } if (h > 700) { h = 700; w = h * r; } }
-      else { w = h * r; if (w < 5) { w = 5; h = w / r; } if (w > 700) { w = 700; h = w / r; } }
-      oo[K.w] = Math.round(clamp(w, 5, 700)); oo[K.h] = Math.round(clamp(h, 5, 700));
+      if (field === 'w') { h = w / r; if (h < 5) { h = 5; w = h * r; } if (h > 1000) { h = 1000; w = h * r; } }
+      else { w = h * r; if (w < 5) { w = 5; h = w / r; } if (w > 1000) { w = 1000; h = w / r; } }
+      oo[K.w] = Math.round(clamp(w, 5, 1000)); oo[K.h] = Math.round(clamp(h, 5, 1000));
       rows.w.sync(); rows.h.sync();
     }
     function addRow(field, label, min, max, step, toDisp, fromDisp, host) {
@@ -118,8 +118,8 @@
     }
     addRow('x', 'Left / right', 0, 1254, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
     addRow('y', 'Up / down', 0, 1254, 1, function (v) { return 1254 - (Number(v) || 0); }, function (d) { return 1254 - d; });
-    addRow('w', 'Max width', 5, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
-    var hr = addRow('h', 'Max height', 5, 700, 1, function (v) { return Number(v) || 0; }, function (d) { return d; });
+    addRow('w', 'Max width', 5, 1000, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g3);
+    var hr = addRow('h', 'Max height', 5, 1000, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g3);
     addRow('r', 'Tilt (deg)', -45, 45, 0.5,
       function (v) { v = Number(v) || 0; return -(v - turnBase(v)) || 0; },
       function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); }, g2);
@@ -144,7 +144,7 @@
     };
     hr.lab.appendChild(lk);
     return {
-      el: g, el2: g2,
+      el: g, el2: g2, el3: g3,
       sync: function () { for (var k in rows) rows[k].sync(); },
       loadAspect: function () {
         nat = null; fixedRatio = 0;
@@ -322,7 +322,7 @@
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
       var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Open'); loadBtn.type = 'button';
       loadBtn.title = 'Open a saved helmet design (and manage the saved designs)';
-      var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'New'); newBtn.type = 'button';
+      var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'New'); newBtn.type = 'button';
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
         R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '' }; baseline = JSON.parse(JSON.stringify(R));
@@ -447,7 +447,7 @@
         if (keep) lpick.value = keep;
       }
       buildPicker();
-      var addB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Add layer'); addB.type = 'button';
+      var addB = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'Add layer'); addB.type = 'button';
       addB.onclick = function () {
         if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
@@ -457,6 +457,7 @@
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
+        origSize.set(n, { w: n.w, h: n.h, r: n.r });
         var selIdx = sel ? R.logos.indexOf(sel) : -1;
         if (selIdx >= 0) {   // a layer is selected: the new one goes directly above it (and under the accents when the selected one is)
           var acN = Math.max(0, Math.min(R.logos.length, Math.floor(+R.ac) || 0));
@@ -579,10 +580,12 @@
         var baseEdge = edgeLine('Base'); dropOn(baseEdge, items.length); layers.appendChild(baseEdge);
       }
 
+      var origSize = new WeakMap();   // the width and height a layer started with, for Reset
       var curGrid = null;           // the slider block of the selected layer (the preview drag keeps it in step)
       function renderDetail() {
         detail.innerHTML = ''; curGrid = null;
         if (!sel || R.logos.indexOf(sel) < 0) return;
+        if (!origSize.has(sel)) origSize.set(sel, { w: sel.w, h: sel.h, r: 0 });
         var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r', sk: 'sk' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
         detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer position'));
@@ -593,10 +596,11 @@
         // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
         [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
         var resetT = mk('button', 'rc-btn-secondary rch-rotbtn', 'Reset'); resetT.type = 'button';
-        resetT.title = 'Put tilt, skew, rotation and mirroring back to normal (size and position stay)';
-        resetT.onclick = function () { sel.r = 0; delete sel.sk; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
+        resetT.title = 'Put width, height, tilt, skew, rotation and mirroring back to normal (position stays)';
+        resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
         rotRow.appendChild(resetT);
-        grid.el2.style.marginTop = '10px'; detail.appendChild(grid.el2);
+        grid.el3.style.marginTop = '10px'; detail.appendChild(grid.el3);   // Max width and Max height sit between the buttons and the tilt slider
+        grid.el2.style.marginTop = '4px'; detail.appendChild(grid.el2);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
@@ -1078,8 +1082,7 @@
             all = res.logos || [];
             var top = mk('div', 'rch-btns');
             var up = btn('Upload Logo'); up.onclick = function () { openLogoForm(null, all, function () { load(); reloadLogoAssets(); }); };
-            top.appendChild(up); lb.appendChild(top);
-            lb.appendChild(mk('p', 'rch-hint', 'Archive hides a logo from the designer but keeps it on helmets that already use it. Delete Forever removes it from every helmet and profile.'));
+            top.style.justifyContent = 'flex-end'; top.appendChild(up); lb.appendChild(top);
             if (!all.length) { lb.appendChild(mk('p', 'rch-hint', 'No logos yet. Press Upload Logo.')); return; }
             var cats = {}, order = [];
             all.forEach(function (l) { var c = l.category || 'Custom logos'; if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(l); });
@@ -1164,6 +1167,8 @@
         fb.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
         var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; fb.appendChild(fi);
         var fstat = mk('p', 'rch-hint'); fb.appendChild(fstat);
+        var pvBox = mk('div', 'rch-logopreview'); var pvImg = new Image(); pvImg.alt = ''; pvBox.appendChild(pvImg); fb.appendChild(pvBox);   // the picture, between the file box and the Name
+        if (logo) { pvImg.src = logo.data || ('assets/helmets/images/' + logo.file); } else pvBox.style.display = 'none';
         fb.appendChild(mk('div', 'rch-label rch-mt', 'Name'));
         var nm = mk('input', 'rch-input'); nm.type = 'text'; nm.maxLength = 60; nm.value = d.name; nm.placeholder = 'e.g. Race Club logo'; nm.oninput = function () { d.name = nm.value; };
         fb.appendChild(nm);
@@ -1180,7 +1185,7 @@
           var f = fi.files && fi.files[0]; if (!f) return;
           fstat.textContent = 'Shrinking the picture...';
           processImage(f).then(function (out) {
-            data = out; fstat.textContent = 'Ready (' + Math.round(out.length / 1024) + ' KB after shrinking).';
+            data = out; pvImg.src = out; pvBox.style.display = ''; fstat.textContent = 'Ready (' + Math.round(out.length / 1024) + ' KB after shrinking).';
             if (!d.name) { d.name = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '); nm.value = d.name; }
           }).catch(function (e) { data = ''; fstat.textContent = e.message; });
         };

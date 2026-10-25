@@ -77,6 +77,16 @@
     c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h);
     c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
   }
+  // A band of constant thickness following a circle for 'sweep' degrees, centred on the top. Fitted so its outline fills the w x h box.
+  function arcBand(c, w, h, sweep) {
+    var N = 28, pts = [], i, a0 = (-90 - sweep / 2) * Math.PI / 180, a1 = (-90 + sweep / 2) * Math.PI / 180, th = 0.24;
+    for (i = 0; i <= N; i++) { var a = a0 + (a1 - a0) * i / N; pts.push([Math.cos(a), Math.sin(a)]); }
+    for (i = N; i >= 0; i--) { var b = a0 + (a1 - a0) * i / N; pts.push([Math.cos(b) * (1 - th), Math.sin(b) * (1 - th)]); }
+    var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    pts.forEach(function (q) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1]; });
+    var sx = w / (x1 - x0), sy = h / (y1 - y0), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    poly(c, pts.map(function (q) { return [(q[0] - mx) * sx, (q[1] - my) * sy]; })); c.fill();
+  }
   var SHAPES = [
     { id: 'rect', name: 'Rectangle', draw: function (c, w, h) { c.beginPath(); c.rect(-w / 2, -h / 2, w, h); c.fill(); } },
     { id: 'round', name: 'Rounded rectangle', draw: function (c, w, h) { rrect(c, -w / 2, -h / 2, w, h, Math.min(w, h) * 0.25); c.fill(); } },
@@ -92,6 +102,10 @@
     { id: 'chevron', name: 'Chevron', draw: function (c, w, h) { poly(c, [[-w / 2, -h / 2], [w * 0.15, -h / 2], [w / 2, 0], [w * 0.15, h / 2], [-w / 2, h / 2], [-w * 0.15, 0]]); c.fill(); } },
     { id: 'stripe', name: 'Slanted stripe', draw: function (c, w, h) { poly(c, [[-w / 2 + w * 0.25, -h / 2], [w / 2, -h / 2], [w / 2 - w * 0.25, h / 2], [-w / 2, h / 2]]); c.fill(); } },
     { id: 'cross', name: 'Cross', draw: function (c, w, h) { var a = w * 0.17, b = h * 0.17; poly(c, [[-a, -h / 2], [a, -h / 2], [a, -b], [w / 2, -b], [w / 2, b], [a, b], [a, h / 2], [-a, h / 2], [-a, b], [-w / 2, b], [-w / 2, -b], [-a, -b]]); c.fill(); } },
+    // Arcs: a curved band (a slice of a ring) fitted to the layer box. Large radius is a gentle curve, small radius bends round almost to a half ring.
+    { id: 'arc_l', name: 'Arc, large radius', draw: function (c, w, h) { arcBand(c, w, h, 70); } },
+    { id: 'arc_m', name: 'Arc, medium radius', draw: function (c, w, h) { arcBand(c, w, h, 130); } },
+    { id: 'arc_s', name: 'Arc, small radius', draw: function (c, w, h) { arcBand(c, w, h, 180); } },
     { id: 'checker', name: 'Checkered strip', colors: 2, draw: function (c, w, h, a, b2) {
         var cols = 8, rows = 2, cw = w / cols, ch = h / rows, x, y, fillStyle = c.fillStyle;
         for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? (b2 || '#ffffff') : fillStyle; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }

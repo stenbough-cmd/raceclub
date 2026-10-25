@@ -272,3 +272,18 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-filename { display: block; height: 18px; line-height: 18px; box-sizing: content-box; }
 .rch-tab-label { flex: 0 0 auto; max-width: 70%; }
 .rch-tab-unsaved { line-height: 18px; font-size: 13px; margin-left: 0; }
+
+/* black buttons: Add layer and New */
+.rch-blackbtn { background: var(--rc-carbon); border-color: var(--rc-carbon); color: #fff; }
+.rch-blackbtn:hover:not(:disabled) { background: #333; border-color: #333; color: #fff; }
+/* Upload Logo: the picture sits between the file box and the Name */
+.rch-logopreview { display: flex; justify-content: center; align-items: center; margin: 8px 0 4px; padding: 10px; border: 1px solid var(--rc-silver); border-radius: 8px; background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px; }
+.rch-logopreview img { max-width: 100%; max-height: 140px; display: block; }
+/* Delete Forever / Archive confirms: the buttons stay at the right and the note slides in beside them */
+.rch-loadrow .rch-btns { margin-left: auto; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
+.rch-loadrow .rch-btns .rch-psub { text-align: right; }
+.rch-loadrow .rch-btns { flex: 1 1 auto; }
+.rch-loadrow .rch-btns button { white-space: nowrap; }
+.rch-loadrow .rch-btns .rch-psub { flex: 1 1 auto; min-width: 0; text-align: right; }
+.rch-addrow .rch-select-wide { flex: 1 1 0; min-width: 0; }
+.rch-loadrow .rch-btns button { flex: 0 0 auto; width: auto; }
