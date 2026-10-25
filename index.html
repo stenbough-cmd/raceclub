@@ -34,27 +34,39 @@
 
 <div class="rc-hero-content">
 
-  <section class="rc-landing-section">
+  <!-- Intro: one clear question answered up front, then two big buttons that jump to the matching
+       explanation further down this same page (#league-experience / #championship). -->
+  <section class="rc-landing-section rc-intro-section">
+    <div class="rc-landing-inner rc-intro-inner">
+      <h2>Every Race Has A Bigger Purpose</h2>
+      <p class="rc-landing-tagline">Build your racing career in Le Mans Ultimate. Compete in a persistent online league or run your own championship against AI rivals. Your results, history, and progress follow you from season to season.</p>
+      <div class="rc-intro-buttons">
+        <a class="rc-intro-btn" href="#league-experience">Explore the Online League <span aria-hidden="true">&rarr;</span></a>
+        <a class="rc-intro-btn" href="#championship">Explore Race Club Championship <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="rc-landing-section rc-modes-section">
     <div class="rc-landing-inner">
-      <h2>What Is Race Club</h2>
-      <p class="rc-landing-tagline">
-        <strong>Race Club</strong> is more than an online racing league. Built around <strong>Le Mans Ultimate</strong>, it's a place to build your own racing career, compete against real drivers online, or create a personal league and take on AI opponents in single-player racing. Whether you want to join an established grid or run a championship on your own terms, Race Club gives every race a bigger purpose.
-      </p>
-      <p class="rc-landing-tagline">
-        Every round you run, every result you record, and every season you complete becomes part of your journey. You're not just racing for a finish position. You're building a racing history, tracking your progress, and creating a career that grows with every lap.
-      </p>
-      <p class="rc-landing-tagline">
-        The <strong><a href="league.html">League Hub</a></strong> is where the competition comes to life. Follow standings, explore race results, catch up on league news, and keep tabs on the drivers battling across the grid. If you're building your own offline season, the <strong><a href="championship.html">Race Club Championship</a></strong> page is where you'll be spending most of your time. Race a calendar that you build and track stats across multiple races and many seasons.
-      </p>
-      <p class="rc-landing-tagline">
-        Inspired by the world of WEC and ELMS endurance racing, Race Club embraces everything that makes motorsports compelling. From shorter, hard-fought battles to longer endurance events, different races demand different skills. Tire and fuel management, consistency, racecraft, and knowing when to attack—or when to play the long game—can make all the difference.
-      </p>
-      <p class="rc-landing-tagline">
-        And you don't have to be the fastest driver on the grid to belong here. Race Club is about more than lap times. It's about competition, progression, and making every race count, whether you're battling real people online or testing yourself against AI.
-      </p>
-      <p class="rc-landing-tagline">
-        Your racing journey starts here. Keep exploring to see what Race Club has to offer, then create your profile and get on track!
-      </p>
+      <div class="rc-eyebrow">Choose Your Path</div>
+      <h2>Two Ways To Race</h2>
+      <div class="rc-highlight-grid rc-modes-grid">
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"></path><circle cx="17" cy="9" r="2.4"></circle><path d="M17 14.2a4 4 0 0 1 4 3.8v1"></path></svg>
+          </div>
+          <h3>Online League</h3>
+          <p>Race other drivers, claim a team seat, compete on a schedule, win awards and follow the championship with individual stats and accomplishments.</p>
+        </div>
+        <div class="rc-highlight-card">
+          <div class="rc-highlight-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"></path><path d="M5 4h13l-2.5 4L18 12H5"></path></svg>
+          </div>
+          <h3>Race Club Championship</h3>
+          <p>Build a solo season, race AI opponents, and track your results at your own pace. Seasons are built using real WEC or ELMS grids that are already built into Le Mans Ultimate.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -77,7 +89,7 @@
   <!-- "Why Race Club" -- the recruiting section. Six short highlight cards, each icon + headline +
      one line, built specifically so this reads as scannable claims instead of another paragraph
      of copy. -->
-  <section class="rc-landing-section rc-why-section">
+  <section class="rc-landing-section rc-why-section" id="league-experience">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Experience</div>
       <h2>This Isn't Just A Lobby. It's A Sim Racing Career.</h2>
@@ -140,6 +152,73 @@
       </div>
     </div>
   </section>
+
+  <!-- Helmet showcase. The four helmets are drawn live by the same renderer the site uses for
+       driver helmets (see the script right after this section). -->
+  <section class="rc-landing-section rc-helmets-section">
+    <div class="rc-landing-inner">
+      <div class="rc-eyebrow">Helmets</div>
+      <h2>Earn The Helmet. Wear The Moment.</h2>
+      <p class="rc-landing-tagline">Race Club helmets are awarded for milestones throughout a season, then follow you into every result, standing and profile. Collect them, wear them, or paint your own.</p>
+      <div class="rc-helmet-showcase" id="rc-helmet-showcase">
+        <div class="rc-helmet-card">
+          <div class="rc-helmet-stage" data-helmet="founder"></div>
+          <div class="rc-helmet-tag">Limited Edition</div>
+          <h3>Race Club Founder's Edition</h3>
+          <p>Only handed to the drivers who were here at the very start. It will never be offered again, so it marks you as part of Race Club history.</p>
+        </div>
+        <div class="rc-helmet-card">
+          <div class="rc-helmet-stage" data-helmet="ferrari"></div>
+          <div class="rc-helmet-tag">Manufacturer</div>
+          <h3>Ferrari</h3>
+          <p>Drive for a manufacturer and wear its colors. Manufacturer helmets carry the badge and paint of the car you race.</p>
+        </div>
+        <div class="rc-helmet-card">
+          <div class="rc-helmet-stage" data-helmet="ironman"></div>
+          <div class="rc-helmet-tag">Milestone Award</div>
+          <h3>Iron Man</h3>
+          <p>Awarded for finishing every round of a season. Show up, go the distance and the helmet is yours.</p>
+        </div>
+        <div class="rc-helmet-card">
+          <div class="rc-helmet-stage" data-helmet="custom"></div>
+          <div class="rc-helmet-tag">Your Design</div>
+          <h3>Your Own Custom Helmet</h3>
+          <p>Paint it yourself in the Helmet Designer with colors, shapes, logos, finishes and visors, then race in it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    var RECIPES = {
+      founder: { d: 0, b: ['black', 'gloss'], a1: ['yellow', 'metallic'], a2: ['white', 'gloss'], v: 'gold', logos: [
+        { s: 'stripe', c: 'yellow', x: 600, y: 470, w: 1000, h: 130, r: -12 },
+        { s: 'stripe', c: 'white', x: 600, y: 590, w: 1000, h: 50, r: -12 },
+        { f: 'r_logo.png', x: 800, y: 380, w: 300, h: 300 }
+      ] },
+      ferrari: { d: 0, b: ['red', 'gloss'], a1: ['yellow', 'gloss'], a2: ['white', 'gloss'], v: 'smoke', logos: [
+        { s: 'stripe', c: 'white', x: 600, y: 520, w: 1000, h: 80, r: -12 },
+        { s: 'circle', c: 'yellow', x: 790, y: 400, w: 300, h: 300 },
+        { f: 'Prancing_Horse.png', x: 790, y: 400, w: 250, h: 250 }
+      ] },
+      ironman: { d: 0, b: ['red', 'metallic'], a1: ['yellow', 'metallic'], a2: ['maroon', 'gloss'], v: 'gold', logos: [
+        { s: 'chevron', c: 'yellow', x: 560, y: 380, w: 560, h: 200, r: 90 },
+        { s: 'ring', c: 'yellow', x: 800, y: 520, w: 260, h: 260 },
+        { s: 'circle', c: 'white', x: 800, y: 520, w: 110, h: 110 }
+      ] },
+      custom:  { d: 0, b: ['blue', 'pearl'], a1: ['white', 'gloss'], a2: ['sky', 'gloss'], v: 'ocean', logos: [
+        { s: 'stripe', c: 'white', x: 600, y: 520, w: 1000, h: 130, r: -12 },
+        { s: 'star', c: 'sky', x: 800, y: 380, w: 200, h: 200 }
+      ] }
+    };
+    var stages = document.querySelectorAll('[data-helmet]');
+    for (var i = 0; i < stages.length; i++) {
+      var r = RECIPES[stages[i].getAttribute('data-helmet')];
+      if (r) stages[i].innerHTML = rcHelmetHtml_('helmet:' + JSON.stringify(r), 240, 'rc-helmet-show');
+    }
+    rcHelmetHydrate_(document.getElementById('rc-helmet-showcase'));
+  })();
+  </script>
 
   <!-- "How It Works" -- four steps, numbered circles instead of the "Why Race Club" section's
      icons above so it reads as a sequence, not another set of claims. Deliberately terse: one
@@ -236,6 +315,30 @@
     </div>
   </div>
 
+
+  <!-- End of the online league part of the page: same dark call-to-action band as the closing "Ready To Race?" section. -->
+  <section class="rc-cta-section">
+    <div class="rc-landing-inner rc-cta-inner">
+      <h2>Ready For The Online League?</h2>
+      <p>Create your driver, pick a team and claim a seat on the grid. Let's race!</p>
+      <a class="rc-btn-primary rc-cta-btn" href="register.html">Create Your Driver</a>
+    </div>
+  </section>
+
+  <!-- Single player (Race Club Championship) anchor. -->
+  <section class="rc-landing-section rc-single-section" id="championship">
+    <div class="rc-landing-inner">
+      <p class="rc-eyebrow">Race Club Championship</p>
+      <h2>Fancy A Single Player Career?</h2>
+      <p class="rc-landing-tagline">Race Club Championship, <em>which is currently in development</em>, is our "offline league" for those who can't commit to a league schedule. Take on a full season against AI rivals in the same classes, teams and points system as the league. Pick your seat, race each round in Le Mans Ultimate, upload your results, and watch your standings, results and bonus points build round by round, all at your own pace.</p>
+
+      <h3 class="rc-single-sub">Create Your Season. Live The Dream.</h3>
+      <p class="rc-landing-tagline">Line up in the World Endurance Championship or the European Le Mans Series against real motorsports drivers, in the real liveries you know from the broadcast. Pick the series, build the calendar, and race it your way. It feels like living the dream of racing in one of endurance racing's biggest championships.</p>
+      <p class="rc-landing-tagline">Race Club's story generator follows along with your season. From the moment your season is compiled until the last checkered flag, it turns your results, rivalries and swings of fortune into a compelling story you can read as the championship unfolds.</p>
+      <p class="rc-landing-tagline rc-single-early">Visit the <a href="championship.html">Championship page</a> for more info. Request early access to test out Race Club Championship by using the Feedback form when you create your profile.</p>
+    </div>
+  </section>
+
   <section class="rc-landing-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Ladder</div>
@@ -266,22 +369,14 @@
         </div>
         <div class="rc-card rc-tier-card rc-tier-gold">
           <h3>Hypercar</h3>
-          <p>The pinnacle of a Race Club's online career. These are the fastest, most demanding cars on the roster.</p>
+          <p>The pinnacle of a Race Club career. These are the fastest, most demanding cars on the roster.</p>
           <div class="rc-tier-difficulty">Advanced</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- "Meet The Grid" teaser -- real team data, live off whatever season/classes are actually
-     running, not a hardcoded team list.
-     Deliberately lazy: the fetch only fires once this section actually scrolls near the viewport
-     (see the IntersectionObserver in the <script> below), not on page load -- Apps Script's
-     cold-start latency is real, and there's no reason to spend it before the user has scrolled
-     anywhere near this far down the page. rootMargin gives it a head start (starts loading a
-     little before the section is actually on screen) so the data is normally already in hand by
-     the time it comes into view; cards then fade in one at a time, quickly, rather than all
-     snapping in at once. -->
+  <!-- "Meet The Grid": a random WEC or ELMS sample of the 2026 field, 12 cars from two classes, built in the script below. -->
   <section class="rc-landing-section rc-grid-section" id="rc-grid-section">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">The Grid</div>
@@ -300,8 +395,6 @@
     var taglineEl = document.getElementById('rc-grid-tagline');
     var rowEl = document.getElementById('rc-grid-teaser-groups');
     var footnoteEl = document.getElementById('rc-grid-teaser-footnote');
-    var started = false;
-
     // Same slugging rule as manufacturerLogoSrc() in js/reference-data.js (not loaded on this page
     // -- everything else here is plain strings/ DOM, so a whole extra script tag just for one
     // function wasn't worth it).
@@ -327,24 +420,6 @@
           if (typeof onAllFailed === 'function') onAllFailed();
         }
       };
-    }
-
-    // "SZN-0001" -> "1" -- same convention Account.html's own
-    // seasonNumberLabel() uses.
-    function seasonNumberLabel_(seasonId) {
-      var m = /(\d+)\s*$/.exec(String(seasonId || ''));
-      return m ? String(parseInt(m[1], 10)) : '';
-    }
-
-    function formatStartDate_(iso) {
-      if (!iso) return '';
-      // seasonStartDate is stored as a plain "YYYY-MM-DD" (no time), so parse it as local rather
-      // than via `new Date(iso)` (which treats a bare date as UTC midnight and can print a day
-      // early/late depending on the visitor's own timezone).
-      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-      if (!m) return '';
-      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-      return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
     function firstSentence_(text) {
@@ -472,16 +547,6 @@
       labelResizeTimer_ = setTimeout(layoutClassLabels_, 120);
     });
 
-    function showFallback_(message) {
-      taglineEl.textContent = message;
-      rowEl.innerHTML = '';
-      footnoteEl.textContent = '';
-    }
-
-    // Real-world car-data year each class's roster is pulled from (the
-    // Cars tab's own Season column) -- used only for the footnote below.
-    var STATIC_CLASS_YEAR = { LMGT3: 2026, LMP3: 2026, LMP2: 2023, Hypercar: 2026 };
-
     // Real roster data, grouped by class -- source of truth is the Cars tab of the "Race Club Data
     // Sheets" spreadsheet.
     var STATIC_CARS_BY_CLASS = {
@@ -567,106 +632,10 @@
       ]
     };
 
-    // No-season fallback: rather than an empty "check back later" message, pick one class at random
-    // and up to 9 real teams from it (fewer if the class has under 9 -- LMP2 has 6) and show those
-    // instead, in the exact same card design the live grid uses.
     function isPhoneWidth_() {
       return window.innerWidth <= 640;
     }
 
-    function renderStaticSample_() {
-      var classNames = Object.keys(STATIC_CARS_BY_CLASS);
-      var chosenClass = classNames[Math.floor(Math.random() * classNames.length)];
-      var pool = STATIC_CARS_BY_CLASS[chosenClass].slice();
-
-      // Fisher-Yates shuffle, then take up to 9 (6 on phone -- see
-      // isPhoneWidth_ above).
-      for (var i = pool.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
-      }
-      var picks = pool.slice(0, Math.min(isPhoneWidth_() ? 6 : 9, pool.length));
-
-      taglineEl.textContent = 'No season is running right now. Here are ' + picks.length +
-        ' of the ' + pool.length + ' teams in the ' + STATIC_CLASS_YEAR[chosenClass] + ' ' +
-        chosenClass + ' class.';
-
-      rowEl.innerHTML = '';
-      var pickCards = picks.map(function (entry) {
-        return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc, STATIC_CLASS_YEAR[chosenClass], '', entry.numbers[0]);
-      });
-      rowEl.appendChild(buildClassGroup_(chosenClass, pickCards));
-      layoutClassLabels_();
-      footnoteEl.textContent = '';
-
-      // Two nested rAFs: the first lets the browser commit the cards' initial opacity:0/translateY
-      // styles (set by .rc-grid-teaser-card in CSS) to the render tree, the second then adds the
-      // visible class so the transition actually runs instead of the cards simply appearing
-      // already-faded-in on first paint.
-      var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          cards.forEach(function (card) { card.classList.add('rc-grid-teaser-visible'); });
-        });
-      });
-    }
-
-    function render(data) {
-      if (!data || !data.success || !data.hasSeason || !data.teams || !data.teams.length) {
-        renderStaticSample_();
-        return;
-      }
-
-      var seasonNum = seasonNumberLabel_(data.seasonId);
-      var seasonLabel = seasonNum ? ('Season ' + seasonNum) : 'This season';
-      var classLabel = (data.activeClasses || []).join(' / ') || 'racing';
-      var startLabel = formatStartDate_(data.seasonStartDate);
-
-      var tagline = seasonLabel + (data.seasonName ? (': ' + data.seasonName) : '') + '. ' +
-        (data.totalCarCount || data.teams.length) + ' real ' + classLabel + ' entries are already locked in' +
-        (startLabel ? (' ahead of the green flag on ' + startLabel) : '') + '. ' +
-        'Here are just some of the teams that could be lining up next to you.';
-      taglineEl.textContent = tagline;
-
-      rowEl.innerHTML = '';
-      // Phone-only total cap to 6 cards (see isPhoneWidth_ above) -- a straight slice of the
-      // already-shuffled list, taken before the per-class grouping below so whatever classes land
-      // in the first 6 keep their existing order/grouping.
-      var teams = (isPhoneWidth_() && data.teams.length > 6) ? data.teams.slice(0, 6) : data.teams;
-
-      // Group into one row per class, each with its own rotated label. data.teams already arrives
-      // grouped contiguously by class (handleGetGridTeaser, Website.gs, concatenates each of
-      // data.activeClasses' own shuffled pool in turn) -- this just splits that single array back
-      // into per- class buckets, preserving the order classes first appear in.
-      var classOrder = [];
-      var teamsByClass = {};
-      teams.forEach(function (team) {
-        var cls = team.carClass || 'Unclassified';
-        if (!teamsByClass[cls]) { teamsByClass[cls] = []; classOrder.push(cls); }
-        teamsByClass[cls].push(team);
-      });
-      classOrder.forEach(function (cls) {
-        var cardEls = teamsByClass[cls].map(function (team) {
-          return buildCard_(team.teamName, team.manufacturer, team.carModel, team.carNumber, team.bio, team.carYear, team.carSeries);
-        });
-        rowEl.appendChild(buildClassGroup_(cls, cardEls));
-      });
-      layoutClassLabels_();
-
-      // Footnote sentence removed -- footnoteEl stays declared/cleared in showFallback_ in case a
-      // future pass wants it again, but nothing populates it any more.
-
-      // Fade cards in one by one, quickly, rather than all at once. Each card starts at
-      // opacity:0/translateY via CSS (.rc-grid-teaser-card); adding .rc-grid-teaser-visible on a
-      // short stagger per card triggers its own transition.
-      var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
-      cards.forEach(function (card, i) {
-        setTimeout(function () { card.classList.add('rc-grid-teaser-visible'); }, i * 90);
-      });
-    }
-
-    // Client-side port of handleGetGridTeaser's own per-class shuffle-and- cap (Website.gs) --
-    // needed only on the published-CSV path.
     function shuffle_(arr) {
       for (var i = arr.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
@@ -675,68 +644,71 @@
       return arr;
     }
 
-    function buildGridTeaserResponseFromPool_(pool) {
-      if (!pool || !pool.hasSeason) return { success: true, hasSeason: false };
+    // ELMS field: the LMP2 and LMP3 teams, each with its own 2026 ELMS livery picture (one car per
+    // card so no two cards ask for the same picture).
+    var ELMS_LMP2 = STATIC_CARS_BY_CLASS.LMP2.filter(function (e) { return e.team !== 'Team WRT'; }).map(function (e) {
+      return e.team === 'United Autosports' ? Object.assign({}, e, { numbers: ['22'] }) : e;
+    });
+    var united23 = STATIC_CARS_BY_CLASS.LMP2.filter(function (e) { return e.team === 'United Autosports'; })[0];
+    ELMS_LMP2.push(Object.assign({}, united23, { numbers: ['23'] }));
+    var ELMS_LMP3 = STATIC_CARS_BY_CLASS.LMP3.filter(function (e) { return e.team !== 'Racing Spirit of Leman'; });
 
-      var GRID_TEASER_PER_CLASS_CAP = 6;
-      var teams = [];
-      (pool.activeClasses || []).forEach(function (cls) {
-        var classPool = (pool.byClass[cls] || []).slice();
-        teams = teams.concat(shuffle_(classPool).slice(0, GRID_TEASER_PER_CLASS_CAP));
-      });
+    var SERIES = [
+      { name: 'WEC', series: '', groups: [['Hypercar', STATIC_CARS_BY_CLASS.Hypercar], ['LMGT3', STATIC_CARS_BY_CLASS.LMGT3]] },
+      { name: 'ELMS', series: 'ELMS', groups: [['LMP2', ELMS_LMP2], ['LMP3', ELMS_LMP3]] }
+    ];
 
-      return {
-        success: true, hasSeason: true,
-        seasonId: pool.seasonId, seasonName: pool.seasonName,
-        seasonStartDate: pool.seasonStartDate,
-        activeClasses: pool.activeClasses,
-        totalCarCount: pool.totalCarCount,
-        teams: teams
-      };
-    }
+    // Every page load: pick WEC or ELMS at random, then show 6 cars from each of its two classes
+    // (12 cards; 3 + 3 on a phone).
+    function renderGrid_() {
+      var pick = SERIES[Math.floor(Math.random() * SERIES.length)];
+      var perClass = isPhoneWidth_() ? 3 : 6;
+      var year = 2026;
 
-    function loadGridTeaser() {
-      if (started) return;
-      started = true;
-      fetchPublishedJson(RC_GRID_TEASER_CSV_URL)
-        .then(function (pool) { return buildGridTeaserResponseFromPool_(pool); })
-        .then(render)
-        .catch(function () {
-          fetchApi('getGridTeaser', {})
-            .then(render)
-            .catch(function () { renderStaticSample_(); });
+      taglineEl.textContent = 'The ' + year + ' ' + pick.name + ' field, ready for you to race against in Le Mans Ultimate. ' +
+        'Refresh the page for another look at the grid.';
+
+      rowEl.innerHTML = '';
+      pick.groups.forEach(function (g) {
+        var picks = shuffle_(g[1].slice()).slice(0, perClass);
+        var cardEls = picks.map(function (entry) {
+          return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc, year, pick.series, entry.numbers[0]);
         });
+        rowEl.appendChild(buildClassGroup_(g[0], cardEls));
+      });
+      layoutClassLabels_();
+      footnoteEl.textContent = '';
+
+      var cards = rowEl.querySelectorAll('.rc-grid-teaser-card');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          cards.forEach(function (card, i) {
+            setTimeout(function () { card.classList.add('rc-grid-teaser-visible'); }, i * 90);
+          });
+        });
+      });
     }
+
+    // Car pictures change a card's height as they load or fail, so re-place the class labels then.
+    rowEl.addEventListener('load', function () { clearTimeout(labelResizeTimer_); labelResizeTimer_ = setTimeout(layoutClassLabels_, 120); }, true);
+    rowEl.addEventListener('error', function () { clearTimeout(labelResizeTimer_); labelResizeTimer_ = setTimeout(layoutClassLabels_, 120); }, true);
+
+    var started = false;
+    function load_() { if (started) return; started = true; renderGrid_(); }
 
     if ('IntersectionObserver' in window) {
-      // rootMargin gives it a head start -- the fetch fires a bit before the section is actually on
-      // screen, so an Apps Script cold start usually has time to finish before the user actually
-      // scrolls this far, without spending that latency before the user has scrolled anywhere near
-      // here.
       var observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
-          if (entry.isIntersecting) { loadGridTeaser(); observer.disconnect(); }
+          if (entry.isIntersecting) { load_(); observer.disconnect(); }
         });
       }, { rootMargin: '2400px 0px' });
       observer.observe(section);
     } else {
-      // No IntersectionObserver support -- just load it, same as every
-      // other section on the page already does unconditionally.
-      loadGridTeaser();
+      load_();
     }
   })();
   </script>
 
-  <!-- Single player teaser. Sits just above the closing call to action; the early-access line
-     points visitors at the Feedback popup (category "Request Championship Mode"). -->
-  <section class="rc-landing-section rc-single-section">
-    <div class="rc-landing-inner">
-      <p class="rc-eyebrow">Race Club Championship</p>
-      <h2>Fancy A Single Player Career?</h2>
-      <p class="rc-landing-tagline">Race Club Championship, <em>which is currently in development</em>, is our "offline league" for those who can't commit to a league schedule. Take on a full season against AI rivals in the same classes, teams and points system as the league. Pick your seat, race each round in Le Mans Ultimate, upload your results, and watch your standings, results and bonus points build round by round, all at your own pace.</p>
-      <p class="rc-landing-tagline rc-single-early">Visit the <a href="championship.html">Championship page</a> for more info. Request early access to test out Race Club Championship by using the Feedback form when you create your profile.</p>
-    </div>
-  </section>
 
   <!-- Closing call to action. Dark band on purpose -- visual bookend to the mid-banner and the
      dark tier cards above it, and a clear last stop before the footer. -->
