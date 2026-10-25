@@ -2097,7 +2097,7 @@ function rccSigningSequence(team, cls, onFinish) {
   var wm = document.createElement('img');
   wm.className = 'rc-signing-wordmark-img';
   wm.alt = 'Race Club';
-  wm.src = 'assets/images/Race Club (Full, Black).png';
+  wm.src = 'assets/images/Race Club Full White.webp';
   stage.appendChild(wm);
   var lights = _rccEl('div', 'rc-startlights');
   for (var i = 0; i < 5; i++) lights.appendChild(_rccEl('div', 'rc-startlight'));
@@ -2143,7 +2143,7 @@ function rccSigningSequence(team, cls, onFinish) {
     var wm2 = document.createElement('img');
     wm2.className = 'rc-signing-wordmark-img rc-signing-wordmark-img-lg';
     wm2.alt = 'Race Club';
-    wm2.src = 'assets/images/Race Club (Full, Black).png';
+    wm2.src = 'assets/images/Race Club Full White.webp';
     content.appendChild(wm2);
     content.appendChild(_rccText('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
     var hypeWrap = _rccEl('div', 'rc-signing-hype-wrap');
