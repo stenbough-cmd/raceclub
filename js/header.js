@@ -416,7 +416,7 @@ function _rcChampBadgeHtml_() {
   if (!p || !(p.role === 'Admin' || p.champAccess)) return '';
   return '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
            '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
-             '<img class="rc-header-leaguehub-logo" src="assets/images/championship_logo.webp" alt="Championship" draggable="false">' +
+             '<img class="rc-header-leaguehub-logo" src="assets/images/championship_header.webp" alt="Championship" draggable="false">' +
            '</a>' +
          '</span>';
 }
@@ -435,11 +435,11 @@ function renderHeaderPending() {
   // visibly gain the badge a moment later once renderHeader() takes over -- it reads as present
   // from the very first paint.
   mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
-      '<img class="rc-header-logo" src="assets/images/race-club-header-logo.webp" alt="Race Club">' +
+      '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
     '</a>' +
     '<span class="rc-header-leaguehub-badge">' +
       '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
-        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
+        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_header.webp" alt="League Hub" draggable="false">' +
       '</a>' +
     '</span>' +
     // Championship logo: only for accounts with the + (Championship Access) and Admins, judged from the saved login profile.
@@ -464,7 +464,7 @@ function renderHeader(opts) {
 
   var html = '';
   html += '<a class="rc-header-logo-link" href="index.html">' +
-            '<img class="rc-header-logo" src="assets/images/race-club-header-logo.webp" alt="Race Club">' +
+            '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
           '</a>';
   // League Hub badge. Sits in the same left-hand flex cluster as the logo, not spaced apart from it
   // -- see .rc-header-nav's margin-left: auto (style.css) for how the nav still ends up pushed
@@ -475,7 +475,7 @@ function renderHeader(opts) {
               // behavior. The matching user-select/user-drag CSS is on .rc-header-leaguehub-logo
               // (style.css) -- together they keep this reading as a clickable link, not draggable/
               // selectable image content.
-              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_logo.webp" alt="League Hub" draggable="false">' +
+              '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_header.webp" alt="League Hub" draggable="false">' +
             '</a>' +
           '</span>';
   // Championship logo: only for accounts with the + (Championship Access) and Admins; nobody else sees it (Matt, 2026-10-24).
