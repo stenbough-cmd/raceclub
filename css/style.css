@@ -1356,7 +1356,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    belt-and-suspenders alongside the anchor's own default pointer cursor, so hovering anywhere over
    the logo graphic itself never shows a text-select (I-beam) cursor or lets a click-drag select it
    as text, on every page (this markup is shared by every page via renderHeader(), js/header.js). */
-.rc-header-logo { height: 58px; display: block; cursor: pointer; user-select: none; -webkit-user-drag: none; }
+.rc-header-logo { height: 36px; display: block; cursor: pointer; user-select: none; -webkit-user-drag: none; }
 /* League Hub badge -- the league_hub_header.webp mark, sitting right after the Race Club logo. Hidden
    below 640px (same "hide the decorative extra before the functional stuff" convention as
    .rc-header-account-text) so it never crowds the LOGIN/REGISTER text or account menu on a narrow
@@ -1401,8 +1401,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (min-width: 641px) {
   .rc-header-logo,
   .rc-header-leaguehub-logo { transition: transform 0.18s ease, height 0.22s ease; }
-  #rc-header[data-nav-active] .rc-header-logo { height: 36px; }
-  #rc-header[data-nav-active="home"] .rc-header-logo { height: 58px; }
+  #rc-header[data-nav-active] .rc-header-logo { height: 22.5px; }   /* inactive: same size as the League Hub and Championship marks */
+  #rc-header[data-nav-active="home"] .rc-header-logo { height: 36px; }   /* active: the size it used to have when inactive */
   #rc-header[data-nav-active="league"] a[href="league.html"] .rc-header-leaguehub-logo,
   #rc-header[data-nav-active="champ"] a[href="championship.html"] .rc-header-leaguehub-logo { height: 36px; }
 }
