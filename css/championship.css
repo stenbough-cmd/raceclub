@@ -1278,6 +1278,9 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
 .rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }
 .rcc-page a:not([class*="rc-btn"]), .rcc-page .rcc-actionbar { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
+/* Red again (Matt): buttons that save to the sheet (.rc-btn-primary, the Feedback popup's send button)
+   and the loading start lights. The demo / access popup buttons keep their own blue-gray. */
+.rcc-page .rc-btn-primary, .rcc-page .rcl-feedback-submit-btn, .rcc-page .rc-startlights { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
 /* The player's highlights stay blue-gray (Matt): row tint, name (also when it is a profile link) and
    team in the tables, and the player's team in the team standings. */
 .rcc-page .rcc-row-me, .rcc-page .rcc-me-text, .rcc-page a.rcc-me-text, .rcc-page .rcc-me-text a,
