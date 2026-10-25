@@ -1266,3 +1266,15 @@ body.rcc-page {
 .rcc-page .rcc-row-me .rcl-standings-team { color: var(--rc-red); }
 /* Footer Legal Disclaimer link. */
 .rcc-page .rc-footer-legal-link { color: var(--rc-red); }
+
+/* Deep gold slashes (Matt, 2026-10-25): the hero's SEASON N / NAME slash, every container header
+   slash and every popup header slash. */
+body.rcc-page { --rcc-slash-gold: #b8860b; }
+.rcc-page .rcl-hero-season-sep,
+.rcc-page .rcl-panel-title::before,
+.rcc-page .rcl-modal-title::before { color: var(--rcc-slash-gold); }
+/* Help popup keeps its red circles and accents (Matt); its links stay blue-gray. */
+.rcc-page .rcc-help-body { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
+.rcc-page .rcc-help-body a, .rcc-page .rcc-help-body .rc-rulebook-nav-link { color: #5f7d99; }
+.rcc-page .rcc-help-body a:hover, .rcc-page .rcc-help-body a:focus-visible,
+.rcc-page .rcc-help-body .rc-rulebook-nav-link:hover { color: #4b6680; }
