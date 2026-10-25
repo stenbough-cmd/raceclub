@@ -976,7 +976,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* More Stories: round badge before each headline (RD over 01, or PRE), about 1.5 lines tall. */
 .rcc-story-prev { display: flex; align-items: center; gap: 10px; text-align: left; }
-.rcc-story-badge { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 4px; background: var(--rcc-navy); color: var(--rc-white); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--rc-font-heading); line-height: 1; box-shadow: inset 0 -2px 0 var(--rc-red); }
+.rcc-story-badge { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 4px; background: var(--rcc-navy); color: var(--rc-white); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--rc-font-heading); line-height: 1; box-shadow: inset 0 -2px 0 var(--rcc-slash-gold, #b8860b); }
 .rcc-story-badge-rd { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.85; }
 .rcc-story-badge-num { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
 .rcc-story-badge-pre .rcc-story-badge-num { font-size: 10px; letter-spacing: 0.06em; margin-top: 0; }
@@ -1014,7 +1014,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 }
 
 /* Season Stories popup: the round badge left of the title, League News size (46px). */
-.rcc-story-headrow .rcc-story-badge { width: 46px; height: 46px; box-shadow: inset 0 -3px 0 var(--rc-red); }
+.rcc-story-headrow .rcc-story-badge { width: 46px; height: 46px; box-shadow: inset 0 -3px 0 var(--rcc-slash-gold, #b8860b); }
 .rcc-story-headrow .rcc-story-badge-rd { font-size: 11px; }
 .rcc-story-headrow .rcc-story-badge-num { font-size: 19px; margin-top: 3px; }
 .rcc-story-headrow .rcc-story-badge-pre .rcc-story-badge-num { font-size: 14px; margin-top: 0; }
@@ -1267,7 +1267,7 @@ body.rcc-page {
 /* Footer Legal Disclaimer link. */
 .rcc-page .rc-footer-legal-link { color: var(--rc-red); }
 
-/* Deep gold slashes (Matt, 2026-10-25): the hero's SEASON N / NAME slash, every container header
+/* Deep gold slashes (Matt, 2026-10-25; the story round badges' bottom line uses it too): the hero's SEASON N / NAME slash, every container header
    slash and every popup header slash. */
 body.rcc-page { --rcc-slash-gold: #b8860b; }
 .rcc-page .rcl-hero-season-sep,
