@@ -444,7 +444,8 @@ function _rccRenderEyebrow(page) {
   var eb = document.querySelector('.rcl-hero-eyebrow');
   if (!eb) return;
   // The Welcome page always reads SINGLE PLAYER MODE, even for a signed-in member without access (Matt, 2026-10-22).
-  if (page && page.welcome) { eb.textContent = 'Single Player Mode'; return; }
+  // The demo also reads SINGLE PLAYER MODE (it is not the viewer's championship).
+  if ((page && page.welcome) || RCC.demo) { eb.textContent = 'Single Player Mode'; return; }
   var me = getToken() ? (getProfileCache() || {}) : {};
   var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
   eb.textContent = name ? name + '\u2019s Offline' : 'Single Player Mode';
@@ -3084,31 +3085,51 @@ function _rccPageShell(showParts) {
 }
 
 // NO ACCESS (Matt, 2026-10-25; replaced the Welcome page). Signed-out visitors and members without
-// Championship Access see the page header only, with a popup in the middle of the page. It has no X:
-// signed out = JOIN RACE CLUB + SEE THE DEMO, signed in = REQUEST ACCESS + SEE THE DEMO, and a
-// "Return to previous page" link under the buttons.
-function rccRenderWelcome() {
-  RCC.demo = null;
-  document.body.classList.remove('rcc-demo');
-  var pill = document.getElementById('rcc-demo-pill');
-  if (pill) pill.parentNode.removeChild(pill);
-  _rccPageShell(false);
-  rccRenderHero({ welcome: true, hasSeason: false, owner: { displayName: '' }, seasons: [] });
-  var meta = document.getElementById('rcc-hero-meta');
-  if (meta) meta.innerHTML = '';
-  rccRenderTicker({ hasSeason: false });
-  var tickerWrap = document.querySelector('.rcl-ticker-wrap');
-  if (tickerWrap) tickerWrap.style.display = 'none';
+// Championship Access get the demo season loaded behind a popup with no X: signed out = JOIN RACE
+// CLUB + SEE THE DEMO, signed in = REQUEST ACCESS + SEE THE DEMO, and a "Return to previous page"
+// link under the buttons. SEE THE DEMO just closes the popup. Close Demo Page brings back a "Like What
+// You See?" popup for them; members with access go to their own championship instead.
+var RCC_TESTING_PHRASES = [
+  'once we’ve tuned out the understeer',
+  'once we’ve dialed in the setup',
+  'after a few shakedown laps',
+  'once we’ve worked through the gremlins',
+  'after we’ve sorted the teething issues in the paddock',
+  'once the car’s hooked up and running clean',
+  'after we’ve found the racing line',
+  'once we’ve scrubbed in the tires',
+  'after the final pit stop adjustments',
+  'once all the loose bolts have stopped rattling'
+];
+function _rccTestingLine() {
+  var phrase = RCC_TESTING_PHRASES[Math.floor(Math.random() * RCC_TESTING_PHRASES.length)];
+  return 'Testing for this mode is currently underway and ' + phrase + ', all members will have access.';
+}
+// Access as far as this browser knows: Admin or Championship Access in the saved profile, unless the
+// server has already said no on this visit (RCC.noAccess).
+function _rccHasAccess() {
+  if (RCC.noAccess || !getToken()) return false;
+  var me = getProfileCache() || {};
+  return me.role === 'Admin' || !!me.champAccess;
+}
+
+function _rccNoAccessPopup(afterDemo) {
   var old = document.querySelector('.rcc-noaccess-overlay');
-  if (old) old.parentNode.removeChild(old);
+  if (old) return;
   var signedIn = !!getToken();
-  var m = rccOpenModal('Championship Access Needed', { narrow: true });
+  var m = rccOpenModal(afterDemo ? 'Like What You See?' : 'Championship Access Needed', { narrow: true });
   m.overlay.classList.add('rcc-noaccess-overlay');
   var x = m.dialog.querySelector('.rcl-modal-close');
   if (x) x.parentNode.removeChild(x);
-  m.body.appendChild(_rccText('p', 'rcc-confirm-text', signedIn
-    ? 'Your account does not have access to Race Club Championship. You can still look around a real season in the demo.'
-    : 'Race Club Championship is for Race Club members with access. Join Race Club to ask for it, or look around a real season in the demo.'));
+  var text;
+  if (afterDemo) {
+    text = signedIn ? 'Request access to Race Club Championship and build a season of your own.'
+      : 'Join Race Club to request access to Race Club Championship.';
+  } else {
+    text = signedIn ? 'Your account does not have access to Race Club Championship. You can still look around a real season in the demo.'
+      : 'Race Club Championship is for Race Club members with access. Join Race Club to ask for it, or look around a real season in the demo.';
+  }
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', text + ' ' + _rccTestingLine()));
   var row = _rccEl('div', 'rcc-btn-row rcc-noaccess-btns');
   var first;
   if (signedIn) {
@@ -3127,10 +3148,14 @@ function rccRenderWelcome() {
     first = _rccText('a', 'rc-btn-secondary rcc-noaccess-btn', 'Join Race Club');
     first.href = 'register.html?championship=1';
   }
-  var demo = _rccText('a', 'rc-btn-secondary rcc-noaccess-btn', 'See The Demo');
-  demo.href = 'championship.html?demo=1';
   row.appendChild(first);
-  row.appendChild(demo);
+  // SEE THE DEMO only when the demo actually loaded behind the popup.
+  if (RCC.demo) {
+    var demo = _rccText('button', 'rc-btn-secondary rcc-noaccess-btn', 'See The Demo');
+    demo.type = 'button';
+    demo.addEventListener('click', function () { m.close(true); });
+    row.appendChild(demo);
+  }
   m.body.appendChild(row);
   var back = _rccText('a', 'rcc-noaccess-back', 'Return to previous page');
   back.href = 'index.html';
@@ -3145,7 +3170,29 @@ function rccRenderWelcome() {
   m.body.appendChild(back);
 }
 
-function rccStartDemo() {
+// The page header only (eyebrow SINGLE PLAYER MODE), used when the demo can't load.
+function _rccHeaderOnly() {
+  RCC.demo = null;
+  document.body.classList.remove('rcc-demo');
+  var pill = document.getElementById('rcc-demo-pill');
+  if (pill) pill.parentNode.removeChild(pill);
+  _rccPageShell(false);
+  rccRenderHero({ welcome: true, hasSeason: false, owner: { displayName: '' }, seasons: [] });
+  var meta = document.getElementById('rcc-hero-meta');
+  if (meta) meta.innerHTML = '';
+  rccRenderTicker({ hasSeason: false });
+  var tickerWrap = document.querySelector('.rcl-ticker-wrap');
+  if (tickerWrap) tickerWrap.style.display = 'none';
+}
+
+// No access (signed out, the saved profile has no access, or the server answered NOT_AVAILABLE).
+function rccRenderWelcome() {
+  RCC.noAccess = true;
+  if (RCC.demo) { _rccNoAccessPopup(false); return; }
+  rccStartDemo(true);
+}
+
+function rccStartDemo(withPopup) {
   // The time stamp skips any copy a cache kept (GitHub Pages holds answers, a "not found" included,
   // for up to 10 minutes after a push).
   fetch(RCC_DEMO_FILE + '?v=' + Date.now(), { cache: 'no-store' }).then(function (r) {
@@ -3156,19 +3203,27 @@ function rccStartDemo() {
     RCC.demo = d;
     RCC.ownerId = 'DEMO';
     document.body.classList.add('rcc-demo');
+    var tickerWrap = document.querySelector('.rcl-ticker-wrap');
+    if (tickerWrap) tickerWrap.style.display = '';
     _rccPageShell(true);
     rccRenderAll(d.page);
-    var pill = _rccEl('button', 'rcc-demo-pill');
+    var pill = document.getElementById('rcc-demo-pill') || _rccEl('button', 'rcc-demo-pill');
     pill.id = 'rcc-demo-pill';
     pill.type = 'button';
-    pill.textContent = 'Close Demo Page \u2715';
-    // Close Demo always goes to the index page (Matt, 2026-10-25).
-    pill.addEventListener('click', function () { window.location.href = 'index.html'; });
-    document.body.appendChild(pill);
+    pill.textContent = 'Close Demo Page ✕';
+    // No access: the "Like What You See?" popup. With access: their own championship (Matt, 2026-10-25).
+    pill.onclick = function () {
+      if (_rccHasAccess()) { window.location.href = 'championship.html'; return; }
+      _rccNoAccessPopup(true);
+    };
+    if (!pill.parentNode) document.body.appendChild(pill);
+    if (withPopup) _rccNoAccessPopup(false);
   }).catch(function (err) {
     if (window.console) console.error('Demo failed:', err);
-    rccRenderWelcome();
     _rccToast('The demo is not available right now. Please try again later.', 'error');
+    if (!withPopup && _rccHasAccess()) { window.location.href = 'championship.html'; return; }
+    _rccHeaderOnly();
+    _rccNoAccessPopup(false);
   });
 }
 
