@@ -58,7 +58,7 @@
 .rch-visor i { width: 16px; height: 16px; border-radius: 50%; display: block; }
 
 /* layer list */
-.rch-layers { display: flex; flex-direction: column; gap: 5px; padding: 0; margin: 6px 0; }
+.rch-layers { display: flex; flex-direction: column; gap: 5px; padding: 8px; margin: 6px 0; border: 1px solid var(--rc-silver); border-radius: 8px; background: var(--rc-white); }
 .rch-subhead { margin: 4px 0 6px; }
 .rch-layer { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 5px 8px; background: var(--rc-white); cursor: grab; font-size: 13px; user-select: none; }
 .rch-layer.sel { border-color: var(--rc-red); background: var(--rc-offwhite); }
