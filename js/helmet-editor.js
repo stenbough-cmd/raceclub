@@ -646,11 +646,11 @@
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape color'))); }
+          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape'))); }
           // Border (basic and advanced shapes and the player number): a color picker under the shape color, then a 0 to 20 px size slider
           if (!gdef.gradient && !gdef.weathering && !gdef.pattern && (!gdef.player || sel.s === 'player_number')) {
             if (!sel.bc) sel.bc = 'black';
-            pickColor('bc', 'Border color');
+            pickColor('bc', 'Border');
             var bwr = mk('div', 'rch-shapecolor');
             bwr.appendChild(mk('div', 'rch-label', 'Border size'));
             var bg2 = mk('div', 'rch-sliders rch-sliders-one');
