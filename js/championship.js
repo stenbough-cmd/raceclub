@@ -1472,6 +1472,9 @@ function rccRenderManufacturers(page) {
   body.style.display = '';
   body.appendChild(_rccText('div', 'rcl-mfr-title', "Manufacturers' Standings"));
   body.appendChild(_rccText('div', 'rcl-mfr-subtitle', 'Hypercar Class · Factory Entries'));
+  // The player's manufacturer (only when they drive a factory Hypercar): name in blue-gray and bold (Matt, 2026-10-25).
+  var mine = (page.grid || []).filter(function (g) { return g.isMine; })[0];
+  var myMfr = (mine && mine.carClass === 'Hypercar' && mine.factory) ? String(mine.manufacturer || '').toUpperCase() : '';
   var top3 = list.slice(0, 3);
   var podium = _rccEl('div', 'rcl-mfr-podium');
   var order = top3.length === 3 ? [1, 0, 2] : top3.map(function (_, i) { return i; });
@@ -1486,7 +1489,7 @@ function rccRenderManufacturers(page) {
     var rl = _rccEl('div', 'rcl-mfr-tile-rankline');
     rl.appendChild(_rccText('span', 'rcl-mfr-tile-rank', String(idx + 1)));
     tile.appendChild(rl);
-    tile.appendChild(_rccText('div', 'rcl-mfr-tile-name', m.manufacturer.toUpperCase()));
+    tile.appendChild(_rccText('div', 'rcl-mfr-tile-name' + (myMfr && m.manufacturer.toUpperCase() === myMfr ? ' rcc-mfr-me' : ''), m.manufacturer.toUpperCase()));
     tile.appendChild(_rccText('div', 'rcl-mfr-tile-points', Math.round(m.points) + ' PTS'));
     podium.appendChild(tile);
   });
@@ -1502,7 +1505,7 @@ function rccRenderManufacturers(page) {
       var logoSlot = _rccEl('span', 'rcl-mfr-rest-logo-slot');
       logoSlot.appendChild(_rccLogo('rcl-mfr-rest-logo', m.manufacturer));
       r.appendChild(logoSlot);
-      r.appendChild(_rccText('span', 'rcl-mfr-rest-name', m.manufacturer.toUpperCase()));
+      r.appendChild(_rccText('span', 'rcl-mfr-rest-name' + (myMfr && m.manufacturer.toUpperCase() === myMfr ? ' rcc-mfr-me' : ''), m.manufacturer.toUpperCase()));
       r.appendChild(_rccText('span', 'rcl-mfr-rest-pts', Math.round(m.points) + ' PTS'));
       restList.appendChild(r);
     });
