@@ -142,6 +142,21 @@
     var k = 0.5523 * r;
     return [['M', cx + r, cy], ['C', cx + r, cy + k, cx + k, cy + r, cx, cy + r], ['C', cx - k, cy + r, cx - r, cy + k, cx - r, cy], ['C', cx - r, cy - k, cx - k, cy - r, cx, cy - r], ['C', cx + k, cy - r, cx + r, cy - k, cx + r, cy], ['Z']];
   }
+  // Amoeba: a smooth closed blob through points at the given radii (0..1) round the centre, fitted to the layer box.
+  function amoeba(id, name, radii) {
+    var n = radii.length, pts = [], k, x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (k = 0; k < n; k++) { var a = -Math.PI / 2 + k * Math.PI * 2 / n + (k % 2 ? 0.08 : -0.05); pts.push([Math.cos(a) * radii[k], Math.sin(a) * radii[k]]); }
+    pts.forEach(function (q) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[1] > y1) y1 = q[1]; });
+    var mx = (x0 + x1) / 2, my = (y0 + y1) / 2, sx = 2 / (x1 - x0), sy = 2 / (y1 - y0);
+    pts = pts.map(function (q) { return [(q[0] - mx) * sx * 0.97, (q[1] - my) * sy * 0.97]; });
+    var cmds = [['M', pts[0][0], pts[0][1]]];
+    for (k = 0; k < n; k++) {   // Catmull-Rom through the points, written as cubic curves
+      var p0 = pts[(k + n - 1) % n], p1 = pts[k], p2 = pts[(k + 1) % n], p3 = pts[(k + 2) % n];
+      cmds.push(['C', p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]]);
+    }
+    cmds.push(['Z']);
+    return pshape(id, name, cmds);
+  }
   var PREMIUM_SHAPES = [
     pshape('flame', 'Flame', [['M', 0.05, -1], ['C', 0.2, -0.55, 0.85, -0.35, 0.85, 0.25], ['C', 0.85, 0.75, 0.45, 1, 0, 1], ['C', -0.5, 1, -0.9, 0.7, -0.8, 0.15], ['C', -0.75, -0.15, -0.5, -0.3, -0.4, -0.6], ['C', -0.25, -0.45, -0.15, -0.3, -0.15, -0.05], ['C', 0.15, -0.3, -0.05, -0.65, 0.05, -1], ['Z']]),
     pshape('flame_swept', 'Flame streaks', [['M', 1, -0.86], ['C', 0.5, -0.9, 0.1, -0.7, -0.45, -1.02], ['C', -0.05, -0.62, 0.5, -0.3, 1, -0.34], ['Z'], ['M', 1, -0.24], ['C', 0.5, -0.28, 0.1, -0.08, -1, -0.4], ['C', -0.6, 0.0, 0.5, 0.32, 1, 0.28], ['Z'], ['M', 1, 0.36], ['C', 0.5, 0.32, 0.1, 0.52, -0.6, 0.2], ['C', -0.2, 0.6, 0.5, 0.92, 1, 0.88], ['Z']]),
@@ -156,6 +171,12 @@
     pshape('claw', 'Claw marks', [['M', -0.85, -1], ['C', -0.55, -0.4, -0.5, 0.3, -0.7, 1], ['C', -0.95, 0.4, -1, -0.4, -0.85, -1], ['Z'], ['M', -0.15, -1], ['C', 0.2, -0.4, 0.25, 0.3, 0.05, 1], ['C', -0.25, 0.4, -0.3, -0.4, -0.15, -1], ['Z'], ['M', 0.6, -1], ['C', 0.95, -0.4, 1, 0.3, 0.8, 1], ['C', 0.5, 0.4, 0.45, -0.4, 0.6, -1], ['Z']]),
     pshape('swoosh', 'Swoosh', [['M', -1, 0.6], ['C', -0.4, 0.55, 0.3, 0.1, 1, -0.8], ['C', 0.6, -0.2, 0.1, 0.45, -0.35, 0.75], ['C', -0.6, 0.9, -0.85, 0.85, -1, 0.6], ['Z']]),
     pshape('crescent', 'Crescent', [['M', 0.35, -0.95], ['C', -0.55, -0.95, -1, -0.45, -1, 0.05], ['C', -1, 0.6, -0.55, 1, 0.1, 1], ['C', 0.5, 1, 0.8, 0.85, 0.95, 0.65], ['C', 0.2, 0.7, -0.35, 0.3, -0.35, -0.15], ['C', -0.35, -0.5, -0.05, -0.8, 0.35, -0.95], ['Z']]),
+    amoeba('amoeba_1', 'Amoeba 1', [1, 0.82, 0.95, 0.7, 0.9, 1, 0.78, 0.92]),
+    amoeba('amoeba_2', 'Amoeba 2', [0.8, 1, 0.74, 0.9, 1, 0.7, 0.88, 0.96, 0.72]),
+    amoeba('amoeba_3', 'Amoeba 3', [1, 0.95, 0.62, 0.9, 0.98, 0.66, 0.85]),
+    amoeba('amoeba_4', 'Amoeba 4', [0.9, 0.7, 1, 0.76, 0.96, 0.66, 1, 0.8, 0.94, 0.72]),
+    amoeba('amoeba_5', 'Amoeba 5', [1, 0.68, 0.84, 1, 0.6, 0.92]),
+    amoeba('amoeba_6', 'Amoeba 6', [0.86, 1, 0.9, 0.64, 0.78, 1, 0.7, 0.96]),
     pshape('heart', 'Heart', [['M', 0, 0.95], ['C', -0.5, 0.55, -1, 0.2, -1, -0.35], ['C', -1, -0.8, -0.65, -0.95, -0.4, -0.95], ['C', -0.2, -0.95, -0.05, -0.8, 0, -0.6], ['C', 0.05, -0.8, 0.2, -0.95, 0.4, -0.95], ['C', 0.65, -0.95, 1, -0.8, 1, -0.35], ['C', 1, 0.2, 0.5, 0.55, 0, 0.95], ['Z']]),
     pshape('gear', 'Gear', (function () {
       var out = [], i, n = 10;
@@ -237,6 +258,36 @@
     } }
   ];
   Array.prototype.push.apply(SHAPES, WEATHERING);
+  // Light effects: soft reflections and glints in one color (white by default) that fade to see-through.
+  function lite(c, hex, k) { var n = parseInt(String(hex).replace('#', ''), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + k + ')'; }
+  function radial(c, r, hex, stops) { var g = c.createRadialGradient(0, 0, 0, 0, 0, r); stops.forEach(function (st) { g.addColorStop(st[0], lite(c, hex, st[1])); }); return g; }
+  var LIGHTS = [
+    { id: 'l_window', name: 'Window reflection', light: true, draw: function (c, w, h, col) {
+        var g = c.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, lite(c, col, 0.85)); g.addColorStop(1, lite(c, col, 0.1)); c.fillStyle = g;
+        var sk = w * 0.12, pw = w * 0.36, gap = w * 0.08, x = -(pw * 2 + gap) / 2;
+        poly(c, [[x + sk, -h / 2], [x + pw + sk, -h / 2], [x + pw - sk, h / 2], [x - sk, h / 2]]); c.fill();
+        x += pw + gap; poly(c, [[x + sk, -h / 2], [x + pw + sk, -h / 2], [x + pw - sk, h / 2], [x - sk, h / 2]]); c.fill(); } },
+    { id: 'l_streak', name: 'Glossy streak', light: true, draw: function (c, w, h, col) {
+        c.save(); c.rotate(-0.35); var L = Math.max(w, h) * 0.5;
+        var g = c.createLinearGradient(-L, 0, L, 0); g.addColorStop(0, lite(c, col, 0)); g.addColorStop(0.5, lite(c, col, 0.9)); g.addColorStop(1, lite(c, col, 0)); c.fillStyle = g;
+        c.beginPath(); c.moveTo(-L, 0); c.quadraticCurveTo(0, -h * 0.12, L, 0); c.quadraticCurveTo(0, h * 0.12, -L, 0); c.closePath(); c.fill(); c.restore(); } },
+    { id: 'l_glare', name: 'Sun glare', light: true, draw: function (c, w, h, col) {
+        c.save(); c.scale(1, h / w); var r = w / 2;
+        c.fillStyle = radial(c, r * 0.55, col, [[0, 1], [0.25, 0.7], [1, 0]]); c.beginPath(); c.arc(0, 0, r * 0.55, 0, Math.PI * 2); c.fill();
+        [0, Math.PI / 2].forEach(function (rot) { c.save(); c.rotate(rot); var g = c.createLinearGradient(-r, 0, r, 0); g.addColorStop(0, lite(c, col, 0)); g.addColorStop(0.5, lite(c, col, 0.9)); g.addColorStop(1, lite(c, col, 0)); c.fillStyle = g; c.beginPath(); c.moveTo(-r, 0); c.lineTo(0, -r * 0.05); c.lineTo(r, 0); c.lineTo(0, r * 0.05); c.closePath(); c.fill(); c.restore(); });
+        c.restore(); } },
+    { id: 'l_spot', name: 'Highlight spot', light: true, draw: function (c, w, h, col) {
+        c.save(); c.scale(1, h / w); var r = w / 2;
+        c.fillStyle = radial(c, r, col, [[0, 0.8], [0.5, 0.35], [1, 0]]); c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+        c.fillStyle = radial(c, r * 0.3, col, [[0, 1], [0.6, 0.9], [1, 0]]); c.beginPath(); c.arc(-r * 0.12, -r * 0.1, r * 0.3, 0, Math.PI * 2); c.fill(); c.restore(); } },
+    { id: 'l_flare', name: 'Lens flare', light: true, draw: function (c, w, h, col) {
+        var spots = [[-0.8, 0.5, 0.55], [-0.45, 0.22, 0.4], [-0.1, 0.12, 0.5], [0.25, 0.3, 0.3], [0.55, 0.16, 0.45], [0.85, 0.4, 0.25]];
+        var g0 = c.createRadialGradient(-w * 0.5, 0, 0, -w * 0.5, 0, h * 0.5); g0.addColorStop(0, lite(c, col, 0.95)); g0.addColorStop(1, lite(c, col, 0));
+        c.fillStyle = g0; c.beginPath(); c.arc(-w * 0.5, 0, h * 0.5, 0, Math.PI * 2); c.fill();
+        spots.forEach(function (sp) { var x = sp[0] * w / 2, r = sp[1] * h / 2; var g = c.createRadialGradient(x, 0, 0, x, 0, r); g.addColorStop(0, lite(c, col, sp[2])); g.addColorStop(0.8, lite(c, col, sp[2] * 0.7)); g.addColorStop(1, lite(c, col, 0)); c.fillStyle = g; c.beginPath(); c.arc(x, 0, r, 0, Math.PI * 2); c.fill(); }); } }
+  ];
+  Array.prototype.push.apply(SHAPES, LIGHTS);
+
   // Patterns: tiles that fit edge to edge. Copy a pattern layer and set the copy next to the first (same width and height) and the
   // pattern carries on without a seam, so several copies cover as large a canvas as you like. Each one repeats a whole number of
   // times inside its box, and is drawn a hair past its edges (same color) so neighbouring tiles never show a hairline.
@@ -428,7 +479,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     return out;
   }
   // shapes that can have a border: basic and advanced shapes and the player number (not gradients, weathering, patterns or the name boxes)
-  function borderOk(id) { var sh = shapeById(id); return !!sh && !sh.gradient && !sh.weathering && !sh.pattern && (!isPlayerId(id) || id === 'player_number'); }
+  function borderOk(id) { var sh = shapeById(id); return !!sh && !sh.gradient && !sh.light && !sh.weathering && !sh.pattern && (!isPlayerId(id) || id === 'player_number'); }
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function randomRecipe(keepDesign) {
     var ids = PALETTE.map(function (p) { return p.id; });

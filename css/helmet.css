@@ -287,3 +287,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-loadrow .rch-btns .rch-psub { flex: 1 1 auto; min-width: 0; text-align: right; }
 .rch-addrow .rch-select-wide { flex: 1 1 0; min-width: 0; }
 .rch-loadrow .rch-btns button { flex: 0 0 auto; width: auto; }
+
+.rch-layerlist-head { margin-top: 18px; }
+.rch-iconlabel { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.rch-iconlabel svg { flex: 0 0 auto; }

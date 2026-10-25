@@ -317,12 +317,16 @@
       mfrSel.onchange = function () { cur.mfr = mfrSel.value; if (cur.kind === 'Manufacturer') { cur.name = cur.mfr; } syncMeta(); };
       var status = mk('p', 'rch-status'); bar.appendChild(status);
       var btns = mk('div', 'rch-btns');
+      var ICO = {'NEW': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>', 'OPEN': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', 'SAVE': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>', 'SAVENEW': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/><line x1="15" y1="12" x2="15" y2="18"/><line x1="12" y1="15" x2="18" y2="15"/></svg>'};
+      function withIcon(b, key, label) { b.innerHTML = ICO[key] + '<span class="rch-btnlabel">' + label + '</span>'; b.classList.add('rch-iconlabel'); }
       var saveBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save'); saveBtn.type = 'button';
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
+      withIcon(saveBtn, 'SAVE', 'Save'); withIcon(saveNewBtn, 'SAVENEW', 'Save as New');
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
       var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Open'); loadBtn.type = 'button';
       loadBtn.title = 'Open a saved helmet design (and manage the saved designs)';
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'New'); newBtn.type = 'button';
+      withIcon(loadBtn, 'OPEN', 'Open'); withIcon(newBtn, 'NEW', 'New');
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
         R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '' }; baseline = JSON.parse(JSON.stringify(R));
@@ -410,7 +414,7 @@
         var keep = lpick.value;
         lpick.innerHTML = '';
         var gS = mk('optgroup'); gS.label = 'Basic shapes';
-        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.weathering || sh.player || sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (sh.premium || sh.gradient || sh.light || sh.weathering || sh.player || sh.pattern) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gS.appendChild(o); });
         lpick.appendChild(gS);
         var gP = mk('optgroup'); gP.label = 'Advanced shapes';
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
@@ -418,6 +422,9 @@
         var gG = mk('optgroup'); gG.label = 'Gradients';
         H.SHAPES.forEach(function (sh) { if (!sh.gradient) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gG.appendChild(o); });
         lpick.appendChild(gG);
+        var gL = mk('optgroup'); gL.label = 'Light effects';
+        H.SHAPES.forEach(function (sh) { if (!sh.light) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gL.appendChild(o); });
+        lpick.appendChild(gL);
         var gW = mk('optgroup'); gW.label = 'Weathering';
         H.SHAPES.forEach(function (sh) { if (!sh.weathering) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gW.appendChild(o); });
         lpick.appendChild(gW);
@@ -452,8 +459,9 @@
         if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
         var kind = lpick.value.charAt(0), isM = kind === 'm', val = lpick.value.substr(2);
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
+        var isLight = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).light;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
-        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
+        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 0 } : isLight ? { s: val, c: 'white', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 220, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : 220, r: 0, sh: 0 }
           : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
@@ -467,7 +475,7 @@
       };
       addRow.appendChild(lpick); addRow.appendChild(addB); addRow.appendChild(addLogoBtn); addRow.appendChild(logosBtn);
       lg.insertBefore(addRow, layers);
-      lg.insertBefore(mk('div', 'rch-label rch-subhead', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
+      lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
       right.appendChild(lg);
 
@@ -649,9 +657,9 @@
           } else if (gdef.player) {
             pickColor('c', 'Name color');
             pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape'))); }
+          } else { pickColor('c', gdef.light ? 'Light color' : gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape'))); }
           // Border (basic and advanced shapes and the player number): a color picker under the shape color, then a 0 to 20 px size slider
-          if (!gdef.gradient && !gdef.weathering && !gdef.pattern && (!gdef.player || sel.s === 'player_number')) {
+          if (!gdef.gradient && !gdef.light && !gdef.weathering && !gdef.pattern && (!gdef.player || sel.s === 'player_number')) {
             if (!sel.bc) sel.bc = 'black';
             pickColor('bc', 'Border');
             var bwr = mk('div', 'rch-shapecolor');
@@ -823,7 +831,7 @@
       }
       // while a save is running the button reads Saving... and the X in the corner is switched off
       function setSaving(on) {
-        saveBtn.disabled = on; saveNewBtn.disabled = on; newBtn.disabled = on; loadBtn.disabled = on; saveBtn.textContent = on ? 'Saving...' : 'Save';
+        saveBtn.disabled = on; saveNewBtn.disabled = on; newBtn.disabled = on; loadBtn.disabled = on; saveBtn.querySelector('.rch-btnlabel').textContent = on ? 'Saving...' : 'Save';
         modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
       }
       // Save / Save as New. forceNew = save this as a separate helmet and leave the one that was loaded alone.
