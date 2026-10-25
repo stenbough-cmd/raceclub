@@ -362,7 +362,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* The striped rows (league.css nth-child(even)) must not cover the tint (Matt, 2026-10-22). */
 .rcc-row-me,
 .rcc-page .rcl-standings-row.rcc-row-me,
-.rcc-page .rcl-race-row.rcc-row-me { background: color-mix(in srgb, var(--rc-red) 6%, transparent); }
+.rcc-page .rcl-race-row.rcc-row-me { background: color-mix(in srgb, var(--rc-red) 12%, transparent); }
 .rcc-me-text { color: var(--rc-red); }
 /* On the standings boards the player's name is bold and black like the rest of the list (Matt). */
 .rcc-board .rcc-me-text { color: var(--rc-carbon); font-weight: 700; }
@@ -1235,3 +1235,34 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcc-noaccess-btn:hover, .rcc-page .rcc-noaccess-btn:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
 .rcc-noaccess-back { display: block; margin-top: 16px; text-align: center; font-size: 14px; color: #4b6680; text-decoration: underline; }
 .rcc-noaccess-back:hover, .rcc-noaccess-back:focus-visible { color: #3e566d; }
+
+/* ====================================================================
+   BLUE-GRAY ACCENTS (Matt, 2026-10-25). On the Championship page the site's red accent becomes the
+   blue-gray of the demo button: every rule that uses var(--rc-red) here (container slashes, red lines,
+   links, highlights, the player's row and name, buttons, popups) picks it up. Lighter shade for dark
+   backgrounds. Class colors (Hypercar red) are set on :root, so they stay red.
+   ==================================================================== */
+body.rcc-page {
+  --rc-red: #5f7d99;
+  --rc-red-dark: #4b6680;
+  --rcc-accent-light: #9db6cc;
+}
+/* Problems stay red (Matt): errors, refused uploads, failed stories, penalties, drive-through dots,
+   the thumbs-down vote. */
+.rcc-page .rc-error, .rcc-page .rc-field-error, .rcc-page .rc-code-error, .rcc-page .rc-toast-error,
+.rcc-page .rcc-error-line, .rcc-page .rcc-upload-bad, .rcc-page .rcc-story-failed,
+.rcc-page .rcr-dt-dot, .rcc-page .rcr-legend-dt, .rcc-page .rcc-thumb-down,
+.rcc-page .rcl-report-clause-penalty, .rcc-page .rcl-report-clause-loss, .rcc-page .rcl-penalty-effect {
+  --rc-red: #F21B0C;
+  --rc-red-dark: #c81509;
+}
+/* Header: SINGLE PLAYER MODE in the SEASON N blue; a stronger shadow on the season name. */
+.rcc-page .rcl-hero-eyebrow { color: var(--rcc-navy); }
+.rcc-page .rcl-hero-season-name { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38), 0 0 2px rgba(0, 0, 0, 0.28); }
+/* Calendar band (dark): ROUND N OF N in a lighter blue-gray. */
+.rcc-page .rcl-carousel-datetime { color: var(--rcc-accent-light); }
+/* The player's name and team in blue-gray on the boards, lists and Race Recap tables. */
+.rcc-page .rcc-board .rcc-me-text, .rcc-page .rcl-race-grid-recap .rcc-me-text { color: var(--rc-red); }
+.rcc-page .rcc-row-me .rcl-standings-team { color: var(--rc-red); }
+/* Footer Legal Disclaimer link. */
+.rcc-page .rc-footer-legal-link { color: var(--rc-red); }
