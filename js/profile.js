@@ -45,7 +45,7 @@
     emptyCard.hidden = true;
     card.hidden = false;
     nameEl.textContent = driver.n || 'Race Club Driver';
-    document.title = (driver.n || 'Driver') + ' | Race Club';
+    document.title = 'Race Club: ' + (driver.n || 'Driver');
     sinceEl.textContent = formatSince(driver.j);
 
     avatar.innerHTML = rcHelmetHtml_(driver.a, 220, 'rc-profile-helmet');
