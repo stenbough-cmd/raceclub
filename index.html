@@ -13,6 +13,7 @@
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
 <script src="js/reference-data.js"></script>
+<script src="js/grid-roster.js"></script>
 <script src="js/edit-profile.js"></script>
 </head>
 <body>
@@ -534,90 +535,8 @@
       labelResizeTimer_ = setTimeout(layoutClassLabels_, 120);
     });
 
-    // Real roster data, grouped by class -- source of truth is the Cars tab of the "Race Club Data
-    // Sheets" spreadsheet.
-    var STATIC_CARS_BY_CLASS = {
-      LMGT3: [
-        { team: 'Garage 59', manufacturer: 'McLaren', car: 'McLaren 720S GT3 Evo', numbers: ['10', '58'],
-          desc: 'Garage 59 is one of endurance racing’s most respected independent GT teams, building a reputation through victories and podiums in premier global championships while maintaining a close relationship with McLaren’s customer racing program. Operating the McLaren 720S LMGT3 Evo, the British squad combines technical expertise, strategic consistency, and years of GT racing experience to compete against factory-backed rivals.' },
-        { team: 'Vista AF Corse', manufacturer: 'Ferrari', car: 'Ferrari 296 GT3 Evo', numbers: ['21', '54'],
-          desc: 'Vista AF Corse represents the latest chapter in the legendary AF Corse story, one of the most successful Ferrari teams in modern endurance racing. With multiple world championships, Le Mans victories, and a long-standing partnership with Ferrari, the organization has become synonymous with excellence in sports car racing.' },
-        { team: 'Heart of Racing Team', manufacturer: 'Aston Martin', car: 'Aston Martin Vantage AMR GT3', numbers: ['23', '27'],
-          desc: 'Heart of Racing Team has rapidly grown into one of the most admired programs in international GT competition, pairing professional success with a charitable mission that has earned widespread respect throughout motorsport. Closely aligned with Aston Martin Racing, the team has collected victories across major endurance championships.' },
-        { team: 'Team WRT', manufacturer: 'BMW', car: 'BMW M4 LMGT3 Evo', numbers: ['32', '69'],
-          desc: 'Team WRT is among the most accomplished endurance racing organizations of the modern era, collecting championships and race wins across GT3, prototype, and endurance competition worldwide. Originally renowned for its success with Audi before becoming BMW’s flagship endurance partner.' },
-        { team: 'TF Sport', manufacturer: 'Corvette', car: 'Corvette Z06 GT3.R', numbers: ['33'],
-          desc: 'TF Sport has steadily established itself as one of the leading customer racing teams in international endurance competition. The British outfit has earned victories and championship success across multiple GT categories while developing a reputation for professionalism and strong race-day strategy.' },
-        { team: 'Racing Team Turkey by TF', manufacturer: 'Corvette', car: 'Corvette Z06 GT3.R', numbers: ['34'],
-          desc: 'Racing Team Turkey by TF brings together ambitious international talent and the race-winning expertise of TF Sport in one highly competitive LMGT3 package, benefiting from TF Sport’s extensive endurance racing knowledge and Corvette’s legendary GT pedigree.' },
-        { team: 'Iron Lynx', manufacturer: 'Mercedes AMG', car: 'Mercedes-AMG GT3 Evo', numbers: ['61', '79'],
-          desc: 'Iron Lynx has become one of endurance racing’s standout success stories, rapidly growing from a developing GT outfit into a championship-winning organization competing on the world stage, known for aggressive yet calculated racecraft.' },
-        { team: 'Proton Competition', manufacturer: 'Ford', car: 'Ford Mustang GT3', numbers: ['77', '88'],
-          desc: 'Proton Competition is one of endurance racing’s most experienced and respected privateer organizations, with decades of participation in top-level sports car events around the globe and a reputation for persistence and professionalism.' },
-        { team: 'Akkodis ASP Team', manufacturer: 'Lexus', car: 'Lexus RC F GT3', numbers: ['78', '87'],
-          desc: 'Akkodis ASP Team enters LMGT3 competition with a wealth of experience gained through years of success in GT championships across Europe and beyond, and has become one of Lexus’ premier international partners.' },
-        { team: 'Manthey DK Engineering', manufacturer: 'Porsche', car: 'Porsche 911 GT3 R (Type 992)', numbers: ['91'],
-          desc: 'Manthey DK Engineering combines the unrivaled endurance racing expertise of Manthey with a team structure built around Porsche’s legendary GT heritage, entering every race with championship-level expectations.' },
-        { team: 'The Bend Manthey', manufacturer: 'Porsche', car: 'Porsche 911 GT3 R (Type 992)', numbers: ['92'],
-          desc: 'The Bend Manthey brings together the world-class capabilities of Manthey Racing and strong international backing to create a formidable Porsche-powered contender with the experience and pedigree to challenge for podiums.' }
-      ],
-      LMP3: [
-        { team: 'DKR Engineering', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['4'],
-          desc: 'DKR Engineering is a Luxembourg-based endurance racing team founded in 2004. After establishing itself in GT racing, the team became a major force in prototype competition, winning multiple Michelin Le Mans Cup LMP3 titles and the 2021 European Le Mans Series LMP3 championship.' },
-        { team: 'Rinaldi Racing', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['5'],
-          desc: 'Rinaldi Racing is a German motorsport team with decades of experience across GT and prototype racing. Best known for its Ferrari programs and success in endurance classics such as the Nürburgring 24 Hours, the team has expanded its presence in LMP3 competition.' },
-        { team: 'Team Virage', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['8'],
-          desc: 'Team Virage is a Polish endurance racing organization that evolved from the successful G-TEC Sport operation founded in 1998. Backed by a strong driver-development philosophy through the Virage Academy, the team blends emerging talent with professional endurance racing expertise.' },
-        { team: 'Eurointernational', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['11'],
-          desc: 'Eurointernational is an Italian racing organization led by Antonio Ferrari with a history dating back to 1989, and has become one of the most accomplished outfits in modern LMP3 racing, collecting dozens of championships and hundreds of podium finishes.' },
-        { team: 'Inter Europol Competition', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['13'],
-          desc: 'Inter Europol Competition is a Polish endurance racing team founded in 2010 and widely recognized by its "Turbo Bakers" nickname, competing in ELMS, IMSA, Asian Le Mans Series, and the 24 Hours of Le Mans.' },
-        { team: 'CLX Motorsport', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['17'],
-          desc: 'CLX Motorsport, formerly known as Cool Racing, is a Swiss-rooted team based in France founded in 2017 and led by former Le Mans class winner Nicolas Lapierre, established as a powerhouse in both LMP2 and LMP3 competition.' },
-        { team: 'Racing Spirit of Leman', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['31'],
-          desc: 'Racing Spirit of Léman is a French-Swiss endurance racing team founded in 2019 near Lake Geneva, from which it takes its name, and has quickly become a respected name in international endurance racing.' },
-        { team: 'Ultimate', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['35'],
-          desc: 'Ultimate is a French family-run racing team founded by former endurance racer Matthieu Lahaye, known for its determination, hands-on management style, and strong endurance-racing heritage.' },
-        { team: 'M Racing', manufacturer: 'Ligier', car: 'Ligier JS P325', numbers: ['68'],
-          desc: 'M Racing is a French endurance racing team headquartered at the Magny-Cours Technopole and supported by touring car legend Yvan Muller, focused on developing drivers while pursuing competitive results.' },
-        { team: 'R-ace GP', manufacturer: 'Duqueine', car: 'Duqueine D09', numbers: ['85'],
-          desc: 'R-ace GP is a French motorsport organization founded in 2011 that built its reputation through elite junior single-seater racing programs, helping develop future Formula 1 stars including Oscar Piastri, Pierre Gasly, and Esteban Ocon.' }
-      ],
-      LMP2: [
-        { team: 'Prema Racing', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['9', '63'],
-          desc: 'PREMA Racing is one of the most successful teams in modern motorsport, founded in Italy in 1983 and renowned for developing generations of top drivers before expanding into endurance racing in 2022.' },
-        { team: 'Vector Sport', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['10'],
-          desc: 'Vector Sport is a British endurance racing team based in Silverstone and founded in 2021 by Gary Holland, building a reputation for professionalism, technical expertise, and strong performances in the highly competitive LMP2 category.' },
-        { team: 'United Autosports', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['22', '23'],
-          desc: 'United Autosports is one of the most accomplished endurance racing teams in the world, founded by Zak Brown and Richard Dean in 2009, with victories and championships across ELMS, WEC, IMSA, and the Asian Le Mans Series.' },
-        { team: 'JOTA Sport', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['28'],
-          desc: 'JOTA Sport is a British endurance racing powerhouse founded in 2000, with championship titles in ELMS, FIA WEC, and the FIA Hypercar World Cup, as well as numerous Le Mans podiums.' },
-        { team: 'Team WRT', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['31', '41'],
-          desc: 'Team WRT is a Belgian racing team founded in 2009 that rose to prominence through dominant performances in GT racing before expanding into prototype competition, capturing the LMP2 class victory at the 2021 24 Hours of Le Mans.' },
-        { team: 'Inter Europol Competition', manufacturer: 'Oreca', car: 'Oreca 07 - Gibson', numbers: ['34'],
-          desc: 'Inter Europol Competition is a Polish endurance racing team founded in 2010 and affectionately known as the "Turbo Bakers", earning championship success across multiple series including landmark victories at the 24 Hours of Le Mans.' }
-      ],
-      Hypercar: [
-        { team: 'Aston Martin THOR Team', manufacturer: 'Aston Martin', car: 'Aston Martin Valkyrie', numbers: ['007', '009'],
-          desc: 'Aston Martin THOR Team represents Aston Martin’s factory Hypercar effort in the FIA World Endurance Championship, built around the spectacular Valkyrie platform in partnership with The Heart of Racing.' },
-        { team: 'Toyota Gazoo Racing', manufacturer: 'Toyota', car: 'Toyota GR010 Hybrid', numbers: ['7', '8'],
-          desc: 'Toyota Gazoo Racing is the benchmark team of modern endurance racing, having dominated the FIA World Endurance Championship and 24 Hours of Le Mans over the past decade with cutting-edge hybrid technology.' },
-        { team: 'Cadillac Hertz Team JOTA', manufacturer: 'Cadillac', car: 'Cadillac V-Series.R', numbers: ['12', '38'],
-          desc: 'Cadillac Hertz Team JOTA brings together Cadillac’s factory-backed Hypercar program and the championship-winning expertise of JOTA Sport, combining American engineering with one of endurance racing’s most respected private teams.' },
-        { team: 'BMW M Team WRT', manufacturer: 'BMW', car: 'BMW M Hybrid V8', numbers: ['15', '20'],
-          desc: 'BMW M Team WRT is the factory endurance racing partnership between BMW Motorsport and Belgian powerhouse Team WRT, known for its professionalism, technical strength, and ability to compete for victories on the world stage.' },
-        { team: 'Genesis Magma Racing', manufacturer: 'Genesis', car: 'Genesis GMR-001', numbers: ['17', '19'],
-          desc: 'Genesis Magma Racing is the premium Korean manufacturer’s ambitious entry into top-level endurance racing, combining advanced engineering, elite personnel, and a long-term commitment to Hypercar competition.' },
-        { team: 'Alpine Endurance Team', manufacturer: 'Alpine', car: 'Alpine A424', numbers: ['35', '36'],
-          desc: 'Alpine Endurance Team is the factory sports car racing division of Alpine, representing the French brand at the highest level of endurance competition with Renault Group engineering expertise.' },
-        { team: 'Ferrari AF Corse', manufacturer: 'Ferrari', car: 'Ferrari 499P', numbers: ['50', '51'],
-          desc: 'Ferrari AF Corse is the official factory team responsible for Ferrari’s modern prototype racing program, combining Ferrari’s rich endurance racing heritage with cutting-edge technology and world-class talent.' },
-        { team: 'AF Corse', manufacturer: 'Ferrari', car: 'Ferrari 499P', numbers: ['83'],
-          desc: 'AF Corse is one of endurance racing’s most accomplished independent teams, renowned for its close relationship with Ferrari and extensive success across international sports car championships.' },
-        { team: 'Peugeot TotalEnergies', manufacturer: 'Peugeot', car: 'Peugeot 9X8', numbers: ['93', '94'],
-          desc: 'Peugeot TotalEnergies is the factory Hypercar team representing the historic French manufacturer in the FIA World Endurance Championship, focused on returning the marque to the front of prototype racing.' }
-      ]
-    };
+    // Roster cache lives in js/grid-roster.js (copied from the Cars tab).
+    var GRID_2026 = window.RC_GRID_2026 || { WEC: { Hypercar: [], LMGT3: [] }, ELMS: { LMP2: [], LMP3: [] } };
 
     function isPhoneWidth_() {
       return window.innerWidth <= 640;
@@ -631,19 +550,9 @@
       return arr;
     }
 
-    // ELMS field: the LMP2 and LMP3 teams, each with its own 2026 ELMS livery picture (one car per
-    // card so no two cards ask for the same picture).
-    var ELMS_LMP2 = STATIC_CARS_BY_CLASS.LMP2.filter(function (e) { return e.team !== 'Team WRT'; }).map(function (e) {
-      // Each card shows only the one ELMS LMP2 car whose picture exists (United's #23 and Prema's #63 are GT cars in the 2026 ELMS).
-      if (e.team === 'United Autosports') return Object.assign({}, e, { numbers: ['22'] });
-      if (e.team === 'Prema Racing') return Object.assign({}, e, { numbers: ['9'] });
-      return e;
-    });
-    var ELMS_LMP3 = STATIC_CARS_BY_CLASS.LMP3.filter(function (e) { return e.team !== 'Racing Spirit of Leman'; });
-
     var SERIES = [
-      { name: 'WEC', series: '', groups: [['Hypercar', STATIC_CARS_BY_CLASS.Hypercar], ['LMGT3', STATIC_CARS_BY_CLASS.LMGT3]] },
-      { name: 'ELMS', series: 'ELMS', groups: [['LMP2', ELMS_LMP2], ['LMP3', ELMS_LMP3]] }
+      { name: 'WEC', series: '', groups: [['Hypercar', GRID_2026.WEC.Hypercar], ['LMGT3', GRID_2026.WEC.LMGT3]] },
+      { name: 'ELMS', series: 'ELMS', groups: [['LMP2', GRID_2026.ELMS.LMP2], ['LMP3', GRID_2026.ELMS.LMP3]] }
     ];
 
     // Every page load: pick WEC or ELMS at random, then show 6 cars from each of its two classes
@@ -652,15 +561,16 @@
       var pick = SERIES[Math.floor(Math.random() * SERIES.length)];
       var perClass = isPhoneWidth_() ? 3 : 6;
       var year = 2026;
-
+      gridState_ = [];
 
       rowEl.innerHTML = '';
       pick.groups.forEach(function (g) {
-        var picks = shuffle_(g[1].slice()).slice(0, perClass);
-        var cardEls = picks.map(function (entry) {
-          return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc, year, pick.series, entry.numbers[0]);
-        });
-        rowEl.appendChild(buildClassGroup_(g[0], cardEls));
+        var pool = shuffle_(g[1].slice());
+        var shown = pool.slice(0, perClass);
+        var cardEls = shown.map(function (entry) { return cardFor_(entry, year, pick.series); });
+        var groupEl = buildClassGroup_(g[0], cardEls);
+        rowEl.appendChild(groupEl);
+        gridState_.push({ pool: pool, shown: shown, groupEl: groupEl, year: year, series: pick.series });
       });
       layoutClassLabels_();
       footnoteEl.textContent = '';
@@ -673,6 +583,57 @@
           });
         });
       });
+      startRotation_();
+    }
+
+    var gridState_ = [];
+    var rotateTimer_ = null;
+
+    function cardFor_(entry, year, series) {
+      return buildCard_(entry.team, entry.manufacturer, entry.car, entry.numbers.join(', #'), entry.desc, year, series, entry.numbers[0]);
+    }
+
+    // Every few seconds one random card in a random class is swapped for a car that is not on screen
+    // right now. The new car's picture is preloaded first so the swap is a clean fade.
+    function rotateOnce_() {
+      if (document.hidden || !gridState_.length) return;
+      var open = gridState_.filter(function (st) { return st.pool.length > st.shown.length; });
+      if (!open.length) return;
+      var st = open[Math.floor(Math.random() * open.length)];
+      var idx = Math.floor(Math.random() * st.shown.length);
+      var unused = st.pool.filter(function (e) { return st.shown.indexOf(e) === -1; });
+      var next = unused[Math.floor(Math.random() * unused.length)];
+      var row = st.groupEl.querySelector('.rc-grid-teaser-row');
+      var oldCard = row && row.children[idx];
+      if (!oldCard) return;
+
+      var done = false;
+      function swap() {
+        if (done) return; done = true;
+        if (!oldCard.parentNode) return;
+        oldCard.style.transition = 'opacity 0.35s ease';
+        oldCard.style.opacity = '0';
+        setTimeout(function () {
+          if (!oldCard.parentNode) return;
+          var fresh = cardFor_(next, st.year, st.series);
+          row.replaceChild(fresh, oldCard);
+          st.shown[idx] = next;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { fresh.classList.add('rc-grid-teaser-visible'); });
+          });
+        }, 380);
+      }
+      var src = (typeof rcCarImageSrc === 'function') ? rcCarImageSrc(st.year, next.numbers[0], st.series) : '';
+      if (!src) { swap(); return; }
+      var pre = new Image();
+      pre.onload = swap; pre.onerror = swap;
+      setTimeout(swap, 2500);
+      pre.src = src;
+    }
+
+    function startRotation_() {
+      clearInterval(rotateTimer_);
+      rotateTimer_ = setInterval(rotateOnce_, 3500);
     }
 
     // Car pictures change a card's height as they load or fail, so re-place the class labels then.
