@@ -467,7 +467,7 @@
       }));
     markExternal('rc-nav-leaguehub');
     markExternal('rc-nav-championship');
-    (function () { var cb0 = document.getElementById('rc-nav-championship'); if (cb0) cb0.style.display = 'none'; })();   // hidden until the profile says this account has the +
+    
     nav.appendChild(navDivider());
     var staffLabel = document.createElement('div');
     staffLabel.className = 'rc-nav-group-label';
@@ -8850,7 +8850,7 @@
     setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
     // Championship: only Admins and accounts with the + see this link at all (Matt, 2026-10-24); it starts hidden so nobody sees it flash.
     var champNav = document.getElementById('rc-nav-championship');
-    if (champNav) champNav.style.display = (profile.role === 'Admin' || !!profile.champAccess) ? '' : 'none';
+    if (champNav) champNav.style.display = '';   // everyone sees the link (Matt, 2026-10-25)
     // Divider above these three is always visible from initial sidebar render now (see
     // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
 

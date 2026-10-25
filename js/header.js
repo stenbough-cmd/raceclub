@@ -216,7 +216,7 @@ function _rcBuildAccountMenuSectionLinks(role) {
   // with Championship Access (the + on their role); everyone else does not see it at all.
   var champProfile = myProfile;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
-  if ((role === 'Admin' || (champProfile && champProfile.champAccess)) && champId) {
+  if (champId) {   // every signed-in member sees the link (Matt, 2026-10-25)
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span>' + EXT + '</a>';
   }
   // no Championship access (no +): the link is simply not there (Matt, 2026-10-24)
@@ -413,7 +413,7 @@ function _rcWireNavLogos_(mount) {
 function _rcChampBadgeHtml_() {
   var p = null;
   try { p = (typeof getToken === 'function' && getToken() && typeof getProfileCache === 'function') ? getProfileCache() : null; } catch (e) { p = null; }
-  if (!p || !(p.role === 'Admin' || p.champAccess)) return '';
+  // Shown to everyone, logged in or not (Matt, 2026-10-25).
   return '<span class="rc-header-leaguehub-badge" style="padding-left:5.25px;position:relative;top:-1px">' +
            '<a class="rc-header-leaguehub-logo-link" href="championship.html">' +
              '<img class="rc-header-leaguehub-logo" src="assets/images/championship_header.webp" alt="Championship" draggable="false">' +
