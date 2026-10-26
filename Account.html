@@ -1482,8 +1482,12 @@
     // track name, layout trailing in lighter steel text).
     var trackLine = el('div', 'rc-nextrace-track-row');
     var trackText = el('div', 'rc-nextrace-track');
-    trackText.innerHTML = '<strong>' + escapeHtml(data.track || '(no track)') + '</strong>' +
-      (data.layout ? ' <span class="rc-cal-layout">· ' + escapeHtml(data.layout) + '</span>' : '');
+    // "<Full Track Name> (<ShortName>): <Layout>" -- the short name is left out when the venue has none (or it
+    // is the same as the full name).
+    var fullTrack = data.trackFullName || data.track || '';
+    var trackShort = (data.track && data.track !== fullTrack) ? ' (' + data.track + ')' : '';
+    trackText.innerHTML = '<strong>' + escapeHtml((fullTrack + trackShort) || '(no track)') + '</strong>' +
+      (data.layout ? '<span class="rc-cal-layout">: ' + escapeHtml(data.layout) + '</span>' : '');
     trackLine.appendChild(trackText);
     info.appendChild(trackLine);
 

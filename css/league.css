@@ -2693,3 +2693,8 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on) { background: transparent; border: 1px solid var(--rcl-ink-dim); color: var(--rcl-ink-dim); }
 .rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on):hover { background: transparent; border-color: var(--rcl-ink); color: var(--rcl-ink); }
 .rcl-modal-dialog .rc-helmet-edit-row .rc-team-toggle.rc-team-on { color: var(--rcl-ink); }
+
+/* Race Recap > Race Details page (same two-column layout as the Championship recap). */
+.rcl-race-details-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; margin-top: 14px; }
+.rcl-race-details-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 6px; }
+.rcl-race-details-col .rcl-seasonfmt-row { font-size: 13px; margin-bottom: 3px; }

@@ -1786,6 +1786,60 @@ function _rclFormatAvgSpeed_(row, trackLengthMeters) {
 
 // Renders one round's full result data (from handleGetPublicRoundResults) into `bodyEl` -- the
 // popup's own content area, rebuilt fresh every time the round dropdown changes.
+// Race Recap popup, "Race Details" page: how the race was set up. Two columns like the Championship recap:
+// "From The Race File" (read from the results file at import, result.raceDetails.fromFile) and "Planned For This
+// Round" (the round's schedule and weather plus the season's session format and race rules).
+function _rclPlannedRaceRows_(hub, roundId) {
+  var rows = [];
+  var entry = ((hub && hub.calendar) || []).filter(function (e) { return e.roundId === roundId; })[0];
+  if (entry) {
+    if (entry.startUtc) rows.push({ label: 'Scheduled', value: _rclFormatDateTime(entry.startUtc) });
+    if (entry.raceLengthTier) rows.push({ label: 'Race Length', value: entry.raceLengthTier + (entry.raceLengthMinutes ? ' (' + rcFormatRaceLength(entry.raceLengthMinutes) + ')' : '') });
+    if (entry.igPracticeStart) rows.push({ label: 'In-Game Practice Start', value: _rclFormat12h(entry.igPracticeStart) });
+    if (entry.igQualifyStart) rows.push({ label: 'In-Game Qualifying Start', value: _rclFormat12h(entry.igQualifyStart) });
+    if (entry.igRaceStart) rows.push({ label: 'In-Game Event Time', value: _rclFormat12h(entry.igRaceStart) });
+    if (entry.weather) {
+      var weatherText = (entry.chanceOfRain || 0) + '% Rain';
+      if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherText += ' · ' + entry.temperatureC + '°C';
+      rows.push({ label: 'Weather', value: weatherText });
+    }
+  }
+  var sections = _rclBuildSeasonFormatBlocks_(hub);
+  sections.forEach(function (sec) {
+    if (sec.pill === 'Season Format' && sec.blocks && sec.blocks.length) {
+      // The last block is the session format (practice / qualify lengths, qualifying type); the race length
+      // rows are skipped because this round's own length is already listed above.
+      sec.blocks[sec.blocks.length - 1].forEach(function (stat) {
+        if (!/^Race Duration/.test(stat.label)) rows.push(stat);
+      });
+    } else if (sec.pill === 'Season Rules') {
+      (sec.blocks || []).forEach(function (blk) { blk.forEach(function (stat) { rows.push(stat); }); });
+    }
+  });
+  return rows;
+}
+function _rclBuildRaceDetailsBody_(hub, roundId, result, bodyEl) {
+  bodyEl.innerHTML = '';
+  var fromFile = (result && result.raceDetails && result.raceDetails.fromFile) || [];
+  var planned = _rclPlannedRaceRows_(hub, roundId);
+  if (!result || (!fromFile.length && !planned.length)) {
+    bodyEl.appendChild(_rclEmptyState('No Data To Display', 'No race details for this round yet.'));
+    return;
+  }
+  bodyEl.appendChild(_rclRecapHeader_('Race Details', result));
+  var cols = _rclEl('div', 'rcl-race-details-cols');
+  [['From The Race File', fromFile], ['Planned For This Round', planned]].forEach(function (pair) {
+    if (!pair[1].length) return;
+    var col = _rclEl('div', 'rcl-race-details-col');
+    col.appendChild(_rclEl('div', 'rcl-race-details-head', _rclEscapeHtml(pair[0])));
+    pair[1].forEach(function (x) {
+      col.appendChild(_rclEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(x.label) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(x.value) + '</span>'));
+    });
+    cols.appendChild(col);
+  });
+  bodyEl.appendChild(cols);
+}
+
 // Race Recap popup, "Highlights" page: the chosen round's Last Race view.
 function _rclBuildHighlightsBody_(hub, result, bodyEl) {
   bodyEl.innerHTML = '';
@@ -2342,8 +2396,9 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
-  // Order: Highlights, Race Results, Qualify Results, Driver Reports, Race Report, Penalties.
+  // Order: Race Details, Highlights, Race Results, Qualify Results, Driver Reports, Race Report, Penalties.
   // Race Results is the page the recap opens on.
+  sessionSelect.appendChild(new Option('Race Details', 'details'));
   sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.appendChild(new Option('Race Results', 'race'));
   sessionSelect.appendChild(new Option('Qualify Results', 'qualifying'));
@@ -2406,10 +2461,11 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     var dataKind = isQualifying ? 'qualifying' : 'race';
     var cacheKey = roundId + ':' + dataKind;
     var builder = isQualifying ? _rclBuildQualifyingBody_
+      : (sessionKind === 'details' ? function (res, el) { _rclBuildRaceDetailsBody_(hub, roundId, res, el); }
       : (sessionKind === 'highlights' ? function (res, el) { _rclBuildHighlightsBody_(hub, res, el); }
       : (sessionKind === 'driver' ? function (res, el) { _rclBuildDriverReportBody_(hub, roundId, res, el); }
       : (sessionKind === 'penalties' ? _rclBuildPenaltiesBody_
-      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_))));
+      : (sessionKind === 'report' ? _rclBuildRaceReportBody_ : _rclBuildAllResultsBody_)))));
     if (isQualifying) syncPenOption(roundId);
     if (Object.prototype.hasOwnProperty.call(resultCache, cacheKey)) {
       builder(resultCache[cacheKey], resultsWrap);
@@ -2421,7 +2477,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // loader (.rcl-page-loader in league.html) and the Edit Profile popup on this same page
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : (sessionKind === 'penalties' ? 'Loading penalties...' : 'Loading round results...'))))));
+    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'details' ? 'Loading race details...' : sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : (sessionKind === 'penalties' ? 'Loading penalties...' : 'Loading round results...'))))));
     busy(true);
     // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
