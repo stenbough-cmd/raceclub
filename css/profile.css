@@ -292,7 +292,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 
 /* ===== Helmet shelf: blue-gray band across the page, between Career Stats and Form Guide ===== */
 body.rc-league-page.rcc-page { overflow-x: clip; }
-.rdp-helmets { width: 100vw; margin-left: calc(50% - 50vw); padding: 26px 0 32px; color: #fff; background: #141416; }   /* the same charcoal as the calendar band (Matt, 2026-10-26) */
+.rdp-helmets { width: 100vw; margin-left: calc(50% - 50vw); padding: 26px 0 32px; color: #fff; background: linear-gradient(180deg, #4d6882 0%, #3c5268 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
 .rdp-helmets[hidden] { display: none; }
 .rdp-helmets-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
 .rdp-helmets-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
@@ -328,3 +328,6 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 .rdp-head-season::before { background-image: url('../assets/images/profile_season.webp'); }
 .rdp-head-form::before { background-image: url('../assets/images/profile_form.webp'); }
 .rdp-head-team::before { background-image: url('../assets/images/profile_history.webp'); }
+
+/* White titles with a slight drop shadow on the picture headers (Matt, 2026-10-26). */
+.rdp-head-avatar .rcl-panel-title, .rdp-head-season .rcl-panel-title, .rdp-head-team .rcl-panel-title { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
