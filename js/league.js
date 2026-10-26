@@ -1040,9 +1040,6 @@ function _rclRenderStandings(hub) {
     // other class). Both stay bare on the page, no panel.
     if (className === 'Hypercar') { if (mfr) host.appendChild(mfr); }
     else { var trophy = _rclBuildTeamTrophy_(hub, cls, className); if (trophy) host.appendChild(trophy); }
-    // BY THE NUMBERS sits between that and the class board.
-    var byNumbers = _rclBuildByTheNumbers_(hub, className);
-    if (byNumbers) host.appendChild(byNumbers);
     var row = _rclEl('div', 'rcl-row-full');
     var panel = _rclEl('section', 'rcl-panel');
     var bannerKind = className === 'Hypercar' ? 'hyper' : ((className === 'LMP2' || className === 'LMP3') ? 'proto' : 'gt');
@@ -1486,53 +1483,6 @@ function _rclBuildLastRaceMentions_(mentions) {
     grid.appendChild(tile);
   });
   return grid;
-}
-
-// BY THE NUMBERS (League Hub): 8 season awards per class, 4 across x 2 rows, same tile look as the
-// Last Race / Last Season highlight tiles. Data is hub.byTheNumbers = [{className, awards:[8]}]
-// (_rcComputeByTheNumbers_, Results.gs). A tile nobody qualifies for has drivers: [] and shows dimmed.
-var _RCL_ICON_BTN_ATTR_ = ' width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
-var _RCL_ICON_CROWN = '<svg' + _RCL_ICON_BTN_ATTR_ + '><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z"></path></svg>';
-var _RCL_ICON_STOPWATCH = '<svg' + _RCL_ICON_BTN_ATTR_ + '><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M9 2h6"></path></svg>';
-var _RCL_ICON_CHEVRONS_UP = '<svg' + _RCL_ICON_BTN_ATTR_ + '><path d="M6 11l6-6 6 6"></path><path d="M6 19l6-6 6 6"></path></svg>';
-var _RCL_ICON_NUT = '<svg' + _RCL_ICON_BTN_ATTR_ + '><path d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2z"></path><circle cx="12" cy="11" r="3"></circle></svg>';
-var _RCL_ICON_ALERT_TRI = '<svg' + _RCL_ICON_BTN_ATTR_ + '><path d="M12 3l10 18H2L12 3z"></path><path d="M12 10v5"></path><path d="M12 18h.01"></path></svg>';
-var RCL_BTN_ICON_BY_TYPE_ = {
-  seasonLeader: _RCL_ICON_TROPHY,
-  mostDominant: _RCL_ICON_CROWN,
-  qualifyingBeast: _RCL_ICON_STOPWATCH,
-  hardCharger: _RCL_ICON_CHEVRONS_UP,
-  cleanestDriver: _RCL_ICON_SHIELD_CHECK,
-  ironman: _RCL_ICON_NUT,
-  mostImproved: _RCL_ICON_TRENDING_UP,
-  riskyBusiness: _RCL_ICON_ALERT_TRI
-};
-
-// Returns the whole bare section (title, "<Class> Drivers" subtitle, tile grid), or null when the hub
-// has no By The Numbers data for this class yet.
-function _rclBuildByTheNumbers_(hub, className) {
-  var entry = ((hub && hub.byTheNumbers) || []).filter(function (c) { return c.className === className; })[0];
-  if (!entry || !(entry.awards || []).length) return null;
-  _rclIndexLastRaceNames_(hub);
-  var box = _rclEl('div', 'rcl-row-full rcl-btn');
-  box.appendChild(_rclEl('div', 'rcl-mfr-title', 'By The Numbers'));
-  box.appendChild(_rclEl('div', 'rcl-mfr-subtitle', _rclEscapeHtml(className) + ' Drivers'));
-  var grid = _rclEl('div', 'rcl-lr-mentions rcl-lr-mentions-season rcl-btn-grid');
-  entry.awards.slice(0, 8).forEach(function (m) {
-    var empty = !(m.drivers || []).length;
-    var tile = _rclEl('div', 'rcl-lr-mention-tile' + (empty ? ' rcl-btn-empty' : ''));
-    var head = _rclEl('div', 'rcl-lr-mention-head');
-    head.appendChild(_rclEl('span', 'rcl-lr-mention-icon', RCL_BTN_ICON_BY_TYPE_[m.typeKey] || ''));
-    head.appendChild(_rclEl('span', 'rcl-lr-mention-title', _rclEscapeHtml((m.title || '').toUpperCase())));
-    tile.appendChild(head);
-    tile.appendChild(_rclEl('div', 'rcl-lr-mention-stat', _rclEscapeHtml(m.stat || '')));
-    var driversEl = _rclMentionDriversEl_(m);
-    if (driversEl) tile.appendChild(driversEl);
-    tile.appendChild(_rclEl('div', 'rcl-lr-mention-narrative', _rclEscapeHtml(m.narrative || '')));
-    grid.appendChild(tile);
-  });
-  box.appendChild(grid);
-  return box;
 }
 
 // Same tile shape as _rclBuildLastRaceMentions_ above, just 4-across instead of 3, and reading the

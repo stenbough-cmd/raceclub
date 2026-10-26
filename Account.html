@@ -3317,6 +3317,13 @@
     }
     btnGroup.appendChild(editBtn);
 
+    // STATISTICS -- the season's 8 awards per class in a popup (adminGetSeasonStatistics, Seasons.gs). Opens a
+    // read-only list, so it is gray; stays available after the season ends.
+    var statsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Statistics');
+    statsBtn.type = 'button';
+    statsBtn.addEventListener('click', function () { openSeasonStatisticsModal(token, s.seasonId); });
+    btnGroup.appendChild(statsBtn);
+
     // Delete removed from this row entirely -- only Edit Season and the races disclosure arrow
     // remain per-row. adminDeleteSeason (Seasons.gs) is untouched server-side; there's just no
     // button wired to it here anymore.
@@ -6807,6 +6814,61 @@
     }, function (driversData, reload) {
       return buildDriversPanel(driversData && driversData.success ? driversData.drivers : [], token, reload);
     }, { label: 'Add Driver', onClick: function (reload) { openAddDriverModal(token, reload); } });
+  }
+
+  // League Tools > Statistics: one graphite season pill, then a class pill per class with its 8 season awards
+  // as lines (Season Leader/Champion, Most Dominant, Qualifying Beast, Hard Charger, Cleanest Driver, Ironman,
+  // Most Improved, Wrecking Ball). Same list look as the Tracks/Cars popups.
+  function openSeasonStatisticsModal(token, seasonId) {
+    var modal = showModal('Statistics', { wide: true });
+    modal.body.appendChild(buildSpinner('Loading statistics…'));
+    fetchApi('adminGetSeasonStatistics', { token: token, seasonId: seasonId }).then(function (data) {
+      modal.body.innerHTML = '';
+      if (!data || !data.success) {
+        modal.body.appendChild(el('div', 'rc-message rc-error', (data && data.message) || 'Could not load statistics.'));
+        return;
+      }
+      var panel = el('div', '');
+      var seasonHead = el('div', 'rc-dm-season-head');
+      seasonHead.style.paddingLeft = '0';
+      var label = (data.seasonNumber ? 'Season ' + data.seasonNumber : 'Season') + (data.seasonName ? ': ' + data.seasonName : '');
+      seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(label.toUpperCase())));
+      panel.appendChild(seasonHead);
+      if (!data.classes || !data.classes.length) {
+        panel.appendChild(el('div', 'rc-stat-empty', 'No race results yet. Statistics appear once a round has been scored.'));
+        modal.body.appendChild(panel);
+        return;
+      }
+      var order = ['Hypercar', 'LMP2', 'LMP3', 'LMGTE', 'LMGT3'];
+      var classes = data.classes.slice().sort(function (x, y) {
+        var xi = order.indexOf(x.className), yi = order.indexOf(y.className);
+        return (xi === -1 ? 99 : xi) - (yi === -1 ? 99 : yi);
+      });
+      classes.forEach(function (c) {
+        var classHead = el('div', 'rc-dm-season-head');
+        classHead.style.paddingLeft = '0';
+        classHead.style.paddingTop = '14px';
+        classHead.appendChild(_rcClassBadge(c.className));
+        panel.appendChild(classHead);
+        (c.awards || []).forEach(function (a) {
+          var winner = (a.drivers || [])[0];
+          var row = el('div', 'rc-stat-row' + (winner ? '' : ' rc-stat-row-empty'));
+          var left = el('div', 'rc-stat-left');
+          left.appendChild(el('div', 'rc-stat-title', escapeHtml(a.title || '')));
+          left.appendChild(el('div', 'rc-stat-narr', escapeHtml(a.narrative || '')));
+          row.appendChild(left);
+          var right = el('div', 'rc-stat-right');
+          right.appendChild(el('div', 'rc-stat-driver', winner ? escapeHtml(winner.name || '') + (winner.carNumber ? ' #' + escapeHtml(String(winner.carNumber)) : '') : '—'));
+          right.appendChild(el('div', 'rc-stat-value', escapeHtml(a.stat || '')));
+          row.appendChild(right);
+          panel.appendChild(row);
+        });
+      });
+      modal.body.appendChild(panel);
+    }).catch(function () {
+      modal.body.innerHTML = '';
+      modal.body.appendChild(el('div', 'rc-message rc-error', 'Could not load statistics. Try again in a moment.'));
+    });
   }
 
   function openTracksModal(token) {

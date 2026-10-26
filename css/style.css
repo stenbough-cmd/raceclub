@@ -3276,3 +3276,16 @@ body.rc-modal-scroll-locked {
 .rc-path-titles { min-width: 0; }
 .rc-path-titles h3 { margin-top: 2px; }
 .rc-cta-section h2.rc-cta-gold { color: #d4af37; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+
+/* Season Statistics popup (Account.html > League Tools > Statistics): one line per award, winner on the right. */
+.rc-stat-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--rc-offwhite); }
+.rc-dm-season-head + .rc-stat-row { border-top: none; }
+.rc-stat-left { min-width: 0; flex: 1 1 auto; }
+.rc-stat-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-carbon); }
+.rc-stat-narr { font-size: 12.5px; line-height: 1.4; color: var(--rc-steel); margin-top: 2px; }
+.rc-stat-right { flex: 0 0 auto; text-align: right; max-width: 45%; }
+.rc-stat-driver { font-size: 13px; font-weight: 700; color: var(--rc-carbon); }
+.rc-stat-value { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--rc-steel); margin-top: 2px; }
+.rc-stat-row-empty .rc-stat-driver, .rc-stat-row-empty .rc-stat-value { color: var(--rc-silver); }
+.rc-stat-empty { font-size: 13px; color: var(--rc-steel); padding: 14px 0; }
+@media (max-width: 560px) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
