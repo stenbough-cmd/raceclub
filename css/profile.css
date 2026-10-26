@@ -317,3 +317,14 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
   .rdp-hc-arrow { width: 32px; height: 32px; font-size: 20px; }
   .rdp-helmets { padding: 20px 0 24px; }
 }
+
+/* Header pictures behind five panel titles (Matt, 2026-10-26): same layering and 50% strength as the League
+   News header. Career Stats, Season Stats, Form Guide, Team History and the driver card; the others stay plain. */
+.rdp-head-pic { position: relative; overflow: hidden; }
+.rdp-head-pic::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background-repeat: no-repeat; background-position: center; background-size: cover; opacity: 0.5; }
+.rdp-head-pic > * { position: relative; z-index: 1; }
+.rdp-head-avatar::before { background-image: url('../assets/images/profile_avatar.webp'); }
+.rdp-head-stats::before { background-image: url('../assets/images/profile_stats.webp'); }
+.rdp-head-season::before { background-image: url('../assets/images/profile_season.webp'); }
+.rdp-head-form::before { background-image: url('../assets/images/profile_form.webp'); }
+.rdp-head-team::before { background-image: url('../assets/images/profile_history.webp'); }
