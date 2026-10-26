@@ -1874,12 +1874,13 @@ function rccOpenResults(roundId, kind) {
   var kindSel = document.createElement('select');
   kindSel.className = 'rcl-allresults-session-select';
   // Highlights first in the list (Matt, 2026-10-19); the recap still opens on Race unless asked otherwise.
+  // Race Details first, above Highlights (Matt, 2026-10-26).
+  kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('Highlights', 'highlights'));
   kindSel.appendChild(new Option('Race Results', 'race'));
   kindSel.appendChild(new Option('Qualify Results', 'qualifying'));
   kindSel.appendChild(new Option('Driver Report', 'driver'));
   kindSel.appendChild(new Option('Race Report', 'report'));
-  kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
   row.appendChild(sel);
   row.appendChild(kindSel);
