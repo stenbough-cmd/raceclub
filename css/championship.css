@@ -1281,6 +1281,8 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 /* Red again (Matt): buttons that save to the sheet (.rc-btn-primary, the Feedback popup's send button)
    and the loading start lights. The demo / access popup buttons keep their own blue-gray. */
 .rcc-page .rc-btn-primary, .rcc-page .rcl-feedback-submit-btn, .rcc-page .rc-startlights { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
+/* The site navbar and its avatar menu keep the site red (Matt). */
+.rcc-page #rc-header { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
 /* The player's highlights stay blue-gray (Matt): row tint, name (also when it is a profile link) and
    team in the tables, and the player's team in the team standings. */
 .rcc-page .rcc-row-me, .rcc-page .rcc-me-text, .rcc-page a.rcc-me-text, .rcc-page .rcc-me-text a,
