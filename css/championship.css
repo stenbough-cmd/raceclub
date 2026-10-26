@@ -1293,3 +1293,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-mfr-me { color: #5f7d99; font-weight: 700; }
 /* Help popup keeps its red circles, accents and links (Matt). */
 .rcc-page .rcc-help-body { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
+
+/* The Access Needed popup sits UNDER the site header (z-index 1000), so the account menu (Edit Profile, Feedback, Logout...)
+   stays clickable while it is open; popups opened from that menu still stack above it (Matt, 2026-10-26). */
+.rcc-noaccess-overlay.rcl-modal-overlay-over-nav { z-index: 999; }

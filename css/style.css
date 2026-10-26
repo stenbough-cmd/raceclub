@@ -3268,3 +3268,11 @@ body.rc-modal-scroll-locked {
 .rc-cta-option-league { border-top-color: var(--rc-red); }
 .rc-cta-option-champ { border-top-color: #5f7d99; }
 .rc-mid-banner-inner h2 { color: #d4af37; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+
+/* Cards with a corner icon: the header sits to the right of the icon (Matt, 2026-10-26). */
+.rc-highlight-head, .rc-path-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.rc-highlight-head .rc-highlight-icon, .rc-path-head .rc-path-icon { flex: none; margin-bottom: 0; }
+.rc-highlight-head h3, .rc-path-titles h3 { margin: 0; }
+.rc-path-titles { min-width: 0; }
+.rc-path-titles h3 { margin-top: 2px; }
+.rc-cta-section h2.rc-cta-gold { color: #d4af37; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
