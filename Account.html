@@ -6822,7 +6822,7 @@
   function openSeasonStatisticsModal(token, seasonId) {
     var modal = showModal('Statistics', { wide: true });
     modal.body.appendChild(buildSpinner('Loading statistics…'));
-    fetchApi('adminGetSeasonStatistics', { token: token, seasonId: seasonId }).then(function (data) {
+    fetchApi('adminGetSeasonStatistics', { token: token, params: { seasonId: seasonId } }).then(function (data) {
       modal.body.innerHTML = '';
       if (!data || !data.success) {
         modal.body.appendChild(el('div', 'rc-message rc-error', (data && data.message) || 'Could not load statistics.'));
