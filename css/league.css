@@ -2693,3 +2693,14 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on) { background: transparent; border: 1px solid var(--rcl-ink-dim); color: var(--rcl-ink-dim); }
 .rcl-modal-dialog .rc-helmet-edit-row .rc-btn-row:not(.rc-team-on):hover { background: transparent; border-color: var(--rcl-ink); color: var(--rcl-ink); }
 .rcl-modal-dialog .rc-helmet-edit-row .rc-team-toggle.rc-team-on { color: var(--rcl-ink); }
+
+/* BY THE NUMBERS (League Hub): bare section like Manufacturers' Standings, 4x2 award tiles. */
+.rcl-btn { margin-top: 32px; }
+.rcl-btn-grid { margin-top: 0; }
+.rcl-btn-empty { opacity: 0.55; }
+@media (max-width: 900px) {
+  .rcl-btn-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .rcl-btn-grid { grid-template-columns: 1fr; }
+}
