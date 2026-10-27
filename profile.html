@@ -24,6 +24,54 @@
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
+<!-- Same link bar as the League Hub (js/league.js _rclRenderNavbar_), with a member dropdown at the right end where the
+     League Hub has its season dropdown. It pins under the header like the home page and League Hub bars. -->
+<nav class="rcl-navbar rc-profile-navbar" id="rc-profile-navbar" aria-label="Driver Profile">
+  <div class="rcl-navbar-inner">
+    <div class="rcl-navbar-links">
+      <a class="rcl-navbar-link" href="index.html">Home</a>
+      <a class="rcl-navbar-link" href="league.html">League Hub</a>
+      <a class="rcl-navbar-link" href="championship.html">Championship</a>
+      <a class="rcl-navbar-link rcl-navbar-gold" id="rc-profile-navbar-account" href="login.html">Login or Register</a>
+    </div>
+  </div>
+</nav>
+<script>
+(function () {
+  var acct = document.getElementById('rc-profile-navbar-account');
+  try { if (acct && typeof getToken === 'function' && getToken()) { acct.textContent = 'Account Dashboard'; acct.setAttribute('href', 'Account.html'); } } catch (e) {}
+  if (acct && acct.getAttribute('href') === 'login.html') acct.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+
+  // Member dropdown: every active member (the driver directory). Choosing one opens that driver's profile.
+  var inner = document.querySelector('#rc-profile-navbar .rcl-navbar-inner');
+  var currentId = (new URLSearchParams(window.location.search).get('id') || '').trim();
+  var pick = null;
+  function build(dir) {
+    var list = (dir && Array.isArray(dir.drivers)) ? dir.drivers.slice() : [];
+    if (!list.length || !inner) return;
+    list.sort(function (a, b) { return String(a.n || '').localeCompare(String(b.n || '')); });
+    if (!pick) {
+      pick = document.createElement('select');
+      pick.className = 'rcl-navbar-season';
+      pick.setAttribute('aria-label', 'Choose a member');
+      pick.addEventListener('change', function () { if (pick.value) window.location.href = 'profile.html?id=' + encodeURIComponent(pick.value); });
+      inner.appendChild(pick);
+    }
+    pick.innerHTML = '';
+    var has = list.some(function (d) { return d.id === currentId; });
+    if (!has) { var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Choose a member'; pick.appendChild(ph); }
+    list.forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d.id; o.textContent = d.n || d.id;
+      pick.appendChild(o);
+    });
+    pick.value = has ? currentId : '';
+  }
+  try { if (typeof rcReadSavedDriverDirectory === 'function') build(rcReadSavedDriverDirectory()); } catch (e) {}
+  try { if (typeof rcFetchDriverDirectory === 'function') rcFetchDriverDirectory().then(build).catch(function () {}); } catch (e) {}
+})();
+</script>
+
 <main class="rc-profile-page">
   <!-- Row 1: driver card (left third) + Career Stats -->
   <div class="rdp-row rdp-row-top">
