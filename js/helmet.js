@@ -452,7 +452,15 @@
       sx = Math.min(s0, s1); sw = Math.max(0.05, Math.abs(s1 - s0));
       if (sx + sw > bw) sw = bw - sx;
       if (sw <= 0) continue;
-      o.drawImage(src, pad + sx, 0, sw, Hh, pad + x, 0, 1, Hh);
+      if (sw <= 1) {
+        // stretched part: copy ONE whole source column, no blending with its neighbours, so the edges of the picture stay sharp
+        o.imageSmoothingEnabled = false;
+        o.drawImage(src, pad + Math.min(bw - 1, Math.floor(sx + sw / 2)), 0, 1, Hh, pad + x, 0, 1, Hh);
+      } else {
+        // squeezed part: several source columns are averaged into one
+        o.imageSmoothingEnabled = true;
+        o.drawImage(src, pad + sx, 0, sw, Hh, pad + x, 0, 1, Hh);
+      }
     }
     return out;
   }
@@ -906,6 +914,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             pinchPad = basePad + Math.ceil(BOW_MAX * l.w * scale * Math.abs(bowL) / 100);   // room for the bow to move the middle sideways
             bowPadY = basePad + Math.ceil(BOW_MAX * l.h * scale * Math.abs(bowU) / 100);
             pinchCv = document.createElement('canvas'); pinchCv.width = Math.ceil(l.w * scale) + pinchPad * 2; pinchCv.height = Math.ceil(l.h * scale) + bowPadY * 2;
+            if (pinchCv.width % 2) pinchCv.width++; if (pinchCv.height % 2) pinchCv.height++;   // even size: the centre falls on a whole pixel, so nothing is drawn half a pixel off (blurry)
             g = pinchCv.getContext('2d'); g.translate(pinchCv.width / 2, pinchCv.height / 2);
           }
           if (l.s) {
