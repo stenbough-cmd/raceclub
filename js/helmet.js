@@ -415,21 +415,20 @@
   var BOW_MAX = 0.4;   // at 100 the middle moves by this share of the box height (or width)
   function bowCanvas(src, padX, padY, up, side) {
     var W = src.width, Hh = src.height, bw = W - padX * 2, bh = Hh - padY * 2, x, y, u, v;
-    // whole-pixel moves and no smoothing: every column / row is copied as it is, so the edges of the picture stay sharp and clean
     var a = document.createElement('canvas'); a.width = W; a.height = Hh;
-    var ag = a.getContext('2d'); ag.imageSmoothingEnabled = false;
+    var ag = a.getContext('2d'); ag.imageSmoothingEnabled = true; ag.imageSmoothingQuality = 'high';   // smooth, so bent edges are antialiased
     if (up) {
       for (x = 0; x < W; x++) {
         u = Math.max(0, Math.min(1, (x - padX + 0.5) / bw));
-        ag.drawImage(src, x, 0, 1, Hh, x, Math.round(-(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2))), 1, Hh);
+        ag.drawImage(src, x, 0, 1, Hh, x, -(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2)), 1, Hh);
       }
     } else ag.drawImage(src, 0, 0);
     if (!side) return a;
     var b = document.createElement('canvas'); b.width = W; b.height = Hh;
-    var bg = b.getContext('2d'); bg.imageSmoothingEnabled = false;
+    var bg = b.getContext('2d'); bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
     for (y = 0; y < Hh; y++) {
       v = Math.max(0, Math.min(1, (y - padY + 0.5) / bh));
-      bg.drawImage(a, 0, y, W, 1, Math.round((side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2))), y, W, 1);
+      bg.drawImage(a, 0, y, W, 1, (side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2)), y, W, 1);
     }
     return b;
   }
@@ -471,9 +470,9 @@
       if (sx + sw > W) sw = W - sx;
       if (sw <= 0) continue;
       if (sw <= 1) {
-        // stretched part: copy ONE whole source column, no blending with its neighbours, so the edges of the picture stay sharp
-        o.imageSmoothingEnabled = false;
-        o.drawImage(src, Math.min(W - 1, Math.floor(sx + sw / 2)), 0, 1, Hh, X, 0, 1, Hh);
+        // stretched part: one column's worth of picture, blended smoothly with the next so diagonal and curved edges are antialiased
+        o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
+        o.drawImage(src, Math.max(0, Math.min(W - 1, sx + sw / 2 - 0.5)), 0, 1, Hh, X, 0, 1, Hh);
       } else {
         // pulled-in part: several source columns are averaged into one
         o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
