@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=47'; s.async = true;
+      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=48'; s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=38'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=39'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Popup title reads HELMET DESIGNER with "lite" in italic, normal weight (every page's showModal takes plain text for the title).

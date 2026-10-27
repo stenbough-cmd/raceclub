@@ -276,6 +276,10 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 /* black buttons: Add layer and New */
 .rch-blackbtn { background: var(--rc-carbon); border-color: var(--rc-carbon); color: #fff; }
 .rch-blackbtn:hover:not(:disabled) { background: #333; border-color: #333; color: #fff; }
+/* While saving (or any time they are disabled) the black buttons stay black and just dim. The site's general disabled
+   look for .rc-btn-secondary is a white fill, which turned white text on white and made them look blank. */
+.rc-btn-secondary.rch-blackbtn:disabled,
+.rc-btn-secondary.rch-blackbtn:disabled:hover { background: var(--rc-carbon); border-color: var(--rc-carbon); color: #fff; opacity: 0.45; }
 /* Upload Logo: the picture sits between the file box and the Name */
 .rch-logopreview { display: flex; justify-content: center; align-items: center; margin: 8px 0 4px; padding: 10px; border: 1px solid var(--rc-silver); border-radius: 8px; background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 16px 16px; }
 .rch-logopreview img { max-width: 100%; max-height: 140px; display: block; }
