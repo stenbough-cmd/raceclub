@@ -150,20 +150,15 @@ body.rc-league-page.rcc-page {
   cursor: pointer;
   position: relative;
 }
-.rcc-actionbar-link + .rcc-actionbar-link::before {
-  content: '·';
-  position: absolute;
-  left: -3px;
-  color: var(--rc-steel);
-}
+/* No dots between the bar's items (Matt, 2026-10-27). */
 .rcc-actionbar-link:first-child { padding-left: 0; }
 .rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
 a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
+/* The page you are on (Championship) is red (Matt, 2026-10-27). */
+.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rcc-true-red, #F21B0C); }
 /* Season Tools: a vertical dropdown under the link, styled like the avatar menu (Matt, 2026-10-13). */
 .rcc-tools { position: relative; display: inline-flex; align-items: center; }
-.rcc-actionbar-link + .rcc-tools::before,
-.rcc-tools + .rcc-actionbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: var(--rc-steel); }
 .rcc-tools + .rcc-actionbar-link { position: relative; }
 .rcc-tools .rcc-tools-toggle { padding-left: 14px; }
 .rcc-tools-toggle::after { content: ''; display: inline-block; width: 0; height: 0; margin-left: 7px; vertical-align: 2px; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; }
@@ -182,6 +177,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-tools-divider { border: 0; border-top: 1px solid var(--rc-silver); margin: 4px 6px; }
 /* Current Seat at the top of the Season Preview popup, with a blank space before Season Details. */
 .rcc-preview-seat { margin-bottom: 22px; }
+.rcc-preview-seat .rcc-current-seat { margin-top: 12px; }
 /* Season picker at the right end of the black bar: an exact copy of the League Hub's season box
    (league.css .rcl-navbar-season with the League page's dark colors written out, since this page's
    --rcl-* colors are the light set) (Matt, 2026-10-22). margin 0 drops style.css's 4px top margin so

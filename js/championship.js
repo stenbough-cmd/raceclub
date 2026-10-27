@@ -496,7 +496,7 @@ function rccRenderActionBar(page) {
   }
   // The black bar is the site navbar (Matt, 2026-10-27, same links as the home page and the League
   // Hub): Home, League Hub, Championship, then Season Tools where the account link sits on those pages.
-  // Logged-out visitors (the demo) also get Login or Register after Season Tools.
+  // Logged-out visitors (the demo) get Login or Register there instead.
   function addLink(label, href) {
     var a = _rccText('a', 'rcc-actionbar-link rcc-actionbar-navlink', label);
     a.href = href;
@@ -505,7 +505,12 @@ function rccRenderActionBar(page) {
   }
   addLink('Home', 'index.html');
   addLink('League Hub', 'league.html');
-  addLink('Championship', 'championship.html');
+  // The page you are on is red (Matt, 2026-10-27).
+  var here = addLink('Championship', 'championship.html');
+  here.classList.add('rcc-actionbar-current');
+  here.setAttribute('aria-current', 'page');
+  // Season Tools only for signed-in members (Matt, 2026-10-27); visitors get Login or Register instead.
+  var signedIn = !!getToken();
   // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
   // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
   var tools = _rccEl('span', 'rcc-tools');
@@ -519,7 +524,7 @@ function rccRenderActionBar(page) {
   menu.appendChild(menuLinks);
   tools.appendChild(toolsBtn);
   tools.appendChild(menu);
-  links.appendChild(tools);
+  if (signedIn) links.appendChild(tools);
   function setOpen(on) {
     tools.classList.toggle('rcc-tools-open', on);
     toolsBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -558,7 +563,7 @@ function rccRenderActionBar(page) {
   divider();
   add('Help', true, rccOpenHelp, null, menuLinks);
   setOpen(false);
-  if (!getToken()) {
+  if (!signedIn) {
     var login = addLink('Login or Register', 'login.html');
     login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
   }
@@ -832,7 +837,8 @@ function _rccSeasonFormat(page, body) {
   var classes = Object.keys(d.classes || {}).filter(function (c) { return d.classes[c]; });
   classes = _rccSortClasses(classes, function (c) { return c; });
   var details = [];
-  details.push(row('Driver', page.owner.displayName + (page.registration ? ' · ' + page.registration.teamName + ' #' + page.registration.carNumber : ' (no team chosen yet)')));
+  // Driver line only before a team is chosen; after that Current Seat at the top shows it (Matt, 2026-10-27).
+  if (!page.registration) details.push(row('Driver', page.owner.displayName + ' (no team chosen yet)'));
   if (rs.aiDifficulty) details.push(row('AI Difficulty', rs.aiDifficulty + '% (' + _rccSkillLevel(rs.aiDifficulty) + ')'));
   if (rs.aiAggression) details.push(row('AI Aggression', rs.aiAggression));
   details.push(row('Championship Rounds', String(page.totalRounds)));
