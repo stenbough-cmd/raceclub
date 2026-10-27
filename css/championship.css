@@ -775,13 +775,13 @@ a.rcc-hero-meta-name { color: inherit; }
 /* ===================== DEMO (logged-out visitors) ===================== */
 /* Locked demo buttons keep their normal look and hover colour; clicking does nothing. */
 .rcc-demo .rcc-demo-locked { cursor: not-allowed; }
-/* DEMO watermark (Matt, 2026-10-27): one fixed, faint, rotated word over the page. Above the content,
+/* DEMO watermark (Matt, 2026-10-27; 12% opacity): one fixed, faint, rotated word over the page. Above the content,
    below the site header (1000) and every popup (500 and up); it never takes clicks, scrolling or selection. */
 .rcc-demo-watermark {
   position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center;
   pointer-events: none; user-select: none; -webkit-user-select: none; overflow: hidden;
   font-family: var(--rc-font-heading); font-weight: 900; font-size: min(34vw, 420px); letter-spacing: 0.06em;
-  text-transform: uppercase; line-height: 1; color: var(--rc-steel); opacity: 0.16; transform: rotate(-25deg);
+  text-transform: uppercase; line-height: 1; color: var(--rc-steel); opacity: 0.12; transform: rotate(-25deg);
 }
 /* Welcome ticker: bold navy welcome line; perk labels bold navy, perk text normal black. */
 .rcc-page .rcc-ticker-lead { font-weight: 800; color: var(--rcc-navy); }
