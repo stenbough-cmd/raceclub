@@ -464,21 +464,7 @@ function rccRenderHero(page) {
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
   // An ended season reads "<NAME> (FINISHED)" (Matt, 2026-10-17).
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName + (page.seasonEnded ? ' (Finished)' : '')));
-  // (The seat line left the header, Matt 2026-10-14: CURRENT SEAT in the black bar opens it.)
-}
-
-// CURRENT SEAT popup (Matt, 2026-10-14): the seat line exactly as the header had it (car picture,
-// DRIVER NAME linked to the career page, TEAM #n opening Team Information, maker logo, car name,
-// class pill), then the team's written description.
-function rccOpenCurrentSeat() {
-  var page = RCC.page;
-  if (!page || !page.registration) return;
-  var m = rccOpenModal('Current Seat', { wide: true });
-  m.dialog.classList.add('rcc-light-dialog');
-  var wrap = _rccEl('div', 'rcc-current-seat');
-  wrap.appendChild(_rccSeatLine(page, null, true));
-  if (page.registration.teamDesc) wrap.appendChild(_rccText('p', 'rcc-myteam-desc rcc-current-seat-desc', page.registration.teamDesc));
-  m.body.appendChild(wrap);
+  // (The seat line left the header, Matt 2026-10-14: it sits at the top of the Season Preview popup.)
 }
 
 // WELCOME popup (no season yet): how to start (Matt, 2026-10-17).
@@ -508,12 +494,18 @@ function rccRenderActionBar(page) {
     if (enabled) b.addEventListener('click', onClick);
     host.appendChild(b);
   }
-  // Season Preview for the season on screen, current or past (Matt, 2026-10-17). With no season at
-  // all it reads Welcome, and its popup points to Create Season in the Season Tools menu.
-  if (hasSeason) add('Season Preview', true, rccOpenSeasonPreview);
-  else add('Welcome', true, rccOpenWelcomeTip);
-  // Current Seat (Matt, 2026-10-14): right after Season Preview, once you have signed for a team.
-  if (page && page.registration) add('Current Seat', true, rccOpenCurrentSeat);
+  // The black bar is the site navbar (Matt, 2026-10-27, same links as the home page and the League
+  // Hub): Home, League Hub, Championship, then Season Tools where the account link sits on those pages.
+  // Logged-out visitors (the demo) also get Login or Register after Season Tools.
+  function addLink(label, href) {
+    var a = _rccText('a', 'rcc-actionbar-link rcc-actionbar-navlink', label);
+    a.href = href;
+    links.appendChild(a);
+    return a;
+  }
+  addLink('Home', 'index.html');
+  addLink('League Hub', 'league.html');
+  addLink('Championship', 'championship.html');
   // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
   // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
   var tools = _rccEl('span', 'rcc-tools');
@@ -543,6 +535,12 @@ function rccRenderActionBar(page) {
       if (t && !t.contains(e.target)) { t.classList.remove('rcc-tools-open'); var tb = t.querySelector('.rcc-tools-toggle'); if (tb) tb.setAttribute('aria-expanded', 'false'); }
     });
   }
+  // Season Tools, top to bottom (Matt, 2026-10-27): Season Preview (Welcome when there is no season;
+  // Current Seat is now at the top of its popup), a divider, the season tools, a divider, Help.
+  function divider() { menuLinks.appendChild(_rccEl('hr', 'rcc-tools-divider')); }
+  if (hasSeason) add('Season Preview', true, rccOpenSeasonPreview, null, menuLinks);
+  else add('Welcome', true, rccOpenWelcomeTip, null, menuLinks);
+  divider();
   // Create Season always lives in Season Tools (Matt, 2026-10-17); it waits while a season is running.
   var running = !!(page && page.hasActiveSeason);
   add('Create Season', !running, rccOpenSeasonWizard.bind(null, null), 'End your current season before creating a new one.', menuLinks);
@@ -557,9 +555,13 @@ function rccRenderActionBar(page) {
   add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
     !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'), menuLinks);
   add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.', menuLinks);
+  divider();
+  add('Help', true, rccOpenHelp, null, menuLinks);
   setOpen(false);
-  // Find A Bug? removed from this bar (Matt, 2026-10-11).
-  add('Help', true, rccOpenHelp);
+  if (!getToken()) {
+    var login = addLink('Login or Register', 'login.html');
+    login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+  }
 
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
@@ -2939,6 +2941,16 @@ function rccOpenSeasonPreview() {
   var m = rccOpenModal('Season Preview', { wide: true });
   m.body.classList.add('rcc-preview-body');
   // No "Season N / Name" line at the top (Matt, 2026-10-22); the page hero already names the season.
+  // CURRENT SEAT first, once you have signed for a team (Matt, 2026-10-27; it was its own popup).
+  if (page.registration) {
+    var seat = _rccEl('div', 'rcl-hero-stats-group rcc-preview-seat');
+    seat.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Current Seat'));
+    var wrap = _rccEl('div', 'rcc-current-seat');
+    wrap.appendChild(_rccSeatLine(page, null, true));
+    if (page.registration.teamDesc) wrap.appendChild(_rccText('p', 'rcc-myteam-desc rcc-current-seat-desc', page.registration.teamDesc));
+    seat.appendChild(wrap);
+    m.body.appendChild(seat);
+  }
   _rccSeasonFormat(page, m.body);
   var g = _rccEl('div', 'rcl-hero-stats-group');
   g.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Rounds'));
