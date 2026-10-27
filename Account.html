@@ -6026,6 +6026,87 @@
       'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
+    // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
+    // Designer's presets), then download home-helmets.json. Saved at assets/data/ in the website, it is what the helmet
+    // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
+    addItem('Choose Home Page Helmets', function () {
+      var modal = showModal('Home Page Helmets', { wide: true, accentHead: true });
+      var body = modal.body;
+      body.appendChild(el('p', 'margin:0 0 12px;font-size:13.5px;line-height:1.55;color:var(--rc-steel);', 'Loading the helmet catalog...'));
+      fetchApi('adminListHelmetPresets', { token: token }).then(function (res) {
+        body.innerHTML = '';
+        if (!res || !res.success) { body.appendChild(el('p', 'margin:0;color:var(--rc-red);', escapeHtml((res && (res.message || res.error)) || 'Could not load the helmet catalog.'))); return; }
+        var presets = (res.presets || []).filter(function (p) { return p.recipe && typeof p.recipe === 'object'; });
+        var chosen = [];
+        body.appendChild(el('p', 'margin:0 0 12px;font-size:13.5px;line-height:1.55;color:var(--rc-steel);', 'Click four helmets to show on the home page. They appear in the order you click them. Click a chosen helmet again to remove it.'));
+        var counter = el('div', 'margin:0 0 12px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--rc-carbon);', '');
+        body.appendChild(counter);
+        var grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:52vh;overflow:auto;padding:2px;');
+        body.appendChild(grid);
+        var exportBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Export Home Page Helmets');
+        exportBtn.type = 'button';
+        var cards = {};
+        function refresh() {
+          counter.textContent = chosen.length + ' of 4 chosen';
+          exportBtn.disabled = chosen.length !== 4;
+          presets.forEach(function (pr) {
+            var c = cards[pr.presetId], n = chosen.indexOf(pr.presetId);
+            c.style.borderColor = n >= 0 ? 'var(--rc-red)' : 'var(--rc-silver)';
+            c.style.boxShadow = n >= 0 ? '0 0 0 1px var(--rc-red)' : 'none';
+            c.querySelector('.rc-hh-num').textContent = n >= 0 ? String(n + 1) : '';
+            c.querySelector('.rc-hh-num').style.display = n >= 0 ? 'flex' : 'none';
+          });
+        }
+        if (!presets.length) body.appendChild(el('p', 'margin:0;color:var(--rc-steel);', 'There are no helmets in the catalog yet.'));
+        presets.forEach(function (pr) {
+          var c = el('button', 'position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;background:var(--rc-white);border:1px solid var(--rc-silver);border-radius:8px;cursor:pointer;font-family:var(--rc-font-body);color:var(--rc-carbon);text-align:center;');
+          c.type = 'button';
+          c.innerHTML = '<span class="rc-hh-num" style="display:none;position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:var(--rc-red);color:#fff;font-size:11px;font-weight:800;align-items:center;justify-content:center;"></span>' +
+            rcHelmetHtml_('helmet:' + JSON.stringify(pr.recipe), 110, '') +
+            '<span style="font-size:12.5px;font-weight:800;line-height:1.25;">' + escapeHtml(pr.name || '') + '</span>' +
+            '<span style="font-size:11px;color:var(--rc-steel);">' + escapeHtml(pr.kind || '') + '</span>';
+          c.addEventListener('click', function () {
+            var n = chosen.indexOf(pr.presetId);
+            if (n >= 0) chosen.splice(n, 1);
+            else if (chosen.length < 4) chosen.push(pr.presetId);
+            else { showToast('Four helmets are already chosen. Click one to remove it first.', 'error'); return; }
+            refresh();
+          });
+          cards[pr.presetId] = c;
+          grid.appendChild(c);
+        });
+        try { rcHelmetHydrate_(grid); } catch (err) {}
+        var foot = el('div', 'display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;');
+        exportBtn.addEventListener('click', function () {
+          var out = { updated: new Date().toISOString(), helmets: chosen.map(function (id) {
+            var pr = presets.filter(function (x) { return x.presetId === id; })[0];
+            return { name: pr.name || '', kind: pr.kind || '', description: pr.description || '', recipe: pr.recipe };
+          }) };
+          var blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'home-helmets.json';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+          showToast('Downloaded home-helmets.json. Save it in the website folder at assets/data/home-helmets.json, then push.', 'success');
+        });
+        foot.appendChild(exportBtn);
+        var cancel = el('button', 'rc-btn-secondary rc-btn-sm', 'Close');
+        cancel.type = 'button';
+        cancel.addEventListener('click', function () { modal.close(); });
+        foot.appendChild(cancel);
+        body.appendChild(foot);
+        refresh();
+      }).catch(function () {
+        body.innerHTML = '';
+        body.appendChild(el('p', 'margin:0;color:var(--rc-red);', 'No answer from the server. Try again.'));
+      });
+    }, [
+      'Opens the whole helmet catalog (Website Default, Manufacturer, Awards and any other helmet in the Helmet Designer) so you can pick the four helmets shown in the "Earn The Helmet. Wear The Moment." section of the home page.',
+      'Click four helmets, then Export Home Page Helmets. Save the downloaded file in the website folder at assets/data/home-helmets.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like. Until the file exists, the home page keeps showing its built-in four helmets.'
+    ]);
+
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
     // season of every class on the Cars tab and downloads it as car-list.json. Saved at assets/data/ in the website, it is what
     // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.

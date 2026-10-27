@@ -224,6 +224,20 @@
       if (r) stages[i].innerHTML = rcHelmetHtml_('helmet:' + JSON.stringify(r), 190, 'rc-helmet-show');
     }
     rcHelmetHydrate_(document.getElementById('rc-helmet-showcase'));
+    // Admin > Choose Home Page Helmets exports assets/data/home-helmets.json (four helmets with name, tag, description and recipe).
+    // When that file exists it replaces the built-in four above; if it is missing or not four helmets, the built-in ones stay.
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    fetch('assets/data/home-helmets.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var list = d && Array.isArray(d.helmets) ? d.helmets.filter(function (h) { return h && h.recipe; }) : [];
+      if (list.length !== 4) return;
+      var host = document.getElementById('rc-helmet-showcase');
+      host.innerHTML = list.map(function (h) {
+        return '<div class="rc-helmet-card"><div class="rc-helmet-stage">' + rcHelmetHtml_('helmet:' + JSON.stringify(h.recipe), 190, 'rc-helmet-show') + '</div>' +
+          (h.kind ? '<div class="rc-helmet-tag">' + esc(h.kind) + '</div>' : '') +
+          '<h3>' + esc(h.name) + '</h3>' + (h.description ? '<p>' + esc(h.description) + '</p>' : '') + '</div>';
+      }).join('');
+      rcHelmetHydrate_(host);
+    }).catch(function () {});
   })();
   </script>
 
