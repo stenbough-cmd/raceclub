@@ -623,7 +623,7 @@
     return Promise.all([
       dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise,
       dashboardData.nextRacePromise, dashboardData.myProtestsPromise
-    ]);
+    ], 'Pick the four helmets shown on the home page and update them.');
   }
 
   function renderDashboardSection(profile, token, dashboardData) {
@@ -6004,17 +6004,17 @@
     addItem('Members', function () { openMembersModal(token); }, [
       'Opens the full list of every account on the site, including prospects who have registered but not yet joined a season. From here you can add a driver yourself, open any member to change their role, disable or re-enable their account, and send them a password reset.',
       'Use this when someone needs their access changed (for example promoting a driver to Steward or Organizer), when a driver is locked out of their account, or when you want to look someone up.'
-    ]);
+    ], 'Pick the four helmets shown on the home page and update them.');
 
     addItem('Tracks', function () { openTracksModal(token); }, [
       'Opens the list of every track and layout the league can race on. You can add a new track with its first layout, add more layouts to an existing track, edit a track\'s name, nickname, region and country, and deactivate or reactivate a track or a single layout.',
       'Deactivating hides a track or layout from the choices used when building a season, but it is never deleted, so past rounds and results that used it keep working. The nickname is the short name shown in tight spaces such as the calendar.'
-    ]);
+    ], 'Pick the four helmets shown on the home page and update them.');
 
     addItem('Cars', function () { openCarsModal(token); }, [
       'Opens the list of every car and team seat drivers can register for. Each entry holds a class, manufacturer, car model, car number, team name and the short team description drivers see on the Choose Your Team screen. You can add a car, edit any of those fields, and deactivate or reactivate it.',
       'Deactivating takes a car out of future registrations without deleting it, so drivers already registered to it and past results are unaffected. Keep the details here accurate, since race imports and the registration mismatch check compare against them.'
-    ]);
+    ], 'Pick the four helmets shown on the home page and update them.');
 
     // INTEGRITY CHECK -- see openIntegrityCheckModal. Gray like every other opener
     // (race-club-ui-consistency's "gray unless it saves" rule) -- this button only opens a modal;
@@ -6053,7 +6053,7 @@
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
     // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
-    addItem('Choose Home Page Helmets', function () {
+    addItem('Update Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true, accentHead: true });
       var body = modal.body;
       body.appendChild(el('p', 'margin:0 0 12px;font-size:13.5px;line-height:1.55;color:var(--rc-steel);', 'Loading the helmet catalog...'));
@@ -6067,7 +6067,7 @@
         body.appendChild(counter);
         var grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:52vh;overflow:auto;padding:2px;');
         body.appendChild(grid);
-        var exportBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Save Home Page Helmets');
+        var exportBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Update Home Page Helmets');
         exportBtn.type = 'button';
         var cards = {};
         function refresh() {
@@ -6126,17 +6126,17 @@
       });
     }, [
       'Opens the whole helmet catalog (Website Default, Manufacturer, Awards and any other helmet in the Helmet Designer) so you can pick the four helmets shown in the "Earn The Helmet. Wear The Moment." section of the home page.',
-      'Click four helmets, then Save Home Page Helmets. The choice is saved straight to GitHub and shows on the home page in about a minute. Nothing is changed in the Sheet, so you can change it as often as you like. Until a choice has been saved, the home page keeps showing its built-in four helmets.'
-    ]);
+      'Click four helmets, then Update Home Page Helmets. The choice is saved straight to GitHub and shows on the home page in about a minute. Nothing is changed in the Sheet, so you can change it as often as you like. Until a choice has been saved, the home page keeps showing its built-in four helmets.'
+    ], 'Pick the four helmets shown on the home page and update them.');
 
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
     // season of every class on the Cars tab and downloads it as car-list.json. Saved at website/data/ in the race-club-data repo, it is what
     // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.
-    addItem('Export Current Car List', function () {
+    addItem('Update Home Page Grid', function () {
       var btn = this;
       var label = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Exporting...';
+      btn.textContent = 'Updating...';
       fetchApi('adminExportCarList', { token: token, params: { publish: '1' }, timeoutMs: 120000 }).then(function (res) {
         btn.disabled = false; btn.textContent = label;
         if (res && res.success && res.published) { showToast('Car list saved (' + (res.summary || '') + '). Saved to GitHub; the website updates in about a minute.', 'success'); return; }
@@ -6152,19 +6152,19 @@
       });
     }, [
       'Builds the current car list for the Meet The Grid section on the landing page and saves it straight to the website through GitHub. For every class (LMGTE, LMGT3, LMP3, LMP2 and Hypercar) it takes the newest season found on the Cars tab, and lists every active car in it with its numbers.',
-      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/car-list.json in the race-club-data repo and push.'
-    ], 'Downloads the newest car list for every class as the Meet The Grid file.');
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/car-list.json in the race-club-data repo and push.'
+    ], 'Updates the Meet The Grid section of the home page with the newest car list for every class.');
 
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
     // active championship season (champGetPage with exportDemo=1, Admin only), with your name
     // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
     // at website/data/ in the race-club-data repo, it is what the public demo (championship.html?demo=1) shows.
     // Gray: it writes nothing to the Sheet.
-    addItem('Export Championship Demo', function () {
+    addItem('Update Championship Demo', function () {
       var btn = this;
       var label = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Exporting...';
+      btn.textContent = 'Updating...';
       fetchApi('champGetPage', { token: token, params: { exportDemo: '1' }, timeoutMs: 300000 }).then(function (res) {
         if (!res || !res.success || !res.demoJson) { btn.disabled = false; btn.textContent = label; showToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
         btn.textContent = 'Saving...';
@@ -6175,8 +6175,8 @@
       });
     }, [
       'Builds a copy of your active Race Club Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
-      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
-    ], 'Downloads your active championship season as the public demo file.');
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
+    ], 'Updates the public Championship demo with a copy of your active championship season.');
 
     // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js
     // rcStagedHubOn). While ON, the League Hub, every Race Recap, driver profiles and driver reports read the made-up
