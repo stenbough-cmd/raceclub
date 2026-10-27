@@ -6003,6 +6003,34 @@
       'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
+    // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
+    // season of every class on the Cars tab and downloads it as car-list.json. Saved at assets/data/ in the website, it is what
+    // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.
+    addItem('Export Current Car List', function () {
+      var btn = this;
+      var label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Exporting...';
+      fetchApi('adminExportCarList', { token: token, timeoutMs: 120000 }).then(function (res) {
+        btn.disabled = false; btn.textContent = label;
+        if (!res || !res.success || !res.carListJson) { showToast((res && (res.message || res.error)) || 'Could not export the car list.', 'error'); return; }
+        var blob = new Blob([res.carListJson], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'car-list.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+        showToast('Car list downloaded (' + (res.summary || '') + '). Save it in the website folder at assets/data/car-list.json, then push.', 'success');
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = label;
+        showToast('No answer from the server. Try again.', 'error');
+      });
+    }, [
+      'Downloads the current car list for the Meet The Grid section on the landing page. For every class (LMGTE, LMGT3, LMP3, LMP2 and Hypercar) it takes the newest season found on the Cars tab, for example LMGTE 2023, LMP3 2024 and the rest 2026, and lists every active car in it with its team, manufacturer, numbers and team description.',
+      'Save the downloaded file in the website folder at assets/data/car-list.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like. Until a car list file is in place, the Meet The Grid section stays hidden.'
+    ], 'Downloads the newest car list for every class as the Meet The Grid file.');
+
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
     // active championship season (champGetPage with exportDemo=1, Admin only), with your name
     // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
