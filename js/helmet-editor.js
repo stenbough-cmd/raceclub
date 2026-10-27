@@ -201,6 +201,7 @@
   var MIRROR_V_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18" stroke-dasharray="2 3"/><path d="M7 9 17 3v6z" transform="translate(0 0)"/><path d="M7 15h10l-5 6z"/></svg>';
   var MIRROR_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7 3 17h6z"/><path d="M15 7l6 10h-6z"/></svg>';
 
+  var TRASH_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';   // garbage can: the Remove layer button
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 
   function openDesigner(ctx, opts) {
@@ -504,7 +505,7 @@
         var isGrad = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).gradient;
         var isLight = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).light;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
-        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 0 } : isLight ? { s: val, c: 'white', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 220, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
+        var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 1 } : isLight ? { s: val, c: 'white', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 220, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
           ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : (val === 'g_checker' ? 160 : 220), r: 0, sh: 0 }
           : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
@@ -612,7 +613,7 @@
           var up = mk('button', 'rch-icon', '&#9650;'); up.type = 'button'; up.title = 'Bring forward';
           var dn = mk('button', 'rch-icon', '&#9660;'); dn.type = 'button'; dn.title = 'Send back';
           var cp = mk('button', 'rch-icon', COPY_ICON); cp.type = 'button'; cp.title = 'Copy this layer (the copy goes directly above it)';
-          var rm = mk('button', 'rch-icon', '&times;'); rm.type = 'button'; rm.title = 'Remove layer';
+          var rm = mk('button', 'rch-icon', TRASH_ICON); rm.type = 'button'; rm.title = 'Remove layer';
           // the arrows move a layer one step in the list, across the Accents line when it is next to it
           up.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos - 1); };
           dn.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos + 1); };
@@ -667,9 +668,9 @@
         nsc.onchange = function () { shadowSet(0); };                          // No shadow: always one of the three is on
         shc.onchange = function () { shadowSet(shc.checked ? 1 : 0); };
         sgc.onchange = function () { shadowSet(sgc.checked ? 2 : 0); };
-        if (!(sel.s && /^player/.test(sel.s))) { nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl); }
-        if (!(sel.s && /^player/.test(sel.s))) { shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl); }
-        if (!(sel.s && /^player/.test(sel.s))) { sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl); }
+        nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl);
+        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
+        sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
         if (sel.s) {
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
           var pickColor = function (key, label, hint, withNone) {
@@ -703,9 +704,9 @@
             if (gdef.colors === 2) { if (!sel.c2) sel.c2 = 'black'; pickColor('c', 'Gradient color 1'); pickColor('c2', 'Gradient color 2'); }
             else { pickColor('c', 'Gradient color'); }
           } else if (gdef.player) {
-            pickColor('c', 'Name color');
-            pickColor('bg', 'Name background color', '', true);
-          } else { pickColor('c', gdef.light ? 'Light color' : gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Name color' : 'Shape'))); }
+            pickColor('c', 'Text color');
+            pickColor('bg', 'Text background color', '', true);
+          } else { pickColor('c', gdef.light ? 'Light color' : gdef.weathering ? 'Mark color' : (gdef.pattern ? 'Pattern color' : (gdef.player ? 'Text color' : 'Shape'))); }
           // Border (basic and advanced shapes and the player number): a color picker under the shape color, then a 0 to 20 px size slider
           if (!gdef.gradient && !gdef.light && !gdef.weathering && !gdef.pattern && (!gdef.player || sel.s === 'player_number')) {
             if (!sel.bc) sel.bc = 'black';

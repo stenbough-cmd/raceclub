@@ -475,9 +475,16 @@
     c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
     mw = c.measureText(name).width;
     var total = (hasFlag ? fw + gap : 0) + mw, x0 = -total / 2;
-    // Soft shadow (always on for Player name boxes): behind the text and flag when there is no background color, or behind the
-    // background rectangle only (never the text) when one is chosen. Not used while a border is drawing (noShadow).
-    function shadowOn() { c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = Math.max(2, h * 0.14); c.shadowOffsetX = 0; c.shadowOffsetY = Math.max(1, h * 0.05); }
+    // The layer's shadow setting (None / Soft / Strong) goes behind the text and flag when there is no background color, or behind the
+    // background rectangle ONLY (never the text or flag) when one is chosen. Not used while a border is drawing (noShadow): the whole
+    // layer's shadow is drawn once around the finished picture then.
+    var sc = l.h ? h / l.h : 1, lvl = l.sh === 0 ? 0 : (l.sh === 2 ? 2 : 1);
+    function shadowOn() {
+      if (!lvl) return;
+      if (lvl === 2) { c.shadowColor = 'rgba(0,0,0,0.85)'; c.shadowBlur = Math.max(3, 13 * sc); c.shadowOffsetY = Math.max(2, 5 * sc); }
+      else { c.shadowColor = 'rgba(0,0,0,0.45)'; c.shadowBlur = Math.max(2, 7 * sc); c.shadowOffsetY = Math.max(1, 2 * sc); }
+      c.shadowOffsetX = 0;
+    }
     function shadowOff() { c.shadowColor = 'rgba(0,0,0,0)'; c.shadowBlur = 0; c.shadowOffsetX = 0; c.shadowOffsetY = 0; }
     if (l.bg) {   // optional background rectangle with a little padding around the flag and name
       var pad = Math.max(2, h * 0.22), bh = size * CAP + pad * 2;
@@ -885,9 +892,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           g.rotate(-l.r * Math.PI / 180);
           if (l.sk) g.transform(1, 0, -Math.tan(l.sk * Math.PI / 180), 1, 0, 0);   // skew: a negative sk leans the top left and the bottom right
           if (l.fx || l.fy) g.scale(l.fx ? -1 : 1, l.fy ? -1 : 1);   // mirrored left to right and / or top to bottom
-          var isPl = !!(l.s && isPlayerId(l.s)), plBorder = isPl && +l.bw >= 1 && borderOk(l.s);   // Player boxes always get a soft shadow: drawn inside drawPlayerBox, or here around the bordered number
+          var isPl = !!(l.s && isPlayerId(l.s)), plBorder = isPl && +l.bw >= 1 && borderOk(l.s);   // Player boxes draw their own shadow inside drawPlayerBox (rectangle only when there is a background); around a bordered number it is drawn here
           if (isPl && !plBorder) { /* drawPlayerBox draws its own shadow */ }
-          else if (plBorder) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           else if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           // Pinch: the layer is drawn flat onto its own canvas first, squeezed sideways, then placed on the helmet (so the shadow is drawn once)
