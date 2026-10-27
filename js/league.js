@@ -3617,7 +3617,7 @@ function _rclOpenMemberListModal(hub) {
   _rclLockBodyScroll();
 }
 
-// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Join Race Club (signed in: Member List) | Help
+// NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Login or Register (signed in: Member List) | Help
 // (signed in: Member List). Same look as the Championship page's link bar (css/league.css,
 // .rcl-navbar). The old row of four square image tiles at the bottom of the page is gone; these
 // links replace it.
@@ -3690,9 +3690,9 @@ function _rclRenderNavbar_(hub) {
   if (signedIn) {
     add('Member List', function () { _rclOpenMemberListModal(_rclNavHub_); });
   } else {
-    add('Join Race Club', function () {
+    add('Login or Register', function () {
       if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
-      window.location.href = 'register.html';
+      window.location.href = 'login.html';
     });
   }
   add('Help', function () { _rclOpenLeagueRulesModal(); });

@@ -1447,7 +1447,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-header-account-toggle:hover,
 .rc-header-account-toggle[aria-expanded="true"] { background: var(--rc-offwhite); }
 /* Signed-out version of the account button: a link with the helmet-unavailable picture and LOGIN OR / REGISTER in place of the name. */
-.rc-header-login-box { text-decoration: none; color: var(--rc-carbon); }
+.rc-header-login-box { text-decoration: none; color: #141416; }   /* #141416 = the black of the navbars (League Hub and the home page) */
 .rc-header-login-text {
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -1455,7 +1455,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   letter-spacing: 0.03em;
   line-height: 1.25;
   text-align: left;
-  color: var(--rc-carbon);
+  color: #141416;
   max-width: 90px;
   align-self: center;
 }
@@ -3318,3 +3318,14 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-switch[aria-checked="true"] .rc-switch-track::after { transform: translateX(20px); }
 .rc-switch-label { font-size: 13.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
 .rc-switch-state { font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--rc-steel); min-width: 28px; }
+
+/* Home page navbar (index.html, top of the page content, scrolls away with the page): the League Hub's navbar look -- near-black bar,
+   white links, red line underneath (copied from .rcl-navbar in css/league.css). */
+.rc-home-navbar { background: #141416; border-bottom: 2px solid var(--rc-red); }
+.rc-home-navbar-inner { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; flex-wrap: wrap; min-height: 48px; }
+.rc-home-navbar-link { padding: 14px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-white); text-decoration: none; position: relative; }
+.rc-home-navbar-link + .rc-home-navbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: #000; }
+.rc-home-navbar-link:first-child { padding-left: 0; }
+.rc-home-navbar-link:hover { color: var(--rc-red); }
+.rc-home-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
+@media (max-width: 640px) { .rc-home-navbar-inner { padding: 0 16px; } .rc-home-navbar-link { padding: 10px 8px; } }
