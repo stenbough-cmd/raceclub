@@ -4500,6 +4500,20 @@
   // the sim's own base consumption rate, not raw percentages. "Realistic" is LMU's own normal/1x
   // rate; "Off" disables consumption entirely.
   var RACE_SETTINGS_MULTIPLIER_OPTIONS = ['Off', 'Realistic', '2x', '3x'];
+  var RACE_SETTINGS_DAMAGE_OPTIONS = ['Off', 'Low', 'Medium', 'High', 'Realistic'];
+  var RACE_SETTINGS_TIME_SCALE_OPTIONS = ['Off', '1x', '2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x', '10x', '11x', '12x'];
+  // Tire count default: 12 when any race is 1h 30m or longer, otherwise 8. Once the organizer types their
+  // own count (or the season is being edited) it is never changed automatically again.
+  var wizTireCountInputEl = null;
+  function autoTireCount(state) {
+    if (!state || !state.raceSettings || state.tireCountTouched || state.__editSeasonId) return;
+    var tables = state.pointsTables || {}, longest = 0;
+    var tiers = (state.races && state.races.length) ? state.races.map(function (r) { return r.tier; }) : Object.keys(tables);
+    tiers.forEach(function (t) { var d = tables[t] && Number(tables[t].duration); if (d > longest) longest = d; });
+    var want = longest >= 90 ? 12 : 8;
+    state.raceSettings.tireCount = want;
+    if (wizTireCountInputEl) wizTireCountInputEl.value = String(want);
+  }
 
   // Special events are just-for-fun races -- no championship points, no money/prize payouts.
   function defaultSpecialEvent() {
@@ -4706,6 +4720,8 @@
         pitStopReq: 'None',
         fuelMultiplier: 'Realistic',
         tireWearMultiplier: 'Realistic',
+        damageMultiplier: 'Medium',
+        timeScale: '1x',
         tireCount: 8,
         trackLimitPoints: 5,
         practiceLengthMin: 30,
@@ -4872,7 +4888,7 @@
       durationInput.appendChild(o);
     });
     if (!curDur) { durationInput.value = '45'; state.pointsTables[tier].duration = 45; }
-    durationInput.addEventListener('change', function () { state.pointsTables[tier].duration = Number(durationInput.value); });
+    durationInput.addEventListener('change', function () { state.pointsTables[tier].duration = Number(durationInput.value); autoTireCount(state); });
     durationInput.style.cssText = 'width:auto;max-width:110px;display:inline-block;margin:0;';
     requireField(durationInput, requiredEls);
     var durWrap = el('span', 'font-size:12px;color:var(--rc-steel);display:flex;align-items:center;gap:6px;');
@@ -5099,10 +5115,16 @@
       'Setup Rules', wizSelect(['Fixed', 'Open'], state.raceSettings.setupRules, function (v) { state.raceSettings.setupRules = v; }),
       'Pit Stop Requirements', wizSelect(['None', 'Mandatory Tire Change', 'Mandatory Fuel-Only'], state.raceSettings.pitStopReq, function (v) { state.raceSettings.pitStopReq = v; })
     ));
+    container.appendChild(fieldPairRow(
+      'Damage Multiplier', wizSelect(RACE_SETTINGS_DAMAGE_OPTIONS, state.raceSettings.damageMultiplier, function (v) { state.raceSettings.damageMultiplier = v; }),
+      'Time Scale', wizSelect(RACE_SETTINGS_TIME_SCALE_OPTIONS, state.raceSettings.timeScale, function (v) { state.raceSettings.timeScale = v; })
+    ));
     var fuelInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.fuelMultiplier, function (v) { state.raceSettings.fuelMultiplier = v; });
     var tireWearInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.tireWearMultiplier, function (v) { state.raceSettings.tireWearMultiplier = v; });
     container.appendChild(fieldPairRow('Fuel Consumption Multiplier', fuelInput, 'Tire Wear Multiplier', tireWearInput));
-    var tireCountInput = wizNumberInput(state.raceSettings.tireCount, function (v) { state.raceSettings.tireCount = v; }, { min: 4 }); requireField(tireCountInput, requiredEls);
+    autoTireCount(state);
+    var tireCountInput = wizNumberInput(state.raceSettings.tireCount, function (v) { state.raceSettings.tireCount = v; state.tireCountTouched = true; }, { min: 4 }); requireField(tireCountInput, requiredEls);
+    wizTireCountInputEl = tireCountInput;
     var trackLimitInput = wizNumberInput(state.raceSettings.trackLimitPoints, function (v) { state.raceSettings.trackLimitPoints = v; }, { min: 0 }); requireField(trackLimitInput, requiredEls);
     container.appendChild(fieldPairRow('Tire Count Allowed', tireCountInput, 'Track Limit Points Before DT', trackLimitInput));
     var practiceLenInput = wizNumberInput(state.raceSettings.practiceLengthMin, function (v) { state.raceSettings.practiceLengthMin = v; }, { min: 0 }); requireField(practiceLenInput, requiredEls);
@@ -5306,7 +5328,7 @@
       });
       card.appendChild(fieldPairRow(
         'Weather', weatherSelect,
-        'Race Length Tier', wizSelect(['Sprint', 'Medium', 'Long'], race.tier, function (v) { race.tier = v; })
+        'Race Length Tier', wizSelect(['Sprint', 'Medium', 'Long'], race.tier, function (v) { race.tier = v; autoTireCount(state); })
       ));
       var rainInput = wizNumberInput(race.chanceOfRain, function (v) { race.chanceOfRain = v; }, { min: 0, max: 100, step: 5 });
       requireField(rainInput, requiredEls);
@@ -5464,6 +5486,7 @@
     var settingsPanel = el('div', 'rc-panel'); settingsPanel.style.marginTop = '12px';
     settingsPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Settings'));
     settingsPanel.appendChild(previewLine('Setup / Pit Stops', state.raceSettings.setupRules + ' / ' + state.raceSettings.pitStopReq));
+    settingsPanel.appendChild(previewLine('Damage / Time Scale', state.raceSettings.damageMultiplier + ' / ' + state.raceSettings.timeScale));
     settingsPanel.appendChild(previewLine('Fuel / Tire Wear', state.raceSettings.fuelMultiplier + ' / ' + state.raceSettings.tireWearMultiplier));
     settingsPanel.appendChild(previewLine('Tire Count / Track Limit Points', state.raceSettings.tireCount + ' / ' + state.raceSettings.trackLimitPoints));
     settingsPanel.appendChild(previewLine('Practice / Qualifying Length', state.raceSettings.practiceLengthMin + ' min / ' + state.raceSettings.qualifyLengthMin + ' min'));
