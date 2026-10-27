@@ -3345,10 +3345,11 @@ function _rccStoryPreview(raw, limit) {
   _rccStoryBlocks(box, cut);
   return { el: box, truncated: truncated };
 }
-function _rccStoryMeta(s) {
+function _rccStoryMeta(s, noAuthor) {
   // Every story is written by Race Club Press (Matt, 2026-10-14). The kind (Season Preview, Race Story,
   // Season Finale) is in the pill before this text, so it is not repeated here (League News look, 2026-10-27).
-  var bits = ['By Race Club Press'];
+  // noAuthor: the story window on the page leaves the author out; the popup keeps it (League Hub, 2026-10-27).
+  var bits = noAuthor ? [] : ['By Race Club Press'];
   if (s.kind !== 'preview') bits.push('Round ' + (s.roundNum || '?') + (s.track ? ' · ' + s.track : ''));
   var d = _rccFormatDate(s.createdAt);
   if (d) bits.push(d);
@@ -3356,19 +3357,19 @@ function _rccStoryMeta(s) {
 }
 // The byline row: label pill (SEASON PREVIEW gold, RACE STORY / SEASON FINALE navy), then the text. It is
 // a direct child of .rcl-news-headrow, so league.css puts it on its own full-width row under the title.
-function _rccStoryMetaEl(s) {
+function _rccStoryMetaEl(s, noAuthor) {
   var pill = s.kind === 'preview' ? '<span class="rcl-news-tag rcl-news-tag-preview">Season Preview</span>'
     : '<span class="rcl-news-tag rcl-news-tag-story">' + (s.kind === 'finale' ? 'Season Finale' : 'Race Story') + '</span>';
-  return _rccEl('div', 'rcl-news-meta', pill + _rccEsc(_rccStoryMeta(s)));
+  return _rccEl('div', 'rcl-news-meta', pill + _rccEsc(_rccStoryMeta(s, noAuthor)));
 }
 // Title row: tile, title, then the byline row (same markup as the League Hub's _rclNewsHeadRow).
-function _rccStoryHeadRow(s) {
+function _rccStoryHeadRow(s, noAuthor) {
   var row = _rccEl('div', 'rcl-news-headrow rcc-story-headrow');
   var bw = _rccEl('div', 'rcl-news-badge-wrap');
   bw.appendChild(_rccStoryBadge(s));
   row.appendChild(bw);
   row.appendChild(_rccText('div', 'rcl-news-title', s.title));
-  row.appendChild(_rccStoryMetaEl(s));
+  row.appendChild(_rccStoryMetaEl(s, noAuthor));
   return row;
 }
 
@@ -3413,7 +3414,7 @@ function rccRenderStories(page) {
   var cur = published[0];
   var wrap = _rccEl('div', 'rcl-news-item rcl-news-current');
   // Story badge back beside the title (Matt, 2026-10-17); league.css centers it against the title only.
-  wrap.appendChild(_rccStoryHeadRow(cur));
+  wrap.appendChild(_rccStoryHeadRow(cur, true));   // story window on the page: no author in the byline
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
   wrap.appendChild(pv.el);
   var more = _rccText('a', 'rcl-news-continue', 'Continue Reading');
