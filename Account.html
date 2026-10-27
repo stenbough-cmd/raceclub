@@ -6026,7 +6026,7 @@
       'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
-    // Saves an exported data file straight into the website's GitHub repo through Apps Script (adminPublishDataFile, assets/data/ only).
+    // Saves an exported data file straight into the race-club-data GitHub repo through Apps Script (adminPublishDataFile, website/data/ only).
     // If GitHub can't be reached or isn't set up, the file is downloaded instead so nothing is lost. Resolves after showing a toast.
     function downloadDataFile_(filename, text) {
       var blob = new Blob([text], { type: 'application/json' });
@@ -6041,15 +6041,15 @@
       return fetchApi('adminPublishDataFile', { method: 'POST', token: token, body: { file: key, content: text }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
         if (res && res.success) { showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return; }
         downloadDataFile_(filename, text);
-        showToast(((res && res.message) || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at assets/data/' + filename + ' and push.', 'error');
+        showToast(((res && res.message) || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at website/data/' + filename + ' in the race-club-data repo and push.', 'error');
       }).catch(function () {
         downloadDataFile_(filename, text);
-        showToast('No answer from GitHub. The file was downloaded instead: save it at assets/data/' + filename + ' and push.', 'error');
+        showToast('No answer from GitHub. The file was downloaded instead: save it at website/data/' + filename + ' in the race-club-data repo and push.', 'error');
       });
     }
 
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
-    // Designer's presets), then download home-helmets.json. Saved at assets/data/ in the website, it is what the helmet
+    // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
     addItem('Choose Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true, accentHead: true });
@@ -6123,11 +6123,11 @@
       });
     }, [
       'Opens the whole helmet catalog (Website Default, Manufacturer, Awards and any other helmet in the Helmet Designer) so you can pick the four helmets shown in the "Earn The Helmet. Wear The Moment." section of the home page.',
-      'Click four helmets, then Save Home Page Helmets. The choice is saved straight to the website through GitHub and shows on the home page in about a minute. Nothing is changed in the Sheet, so you can change it as often as you like. Until a choice has been saved, the home page keeps showing its built-in four helmets.'
+      'Click four helmets, then Save Home Page Helmets. The choice is saved straight to GitHub and shows on the home page in about a minute. Nothing is changed in the Sheet, so you can change it as often as you like. Until a choice has been saved, the home page keeps showing its built-in four helmets.'
     ]);
 
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
-    // season of every class on the Cars tab and downloads it as car-list.json. Saved at assets/data/ in the website, it is what
+    // season of every class on the Cars tab and downloads it as car-list.json. Saved at website/data/ in the race-club-data repo, it is what
     // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.
     addItem('Export Current Car List', function () {
       var btn = this;
@@ -6139,7 +6139,7 @@
         if (res && res.success && res.published) { showToast('Car list saved (' + (res.summary || '') + '). Saved to GitHub; the website updates in about a minute.', 'success'); return; }
         if (res && res.carListJson) {   // GitHub could not be reached or is not set up: download the file instead
           downloadDataFile_('car-list.json', res.carListJson);
-          showToast((res.message || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at assets/data/car-list.json and push.', 'error');
+          showToast((res.message || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at website/data/car-list.json in the race-club-data repo and push.', 'error');
           return;
         }
         showToast((res && (res.message || res.error)) || 'Could not export the car list.', 'error');
@@ -6149,13 +6149,13 @@
       });
     }, [
       'Builds the current car list for the Meet The Grid section on the landing page and saves it straight to the website through GitHub. For every class (LMGTE, LMGT3, LMP3, LMP2 and Hypercar) it takes the newest season found on the Cars tab, and lists every active car in it with its numbers.',
-      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at assets/data/car-list.json and push.'
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/car-list.json in the race-club-data repo and push.'
     ], 'Downloads the newest car list for every class as the Meet The Grid file.');
 
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
     // active championship season (champGetPage with exportDemo=1, Admin only), with your name
     // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
-    // at assets/data/ in the website, it is what the public demo (championship.html?demo=1) shows.
+    // at website/data/ in the race-club-data repo, it is what the public demo (championship.html?demo=1) shows.
     // Gray: it writes nothing to the Sheet.
     addItem('Export Championship Demo', function () {
       var btn = this;
@@ -6172,7 +6172,7 @@
       });
     }, [
       'Builds a copy of your active Race Club Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
-      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at assets/data/championship-demo.json and push.'
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
     ], 'Downloads your active championship season as the public demo file.');
 
     // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js

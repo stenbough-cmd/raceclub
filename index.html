@@ -22,6 +22,11 @@
 
 <div id="rc-header"></div>
 <script>renderHeader();</script>
+<script>
+// Where Admin exports (car list, home helmets, Championship demo) are published: the race-club-data repo's GitHub Pages address + website/data/.
+// Must match GITHUB_ARCHIVE_BASE_URL in the Apps Script properties. Keep the trailing slash.
+var RC_DATA_BASE = 'https://stenbough.github.io/race-club-data/website/data/';
+</script>
 
 <!-- Hero banner, sticky right under the fixed header (see .rc-hero in css/style.css) -- it sits
      in normal document flow until scrolled, then pins to top: 72px while .rc-hero-content
@@ -225,10 +230,10 @@
       if (r) stages[i].innerHTML = rcHelmetHtml_('helmet:' + JSON.stringify(r), 190, 'rc-helmet-show');
     }
     rcHelmetHydrate_(document.getElementById('rc-helmet-showcase'));
-    // Admin > Choose Home Page Helmets exports assets/data/home-helmets.json (four helmets with name, tag, description and recipe).
+    // Admin > Choose Home Page Helmets exports website/data/home-helmets.json (race-club-data repo) (four helmets with name, tag, description and recipe).
     // When that file exists it replaces the built-in four above; if it is missing or not four helmets, the built-in ones stay.
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-    fetch('assets/data/home-helmets.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    fetch(RC_DATA_BASE + 'home-helmets.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       var list = d && Array.isArray(d.helmets) ? d.helmets.filter(function (h) { return h && h.recipe; }) : [];
       if (list.length !== 4) return;
       var host = document.getElementById('rc-helmet-showcase');
@@ -595,7 +600,7 @@
       labelResizeTimer_ = setTimeout(layoutClassLabels_, 120);
     });
 
-    // The car list is a file the website recalls: assets/data/car-list.json, made by Admin > EXPORT CURRENT CAR LIST (one row per
+    // The car list is a file the website recalls: website/data/car-list.json in the race-club-data repo, made by Admin > EXPORT CURRENT CAR LIST (one row per
     // class, newest season of each). Replace the file and push to update the grid. No file = the section stays hidden.
     function isPhoneWidth_() {
       return window.innerWidth <= 640;
@@ -701,7 +706,7 @@
     var started = false;
     function load_() {
       if (started) return; started = true;
-      fetch('assets/data/car-list.json', { cache: 'no-cache' })
+      fetch(RC_DATA_BASE + 'car-list.json', { cache: 'no-cache' })
         .then(function (r) { if (!r.ok) throw new Error('no car list'); return r.json(); })
         .then(function (data) { renderGrid_(data || {}); })
         .catch(function () { section.style.display = 'none'; });
