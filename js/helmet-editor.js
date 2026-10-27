@@ -263,10 +263,11 @@
         return !!cur.saved && (cur.saved.kind !== cur.kind || cur.saved.mfr !== (cur.kind === 'Manufacturer' ? cur.mfr : '') || cur.saved.name !== (cur.kind === 'Manufacturer' ? cur.mfr : String(cur.name || '').trim()));
       }
       dirtyFn = isDirty;
+      var savingNow = false;   // true while a save is running: the note beside the file name reads "saving..."
       function updateTab() {
         var t = cur.id ? ((cur.saved && cur.saved.name) || cur.name || 'Helmet') + ' (' + cur.id + ')' : 'Untitled';
         var dirty = isDirty();
-        tabNote.textContent = dirty ? 'unsaved changes' : '';
+        tabNote.textContent = savingNow ? 'saving...' : (dirty ? 'unsaved changes' : '');
         fnBox.style.width = Math.max(8, t.length + 1) + 'ch';
         tab.title = t + (dirty ? ' - unsaved changes' : '');
         fnBox.value = t;
@@ -885,6 +886,7 @@
       }
       // while a save is running the button reads Saving... and the X in the corner is switched off
       function setSaving(on) {
+        savingNow = on; updateTab();
         saveBtn.disabled = on; saveNewBtn.disabled = on; newBtn.disabled = on; loadBtn.disabled = on; saveBtn.querySelector('.rch-btnlabel').textContent = on ? 'Saving...' : 'Save';
         modal.closeBtn.disabled = on; modal.closeBtn.style.opacity = on ? '0.35' : ''; modal.closeBtn.style.pointerEvents = on ? 'none' : '';
       }
