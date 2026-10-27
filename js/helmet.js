@@ -432,6 +432,77 @@
     }
     return b;
   }
+  // Stretch (sideways only), around position pp (0..100 across the layer box). Amount > 0 pulls the picture wider around pp, amount < 0 pulls it
+  // IN around pp. Only the area near pp changes scale (a smooth bump about 60% of the box wide); everything outside it keeps its normal size and
+  // simply slides along, so when the middle is pulled in the two ends follow it inward instead of staying pinned to the full width.
+  // pad = the empty margin round the layer box on the canvas (src is box + pad each side).
+  var STRETCH_HALF = 0.3;   // half the width of the area that changes, as a share of the box width
+  function pinchCanvas(src, pad, pp, pa) {
+    var W = src.width, Hh = src.height, bw = W - pad * 2, out = document.createElement('canvas');
+    out.width = W; out.height = Hh;
+    var o = out.getContext('2d');
+    var p = Math.max(0, Math.min(1, pp / 100)), m = pa > 0 ? -2 * pa / 100 : 0.9 * Math.abs(pa) / 100;
+    var STEP = 0.25, N = Math.ceil(W / STEP) + 1, i, u, t;
+    // cumulative area of the bump from the left edge of the box, in box units
+    function bump(v) { t = (v - p) / STRETCH_HALF; return (t > -1 && t < 1) ? 0.5 * (1 + Math.cos(Math.PI * t)) : 0; }
+    var B = new Float64Array(N), prev = 0, bp = 0;
+    for (i = 0; i < N; i++) {
+      u = (i * STEP - pad) / bw;
+      if (u > 0 && u <= 1) B[i] = B[i - 1] + 0.5 * (bump(u) + bump(u - STEP / bw)) * (STEP / bw);
+      else B[i] = (u > 1 && i) ? B[i - 1] : 0;
+      if (u <= p) bp = B[i];
+    }
+    // destination position (canvas px) of every source sample
+    var D = new Float64Array(N);
+    for (i = 0; i < N; i++) { u = (i * STEP - pad) / bw; D[i] = pad + (u - m * (B[i] - bp)) * bw; }
+    var j = 0, X, s0, s1, sx, sw, lo, hi;
+    function srcAt(x) {   // source px whose destination is x (D rises steadily)
+      while (j < N - 2 && D[j + 1] < x) j++;
+      var d0 = D[j], d1 = D[j + 1];
+      return (j + (d1 > d0 ? (x - d0) / (d1 - d0) : 0)) * STEP;
+    }
+    for (X = 0; X < W; X++) {
+      if (X + 1 <= D[0] || X >= D[N - 1]) continue;   // nothing of the picture lands here
+      lo = Math.max(X, D[0]); hi = Math.min(X + 1, D[N - 1]);
+      j = Math.max(0, Math.min(j, N - 2)); if (D[j] > lo) j = 0;
+      s0 = srcAt(lo); s1 = srcAt(hi);
+      sx = Math.max(0, Math.min(s0, s1)); sw = Math.abs(s1 - s0);
+      if (sx + sw > W) sw = W - sx;
+      if (sw <= 0) continue;
+      if (sw <= 1) {
+        // stretched part: copy ONE whole source column, no blending with its neighbours, so the edges of the picture stay sharp
+        o.imageSmoothingEnabled = false;
+        o.drawImage(src, Math.min(W - 1, Math.floor(sx + sw / 2)), 0, 1, Hh, X, 0, 1, Hh);
+      } else {
+        // pulled-in part: several source columns are averaged into one
+        o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
+        o.drawImage(src, sx, 0, sw, Hh, X, 0, 1, Hh);
+      }
+    }
+    return out;
+  }
+  // Bow: bends the layer so its middle moves while its edges stay put. up = -100..100 (positive: the middle rises, like an arch),
+  // side = -100..100 (positive: the middle moves right). pad* is the empty margin round the layer box on the canvas.
+  var BOW_MAX = 0.4;   // at 100 the middle moves by this share of the box height (or width)
+  function bowCanvas(src, padX, padY, up, side) {
+    var W = src.width, Hh = src.height, bw = W - padX * 2, bh = Hh - padY * 2, x, y, u, v;
+    var a = document.createElement('canvas'); a.width = W; a.height = Hh;
+    var ag = a.getContext('2d');
+    if (up) {
+      for (x = 0; x < W; x++) {
+        u = Math.max(0, Math.min(1, (x - padX + 0.5) / bw));
+        ag.drawImage(src, x, 0, 1, Hh, x, -(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2)), 1, Hh);
+      }
+    } else ag.drawImage(src, 0, 0);
+    if (!side) return a;
+    var b = document.createElement('canvas'); b.width = W; b.height = Hh;
+    var bg = b.getContext('2d');
+    for (y = 0; y < Hh; y++) {
+      v = Math.max(0, Math.min(1, (y - padY + 0.5) / bh));
+      bg.drawImage(a, 0, y, W, 1, (side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2)), y, W, 1);
+    }
+    return b;
+  }
   // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) stretched sideways around position pp.
   // Only the x axis changes. amount > 0 stretches the picture near pp (the rest is squeezed in to make room), amount < 0 does the opposite.
   function pinchCanvas(src, pad, pp, pa) {
@@ -911,7 +982,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           var gOut = g, pinchCv = null, pinchPad = 0, bowPadY = 0, pinchOn = Math.abs(+l.pa) >= 1, bowU = Math.abs(+l.bu) >= 1 ? +l.bu : 0, bowL = Math.abs(+l.bl) >= 1 ? +l.bl : 0;
           if (pinchOn || bowU || bowL) {
             var basePad = Math.ceil(((+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0)) + 6;
-            pinchPad = basePad + Math.ceil(BOW_MAX * l.w * scale * Math.abs(bowL) / 100);   // room for the bow to move the middle sideways
+            pinchPad = basePad + Math.ceil(BOW_MAX * l.w * scale * Math.abs(bowL) / 100) + (pinchOn && +l.pa > 0 ? Math.ceil(0.6 * l.w * scale * (+l.pa) / 100) : 0);   // room for the bow, and for a stretch, to push the picture sideways
             bowPadY = basePad + Math.ceil(BOW_MAX * l.h * scale * Math.abs(bowU) / 100);
             pinchCv = document.createElement('canvas'); pinchCv.width = Math.ceil(l.w * scale) + pinchPad * 2; pinchCv.height = Math.ceil(l.h * scale) + bowPadY * 2;
             if (pinchCv.width % 2) pinchCv.width++; if (pinchCv.height % 2) pinchCv.height++;   // even size: the centre falls on a whole pixel, so nothing is drawn half a pixel off (blurry)
