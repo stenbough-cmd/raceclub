@@ -338,3 +338,25 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f; color: #f2f2f0; border: 1px solid #45474d; }
 .rc-profile-navbar .rcl-navbar-season option { background: #1b1c1f; color: #f2f2f0; }
 .rdp-form > .rdp-empty { flex: 1 1 100%; }
+
+/* Driver Profile card: dark, like the League Hub panels (the rest of the page keeps the light look). The League Hub's colors
+   are written out on the card so everything inside it (name, seat, car picture box) reads from the dark palette. */
+body.rc-league-page.rcc-page #rc-profile-card {
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+  background: #141416;
+  border-color: #2c2d31;
+  color: #f2f2f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+#rc-profile-card .rdp-team { background: linear-gradient(170deg, #202124, #17181a); border-color: #45474d; }
+#rc-profile-card .rdp-seat-label { color: #e0b64c; }
+
+/* Navbar: Home starts where the page's panels start, and the member dropdown ends where the last panel ends
+   (the page is 1280px wide with 16px side padding). */
+.rc-profile-navbar .rcl-navbar-inner { max-width: 1280px; padding: 0 16px; box-sizing: border-box; }
