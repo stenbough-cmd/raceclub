@@ -397,6 +397,39 @@
   SHAPES.push({ id: 'player', name: 'Player name and flag', player: true, draw: function () {} });
   SHAPES.push({ id: 'player_num', name: 'Player name, flag and number', player: true, draw: function () {} });
   function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num' || id === 'player_number'; }
+  // Pinch (sideways squeeze): pa = amount -100..100 (0 = none, negative bulges), pp = where along the width, 0..100 (50 = middle).
+  function pinchOf(from, to) {
+    var a = Math.round(+from.pa);
+    if (isFinite(a) && Math.abs(a) >= 1) {
+      to.pa = Math.max(-100, Math.min(100, a));
+      var p = (from.pp === undefined || from.pp === null || from.pp === '') ? 50 : Math.round(+from.pp);
+      to.pp = isFinite(p) ? Math.max(0, Math.min(100, p)) : 50;
+    }
+  }
+  // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) squeezed sideways around position pp.
+  // Only the x axis changes. amount > 0 compresses the picture near pp (the rest is spread out), amount < 0 does the opposite.
+  function pinchCanvas(src, pad, pp, pa) {
+    var W = src.width, Hh = src.height, bw = W - pad * 2, out = document.createElement('canvas');
+    out.width = W; out.height = Hh;
+    var o = out.getContext('2d'); o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
+    var p = Math.max(0, Math.min(1, pp / 100)), k = 1 + 3 * Math.abs(pa) / 100, sgn = pa > 0 ? 1 : -1;
+    // maps a destination position u (0..1 across the box) to the source position it shows
+    function map(u) {
+      var t, g;
+      if (u >= p) { t = (1 - p) > 0 ? (u - p) / (1 - p) : 0; g = sgn > 0 ? 1 - Math.pow(1 - t, k) : Math.pow(t, k); return p + (1 - p) * g; }
+      t = p > 0 ? (p - u) / p : 0; g = sgn > 0 ? 1 - Math.pow(1 - t, k) : Math.pow(t, k); return p - p * g;
+    }
+    if (pad > 0) { o.drawImage(src, 0, 0, pad, Hh, 0, 0, pad, Hh); o.drawImage(src, W - pad, 0, pad, Hh, W - pad, 0, pad, Hh); }
+    var x, s0, s1, sx, sw;
+    for (x = 0; x < bw; x++) {
+      s0 = map(x / bw) * bw; s1 = map((x + 1) / bw) * bw;
+      sx = Math.min(s0, s1); sw = Math.max(0.05, Math.abs(s1 - s0));
+      if (sx + sw > bw) sw = bw - sx;
+      if (sw <= 0) continue;
+      o.drawImage(src, pad + sx, 0, sw, Hh, pad + x, 0, 1, Hh);
+    }
+    return out;
+  }
   function flagUrlOf(country) { return (country && typeof countryFlagSrc === 'function') ? countryFlagSrc(country) : ''; }
   function drawPlayerBox(c, l, w, h, pl, flagImg, noShadow) {
     var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name' && l.s !== 'player_number';
@@ -488,6 +521,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         if (+l.sk) sl.sk = Math.max(-45, Math.min(45, Math.round(+l.sk * 2) / 2));
         if (+l.bw >= 1 && borderOk(l.s)) { sl.bw = Math.min(20, Math.round(+l.bw)); sl.bc = (typeof l.bc === 'string' && l.bc) ? l.bc : 'black'; }   // border size (px) and color
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
+        pinchOf(l, sl);
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : ((l.s === 'checker' || l.s === 'g_checker') ? 'white' : 'black');
         out.logos.push(sl);
         return;
@@ -499,6 +533,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (+l.sk) il.sk = Math.max(-45, Math.min(45, Math.round(+l.sk * 2) / 2));
       if (l.st) il.st = 1;   // width and height set apart: the picture is stretched to the box
       if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
+      pinchOf(l, il);
       out.logos.push(il);
     });
     var acN = Math.floor(+r.ac); if (acN > 0 && out.logos.length) out.ac = Math.min(acN, out.logos.length);   // ac = how many layers sit UNDER the accent paint (0 = all layers are on top of the accents)
@@ -829,6 +864,13 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           else if (plBorder) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           else if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
+          // Pinch: the layer is drawn flat onto its own canvas first, squeezed sideways, then placed on the helmet (so the shadow is drawn once)
+          var gOut = g, pinchCv = null, pinchPad = 0;
+          if (Math.abs(+l.pa) >= 1) {
+            pinchPad = Math.ceil(((+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0)) + 6;
+            pinchCv = document.createElement('canvas'); pinchCv.width = Math.ceil(l.w * scale) + pinchPad * 2; pinchCv.height = Math.ceil(l.h * scale) + pinchPad * 2;
+            g = pinchCv.getContext('2d'); g.translate(pinchCv.width / 2, pinchCv.height / 2);
+          }
           if (l.s) {
             var paintShape = function (gg) {
               if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null, gg !== g); }
@@ -855,6 +897,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             if (l.st) { dw = l.w * scale; dh = l.h * scale; }   // stretched on purpose (width and height set apart)
             g.drawImage(im, -dw / 2, -dh / 2, dw, dh);
           }
+          if (pinchCv) { g = gOut; var pw = pinchCanvas(pinchCv, pinchPad, +l.pp, +l.pa); g.drawImage(pw, -pw.width / 2, -pw.height / 2); }
           g.restore();
           if (tcv) { lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1; }
         });

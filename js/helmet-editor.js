@@ -88,7 +88,7 @@
   // picture's proportions while either one changes.
   var linkOn = true;     // remembered for the session
   function makeGrid(o) {
-    var K = o.keys, g = mk('div', 'rch-sliders'), g2 = mk('div', 'rch-sliders'), g3 = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;   // g = position sliders, g2 = tilt and skew
+    var K = o.keys, g = mk('div', 'rch-sliders'), g2 = mk('div', 'rch-sliders'), g3 = mk('div', 'rch-sliders'), g4 = mk('div', 'rch-sliders'), rows = {}, nat = null, fixedRatio = 0;   // g = position sliders, g2 = tilt and skew
     function obj() { return o.obj(); }
     function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
     function fmt(d) { return String(Math.round(d * 10) / 10); }
@@ -110,6 +110,7 @@
       function apply(d) {
         obj()[K[field]] = fromDisp(clamp(d, min, max));
         if (field === 'sk' && !obj()[K[field]]) delete obj()[K[field]];
+        if (field === 'pa' && !obj()[K[field]]) { delete obj()[K[field]]; if (K.pp) delete obj()[K.pp]; }   // no pinch: nothing is saved
         if (field === 'w' || field === 'h') {
           // unlinked: the picture is stretched to the box (width and height move on their own); linked: back to its own proportions
           if (o.stretchKey) { if (linkOn) delete obj()[o.stretchKey]; else obj()[o.stretchKey] = 1; }
@@ -133,6 +134,12 @@
       function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); }, g2);
     // Skew: slide left and the top leans left while the bottom leans right; slide right for the opposite
     if (K.sk) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g2);
+    // Pinch (squeezes the picture sideways only): Position = where along the width (0 = left edge, 100 = right edge), Amount = how strong
+    // (negative bulges instead of squeezing)
+    if (K.pa) {
+      addRow('pp', 'Position', 0, 100, 1, function (v) { return (v === undefined || v === null || v === '') ? 50 : (Number(v) || 0); }, function (d) { return d; }, g4);
+      addRow('pa', 'Amount', -100, 100, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g4);
+    }
     // link button, centered between the Max width and Max height labels
     var lk = mk('button', 'rch-link', LINK_ICON); lk.type = 'button';
     function lkState() { lk.className = 'rch-link' + (linkOn ? ' on' : ''); lk.setAttribute('aria-pressed', linkOn ? 'true' : 'false'); lk.title = linkOn ? 'Linked: width and height keep the picture\'s proportions. Click to unlink.' : 'Unlinked. Click to keep the picture\'s proportions.'; lk.setAttribute('aria-label', lk.title); }
@@ -152,7 +159,7 @@
     };
     hr.lab.appendChild(lk);
     return {
-      el: g, el2: g2, el3: g3,
+      el: g, el2: g2, el3: g3, el4: g4,
       sync: function () { for (var k in rows) rows[k].sync(); },
       loadAspect: function () {
         nat = null; fixedRatio = 0;
@@ -624,7 +631,7 @@
         detail.innerHTML = ''; curGrid = null;
         if (!sel || R.logos.indexOf(sel) < 0) return;
         if (!origSize.has(sel)) origSize.set(sel, { w: sel.w, h: sel.h, r: 0 });
-        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r', sk: 'sk' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
+        var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r', sk: 'sk', pp: 'pp', pa: 'pa' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
         detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer position'));
         detail.appendChild(grid.el);
@@ -634,11 +641,13 @@
         // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
         [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
         var resetT = mk('button', 'rc-btn-secondary rch-rotbtn', 'Reset'); resetT.type = 'button';
-        resetT.title = 'Put width, height, tilt, skew, rotation and mirroring back to normal (position stays)';
-        resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
+        resetT.title = 'Put width, height, tilt, skew, pinch, rotation and mirroring back to normal (position stays)';
+        resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.pp; delete sel.pa; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
         rotRow.appendChild(resetT);
         grid.el3.style.marginTop = '10px'; detail.appendChild(grid.el3);   // Max width and Max height sit between the buttons and the tilt slider
         grid.el2.style.marginTop = '4px'; detail.appendChild(grid.el2);
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Pinch'));
+        detail.appendChild(grid.el4);   // Position and Amount: squeezes the picture sideways only, as if it wraps round the helmet
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
@@ -705,20 +714,20 @@
             bn.onchange = function () { var d = parseFloat(bn.value); setB(isFinite(d) ? d : 0); bn.value = curB(); };
             bg2.appendChild(br); bg2.appendChild(bn); bwr.appendChild(bg2); detail.appendChild(bwr);
           }
-          // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
-          var tw = mk('div', 'rch-shapecolor');
-          tw.appendChild(mk('div', 'rch-label', 'Transparency'));
-          var tg = mk('div', 'rch-sliders rch-sliders-one');
-          var tr = mk('input'); tr.type = 'range'; tr.min = 0; tr.max = 90; tr.step = 1;
-          var tn = mk('input', 'rch-num'); tn.type = 'number'; tn.min = 0; tn.max = 90; tn.step = 1; tn.setAttribute('aria-label', 'Transparency percent');
-          function curT() { var ov = Number(sel.o); return (ov > 0 && ov < 100) ? Math.round(100 - ov) : 0; }
-          function setT(t) { t = Math.max(0, Math.min(90, Math.round(t))); if (t === 0) delete sel.o; else sel.o = 100 - t; tr.value = t; draw(true); }
-          tr.value = curT(); tn.value = curT();
-          tr.oninput = function () { tn.value = tr.value; setT(parseFloat(tr.value)); };
-          tn.oninput = function () { var d = parseFloat(tn.value); if (isFinite(d) && d >= 0 && d <= 90) setT(d); };
-          tn.onchange = function () { var d = parseFloat(tn.value); setT(isFinite(d) ? d : 0); tn.value = curT(); };
-          tg.appendChild(tr); tg.appendChild(tn); tw.appendChild(tg); detail.appendChild(tw);
         }
+        // Transparency slider (between the colors and any note): 0 = solid, up to 90 = nearly see-through. Stored as o = percent visible.
+        var tw = mk('div', 'rch-shapecolor');
+        tw.appendChild(mk('div', 'rch-label', 'Transparency'));
+        var tg = mk('div', 'rch-sliders rch-sliders-one');
+        var tr = mk('input'); tr.type = 'range'; tr.min = 0; tr.max = 90; tr.step = 1;
+        var tn = mk('input', 'rch-num'); tn.type = 'number'; tn.min = 0; tn.max = 90; tn.step = 1; tn.setAttribute('aria-label', 'Transparency percent');
+        function curT() { var ov = Number(sel.o); return (ov > 0 && ov < 100) ? Math.round(100 - ov) : 0; }
+        function setT(t) { t = Math.max(0, Math.min(90, Math.round(t))); if (t === 0) delete sel.o; else sel.o = 100 - t; tr.value = t; draw(true); }
+        tr.value = curT(); tn.value = curT();
+        tr.oninput = function () { tn.value = tr.value; setT(parseFloat(tr.value)); };
+        tn.oninput = function () { var d = parseFloat(tn.value); if (isFinite(d) && d >= 0 && d <= 90) setT(d); };
+        tn.onchange = function () { var d = parseFloat(tn.value); setT(isFinite(d) ? d : 0); tn.value = curT(); };
+        tg.appendChild(tr); tg.appendChild(tn); tw.appendChild(tg); detail.appendChild(tw);
         detail.appendChild(opts);
       }
 
