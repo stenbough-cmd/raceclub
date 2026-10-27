@@ -958,6 +958,8 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-retry { font-weight: 700; }
 .rcc-story-standfirst { margin: 8px 0 0; font-size: 15px; font-style: italic; color: var(--rc-steel); line-height: 1.5; }
 .rcc-story-dialog .rcl-news-body { font-size: 15px; line-height: 1.7; color: var(--rc-carbon); }
+/* Lead paragraph a little bigger than the rest, like the League News popup (2026-10-27). */
+.rcc-story-dialog .rcl-news-body > p:first-of-type { font-size: 16px; }
 .rcc-story-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
 .rcc-story-vote-q { font-size: 13px; font-weight: 700; color: var(--rc-steel); }
 .rcc-thumb { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #c9d1da; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
@@ -976,11 +978,8 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* More Stories: round badge before each headline (RD over 01, or PRE), about 1.5 lines tall. */
 .rcc-story-prev { display: flex; align-items: center; gap: 10px; text-align: left; }
-.rcc-story-badge { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 4px; background: var(--rcc-navy); color: var(--rc-white); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--rc-font-heading); line-height: 1; box-shadow: inset 0 -2px 0 var(--rcc-true-red, #F21B0C); }
-.rcc-story-badge-rd { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.85; }
-.rcc-story-badge-num { font-size: 12px; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
-.rcc-story-badge-pre .rcc-story-badge-num { font-size: 10px; letter-spacing: 0.06em; margin-top: 0; }
 .rcc-story-prev-title { min-width: 0; }
+.rcc-story-prev .rcl-news-badge { flex: 0 0 auto; }
 /* Race Report events (Matt, 2026-10-13): every event clause gray except position changes and the
    fastest lap, which keep their colors. Names stay dark and capitalized; the player's name is bold. */
 .rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, #5b6573); font-weight: 400; }
@@ -1014,10 +1013,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 }
 
 /* Season Stories popup: the round badge left of the title, League News size (46px). */
-.rcc-story-headrow .rcc-story-badge { width: 46px; height: 46px; box-shadow: inset 0 -3px 0 var(--rcc-true-red, #F21B0C); }
-.rcc-story-headrow .rcc-story-badge-rd { font-size: 11px; }
-.rcc-story-headrow .rcc-story-badge-num { font-size: 19px; margin-top: 3px; }
-.rcc-story-headrow .rcc-story-badge-pre .rcc-story-badge-num { font-size: 14px; margin-top: 0; }
 .rcc-story-headrow { margin-bottom: 12px; }
 
 /* TEAM ENDURANCE STANDINGS (Matt, 2026-10-13): bare on the page above each non-Hypercar board, like
