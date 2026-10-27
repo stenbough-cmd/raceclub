@@ -2751,3 +2751,6 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bo
 .rcl-news-headrow { padding-bottom: 12px; margin-bottom: 2px; border-bottom: 1px solid var(--rcl-line); }
 .rcl-news-body > p:first-of-type, .rcl-news-current-body > p:first-of-type { font-size: 15px; color: var(--rcl-ink); }
 .rcl-news-body > p:first-of-type::first-line, .rcl-news-current-body > p:first-of-type::first-line { font-weight: 600; }
+
+/* The byline row (label pill, author, round, date) sits on its own row under the title and tile and spans the whole news window. */
+.rcl-news-headrow .rcl-news-meta { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
