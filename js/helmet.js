@@ -581,6 +581,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         pinchOf(l, sl);
         if (+l.hd) sl.hd = 1;   // hd = layer hidden (kept in the helmet, not drawn)
+        if (+l.iv) sl.iv = 1;   // iv = colors inverted
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : ((l.s === 'checker' || l.s === 'g_checker') ? 'white' : 'black');
         out.logos.push(sl);
         return;
@@ -594,6 +595,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
       pinchOf(l, il);
       if (+l.hd) il.hd = 1;
+      if (+l.iv) il.iv = 1;
       out.logos.push(il);
     });
     var acN = Math.floor(+r.ac); if (acN > 0 && out.logos.length) out.ac = Math.min(acN, out.logos.length);   // ac = how many layers sit UNDER the accent paint (0 = all layers are on top of the accents)
@@ -919,15 +921,16 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           if (idx < lo || idx >= hi) return;
           if (+l.hd) return;   // hidden layer
           var im = logoImgs[idx]; if (!im) return;
-          var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null;
-          if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; }   // draw on a spare canvas, then lay it over at the chosen see-through amount
+          var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null, inv = +l.iv === 1;
+          if (op < 1 || inv) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; }   // draw on a spare canvas, then lay it over at the chosen see-through amount
           g.save();
           g.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           g.rotate(-l.r * Math.PI / 180);
           if (l.sk) g.transform(1, 0, -Math.tan(l.sk * Math.PI / 180), 1, 0, 0);   // skew: a negative sk leans the top left and the bottom right
           if (l.fx || l.fy) g.scale(l.fx ? -1 : 1, l.fy ? -1 : 1);   // mirrored left to right and / or top to bottom
           var isPl = !!(l.s && isPlayerId(l.s)), plBorder = isPl && +l.bw >= 1 && borderOk(l.s);   // Player boxes draw their own shadow inside drawPlayerBox (rectangle only when there is a background); around a bordered number it is drawn here
-          if (isPl && !plBorder) { /* drawPlayerBox draws its own shadow */ }
+          if (inv) { /* an inverted layer is drawn flat, flipped, and then laid down with its shadow (below) */ }
+          else if (isPl && !plBorder) { /* drawPlayerBox draws its own shadow */ }
           else if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           // Pinch: the layer is drawn flat onto its own canvas first, squeezed sideways, then placed on the helmet (so the shadow is drawn once)
@@ -942,7 +945,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           }
           if (l.s) {
             var paintShape = function (gg) {
-              if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null, gg !== g); }
+              if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null, gg !== g || inv); }
               else { gg.fillStyle = hexOf(l.c); shapeById(l.s).draw(gg, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black')); }
             };
             var bwPx = (+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0;
@@ -968,7 +971,17 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           }
           if (pinchCv) { g = gOut; var pw = pinchCv; if (pinchOn) pw = pinchCanvas(pw, pinchPad, +l.pp, +l.pa); if (bowU || bowL) pw = bowCanvas(pw, pinchPad, bowPadY, bowU, bowL); g.drawImage(pw, -pw.width / 2, -pw.height / 2); }
           g.restore();
-          if (tcv) { lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1; }
+          if (tcv) {
+            if (inv) {   // flip every color (the see-through parts stay see-through), then put the layer down with its shadow
+              var tg = tcv.getContext('2d'), tid = tg.getImageData(0, 0, tcv.width, tcv.height), td = tid.data, ti;
+              for (ti = 0; ti < td.length; ti += 4) { td[ti] = 255 - td[ti]; td[ti + 1] = 255 - td[ti + 1]; td[ti + 2] = 255 - td[ti + 2]; }
+              tg.putImageData(tid, 0, 0);
+              if (l.sh === 2) { lx.shadowColor = 'rgba(0,0,0,0.85)'; lx.shadowBlur = Math.max(3, 13 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(2, 5 * scale); }
+              else if (l.sh !== 0) { lx.shadowColor = 'rgba(0,0,0,0.45)'; lx.shadowBlur = Math.max(2, 7 * scale); lx.shadowOffsetX = 0; lx.shadowOffsetY = Math.max(1, 2 * scale); }
+            }
+            lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1;
+            lx.shadowColor = 'rgba(0,0,0,0)'; lx.shadowBlur = 0; lx.shadowOffsetX = 0; lx.shadowOffsetY = 0;
+          }
         });
         var dc = lc;
         if (SS > 1) { dc = document.createElement('canvas'); dc.width = outW; dc.height = outH; var dx = dc.getContext('2d', { willReadFrequently: true }); dx.imageSmoothingEnabled = true; dx.imageSmoothingQuality = 'high'; dx.drawImage(lc, 0, 0, outW, outH); }

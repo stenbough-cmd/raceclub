@@ -212,6 +212,7 @@
     var fetchApi = ctx.fetchApi, token = ctx.token, toast = ctx.showToast, toast_ = ctx.showToast;
     // the Player Name and Flag box shows the admin's own name and country in the preview (members get theirs when they pick the helmet)
     var me = (typeof getProfileCache === 'function') ? (getProfileCache() || {}) : {};
+    function hexTip(h) { h = String(h || ''); return /^#[0-9a-fA-F]{6}$/.test(h) ? h.toUpperCase() : ''; }   // hover text: the hex code of a color
     var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || 'United States', u: '12' };
     var body = mk('div', 'rch-designer');
     var inline = !!opts.host, dirtyFn = null;
@@ -424,13 +425,13 @@
         head.appendChild(fs); row.appendChild(head);
         var sw = mk('div', 'rch-swatches');
         H.PALETTE.forEach(function (p) {
-          var b = mk('button', 'rch-sw'); b.type = 'button'; b.style.background = p.hex; b.title = p.name; b.dataset.id = p.id;
+          var b = mk('button', 'rch-sw'); b.type = 'button'; b.style.background = p.hex; b.title = p.name + ' - ' + hexTip(p.hex); b.dataset.id = p.id;
           b.onclick = function () { R[s[0]][0] = p.id; draw(); };
           sw.appendChild(b);
         });
         var cpw = mk('label', 'rch-sw-custom'); cpw.title = 'Exact color (admin only)';
         var cp = mk('input'); cp.type = 'color';
-        cp.oninput = function () { R[s[0]][0] = cp.value; draw(true); };
+        cp.oninput = function () { R[s[0]][0] = cp.value; cpw.title = 'Custom color - ' + hexTip(cp.value); draw(true); };
         cpw.appendChild(cp); sw.appendChild(cpw);
         row.appendChild(sw); style.appendChild(row);
         slotRows[s[0]] = { fs: fs, sw: sw, cp: cp, cpw: cpw };
@@ -680,6 +681,10 @@
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
+        // Invert: flips every color of the layer to its opposite (iv: 1). Works on shapes and logos alike.
+        var ivl = mk('label', 'rch-check rch-plain'); var ivc = mk('input'); ivc.type = 'checkbox'; ivc.checked = !!+sel.iv;
+        ivc.onchange = function () { if (ivc.checked) sel.iv = 1; else delete sel.iv; draw(true); };
+        ivl.appendChild(ivc); ivl.appendChild(document.createTextNode(' Invert')); opts.appendChild(ivl);
         var nsl = mk('label', 'rch-check rch-plain'); var nsc = mk('input'); nsc.type = 'checkbox'; nsc.checked = sel.sh === 0;   // a layer with no shadow setting at all is drawn with a soft shadow, so it shows as Soft here
         var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = sel.sh !== 0 && sel.sh !== 2;
         var sgl = mk('label', 'rch-check rch-plain'); var sgc = mk('input'); sgc.type = 'checkbox'; sgc.checked = sel.sh === 2;
@@ -698,7 +703,7 @@
             var sw2 = mk('div', 'rch-swatches');
             var isHexC = String(sel[key]).charAt(0) === '#';
             H.PALETTE.forEach(function (p) {
-              var b = mk('button', 'rch-sw' + (!isHexC && sel[key] === p.id ? ' sel' : '')); b.type = 'button'; b.style.background = p.hex; b.title = p.name;
+              var b = mk('button', 'rch-sw' + (!isHexC && sel[key] === p.id ? ' sel' : '')); b.type = 'button'; b.style.background = p.hex; b.title = p.name + ' - ' + hexTip(p.hex);
               b.onclick = function () { sel[key] = p.id; draw(); };
               sw2.appendChild(b);
             });
@@ -708,10 +713,10 @@
               nb.onclick = function () { delete sel[key]; draw(); };
               sw2.appendChild(nb);
             } else {
-            var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = 'Exact color';
+            var cpw2 = mk('label', 'rch-sw-custom' + (isHexC ? ' sel' : '')); cpw2.title = isHexC ? 'Custom color - ' + hexTip(sel[key]) : 'Exact color';
             if (isHexC) cpw2.style.background = sel[key];
             var cp2 = mk('input'); cp2.type = 'color'; cp2.value = H.hexOf(sel[key]);
-            cp2.oninput = function () { sel[key] = cp2.value; draw(true); };
+            cp2.oninput = function () { sel[key] = cp2.value; cpw2.title = 'Custom color - ' + hexTip(cp2.value); draw(true); };
             cp2.onchange = function () { draw(); };
             cpw2.appendChild(cp2); sw2.appendChild(cpw2);
             }
@@ -789,6 +794,7 @@
           r.cp.value = H.hexOf(R[s[0]][0]);
           r.cpw.classList.toggle('sel', isHex);
           r.cpw.style.background = isHex ? H.hexOf(R[s[0]][0]) : '';
+          r.cpw.title = isHex ? 'Custom color - ' + hexTip(H.hexOf(R[s[0]][0])) : 'Exact color (admin only)';
         });
         [].forEach.call(vs.querySelectorAll('.rch-visor'), function (b) { b.classList.toggle('sel', b.dataset.id === R.v); });
         if (document.activeElement !== ta) ta.value = JSON.stringify(R);
