@@ -6026,6 +6026,28 @@
       'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
     ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
+    // Saves an exported data file straight into the website's GitHub repo through Apps Script (adminPublishDataFile, assets/data/ only).
+    // If GitHub can't be reached or isn't set up, the file is downloaded instead so nothing is lost. Resolves after showing a toast.
+    function downloadDataFile_(filename, text) {
+      var blob = new Blob([text], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+    }
+    function publishDataFile_(key, filename, text, okMsg) {
+      return fetchApi('adminPublishDataFile', { method: 'POST', token: token, body: { file: key, content: text }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
+        if (res && res.success) { showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return; }
+        downloadDataFile_(filename, text);
+        showToast(((res && res.message) || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at assets/data/' + filename + ' and push.', 'error');
+      }).catch(function () {
+        downloadDataFile_(filename, text);
+        showToast('No answer from GitHub. The file was downloaded instead: save it at assets/data/' + filename + ' and push.', 'error');
+      });
+    }
+
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
     // Designer's presets), then download home-helmets.json. Saved at assets/data/ in the website, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
@@ -6043,7 +6065,7 @@
         body.appendChild(counter);
         var grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:52vh;overflow:auto;padding:2px;');
         body.appendChild(grid);
-        var exportBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Export Home Page Helmets');
+        var exportBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Save Home Page Helmets');
         exportBtn.type = 'button';
         var cards = {};
         function refresh() {
@@ -6082,14 +6104,11 @@
             var pr = presets.filter(function (x) { return x.presetId === id; })[0];
             return { name: pr.name || '', kind: pr.kind || '', description: pr.description || '', recipe: pr.recipe };
           }) };
-          var blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
-          var a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'home-helmets.json';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
-          showToast('Downloaded home-helmets.json. Save it in the website folder at assets/data/home-helmets.json, then push.', 'success');
+          var label0 = exportBtn.textContent;
+          exportBtn.disabled = true; exportBtn.textContent = 'Saving...';
+          publishDataFile_('home-helmets', 'home-helmets.json', JSON.stringify(out, null, 1), 'Home page helmets updated.').then(function () {
+            exportBtn.textContent = label0; exportBtn.disabled = chosen.length !== 4;
+          });
         });
         foot.appendChild(exportBtn);
         var cancel = el('button', 'rc-btn-secondary rc-btn-sm', 'Close');
@@ -6104,7 +6123,7 @@
       });
     }, [
       'Opens the whole helmet catalog (Website Default, Manufacturer, Awards and any other helmet in the Helmet Designer) so you can pick the four helmets shown in the "Earn The Helmet. Wear The Moment." section of the home page.',
-      'Click four helmets, then Export Home Page Helmets. Save the downloaded file in the website folder at assets/data/home-helmets.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like. Until the file exists, the home page keeps showing its built-in four helmets.'
+      'Click four helmets, then Save Home Page Helmets. The choice is saved straight to the website through GitHub and shows on the home page in about a minute. Nothing is changed in the Sheet, so you can change it as often as you like. Until a choice has been saved, the home page keeps showing its built-in four helmets.'
     ]);
 
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
@@ -6115,24 +6134,22 @@
       var label = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Exporting...';
-      fetchApi('adminExportCarList', { token: token, timeoutMs: 120000 }).then(function (res) {
+      fetchApi('adminExportCarList', { token: token, params: { publish: '1' }, timeoutMs: 120000 }).then(function (res) {
         btn.disabled = false; btn.textContent = label;
-        if (!res || !res.success || !res.carListJson) { showToast((res && (res.message || res.error)) || 'Could not export the car list.', 'error'); return; }
-        var blob = new Blob([res.carListJson], { type: 'application/json' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'car-list.json';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
-        showToast('Car list downloaded (' + (res.summary || '') + '). Save it in the website folder at assets/data/car-list.json, then push.', 'success');
+        if (res && res.success && res.published) { showToast('Car list saved (' + (res.summary || '') + '). Saved to GitHub; the website updates in about a minute.', 'success'); return; }
+        if (res && res.carListJson) {   // GitHub could not be reached or is not set up: download the file instead
+          downloadDataFile_('car-list.json', res.carListJson);
+          showToast((res.message || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at assets/data/car-list.json and push.', 'error');
+          return;
+        }
+        showToast((res && (res.message || res.error)) || 'Could not export the car list.', 'error');
       }).catch(function () {
         btn.disabled = false; btn.textContent = label;
         showToast('No answer from the server. Try again.', 'error');
       });
     }, [
-      'Downloads the current car list for the Meet The Grid section on the landing page. For every class (LMGTE, LMGT3, LMP3, LMP2 and Hypercar) it takes the newest season found on the Cars tab, for example LMGTE 2023, LMP3 2024 and the rest 2026, and lists every active car in it with its team, manufacturer, numbers and team description.',
-      'Save the downloaded file in the website folder at assets/data/car-list.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like. Until a car list file is in place, the Meet The Grid section stays hidden.'
+      'Builds the current car list for the Meet The Grid section on the landing page and saves it straight to the website through GitHub. For every class (LMGTE, LMGT3, LMP3, LMP2 and Hypercar) it takes the newest season found on the Cars tab, and lists every active car in it with its numbers.',
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at assets/data/car-list.json and push.'
     ], 'Downloads the newest car list for every class as the Meet The Grid file.');
 
     // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
@@ -6146,23 +6163,16 @@
       btn.disabled = true;
       btn.textContent = 'Exporting...';
       fetchApi('champGetPage', { token: token, params: { exportDemo: '1' }, timeoutMs: 300000 }).then(function (res) {
-        btn.disabled = false; btn.textContent = label;
-        if (!res || !res.success || !res.demoJson) { showToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
-        var blob = new Blob([res.demoJson], { type: 'application/json' });
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'championship-demo.json';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
-        showToast('Demo file downloaded. Save it in the website folder at assets/data/championship-demo.json, then push.', 'success');
+        if (!res || !res.success || !res.demoJson) { btn.disabled = false; btn.textContent = label; showToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
+        btn.textContent = 'Saving...';
+        return publishDataFile_('championship-demo', 'championship-demo.json', res.demoJson, 'Championship demo updated.').then(function () { btn.disabled = false; btn.textContent = label; });
       }).catch(function () {
         btn.disabled = false; btn.textContent = label;
         showToast('No answer from the server. Try again.', 'error');
       });
     }, [
-      'Downloads a copy of your active Race Club Championship season for the public demo page, the one visitors open from the Welcome box on the Championship page. It includes the calendar, standings and every uploaded round\u2019s results, Driver Report and laps. Your name is replaced with Max Powers and your account details are removed.',
-      'Save the downloaded file in the website folder at assets/data/championship-demo.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like.'
+      'Builds a copy of your active Race Club Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
+      'The website updates in about a minute, and nothing is changed in the Sheet, so you can export as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at assets/data/championship-demo.json and push.'
     ], 'Downloads your active championship season as the public demo file.');
 
     // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js
