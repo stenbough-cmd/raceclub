@@ -2975,14 +2975,14 @@ function _rclNewsBadgeHtml(item, small) {
 }
 
 // Title + meta with the badge on the left.
-function _rclNewsHeadRow(item, noBadge) {
+function _rclNewsHeadRow(item, noBadge, noAuthor) {
   var row = _rclEl('div', 'rcl-news-headrow');
   if (!noBadge) row.appendChild(_rclEl('div', 'rcl-news-badge-wrap', _rclNewsBadgeHtml(item, false)));
   var col = _rclEl('div', 'rcl-news-headtext');
   col.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(item.title || '(untitled)')));
   var tagKind = (item && item.isStory) ? (Number(item.roundNum) > 0 ? 'story' : 'preview') : 'news';
   var tagText = tagKind === 'story' ? 'Race Story' : (tagKind === 'preview' ? 'Season Preview' : 'League News');
-  col.appendChild(_rclEl('div', 'rcl-news-meta', '<span class="rcl-news-tag rcl-news-tag-' + tagKind + '">' + tagText + '</span>' + _rclEscapeHtml(_rclNewsMetaLine(item))));
+  col.appendChild(_rclEl('div', 'rcl-news-meta', '<span class="rcl-news-tag rcl-news-tag-' + tagKind + '">' + tagText + '</span>' + _rclEscapeHtml(_rclNewsMetaLine(item, noAuthor))));
   row.appendChild(col);
   return row;
 }
@@ -3051,11 +3051,11 @@ function _rclAddStoryVoteBar(wrap, item) {
   });
 }
 
-function _rclNewsMetaLine(item) {
+function _rclNewsMetaLine(item, noAuthor) {   // noAuthor: the on-page preview leaves the author out; the full popup keeps it
   // AI stories: BY RACE CLUB PRESS · ROUND N · SHORT NAME · OCT 14, 2026 (the race date), all caps.
   // The season preview has no round or track: BY RACE CLUB PRESS · SEASON PREVIEW · date.
   if (item && item.isStory) {
-    var sp = ['By ' + (item.authorName || 'Race Club Press')];
+    var sp = noAuthor ? [] : ['By ' + (item.authorName || 'Race Club Press')];
     if (Number(item.roundNum) > 0) {
       sp.push('Round ' + item.roundNum);
       if (item.shortName) sp.push(item.shortName);
@@ -3065,7 +3065,7 @@ function _rclNewsMetaLine(item) {
     return sp.join(' \u00b7 ').toUpperCase();
   }
   var metaParts = [];
-  if (item.authorName) metaParts.push('By ' + item.authorName);
+  if (item.authorName && !noAuthor) metaParts.push('By ' + item.authorName);
   var dateLabel = _rclFormatDate(item.publishedAt);
   if (dateLabel) metaParts.push(dateLabel);
   return metaParts.join(' · ');
@@ -3126,7 +3126,7 @@ function _rclRenderNews(hub) {
     heroImg.loading = 'lazy';
     currentWrap.appendChild(heroImg);
   }
-  currentWrap.appendChild(_rclNewsHeadRow(current));
+  currentWrap.appendChild(_rclNewsHeadRow(current, false, true));   // preview on the page: no author in the byline
   // 1000-character cap, not the old fixed 14-line CSS clamp -- "Continue reading..." now only shows
   // up when the story is actually longer than that, via preview.truncated.
   // EXCEPT when Last Race has nothing to show -- same hasLastRace check _rclRenderLastRace_ makes
