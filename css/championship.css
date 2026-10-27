@@ -772,23 +772,17 @@ a.rcc-hero-meta-name { color: inherit; }
 .rcr-popup-round { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcc-navy); margin: -4px 0 6px; }
 .rcc-page .rcl-carousel-hero-btns { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 
-/* ===================== WELCOME + DEMO ===================== */
-.rcc-welcome-body { padding: 22px 24px 26px; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
-.rcc-welcome-body p { margin: 0 0 14px; }
-.rcc-welcome-lead { font-size: 17px; font-weight: 600; }
-.rcc-welcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 18px 0 20px; }
-.rcc-welcome-grid > div { padding: 14px 16px; border-radius: 10px; background: linear-gradient(180deg, #ffffff, #f3f5f7); border: 1px solid #e3e6ea; }
-.rcc-welcome-grid strong { display: block; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); margin-bottom: 4px; }
-.rcc-welcome-grid span { font-size: 13.5px; color: #4b5563; line-height: 1.5; }
-.rcc-welcome-cta { display: flex; justify-content: center; margin-top: 8px; }
-.rcc-welcome-demo { text-decoration: none; }
+/* ===================== DEMO (logged-out visitors) ===================== */
 /* Locked demo buttons keep their normal look and hover colour; clicking does nothing. */
 .rcc-demo .rcc-demo-locked { cursor: not-allowed; }
-.rcc-demo-pill { position: fixed; bottom: 16px; right: 16px; z-index: 900; background: #111; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); cursor: pointer; }
-.rcc-demo-pill:hover { background: #2b2b2b; }
-.rcc-demo-pill:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
-/* CLOSE DEMO PAGE sits in the bottom right corner, the same gap below as to the right (Matt). */
-@media (max-width: 640px) { .rcc-demo-pill { bottom: 10px; right: 10px; padding: 8px 14px; font-size: 11px; } }
+/* DEMO watermark (Matt, 2026-10-27): one fixed, faint, rotated word over the page. Above the content,
+   below the site header (1000) and every popup (500 and up); it never takes clicks, scrolling or selection. */
+.rcc-demo-watermark {
+  position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center;
+  pointer-events: none; user-select: none; -webkit-user-select: none; overflow: hidden;
+  font-family: var(--rc-font-heading); font-weight: 900; font-size: min(34vw, 420px); letter-spacing: 0.06em;
+  text-transform: uppercase; line-height: 1; color: var(--rc-steel); opacity: 0.16; transform: rotate(-25deg);
+}
 /* Welcome ticker: bold navy welcome line; perk labels bold navy, perk text normal black. */
 .rcc-page .rcc-ticker-lead { font-weight: 800; color: var(--rcc-navy); }
 .rcc-page .rcl-ticker-item-tag.rcc-ticker-tag-bold { font-weight: 800; }
@@ -1099,16 +1093,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcl-mfr-rest-name, .rcc-page .rcc-tt-name, .rcc-page .rcc-tt-num { font-weight: 400; }
 .rcc-page .rcc-tt-me .rcc-tt-name { color: var(--rc-red); }
 
-/* Welcome: See The Demo as a solid blue-gray button so it stands out (Matt, 2026-10-14). */
-.rcc-page .rcc-welcome-demo { background: #5f7d99; border-color: #5f7d99; color: var(--rc-white); }
-.rcc-page .rcc-welcome-demo:hover, .rcc-page .rcc-welcome-demo:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
 
 /* Current Seat popup (Matt, 2026-10-14). */
 .rcc-current-seat .rcc-seat-line { margin: 0; }
 .rcc-current-seat-desc { margin: 16px 0 0; font-size: 14.5px; line-height: 1.6; color: #374151; }
-/* Welcome perks: 3 across on PC (Matt, 2026-10-14); one column on phones. */
-.rcc-page .rcc-welcome-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 640px) { .rcc-page .rcc-welcome-grid { grid-template-columns: minmax(0, 1fr); } }
 /* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
 @media (max-width: 640px) {
   .rcc-actionbar-inner { padding: 0 12px; }
@@ -1120,10 +1108,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* OFFLINE SEASON MANAGER: no drop shadow (Matt, 2026-10-14). */
 .rcc-page .rcl-hero-season.rcc-hero-offline, .rcc-page .rcl-hero-season.rcc-hero-offline * { text-shadow: none; }
-/* Welcome: Request Access as a blue-gray bordered button next to the solid See The Demo (Matt). */
-.rcc-page .rcc-welcome-cta { flex-wrap: wrap; gap: 10px; }
-.rcc-page .rcc-welcome-request { background: transparent; border: 1.5px solid #5f7d99; color: #4b6680; text-decoration: none; }
-.rcc-page .rcc-welcome-request:hover, .rcc-page .rcc-welcome-request:focus-visible { background: color-mix(in srgb, #5f7d99 10%, transparent); color: #3e566d; border-color: #4b6680; }
 
 /* Race Recap on phones (Matt, 2026-10-14): every column stays and each class table pans sideways
    (league.css gives the rows their desktop width). The award key under the table stays screen-wide. */
@@ -1227,14 +1211,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }
 }
 
-/* No Access popup (Matt, 2026-10-25): both buttons in the Championship blue-gray, centered, with the
-   "Return to previous page" link under them. */
-.rcc-noaccess-overlay .rcl-modal-title { padding-right: 0; }
-.rcc-noaccess-btns { justify-content: center; margin-top: 18px; }
-.rcc-page .rcc-noaccess-btn { background: #5f7d99; border-color: #5f7d99; color: var(--rc-white); text-decoration: none; }
-.rcc-page .rcc-noaccess-btn:hover, .rcc-page .rcc-noaccess-btn:focus-visible { background: #4b6680; border-color: #4b6680; color: var(--rc-white); }
-.rcc-noaccess-back { display: block; margin-top: 16px; text-align: center; font-size: 14px; color: var(--rcc-true-red, #F21B0C); text-decoration: underline; }
-.rcc-noaccess-back:hover, .rcc-noaccess-back:focus-visible { color: #c81509; }
 
 /* ====================================================================
    BLUE-GRAY ACCENTS (Matt, 2026-10-25). On the Championship page the site's red accent becomes the
@@ -1293,7 +1269,3 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-mfr-me { color: #5f7d99; font-weight: 700; }
 /* Help popup keeps its red circles, accents and links (Matt). */
 .rcc-page .rcc-help-body { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
-
-/* The Access Needed popup sits UNDER the site header (z-index 1000), so the account menu (Edit Profile, Feedback, Logout...)
-   stays clickable while it is open; popups opened from that menu still stack above it (Matt, 2026-10-26). */
-.rcc-noaccess-overlay.rcl-modal-overlay-over-nav { z-index: 999; }
