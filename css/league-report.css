@@ -189,3 +189,55 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
   .rcr-report-who .rc-cs-team-name-flex { row-gap: 0; line-height: 1.2; }
   .rcr-report-who .rc-cs-car-line { margin-top: 2px; }
 }
+
+/* ---- League Hub Driver Reports page: dark, in the League Hub's own colors (Matt, 2026-10-27) ----
+   The Championship and driver profile reports stay white; only the card the League Hub draws (.rcl-dr-light) is dark.
+   Everything below is scoped to .rcl-dr-light and uses the League Hub color variables from css/league.css. */
+.rcl-dr-light { background: var(--rcl-bg-raised); color: var(--rcl-ink); border: 1px solid var(--rcl-line); --rc-carbon: var(--rcl-ink); --rc-steel: var(--rcl-ink-dim); --rc-silver: var(--rcl-line); --rc-offwhite: var(--rcl-line); --rc-white: var(--rcl-bg-raised); --rcc-navy: #8fb8dc; }
+.rcl-dr-light .rcl-dr-pick select { background-color: var(--rcl-bg); color: var(--rcl-ink); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-seg { background: var(--rcl-bg); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+.rcl-dr-light .rcr-seg-btn { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-seg-btn.rcr-seg-on { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); box-shadow: 0 0 0 1px var(--rcl-line-bright); }
+.rcl-dr-light .rcr-note, .rcl-dr-light .rcr-tile-sub, .rcl-dr-light .rcr-block-sub, .rcl-dr-light .rcr-corner-sub { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-tile { background: var(--rcl-bg-raised-2); border-color: var(--rcl-line); }
+.rcl-dr-light .rcr-tile-label, .rcl-dr-light .rcr-mini-title, .rcl-dr-light .rcr-corner-name, .rcl-dr-light .rcr-div-key, .rcl-dr-light .rcr-contact-axis, .rcl-dr-light .rcr-strat-ticks span { color: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-tile-hero { background: var(--rcl-bg); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-tile-hero .rcr-tile-label, .rcl-dr-light .rcr-tile-hero .rcr-tile-sub { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-tile-hero .rcr-tile-value { color: var(--rcl-ink); }
+.rcl-dr-light .rcr-tile-hero.rcr-up .rcr-tile-sub { color: var(--rcl-report-gain); }
+.rcl-dr-light .rcr-tile-hero.rcr-down .rcr-tile-sub { color: #ff8f85; }
+.rcl-dr-light .rcr-block { border-top-color: var(--rcl-line); }
+.rcl-dr-light .rcr-grid { stroke: var(--rcl-line); }
+.rcl-dr-light .rcr-axis { fill: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-cross { stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-tip { background: var(--rcl-bg); color: var(--rcl-ink); border: 1px solid var(--rcl-line-bright); }
+.rcl-dr-light .rcr-tip b { color: var(--rcl-ink); }
+.rcl-dr-light .rcr-legend, .rcl-dr-light .rcr-bar-name, .rcl-dr-light .rcr-bar-val, .rcl-dr-light .rcr-strat-name, .rcl-dr-light .rcr-strat-sum, .rcl-dr-light .rcr-contact-item { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-bar-track, .rcl-dr-light .rcr-div-track, .rcl-dr-light .rcr-contact-meter { background: var(--rcl-bg); }
+.rcl-dr-light .rcr-div-mid { background: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-div-good { background: #4b8fd0; }
+.rcl-dr-light .rcr-div-bad { background: #d09a2f; }
+.rcl-dr-light .rcr-div-key-good { color: #6fb0ec; }
+.rcl-dr-light .rcr-div-key-bad { color: #e0a84a; }
+.rcl-dr-light .rcr-car-body { fill: var(--rcl-bg-raised-2); stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-line { stroke: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-car-glass { fill: var(--rcl-bg); }
+.rcl-dr-light .rcr-car-roof { fill: var(--rcl-line); stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-mirror { fill: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-wing { fill: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-car-splitter { fill: var(--rcl-line-bright); stroke: var(--rcl-bg); }
+.rcl-dr-light .rcr-car-tyre { stroke: var(--rcl-bg); }
+.rcl-dr-light .rcr-good { color: var(--rcl-report-gain); }
+.rcl-dr-light .rcr-bad { color: #ff8f85; }
+.rcl-dr-light .rcr-strat-bar { background: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-strat-pit { background: var(--rcl-line-bright); color: var(--rcl-ink); }
+.rcl-dr-light .rcr-strat-tyres { background: var(--rcl-bg); }
+.rcl-dr-light .rcr-strat-tonly { background: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-contact-line { border-bottom-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-contact, .rcl-dr-light .rcr-limit { box-shadow: 0 0 0 2px var(--rcl-bg-raised); }
+.rcl-dr-light .rcr-contact-wall { background: rgba(180, 183, 189, 0.75); }
+.rcl-dr-light .rcr-set { background: var(--rcl-bg); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-dt-dot { stroke: var(--rcl-bg-raised); }
+.rcl-dr-light .rcr-comp-h { background: #f2f2f0; }
+.rcl-dr-light .rcc-laps-row { border-bottom-color: var(--rcl-line); }
+.rcl-dr-light .rcr-sets-row { border-bottom-color: var(--rcl-line); }

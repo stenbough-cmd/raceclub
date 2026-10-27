@@ -81,6 +81,7 @@
     if (r.p && assets.byId) cur = assets.byId[r.p];
     else if (r.t && r.m && assets.byMaker) cur = assets.byMaker[r.m];
     else if (r.w && assets.def) cur = assets.def;
+    if (!cur && r.sg) return null;   // sg = staged demo driver: no saved team helmet for this manufacturer, so use the website default helmet
     if (!cur) return r;
     var o = {}, k;
     for (k in cur) if (Object.prototype.hasOwnProperty.call(cur, k)) o[k] = cur[k];
