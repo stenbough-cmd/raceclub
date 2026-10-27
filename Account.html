@@ -623,7 +623,7 @@
     return Promise.all([
       dashboardData.activeSeasonPromise, dashboardData.currentSeatPromise,
       dashboardData.nextRacePromise, dashboardData.myProtestsPromise
-    ], 'Pick the four helmets shown on the home page and update them.');
+    ]);
   }
 
   function renderDashboardSection(profile, token, dashboardData) {
@@ -6004,17 +6004,17 @@
     addItem('Members', function () { openMembersModal(token); }, [
       'Opens the full list of every account on the site, including prospects who have registered but not yet joined a season. From here you can add a driver yourself, open any member to change their role, disable or re-enable their account, and send them a password reset.',
       'Use this when someone needs their access changed (for example promoting a driver to Steward or Organizer), when a driver is locked out of their account, or when you want to look someone up.'
-    ], 'Pick the four helmets shown on the home page and update them.');
+    ]);
 
     addItem('Tracks', function () { openTracksModal(token); }, [
       'Opens the list of every track and layout the league can race on. You can add a new track with its first layout, add more layouts to an existing track, edit a track\'s name, nickname, region and country, and deactivate or reactivate a track or a single layout.',
       'Deactivating hides a track or layout from the choices used when building a season, but it is never deleted, so past rounds and results that used it keep working. The nickname is the short name shown in tight spaces such as the calendar.'
-    ], 'Pick the four helmets shown on the home page and update them.');
+    ]);
 
     addItem('Cars', function () { openCarsModal(token); }, [
       'Opens the list of every car and team seat drivers can register for. Each entry holds a class, manufacturer, car model, car number, team name and the short team description drivers see on the Choose Your Team screen. You can add a car, edit any of those fields, and deactivate or reactivate it.',
       'Deactivating takes a car out of future registrations without deleting it, so drivers already registered to it and past results are unaffected. Keep the details here accurate, since race imports and the registration mismatch check compare against them.'
-    ], 'Pick the four helmets shown on the home page and update them.');
+    ]);
 
     // INTEGRITY CHECK -- see openIntegrityCheckModal. Gray like every other opener
     // (race-club-ui-consistency's "gray unless it saves" rule) -- this button only opens a modal;
