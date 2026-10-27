@@ -195,7 +195,15 @@
   function renderForm(data) {
     var panel = $('rdp-form');
     var list = (data.form || []).slice(-20);
-    if (!list.length) { panel.hidden = true; return; }
+    if (!list.length) {   // the Form Guide always shows, with a message when there is nothing to chart yet
+      formList = [];
+      var ew = $('rdp-form-squares'); ew.innerHTML = ''; ew.classList.remove('rdp-form-spread');
+      ew.appendChild(emptyBlock('No Races Yet', 'Finishing positions will show here once this driver has raced.'));
+      var en = $('rdp-form-note'); if (en) en.hidden = true;
+      panel.hidden = false;
+      return;
+    }
+    var fn = $('rdp-form-note'); if (fn) fn.hidden = false;
     formList = list;
     var wrap = $('rdp-form-squares');
     wrap.innerHTML = '';

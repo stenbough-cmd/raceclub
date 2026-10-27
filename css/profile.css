@@ -337,3 +337,4 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 /* This page uses the light palette, so the member dropdown gets the League Hub's dark colors written out. */
 .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f; color: #f2f2f0; border: 1px solid #45474d; }
 .rc-profile-navbar .rcl-navbar-season option { background: #1b1c1f; color: #f2f2f0; }
+.rdp-form > .rdp-empty { flex: 1 1 100%; }
