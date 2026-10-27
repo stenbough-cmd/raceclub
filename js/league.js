@@ -3059,9 +3059,7 @@ function _rclNewsMetaLine(item) {
     if (Number(item.roundNum) > 0) {
       sp.push('Round ' + item.roundNum);
       if (item.shortName) sp.push(item.shortName);
-    } else {
-      sp.push('Season Preview');
-    }
+    }   // the season preview has no round: its "Season Preview" label is the pill beside the byline
     var sDate = _rclFormatDate(item.publishedAt);
     if (sDate) sp.push(sDate);
     return sp.join(' \u00b7 ').toUpperCase();
