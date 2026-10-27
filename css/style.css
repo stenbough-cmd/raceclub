@@ -3331,3 +3331,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 #rc-home-navbar-account.rc-home-navbar-link:hover { color: var(--rc-red); }
 .rc-home-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
 @media (max-width: 640px) { .rc-home-navbar-inner { padding: 0 16px; } .rc-home-navbar-link { padding: 10px 8px; } }
+
+/* Header badges for League Hub and Championship are hidden for now (Matt, 2026-10-27), only the Race Club logo shows.
+   Not deleted: remove this rule to bring them back. */
+.rc-header-leaguehub-badge { display: none !important; }
+/* The navbar link for the page you are on is red (index.html, league.html). */
+.rc-home-navbar-link.rc-navbar-active { color: var(--rc-red); }

@@ -2719,3 +2719,5 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-news-badge-pre::before { display: none; }
 .rcl-news-badge-icon { width: 26px; height: 26px; }
 .rcl-news-badge-sm .rcl-news-badge-icon { width: 19px; height: 19px; }
+
+a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-red); }
