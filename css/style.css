@@ -1736,9 +1736,12 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    fixed distance from it" -- same 360px-to-1600px range as everything else on this component. */
 .rc-hero-badge {
   position: absolute;
-  /* The R now lives inside the navbar (index.html) and always sits 30px above the navbar's top edge, wherever the
-     navbar is on screen, so a wide window can never push it out of sight (Matt, 2026-10-27). */
-  bottom: calc(100% + 30px);
+  /* The R lives in the hero again and stays put while the page scrolls, so the navbar passes over it as soon as scrolling starts.
+     Its distance from the hero's bottom edge is at least 30px, and grows on a wide or short window (hero height = half the width)
+     so that, at page load, the R is never closer than 30px to the navbar even when the navbar rests on the bottom of the screen
+     instead of the bottom of the hero. 160px = 70px header + 50px navbar + 30px gap + a little slack for the scrollbar. */
+  bottom: max(30px, calc(50vw - 100vh + 160px));
+  bottom: max(30px, calc(50vw - 100svh + 160px));
   pointer-events: none;
   right: clamp(49px, 46.68px + 0.65vw, 57px);
   height: clamp(38px, 33.94px + 1.13vw, 52px);
@@ -1751,8 +1754,6 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (max-width: 640px) {
   .rc-hero-badge {
     height: 22px;
-    /* Pulled in further -- 10px -> 6px on top of the first pass. */
-    bottom: calc(100% + 30px);
     right: 12px;
   }
 }
