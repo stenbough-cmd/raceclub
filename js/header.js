@@ -249,9 +249,7 @@ function _rcHeaderInitials(name) {
 function rcRolePlusHtml(p) {
   if (!p) return '';
   var role = p.role || p.Role;
-  var on = p.champAccess !== undefined ? !!p.champAccess : (p.ChampAccess === true || String(p.ChampAccess).toLowerCase() === 'true');
-  if (role === 'Admin' || !on) return '';
-  return '<b style="font-weight:900;font-size:1.15em;line-height:1;margin-left:1px;">+</b>';
+  return '';   // Championship is open to every member now (Matt, 2026-10-27): no + marker any more
 }
 
 // Same Admin/Organizer/Steward/Driver/Prospect -> .rc-badge-role-* mapping as Account.html's own
@@ -515,7 +513,7 @@ function renderHeader(opts) {
       fetchApi('getProfile', { token: token }).then(function (data) {
         if (!data || !data.success || !data.profile) return;
         var f = data.profile;
-        if (String(f.role) !== String(cached.role) || !!f.champAccess !== !!cached.champAccess ||
+        if (String(f.role) !== String(cached.role) ||
             String(f.displayName || '') !== String(cached.displayName || '') ||
             String(f.avatarFilename || '') !== String(cached.avatarFilename || '')) {
           setProfileCache(f);
@@ -795,7 +793,7 @@ function rcWireFooterLegalLink() {
 }
 
 // Feedback categories -- must match FEEDBACK_CATEGORIES_ in Website.gs exactly.
-var _RC_FEEDBACK_CATEGORIES_ = ['Bug Report', 'Feature Request', 'Rulebook / Rules Question', 'Account or Login Issue', 'Request League Role', 'Request Championship Mode', 'General Feedback', 'Other'];
+var _RC_FEEDBACK_CATEGORIES_ = ['Bug Report', 'Feature Request', 'Rulebook / Rules Question', 'Account or Login Issue', 'General Feedback', 'Other'];
 var _RC_FEEDBACK_MESSAGE_MAX_ = 500;
 
 // Feedback popup -- unlike Edit Profile (_rcOpenEditProfileFromHeader above, which navigates to

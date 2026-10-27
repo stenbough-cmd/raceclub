@@ -7836,12 +7836,6 @@
           var row = el('div', 'rc-group-row');
           var info = el('div', 'rc-dm-row-info');
           info.appendChild(el('span', 'rc-dm-row-label', escapeHtml(person.DisplayName || person.Username || '(no name)')));
-          // Championship Access: a plain bold (+) right after the name, no extra pill.
-          if (typeof rcRolePlusHtml === 'function' && rcRolePlusHtml(person)) {
-            var plusMark = el('span', 'font-weight:900;margin-left:5px;color:var(--rc-carbon);', '(+)');
-            plusMark.title = 'Championship Access';
-            info.appendChild(plusMark);
-          }
           if (person.Status && person.Status !== 'Active') {
             info.appendChild(el('span', 'rc-dm-status-pill rc-dm-status-pill-inactive', escapeHtml(String(person.Status).toUpperCase())));
           }
@@ -8048,24 +8042,6 @@
     });
     form.appendChild(role);
 
-    // Championship Access (CHAMP chat, 2026-10-08) -- saved to Users.ChampAccess; shows as a bold +
-    // after the role (DRIVER+, STEWARD+, ORGANIZER+). Admins always have it, so the box is locked on.
-    var champLabel = document.createElement('label');
-    champLabel.style.marginTop = '14px';
-    var champBox = document.createElement('input');
-    champBox.type = 'checkbox';
-    champBox.checked = driver.ChampAccess === true || String(driver.ChampAccess).toLowerCase() === 'true';
-    champLabel.appendChild(champBox);
-    champLabel.appendChild(document.createTextNode(' Championship Access (+)'));
-    form.appendChild(champLabel);
-    form.appendChild(el('div', 'rc-hint', 'Lets this person run their own offline championship seasons. Shown as a + after their role. Admins always have it.'));
-    function syncChampBox() {
-      var isAdmin = role.value === 'Admin';
-      champBox.disabled = isAdmin;
-      if (isAdmin) champBox.checked = true;
-    }
-    role.addEventListener('change', syncChampBox);
-    syncChampBox();
 
     var saveBtn = el('button', null, 'Save Changes');
     saveBtn.type = 'submit';
@@ -8120,8 +8096,7 @@
             email: email.value.trim(),
             location: location.value,
             timeZone: timeZone.value,
-            role: role.value,
-            champAccess: role.value === 'Admin' ? true : champBox.checked
+            role: role.value
           }
         });
       })

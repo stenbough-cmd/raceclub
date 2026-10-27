@@ -70,11 +70,6 @@
           <select id="rc-reg-timezone" required></select>
           <div class="rc-hint">Used to show the race schedule in your local time.</div>
 
-          <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
-            <input id="rc-reg-champ" type="checkbox">
-            Request access to offline Championship Mode
-          </label>
-          <div class="rc-hint">Race Club Championship is a single-player mode in Le Mans Ultimate. Build your own WEC or ELMS season, race AI opponents at your own pace, and follow your results with a season story written as you race.</div>
 
           <label style="margin-top:14px;display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;">
             <input id="rc-reg-story" type="checkbox" checked>
@@ -235,10 +230,6 @@
   // USER AGREEMENT -- shown after the form checks out and before the account is created.
   // I AGREE continues with registration; CANCEL closes it and leaves the form as it was.
   // ---------------------------------------------------------------------
-  // Arriving from the home page's single player link (register.html?championship=1) ticks the Championship Mode box. Otherwise it stays off.
-  try {
-    if (new URLSearchParams(window.location.search).get('championship') === '1') document.getElementById('rc-reg-champ').checked = true;
-  } catch (e) {}
 
   function openAgreement(onAgree) {
     var backdrop = document.createElement('div');
@@ -349,7 +340,6 @@
         email: email, location: location, timeZone: timeZone,
         password: password,
         storyOptOut: document.getElementById('rc-reg-story').checked ? '0' : '1',
-        championshipRequest: document.getElementById('rc-reg-champ').checked ? '1' : '0',
         emailNotificationsOptIn: document.getElementById('rc-reg-notify').checked ? '1' : '0'
       }
     })
