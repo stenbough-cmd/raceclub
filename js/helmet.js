@@ -555,6 +555,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         if (+l.bw >= 1 && borderOk(l.s)) { sl.bw = Math.min(20, Math.round(+l.bw)); sl.bc = (typeof l.bc === 'string' && l.bc) ? l.bc : 'black'; }   // border size (px) and color
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
         pinchOf(l, sl);
+        if (+l.hd) sl.hd = 1;   // hd = layer hidden (kept in the helmet, not drawn)
         if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : ((l.s === 'checker' || l.s === 'g_checker') ? 'white' : 'black');
         out.logos.push(sl);
         return;
@@ -567,6 +568,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       if (l.st) il.st = 1;   // width and height set apart: the picture is stretched to the box
       if (+l.o >= 5 && +l.o < 100) il.o = Math.round(+l.o);
       pinchOf(l, il);
+      if (+l.hd) il.hd = 1;
       out.logos.push(il);
     });
     var acN = Math.floor(+r.ac); if (acN > 0 && out.logos.length) out.ac = Math.min(acN, out.logos.length);   // ac = how many layers sit UNDER the accent paint (0 = all layers are on top of the accents)
@@ -884,6 +886,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         var lx = lc.getContext('2d', { willReadFrequently: true });
         recipe.logos.forEach(function (l, idx) {
           if (idx < lo || idx >= hi) return;
+          if (+l.hd) return;   // hidden layer
           var im = logoImgs[idx]; if (!im) return;
           var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null;
           if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); }   // draw on a spare canvas, then lay it over at the chosen see-through amount

@@ -295,3 +295,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-filterrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; }
 .rch-filterlabel { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); }
 .rch-filterrow + .rch-addrow { margin-top: 6px; }
+
+/* a hidden layer (eye button in the layer list): its name is dimmed, the eye is crossed out */
+.rch-layer-off .rch-layer-name { opacity: 0.45; }
+.rch-layer-off .rch-icon:nth-last-child(2) { color: var(--rc-red); }

@@ -202,6 +202,8 @@
   var MIRROR_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7 3 17h6z"/><path d="M15 7l6 10h-6z"/></svg>';
 
   var TRASH_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';   // garbage can: the Remove layer button
+  var EYE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';   // layer shown
+  var EYE_OFF_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';   // layer hidden
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 
   function openDesigner(ctx, opts) {
@@ -604,7 +606,7 @@
             return;
           }
           var idx = it.idx, l = R.logos[idx];
-          var row = mk('div', 'rch-layer' + (l === sel ? ' sel' : '')); row.dataset.pos = pos;
+          var row = mk('div', 'rch-layer' + (l === sel ? ' sel' : '') + (l.hd ? ' rch-layer-off' : '')); row.dataset.pos = pos;
           row.appendChild(mk('span', 'rch-layer-no', String(idx + 1)));   // layer number: 1 is the back layer, the highest number is in front
           row.appendChild(mk('span', 'rch-grip', '&#8942;&#8942;'));
           var nm = mk('span', 'rch-layer-name'); nm.textContent = logoName(l);
@@ -613,18 +615,20 @@
           var up = mk('button', 'rch-icon', '&#9650;'); up.type = 'button'; up.title = 'Bring forward';
           var dn = mk('button', 'rch-icon', '&#9660;'); dn.type = 'button'; dn.title = 'Send back';
           var cp = mk('button', 'rch-icon', COPY_ICON); cp.type = 'button'; cp.title = 'Copy this layer (the copy goes directly above it)';
+          var hv = mk('button', 'rch-icon', l.hd ? EYE_OFF_ICON : EYE_ICON); hv.type = 'button'; hv.title = l.hd ? 'Show this layer' : 'Hide this layer';
           var rm = mk('button', 'rch-icon', TRASH_ICON); rm.type = 'button'; rm.title = 'Remove layer';
           // the arrows move a layer one step in the list, across the Accents line when it is next to it
           up.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos - 1); };
           dn.onclick = function (e) { e.stopPropagation(); stepItem(pos, pos + 1); };
           rm.onclick = function (e) { e.stopPropagation(); R.logos.splice(idx, 1); if (idx < ac) { if (ac - 1 > 0) R.ac = ac - 1; else delete R.ac; } if (sel === l) sel = null; draw(); };
+          hv.onclick = function (e) { e.stopPropagation(); if (l.hd) delete l.hd; else l.hd = 1; draw(); };
           cp.onclick = function (e) {
             e.stopPropagation();
             if (R.logos.length >= MAX_LAYERS) { toast('A helmet can have 25 layers at most.', 'error'); return; }
             var dup = JSON.parse(JSON.stringify(l)); dup.x = (+dup.x || 0) + 20; dup.y = (+dup.y || 0) - 20;
             R.logos.splice(idx + 1, 0, dup); if (idx < ac) R.ac = ac + 1; sel = dup; draw();
           };
-          row.appendChild(up); row.appendChild(dn); row.appendChild(cp); row.appendChild(rm);
+          row.appendChild(up); row.appendChild(dn); row.appendChild(cp); row.appendChild(hv); row.appendChild(rm);
           row.onclick = function () { sel = l; renderLayers(missing); renderDetail(); updateSelBox(); };
           dragStart(row, pos); dropOn(row, pos);
           layers.appendChild(row);
