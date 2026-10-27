@@ -3680,17 +3680,17 @@ function _rclRenderNavbar_(hub) {
   try { signedIn = !!getToken(); } catch (err) { signedIn = false; }
 
   // Same four links as the home page navbar (index.html): real page links, last one depends on sign-in.
-  function addLink(label, href) {
-    var a = _rclEl('a', 'rcl-navbar-link', _rclEscapeHtml(label));
+  function addLink(label, href, gold) {
+    var a = _rclEl('a', 'rcl-navbar-link' + (gold ? ' rcl-navbar-gold' : ''), _rclEscapeHtml(label));
     a.setAttribute('href', href);
     links.appendChild(a);
   }
   addLink('Home', 'index.html');
   addLink('League Hub', 'league.html');
   addLink('Championship', 'championship.html');
-  if (signedIn) addLink('Account Dashboard', 'Account.html');
+  if (signedIn) addLink('Account Dashboard', 'Account.html', true);
   else {
-    addLink('Login or Register', 'login.html');
+    addLink('Login or Register', 'login.html', true);
     links.lastChild.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
   }
 

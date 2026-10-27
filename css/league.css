@@ -2184,6 +2184,8 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 }
 .rcl-navbar-link:first-child { padding-left: 0; }
 a.rcl-navbar-link { text-decoration: none; display: inline-block; }
+a.rcl-navbar-link.rcl-navbar-gold { color: #d4af37; }
+a.rcl-navbar-link.rcl-navbar-gold:hover { color: var(--rc-red); }
 .rcl-navbar-link:hover { color: var(--rc-red); }
 .rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
 @media (max-width: 640px) {
