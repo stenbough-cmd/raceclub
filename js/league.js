@@ -2980,7 +2980,9 @@ function _rclNewsHeadRow(item, noBadge) {
   if (!noBadge) row.appendChild(_rclEl('div', 'rcl-news-badge-wrap', _rclNewsBadgeHtml(item, false)));
   var col = _rclEl('div', 'rcl-news-headtext');
   col.appendChild(_rclEl('div', 'rcl-news-title', _rclEscapeHtml(item.title || '(untitled)')));
-  col.appendChild(_rclEl('div', 'rcl-news-meta', _rclEscapeHtml(_rclNewsMetaLine(item))));
+  var tagKind = (item && item.isStory) ? (Number(item.roundNum) > 0 ? 'story' : 'preview') : 'news';
+  var tagText = tagKind === 'story' ? 'Race Story' : (tagKind === 'preview' ? 'Season Preview' : 'League News');
+  col.appendChild(_rclEl('div', 'rcl-news-meta', '<span class="rcl-news-tag rcl-news-tag-' + tagKind + '">' + tagText + '</span>' + _rclEscapeHtml(_rclNewsMetaLine(item))));
   row.appendChild(col);
   return row;
 }
