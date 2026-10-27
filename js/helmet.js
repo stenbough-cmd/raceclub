@@ -415,20 +415,21 @@
   var BOW_MAX = 0.4;   // at 100 the middle moves by this share of the box height (or width)
   function bowCanvas(src, padX, padY, up, side) {
     var W = src.width, Hh = src.height, bw = W - padX * 2, bh = Hh - padY * 2, x, y, u, v;
+    // whole-pixel moves and no smoothing: every column / row is copied as it is, so the edges of the picture stay sharp and clean
     var a = document.createElement('canvas'); a.width = W; a.height = Hh;
-    var ag = a.getContext('2d');
+    var ag = a.getContext('2d'); ag.imageSmoothingEnabled = false;
     if (up) {
       for (x = 0; x < W; x++) {
         u = Math.max(0, Math.min(1, (x - padX + 0.5) / bw));
-        ag.drawImage(src, x, 0, 1, Hh, x, -(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2)), 1, Hh);
+        ag.drawImage(src, x, 0, 1, Hh, x, Math.round(-(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2))), 1, Hh);
       }
     } else ag.drawImage(src, 0, 0);
     if (!side) return a;
     var b = document.createElement('canvas'); b.width = W; b.height = Hh;
-    var bg = b.getContext('2d');
+    var bg = b.getContext('2d'); bg.imageSmoothingEnabled = false;
     for (y = 0; y < Hh; y++) {
       v = Math.max(0, Math.min(1, (y - padY + 0.5) / bh));
-      bg.drawImage(a, 0, y, W, 1, (side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2)), y, W, 1);
+      bg.drawImage(a, 0, y, W, 1, Math.round((side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2))), y, W, 1);
     }
     return b;
   }
@@ -477,60 +478,6 @@
         // pulled-in part: several source columns are averaged into one
         o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
         o.drawImage(src, sx, 0, sw, Hh, X, 0, 1, Hh);
-      }
-    }
-    return out;
-  }
-  // Bow: bends the layer so its middle moves while its edges stay put. up = -100..100 (positive: the middle rises, like an arch),
-  // side = -100..100 (positive: the middle moves right). pad* is the empty margin round the layer box on the canvas.
-  var BOW_MAX = 0.4;   // at 100 the middle moves by this share of the box height (or width)
-  function bowCanvas(src, padX, padY, up, side) {
-    var W = src.width, Hh = src.height, bw = W - padX * 2, bh = Hh - padY * 2, x, y, u, v;
-    var a = document.createElement('canvas'); a.width = W; a.height = Hh;
-    var ag = a.getContext('2d');
-    if (up) {
-      for (x = 0; x < W; x++) {
-        u = Math.max(0, Math.min(1, (x - padX + 0.5) / bw));
-        ag.drawImage(src, x, 0, 1, Hh, x, -(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2)), 1, Hh);
-      }
-    } else ag.drawImage(src, 0, 0);
-    if (!side) return a;
-    var b = document.createElement('canvas'); b.width = W; b.height = Hh;
-    var bg = b.getContext('2d');
-    for (y = 0; y < Hh; y++) {
-      v = Math.max(0, Math.min(1, (y - padY + 0.5) / bh));
-      bg.drawImage(a, 0, y, W, 1, (side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2)), y, W, 1);
-    }
-    return b;
-  }
-  // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) stretched sideways around position pp.
-  // Only the x axis changes. amount > 0 stretches the picture near pp (the rest is squeezed in to make room), amount < 0 does the opposite.
-  function pinchCanvas(src, pad, pp, pa) {
-    var W = src.width, Hh = src.height, bw = W - pad * 2, out = document.createElement('canvas');
-    out.width = W; out.height = Hh;
-    var o = out.getContext('2d'); o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
-    var p = Math.max(0, Math.min(1, pp / 100)), k = 1 + 3 * Math.abs(pa) / 100, sgn = pa > 0 ? -1 : 1;   // sgn < 0 stretches the picture around pp, sgn > 0 squeezes it
-    // maps a destination position u (0..1 across the box) to the source position it shows
-    function map(u) {
-      var t, g;
-      if (u >= p) { t = (1 - p) > 0 ? (u - p) / (1 - p) : 0; g = sgn > 0 ? 1 - Math.pow(1 - t, k) : Math.pow(t, k); return p + (1 - p) * g; }
-      t = p > 0 ? (p - u) / p : 0; g = sgn > 0 ? 1 - Math.pow(1 - t, k) : Math.pow(t, k); return p - p * g;
-    }
-    if (pad > 0) { o.drawImage(src, 0, 0, pad, Hh, 0, 0, pad, Hh); o.drawImage(src, W - pad, 0, pad, Hh, W - pad, 0, pad, Hh); }
-    var x, s0, s1, sx, sw;
-    for (x = 0; x < bw; x++) {
-      s0 = map(x / bw) * bw; s1 = map((x + 1) / bw) * bw;
-      sx = Math.min(s0, s1); sw = Math.max(0.05, Math.abs(s1 - s0));
-      if (sx + sw > bw) sw = bw - sx;
-      if (sw <= 0) continue;
-      if (sw <= 1) {
-        // stretched part: copy ONE whole source column, no blending with its neighbours, so the edges of the picture stay sharp
-        o.imageSmoothingEnabled = false;
-        o.drawImage(src, pad + Math.min(bw - 1, Math.floor(sx + sw / 2)), 0, 1, Hh, pad + x, 0, 1, Hh);
-      } else {
-        // squeezed part: several source columns are averaged into one
-        o.imageSmoothingEnabled = true;
-        o.drawImage(src, pad + sx, 0, sw, Hh, pad + x, 0, 1, Hh);
       }
     }
     return out;

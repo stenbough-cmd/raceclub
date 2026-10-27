@@ -665,8 +665,8 @@
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
-        var nsl = mk('label', 'rch-check rch-plain'); var nsc = mk('input'); nsc.type = 'checkbox'; nsc.checked = !(sel.sh === 1 || sel.sh === true || sel.sh === 2);
-        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = sel.sh === 1 || sel.sh === true;
+        var nsl = mk('label', 'rch-check rch-plain'); var nsc = mk('input'); nsc.type = 'checkbox'; nsc.checked = sel.sh === 0;   // a layer with no shadow setting at all is drawn with a soft shadow, so it shows as Soft here
+        var shl = mk('label', 'rch-check rch-plain'); var shc = mk('input'); shc.type = 'checkbox'; shc.checked = sel.sh !== 0 && sel.sh !== 2;
         var sgl = mk('label', 'rch-check rch-plain'); var sgc = mk('input'); sgc.type = 'checkbox'; sgc.checked = sel.sh === 2;
         function shadowSet(v) { sel.sh = v; nsc.checked = v === 0; shc.checked = v === 1; sgc.checked = v === 2; draw(true); }
         nsc.onchange = function () { shadowSet(0); };                          // No shadow: always one of the three is on
