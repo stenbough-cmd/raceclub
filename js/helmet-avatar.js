@@ -118,7 +118,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=36')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=37')).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -250,7 +250,7 @@
   };
   // The helmet list changed: fetch the new designs (this also stores the new version number) and draw every helmet again.
   window.rcHelmetRefreshNow_ = function () {
-    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=36')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
+    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=37')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
   };
   // Older team-helmet avatars have no manufacturer saved in them, so they cannot pick up later edits to that manufacturer's helmet. Ask the
   // server which manufacturer the member's seat belongs to and save it into the avatar (once).

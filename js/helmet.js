@@ -405,6 +405,32 @@
       var p = (from.pp === undefined || from.pp === null || from.pp === '') ? 50 : Math.round(+from.pp);
       to.pp = isFinite(p) ? Math.max(0, Math.min(100, p)) : 50;
     }
+    // Bow: bu = up / down, bl = left / right, -100..100 (0 = none)
+    var bu = Math.round(+from.bu), bl = Math.round(+from.bl);
+    if (isFinite(bu) && Math.abs(bu) >= 1) to.bu = Math.max(-100, Math.min(100, bu));
+    if (isFinite(bl) && Math.abs(bl) >= 1) to.bl = Math.max(-100, Math.min(100, bl));
+  }
+  // Bow: bends the layer so its middle moves while its edges stay put. up = -100..100 (positive: the middle rises, like an arch),
+  // side = -100..100 (positive: the middle moves right). pad* is the empty margin round the layer box on the canvas.
+  var BOW_MAX = 0.4;   // at 100 the middle moves by this share of the box height (or width)
+  function bowCanvas(src, padX, padY, up, side) {
+    var W = src.width, Hh = src.height, bw = W - padX * 2, bh = Hh - padY * 2, x, y, u, v;
+    var a = document.createElement('canvas'); a.width = W; a.height = Hh;
+    var ag = a.getContext('2d');
+    if (up) {
+      for (x = 0; x < W; x++) {
+        u = Math.max(0, Math.min(1, (x - padX + 0.5) / bw));
+        ag.drawImage(src, x, 0, 1, Hh, x, -(up / 100) * BOW_MAX * bh * (1 - Math.pow(2 * u - 1, 2)), 1, Hh);
+      }
+    } else ag.drawImage(src, 0, 0);
+    if (!side) return a;
+    var b = document.createElement('canvas'); b.width = W; b.height = Hh;
+    var bg = b.getContext('2d');
+    for (y = 0; y < Hh; y++) {
+      v = Math.max(0, Math.min(1, (y - padY + 0.5) / bh));
+      bg.drawImage(a, 0, y, W, 1, (side / 100) * BOW_MAX * bw * (1 - Math.pow(2 * v - 1, 2)), y, W, 1);
+    }
+    return b;
   }
   // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) squeezed sideways around position pp.
   // Only the x axis changes. amount > 0 compresses the picture near pp (the rest is spread out), amount < 0 does the opposite.
@@ -865,10 +891,12 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           else if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           // Pinch: the layer is drawn flat onto its own canvas first, squeezed sideways, then placed on the helmet (so the shadow is drawn once)
-          var gOut = g, pinchCv = null, pinchPad = 0;
-          if (Math.abs(+l.pa) >= 1) {
-            pinchPad = Math.ceil(((+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0)) + 6;
-            pinchCv = document.createElement('canvas'); pinchCv.width = Math.ceil(l.w * scale) + pinchPad * 2; pinchCv.height = Math.ceil(l.h * scale) + pinchPad * 2;
+          var gOut = g, pinchCv = null, pinchPad = 0, bowPadY = 0, pinchOn = Math.abs(+l.pa) >= 1, bowU = Math.abs(+l.bu) >= 1 ? +l.bu : 0, bowL = Math.abs(+l.bl) >= 1 ? +l.bl : 0;
+          if (pinchOn || bowU || bowL) {
+            var basePad = Math.ceil(((+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0)) + 6;
+            pinchPad = basePad + Math.ceil(BOW_MAX * l.w * scale * Math.abs(bowL) / 100);   // room for the bow to move the middle sideways
+            bowPadY = basePad + Math.ceil(BOW_MAX * l.h * scale * Math.abs(bowU) / 100);
+            pinchCv = document.createElement('canvas'); pinchCv.width = Math.ceil(l.w * scale) + pinchPad * 2; pinchCv.height = Math.ceil(l.h * scale) + bowPadY * 2;
             g = pinchCv.getContext('2d'); g.translate(pinchCv.width / 2, pinchCv.height / 2);
           }
           if (l.s) {
@@ -897,7 +925,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
             if (l.st) { dw = l.w * scale; dh = l.h * scale; }   // stretched on purpose (width and height set apart)
             g.drawImage(im, -dw / 2, -dh / 2, dw, dh);
           }
-          if (pinchCv) { g = gOut; var pw = pinchCanvas(pinchCv, pinchPad, +l.pp, +l.pa); g.drawImage(pw, -pw.width / 2, -pw.height / 2); }
+          if (pinchCv) { g = gOut; var pw = pinchCv; if (pinchOn) pw = pinchCanvas(pw, pinchPad, +l.pp, +l.pa); if (bowU || bowL) pw = bowCanvas(pw, pinchPad, bowPadY, bowU, bowL); g.drawImage(pw, -pw.width / 2, -pw.height / 2); }
           g.restore();
           if (tcv) { lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1; }
         });
