@@ -3291,7 +3291,8 @@ body.rc-modal-scroll-locked {
 @media (max-width: 560px) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
 
 /* Section bars: a thick red bar butts up against the bottom of the dark band above the Online League and the Offline Championship sections. */
-.rc-why-section, .rc-single-section { border-top: 18px solid var(--rc-red); }
+.rc-why-section { border-top: 18px solid var(--rc-red); }
+.rc-single-section { border-top: 18px solid var(--rc-steel); }   /* blue-gray bar above the Offline Championship section */
 
 /* Index photo showcase: one photo with a caption under it and a dot pill at the bottom middle. */
 .rc-showcase-section { background: var(--rc-white); }
