@@ -197,25 +197,25 @@
   function clear(hex) { var h = String(hex).replace('#', ''); var n = parseInt(h, 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',0)'; }
   // Every gradient is ONE color that fades out to see-through on one side (the Checkered one keeps its two checker colors and fades its squares out toward one short end).
   var GRADIENTS = [
-    { id: 'g_linear', name: 'Fade to clear, left', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, w / 2, 0, -w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_fade', name: 'Fade to clear, right', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_linear', hidden: true, name: 'Fade to clear, left', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, w / 2, 0, -w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_fade', hidden: true, name: 'Fade to clear, right', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_band', name: 'Hold, then fade', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, a); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_radial', name: 'Ring fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, clear(a)); g.addColorStop(1, a); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
     { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
-    { id: 'g_vertical', name: 'Fade to clear, bottom', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, -h / 2, 0, h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_vertical', hidden: true, name: 'Fade to clear, bottom', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, -h / 2, 0, h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_diagonal', name: 'Diagonal fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, -h / 2, w / 2, h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_mirror', name: 'Fade to clear, top', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, h / 2, 0, -h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_angular', name: 'Angular sweep', gradient: true, colors: 1, draw: function (c, w, h, a) {
+    { id: 'g_mirror', hidden: true, name: 'Fade to clear, top', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, h / 2, 0, -h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_angular', name: 'Angular sweep fade', gradient: true, colors: 1, draw: function (c, w, h, a) {
         if (!c.createConicGradient) { c.save(); c.scale(1, h / w); var rg = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); rg.addColorStop(0, a); rg.addColorStop(1, clear(a)); c.fillStyle = rg; c.fillRect(-w / 2, -w / 2, w, w); c.restore(); return; }
         var g = c.createConicGradient(0, 0, 0); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_diamond', name: 'Diamond', gradient: true, colors: 1, draw: function (c, w, h, a) {
+    { id: 'g_diamond', name: 'Diamond fade', gradient: true, colors: 1, draw: function (c, w, h, a) {
         // color in the middle, fading to see-through at the diamond's four corners: the same straight fade in each quarter, mirrored
         var hw = w / 2, hh = h / 2, gx = 1 / hw, gy = 1 / hh, k = 1 / (gx * gx + gy * gy), q = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
         q.forEach(function (m) { c.save(); c.scale(m[0], m[1]); c.beginPath(); c.rect(0, 0, hw, hh); c.clip(); c.fillStyle = grad(c, 0, 0, gx * k, gy * k, a, clear(a)); c.fillRect(0, 0, hw, hh); c.restore(); });
       } },
-    // Checkered: exactly the Checkered strip from Basic shapes (8 across, 2 rows, two colors), with the squares fading out toward the right-hand short end
-    { id: 'g_checker', name: 'Checkered', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
-        var cols = 8, rows = 2, cw = w / cols, ch = h / rows, x, y, a0 = c.globalAlpha;
+    // Checkered fade: the Checkered strip from Basic shapes (8 across, same square size) but twice as tall with 4 rows, the squares fading out toward the right-hand short end
+    { id: 'g_checker', name: 'Checkered fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
+        var cols = 8, rows = 4, cw = w / cols, ch = h / rows, x, y, a0 = c.globalAlpha;
         for (x = 0; x < cols; x++) {
           c.globalAlpha = a0 * (cols - x - 0.5) / cols;
           for (y = 0; y < rows; y++) { c.fillStyle = ((x + y) % 2) ? (b || '#ffffff') : a; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
@@ -398,7 +398,7 @@
   SHAPES.push({ id: 'player_num', name: 'Player name, flag and number', player: true, draw: function () {} });
   function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num' || id === 'player_number'; }
   function flagUrlOf(country) { return (country && typeof countryFlagSrc === 'function') ? countryFlagSrc(country) : ''; }
-  function drawPlayerBox(c, l, w, h, pl, flagImg) {
+  function drawPlayerBox(c, l, w, h, pl, flagImg, noShadow) {
     var name = String((pl && pl.n) || 'DRIVER NAME').toUpperCase(), hasFlag = !!flagImg && l.s !== 'player_name' && l.s !== 'player_number';
     if (l.s === 'player_number') name = String((pl && pl.u) || '').toUpperCase();   // the car number alone
     if (l.s === 'player_num' && pl && pl.u) name += '  #' + pl.u;
@@ -416,13 +416,18 @@
     c.font = 'italic 800 ' + size + 'px "Arial Narrow", Arial, Helvetica, sans-serif';
     mw = c.measureText(name).width;
     var total = (hasFlag ? fw + gap : 0) + mw, x0 = -total / 2;
+    // Soft shadow (always on for Player name boxes): behind the text and flag when there is no background color, or behind the
+    // background rectangle only (never the text) when one is chosen. Not used while a border is drawing (noShadow).
+    function shadowOn() { c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = Math.max(2, h * 0.14); c.shadowOffsetX = 0; c.shadowOffsetY = Math.max(1, h * 0.05); }
+    function shadowOff() { c.shadowColor = 'rgba(0,0,0,0)'; c.shadowBlur = 0; c.shadowOffsetX = 0; c.shadowOffsetY = 0; }
     if (l.bg) {   // optional background rectangle with a little padding around the flag and name
       var pad = Math.max(2, h * 0.22), bh = size * CAP + pad * 2;
-      c.fillStyle = hexOf(l.bg); rrect(c, x0 - pad, -bh / 2, total + pad * 2, bh, Math.max(1, bh * 0.1)); c.fill();
-    }
+      c.fillStyle = hexOf(l.bg); if (!noShadow) shadowOn(); rrect(c, x0 - pad, -bh / 2, total + pad * 2, bh, Math.max(1, bh * 0.1)); c.fill(); shadowOff();
+    } else if (!noShadow) shadowOn();
     if (hasFlag) c.drawImage(flagImg, x0, -fh / 2, fw, fh);
     c.fillStyle = hexOf(l.c); c.textBaseline = 'alphabetic'; c.textAlign = 'left';
     c.fillText(name, x0 + (hasFlag ? fw + gap : 0), fh / 2);   // baseline at the bottom of the flag, so the capitals line up with it
+    shadowOff();
   }
   function shapeById(id) { for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i].id === id) return SHAPES[i]; return null; }
 
@@ -819,11 +824,14 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           g.rotate(-l.r * Math.PI / 180);
           if (l.sk) g.transform(1, 0, -Math.tan(l.sk * Math.PI / 180), 1, 0, 0);   // skew: a negative sk leans the top left and the bottom right
           if (l.fx || l.fy) g.scale(l.fx ? -1 : 1, l.fy ? -1 : 1);   // mirrored left to right and / or top to bottom
-          if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
+          var isPl = !!(l.s && isPlayerId(l.s)), plBorder = isPl && +l.bw >= 1 && borderOk(l.s);   // Player boxes always get a soft shadow: drawn inside drawPlayerBox, or here around the bordered number
+          if (isPl && !plBorder) { /* drawPlayerBox draws its own shadow */ }
+          else if (plBorder) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
+          else if (l.sh === 2) { g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = Math.max(3, 13 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(2, 5 * scale); }   // strong shadow
           else if (l.sh) { g.shadowColor = 'rgba(0,0,0,0.45)'; g.shadowBlur = Math.max(2, 7 * scale); g.shadowOffsetX = 0; g.shadowOffsetY = Math.max(1, 2 * scale); }
           if (l.s) {
             var paintShape = function (gg) {
-              if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null); }
+              if (isPlayerId(l.s)) { drawPlayerBox(gg, l, l.w * scale, l.h * scale, plInfo, im !== true ? im : null, gg !== g); }
               else { gg.fillStyle = hexOf(l.c); shapeById(l.s).draw(gg, l.w * scale, l.h * scale, hexOf(l.c), hexOf(l.c2 || 'black')); }
             };
             var bwPx = (+l.bw >= 1 && borderOk(l.s)) ? Math.min(20, +l.bw) * scale : 0;

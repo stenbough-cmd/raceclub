@@ -432,7 +432,7 @@
         H.SHAPES.forEach(function (sh) { if (!sh.premium) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gP.appendChild(o); });
         lpick.appendChild(gP);
         var gG = mk('optgroup'); gG.setAttribute('data-cat', 'shapes'); gG.label = 'Gradients';
-        H.SHAPES.forEach(function (sh) { if (!sh.gradient) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gG.appendChild(o); });
+        H.SHAPES.forEach(function (sh) { if (!sh.gradient || sh.hidden) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gG.appendChild(o); });
         lpick.appendChild(gG);
         var gL = mk('optgroup'); gL.setAttribute('data-cat', 'effects'); gL.label = 'Light effects';
         H.SHAPES.forEach(function (sh) { if (!sh.light) return; var o = mk('option'); o.value = 's:' + sh.id; o.textContent = sh.name; gL.appendChild(o); });
@@ -492,7 +492,7 @@
         var isLight = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).light;
         var isWeather = kind === 's' && (H.SHAPES.filter(function (x) { return x.id === val; })[0] || {}).weathering;
         var n = (kind === 's' && /^player/.test(val)) ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: (val === 'player_number' ? 120 : 320), h: 56, r: 0, sh: 0 } : isLight ? { s: val, c: 'white', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 220, r: 0, sh: 0 } : isWeather ? { s: val, c: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 360, h: 260, r: 0, sh: 0 } : isGrad ? { s: val, c: 'red', c2: 'black', m: '', v: 'std', f: '', x: 640, y: 770, w: 320, h: 200, r: 0, sh: 0 } : kind === 's'
-          ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker' || val === 'g_checker') ? 80 : 220, r: 0, sh: 0 }
+          ? { s: val, c: 'red', m: '', v: 'std', f: '', x: 640, y: 770, w: 220, h: (val === 'stripe' || val === 'pill' || val === 'checker') ? 80 : (val === 'g_checker' ? 160 : 220), r: 0, sh: 0 }
           : isM ? { m: val, v: 'std', f: '', x: 640, y: 770, w: 240, h: 170, r: 3, sh: 0 }
           : { m: '', v: 'std', f: val, x: 640, y: 770, w: 220, h: 220, r: 0, sh: 0 };   // an uploaded logo always starts the same way a shape does
         origSize.set(n, { w: n.w, h: n.h, r: n.r });
@@ -649,9 +649,9 @@
         nsc.onchange = function () { shadowSet(0); };                          // No shadow: always one of the three is on
         shc.onchange = function () { shadowSet(shc.checked ? 1 : 0); };
         sgc.onchange = function () { shadowSet(sgc.checked ? 2 : 0); };
-        nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl);
-        shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl);
-        sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl);
+        if (!(sel.s && /^player/.test(sel.s))) { nsl.appendChild(nsc); nsl.appendChild(document.createTextNode(' No shadow')); opts.appendChild(nsl); }
+        if (!(sel.s && /^player/.test(sel.s))) { shl.appendChild(shc); shl.appendChild(document.createTextNode(' Soft shadow')); opts.appendChild(shl); }
+        if (!(sel.s && /^player/.test(sel.s))) { sgl.appendChild(sgc); sgl.appendChild(document.createTextNode(' Strong shadow')); opts.appendChild(sgl); }
         if (sel.s) {
           var gdef = H.SHAPES.filter(function (x) { return x.id === sel.s; })[0] || {};
           var pickColor = function (key, label, hint, withNone) {

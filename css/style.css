@@ -3267,7 +3267,7 @@ body.rc-modal-scroll-locked {
 .rc-cta-option { border-top-width: 4px; }
 .rc-cta-option-league { border-top-color: var(--rc-red); }
 .rc-cta-option-champ { border-top-color: #5f7d99; }
-.rc-mid-banner-inner h2 { color: #d4af37; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+.rc-mid-banner-inner h2 { color: var(--rc-white); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }   /* white again (Matt, 2026-10-27); Ready To Race stays gold */
 
 /* Cards with a corner icon: the header sits to the right of the icon (Matt, 2026-10-26). */
 .rc-highlight-head, .rc-path-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
