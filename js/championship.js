@@ -3414,7 +3414,15 @@ function rccRenderStories(page) {
   var cur = published[0];
   var wrap = _rccEl('div', 'rcl-news-item rcl-news-current');
   // Story badge back beside the title (Matt, 2026-10-17); league.css centers it against the title only.
-  wrap.appendChild(_rccStoryHeadRow(cur, true));   // story window on the page: no author in the byline
+  // The byline keeps "By Race Club Press" (Matt, 2026-10-27). The title opens the full story, like Continue Reading.
+  var curHead = _rccStoryHeadRow(cur);
+  var curTitle = curHead.querySelector('.rcl-news-title');
+  curTitle.classList.add('rcc-story-title-link');
+  curTitle.setAttribute('role', 'button');
+  curTitle.tabIndex = 0;
+  curTitle.addEventListener('click', function () { rccOpenStory(0); });
+  curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rccOpenStory(0); } });
+  wrap.appendChild(curHead);
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
   wrap.appendChild(pv.el);
   var more = _rccText('a', 'rcl-news-continue', 'Continue Reading');

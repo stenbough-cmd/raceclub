@@ -980,6 +980,9 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-prev { display: flex; align-items: center; gap: 10px; text-align: left; }
 .rcc-story-prev-title { min-width: 0; }
 .rcc-story-prev .rcl-news-badge { flex: 0 0 auto; }
+/* The story window's title opens the full story (Matt, 2026-10-27). */
+.rcc-story-title-link { cursor: pointer; }
+.rcc-story-title-link:hover, .rcc-story-title-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 /* Race Report events (Matt, 2026-10-13): every event clause gray except position changes and the
    fastest lap, which keep their colors. Names stay dark and capitalized; the player's name is bold. */
 .rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, #5b6573); font-weight: 400; }
