@@ -6033,6 +6033,41 @@
       'Save the downloaded file in the website folder at assets/data/championship-demo.json, replacing the old one, then push the website. Nothing is changed in the Sheet, so you can export as often as you like.'
     ], 'Downloads your active championship season as the public demo file.');
 
+    // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js
+    // rcStagedHubOn). While ON, the League Hub, every Race Recap, driver profiles and driver reports read the made-up
+    // data in assets/data/staged/ instead of the real league. It only changes what this browser reads: nothing is
+    // written to the Sheet and no other visitor is affected. Gray (not red): it saves nothing to the Sheet.
+    (function () {
+      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-top:22px;border-top:1px solid var(--rc-silver);');
+      var sw = el('button', 'rc-switch', '');
+      sw.type = 'button';
+      sw.setAttribute('role', 'switch');
+      var track = el('span', 'rc-switch-track', '');
+      var label = el('span', 'rc-switch-label', 'Staged League Hub');
+      var state = el('span', 'rc-switch-state', '');
+      sw.appendChild(track); sw.appendChild(label); sw.appendChild(state);
+      function paint() {
+        var on = rcStagedHubOn();
+        sw.setAttribute('aria-checked', on ? 'true' : 'false');
+        state.textContent = on ? 'ON' : 'OFF';
+      }
+      sw.addEventListener('click', function () {
+        var turningOn = !rcStagedHubOn();
+        rcSetStagedHub(turningOn);
+        paint();
+        showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
+      });
+      paint();
+      item.appendChild(sw);
+      [
+        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tyre wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
+        'It only changes what your browser shows. Nothing is written to the Sheet, no one else sees it, and the real league data is untouched. The tab title starts with [STAGED] while it is on. Turn it off to see the real League Hub again.'
+      ].forEach(function (text) {
+        item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
+      });
+      list.appendChild(item);
+    })();
+
     panel.appendChild(list);
     section.appendChild(panel);
   }

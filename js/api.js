@@ -92,6 +92,76 @@ function rcIdentityProblem(fields, original) {
   return '';
 }
 
+// ---- STAGED LEAGUE HUB (Admin-only preview) ----
+// When the Admin switch (Account > Admin > Data Management > Staged League Hub) is ON in THIS browser, the
+// League Hub, every Race Recap, driver profile pages and driver reports read made-up data from
+// assets/data/staged/ instead of the real league. Only read-only requests are answered this way; nothing
+// is ever written to the Sheet, and every other request still goes to the real server. The switch lives
+// in this browser only (localStorage) and is ignored unless the saved profile is an Admin.
+var RC_STAGED_FLAG_KEY = 'rc_staged_hub_on';
+function rcStagedHubOn() {
+  try {
+    if (localStorage.getItem(RC_STAGED_FLAG_KEY) !== '1') return false;
+    if (!localStorage.getItem('raceclub_token')) return false;
+    var prof = JSON.parse(localStorage.getItem('raceclub_profile_cache') || 'null');
+    return !!(prof && prof.role === 'Admin');
+  } catch (err) { return false; }
+}
+function rcSetStagedHub(on) {
+  try { if (on) localStorage.setItem(RC_STAGED_FLAG_KEY, '1'); else localStorage.removeItem(RC_STAGED_FLAG_KEY); } catch (err) { /* storage blocked */ }
+}
+var _rcStagedFiles_ = {};
+function _rcStagedFile_(name) {
+  if (!_rcStagedFiles_[name]) {
+    _rcStagedFiles_[name] = fetch('assets/data/staged/' + name + '.json', { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('RC_STAGED_' + r.status);
+      return r.json();
+    });
+    _rcStagedFiles_[name].catch(function () { delete _rcStagedFiles_[name]; });
+  }
+  return _rcStagedFiles_[name];
+}
+function _rcStagedRoundFile_(roundId) {
+  if (!/^CRND-\d{4}$/.test(String(roundId || ''))) return Promise.resolve(null);
+  return _rcStagedFile_('round-' + roundId).catch(function () { return null; });
+}
+// Returns a Promise with the staged answer, or null when this request is not one the staged data covers.
+function _rcStagedAnswer_(action, options) {
+  var params = (options && options.params) || {};
+  var isPost = options && options.method === 'POST';
+  if (action === 'leagueStory') {
+    return Promise.resolve(isPost ? { success: false, message: 'Story feedback is switched off while the Staged League Hub is on.' }
+      : { success: true, signedIn: false, eligibleSeasonIds: [], votes: {} });
+  }
+  if (isPost) return null;
+  var NF = { success: false, error: 'NOT_FOUND', message: 'No posted results for that round.' };
+  if (action === 'getLeagueHub') {
+    return _rcStagedFile_('hub').then(function (hub) { return (params.seasonId && params.seasonId !== hub.seasonId) ? { success: false, error: 'NOT_FOUND' } : hub; });
+  }
+  if (action === 'getMemberList') return _rcStagedFile_('hub').then(function (hub) { return { success: true, members: hub.members }; });
+  if (action === 'getDriverDirectory') return _rcStagedFile_('directory');
+  if (action === 'getPublicRoundResults') return _rcStagedRoundFile_(params.roundId).then(function (f) { return f ? { success: true, result: f.result } : NF; });
+  if (action === 'getPublicRoundQualifying') return _rcStagedRoundFile_(params.roundId).then(function (f) { return f ? { success: true, result: f.qualifying } : NF; });
+  if (action === 'getDriverProfileRound') {
+    return _rcStagedRoundFile_(params.roundId).then(function (f) {
+      var r = f && f.driverRounds && f.driverRounds[params.profileId];
+      return r || { success: true, hasData: false, round: { roundId: params.roundId } };
+    });
+  }
+  if (action === 'getDriverProfilePage') {
+    return _rcStagedFile_('profiles').then(function (f) { return (f.pages && f.pages[params.profileId]) || { success: false, error: 'PROFILE_NOT_FOUND' }; });
+  }
+  if (action === 'getDriverProfileRivals') {
+    return _rcStagedFile_('profiles').then(function (f) { return (f.rivals && f.rivals[params.profileId]) || { success: true, rivals: [] }; });
+  }
+  return null;
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (rcStagedHubOn() && !/^\[STAGED\]/.test(document.title)) document.title = '[STAGED] ' + document.title;
+  });
+}
+
 // ---- DRIVER DIRECTORY (public list behind profile.html) ----
 // Saved in this browser (localStorage) so a profile can draw instantly from the last copy while a
 // fresh one is fetched quietly in the background (stale-while-revalidate). Every storage call is
@@ -99,6 +169,7 @@ function rcIdentityProblem(fields, original) {
 var RC_DRIVER_DIRECTORY_STORAGE_KEY_ = 'rc_driver_directory_v1';
 
 function rcReadSavedDriverDirectory() {
+  if (rcStagedHubOn()) return null;   // staged data is never kept as the saved copy
   try {
     var raw = localStorage.getItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_);
     if (!raw) return null;
@@ -110,6 +181,7 @@ function rcReadSavedDriverDirectory() {
 // Fetches the current directory (published CSV first, Apps Script as the fallback), saves it, and
 // resolves with it. Rejects if both routes fail.
 function rcFetchDriverDirectory() {
+  if (rcStagedHubOn()) return fetchApi('getDriverDirectory', {});
   return fetchPublishedJson(RC_DRIVER_DIRECTORY_CSV_URL).catch(function () {
     return fetchApi('getDriverDirectory', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
   }).then(function (dir) {
@@ -241,6 +313,10 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
 // Wraps the fetch/text-plain/JSON pattern used throughout the source file. action: string, e.g.
 function fetchApi(action, options) {
   options = options || {};
+  if (rcStagedHubOn()) {
+    var stagedAnswer = _rcStagedAnswer_(action, options);
+    if (stagedAnswer) return stagedAnswer;
+  }
   var method = options.method || 'GET';
   var url = API_BASE_URL + '?action=' + encodeURIComponent(action);
   if (options.token) url += '&token=' + encodeURIComponent(options.token);

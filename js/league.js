@@ -3880,9 +3880,11 @@ function _rclShowLoadError_(onRetry, title) {
 }
 
 function _rclReadSavedHubText_() {
+  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return null;   // Staged League Hub: never draw from the real saved copy
   try { return localStorage.getItem(RCL_HUB_STORAGE_KEY_); } catch (err) { return null; }
 }
 function _rclSaveHubText_(text) {
+  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return;   // ...and never save staged data over it
   try { localStorage.setItem(RCL_HUB_STORAGE_KEY_, text); } catch (err) { /* storage full or blocked -- the page still works */ }
 }
 
@@ -3890,6 +3892,7 @@ function _rclSaveHubText_(text) {
 // servers with zero Apps Script execution, and falls back to the normal fetchApi('getLeagueHub',
 // ...) call on ANY failure (CSV URL not configured, fetch failed, or the text didn't parse).
 function _rclFetchLeagueHubRaw_() {
+  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return fetchApi('getLeagueHub', {});   // Staged League Hub: skip the published CSV
   return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).catch(function () {
     return fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
   });
