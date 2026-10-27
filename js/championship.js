@@ -3099,10 +3099,12 @@ function _rccHeaderOnly() {
   if (tickerWrap) tickerWrap.style.display = 'none';
 }
 
-// The DEMO watermark: one fixed element over the page that never takes clicks, scrolling or selection.
+// The DEMO watermark: a repeating pattern over the whole page that scrolls with it and never takes
+// clicks, scrolling or selection.
 function _rccDemoWatermark() {
   if (document.getElementById('rcc-demo-watermark')) return;
-  var wm = _rccText('div', 'rcc-demo-watermark', 'Demo');
+  // A tiled DEMO pattern drawn by CSS (an empty box the size of the page).
+  var wm = _rccEl('div', 'rcc-demo-watermark');
   wm.id = 'rcc-demo-watermark';
   wm.setAttribute('aria-hidden', 'true');
   document.body.appendChild(wm);
