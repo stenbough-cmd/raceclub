@@ -198,7 +198,7 @@
   // Every gradient is ONE color that fades out to see-through on one side (the Checkered one keeps its two checker colors and fades its squares out toward one short end).
   var GRADIENTS = [
     { id: 'g_linear', hidden: true, name: 'Fade to clear, left', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, w / 2, 0, -w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_fade', hidden: true, name: 'Fade to clear, right', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_fade', name: 'Rectangle fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_band', name: 'Hold, then fade', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, a); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_radial', name: 'Ring fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, clear(a)); g.addColorStop(1, a); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
     { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
