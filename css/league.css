@@ -2754,3 +2754,7 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bo
 
 /* The byline row (label pill, author, round, date) sits on its own row under the title and tile and spans the whole news window. */
 .rcl-news-headrow .rcl-news-meta { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
+
+.rcl-news-title-link { cursor: pointer; }
+.rcl-news-title-link:hover { text-decoration: underline; }
+.rcl-news-title-link:focus-visible { outline: 2px solid var(--rcl-ink-dim); outline-offset: 2px; }

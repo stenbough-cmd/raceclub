@@ -3126,7 +3126,16 @@ function _rclRenderNews(hub) {
     heroImg.loading = 'lazy';
     currentWrap.appendChild(heroImg);
   }
-  currentWrap.appendChild(_rclNewsHeadRow(current, false, true));   // preview on the page: no author in the byline
+  var currentHead = _rclNewsHeadRow(current);
+  // The title opens the full story popup, same as Continue reading.
+  var currentTitle = currentHead.querySelector('.rcl-news-title');
+  if (currentTitle) {
+    currentTitle.classList.add('rcl-news-title-link');
+    currentTitle.setAttribute('role', 'button'); currentTitle.setAttribute('tabindex', '0');
+    currentTitle.addEventListener('click', function () { _rclOpenStoryModal(0); });
+    currentTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _rclOpenStoryModal(0); } });
+  }
+  currentWrap.appendChild(currentHead);
   // 1000-character cap, not the old fixed 14-line CSS clamp -- "Continue reading..." now only shows
   // up when the story is actually longer than that, via preview.truncated.
   // EXCEPT when Last Race has nothing to show -- same hasLastRace check _rclRenderLastRace_ makes
