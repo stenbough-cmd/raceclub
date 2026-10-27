@@ -3060,11 +3060,14 @@ function _rccForgetSavedPages() {
 // ---------------------------------------------------------------------
 // ---------------------------------------------------------------------
 // DEMO (Matt, 2026-10-09; for logged-out visitors since 2026-10-27). The demo draws a
-// frozen copy of a real season from assets/data/championship-demo.json (made with Export
-// Championship Demo in the Account page's Admin section). The demo never calls the server: _rccApi answers from that file, and every button that
+// frozen copy of a real season from championship-demo.json in the race-club-data repo (made with Export
+// Championship Demo in the Account page's Admin section, which saves it there). The demo never calls the server: _rccApi answers from that file, and every button that
 // would change something is locked with a hover note. Nothing in demo mode can write anything.
 // ---------------------------------------------------------------------
-var RCC_DEMO_FILE = 'assets/data/championship-demo.json';
+// All saved data lives in the race-club-data repo (Matt, 2026-10-27). This base address must match the
+// Script Property GITHUB_ARCHIVE_BASE_URL plus 'website/data/' (the same as RC_DATA_BASE in index.html).
+var RCC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
+var RCC_DEMO_FILE = RCC_DATA_BASE + 'championship-demo.json';
 var RCC_DEMO_NOTE = 'You are viewing a demo version of the Championship page.';
 var RCC_DEMO_LOCKED = ['Create Season', 'Edit Season', 'End Season', 'Delete Season', 'Choose Your Team', 'Upload Results', 'Erase Results'];
 
