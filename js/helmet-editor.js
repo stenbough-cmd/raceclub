@@ -306,6 +306,20 @@
       });
       left.appendChild(sizeRow);
 
+      // Preview text boxes: type any name and number to see how the Player Name and Player Number layers look. Only the preview uses
+      // them (nothing is saved), and a helmet with no name or number layer simply ignores them.
+      var pvRow = mk('div', 'rch-btns rch-bgrow rch-pvrow');
+      var pvNameWrap = mk('label', 'rch-pvfield'); pvNameWrap.appendChild(mk('span', 'rch-label', 'Preview name'));
+      var pvName = mk('input', 'rch-input'); pvName.type = 'text'; pvName.maxLength = 40; pvName.placeholder = 'Type any name'; pvName.value = previewPlayer.n || '';
+      pvName.oninput = function () { previewPlayer.n = pvName.value; draw(true); };
+      pvNameWrap.appendChild(pvName);
+      var pvNumWrap = mk('label', 'rch-pvfield rch-pvnum'); pvNumWrap.appendChild(mk('span', 'rch-label', 'Preview number'));
+      var pvNum = mk('input', 'rch-input'); pvNum.type = 'text'; pvNum.maxLength = 4; pvNum.placeholder = 'e.g. 123'; pvNum.value = previewPlayer.u || '';
+      pvNum.oninput = function () { previewPlayer.u = pvNum.value; draw(true); };
+      pvNumWrap.appendChild(pvNum);
+      pvRow.appendChild(pvNameWrap); pvRow.appendChild(pvNumWrap);
+      left.appendChild(pvRow);
+
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
       var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label', 'Helmet name'));

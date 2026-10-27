@@ -302,3 +302,8 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 
 /* a hidden layer (eye button in the layer list): the whole entry is dimmed so it is obviously hidden, except the crossed-out eye button which stays solid */
 .rch-layer-off > :not(.rch-icon:nth-last-child(2)) { opacity: 0.45; }
+
+/* Preview name and number boxes under the preview helmet */
+.rch-pvrow { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.rch-pvfield { display: flex; flex-direction: column; gap: 4px; flex: 1 1 160px; min-width: 0; }
+.rch-pvfield.rch-pvnum { flex: 0 1 110px; }
