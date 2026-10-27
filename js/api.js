@@ -95,7 +95,7 @@ function rcIdentityProblem(fields, original) {
 // ---- STAGED LEAGUE HUB (Admin-only preview) ----
 // When the Admin switch (Account > Admin > Data Management > Staged League Hub) is ON in THIS browser, the
 // League Hub, every Race Recap, driver profile pages and driver reports read made-up data from
-// assets/data/staged/ instead of the real league. Only read-only requests are answered this way; nothing
+// website/staged/ in the race-club-data repo instead of the real league. Only read-only requests are answered this way; nothing
 // is ever written to the Sheet, and every other request still goes to the real server. The switch lives
 // in this browser only (localStorage) and is ignored unless the saved profile is an Admin.
 var RC_STAGED_FLAG_KEY = 'rc_staged_hub_on';
@@ -110,10 +110,12 @@ function rcStagedHubOn() {
 function rcSetStagedHub(on) {
   try { if (on) localStorage.setItem(RC_STAGED_FLAG_KEY, '1'); else localStorage.removeItem(RC_STAGED_FLAG_KEY); } catch (err) { /* storage blocked */ }
 }
+// All saved website data lives in the race-club-data repo (GitHub Pages). Must match GITHUB_ARCHIVE_BASE_URL plus 'website/staged/'.
+var RC_STAGED_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/staged/';
 var _rcStagedFiles_ = {};
 function _rcStagedFile_(name) {
   if (!_rcStagedFiles_[name]) {
-    _rcStagedFiles_[name] = fetch('assets/data/staged/' + name + '.json', { cache: 'no-cache' }).then(function (r) {
+    _rcStagedFiles_[name] = fetch(RC_STAGED_BASE + name + '.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('RC_STAGED_' + r.status);
       return r.json();
     });
