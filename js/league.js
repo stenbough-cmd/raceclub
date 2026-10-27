@@ -3679,23 +3679,20 @@ function _rclRenderNavbar_(hub) {
   var signedIn = false;
   try { signedIn = !!getToken(); } catch (err) { signedIn = false; }
 
-  function add(label, onClick) {
-    var b = _rclEl('button', 'rcl-navbar-link', _rclEscapeHtml(label));
-    b.type = 'button';
-    b.addEventListener('click', onClick);
-    links.appendChild(b);
+  // Same four links as the home page navbar (index.html): real page links, last one depends on sign-in.
+  function addLink(label, href) {
+    var a = _rclEl('a', 'rcl-navbar-link', _rclEscapeHtml(label));
+    a.setAttribute('href', href);
+    links.appendChild(a);
   }
-  // With no season at all the link reads Welcome instead of Season Preview.
-  add((_rclNavHub_ && _rclNavHub_.hasSeason) ? 'Season Preview' : 'Welcome', function () { _rclOpenSeasonPreviewModal_(_rclNavHub_); });
-  if (signedIn) {
-    add('Member List', function () { _rclOpenMemberListModal(_rclNavHub_); });
-  } else {
-    add('Login or Register', function () {
-      if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage();
-      window.location.href = 'login.html';
-    });
+  addLink('Home', 'index.html');
+  addLink('League Hub', 'league.html');
+  addLink('Championship', 'championship.html');
+  if (signedIn) addLink('Account Dashboard', 'Account.html');
+  else {
+    addLink('Login or Register', 'login.html');
+    links.lastChild.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
   }
-  add('Help', function () { _rclOpenLeagueRulesModal(); });
 
   // Season picker: every season ever created, newest first, right end of the bar, centered vertically.
   if (hub && Array.isArray(hub.seasons) && hub.seasons.length && !_rclViewSeasonId_) {
