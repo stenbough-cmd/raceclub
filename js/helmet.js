@@ -201,6 +201,24 @@
     { id: 'g_band', name: 'Soft band', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, clear(a)); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
     { id: 'g_radial', name: 'Two-color radial', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
     { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
+    ,
+    // Popular gradient shapes: vertical and diagonal fades, a mirrored fade, an angular (conic) sweep and a diamond. All use two colors.
+    { id: 'g_vertical', name: 'Vertical fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, 0, -h / 2, 0, h / 2, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_diagonal', name: 'Diagonal fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, -w / 2, -h / 2, w / 2, h / 2, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_mirror', name: 'Mirrored fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { var g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, b); g.addColorStop(0.5, a); g.addColorStop(1, b); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_angular', name: 'Angular sweep', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
+        if (!c.createConicGradient) { c.save(); c.scale(1, h / w); var rg = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); rg.addColorStop(0, a); rg.addColorStop(1, b); c.fillStyle = rg; c.fillRect(-w / 2, -w / 2, w, w); c.restore(); return; }
+        var g = c.createConicGradient(0, 0, 0); g.addColorStop(0, a); g.addColorStop(0.5, b); g.addColorStop(1, a); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_diamond', name: 'Diamond', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
+        // color a in the middle, color b at the diamond's four corners: the same straight fade in each quarter, mirrored
+        var hw = w / 2, hh = h / 2, gx = 1 / hw, gy = 1 / hh, k = 1 / (gx * gx + gy * gy), q = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+        q.forEach(function (m) { c.save(); c.scale(m[0], m[1]); c.beginPath(); c.rect(0, 0, hw, hh); c.clip(); c.fillStyle = grad(c, 0, 0, gx * k, gy * k, a, b); c.fillRect(0, 0, hw, hh); c.restore(); });
+      } },
+    // Checkered: a two-color checkerboard filling the whole layer box (squarish squares, 8 across)
+    { id: 'g_checker', name: 'Checkered', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
+        var cols = 8, cw = w / cols, rows = Math.max(2, Math.round(h / cw)), ch = h / rows, x, y;
+        for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? b : a; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
+      } }
   ];
   Array.prototype.push.apply(SHAPES, GRADIENTS);
   // Weathering layers: scratches, scuffs and wear drawn in one color (the same marks every time: they use a fixed seed).
