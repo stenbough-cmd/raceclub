@@ -135,8 +135,8 @@
       function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); }, g2);
     // Skew: slide left and the top leans left while the bottom leans right; slide right for the opposite
     if (K.sk) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g2);
-    // Pinch (squeezes the picture sideways only): Position = where along the width (0 = left edge, 100 = right edge), Amount = how strong
-    // (negative bulges instead of squeezing)
+    // Stretch (pulls the picture wider sideways only): Position = where along the width (0 = left edge, 100 = right edge), Amount = how strong
+    // (negative squeezes instead of stretching)
     if (K.pa) {
       addRow('pp', 'Position', 0, 100, 1, function (v) { return (v === undefined || v === null || v === '') ? 50 : (Number(v) || 0); }, function (d) { return d; }, g4);
       addRow('pa', 'Amount', -100, 100, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g4);
@@ -647,12 +647,12 @@
         // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
         [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
         var resetT = mk('button', 'rc-btn-secondary rch-rotbtn', 'Reset'); resetT.type = 'button';
-        resetT.title = 'Put width, height, tilt, skew, pinch, bow, rotation and mirroring back to normal (position stays)';
+        resetT.title = 'Put width, height, tilt, skew, stretch, bow, rotation and mirroring back to normal (position stays)';
         resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.pp; delete sel.pa; delete sel.bu; delete sel.bl; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
         rotRow.appendChild(resetT);
         grid.el3.style.marginTop = '10px'; detail.appendChild(grid.el3);   // Max width and Max height sit between the buttons and the tilt slider
         grid.el2.style.marginTop = '4px'; detail.appendChild(grid.el2);
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Pinch'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Stretch'));
         detail.appendChild(grid.el4);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Bow'));
         detail.appendChild(grid.el5);   // Up / down and Left / right: bends the layer so its middle moves while the edges stay put

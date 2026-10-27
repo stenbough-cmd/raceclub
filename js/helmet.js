@@ -397,7 +397,7 @@
   SHAPES.push({ id: 'player', name: 'Player name and flag', player: true, draw: function () {} });
   SHAPES.push({ id: 'player_num', name: 'Player name, flag and number', player: true, draw: function () {} });
   function isPlayerId(id) { return id === 'player' || id === 'player_name' || id === 'player_num' || id === 'player_number'; }
-  // Pinch (sideways squeeze): pa = amount -100..100 (0 = none, negative bulges), pp = where along the width, 0..100 (50 = middle).
+  // Stretch (sideways only): pa = amount -100..100 (0 = none, positive stretches the picture around pp, negative squeezes it), pp = where along the width, 0..100 (50 = middle).
   function pinchOf(from, to) {
     var a = Math.round(+from.pa);
     if (isFinite(a) && Math.abs(a) >= 1) {
@@ -432,13 +432,13 @@
     }
     return b;
   }
-  // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) squeezed sideways around position pp.
-  // Only the x axis changes. amount > 0 compresses the picture near pp (the rest is spread out), amount < 0 does the opposite.
+  // Redraws src (a canvas) with its middle section (the layer box, padded by pad px each side) stretched sideways around position pp.
+  // Only the x axis changes. amount > 0 stretches the picture near pp (the rest is squeezed in to make room), amount < 0 does the opposite.
   function pinchCanvas(src, pad, pp, pa) {
     var W = src.width, Hh = src.height, bw = W - pad * 2, out = document.createElement('canvas');
     out.width = W; out.height = Hh;
     var o = out.getContext('2d'); o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
-    var p = Math.max(0, Math.min(1, pp / 100)), k = 1 + 3 * Math.abs(pa) / 100, sgn = pa > 0 ? 1 : -1;
+    var p = Math.max(0, Math.min(1, pp / 100)), k = 1 + 3 * Math.abs(pa) / 100, sgn = pa > 0 ? -1 : 1;   // sgn < 0 stretches the picture around pp, sgn > 0 squeezes it
     // maps a destination position u (0..1 across the box) to the source position it shows
     function map(u) {
       var t, g;
