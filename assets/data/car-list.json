@@ -1,7 +1,134 @@
 {
- "generatedAt": "2026-10-27T15:44:03.796Z",
- "note": "Starter list made from the old built-in roster (all 2026). Replace it with Admin > Export Current Car List.",
+ "generatedAt": "2026-10-27T16:11:14.766Z",
  "classes": [
+  {
+   "name": "LMGTE",
+   "year": 2023,
+   "cars": [
+    {
+     "team": "AF Corse",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 488 GTE Evo",
+     "series": "WEC",
+     "numbers": [
+      "21",
+      "54",
+      "83"
+     ],
+     "desc": "AF Corse is one of endurance racing’s most legendary organizations, having built its reputation through championship-winning campaigns with Ferrari across GT and prototype competition. Fielding the Ferrari 488 GTE Evo, the Italian powerhouse combines elite engineering, strategic excellence, and decades of Le Mans experience into a package capable of competing for victories at every level of endurance racing. With a culture built around professionalism and success, AF Corse offers drivers the opportunity to join one of motorsport’s most respected and accomplished teams while continuing a legacy defined by trophies, teamwork, and relentless pursuit of excellence."
+    },
+    {
+     "team": "ORT by TF",
+     "manufacturer": "Aston Martin",
+     "car": "Aston Martin Vantage GTE",
+     "series": "WEC",
+     "numbers": [
+      "25"
+     ],
+     "desc": "ORT by TF Sport has grown into one of Aston Martin’s most trusted endurance racing partners, earning victories and championships through consistent performances on some of the world’s toughest circuits. Campaigning the Aston Martin Vantage GTE, the British squad blends technical precision, experienced personnel, and a racer-first mentality that has made it a fixture at the front of GT competition. For drivers seeking a team that combines proven results with a family atmosphere and unwavering determination, ORT by TF Sport represents an ideal platform for success."
+    },
+    {
+     "team": "Corvette Racing",
+     "manufacturer": "Corvette",
+     "car": "Corvette C8.R",
+     "series": "WEC",
+     "numbers": [
+      "33"
+     ],
+     "desc": "Corvette Racing stands as one of the most iconic factory-backed programs in endurance racing history, with decades of success at Le Mans, Sebring, Daytona, and beyond. Operating the fearsome Corvette C8.R, the American squad is renowned for meticulous preparation, engineering excellence, and an unmatched commitment to performance. Built upon a legacy of victories against the world's best manufacturers, Corvette Racing offers competitors the opportunity to wear one of motorsport’s most respected badges while pursuing glory on racing’s biggest stages."
+    },
+    {
+     "team": "Project 1 - AO",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "56"
+     ],
+     "desc": "Project 1 - AO Racing combines German endurance racing expertise with an ambitious competitive spirit that has earned respect throughout international GT competition. Racing the Porsche 911 RSR-19, the team embraces Porsche’s rich motorsport heritage while developing its own reputation for resilience and determination. Whether fighting through difficult races or capitalizing on race-winning opportunities, Project 1 - AO delivers an environment where commitment and teamwork are rewarded with the chance to compete against the very best in endurance racing."
+    },
+    {
+     "team": "Kessel Racing",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 488 GTE Evo",
+     "series": "WEC",
+     "numbers": [
+      "57"
+     ],
+     "desc": "Kessel Racing has spent years establishing itself as one of Ferrari’s most recognizable customer teams, earning success across a wide range of GT championships and endurance events. Behind the wheel of the Ferrari 488 GTE Evo, the Swiss-based operation pairs technical experience with a passion for competition that has become its trademark. Known for professionalism, consistency, and an unwavering love of racing, Kessel Racing gives drivers the opportunity to join a respected organization that continues to challenge for top results around the world."
+    },
+    {
+     "team": "Iron Lynx",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "60"
+     ],
+     "desc": "Iron Lynx rapidly emerged as one of endurance racing’s premier GT organizations, building a reputation through major victories, championship fights, and strong manufacturer partnerships. Campaigning the Porsche 911 RSR-19, the team brings together elite engineering talent, innovative preparation, and a relentless competitive mentality. For racers looking to compete within a modern organization committed to growth and success, Iron Lynx offers a chance to be part of a team constantly pushing toward the next milestone."
+    },
+    {
+     "team": "Dempsey-Proton Racing",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "77"
+     ],
+     "desc": "Dempsey-Proton Racing has become synonymous with Porsche endurance racing, combining decades of experience with a reputation for extracting maximum performance from every program it undertakes. Long respected throughout Le Mans and world championship competition, the team thrives on discipline, preparation, and race-day execution. Joining Dempsey-Proton means becoming part of a storied organization that values commitment, rewards consistency, and embraces the challenge of competing at the highest level of GT racing."
+    },
+    {
+     "team": "Iron Dames",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "85"
+     ],
+     "desc": "Iron Dames has become one of motorsport’s most inspirational and recognizable projects, demonstrating that ambition, talent, and determination can break barriers on the world stage. Competing with the Porsche 911 RSR-19, the team has earned admiration throughout endurance racing while consistently fighting for strong results against established rivals. More than simply a racing team, Iron Dames represents a movement driven by passion, opportunity, and excellence, making it one of the most exciting programs in international motorsport."
+    },
+    {
+     "team": "GR Racing",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "86"
+     ],
+     "desc": "GR Racing has built its reputation through perseverance, professionalism, and a deep passion for endurance competition. Running the Ferrari 488 GTE Evo, the team consistently punches above its weight by maximizing opportunities and delivering strong performances against larger organizations. With a culture centered on teamwork and continuous improvement, GR Racing provides drivers the opportunity to join a close-knit group committed to competing with heart, determination, and pride."
+    },
+    {
+     "team": "Proton Competition",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 RSR-19",
+     "series": "WEC",
+     "numbers": [
+      "88"
+     ],
+     "desc": "Proton Competition is among the most respected names in Porsche customer racing, with years of success spanning endurance championships and multiple appearances at the 24 Hours of Le Mans. Fielding the Porsche 911 RSR-19, the German squad combines technical expertise, race-winning experience, and one of the strongest support structures in GT racing. Drivers joining Proton Competition become part of an organization that understands what it takes to succeed on the global stage and possesses the tools necessary to compete for top honors."
+    },
+    {
+     "team": "NorthWest AMR",
+     "manufacturer": "Aston Martin",
+     "car": "Aston Martin Vantage GTE",
+     "series": "WEC",
+     "numbers": [
+      "98"
+     ],
+     "desc": "NorthWest AMR proudly represents Aston Martin’s enduring presence in international GT racing, bringing together experienced personnel and competitive drivers under one of the sport’s most iconic brands. Operating the Aston Martin Vantage GTE, the team embraces the challenge of endurance racing with determination, professionalism, and a commitment to continuous improvement. For competitors seeking a team built upon tradition, resilience, and ambition, NorthWest AMR offers the chance to race beneath the wings of a legendary manufacturer."
+    },
+    {
+     "team": "D'Station Racing",
+     "manufacturer": "Aston Martin",
+     "car": "Aston Martin Vantage GTE",
+     "series": "WEC",
+     "numbers": [
+      "777"
+     ],
+     "desc": "D'Station Racing has become a fan favorite through its unique identity, international presence, and long-standing partnership with Aston Martin. The Japanese team has steadily developed into a respected contender in endurance racing, combining disciplined preparation with a never-quit attitude. Racing the Aston Martin Vantage GTE, D'Station provides drivers an opportunity to represent one of Asia’s most recognizable GT programs while competing on the world’s biggest endurance racing stages."
+    }
+   ]
+  },
   {
    "name": "LMGT3",
    "year": 2026,
@@ -12,7 +139,8 @@
      "car": "McLaren 720S GT3 Evo",
      "series": "WEC",
      "numbers": [
-      "10"
+      "10",
+      "58"
      ],
      "desc": "Garage 59 is one of endurance racing’s most respected independent GT teams, building a reputation through victories and podiums in premier global championships while maintaining a close relationship with McLaren’s customer racing program. Operating the McLaren 720S LMGT3 Evo, the British squad combines technical expertise, strategic consistency, and years of GT racing experience to compete against factory-backed rivals. Known for punching above its weight on the world stage, Garage 59 arrives determined to showcase the speed and potential of McLaren machinery while chasing breakthrough results in the fiercely competitive LMGT3 field."
     },
@@ -22,7 +150,8 @@
      "car": "Ferrari 296 GT3 Evo",
      "series": "WEC",
      "numbers": [
-      "21"
+      "21",
+      "54"
      ],
      "desc": "Vista AF Corse represents the latest chapter in the legendary AF Corse story, one of the most successful Ferrari teams in modern endurance racing. With multiple world championships, Le Mans victories, and a long-standing partnership with Ferrari, the organization has become synonymous with excellence in sports car racing. Piloting the Ferrari 296 LMGT3 Evo, Vista AF Corse combines elite operational experience with the passion and prestige of the Prancing Horse. Every appearance carries high expectations, and the team has all the credentials needed to fight for victories on endurance racing’s biggest stages."
     },
@@ -32,16 +161,7 @@
      "car": "Aston Martin Vantage AMR GT3",
      "series": "WEC",
      "numbers": [
-      "23"
-     ],
-     "desc": "Heart of Racing Team has rapidly grown into one of the most admired programs in international GT competition, pairing professional success with a charitable mission that has earned widespread respect throughout motorsport. Closely aligned with Aston Martin Racing, the team has collected victories across major endurance championships while developing a reputation for disciplined execution and relentless determination. With the Aston Martin Vantage AMR LMGT3, Heart of Racing blends proven performance with a fearless racing spirit, making it a serious contender whenever the green flag falls."
-    },
-    {
-     "team": "Heart of Racing Team",
-     "manufacturer": "Aston Martin",
-     "car": "Aston Martin Vantage AMR GT3",
-     "series": "WEC",
-     "numbers": [
+      "23",
       "27"
      ],
      "desc": "Heart of Racing Team has rapidly grown into one of the most admired programs in international GT competition, pairing professional success with a charitable mission that has earned widespread respect throughout motorsport. Closely aligned with Aston Martin Racing, the team has collected victories across major endurance championships while developing a reputation for disciplined execution and relentless determination. With the Aston Martin Vantage AMR LMGT3, Heart of Racing blends proven performance with a fearless racing spirit, making it a serious contender whenever the green flag falls."
@@ -77,32 +197,13 @@
      "desc": "Racing Team Turkey by TF brings together ambitious international talent and the race-winning expertise of TF Sport in one highly competitive LMGT3 package. Benefiting from TF Sport’s extensive endurance racing knowledge and Corvette’s legendary GT pedigree, the team enters each event with the capability to challenge established rivals. The Corvette Z06 LMGT3.R offers the speed and reliability needed for long-distance success, while the team’s determination and growing experience continue to make it an exciting program to watch."
     },
     {
-     "team": "Vista AF Corse",
-     "manufacturer": "Ferrari",
-     "car": "Ferrari 296 GT3 Evo",
-     "series": "WEC",
-     "numbers": [
-      "54"
-     ],
-     "desc": "Vista AF Corse represents the latest chapter in the legendary AF Corse story, one of the most successful Ferrari teams in modern endurance racing. With multiple world championships, Le Mans victories, and a long-standing partnership with Ferrari, the organization has become synonymous with excellence in sports car racing. Piloting the Ferrari 296 LMGT3 Evo, Vista AF Corse combines elite operational experience with the passion and prestige of the Prancing Horse. Every appearance carries high expectations, and the team has all the credentials needed to fight for victories on endurance racing’s biggest stages."
-    },
-    {
-     "team": "Garage 59",
-     "manufacturer": "McLaren",
-     "car": "McLaren 720S GT3 Evo",
-     "series": "WEC",
-     "numbers": [
-      "58"
-     ],
-     "desc": "Garage 59 is one of endurance racing’s most respected independent GT teams, building a reputation through victories and podiums in premier global championships while maintaining a close relationship with McLaren’s customer racing program. Operating the McLaren 720S LMGT3 Evo, the British squad combines technical expertise, strategic consistency, and years of GT racing experience to compete against factory-backed rivals. Known for punching above its weight on the world stage, Garage 59 arrives determined to showcase the speed and potential of McLaren machinery while chasing breakthrough results in the fiercely competitive LMGT3 field."
-    },
-    {
      "team": "Iron Lynx",
      "manufacturer": "Mercedes AMG",
      "car": "Mercedes-AMG GT3",
      "series": "WEC",
      "numbers": [
-      "61"
+      "61",
+      "79"
      ],
      "desc": "Iron Lynx has become one of endurance racing’s standout success stories, rapidly growing from a developing GT outfit into a championship-winning organization competing on the world stage. The Italian team has earned major victories in GT and endurance championships while building a reputation for aggressive yet calculated racecraft. Partnering with Mercedes-AMG machinery, Iron Lynx combines ambition, experience, and technical excellence in pursuit of top results. The team’s relentless drive for success ensures it remains a dangerous competitor throughout every race weekend."
     },
@@ -122,49 +223,21 @@
      "car": "Ford Mustang GT3",
      "series": "WEC",
      "numbers": [
-      "77"
-     ],
-     "desc": "Proton Competition is one of endurance racing’s most experienced and respected privateer organizations, with decades of participation in top-level sports car events around the globe. The German team has earned a reputation for persistence, professionalism, and extracting maximum performance from every racing program it undertakes. Campaigning the Ford Mustang LMGT3, Proton Competition combines proven endurance know-how with Ford’s historic racing heritage. Their blend of tradition and ambition makes them a team capable of surprising even the strongest competitors."
-    },
-    {
-     "team": "Akkodis ASP Team",
-     "manufacturer": "Lexus",
-     "car": "Lexus RC F GT3",
-     "series": "WEC",
-     "numbers": [
-      "78"
-     ],
-     "desc": "Akkodis ASP Team enters LMGT3 competition with a wealth of experience gained through years of success in GT championships across Europe and beyond. The French squad has consistently demonstrated strong operational performance, driver development, and race-winning pace, making it one of Lexus’ premier international partners. With the Lexus RC F LMGT3, Akkodis ASP Team relies on proven reliability and disciplined execution to compete at the highest level. Their steady rise through the ranks has transformed them into a team capable of challenging the sport’s biggest names."
-    },
-    {
-     "team": "Iron Lynx",
-     "manufacturer": "Mercedes AMG",
-     "car": "Mercedes-AMG GT3",
-     "series": "WEC",
-     "numbers": [
-      "79"
-     ],
-     "desc": "Iron Lynx has become one of endurance racing’s standout success stories, rapidly growing from a developing GT outfit into a championship-winning organization competing on the world stage. The Italian team has earned major victories in GT and endurance championships while building a reputation for aggressive yet calculated racecraft. Partnering with Mercedes-AMG machinery, Iron Lynx combines ambition, experience, and technical excellence in pursuit of top results. The team’s relentless drive for success ensures it remains a dangerous competitor throughout every race weekend."
-    },
-    {
-     "team": "Akkodis ASP Team",
-     "manufacturer": "Lexus",
-     "car": "Lexus RC F GT3",
-     "series": "WEC",
-     "numbers": [
-      "87"
-     ],
-     "desc": "Akkodis ASP Team enters LMGT3 competition with a wealth of experience gained through years of success in GT championships across Europe and beyond. The French squad has consistently demonstrated strong operational performance, driver development, and race-winning pace, making it one of Lexus’ premier international partners. With the Lexus RC F LMGT3, Akkodis ASP Team relies on proven reliability and disciplined execution to compete at the highest level. Their steady rise through the ranks has transformed them into a team capable of challenging the sport’s biggest names."
-    },
-    {
-     "team": "Proton Competition",
-     "manufacturer": "Ford",
-     "car": "Ford Mustang GT3",
-     "series": "WEC",
-     "numbers": [
+      "77",
       "88"
      ],
      "desc": "Proton Competition is one of endurance racing’s most experienced and respected privateer organizations, with decades of participation in top-level sports car events around the globe. The German team has earned a reputation for persistence, professionalism, and extracting maximum performance from every racing program it undertakes. Campaigning the Ford Mustang LMGT3, Proton Competition combines proven endurance know-how with Ford’s historic racing heritage. Their blend of tradition and ambition makes them a team capable of surprising even the strongest competitors."
+    },
+    {
+     "team": "Akkodis ASP Team",
+     "manufacturer": "Lexus",
+     "car": "Lexus RC F GT3",
+     "series": "WEC",
+     "numbers": [
+      "78",
+      "87"
+     ],
+     "desc": "Akkodis ASP Team enters LMGT3 competition with a wealth of experience gained through years of success in GT championships across Europe and beyond. The French squad has consistently demonstrated strong operational performance, driver development, and race-winning pace, making it one of Lexus’ premier international partners. With the Lexus RC F LMGT3, Akkodis ASP Team relies on proven reliability and disciplined execution to compete at the highest level. Their steady rise through the ranks has transformed them into a team capable of challenging the sport’s biggest names."
     },
     {
      "team": "Manthey DK Engineering",
@@ -185,6 +258,118 @@
       "92"
      ],
      "desc": "The Bend Manthey brings together the world-class capabilities of Manthey Racing and strong international backing to create a formidable Porsche-powered contender. Benefiting from Manthey’s extensive record of championship success and endurance racing excellence, the team operates with the precision and professionalism expected from one of the sport’s elite organizations. Armed with the Porsche 911 GT3 R LMGT3, The Bend Manthey possesses the experience, technical strength, and winning pedigree necessary to challenge for podiums and victories throughout the WEC season."
+    },
+    {
+     "team": "United Autosports",
+     "manufacturer": "McLaren",
+     "car": "McLaren 720S GT3 Evo",
+     "series": "ELMS",
+     "numbers": [
+      "23"
+     ],
+     "desc": "United Autosports is one of the most accomplished endurance racing teams in modern motorsport. Founded by Zak Brown and Richard Dean, the organization has achieved success across ELMS, WEC, IMSA, and the Asian Le Mans Series with both prototype and GT machinery. Their GT programs benefit from world-class engineering resources, experienced race operations personnel, and a proven record of success at the highest levels of international endurance racing."
+    },
+    {
+     "team": "TF Sport",
+     "manufacturer": "Corvette",
+     "car": "Chevrolet Corvette Z06 GT3.R",
+     "series": "ELMS",
+     "numbers": [
+      "33"
+     ],
+     "desc": "TF Sport is one of Britain's premier GT racing organizations and has earned victories in many of the world's most prestigious endurance events. The team has developed a reputation for professionalism, technical excellence, and consistent championship contention across multiple categories. Through close manufacturer relationships and strong driver lineups, TF Sport has become a benchmark operation in international GT racing."
+    },
+    {
+     "team": "Richard Mille AF Corse",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 296 GT3",
+     "series": "ELMS",
+     "numbers": [
+      "50"
+     ],
+     "desc": "Richard Mille AF Corse combines the support of luxury watchmaker Richard Mille with the vast endurance racing expertise of AF Corse. The partnership brings together one of motorsport's most successful GT organizations and a commitment to developing top-level driving talent. The team consistently fields competitive entries capable of fighting for victories across Europe's premier endurance championships."
+    },
+    {
+     "team": "AF Corse",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 296 GT3",
+     "series": "ELMS",
+     "numbers": [
+      "51"
+     ],
+     "desc": "AF Corse is one of the most successful endurance racing teams of the modern era and serves as Ferrari's primary competition partner in GT racing. Since its foundation in 2002, the Italian organization has accumulated numerous championships, race wins, and international accolades. Its expertise in Ferrari machinery and endurance racing strategy has made AF Corse a cornerstone of sports car racing worldwide."
+    },
+    {
+     "team": "High Class Racing",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 GT3 R",
+     "series": "ELMS",
+     "numbers": [
+      "54"
+     ],
+     "desc": "High Class Racing is a Danish motorsport organization with extensive experience in endurance racing competition. The team has successfully competed in both prototype and GT categories while building a reputation for professional operations and strong race execution. Years of international experience have helped establish the team as a respected competitor throughout European sports car racing."
+    },
+    {
+     "team": "Spirit of Race",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 296 GT3",
+     "series": "ELMS",
+     "numbers": [
+      "55"
+     ],
+     "desc": "Spirit of Race is a Swiss-based endurance racing team closely associated with Ferrari competition. The organization has competed in many of the world's most prestigious endurance events while cultivating a reputation for strong racecraft and competitive GT programs. Its experienced personnel and long relationship with Ferrari have made Spirit of Race a respected name in GT racing."
+    },
+    {
+     "team": "Kessel Racing",
+     "manufacturer": "Ferrari",
+     "car": "Ferrari 296 GT3",
+     "series": "ELMS",
+     "numbers": [
+      "57",
+      "74"
+     ],
+     "desc": "Kessel Racing is one of Europe's most experienced Ferrari-affiliated racing teams and has spent decades competing at the highest levels of GT competition. The Swiss organization has achieved success across multiple championships while developing a reputation for technical expertise, reliability, and strong driver support. Its long history with Ferrari machinery makes it a perennial contender in endurance racing."
+    },
+    {
+     "team": "Racing Spirit of Leman",
+     "manufacturer": "Aston Martin",
+     "car": "Aston Martin Vantage GT3 Evo",
+     "series": "ELMS",
+     "numbers": [
+      "59"
+     ],
+     "desc": "Racing Spirit of Leman is a Swiss endurance racing organization that has steadily expanded its presence in international motorsport. The team combines experienced racing personnel with ambitious long-term development goals and has established itself as a competitive operation in GT racing. Its continued growth has made it an increasingly recognized name within the European endurance paddock."
+    },
+    {
+     "team": "Team Qatar by Iron Lynx",
+     "manufacturer": "Mercedes-AMG",
+     "car": "Mercedes-AMG GT3 Evo",
+     "series": "ELMS",
+     "numbers": [
+      "62"
+     ],
+     "desc": "Team Qatar by Iron Lynx combines Qatar-backed motorsport initiatives with the proven endurance racing expertise of Iron Lynx. The collaboration brings together international investment, experienced management, and highly competitive driver talent. With access to strong technical resources and a professional racing structure, the team aims to challenge for top honors throughout the ELMS season."
+    },
+    {
+     "team": "Iron Lynx",
+     "manufacturer": "Mercedes-AMG",
+     "car": "Mercedes-AMG GT3 Evo",
+     "series": "ELMS",
+     "numbers": [
+      "63"
+     ],
+     "desc": "Iron Lynx has become one of the most recognizable names in modern endurance racing through success in GT competition and expansion into factory-supported international programs. The Italian team is known for its professionalism, competitive race operations, and ability to build strong partnerships with manufacturers. Its achievements have established Iron Lynx as a major force in global sports car racing."
+    },
+    {
+     "team": "Proton Competition",
+     "manufacturer": "Porsche",
+     "car": "Porsche 911 GT3 R",
+     "series": "ELMS",
+     "numbers": [
+      "75",
+      "77"
+     ],
+     "desc": "Proton Competition is among Germany's most respected endurance racing organizations and has enjoyed a long-standing relationship with Porsche. Through years of success in GT and prototype competition, the team has developed a reputation for engineering excellence, operational consistency, and strong manufacturer partnerships. Its GT programs regularly compete at the highest levels of international endurance racing."
     }
    ]
   },
@@ -302,21 +487,164 @@
      "team": "DKR Engineering",
      "manufacturer": "Oreca",
      "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
+     "series": "WEC",
      "numbers": [
       "3"
      ],
-     "desc": "DKR Engineering is a Luxembourg-based endurance racing team that has built a strong reputation in prototype competition through consistent performances across European and international sports car championships. The organization is known for maximizing results with developing talent and experienced endurance racers alike. DKR has achieved success in multiple prototype categories and is respected for its technical preparation, strategic race execution, and ability to compete against larger factory-supported operations."
+     "desc": "DKR Engineering is a Luxembourg-based team that built its reputation as a front-runner in LMP3 before stepping up to LMP2. The squad brings a blend of veteran pace and gentleman-driver experience to its Pro-Am program at the 24 Hours of Le Mans."
+    },
+    {
+     "team": "CrowdStrike Racing by APR",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "4"
+     ],
+     "desc": "CrowdStrike Racing by APR pairs the cybersecurity company's racing program with the race-winning operation of Algarve Pro Racing. Fronted by CrowdStrike founder and CEO George Kurtz, the team has become a fixture of the LMP2 Pro-Am fight in both Europe and North America."
+    },
+    {
+     "team": "Proton Competition",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "9",
+      "44"
+     ],
+     "desc": "Proton Competition is a German team run by the Ried family that spent years as one of the most successful privateer squads in GT endurance racing. Its move into LMP2 extended the outfit's long-running presence at Le Mans into prototype competition."
+    },
+    {
+     "team": "TDS Racing",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "14"
+     ],
+     "desc": "TDS Racing is a French team with deep roots in prototype racing and a long record of podiums in the European Le Mans Series. Its Le Mans line-up combines Shopify founder Tobias Lütke with seasoned professional sports car drivers."
+    },
+    {
+     "team": "United Autosports",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "22",
+      "222"
+     ],
+     "desc": "United Autosports was founded in 2009 by Zak Brown and Richard Dean and grew into one of the most decorated LMP2 teams in the world. The British squad won the LMP2 class at the 2020 24 Hours of Le Mans on its way to the FIA World Endurance Championship title."
+    },
+    {
+     "team": "Nielsen Racing",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "24"
+     ],
+     "desc": "Nielsen Racing is a British team that climbed through the Le Mans Cup and LMP3 ranks before establishing itself in LMP2. The squad is known for developing young talent alongside experienced endurance racers."
+    },
+    {
+     "team": "Algarve Pro Racing",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "25"
+     ],
+     "desc": "Algarve Pro Racing is a team based in Portugal's Algarve region that has become one of the leading LMP2 operations in the European Le Mans Series. Its Le Mans entries regularly mix professional drivers with ambitious gentleman racers in the Pro-Am category."
     },
     {
      "team": "Vector Sport",
      "manufacturer": "Oreca",
      "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
+     "series": "WEC",
      "numbers": [
-      "7"
+      "26"
      ],
-     "desc": "Vector Sport is a British racing team that has rapidly expanded its presence in international endurance racing. Established with ambitions to compete at the highest levels of prototype racing, the team has participated in major championships including ELMS, WEC, and the 24 Hours of Le Mans. Vector Sport combines modern engineering practices with a progressive driver development philosophy and has earned recognition for its competitive pace against more established organizations."
+     "desc": "Vector Sport is an endurance team that made its name in LMP2 in the FIA World Endurance Championship. The squad has built a reputation for strong pace and consistent results in one of the most competitive classes at Le Mans."
+    },
+    {
+     "team": "IDEC Sport",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "28"
+     ],
+     "desc": "IDEC Sport is a French team founded by businessman Patrice Lafargue and a long-time contender in the European Le Mans Series. The family-run outfit has raced at Le Mans for more than a decade, with Paul Lafargue continuing the family's place in the cockpit."
+    },
+    {
+     "team": "Forestier Racing by Panis",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "29"
+     ],
+     "desc": "Forestier Racing by Panis brings together the Forestier family's racing ambitions and the LMP2 expertise of former Formula One driver Olivier Panis' team. The French squad fields a young, fast line-up in the hunt for LMP2 honors at Le Mans."
+    },
+    {
+     "team": "Duqueine Team",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "30"
+     ],
+     "desc": "Duqueine Team is the racing arm of French constructor Duqueine Engineering, known for building its own prototypes for the LMP3 class. In LMP2 the team runs an Oreca with a line-up that blends factory-level talent with rising stars."
+    },
+    {
+     "team": "CLX Motorsport",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "37"
+     ],
+     "desc": "CLX Motorsport is a Swiss team that earned its stripes in the LMP3 ranks of the European Le Mans Series before graduating to LMP2. Its Le Mans effort leans on a young, hungry driver line-up."
+    },
+    {
+     "team": "Inter Europol Competition",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "43",
+      "343"
+     ],
+     "desc": "Inter Europol Competition is a Polish team that rose from LMP3 to become one of the strongest LMP2 outfits in endurance racing. The squad claimed the LMP2 class victory at the 2023 24 Hours of Le Mans, a landmark result for Polish motorsport."
+    },
+    {
+     "team": "RD Limited",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "48"
+     ],
+     "desc": "RD Limited is the racing company of two-time 24 Hours of Le Mans overall winner Romain Dumas, also famous for his record-setting runs at the Pikes Peak hill climb. The team's Pro-Am entry pairs Dumas' experience with a strong professional co-driver and a committed amateur."
+    },
+    {
+     "team": "AO by TF",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "99"
+     ],
+     "desc": "AO by TF combines PJ Hyett's Racing Team AO, known for its eye-catching dinosaur liveries, with the endurance expertise of TF Sport. The American-led effort is a fan favorite and a serious contender in LMP2 Pro-Am."
+    },
+    {
+     "team": "AF Corse",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "WEC",
+     "numbers": [
+      "183"
+     ],
+     "desc": "AF Corse is the Italian team long associated with Ferrari's factory endurance programs and one of the most successful outfits in Le Mans history. Its LMP2 Pro-Am entry is built around French gentleman driver François Perrodo, a long-time AF Corse regular."
     },
     {
      "team": "Proton Competition",
@@ -324,7 +652,8 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "9"
+      "9",
+      "88"
      ],
      "desc": "Proton Competition is one of Germany's most respected endurance racing organizations and a long-standing competitor in international sports car racing. The team has built a reputation for professionalism, technical consistency, and success across GT and prototype categories. Through decades of competition at Le Mans and in major endurance championships, Proton Competition has become one of the most recognizable privateer operations in global motorsport."
     },
@@ -334,19 +663,10 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "10"
+      "10",
+      "7"
      ],
      "desc": "Vector Sport is a British endurance racing team that rapidly established itself as a competitive force in prototype racing. Based in Silverstone, the organization has competed successfully in both ELMS and FIA WEC competition. Through ambitious growth, strong engineering support, and experienced personnel, Vector Sport continues to strengthen its position among Europe's leading LMP2 teams."
-    },
-    {
-     "team": "TDS Racing",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "14"
-     ],
-     "desc": "TDS Racing is one of the most successful and respected endurance racing organizations in Europe. Founded in France, the team has accumulated victories and championships across numerous sports car categories, including significant success in LMP2 competition. Renowned for operational excellence, technical expertise, and long-term consistency, TDS Racing has established itself as a benchmark team capable of competing for victories at every major endurance event it enters."
     },
     {
      "team": "IDEC Sport",
@@ -354,47 +674,19 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "18"
+      "18",
+      "28"
      ],
      "desc": "IDEC Sport is a French endurance racing powerhouse that has become one of the premier teams in LMP2 competition. The organization has earned race victories, championship contention, and multiple Le Mans appearances while helping develop emerging talent. Known for strong technical preparation and consistent race execution, IDEC Sport remains one of the benchmark teams in European prototype racing."
     },
     {
-     "team": "Rossa Racing by Virage",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "19"
-     ],
-     "desc": "Rossa Racing by Virage combines the resources and expertise of Team Virage with a dedicated endurance racing program focused on prototype competition. The organization has developed a reputation for cultivating emerging drivers while maintaining competitive performances in international endurance championships. Through steady growth and professional race operations, the team has become a recognized presence within the European prototype racing scene."
-    },
-    {
-     "team": "Algarve Pro Racing",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "20"
-     ],
-     "desc": "Algarve Pro Racing is one of the premier prototype racing teams in modern endurance competition. Based in Portugal, the team has achieved numerous victories and championship successes in both European and international series. APR is highly regarded for its technical capabilities, race strategy, and driver development programs, regularly producing race-winning performances against elite competition. Its consistent success has made the organization a fixture at the front of LMP2 racing worldwide."
-    },
-    {
      "team": "United Autosports",
      "manufacturer": "Oreca",
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
+      "22",
       "21"
-     ],
-     "desc": "United Autosports is a globally recognized endurance racing team founded by Zak Brown and Richard Dean. The organization has become one of the most successful operations in modern sports car racing, securing victories and championships across numerous prototype and GT categories. With state-of-the-art facilities, a deep engineering staff, and an extensive record of success at prestigious endurance events, United Autosports is widely regarded as one of the benchmark teams in international racing."
-    },
-    {
-     "team": "United Autosports",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "22"
      ],
      "desc": "United Autosports is one of the most successful endurance racing teams in modern motorsport. Founded by Zak Brown and Richard Dean, the team has achieved victories and championships across ELMS, WEC, IMSA, and the Asian Le Mans Series. With multiple class victories at the 24 Hours of Le Mans and a reputation for excellence, United Autosports is widely regarded as one of the leading prototype racing organizations in the world."
     },
@@ -404,7 +696,8 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "24"
+      "24",
+      "27"
      ],
      "desc": "Nielsen Racing is a British endurance racing team with extensive experience in prototype competition. Over the years the organization has steadily developed into a regular front-running operation in European endurance racing. Its combination of technical expertise, strong driver development, and consistent performance has earned the team an established place in the LMP2 paddock."
     },
@@ -414,29 +707,10 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "25"
+      "25",
+      "20"
      ],
      "desc": "Algarve Pro Racing has established itself as one of the strongest independent prototype racing teams in the world. Based in Portugal, the team has earned championships and major race victories across ELMS and the Asian Le Mans Series. Renowned for extracting maximum performance from the Oreca platform, APR is consistently regarded as one of the elite organizations in LMP2 competition."
-    },
-    {
-     "team": "Nielsen Racing",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "27"
-     ],
-     "desc": "Nielsen Racing is a British endurance racing team known for its professionalism, technical strength, and commitment to developing emerging talent. The organization has competed successfully across multiple prototype categories and has built a reputation for extracting strong performances from both experienced professionals and rising stars. Nielsen Racing continues to be a respected contender throughout European endurance racing competition."
-    },
-    {
-     "team": "IDEC Sport",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "28"
-     ],
-     "desc": "IDEC Sport is a French endurance racing powerhouse that has become one of the premier teams in LMP2 competition. The organization has earned race victories, championship contention, and multiple Le Mans appearances while helping develop emerging talent. Known for strong technical preparation and consistent race execution, IDEC Sport remains one of the benchmark teams in European prototype racing."
     },
     {
      "team": "Forestier Racing by Panis",
@@ -449,41 +723,12 @@
      "desc": "Forestier Racing by Panis combines the resources of Forestier Racing with the successful legacy established by Panis Racing. Building upon years of experience in prototype competition, the team carries forward one of France's most respected endurance racing programs. Its focus on strong race execution, driver development, and technical excellence has made it a regular contender in LMP2 racing."
     },
     {
-     "team": "Duqueine Team",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "30"
-     ],
-     "desc": "Duqueine Team is a French motorsport organization with extensive experience in prototype racing and driver development. The team has participated in numerous endurance racing championships and is recognized for its technical preparation, professional operations, and ability to nurture future racing talent. Duqueine has established itself as a consistent and competitive presence within the European sports car racing landscape."
-    },
-    {
      "team": "Inter Europol Competition",
      "manufacturer": "Oreca",
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
-      "34"
-     ],
-     "desc": "Inter Europol Competition is a Polish endurance racing team known worldwide as the Turbo Bakers. Since its foundation the team has become one of Europe's leading prototype organizations, earning victories and championship success across multiple endurance categories. Its distinctive identity, technical expertise, and competitive spirit have made it a fan favorite and a consistent contender for major honors."
-    },
-    {
-     "team": "CLX Motorsport",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "37"
-     ],
-     "desc": "CLX Motorsport is an ambitious European racing organization that has quickly gained recognition through success in endurance racing and driver development programs. The team combines modern engineering resources with a commitment to nurturing emerging talent. Continued growth and competitive performances have established CLX Motorsport as one of the rising names in prototype racing."
-    },
-    {
-     "team": "Inter Europol Competition",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
+      "34",
       "43"
      ],
      "desc": "Inter Europol Competition is a Polish endurance racing team known worldwide as the Turbo Bakers. Since its foundation the team has become one of Europe's leading prototype organizations, earning victories and championship success across multiple endurance categories. Its distinctive identity, technical expertise, and competitive spirit have made it a fan favorite and a consistent contender for major honors."
@@ -494,9 +739,50 @@
      "car": "Oreca 07 - Gibson",
      "series": "ELMS",
      "numbers": [
+      "37",
       "47"
      ],
-     "desc": "CLX Motorsport is an ambitious European racing organization that has quickly earned recognition through competitive performances in endurance racing and a strong commitment to driver development. By combining modern engineering resources, data-driven race preparation, and talented personnel, the team has established itself as an emerging force in prototype competition. Continued investment and on-track success have positioned CLX Motorsport among the rising contenders in European endurance racing."
+     "desc": "CLX Motorsport is an ambitious European racing organization that has quickly gained recognition through success in endurance racing and driver development programs. The team combines modern engineering resources with a commitment to nurturing emerging talent. Continued growth and competitive performances have established CLX Motorsport as one of the rising names in prototype racing."
+    },
+    {
+     "team": "DKR Engineering",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "ELMS",
+     "numbers": [
+      "3"
+     ],
+     "desc": "DKR Engineering is a Luxembourg-based endurance racing team that has built a strong reputation in prototype competition through consistent performances across European and international sports car championships. The organization is known for maximizing results with developing talent and experienced endurance racers alike. DKR has achieved success in multiple prototype categories and is respected for its technical preparation, strategic race execution, and ability to compete against larger factory-supported operations."
+    },
+    {
+     "team": "TDS Racing",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "ELMS",
+     "numbers": [
+      "14"
+     ],
+     "desc": "TDS Racing is one of the most successful and respected endurance racing organizations in Europe. Founded in France, the team has accumulated victories and championships across numerous sports car categories, including significant success in LMP2 competition. Renowned for operational excellence, technical expertise, and long-term consistency, TDS Racing has established itself as a benchmark team capable of competing for victories at every major endurance event it enters."
+    },
+    {
+     "team": "Rossa Racing by Virage",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "ELMS",
+     "numbers": [
+      "19"
+     ],
+     "desc": "Rossa Racing by Virage combines the resources and expertise of Team Virage with a dedicated endurance racing program focused on prototype competition. The organization has developed a reputation for cultivating emerging drivers while maintaining competitive performances in international endurance championships. Through steady growth and professional race operations, the team has become a recognized presence within the European prototype racing scene."
+    },
+    {
+     "team": "Duqueine Team",
+     "manufacturer": "Oreca",
+     "car": "Oreca 07 - Gibson",
+     "series": "ELMS",
+     "numbers": [
+      "30"
+     ],
+     "desc": "Duqueine Team is a French motorsport organization with extensive experience in prototype racing and driver development. The team has participated in numerous endurance racing championships and is recognized for its technical preparation, professional operations, and ability to nurture future racing talent. Duqueine has established itself as a consistent and competitive presence within the European sports car racing landscape."
     },
     {
      "team": "AF Corse",
@@ -507,16 +793,6 @@
       "83"
      ],
      "desc": "AF Corse is one of the most accomplished endurance racing teams in the world. Based in Italy, the organization has achieved extensive success in GT and prototype competition, earning championships and victories across major international racing series. AF Corse is renowned for its close association with Ferrari, exceptional engineering standards, and ability to consistently compete for wins at the highest levels of sports car racing. The team's reputation for excellence has made it one of endurance racing's most respected organizations."
-    },
-    {
-     "team": "Proton Competition",
-     "manufacturer": "Oreca",
-     "car": "Oreca 07 - Gibson",
-     "series": "ELMS",
-     "numbers": [
-      "88"
-     ],
-     "desc": "Proton Competition is a German endurance racing organization with decades of experience at the highest levels of sports car competition. The team has competed successfully in numerous international championships and is particularly well known for its long-standing presence at the 24 Hours of Le Mans. Combining engineering expertise with proven race execution, Proton Competition has established itself as one of Europe's most respected privateer racing teams."
     },
     {
      "team": "AO by TF",
@@ -540,39 +816,21 @@
      "car": "Aston Martin Valkyrie",
      "series": "WEC",
      "numbers": [
-      "007"
-     ],
-     "desc": "Aston Martin THOR Team represents Aston Martin’s factory Hypercar effort in the FIA World Endurance Championship, built around the spectacular Valkyrie platform. Developed in partnership with The Heart of Racing, the program brings the iconic British manufacturer back to the highest level of endurance racing with ambitions of challenging for overall victories at Le Mans and throughout the world championship."
-    },
-    {
-     "team": "Toyota Racing",
-     "manufacturer": "Toyota",
-     "car": "Toyota TR010",
-     "series": "WEC",
-     "numbers": [
-      "7"
-     ],
-     "desc": "Toyota Gazoo Racing is the benchmark team of modern endurance racing, having dominated the FIA World Endurance Championship and 24 Hours of Le Mans over the past decade. Combining cutting-edge hybrid technology, operational excellence, and unmatched consistency, Toyota has established itself as one of the most successful prototype racing organizations in motorsport history."
-    },
-    {
-     "team": "Toyota Racing",
-     "manufacturer": "Toyota",
-     "car": "Toyota TR010",
-     "series": "WEC",
-     "numbers": [
-      "8"
-     ],
-     "desc": "Toyota Gazoo Racing is the benchmark team of modern endurance racing, having dominated the FIA World Endurance Championship and 24 Hours of Le Mans over the past decade. Combining cutting-edge hybrid technology, operational excellence, and unmatched consistency, Toyota has established itself as one of the most successful prototype racing organizations in motorsport history."
-    },
-    {
-     "team": "Aston Martin THOR Team",
-     "manufacturer": "Aston Martin",
-     "car": "Aston Martin Valkyrie",
-     "series": "WEC",
-     "numbers": [
+      "007",
       "009"
      ],
      "desc": "Aston Martin THOR Team represents Aston Martin’s factory Hypercar effort in the FIA World Endurance Championship, built around the spectacular Valkyrie platform. Developed in partnership with The Heart of Racing, the program brings the iconic British manufacturer back to the highest level of endurance racing with ambitions of challenging for overall victories at Le Mans and throughout the world championship."
+    },
+    {
+     "team": "Toyota Racing",
+     "manufacturer": "Toyota",
+     "car": "Toyota TR010",
+     "series": "WEC",
+     "numbers": [
+      "7",
+      "8"
+     ],
+     "desc": "Toyota Gazoo Racing is the benchmark team of modern endurance racing, having dominated the FIA World Endurance Championship and 24 Hours of Le Mans over the past decade. Combining cutting-edge hybrid technology, operational excellence, and unmatched consistency, Toyota has established itself as one of the most successful prototype racing organizations in motorsport history."
     },
     {
      "team": "Cadillac Hertz Team Jota",
@@ -590,49 +848,21 @@
      "car": "BMW M Hybrid V8",
      "series": "WEC",
      "numbers": [
-      "15"
-     ],
-     "desc": "BMW M Team WRT is the factory endurance racing partnership between BMW Motorsport and Belgian powerhouse Team WRT. With championship-winning credentials across GT and prototype racing, the team operates BMW’s cutting-edge Hypercar program and is known for its professionalism, technical strength, and ability to compete for victories on the world stage."
-    },
-    {
-     "team": "Genesis Magma Racing",
-     "manufacturer": "Genesis",
-     "car": "Genesis GMR-001",
-     "series": "WEC",
-     "numbers": [
-      "17"
-     ],
-     "desc": "Genesis Magma Racing is the premium Korean manufacturer’s ambitious entry into top-level endurance racing. Created to showcase Genesis performance technology and global motorsport aspirations, the team combines advanced engineering, elite personnel, and a long-term commitment to establishing itself as a competitive force in Hypercar competition."
-    },
-    {
-     "team": "Genesis Magma Racing",
-     "manufacturer": "Genesis",
-     "car": "Genesis GMR-001",
-     "series": "WEC",
-     "numbers": [
-      "19"
-     ],
-     "desc": "Genesis Magma Racing is the premium Korean manufacturer’s ambitious entry into top-level endurance racing. Created to showcase Genesis performance technology and global motorsport aspirations, the team combines advanced engineering, elite personnel, and a long-term commitment to establishing itself as a competitive force in Hypercar competition."
-    },
-    {
-     "team": "BMW M Team WRT",
-     "manufacturer": "BMW",
-     "car": "BMW M Hybrid V8",
-     "series": "WEC",
-     "numbers": [
+      "15",
       "20"
      ],
      "desc": "BMW M Team WRT is the factory endurance racing partnership between BMW Motorsport and Belgian powerhouse Team WRT. With championship-winning credentials across GT and prototype racing, the team operates BMW’s cutting-edge Hypercar program and is known for its professionalism, technical strength, and ability to compete for victories on the world stage."
     },
     {
-     "team": "Alpine Endurance Team",
-     "manufacturer": "Alpine",
-     "car": "Alpine A424",
+     "team": "Genesis Magma Racing",
+     "manufacturer": "Genesis",
+     "car": "Genesis GMR-001",
      "series": "WEC",
      "numbers": [
-      "35"
+      "17",
+      "19"
      ],
-     "desc": "Alpine Endurance Team is the factory sports car racing division of Alpine, representing the French brand at the highest level of endurance competition. Building on a strong history in prototype racing and championship-winning programs, Alpine combines Renault Group engineering expertise with a dedicated racing operation focused on challenging the world’s leading manufacturers."
+     "desc": "Genesis Magma Racing is the premium Korean manufacturer’s ambitious entry into top-level endurance racing. Created to showcase Genesis performance technology and global motorsport aspirations, the team combines advanced engineering, elite personnel, and a long-term commitment to establishing itself as a competitive force in Hypercar competition."
     },
     {
      "team": "Alpine Endurance Team",
@@ -640,6 +870,7 @@
      "car": "Alpine A424",
      "series": "WEC",
      "numbers": [
+      "35",
       "36"
      ],
      "desc": "Alpine Endurance Team is the factory sports car racing division of Alpine, representing the French brand at the highest level of endurance competition. Building on a strong history in prototype racing and championship-winning programs, Alpine combines Renault Group engineering expertise with a dedicated racing operation focused on challenging the world’s leading manufacturers."
@@ -660,16 +891,7 @@
      "car": "Ferrari 499P",
      "series": "WEC",
      "numbers": [
-      "50"
-     ],
-     "desc": "Ferrari AF Corse is the official factory team responsible for Ferrari’s modern prototype racing program. Supported by the legendary AF Corse organization, the team combines Ferrari’s rich endurance racing heritage with cutting-edge technology and world-class talent, continuing the marque’s pursuit of overall victories at Le Mans and global championship success."
-    },
-    {
-     "team": "Ferrari AF Corse",
-     "manufacturer": "Ferrari",
-     "car": "Ferrari 499P",
-     "series": "WEC",
-     "numbers": [
+      "50",
       "51"
      ],
      "desc": "Ferrari AF Corse is the official factory team responsible for Ferrari’s modern prototype racing program. Supported by the legendary AF Corse organization, the team combines Ferrari’s rich endurance racing heritage with cutting-edge technology and world-class talent, continuing the marque’s pursuit of overall victories at Le Mans and global championship success."
@@ -690,16 +912,7 @@
      "car": "Peugeot 9X8",
      "series": "WEC",
      "numbers": [
-      "93"
-     ],
-     "desc": "Peugeot TotalEnergies is the factory Hypercar team representing the historic French manufacturer in the FIA World Endurance Championship. Combining Peugeot Sport’s engineering heritage with support from energy partner TotalEnergies, the team is focused on returning the marque to the front of prototype racing through innovation, technology, and long-term development."
-    },
-    {
-     "team": "Peugeot TotalEnergies",
-     "manufacturer": "Peugeot",
-     "car": "Peugeot 9X8",
-     "series": "WEC",
-     "numbers": [
+      "93",
       "94"
      ],
      "desc": "Peugeot TotalEnergies is the factory Hypercar team representing the historic French manufacturer in the FIA World Endurance Championship. Combining Peugeot Sport’s engineering heritage with support from energy partner TotalEnergies, the team is focused on returning the marque to the front of prototype racing through innovation, technology, and long-term development."
