@@ -2721,3 +2721,7 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-news-badge-sm .rcl-news-badge-icon { width: 19px; height: 19px; }
 
 a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-red); }
+
+/* League Hub navbar works like the home page one (Matt, 2026-10-27): it rides up with the page, then stays pinned
+   right under the 70px fixed header while the page keeps scrolling beneath it. Also rests on the bottom edge on a very short window. */
+body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bottom: 0; z-index: 50; }
