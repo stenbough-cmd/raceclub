@@ -904,17 +904,23 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
 
       // logos (clipped to the shell so they never float off the helmet)
       function layersPass(lo, hi, target) {
+      // draw the layers at double size, then shrink them to the helmet size, so every move, turn, skew, stretch and bow comes out smooth (antialiased)
+      var SS = Wt > 1100 ? 1 : 2;
+      layersPassSS(lo, hi, target, Wt * SS, Ht * SS, scale * SS, Wt, Ht, SS);
+      }
+      function layersPassSS(lo, hi, target, Wt, Ht, scale, outW, outH, SS) {
       var hasLogo = false, li;
       for (li = lo; li < hi; li++) if (logoImgs[li]) hasLogo = true;
       if (hasLogo) {
         var lc = document.createElement('canvas'); lc.width = Wt; lc.height = Ht;
         var lx = lc.getContext('2d', { willReadFrequently: true });
+        lx.imageSmoothingEnabled = true; lx.imageSmoothingQuality = 'high';
         recipe.logos.forEach(function (l, idx) {
           if (idx < lo || idx >= hi) return;
           if (+l.hd) return;   // hidden layer
           var im = logoImgs[idx]; if (!im) return;
           var op = (l.o > 0 && l.o < 100) ? l.o / 100 : 1, g = lx, tcv = null;
-          if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); }   // draw on a spare canvas, then lay it over at the chosen see-through amount
+          if (op < 1) { tcv = document.createElement('canvas'); tcv.width = Wt; tcv.height = Ht; g = tcv.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; }   // draw on a spare canvas, then lay it over at the chosen see-through amount
           g.save();
           g.translate((l.x - CROP.x) * scale, (l.y - CROP.y) * scale);
           g.rotate(-l.r * Math.PI / 180);
@@ -964,7 +970,9 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
           g.restore();
           if (tcv) { lx.globalAlpha = op; lx.drawImage(tcv, 0, 0); lx.globalAlpha = 1; }
         });
-        var ld = lx.getImageData(0, 0, Wt, Ht).data;
+        var dc = lc;
+        if (SS > 1) { dc = document.createElement('canvas'); dc.width = outW; dc.height = outH; var dx = dc.getContext('2d', { willReadFrequently: true }); dx.imageSmoothingEnabled = true; dx.imageSmoothingQuality = 'high'; dx.drawImage(lc, 0, 0, outW, outH); }
+        var ld = dc.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, outW, outH).data;
         for (var q = 0; q < N; q++) {
           var la = ld[q * 4 + 3] / 255; if (la <= 0) continue;
           la *= m1[q * 4] / 255;
