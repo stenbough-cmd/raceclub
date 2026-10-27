@@ -3691,7 +3691,7 @@ function _rclRenderNavbar_(hub) {
   addLink('League Hub', 'league.html');
   links.lastChild.classList.add('rcl-navbar-active');
   addLink('Championship', 'championship.html');
-  if (signedIn) addLink('Account Dashboard', 'Account.html', true);
+  if (signedIn) addLink('Account Dashboard', 'Account.html');
   else {
     addLink('Login or Register', 'login.html', true);
     links.lastChild.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
