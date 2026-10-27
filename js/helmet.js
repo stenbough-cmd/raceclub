@@ -195,31 +195,35 @@
   // Gradient layers: draw(c, w, h, color1, color2). 'colors: 2' shapes use both colors; 'colors: 1' shapes fade the one color out to see-through.
   function grad(c, x0, y0, x1, y1, a, b) { var g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
   function clear(hex) { var h = String(hex).replace('#', ''); var n = parseInt(h, 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',0)'; }
+  // Every gradient is ONE color that fades out to see-through on one side (the Checkered one keeps its two checker colors and fades its squares out toward one short end).
   var GRADIENTS = [
-    { id: 'g_linear', name: 'Two-color fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_fade', name: 'Fade to clear', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_band', name: 'Soft band', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, clear(a)); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_radial', name: 'Two-color radial', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, b); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
-    { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } }
-    ,
-    // Popular gradient shapes: vertical and diagonal fades, a mirrored fade, an angular (conic) sweep and a diamond. All use two colors.
-    { id: 'g_vertical', name: 'Vertical fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, 0, -h / 2, 0, h / 2, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_diagonal', name: 'Diagonal fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { c.fillStyle = grad(c, -w / 2, -h / 2, w / 2, h / 2, a, b); c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_mirror', name: 'Mirrored fade', gradient: true, colors: 2, draw: function (c, w, h, a, b) { var g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, b); g.addColorStop(0.5, a); g.addColorStop(1, b); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_angular', name: 'Angular sweep', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
-        if (!c.createConicGradient) { c.save(); c.scale(1, h / w); var rg = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); rg.addColorStop(0, a); rg.addColorStop(1, b); c.fillStyle = rg; c.fillRect(-w / 2, -w / 2, w, w); c.restore(); return; }
-        var g = c.createConicGradient(0, 0, 0); g.addColorStop(0, a); g.addColorStop(0.5, b); g.addColorStop(1, a); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
-    { id: 'g_diamond', name: 'Diamond', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
-        // color a in the middle, color b at the diamond's four corners: the same straight fade in each quarter, mirrored
+    { id: 'g_linear', name: 'Fade to clear, left', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, w / 2, 0, -w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_fade', name: 'Fade to clear, right', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, 0, w / 2, 0, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_band', name: 'Hold, then fade', gradient: true, colors: 1, draw: function (c, w, h, a) { var g = c.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, a); g.addColorStop(0.5, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_radial', name: 'Ring fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, clear(a)); g.addColorStop(1, a); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
+    { id: 'g_glow', name: 'Glow', gradient: true, colors: 1, draw: function (c, w, h, a) { c.save(); c.scale(1, h / w); var g = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.beginPath(); c.arc(0, 0, w / 2, 0, Math.PI * 2); c.fill(); c.restore(); } },
+    { id: 'g_vertical', name: 'Fade to clear, bottom', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, -h / 2, 0, h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_diagonal', name: 'Diagonal fade', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, -w / 2, -h / 2, w / 2, h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_mirror', name: 'Fade to clear, top', gradient: true, colors: 1, draw: function (c, w, h, a) { c.fillStyle = grad(c, 0, h / 2, 0, -h / 2, a, clear(a)); c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_angular', name: 'Angular sweep', gradient: true, colors: 1, draw: function (c, w, h, a) {
+        if (!c.createConicGradient) { c.save(); c.scale(1, h / w); var rg = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); rg.addColorStop(0, a); rg.addColorStop(1, clear(a)); c.fillStyle = rg; c.fillRect(-w / 2, -w / 2, w, w); c.restore(); return; }
+        var g = c.createConicGradient(0, 0, 0); g.addColorStop(0, a); g.addColorStop(1, clear(a)); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); } },
+    { id: 'g_diamond', name: 'Diamond', gradient: true, colors: 1, draw: function (c, w, h, a) {
+        // color in the middle, fading to see-through at the diamond's four corners: the same straight fade in each quarter, mirrored
         var hw = w / 2, hh = h / 2, gx = 1 / hw, gy = 1 / hh, k = 1 / (gx * gx + gy * gy), q = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
-        q.forEach(function (m) { c.save(); c.scale(m[0], m[1]); c.beginPath(); c.rect(0, 0, hw, hh); c.clip(); c.fillStyle = grad(c, 0, 0, gx * k, gy * k, a, b); c.fillRect(0, 0, hw, hh); c.restore(); });
+        q.forEach(function (m) { c.save(); c.scale(m[0], m[1]); c.beginPath(); c.rect(0, 0, hw, hh); c.clip(); c.fillStyle = grad(c, 0, 0, gx * k, gy * k, a, clear(a)); c.fillRect(0, 0, hw, hh); c.restore(); });
       } },
-    // Checkered: a two-color checkerboard filling the whole layer box (squarish squares, 8 across)
+    // Checkered: exactly the Checkered strip from Basic shapes (8 across, 2 rows, two colors), with the squares fading out toward the right-hand short end
     { id: 'g_checker', name: 'Checkered', gradient: true, colors: 2, draw: function (c, w, h, a, b) {
-        var cols = 8, cw = w / cols, rows = Math.max(2, Math.round(h / cw)), ch = h / rows, x, y;
-        for (y = 0; y < rows; y++) for (x = 0; x < cols; x++) { c.fillStyle = ((x + y) % 2) ? b : a; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
+        var cols = 8, rows = 2, cw = w / cols, ch = h / rows, x, y, a0 = c.globalAlpha;
+        for (x = 0; x < cols; x++) {
+          c.globalAlpha = a0 * (cols - x - 0.5) / cols;
+          for (y = 0; y < rows; y++) { c.fillStyle = ((x + y) % 2) ? (b || '#ffffff') : a; c.fillRect(-w / 2 + x * cw, -h / 2 + y * ch, cw + 0.5, ch + 0.5); }
+        }
+        c.globalAlpha = a0; c.fillStyle = a;
       } }
   ];
+
   Array.prototype.push.apply(SHAPES, GRADIENTS);
   // Weathering layers: scratches, scuffs and wear drawn in one color (the same marks every time: they use a fixed seed).
   function rng(seed) { return function () { seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -479,7 +483,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
         if (+l.sk) sl.sk = Math.max(-45, Math.min(45, Math.round(+l.sk * 2) / 2));
         if (+l.bw >= 1 && borderOk(l.s)) { sl.bw = Math.min(20, Math.round(+l.bw)); sl.bc = (typeof l.bc === 'string' && l.bc) ? l.bc : 'black'; }   // border size (px) and color
         if (+l.o >= 5 && +l.o < 100) sl.o = Math.round(+l.o);   // o = percent visible (omitted = solid)
-        if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : (l.s === 'checker' ? 'white' : 'black');
+        if (shapeById(l.s).gradient || l.s === 'checker') sl.c2 = (typeof l.c2 === 'string' && l.c2) ? l.c2 : ((l.s === 'checker' || l.s === 'g_checker') ? 'white' : 'black');
         out.logos.push(sl);
         return;
       }
