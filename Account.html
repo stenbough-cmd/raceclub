@@ -6039,12 +6039,14 @@
     }
     function publishDataFile_(key, filename, text, okMsg) {
       return fetchApi('adminPublishDataFile', { method: 'POST', token: token, body: { file: key, content: text }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
-        if (res && res.success) { showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return; }
+        if (res && res.success) { showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return true; }
         downloadDataFile_(filename, text);
         showToast(((res && res.message) || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at website/data/' + filename + ' in the race-club-data repo and push.', 'error');
+        return false;
       }).catch(function () {
         downloadDataFile_(filename, text);
         showToast('No answer from GitHub. The file was downloaded instead: save it at website/data/' + filename + ' in the race-club-data repo and push.', 'error');
+        return false;
       });
     }
 
@@ -6106,7 +6108,8 @@
           }) };
           var label0 = exportBtn.textContent;
           exportBtn.disabled = true; exportBtn.textContent = 'Saving...';
-          publishDataFile_('home-helmets', 'home-helmets.json', JSON.stringify(out, null, 1), 'Home page helmets updated.').then(function () {
+          publishDataFile_('home-helmets', 'home-helmets.json', JSON.stringify(out, null, 1), 'Home page helmets updated.').then(function (saved) {
+            if (saved) { modal.close(); return; }
             exportBtn.textContent = label0; exportBtn.disabled = chosen.length !== 4;
           });
         });
