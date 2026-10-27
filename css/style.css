@@ -3321,7 +3321,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 
 /* Home page navbar (index.html, top of the page content, scrolls away with the page): the League Hub's navbar look -- near-black bar,
    white links, red line underneath (copied from .rcl-navbar in css/league.css). */
-.rc-home-navbar { background: #141416; border-bottom: 2px solid var(--rc-red); }
+/* Always visible: it sits right under the hero image in the page, but is sticky on both edges, so on a short window it
+   rests on the bottom edge of the screen, rises as you scroll, and then stays pinned just under the fixed 70px header. */
+.rc-home-navbar { background: #141416; border-bottom: 2px solid var(--rc-red); position: sticky; top: 70px; bottom: 0; z-index: 3; }
 .rc-home-navbar-inner { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; flex-wrap: wrap; min-height: 48px; }
 .rc-home-navbar-link { padding: 14px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-white); text-decoration: none; position: relative; }
 .rc-home-navbar-link + .rc-home-navbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: #000; }
