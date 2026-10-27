@@ -1403,7 +1403,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (min-width: 641px) {
   .rc-header-logo,
   .rc-header-leaguehub-logo { transition: transform 0.18s ease, height 0.22s ease; }
-  #rc-header[data-nav-active] .rc-header-logo { height: 22.5px; }   /* inactive: same size as the League Hub and Championship marks */
+  /* The Race Club logo is always full size on every page (Matt, 2026-10-27); it no longer shrinks when League Hub or Championship is active. It still grows a little on hover. */
+  #rc-header[data-nav-active] .rc-header-logo { height: 36px; }
   #rc-header[data-nav-active="home"] .rc-header-logo { height: 36px; }   /* active: the size it used to have when inactive */
   #rc-header[data-nav-active="league"] a[href="league.html"] .rc-header-leaguehub-logo,
   #rc-header[data-nav-active="champ"] a[href="championship.html"] .rc-header-leaguehub-logo { height: 36px; }
