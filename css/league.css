@@ -2698,3 +2698,21 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-race-details-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; margin-top: 14px; }
 .rcl-race-details-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 6px; }
 .rcl-race-details-col .rcl-seasonfmt-row { font-size: 13px; margin-bottom: 3px; }
+
+
+/* League News tiles (ECO chat, 2026-10-27): story tiles get a checkered strip along the top and a small RD over a bigger round
+   number; the preview shows a flag and a News post a newspaper, both as line icons like the rest of the site. */
+.rcl-news-badge { position: relative; overflow: hidden; }
+.rcl-news-badge-rd::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: repeating-conic-gradient(#fff 0% 25%, rgba(255, 255, 255, 0.14) 0% 50%) 0 0 / 6px 6px;
+  opacity: 0.85;
+}
+.rcl-news-badge-rd:not(.rcl-news-badge-pre) .rcl-news-badge-top { margin-top: 6px; font-size: 9px; letter-spacing: 0.2em; padding-left: 0.2em; font-weight: 700; opacity: 0.7; }
+.rcl-news-badge-rd:not(.rcl-news-badge-pre) .rcl-news-badge-bottom { margin-top: 2px; font-size: 20px; }
+.rcl-news-badge-sm.rcl-news-badge-rd:not(.rcl-news-badge-pre) .rcl-news-badge-top { margin-top: 4px; font-size: 7px; }
+.rcl-news-badge-sm.rcl-news-badge-rd:not(.rcl-news-badge-pre) .rcl-news-badge-bottom { font-size: 15px; }
+.rcl-news-badge-sm.rcl-news-badge-rd::before { height: 4px; background-size: 4px 4px; }
+.rcl-news-badge-pre::before { display: none; }
+.rcl-news-badge-icon { width: 26px; height: 26px; }
+.rcl-news-badge-sm .rcl-news-badge-icon { width: 19px; height: 19px; }

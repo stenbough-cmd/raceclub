@@ -2958,20 +2958,20 @@ function _rclStoryPreviewHtml(rawBody, charLimit) {
 
 // The little square beside every League News item: an AI Season Story shows "RD" over its round number
 // (01, 02, 03... the season preview is 00); a regular News post shows "NE" over "WS" in a different color.
+var RCL_BADGE_FLAG_SVG_ = '<svg class="rcl-news-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4 2.5 4H5"/><path d="M9 4v8M13 4v8" stroke-width="1.4"/></svg>';
+var RCL_BADGE_PAPER_SVG_ = '<svg class="rcl-news-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12v14H6a2 2 0 0 1-2-2V5z"/><path d="M16 9h4v8a2 2 0 0 1-2 2h-2"/><path d="M7 9h6M7 12.5h6M7 16h3"/></svg>';
+// The little tile beside every League News item. A Season Story is a navy tile with a checkered strip along the top, a small
+// "RD" and the round number; the season preview shows a flag; a regular News post is a red tile with a newspaper icon.
 function _rclNewsBadgeHtml(item, small) {
-  var top, bottom, kind;
+  var sm = small ? ' rcl-news-badge-sm' : '';
   if (item && item.isStory && !(Number(item.roundNum) > 0)) {
-    // Season preview: one word, PRE, in the red box.
-    return '<span class="rcl-news-badge rcl-news-badge-rd rcl-news-badge-pre' + (small ? ' rcl-news-badge-sm' : '') + '"><span class="rcl-news-badge-top">PRE</span></span>';
+    return '<span class="rcl-news-badge rcl-news-badge-rd rcl-news-badge-pre' + sm + '" title="Season preview">' + RCL_BADGE_FLAG_SVG_ + '</span>';
   }
   if (item && item.isStory) {
-    top = 'RD';
-    bottom = (item.roundNum || 0) < 10 ? '0' + (item.roundNum || 0) : String(item.roundNum);
-    kind = 'rcl-news-badge-rd';
-  } else {
-    top = 'NE'; bottom = 'WS'; kind = 'rcl-news-badge-ne';
+    var n = (item.roundNum || 0) < 10 ? '0' + (item.roundNum || 0) : String(item.roundNum);
+    return '<span class="rcl-news-badge rcl-news-badge-rd' + sm + '"><span class="rcl-news-badge-top">RD</span><span class="rcl-news-badge-bottom">' + n + '</span></span>';
   }
-  return '<span class="rcl-news-badge ' + kind + (small ? ' rcl-news-badge-sm' : '') + '"><span class="rcl-news-badge-top">' + top + '</span><span class="rcl-news-badge-bottom">' + bottom + '</span></span>';
+  return '<span class="rcl-news-badge rcl-news-badge-ne' + sm + '" title="League news">' + RCL_BADGE_PAPER_SVG_ + '</span>';
 }
 
 // Title + meta with the badge on the left.
