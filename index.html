@@ -42,7 +42,7 @@
   <section class="rc-landing-section rc-intro-section">
     <div class="rc-landing-inner rc-intro-inner">
       <h2>What Is Race Club?</h2>
-      <p class="rc-landing-tagline">Build your racing career in Le Mans Ultimate. Compete in a persistent online league or run your own championship against AI rivals. Your results, racing history, and progress become part of a career that grows with every season.</p>
+      <p class="rc-landing-tagline">Race Club is a community-driven, league website for players of Le Mans Ultimate. Compete in the online league against other Race Club drivers or run your own offline championship against AI rivals. Your results, racing history, and reputation become part of a career that grows with every season.</p>
 
       <div class="rc-path-heading">Two Ways To Race</div>
       <div class="rc-path-grid">
@@ -83,7 +83,7 @@
       <div class="rc-eyebrow">Community</div>
       <h2 class="rc-discord-cta-heading">The Race Club Community</h2>
       <p class="rc-discord-cta-lead">Race chat, schedules, and league updates happen here.</p>
-      <p class="rc-discord-cta-sub">Join the conversation, meet other drivers, and keep up with what's happening across Race Club. Discord isn't required to race, but it's the best place to stay connected.</p>
+      <p class="rc-discord-cta-sub">Join the conversation, meet other drivers, and keep up with what's happening across Race Club.</p>
       <a class="rc-discord-cta-btn" href="https://discord.gg/UxWgwDwc9U" target="_blank" rel="noopener noreferrer">
         <img class="rc-discord-cta-logo" src="assets/images/Discord-Symbol-White.svg" alt="Discord">
         <span>Join Our Discord</span>
@@ -98,7 +98,7 @@
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">Race Club's Online League</div>
       <h2>This Isn't Just A Lobby. It's A Sim Racing Career.</h2>
-      <p class="rc-landing-tagline">Every season gives you a team to represent, a championship to fight for, and a racing record that continues long after the final checkered flag. Race Club brings the structure and progression of a racing career to your online competition.</p>
+      <p class="rc-landing-tagline">Every season gives you the chance to represent a different team or manufacturer, fight for a new championship amongst new rivals, and build a racing record that continues long after the final checkered flag. Race Club brings the structure and progression of a racing career to your online competition.</p>
 
       <div class="rc-highlight-grid">
 
@@ -145,6 +145,18 @@
         </div>
 
       </div>
+    </div>
+  </section>
+
+  <!-- Photo showcase: rotates every 10 seconds (js/index-showcase.js). Hidden until at least one photo is listed there. -->
+  <section class="rc-showcase-section" id="rc-showcase" hidden>
+    <div class="rc-landing-inner rc-showcase-inner">
+      <figure class="rc-showcase">
+        <div class="rc-showcase-stage" id="rc-showcase-stage">
+          <button type="button" class="rc-showcase-pill" id="rc-showcase-pill" aria-label="Next photo"></button>
+        </div>
+        <figcaption class="rc-showcase-caption" id="rc-showcase-caption" aria-live="polite"></figcaption>
+      </figure>
     </div>
   </section>
 
@@ -719,5 +731,6 @@
 
 </div>
 
+<script src="js/index-showcase.js"></script>
 </body>
 </html>

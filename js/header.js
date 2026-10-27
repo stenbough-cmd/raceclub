@@ -442,7 +442,9 @@ function renderHeaderPending() {
   // League Hub badge included here too. Included in this pending state too so the header doesn't
   // visibly gain the badge a moment later once renderHeader() takes over -- it reads as present
   // from the very first paint.
-  mount.innerHTML = '<a class="rc-header-logo-link" href="index.html">' +
+  // Logged in: the Race Club logo goes to the Dashboard (Account.html); logged out it goes to the home page.
+  var pendingLogoHref = ((typeof getToken === 'function') && getToken()) ? 'Account.html' : 'index.html';
+  mount.innerHTML = '<a class="rc-header-logo-link" href="' + pendingLogoHref + '">' +
       '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
     '</a>' +
     '<span class="rc-header-leaguehub-badge">' +
@@ -471,7 +473,8 @@ function renderHeader(opts) {
   _rcWireNavLogos_(mount);
 
   var html = '';
-  html += '<a class="rc-header-logo-link" href="index.html">' +
+  // Logged in: the Race Club logo goes to the Dashboard (Account.html); logged out it goes to the home page.
+  html += '<a class="rc-header-logo-link" href="' + (token ? 'Account.html' : 'index.html') + '">' +
             '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
           '</a>';
   // League Hub badge. Sits in the same left-hand flex cluster as the logo, not spaced apart from it
