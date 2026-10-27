@@ -124,6 +124,10 @@ body.rc-league-page.rcc-page {
 .rcc-actionbar {
   background: var(--rc-carbon);
   border-bottom: 2px solid var(--rc-red);
+  /* Pins under the fixed 70px header once it scrolls up to it, like the home page and League Hub
+     navbars (Matt, 2026-10-27). Above the page content (so the Season Tools menu shows over it),
+     below the header (1000) and every popup (500 and up). */
+  position: sticky; top: 70px; bottom: 0; z-index: 50;
 }
 .rcc-actionbar-inner {
   max-width: 1180px;
