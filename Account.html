@@ -5976,6 +5976,21 @@
     });
     studioBox.appendChild(studioBtn);
     studioBox.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml('Design the helmets the site uses: the default helmet, each manufacturer\'s team helmet, and special event, premium and award helmets. Open, edit details, share and archive designs, and manage the logo library, all from inside the designer.')));
+    // Manage Helmet Designs / Manage Logos: open just that list (Open is left out, nothing is loaded into a designer), no designer window.
+    function addStudioManager(label, only, descr) {
+      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:14px;');
+      var b = el('button', 'rc-btn-secondary rc-btn-sm', label);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
+        window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, { only: only });
+      });
+      item.appendChild(b);
+      item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(descr)));
+      studioBox.appendChild(item);
+    }
+    addStudioManager('Manage Helmet Designs', 'manage', 'Opens the list of every saved helmet design without opening the designer. From here you can edit a design\'s details (name, category, tier, description and who it is given to), archive it, restore an archived one, or delete it forever. To change how a helmet looks, open it in the Helmet Designer.');
+    addStudioManager('Manage Logos', 'logos', 'Opens the list of every helmet logo without opening the designer. From here you can upload a logo, edit one, archive it, restore an archived one, or delete it forever.');
     studioPanel.appendChild(studioBox);
     section.appendChild(studioPanel);
 
