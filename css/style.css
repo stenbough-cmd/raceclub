@@ -3331,7 +3331,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-home-navbar-link + .rc-home-navbar-link::before { content: '\00B7'; position: absolute; left: -3px; color: #000; }
 .rc-home-navbar-link:first-child { padding-left: 0; }
 .rc-home-navbar-link:hover { color: var(--rc-red); }
-#rc-home-navbar-account.rc-home-navbar-link[href="login.html"] { color: #d4af37; }
+#rc-home-navbar-account.rc-home-navbar-link[href="login.html"] { color: var(--rc-white); }
 #rc-home-navbar-account.rc-home-navbar-link[href="login.html"]:hover { color: var(--rc-red); }
 .rc-home-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
 @media (max-width: 640px) { .rc-home-navbar-inner { padding: 0 16px; } .rc-home-navbar-link { padding: 10px 8px; } }
