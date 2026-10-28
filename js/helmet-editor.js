@@ -1186,6 +1186,7 @@
             order.sort(function (x, y) { return x === 'Custom logos' ? -1 : (y === 'Custom logos' ? 1 : x.localeCompare(y)); });
             order.forEach(function (c) {
               lb.appendChild(mk('div', 'rch-label rch-mt', esc(c)));
+              var lg = mk('div', 'rch-kindgroup'); lb.appendChild(lg);   // the logos of this category sit inset under its heading
               cats[c].forEach(function (l) {
                 var row = mk('div', 'rch-loadrow' + (l.active ? '' : ' rch-archived'));
                 var th = mk('div', 'rch-thumb rch-logothumb'); var im = new Image(); im.__rcSetting = true; im.src = l.data || ('assets/helmets/images/' + l.file); im.alt = ''; th.appendChild(im); row.appendChild(th);
@@ -1214,7 +1215,7 @@
                   yes.onclick = function () { yes.disabled = true; run(function (ok, msg) { if (!ok) { yes.disabled = false; toast(msg || 'That did not work.', 'error'); } }); };
                   no.onclick = home; act.appendChild(yes); act.appendChild(no);
                 }
-                home(); row.appendChild(act); lb.appendChild(row);
+                home(); row.appendChild(act); lg.appendChild(row);
               });
             });
           }).catch(function () { lb.innerHTML = ''; lb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
