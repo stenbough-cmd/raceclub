@@ -29,17 +29,16 @@
 <nav class="rcl-navbar rc-profile-navbar" id="rc-profile-navbar" aria-label="Driver Profile">
   <div class="rcl-navbar-inner">
     <div class="rcl-navbar-links">
-      <a class="rcl-navbar-link" href="index.html">Home</a>
+      <a class="rcl-navbar-link rcl-navbar-gold" id="rc-profile-navbar-account" href="login.html">Login</a>
       <a class="rcl-navbar-link" href="league.html">League Hub</a>
       <a class="rcl-navbar-link" href="championship.html">Championship</a>
-      <a class="rcl-navbar-link rcl-navbar-gold" id="rc-profile-navbar-account" href="login.html">Login or Register</a>
     </div>
   </div>
 </nav>
 <script>
 (function () {
   var acct = document.getElementById('rc-profile-navbar-account');
-  try { if (acct && typeof getToken === 'function' && getToken()) { acct.textContent = 'Account Dashboard'; acct.setAttribute('href', 'Account.html'); } } catch (e) {}
+  try { if (acct && typeof getToken === 'function' && getToken()) { acct.textContent = 'Dashboard'; acct.setAttribute('href', 'Account.html'); } } catch (e) {}
   if (acct && acct.getAttribute('href') === 'login.html') acct.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
 
   // Member dropdown: every active member (the driver directory). Choosing one opens that driver's profile.

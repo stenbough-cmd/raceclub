@@ -43,16 +43,15 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 <!-- Navbar above "What Is Race Club?": sits at the bottom of the first screen, rides up as you scroll, then stays pinned under the header. The last link depends on whether someone is signed in. -->
 <nav class="rc-home-navbar" aria-label="Main">
   <div class="rc-home-navbar-inner">
-    <a class="rc-home-navbar-link rc-navbar-active" href="index.html">Home</a>
+    <a class="rc-home-navbar-link" id="rc-home-navbar-account" href="login.html">Login</a>
     <a class="rc-home-navbar-link" href="league.html">League Hub</a>
     <a class="rc-home-navbar-link" href="championship.html">Championship</a>
-    <a class="rc-home-navbar-link" id="rc-home-navbar-account" href="login.html">Login or Register</a>
   </div>
 </nav>
 <script>
   (function () {
     var a = document.getElementById('rc-home-navbar-account');
-    try { if (a && typeof getToken === 'function' && getToken()) { a.textContent = 'Account Dashboard'; a.setAttribute('href', 'Account.html'); } } catch (e) {}
+    try { if (a && typeof getToken === 'function' && getToken()) { a.textContent = 'Dashboard'; a.setAttribute('href', 'Account.html'); } } catch (e) {}
   })();
 </script>
 
