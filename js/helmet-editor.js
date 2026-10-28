@@ -74,6 +74,7 @@
   }
   // Groups saved helmets of one kind by their Category (no category first), for the Load and Manage popups.
   // build(label, rows) is called once per group; label is '' for the no category group when it is the only one.
+  function tierRank(t) { var i = TIERS.indexOf(String(t || 'Common')); return i < 0 ? TIERS.length : i; }   // Legendary 0 ... Common 3
   function eachGroup(rows, build) {
     var cats = {}, order = [];
     rows.forEach(function (p) { var c = String(p.collection || ''); if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(p); });
@@ -1111,15 +1112,20 @@
               var rows = list.filter(function (p) { return p.kind === k; });
               if (!rows.length) return;
               mb.appendChild(mk('div', 'rch-label rch-mt', esc(k)));
-              eachGroup(rows, function (gl, grp) { if (gl) mb.appendChild(mk('div', 'rch-psub rch-collhead', esc(gl))); grp.forEach(function (p) {
-                var row = mk('div', 'rch-loadrow' + (p.active ? '' : ' rch-archived'));
+              var kg = mk('div', 'rch-kindgroup'); mb.appendChild(kg);   // the helmets of this kind sit inset under its heading, split by category
+              eachGroup(rows, function (gl, grp) {
+                if (gl) kg.appendChild(mk('div', 'rch-psub rch-collhead', esc(gl)));
+                else if (kg.childNodes.length) kg.appendChild(mk('div', 'rch-collhead'));
+                if (COLL_KINDS.indexOf(k) >= 0) grp = grp.slice().sort(function (a, b) { return tierRank(a.tier) - tierRank(b.tier); });   // highest tier first (the sort keeps the saved order inside a tier)
+                grp.forEach(function (p) {
+                var hasTier = COLL_KINDS.indexOf(k) >= 0;
+                var row = mk('div', 'rch-loadrow' + (p.active ? '' : ' rch-archived') + (hasTier ? ' rch-tier-' + String(p.tier || 'Common').toLowerCase() : ''));
                 var th = mk('div', 'rch-thumb'); row.appendChild(th); renderThumb(th, p.recipe, 140);
                 var info = mk('div', 'rch-info');
-                info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)')));
+                info.appendChild(mk('div', 'rch-pname', esc(p.name) + (p.active ? '' : ' (archived)') + (hasTier ? ' <span class="rch-tiername">' + esc(p.tier || 'Common') + '</span>' : '')));
                 var bits = [];
-                if (p.kind === 'Manufacturer') bits.push(p.manufacturer);
                 if (p.kind !== 'Website Default' && p.kind !== 'Manufacturer') { bits.push(p.grantCount ? ('given to ' + p.grantCount + (p.grantCount === 1 ? ' group or member' : ' groups and members')) : (p.everGiven ? 'access taken back' : 'not given to anyone yet')); }
-                info.appendChild(mk('div', 'rch-psub', esc(bits.filter(Boolean).join(' - '))));
+                if (bits.filter(Boolean).length) info.appendChild(mk('div', 'rch-psub', esc(bits.filter(Boolean).join(' - '))));
                 row.appendChild(info);
                 var act = mk('div', 'rch-btns');
                 function home() {
@@ -1151,7 +1157,7 @@
                   no.onclick = home;
                   act.appendChild(yes); act.appendChild(no);
                 }
-                home(); row.appendChild(act); mb.appendChild(row);
+                home(); row.appendChild(act); kg.appendChild(row);
               }); });
             });
           }).catch(function () { mb.innerHTML = ''; mb.appendChild(mk('p', 'rch-hint', 'No answer from the server.')); });
