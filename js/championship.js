@@ -494,23 +494,27 @@ function rccRenderActionBar(page) {
     if (enabled) b.addEventListener('click', onClick);
     host.appendChild(b);
   }
-  // The black bar is the site navbar (Matt, 2026-10-27, same links as the home page and the League
-  // Hub): Home, League Hub, Championship, then Season Tools where the account link sits on those pages.
-  // Logged-out visitors (the demo) get Login or Register there instead.
+  // The black bar is the site navbar (Matt, 2026-10-27). First link: DASHBOARD (Account.html) when
+  // signed in, LOGIN (white, not gold) when not; then League Hub and Championship. Signed-in members
+  // also get Season Tools at the end. There is no Home link (the home page is an advertisement).
   function addLink(label, href) {
     var a = _rccText('a', 'rcc-actionbar-link rcc-actionbar-navlink', label);
     a.href = href;
     links.appendChild(a);
     return a;
   }
-  addLink('Home', 'index.html');
+  var signedIn = !!getToken();
+  if (signedIn) addLink('Dashboard', 'Account.html');
+  else {
+    var login = addLink('Login', 'login.html');
+    login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+  }
   addLink('League Hub', 'league.html');
   // The page you are on is red (Matt, 2026-10-27).
   var here = addLink('Championship', 'championship.html');
   here.classList.add('rcc-actionbar-current');
   here.setAttribute('aria-current', 'page');
-  // Season Tools only for signed-in members (Matt, 2026-10-27); visitors get Login or Register instead.
-  var signedIn = !!getToken();
+  // Season Tools only for signed-in members (Matt, 2026-10-27).
   // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
   // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
   var tools = _rccEl('span', 'rcc-tools');
@@ -563,10 +567,6 @@ function rccRenderActionBar(page) {
   divider();
   add('Help', true, rccOpenHelp, null, menuLinks);
   setOpen(false);
-  if (!signedIn) {
-    var login = addLink('Login or Register', 'login.html');
-    login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
-  }
 
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
