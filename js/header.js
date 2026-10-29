@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=42'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=43'; l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Popup title reads HELMET DESIGNER with "lite" in italic, normal weight (every page's showModal takes plain text for the title).

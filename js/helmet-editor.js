@@ -329,15 +329,21 @@
 
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
-      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'Helmet name'));
+      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'File name'));
       var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Season 1 Champion';
       nameIn.oninput = function () { cur.name = nameIn.value; updateTab(); };
       nameWrap.appendChild(nameIn);
       var kindWrap = mk('div'); kindWrap.appendChild(mk('div', 'rch-label', 'Kind'));
       var kindSel = mk('select', 'rch-select-wide'); KINDS.forEach(function (k) { var o = mk('option'); o.value = k; o.textContent = k; kindSel.appendChild(o); });
       kindWrap.appendChild(kindSel);
-      var nkRow = mk('div', 'rch-row-nk'); nkRow.appendChild(nameWrap); nkRow.appendChild(kindWrap);
+      // Row 1: File name + Category (Category takes the column Kind used to have; it only shows for Special Event, Premium and Awards helmets).
+      // Row 2: Kind + Tier, half and half (Tier shows for the same three kinds). Then the Manufacturer row.
+      var collWrap = mk('div'); collWrap.appendChild(mk('div', 'rch-label', 'Category'));
+      var tierWrap = mk('div'); tierWrap.appendChild(mk('div', 'rch-label', 'Tier'));
+      var nkRow = mk('div', 'rch-row-nk'); nkRow.appendChild(nameWrap); nkRow.appendChild(collWrap);
       bar.appendChild(nkRow);
+      var ktRow = mk('div', 'rch-row-kt'); ktRow.appendChild(kindWrap); ktRow.appendChild(tierWrap);
+      bar.appendChild(ktRow);
       var mfrWrap = mk('div'); mfrWrap.appendChild(mk('div', 'rch-label', 'Manufacturer'));
       var mfrSel = mk('select', 'rch-select-wide'); mfrSel.appendChild(mk('option', '', '')); mfrSel.firstChild.value = ''; mfrSel.firstChild.textContent = 'Choose...';
       function fillMfrs() {
@@ -351,12 +357,10 @@
       var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap);
       bar.appendChild(mcRow);
       // Category (Season 1, Limited Edition...): only for Special Event, Premium and Awards helmets; groups them in the Load and Manage lists
-      var collWrap = mk('div', 'rch-collwrap'); collWrap.appendChild(mk('div', 'rch-label', 'Category'));
       var collPick = makeCollPicker(function (v) { cur.coll = v; updateTab(); });
       collWrap.appendChild(collPick.el);
-      collWrap.appendChild(mk('div', 'rch-label rch-mt', 'Tier'));
       var tierSel = makeTierSel(); tierSel.onchange = function () { cur.tier = tierSel.value; updateTab(); };
-      collWrap.appendChild(tierSel); bar.appendChild(collWrap);
+      tierWrap.appendChild(tierSel);
       // optional description (200 characters at most); the note about the chosen Kind sits under it
       var descWrap = mk('div', 'rch-descwrap'); descWrap.appendChild(mk('div', 'rch-label', 'Helmet description'));
       var descIn = mk('textarea', 'rch-desc'); descIn.maxLength = 200; descIn.rows = 3; descIn.placeholder = 'Optional. A short note about this helmet (200 characters at most).';
@@ -549,7 +553,7 @@
 
       /* ---------------- right: recipe text ---------------- */
       var rec = mk('details', 'rch-section rch-details');
-      var recSum = mk('summary', ''); recSum.appendChild(mk('span', 'rch-label rch-redlabel rch-reclabel', 'Recipe')); recSum.appendChild(document.createTextNode(' Copy or paste a helmet')); rec.appendChild(recSum);
+      var recSum = mk('summary', ''); recSum.appendChild(mk('span', 'rch-label rch-redlabel rch-reclabel', 'Recipe')); rec.appendChild(recSum);
       var ta = mk('textarea', 'rch-text'); ta.spellcheck = false; rec.appendChild(ta);
       var rbtns = mk('div', 'rch-btns');
       var cpB = mk('button', 'rc-btn-secondary rc-btn-row', 'Copy Recipe'); cpB.type = 'button';
@@ -778,7 +782,9 @@
         var isMfr = cur.kind === 'Manufacturer';
         kindSel.value = cur.kind; mfrSel.value = cur.mfr || '';
         mcRow.style.display = isMfr ? '' : 'none';
-        collWrap.style.display = COLL_KINDS.indexOf(cur.kind) >= 0 ? '' : 'none';
+        var hasColl = COLL_KINDS.indexOf(cur.kind) >= 0;
+        collWrap.style.display = hasColl ? '' : 'none'; tierWrap.style.display = hasColl ? '' : 'none';
+        nkRow.style.gridTemplateColumns = hasColl ? '' : '1fr'; ktRow.style.gridTemplateColumns = hasColl ? '' : '1fr';   // a lone box takes the whole row
         collPick.fill(collList, cur.coll || '');
         tierSel.value = cur.tier || 'Common';
         kindHint.textContent = KIND_HINTS[cur.kind] || '';
