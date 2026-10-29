@@ -5968,7 +5968,7 @@
     var studioPanel = el('div', 'rc-panel rc-dash-card');
     studioPanel.appendChild(el('h3', 'rc-dash-card-title', 'Design Studio'));
     var studioBox = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
-    var studioBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Helmet Designer');
+    var studioBtn = el('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'Helmet Designer');
     studioBtn.type = 'button';
     studioBtn.addEventListener('click', function () {
       if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
@@ -6001,6 +6001,7 @@
     // repeated -- instead of one row of buttons.
     var list = el('div', 'display:flex;flex-direction:column;gap:22px;');
 
+    var addTarget = null;   // where addItem puts the next item: the Data Management list, or the Website Tools list once it is set
     function addItem(label, onClick, descriptionParas, tooltip) {
       var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
       var btn = el('button', 'rc-btn-secondary rc-btn-sm', label);
@@ -6011,7 +6012,7 @@
       descriptionParas.forEach(function (text) {
         item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
       });
-      list.appendChild(item);
+      (addTarget || list).appendChild(item);
     }
 
     // Create a Season / End Season / Clear Season Draft live on the League Tools page's Seasons
@@ -6068,6 +6069,11 @@
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
     // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
+    // WEBSITE TOOLS container (below Data Management): the three Update buttons and the Staged League Hub switch.
+    var webPanel = el('div', 'rc-panel rc-dash-card');
+    webPanel.appendChild(el('h3', 'rc-dash-card-title', 'Website Tools'));
+    var webList = el('div', 'display:flex;flex-direction:column;gap:22px;');
+    addTarget = webList;
     addItem('Update Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true, accentHead: true });
       var body = modal.body;
@@ -6225,11 +6231,13 @@
       ].forEach(function (text) {
         item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
       });
-      list.appendChild(item);
+      webList.appendChild(item);
     })(); } catch (stagedErr) { /* the switch is optional: Data Management must always draw */ }
 
     panel.appendChild(list);
     section.appendChild(panel);
+    webPanel.appendChild(webList);
+    section.appendChild(webPanel);
   }
 
   // (Generated Story Feedback list removed 2026-10-15: story feedback is emailed to the admin when it is submitted.)
