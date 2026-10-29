@@ -373,10 +373,10 @@
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
       withIcon(saveBtn, 'SAVE', 'Save'); withIcon(saveNewBtn, 'SAVENEW', 'Save as New');
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
-      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Open'); loadBtn.type = 'button';
-      loadBtn.title = 'Open a saved helmet design (and manage the saved designs)';
+      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage'); loadBtn.type = 'button';
+      loadBtn.title = 'Load, edit, archive or delete the saved helmet designs';
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'New'); newBtn.type = 'button';
-      withIcon(loadBtn, 'OPEN', 'Open'); withIcon(newBtn, 'NEW', 'New');
+      withIcon(loadBtn, 'OPEN', 'Manage'); withIcon(newBtn, 'NEW', 'New');
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
         R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '', tier: 'Common' }; baseline = JSON.parse(JSON.stringify(R));
@@ -1102,14 +1102,14 @@
       /* ---------------- Open popup: every saved design, with Open, Edit Details, Archive (and Restore, Delete Forever for archived ones) ---------------- */
       function openManage() {
         var mb = mk('div', 'rch-loadbody');
-        var mm = ctx.showModal(only ? 'Manage Helmet Designs' : 'Open Helmet Design', { bodyEl: mb, wide: true, accentHead: true });
+        var mm = ctx.showModal(only ? 'Manage Helmet Designs' : 'Manage Helmet Design', { bodyEl: mb, wide: true, accentHead: true });
         function load() {
           mb.innerHTML = ''; mb.appendChild(spin('Loading...'));
           fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
             mb.innerHTML = '';
             if (!res || !res.success) { mb.appendChild(mk('p', 'rch-hint', 'Could not load: ' + esc((res && res.message) || 'no answer.'))); return; }
             var list = res.presets || [];
-            mb.appendChild(mk('p', 'rch-hint', 'Open loads a design into the studio. Edit Details changes its name, category, description and who it is given to (not the design). Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles.'));
+            mb.appendChild(mk('p', 'rch-hint', 'Load puts a design into the studio. Edit Details changes its name, category, description and who it is given to (not the design). Archive hides it from new use, and members who already have it keep it. Delete Forever removes it everywhere, including from member profiles.'));
             if (!list.length) { mb.appendChild(mk('p', 'rch-hint', 'Nothing saved yet. Design a helmet and press Save.')); return; }
             KINDS.forEach(function (k) {
               var rows = list.filter(function (p) { return p.kind === k; });
@@ -1134,7 +1134,7 @@
                 function home() {
                   act.innerHTML = '';
                   if (p.active) {
-                    if (!only) { var op = btn('Open'); op.onclick = function () { loadWithCheck(p, function () { mm.close(); }); }; act.appendChild(op); }
+                    if (!only) { var op = btn('Load'); op.onclick = function () { loadWithCheck(p, function () { mm.close(); }); }; act.appendChild(op); }
                     var ed = btn('Edit Details'); ed.onclick = function () { openDetails(p, list, load); };
                     act.appendChild(ed);
                     var ar = btn('Archive'); ar.onclick = function () { confirmRow('Archive it?', 'Yes, archive', function (done) {
