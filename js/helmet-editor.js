@@ -329,7 +329,7 @@
 
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
-      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'File name'));
+      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-boldlabel', 'File name'));
       var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Season 1 Champion';
       nameIn.oninput = function () { cur.name = nameIn.value; updateTab(); };
       nameWrap.appendChild(nameIn);
@@ -395,7 +395,7 @@
           { label: 'Cancel' }]);
       };
       btns.appendChild(newBtn); btns.appendChild(loadBtn); btns.appendChild(saveBtn); btns.appendChild(saveNewBtn);
-      bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'File options'));
+      bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'File options'));
       bar.appendChild(btns);
       var logosBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage'); logosBtn.title = 'Manage logos'; logosBtn.type = 'button';
       var addLogoBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Upload'); addLogoBtn.title = 'Upload a logo'; addLogoBtn.type = 'button';
@@ -405,7 +405,7 @@
       /* ---------------- right: style ---------------- */
       var style = mk('div', 'rch-section');
       var dRow = mk('div', 'rch-dstack');
-      var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'Design'));
+      var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label rch-boldlabel', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain';
       // Grouped like the layer picker below: unlocked designs under "Basic", locked ones under "Admin" (HelmetAssets.Locked)
@@ -460,7 +460,7 @@
 
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
-      lg.appendChild(mk('div', 'rch-label rch-redlabel', 'Logos and shapes'));
+      lg.appendChild(mk('div', 'rch-label rch-boldlabel', 'Logos and shapes'));
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -547,13 +547,13 @@
       };
       addRow.appendChild(lpick); addRow.appendChild(addB); addRow.appendChild(addLogoBtn); addRow.appendChild(logosBtn);
       lg.insertBefore(addRow, layers); lg.insertBefore(filterRow, addRow);
-      lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
+      lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head rch-boldlabel', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
       right.appendChild(lg);
 
       /* ---------------- right: recipe text ---------------- */
       var rec = mk('details', 'rch-section rch-details');
-      var recSum = mk('summary', ''); recSum.appendChild(mk('span', 'rch-label rch-redlabel rch-reclabel', 'Recipe')); rec.appendChild(recSum);
+      var recSum = mk('summary', ''); recSum.appendChild(mk('span', 'rch-label rch-boldlabel rch-reclabel', 'Recipe')); rec.appendChild(recSum);
       var ta = mk('textarea', 'rch-text'); ta.spellcheck = false; rec.appendChild(ta);
       var rbtns = mk('div', 'rch-btns');
       var cpB = mk('button', 'rc-btn-secondary rc-btn-row', 'Copy Recipe'); cpB.type = 'button';
@@ -670,28 +670,32 @@
         if (!origSize.has(sel)) origSize.set(sel, { w: sel.w, h: sel.h, r: 0 });
         var grid = curGrid = makeGrid({ keys: { x: 'x', y: 'y', w: 'w', h: 'h', r: 'r', sk: 'sk', pp: 'pp', pa: 'pa', bu: 'bu', bl: 'bl', pv: 'pv' }, stretchKey: 'st', obj: function () { return sel; }, layer: function () { return sel; }, changed: function () { draw(true); } });
         grid.loadAspect();
-        detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer position'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-redlabel', 'Layer position'));
         detail.appendChild(grid.el);
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Layer transform'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-redlabel', 'Layer transform'));
         grid.el3.style.marginTop = '4px'; detail.appendChild(grid.el3);   // Max width and Max height, then the rotate buttons, then the tilt slider
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-redlabel', 'Rotate'));
         var rotRow = mk('div', 'rch-btns rch-rotrow'); detail.appendChild(rotRow);   // Rotate Left, the two mirrors, Rotate Right
         var tbtns = makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, [['fx', MIRROR_ICON, 'Mirror left to right'], ['fy', MIRROR_V_ICON, 'Mirror top to bottom']]);
         // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
-        [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
+        var b180 = mk('button', 'rc-btn-secondary rc-btn-row rch-rotbtn', '180\u00B0'); b180.type = 'button';
+        b180.title = 'Turn the layer upside down (rotate 180 degrees)'; b180.setAttribute('aria-label', 'Rotate 180 degrees');
+        b180.onclick = function () { sel.r = wrapAngle((Number(sel.r) || 0) + 180); grid.sync(); draw(true); };
+        [tbtns[0], tbtns[3], b180, tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
         var resetT = mk('button', 'rc-btn-secondary rc-btn-row rch-rotbtn', 'Reset'); resetT.type = 'button';
         resetT.title = 'Put width, height, tilt, skew, stretch, bow, perspective, rotation and mirroring back to normal (position stays)';
         resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.pp; delete sel.pa; delete sel.bu; delete sel.bl; delete sel.pv; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
         rotRow.appendChild(resetT);
         void 0;
         grid.el2.style.marginTop = '4px'; detail.appendChild(grid.el2);
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Stretch'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-redlabel', 'Stretch'));
         detail.appendChild(grid.el4);
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Bow'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-redlabel', 'Bow'));
         detail.appendChild(grid.el5);   // Up / down and Left / right: bends the layer so its middle moves while the edges stay put
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Perspective'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-redlabel', 'Perspective'));
         detail.appendChild(grid.el6);   // one slider: the top edge pulls in (or out) compared with the bottom edge
         void 0;   // Position and Amount: squeezes the picture sideways only, as if it wraps round the helmet
-        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Colors and effects'));
+        detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Colors and effects'));
         var opts = mk('div', 'rch-btns');
         // Soft shadow and Strong shadow: one or the other or none (sh: 0 none, 1 soft, 2 strong)
         // Invert: flips every color of the layer to its opposite (iv: 1). Works on shapes and logos alike.
