@@ -136,7 +136,7 @@
       function (v) { v = Number(v) || 0; return -(v - turnBase(v)) || 0; },
       function (d) { return wrapAngle(turnBase(obj()[K.r]) - d); }, g2);
     // Skew: slide left and the top leans left while the bottom leans right; slide right for the opposite
-    if (K.sk) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g2);
+    if (K.sk && !K.pv) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g2);   // (with Perspective, Skew sits under it instead)
     // Stretch (pulls the picture wider sideways only): Position = where along the width (0 = left edge, 100 = right edge), Amount = how strong
     // (negative squeezes instead of stretching)
     if (K.pa) {
@@ -150,6 +150,8 @@
     }
     // Perspective (one slider): 0 = normal; slide right and the top edge pulls in (narrower than the bottom), slide left for the opposite
     if (K.pv) addRow('pv', 'Perspective', -100, 100, 1, function (v) { return Number(v) || 0; }, function (d) { return d; }, g6);
+    // Skew: slide left and the top leans left while the bottom leans right; slide right for the opposite (sits under Perspective)
+    if (K.sk && K.pv) addRow('sk', 'Skew (deg)', -45, 45, 0.5, function (v) { return Number(v) || 0; }, function (d) { return d; }, g6);
     // link button, centered between the Max width and Max height labels
     var lk = mk('button', 'rch-link', LINK_ICON); lk.type = 'button';
     function lkState() { lk.className = 'rch-link' + (linkOn ? ' on' : ''); lk.setAttribute('aria-pressed', linkOn ? 'true' : 'false'); lk.title = linkOn ? 'Linked: width and height keep the picture\'s proportions. Click to unlink.' : 'Unlinked. Click to keep the picture\'s proportions.'; lk.setAttribute('aria-label', lk.title); }
@@ -184,7 +186,7 @@
   function makeRotateButtons(getObj, key, after, mirrorKeys) {
     function one(label, dir) {
       // Left reads "Left" then its arrow, Right reads its arrow then "Right", so the two mirror each other around the Mirror button
-      var b = mk('button', 'rc-btn-secondary rch-rotbtn', dir > 0 ? '<span>' + label + '</span>' + ROT_ICON : ROT_ICON + '<span>' + label + '</span>'); b.type = 'button';
+      var b = mk('button', 'rc-btn-secondary rc-btn-row rch-rotbtn', dir > 0 ? '<span>' + label + '</span>' + ROT_ICON : ROT_ICON + '<span>' + label + '</span>'); b.type = 'button';
       b.title = 'Rotate ' + label.toLowerCase() + ' 90 degrees'; b.setAttribute('aria-label', 'Rotate ' + label.toLowerCase() + ' 90 degrees');
       if (dir < 0) b.firstChild.style.transform = 'scaleX(-1)';
       b.onclick = function () { var oo = getObj(); oo[key] = wrapAngle((Number(oo[key]) || 0) + dir * 90); after(); };
@@ -193,7 +195,7 @@
     var out = [one('Rotate Left', 1)];
     (mirrorKeys || []).forEach(function (mk2) {
       // Mirror buttons (icon only) between the two rotate buttons: fx flips left to right, fy flips top to bottom
-      var mb = mk('button', 'rc-btn-secondary rch-rotbtn rch-mirror', mk2[1]); mb.type = 'button';
+      var mb = mk('button', 'rc-btn-secondary rc-btn-row rch-rotbtn rch-mirror', mk2[1]); mb.type = 'button';
       mb.title = mk2[2]; mb.setAttribute('aria-label', mk2[2]);
       function mstate() { mb.classList.toggle('rch-on', !!getObj()[mk2[0]]); }
       mb.onclick = function () { var oo = getObj(); if (oo[mk2[0]]) delete oo[mk2[0]]; else oo[mk2[0]] = 1; mstate(); after(); };
@@ -327,7 +329,7 @@
 
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
-      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label', 'Helmet name'));
+      var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'Helmet name'));
       var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 60; nameIn.placeholder = 'e.g. Season 1 Champion';
       nameIn.oninput = function () { cur.name = nameIn.value; updateTab(); };
       nameWrap.appendChild(nameIn);
@@ -399,7 +401,7 @@
       /* ---------------- right: style ---------------- */
       var style = mk('div', 'rch-section');
       var dRow = mk('div', 'rch-dstack');
-      var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label', 'Design'));
+      var dWrap = mk('div'); dWrap.appendChild(mk('div', 'rch-label rch-redlabel', 'Design'));
       var dSel = mk('select', 'rch-select-wide');
       var plainO = mk('option'); plainO.value = 0; plainO.textContent = 'Plain';
       // Grouped like the layer picker below: unlocked designs under "Basic", locked ones under "Admin" (HelmetAssets.Locked)
@@ -454,7 +456,7 @@
 
       /* ---------------- right: logos (layer list) ---------------- */
       var lg = mk('div', 'rch-section');
-      lg.appendChild(mk('div', 'rch-label', 'Logos and shapes'));
+      lg.appendChild(mk('div', 'rch-label rch-redlabel', 'Logos and shapes'));
       var layers = mk('div', 'rch-layers'); lg.appendChild(layers);
       var addRow = mk('div', 'rch-btns rch-addrow');
       var lpick = mk('select', 'rch-select-wide');
@@ -547,7 +549,7 @@
 
       /* ---------------- right: recipe text ---------------- */
       var rec = mk('details', 'rch-section rch-details');
-      rec.appendChild(mk('summary', '', 'Recipe text (copy or paste a helmet)'));
+      var recSum = mk('summary', ''); recSum.appendChild(mk('span', 'rch-label rch-redlabel rch-reclabel', 'Recipe')); recSum.appendChild(document.createTextNode(' Copy or paste a helmet')); rec.appendChild(recSum);
       var ta = mk('textarea', 'rch-text'); ta.spellcheck = false; rec.appendChild(ta);
       var rbtns = mk('div', 'rch-btns');
       var cpB = mk('button', 'rc-btn-secondary rc-btn-row', 'Copy Recipe'); cpB.type = 'button';
@@ -667,15 +669,16 @@
         detail.appendChild(mk('div', 'rch-label rch-subhead', 'Layer position'));
         detail.appendChild(grid.el);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Layer transform'));
+        grid.el3.style.marginTop = '4px'; detail.appendChild(grid.el3);   // Max width and Max height, then the rotate buttons, then the tilt slider
         var rotRow = mk('div', 'rch-btns rch-rotrow'); detail.appendChild(rotRow);   // Rotate Left, the two mirrors, Rotate Right
         var tbtns = makeRotateButtons(function () { return sel; }, 'r', function () { grid.sync(); draw(true); }, [['fx', MIRROR_ICON, 'Mirror left to right'], ['fy', MIRROR_V_ICON, 'Mirror top to bottom']]);
         // order: Rotate Left, Rotate Right, mirror left to right, mirror top to bottom, Reset
         [tbtns[0], tbtns[3], tbtns[1], tbtns[2]].forEach(function (bn) { rotRow.appendChild(bn); });
-        var resetT = mk('button', 'rc-btn-secondary rch-rotbtn', 'Reset'); resetT.type = 'button';
+        var resetT = mk('button', 'rc-btn-secondary rc-btn-row rch-rotbtn', 'Reset'); resetT.type = 'button';
         resetT.title = 'Put width, height, tilt, skew, stretch, bow, perspective, rotation and mirroring back to normal (position stays)';
         resetT.onclick = function () { var d0 = origSize.get(sel); if (d0) { sel.w = d0.w; sel.h = d0.h; delete sel.st; } sel.r = (sel.m && !sel.s) ? (d0 && d0.r != null ? d0.r : 0) : 0; delete sel.sk; delete sel.pp; delete sel.pa; delete sel.bu; delete sel.bl; delete sel.pv; delete sel.fx; delete sel.fy; renderDetail(); draw(true); };
         rotRow.appendChild(resetT);
-        grid.el3.style.marginTop = '10px'; detail.appendChild(grid.el3);   // Max width and Max height sit between the buttons and the tilt slider
+        void 0;
         grid.el2.style.marginTop = '4px'; detail.appendChild(grid.el2);
         detail.appendChild(mk('div', 'rch-label rch-subhead rch-mt', 'Stretch'));
         detail.appendChild(grid.el4);

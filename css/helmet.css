@@ -317,3 +317,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-loadrow.rch-tier-rare { border-left: 5px solid #8a4fc7; }
 .rch-loadrow.rch-tier-uncommon { border-left: 5px solid #3b82d6; }
 .rch-loadrow.rch-tier-common { border-left: 5px solid #9aa1a8; }
+
+/* container labels in the designer (Helmet name, Design, Logos and shapes, Recipe) are red */
+.rch-label.rch-redlabel { color: var(--rc-red); }
+.rch-reclabel { display: inline; margin: 0 4px 0 0; font-size: 10.5px; }
