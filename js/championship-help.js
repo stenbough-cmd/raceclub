@@ -100,7 +100,7 @@ var RCC_HELP_SECTIONS = [
     id: 'upload', num: '5', title: 'Uploading Your Results',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Click Upload Results</strong> in the Single Player Championship section of your Dashboard, or UPLOAD RESULTS on the calendar card of the next round.</li>' +
+      '<li><strong>Click Upload Results</strong> in the Single Player Championship section of your Dashboard.</li>' +
       '<li><strong>Check the round.</strong> Rounds are uploaded in calendar order, so the popup always shows the next round without results. A later round cannot be uploaded until every round before it has results.</li>' +
       '<li><strong>For file 1</strong>, choose the Qualifying file (…Q1.xml). Seasons without a qualifying session skip this step.</li>' +
       '<li><strong>For file 2</strong>, choose the Race file (…R1.xml).</li>' +

@@ -851,7 +851,7 @@ function rccRenderLastRace(page) {
 
 // ---------------------------------------------------------------------
 // CALENDAR CAROUSEL (adapted from league.js -- no dates in championship mode, so the countdown is
-// replaced by round status: Race Recap once results are in, Upload Results for the next round)
+// replaced by round status: Race Recap once results are in, Up Next for the next round)
 // ---------------------------------------------------------------------
 function rccRenderCarousel(page) {
   var outer = document.getElementById('rcl-race-carousel');
@@ -931,11 +931,8 @@ function rccRenderCarousel(page) {
         drBtn.type = 'button';
         drBtn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenResults(entry.roundId, 'driver'); });
       }
-    } else if (idx === nextIdx && !page.seasonEnded && page.registration) {
-      btn = _rccText('button', 'rcl-carousel-hero-btn', 'UPLOAD RESULTS');
-      if (RCC.demo) _rccDemoLock(btn);
-      else btn.addEventListener('click', function (evt) { evt.stopPropagation(); rccOpenUpload(entry.roundId, true); });
     } else {
+      // No Upload Results button on the calendar (Matt, 2026-11-01): uploading is done from the Dashboard.
       btn = _rccText('button', 'rcl-carousel-hero-btn rcl-carousel-hero-btn-disabled', idx === nextIdx ? 'UP NEXT' : 'NOT YET RACED');
       btn.disabled = true;
     }
