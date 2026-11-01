@@ -81,37 +81,32 @@
     return loading;
   }
 
-  // The championship data is fetched at page start (rcPreloadChampionship, called by Account.html in parallel with the league
-  // dashboard fetch), so it is usually already here when the dashboard is drawn. A preload is used once; later draws fetch fresh.
-  var preloaded = null;
+  // opts.page: the championship page the server already sent with the dashboard data (an ended season's page arrives as a pointer to
+  // its archived file, resolved here the same way championship.js does). No page: fetch it now.
   function fetchPage(opts, profileId) {
-    var pre = preloaded;
-    if (pre && pre.key === opts.token + '|' + profileId) { preloaded = null; return pre.promise; }
     return ensureLoaded(opts).then(function () {
       RCC.token = opts.token;
       RCC.ownerId = profileId;
-      return _rccGetPage('');
+      var res = opts.page;
+      if (!res) return _rccGetPage('');
+      if (!res.success || !res.archived) { RCC.archive = null; return res; }
+      return _rccLoadArchive(res).catch(function () {
+        RCC.archive = null;
+        return _rccApi('champGetPage', { seasonId: res.seasonId, noArchive: '1' });
+      });
     });
   }
-  window.rcPreloadChampionship = function (opts) {
-    if (!opts || !opts.token || !opts.profileId) return;
-    var promise = ensureLoaded(opts).then(function () {
-      RCC.token = opts.token;
-      RCC.ownerId = opts.profileId;
-      return _rccGetPage('');
-    });
-    promise.catch(function () {});
-    preloaded = { key: opts.token + '|' + opts.profileId, promise: promise };
-  };
 
-  // ON/OFF per member (this browser). Off is the default, so a member who never switches it on costs the page no championship fetch at all.
-  function enabledKey(profileId) { return 'rc_champ_on_' + profileId; }
-  window.rcChampEnabled = function (profileId) {
-    try { return !!profileId && localStorage.getItem(enabledKey(profileId)) === '1'; } catch (e) { return false; }
+  // ON/OFF is stored per member on the server (Users.ChampEnabled). This browser only keeps a HINT of the last value, so the
+  // championship scripts can start downloading early; it never decides what is shown.
+  function hintKey(profileId) { return 'rc_champ_hint_' + profileId; }
+  window.rcChampHint = function (profileId) {
+    try { return !!profileId && localStorage.getItem(hintKey(profileId)) === '1'; } catch (e) { return false; }
   };
-  window.rcSetChampEnabled = function (profileId, on) {
-    try { if (on) localStorage.setItem(enabledKey(profileId), '1'); else localStorage.removeItem(enabledKey(profileId)); } catch (e) { /* ignore */ }
+  window.rcSetChampHint = function (profileId, on) {
+    try { if (on) localStorage.setItem(hintKey(profileId), '1'); else localStorage.removeItem(hintKey(profileId)); } catch (e) { /* ignore */ }
   };
+  window.rcPreloadChampionshipScripts = function (opts) { var p = ensureLoaded(opts || {}); p.catch(function () {}); };
 
   function statusOf(s) {
     if (s.status === 'Completed') return { label: s.unfinished ? 'Ended early' : 'Finished', active: false };
