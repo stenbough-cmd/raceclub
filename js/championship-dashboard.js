@@ -46,9 +46,9 @@
       '.rcd-season { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 2px; border-top: 1px solid var(--rc-silver); }' +
       '.rcd-season:first-child { border-top: 0; }' +
       '.rcd-season-name { flex: 1 1 200px; min-width: 0; font-weight: 700; font-size: 14px; color: var(--rc-carbon); }' +
-      '.rcd-pill { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--rc-silver); color: var(--rc-carbon); }' +
+      '.rcd-pill { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--rc-silver); color: var(--rc-carbon); }' +
       '.rcd-pill.rcd-active { background: var(--rc-red); color: #fff; }' +
-      '.rcd-note { margin: 0 0 12px; font-size: 13.5px; line-height: 1.55; color: var(--rc-steel); }' +
+      '.rcd-note { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--rc-steel); }' +
       // Every button in the container centers its label the same way, whether it is a <button> or a link (View), with the same border
       // box (the primary button had no border, so it ran 2px shorter than its neighbours).
       '.rcd-panel .rc-btn-primary, .rcd-panel .rc-btn-secondary { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: normal; text-decoration: none; }' +

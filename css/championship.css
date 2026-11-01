@@ -209,7 +209,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
   padding: 6px 6px;
   border-bottom: 1px solid var(--rc-silver);
   font-family: var(--rc-font-heading);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -225,7 +225,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-board-num-head { text-align: center; }
 .rcc-board-logo-head { text-align: center; }
 .rcc-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
-.rcc-board-num { text-align: center; font-size: 14.5px; font-weight: 400; color: var(--rc-carbon); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcc-board-num { text-align: center; font-size: 15px; font-weight: 400; color: var(--rc-carbon); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* The name cell holds only the name; it cuts off with "..." before the round columns shrink. */
 .rcc-board-name-cell { min-width: 0; }
 .rcc-board .rcl-standings-name { min-width: 0; }
@@ -276,7 +276,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 
 /* -------------------------------------------------------------------- */
 /* Race Recap results tables: the player's own row in bold (everyone else is normal weight). */
-.rcl-race-grid-recap .rcc-board-num { font-size: 14.5px; font-weight: 400; color: var(--rc-carbon); }
+.rcl-race-grid-recap .rcc-board-num { font-size: 15px; font-weight: 400; color: var(--rc-carbon); }
 .rcl-race-grid-recap .rcc-me-text { color: var(--rc-carbon); }
 .rcl-race-grid-recap.rcc-row-me .rcl-race-row-num,
 .rcl-race-grid-recap.rcc-row-me .rcl-race-row-pts,
@@ -381,7 +381,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* FACTORY / PRIVATEER pill after the team number: very light gray fill, white text, same size as the class pill (Matt). */
 /* Pills in the seat line (header, Team Information): class pill a little smaller than the site's
    default, FACTORY / PRIVATEER the same size as a light gray dashed outline (Matt). */
-.rcc-seat-line .rc-badge-chip-abbrev { padding: 1px 5px; font-size: 10.5px; line-height: 1.5; align-self: center; }
+.rcc-seat-line .rc-badge-chip-abbrev { padding: 1px 5px; font-size: 11px; line-height: 1.5; align-self: center; }
 .rcc-seat-line .rcc-badge-entry { background: none; border: 1px dashed #b4bcc6; color: #9aa3ae; padding: 0 4px; letter-spacing: 0.04em; }
 /* YOU tag centred on the team name instead of sitting on its baseline. */
 .rcc-seat-line .rcc-tag { align-self: center; line-height: 1.4; }
@@ -610,7 +610,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   border-radius: 6px;
   padding: 12px 16px 12px 46px;
   color: var(--rc-carbon);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.55;
 }
 .rcc-tip::before,
@@ -650,7 +650,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-thumb-down.rcc-thumb-on { background: var(--rc-red); border-color: var(--rc-red); }
 .rcc-thumb-on svg { fill: #fff; }
 .rcc-story-why { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-.rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 8px 10px; border: 1px solid #c9d1da; border-radius: 6px; resize: vertical; }
+.rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #c9d1da; border-radius: 6px; resize: vertical; }
 .rcc-story-why-text { flex: 1 1 100%; font-size: 12px; color: var(--rc-steel); }
 
 /* Season Stories header title in white over the news banner (Matt). */
@@ -672,7 +672,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* HELP quick start: "as easy as 1-2-3", above Jump To A Section (Matt, 2026-10-13). */
 .rcc-quick { margin: 0 0 24px; padding: 20px 20px 18px; border-radius: 10px; background: var(--rcc-navy); color: var(--rc-white); }
-.rcc-quick-title { font-family: var(--rc-font-heading); font-size: 17px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
+.rcc-quick-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
 .rcc-quick-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .rcc-quick-steps > li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 16px 14px 14px; border-radius: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); }
 .rcc-quick-steps > li strong { font-family: var(--rc-font-heading); font-size: 15px; letter-spacing: 0.03em; text-transform: uppercase; }
@@ -763,11 +763,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Current Seat popup (Matt, 2026-10-14). */
 .rcc-current-seat .rcc-seat-line { margin: 0; }
-.rcc-current-seat-desc { margin: 16px 0 0; font-size: 14.5px; line-height: 1.6; color: #374151; }
+.rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: #374151; }
 /* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
 @media (max-width: 640px) {
   .rcc-actionbar-inner { padding: 0 12px; }
-  .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 10.5px; letter-spacing: 0.03em; }
+  .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 11px; letter-spacing: 0.03em; }
   
   .rcc-actionbar-links > .rcc-actionbar-link:first-child { padding-left: 0; }
   

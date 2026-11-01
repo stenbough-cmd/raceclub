@@ -8,10 +8,10 @@
 .rch-left { position: sticky; top: 0; }
 @media (max-width: 860px) { .rch-left { position: static; } }
 
-.rch-label { display: block; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); margin-bottom: 5px; }
+.rch-label { display: block; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); margin-bottom: 5px; }
 .rch-mt { margin-top: 14px; }
 .rch-hint { font-size: 12px; line-height: 1.45; color: var(--rc-steel); margin: 6px 0 0; }
-.rch-status { font-size: 12.5px; color: var(--rc-carbon); margin: 8px 0 10px; }
+.rch-status { font-size: 13px; color: var(--rc-carbon); margin: 8px 0 10px; }
 .rch-section { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; background: var(--rc-white); }
 
 .rch-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -76,10 +76,10 @@
 .rch-link.on { color: var(--rc-carbon); border-color: var(--rc-steel); background: var(--rc-offwhite); }
 .rch-link:hover { border-color: var(--rc-steel); }
 .rch-rotbtn { display: inline-flex; align-items: center; gap: 6px; }
-.rch-check { font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; }
+.rch-check { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
 .rch-detail .rch-btns { margin-top: 10px; }
 .rch-detail .rch-select-wide { width: auto; }
-.rch-details summary { cursor: pointer; font-size: 12.5px; color: var(--rc-steel); }
+.rch-details summary { cursor: pointer; font-size: 13px; color: var(--rc-steel); }
 
 /* load popup */
 .rch-loadbody { min-width: 280px; }
@@ -277,7 +277,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-iconlabel svg { flex: 0 0 auto; }
 
 .rch-filterrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; }
-.rch-filterlabel { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); }
+.rch-filterlabel { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); }
 .rch-filterrow + .rch-addrow { margin-top: 6px; }
 
 /* a hidden layer (eye button in the layer list): the whole entry is dimmed so it is obviously hidden, except the crossed-out eye button which stays solid */
@@ -301,7 +301,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 /* container labels in the designer (Helmet name, Design, Logos and shapes, Recipe) are red */
 .rch-label.rch-boldlabel { color: var(--rc-carbon); font-weight: 800; }
 .rch-label.rch-redlabel { color: var(--rc-red); }
-.rch-reclabel { display: inline; margin: 0 4px 0 0; font-size: 10.5px; }
+.rch-reclabel { display: inline; margin: 0 4px 0 0; font-size: 11px; }
 
 .rch-row-kt { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; align-items: end; }
 
