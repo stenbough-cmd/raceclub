@@ -388,7 +388,7 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
 // ---------------------------------------------------------------------
 // HERO + BLACK LINK BAR
 // ---------------------------------------------------------------------
-// Eyebrow above CHAMPIONSHIP (Matt, 2026-10-15): "<FULL NAME>'S OFFLINE" for a signed-in driver,
+// Eyebrow above CHAMPIONSHIP (Matt, 2026-10-15): "<FULL NAME>'S SINGLE PLAYER" for a signed-in driver,
 // "SINGLE PLAYER MODE" when nobody is signed in. The name comes from the saved sign-in profile.
 function _rccRenderEyebrow(page) {
   var eb = document.querySelector('.rcl-hero-eyebrow');
@@ -397,7 +397,7 @@ function _rccRenderEyebrow(page) {
   if (RCC.demo) { eb.textContent = 'Single Player Mode'; return; }
   var me = getToken() ? (getProfileCache() || {}) : {};
   var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
-  eb.textContent = name ? name + '\u2019s Offline' : 'Single Player Mode';
+  eb.textContent = name ? name + '\u2019s Single Player' : 'Single Player Mode';
 }
 
 function rccRenderHero(page) {
@@ -3001,6 +3001,26 @@ function _rccDemoWatermark() {
   document.body.appendChild(wm);
 }
 
+// The member's Championship switch is OFF (Dashboard, Users.ChampEnabled; off by default): under the site header
+// the page shows ONE container saying so and nothing else (Matt, 2026-11-01): no ticker, hero, link bar or panels.
+function _rccShowDisabled() {
+  _rccClearLoadError();
+  _rccHidePageLoader();
+  _rccUnlockScroll();
+  ['.rcl-ticker-wrap', '.rcl-hero', '#rcc-actionbar'].forEach(function (sel) {
+    var node = document.querySelector(sel);
+    if (node) node.style.display = 'none';
+  });
+  var main = document.querySelector('.rcl-main');
+  if (!main || document.getElementById('rcc-off-panel')) return;
+  Array.prototype.forEach.call(main.children, function (child) { child.style.display = 'none'; });
+  var box = _rccEl('div', 'rcl-panel rcl-row-full');
+  box.id = 'rcc-off-panel';
+  box.appendChild(_rccEmpty('Championship Is Switched Off',
+    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season.'));
+  main.insertBefore(box, main.firstChild);
+}
+
 function rccStartDemo() {
   // The time stamp skips any copy a cache kept (GitHub Pages holds answers, a "not found" included,
   // for up to 10 minutes after a push).
@@ -3089,6 +3109,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // The season the page opened on stays in memory (currentText), so picking it again in the season
   // picker is instant, and a background refresh never switches away from a past season.
   var revalidating = false;
+  // Is the Championship switched on for this member? The server's answer (Users.ChampEnabled) decides; if it can not be
+  // read, null = unknown and the page carries on as before. Asked in parallel with the page, which is not drawn until it answers.
+  var champOff = false;
+  var enabledP = fetchApi('getProfile', { token: RCC.token }).then(function (d) {
+    return (d && d.success && d.profile) ? !!d.profile.champEnabled : null;
+  }, function () { return null; });
+  enabledP.then(function (en) { if (en === false) { champOff = true; _rccShowDisabled(); } });
   // The first load failed and this browser has no saved copy (audit A4, Matt 2026-10-22): show "Could
   // Not Load The Championship" with RETRY instead of an empty page that looks like no season. The
   // player stays logged in; only a real "please log in" answer goes to the login page.
@@ -3102,6 +3129,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var hadCopy = !!currentText;
     _rccGetPage(_rccQuery('season')).then(function (page) {
       if (_rccHandleAuthError(page)) return;
+      return enabledP.then(function () { return page; });
+    }).then(function (page) {
+      if (champOff || !page) return;
       if (page && page.success) {
         var text = JSON.stringify(page);
         // A RETRY that worked: take the error panel away and bring the page back.

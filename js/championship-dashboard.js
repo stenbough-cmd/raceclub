@@ -13,7 +13,7 @@
 (function () {
   var STYLE_ID = 'rcd-style';
   var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar6'];
-  var JS_FILES = ['js/championship-help.js?v=7', 'js/championship.js?v=9'];
+  var JS_FILES = ['js/championship-help.js?v=7', 'js/championship.js?v=10'];
   var loading = null;
 
   function mk(tag, cls, text) {
