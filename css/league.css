@@ -46,8 +46,14 @@ body.rc-league-page {
   gap: 18px;
   background: rgba(10, 10, 11, 0.94);
   transition: opacity 0.4s ease;
+  /* Stays invisible for the first second, then fades in. Pages that load faster than that never show the
+     loader at all (a split-second flash looks like a glitch); slow loads still get the start lights.
+     `backwards` holds opacity 0 during the delay and hands back to the normal opacity afterwards. */
+  animation: rcl-loader-wait 0.3s ease 1s backwards;
 }
-.rcl-page-loader-hidden { opacity: 0; pointer-events: none; }
+@keyframes rcl-loader-wait { from { opacity: 0; } to { opacity: 1; } }
+/* `animation: none` so a loader hidden during the delay can not fade in afterwards. */
+.rcl-page-loader-hidden { opacity: 0; pointer-events: none; animation: none; }
 .rcl-has-cache .rcl-page-loader { display: none; }
 /* .rc-loading-text (style.css) is tuned for the site's light theme (var(--rc-steel)) -- this
    overlay is dark, so it needs its own color here rather than inheriting an unreadable
