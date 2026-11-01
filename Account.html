@@ -18,6 +18,7 @@
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=47"></script>
 <script src="js/helmet-editor.js?v=70"></script>
+<script src="js/championship-dashboard.js?v=1"></script>
 </head>
 <body>
 
@@ -637,12 +638,26 @@
     var spinner = buildPageSpinner('Loading your dashboard...');
     section.appendChild(spinner);
 
+    // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
+    // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
+    var champHost = el('div', 'margin-top:34px;');
+    champHost.appendChild(el('h2', null, 'Single Player Championship'));
+    try {
+      if (typeof rcBuildChampionshipDashboard === 'function') {
+        champHost.appendChild(rcBuildChampionshipDashboard({
+          token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner,
+          reload: function () { rcReloadAfterSave(); }
+        }));
+      }
+    } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
+    section.appendChild(champHost);
+
     var rows = null;
 
     function paintRows(data, onRegistered) {
       var built = buildDashboardDataRows(profile, token, data, onRegistered);
-      section.appendChild(built.topRow);
-      section.appendChild(built.resultsRow);
+      section.insertBefore(built.topRow, champHost);
+      section.insertBefore(built.resultsRow, champHost);
 
       return built;
     }

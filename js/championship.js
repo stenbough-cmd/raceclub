@@ -70,7 +70,11 @@ function _rccShowCarriedToasts() {
   try { list = JSON.parse(sessionStorage.getItem(RCC_FLASH_KEY) || 'null'); sessionStorage.removeItem(RCC_FLASH_KEY); } catch (err) { list = null; }
   (list || []).forEach(function (t) { if (typeof showToast === 'function') showToast(t.msg, t.type); });
 }
-function _rccGo(url) { _rccCarryToasts(); window.location.href = url; }
+function _rccGo(url) {
+  // Embedded in the Account dashboard (js/championship-dashboard.js): stay there; the dashboard redraws itself.
+  if (window.RCC_EMBEDDED && /^championship\.html/.test(String(url))) { rccReloadAfterSave(); return; }
+  _rccCarryToasts(); window.location.href = url;
+}
 var RCC_CLASS_ORDER = ['Hypercar', 'LMP2', 'LMP3', 'LMGT3', 'LMGTE'];
 function _rccSortClasses(list, nameOf) {
   return list.slice().sort(function (a, b) {
@@ -194,6 +198,7 @@ function _rccQuery(name) {
 // Reload this same page (same owner, same season) after a save -- the site's "reload after save"
 // rule. No timers, no polling.
 function rccReloadAfterSave() {
+  if (window.RCC_EMBEDDED && typeof window.RCC_EMBEDDED_RELOAD === 'function') { window.RCC_EMBEDDED_RELOAD(); return; }   // Account dashboard: redraw the dashboard instead
   _rccCarryToasts();
   window.location.reload();
 }
@@ -346,7 +351,7 @@ function _rccUnlockScroll() {
 
 function rccOpenModal(title, opts) {
   opts = opts || {};
-  var overlay = _rccEl('div', 'rcl-modal-overlay rcl-modal-overlay-over-nav rcc-modal-overlay');
+  var overlay = _rccEl('div', 'rcl-modal-overlay rcl-modal-overlay-over-nav rcc-modal-overlay' + (window.RCC_EMBEDDED ? ' rcc-page' : ''));   // embedded (Account dashboard): rcc-page here makes championship.css's popup rules apply
   var dialog = _rccEl('div', 'rcl-modal-dialog' + (opts.wide ? ' rcl-modal-dialog-wide' : '') + (opts.narrow ? ' rcl-modal-dialog-narrow' : ''));
   var head = _rccEl('div', 'rcl-modal-head');
   var titleEl = _rccText('div', 'rcl-modal-title', title);
@@ -3203,6 +3208,7 @@ function rccRenderAll(page) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  if (window.RCC_EMBEDDED) return;   // loaded by the Account dashboard (js/championship-dashboard.js): no page to start
   _rccInitTooltips();
   var mode = _rccCheckAccess();
   if (!mode) return;
