@@ -8,7 +8,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=dash2">
 <link rel="stylesheet" href="css/helmet.css?v=45">
 <script src="js/img-loader.js"></script>
 <script src="js/api.js?v=staged2"></script>
@@ -631,7 +631,8 @@
     var section = document.getElementById('rc-section-dashboard');
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', null, 'Online League Dashboard'));
+    // Nothing else is on the page while it loads: the heading, league cards and championship all appear together (below).
+    section.classList.add('rc-dash-instant');
 
     // Two rows of cards: Row 1: Registration Status, Current Seat Row 2: Next Race, Protest (last 3
     // filed protests, same asyncDashCard treatment as every other data-driven card)
@@ -682,6 +683,7 @@
 
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
+      section.appendChild(el('h2', null, 'Online League Dashboard'));
       section.appendChild(champHost);
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });

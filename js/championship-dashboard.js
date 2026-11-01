@@ -81,6 +81,29 @@
     return loading;
   }
 
+  // The championship data is fetched at page start (rcPreloadChampionship, called by Account.html in parallel with the league
+  // dashboard fetch), so it is usually already here when the dashboard is drawn. A preload is used once; later draws fetch fresh.
+  var preloaded = null;
+  function fetchPage(opts, profileId) {
+    var pre = preloaded;
+    if (pre && pre.key === opts.token + '|' + profileId) { preloaded = null; return pre.promise; }
+    return ensureLoaded(opts).then(function () {
+      RCC.token = opts.token;
+      RCC.ownerId = profileId;
+      return _rccGetPage('');
+    });
+  }
+  window.rcPreloadChampionship = function (opts) {
+    if (!opts || !opts.token || !opts.profileId) return;
+    var promise = ensureLoaded(opts).then(function () {
+      RCC.token = opts.token;
+      RCC.ownerId = opts.profileId;
+      return _rccGetPage('');
+    });
+    promise.catch(function () {});
+    preloaded = { key: opts.token + '|' + opts.profileId, promise: promise };
+  };
+
   function statusOf(s) {
     if (s.status === 'Completed') return { label: s.unfinished ? 'Ended early' : 'Finished', active: false };
     return { label: s.status === 'Registration' ? 'Setting up' : 'Active', active: true };
@@ -277,11 +300,7 @@
     var profile = opts.profile || {};
     if (!opts.token || !profile.profileId) { fail('Sign in to use the championship tools.'); return panel; }
     // panel.rcdReady settles once the championship data is drawn (or failed), so the page can show it together with the league cards.
-    panel.rcdReady = ensureLoaded(opts).then(function () {
-      RCC.token = opts.token;
-      RCC.ownerId = profile.profileId;
-      return _rccGetPage('');
-    }).then(function (page) {
+    panel.rcdReady = fetchPage(opts, profile.profileId).then(function (page) {
       if (!page || !page.success) { fail(); return; }
       RCC.page = page;
       body.innerHTML = '';
