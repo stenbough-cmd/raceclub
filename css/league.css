@@ -55,6 +55,10 @@ body.rc-league-page {
 /* `animation: none` so a loader hidden during the delay can not fade in afterwards. */
 .rcl-page-loader-hidden { opacity: 0; pointer-events: none; animation: none; }
 .rcl-has-cache .rcl-page-loader { display: none; }
+/* While a League Hub / Championship page waits for its data (html.rc-pending, set in the page's <head> and removed by
+   rcRevealPage()), everything under the site header is hidden: a plain empty page, then every container at once. */
+html.rc-pending .rcl-ticker-wrap, html.rc-pending .rcl-hero, html.rc-pending .rcl-navbar,
+html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-site-footer { display: none !important; }
 /* .rc-loading-text (style.css) is tuned for the site's light theme (var(--rc-steel)) -- this
    overlay is dark, so it needs its own color here rather than inheriting an unreadable
    dark-gray-on-black. */

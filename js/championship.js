@@ -219,6 +219,9 @@ function _rccShowPageLoader(message) {
   _rccLockScroll();
 }
 
+// Lifts the "plain empty page" state (html.rc-pending, championship.html) so every container appears together.
+function _rccReveal() { if (typeof window.rcRevealPage === 'function') window.rcRevealPage(); }
+
 function _rccHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
@@ -488,6 +491,7 @@ function _rccClearLoadError() {
 }
 function _rccShowLoadError(onRetry, title) {
   _rccClearLoadError();
+  _rccReveal();
   var main = document.querySelector('.rcl-main');
   if (!main) return;
   var box = _rccEl('div', 'rcl-row-full rcc-load-error');
@@ -3012,13 +3016,15 @@ function _rccShowDisabled() {
     if (node) node.style.display = 'none';
   });
   var main = document.querySelector('.rcl-main');
-  if (!main || document.getElementById('rcc-off-panel')) return;
+  if (!main) { _rccReveal(); return; }
+  if (document.getElementById('rcc-off-panel')) { _rccReveal(); return; }
   Array.prototype.forEach.call(main.children, function (child) { child.style.display = 'none'; });
   var box = _rccEl('div', 'rcl-panel rcl-row-full');
   box.id = 'rcc-off-panel';
   box.appendChild(_rccEmpty('Championship Is Switched Off',
-    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season.'));
+    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season. For more information, visit the Help section.'));
   main.insertBefore(box, main.firstChild);
+  _rccReveal();
 }
 
 function rccStartDemo() {
@@ -3035,9 +3041,11 @@ function rccStartDemo() {
     _rccPageShell(true);
     rccRenderAll(d.page);
     _rccDemoWatermark();
+    _rccReveal();
   }).catch(function (err) {
     if (window.console) console.error('Demo failed:', err);
     _rccHeaderOnly();
+    _rccReveal();
     _rccToast('The demo is not available right now. Please try again later.', 'error');
   });
 }
@@ -3144,9 +3152,10 @@ document.addEventListener('DOMContentLoaded', function () {
         showLoadFailed();
       }
     }).catch(function () {
-      if (!hadCopy) showLoadFailed();
+      return enabledP.then(function () { if (!champOff && !hadCopy) showLoadFailed(); });
     }).then(function () {
       revalidating = false;
+      _rccReveal();
       if (!hadCopy) { _rccUnlockScroll(); _rccHidePageLoader(); }
     });
   }

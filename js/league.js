@@ -3818,6 +3818,9 @@ function _rclShowPageLoader_(text) {
   if (!document.body.classList.contains('rc-modal-scroll-locked')) _rclLockBodyScroll();
 }
 
+// Lifts the "plain empty page" state (html.rc-pending, league.html) so every container appears together.
+function _rclReveal_() { if (typeof window.rcRevealPage === 'function') window.rcRevealPage(); }
+
 function _rclHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
@@ -3876,6 +3879,7 @@ function _rclClearLoadError_() {
 }
 function _rclShowLoadError_(onRetry, title) {
   _rclClearLoadError_();
+  _rclReveal_();
   _rclHidePageLoader();
   var main = document.querySelector('.rcl-main');
   if (!main) return;
@@ -3917,6 +3921,7 @@ document.addEventListener('DOMContentLoaded', function () {
       _rclRenderTicker({ lastRace: null, standings: [] });
       RENDERERS.forEach(function (fn) { fn({ hasSeason: false }); });
       _rclRenderHero({ hasSeason: false });
+      _rclReveal_();
       _rclHidePageLoader();
       return;
     }
@@ -3925,6 +3930,7 @@ document.addEventListener('DOMContentLoaded', function () {
     _rclRenderTicker(hub);
     RENDERERS.forEach(function (fn) { fn(hub); });
     storyWritingOn = _rclStoryWritingActive(hub);
+    _rclReveal_();
     _rclHidePageLoader();
   }
 
