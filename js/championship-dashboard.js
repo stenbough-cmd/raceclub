@@ -184,7 +184,7 @@
     } else {
       var lastYear = null;
       seasons.forEach(function (s, idx) {
-        var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Seasons';
+        var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
         if (year !== lastYear) {
           var head = mk('div', 'rc-group-head');
           head.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
