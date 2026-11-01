@@ -150,7 +150,7 @@
     var firstEmpty = cal.filter(function (x) { return !x.hasResults; })[0];
     var doneRounds = cal.filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
     var lastDone = doneRounds[doneRounds.length - 1];
-    function roundRow(c) {
+    function roundRow(c, readOnly) {
       var r = mk('div', 'rc-group-row');
       var info = mk('div', 'rc-dm-row-info');
       var col = mk('div', '');
@@ -168,14 +168,14 @@
       col.appendChild(st);
       var bg = mk('div', '');
       bg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
-      if (active) {
+      if (active && !readOnly) {
         var canUp = !!page.registration && firstEmpty && firstEmpty.roundId === c.roundId;
         bg.appendChild(rowBtn('Upload Results', canUp, function () { rccOpenUpload(c.roundId, true); },
           c.hasResults ? 'Results already uploaded for this round. Erase them first to upload again.' : (!page.registration ? 'Choose your team first.' : 'Upload the earlier rounds first.')));
         bg.appendChild(rowBtn('Erase Results', !!lastDone && lastDone.roundId === c.roundId, function () { rccOpenErase(); },
           (c.hasQualifyResults || c.hasRaceResults) ? 'Only the latest round with results can be erased.' : 'No results uploaded for this round.'));
       }
-      col.appendChild(bg);
+      if (bg.childNodes.length) col.appendChild(bg);
       info.appendChild(col);
       r.appendChild(info);
       return r;
@@ -214,6 +214,37 @@
           bg.appendChild(rowBtn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
           bg.appendChild(rowBtn('Choose Your Team', active && !page.registration, function () { rccOpenRegistration(); }, page.registration ? 'You have already chosen your team for this season.' : 'The season has ended.'));
         }
+        // A past season: its own Season Preview, and its rounds (read only, no buttons) behind the arrow. Both come from that
+        // season's own page, fetched the first time either is used (an ended season is read from its saved file).
+        var pastPage = null, pastLoading = null;
+        function loadPast() {
+          if (pastPage) return Promise.resolve(pastPage);
+          if (!pastLoading) {
+            pastLoading = _rccGetPage(s.seasonId).then(function (pg) {
+              if (!pg || !pg.success) throw new Error('load');
+              pastPage = pg;
+              return pg;
+            });
+            pastLoading.catch(function () { pastLoading = null; });
+          }
+          return pastLoading;
+        }
+        if (!isCurrent) {
+          var pvBtn = rowBtn('Season Preview', true, function () {
+            pvBtn.disabled = true;
+            loadPast().then(function (pg) {
+              pvBtn.disabled = false;
+              // rccOpenSeasonPreview reads RCC.page: point it at this season for the moment the popup is built
+              var keep = RCC.page;
+              RCC.page = pg;
+              try { rccOpenSeasonPreview(); } finally { RCC.page = keep; }
+            }).catch(function () {
+              pvBtn.disabled = false;
+              if (typeof showToast === 'function') showToast('Could not load this season right now.', 'error');
+            });
+          });
+          bg.appendChild(pvBtn);
+        }
         var open = mk('a', 'rc-btn-secondary rc-btn-row', 'View');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
         open.style.textDecoration = 'none';
@@ -234,6 +265,36 @@
             tg.setAttribute('aria-label', isOpen ? 'Show races' : 'Hide races');
           });
           bg.appendChild(tg);
+        }
+        if (!isCurrent) {
+          racesBox = mk('div', '');
+          racesBox.style.cssText = 'padding-left:20px;display:none;';
+          var pastToggle = mk('button', 'rc-disclosure-btn');
+          pastToggle.innerHTML = CHEVRON; pastToggle.type = 'button';
+          pastToggle.setAttribute('aria-expanded', 'false'); pastToggle.setAttribute('aria-label', 'Show rounds');
+          var pastFilled = false;
+          pastToggle.addEventListener('click', function () {
+            var isOpen = racesBox.style.display !== 'none';
+            racesBox.style.display = isOpen ? 'none' : '';
+            pastToggle.classList.toggle('rc-disclosure-open', !isOpen);
+            pastToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+            pastToggle.setAttribute('aria-label', isOpen ? 'Show rounds' : 'Hide rounds');
+            if (isOpen || pastFilled) return;
+            pastFilled = true;
+            racesBox.innerHTML = '';
+            racesBox.appendChild(mk('div', 'rc-hint', 'Loading rounds...'));
+            loadPast().then(function (pg) {
+              racesBox.innerHTML = '';
+              var rounds = pg.calendar || [];
+              if (!rounds.length) racesBox.appendChild(mk('div', 'rc-dm-empty', 'No rounds in this season.'));
+              rounds.forEach(function (c) { racesBox.appendChild(roundRow(c, true)); });
+            }).catch(function () {
+              pastFilled = false;
+              racesBox.innerHTML = '';
+              racesBox.appendChild(mk('div', 'rc-hint', 'Could not load the rounds right now. Close and open the arrow to try again.'));
+            });
+          });
+          bg.appendChild(pastToggle);
         }
         textCol.appendChild(bg);
         info.appendChild(textCol);
