@@ -541,8 +541,11 @@
       var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
       detailsLine.style.display = '';
       drawDetails(detailsHost, curSeason, curRound);
-      raceHost.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading race...') : tx('div', 'rdp-loading', 'Loading race...'));
+      // Report files arrive in well under a tenth of a second (api.js), so the spinner only appears if the wait is long enough to notice.
+      var raceSpin = window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading race...') : tx('div', 'rdp-loading', 'Loading race...');
+      var raceSpinTimer = setTimeout(function () { if (my === token) raceHost.appendChild(raceSpin); }, 150);
       loadRound(raceSel.value).then(function (res) {
+        clearTimeout(raceSpinTimer);
         if (my !== token) return;
         raceHost.innerHTML = '';
         if (!res || !res.success) { raceHost.appendChild(emptyBlock('Race Unavailable', (res && res.message) || 'Could not load this race right now.')); return; }
@@ -568,6 +571,7 @@
         split.appendChild(right);
         raceHost.appendChild(split);
       }).catch(function () {
+        clearTimeout(raceSpinTimer);
         if (my !== token) return;
         raceHost.innerHTML = '';
         raceHost.appendChild(emptyBlock('Race Unavailable', 'Could not load this race right now.'));

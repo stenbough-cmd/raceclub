@@ -2084,16 +2084,21 @@ function _rclBuildDriverReportBody_(hub, roundId, result, el) {
       if (res.driverReport.pitNote) reportHost.appendChild(_rccText('p', 'rcr-note', res.driverReport.pitNote));
     }
     if (Object.prototype.hasOwnProperty.call(_rclDriverReportCache_, key)) { show(_rclDriverReportCache_[key]); return; }
-    reportHost.appendChild(_rclBuildInlineSpinner_('Loading driver report...'));
+    // The report usually arrives from a data file in well under a tenth of a second (api.js); a spinner that
+    // flashed up and vanished would look like a glitch, so it only appears if the wait is long enough to notice.
+    var reportSpinner = _rclBuildInlineSpinner_('Loading driver report...');
+    var reportSpinTimer = setTimeout(function () { if (my === _rclDriverReportToken_) reportHost.appendChild(reportSpinner); }, 150);
     sel.disabled = true;
     fetchApi('getDriverProfileRound', { params: { profileId: d.profileId, roundId: roundId }, timeoutMs: 60000 }).then(function (res) {
+      clearTimeout(reportSpinTimer);
       if (res && res.success) _rclDriverReportCache_[key] = res;
       sel.disabled = false;
       show(res);
     }, function () {
+      clearTimeout(reportSpinTimer);
       sel.disabled = false;
       show(null);
-    }).catch(function () { sel.disabled = false; });
+    }).catch(function () { clearTimeout(reportSpinTimer); sel.disabled = false; });
   }
 
   // Always opens on "Choose a driver".

@@ -342,7 +342,12 @@ function _rcDataRoundPath_(p) {
 // action -> which file answers it and which part of the file is the answer (the same object the action returns).
 var RC_DATA_ROUTES_ = {
   getPublicRoundResults: { file: _rcDataRoundPath_, pick: function (f) { return f.results; } },
-  getPublicRoundQualifying: { file: _rcDataRoundPath_, pick: function (f) { return f.qualifying; } }
+  getPublicRoundQualifying: { file: _rcDataRoundPath_, pick: function (f) { return f.qualifying; } },
+  // One driver's report for one round (My Laps + Driver Report): the whole file is the answer.
+  getDriverProfileRound: {
+    file: function (p) { return (/^RND-\d{3,8}$/.test(String(p.roundId || '')) && /^RC-\d{5,6}$/.test(String(p.profileId || ''))) ? 'rounds/' + p.roundId + '/' + p.profileId + '.json' : null; },
+    pick: function (f) { return f; }
+  }
 };
 
 function _rcDataRevs_() {
