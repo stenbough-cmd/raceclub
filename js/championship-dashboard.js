@@ -103,19 +103,52 @@
       return b;
     }
 
-    // Same layout as the League Tools Seasons panel: one right-aligned button row, then the list in its own bordered box,
-    // grouped under year pills, one .rc-group-row per season with the name and a gray meta line.
+    // Same layout as the League Tools Seasons panel (Account.html buildSeasonsPanel / buildSeasonRow / buildSeasonRaceRow):
+    // a right-aligned row with Create / End / Delete Season, then the list in its own box, grouped under year pills. Each season
+    // is a .rc-group-row (name, gray meta line, its buttons underneath, a chevron) and its rounds open under it, indented.
+    var CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
     var row = mk('div', 'rcd-row');
-    row.appendChild(btn('Create Season', !running, function () { rccOpenSeasonWizard(null); }, 'End your current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
-    row.appendChild(btn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
-    row.appendChild(btn('Choose Your Team', active, function () { rccOpenRegistration(); }, !hasSeason ? 'Create a season first.' : 'The season has ended.'));
-    row.appendChild(btn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.'));
-    row.appendChild(btn('End Season', active, function () { rccOpenEndSeason(); }, 'No active season to end.'));
-    row.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season to delete.'));
-    row.appendChild(btn('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
-      !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.')));
-    row.appendChild(btn('Erase Results', active && anyResults, function () { rccOpenErase(); }, !active ? 'No active season.' : 'No results to erase yet.'));
+    row.appendChild(btn('Create a Season', !running, function () { rccOpenSeasonWizard(null); }, 'End the current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
+    row.appendChild(btn('End Season', active, function () { rccOpenEndSeason(); }, 'No season is currently eligible to end.'));
+    row.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season is currently eligible to delete.'));
     panel.appendChild(row);
+
+    function rowBtn(label, enabled, onClick, why) { return btn(label, enabled, onClick, why, 'rc-btn-secondary rc-btn-row'); }
+
+    // One round of the running season (same shape as buildSeasonRaceRow).
+    var firstEmpty = cal.filter(function (x) { return !x.hasResults; })[0];
+    var doneRounds = cal.filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
+    var lastDone = doneRounds[doneRounds.length - 1];
+    function roundRow(c) {
+      var r = mk('div', 'rc-group-row');
+      var info = mk('div', 'rc-dm-row-info');
+      var col = mk('div', '');
+      col.appendChild(mk('span', 'rc-dm-row-label', 'Round ' + c.roundNum + ': ' + (c.eventName || c.track || '')));
+      var bits = [];
+      if (c.track) bits.push(c.track + (c.layout ? ': ' + c.layout : ''));
+      col.appendChild(mk('div', 'rc-hint', bits.join(' · ') || 'Track not set'));
+      var st = mk('div', 'rc-round-status');
+      var text, icon;
+      if (c.hasResults) { text = 'Results uploaded. Standings updated.'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-green', '✓'); }
+      else if (c.hasQualifyResults || c.hasRaceResults) { text = c.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-yellow', '~'); }
+      else { text = 'Awaiting results.'; icon = mk('span', 'rc-protest-dash-icon rc-protest-dash-icon-pending'); }
+      st.appendChild(icon);
+      st.appendChild(mk('span', 'rc-round-status-text', text));
+      col.appendChild(st);
+      var bg = mk('div', '');
+      bg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+      if (active) {
+        var canUp = !!page.registration && firstEmpty && firstEmpty.roundId === c.roundId;
+        bg.appendChild(rowBtn('Upload Results', canUp, function () { rccOpenUpload(c.roundId, true); },
+          c.hasResults ? 'Results already uploaded for this round. Erase them first to upload again.' : (!page.registration ? 'Choose your team first.' : 'Upload the earlier rounds first.')));
+        bg.appendChild(rowBtn('Erase Results', !!lastDone && lastDone.roundId === c.roundId, function () { rccOpenErase(); },
+          (c.hasQualifyResults || c.hasRaceResults) ? 'Only the latest round with results can be erased.' : 'No results uploaded for this round.'));
+      }
+      col.appendChild(bg);
+      info.appendChild(col);
+      r.appendChild(info);
+      return r;
+    }
 
     var box = mk('div', 'rc-panel');
     var seasons = (page && page.seasons) || [];
@@ -123,7 +156,7 @@
       box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet.'));
     } else {
       var lastYear = null;
-      seasons.forEach(function (s) {
+      seasons.forEach(function (s, idx) {
         var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Seasons';
         if (year !== lastYear) {
           var head = mk('div', 'rc-group-head');
@@ -131,22 +164,52 @@
           box.appendChild(head);
           lastYear = year;
         }
-        var st = statusOf(s);
+        var isCurrent = s.seasonId === page.seasonId;
+        var ended = s.status === 'Completed';
+        var container = mk('div', '');
         var line = mk('div', 'rc-group-row');
         var info = mk('div', 'rc-dm-row-info');
         var textCol = mk('div', '');
         textCol.appendChild(mk('span', 'rc-dm-row-label', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
-        var meta = [st.label];
-        if (s.raceCount != null) meta.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
+        var meta = [statusOf(s).label];
+        if (isCurrent && cal.length) meta.push(cal.length + ' race' + (cal.length === 1 ? '' : 's'));
+        else if (s.raceCount != null) meta.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
         if (s.createdAt) meta.push('Created ' + String(s.createdAt).slice(0, 10));
-        textCol.appendChild(mk('div', 'rc-hint', meta.join(' \u00B7 ')));
-        info.appendChild(textCol);
-        line.appendChild(info);
+        textCol.appendChild(mk('div', 'rc-hint', meta.join(' · ')));
+        var bg = mk('div', '');
+        bg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+        if (isCurrent) {
+          bg.appendChild(rowBtn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'This season has ended, so its details can no longer be edited.'));
+          bg.appendChild(rowBtn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
+          bg.appendChild(rowBtn('Choose Your Team', active, function () { rccOpenRegistration(); }, 'The season has ended.'));
+        }
         var open = mk('a', 'rc-btn-secondary rc-btn-row', 'Open');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
-        open.style.cssText = 'flex:none;text-decoration:none;';
-        line.appendChild(open);
-        box.appendChild(line);
+        open.style.textDecoration = 'none';
+        bg.appendChild(open);
+        var racesBox = null;
+        if (isCurrent && cal.length) {
+          racesBox = mk('div', '');
+          racesBox.style.cssText = 'padding-left:20px;';
+          cal.forEach(function (c) { racesBox.appendChild(roundRow(c)); });
+          var tg = mk('button', 'rc-disclosure-btn rc-disclosure-open');
+          tg.innerHTML = CHEVRON; tg.type = 'button';
+          tg.setAttribute('aria-expanded', 'true'); tg.setAttribute('aria-label', 'Hide races');
+          tg.addEventListener('click', function () {
+            var isOpen = racesBox.style.display !== 'none';
+            racesBox.style.display = isOpen ? 'none' : '';
+            tg.classList.toggle('rc-disclosure-open', !isOpen);
+            tg.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+            tg.setAttribute('aria-label', isOpen ? 'Show races' : 'Hide races');
+          });
+          bg.appendChild(tg);
+        }
+        textCol.appendChild(bg);
+        info.appendChild(textCol);
+        line.appendChild(info);
+        container.appendChild(line);
+        if (racesBox) container.appendChild(racesBox);
+        box.appendChild(container);
       });
     }
     panel.appendChild(box);

@@ -3189,7 +3189,7 @@
 
     // Two parts in one Help page: the League (red) and the Single Player Championship (blue-gray, like the dashboard container).
     var helpTabs = el('div', 'display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px;');
-    var tabLeague = el('button', 'rc-btn-primary rc-btn-sm', 'League');
+    var tabLeague = el('button', 'rc-btn-primary rc-btn-sm', 'Online League');
     var tabChamp = el('button', 'rc-btn-secondary rc-btn-sm', 'Single Player Championship');
     tabLeague.type = 'button'; tabChamp.type = 'button';
     helpTabs.appendChild(tabLeague); helpTabs.appendChild(tabChamp);
@@ -3206,6 +3206,7 @@
       champPart.style.display = champ ? '' : 'none';
       tabLeague.className = champ ? 'rc-btn-secondary rc-btn-sm' : 'rc-btn-primary rc-btn-sm';
       tabChamp.className = champ ? 'rc-btn-primary rc-btn-sm rcd-help-tab' : 'rc-btn-secondary rc-btn-sm';
+      tabChamp.style.setProperty('--rc-red', '#5f7d99'); tabChamp.style.setProperty('--rc-red-dark', '#4b6680');
       if (champ && !champBuilt && typeof window.rcBuildChampionshipHelp === 'function') {
         champBuilt = true;
         champPart.appendChild(window.rcBuildChampionshipHelp());
