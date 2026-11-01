@@ -650,7 +650,8 @@
         }));
       }
     } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
-    section.appendChild(champHost);
+    // champHost joins the page only once the league cards are ready AND the championship has loaded, so both appear together.
+    var champReady = (champHost.querySelector('.rcd-panel') && champHost.querySelector('.rcd-panel').rcdReady) || Promise.resolve();
 
     var rows = null;
 
@@ -679,8 +680,9 @@
       });
     }
 
-    _rcDashboardAllSettled_(dashboardData).then(function () {
+    Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
+      section.appendChild(champHost);
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });
   }

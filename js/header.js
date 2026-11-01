@@ -548,7 +548,7 @@ function renderHeader(opts) {
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
-              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-help">' + _rcMenuIcon_('help') + '<span>League Help</span></button>' +
+              '<button type="button" class="rc-header-menu-item" id="rc-header-menu-help">' + _rcMenuIcon_('help') + '<span>Help</span></button>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">' + _rcMenuIcon_('feedback') + '<span>Feedback</span></button>' +
               // Discord link, right under Feedback (same order as the Account.html sidebar), opening in a new tab.
               '<a class="rc-header-menu-item rc-header-menu-item-discord" href="https://discord.com/channels/1538292330870611968/1551231154353479730" target="_blank" rel="noopener noreferrer"><span class="rc-header-menu-icon" aria-hidden="true"><img class="rc-header-menu-discord-img" src="assets/images/Discord-Symbol-White.svg" alt="" width="16" height="12"></span><span>Discord</span></a>' +
