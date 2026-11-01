@@ -30,9 +30,11 @@
     s.textContent =
       // The Championship page's accent: the site red becomes blue-gray inside this container and inside the championship popups.
       '.rcd-panel, .rcd-help, .rcc-modal-overlay { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
-      // Color tokens the popups read (league.css and championship.css set these on the page body, which this page does not have).
-      '.rcc-modal-overlay { --rcl-bg: #0a0a0b; --rcl-bg-raised: #141416; --rcl-bg-raised-2: #1b1c1f; --rcl-line: #2c2d31; --rcl-line-bright: #45474d; --rcl-ink: #f2f2f0; --rcl-ink-dim: #b4b7bd; --rcl-ink-faint: #7d8088;' +
-      ' --rcc-navy: var(--rc-balanced); --rcc-accent-light: #9db6cc; --rcc-true-red: #F21B0C;' +
+      // Popups use the Championship page's own look: the light palette championship.css sets on that page's body
+      // (body.rc-league-page.rcc-page), the blue-gray accent and the true-red header slash. The popup overlay carries the rcc-page class.
+      '.rcc-modal-overlay { --rcl-bg: var(--rc-offwhite); --rcl-bg-raised: var(--rc-white); --rcl-bg-raised-2: var(--rc-offwhite); --rcl-line: var(--rc-silver);' +
+      ' --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white)); --rcl-ink: var(--rc-carbon); --rcl-ink-dim: var(--rc-steel);' +
+      ' --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, var(--rc-white)); --rcc-navy: var(--rc-balanced); --rcc-accent-light: #9db6cc; --rcc-true-red: #F21B0C;' +
       ' --rcl-gold: #e0b64c; --rcl-badge-news: #2f6f9f; --rcl-report-damage: #f5923b; --rcl-report-collision: #e8c547; --rcl-report-gain: #4fbf72; --rcl-report-fastest: #b07ce8; --rcl-bonus: #7fa8d4; color: var(--rcl-ink); }' +
       '.rcd-help { --rcc-navy: #34495c; --rcc-accent-light: #9db6cc; } .rcd-help-tab { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
       // Loading lights: the site's red lights, drawn straight on the container (no card of their own).
