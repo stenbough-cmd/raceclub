@@ -12,8 +12,8 @@
 
 (function () {
   var STYLE_ID = 'rcd-style';
-  var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar7'];
-  var JS_FILES = ['js/championship-help.js?v=7', 'js/championship.js?v=12'];
+  var CSS_FILES = ['css/league.css', 'css/driver-report.css', 'css/championship.css'].map(rcAsset);
+  var JS_FILES = ['js/championship-help.js', 'js/championship.js'].map(rcAsset);
   var loading = null;
 
   function mk(tag, cls, text) {
@@ -62,10 +62,6 @@
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-wide { max-width: 820px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-narrow { max-width: 460px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-head { margin: 0; padding: 18px 20px; background: var(--rc-white); border-bottom: 1px solid var(--rc-silver); border-radius: 10px 10px 0 0; }' +
-      '.rcc-modal-overlay.rcc-page .rcl-modal-title { display: block; margin: 0; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; letter-spacing: normal; text-transform: none; color: var(--rc-carbon); }' +
-      '.rcc-modal-overlay.rcc-page .rcl-modal-title::before { content: none; }' +
-      '.rcc-modal-overlay.rcc-page .rcl-modal-close { width: 30px; height: 30px; padding: 0; border-radius: 4px; color: var(--rc-steel); font-size: 20px; }' +
-      '.rcc-modal-overlay.rcc-page .rcl-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-body { padding: 20px; }' +
       '@media (max-width: 640px) { .rcc-modal-overlay.rcc-page { padding-left: 24px; } }';
     document.head.appendChild(s);
@@ -344,7 +340,7 @@
     wrap.appendChild(mk('p', 'rcd-note', 'Loading help...'));
     if (!helpLoading) {
       CSS_FILES.forEach(loadCss);
-      helpLoading = loadScript('js/championship-help.js?v=7');
+      helpLoading = loadScript(rcAsset('js/championship-help.js'));
       helpLoading.catch(function () { helpLoading = null; });
     }
     helpLoading.then(function () {
@@ -416,7 +412,7 @@
       panel.rcdReady = Promise.resolve();
       return panel;
     }
-    if (!opts.token || !profile.profileId) { fail('Sign in to use the championship tools.'); return panel; }
+    if (!opts.token || !profile.profileId) { fail('Log in to use the championship tools.'); return panel; }
     // panel.rcdReady settles once the championship data is drawn (or failed), so the page can show it together with the league cards.
     panel.rcdReady = fetchPage(opts, profile.profileId).then(function (page) {
       if (!page || !page.success) { fail(); return; }

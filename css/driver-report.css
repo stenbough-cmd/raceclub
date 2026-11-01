@@ -1,4 +1,8 @@
-/* Race Club -- css/profile-report.css: the Driver Report chart styles, copied unchanged from css/championship.css (DRIVER REPORT block) so profile.html can draw js/championship-report.js without loading the whole Championship stylesheet. The report is designed for a light surface; profile.html shows it on a white card (.rdp-light). */
+/* Race Club -- css/driver-report.css: ONE stylesheet for the Driver Report on every page (Championship, League Hub, Driver Profile).
+   It replaces the DRIVER REPORT block of championship.css and the copies in league-report.css and profile-report.css.
+   Draws with js/driver-report.js. Light surface by default; the League Hub's dark card is the .rcl-dr-light section near the end;
+   the Driver Profile layout (two columns, 4 tiles, wide tyre-set rows) is the "Driver Profile layout" section. */
+.rcl-dr-light { --rcc-navy: var(--rc-balanced, #1a5276); }
 .rdp-light { --rcc-navy: #1b2a49; }
 /* ===================== DRIVER REPORT (js/championship-report.js) ===================== */
 .rcr-report { margin: 28px 0 8px; }
@@ -83,7 +87,7 @@
 .rcr-strat-bar { position: absolute; left: 0; top: 5px; height: 8px; border-radius: 4px; background: #c3c9d2; }
 .rcr-strat-pit { position: absolute; top: -1px; transform: translateX(-50%); height: 20px; min-width: 22px; padding: 0 5px; border-radius: 10px; background: #5b6573; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
 .rcr-strat-tyres { background: #1f2937; }
-.rcr-strat-tonly { background: #8a94a3; }
+.rcr-strat-tonly { background: #8a94a3; } /* T = tyres only (2026-10-14) */
 .rcr-strat-icon { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; }
 .rcr-strat-sum { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
 .rcr-strat-ticks { height: 14px; }
@@ -108,17 +112,19 @@
   .rcr-contact-meter { display: none; }
   .rcr-tile-value { font-size: 20px; }
 }
-.rcr-popup-round { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcc-navy); margin: -4px 0 6px; }
+
 .rcc-page .rcl-carousel-hero-btns { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 
+/* Report card + owner line (Championship recap and League Hub). */
+.rcr-card { background: var(--rc-white); border: 1px solid var(--rcl-line); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; }
+@media (max-width: 700px) { .rcr-card { padding: 14px 12px; } }
+.rcr-report-who { margin: 0 0 14px; } /* padding, not margin: a margin here would merge with the dropdown row's 18px and add nothing. +10px under the recap dropdowns (Matt, 2026-11-01) */
+.rcr-report-who + .rcr-report { margin-top: 8px; } /* gap down to the Driver Report heading is 14px, same as the League Hub */
+.rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }
+.rcr-who-name .rcr-who-team { font-weight: 400; color: var(--rc-steel); }
+a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
+.rcr-block .rcc-tip { margin: 14px 0 4px; }
 
-/* ---- copied from championship.css: laps table, compound dots, tyre set rows, DT bubble and key (profile.html does not load championship.css) ---- */
-.rcc-laps-table { overflow-x: auto; margin-top: 6px; }
-.rcc-laps-row { display: grid; grid-template-columns: 60px 50px 90px 76px 76px 76px 84px 56px 140px 90px; gap: 8px; padding: 5px 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-offwhite); min-width: 880px; }
-.rcc-laps-head { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); border-bottom: 1px solid var(--rc-silver); }
-.rcc-laps-best { font-weight: 800; }
-.rcc-laps-pit { color: var(--rc-steel); }
-.rcc-laps-events { margin-top: 12px; }
 /* Driver Report: tyre compound circles (Matt): S red, M yellow, H white, W blue. */
 .rcr-comp { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; line-height: 1; flex: 0 0 auto; box-sizing: border-box; }
 .rcr-comp-s { background: #d7261e; color: #fff; }
@@ -132,6 +138,7 @@
 .rcr-sets { display: grid; gap: 0; margin-top: 6px; font-size: 13px; }
 .rcr-sets-row { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) 56px; gap: 12px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--rc-offwhite); }
 .rcr-sets-head { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-steel); }
+.rcr-sets-you { font-weight: 700; } /* no red tint behind your row (Matt, 2026-10-14) */
 .rcr-sets-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rcr-sets-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .rcr-set { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 3px; border: 1px solid #d5dbe2; border-radius: 999px; background: #fff; font-weight: 400; }
@@ -153,14 +160,28 @@
 .rcr-sg-text { fill: #fff; font-size: 8px; font-weight: 700; pointer-events: none; }
 .rcr-legend-swatch.rcr-legend-sg { width: 18px; height: 18px; border-radius: 50%; border: 0; background: var(--rc-orange, #e8892b); color: #fff;
   font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
+/* Lap table used by the Driver Profile race popup. */
+.rcc-laps-table { overflow-x: auto; margin-top: 6px; }
+.rcc-laps-row { display: grid; grid-template-columns: 60px 50px 90px 76px 76px 76px 84px 56px 140px 90px; gap: 8px; padding: 5px 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-offwhite); min-width: 880px; }
+.rcc-laps-head { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); border-bottom: 1px solid var(--rc-silver); }
+.rcc-laps-best { font-weight: 800; }
+.rcc-laps-pit { color: var(--rc-steel); }
+.rcc-laps-events { margin-top: 12px; }
 
-/* ---- Profile page changes (Matt, 2026-10-14) ---- */
+a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 640px) {
+  .rcr-report-who .rc-cs-logo-wrap { display: none; }
+  .rcr-report-who .rc-cs-team-name-flex { row-gap: 0; line-height: 1.2; }
+  .rcr-report-who .rc-cs-car-line { margin-top: 2px; }
+}
+
+/* ---- Driver Profile layout (js/driver-report.js with {variant:'profile'}) ---- */
 .rcr-tiles-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.rcr-tiles-gap { margin-top: 22px; }
-/* Tyre sets */
-.rcr-sets-row { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) 56px; }
-@media (max-width: 640px) { .rcr-sets-row { grid-template-columns: minmax(0, 1fr); } }
-/* Side-by-side graphs (Matt, 2026-10-14): two columns on PC, one on phones. */
+/* Tyre sets on their own full-width row. */
+.rcr-sets-wide { margin-top: 22px; }
+.rcr-sets-wide .rcr-sets-row { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) 56px; }
+@media (max-width: 640px) { .rcr-sets-wide .rcr-sets-row { grid-template-columns: minmax(0, 1fr); } }
+/* Side-by-side graphs: two columns on PC, one on phones. .rcr-stack keeps them in one column always. */
 .rcr-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 32px; align-items: start; }
 .rcr-col { min-width: 0; }
 .rcr-cols + .rcr-legend, .rcr-cols + .rcr-tiles { margin-top: 18px; }
@@ -168,7 +189,69 @@
   .rcr-cols { grid-template-columns: minmax(0, 1fr); }
   .rcr-tiles-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-/* Tyre sets row sits on its own below the car and graph; qualifying graphs stack. */
-.rcr-sets-wide { margin-top: 22px; }
 .rcr-stack { grid-template-columns: minmax(0, 1fr); }
+
+/* ---- League Hub Driver Reports page: driver block + driver dropdown row, dark card in the League Hub's own colors ---- */
+.rcl-dr-light { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; }
+.rcl-dr-top { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; margin: 0 0 14px; }
+.rcl-dr-top .rcr-report-who { flex: 1 1 auto; min-width: 0; margin: 0; }
+.rcl-dr-pick { flex: none; display: flex; flex-direction: column; width: 315px; max-width: 100%; margin-left: auto; }
+
+.rcl-dr-pick select { width: 100%; height: 38px; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: normal; background-color: #fff; color: #171717; border: 1px solid #D8DDE1; border-radius: 4px; }
+.rcl-dr-light .rcr-report { margin-top: 8px; }
+@media (max-width: 640px) {
+  .rcl-dr-light { padding: 14px 12px; }
+  .rcl-dr-top { flex-direction: column; align-items: stretch; }
+  .rcl-dr-pick { width: 100%; margin-left: 0; }
+}
+/* ---- League Hub Driver Reports page: dark, in the League Hub's own colors (Matt, 2026-10-27) ----
+   The Championship and driver profile reports stay white; only the card the League Hub draws (.rcl-dr-light) is dark.
+   Everything below is scoped to .rcl-dr-light and uses the League Hub color variables from css/league.css. */
+.rcl-dr-light { background: var(--rcl-bg-raised); color: var(--rcl-ink); border: 1px solid var(--rcl-line); --rc-carbon: var(--rcl-ink); --rc-steel: var(--rcl-ink-dim); --rc-silver: var(--rcl-line); --rc-offwhite: var(--rcl-line); --rc-white: var(--rcl-bg-raised); --rcc-navy: #8fb8dc; }
+.rcl-dr-light .rcl-dr-pick select { background-color: var(--rcl-bg); color: var(--rcl-ink); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-seg { background: var(--rcl-bg); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+.rcl-dr-light .rcr-seg-btn { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-seg-btn.rcr-seg-on { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); box-shadow: 0 0 0 1px var(--rcl-line-bright); }
+.rcl-dr-light .rcr-note, .rcl-dr-light .rcr-tile-sub, .rcl-dr-light .rcr-block-sub, .rcl-dr-light .rcr-corner-sub { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-tile { background: var(--rcl-bg-raised-2); border-color: var(--rcl-line); }
+.rcl-dr-light .rcr-tile-label, .rcl-dr-light .rcr-mini-title, .rcl-dr-light .rcr-corner-name, .rcl-dr-light .rcr-div-key, .rcl-dr-light .rcr-contact-axis, .rcl-dr-light .rcr-strat-ticks span { color: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-tile-hero { background: var(--rcl-bg); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-tile-hero .rcr-tile-label, .rcl-dr-light .rcr-tile-hero .rcr-tile-sub { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-tile-hero .rcr-tile-value { color: var(--rcl-ink); }
+.rcl-dr-light .rcr-tile-hero.rcr-up .rcr-tile-sub { color: var(--rcl-report-gain); }
+.rcl-dr-light .rcr-tile-hero.rcr-down .rcr-tile-sub { color: #ff8f85; }
+.rcl-dr-light .rcr-block { border-top-color: var(--rcl-line); }
+.rcl-dr-light .rcr-grid { stroke: var(--rcl-line); }
+.rcl-dr-light .rcr-axis { fill: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-cross { stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-tip { background: var(--rcl-bg); color: var(--rcl-ink); border: 1px solid var(--rcl-line-bright); }
+.rcl-dr-light .rcr-tip b { color: var(--rcl-ink); }
+.rcl-dr-light .rcr-legend, .rcl-dr-light .rcr-bar-name, .rcl-dr-light .rcr-bar-val, .rcl-dr-light .rcr-strat-name, .rcl-dr-light .rcr-strat-sum, .rcl-dr-light .rcr-contact-item { color: var(--rcl-ink-dim); }
+.rcl-dr-light .rcr-bar-track, .rcl-dr-light .rcr-div-track, .rcl-dr-light .rcr-contact-meter { background: var(--rcl-bg); }
+.rcl-dr-light .rcr-div-mid { background: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-div-good { background: #4b8fd0; }
+.rcl-dr-light .rcr-div-bad { background: #d09a2f; }
+.rcl-dr-light .rcr-div-key-good { color: #6fb0ec; }
+.rcl-dr-light .rcr-div-key-bad { color: #e0a84a; }
+.rcl-dr-light .rcr-car-body { fill: var(--rcl-bg-raised-2); stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-line { stroke: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-car-glass { fill: var(--rcl-bg); }
+.rcl-dr-light .rcr-car-roof { fill: var(--rcl-line); stroke: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-mirror { fill: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-car-wing { fill: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-car-splitter { fill: var(--rcl-line-bright); stroke: var(--rcl-bg); }
+.rcl-dr-light .rcr-car-tyre { stroke: var(--rcl-bg); }
+.rcl-dr-light .rcr-good { color: var(--rcl-report-gain); }
+.rcl-dr-light .rcr-bad { color: #ff8f85; }
+.rcl-dr-light .rcr-strat-bar { background: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-strat-pit { background: var(--rcl-line-bright); color: var(--rcl-ink); }
+.rcl-dr-light .rcr-strat-tyres { background: var(--rcl-bg); }
+.rcl-dr-light .rcr-strat-tonly { background: var(--rcl-ink-faint); }
+.rcl-dr-light .rcr-contact-line { border-bottom-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-contact, .rcl-dr-light .rcr-limit { box-shadow: 0 0 0 2px var(--rcl-bg-raised); }
+.rcl-dr-light .rcr-contact-wall { background: rgba(180, 183, 189, 0.75); }
+.rcl-dr-light .rcr-set { background: var(--rcl-bg); border-color: var(--rcl-line-bright); }
+.rcl-dr-light .rcr-dt-dot { stroke: var(--rcl-bg-raised); }
+.rcl-dr-light .rcr-comp-h { background: #f2f2f0; }
+.rcl-dr-light .rcc-laps-row { border-bottom-color: var(--rcl-line); }
+.rcl-dr-light .rcr-sets-row { border-bottom-color: var(--rcl-line); }

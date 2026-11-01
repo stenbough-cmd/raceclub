@@ -8,7 +8,7 @@
 // rather than "Label:". Apostrophes are typographic (’) so the strings need no escaping.
 // Quick start (Matt, 2026-10-13): three steps shown above Jump To A Section.
 var RCC_HELP_QUICKSTART =
-  '<div class="rcc-quick-title">Using Race Club Championship Is as Easy as 1-2-3</div>' +
+  '<div class="rcc-quick-title">Using the Single Player Championship Is as Easy as 1-2-3</div>' +
   '<ol class="rcc-quick-steps">' +
   '<li><span class="rcc-quick-num">1</span><strong>Create a Season</strong><span>Create a season here on the website and choose the car you will drive all season.</span></li>' +
   '<li><span class="rcc-quick-num">2</span><strong>Race It</strong><span>Complete a race in Le Mans Ultimate in the car you chose, at the track your calendar shows for the round.</span></li>' +
@@ -18,9 +18,9 @@ var RCC_HELP_QUICKSTART =
 
 var RCC_HELP_SECTIONS = [
   {
-    id: 'what-it-is', num: '1', title: 'What Race Club Championship Is',
+    id: 'what-it-is', num: '1', title: 'What the Single Player Championship Is',
     html:
-      '<p>Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. Race Club Championship fills that gap. You build an offline championship here, race each round in the game, and play through the season one round at a time, at your own pace.</p>' +
+      '<p>Le Mans Ultimate lets you race a single weekend against the AI, but it has no way to link those weekends into a season. The Single Player Championship fills that gap. You build a championship here, race each round in the game, and play through the season one round at a time, at your own pace.</p>' +
       '<p>You choose the series, the year, the classes, the calendar, the race lengths and the points. You sign for a real team and car, and your rivals are the drivers the game puts in every other car on the grid. After each round, you upload the results files the game creates (Qualifying and Race, or just the Race when your season has no qualifying), and this page takes care of the rest. It keeps the class standings for drivers and teams, the manufacturers’ standings for factory Hypercars and the bonus points. Every round also gets a race recap with a lap-by-lap report and the race’s settings, a Driver Report that turns your race into charts, a breakdown of your own laps, and a place in the Highlights ticker.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">In Short</strong><ul>' +
       '<li>A full season against the AI, scored the same way as the Race Club league</li>' +
@@ -75,7 +75,7 @@ var RCC_HELP_SECTIONS = [
       '<li>A race length that is the same as the round’s length or longer</li>' +
       '</ul>The other settings, such as weather, start time, time scales and AI settings, will not stop an upload. Matching them as closely as you can keeps your season’s records accurate.</div>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Use the Base Setup</strong>The AI drives every car on the game\u2019s base setup. For the fairest competition, use the base setup too, in qualifying and in the race. A tuned setup, such as one you bought or downloaded, can make your car faster than the AI was built to race against.</div>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">DLC</strong>Some tracks and cars in Le Mans Ultimate require DLC. Race Club Championship includes everything in the game and cannot tell which DLC you own, so only choose tracks and teams you are able to race.</div>'
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">DLC</strong>Some tracks and cars in Le Mans Ultimate require DLC. The Single Player Championship includes everything in the game and cannot tell which DLC you own, so only choose tracks and teams you are able to race.</div>'
   },
   {
     id: 'find-files', num: '4', title: 'Finding Your Results Files',
@@ -154,7 +154,7 @@ var RCC_HELP_SECTIONS = [
     id: 'end-season', num: '8', title: 'Ending a Season',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
+      '<li><strong>Upload every round.</strong> A season counts toward your racing record only when it ends after the last round’s results are uploaded.</li>' +
       '<li><strong>Click End Season</strong> in the Single Player Championship section of your Dashboard and confirm.</li>' +
       '<li><strong>The season is complete.</strong> The standings become final and the season can no longer be edited.</li>' +
       '<li><strong>Start the next one.</strong> Press Create Season on your Dashboard. Your past seasons stay available from the Season dropdown in the black bar.</li>' +

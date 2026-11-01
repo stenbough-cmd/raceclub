@@ -67,7 +67,7 @@ var _rcHelmetModuleP_ = null;
 function _rcHelmetModule_() {
   if (!_rcHelmetModuleP_) {
     _rcHelmetModuleP_ = new Promise(function (res, rej) {
-      var s = document.createElement('script'); s.src = 'js/helmet-avatar.js?v=50'; s.async = true;
+      var s = document.createElement('script'); s.src = rcAsset('js/helmet-avatar.js'); s.async = true;
       s.onload = function () { res(); };
       s.onerror = function () { _rcHelmetModuleP_ = null; rej(new Error('helmet module')); };
       document.head.appendChild(s);
@@ -93,7 +93,7 @@ function rcHelmetSpinner_(message) {
 }
 function _rcHelmetCss_() {
   if (document.querySelector('link[data-rch-css]') || document.querySelector('link[href*="helmet.css"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/helmet.css?v=45'; l.setAttribute('data-rch-css', '1');
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = rcAsset('css/helmet.css'); l.setAttribute('data-rch-css', '1');
   document.head.appendChild(l);
 }
 // Popup title reads HELMET DESIGNER with "lite" in italic, normal weight (every page's showModal takes plain text for the title).
@@ -234,13 +234,6 @@ function _rcBuildAccountMenuSectionLinks(role) {
   if (role === 'Admin') staff += link('admin', 'Admin', 'admin');
   if (staff) html += DIV + '<div class="rc-header-menu-label">Staff</div>' + staff;
   return html;
-}
-
-function _rcHeaderInitials(name) {
-  var parts = (name || '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 // Championship Access marker (CHAMP chat, 2026-10-08): a bold + right after the role name
@@ -427,34 +420,6 @@ function _rcChampBadgeHtml_() {
          '</span>';
 }
 
-// Shows just the logo -- no HOME/LOGIN/ACCOUNT at all -- while a page is still waiting to find out
-// whether its own session is actually valid. Used by Account.html in place of an immediate
-// renderHeader() call, so the navbar never asserts a login state (or a logged-out state) it hasn't
-// confirmed yet.
-function renderHeaderPending() {
-  var mount = document.getElementById('rc-header');
-  if (!mount) return;
-  mount.className = 'rc-fixed-header';
-  mount.setAttribute('data-nav-active', _rcNavActive_());
-  _rcWireNavLogos_(mount);
-  // League Hub badge included here too. Included in this pending state too so the header doesn't
-  // visibly gain the badge a moment later once renderHeader() takes over -- it reads as present
-  // from the very first paint.
-  // The Race Club logo always goes to the home page (index.html), signed in or not.
-  var pendingLogoHref = 'index.html';
-  mount.innerHTML = '<a class="rc-header-logo-link" href="' + pendingLogoHref + '">' +
-      '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
-    '</a>' +
-    '<span class="rc-header-leaguehub-badge">' +
-      '<a class="rc-header-leaguehub-logo-link" href="league.html">' +
-        '<img class="rc-header-leaguehub-logo" src="assets/images/league_hub_header.webp" alt="League Hub" draggable="false">' +
-      '</a>' +
-    '</span>' +
-    // Championship logo: only for accounts with the + (Championship Access) and Admins, judged from the saved login profile.
-    _rcChampBadgeHtml_() +
-    '<nav class="rc-header-nav"></nav>';
-}
-
 // opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER) even if a token is
 // present in localStorage. This never clears the token itself (that would force a real re-login
 // over what might just be a momentary connection problem) -- it only affects what the header LOOKS
@@ -562,9 +527,9 @@ function renderHeader(opts) {
     // reach it on mobile while logged out) and Register/Login.
     // Signed out (desktop): the "helmet unavailable" picture where the avatar goes, with LOGIN OR / REGISTER where the name goes, highlighted
     // light gray on hover exactly like the signed-in account button. Phones keep the hamburger below.
-    html += '<a class="rc-header-account-toggle rc-header-login-box" id="rc-header-login-link" href="login.html" aria-label="Login or register">' +
+    html += '<a class="rc-header-account-toggle rc-header-login-box" id="rc-header-login-link" href="login.html" aria-label="Log in or create an account">' +
               '<span class="rc-header-avatar"><img class="rc-helmet" alt="" style="width:46px;height:auto" src="assets/images/helmet_unavailable.webp" draggable="false"></span>' +
-              '<span class="rc-header-login-text">LOGIN OR REGISTER</span>' +
+              '<span class="rc-header-login-text">LOG IN</span>' +
             '</a>' +
             '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
               // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)
@@ -574,7 +539,7 @@ function renderHeader(opts) {
               '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
               '<a class="rc-header-menu-item" href="championship.html">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>' +
               '<hr class="rc-header-menu-divider">' +
-              '<a class="rc-header-menu-item" href="login.html">' + _rcMenuIcon_('login') + '<span>Register / Login</span></a>' +
+              '<a class="rc-header-menu-item" href="login.html">' + _rcMenuIcon_('login') + '<span>Log In</span></a>' +
             '</div>';
   }
   html += '</nav>';
@@ -790,6 +755,14 @@ function rcOpenLegalModal() {
 function rcWireFooterLegalLink() {
   var link = document.getElementById('rc-footer-legal-link');
   if (link) link.addEventListener('click', function (evt) { evt.preventDefault(); rcOpenLegalModal(); });
+  // Site version (js/version.js) shown small under the legal text on every page that has the footer.
+  var legal = link && link.parentNode;
+  if (legal && typeof RC_VERSION !== 'undefined' && !legal.querySelector('.rc-footer-version')) {
+    var ver = document.createElement('div');
+    ver.className = 'rc-footer-version';
+    ver.textContent = 'Race Club Online v' + RC_VERSION;
+    legal.appendChild(ver);
+  }
 }
 
 // Feedback categories -- must match FEEDBACK_CATEGORIES_ in Website.gs exactly.

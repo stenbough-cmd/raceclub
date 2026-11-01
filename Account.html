@@ -8,17 +8,18 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=dash4">
-<link rel="stylesheet" href="css/helmet.css?v=45">
-<script src="js/img-loader.js"></script>
-<script src="js/api.js?v=data6"></script>
-<script src="js/auth.js"></script>
-<script src="js/reference-data.js"></script>
-<script src="js/rulebook-content.js"></script>
-<script src="js/header.js"></script>
-<script src="js/helmet.js?v=47"></script>
-<script src="js/helmet-editor.js?v=71"></script>
-<script src="js/championship-dashboard.js?v=24"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.0">
+<link rel="stylesheet" href="css/helmet.css?v=0.9.0">
+<script src="js/version.js?v=0.9.0"></script>
+<script src="js/img-loader.js?v=0.9.0"></script>
+<script src="js/api.js?v=0.9.0"></script>
+<script src="js/auth.js?v=0.9.0"></script>
+<script src="js/reference-data.js?v=0.9.0"></script>
+<script src="js/rulebook-content.js?v=0.9.0"></script>
+<script src="js/header.js?v=0.9.0"></script>
+<script src="js/helmet.js?v=0.9.0"></script>
+<script src="js/helmet-editor.js?v=0.9.0"></script>
+<script src="js/championship-dashboard.js?v=0.9.0"></script>
 </head>
 <body>
 
@@ -53,7 +54,7 @@
      describes it more accurately than "dashboard" -- the Dashboard section's own lazy-load
      spinner (buildPageSpinner in renderDashboardSection) is a separate element and keeps saying
      "Loading your dashboard..." unchanged. -->
-      <div class="rc-loading-text">Loading your account&hellip;</div>
+      <div class="rc-loading-text">Loading your account...</div>
     </div>
     <div id="rc-error" class="rc-message rc-error" style="display:none;"></div>
 
@@ -501,7 +502,7 @@
     nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
     // Feedback -- opens the same page-agnostic popup the header dropdown's Feedback item opens
     // (_rcOpenFeedbackModal, js/header.js, loaded on this page before this script -- see the
-    // <script src="js/header.js"> tag in <head>), not an in-page section.
+    // <script src="js/header.js?v=0.9.0"> tag in <head>), not an in-page section.
     nav.appendChild(makeNavButton('feedback', 'Feedback', ICON_FEEDBACK, 'rc-nav-feedback', false, function () { _rcOpenFeedbackModal(); }));
     // Discord link, right under Feedback, opening in a new tab so a driver never loses their place
     // on the site.
@@ -1207,7 +1208,7 @@
   // .rcl-modal-dialog) and header treatment (bold uppercase title, red 2px underline) to the rest
   // of the account page's popups.
   function openSeasonFormatModal() {
-    var modal = showModal('Season Details', { wide: true, accentHead: true });
+    var modal = showModal('Season Details', { wide: true });
     // 50px wider than the plain .rc-modal-wide -- the race-card list below needs the extra room the
     // Season Format list above it doesn't.
     modal.el.classList.add('rc-modal-calendar-wide');
@@ -1338,7 +1339,7 @@
   // CSV-first -- tries the published League Hub CSV via _rcFetchLeagueHubCsvFirst_ and this
   // driver's own row in it (_rcFindOwnSeatInHubStandings_ above) before ever asking Apps Script.
   function openCurrentSeatInfoModal(token, profileId) {
-    var modal = showModal('Current Seat Info', { wide: true, accentHead: true });
+    var modal = showModal('Current Seat Info', { wide: true });
     modal.body.appendChild(buildSpinner('Loading your seat info...'));
     // Resolved to the CSV-sourced row, or null on any miss -- caught here (not left to the outer
     // .catch below) so a CSV miss falls through to exactly ONE fetchApi('getMyCurrentSeatInfo')
@@ -2440,11 +2441,9 @@
     opts = opts || {};
     var backdrop = el('div', 'rc-modal-backdrop');
     var modal = el('div', 'rc-modal' + (opts.wide ? ' rc-modal-wide' : ''));
-    // accentHead -- opt-in bold-uppercase title + red 2px underline, matching every other
-    // Account.html card/panel header, instead of the plain small-text/thin-gray-line default every
-    // short-form popup (Edit Profile, Add Track, ...) keeps.
-    var head = el('div', 'rc-modal-head' + (opts.accentHead ? ' rc-modal-head-accent' : ''));
-    head.appendChild(el('h3', opts.accentHead ? 'rc-modal-title-accent' : 'margin:0;font-size:16px;', escapeHtml(title)));
+    // One popup header for the whole site (Matt, 2026-11-01): plain 16px title, thin gray line, no red line, no gray bar.
+    var head = el('div', 'rc-modal-head');
+    head.appendChild(el('h3', 'rc-modal-title', escapeHtml(title)));
     var closeBtn = el('button', 'rc-modal-close', '&times;');
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Close');
@@ -2524,9 +2523,9 @@
   }
 
   // Updates an already-open showModal()'s title text in place -- used by popups whose real title
-  // (e.g. Only ever called on accentHead popups, so .rc-modal-title-accent is always present.
+  // (e.g. the popup's title is only known after its data loads).
   function _rcSetModalTitle(modal, text) {
-    var titleEl = modal.el.querySelector('.rc-modal-title-accent');
+    var titleEl = modal.el.querySelector('.rc-modal-title');
     if (titleEl) titleEl.textContent = text;
   }
 
@@ -2567,7 +2566,7 @@
     btnRow.appendChild(okBtn);
     body.appendChild(btnRow);
 
-    var modal = showModal('Season Commitment', { bodyEl: body, accentHead: true });
+    var modal = showModal('Season Commitment', { bodyEl: body });
     modal.closeBtn.style.display = 'none';
     okBtn.addEventListener('click', function () { modal.close(); });
   }
@@ -4050,7 +4049,7 @@
   // the full history renders inline, grouped by season, right in this one container.
   // -----------------------------------------------------------------------
   function openProtestModal(token) {
-    var modal = showModal('Protests', { wide: true, accentHead: true });
+    var modal = showModal('Protests', { wide: true });
 
     // Pulled out into its own function so Edit/Withdraw can refresh this SAME popup in place --
     // re-fetch + re-render right here, no modal close/reopen, no full page reload -- instead of the
@@ -6197,7 +6196,7 @@
     var webList = el('div', 'display:flex;flex-direction:column;gap:22px;');
     addTarget = webList;
     addItem('Update Home Page Helmets', function () {
-      var modal = showModal('Home Page Helmets', { wide: true, accentHead: true });
+      var modal = showModal('Home Page Helmets', { wide: true });
       var body = modal.body;
       body.appendChild(el('p', 'margin:0 0 12px;font-size:13.5px;line-height:1.55;color:var(--rc-steel);', 'Loading the helmet catalog...'));
       fetchApi('adminListHelmetPresets', { token: token }).then(function (res) {
@@ -6317,7 +6316,7 @@
         showToast('No answer from the server. Try again.', 'error');
       });
     }, [
-      'Builds a copy of your active Race Club Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
+      'Builds a copy of your active Single Player Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
       'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
     ], 'Updates the public Championship demo with a copy of your active championship season.');
 
@@ -6465,7 +6464,7 @@
     var haveQ = !!opts.hasQuali, haveR = !!opts.hasRace;
     var qFile = haveQ ? null : xmlInput();
     var rFile = haveR ? null : xmlInput();
-    if (qFile) modal.body.appendChild(wizField('1. Qualify Results (XML)', qFile));
+    if (qFile) modal.body.appendChild(wizField('1. Qualifying Results (XML)', qFile));
     if (rFile) modal.body.appendChild(wizField('2. Race Results (XML)', rFile));
 
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
@@ -7162,7 +7161,7 @@
     // Single fetch now -- adminListDrivers itself returns a per-row hasSeat flag (whether that
     // account has a Registrations row in the season currently open to registration), which
     // buildDriversPanel uses to bucket Prospect apart from Driver.
-    openAdminListModal('Members', 'Loading members…', function () {
+    openAdminListModal('Members', 'Loading members...', function () {
       return fetchApi('adminListDrivers', { token: token });
     }, function (driversData, reload) {
       return buildDriversPanel(driversData && driversData.success ? driversData.drivers : [], token, reload);
@@ -7174,7 +7173,7 @@
   // Most Improved, Wrecking Ball). Same list look as the Tracks/Cars popups.
   function openSeasonStatisticsModal(token, seasonId) {
     var modal = showModal('Statistics', { wide: true });
-    modal.body.appendChild(buildSpinner('Loading statistics…'));
+    modal.body.appendChild(buildSpinner('Loading statistics...'));
     fetchApi('adminGetSeasonStatistics', { token: token, params: { seasonId: seasonId } }).then(function (data) {
       modal.body.innerHTML = '';
       if (!data || !data.success) {
@@ -7225,7 +7224,7 @@
   }
 
   function openTracksModal(token) {
-    openAdminListModal('Tracks', 'Loading tracks…', function () {
+    openAdminListModal('Tracks', 'Loading tracks...', function () {
       return fetchApi('getTracks', { token: token });
     }, function (tracksData, reload) {
       return buildTracksPanel(tracksData && tracksData.success ? tracksData.tracks : [], token, reload);
@@ -7233,7 +7232,7 @@
   }
 
   function openCarsModal(token) {
-    openAdminListModal('Cars', 'Loading cars…', function () {
+    openAdminListModal('Cars', 'Loading cars...', function () {
       return fetchApi('getCars', { token: token });
     }, function (carsData, reload) {
       return buildCarsPanel(carsData && carsData.success ? carsData.cars : [], token, reload);
@@ -7256,7 +7255,7 @@
   // INTEGRITY CHECK popup -- runs handleAdminIntegrityCheck (Seasons.gs) against the
   // active/registration-open season and lists what it found.
   function openIntegrityCheckModal(token) {
-    var modal = showModal('Integrity Check', { wide: true, accentHead: true });
+    var modal = showModal('Integrity Check', { wide: true });
     modal.body.appendChild(buildSpinner('RUNNING INTEGRITY CHECK...'));
     if (modal.closeBtn) modal.closeBtn.disabled = true;
     fetchApi('adminIntegrityCheck', {

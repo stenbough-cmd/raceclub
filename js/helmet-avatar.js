@@ -118,7 +118,7 @@
   var readyP = null;
   function ensure() {
     if (!readyP) {
-      readyP = (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=47')).then(assetsPromise).then(function (a) {
+      readyP = (window.RCHelmet ? Promise.resolve() : loadScript(rcAsset('js/helmet.js'))).then(assetsPromise).then(function (a) {
         apply(a);
         return window.RCHelmet;
       });
@@ -150,7 +150,7 @@
     var profile = o.profile, token = o.token, showModal = o.showModal, toast = o.showToast || window.showToast || function () {};
     var tried = [], teamInfo = null;
     return ensure().then(function (H) {
-      return loadScript('js/helmet-player.js?v=28').then(function () { return H; });
+      return loadScript(rcAsset('js/helmet-player.js')).then(function () { return H; });
     }).then(function (H) {
       // The popup always asks the server for the current design list (the saved copy used for the
       // header can be out of date, for example after a design file or sheet row changes).
@@ -250,7 +250,7 @@
   };
   // The helmet list changed: fetch the new designs (this also stores the new version number) and draw every helmet again.
   window.rcHelmetRefreshNow_ = function () {
-    return (window.RCHelmet ? Promise.resolve() : loadScript('js/helmet.js?v=47')).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
+    return (window.RCHelmet ? Promise.resolve() : loadScript(rcAsset('js/helmet.js'))).then(function () { return freshAssets(); }).then(function () { redrawAll(); });
   };
   // Older team-helmet avatars have no manufacturer saved in them, so they cannot pick up later edits to that manufacturer's helmet. Ask the
   // server which manufacturer the member's seat belongs to and save it into the avatar (once).

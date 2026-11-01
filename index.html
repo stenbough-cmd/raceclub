@@ -8,15 +8,16 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=nav2">
-<script src="js/img-loader.js"></script>
-<script src="js/api.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/header.js"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.0">
+<script src="js/version.js?v=0.9.0"></script>
+<script src="js/img-loader.js?v=0.9.0"></script>
+<script src="js/api.js?v=0.9.0"></script>
+<script src="js/auth.js?v=0.9.0"></script>
+<script src="js/header.js?v=0.9.0"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js"></script>
-<script src="js/edit-profile.js"></script>
+<script src="js/reference-data.js?v=0.9.0"></script>
+<script src="js/edit-profile.js?v=0.9.0"></script>
 </head>
 <body>
 
@@ -33,7 +34,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
      scrolls up and covers it. -->
 <div class="rc-hero" role="img" aria-label="Race Club: league cars on track">
   <div class="rc-hero-text">
-    <div class="rc-hero-title rc-hero-title-shift">YOUR <span class="rc-hero-title-accent">CAREER</span></div>
+    <div class="rc-hero-title rc-hero-title-shift">YOUR <span class="rc-hero-title-accent">SEASON</span></div>
     <div class="rc-hero-title">YOUR <span class="rc-hero-title-accent">LEGACY</span></div>
     <div class="rc-hero-subtitle rc-hero-title-shift"><span class="rc-hero-subtitle-underline">RACE - EARN RESPECT</span> - BE REMEMBERED</div>
   </div>
@@ -43,7 +44,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 <!-- Navbar above "What Is Race Club?": sits at the bottom of the first screen, rides up as you scroll, then stays pinned under the header. The last link depends on whether someone is signed in. -->
 <nav class="rc-home-navbar" aria-label="Main">
   <div class="rc-home-navbar-inner">
-    <a class="rc-home-navbar-link" id="rc-home-navbar-account" href="login.html">Login</a>
+    <a class="rc-home-navbar-link" id="rc-home-navbar-account" href="login.html">Log In</a>
     <a class="rc-home-navbar-link" href="league.html">League Hub</a>
     <a class="rc-home-navbar-link" href="championship.html">Championship</a>
   </div>
@@ -62,7 +63,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
   <section class="rc-landing-section rc-intro-section">
     <div class="rc-landing-inner rc-intro-inner">
       <h2>What Is Race Club?</h2>
-      <p class="rc-landing-tagline">Race Club is a community-driven, league website for players of Le Mans Ultimate. Compete in the online league against other Race Club drivers or run your own offline championship against AI rivals. Your results, racing history, and reputation become part of a career that grows with every season.</p>
+      <p class="rc-landing-tagline">Race Club is a community-driven, league website for players of Le Mans Ultimate. Compete in the online league against other Race Club drivers or run your own Single Player Championship against AI rivals. Your results, racing history, and reputation grow with every season.</p>
 
       <div class="rc-path-heading">Two Ways To Race</div>
       <div class="rc-path-grid">
@@ -74,21 +75,21 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
           <ul class="rc-path-list">
             <li>Claim a team seat based on real WEC or ELMS entries</li>
             <li>Compete in scheduled rounds with championship standings</li>
-            <li>Earn milestone awards, collectible helmets, and a lasting career record</li>
+            <li>Earn milestone awards, collectible helmets, and a lasting racing record</li>
           </ul>
           <a class="rc-path-btn" href="#league-experience">Explore the Online League <span aria-hidden="true">&rarr;</span></a>
         </div>
         <div class="rc-path-card rc-path-card-champ">
           <div class="rc-path-head"><div class="rc-path-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"></path><path d="M5 4h13l-2.5 4L18 12H5"></path></svg>
-          </div><div class="rc-path-titles"><div class="rc-path-kicker">Single Player</div><h3>Offline Championship</h3></div></div>
+          </div><div class="rc-path-titles"><div class="rc-path-kicker">Single Player</div><h3>Single Player Championship</h3></div></div>
           <p>Track your own endurance racing season in Le Mans Ultimate's using their single-player mode. Race against AI opponents, follow a championship calendar of your choosing, and track your results at your own pace.</p>
           <ul class="rc-path-list">
             <li>Race whenever it suits you</li>
             <li>Build seasons around WEC or ELMS grids and liveries</li>
             <li>Follow your season with results and AI-race storytelling</li>
           </ul>
-          <a class="rc-path-btn rc-btn-champ" href="#championship">Explore Race Club Championship <span aria-hidden="true">&rarr;</span></a>
+          <a class="rc-path-btn rc-btn-champ" href="#championship">Explore the Single Player Championship <span aria-hidden="true">&rarr;</span></a>
         </div>
       </div>
     </div>
@@ -117,8 +118,8 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
   <section class="rc-landing-section rc-why-section" id="league-experience">
     <div class="rc-landing-inner">
       <div class="rc-eyebrow">Race Club's Online League</div>
-      <h2>This Isn't Just A Lobby. It's A Sim Racing Career.</h2>
-      <p class="rc-landing-tagline">Every season gives you the chance to represent a different team or manufacturer, fight for a new championship amongst new rivals, and build a racing record that continues long after the final checkered flag. Race Club brings the structure and progression of a racing career to your online competition.</p>
+      <h2>This Isn't Just A Lobby. It's A Racing Community.</h2>
+      <p class="rc-landing-tagline">Every season gives you the chance to represent a different team or manufacturer, fight for a new championship amongst new rivals, and build a racing record that continues long after the final checkered flag. Race Club brings the structure and progression of a real racing season to your online competition.</p>
 
       <div class="rc-highlight-grid">
 
@@ -154,7 +155,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
           <div class="rc-highlight-head"><div class="rc-highlight-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 3v6h-6"></path></svg>
           </div><h3>A Fresh Grid Every Season</h3></div>
-          <p>Seats reset when a season ends, but your career record carries forward. Choose a new team and begin the next chapter.</p>
+          <p>Seats reset when a season ends, but your racing record carries forward. Choose a new team and begin the next chapter.</p>
         </div>
 
         <div class="rc-highlight-card">
@@ -260,7 +261,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
         <div class="rc-step-card">
           <div class="rc-step-number">1</div>
           <h3>Create Your Driver Profile</h3>
-          <p>Sign up for Race Club and set up your driver profile. No tryouts or drafts required.</p>
+          <p>Create an account and set up your driver profile. No tryouts or drafts required.</p>
         </div>
 
         <div class="rc-step-card">
@@ -278,7 +279,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
         <div class="rc-step-card">
           <div class="rc-step-number">4</div>
           <h3>Build Your Racing Record</h3>
-          <p>As each round is scored, your results update your standings, points, and career history.</p>
+          <p>As each round is scored, your results update your standings, points, and racing history.</p>
         </div>
 
       </div>
@@ -345,9 +346,9 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
   <!-- Single player (Race Club Championship) anchor. -->
   <section class="rc-landing-section rc-single-section" id="championship">
     <div class="rc-landing-inner">
-      <p class="rc-eyebrow rc-eyebrow-blue">Race Club's Offline Championship</p>
-      <h2>Your Championship. Your Calendar. Your Career.</h2>
-      <p class="rc-landing-tagline">Can't commit to a regular online league schedule? Race Club Championship brings the structure of an endurance racing season to your own single-player experience in Le Mans Ultimate.</p>
+      <p class="rc-eyebrow rc-eyebrow-blue">Race Club's Single Player Championship</p>
+      <h2>Your Championship. Your Calendar. Your Rules.</h2>
+      <p class="rc-landing-tagline">Can't commit to a regular online league schedule? The Single Player Championship brings the structure of an endurance racing season to your own single-player experience in Le Mans Ultimate.</p>
       <p class="rc-landing-tagline">Choose between WEC and ELMS-inspired grids, build your calendar, select your team and car, and race against AI opponents on your own schedule. Follow your results as each round shapes your championship.</p>
 
       <h3 class="rc-single-sub">Create Your Season. Live The Dream.</h3>
@@ -421,7 +422,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
         </div>
         <div class="rc-card rc-tier-card rc-tier-gold">
           <h3>Hypercar</h3>
-          <p>The pinnacle of a Race Club career. These are the fastest, most demanding cars on the roster.</p>
+          <p>The pinnacle of Race Club racing. These are the fastest, most demanding cars on the roster.</p>
           <div class="rc-tier-difficulty">Advanced</div>
         </div>
       </div>
@@ -728,7 +729,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
   <!-- Mid-page banner. Deliberately NOT the fixed/spacer trick the top hero uses -- that effect is
      specifically for covering a banner pinned at the very top of the page as content scrolls up
      over it. -->
-  <div class="rc-mid-banner" role="img" aria-label="Race Club: the career, on and off track">
+  <div class="rc-mid-banner" role="img" aria-label="Race Club: racing, on and off track">
     <div class="rc-mid-banner-inner">
       <h2>This Is Your Legacy.</h2>
       <p>Every race, every choice, every season: it all becomes part of the record you're building.</p>
@@ -757,6 +758,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js"></script>
+<script src="js/index-showcase.js?v=0.9.0"></script>
 </body>
 </html>

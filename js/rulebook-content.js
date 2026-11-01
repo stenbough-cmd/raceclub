@@ -18,11 +18,11 @@ function _rcRulebookInfractionHtml_() {
 var RULEBOOK_SECTIONS = [
   {
     id: 'welcome-overview', num: '1', title: 'Welcome & Overview',
-    html: '<p>Race Club is a persistent driver career league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile: results, penalties, and history all carry forward instead of resetting each week.</p>' +
-      '<p>The League Hub is the public view of that career: standings, results, and news update as soon as a round is scored, visible to anyone without needing to log in.</p>' +
+    html: '<p>Race Club is a persistent driver league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile: results, penalties, and history all carry forward instead of resetting each week.</p>' +
+      '<p>The League Hub is the public view of that record: standings, results, and news update as soon as a round is scored, visible to anyone without needing to log in.</p>' +
       '<p>Race Club runs a WEC-style season: race length varies round to round, mixing shorter sprint rounds with longer endurance rounds. Cars are grouped into classes modeled on real WEC competition.</p>' +
       '<div class="rc-rulebook-callout"><strong>Overview:</strong><ul>' +
-      '<li>Driver profile, results, and career history persist across every season</li>' +
+      '<li>Driver profile, results, and racing history persist across every season</li>' +
       '<li>Every race, penalty, and bonus is logged to your permanent record</li>' +
       '<li>Built on real LMU league races, not a separate simulation layer</li>' +
       '</ul></div>'

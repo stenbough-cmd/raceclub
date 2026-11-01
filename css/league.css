@@ -506,7 +506,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   width: 250px;
   max-width: 100%;
 }
-.rcl-mfr-tile-p1 { margin-bottom: 28px; }
+
 /* I want them square at all costs" -- a plain width:100% + aspect-ratio:1/1 box wasn't holding
    reliably, so this switches to the padding-bottom:100% trick instead: percentage padding is always
    computed off the containing block's WIDTH, even padding-top/bottom, so a box with no declared
@@ -572,16 +572,11 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 /* Gold/silver/bronze -- same three gradients as the Current Standings position badges
    (.rcl-standings-row-p1/p2/p3's own .rcl-standings-pos rule, further down this file), applied here
    as text/border color instead of a filled badge background. */
-.rcl-mfr-tile-p1 .rcl-mfr-tile-rankline { border-bottom-color: #cf9f2c; }
-.rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: #f4dc8e; }
-.rcl-mfr-tile-p2 .rcl-mfr-tile-rankline { border-bottom-color: #a7abb2; }
-.rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: #eceef1; }
-.rcl-mfr-tile-p3 .rcl-mfr-tile-rankline { border-bottom-color: #a3653a; }
-.rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: #dba876; }
+
 @media (max-width: 640px) {
   .rcl-mfr-podium { gap: 10px; }
   .rcl-mfr-tile { width: 31%; }
-  .rcl-mfr-tile-p1 { margin-bottom: 16px; }
+  
   .rcl-mfr-tile-box-inner { padding: 16px; }
   /* Same 200:140 width-to-height proportion as the desktop logo cap (height = 70% of the width available). */
   .rcl-mfr-tile-logo { max-width: 100%; max-height: 70%; }
@@ -655,7 +650,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   margin-bottom: 12px;
   overflow: visible;
 }
-.rcl-lr-podium-logo { max-width: 50px; max-height: 30px; width: auto; height: auto; object-fit: contain; }
+
 /* Car profile picture above the driver name, and the car number after the name. */
 .rcl-lr-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
 .rcl-lr-podium-num { font-weight: 800; color: var(--rcl-ink); font-family: var(--rc-font-heading); font-size: 13px; white-space: nowrap; }
@@ -712,21 +707,19 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   margin-left: 2px;
   color: rgba(20, 16, 8, 0.75);
 }
-.rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 100px; background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
-.rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 80px; background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
-.rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 66px; background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
+
 @media (max-width: 640px) {
   .rcl-lr-podium { gap: 10px; }
   .rcl-lr-podium-tile { width: 33%; }
-  .rcl-lr-podium-logo { max-width: 38px; max-height: 24px; width: auto; height: auto; }
+  
   .rcl-lr-podium-name { font-size: 11px; }
   .rcl-lr-podium-car { max-width: 92px; max-height: 38px; }
   .rcl-lr-podium-num { font-size: 11px; }
   .rcl-lr-podium-standnum { font-size: 26px; }
   .rcl-lr-podium-standsuffix { font-size: 12px; margin-top: 3px; }
-  .rcl-lr-podium-tile-p1 .rcl-lr-podium-stand { height: 74px; }
-  .rcl-lr-podium-tile-p2 .rcl-lr-podium-stand { height: 62px; }
-  .rcl-lr-podium-tile-p3 .rcl-lr-podium-stand { height: 52px; }
+  
+  
+  
 }
 
 /* Each tile: icon + title on top, the stat as the big visual anchor, then driver(s) and a short
@@ -935,10 +928,10 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
    above the mobile breakpoint (see that media query below), since desktop/tablet already see every
    column of the standings grid. */
 .rcl-standings-status-mobile-note { display: none; }
-.rcl-standings-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; align-items: start; }
+
 /* Gap above already spaces columns/rows in the grid -- the old stacked- layout margin would only
    unevenly pad whichever class happens to start a new row. */
-.rcl-standings-columns .rcl-standings-class + .rcl-standings-class { margin-top: 0; }
+
 .rcl-standings-class + .rcl-standings-class { margin-top: 22px; }
 /* Kept out entirely rather than left unused, since neither is referenced from js/league.js anymore. */
 /* Graphite header bar -- full-width, centered, solid graphite background above each class column,
@@ -1032,11 +1025,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
    colored .rcl-standings-pos badge with a thin plain accent line down the row's left edge instead. */
 /* Left accent line removed -- the .rcl-standings-class- header graphite bar above each column now
    already marks the section, so the per-row line was redundant. */
-.rcl-standings-row-simple {
-  grid-template-columns: 1fr;
-  padding-left: 12px;
-  border-radius: 0;
-}
+
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
 .rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
 .rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
@@ -1114,78 +1103,32 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 }
 /* "View Points Tables" link at the bottom of the Leaderboard panel -- opens the points tables in a
    popup instead of them living in their own panel on the page. */
-.rcl-standings-points-row { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); display: flex; justify-content: center; align-items: center; gap: 28px; }
-.rcl-standings-points-link {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  cursor: pointer;
-}
-.rcl-standings-points-link:hover { text-decoration: underline; }
 
 /* -------------------------------------------------------------------- */
 /* Last race results                                                    */
 /* -------------------------------------------------------------------- */
 /* "EVENT" label above the event/track title, ALL RESULTS only. */
-.rcl-race-headline-eventname { font-size: 18px; color: var(--rcl-ink); }
-.rcl-race-headline-event-name { font-weight: 800; }
-.rcl-race-headline-event-track { font-weight: 500; }
-.rcl-race-headline-event-layout { font-weight: 500; color: var(--rcl-ink-dim); }
-.rcl-race-headline-value-accent { color: #e0b64c; }
 
 /* Per-class category breakdown -- All Results popup. Four category blocks in a row, wrapping on
    narrow widths since a 5-class round would otherwise squeeze every column too tight. */
-.rcl-race-categories { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid var(--rcl-line); }
+
 /* 24px gap above, and no line/padding below any more -- the 18px margin-bottom alone now supplies
    that gap before .rcl-race-col-head, with nothing to visually divide the two. */
-.rcl-race-categories-inclass {
-  margin-top: 24px;
-  margin-bottom: 18px;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-  border-top: none;
-}
-.rcl-race-category { flex: 1 1 200px; min-width: 180px; }
-.rcl-race-category-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  /* Gray, matching the event line's own track/layout tone -- was red; var(--rcl-ink-dim) is the
-     same gray .rcl-race-headline-event-layout already uses on the event title line right above this
-     breakdown, so both read as the same "dim label" gray instead of two different tones. */
-  color: var(--rcl-ink-dim);
-  margin-bottom: 8px;
-}
+
 /* Icon has its own explicit color (rather than truly inheriting the title's) since it needs to stay
    this gray even on Winner/Fastest Lap rows, where .rcl-race-category-row-winner/-fastestLap
    recolor the NAME and NUMBER gold/purple but never touch this title row above them. */
-.rcl-race-category-icon { display: inline-flex; color: var(--rcl-ink-dim); }
-.rcl-race-category-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 6px; }
-.rcl-race-category-row:last-child { margin-bottom: 0; }
-.rcl-race-category-name { font-weight: 700; color: var(--rcl-ink); }
+
 /* Same size, weight, AND color as the name next to it. font-size was already inherited from
    .rcl-race- category-row (14px, matching the name). */
-.rcl-race-category-number { font-weight: 700; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
+
 /* Winner's gold accent color -- same gold token the headline's own Winner stat value uses
    (.rcl-race-headline-value-accent), reused here for the per-class category breakdown row. */
-.rcl-race-category-row-winner .rcl-race-category-name,
-.rcl-race-category-row-winner .rcl-race-category-number { color: #e0b64c; }
+
 /* Country flag. Reuses .rcl-standings-flag's exact look (16x12, rounded corners, thin border) every
    other driver row on this page already shows a flag with; this modifier just tightens the row gap
    slightly for the smaller flag. */
-.rcl-race-category-flag { margin-left: -2px; }
+
 /* Widened 18px -> 32px -- shared by Recent Results and the All Results popup, both of which build
    their per-class blocks as sibling .rcl-race-class divs. */
 .rcl-race-class + .rcl-race-class { margin-top: 32px; }
@@ -1199,7 +1142,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
    it never competes with it. Pos stays 40px in every grid (matches .rcl-standings-pos's own badge
    width) so the badge lines up identically across Current Standings/Recent Results/View All
    Results. */
-.rcl-race-grid-3 { grid-template-columns: 40px 1fr auto; }
+
 /* ON column removed entirely -- 8 columns then, driver bumped from 1.5fr to 2fr with that freed
    space. INTERVAL/PTS' column widths are otherwise unchanged from the PEN-era layout -- still 9
    columns, PTS keeps its compact 52px at the end, same idea as GAP/Best Lap's own fixed widths. */
@@ -1366,7 +1309,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-report-clause-loss { color: var(--rc-red); } /* position lost: red, NOT bold */
 .rcl-report-clause-retirement { color: var(--rcl-ink); font-weight: 700; } /* retires from the race: bold white */
 .rcl-report-clause-fastest { color: var(--rcl-report-fastest); font-weight: 700; } /* fastest lap of the race: bold purple */
-.rcl-penalties-section { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rcl-line); }
+
 .rcl-penalty-effect { color: var(--rc-red); font-weight: 700; }
 
 /* -------------------------------------------------------------------- */
@@ -1705,7 +1648,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   border-bottom: 1px solid var(--rcl-line);
   overflow: hidden;
 }
-.rcl-cal-event { font-size: 18px; }
+
 /* Vertically centers every meta chip against its siblings -- without this, the padded pill chips
    (taller, own box) and the site's default stretch alignment left them looking offset from each
    other on the same row. */
@@ -1714,16 +1657,13 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    deliberately NOT .rcl-cal-status (the notification itself, appended alongside .rcl-cal- event
    inside .rcl-cal-row-top), so the COMPLETED/results phrase stays fully legible against the
    faded-out row around it. */
-.rcl-cal-row-finished .rcl-cal-event,
-.rcl-cal-row-finished .rcl-cal-meta {
-  opacity: 0.5;
-}
+
 /* "View Season Details" link at the bottom of the Calendar panel -- same shape as the Leaderboard's
    own "View Points Tables" link below its content. */
 /* No own border-top any more -- the last race row's own bottom border (now kept, see .rcl-cal-row
    above) is the one line between the schedule and this link; margin-top just gives the link
    breathing room below that existing line instead of drawing a second one of its own. */
-.rcl-cal-details-row { margin-top: 16px; text-align: center; }
+
 /* Recent Results' own "View All Results" link gets a line above it now -- an extra modifier
    alongside .rcl-cal-details-row above (not a change to that shared class itself), since the
    Calendar's own "View Season Details" link deliberately has NO line of its own (see the comment
@@ -1870,7 +1810,6 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-story-vote-send { align-self: flex-start; background: var(--rc-red); color: #fff; border: none; padding: 8px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
 .rcl-story-vote-send:hover { background: var(--rc-red-dark); }
 
-
 /* -------------------------------------------------------------------- */
 /* Read-story popup -- centered card over a dimmed backdrop, opened from */
 /* "Continue reading..." or any previous-story title.                   */
@@ -1903,17 +1842,18 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   position: relative;
   background: var(--rcl-bg-raised);
   border: 1px solid var(--rcl-line);
-  border-radius: 8px;
+  border-radius: 10px;
   max-width: 820px;
   width: 100%;
   /* Capped to fit inside the overlay's own top/bottom padding (86px + 24px = 110px, kept in sync
      with .rcl-modal-overlay above), so the dialog always sits fully inside the page -- clear of the
-     fixed navbar at the top -- and scrolls its own content internally once it hits this ceiling,
-     instead of pushing the overlay taller than the viewport. */
+     fixed navbar at the top -- and scrolls its own content internally once it hits this ceiling. */
   max-height: calc(100vh - 110px);
   overflow-y: auto;
-  padding: 0 28px 24px;
+  /* Same gutters as Account.html's popups (.rc-modal-body: 20px). */
+  padding: 0 20px 20px;
   margin: auto 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 /* Wider dialog, Drivers popup only -- a scoped modifier added alongside .rcl-modal-dialog (see
    _rclOpenDriversModal, league.js) rather than raising the shared class's own max-width, since
@@ -1924,62 +1864,44 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    those popups are the same width whether they're opened from Account.html (light) or league.html
    (dark). */
 .rcl-modal-dialog-narrow { max-width: 460px; }
-/* Same raised-2 background + red underline as .rcl-panel-head, so the popup's own header reads as
-   the exact same header treatment as every panel on the page, not a slightly different one-off. */
+/* Popup header: the same as Account.html's popups (.rc-modal-head) in the League Hub's dark colors -- plain title, one thin
+   line under it, no red line and no gray bar (Matt, 2026-11-01). */
 .rcl-modal-head {
   position: sticky;
   top: 0;
-  /* z-index -- exact same bug and exact same fix as .rc-modal-head's own z-index in css/style.css:
-     a sticky element with no z-index has no stacking priority over later-in-DOM body content once
-     it's pinned mid-scroll, so table headers/labels scrolling up underneath this bar could paint on
-     top of it instead of staying behind it. */
+  /* z-index: a sticky element needs one or table headers scrolling up underneath could paint over it. */
   z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 -28px 20px;
-  padding: 20px 28px 16px;
-  background: var(--rcl-bg-raised-2);
-  border-bottom: 2px solid var(--rc-red);
+  margin: 0 -20px 20px;
+  padding: 18px 20px;
+  background: var(--rcl-bg-raised);
+  border-bottom: 1px solid var(--rcl-line);
+  border-radius: 10px 10px 0 0;
 }
-/* Same angled red tab + type treatment as .rcl-panel-title -- display:flex/gap added so the
-   ::before tab renders inline before the text, exactly like a panel header's own title. */
 .rcl-modal-title {
-  /* Matches .rcl-panel-title's own bump. */
+  margin: 0;
   font-family: var(--rc-font-heading);
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--rcl-ink);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-/* Same single-forward-slash treatment as .rcl-panel-title::before above, including the same
-   slightly-larger size, glyph-centering nudge (follow-ups), and 1000-weight/single-slash final
-   call. */
-.rcl-modal-title::before {
-  content: "/";
-  color: var(--rc-red);
-  font-weight: 1000;
-  font-size: 24px;
-  line-height: 1;
-  position: relative;
-  top: -2px;
 }
 .rcl-modal-close {
   flex: none;
-  background: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: none;
+  border-radius: 4px;
+  background: none;
   color: var(--rcl-ink-faint);
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  padding: 4px 8px;
 }
-.rcl-modal-close:hover { color: var(--rcl-ink); }
+.rcl-modal-close:hover { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); }
 .rcl-modal-body .rcl-news-item + .rcl-news-item { margin-top: 24px; padding-top: 24px; }
 .rcl-modal-loadmore-wrap { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rcl-line); text-align: center; }
 .rcl-modal-loadmore-btn {
@@ -2083,7 +2005,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 
   /* Horizontal scrollbar fix, All Results popup. */
   .rcl-modal-dialog { padding: 0 16px 20px; overflow-x: hidden; }
-  .rcl-modal-head { margin: 0 -16px 20px; padding: 20px 16px 16px; }
+  .rcl-modal-head { margin: 0 -16px 20px; padding: 18px 16px; }
   .rcl-allresults-select,
   .rcl-allresults-session-select { min-width: 0; width: 100%; }
   /* League Hub recap: the page names are longer now (Race Results, Qualify Results), so on phones the two dropdowns stack, each full width. */
@@ -2263,39 +2185,6 @@ a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-red
 /* Static rows for now (no hover/link styling -- */
 /* clicking through to an individual profile is a future feature).       */
 /* -------------------------------------------------------------------- */
-.rcl-memberlist-group { margin-bottom: 24px; }
-.rcl-memberlist-group:last-child { margin-bottom: 0; }
-.rcl-memberlist-tier {
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--rcl-line);
-}
-.rcl-memberlist-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--rcl-line);
-}
-.rcl-memberlist-row:last-child { border-bottom: none; }
-.rcl-memberlist-name {
-  font-family: var(--rc-font-heading);
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--rcl-ink);
-}
-.rcl-memberlist-joined {
-  font-size: 12px;
-  color: var(--rcl-ink-dim);
-  white-space: nowrap;
-}
 
 /* Driver names that link to profile.html?id=... (Standings, results popups, Member List). */
 a.rcl-driver-link { color: inherit; text-decoration: none; cursor: pointer; }
@@ -2378,52 +2267,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 
 /* Metal Drivers / Teams switch in a class panel's header (not shown for Hypercar). Dark brushed
    graphite to sit with the rest of this page; the knob is a lighter graphite plate. */
-.rcl-switch-slot { display: flex; align-items: center; }
-.rcl-metal-switch {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  width: 176px;
-  height: 34px;
-  padding: 3px;
-  border-radius: 9px;
-  border: 1px solid var(--rcl-line-bright);
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0.12) 1px 3px),
-    linear-gradient(180deg, #2a2b2f 0%, #1d1e21 50%, #18191b 52%, #232427 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-}
-.rcl-metal-knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  height: calc(100% - 6px);
-  border-radius: 6px;
-  border: 1px solid #5a5d65;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(0, 0, 0, 0.06) 1px 2px),
-    linear-gradient(180deg, #55585f 0%, #3f4147 48%, #35373c 52%, #4a4c53 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: transform 0.22s ease;
-}
-.rcl-metal-switch-teams .rcl-metal-knob { transform: translateX(100%); }
-.rcl-metal-label {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-faint);
-  transition: color 0.22s ease;
-}
-.rcl-metal-switch:not(.rcl-metal-switch-teams) .rcl-metal-label-drivers,
-.rcl-metal-switch-teams .rcl-metal-label-teams { color: var(--rcl-ink); }
+
 /* Single-plate version of the switch above: same graphite track and plate, one side only, acts as a
    button. Sits at the right end of a .rcl-panel-head (flex, align-items:center) so it is vertically
    centered with the title. */
@@ -2439,33 +2283,8 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
   cursor: pointer;
 }
-.rcl-metal-button-plate {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 0 16px;
-  border-radius: 6px;
-  border: 1px solid #5a5d65;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(0, 0, 0, 0.06) 1px 2px),
-    linear-gradient(180deg, #55585f 0%, #3f4147 48%, #35373c 52%, #4a4c53 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--rcl-ink);
-}
-.rcl-metal-button:hover .rcl-metal-button-plate { filter: brightness(1.15); }
-.rcl-metal-button:active .rcl-metal-button-plate { transform: translateY(1px); }
+
 .rcl-metal-button:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
-.rcl-metal-switch:focus, .rcl-metal-switch:focus-visible { outline: none; }
-@media (prefers-reduced-motion: reduce) {
-  .rcl-metal-knob, .rcl-metal-label { transition: none; }
-}
 
 @media (max-width: 640px) {
   /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
@@ -2485,18 +2304,11 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   .rcl-board-round-head,
   .rcl-board-round { display: none; }
   .rcl-board-footer .rcl-standings-status-mobile-note { display: block; }
-  .rcl-panel-head:has(.rcl-switch-slot) { flex-wrap: wrap; }
+  
 }
 
 /* Driver names and team names are ALL CAPS everywhere on the page except the Highlights ticker. */
-.rcl-standings-name,
-.rcl-standings-team,
-.rcl-lr-podium-name,
-.rcl-lr-mention-drivers,
-.rcl-race-category-name,
-.rcl-report-name,
-.rcl-memberlist-name,
-.rcl-driver-link-inner { text-transform: uppercase; }
+.rcl-standings-name, .rcl-standings-team, .rcl-lr-podium-name, .rcl-lr-mention-drivers, .rcl-report-name { text-transform: uppercase; }
 
 /* Class standings boards: names, car numbers, team names and round points in normal weight (not bold). */
 .rcl-board .rcl-standings-name,
@@ -2558,14 +2370,13 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-tt-num { font-weight: 700; opacity: 0.8; }
 .rcl-tt-pts { flex: 0 0 auto; }
 /* Signed-in driver: bold (and full white), never red. */
-.rcl-me, .rcl-standings-name.rcl-me, .rcl-driver-link-inner.rcl-me { font-weight: 900; color: var(--rcl-ink); }
+.rcl-me, .rcl-standings-name.rcl-me { font-weight: 900; color: var(--rcl-ink); }
 .rcl-tt-item.rcl-me, .rcl-tt-item.rcl-me .rcl-tt-num { font-weight: 900; color: var(--rcl-ink); opacity: 1; }
 .rcl-tt-tile.rcl-me .rcl-mfr-tile-name, .rcl-tt-tile.rcl-me .rcl-mfr-tile-points { font-weight: 900; }
 /* Podium: tiles line up from the top so a wrapped team name can't push a car or rank line out of
    place; P2 and P3 sit 28px lower than P1 (16px on phones). */
 .rcl-tt-podium { align-items: flex-start; }
-.rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p1 { margin-bottom: 0; }
-.rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p2, .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; }
+
 @media (max-width: 640px) {
   .rcl-tt-list { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
 }
@@ -2576,7 +2387,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
   .rcl-tt-podium-car { height: 40px; }
   .rcl-tt-podium-car .rcl-tt-car { max-height: 40px; }
   .rcl-tt-tile-name { font-size: 13px; }
-  .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p2, .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p3 { margin-top: 16px; }
+  
 }
 
 /* Calendar carousel on league.html only (championship.css has its own copy for the Championship page):
@@ -2629,8 +2440,6 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--
 }
 
 /* Welcome popup (no season yet) */
-.rcl-welcome-text { margin: 0 0 14px; font-size: 15px; line-height: 1.65; color: var(--rcl-ink-dim); }
-.rcl-welcome-text:last-child { margin-bottom: 0; }
 
 /* Manufacturers' Standings and Team Endurance Standings, P4 onward (league.html only, Matt 2026-10-14):
    names normal weight and white; points white, weight unchanged. */
@@ -2642,8 +2451,6 @@ body.rc-league-page:not(.rcc-page) .rcl-tt-pts { color: var(--rcl-ink); }
 
 /* Flag behind a member name in the Member List popup. */
 /* The name and flag sit in a row centered on each other (the name text's line box and the flag's middle line up). */
-.rcl-memberlist-name { display: flex; align-items: center; }
-.rcl-memberlist-name .rcl-memberlist-flag { display: block; flex: none; margin: 0 0 0 8px; }
 
 /* League Race Recap > Race Report: driver names and the green position-gain wording are regular weight
    (Matt, 2026-10-14). Scoped away from the Championship page, which keeps its own look. */
@@ -2712,7 +2519,6 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-race-details-head { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 6px; }
 .rcl-race-details-col .rcl-seasonfmt-row { font-size: 13px; margin-bottom: 3px; }
 
-
 /* League News tiles (ECO chat, 2026-10-27): story tiles get a checkered strip along the top and a small RD over a bigger round
    number; the preview shows a flag and a News post a newspaper, both as line icons like the rest of the site. */
 .rcl-news-badge { position: relative; overflow: hidden; }
@@ -2735,7 +2541,6 @@ a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-red); }
 /* League Hub navbar works like the home page one (Matt, 2026-10-27): it rides up with the page, then stays pinned
    right under the 70px fixed header while the page keeps scrolling beneath it. Also rests on the bottom edge on a very short window. */
 body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bottom: 0; z-index: 50; }
-
 
 /* League News tiles and labels (ECO chat, 2026-10-27): no red bottom strip any more. Tiles get a thin light outline and a soft
    sheen; a News post's red tile carries a pair of racing stripes across its lower right corner; story tiles keep the checkered

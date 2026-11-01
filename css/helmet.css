@@ -13,8 +13,7 @@
 .rch-hint { font-size: 12px; line-height: 1.45; color: var(--rc-steel); margin: 6px 0 0; }
 .rch-status { font-size: 12.5px; color: var(--rc-carbon); margin: 8px 0 10px; }
 .rch-section { border: 1px solid var(--rc-silver); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; background: var(--rc-white); }
-.rch-row2 { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
-.rch-row3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+
 .rch-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .rch-tools { justify-content: flex-end; }
 .rch-addrow { margin-top: 10px; margin-bottom: 4px; }
@@ -32,15 +31,12 @@
 
 /* preview */
 .rch-stage { border-radius: 8px; min-height: 360px; display: flex; align-items: center; justify-content: center; padding: 16px; touch-action: none; cursor: crosshair; border: 1px solid var(--rc-silver); }
-.rch-stage.light, .rch-sizes.light { background: #ffffff; }
-.rch-stage.grey, .rch-sizes.grey { background: #d9dde2; }
-.rch-stage.dark, .rch-sizes.dark { background: #1a1d24; }
+.rch-stage.light { background: #ffffff; }
+.rch-stage.grey { background: #d9dde2; }
+.rch-stage.dark { background: #1a1d24; }
 .rch-stage canvas { max-width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 7px rgba(0, 0, 0, 0.38)); }
 .rch-bgrow { margin-top: 10px; }
 .rch-bgrow .rch-label { margin: 0; }
-.rch-sizes { display: flex; align-items: flex-end; gap: 22px; margin-top: 12px; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--rc-silver); }
-.rch-sizes canvas { display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.38)); }
-.rch-sizes .rch-lbl { font-size: 11px; color: var(--rc-steel); text-align: center; margin-top: 4px; }
 
 /* colour rows */
 .rch-slot { margin-top: 12px; }
@@ -112,52 +108,41 @@
 .rch-dstack .rch-tools { justify-content: flex-start; }
 
 /* player popup: Helmet Options checkboxes; controls are locked while "match my team" is ticked */
-.rch-options { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 8px; }
+
 .rch-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--rc-carbon); cursor: pointer; }
 .rch-check.off { color: var(--rc-steel); cursor: default; }
 .rch-check input { margin: 0; }
-.rch-locked .rch-section { opacity: 0.45; pointer-events: none; }
+
 .rch-check { text-transform: none; letter-spacing: 0; font-weight: 600; margin: 0; }
 .rch-check span { text-transform: none; letter-spacing: 0; font-weight: 600; }
 /* Soft shadow (admin designer): normal weight, not bold */
 .rch-check.rch-plain, .rch-check.rch-plain span { font-weight: 400; }
-.rch-options > .rch-label { margin: 0; }
-.rch-options .rch-hint { margin: 0; }
 
 /* player popup: preview wrapper with the restore arrow in its top right; text-color section */
 .rch-stagewrap { position: relative; }
-.rch-undo { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--rc-silver); background: var(--rc-white); color: var(--rc-steel); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
-.rch-undo:hover:not(:disabled) { color: var(--rc-carbon); border-color: var(--rc-steel); }
-.rch-undo:disabled { opacity: 0.35; cursor: default; }
 
 /* admin: category row, manager popups */
-.rch-catrow { margin-top: 10px; }
+
 .rch-archived .rch-thumb, .rch-archived .rch-info { opacity: 0.5; }
 .rch-logothumb { display: flex; align-items: center; justify-content: center; background: var(--rc-offwhite); border-radius: 6px; min-width: 90px; }
 .rch-logothumb img { max-width: 80px; max-height: 70px; }
 .rch-memberlist { max-height: 260px; overflow-y: auto; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--rc-white); }
-.rch-assign .rch-check, .rch-memberlist .rch-check { text-transform: none; }
-.rch-assign > .rch-label { margin-top: 12px; }
+.rch-memberlist .rch-check { text-transform: none; }
 
 .rch-dim { opacity: 0.45; pointer-events: none; }
 
 /* restore arrow above the preview, right aligned */
-.rch-prevbar { display: flex; justify-content: flex-end; margin-bottom: 8px; min-height: 32px; }
+
 /* tooltip on the disabled "match my team" line (normal weight) */
-.rch-tipped { position: relative; }
-.rch-tipped::after { content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 6px); width: max-content; max-width: 260px; padding: 6px 10px; border-radius: 6px; background: var(--rc-carbon); color: #fff; font-size: 12px; font-weight: 400; line-height: 1.4; text-transform: none; letter-spacing: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s ease; z-index: 5; }
-.rch-tipped:hover::after, .rch-tipped:focus::after { opacity: 1; visibility: visible; }
+
 /* selected size button, blank row in the Give Helmet list, Logo Manager row in the designer */
 .rch-bgrow .rc-btn-secondary.rch-on { border-color: var(--rc-steel); color: var(--rc-carbon); background: var(--rc-offwhite); }
-.rch-gap { height: 14px; }
-.rch-lmrow { margin: 0 0 6px; }
-.rch-lmhead { margin-top: 18px; }
+
 /* admin: helmet name + kind share the top row; manufacturer + class sit under it */
 .rch-row-nk { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; align-items: end; }
 .rch-row-mc { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
 
 /* circle-arrow Reset button: last in the button row, square, icon only */
-.rch-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; min-width: 0; }
 
 /* Admin Helmet Designer on a computer: the helmet side is locked in place and only the controls side scrolls. */
 @media (min-width: 861px) {
@@ -190,12 +175,11 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-visor { background: var(--rc
 body.rc-league-page:not(.rcc-page) .rch-player .rch-visor.sel { border-color: var(--rc-red); }
 body.rc-league-page:not(.rcc-page) .rch-player .rch-check { color: var(--rcl-ink); }
 body.rc-league-page:not(.rcc-page) .rch-player .rch-check.off { color: var(--rcl-ink-faint); }
-body.rc-league-page:not(.rcc-page) .rch-player .rch-options { border-top-color: var(--rcl-line); }
+
 body.rc-league-page:not(.rcc-page) .rch-player .rch-layer { background: var(--rcl-bg); border-color: var(--rcl-line-bright); color: var(--rcl-ink); }
 body.rc-league-page:not(.rcc-page) .rch-player .rch-layer.sel { background: var(--rcl-bg-raised-2); border-color: var(--rc-red); }
-body.rc-league-page:not(.rcc-page) .rch-player .rch-undo,
 body.rc-league-page:not(.rcc-page) .rch-player .rch-link { background: var(--rcl-bg); color: var(--rcl-ink-dim); border-color: var(--rcl-line-bright); }
-body.rc-league-page:not(.rcc-page) .rch-player .rch-undo:hover:not(:disabled) { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
+
 body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary { background: transparent; color: var(--rcl-ink-dim); border-color: var(--rcl-line-bright); }
 body.rc-league-page:not(.rcc-page) .rch-player .rc-btn-secondary:hover:not(:disabled) { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
 body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-on { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); background: var(--rcl-bg-raised-2); }
@@ -225,8 +209,6 @@ body.rc-league-page:not(.rcc-page) { --rch-edge: #5b9cf5; }
 .rch-edge.over .rch-edge-line { border-top-width: 3px; }
 .rch-edge.dragging { opacity: 0.45; }
 
-.rch-btns.rch-btns-second { margin-top: 10px; }
-
 /* "Are you sure" popups in the designer: centered message and buttons, even space above and below */
 .rch-confirm { text-align: center; padding: 2px 0; }
 .rch-confirm-msg { margin: 0 auto 18px; max-width: 440px; font-size: 14px; line-height: 1.55; color: var(--rc-carbon); }
@@ -240,7 +222,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 
 /* Helmet description box (admin designer) */
 .rch-desc { display: block; width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); color: var(--rc-carbon); }
-.rch-desc-count { margin: 4px 0 0; text-align: right; font-size: 11px; color: var(--rc-steel); }
+
 .rch-descwrap { margin-top: 10px; }
 .rch-collhead { margin: 10px 0 0 2px; font-weight: 700; color: var(--rc-carbon); }
 .rch-mirror.rch-on { border-color: var(--rc-red); color: var(--rc-red); }
@@ -249,9 +231,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 /* one gap (5px) between every subheading or label and what it describes; 14px above a subheading that starts a new group */
 .rch-subhead { margin: 4px 0 5px; }
 .rch-subhead.rch-mt { margin-top: 14px; }
-.rch-lmhead { margin-top: 18px; }
-.rch-btns.rch-btns-second { margin-top: 0; }
-.rch-collwrap { margin-top: 14px; }
+
 .rch-sliders.rch-sliders-one { margin-top: 0; }
 .rch-tab-unsaved { font-style: italic; font-weight: 400; color: var(--rc-steel); }
 /* the link button reaches back to the Max width and Max height labels with a square corner line */

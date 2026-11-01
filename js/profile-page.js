@@ -13,32 +13,13 @@
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
   function tx(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; e.textContent = text == null ? '' : String(text); return e; }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-  function num(v, d) { return v === null || v === undefined || isNaN(v) ? '--' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
+  function num(v, d) { return v === null || v === undefined || isNaN(v) ? '—' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
   // Profile data now comes from files on GitHub (profiles/<id>.json, profiles/<id>/rivals.json) and is not kept in this
   // browser. Copies saved by earlier versions are removed.
   try { Object.keys(localStorage).forEach(function (k) { if (/^rc_profile_(page|rivals)_v\d+_/.test(k)) localStorage.removeItem(k); }); } catch (e) { /* storage blocked: fine */ }
-  function ord(n) { n = Number(n); if (!n) return '--'; var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+  function ord(n) { n = Number(n); if (!n) return '—'; var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 
-  // championship-report.js was written for the Championship page and calls these four helpers, which
-  // live in championship.js. They are copied here (same behavior) so the report can be drawn.
-  if (typeof window._rccEl !== 'function') window._rccEl = el;
-  if (typeof window._rccText !== 'function') window._rccText = tx;
-  if (typeof window._rccEsc !== 'function') window._rccEsc = esc;
-  if (typeof window._rccLapTime !== 'function') {
-    window._rccLapTime = function (raw) {
-      var t = Number(raw);
-      if (raw === null || raw === undefined || raw === '' || isNaN(t) || t <= 0) return '--';
-      var ms = Math.round(t * 1000), m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
-      return m + ':' + (s < 10 ? '0' : '') + s + '.' + ('00' + r).slice(-3);
-    };
-  }
-  if (typeof window._rccEventTime !== 'function') {
-    window._rccEventTime = function (seconds) {
-      if (seconds === null || seconds === undefined || isNaN(seconds)) return '';
-      var total = Math.max(0, Math.floor(seconds)), h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
-      return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + s).slice(-2);
-    };
-  }
+  // _rccEl / _rccText / _rccLapTime / _rccEventTime come from js/driver-report.js (loaded before this file).
 
   // One shared hover tooltip for the Form Guide squares.
   var tip = el('div', 'rdp-tip');
@@ -124,7 +105,7 @@
   }
   function renderAchievements(data) {
     var a = data.achievements || {};
-    var items = [['Races Entered', a.racesEntered], ['Wins', a.wins], ['Podiums', a.podiums], ['Avg. Finish', a.avgFinish === null || a.avgFinish === undefined ? '--' : Number(a.avgFinish).toFixed(1)], ['Pole Positions', a.poles], ['Fastest Laps', a.fastestLaps]];
+    var items = [['Races Entered', a.racesEntered], ['Wins', a.wins], ['Podiums', a.podiums], ['Avg. Finish', a.avgFinish === null || a.avgFinish === undefined ? '—' : Number(a.avgFinish).toFixed(1)], ['Pole Positions', a.poles], ['Fastest Laps', a.fastestLaps]];
     var grid = $('rdp-ach-grid');
     grid.innerHTML = '';
     items.forEach(function (it) {
@@ -210,7 +191,7 @@
     wrap.innerHTML = '';
     list.forEach(function (r) {
       var cls = 'rdp-form-sq' + (r.finish === 1 ? ' rdp-form-p1' : r.finish === 2 ? ' rdp-form-p2' : r.finish === 3 ? ' rdp-form-p3' : '');
-      var sq = tx('div', cls, r.finish === null || r.finish === undefined ? '--' : r.finish);
+      var sq = tx('div', cls, r.finish === null || r.finish === undefined ? '—' : r.finish);
       var place = (r.track || '') + (r.layout ? ': ' + r.layout : '');
       var html = '<div><b>' + esc(r.seasonName) + '</b></div><div class="rdp-tip-line"><b>' + esc(r.eventName || ('Round ' + r.roundNum)) + '</b>' + (place ? ' ' + esc(place) : '') + '</div>';
       sq.addEventListener('mouseenter', function () { showTip(sq, html); });
@@ -318,7 +299,7 @@
       var cx = L + slot * (i + 0.5);
       var hasGrid = r.grid !== null && r.grid !== undefined;
       var color = !hasGrid ? '#9aa0a6' : r.finish < r.grid ? '#3fae6b' : r.finish > r.grid ? '#d7261e' : '#9aa0a6';
-      var tipHtml = '<div><b>Round ' + esc(r.roundNum) + '</b> ' + esc(r.track || r.eventName || '') + '</div><div class="rdp-tip-line">Started ' + (hasGrid ? 'P' + esc(r.grid) : '--') + ', finished P' + esc(r.finish) + '</div>';
+      var tipHtml = '<div><b>Round ' + esc(r.roundNum) + '</b> ' + esc(r.track || r.eventName || '') + '</div><div class="rdp-tip-line">Started ' + (hasGrid ? 'P' + esc(r.grid) : '—') + ', finished P' + esc(r.finish) + '</div>';
       var g = sv('g', { 'class': 'rdp-bar-pair' });
       if (hasGrid) g.appendChild(sv('rect', { x: cx - bw - 1, y: base - hOf(r.grid), width: bw, height: hOf(r.grid), rx: 1.5, fill: '#5b6470' }));
       g.appendChild(sv('rect', { x: hasGrid ? cx + 1 : cx - bw / 2, y: base - hOf(r.finish), width: bw, height: hOf(r.finish), rx: 1.5, fill: color }));
@@ -358,7 +339,7 @@
     if (!sessions || !sessions.length) { host.appendChild(tx('div', 'rdp-empty-sub', 'None of your laps were imported for this round.')); return; }
     sessions.forEach(function (s) {
       var w = el('div', 'rcl-race-class');
-      var title = (s.kind === 'race' ? 'Race' : 'Qualifying') + ' · P' + (s.classPosition || '-') + ' in class · Best ' + window._rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
+      var title = (s.kind === 'race' ? 'Race' : 'Qualifying') + ' · P' + (s.classPosition || '—') + ' in class · Best ' + window._rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
       w.appendChild(tx('div', 'rcl-standings-class-header', title.toUpperCase()));
       var table = el('div', 'rcc-laps-table');
       var head = el('div', 'rcc-laps-row rcc-laps-head');
@@ -370,14 +351,14 @@
         var r = el('div', 'rcc-laps-row' + (Number(l.lapTime) === best ? ' rcc-laps-best' : '') + (l.pit ? ' rcc-laps-pit' : ''));
         var lt = window._rccLapTime;
         r.appendChild(tx('div', null, String(l.lapNum) + (l.pit ? ' PIT' : '')));
-        r.appendChild(tx('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '--'));
+        r.appendChild(tx('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '—'));
         r.appendChild(tx('div', null, lt(l.lapTime)));
         r.appendChild(tx('div', null, lt(l.sector1)));
         r.appendChild(tx('div', null, lt(l.sector2)));
         r.appendChild(tx('div', null, lt(l.sector3)));
-        r.appendChild(tx('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '--'));
-        r.appendChild(tx('div', null, l.fuel !== '' && l.fuel !== null ? Math.round(Number(l.fuel) * 100) + '%' : '--'));
-        r.appendChild(tx('div', null, [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' || v === null ? '--' : Math.round(Number(v) * 100); }).join(' ')));
+        r.appendChild(tx('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '—'));
+        r.appendChild(tx('div', null, l.fuel !== '' && l.fuel !== null ? Math.round(Number(l.fuel) * 100) + '%' : '—'));
+        r.appendChild(tx('div', null, [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' || v === null ? '—' : Math.round(Number(v) * 100); }).join(' ')));
         r.appendChild(tx('div', null, String(l.frontCompound || '').replace(/^\d+,/, '')));
         table.appendChild(r);
       });
@@ -495,11 +476,11 @@
       summary.innerHTML = '';
       var tiles = el('div', 'rdp-tiles');
       tiles.appendChild(tile('Races', num(s.races), ''));
-      tiles.appendChild(tile('Rank', s.position ? ord(s.position) : '--', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
+      tiles.appendChild(tile('Rank', s.position ? ord(s.position) : '—', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
       tiles.appendChild(tile('Points', num(s.points), ''));
       tiles.appendChild(tile('Wins', num(s.wins), ''));
       tiles.appendChild(tile('Podiums', num(s.podiums), ''));
-      tiles.appendChild(tile('Best Finish', s.bestFinish ? 'P' + s.bestFinish : '--', ''));
+      tiles.appendChild(tile('Best Finish', s.bestFinish ? 'P' + s.bestFinish : '—', ''));
       tiles.appendChild(tile('Avg. Finish', num(s.avgFinish, 1), ''));
       tiles.appendChild(tile('Poles', num(s.poles), ''));
       tiles.appendChild(tile('Fastest Laps', num(s.fastestLaps), ''));
@@ -559,7 +540,7 @@
         var right = el('div', 'rdp-race-col');
         var light = el('div', 'rdp-light');
         var rep = null;
-        try { rep = res.driverReport ? window._rccDriverReport(res.driverReport) : null; } catch (err) { rep = null; }
+        try { rep = res.driverReport ? window._rccDriverReport(res.driverReport, { variant: 'profile' }) : null; } catch (err) { rep = null; }
         if (rep) {
           light.appendChild(rep);
           if (res.driverReport.pitNote) light.appendChild(tx('div', 'rdp-chart-sub', res.driverReport.pitNote));
@@ -774,7 +755,7 @@
       card.appendChild(seatNameEl(seat));
       card.appendChild(seatModelEl(seat));
       var stats = el('div', 'rdp-team-stats');
-      [[t.position ? ord(t.position) : '--', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
+      [[t.position ? ord(t.position) : '—', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
         var st = el('div', 'rdp-team-stat');
         st.appendChild(tx('b', '', p[0]));
         st.appendChild(tx('span', '', p[1]));

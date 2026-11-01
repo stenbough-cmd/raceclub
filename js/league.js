@@ -672,57 +672,6 @@ function _rclBuildDriverIdentity_(row, dnf) {
   return identity;
 }
 
-function _rclBuildStandingsColumns_(standings, hasResults) {
-  // One column per class -- .rcl-standings- columns is the grid wrapper (css/league.css),
-  // auto-fitting however many classes the season actually has.
-  var columns = _rclEl('div', 'rcl-standings-columns');
-  standings.forEach(function (cls) {
-    var wrap = _rclEl('div', 'rcl-standings-class');
-    var headerText = (cls.className || 'CLASS').toUpperCase() + ' LEADERBOARD';
-    wrap.appendChild(_rclEl('div', 'rcl-standings-class-header', headerText));
-    var clsStandings = cls.standings || [];
-    if (!clsStandings.length) {
-      wrap.appendChild(_rclEl('div', 'rcl-empty-state-subtitle', 'No drivers registered in this class yet.'));
-    } else {
-      // Column labels, same exact style as Recent Results/View All Results -- only when hasResults
-      // is true (the Drivers roster popup has no ranking/points to label). Same 40px/1fr/auto grid
-      // .rcl-standings-row already uses.
-      if (hasResults) {
-        var standingsHeadRow = _rclEl('div', 'rcl-race-col-head rcl-race-grid-3');
-        standingsHeadRow.appendChild(_rclEl('div', null, 'Pos'));
-        standingsHeadRow.appendChild(_rclEl('div', null, 'Driver'));
-        standingsHeadRow.appendChild(_rclEl('div', null, 'Pts'));
-        wrap.appendChild(standingsHeadRow);
-      }
-      // Now shared module-level constant so Recent Results/View All Results use the exact same
-      // metal thresholds.
-      clsStandings.forEach(function (row, idx) {
-        // No points column while hasResults is false, but the position container itself STAYS --
-        // empty text, no p1/p2/p3 metal class (so it falls back to .rcl-standings-pos's own default
-        // titanium gradient, the same one non-podium rows already use), same 40px slot and
-        // grid-template-columns as a normal row.
-        var rowEl = _rclEl('div', 'rcl-standings-row' + (hasResults && RCL_POS_METAL_CLASS_[idx] ? ' ' + RCL_POS_METAL_CLASS_[idx] : '') + (!hasResults ? ' rcl-standings-row-simple' : ''));
-        if (hasResults) {
-          rowEl.appendChild(_rclBuildPosBadge_(idx));
-        }
-        rowEl.appendChild(_rclBuildDriverIdentity_(row));
-
-        if (hasResults) {
-          // Points total only, no "-N PTS" gap-to-leader line underneath -- P1 never had a gap line
-          // (idx === 0 skipped it), so every other row's extra line was what made them taller than
-          // P1's row.
-          var ptsCol = _rclEl('div', 'rcl-standings-pts');
-          ptsCol.appendChild(_rclEl('div', 'rcl-standings-pts-num', String(row.championshipPoints)));
-          rowEl.appendChild(ptsCol);
-        }
-        wrap.appendChild(rowEl);
-      });
-    }
-    columns.appendChild(wrap);
-  });
-  return columns;
-}
-
 // ---------------------------------------------------------------------
 // CHAMPIONSHIP STANDINGS BOARDS (one full-width panel per class)
 // ---------------------------------------------------------------------
@@ -1131,27 +1080,6 @@ function _rclBuildTeamTrophy_(hub, cls, className) {
 // _rclBuildRaceHeadline_ (Race headline, below) and _rclBuildQualifyingBody_ (Qualifying tab) so
 // the two never drift apart.
 
-// The "Round n" text itself is a bare text node with no class of its own (same as it's always been)
-// -- it inherits .rcl-race-headline-eventname's own color/weight (var(--rcl-ink), a near-white
-// #f2f2f0, and no bold -- only the event NAME span below gets font-weight 800), which already reads
-// as "white, normal weight" with no extra CSS needed.
-function _rclBuildEventTitleLine_(entry, hideRoundNum, roundSep) {
-  var eventLine = _rclEl('div', 'rcl-race-headline-eventname');
-  if (!hideRoundNum && entry.roundNum) {
-    eventLine.appendChild(document.createTextNode('Round ' + entry.roundNum + (roundSep || '   ')));
-  }
-  eventLine.appendChild(_rclEl('span', 'rcl-race-headline-event-name', _rclEscapeHtml(entry.eventName || '')));
-  if (entry.track) {
-    eventLine.appendChild(document.createTextNode(' at '));
-    eventLine.appendChild(_rclEl('span', 'rcl-race-headline-event-track', _rclEscapeHtml(entry.track)));
-  }
-  if (entry.layout) {
-    eventLine.appendChild(document.createTextNode(': '));
-    eventLine.appendChild(_rclEl('span', 'rcl-race-headline-event-layout', _rclEscapeHtml(entry.layout)));
-  }
-  return eventLine;
-}
-
 // Icons for the All Results popup's per-class category breakdown.
 var _RCL_ICON_TROPHY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>';
 var _RCL_ICON_LAPS_LED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg>';
@@ -1251,7 +1179,7 @@ function _rclRecapNameIcons_(awards, row) {
 
 // One sub-section per class: a top-3 podium-STAND graphic, then a 3-across row of "headline
 // mention" tiles sitting on the same row as the podium.
-// ONE header for every Race Recap page (Highlights, Race Results, Qualify Results, Race Report,
+// ONE header for every Race Recap page (Highlights, Race Results, Qualifying Results, Race Report,
 // Penalties Assessed): the metal bar, the title, then the lighter "FROM ROUND N AT <TRACK>" (the
 // track is the Tracks ShortName the round payload already carries). `r` is a round payload (or
 // hub.lastRace); with no round number or track the bar shows the title alone.
@@ -1677,22 +1605,6 @@ function _rclBuildMobileViewOnPcNote_() {
   return _rclEl('div', 'rcl-standings-status-note rcl-standings-status-preliminary rcl-standings-status-mobile-note', '**FOR FULL RESULTS, VIEW ON PC BROWSER');
 }
 
-// Shared by both branches of _rclRenderLastRace_ (the normal render and its "no lastRace yet"
-// empty-state fallback) so the link still shows up whenever the season actually has any completed
-// rounds on record, even in the rare case the abbreviated lastRace payload itself came back empty
-// for some reason.
-function _rclAppendResultsStatusFooter_(body, round, seasonEnded, seasonNumber) {
-  var notice = _rclBuildResultsStatusNotice_(round, seasonEnded, seasonNumber);
-  if (!notice) return;
-  var footer = _rclEl('div', 'rcl-results-bottom-row rcl-results-status-footer');
-  footer.appendChild(notice);
-  // Mobile-only "view on PC" nudge -- Recent Results/ Current Standings both hide team names on
-  // phone width same as All Results (league.css), so it gets the same nudge under its status
-  // notice.
-  footer.appendChild(_rclBuildMobileViewOnPcNote_());
-  body.appendChild(footer);
-}
-
 // ---------------------------------------------------------------------
 // ALL RESULTS POPUP -- the FULL, uncapped result set for any completed round in the current season,
 // picked from a dropdown (hub.resultsRounds, most recent first), plus that round's "Penalties
@@ -1719,7 +1631,7 @@ function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
   // applies, just with its own SUS text instead of DSQ.
   if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
-  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !leaderRow || leaderRow.finishTimeSeconds === null || leaderRow.finishTimeSeconds === undefined) return '--';
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || !leaderRow || leaderRow.finishTimeSeconds === null || leaderRow.finishTimeSeconds === undefined) return '—';
   var lapsDown = (leaderRow.laps || 0) - (row.laps || 0);
   if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
   var gap = (row.finishTimeSeconds + (rowPenSeconds || 0)) - (leaderRow.finishTimeSeconds + (leaderPenSeconds || 0));
@@ -1730,23 +1642,23 @@ function _rclFormatGap_(row, leaderRow, rowPenSeconds, leaderPenSeconds) {
 // INTERVAL (to the car directly ahead), back in the All Results table. Same shape as _rclFormatGap_
 // just above, just measured against the row immediately ahead in this class's standings (prevRow)
 // instead of the class leader -- the leader/first row has no car ahead of it, so that row always
-// shows '--'.
+// shows '—'.
 function _rclFormatInterval_(row, prevRow, rowPenSeconds, prevPenSeconds) {
   if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
-  if (!prevRow) return '--';
-  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || prevRow.finishTimeSeconds === null || prevRow.finishTimeSeconds === undefined) return '--';
+  if (!prevRow) return '—';
+  if (row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || prevRow.finishTimeSeconds === null || prevRow.finishTimeSeconds === undefined) return '—';
   var lapsDown = (prevRow.laps || 0) - (row.laps || 0);
   if (lapsDown > 0) return '+' + lapsDown + ' Lap' + (lapsDown === 1 ? '' : 's');
   var interval = (row.finishTimeSeconds + (rowPenSeconds || 0)) - (prevRow.finishTimeSeconds + (prevPenSeconds || 0));
-  if (interval <= 0) return '--';
+  if (interval <= 0) return '—';
   return '+' + interval.toFixed(3);
 }
 
 // TOTAL TIME as h:mm:ss.mmm. No leading zero on the hours digit, but minutes/seconds are always 2
 // digits and milliseconds always 3, matching that example.
 function _rclFormatTotalTime_(seconds) {
-  if (seconds === null || seconds === undefined || isNaN(seconds)) return '--';
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '—';
   var totalMs = Math.round(seconds * 1000);
   var ms = totalMs % 1000;
   var totalSec = Math.floor(totalMs / 1000);
@@ -1763,7 +1675,7 @@ function _rclFormatTotalTime_(seconds) {
 // above (a full race time), a single lap is never going to run an hour.
 function _rclFormatLapTime_(raw) {
   var totalSeconds = Number(raw);
-  if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '--';
+  if (raw === null || raw === undefined || raw === '' || isNaN(totalSeconds)) return '—';
   var totalMs = Math.round(totalSeconds * 1000);
   var ms = totalMs % 1000;
   var totalSec = Math.floor(totalMs / 1000);
@@ -1779,7 +1691,7 @@ function _rclFormatLapTime_(raw) {
 function _rclFormatAvgSpeed_(row, trackLengthMeters) {
   if (row.suspended) return 'SUS';
   if (row.disqualified) return 'DSQ';
-  if (!trackLengthMeters || !row.laps || row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || row.finishTimeSeconds <= 0) return '--';
+  if (!trackLengthMeters || !row.laps || row.finishTimeSeconds === null || row.finishTimeSeconds === undefined || row.finishTimeSeconds <= 0) return '—';
   var kmh = (trackLengthMeters * row.laps / 1000) / (row.finishTimeSeconds / 3600);
   return kmh.toFixed(1);
 }
@@ -1944,7 +1856,7 @@ function _rclBuildAllResultsBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-gap', _rclFormatGap_(row, leaderRow, penSeconds, leaderPenSeconds)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', _rclFormatAvgSpeed_(row, result.trackLengthMeters)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-bestlap', _rclFormatLapTime_(row.bestLapTime)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '--'));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-pts', (row.points !== null && row.points !== undefined) ? ('+' + row.points) : '—'));
       scrollInner.appendChild(rowEl);
     });
     var recapKey = _rclBuildRecapIconKey_(recapAwards);
@@ -2241,7 +2153,7 @@ function _rclBuildPenaltiesBody_(result, bodyEl) {
   });
   (result.penalties || []).forEach(function (p) {
     var lapVal = p.lapNumber;
-    var label = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' : (lapVal ? ('Lap ' + lapVal) : '-');
+    var label = (lapVal === 'Pre-race') ? 'Pre' : (lapVal === 'Post-race') ? 'Post' : (lapVal ? ('Lap ' + lapVal) : '—');
     var order = (lapVal === 'Pre-race') ? -1 : (lapVal === 'Post-race') ? 999999 : (lapVal ? (Number(lapVal) || 0) : 1000000);
     items.push({ order: order, label: label, steward: p });
   });
@@ -2343,7 +2255,7 @@ function _rclBuildQualifyingBody_(result, bodyEl) {
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector1)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector2)));
       rowEl.appendChild(_rclEl('div', 'rcl-race-row-num', _rclFormatLapTime_(row.sector3)));
-      rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', (row.avgKmh !== null && row.avgKmh !== undefined) ? String(row.avgKmh) : '--'));
+      rowEl.appendChild(_rclEl('div', 'rcl-race-row-avg', (row.avgKmh !== null && row.avgKmh !== undefined) ? String(row.avgKmh) : '—'));
       scrollInner.appendChild(rowEl);
     });
     bodyEl.appendChild(clsWrap);
@@ -2401,12 +2313,12 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
   // re-loads via the shared load() below.
   var sessionSelect = document.createElement('select');
   sessionSelect.className = 'rcl-allresults-session-select';
-  // Order: Race Details, Highlights, Race Results, Qualify Results, Driver Reports, Race Report, Penalties.
+  // Order: Race Details, Highlights, Race Results, Qualifying Results, Driver Reports, Race Report, Penalties.
   // Race Results is the page the recap opens on.
   sessionSelect.appendChild(new Option('Race Details', 'details'));
   sessionSelect.appendChild(new Option('Highlights', 'highlights'));
   sessionSelect.appendChild(new Option('Race Results', 'race'));
-  sessionSelect.appendChild(new Option('Qualify Results', 'qualifying'));
+  sessionSelect.appendChild(new Option('Qualifying Results', 'qualifying'));
   sessionSelect.appendChild(new Option('Driver Reports', 'driver'));
   sessionSelect.appendChild(new Option('Race Report', 'report'));
   // Penalties: greyed out until the round's race data shows at least one penalty (in-game or steward).
@@ -2461,7 +2373,7 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
 
   function loadRound(roundId, sessionKind) {
     // Highlights, Race Results, Driver Reports and Race Report all draw from the same race payload: one
-    // getPublicRoundResults call and one cache entry ('race'); only Qualify Results has its own.
+    // getPublicRoundResults call and one cache entry ('race'); only Qualifying Results has its own.
     var isQualifying = sessionKind === 'qualifying';
     var dataKind = isQualifying ? 'qualifying' : 'race';
     var cacheKey = roundId + ':' + dataKind;
@@ -2791,82 +2703,6 @@ function _rclRenderRaceCarousel(hub) {
     var padY = (parseFloat(trackStyle.paddingTop) || 0) + (parseFloat(trackStyle.paddingBottom) || 0);
     if (maxHeight > 0) track.style.height = (maxHeight + padY) + 'px';
   });
-}
-
-// RACE INFO popup -- this specific round's own track/session details up top ("This Race"), then the
-// season's Season Format + Season Rules sections reused as-is from _rclBuildSeasonFormatBlocks_.
-function _rclOpenRaceInfoModal(hub, entry) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
-  var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Race Info'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-
-  var body = _rclEl('div', 'rcl-modal-body');
-
-  // Same plain "Category: Value" row shape _rclOpenSeasonDetailsModal uses (see that function's own
-  // comment for why) -- duplicated here rather than shared since it's a few lines and each popup
-  // builds its own body independently.
-  function buildRow(stat) {
-    var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
-      '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
-    return _rclEl('div', 'rcl-seasonfmt-row', html);
-  }
-
-  var roundRows = [];
-  roundRows.push({ label: 'Event', value: entry.eventName || 'Race' });
-  if (entry.track) roundRows.push({ label: 'Track', value: entry.track + (entry.layout ? (': ' + entry.layout) : '') });
-  if (entry.startUtc) roundRows.push({ label: 'Date', value: _rclFormatDateTime(entry.startUtc) });
-  if (entry.raceLengthTier) {
-    roundRows.push({ label: 'Race Length', value: entry.raceLengthTier + (entry.raceLengthMinutes ? (' (' + rcFormatRaceLength(entry.raceLengthMinutes) + ')') : '') });
-  }
-  if (entry.igRaceStart) roundRows.push({ label: 'In-Game Event Time', value: _rclFormat12h(entry.igRaceStart) });
-  if (entry.weather) {
-    var weatherText = (entry.chanceOfRain || 0) + '% Rain';
-    if (entry.temperatureC !== null && entry.temperatureC !== undefined) weatherText += ' · ' + entry.temperatureC + '°C';
-    roundRows.push({ label: 'Weather', value: weatherText });
-  }
-  var roundGroup = _rclEl('div', 'rcl-hero-stats-group');
-  roundGroup.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'This Race'));
-  var roundList = _rclEl('div', 'rcl-seasonfmt-list');
-  var roundBlock = _rclEl('div', 'rcl-seasonfmt-block');
-  roundRows.forEach(function (stat) { roundBlock.appendChild(buildRow(stat)); });
-  roundList.appendChild(roundBlock);
-  roundGroup.appendChild(roundList);
-  body.appendChild(roundGroup);
-
-  var sections = _rclBuildSeasonFormatBlocks_(hub).filter(function (s) { return s.pill === 'Season Format' || s.pill === 'Season Rules'; });
-  sections.forEach(function (section) {
-    var group = _rclEl('div', 'rcl-hero-stats-group');
-    group.appendChild(_rclEl('div', 'rcl-hero-stats-label', section.pill));
-    var list = _rclEl('div', 'rcl-seasonfmt-list');
-    (section.blocks || []).forEach(function (rows) {
-      var blockEl = _rclEl('div', 'rcl-seasonfmt-block');
-      rows.forEach(function (stat) { blockEl.appendChild(buildRow(stat)); });
-      list.appendChild(blockEl);
-    });
-    group.appendChild(list);
-    body.appendChild(group);
-  });
-
-  if (!roundRows.length && !sections.length) {
-    body.appendChild(_rclEmptyState('No Data To Display', 'Race info shows up here once it is set.'));
-  }
-
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
-
-  // Closable only via the X button -- same posture every other popup on
-  // this page uses.
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
 }
 
 // POINTS -- race-length-tier point tables + bonus points.
@@ -3577,66 +3413,6 @@ function _rclOpenLeagueRulesModal() {
 // MEMBER LIST popup -- fetches handleGetMemberList (Website.gs) fresh on every open (small, public,
 // no-token payload -- not worth folding into the cached League Hub bundle).
 var RCL_ROLE_TIERS_ = ['Admin', 'Organizer', 'Steward', 'Driver'];
-// No fetch of its own, no loading state -- hub.members is already sitting in the same cached League
-// Hub payload this page loaded once up front (see _rcBuildMemberList_, Website.gs), so this reads
-// it directly, exactly the same "no fetch, just render what's already in memory" shape
-// _rclOpenSeasonDetailsModal above has always had.
-function _rclOpenMemberListModal(hub) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
-  var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', 'Member List'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-
-  var body = _rclEl('div', 'rcl-modal-body');
-
-  var members = (hub && hub.members) ? hub.members : [];
-  if (!members.length) {
-    body.appendChild(_rclEmptyState('No Members Yet', 'Members show up here once accounts are created.'));
-  } else {
-    RCL_ROLE_TIERS_.forEach(function (tier) {
-      var tierMembers = members.filter(function (m) { return (m.role || 'Driver') === tier; });
-      if (!tierMembers.length) return;
-      var group = _rclEl('div', 'rcl-memberlist-group');
-      group.appendChild(_rclEl('div', 'rcl-memberlist-tier', tier === 'Admin' ? 'Admins' : tier + 's'));
-      tierMembers.forEach(function (m) {
-        var row = _rclEl('div', 'rcl-memberlist-row');
-        var memberNameEl = _rclEl('div', 'rcl-memberlist-name');
-        memberNameEl.appendChild(_rclBuildDriverNameEl_('rcl-driver-link-inner', m.displayName || 'Unknown Driver', m.profileId));
-        // Country flag right behind the name (Users.Location).
-        if (m.country && typeof countryFlagSrc === 'function') {
-          var memberFlagSrc = countryFlagSrc(m.country);
-          if (memberFlagSrc) {
-            var memberFlag = document.createElement('img');
-            memberFlag.className = 'rcl-standings-flag rcl-memberlist-flag';
-            memberFlag.src = memberFlagSrc;
-            memberFlag.alt = '';
-            memberFlag.title = m.country;
-            memberFlag.onerror = function () { memberFlag.style.display = 'none'; };
-            memberNameEl.appendChild(memberFlag);
-          }
-        }
-        row.appendChild(memberNameEl);
-        row.appendChild(_rclEl('div', 'rcl-memberlist-joined', 'Joined on ' + (_rclFormatDate(m.joinedAt) || 'an unknown date')));
-        group.appendChild(row);
-      });
-      body.appendChild(group);
-    });
-  }
-
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
-
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
-}
 
 // NAVBAR under the header (#rcl-navbar, league.html): Season Preview | Login or Register (signed in: Member List) | Help
 // (signed in: Member List). Same look as the Championship page's link bar (css/league.css,
@@ -3661,20 +3437,6 @@ function _rclArchivedRoundPart_(roundId, isQualifying) {
   return (res && res.success) ? res : null;
 }
 
-// "Oct 10 - Dec 5, 2026" (same year), "Dec 27, 2026 - Feb 14, 2027" (across years), "" with no dates.
-function _rclSeasonRange_(s) {
-  var a = s.startUtc ? new Date(s.startUtc) : null;
-  var b = s.endUtc ? new Date(s.endUtc) : null;
-  if (a && isNaN(a.getTime())) a = null;
-  if (b && isNaN(b.getTime())) b = null;
-  if (!a && !b) return '';
-  if (!a) a = b;
-  if (!b) b = a;
-  var md = { month: 'short', day: 'numeric' }, mdy = { month: 'short', day: 'numeric', year: 'numeric' };
-  if (a.getTime() === b.getTime()) return a.toLocaleDateString(undefined, mdy);
-  if (a.getFullYear() === b.getFullYear()) return a.toLocaleDateString(undefined, md) + ' \u2013 ' + b.toLocaleDateString(undefined, mdy);
-  return a.toLocaleDateString(undefined, mdy) + ' \u2013 ' + b.toLocaleDateString(undefined, mdy);
-}
 function _rclSeasonLabel_(s) {
   // Same label as the Season dropdown on the Driver Profile page: "Season 2 - Name (Oct 10, 2026 - Dec 5, 2026)".
   function fmt(iso) {
@@ -3708,7 +3470,7 @@ function _rclRenderNavbar_(hub) {
   }
   if (signedIn) addLink('Dashboard', 'Account.html');
   else {
-    addLink('Login', 'login.html', true);
+    addLink('Log In', 'login.html', true);
     links.lastChild.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
   }
   addLink('League Hub', 'league.html');
@@ -3735,66 +3497,6 @@ function _rclRenderNavbar_(hub) {
     inner.appendChild(pick);
   }
   nav.appendChild(inner);
-}
-
-// SEASON PREVIEW popup -- the Season Details / Championship Points / Race Rules sections (same
-// content as the old Season Format popup) plus a Rounds section, one line per round:
-//   Round n · Event name: Track: Layout · 60 mins (Tier) · 2:00 PM · Clear 10% Rain 22°C · Raced
-// The "Round n · Event name:" part uses the gray label style, the rest the white value style.
-// "Raced" is only added once the round has results; otherwise the line ends after the temperature.
-function _rclOpenSeasonPreviewModal_(hub) {
-  var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
-  var head = _rclEl('div', 'rcl-modal-head');
-  head.appendChild(_rclEl('div', 'rcl-modal-title', (hub && hub.hasSeason) ? 'Season Preview' : 'Welcome'));
-  var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
-  closeBtn.type = 'button';
-  closeBtn.setAttribute('aria-label', 'Close');
-  head.appendChild(closeBtn);
-  dialog.appendChild(head);
-
-  var body = _rclEl('div', 'rcl-modal-body rcl-seasonfmt-modal-body');
-  if (hub && hub.hasSeason) {
-    _rclAppendSeasonFormatSections_(hub, body);
-  } else {
-    // No season yet: a welcome message instead of the season details.
-    body.appendChild(_rclEl('p', 'rcl-welcome-text', 'Welcome to Race Club, an online endurance racing league for Le Mans Ultimate. We are glad you are here.'));
-    body.appendChild(_rclEl('p', 'rcl-welcome-text', 'Sit tight. A new season will begin shortly, and the calendar, standings and news will fill in here as soon as it does.'));
-  }
-
-  var rounds = ((hub && hub.calendar) || []).filter(function (e) { return e.kind === 'round'; })
-    .sort(function (a, b) { return (a.roundNum || 0) - (b.roundNum || 0); });
-  if (hub && hub.hasSeason && rounds.length) {
-    var group = _rclEl('div', 'rcl-hero-stats-group');
-    group.appendChild(_rclEl('div', 'rcl-hero-stats-label', 'Rounds'));
-    var list = _rclEl('div', 'rcl-seasonfmt-list');
-    rounds.forEach(function (e) {
-      var bits = [];
-      var trackBit = (e.track || '') + (e.layout ? ': ' + e.layout : '');
-      if (trackBit) bits.push(trackBit);
-      var mins = _rclEntryLengthMinutes(e, hub);
-      if (mins || e.raceLengthTier) bits.push((mins ? rcFormatRaceLength(mins) : '') + (e.raceLengthTier ? (mins ? ' ' : '') + '(' + e.raceLengthTier + ')' : ''));
-      if (e.igRaceStart) bits.push(_rclFormat12h(e.igRaceStart));
-      if (e.weather) {
-        var w = e.weather + ' ' + (e.chanceOfRain || 0) + '% Rain';
-        if (e.temperatureC !== null && e.temperatureC !== undefined) w += ' ' + e.temperatureC + '\u00B0C';
-        bits.push(w);
-      }
-      if (e.hasResults) bits.push('Raced');
-      var html = '<span class="rcl-seasonfmt-row-label">Round ' + _rclEscapeHtml(String(e.roundNum || '')) + ' \u00B7 ' + _rclEscapeHtml(e.eventName || 'Race') + ':</span> ' +
-        '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(bits.join(' \u00B7 ')) + '</span>';
-      list.appendChild(_rclEl('div', 'rcl-seasonfmt-row', html));
-    });
-    group.appendChild(list);
-    body.appendChild(group);
-  }
-
-  dialog.appendChild(body);
-  overlay.appendChild(dialog);
-  function close() { document.body.removeChild(overlay); _rclUnlockBodyScroll(); }
-  closeBtn.addEventListener('click', close);
-  document.body.appendChild(overlay);
-  _rclLockBodyScroll();
 }
 
 // Full-page loading overlay -- markup/CSS live in league.html and css/league.css; this just locks
@@ -3987,7 +3689,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       return;
     }
-    _rclShowPageLoader_('Loading Season...');
+    _rclShowPageLoader_('Loading season...');
     loadPastSeason(seasonId).then(function (loaded) {
       if (myToken !== pickToken) return;
       _rclViewSeasonId_ = seasonId;

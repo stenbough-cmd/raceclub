@@ -77,9 +77,6 @@ body.rc-league-page.rcc-page {
 
 /* Manufacturers' podium rank numbers: the hub's pale gold/silver/bronze are tuned for black and
    disappear on white, so they're darkened here. */
-.rcc-page .rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 70%, var(--rc-carbon)); }
-.rcc-page .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: var(--rc-steel); }
-.rcc-page .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 40%, var(--rc-red-dark)); }
 
 /* Hero meta line under "Season N / Name" -- tucked right under it (negative margin eats part of
    the season line's own line-height). */
@@ -89,22 +86,12 @@ body.rc-league-page.rcc-page {
   font-size: 15px;
   color: var(--rcl-ink-dim);
 }
-.rcc-hero-meta-name,
-.rcc-hero-meta-num { font-weight: 700; }
+
 /* Season title in white; "Season N" stays navy and the slash red (Matt). */
 /* No shadow on "Season N" and "/"; the white season title keeps a lighter one (Matt, 2026-10-15). */
 .rcc-page .rcl-hero-season { text-shadow: none; }
 .rcc-page .rcl-hero-season-name { color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.12); }
 /* Car maker logo in front of the team name, sized like the ticker's logos. */
-.rcc-hero-meta-logo {
-  display: inline-block;
-  height: 16px;
-  width: auto;
-  max-width: 36px;
-  object-fit: contain;
-  vertical-align: -3px;
-  margin-right: 6px;
-}
 
 /* -------------------------------------------------------------------- */
 /* Highlights ticker (league.css look, light-page colors)                */
@@ -162,23 +149,11 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* The page you are on (Championship) is red (Matt, 2026-10-27). */
 .rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rcc-true-red, #F21B0C); }
 /* Season Tools: a vertical dropdown under the link, styled like the avatar menu (Matt, 2026-10-13). */
-.rcc-tools { position: relative; display: inline-flex; align-items: center; }
-.rcc-tools + .rcc-actionbar-link { position: relative; }
-.rcc-tools .rcc-tools-toggle { padding-left: 14px; }
-.rcc-tools-toggle::after { content: ''; display: inline-block; width: 0; height: 0; margin-left: 7px; vertical-align: 2px; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; }
-.rcc-tools-open .rcc-tools-toggle { color: var(--rc-red); }
+
 /* Triangle points left, towards SEASON TOOLS, while closed and turns to point down when the menu opens (Matt, 2026-10-17). */
-.rcc-tools-toggle::after { transform: rotate(90deg); transition: transform 0.2s ease; }
-.rcc-tools-open .rcc-tools-toggle::after { transform: rotate(0deg); }
-.rcc-tools-menu { display: none; position: absolute; top: calc(100% - 4px); left: 4px; min-width: 190px; background: var(--rc-white); border: 1px solid var(--rc-silver); border-radius: 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14); padding: 6px; z-index: 1001; }
-.rcc-tools-open .rcc-tools-menu { display: block; }
-.rcc-tools-links { display: flex; flex-direction: column; }
-.rcc-tools-links .rcc-actionbar-link { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 5px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--rc-carbon); white-space: nowrap; }
-.rcc-tools-links .rcc-actionbar-link::before { content: none; }
-.rcc-tools-links .rcc-actionbar-link:hover:not(:disabled) { background: var(--rc-offwhite); color: var(--rc-red); }
-.rcc-tools-links .rcc-actionbar-link:disabled { color: #a3abb5; }
+
 /* Dividers in Season Tools (Matt, 2026-10-27): after Season Preview and before Help. */
-.rcc-tools-divider { border: 0; border-top: 1px solid var(--rc-silver); margin: 4px 6px; }
+
 /* Current Seat at the top of the Season Preview popup, with a blank space before Season Details. */
 .rcc-preview-seat { margin-bottom: 22px; }
 .rcc-preview-seat .rcc-current-seat { margin-top: 12px; }
@@ -269,11 +244,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
    mention cards, results popups and race report (.rcl-standings-name, .rcl-lr-podium-name, ...);
    these are the championship-only spots: Team Information, Choose Your Team and the signing
    reveal. The ticker and the hero subtitle are left as they are. */
-.rcc-myteam-name,
-.rcc-grid-team,
-.rcc-grid-crew,
-.rcc-page .rc-team-name,
-.rcc-page .rc-signing-reveal-team { text-transform: uppercase; }
+.rcc-grid-crew, .rcc-page .rc-team-name, .rcc-page .rc-signing-reveal-team { text-transform: uppercase; }
 /* Names, car numbers and team names in normal weight; the PTS total and rank badges stay bold. */
 .rcc-board .rcl-standings-name,
 .rcc-board .rcl-standings-carnum,
@@ -287,79 +258,11 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
    silver, lighter than the class header bar under it so it doesn't pull the eye away from the board
    (Matt). The page's navy is the accent: the selected label and a thin line along the knob's bottom
    edge. */
-.rcc-switch-slot { display: flex; align-items: center; }
-.rcc-metal-switch {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  width: 176px;
-  height: 34px;
-  padding: 3px;
-  border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--rc-steel) 35%, var(--rc-silver));
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px),
-    linear-gradient(180deg, #f6f7f8 0%, #e9ecee 48%, #e1e4e7 52%, #f1f3f4 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-}
-.rcc-metal-knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  height: calc(100% - 6px);
-  border-radius: 6px;
-  border: 1px solid #b4bbc2;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.03) 1px 2px),
-    linear-gradient(180deg, #ffffff 0%, #eef0f2 45%, #dfe3e7 55%, #f8f9fa 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 var(--rcc-navy);
-  transition: transform 0.22s ease;
-}
-.rcc-metal-switch-teams .rcc-metal-knob { transform: translateX(100%); }
-.rcc-metal-label {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-steel);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-  transition: color 0.22s ease;
-}
-.rcc-metal-switch:not(.rcc-metal-switch-teams) .rcc-metal-label-drivers,
-.rcc-metal-switch-teams .rcc-metal-label-teams { color: var(--rcc-navy); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
-.rcc-metal-switch:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) {
-  .rcc-metal-knob, .rcc-metal-label { transition: none; }
-}
 
 /* -------------------------------------------------------------------- */
 /* Standings tabs (Drivers / Teams) in the panel header                  */
 /* -------------------------------------------------------------------- */
 .rcc-panel-head-tabs { flex-wrap: wrap; }
-.rcc-tabs { display: flex; gap: 6px; }
-.rcc-tab {
-  background: var(--rc-white);
-  border: 1px solid var(--rc-silver);
-  border-radius: 999px;
-  padding: 5px 14px;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--rc-steel);
-  cursor: pointer;
-}
-.rcc-tab:hover { background: var(--rc-offwhite); }
-.rcc-tab-active,
-.rcc-tab-active:hover { background: var(--rc-carbon); border-color: var(--rc-carbon); color: var(--rc-white); }
 
 /* The player's own rows and name, everywhere. */
 /* The player's row: a faint tint only (the red bar over the position badge was removed, Matt). */
@@ -401,34 +304,6 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
   background: var(--rc-white);
 }
 .rcc-cta-text { font-size: 14px; color: var(--rc-carbon); }
-.rcc-you-line {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--rc-silver);
-}
-.rcc-you-label {
-  font-family: var(--rc-font-heading);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-steel);
-}
-.rcc-you-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); }
-.rcc-link-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rc-red);
-  cursor: pointer;
-}
-.rcc-link-btn:hover { text-decoration: underline; }
 
 /* -------------------------------------------------------------------- */
 /* Popups                                                                */
@@ -482,9 +357,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-points-pos { font-size: 11px; font-weight: 800; color: var(--rc-steel); text-align: center; }
 .rcc-points-cell input { margin-top: 0; padding: 6px 4px; text-align: center; height: 38px; }
 /* A shared-points crew line ("Name, Name, Name") wraps instead of cutting names off. */
-.rcc-page .rcc-name-row-wrap { flex-wrap: wrap; overflow: visible; }
-.rcc-page .rcc-name-row-wrap .rcl-standings-name { white-space: normal; overflow: visible; }
-.rcc-page .rcc-name-row-wrap .rcl-standings-team { flex-basis: auto; }
+
 /* "Bonus" row label lines up with the Sprint / Medium / Long labels above it. */
 .rcc-bonus-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; align-items: end; }
 .rcc-bonus-row .rcc-bonus-grid { margin-bottom: 0; }
@@ -499,11 +372,6 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-round-locked-text { font-size: 13px; color: var(--rc-steel); }
 
 /* Upload */
-.rcc-upload-out { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
-.rcc-upload-line { font-size: 13px; line-height: 1.45; padding: 6px 10px; border-radius: 4px; background: var(--rc-offwhite); color: var(--rc-carbon); }
-.rcc-upload-ok { border-left: 3px solid var(--rc-carbon); }
-.rcc-upload-bad { border-left: 3px solid var(--rc-red); color: var(--rc-red); }
-.rcc-upload-note, .rcc-upload-skip { color: var(--rc-steel); }
 
 /* Team information */
 .rcc-myteam { padding: 14px 16px; margin-bottom: 18px; border: 1px solid var(--rc-silver); border-left: 3px solid var(--rc-red); border-radius: 6px; background: var(--rc-white); }
@@ -527,27 +395,16 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
   .rcc-grid-row .rc-cs-logo-wrap { width: 100px; }
   .rcc-myteam .rc-cs-row, .rcc-grid-row .rc-cs-row { gap: 12px; }
 }
-.rcc-myteam-name { font-size: 18px; font-weight: 800; color: var(--rc-carbon); }
-.rcc-myteam-sub { font-size: 13px; color: var(--rc-steel); }
+
 .rcc-myteam-desc { font-size: 13px; color: var(--rc-steel); margin: 8px 0 0; }
 .rcc-grid-row { display: flex; gap: 12px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--rc-offwhite); }
-.rcc-grid-logo { width: 34px; height: 34px; object-fit: contain; flex: 0 0 34px; }
-.rcc-grid-info { min-width: 0; }
-.rcc-grid-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rcc-grid-team { font-weight: 800; color: var(--rc-carbon); }
-.rcc-grid-model { font-size: 12px; color: var(--rc-steel); }
+
 .rcc-grid-crew { font-size: 13px; color: var(--rc-carbon); }
 .rcc-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--rc-silver); color: var(--rc-steel); }
-.rcc-tag-factory { border-color: var(--rc-carbon); color: var(--rc-carbon); }
+
 .rcc-tag-me { border-color: var(--rc-red); color: var(--rc-red); }
 
 /* My Laps table */
-.rcc-laps-table { overflow-x: auto; margin-top: 6px; }
-.rcc-laps-row { display: grid; grid-template-columns: 60px 50px 90px 76px 76px 76px 84px 56px 140px 90px; gap: 8px; padding: 5px 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rc-carbon); border-bottom: 1px solid var(--rc-offwhite); min-width: 880px; }
-.rcc-laps-head { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); border-bottom: 1px solid var(--rc-silver); }
-.rcc-laps-best { font-weight: 800; }
-.rcc-laps-pit { color: var(--rc-steel); }
-.rcc-laps-events { margin-top: 12px; }
 
 @media (max-width: 640px) {
   .rcc-actionbar-inner { padding: 0 16px; }
@@ -623,10 +480,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* Race Recap: bonus winners centered in the popup, and the Race Details */
 /* block under them (_rccRaceDetails).                                    */
 /* -------------------------------------------------------------------- */
-.rcc-page .rcl-modal-dialog-allresults .rcl-race-categories-inclass { justify-content: center; }
-.rcc-page .rcl-modal-dialog-allresults .rcl-race-category { flex: 0 1 200px; text-align: center; }
-.rcc-page .rcl-modal-dialog-allresults .rcl-race-category-title,
-.rcc-page .rcl-modal-dialog-allresults .rcl-race-category-row { justify-content: center; }
+
 .rcc-race-details { margin: 4px 0 22px; }
 .rcc-race-details .rcl-race-class-name { margin-bottom: 10px; }
 .rcc-race-details-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
@@ -634,20 +488,9 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-race-details .rcl-seasonfmt-row { font-size: 13px; margin-bottom: 3px; }
 
 /* Header subtitle: "[logo] Team #n" opens Team Information; the name opens the public profile. */
-.rcc-hero-meta-team {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-.rcc-hero-meta-team:hover,
-.rcc-hero-meta-team:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
-a.rcc-hero-meta-name { color: inherit; }
 
 /* Season Preview popup */
-.rcc-preview-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; text-transform: uppercase; color: var(--rc-carbon); margin-bottom: 14px; }
+
 .rcc-preview-body .rcl-hero-stats-group { margin-bottom: 18px; }
 
 /* Season wizard: Season Name 50% | Series 25% | Year 25%; a round's second row of settings. */
@@ -664,117 +507,6 @@ a.rcc-hero-meta-name { color: inherit; }
 /* Ticker round entries: flag, event and " at track" as one inline group (no flex gap inside). */
 .rcc-ticker-event { white-space: nowrap; }
 .rcc-ticker-flag { height: 12px; width: auto; vertical-align: -1px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); }
-
-/* ===================== DRIVER REPORT (js/championship-report.js) ===================== */
-.rcr-report { margin: 28px 0 8px; }
-.rcr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-.rcr-head .rcl-race-class-name { margin: 0; }
-.rcr-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: linear-gradient(180deg, #eef0f3, #dfe3e8); box-shadow: inset 0 1px 2px rgba(0,0,0,0.12); }
-.rcr-seg-btn { border: 0; background: transparent; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6573; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
-.rcr-seg-btn.rcr-seg-on { background: #fff; color: var(--rc-carbon); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
-.rcr-seg-btn:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 1px; }
-.rcr-seg-sm .rcr-seg-btn { font-size: 10px; padding: 5px 10px; }
-.rcr-note { font-size: 13px; color: #5b6573; margin: 6px 0 14px; }
-.rcr-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 0 16px; }
-.rcr-tile { border-radius: 10px; padding: 12px 14px; background: linear-gradient(180deg, #ffffff, #f3f5f7); border: 1px solid #e3e6ea; }
-.rcr-tile-label { font-family: var(--rc-font-heading); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; }
-.rcr-tile-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
-.rcr-tile-sub { font-size: 12px; color: #5b6573; margin-top: 3px; }
-.rcr-tile-hero { background: linear-gradient(135deg, #1f2937, #374151); border-color: #1f2937; }
-.rcr-tile-hero .rcr-tile-label, .rcr-tile-hero .rcr-tile-sub { color: #cbd2db; }
-.rcr-tile-hero .rcr-tile-value { color: #fff; }
-.rcr-tile-hero.rcr-up .rcr-tile-sub { color: #7ee2a4; font-weight: 700; }
-.rcr-tile-hero.rcr-down .rcr-tile-sub { color: #ffb4ab; font-weight: 700; }
-.rcr-block { margin: 0 0 22px; padding-top: 16px; border-top: 1px solid #e3e6ea; }
-.rcr-block-head { margin-bottom: 10px; }
-.rcr-block-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); }
-.rcr-block-sub { font-size: 12.5px; color: #5b6573; margin-top: 2px; }
-.rcr-mini-title { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; margin: 14px 0 8px; }
-.rcr-chart { position: relative; }
-.rcr-svg { width: 100%; height: auto; display: block; overflow: visible; }
-.rcr-grid { stroke: #e7eaee; stroke-width: 1; }
-.rcr-axis { font-family: var(--rc-font-body); font-size: 11px; fill: #6b7280; }
-.rcr-cross { stroke: #9aa3af; stroke-width: 1; stroke-dasharray: 3 3; }
-.rcr-tip { position: absolute; display: none; z-index: 5; pointer-events: none; background: #111827; color: #f3f4f6; font-size: 12px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); white-space: nowrap; }
-.rcr-tip b { color: #fff; }
-.rcr-tip-head { font-weight: 800; margin-bottom: 3px; }
-.rcr-tip-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
-.rcr-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; font-size: 12px; color: #374151; }
-.rcr-legend-item { display: inline-flex; align-items: center; gap: 6px; }
-.rcr-legend-swatch { width: 16px; height: 4px; border-radius: 2px; border: 1px solid transparent; }
-.rcr-legend-dash { border-top: 2px dashed; height: 0; border-left: 0; border-right: 0; border-bottom: 0; }
-.rcr-bars { display: flex; flex-direction: column; gap: 5px; }
-.rcr-bar-row, .rcr-div-row { display: grid; grid-template-columns: 150px 1fr 120px; align-items: center; gap: 10px; font-size: 12.5px; }
-.rcr-bar-name { color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rcr-bar-you .rcr-bar-name, .rcr-bar-you .rcr-bar-val { font-weight: 800; color: var(--rc-carbon); }
-.rcr-bar-track { height: 12px; background: #f1f3f5; border-radius: 6px; overflow: hidden; }
-.rcr-bar-fill { height: 100%; border-radius: 6px; }
-.rcr-bar-val { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
-.rcr-div { display: flex; flex-direction: column; gap: 6px; }
-.rcr-div-track { position: relative; height: 14px; background: #f1f3f5; border-radius: 7px; }
-.rcr-div-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: #9aa3af; }
-.rcr-div-fill { position: absolute; top: 0; bottom: 0; border-radius: 7px; }
-.rcr-div-good { background: #2f6fb5; }
-.rcr-div-bad { background: #a86f12; }
-.rcr-div-key { display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin: 2px 130px 0 160px; }
-.rcr-div-key-good { color: #2f6fb5; font-weight: 700; }
-.rcr-div-key-bad { color: #8a5a0e; font-weight: 700; }
-.rcr-tyre-grid { display: grid; grid-template-columns: minmax(300px, 1fr) 1.2fr; gap: 22px; align-items: start; }
-.rcr-car-box { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.rcr-car-holder { display: grid; grid-template-columns: 1fr 140px 1fr; align-items: center; gap: 8px; width: 100%; }
-.rcr-car { width: 140px; height: auto; }
-.rcr-car-body { fill: #e9ecf0; stroke: #8a94a3; stroke-width: 2; stroke-linejoin: round; }
-.rcr-car-line { fill: none; stroke: #b8c0cb; stroke-width: 1.5; stroke-linecap: round; }
-.rcr-car-glass { fill: #3b4656; }
-.rcr-car-roof { fill: #d3d8df; stroke: #8a94a3; stroke-width: 1; }
-.rcr-car-mirror { fill: #8a94a3; }
-.rcr-car-wing { fill: #4b5563; }
-.rcr-car-splitter { fill: #5b6573; stroke: #3b4656; stroke-width: 1.5; }
-.rcr-car-tyre { stroke: #1f2937; stroke-width: 2; opacity: 0.95; }
-.rcr-corners { display: flex; flex-direction: column; justify-content: space-between; gap: 46px; }
-.rcr-corner-r { text-align: left; }
-.rcr-corner-l { text-align: right; }
-.rcr-corner-name { font-family: var(--rc-font-heading); font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; }
-.rcr-corner-pct { font-family: var(--rc-font-heading); font-size: 22px; font-weight: 800; color: var(--rc-carbon); font-variant-numeric: tabular-nums; }
-.rcr-corner-sub { font-size: 11.5px; color: #5b6573; }
-.rcr-corner-cmp { font-size: 11.5px; font-weight: 700; }
-.rcr-good { color: #1f7a45; }
-.rcr-bad { color: #b3261e; }
-.rcr-strat { display: flex; flex-direction: column; gap: 6px; }
-.rcr-strat-row { display: grid; grid-template-columns: 170px 1fr 70px; align-items: center; gap: 10px; font-size: 12.5px; }
-.rcr-strat-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #374151; }
-.rcr-strat-you .rcr-strat-name, .rcr-strat-you .rcr-strat-sum { font-weight: 800; color: var(--rc-carbon); }
-.rcr-strat-track { position: relative; height: 18px; }
-.rcr-strat-bar { position: absolute; left: 0; top: 5px; height: 8px; border-radius: 4px; background: #c3c9d2; }
-.rcr-strat-pit { position: absolute; top: -1px; transform: translateX(-50%); height: 20px; min-width: 22px; padding: 0 5px; border-radius: 10px; background: #5b6573; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; cursor: default; }
-.rcr-strat-tyres { background: #1f2937; }
-.rcr-strat-tonly { background: #8a94a3; } /* T = tyres only (2026-10-14) */
-.rcr-strat-icon { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; }
-.rcr-strat-sum { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
-.rcr-strat-ticks { height: 14px; }
-.rcr-strat-ticks span { position: absolute; transform: translateX(-50%); font-size: 10.5px; color: #6b7280; white-space: nowrap; }
-.rcr-contact-line { position: relative; height: 54px; margin: 6px 6px 0; border-bottom: 2px solid #c3c9d2; }
-.rcr-contact { position: absolute; bottom: 0; transform: translate(-50%, 50%); border-radius: 50%; background: rgba(215, 38, 30, 0.75); box-shadow: 0 0 0 2px #fff; }
-.rcr-contact-wall { background: rgba(31, 41, 55, 0.75); }
-.rcr-limit { position: absolute; bottom: 0; width: 11px; height: 11px; transform: translate(-50%, 50%) rotate(45deg); background: #d4a017; box-shadow: 0 0 0 2px #fff; }
-.rcr-contact-axis { display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin: 16px 6px 10px; }
-.rcr-contact-list { display: flex; flex-direction: column; gap: 5px; }
-.rcr-contact-item { display: grid; grid-template-columns: 56px 180px 1fr 110px; gap: 10px; align-items: center; font-size: 12.5px; color: #374151; }
-.rcr-contact-who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rcr-contact-meter { height: 8px; background: #f1f3f5; border-radius: 4px; overflow: hidden; }
-.rcr-contact-meter-fill { display: block; height: 100%; background: #d7261e; border-radius: 4px; }
-.rcr-contact-val { text-align: right; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) {
-  .rcr-tyre-grid { grid-template-columns: 1fr; }
-  .rcr-bar-row, .rcr-div-row { grid-template-columns: 96px 1fr 84px; font-size: 11.5px; }
-  .rcr-div-key { margin: 2px 94px 0 106px; }
-  .rcr-strat-row { grid-template-columns: 104px 1fr 48px; font-size: 11.5px; }
-  .rcr-contact-item { grid-template-columns: 48px 1fr 70px; }
-  .rcr-contact-meter { display: none; }
-  .rcr-tile-value { font-size: 20px; }
-}
-.rcr-popup-round { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcc-navy); margin: -4px 0 6px; }
-.rcc-page .rcl-carousel-hero-btns { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 
 /* ===================== DEMO (logged-out visitors) ===================== */
 /* Locked demo buttons keep their normal look and hover colour; clicking does nothing. */
@@ -795,35 +527,8 @@ body.rcc-demo { position: relative; }
 .rcc-page .rcc-ticker-plain { font-weight: 400; color: var(--rc-carbon); }
 
 /* RACE RECAP button in the Last Race header: the metal switch's track with a single full-width knob. */
-.rcc-metal-btn {
-  display: inline-flex; align-items: stretch; height: 34px; padding: 3px; border-radius: 9px; flex: none;
-  border: 1px solid color-mix(in srgb, var(--rc-steel) 35%, var(--rc-silver));
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0 1px, rgba(0, 0, 0, 0.015) 1px 3px),
-    linear-gradient(180deg, #f6f7f8 0%, #e9ecee 48%, #e1e4e7 52%, #f1f3f4 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.6), 0 1px 0 rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-}
-.rcc-metal-btn-face {
-  display: flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 6px;
-  border: 1px solid #b4bbc2;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 1px, rgba(0, 0, 0, 0.03) 1px 2px),
-    linear-gradient(180deg, #ffffff 0%, #eef0f2 45%, #dfe3e7 55%, #f8f9fa 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 var(--rcc-navy);
-  font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--rcc-navy); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); transition: filter 0.15s ease;
-}
-.rcc-metal-btn:hover .rcc-metal-btn-face { filter: brightness(1.04); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 var(--rcc-navy); }
-.rcc-metal-btn:active .rcc-metal-btn-face { transform: translateY(1px); }
-.rcc-metal-btn:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
-.rcr-card { background: var(--rc-white); border: 1px solid var(--rcl-line); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; }
-@media (max-width: 700px) { .rcr-card { padding: 14px 12px; } }
-.rcr-report-who { margin: 0 0 14px; } /* padding, not margin: a margin here would merge with the dropdown row's 18px and add nothing. +10px under the recap dropdowns (Matt, 2026-11-01) */
-.rcr-report-who + .rcr-report { margin-top: 8px; } /* gap down to the Driver Report heading is 14px, same as the League Hub */
+
 /* Driver Report owner line: driver name bold black, then team and number normal weight in steel. */
-.rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }
-.rcr-who-name .rcr-who-team { font-weight: 400; color: var(--rc-steel); }
 /* Header seat line (same as the Driver Report's): the name links to the profile, the team opens
    Team Information. Links keep the line's own colors; underline on hover. */
 .rcc-hero-meta .rcc-seat-line { margin: 6px 0 0; }
@@ -845,11 +550,10 @@ body.rcc-demo { position: relative; }
   .rcc-hero-meta .rc-cs-logo-wrap { height: 36px; min-width: 0; }
   .rcc-hero-meta .rc-cs-logo { max-height: 36px; max-width: 90px; }
 }
-a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcc-seat-line-team { background: none; border: none; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-seat-line-team:hover, .rcc-seat-line-team:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
-.rcc-hero-meta-team-text { white-space: nowrap; }
+
 /* Car profile pictures (assets/cars/<year>-<number>.png): podium tiles and the standings CAR column. */
 .rcc-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
 @media (max-width: 640px) { .rcc-podium-car { max-width: 92px; max-height: 38px; } }
@@ -922,33 +626,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-tip-title { display: block; font-weight: 700; margin-bottom: 3px; color: var(--rc-carbon); }
 .rcc-tip p { margin: 0 0 6px; }
 .rcc-tip p:last-child { margin-bottom: 0; }
-.rcr-block .rcc-tip { margin: 14px 0 4px; }
-
-/* Driver Report: tyre compound circles (Matt): S red, M yellow, H white, W blue. */
-.rcr-comp { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; line-height: 1; flex: 0 0 auto; box-sizing: border-box; }
-.rcr-comp-s { background: #d7261e; color: #fff; }
-.rcr-comp-m { background: #f2c230; color: #1f2937; }
-.rcr-comp-h { background: #fff; color: #1f2937; border: 1.5px solid #8a94a3; }
-.rcr-comp-w { background: #2f6fb5; color: #fff; }
-.rcr-corner-pct { display: flex; align-items: center; gap: 8px; }
-.rcr-corner-l .rcr-corner-pct { justify-content: flex-end; }
-.rcr-corner-r .rcr-corner-pct { justify-content: flex-start; }
-/* Tyre sets table. */
-.rcr-sets { display: grid; gap: 0; margin-top: 6px; font-size: 13px; }
-.rcr-sets-row { display: grid; grid-template-columns: minmax(130px, 200px) minmax(0, 1fr) 56px; gap: 12px; align-items: center; padding: 7px 6px; border-bottom: 1px solid var(--rc-offwhite); }
-.rcr-sets-head { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-steel); }
-.rcr-sets-you { font-weight: 700; } /* no red tint behind your row (Matt, 2026-10-14) */
-.rcr-sets-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rcr-sets-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.rcr-set { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 3px; border: 1px solid #d5dbe2; border-radius: 999px; background: #fff; font-weight: 400; }
-.rcr-set-pace { font-variant-numeric: tabular-nums; color: var(--rc-carbon); }
-.rcr-set-laps, .rcr-set-wear { color: var(--rc-steel); }
-.rcr-set-none { color: var(--rc-steel); }
-.rcr-sets-tyres { text-align: center; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tyres'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
-/* Legend: pit stop circle; space under the pit strategy key. */
-.rcr-legend-circle { border-radius: 50%; border-width: 2px; border-style: solid; width: 10px; height: 10px; }
-.rcr-legend-gap { margin-bottom: 18px; }
 
 /* Season Stories (2026-10-11): League News layout (league.css .rcl-news-*), plus the writing notice,
    standfirst and thumbs feedback. */
@@ -989,17 +666,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Race Report events (Matt, 2026-10-13): every event clause gray except position changes and the
    fastest lap, which keep their colors. Names stay dark and capitalized; the player's name is bold. */
 .rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, #5b6573); font-weight: 400; }
-
-/* Driver Report: drive-through penalty bubble on the charts and in the key (Matt, 2026-10-11). */
-.rcr-dt-dot { fill: var(--rc-red, #c8102e); stroke: #fff; stroke-width: 1.5; }
-.rcr-dt-text { fill: #fff; font-size: 8px; font-weight: 700; pointer-events: none; }
-.rcr-legend-swatch.rcr-legend-dt { width: 18px; height: 18px; border-radius: 50%; border: 0; background: var(--rc-red, #c8102e); color: #fff;
-  font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
-/* Stop/Go penalty bubble on the charts and in the key (Matt, 2026-10-19): solid orange, white SG label. */
-.rcr-sg-dot { fill: var(--rc-orange, #e8892b); stroke: #fff; stroke-width: 1.5; }
-.rcr-sg-text { fill: #fff; font-size: 8px; font-weight: 700; pointer-events: none; }
-.rcr-legend-swatch.rcr-legend-sg { width: 18px; height: 18px; border-radius: 50%; border: 0; background: var(--rc-orange, #e8892b); color: #fff;
-  font-size: 7.5px; font-weight: 700; line-height: 18px; text-align: center; letter-spacing: 0; }
 
 /* LAST RACE: 15px more space under each <CLASS> HIGHLIGHTS header (Matt, 2026-10-11): 22px + 15px. */
 .rcc-page .rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
@@ -1051,11 +717,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Team podium: line the tiles up from the top so a long team name that wraps can't push a car or
    rank line out of place; P1 sits 28px higher than P2 and P3 (16px on phones), like Manufacturers. */
 .rcc-tt-podium { align-items: flex-start; }
-.rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p1 { margin-bottom: 0; }
-.rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; }
-@media (max-width: 640px) {
-  .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 16px; }
-}
 
 /* Calendar carousel: more room above and below (Matt, 2026-10-13), even on both sides: about 83px
    from the panels above to the card's text, and from the card's buttons to the board below. The
@@ -1100,17 +761,16 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcl-mfr-rest-name, .rcc-page .rcc-tt-name, .rcc-page .rcc-tt-num { font-weight: 400; }
 .rcc-page .rcc-tt-me .rcc-tt-name { color: var(--rc-red); }
 
-
 /* Current Seat popup (Matt, 2026-10-14). */
 .rcc-current-seat .rcc-seat-line { margin: 0; }
 .rcc-current-seat-desc { margin: 16px 0 0; font-size: 14.5px; line-height: 1.6; color: #374151; }
 /* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
 @media (max-width: 640px) {
   .rcc-actionbar-inner { padding: 0 12px; }
-  .rcc-actionbar-link, .rcc-tools .rcc-tools-toggle { padding-left: 6px; padding-right: 6px; font-size: 10.5px; letter-spacing: 0.03em; }
-  .rcc-tools-toggle::after { margin-left: 4px; }
+  .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 10.5px; letter-spacing: 0.03em; }
+  
   .rcc-actionbar-links > .rcc-actionbar-link:first-child { padding-left: 0; }
-  .rcc-tools-links .rcc-actionbar-link { padding: 10px 12px; font-size: 12.5px; }
+  
 }
 
 /* OFFLINE SEASON MANAGER: no drop shadow (Matt, 2026-10-14). */
@@ -1148,7 +808,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Hypercar photo mirrored left to right (Matt, 2026-10-17); only the image layer flips, not the title. */
 .rcc-page .rcc-class-head-hyper::before { transform: scaleX(-1); }
 .rcc-page .rcc-class-head .rcl-panel-title { position: relative; z-index: 1; color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
-
 
 /* Last Race footer (Matt, 2026-10-17): a link to this round's Race Recap under a gray line, in the
    standings board footers' small heading style. */
@@ -1218,7 +877,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }
 }
 
-
 /* ====================================================================
    BLUE-GRAY ACCENTS (Matt, 2026-10-25). On the Championship page the site's red accent becomes the
    blue-gray of the demo button: every rule that uses var(--rc-red) here (container slashes, red lines,
@@ -1232,10 +890,7 @@ body.rcc-page {
 }
 /* Problems stay red (Matt): errors, refused uploads, failed stories, penalties, drive-through dots,
    the thumbs-down vote. */
-.rcc-page .rc-error, .rcc-page .rc-field-error, .rcc-page .rc-code-error, .rcc-page .rc-toast-error,
-.rcc-page .rcc-error-line, .rcc-page .rcc-upload-bad, .rcc-page .rcc-story-failed,
-.rcc-page .rcr-dt-dot, .rcc-page .rcr-legend-dt, .rcc-page .rcc-thumb-down,
-.rcc-page .rcl-report-clause-penalty, .rcc-page .rcl-report-clause-loss, .rcc-page .rcl-penalty-effect {
+.rcc-page .rc-error, .rcc-page .rc-field-error, .rcc-page .rc-code-error, .rcc-page .rc-toast-error, .rcc-page .rcc-error-line, .rcc-page .rcc-story-failed, .rcc-page .rcr-dt-dot, .rcc-page .rcr-legend-dt, .rcc-page .rcc-thumb-down, .rcc-page .rcl-report-clause-penalty, .rcc-page .rcl-report-clause-loss, .rcc-page .rcl-penalty-effect {
   --rc-red: #F21B0C;
   --rc-red-dark: #c81509;
 }
@@ -1254,9 +909,8 @@ body.rcc-page {
    the black link bar, and the Season Stories badges' bottom line. */
 body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-hero-season-sep,
-.rcc-page .rcl-panel-title::before,
-.rcc-page .rcl-modal-title::before { color: var(--rcc-true-red); }
-.rcc-page .rcl-panel-head, .rcc-page .rcl-modal-head { border-bottom-color: var(--rcc-true-red); }
+.rcc-page .rcl-panel-title::before { color: var(--rcc-true-red); }
+.rcc-page .rcl-panel-head { border-bottom-color: var(--rcc-true-red); }
 .rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */

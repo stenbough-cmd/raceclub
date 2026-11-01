@@ -27,7 +27,6 @@
     return e;
   }
   function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-  function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   function spin(msg) { return window.rcHelmetSpinner_ ? window.rcHelmetSpinner_(msg) : mk('p', 'rch-hint', msg || 'Loading...'); }
   var SLOTS = [['b', 'Base Color'], ['a1', 'Accent Color 1'], ['a2', 'Accent Color 2']];
@@ -222,13 +221,13 @@
     var previewPlayer = { n: me.displayName || me.username || 'Driver Name', c: me.location || 'United States', u: '12' };
     var body = mk('div', 'rch-designer');
     var inline = !!opts.host, dirtyFn = null;
-    var modal = (only || inline) ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true, accentHead: true });
+    var modal = (only || inline) ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true });
     if (inline) { body.classList.add('rch-studio'); opts.host.appendChild(body); window.addEventListener('beforeunload', function (e) { if (dirtyFn && dirtyFn()) { e.preventDefault(); e.returnValue = ''; } }); }
     modal.el.classList.add('rch-modal');
     var stub = null;
     if (only) {   // the manager popup opens straight away with its own loading lights; the real one replaces it once the designer data is ready
       var sb = mk('div', 'rch-loadbody'); sb.appendChild(spin('Loading...'));
-      stub = ctx.showModal(only === 'logos' ? 'Logo Manager' : 'Manage Helmet Designs', { bodyEl: sb, wide: true, accentHead: true });
+      stub = ctx.showModal(only === 'logos' ? 'Logo Manager' : 'Manage Helmet Designs', { bodyEl: sb, wide: true });
     }
     // the loading lights sit in the middle of the popup
     var loadBox = mk('div'); loadBox.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:62vh';
@@ -912,7 +911,7 @@
         var cb = mk('div', 'rch-confirm');
         cb.appendChild(mk('p', 'rch-confirm-msg')); cb.firstChild.textContent = msg;
         var row = mk('div', 'rch-btns'); cb.appendChild(row);
-        var cm = ctx.showModal(title, { bodyEl: cb, accentHead: true });
+        var cm = ctx.showModal(title, { bodyEl: cb });
         buttons.forEach(function (bd) {
           var bt = mk('button', bd.primary ? 'rc-btn-primary rc-btn-sm' : 'rc-btn-secondary rc-btn-sm', bd.label); bt.type = 'button';
           bt.onclick = function () { cm.close(); if (bd.fn) bd.fn(); };
@@ -1036,7 +1035,7 @@
       /* ---------------- Edit details: name, kind, manufacturer, category, description, and who it is given to (never the design itself) ---------------- */
       function openDetails(p, list, after) {
         var db = mk('div', 'rch-logoform');
-        var dm = ctx.showModal('Edit Helmet Details', { bodyEl: db, accentHead: true });
+        var dm = ctx.showModal('Edit Helmet Details', { bodyEl: db });
         db.appendChild(mk('div', 'rch-label', 'Helmet name'));
         var n = mk('input', 'rch-input'); n.type = 'text'; n.maxLength = 60; n.value = p.name || ''; db.appendChild(n);
         db.appendChild(mk('div', 'rch-label rch-mt', 'Kind'));
@@ -1112,7 +1111,7 @@
       /* ---------------- Open popup: every saved design, with Open, Edit Details, Archive (and Restore, Delete Forever for archived ones) ---------------- */
       function openManage() {
         var mb = mk('div', 'rch-loadbody');
-        var mm = ctx.showModal(only ? 'Manage Helmet Designs' : 'Manage Helmet Design', { bodyEl: mb, wide: true, accentHead: true });
+        var mm = ctx.showModal(only ? 'Manage Helmet Designs' : 'Manage Helmet Design', { bodyEl: mb, wide: true });
         function load() {
           mb.innerHTML = ''; mb.appendChild(spin('Loading...'));
           fetchApi('adminListHelmetPresets', { token: token, params: { includeArchived: '1' } }).then(function (res) {
@@ -1182,7 +1181,7 @@
       /* ---------------- Logo Manager ---------------- */
       function openLogoManager() {
         var lb = mk('div', 'rch-loadbody');
-        var lm = ctx.showModal('Logo Manager', { bodyEl: lb, wide: true, accentHead: true });
+        var lm = ctx.showModal('Logo Manager', { bodyEl: lb, wide: true });
         var all = [];
         function load() {
           lb.innerHTML = ''; lb.appendChild(spin('Loading...'));
@@ -1274,7 +1273,7 @@
         var d = { name: logo ? logo.name : '', category: logo ? (logo.category || '') : '' };
         var data = '';                          // a newly picked picture
         var fb = mk('div', 'rch-logoform');
-        var fm = ctx.showModal(isNew ? 'Upload Logo' : 'Edit Logo', { bodyEl: fb, accentHead: true });
+        var fm = ctx.showModal(isNew ? 'Upload Logo' : 'Edit Logo', { bodyEl: fb });
         fb.appendChild(mk('div', 'rch-label', isNew ? 'Picture (PNG, WebP or JPEG; transparent PNG works best)' : 'Replace picture (optional)'));
         var fi = mk('input'); fi.type = 'file'; fi.accept = 'image/png,image/webp,image/jpeg'; fb.appendChild(fi);
         var fstat = mk('p', 'rch-hint'); fb.appendChild(fstat);

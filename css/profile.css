@@ -82,7 +82,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-tip-line { white-space: nowrap; color: var(--rcl-ink-dim); }
 
 /* Season Stats */
-.rdp-selects { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+
 .rdp-select { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); border: 1px solid var(--rcl-line-bright); border-radius: 6px; padding: 8px 12px; font-size: 14px; font-family: var(--rc-font-body); max-width: 100%; }
 .rdp-select:disabled { opacity: .55; }
 .rdp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 18px; }
@@ -92,14 +92,14 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-tile-sub { font-size: 11.5px; color: var(--rcl-ink-dim); }
 .rdp-charts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 22px; }
 .rdp-chart { border: 1px solid var(--rcl-line); border-radius: 8px; padding: 12px; background: var(--rcl-bg-raised-2); min-width: 0; }
-.rdp-chart-title { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink); margin-bottom: 2px; }
+
 .rdp-chart-sub { font-size: 11.5px; color: var(--rcl-ink-faint); margin-bottom: 8px; }
 .rdp-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .rdp-axis { font-size: 10px; fill: var(--rcl-ink-faint); font-family: var(--rc-font-body); }
 .rdp-grid-line { stroke: #2c2d31; stroke-width: 1; }
 .rdp-race-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
 .rdp-race-col { min-width: 0; }
-.rdp-race-col-title { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink); border-bottom: 1px solid var(--rcl-line-bright); padding-bottom: 6px; margin-bottom: 10px; }
+
 .rdp-light { background: #fff; color: #1f2937; border-radius: 8px; padding: 14px; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; min-width: 0; overflow-x: auto; }
 .rdp-laps { color: var(--rcl-ink); }
 .rdp-laps .rcc-laps-row { color: var(--rcl-ink); border-bottom: 1px solid #25262a; min-width: 760px; grid-template-columns: 52px 44px 82px 68px 68px 68px 70px 48px 118px 76px; font-size: 12px; }
@@ -123,11 +123,12 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-story-more:hover { text-decoration: underline; }
 .rdp-stories-list { }
 .rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 8px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
-.rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--rc-red); background: var(--rcl-bg-raised-2); }
-.rdp-modal-title { font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink); font-size: 16px; }
-.rdp-modal-x { background: none; border: 0; color: var(--rcl-ink-dim); font-size: 26px; line-height: 1; cursor: pointer; padding: 0 4px; }
-.rdp-modal-body { padding: 18px 22px 24px; overflow-y: auto; color: var(--rcl-ink-dim); line-height: 1.65; font-size: 15px; }
+.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--rcl-line); background: var(--rcl-bg-raised); border-radius: 10px 10px 0 0; } /* same header as the Account page popups, in the dark colors */
+.rdp-modal-title { margin: 0; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rcl-ink); font-size: 16px; }
+.rdp-modal-x { flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--rcl-ink-faint); font-size: 20px; line-height: 1; cursor: pointer; }
+.rdp-modal-x:hover { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); }
+.rdp-modal-body { padding: 20px; overflow-y: auto; color: var(--rcl-ink-dim); line-height: 1.65; font-size: 15px; }
 .rdp-modal-body h3 { font-family: var(--rc-font-heading); font-size: 17px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rcl-ink); margin: 18px 0 6px; }
 .rdp-modal-body p { margin: 0 0 12px; }
 
@@ -140,8 +141,6 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-rival-flag { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
 .rdp-rival-tags { font-size: 12.5px; color: var(--rcl-ink-dim); margin-top: 3px; line-height: 1.45; }
-.rdp-rival-h2h { text-align: right; font-family: var(--rc-font-heading); font-weight: 800; font-size: 20px; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
-.rdp-rival-h2h small { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--rcl-ink-faint); text-transform: uppercase; }
 
 /* Team History */
 .rdp-teams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -167,7 +166,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
   .rdp-ach-value { font-size: 30px; }
   .rdp-form-sq { width: 36px; height: 36px; font-size: 14px; }
   .rdp-rival { grid-template-columns: 40px 1fr; }
-  .rdp-rival-h2h { grid-column: 2; text-align: left; }
+  
 }
 
 /* Team History: three containers on one row; they stack on phones. */
@@ -191,8 +190,8 @@ a.rdp-rival-name:hover { text-decoration: underline; }
   .rdp-tiles { grid-template-columns: repeat(9, minmax(0, 1fr)); }
   .rdp-tile { padding: 10px 8px; min-width: 0; }
   .rdp-tile-label, .rdp-tile-sub { overflow-wrap: anywhere; }
-  .rdp-selects { flex-wrap: nowrap; }
-  .rdp-selects .rdp-select { flex: 0 1 auto; min-width: 0; }
+  
+  
 }
 
 /* Profile tweaks (Matt, 2026-10-14) */
@@ -257,7 +256,6 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-key-leader { border-top: 2.5px dashed #c9a227; }
 .rdp-key-avg { border-top: 2.5px solid #8b929b; }
 
-
 /* ===== LIGHT THEME (Matt, 2026-10-17): light-surface versions of the spots above that were hard-coded dark ===== */
 .rcc-page .rdp-ach { background: linear-gradient(160deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
 .rcc-page .rdp-form-sq { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
@@ -274,7 +272,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-story-more,
 .rcc-page .rdp-see-more { color: var(--rcc-navy); }
 .rcc-page .rdp-modal-bg { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
-.rcc-page .rdp-modal { box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+.rcc-page .rdp-modal { box-shadow: 0 20px 50px rgba(23,23,23,.25); }
 .rcc-page .rdp-rival-rank { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
 .rcc-page .rdp-rival-season { background: var(--rcl-bg-raised-2); }
 .rcc-page .rdp-team { background: linear-gradient(170deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
@@ -324,9 +322,9 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 .rdp-head-pic::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background-repeat: no-repeat; background-position: center; background-size: cover; opacity: 0.5; }
 .rdp-head-pic > * { position: relative; z-index: 1; }
 .rdp-head-avatar::before { background-image: url('../assets/images/profile_avatar.webp'); }
-.rdp-head-stats::before { background-image: url('../assets/images/profile_stats.webp'); }
+
 .rdp-head-season::before { background-image: url('../assets/images/profile_season.webp'); }
-.rdp-head-form::before { background-image: url('../assets/images/profile_form.webp'); }
+
 .rdp-head-team::before { background-image: url('../assets/images/profile_history.webp'); }
 
 /* White titles with a slight drop shadow on the picture headers (Matt, 2026-10-26). */

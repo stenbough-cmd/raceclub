@@ -85,7 +85,6 @@ function _rccSortClasses(list, nameOf) {
     return ai - bi;
   });
 }
-function _rccClassLabel(cls) { return cls === 'Hypercar' ? 'Hypercar' : cls; }
 function _rccClassPill(cls) {
   var colors = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
   var pill = _rccText('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colors[cls] ? ' ' + colors[cls] : ''), cls === 'Hypercar' ? 'HY' : cls);
@@ -126,13 +125,13 @@ function _rccFlag(className, country) {
 }
 function _rccLapTime(raw) {
   var t = Number(raw);
-  if (raw === null || raw === undefined || raw === '' || isNaN(t) || t <= 0) return '--';
+  if (raw === null || raw === undefined || raw === '' || isNaN(t) || t <= 0) return '—';
   var ms = Math.round(t * 1000);
   var m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
   return m + ':' + (s < 10 ? '0' : '') + s + '.' + ('00' + r).slice(-3);
 }
 function _rccTotalTime(seconds) {
-  if (seconds === null || seconds === undefined || isNaN(seconds)) return '--';
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '—';
   var ms = Math.round(seconds * 1000);
   var h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000), r = ms % 1000;
   return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2) + '.' + ('00' + r).slice(-3);
@@ -148,13 +147,6 @@ function _rccFormatDate(iso) {
   var d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-function _rccFormat12h(hhmm) {
-  if (!hhmm) return '';
-  var p = String(hhmm).split(':');
-  var h = parseInt(p[0], 10);
-  if (isNaN(h) || p.length < 2) return hhmm;
-  return ((h % 12) || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM');
 }
 // In-game race start (Matt, 2026-10-09): one of RCC_RACE_STARTS. Older rounds stored a clock time
 // ("14:00"), which maps to the matching part of the day.
@@ -212,7 +204,7 @@ function _rccShowPageLoader(message) {
   document.documentElement.classList.remove('rcl-has-cache');
   var loader = _rccEl('div', 'rcl-page-loader');
   loader.id = 'rcl-page-loader';
-  var card = _rccSpinner(message || 'Loading Championship\u2026');
+  var card = _rccSpinner(message || 'Loading championship...');
   card.classList.add('rc-inline-spinner-page');
   loader.appendChild(card);
   document.body.insertBefore(loader, document.body.firstChild);
@@ -413,7 +405,7 @@ function rccRenderHero(page) {
   // No drop shadow on OFFLINE SEASON MANAGER (Matt, 2026-10-14).
   seasonEl.classList.toggle('rcc-hero-offline', !page || !page.hasSeason);
   if (!page || !page.hasSeason) {
-    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Offline Season Manager'));
+    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Single Player Championship'));
     return;
   }
   seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
@@ -427,7 +419,7 @@ function rccRenderHero(page) {
 function rccOpenWelcomeTip() {
   var m = rccOpenModal('Welcome', { narrow: true });
   m.dialog.classList.add('rcc-light-dialog');
-  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Welcome to Race Club Championship. To start your first offline season, press Create Season in the Single Player Championship section of your Dashboard.'));
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Welcome to the Single Player Championship. To start your first season, press Create Season in the Single Player Championship section of your Dashboard.'));
 }
 
 function rccRenderActionBar(page) {
@@ -452,7 +444,7 @@ function rccRenderActionBar(page) {
   var signedIn = !!getToken();
   if (signedIn) addLink('Dashboard', 'Account.html');
   else {
-    var login = addLink('Login', 'login.html');
+    var login = addLink('Log In', 'login.html');
     login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
   }
   addLink('League Hub', 'league.html');
@@ -978,23 +970,6 @@ function _rccPosBadge(idx, text) {
   return _rccText('div', 'rcl-standings-pos' + (RCC_METAL[idx] ? ' ' + RCC_METAL[idx] : ''), text !== undefined ? text : String(idx + 1));
 }
 
-function _rccIdentity(row, opts) {
-  opts = opts || {};
-  var identity = _rccEl('div', 'rcl-standings-identity' + (opts.dnf ? ' rcl-standings-identity-dnf' : ''));
-  var slot = _rccEl('div', 'rcl-standings-mfr-logo-slot');
-  // No logo (or it fails to load): the slot stays as empty space so every name in a table lines up.
-  if (row.manufacturer) slot.appendChild(_rccLogo('rcl-standings-mfr-logo', row.manufacturer));
-  identity.appendChild(slot);
-  var nameRow = _rccEl('div', 'rcl-standings-name-row' + (opts.wrap ? ' rcc-name-row-wrap' : ''));
-  nameRow.appendChild(row.isPlayer && !opts.nameOverride ? _rccPlayerName('rcl-standings-name rcc-me-text', row.name)
-    : _rccText('span', 'rcl-standings-name' + (row.isPlayer ? ' rcc-me-text' : ''), opts.nameOverride || row.name));
-  if (row.carNumber && !opts.hideNumber) nameRow.appendChild(_rccText('span', 'rcl-standings-carnum', '#' + row.carNumber));
-  if (opts.sub) nameRow.appendChild(_rccText('span', 'rcl-standings-team', opts.sub));
-  else if (row.teamName && !opts.hideTeam) nameRow.appendChild(_rccText('span', 'rcl-standings-team', row.teamName));
-  identity.appendChild(nameRow);
-  return identity;
-}
-
 // One board per class (Hypercar first, then LMP2, LMP3, LMGT3, LMGTE), each in its own panel.
 // Columns: Pos | maker logo | N° | Driver or Team | one column per round (track flag header; points,
 // bonus in superscript) | Total. Drivers: crew-mates of one car with equal points share a line and a rank
@@ -1017,19 +992,6 @@ function _rccStandingsLines(cls, kind) {
     lines.push(line);
   });
   return lines;
-}
-
-function _rccMetalSwitch(view, onChange) {
-  var sw = _rccEl('button', 'rcc-metal-switch' + (view === 'teams' ? ' rcc-metal-switch-teams' : ''));
-  sw.type = 'button';
-  sw.setAttribute('role', 'switch');
-  sw.setAttribute('aria-checked', view === 'teams' ? 'true' : 'false');
-  sw.setAttribute('aria-label', 'Show team standings');
-  sw.appendChild(_rccEl('span', 'rcc-metal-knob'));
-  sw.appendChild(_rccText('span', 'rcc-metal-label rcc-metal-label-drivers', 'Drivers'));
-  sw.appendChild(_rccText('span', 'rcc-metal-label rcc-metal-label-teams', 'Teams'));
-  sw.addEventListener('click', function () { onChange(view === 'teams' ? 'drivers' : 'teams'); });
-  return sw;
 }
 
 // Three grid cells for a board row: maker logo | car number | name. The logo slot always stays
@@ -1409,37 +1371,12 @@ function rccRenderManufacturers(page) {
   }
 }
 
-// ---------------------------------------------------------------------
-// RESULTS POPUP -- Race / Qualifying / My Laps for any imported round
-// ---------------------------------------------------------------------
-function _rccCategoryBreakdown(cls) {
-  var wrap = _rccEl('div', 'rcl-race-categories rcl-race-categories-inclass');
-  function cat(icon, title, name, num, kind) {
-    if (!name) return;
-    var c = _rccEl('div', 'rcl-race-category');
-    var h = _rccEl('div', 'rcl-race-category-title');
-    h.appendChild(_rccEl('span', 'rcl-race-category-icon', icon));
-    h.appendChild(document.createTextNode(title));
-    c.appendChild(h);
-    var r = _rccEl('div', 'rcl-race-category-row' + (kind ? ' rcl-race-category-row-' + kind : ''));
-    r.appendChild(_rccText('span', 'rcl-race-category-name', name));
-    if (num) r.appendChild(_rccText('span', 'rcl-race-category-number', '#' + num));
-    c.appendChild(r);
-    wrap.appendChild(c);
-  }
-  cat(_RCC_ICON_TROPHY, 'Winner', cls.classWinner, cls.classWinnerCarNumber, 'winner');
-  if (cls.classMostLapsLedCount) cat(_RCC_ICON_LAPS_LED, 'Most Laps Led', cls.classMostLapsLedDriver, cls.classMostLapsLedCarNumber);
-  cat(_RCC_ICON_POLE, 'Pole Sitter', cls.classPoleSitter, cls.classPoleSitterCarNumber);
-  cat(_RCC_ICON_STOPWATCH, 'Fastest Lap', cls.classFastestLapDriver, cls.classFastestLapCarNumber);
-  return wrap;
-}
-
 function _rccGap(row, ref) {
-  if (!ref || row.finishTimeSeconds === null || ref.finishTimeSeconds === null) return '--';
+  if (!ref || row.finishTimeSeconds === null || ref.finishTimeSeconds === null) return '—';
   var down = (ref.laps || 0) - (row.laps || 0);
   if (down > 0) return '+' + down + ' Lap' + (down === 1 ? '' : 's');
   var g = row.finishTimeSeconds - ref.finishTimeSeconds;
-  return g <= 0 ? '--' : '+' + g.toFixed(3);
+  return g <= 0 ? '—' : '+' + g.toFixed(3);
 }
 
 // Race Details: what the results file says about the race (length, laps, failures, damage, fuel and
@@ -1589,13 +1526,13 @@ function _rccRaceBody(result, el) {
       recapCells.forEach(function (cell) { r.appendChild(cell); });
       r.appendChild(_rccText('div', 'rcl-race-row-num', String(row.laps || 0)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccTotalTime(row.finishTimeSeconds)));
-      r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? '--' : _rccGap(row, rows[idx - 1])));
+      r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? '—' : _rccGap(row, rows[idx - 1])));
       r.appendChild(_rccText('div', 'rcl-race-row-gap', idx === 0 ? 'Leader' : _rccGap(row, leader)));
-      var kmh = '--';
+      var kmh = '—';
       if (result.trackLengthMeters && row.laps && row.finishTimeSeconds > 0) kmh = ((result.trackLengthMeters * row.laps / 1000) / (row.finishTimeSeconds / 3600)).toFixed(1);
       r.appendChild(_rccText('div', 'rcl-race-row-avg', kmh));
       r.appendChild(_rccText('div', 'rcl-race-row-bestlap', _rccLapTime(row.bestLapTime)));
-      r.appendChild(_rccText('div', 'rcl-race-row-pts', row.points === null || row.points === undefined ? '--' : '+' + row.points));
+      r.appendChild(_rccText('div', 'rcl-race-row-pts', row.points === null || row.points === undefined ? '—' : '+' + row.points));
       w.appendChild(r);
     });
     if (awards.length) {
@@ -1667,7 +1604,7 @@ function _rccQualifyingBody(result, el) {
   if (!result || !result.hasQualifying || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Qualifying Data', 'No qualifying session was imported for this round.')); return; }
   result.classes.forEach(function (cls) {
     var w = _rccEl('div', 'rcl-race-class');
-    w.appendChild(_rccRecapHeader(cls.className + ' Qualify Results', result));
+    w.appendChild(_rccRecapHeader(cls.className + ' Qualifying Results', result));
     var head = _rccEl('div', 'rcl-race-col-head rcl-race-grid-recap rcl-race-grid-recap-q');
     ['Pos', 'Manu', 'N<sup class="rcc-board-num-deg">&deg;</sup>', 'Driver', 'Best Lap', 'Sector 1', 'Sector 2', 'Sector 3', 'Avg (KM/H)'].forEach(function (t) { head.appendChild(_rccEl('div', null, t)); });
     w.appendChild(head);
@@ -1679,7 +1616,7 @@ function _rccQualifyingBody(result, el) {
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector1)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector2)));
       r.appendChild(_rccText('div', 'rcl-race-row-num', _rccLapTime(row.sector3)));
-      r.appendChild(_rccText('div', 'rcl-race-row-avg', row.avgKmh !== null && row.avgKmh !== undefined ? String(row.avgKmh) : '--'));
+      r.appendChild(_rccText('div', 'rcl-race-row-avg', row.avgKmh !== null && row.avgKmh !== undefined ? String(row.avgKmh) : '—'));
       w.appendChild(r);
     });
     el.appendChild(w);
@@ -1694,7 +1631,7 @@ function _rccMyLapsBody(result, el) {
     var w = _rccEl('div', 'rcl-race-class');
     // Same recap header as every other page (Matt, 2026-10-20); the session's numbers move to a line under it.
     w.appendChild(_rccRecapHeader(s.kind === 'race' ? 'My Race Laps' : 'My Qualifying Laps', result));
-    var sum = 'P' + (s.classPosition || '-') + ' in class · Best ' + _rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
+    var sum = 'P' + (s.classPosition || '—') + ' in class · Best ' + _rccLapTime(s.bestLapTime) + (s.kind === 'race' ? ' · ' + s.pitstops + ' stop' + (s.pitstops === 1 ? '' : 's') : '');
     w.appendChild(_rccText('div', 'rcc-laps-summary', sum));
     var table = _rccEl('div', 'rcc-laps-table');
     var head = _rccEl('div', 'rcc-laps-row rcc-laps-head');
@@ -1706,14 +1643,14 @@ function _rccMyLapsBody(result, el) {
     s.laps.forEach(function (l) {
       var r = _rccEl('div', 'rcc-laps-row' + (Number(l.lapTime) === best ? ' rcc-laps-best' : '') + (l.pit ? ' rcc-laps-pit' : ''));
       r.appendChild(_rccText('div', null, String(l.lapNum) + (l.pit ? ' PIT' : '')));
-      r.appendChild(_rccText('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '--'));
+      r.appendChild(_rccText('div', null, l.positionAtLap ? 'P' + l.positionAtLap : '—'));
       r.appendChild(_rccText('div', Number(l.lapTime) === best ? 'rcc-laps-fastest' : null, _rccLapTime(l.lapTime)));
       r.appendChild(_rccText('div', null, _rccLapTime(l.sector1)));
       r.appendChild(_rccText('div', null, _rccLapTime(l.sector2)));
       r.appendChild(_rccText('div', null, _rccLapTime(l.sector3)));
-      r.appendChild(_rccText('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '--'));
-      r.appendChild(_rccText('div', null, l.fuel !== '' ? Math.round(Number(l.fuel) * 100) + '%' : '--'));
-      var tw = [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' ? '--' : Math.round(Number(v) * 100); }).join(' ');
+      r.appendChild(_rccText('div', null, l.topSpeed ? Number(l.topSpeed).toFixed(1) : '—'));
+      r.appendChild(_rccText('div', null, l.fuel !== '' ? Math.round(Number(l.fuel) * 100) + '%' : '—'));
+      var tw = [l.tireWearFL, l.tireWearFR, l.tireWearRL, l.tireWearRR].map(function (v) { return v === '' ? '—' : Math.round(Number(v) * 100); }).join(' ');
       r.appendChild(_rccText('div', null, tw));
       r.appendChild(_rccText('div', null, String(l.frontCompound || '').replace(/^\d+,/, '')));
       table.appendChild(r);
@@ -1776,7 +1713,7 @@ function rccOpenResults(roundId, kind) {
   kindSel.appendChild(new Option('Race Details', 'details'));
   kindSel.appendChild(new Option('Highlights', 'highlights'));
   kindSel.appendChild(new Option('Race Results', 'race'));
-  kindSel.appendChild(new Option('Qualify Results', 'qualifying'));
+  kindSel.appendChild(new Option('Qualifying Results', 'qualifying'));
   kindSel.appendChild(new Option('Driver Report', 'driver'));
   kindSel.appendChild(new Option('Race Report', 'report'));
   kindSel.appendChild(new Option('My Laps', 'mylaps'));
@@ -2720,7 +2657,7 @@ function rccOpenUpload(roundId, lockRound) {
   var noQuali = ((page.seasonDetails || {}).raceSettings || {}).qualifying === 'No';
   var qFile = noQuali ? null : fileInput();
   var rFile = fileInput();
-  if (qFile) m.body.appendChild(_rccField('1. Qualify Results (XML)', qFile));
+  if (qFile) m.body.appendChild(_rccField('1. Qualifying Results (XML)', qFile));
   m.body.appendChild(_rccField(noQuali ? 'Race Results (XML)' : '2. Race Results (XML)', rFile));
   var row = _rccEl('div', 'rcc-btn-row rcc-btn-row-end');
   var go = _rccText('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
@@ -2868,15 +2805,6 @@ function rccOpenSeasonPreview() {
   });
   g.appendChild(list);
   m.body.appendChild(g);
-}
-
-// FIND A BUG? -- the site's own Feedback popup (js/header.js), opened on Bug Report.
-function rccOpenBugReport() {
-  if (typeof _rcOpenFeedbackModal !== 'function') { _rccToast('The feedback form could not be opened. Reload the page and try again.', 'error'); return; }
-  _rcOpenFeedbackModal();
-  var dialogs = document.querySelectorAll('.rcl-modal-dialog select, .rc-modal select');
-  var sel = dialogs.length ? dialogs[dialogs.length - 1] : null;
-  if (sel) { sel.value = 'Bug Report'; sel.dispatchEvent(new Event('change')); }
 }
 
 // ---------------------------------------------------------------------
@@ -3179,7 +3107,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (currentText) { try { rccRenderAll(JSON.parse(currentText)); } catch (err) { /* keep what is shown */ } }
       return;
     }
-    _rccShowPageLoader('Loading Season\u2026');
+    _rccShowPageLoader('Loading season...');
     _rccGetPage(seasonId).then(function (page) {
       if (myToken !== pickToken) return;
       if (_rccHandleAuthError(page)) return;
