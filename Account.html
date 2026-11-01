@@ -6365,7 +6365,11 @@
       btn.textContent = 'Backing up...';
       fetchApi('adminBackupNow', { token: token, timeoutMs: 180000 }).then(function (res) {
         btn.disabled = false; btn.textContent = label;
-        if (res && res.success) { showToast('Backup saved: ' + res.name + '. It is in your Drive folder Race Club Backups.', 'success'); return; }
+        if (res && res.success) {
+          if (res.championshipError) { showToast('Sheet backup saved (' + res.name + '), but the Championship data could NOT be copied: ' + res.championshipError, 'error'); return; }
+          showToast('Backup saved: ' + res.name + (res.championship ? ' and ' + res.championship : '') + '. It is in your Drive folder Race Club Backups.', 'success');
+          return;
+        }
         showToast((res && (res.message || res.error)) || 'Could not make the backup.', 'error');
       }).catch(function () {
         btn.disabled = false; btn.textContent = label;
