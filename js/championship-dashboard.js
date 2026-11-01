@@ -297,7 +297,14 @@
     panel.appendChild(mk('h3', 'rc-dash-card-title', 'Seasons'));
     var body = mk('div', '');
     panel.appendChild(body);
-    var spin = opts.spinner ? opts.spinner('Loading your championship...') : mk('p', 'rcd-note', 'Loading your championship...');
+    // Own loading markup, drawn straight on the container (no card, no popup look): the site's start lights in the site red.
+    // The red is set inline on the element so nothing else on the page can recolor it.
+    var spin = mk('div', 'rcd-loading');
+    spin.style.cssText = '--rc-red:#F21B0C;--rc-red-dark:#c81509;display:flex;flex-direction:column;align-items:center;gap:16px;padding:44px 0 40px;background:none;border:0;box-shadow:none;';
+    var spinLights = mk('div', 'rc-startlights');
+    for (var li = 0; li < 5; li++) spinLights.appendChild(mk('span', 'rc-startlight'));
+    spin.appendChild(spinLights);
+    spin.appendChild(mk('div', 'rc-loading-text', 'Loading your championship...'));
     body.appendChild(spin);
     function fail(msg) {
       body.innerHTML = '';
