@@ -304,12 +304,95 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
       // rather than an unhandled parse error further down the chain.
       return res.json();
     })
+    .then(function (data) {
+      if (data && data._pub) rcNoteDataRevs(data._pub);   // Apps Script just published data files (Publish.gs)
+      return data;
+    })
     .catch(function (err) {
       if (timer) clearTimeout(timer);
       if (timedOut) throw new Error('RC_FETCH_TIMEOUT');
       throw err;
     });
 }
+
+// ---- PUBLIC DATA FILES (GitHub Pages) ----
+// Public, read-only data is published by Apps Script as JSON files in the race-club-data repo (Publish.gs) and read
+// straight from GitHub Pages (about 20 ms) instead of calling Apps Script (about 1.6 s). fetchApi decides this itself,
+// so a page keeps calling fetchApi('getPublicRoundResults', ...) exactly as before and never knows which route answered.
+//   - Files are fetched from a fixed address with cache: 'no-cache': the browser asks GitHub "changed?" on every load
+//     (a tiny 304 reply when not), and nothing is kept in the browser.
+//   - A file is used only if it is valid (schema matches, has a revision) and is not older than the newest revision
+//     this browser has been told about. Apps Script adds `_pub` to the reply of any request that published a file,
+//     so the person who just saved never sees an older copy than their own save produced.
+//   - Missing, unreadable, slow (8 s) or older-than-expected file: the same request goes to Apps Script, and the
+//     first such request for a file also carries republish=1 so Apps Script writes the file for the next visitor.
+//   - Add ?source=api to any page address to skip files and use Apps Script only (for checking a page).
+var RC_DATA_BASE_URL = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
+var RC_DATA_SCHEMA = 1;                       // must match RC_PUBLISH_SCHEMA_ in Publish.gs
+var RC_DATA_FILE_TIMEOUT_MS = 8000;
+var RC_DATA_REVS_KEY_ = 'rc_pub_revs';        // tiny { path: { rev, t } } note, not data; entries expire after 15 minutes
+var RC_DATA_REVS_KEEP_MS_ = 15 * 60 * 1000;
+var RC_DATA_SOURCE = (function () {
+  try { var m = /[?&]source=(api|files)(?:&|$)/.exec(location.search); return m ? m[1] : 'files'; } catch (err) { return 'files'; }
+})();
+
+function _rcDataRoundPath_(p) {
+  return /^RND-\d{3,8}$/.test(String(p.roundId || '')) ? 'rounds/' + p.roundId + '.json' : null;
+}
+// action -> which file answers it and which part of the file is the answer (the same object the action returns).
+var RC_DATA_ROUTES_ = {
+  getPublicRoundResults: { file: _rcDataRoundPath_, pick: function (f) { return f.results; } },
+  getPublicRoundQualifying: { file: _rcDataRoundPath_, pick: function (f) { return f.qualifying; } }
+};
+
+function _rcDataRevs_() {
+  try {
+    var o = JSON.parse(localStorage.getItem(RC_DATA_REVS_KEY_) || '{}');
+    return (o && typeof o === 'object') ? o : {};
+  } catch (err) { return {}; }
+}
+// Called with the `_pub` map of any Apps Script reply: { 'rounds/RND-0001.json': rev, ... }.
+function rcNoteDataRevs(pub) {
+  if (!pub || typeof pub !== 'object') return;
+  try {
+    var now = Date.now(), revs = _rcDataRevs_(), keep = {};
+    Object.keys(revs).forEach(function (k) { if (revs[k] && now - revs[k].t < RC_DATA_REVS_KEEP_MS_) keep[k] = revs[k]; });
+    Object.keys(pub).forEach(function (k) {
+      var rev = Number(pub[k]);
+      if (rev && (!keep[k] || rev > keep[k].rev)) keep[k] = { rev: rev, t: now };
+    });
+    localStorage.setItem(RC_DATA_REVS_KEY_, JSON.stringify(keep));
+  } catch (err) { /* storage blocked: every file is then used as published, which is still correct for other visitors */ }
+}
+
+var _rcDataInflight_ = {};
+function _rcDataFile_(rel) {
+  if (_rcDataInflight_[rel]) return _rcDataInflight_[rel];
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = controller ? setTimeout(function () { controller.abort(); }, RC_DATA_FILE_TIMEOUT_MS) : null;
+  var opts = { cache: 'no-cache' };
+  if (controller) opts.signal = controller.signal;
+  var p = fetch(RC_DATA_BASE_URL + rel, opts).then(function (res) {
+    if (timer) clearTimeout(timer);
+    if (!res.ok) throw new Error('RC_DATA_' + res.status);
+    return res.json();
+  }, function (err) {
+    if (timer) clearTimeout(timer);
+    throw err;
+  }).then(function (f) {
+    if (!f || !f.meta || f.meta.schema !== RC_DATA_SCHEMA || typeof f.meta.rev !== 'number') throw new Error('RC_DATA_BAD');
+    var known = _rcDataRevs_()[rel];
+    if (known && Date.now() - known.t < RC_DATA_REVS_KEEP_MS_ && f.meta.rev < known.rev) throw new Error('RC_DATA_OLD');
+    return f;
+  });
+  _rcDataInflight_[rel] = p;
+  // Share one fetch between calls made together (Race and Qualifying tabs), then forget it so a later call is fresh.
+  var forget = function () { setTimeout(function () { if (_rcDataInflight_[rel] === p) delete _rcDataInflight_[rel]; }, 3000); };
+  p.then(forget, forget);
+  return p;
+}
+
+var _rcRepublished_ = {};
 
 // fetchApi(action, options) -> Promise<Object>
 // Wraps the fetch/text-plain/JSON pattern used throughout the source file. action: string, e.g.
@@ -319,6 +402,28 @@ function fetchApi(action, options) {
     var stagedAnswer = _rcStagedAnswer_(action, options);
     if (stagedAnswer) return stagedAnswer;
   }
+  var route = RC_DATA_ROUTES_[action];
+  if (route && RC_DATA_SOURCE === 'files' && (options.method || 'GET') === 'GET') {
+    var rel = route.file(options.params || {});
+    if (rel) {
+      return _rcDataFile_(rel).then(function (f) {
+        var res = route.pick(f);
+        if (!res || !res.success) throw new Error('RC_DATA_EMPTY');
+        return res;
+      }).catch(function () {
+        var o = Object.assign({}, options);
+        o.params = Object.assign({}, options.params);
+        if (!_rcRepublished_[rel]) { _rcRepublished_[rel] = true; o.params.republish = '1'; }
+        return _rcFetchApiLive_(action, o);
+      });
+    }
+  }
+  return _rcFetchApiLive_(action, options);
+}
+
+// The Apps Script route (what fetchApi was before data files).
+function _rcFetchApiLive_(action, options) {
+  options = options || {};
   var method = options.method || 'GET';
   var url = API_BASE_URL + '?action=' + encodeURIComponent(action);
   if (options.token) url += '&token=' + encodeURIComponent(options.token);

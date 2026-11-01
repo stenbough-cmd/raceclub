@@ -2477,7 +2477,11 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     // loader (.rcl-page-loader in league.html) and the Edit Profile popup on this same page
     // (rcOpenEditProfileModalInPlace, edit-profile.js), not the plain "Loading..." text this popup
     // used before.
-    resultsWrap.appendChild(_rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'details' ? 'Loading race details...' : sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : (sessionKind === 'penalties' ? 'Loading penalties...' : 'Loading round results...'))))));
+    // Round data now usually arrives from a data file in well under a tenth of a second (api.js). A spinner
+    // that flashed up and vanished in that time would look like a glitch, so it only appears when the
+    // wait is long enough to notice (150 ms); a fast load simply shows the finished page.
+    var spinnerEl = _rclBuildInlineSpinner_(isQualifying ? 'Loading qualifying results...' : (sessionKind === 'report' ? 'Loading race report...' : (sessionKind === 'details' ? 'Loading race details...' : sessionKind === 'highlights' ? 'Loading highlights...' : (sessionKind === 'driver' ? 'Loading driver reports...' : (sessionKind === 'penalties' ? 'Loading penalties...' : 'Loading round results...')))));
+    var spinnerTimer = setTimeout(function () { resultsWrap.appendChild(spinnerEl); }, 150);
     busy(true);
     // getPublicRoundQualifying -- a separate endpoint from getPublicRoundResults, since a Qualify
     // session's data (best lap + sectors, no finish position/gap/interval) has almost nothing in
@@ -2488,15 +2492,18 @@ function _rclOpenAllResultsModal(hub, preselectRoundId) {
     var roundRequest = archivedPart ? Promise.resolve(archivedPart)
       : fetchApi(isQualifying ? 'getPublicRoundQualifying' : 'getPublicRoundResults', { params: { roundId: roundId }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
     roundRequest.then(function (res) {
+      clearTimeout(spinnerTimer);
       busy(false);
       var result = (res && res.success) ? res.result : null;
       resultCache[cacheKey] = result;
       builder(result, resultsWrap);
       if (!isQualifying) applyPenOption(roundId, result);
     }, function () {
+      clearTimeout(spinnerTimer);
       busy(false);
       builder(null, resultsWrap);
     }).catch(function () {
+      clearTimeout(spinnerTimer);
       // Anything thrown while drawing must never leave the dropdowns locked.
       busy(false);
     });
