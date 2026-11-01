@@ -18,7 +18,7 @@
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=47"></script>
 <script src="js/helmet-editor.js?v=71"></script>
-<script src="js/championship-dashboard.js?v=15"></script>
+<script src="js/championship-dashboard.js?v=16"></script>
 </head>
 <body>
 
@@ -643,6 +643,8 @@
 
     // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
     // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
+    // Last known switch state (a hint only): if ON, start reading the championship file now, alongside the Apps Script call below.
+    try { if (typeof rcChampHint === 'function' && rcChampHint(profile.profileId) && typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
     var champHost = el('div', 'margin-top:34px;');
     var champOn = false;
     // Heading with the ON/OFF switch right after it. The setting is stored per member (Users.ChampEnabled) and arrives inside the
@@ -716,7 +718,7 @@
       champOn = !!(slice && slice.success && slice.enabled !== false);
       if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
       paintChampSwitch();
-      var panel = buildChampPanel(champOn ? slice : null);
+      var panel = buildChampPanel(null);
       if (panel) champBody.appendChild(panel);
       return panel && panel.rcdReady;
     });

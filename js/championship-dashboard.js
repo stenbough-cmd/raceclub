@@ -92,10 +92,23 @@
       RCC.token = opts.token;
       RCC.ownerId = profileId;
       var res = opts.page;
-      if (!res) return _rccGetPage('');
-      return res;
+      if (res) return res;
+      // A page requested ahead of time (rcPrefetchChampionshipPage) is used once; a failed one is simply asked for again.
+      var early = prefetched;
+      prefetched = null;
+      if (early) return early.catch(function () { return _rccGetPage(''); });
+      return _rccGetPage('');
     });
   }
+
+  // The dashboard asks for the championship file at the same moment it asks Apps Script for the rest, when this browser
+  // last saw the switch ON (hint only). If the server then says OFF, the answer is just never used.
+  var prefetched = null;
+  window.rcPrefetchChampionshipPage = function (opts, profileId) {
+    if (!opts || !opts.token || !profileId) return;
+    prefetched = fetchPage({ token: opts.token, spinner: opts.spinner }, profileId);
+    prefetched.catch(function () {});
+  };
 
   // ON/OFF is stored per member on the server (Users.ChampEnabled). This browser only keeps a HINT of the last value, so the
   // championship scripts can start downloading early; it never decides what is shown.
