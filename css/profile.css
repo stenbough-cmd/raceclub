@@ -196,7 +196,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 }
 
 /* Profile tweaks (Matt, 2026-10-14) */
-.rdp-form-spread { justify-content: space-between; }
+.rdp-form-spread { justify-content: flex-start; } /* left aligned with a gap, not stretched across the panel (Matt, 2026-11-01) */
 .rdp-select-full { display: block; width: 100%; box-sizing: border-box; }
 .rdp-catline { display: flex; align-items: center; gap: 12px; margin: 30px 0 22px; }
 .rdp-catline::before, .rdp-catline::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rcl-gold, #e0b64c); }
