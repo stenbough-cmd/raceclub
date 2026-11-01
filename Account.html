@@ -9253,6 +9253,14 @@
   // asyncDashCard/buildDashboardDataRows above.
   var dashboardData = fetchDashboardData(token);
 
+  // Start the Single Player Championship load at the same moment, so it arrives with the league cards (profile id from the cached profile).
+  try {
+    var cachedForChamp = JSON.parse(localStorage.getItem('raceclub_profile_cache') || 'null');
+    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcPreloadChampionship === 'function') {
+      window.rcPreloadChampionship({ token: token, profileId: cachedForChamp.profileId, showToast: showToast });
+    }
+  } catch (preErr) { /* the dashboard fetches it itself when there is no cache */ }
+
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
   var freshProfile = null;

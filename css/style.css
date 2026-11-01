@@ -1327,6 +1327,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    card. */
 .rc-dash-card-fade { opacity: 0; transition: opacity 0.55s ease; }
 .rc-dash-card-fade-in { opacity: 1; }
+/* First paint of the dashboard: every card is already loaded, so no fade -- everything shows at once. */
+.rc-dash-instant .rc-dash-card-fade { transition: none; }
 
 @media (max-width: 640px) {
   .rc-field-pair, .rc-field-trio, .rc-field-trio-name { grid-template-columns: 1fr; }
