@@ -77,6 +77,9 @@ body.rc-league-page.rcc-page {
 
 /* Manufacturers' podium rank numbers: the hub's pale gold/silver/bronze are tuned for black and
    disappear on white, so they're darkened here. */
+.rcc-page .rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 70%, var(--rc-carbon)); }
+.rcc-page .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: var(--rc-steel); }
+.rcc-page .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 40%, var(--rc-red-dark)); }
 
 /* Hero meta line under "Season N / Name" -- tucked right under it (negative margin eats part of
    the season line's own line-height). */
@@ -715,8 +718,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   .rcc-tt-tile-name { font-size: 13px; }
 }
 /* Team podium: line the tiles up from the top so a long team name that wraps can't push a car or
-   rank line out of place; P1 sits 28px higher than P2 and P3 (16px on phones), like Manufacturers. */
+   rank line out of place; P1 sits 50px higher than P2 and P3 (28px on phones), like Manufacturers. */
 .rcc-tt-podium { align-items: flex-start; }
+.rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p1 { margin-bottom: 0; }
+.rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 50px; }
+@media (max-width: 640px) { .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; } }
 
 /* Calendar carousel: more room above and below (Matt, 2026-10-13), even on both sides: about 83px
    from the panels above to the card's text, and from the card's buttons to the board below. The
