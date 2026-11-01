@@ -33,7 +33,7 @@ var RCC_HELP_SECTIONS = [
   {
     id: 'create-season', num: '2', title: 'Creating a Season',
     html:
-      '<p>Open <strong>Season Tools</strong> in the black bar and choose <strong>Create Season</strong>. The popup is laid out in six parts.</p>' +
+      '<p>Open your <strong>Dashboard</strong>, go to the <strong>Single Player Championship</strong> section and press <strong>Create Season</strong>. The popup is laid out in six parts.</p>' +
       '<ol class="rcc-help-steps">' +
       '<li><strong>Season.</strong> Give the season a name, then pick the series (WEC or ELMS) and the year. Together they decide which cars you race against, and they should match the series and year you choose in the game. Only years with cars available are listed.</li>' +
       '<li><strong>Classes.</strong> Tick the classes you want to race. Classes with no cars in that series and year are grayed out, and the number next to each class shows how many cars it adds to the grid.</li>' +
@@ -42,9 +42,9 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Points.</strong> Pick the length of a Sprint, Medium and Long race, from 15m up to 24h, and the points for P1 to P10 in each. You can also award 0 to 5 bonus points for Pole Position, Fastest Lap and Most Laps Led. Points are scored within each class.</li>' +
       '<li><strong>Sessions.</strong> First choose the settings every round shares, which are the start type (Rolling or Fast), the RealRoad time scale and whether there is a qualifying session. If you choose <strong>No (Random start)</strong>, the game sets a random grid, you only upload the Race file, and there is no pole bonus. Then add your rounds in the order you want to race them. Each round has a track, a layout, a race length, a weather preset (Sunny, Cloudy, Rainy or Real World) and an in-game race start (Morning, Midday, Afternoon, Evening or Night). If you leave the event name blank, the round uses the season name.</li>' +
       '</ol>' +
-      '<p>Click <strong>Create Season</strong> at the bottom of the popup. Next, click <strong>Choose Your Team</strong> in the Season Preview section of the page, pick a class and a car, and click <strong>Join This Team</strong>. That car is your seat for the whole season.</p>' +
+      '<p>Click <strong>Create Season</strong> at the bottom of the popup. Next, click <strong>Choose Your Team</strong> in the Single Player Championship section of your Dashboard, pick a class and a car, and click <strong>Join This Team</strong>. That car is your seat for the whole season.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
-      '<li><strong>Season Preview</strong>, at the top of Season Tools in the black bar, shows every setting and round in the season on screen, so you can check them before you set up a race. Your Current Seat is at the top of it. Create Season stays in Season Tools, ready for when this season ends.</li>' +
+      '<li><strong>Season Preview</strong>, in the Single Player Championship section of your Dashboard, shows every setting and round in the season on screen, so you can check them before you set up a race. Your Current Seat is at the top of it. Create Season stays there too, ready for when this season ends.</li>' +
       '<li>Edit Season can change almost anything at any time, including the name, the Difficulty and Advanced settings, the start type, the RealRoad time scale and any round that has not been raced yet. The series, year, classes, points and bonuses are fixed once the season is created. The qualifying setting is fixed once a round has results.</li>' +
       '<li>Rounds with results are locked and keep their round number. You can add, remove and reorder the rounds after them, but no round can be moved or added in front of them.</li>' +
       '<li>Your choice of team is final for the season, so you cannot change cars partway through.</li>' +
@@ -100,7 +100,7 @@ var RCC_HELP_SECTIONS = [
     id: 'upload', num: '5', title: 'Uploading Your Results',
     html:
       '<ol class="rcc-help-steps">' +
-      '<li><strong>Click Upload Results</strong> in Season Tools, or UPLOAD RESULTS on the calendar card of the next round.</li>' +
+      '<li><strong>Click Upload Results</strong> in the Single Player Championship section of your Dashboard, or UPLOAD RESULTS on the calendar card of the next round.</li>' +
       '<li><strong>Check the round.</strong> Rounds are uploaded in calendar order, so the popup always shows the next round without results. A later round cannot be uploaded until every round before it has results.</li>' +
       '<li><strong>For file 1</strong>, choose the Qualifying file (…Q1.xml). Seasons without a qualifying session skip this step.</li>' +
       '<li><strong>For file 2</strong>, choose the Race file (…R1.xml).</li>' +
@@ -108,7 +108,7 @@ var RCC_HELP_SECTIONS = [
       '</ol>' +
       '<p>The files are checked before anything is saved. They must be a Qualifying file and a Race file from the same weekend (or just the Race file when your season has no qualifying), raced at the round’s track and at least as long as the round, with you in your own car and only cars from your season’s grid. Cars in the files that are missing from your grid are added for you. If more than 6 of them are cars Race Club does not know yet, the upload stops. Whenever something is wrong, a message in the lower right explains it and nothing is saved, so you can fix the problem and upload again. The one exception is the track name: when the name in the files looks different from the round’s track, you are asked whether to upload anyway. Choose Upload Anyway only when it is the same track under a slightly different name in the game; otherwise choose Cancel and pick the right files.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Length</strong>The race in the game has to be the same length as the round on your calendar, or longer. If it is shorter, the upload is refused and nothing is saved. For example, a Sprint round of 40 minutes accepts a race of 40 minutes or more, but not a race of 30 minutes. A longer race is accepted and still scores the round’s own points table, so a 60 minute race on a 40 minute Sprint round scores Sprint points. If you have to race a shorter length, use Edit Season to change the round’s race length before you upload.</div>' +
-      '<p>If you upload the wrong files, click <strong>Erase Results</strong> in Season Tools and upload again. Only your latest round with results can be erased. The round stays on the calendar.</p>'
+      '<p>If you upload the wrong files, click <strong>Erase Results</strong> in the Single Player Championship section of your Dashboard and upload again. Only your latest round with results can be erased. The round stays on the calendar.</p>'
   },
   {
     id: 'recap', num: '6', title: 'Race Recap, Driver Report and Standings',
@@ -155,9 +155,9 @@ var RCC_HELP_SECTIONS = [
     html:
       '<ol class="rcc-help-steps">' +
       '<li><strong>Upload every round.</strong> A season counts toward your career only when it ends after the last round’s results are uploaded.</li>' +
-      '<li><strong>Click End Season</strong> in Season Tools and confirm.</li>' +
+      '<li><strong>Click End Season</strong> in the Single Player Championship section of your Dashboard and confirm.</li>' +
       '<li><strong>The season is complete.</strong> The standings become final and the season can no longer be edited.</li>' +
-      '<li><strong>Start the next one.</strong> Choose Create Season in Season Tools. Your past seasons stay available from the Season dropdown in the black bar.</li>' +
+      '<li><strong>Start the next one.</strong> Press Create Season on your Dashboard. Your past seasons stay available from the Season dropdown in the black bar.</li>' +
       '</ol>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Changed Your Mind?</strong>If you are unhappy with a season, you have two choices. You can click End Season before every round is raced and type END SEASON to confirm, which saves it as an unfinished season. Its standings stay on this page, but an unfinished season never counts toward your career. Or you can click Delete Season, which removes the season you are viewing along with its rounds, your team signing and every result and lap. Deleting cannot be undone, so you will be asked to type DELETE SEASON first.</div>' +
       '<p>If you find something that doesn’t work, open the menu under your name at the top of the page (the menu button on a phone), choose <strong>Feedback</strong> and let us know.</p>'

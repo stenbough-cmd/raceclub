@@ -476,7 +476,7 @@ function rccRenderHero(page) {
 function rccOpenWelcomeTip() {
   var m = rccOpenModal('Welcome', { narrow: true });
   m.dialog.classList.add('rcc-light-dialog');
-  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Welcome to Race Club Championship. To start your first offline season, open the Season Tools menu in the black bar and choose Create Season.'));
+  m.body.appendChild(_rccText('p', 'rcc-confirm-text', 'Welcome to Race Club Championship. To start your first offline season, press Create Season in the Single Player Championship section of your Dashboard.'));
 }
 
 function rccRenderActionBar(page) {
@@ -489,16 +489,6 @@ function rccRenderActionBar(page) {
 
   var hasSeason = !!(page && page.hasSeason);
   var active = hasSeason && !page.seasonEnded;
-  function add(label, enabled, onClick, why, into) {
-    var host = into || links;
-    var b = _rccText('button', 'rcc-actionbar-link', label);
-    b.type = 'button';
-    if (RCC.demo && RCC_DEMO_LOCKED.indexOf(label) !== -1) { _rccDemoLock(b); host.appendChild(b); return; }
-    b.disabled = !enabled;
-    if (!enabled && why) b.title = why;
-    if (enabled) b.addEventListener('click', onClick);
-    host.appendChild(b);
-  }
   // The black bar is the site navbar (Matt, 2026-10-27). First link: DASHBOARD (Account.html) when
   // signed in, LOGIN (white, not gold) when not; then League Hub and Championship. Signed-in members
   // also get Season Tools at the end. There is no Home link (the home page is an advertisement).
@@ -519,59 +509,8 @@ function rccRenderActionBar(page) {
   var here = addLink('Championship', 'championship.html');
   here.classList.add('rcc-actionbar-current');
   here.setAttribute('aria-current', 'page');
-  // Season Tools only for signed-in members (Matt, 2026-10-27).
-  // Season Tools (Matt, 2026-10-13): a vertical dropdown under the link, like the avatar menu. Click
-  // opens or closes it; clicking or tapping anywhere else, tabbing out of it or Escape closes it.
-  var tools = _rccEl('span', 'rcc-tools');
-  var toolsBtn = _rccText('button', 'rcc-actionbar-link rcc-tools-toggle', 'Season Tools');
-  toolsBtn.type = 'button';
-  toolsBtn.setAttribute('aria-expanded', 'false');
-  var menu = _rccEl('div', 'rcc-tools-menu');
-  menu.id = 'rcc-tools-menu';
-  toolsBtn.setAttribute('aria-controls', menu.id);
-  var menuLinks = _rccEl('div', 'rcc-tools-links');
-  menu.appendChild(menuLinks);
-  tools.appendChild(toolsBtn);
-  tools.appendChild(menu);
-  if (signedIn) links.appendChild(tools);
-  function setOpen(on) {
-    tools.classList.toggle('rcc-tools-open', on);
-    toolsBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
-    menuLinks.querySelectorAll('button').forEach(function (b) { b.tabIndex = on ? 0 : -1; });
-  }
-  toolsBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!tools.classList.contains('rcc-tools-open')); });
-  tools.addEventListener('focusout', function (e) { if (!e.relatedTarget || !tools.contains(e.relatedTarget)) setOpen(false); });
-  tools.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); toolsBtn.focus(); } });
-  if (!RCC.toolsDocClick) {
-    RCC.toolsDocClick = true;
-    document.addEventListener('click', function (e) {
-      var t = document.querySelector('.rcc-tools.rcc-tools-open');
-      if (t && !t.contains(e.target)) { t.classList.remove('rcc-tools-open'); var tb = t.querySelector('.rcc-tools-toggle'); if (tb) tb.setAttribute('aria-expanded', 'false'); }
-    });
-  }
-  // Season Tools, top to bottom (Matt, 2026-10-27): Season Preview (Welcome when there is no season;
-  // Current Seat is now at the top of its popup), a divider, the season tools, a divider, Help.
-  function divider() { menuLinks.appendChild(_rccEl('hr', 'rcc-tools-divider')); }
-  if (hasSeason) add('Season Preview', true, rccOpenSeasonPreview, null, menuLinks);
-  else add('Welcome', true, rccOpenWelcomeTip, null, menuLinks);
-  divider();
-  // Create Season always lives in Season Tools (Matt, 2026-10-17); it waits while a season is running.
-  var running = !!(page && page.hasActiveSeason);
-  add('Create Season', !running, rccOpenSeasonWizard.bind(null, null), 'End your current season before creating a new one.', menuLinks);
-  add('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.', menuLinks);
-  add('End Season', active, rccOpenEndSeason, 'No active season to end.', menuLinks);
-  add('Delete Season', hasSeason, rccOpenDeleteSeason, 'No season to delete.', menuLinks);
-  // Team Information has no link of its own: the team in the header subtitle opens it.
-  // Choose Your Team lives only in the Season Preview container (Matt, 2026-10-09), not in this bar.
-  var cal = (page && page.calendar) || [];
-  var anyEmpty = cal.some(function (c) { return !c.hasResults; });
-  var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
-  add('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
-    !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.'), menuLinks);
-  add('Erase Results', active && anyResults, rccOpenErase, !active ? 'No active season.' : 'No results to erase yet.', menuLinks);
-  divider();
-  add('Help', true, rccOpenHelp, null, menuLinks);
-  setOpen(false);
+  // The Season Tools menu left this bar (Matt, 2026-11-01): the season tools, Season Preview, Choose Your Team and Help now live in the
+  // SINGLE PLAYER CHAMPIONSHIP container on the Account dashboard (js/championship-dashboard.js).
 
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
@@ -927,7 +866,7 @@ function rccRenderLastRace(page) {
   body.classList.remove('rcl-seasonfmt-modal-body');
   if (!page || !page.hasSeason) {
     titleEl.textContent = 'Welcome';
-    body.appendChild(_rccEmpty('No Championship Yet', 'Open Season Tools in the bar above and choose Create Season to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then join a team.'));
+    body.appendChild(_rccEmpty('No Championship Yet', 'Open the Single Player Championship section of your Dashboard and press Create Season to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then choose your team there.'));
     return;
   }
   // An ended season keeps showing Last Race and the last round's highlights; no Season Recap or
@@ -937,10 +876,9 @@ function rccRenderLastRace(page) {
     body.classList.add('rcl-seasonfmt-modal-body');
     if (!page.registration) {
       var cta = _rccEl('div', 'rcc-cta');
-      cta.appendChild(_rccText('div', 'rcc-cta-text', 'Your season is set up. Choose the team you will drive for to start racing.'));
-      var btn = _rccText('button', 'rc-btn-secondary', 'Choose Your Team');
-      btn.type = 'button';
-      btn.addEventListener('click', rccOpenRegistration);
+      cta.appendChild(_rccText('div', 'rcc-cta-text', 'Your season is set up. Choose the team you will drive for in the Single Player Championship section of your Dashboard to start racing.'));
+      var btn = _rccText('a', 'rc-btn-secondary', 'Go To Dashboard');
+      btn.href = 'Account.html';
       cta.appendChild(btn);
       body.appendChild(cta);
     }
