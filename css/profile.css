@@ -16,7 +16,7 @@ body.rc-league-page.rcc-page {
   background: var(--rcl-bg);
   color: var(--rcl-ink);
 }
-.rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
+.rcc-page .rcl-panel { box-shadow: var(--rc-shadow-sm); }
 .rcc-page .rcl-panel-title { text-shadow: none; }
 body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; }
 .rc-profile-page {
@@ -123,9 +123,9 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-story-more:hover { text-decoration: underline; }
 .rdp-stories-list { }
 .rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: var(--rc-shadow-lg-dark); }
 .rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--rcl-line); background: var(--rcl-bg-raised); border-radius: 10px 10px 0 0; } /* same header as the Account page popups, in the dark colors */
-.rdp-modal-title { margin: 0; font-family: var(--rc-font-heading); font-weight: 700; color: var(--rcl-ink); font-size: 16px; }
+.rdp-modal-title { margin: 0; font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink); font-size: 18px; }
 .rdp-modal-x { flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--rcl-ink-faint); font-size: 20px; line-height: 1; cursor: pointer; }
 .rdp-modal-x:hover { background: var(--rcl-bg-raised-2); color: var(--rcl-ink); }
 .rdp-modal-body { padding: 20px; overflow-y: auto; color: var(--rcl-ink-dim); line-height: 1.65; font-size: 15px; }
@@ -272,7 +272,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-story-more,
 .rcc-page .rdp-see-more { color: var(--rcc-navy); }
 .rcc-page .rdp-modal-bg { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
-.rcc-page .rdp-modal { box-shadow: 0 20px 50px rgba(23,23,23,.25); }
+.rcc-page .rdp-modal { box-shadow: var(--rc-shadow-lg); }
 .rcc-page .rdp-rival-rank { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
 .rcc-page .rdp-rival-season { background: var(--rcl-bg-raised-2); }
 .rcc-page .rdp-team { background: linear-gradient(170deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }

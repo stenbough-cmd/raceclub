@@ -58,7 +58,7 @@ body.rc-league-page.rcc-page {
   .rcc-page .rcl-page-loader .rc-startlight:nth-child(4) { animation-name: rc-startlight-4; }
   .rcc-page .rcl-page-loader .rc-startlight:nth-child(5) { animation-name: rc-startlight-5; }
 }
-.rcc-page .rcl-panel { box-shadow: 0 1px 3px color-mix(in srgb, var(--rc-carbon) 10%, transparent), 0 6px 16px color-mix(in srgb, var(--rc-carbon) 6%, transparent); }
+.rcc-page .rcl-panel { box-shadow: var(--rc-shadow-sm); }
 .rcc-page .rcl-panel-title,
 .rcc-page .rcl-hero-title { text-shadow: none; }
 .rcc-page .rcl-report-name { color: var(--rc-carbon); font-weight: 400; }
