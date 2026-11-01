@@ -39,6 +39,7 @@
       '.rcd-help { --rcc-navy: #34495c; --rcc-accent-light: #9db6cc; } .rcd-help-tab { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
       // Loading lights: the site's red lights, drawn straight on the container (no card of their own).
       '.rcd-panel .rc-inline-spinner-wrap { --rc-red: #F21B0C; --rc-red-dark: #c81509; background: none; border: 0; box-shadow: none; padding: 44px 0 40px; max-width: none; width: auto; }' +
+      '.rcd-season-row { background: color-mix(in srgb, var(--rc-offwhite) 55%, var(--rc-white)); border-radius: 6px; padding-right: 12px; }' +
       '.rcd-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; margin-bottom: 14px; }' +
       '.rcd-row-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }' +
       '.rcd-spacer { flex: 1 1 20px; }' +
@@ -198,7 +199,7 @@
         var isCurrent = s.seasonId === page.seasonId;
         var ended = s.status === 'Completed';
         var container = mk('div', '');
-        var line = mk('div', 'rc-group-row');
+        var line = mk('div', 'rc-group-row rcd-season-row');
         var info = mk('div', 'rc-dm-row-info');
         var textCol = mk('div', '');
         textCol.appendChild(mk('span', 'rc-dm-row-label', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
