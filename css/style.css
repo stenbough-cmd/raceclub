@@ -245,6 +245,8 @@ p { margin: 0 0 0.75em; }
   border-bottom: 1px solid var(--rc-offwhite);
 }
 .rc-group-row:last-child { border-bottom: none; }
+/* A season's own record (League Tools Seasons list): very light gray background; its rounds below stay white. */
+.rc-season-record { background: color-mix(in srgb, var(--rc-offwhite) 55%, var(--rc-white)); border-radius: 6px; padding-right: 12px; }
 
 /* -------------------------------------------------------------------- */
 /* Data Management (Account.html) -- Drivers/Tracks/Cars panels          */

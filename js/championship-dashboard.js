@@ -113,9 +113,10 @@
   };
   window.rcPreloadChampionshipScripts = function (opts) { var p = ensureLoaded(opts || {}); p.catch(function () {}); };
 
-  function statusOf(s) {
+  // "Set up" = the season exists but the driver has not chosen a team and car yet; "In progress" = a car is chosen.
+  function statusOf(s, hasTeam) {
     if (s.status === 'Completed') return { label: s.unfinished ? 'Ended early' : 'Finished', active: false };
-    return { label: s.status === 'Registration' ? 'Setting up' : 'Active', active: true };
+    return { label: hasTeam ? 'In progress' : 'Set up', active: true };
   }
 
   function draw(panel, page, opts) {
@@ -203,7 +204,7 @@
         var info = mk('div', 'rc-dm-row-info');
         var textCol = mk('div', '');
         textCol.appendChild(mk('span', 'rc-dm-row-label', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
-        var meta = [statusOf(s).label];
+        var meta = [statusOf(s, isCurrent && !!page.registration).label];
         if (isCurrent && cal.length) meta.push(cal.length + ' race' + (cal.length === 1 ? '' : 's'));
         else if (s.raceCount != null) meta.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
         if (s.createdAt) meta.push('Created ' + String(s.createdAt).slice(0, 10));
