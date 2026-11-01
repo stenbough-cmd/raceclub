@@ -156,7 +156,7 @@
       var r = mk('div', 'rc-group-row');
       var info = mk('div', 'rc-dm-row-info');
       var col = mk('div', '');
-      col.appendChild(mk('span', 'rc-dm-row-label', 'Round ' + c.roundNum + ': ' + (c.eventName || c.track || '')));
+      col.appendChild(mk('span', 'rc-dm-row-label rc-round-title', 'Round ' + c.roundNum + ': ' + (c.eventName || c.track || '')));
       var bits = [];
       if (c.track) bits.push(c.track + (c.layout ? ': ' + c.layout : ''));
       col.appendChild(mk('div', 'rc-hint', bits.join(' · ') || 'Track not set'));

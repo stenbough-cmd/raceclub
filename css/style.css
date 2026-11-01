@@ -348,6 +348,8 @@ p { margin: 0 0 0.75em; }
    list under this exact same .rc-group-head component). */
 .rc-dm-row-light { padding-left: 20px; border-bottom-color: var(--rc-offwhite); }
 .rc-dm-row-label { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 600; color: var(--rc-carbon); }
+/* Round / race titles inside a season (League Tools and the Championship seasons list): black, normal weight. Season titles keep the weight above. */
+.rc-dm-row-label.rc-round-title { font-weight: 400; color: var(--rc-carbon); }
 /* Sub-rows (a track's layouts, a class's seasons, a season's cars) -- indented and prefixed with a
    tree glyph rather than a bullet, so the parent/child relationship reads at a glance without a
    full tree-line graphic. */
