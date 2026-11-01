@@ -6191,7 +6191,7 @@
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
     // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
-    // WEBSITE TOOLS container (below Data Management): the Update buttons.
+    // WEBSITE TOOLS container (below Data Management): the Update buttons, Backup Now and the Staged League Hub switch.
     var webPanel = el('div', 'rc-panel rc-dash-card');
     webPanel.appendChild(el('h3', 'rc-dash-card-title', 'Website Tools'));
     var webList = el('div', 'display:flex;flex-direction:column;gap:22px;');
@@ -6320,6 +6320,41 @@
       'Builds a copy of your active Race Club Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
       'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
     ], 'Updates the public Championship demo with a copy of your active championship season.');
+
+    // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js
+    // rcStagedHubOn). While ON, the League Hub, every Race Recap, driver profiles and driver reports read the made-up
+    // data in website/staged/ in the race-club-data repo instead of the real league. It only changes what this browser reads: nothing is
+    // written to the Sheet and no other visitor is affected. Gray (not red): it saves nothing to the Sheet.
+    try { (function () {
+      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-top:22px;border-top:1px solid var(--rc-silver);');
+      var sw = el('button', 'rc-switch', '');
+      sw.type = 'button';
+      sw.setAttribute('role', 'switch');
+      var track = el('span', 'rc-switch-track', '');
+      var label = el('span', 'rc-switch-label', 'Staged League Hub');
+      var state = el('span', 'rc-switch-state', '');
+      sw.appendChild(track); sw.appendChild(label); sw.appendChild(state);
+      function paint() {
+        var on = rcStagedHubOn();
+        sw.setAttribute('aria-checked', on ? 'true' : 'false');
+        state.textContent = on ? 'ON' : 'OFF';
+      }
+      sw.addEventListener('click', function () {
+        var turningOn = !rcStagedHubOn();
+        rcSetStagedHub(turningOn);
+        paint();
+        showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
+      });
+      paint();
+      item.appendChild(sw);
+      [
+        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tyre wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
+        'It only changes what your browser shows. Nothing is written to the Sheet, no one else sees it, and the real league data is untouched. The tab title starts with [STAGED] while it is on. Turn it off to see the real League Hub again.'
+      ].forEach(function (text) {
+        item.appendChild(el('p', 'margin:0;font-size:13.5px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
+      });
+      webList.appendChild(item);
+    })(); } catch (stagedErr) { /* the switch is optional: Data Management must always draw */ }
 
     // BACKUP NOW (ECO chat, 2026-11-01). Asks Apps Script to copy the whole Sheet into the owner's Drive folder "Race Club Backups".
     // Gray: it writes nothing to the Sheet (the copy is a separate Drive file).
