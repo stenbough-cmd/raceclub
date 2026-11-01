@@ -13,7 +13,7 @@
 (function () {
   var STYLE_ID = 'rcd-style';
   var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar2'];
-  var JS_FILES = ['js/championship-help.js?v=6', 'js/championship.js?v=6'];
+  var JS_FILES = ['js/championship-help.js?v=6', 'js/championship.js?v=7'];
   var loading = null;
 
   function mk(tag, cls, text) {
@@ -86,19 +86,14 @@
     return loading;
   }
 
-  // opts.page: the championship page the server already sent with the dashboard data (an ended season's page arrives as a pointer to
-  // its archived file, resolved here the same way championship.js does). No page: fetch it now.
+  // opts.page: the championship page the server already sent with the dashboard data. No page: fetch it now (from its data file).
   function fetchPage(opts, profileId) {
     return ensureLoaded(opts).then(function () {
       RCC.token = opts.token;
       RCC.ownerId = profileId;
       var res = opts.page;
       if (!res) return _rccGetPage('');
-      if (!res.success || !res.archived) { RCC.archive = null; return res; }
-      return _rccLoadArchive(res).catch(function () {
-        RCC.archive = null;
-        return _rccApi('champGetPage', { seasonId: res.seasonId, noArchive: '1' });
-      });
+      return res;
     });
   }
 

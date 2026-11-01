@@ -356,6 +356,22 @@ var RC_DATA_ROUTES_ = {
     file: function (p) { return /^RC-\d{5,6}$/.test(String(p.profileId || '')) ? 'profiles/' + p.profileId + '/rivals.json' : null; },
     pick: _rcDataStrip_
   },
+  // Championship (running and ended seasons alike): the owner's page, and each round's Race / Qualifying / My Laps result.
+  champGetPage: {
+    file: function (p) {
+      if (p.exportDemo || !/^RC-\d{5,6}$/.test(String(p.ownerId || ''))) return null;
+      if (!p.seasonId) return 'championship/' + p.ownerId + '/current.json';
+      return /^CSZN-\d{4,8}$/.test(String(p.seasonId)) ? 'championship/' + p.ownerId + '/' + p.seasonId + '/page.json' : null;
+    },
+    pick: _rcDataStrip_
+  },
+  champGetRoundResults: {
+    file: function (p) {
+      return (/^RC-\d{5,6}$/.test(String(p.ownerId || '')) && /^CRND-\d{4,8}$/.test(String(p.roundId || '')))
+        ? 'championship/' + p.ownerId + '/rounds/' + p.roundId + '.json' : null;
+    },
+    pick: function (f, p) { var r = f[(p && p.kind) || 'race']; return r ? { success: true, result: r } : null; }
+  },
   getDriverDirectory: { file: function () { return 'league/directory.json'; }, pick: _rcDataStrip_ },
   getDriverProfileRound: {
     file: function (p) { return (/^RND-\d{3,8}$/.test(String(p.roundId || '')) && /^RC-\d{5,6}$/.test(String(p.profileId || ''))) ? 'rounds/' + p.roundId + '/' + p.profileId + '.json' : null; },
@@ -425,13 +441,15 @@ function fetchApi(action, options) {
     var rel = route.file(options.params || {});
     if (rel) {
       return _rcDataFile_(rel).then(function (f) {
-        var res = route.pick(f);
+        var res = route.pick(f, options.params || {});
         if (!res || !res.success) throw new Error('RC_DATA_EMPTY');
         return res;
-      }).catch(function () {
+      }).catch(function (err) {
         var o = Object.assign({}, options);
         o.params = Object.assign({}, options.params);
-        if (!_rcRepublished_[rel]) { _rcRepublished_[rel] = true; o.params.republish = '1'; }
+        // A file that exists but is older than this browser's own save is already being published: no rebuild is asked for.
+        var oldFile = !!(err && err.message === 'RC_DATA_OLD');
+        if (!oldFile && !_rcRepublished_[rel]) { _rcRepublished_[rel] = true; o.params.republish = '1'; }
         return _rcFetchApiLive_(action, o);
       });
     }

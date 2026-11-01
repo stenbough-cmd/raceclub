@@ -254,74 +254,22 @@ function _rccCheckAccess() {
 
 function _rccApi(action, params, opts) {
   if (RCC.demo) return _rccDemoApi(action, params || {});
-  // An ended season loaded from its archived file answers its Race Recap from the same file.
-  if (action === 'champGetRoundResults' && RCC.archive && params) {
-    var ar = (RCC.archive.rounds || {})[params.roundId];
-    var arRes = ar && ar[params.kind || 'race'];
-    if (arRes) return Promise.resolve({ success: true, result: arRes });
-  }
   opts = opts || {};
   var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
   if (opts.post) {
-    // Any save makes this browser's saved copies of the page out of date, so they're dropped the
-    // moment a write succeeds: the reload that follows then waits for fresh data instead of
-    // flashing the old page first.
-    return fetchApi(action, { method: 'POST', token: RCC.token, params: { ownerId: RCC.ownerId }, body: p }).then(function (res) {
-      if (res && res.success) _rccForgetSavedPages();
-      return res;
-    });
+    return fetchApi(action, { method: 'POST', token: RCC.token, params: { ownerId: RCC.ownerId }, body: p });
   }
   return fetchApi(action, { token: RCC.token, params: p, timeoutMs: opts.timeoutMs || RC_FETCH_TIMEOUT_MS_LONG });
 }
 
 // ---------------------------------------------------------------------
-// SEASON ARCHIVE (2026-10-20). An ended season is saved by the server as one JSON file in the Race
-// Club data repository on GitHub. For an ended season the server answers { archived, archiveUrl,
-// archivedAt, seasons, ... } instead of the whole page; the page reads the file, checks it is this
-// player's season in its latest version, and keeps the Race Recap rounds from it. Anything off (file
-// not published yet, an older copy, a network error) falls back to building the page from the sheet.
+// PAGE DATA. champGetPage and champGetRoundResults are answered from files on GitHub (js/api.js,
+// RC_DATA_ROUTES_): championship/<id>/current.json, <id>/<SeasonID>/page.json and <id>/rounds/<RoundID>.json,
+// for running and ended seasons alike. When a file is missing or older than this browser's own last save,
+// fetchApi asks Apps Script for the same data. Nothing is kept in this browser.
 // ---------------------------------------------------------------------
-var RCC_ARCHIVE_TIMEOUT_MS = 15000;
-
-function _rccLoadArchive(res) {
-  var url = String(res.archiveUrl || '');
-  if (!/^https:\/\/[^\s"'<>]+\.json$/.test(url)) return Promise.reject(new Error('bad archive url'));
-  var ctl = typeof AbortController === 'function' ? new AbortController() : null;
-  var timer = ctl ? setTimeout(function () { ctl.abort(); }, RCC_ARCHIVE_TIMEOUT_MS) : null;
-  return fetch(url + '?v=' + encodeURIComponent(res.archivedAt || ''), {
-    cache: 'no-store', credentials: 'omit', mode: 'cors', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined
-  }).then(function (r) {
-    if (!r.ok) throw new Error('archive ' + r.status);
-    return r.json();
-  }).then(function (b) {
-    if (timer) clearTimeout(timer);
-    var a = b && b.archive;
-    if (!a || a.kind !== 'championship' || a.seasonId !== res.seasonId || a.archivedAt !== res.archivedAt ||
-        String(a.ownerId) !== String(RCC.ownerId) || !b.page || b.page.seasonId !== res.seasonId || !b.page.seasonEnded) {
-      throw new Error('archive mismatch');
-    }
-    var page = b.page;
-    // Always current: the season list, active-season flag and season number come from the server.
-    page.success = true;
-    page.seasons = res.seasons || page.seasons || [];
-    page.hasActiveSeason = !!res.hasActiveSeason;
-    if (res.seasonNumber) page.seasonNumber = res.seasonNumber;
-    page.build = res.build || page.build;
-    page.archivedAt = res.archivedAt;
-    RCC.archive = { seasonId: res.seasonId, rounds: (b.rounds && typeof b.rounds === 'object') ? b.rounds : {} };
-    return page;
-  }, function (err) { if (timer) clearTimeout(timer); throw err; });
-}
-
-// champGetPage, reading an ended season from its archived file when the server points to one.
 function _rccGetPage(seasonId) {
-  return _rccApi('champGetPage', { seasonId: seasonId }).then(function (res) {
-    if (!res || !res.success || !res.archived) { RCC.archive = null; return res; }
-    return _rccLoadArchive(res).catch(function () {
-      RCC.archive = null;
-      return _rccApi('champGetPage', { seasonId: seasonId || res.seasonId, noArchive: '1' });
-    });
-  });
+  return _rccApi('champGetPage', { seasonId: seasonId });
 }
 
 // Server-side refusal -> the same redirects the page itself applies.
@@ -2976,27 +2924,10 @@ function rccOpenErase() {
   });
 }
 
-// ---------------------------------------------------------------------
-// SAVED COPY (same idea as league.js's rc_league_hub_v1): the last page payload is kept in this
-// browser, drawn instantly on the next visit, then refreshed quietly in the background with one
-// Apps Script call. The screen only redraws if the fresh data differs. One copy per owner + season
-// view; championship.html's <head> checks the same key to skip the loading overlay.
-// ---------------------------------------------------------------------
-var RCC_SAVED_PREFIX = 'rc_champ_page_v1:';
-function _rccSavedKey() { return RCC_SAVED_PREFIX + RCC.ownerId + ':' + (_rccQuery('season') || ''); }
-function _rccReadSaved() { try { return localStorage.getItem(_rccSavedKey()); } catch (err) { return null; } }
-function _rccWriteSaved(text) { try { localStorage.setItem(_rccSavedKey(), text); } catch (err) { /* storage full or blocked -- the page still works */ } }
-function _rccForgetSavedPages() {
-  try {
-    var prefix = RCC_SAVED_PREFIX + RCC.ownerId + ':';
-    var drop = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf(prefix) === 0) drop.push(k);
-    }
-    drop.forEach(function (k) { localStorage.removeItem(k); });
-  } catch (err) { /* nothing saved, nothing to drop */ }
-}
+// Saved copies of the page kept by earlier versions are removed (the page now comes from files).
+try {
+  Object.keys(localStorage).forEach(function (k) { if (k.indexOf('rc_champ_page_v1:') === 0) localStorage.removeItem(k); });
+} catch (err) { /* storage blocked: nothing to remove */ }
 
 // ---------------------------------------------------------------------
 // BOOT
@@ -3153,28 +3084,14 @@ document.addEventListener('DOMContentLoaded', function () {
   if (mode === 'demo') { rccStartDemo(); return; }
   _rccShowCarriedToasts();
 
-  // 1. Draw the saved copy instantly, if this browser has one.
+  // The page waits behind the loading popup and draws once, with the finished data.
   var currentText = null;
-  var savedText = _rccReadSaved();
-  if (savedText) {
-    try {
-      var saved = JSON.parse(savedText);
-      if (saved && saved.success) {
-        currentText = savedText;
-        rccRenderAll(saved);
-        _rccHidePageLoader();
-      }
-    } catch (parseErr) { currentText = null; }
-  }
-  if (!currentText) {
-    document.documentElement.classList.remove('rcl-has-cache');
-    _rccLockScroll();
-  }
+  document.documentElement.classList.remove('rcl-has-cache');
+  _rccLockScroll();
 
   // 2. Fetch fresh data; redraw only when it differs from what's on screen.
-  // The season the page opened on stays in memory (currentText + defaultArchive), so picking it again
-  // in the season picker is instant, and a background refresh never switches away from a past season.
-  var defaultArchive = null;
+  // The season the page opened on stays in memory (currentText), so picking it again in the season
+  // picker is instant, and a background refresh never switches away from a past season.
   var revalidating = false;
   // The first load failed and this browser has no saved copy (audit A4, Matt 2026-10-22): show "Could
   // Not Load The Championship" with RETRY instead of an empty page that looks like no season. The
@@ -3187,19 +3104,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (revalidating) return;
     revalidating = true;
     var hadCopy = !!currentText;
-    var shownArchive = RCC.archive;
     _rccGetPage(_rccQuery('season')).then(function (page) {
-      var gotArchive = RCC.archive;
-      if (RCC.viewSeasonId) RCC.archive = shownArchive;
       if (_rccHandleAuthError(page)) return;
       if (page && page.success) {
-        defaultArchive = gotArchive;
         var text = JSON.stringify(page);
         // A RETRY that worked: take the error panel away and bring the page back.
         if (document.getElementById('rcc-load-error')) { _rccClearLoadError(); _rccPageShell(true); }
         if (text !== currentText) {
           currentText = text;
-          _rccWriteSaved(text);
           if (!RCC.viewSeasonId) rccRenderAll(page);
         }
       } else if (!hadCopy) {
@@ -3224,13 +3136,11 @@ document.addEventListener('DOMContentLoaded', function () {
     try { defaultId = currentText ? (JSON.parse(currentText).seasonId || '') : ''; } catch (err) { defaultId = ''; }
     if (!seasonId || seasonId === defaultId) {
       RCC.viewSeasonId = '';
-      RCC.archive = defaultArchive;
       _rccHidePageLoader();
       _rccUnlockScroll();
       if (currentText) { try { rccRenderAll(JSON.parse(currentText)); } catch (err) { /* keep what is shown */ } }
       return;
     }
-    var shownArchive = RCC.archive;
     _rccShowPageLoader('Loading Season\u2026');
     _rccGetPage(seasonId).then(function (page) {
       if (myToken !== pickToken) return;
@@ -3240,7 +3150,6 @@ document.addEventListener('DOMContentLoaded', function () {
       rccRenderAll(page);
     }).catch(function () {
       if (myToken !== pickToken) return;
-      RCC.archive = shownArchive;
       if (RCC.page) rccRenderActionBar(RCC.page);
       _rccShowLoadError(function () { RCC.onSeasonPick(seasonId); });
     }).then(function () {
@@ -3508,7 +3417,7 @@ function rccRunStoryQueue(page) {
     if (res && res.success && res.already && res.status === 'writing') { RCC.storyWriting = next; rccRenderStories(page); _rccWatchStory(page, next, Date.now() + 6 * 60 * 1000); return; }
     if (!res || !res.success) { RCC.storyFailed = next; RCC.storyFailedWhy = (res && res.message) || (res ? 'The story could not be written this time.' : 'No answer from the server.'); rccRenderStories(page); return; }
     return _rccApi('champStory', { op: 'list', seasonId: page.seasonId }).then(function (lr) {
-      if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; _rccForgetSavedPages(); }
+      if (lr && lr.success) { page.stories = lr.stories; page.storyQueue = lr.queue; }
       rccRenderStories(page);
       if (lr && lr.success && lr.queue.length) rccRunStoryQueue(page);
     });
@@ -3530,7 +3439,6 @@ function _rccWatchStory(page, item, until) {
       RCC.storyWriting = null;
       page.stories = lr.stories; page.queue = lr.queue; page.storyQueue = lr.queue;
       if (!mine || mine.status !== 'published') { RCC.storyFailed = item; RCC.storyFailedWhy = mine && mine.status === 'failed' ? 'The writer stopped before finishing. Retry the story.' : 'No answer from the server.'; }
-      else _rccForgetSavedPages();
       rccRenderStories(page);
       if (mine && mine.status === 'published' && lr.queue.length) rccRunStoryQueue(page);
     }).catch(function () {
