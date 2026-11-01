@@ -49,7 +49,25 @@
       '.rcd-pill { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--rc-silver); color: var(--rc-carbon); }' +
       '.rcd-pill.rcd-active { background: var(--rc-red); color: #fff; }' +
       '.rcd-note { margin: 0 0 12px; font-size: 13.5px; line-height: 1.55; color: var(--rc-steel); }' +
-      '.rcd-season a.rc-btn-secondary { text-decoration: none; display: inline-block; }';
+      // Every button in the container centers its label the same way, whether it is a <button> or a link (View), with the same border
+      // box (the primary button had no border, so it ran 2px shorter than its neighbours).
+      '.rcd-panel .rc-btn-primary, .rcd-panel .rc-btn-secondary { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; text-align: center; line-height: normal; text-decoration: none; }' +
+      '.rcd-panel .rc-btn-primary { border: 1px solid transparent; }' +
+      '.rcd-panel .rc-btn-row { min-height: 28px; }' +
+      // Popups look like the Account page popups (Edit Season in League Tools): plain white header, thin gray line, small bold title, a plain X,
+      // no red slash or red line, and centered over the page body (right of the sidebar), not the whole screen.
+      '.rcc-modal-overlay.rcc-page { background: rgba(23, 23, 23, 0.5); align-items: center; padding: 24px; z-index: 2000; }' +
+      '@media (min-width: 641px) { .rcc-modal-overlay.rcc-page { padding-left: 244px; } }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-dialog { background: var(--rc-white); border: 0; border-radius: 10px; box-shadow: 0 20px 50px rgba(23, 23, 23, 0.25); padding: 0; max-width: 820px; max-height: calc(100vh - 48px); margin: 0; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-wide { max-width: 820px; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-narrow { max-width: 460px; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-head { margin: 0; padding: 18px 20px; background: var(--rc-white); border-bottom: 1px solid var(--rc-silver); border-radius: 10px 10px 0 0; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-title { display: block; margin: 0; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; letter-spacing: normal; text-transform: none; color: var(--rc-carbon); }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-title::before { content: none; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-close { width: 30px; height: 30px; padding: 0; border-radius: 4px; color: var(--rc-steel); font-size: 20px; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-close:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-body { padding: 20px; }' +
+      '@media (max-width: 640px) { .rcc-modal-overlay.rcc-page { padding-left: 24px; } }';
     document.head.appendChild(s);
   }
 
