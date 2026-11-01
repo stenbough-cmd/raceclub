@@ -1253,7 +1253,8 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-hero-season-sep,
 .rcc-page .rcl-panel-title::before,
 .rcc-page .rcl-modal-title::before { color: var(--rcc-true-red); }
-.rcc-page .rcl-panel-head, .rcc-page .rcl-modal-head, .rcc-page .rcc-actionbar { border-bottom-color: var(--rcc-true-red); }
+.rcc-page .rcl-panel-head, .rcc-page .rcl-modal-head { border-bottom-color: var(--rcc-true-red); }
+.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
 .rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }
