@@ -104,6 +104,15 @@
     preloaded = { key: opts.token + '|' + opts.profileId, promise: promise };
   };
 
+  // ON/OFF per member (this browser). Off is the default, so a member who never switches it on costs the page no championship fetch at all.
+  function enabledKey(profileId) { return 'rc_champ_on_' + profileId; }
+  window.rcChampEnabled = function (profileId) {
+    try { return !!profileId && localStorage.getItem(enabledKey(profileId)) === '1'; } catch (e) { return false; }
+  };
+  window.rcSetChampEnabled = function (profileId, on) {
+    try { if (on) localStorage.setItem(enabledKey(profileId), '1'); else localStorage.removeItem(enabledKey(profileId)); } catch (e) { /* ignore */ }
+  };
+
   function statusOf(s) {
     if (s.status === 'Completed') return { label: s.unfinished ? 'Ended early' : 'Finished', active: false };
     return { label: s.status === 'Registration' ? 'Setting up' : 'Active', active: true };
@@ -298,6 +307,20 @@
       body.appendChild(mk('p', 'rcd-note', msg || 'Could not load your championship right now. Refresh the page to try again.'));
     }
     var profile = opts.profile || {};
+    if (opts.enabled === false) {
+      // Switched off: nothing is fetched. Same "No Data To Display" panel as the rest of the site, plus a note about the switch.
+      body.innerHTML = '';
+      var box = mk('div', 'rc-panel');
+      var empty = mk('div', 'rc-empty-state');
+      empty.appendChild(mk('div', 'rc-empty-state-icon', ''));
+      empty.firstChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>';
+      empty.appendChild(mk('div', 'rc-empty-state-title', 'No Data To Display'));
+      empty.appendChild(mk('div', 'rc-empty-state-subtitle', 'The Single Player Championship is switched off. Turn on the switch next to the Single Player Championship heading to set up and play your own offline season. Switch it off again at any time; your seasons are kept.'));
+      box.appendChild(empty);
+      body.appendChild(box);
+      panel.rcdReady = Promise.resolve();
+      return panel;
+    }
     if (!opts.token || !profile.profileId) { fail('Sign in to use the championship tools.'); return panel; }
     // panel.rcdReady settles once the championship data is drawn (or failed), so the page can show it together with the league cards.
     panel.rcdReady = fetchPage(opts, profile.profileId).then(function (page) {

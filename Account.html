@@ -642,17 +642,50 @@
     // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
     // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
     var champHost = el('div', 'margin-top:34px;');
-    champHost.appendChild(el('h2', null, 'Single Player Championship'));
-    try {
-      if (typeof rcBuildChampionshipDashboard === 'function') {
-        champHost.appendChild(rcBuildChampionshipDashboard({
-          token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner,
-          reload: function () { rcReloadAfterSave(); }
-        }));
-      }
-    } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
+    var champOn = typeof rcChampEnabled === 'function' && rcChampEnabled(profile.profileId);
+    // Heading with the ON/OFF switch right after it. Off by default: while off, nothing about the championship is fetched.
+    var champHead = el('div', 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;');
+    champHead.appendChild(el('h2', 'margin:0;', 'Single Player Championship'));
+    var champSw = el('button', 'rc-switch', '');
+    champSw.type = 'button';
+    champSw.setAttribute('role', 'switch');
+    champSw.setAttribute('aria-label', 'Single Player Championship');
+    var champState = el('span', 'rc-switch-state', '');
+    champSw.appendChild(el('span', 'rc-switch-track', ''));
+    champSw.appendChild(champState);
+    champHead.appendChild(champSw);
+    champHost.appendChild(champHead);
+    var champBody = el('div', 'margin-top:12px;');
+    champHost.appendChild(champBody);
+    function paintChampSwitch() {
+      champSw.setAttribute('aria-checked', champOn ? 'true' : 'false');
+      champState.textContent = champOn ? 'ON' : 'OFF';
+    }
+    function buildChampPanel() {
+      try {
+        if (typeof rcBuildChampionshipDashboard === 'function') {
+          return rcBuildChampionshipDashboard({
+            token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner, enabled: champOn,
+            reload: function () { rcReloadAfterSave(); }
+          });
+        }
+      } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
+      return null;
+    }
+    var champPanel = buildChampPanel();
+    if (champPanel) champBody.appendChild(champPanel);
+    paintChampSwitch();
+    champSw.addEventListener('click', function () {
+      champOn = !champOn;
+      if (typeof rcSetChampEnabled === 'function') rcSetChampEnabled(profile.profileId, champOn);
+      paintChampSwitch();
+      // Only this container is redrawn (turning it on fetches the championship then, with its own loading lights).
+      champBody.innerHTML = '';
+      var fresh = buildChampPanel();
+      if (fresh) champBody.appendChild(fresh);
+    });
     // champHost joins the page only once the league cards are ready AND the championship has loaded, so both appear together.
-    var champReady = (champHost.querySelector('.rcd-panel') && champHost.querySelector('.rcd-panel').rcdReady) || Promise.resolve();
+    var champReady = (champPanel && champPanel.rcdReady) || Promise.resolve();
 
     var rows = null;
 
@@ -9258,7 +9291,7 @@
   // Start the Single Player Championship load at the same moment, so it arrives with the league cards (profile id from the cached profile).
   try {
     var cachedForChamp = JSON.parse(localStorage.getItem('raceclub_profile_cache') || 'null');
-    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcPreloadChampionship === 'function') {
+    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcChampEnabled === 'function' && window.rcChampEnabled(cachedForChamp.profileId) && typeof window.rcPreloadChampionship === 'function') {
       window.rcPreloadChampionship({ token: token, profileId: cachedForChamp.profileId, showToast: showToast });
     }
   } catch (preErr) { /* the dashboard fetches it itself when there is no cache */ }
