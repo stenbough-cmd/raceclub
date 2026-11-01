@@ -63,7 +63,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-empty-title { font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink); font-size: 14px; }
 .rdp-empty-sub { font-size: 13px; max-width: 420px; }
 
-/* Career Stats: six squares */
+/* League Stats: six squares */
 .rdp-ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .rdp-ach { aspect-ratio: 1 / 0.72; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: linear-gradient(160deg, #26272b, #1a1b1e); border: 1px solid var(--rcl-line-bright); padding: 8px; min-width: 0; }
 .rdp-ach-value { font-family: var(--rc-font-heading); font-size: 38px; font-weight: 800; color: var(--rcl-ink); line-height: 1; font-variant-numeric: tabular-nums; }
@@ -290,7 +290,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 #rdp-ach-loading:empty { display: none; }
 #rdp-ach-loading { padding: 12px 0; }
 
-/* ===== Helmet shelf: blue-gray band across the page, between Career Stats and Form Guide ===== */
+/* ===== Helmet shelf: blue-gray band across the page, between League Stats and Form Guide ===== */
 body.rc-league-page.rcc-page { overflow-x: clip; }
 .rdp-helmets { width: 100vw; margin-left: calc(50% - 50vw); padding: 26px 0 32px; color: #fff; background: linear-gradient(180deg, #4d6882 0%, #3c5268 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
 .rdp-helmets[hidden] { display: none; }
@@ -319,7 +319,7 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 }
 
 /* Header pictures behind five panel titles (Matt, 2026-10-26): same layering and 50% strength as the League
-   News header. Career Stats, Season Stats, Form Guide, Team History and the driver card; the others stay plain. */
+   News header. League Stats, Season Stats, Form Guide, Team History and the driver card; the others stay plain. */
 .rdp-head-pic { position: relative; overflow: hidden; }
 .rdp-head-pic::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background-repeat: no-repeat; background-position: center; background-size: cover; opacity: 0.5; }
 .rdp-head-pic > * { position: relative; z-index: 1; }

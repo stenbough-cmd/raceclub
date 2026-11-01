@@ -1,4 +1,4 @@
-// Race Club -- js/profile-page.js. The lower rows of profile.html (Career Stats, Form Guide,
+// Race Club -- js/profile-page.js. The lower rows of profile.html (League Stats, Form Guide,
 // Season Stats, Story Mentions, Rivalries, Team History). League racing only. Data comes from three
 // public Apps Script ops (DriverProfilePage.gs): getDriverProfilePage, getDriverProfileRivals and
 // getDriverProfileRound. Each response is saved in this browser and redrawn instantly next visit,
@@ -137,7 +137,7 @@
     $('rdp-ach-loading').innerHTML = '';
   }
 
-  // ---- Helmet shelf (between Career Stats and Form Guide) -------------------------------------------
+  // ---- Helmet shelf (between League Stats and Form Guide) -------------------------------------------
   // data.helmets arrives already sorted highest prestige first; the prestige itself is never sent or shown.
   function renderHelmets(data) {
     var panel = $('rdp-helmets'), track = $('rdp-hc-track'), view = $('rdp-hc-view');
@@ -812,7 +812,7 @@
   }
   var rivalsStarted = false;
   function startRivals() { if (!rivalsStarted) { rivalsStarted = true; loadRivals(); } }
-  if (window.rcHelmetSpinner_) { $('rdp-ach-loading').appendChild(window.rcHelmetSpinner_('Loading career stats...')); }   // the other containers show up empty with just their headers
+  if (window.rcHelmetSpinner_) { $('rdp-ach-loading').appendChild(window.rcHelmetSpinner_('Loading league stats...')); }   // the other containers show up empty with just their headers
   fetchApi('getDriverProfilePage', { params: { profileId: profileId }, timeoutMs: 60000 }).then(function (res) {
     if (res && res.success) { renderAll(res); startRivals(); }
   }).catch(function () { $('rdp-ach-loading').innerHTML = ''; $('rdp-ach-loading').appendChild(emptyBlock('Stats Unavailable', 'Could not load this profile right now.')); });
