@@ -35,6 +35,8 @@
       ' --rcc-navy: var(--rc-balanced); --rcc-accent-light: #9db6cc; --rcc-true-red: #F21B0C;' +
       ' --rcl-gold: #e0b64c; --rcl-badge-news: #2f6f9f; --rcl-report-damage: #f5923b; --rcl-report-collision: #e8c547; --rcl-report-gain: #4fbf72; --rcl-report-fastest: #b07ce8; --rcl-bonus: #7fa8d4; color: var(--rcl-ink); }' +
       '.rcd-help { --rcc-navy: #34495c; --rcc-accent-light: #9db6cc; } .rcd-help-tab { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
+      // Loading lights: the site's red lights, drawn straight on the container (no card of their own).
+      '.rcd-panel .rc-inline-spinner-wrap { --rc-red: #F21B0C; --rc-red-dark: #c81509; background: none; border: 0; box-shadow: none; padding: 44px 0 40px; max-width: none; width: auto; }' +
       '.rcd-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; margin-bottom: 14px; }' +
       '.rcd-row-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }' +
       '.rcd-spacer { flex: 1 1 20px; }' +

@@ -566,7 +566,9 @@
       activeSeasonPromise: slice('activeSeason'),
       currentSeatPromise: slice('currentSeat'),
       nextRacePromise: slice('nextRace'),
-      myProtestsPromise: slice('myProtests')
+      myProtestsPromise: slice('myProtests'),
+      // Single Player Championship slice: { success, enabled:false } while the member's switch is off, else the championship page.
+      champPromise: slice('champion')
     };
   }
 
@@ -642,8 +644,9 @@
     // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
     // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
     var champHost = el('div', 'margin-top:34px;');
-    var champOn = typeof rcChampEnabled === 'function' && rcChampEnabled(profile.profileId);
-    // Heading with the ON/OFF switch right after it. Off by default: while off, nothing about the championship is fetched.
+    var champOn = false;
+    // Heading with the ON/OFF switch right after it. The setting is stored per member (Users.ChampEnabled) and arrives inside the
+    // one getDashboardData response: when it is OFF the server sends no championship data and the page loads none.
     var champHead = el('div', 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;');
     champHead.appendChild(el('h2', 'margin:0;', 'Single Player Championship'));
     var champSw = el('button', 'rc-switch', '');
@@ -661,31 +664,49 @@
       champSw.setAttribute('aria-checked', champOn ? 'true' : 'false');
       champState.textContent = champOn ? 'ON' : 'OFF';
     }
-    function buildChampPanel() {
+    // page: the championship page the server already sent with the dashboard data (first draw only); none = fetch it now.
+    function buildChampPanel(page) {
       try {
         if (typeof rcBuildChampionshipDashboard === 'function') {
           return rcBuildChampionshipDashboard({
-            token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner, enabled: champOn,
+            token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner, enabled: champOn, page: page || null,
             reload: function () { rcReloadAfterSave(); }
           });
         }
       } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
       return null;
     }
-    var champPanel = buildChampPanel();
-    if (champPanel) champBody.appendChild(champPanel);
-    paintChampSwitch();
+    var champSwitching = false;
     champSw.addEventListener('click', function () {
-      champOn = !champOn;
-      if (typeof rcSetChampEnabled === 'function') rcSetChampEnabled(profile.profileId, champOn);
-      paintChampSwitch();
-      // Only this container is redrawn (turning it on fetches the championship then, with its own loading lights).
-      champBody.innerHTML = '';
-      var fresh = buildChampPanel();
-      if (fresh) champBody.appendChild(fresh);
+      if (champSwitching) return;
+      champSwitching = true;
+      var turningOn = !champOn;
+      champSw.disabled = true;
+      fetchApi('setChampEnabled', { method: 'POST', token: token, body: { enabled: turningOn ? '1' : '0' } }).then(function (res) {
+        champSwitching = false; champSw.disabled = false;
+        if (!res || !res.success) { showToast('Could not change the switch. Please try again.', 'error'); return; }
+        champOn = turningOn;
+        if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
+        paintChampSwitch();
+        // Only this container is redrawn (turning it on fetches the championship now, with its own loading lights).
+        champBody.innerHTML = '';
+        var fresh = buildChampPanel(null);
+        if (fresh) champBody.appendChild(fresh);
+      }).catch(function () {
+        champSwitching = false; champSw.disabled = false;
+        showToast('Could not reach the server.', 'error');
+      });
     });
-    // champHost joins the page only once the league cards are ready AND the championship has loaded, so both appear together.
-    var champReady = (champPanel && champPanel.rcdReady) || Promise.resolve();
+    // The championship slice of the one dashboard response. Built once it is here; champHost joins the page only when the league
+    // cards AND the championship are ready, so everything appears together.
+    var champReady = (dashboardData.champPromise || Promise.resolve(null)).then(function (slice) {
+      champOn = !!(slice && slice.success && slice.enabled !== false);
+      if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
+      paintChampSwitch();
+      var panel = buildChampPanel(champOn ? slice : null);
+      if (panel) champBody.appendChild(panel);
+      return panel && panel.rcdReady;
+    });
 
     var rows = null;
 
@@ -9288,13 +9309,14 @@
   // asyncDashCard/buildDashboardDataRows above.
   var dashboardData = fetchDashboardData(token);
 
-  // Start the Single Player Championship load at the same moment, so it arrives with the league cards (profile id from the cached profile).
+  // Speed-up only: if this browser last saw the championship switched ON, start loading its scripts now (the data itself always
+  // rides in with the dashboard data, and only when the server says the switch is on).
   try {
     var cachedForChamp = JSON.parse(localStorage.getItem('raceclub_profile_cache') || 'null');
-    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcChampEnabled === 'function' && window.rcChampEnabled(cachedForChamp.profileId) && typeof window.rcPreloadChampionship === 'function') {
-      window.rcPreloadChampionship({ token: token, profileId: cachedForChamp.profileId, showToast: showToast });
+    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcChampHint === 'function' && window.rcChampHint(cachedForChamp.profileId) && typeof window.rcPreloadChampionshipScripts === 'function') {
+      window.rcPreloadChampionshipScripts({ showToast: showToast, reload: function () { rcReloadAfterSave(); } });
     }
-  } catch (preErr) { /* the dashboard fetches it itself when there is no cache */ }
+  } catch (preErr) { /* only a speed-up */ }
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
   if (freshProfileRaw) sessionStorage.removeItem('raceclub_fresh_profile');
