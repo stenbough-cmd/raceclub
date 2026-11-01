@@ -14,8 +14,9 @@
   function tx(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; e.textContent = text == null ? '' : String(text); return e; }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function num(v, d) { return v === null || v === undefined || isNaN(v) ? '--' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
-  function saveLocal(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { /* storage blocked: fine */ } }
-  function readLocal(key) { try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  // Profile data now comes from files on GitHub (profiles/<id>.json, profiles/<id>/rivals.json) and is not kept in this
+  // browser. Copies saved by earlier versions are removed.
+  try { Object.keys(localStorage).forEach(function (k) { if (/^rc_profile_(page|rivals)_v\d+_/.test(k)) localStorage.removeItem(k); }); } catch (e) { /* storage blocked: fine */ }
   function ord(n) { n = Number(n); if (!n) return '--'; var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 
   // championship-report.js was written for the Championship page and calls these four helpers, which
@@ -744,14 +745,11 @@
     });
   }
   function loadRivals() {
-    var key = 'rc_profile_rivals_v3_' + profileId;
-    var saved = readLocal(key);
-    if (saved) drawRivals(saved);
-    else { $('rdp-rivals').innerHTML = ''; $('rdp-rivals').appendChild(tx('div', 'rdp-loading', 'Loading rivalries...')); }
+    $('rdp-rivals').innerHTML = ''; $('rdp-rivals').appendChild(tx('div', 'rdp-loading', 'Loading rivalries...'));
     fetchApi('getDriverProfileRivals', { params: { profileId: profileId }, timeoutMs: 60000 }).then(function (res) {
-      if (res && res.success) { saveLocal(key, res); drawRivals(res); }
-      else if (!saved) drawRivals(null);
-    }).catch(function () { if (!saved) drawRivals(null); });
+      if (res && res.success) drawRivals(res);
+      else drawRivals(null);
+    }).catch(function () { drawRivals(null); });
   }
 
   // ---- Row 5: Team History --------------------------------------------------------------------
@@ -812,13 +810,10 @@
     renderTeams(data);
     $('rdp-row-mid').hidden = false;
   }
-  var pageKey = 'rc_profile_page_v2_' + profileId;
-  var savedPage = readLocal(pageKey);
   var rivalsStarted = false;
   function startRivals() { if (!rivalsStarted) { rivalsStarted = true; loadRivals(); } }
-  if (savedPage && savedPage.success) { renderAll(savedPage); startRivals(); }
-  else if (window.rcHelmetSpinner_) { $('rdp-ach-loading').appendChild(window.rcHelmetSpinner_('Loading career stats...')); }   // the other containers show up empty with just their headers
+  if (window.rcHelmetSpinner_) { $('rdp-ach-loading').appendChild(window.rcHelmetSpinner_('Loading career stats...')); }   // the other containers show up empty with just their headers
   fetchApi('getDriverProfilePage', { params: { profileId: profileId }, timeoutMs: 60000 }).then(function (res) {
-    if (res && res.success) { saveLocal(pageKey, res); renderAll(res); startRivals(); }
-  }).catch(function () { if (!savedPage) { $('rdp-ach-loading').innerHTML = ''; $('rdp-ach-loading').appendChild(emptyBlock('Stats Unavailable', 'Could not load this profile right now.')); } });
+    if (res && res.success) { renderAll(res); startRivals(); }
+  }).catch(function () { $('rdp-ach-loading').innerHTML = ''; $('rdp-ach-loading').appendChild(emptyBlock('Stats Unavailable', 'Could not load this profile right now.')); });
 })();

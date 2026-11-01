@@ -347,6 +347,15 @@ var RC_DATA_ROUTES_ = {
     file: function (p) { return p.seasonId ? null : 'league/hub.json'; },
     pick: function (f) { return rcPatchHubTimeFields(_rcDataStrip_(f)); }
   },
+  // A driver's profile page and rivalries (two files; rivals are the slow build, so they are their own file).
+  getDriverProfilePage: {
+    file: function (p) { return /^RC-\d{5,6}$/.test(String(p.profileId || '')) ? 'profiles/' + p.profileId + '.json' : null; },
+    pick: _rcDataStrip_
+  },
+  getDriverProfileRivals: {
+    file: function (p) { return /^RC-\d{5,6}$/.test(String(p.profileId || '')) ? 'profiles/' + p.profileId + '/rivals.json' : null; },
+    pick: _rcDataStrip_
+  },
   getDriverDirectory: { file: function () { return 'league/directory.json'; }, pick: _rcDataStrip_ },
   getDriverProfileRound: {
     file: function (p) { return (/^RND-\d{3,8}$/.test(String(p.roundId || '')) && /^RC-\d{5,6}$/.test(String(p.profileId || ''))) ? 'rounds/' + p.roundId + '/' + p.profileId + '.json' : null; },
