@@ -817,7 +817,8 @@ body.rcc-demo { position: relative; }
 .rcc-metal-btn:hover .rcc-metal-btn-face { filter: brightness(1.04); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 var(--rcc-navy); }
 .rcc-metal-btn:active .rcc-metal-btn-face { transform: translateY(1px); }
 .rcc-metal-btn:focus-visible { outline: 2px solid var(--rcc-navy); outline-offset: 2px; }
-.rcr-report-who { margin: 10px 0 14px; } /* 10px extra gap under the recap dropdowns (Matt, 2026-11-01) */
+.rcr-report-who { margin: 0 0 14px; padding-top: 10px; } /* padding, not margin: a margin here would merge with the dropdown row's 18px and add nothing. +10px under the recap dropdowns (Matt, 2026-11-01) */
+.rcr-report-who + .rcr-report { margin-top: 8px; } /* gap down to the Driver Report heading is 14px, same as the League Hub */
 /* Driver Report owner line: driver name bold black, then team and number normal weight in steel. */
 .rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }
 .rcr-who-name .rcr-who-team { font-weight: 400; color: var(--rc-steel); }
