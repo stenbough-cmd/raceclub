@@ -1,7 +1,7 @@
 // Race Club -- js/championship-dashboard.js
 // SINGLE PLAYER CHAMPIONSHIP container on the Account dashboard (ECO chat, 2026-11-01, the Championship and ECO chats were
 // merged). It carries the championship season tools (Create / Edit / End / Delete Season, Upload / Erase Results, Season Preview,
-// Choose Your Team, Help) so a member can run their own offline championship from the dashboard.
+// Choose Your Team) so a member can run their own offline championship from the dashboard.
 //
 // It does not copy those tools: it loads js/championship.js (the same file championship.html uses) in "embedded" mode and calls
 // its popups (rccOpenSeasonWizard, rccOpenEndSeason, ...). Embedded mode (window.RCC_EMBEDDED) switches off championship.js's own
@@ -212,9 +212,9 @@
         if (isCurrent) {
           bg.appendChild(rowBtn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'This season has ended, so its details can no longer be edited.'));
           bg.appendChild(rowBtn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
-          bg.appendChild(rowBtn('Choose Your Team', active, function () { rccOpenRegistration(); }, 'The season has ended.'));
+          bg.appendChild(rowBtn('Choose Your Team', active && !page.registration, function () { rccOpenRegistration(); }, page.registration ? 'You have already chosen your team for this season.' : 'The season has ended.'));
         }
-        var open = mk('a', 'rc-btn-secondary rc-btn-row', 'Open');
+        var open = mk('a', 'rc-btn-secondary rc-btn-row', 'View');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
         open.style.textDecoration = 'none';
         bg.appendChild(open);
