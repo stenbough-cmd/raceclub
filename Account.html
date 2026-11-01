@@ -676,25 +676,38 @@
       } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
       return null;
     }
-    var champSwitching = false;
+    // Clicking is instant: the switch and the container change at once, the save runs in the background, and the switch stays
+    // disabled until the save (and, when turning on, the championship load) is done, so it cannot be flipped back and forth.
+    function setChampBusy(busy) {
+      champSw.disabled = busy;
+      champSw.style.opacity = busy ? '0.55' : '';
+      champSw.style.cursor = busy ? 'not-allowed' : '';
+    }
+    function showChampState(on) {
+      champOn = on;
+      paintChampSwitch();
+      champBody.innerHTML = '';
+      var fresh = buildChampPanel(null);
+      if (fresh) champBody.appendChild(fresh);
+      return fresh;
+    }
     champSw.addEventListener('click', function () {
-      if (champSwitching) return;
-      champSwitching = true;
+      if (champSw.disabled) return;
       var turningOn = !champOn;
-      champSw.disabled = true;
-      fetchApi('setChampEnabled', { method: 'POST', token: token, body: { enabled: turningOn ? '1' : '0' } }).then(function (res) {
-        champSwitching = false; champSw.disabled = false;
-        if (!res || !res.success) { showToast('Could not change the switch' + (res && (res.message || res.error) ? ' (' + (res.message || res.error) + ')' : '') + '. If this keeps happening, the updated Apps Script has not been deployed yet.', 'error'); return; }
-        champOn = turningOn;
-        if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
-        paintChampSwitch();
-        // Only this container is redrawn (turning it on fetches the championship now, with its own loading lights).
-        champBody.innerHTML = '';
-        var fresh = buildChampPanel(null);
-        if (fresh) champBody.appendChild(fresh);
-      }).catch(function () {
-        champSwitching = false; champSw.disabled = false;
-        showToast('Could not reach the server.', 'error');
+      setChampBusy(true);
+      var panel = showChampState(turningOn);
+      var panelDone = (panel && panel.rcdReady) || Promise.resolve();
+      var saved = fetchApi('setChampEnabled', { method: 'POST', token: token, body: { enabled: turningOn ? '1' : '0' } }).then(function (res) {
+        if (!res || !res.success) throw new Error((res && (res.message || res.error)) || 'FAILED');
+        if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, turningOn);
+      });
+      Promise.all([saved, panelDone.catch(function () {})]).then(function () {
+        setChampBusy(false);
+      }).catch(function (err) {
+        // The save did not go through: put everything back the way it was.
+        showChampState(!turningOn);
+        setChampBusy(false);
+        showToast('Could not change the switch (' + (err && err.message ? err.message : 'error') + '). If this keeps happening, the updated Apps Script has not been deployed yet.', 'error');
       });
     });
     // The championship slice of the one dashboard response. Built once it is here; champHost joins the page only when the league

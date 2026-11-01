@@ -12,8 +12,8 @@
 
 (function () {
   var STYLE_ID = 'rcd-style';
-  var CSS_FILES = ['css/league.css', 'css/championship.css'];
-  var JS_FILES = ['js/championship-help.js', 'js/championship.js'];
+  var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar2'];
+  var JS_FILES = ['js/championship-help.js?v=6', 'js/championship.js?v=6'];
   var loading = null;
 
   function mk(tag, cls, text) {
@@ -252,8 +252,8 @@
     var wrap = mk('div', 'rcd-help rcc-help-body');
     wrap.appendChild(mk('p', 'rcd-note', 'Loading help...'));
     if (!helpLoading) {
-      ['css/league.css', 'css/championship.css'].forEach(loadCss);
-      helpLoading = loadScript('js/championship-help.js');
+      CSS_FILES.forEach(loadCss);
+      helpLoading = loadScript('js/championship-help.js?v=6');
       helpLoading.catch(function () { helpLoading = null; });
     }
     helpLoading.then(function () {
