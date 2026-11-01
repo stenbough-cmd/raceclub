@@ -547,7 +547,7 @@
       };
       addRow.appendChild(lpick); addRow.appendChild(addB); addRow.appendChild(addLogoBtn); addRow.appendChild(logosBtn);
       lg.insertBefore(addRow, layers); lg.insertBefore(filterRow, addRow);
-      lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head rch-boldlabel', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
+      lg.insertBefore(mk('div', 'rch-label rch-subhead rch-layerlist-head rch-redlabel', 'Layer list'), layers);   // the shape picker and Add layer sit above the list, over the Outer Shell line
       var detail = mk('div', 'rch-detail'); lg.appendChild(detail);
       right.appendChild(lg);
 

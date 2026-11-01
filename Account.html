@@ -3364,6 +3364,14 @@
     textCol.appendChild(nameLine);
 
     var metaParts = [];
+    // Season stage: Finished once ended; In progress once the first race's date/time has arrived; otherwise Registration.
+    var firstStart = null;
+    (races || []).forEach(function (r) {
+      if (r.kind === 'bye' || !r.startUtc) return;
+      var t = new Date(r.startUtc).getTime();
+      if (!isNaN(t) && (firstStart === null || t < firstStart)) firstStart = t;
+    });
+    metaParts.push(s.status === 'Completed' ? 'Finished' : ((firstStart !== null && firstStart <= Date.now()) ? 'In progress' : 'Registration'));
     metaParts.push(s.classes && s.classes.length ? s.classes.join(', ') : 'No classes selected');
     metaParts.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
     metaParts.push(s.registrationCount + ' driver' + (s.registrationCount === 1 ? '' : 's') + ' registered');
