@@ -29,12 +29,12 @@
     s.id = STYLE_ID;
     s.textContent =
       // The Championship page's accent: the site red becomes blue-gray inside this container and inside the championship popups.
-      '.rcd-panel, .rcc-modal-overlay { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
+      '.rcd-panel, .rcd-help, .rcc-modal-overlay { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
       // Color tokens the popups read (league.css and championship.css set these on the page body, which this page does not have).
-      '.rcc-modal-overlay { --rcl-bg: var(--rc-offwhite); --rcl-bg-raised: var(--rc-white); --rcl-bg-raised-2: var(--rc-offwhite); --rcl-line: var(--rc-silver);' +
-      ' --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white)); --rcl-ink: var(--rc-carbon); --rcl-ink-dim: var(--rc-steel);' +
-      ' --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, var(--rc-white)); --rcc-navy: var(--rc-balanced); --rcc-accent-light: #9db6cc; --rcc-true-red: #F21B0C;' +
+      '.rcc-modal-overlay { --rcl-bg: #0a0a0b; --rcl-bg-raised: #141416; --rcl-bg-raised-2: #1b1c1f; --rcl-line: #2c2d31; --rcl-line-bright: #45474d; --rcl-ink: #f2f2f0; --rcl-ink-dim: #b4b7bd; --rcl-ink-faint: #7d8088;' +
+      ' --rcc-navy: var(--rc-balanced); --rcc-accent-light: #9db6cc; --rcc-true-red: #F21B0C;' +
       ' --rcl-gold: #e0b64c; --rcl-badge-news: #2f6f9f; --rcl-report-damage: #f5923b; --rcl-report-collision: #e8c547; --rcl-report-gain: #4fbf72; --rcl-report-fastest: #b07ce8; --rcl-bonus: #7fa8d4; color: var(--rcl-ink); }' +
+      '.rcd-help { --rcc-navy: #34495c; --rcc-accent-light: #9db6cc; } .rcd-help-tab { --rc-red: #5f7d99; --rc-red-dark: #4b6680; }' +
       '.rcd-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; margin-bottom: 14px; }' +
       '.rcd-row-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }' +
       '.rcd-spacer { flex: 1 1 20px; }' +
@@ -103,43 +103,101 @@
       return b;
     }
 
+    // Same layout as the League Tools Seasons panel: one right-aligned button row, then the list in its own bordered box,
+    // grouped under year pills, one .rc-group-row per season with the name and a gray meta line.
     var row = mk('div', 'rcd-row');
-    var left = mk('div', 'rcd-row-group');
-    left.appendChild(btn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
-    left.appendChild(btn('Choose Your Team', active, function () { rccOpenRegistration(); }, !hasSeason ? 'Create a season first.' : 'The season has ended.'));
-    left.appendChild(btn('Help', true, rccOpenHelp));
-    row.appendChild(left);
-    row.appendChild(mk('div', 'rcd-spacer'));
-    var right = mk('div', 'rcd-row-group');
-    right.appendChild(btn('Create Season', !running, function () { rccOpenSeasonWizard(null); }, 'End your current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
-    right.appendChild(btn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.'));
-    right.appendChild(btn('End Season', active, function () { rccOpenEndSeason(); }, 'No active season to end.'));
-    right.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season to delete.'));
-    right.appendChild(btn('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
+    row.appendChild(btn('Create Season', !running, function () { rccOpenSeasonWizard(null); }, 'End your current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
+    row.appendChild(btn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
+    row.appendChild(btn('Choose Your Team', active, function () { rccOpenRegistration(); }, !hasSeason ? 'Create a season first.' : 'The season has ended.'));
+    row.appendChild(btn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'No active season to edit.'));
+    row.appendChild(btn('End Season', active, function () { rccOpenEndSeason(); }, 'No active season to end.'));
+    row.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season to delete.'));
+    row.appendChild(btn('Upload Results', active && !!page.registration && anyEmpty, function () { rccOpenUpload(null, false); },
       !active ? 'No active season.' : (!page.registration ? 'Choose your team first.' : 'Every round already has results.')));
-    right.appendChild(btn('Erase Results', active && anyResults, function () { rccOpenErase(); }, !active ? 'No active season.' : 'No results to erase yet.'));
-    row.appendChild(right);
+    row.appendChild(btn('Erase Results', active && anyResults, function () { rccOpenErase(); }, !active ? 'No active season.' : 'No results to erase yet.'));
     panel.appendChild(row);
 
     var box = mk('div', 'rc-panel');
     var seasons = (page && page.seasons) || [];
     if (!seasons.length) {
-      box.appendChild(mk('p', 'rcd-note', 'No championship seasons yet. Press Create Season to set up your first offline season.'));
+      box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet.'));
     } else {
+      var lastYear = null;
       seasons.forEach(function (s) {
+        var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Seasons';
+        if (year !== lastYear) {
+          var head = mk('div', 'rc-group-head');
+          head.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
+          box.appendChild(head);
+          lastYear = year;
+        }
         var st = statusOf(s);
-        var line = mk('div', 'rcd-season');
-        var name = mk('div', 'rcd-season-name', (s.seasonNumber ? 'Season ' + s.seasonNumber + ': ' : '') + (s.name || s.seasonId));
-        line.appendChild(name);
-        line.appendChild(mk('span', 'rcd-pill' + (st.active ? ' rcd-active' : ''), st.label));
-        var open = mk('a', 'rc-btn-secondary rc-btn-sm rc-btn-row', 'Open');
+        var line = mk('div', 'rc-group-row');
+        var info = mk('div', 'rc-dm-row-info');
+        var textCol = mk('div', '');
+        textCol.appendChild(mk('span', 'rc-dm-row-label', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
+        var meta = [st.label];
+        if (s.raceCount != null) meta.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
+        if (s.createdAt) meta.push('Created ' + String(s.createdAt).slice(0, 10));
+        textCol.appendChild(mk('div', 'rc-hint', meta.join(' \u00B7 ')));
+        info.appendChild(textCol);
+        line.appendChild(info);
+        var open = mk('a', 'rc-btn-secondary rc-btn-row', 'Open');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
+        open.style.cssText = 'flex:none;text-decoration:none;';
         line.appendChild(open);
         box.appendChild(line);
       });
     }
     panel.appendChild(box);
   }
+
+  // HELP (Account.html Help page, "Single Player Championship" tab): the championship help text, in the Championship's blue-gray.
+  // Returns an element at once and fills it as soon as css/championship.css and js/championship-help.js have loaded.
+  var helpLoading = null;
+  window.rcBuildChampionshipHelp = function () {
+    addStyle();
+    var wrap = mk('div', 'rcd-help rcc-help-body');
+    wrap.appendChild(mk('p', 'rcd-note', 'Loading help...'));
+    if (!helpLoading) {
+      ['css/league.css', 'css/championship.css'].forEach(loadCss);
+      helpLoading = loadScript('js/championship-help.js');
+      helpLoading.catch(function () { helpLoading = null; });
+    }
+    helpLoading.then(function () {
+      wrap.innerHTML = '';
+      var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
+      if (typeof RCC_HELP_QUICKSTART !== 'undefined') {
+        var qs = mk('div', 'rcc-quick');
+        qs.innerHTML = RCC_HELP_QUICKSTART;
+        wrap.appendChild(qs);
+      }
+      var card = mk('div', 'rc-panel rc-dash-card');
+      card.appendChild(mk('h3', 'rc-dash-card-title', 'Single Player Championship'));
+      var nav = mk('div', 'rc-rulebook-nav');
+      nav.appendChild(mk('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
+      var grid = mk('div', 'rc-rulebook-nav-grid');
+      nav.appendChild(grid);
+      card.appendChild(nav);
+      sections.forEach(function (sec) {
+        var sw = mk('div', 'rc-rulebook-section');
+        sw.appendChild(mk('h3', null, sec.num + '. ' + sec.title));
+        var body = document.createElement('div');
+        body.innerHTML = sec.html || '';
+        sw.appendChild(body);
+        var link = mk('a', 'rc-rulebook-nav-link', sec.num + '. ' + sec.title);
+        link.href = '#';
+        link.addEventListener('click', function (evt) { evt.preventDefault(); sw.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+        grid.appendChild(link);
+        card.appendChild(sw);
+      });
+      wrap.appendChild(card);
+    }).catch(function () {
+      wrap.innerHTML = '';
+      wrap.appendChild(mk('p', 'rcd-note', 'Could not load the championship help right now. Refresh the page to try again.'));
+    });
+    return wrap;
+  };
 
   window.rcBuildChampionshipDashboard = function (opts) {
     addStyle();
