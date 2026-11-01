@@ -3864,11 +3864,9 @@ function _rclPatchTimeDerivedFields_(hub) {
   return hub;
 }
 
-// Saved copy of the last League Hub payload, kept in this browser (localStorage) so coming back to
-// this page (e.g. from a driver profile) draws instantly from it while fresh data is fetched quietly
-// in the background (stale-while-revalidate). league.html's <head> checks the same key to skip the
-// loading overlay when a copy exists.
-var RCL_HUB_STORAGE_KEY_ = 'rc_league_hub_v1';
+// The hub comes from league/hub.json on GitHub Pages (see RC_DATA_ROUTES_ in api.js), revalidated on every load.
+// Nothing is kept in this browser. Copies saved by earlier versions are removed here.
+try { localStorage.removeItem('rc_league_hub_v1'); } catch (err) { /* storage blocked */ }
 
 // Load-failure panel with a RETRY button. Shown only when the first load fails and there is no saved
 // copy to draw from (a saved copy means the page is already showing something, so no panel).
@@ -3897,23 +3895,10 @@ function _rclShowLoadError_(onRetry, title) {
   main.insertBefore(box, main.firstChild);
 }
 
-function _rclReadSavedHubText_() {
-  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return null;   // Staged League Hub: never draw from the real saved copy
-  try { return localStorage.getItem(RCL_HUB_STORAGE_KEY_); } catch (err) { return null; }
-}
-function _rclSaveHubText_(text) {
-  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return;   // ...and never save staged data over it
-  try { localStorage.setItem(RCL_HUB_STORAGE_KEY_, text); } catch (err) { /* storage full or blocked -- the page still works */ }
-}
-
-// _rclFetchLeagueHubRaw_() -- tries the published CSV first, which hits Google's own static-file
-// servers with zero Apps Script execution, and falls back to the normal fetchApi('getLeagueHub',
-// ...) call on ANY failure (CSV URL not configured, fetch failed, or the text didn't parse).
+// _rclFetchLeagueHubRaw_() -- the current-season hub: league/hub.json, or Apps Script when the file is
+// missing or unusable (fetchApi decides; the clock-driven fields are recomputed on every read).
 function _rclFetchLeagueHubRaw_() {
-  if (typeof rcStagedHubOn === 'function' && rcStagedHubOn()) return fetchApi('getLeagueHub', {});   // Staged League Hub: skip the published CSV
-  return fetchPublishedJson(RC_LEAGUE_HUB_CSV_URL).catch(function () {
-    return fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
-  });
+  return fetchApi('getLeagueHub', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -3943,18 +3928,8 @@ document.addEventListener('DOMContentLoaded', function () {
     _rclHidePageLoader();
   }
 
-  // Draw the saved copy first, if there is one.
+  // The page waits behind the loading popup and draws once, with the finished data.
   var currentText = null;
-  var savedText = _rclReadSavedHubText_();
-  if (savedText) {
-    try {
-      var savedHub = JSON.parse(savedText);
-      if (savedHub && savedHub.success) {
-        currentText = savedText;
-        showHub(_rclPatchTimeDerivedFields_(savedHub));
-      }
-    } catch (parseErr) { currentText = null; }
-  }
   if (!currentText) {
     document.documentElement.classList.remove('rcl-has-cache');
     if (document.getElementById('rcl-page-loader')) _rclLockBodyScroll();
@@ -4031,7 +4006,6 @@ document.addEventListener('DOMContentLoaded', function () {
         var text = JSON.stringify(hub);
         if (text !== currentText) {
           currentText = text;
-          _rclSaveHubText_(text);
           // While a past season is showing, only the saved current-season copy is refreshed.
           if (!_rclViewSeasonId_) showHub(_rclPatchTimeDerivedFields_(hub));
         }

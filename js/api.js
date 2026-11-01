@@ -165,44 +165,17 @@ if (typeof document !== 'undefined' && document.addEventListener) {
 }
 
 // ---- DRIVER DIRECTORY (public list behind profile.html) ----
-// Saved in this browser (localStorage) so a profile can draw instantly from the last copy while a
-// fresh one is fetched quietly in the background (stale-while-revalidate). Every storage call is
-// wrapped: private windows / blocked storage just mean "no saved copy".
-var RC_DRIVER_DIRECTORY_STORAGE_KEY_ = 'rc_driver_directory_v1';
-
-function rcReadSavedDriverDirectory() {
-  if (rcStagedHubOn()) return null;   // staged data is never kept as the saved copy
-  try {
-    var raw = localStorage.getItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_);
-    if (!raw) return null;
-    var dir = JSON.parse(raw);
-    return (dir && Array.isArray(dir.drivers)) ? dir : null;
-  } catch (err) { return null; }
-}
-
-// Fetches the current directory (published CSV first, Apps Script as the fallback), saves it, and
-// resolves with it. Rejects if both routes fail.
+// Read from league/directory.json (see RC_DATA_ROUTES_). Nothing is kept in this browser: the file is
+// revalidated on every load, which costs a tiny 304 reply when it has not changed.
+function rcReadSavedDriverDirectory() { return null; }
 function rcFetchDriverDirectory() {
-  if (rcStagedHubOn()) return fetchApi('getDriverDirectory', {});
-  return fetchPublishedJson(RC_DRIVER_DIRECTORY_CSV_URL).catch(function () {
-    return fetchApi('getDriverDirectory', { timeoutMs: RC_FETCH_TIMEOUT_MS_LONG });
-  }).then(function (dir) {
+  return fetchApi('getDriverDirectory', {}).then(function (dir) {
     if (!dir || !dir.success || !Array.isArray(dir.drivers)) throw new Error('RC_DIRECTORY_BAD');
-    try {
-      localStorage.setItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_, JSON.stringify(dir));
-      localStorage.setItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_ + '_t', String(Date.now()));
-    } catch (err) { /* storage unavailable */ }
     return dir;
   });
 }
-
-// True when there is no saved directory, or it was saved more than maxAgeMs ago.
-function rcDriverDirectoryIsStale(maxAgeMs) {
-  try {
-    var t = Number(localStorage.getItem(RC_DRIVER_DIRECTORY_STORAGE_KEY_ + '_t')) || 0;
-    return !rcReadSavedDriverDirectory() || (Date.now() - t) > maxAgeMs;
-  } catch (err) { return true; }
-}
+// The league page used this to warm the saved copy; with no saved copy there is nothing to warm.
+function rcDriverDirectoryIsStale() { return false; }
 
 // Writes (POSTs) wait up to Apps Script's 6-minute execution limit plus slack, so an admin always gets
 // the server's real acknowledgement or error instead of guessing whether a short client timeout hid
@@ -339,11 +312,42 @@ var RC_DATA_SOURCE = (function () {
 function _rcDataRoundPath_(p) {
   return /^RND-\d{3,8}$/.test(String(p.roundId || '')) ? 'rounds/' + p.roundId + '.json' : null;
 }
+// A data file minus its meta block = the object the action returns.
+function _rcDataStrip_(f) {
+  var out = {};
+  Object.keys(f).forEach(function (k) { if (k !== 'meta') out[k] = f[k]; });
+  return out;
+}
+// The few League Hub fields that depend on the clock (client-side twin of _rcRefreshTimeDerivedLeagueHubFields_ in
+// Website.gs; keep them in lockstep). A published file is minutes or days old, so these are recomputed on every read.
+function rcPatchHubTimeFields(hub) {
+  if (!hub || !hub.hasSeason || !Array.isArray(hub.calendar)) return hub;
+  var nowMs = Date.now();
+  hub.calendar.forEach(function (entry) {
+    entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
+    entry.raceOver = !!(entry.startUtc && (new Date(entry.startUtc).getTime() + 3 * 60 * 60 * 1000) <= nowMs);
+  });
+  var done = hub.calendar.filter(function (e) { return e.kind === 'round' && e.finished && e.hasResults; });
+  hub.roundsCompleted = done.length;
+  hub.hasUnofficialResults = done.some(function (e) { return !e.resultsFinalized; });
+  var next = hub.calendar.filter(function (e) { return e.kind !== 'bye' && !e.raceOver; })[0];
+  hub.nextRace = next ? {
+    kind: next.kind, eventName: next.eventName || '', track: next.track || '', layout: next.layout || '',
+    startUtc: next.startUtc || '', raceLengthTier: next.raceLengthTier || '', roundNum: next.roundNum || 0, totalRounds: hub.totalRounds
+  } : null;
+  return hub;
+}
 // action -> which file answers it and which part of the file is the answer (the same object the action returns).
 var RC_DATA_ROUTES_ = {
   getPublicRoundResults: { file: _rcDataRoundPath_, pick: function (f) { return f.results; } },
   getPublicRoundQualifying: { file: _rcDataRoundPath_, pick: function (f) { return f.qualifying; } },
   // One driver's report for one round (My Laps + Driver Report): the whole file is the answer.
+  // League Hub (current season only; a past season, ?seasonId=, still asks Apps Script) and the Driver Directory.
+  getLeagueHub: {
+    file: function (p) { return p.seasonId ? null : 'league/hub.json'; },
+    pick: function (f) { return rcPatchHubTimeFields(_rcDataStrip_(f)); }
+  },
+  getDriverDirectory: { file: function () { return 'league/directory.json'; }, pick: _rcDataStrip_ },
   getDriverProfileRound: {
     file: function (p) { return (/^RND-\d{3,8}$/.test(String(p.roundId || '')) && /^RC-\d{5,6}$/.test(String(p.profileId || ''))) ? 'rounds/' + p.roundId + '/' + p.profileId + '.json' : null; },
     pick: function (f) { return f; }
