@@ -90,7 +90,7 @@ body.rc-league-page.rcc-page {
 /* Season title in white; "Season N" stays navy and the slash red (Matt). */
 /* No shadow on "Season N" and "/"; the white season title keeps a lighter one (Matt, 2026-10-15). */
 .rcc-page .rcl-hero-season { text-shadow: none; }
-.rcc-page .rcl-hero-season-name { color: var(--rc-white); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.12); }
+.rcc-page .rcl-hero-season-name { color: var(--rc-white); }
 /* Car maker logo in front of the team name, sized like the ticker's logos. */
 
 /* -------------------------------------------------------------------- */

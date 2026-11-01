@@ -16,13 +16,13 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.3">
-<script src="js/version.js?v=0.9.3"></script>
-<script src="js/img-loader.js?v=0.9.3"></script>
-<script src="js/api.js?v=0.9.3"></script>
-<script src="js/auth.js?v=0.9.3"></script>
-<script src="js/reference-data.js?v=0.9.3"></script>
-<script src="js/header.js?v=0.9.3"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.4">
+<script src="js/version.js?v=0.9.4"></script>
+<script src="js/img-loader.js?v=0.9.4"></script>
+<script src="js/api.js?v=0.9.4"></script>
+<script src="js/auth.js?v=0.9.4"></script>
+<script src="js/reference-data.js?v=0.9.4"></script>
+<script src="js/header.js?v=0.9.4"></script>
 </head>
 <body>
 <div id="rc-header"></div>
@@ -199,23 +199,7 @@
   var regPasswordMatch = document.getElementById('rc-reg-password-match');
   var regBtn = document.getElementById('rc-register-btn');
 
-  function checkPasswordMatch() {
-    var p1 = regPassword.value;
-    var p2 = regPassword2.value;
-    if (!p2) {
-      regPasswordMatch.className = 'rc-hint';
-      regPasswordMatch.textContent = '';
-      regBtn.disabled = false;
-      return true;
-    }
-    var matches = p1 === p2;
-    regPasswordMatch.className = matches ? 'rc-hint rc-ok' : 'rc-hint rc-error';
-    regPasswordMatch.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
-    regBtn.disabled = !matches;
-    return matches;
-  }
-  regPassword.addEventListener('input', checkPasswordMatch);
-  regPassword2.addEventListener('input', checkPasswordMatch);
+  var checkPasswordMatch = rcWirePasswordMatch(regPassword, regPassword2, regPasswordMatch, regBtn);
 
   // A field's red border clears as soon as the person edits it.
   ['input', 'change'].forEach(function (evtName) {

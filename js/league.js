@@ -24,11 +24,7 @@ function _rclBuildInlineSpinner_(message) {
   return wrap;
 }
 
-function _rclEscapeHtml(str) {
-  var d = document.createElement('div');
-  d.textContent = str == null ? '' : String(str);
-  return d.innerHTML;
-}
+function _rclEscapeHtml(str) { return rcEscapeHtml(str); }
 
 // Class pill -- same rounded-rectangle, white-on-color chip every other class badge on the site
 // uses (.rc-badge-chip + its color class, style.css, which league.html already loads alongside

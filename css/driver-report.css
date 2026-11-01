@@ -192,7 +192,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
 .rcr-stack { grid-template-columns: minmax(0, 1fr); }
 
 /* ---- League Hub Driver Reports page: driver block + driver dropdown row, dark card in the League Hub's own colors ---- */
-.rcl-dr-light { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; }
+.rcl-dr-light { border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; }
 .rcl-dr-top { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; margin: 0 0 14px; }
 .rcl-dr-top .rcr-report-who { flex: 1 1 auto; min-width: 0; margin: 0; }
 .rcl-dr-pick { flex: none; display: flex; flex-direction: column; width: 315px; max-width: 100%; margin-left: auto; }

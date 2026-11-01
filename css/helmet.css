@@ -24,7 +24,7 @@
 }
 .rch-input { width: 100%; padding: 7px 9px; }
 .rch-select-wide { width: 100%; padding: 6px 8px; min-width: 0; }
-.rch-addrow .rch-select-wide { width: auto; flex: 1 1 130px; }
+.rch-addrow .rch-select-wide { width: auto; }
 /* finish drop-downs: about half the size they were */
 .rch-finish { width: 124px; padding: 1px 2px; font-size: 11px; height: 22px; }
 .rch-text { width: 100%; min-height: 90px; padding: 8px; font-family: monospace; font-size: 12px; margin: 8px 0; }
@@ -55,7 +55,7 @@
 
 /* layer list */
 .rch-layers { display: flex; flex-direction: column; gap: 5px; padding: 8px; margin: 6px 0; border: 1px solid var(--rc-silver); border-radius: 8px; background: var(--rc-white); }
-.rch-subhead { margin: 4px 0 6px; }
+
 .rch-layer { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rc-silver); border-radius: 6px; padding: 5px 8px; background: var(--rc-white); cursor: grab; font-size: 13px; user-select: none; }
 .rch-layer.sel { border-color: var(--rc-red); background: var(--rc-offwhite); }
 .rch-layer.dragging { opacity: 0.45; }
@@ -76,7 +76,7 @@
 .rch-link.on { color: var(--rc-carbon); border-color: var(--rc-steel); background: var(--rc-offwhite); }
 .rch-link:hover { border-color: var(--rc-steel); }
 .rch-rotbtn { display: inline-flex; align-items: center; gap: 6px; }
-.rch-check { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+
 .rch-detail .rch-btns { margin-top: 10px; }
 .rch-detail .rch-select-wide { width: auto; }
 .rch-details summary { cursor: pointer; font-size: 13px; color: var(--rc-steel); }
@@ -197,7 +197,7 @@ body.rc-league-page:not(.rcc-page) .rch-player .rch-bgrow .rc-btn-secondary.rch-
 
 /* Layer numbers (1 = back layer) on the left of each layer row, and the single-row transparency slider */
 .rch-layer-no { min-width: 18px; text-align: right; color: var(--rc-steel); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.rch-sliders.rch-sliders-one { grid-template-columns: 1fr 62px; grid-auto-rows: 30px; margin-top: 4px; }
+.rch-sliders.rch-sliders-one { grid-template-columns: 1fr 62px; grid-auto-rows: 30px; }
 
 /* Labeled lines in the layer list: Outer Shell (top), Accents (movable), Base (bottom). Blue so they stand out from the layers. */
 :root { --rch-edge: #2b6cd9; }
@@ -246,7 +246,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-designer:not(.rch-player) .rch-section { border-top: 3px solid var(--rc-silver); background: #fcfcfc; }
 .rch-designer:not(.rch-player) .rch-layers { background: #fff; }
 .rch-filename { border: 0; background: transparent; padding: 0; margin: 0; outline: 0; color: inherit; cursor: default; max-width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; font-weight: 700; }
-.rch-tab-unsaved { margin-left: 6px; }
+
 .rch-loadrow { flex-wrap: wrap; }
 .rch-loadrow .rch-info { flex: 1 1 150px; }
 .rch-filename { display: block; height: 18px; line-height: 18px; box-sizing: content-box; }
@@ -265,7 +265,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-logopreview img { max-width: 100%; max-height: 140px; display: block; }
 /* Delete Forever / Archive confirms: the buttons stay at the right and the note slides in beside them */
 .rch-loadrow .rch-btns { margin-left: auto; justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
-.rch-loadrow .rch-btns .rch-psub { text-align: right; }
+
 .rch-loadrow .rch-btns { flex: 1 1 auto; }
 .rch-loadrow .rch-btns button { white-space: nowrap; }
 .rch-loadrow .rch-btns .rch-psub { flex: 1 1 auto; min-width: 0; text-align: right; }

@@ -70,11 +70,7 @@
     return e;
   }
 
-  function escapeHtml(str) {
-    var d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');   // quotes too, so text is safe inside attributes
-  }
+  function escapeHtml(str) { return rcEscapeHtml(str); }
 
   function _rcProtestLapLabel(lapNumber) {
     if (lapNumber === undefined || lapNumber === null || lapNumber === '') return '';

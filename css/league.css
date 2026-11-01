@@ -653,7 +653,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 
 /* Car profile picture above the driver name, and the car number after the name. */
 .rcl-lr-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
-.rcl-lr-podium-num { font-weight: 800; color: var(--rcl-ink); font-family: var(--rc-font-heading); font-size: 13px; white-space: nowrap; }
+.rcl-lr-podium-num { color: var(--rcl-ink); font-family: var(--rc-font-heading); font-size: 13px; white-space: nowrap; }
 /* flex-wrap: nowrap (was wrap) -- forced onto one line, overflowing the tile's fixed width rather
    than wrapping to a second line. */
 .rcl-lr-podium-identity {
@@ -1404,7 +1404,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    wants, instead of matching the item's own (possibly mid-transition, narrower) current width,
    which is what the no-wrap/ ellipsis treatment below needs to actually have something to clip
    against. */
-.rcl-carousel-header { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.rcl-carousel-header { flex-direction: column; align-items: center; width: 100%; }
 /* No-wrap + ellipsis on every header/hero text line -- the real cause of the flicker wasn't the
    track's own height so much as THIS: an item's width animates over .25s (.rcl-carousel-item's
    `width 0.25s ease` transition) between 75px and 400px, but its full header/hero text
@@ -1768,7 +1768,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-news-headtext { display: contents; }
 .rcl-news-badge-wrap { grid-column: 1; grid-row: 1; }
 .rcl-news-headrow .rcl-news-title { grid-column: 2; grid-row: 1; min-width: 0; }
-.rcl-news-headrow .rcl-news-meta { grid-column: 2; grid-row: 2; min-width: 0; }
+.rcl-news-headrow .rcl-news-meta { min-width: 0; }
 .rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) { grid-template-columns: minmax(0, 1fr); }
 .rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) .rcl-news-title,
 .rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) .rcl-news-meta { grid-column: 1; }
@@ -1787,8 +1787,8 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 /* Same colors as the Season Stories badges on the Championship page (navy with a red bottom edge). The border sits
    on the bottom of the icon (inset shadow keeps the icon the same size). Posts written by people use the Race Club
    red with the darker red bottom edge. */
-.rcl-news-badge-rd { background: var(--rc-balanced); box-shadow: inset 0 -3px 0 var(--rc-red); }
-.rcl-news-badge-ne { background: var(--rc-red); box-shadow: inset 0 -3px 0 var(--rc-red-dark); }
+.rcl-news-badge-rd { box-shadow: inset 0 -3px 0 var(--rc-red); }
+.rcl-news-badge-ne { box-shadow: inset 0 -3px 0 var(--rc-red-dark); }
 .rcl-news-badge-sm.rcl-news-badge-rd { box-shadow: inset 0 -2px 0 var(--rc-red); }
 .rcl-news-badge-sm.rcl-news-badge-ne { box-shadow: inset 0 -2px 0 var(--rc-red-dark); }
 .rcl-news-badge-top { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding-left: 0.12em; }

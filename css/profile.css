@@ -121,7 +121,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-story-text { font-size: 14px; line-height: 1.55; color: var(--rcl-ink-dim); }
 .rdp-story-more { margin-top: 8px; background: none; border: 0; padding: 0; color: #8fb0cf; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
 .rdp-story-more:hover { text-decoration: underline; }
-.rdp-stories-list { }
+
 .rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: var(--rc-shadow-lg-dark); }
 .rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--rcl-line); background: var(--rcl-bg-raised); border-radius: 10px 10px 0 0; } /* same header as the Account page popups, in the dark colors */
@@ -133,7 +133,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-modal-body p { margin: 0 0 12px; }
 
 /* Rivalries */
-.rdp-rival { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rcl-line); }
+.rdp-rival { display: grid; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--rcl-line); }
 .rdp-rival:first-child { padding-top: 0; }
 .rdp-rival:last-child { border-bottom: 0; padding-bottom: 0; }
 .rdp-rival-rank { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--rc-font-heading); font-weight: 800; font-size: 18px; color: #fff; background: linear-gradient(135deg, #3a3b40, #26272b); border: 1px solid var(--rcl-line-bright); }
@@ -149,9 +149,9 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-season { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink); }
 .rdp-team-logo { height: 22px; width: auto; max-width: 56px; object-fit: contain; flex: none; }
 .rdp-team-car { width: 100%; aspect-ratio: 900 / 260; object-fit: contain; display: block; box-sizing: border-box; padding: 10px 14px; }
-.rdp-team-name { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rcl-ink); line-height: 1.2; }
+.rdp-team-name { font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; color: var(--rcl-ink); line-height: 1.2; }
 .rdp-team-model-name { min-width: 0; }
-.rdp-team-model { font-size: 14px; color: var(--rcl-ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rdp-team-model { color: var(--rcl-ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rdp-team-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; border-top: 1px solid var(--rcl-line); padding-top: 8px; }
 .rdp-team-stat { text-align: center; }
 .rdp-team-stat b { display: block; font-family: var(--rc-font-heading); font-size: 16px; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
@@ -196,7 +196,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 
 /* Profile tweaks (Matt, 2026-10-14) */
 .rdp-form-spread { justify-content: flex-start; } /* left aligned with a gap, not stretched across the panel (Matt, 2026-11-01) */
-.rdp-select-full { display: block; width: 100%; box-sizing: border-box; }
+.rdp-select-full { display: block; box-sizing: border-box; }
 .rdp-catline { display: flex; align-items: center; gap: 12px; margin: 30px 0 22px; }
 .rdp-catline::before, .rdp-catline::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--rcl-gold, #e0b64c); }
 .rdp-catline-text { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rcl-gold, #e0b64c); }
@@ -219,8 +219,8 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-sm { padding: 9px; gap: 6px; }
 .rdp-team-sm .rdp-team-top { margin-bottom: 4px; }
 .rdp-team-sm .rdp-team-season { font-size: 11px; letter-spacing: 0.06em; }
-.rdp-team-sm .rdp-team-name { font-size: 13px; }
-.rdp-team-sm .rdp-team-model { font-size: 12px; gap: 6px; }
+
+.rdp-team-sm .rdp-team-model { gap: 6px; }
 .rdp-team-sm .rdp-team-car { padding: 4px 6px; }
 .rdp-team-sm .rdp-team-stat b { font-size: 14px; }
 .rdp-team-sm .rdp-team-stat span { font-size: 9px; letter-spacing: 0.05em; }

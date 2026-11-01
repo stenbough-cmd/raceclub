@@ -12,7 +12,7 @@
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
   function tx(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; e.textContent = text == null ? '' : String(text); return e; }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  function esc(s) { return rcEscapeHtml(s); }
   function num(v, d) { return v === null || v === undefined || isNaN(v) ? '—' : (d === undefined ? String(v) : Number(v).toFixed(d)); }
   // Profile data now comes from files on GitHub (profiles/<id>.json, profiles/<id>/rivals.json) and is not kept in this
   // browser. Copies saved by earlier versions are removed.

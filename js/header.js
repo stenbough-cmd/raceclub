@@ -670,11 +670,7 @@ function renderHeader(opts) {
   }
 }
 
-function escapeHtmlHeader_(str) {
-  var d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+function escapeHtmlHeader_(str) { return rcEscapeHtml(str); }
 
 // ---------------------------------------------------------------------
 // SITEWIDE FOOTER LEGAL DISCLAIMER -- every page's .rc-site-footer now ends with a "Legal
@@ -1043,4 +1039,26 @@ function rcHelmetTeamToggle_(profile, token, cls, showToast, onChange) {
     });
   });
   return b;
+}
+
+// rcWirePasswordMatch(pw1Input, pw2Input, hintEl, submitBtn): live "Passwords match." hint under a pair of password boxes,
+// checked on every keystroke. submitBtn is optional; when given it is disabled while the two boxes differ.
+// Returns the check function (true when the boxes match or the second one is empty).
+function rcWirePasswordMatch(pw1, pw2, hintEl, submitBtn) {
+  function check() {
+    if (!pw2.value) {
+      hintEl.className = 'rc-hint';
+      hintEl.textContent = '';
+      if (submitBtn) submitBtn.disabled = false;
+      return true;
+    }
+    var matches = pw1.value === pw2.value;
+    hintEl.className = matches ? 'rc-hint rc-ok' : 'rc-hint rc-error';
+    hintEl.textContent = matches ? 'Passwords match.' : 'Passwords do not match.';
+    if (submitBtn) submitBtn.disabled = !matches;
+    return matches;
+  }
+  pw1.addEventListener('input', check);
+  pw2.addEventListener('input', check);
+  return check;
 }

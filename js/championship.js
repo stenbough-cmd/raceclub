@@ -26,11 +26,7 @@ function _rccText(tag, className, text) {
   e.textContent = text == null ? '' : String(text);
   return e;
 }
-function _rccEsc(str) {
-  var d = document.createElement('div');
-  d.textContent = str == null ? '' : String(str);
-  return d.innerHTML;
-}
+function _rccEsc(str) { return rcEscapeHtml(str); }
 function _rccSpinner(message) {
   var wrap = _rccEl('div', 'rc-inline-spinner-wrap');
   var lights = _rccEl('div', 'rc-startlights');
