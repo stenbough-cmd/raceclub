@@ -18,7 +18,7 @@
 <script src="js/header.js"></script>
 <script src="js/helmet.js?v=47"></script>
 <script src="js/helmet-editor.js?v=70"></script>
-<script src="js/championship-dashboard.js?v=1"></script>
+<script src="js/championship-dashboard.js?v=6"></script>
 </head>
 <body>
 
@@ -684,7 +684,7 @@
       champSw.disabled = true;
       fetchApi('setChampEnabled', { method: 'POST', token: token, body: { enabled: turningOn ? '1' : '0' } }).then(function (res) {
         champSwitching = false; champSw.disabled = false;
-        if (!res || !res.success) { showToast('Could not change the switch. Please try again.', 'error'); return; }
+        if (!res || !res.success) { showToast('Could not change the switch' + (res && (res.message || res.error) ? ' (' + (res.message || res.error) + ')' : '') + '. If this keeps happening, the updated Apps Script has not been deployed yet.', 'error'); return; }
         champOn = turningOn;
         if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
         paintChampSwitch();
