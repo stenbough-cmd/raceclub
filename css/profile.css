@@ -58,10 +58,10 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-panel-note { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); }
 .rdp-seat { font-size: 13px; color: var(--rcl-ink-dim); text-align: center; line-height: 1.4; }
 .rdp-seat b { color: var(--rcl-ink); letter-spacing: 0.03em; text-transform: uppercase; }
-.rdp-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 12px; text-align: center; color: var(--rcl-ink-dim); }
-.rdp-empty svg { width: 54px; height: 54px; color: var(--rcl-ink-faint); }
-.rdp-empty-title { font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink); font-size: 14px; }
-.rdp-empty-sub { font-size: 13px; max-width: 420px; }
+.rdp-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 12px; text-align: center; color: var(--rcl-ink-dim); }
+.rdp-empty svg { width: 72px; height: 72px; color: var(--rcl-ink-faint); }
+.rdp-empty-title { font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink-dim); font-size: 14px; }
+.rdp-empty-sub { font-size: 14px; color: var(--rcl-ink-faint); max-width: 420px; }
 
 /* League Stats: six squares */
 .rdp-ach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -75,7 +75,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-form-sq { flex: 0 0 auto; }
 .rdp-form-sq { width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--rc-font-heading); font-weight: 800; font-size: 16px; color: #fff; background: linear-gradient(135deg, #3a3b40, #26272b); border: 1px solid var(--rcl-line-bright); cursor: default; }
 .rdp-form-p1 { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); color: #2b2100; border-color: #cf9f2c; }
-.rdp-form-p2 { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); color: #202327; border-color: #a7abb2; }
+.rdp-form-p2 { background: linear-gradient(135deg, var(--rc-offwhite) 0%, #a7abb2 100%); color: #202327; border-color: #a7abb2; }
 .rdp-form-p3 { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); color: #2a1608; border-color: #a3653a; }
 .rdp-tip { position: fixed; z-index: 3000; pointer-events: none; display: none; background: #0f0f11; border: 1px solid var(--rcl-line-bright); border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.4; color: var(--rcl-ink); box-shadow: 0 6px 18px rgba(0,0,0,.5); width: max-content; max-width: 92vw; box-sizing: border-box; }
 .rdp-tip b { color: var(--rcl-ink); font-weight: 800; }
@@ -100,7 +100,7 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-race-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
 .rdp-race-col { min-width: 0; }
 
-.rdp-light { background: #fff; color: #1f2937; border-radius: 8px; padding: 14px; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; min-width: 0; overflow-x: auto; }
+.rdp-light { background: #fff; color: var(--rc-carbon); border-radius: 8px; padding: 14px; --rc-carbon: #171717; --rc-steel: #536575; --rc-silver: #D8DDE1; min-width: 0; overflow-x: auto; }
 .rdp-laps { color: var(--rcl-ink); }
 .rdp-laps .rcc-laps-row { color: var(--rcl-ink); border-bottom: 1px solid #25262a; min-width: 760px; grid-template-columns: 52px 44px 82px 68px 68px 68px 70px 48px 118px 76px; font-size: 12px; }
 .rdp-laps .rcc-laps-head { color: var(--rcl-ink-faint); border-bottom: 1px solid var(--rcl-line-bright); }
@@ -257,12 +257,12 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-key-avg { border-top: 2.5px solid #8b929b; }
 
 /* ===== LIGHT THEME (Matt, 2026-10-17): light-surface versions of the spots above that were hard-coded dark ===== */
-.rcc-page .rdp-ach { background: linear-gradient(160deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
-.rcc-page .rdp-form-sq { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
+.rcc-page .rdp-ach { background: linear-gradient(160deg, #ffffff, var(--rc-offwhite)); border-color: var(--rcl-line); }
+.rcc-page .rdp-form-sq { background: linear-gradient(135deg, var(--rc-steel), var(--rc-carbon)); border-color: var(--rc-carbon); }
 .rcc-page .rdp-form-p1 { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); border-color: #cf9f2c; }
-.rcc-page .rdp-form-p2 { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); border-color: #a7abb2; }
+.rcc-page .rdp-form-p2 { background: linear-gradient(135deg, var(--rc-offwhite) 0%, #a7abb2 100%); border-color: #a7abb2; }
 .rcc-page .rdp-form-p3 { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); border-color: #a3653a; }
-.rcc-page .rdp-tip { background: #111827; color: #f3f4f6; border-color: #111827; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.rcc-page .rdp-tip { background: var(--rc-carbon); color: var(--rc-offwhite); border-color: var(--rc-carbon); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
 .rcc-page .rdp-tip b { color: #fff; }
 .rcc-page .rdp-tip-line { color: #cbd2db; }
 .rcc-page .rdp-grid-line { stroke: #e7eaee; }
@@ -273,9 +273,9 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-see-more { color: var(--rcc-navy); }
 .rcc-page .rdp-modal-bg { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
 .rcc-page .rdp-modal { box-shadow: var(--rc-shadow-lg); }
-.rcc-page .rdp-rival-rank { background: linear-gradient(135deg, #5b6470, #3f4650); border-color: #3f4650; }
+.rcc-page .rdp-rival-rank { background: linear-gradient(135deg, var(--rc-steel), var(--rc-carbon)); border-color: var(--rc-carbon); }
 .rcc-page .rdp-rival-season { background: var(--rcl-bg-raised-2); }
-.rcc-page .rdp-team { background: linear-gradient(170deg, #ffffff, #f3f5f7); border-color: var(--rcl-line); }
+.rcc-page .rdp-team { background: linear-gradient(170deg, #ffffff, var(--rc-offwhite)); border-color: var(--rcl-line); }
 .rcc-page .rdp-seat-label,
 .rcc-page .rdp-catline-text { color: #8a6a12; }
 .rcc-page .rdp-catline::before,

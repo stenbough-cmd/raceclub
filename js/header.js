@@ -694,8 +694,7 @@ function rcOpenLegalModal() {
   var head = document.createElement('div');
   head.className = 'rc-modal-head';
   var title = document.createElement('h3');
-  title.style.margin = '0';
-  title.style.fontSize = '16px';
+  title.className = 'rc-modal-title';
   title.textContent = 'Legal Disclaimer';
   head.appendChild(title);
   var closeBtn = document.createElement('button');
@@ -795,8 +794,7 @@ function _rcOpenFeedbackModal() {
   if (isDark) {
     title.className = 'rcl-modal-title';
   } else {
-    title.style.margin = '0';
-    title.style.fontSize = '16px';
+    title.className = 'rc-modal-title';
   }
   title.textContent = 'Feedback';
   head.appendChild(title);

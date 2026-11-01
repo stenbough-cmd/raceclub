@@ -607,7 +607,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   gap: 10px;
   padding: 10px 12px;
   border-radius: 4px;
-  color: #cfd4d8;
+  color: var(--rc-silver);
   text-decoration: none;
   font-family: var(--rc-font-heading);
   font-size: 13px;
@@ -637,7 +637,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
    role that can't use them -- this is that disabled state: dimmed, no pointer, hover suppressed so
    it doesn't look clickable. */
 .rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
-.rc-nav-item:disabled:hover { background: none; color: #cfd4d8; }
+.rc-nav-item:disabled:hover { background: none; color: var(--rc-silver); }
 .rc-main {
   flex: 1;
   min-width: 0;
@@ -2584,7 +2584,7 @@ body.rc-modal-scroll-locked {
   background: var(--rc-offwhite);
   /* A shade lighter than --rc-silver but still visibly darker than the --rc-offwhite (#F5F5F3)
      panel behind it, so the frame stays readable as a frame instead of blending into the pill. */
-  border: 1.5px solid #e6e9eb;
+  border: 1.5px solid var(--rc-offwhite);
   border-radius: 999px;
 }
 .rc-startlight {
@@ -2640,11 +2640,12 @@ body.rc-modal-scroll-locked {
 /* Simple centered "coming soon" panels — Calendar/Results/Career/etc. */
 .rc-placeholder-panel { text-align: center; padding: 90px 20px; }
 .rc-placeholder-panel p { margin-top: 10px; }
-.rc-empty-state { text-align: center; padding: 90px 20px; }
-.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 26px; }
-.rc-empty-state-icon svg { width: 160px; height: 160px; }
-.rc-empty-state-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 700; color: var(--rc-steel); letter-spacing: 0.02em; }
-.rc-empty-state-subtitle { font-size: 13px; color: var(--rc-steel); opacity: 0.75; margin-top: 8px; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+/* One empty-state look for the whole site (League Hub style, Matt 2026-11-01). */
+.rc-empty-state { text-align: center; padding: 40px 12px; }
+.rc-empty-state-icon { color: var(--rc-silver); margin: 0 auto 18px; }
+.rc-empty-state-icon svg { width: 72px; height: 72px; }
+.rc-empty-state-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-steel); }
+.rc-empty-state-subtitle { margin-top: 6px; font-size: 14px; color: var(--rc-steel); opacity: 0.75; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5; }
 
 /* Forced password-change lock screen (mustChangePassword) */
 .rc-forced-password-wrap { max-width: 420px; margin: 60px auto; }
@@ -3014,7 +3015,7 @@ body.rc-modal-scroll-locked {
    warning triangle for warnings, a thick accent bar on the left and a thin border all round (light theme). */
 #rc-section-help .rc-rulebook-callout {
   position: relative;
-  background: #f4f7fa;
+  background: var(--rc-offwhite);
   border: 1px solid #b9c6d3;
   border-left: 4px solid #5f7d99;
   border-radius: 6px;

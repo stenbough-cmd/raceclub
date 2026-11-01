@@ -35,8 +35,7 @@ function _rcEPShowModal(title, opts) {
   if (isDark) {
     titleEl.className = 'rcl-modal-title';
   } else {
-    titleEl.style.margin = '0';
-    titleEl.style.fontSize = '16px';
+    titleEl.className = 'rc-modal-title';
   }
   titleEl.textContent = title;
   head.appendChild(titleEl);
@@ -132,50 +131,56 @@ function _rcEPPasswordChangeSection(token, opts) {
 // Same form as Account.html's openEditProfileModal() -- Username / First / Last / Suffix / Email /
 // Location / Time Zone, posting to updateOwnProfile, plus the Change Password section embedded
 // underneath.
-function _rcEPOpenEditProfileModal(profile, token) {
+function _rcEPOpenEditProfileModal(profile, token, host) {
   if (!profile || !token) return;
+  // host (optional) lets Account.html use this same form with its own popup shell and helpers:
+  // { el, showModal, passwordSection, afterSave }. Without it the form uses this file's own.
+  host = host || {};
+  var _el = host.el || _rcEP_el;
+  var _showModal = host.showModal || _rcEPShowModal;
+  var _pwSection = host.passwordSection || _rcEPPasswordChangeSection;
 
-  var body = _rcEP_el('div');
+  var body = _el('div');
 
   // The driver's helmet, with a Customize Helmet link under it (replaces the old Change/Delete Avatar).
-  var avatarRow = _rcEP_el('div', 'rc-helmet-edit-row');
+  var avatarRow = _el('div', 'rc-helmet-edit-row');
   function drawHelmet() {
     avatarRow.innerHTML = rcHelmetHtml_(profile.avatarFilename, 150, 'rc-helmet-edit');
-    var link = _rcEP_el('button', (document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page')) ? 'rc-btn-primary rc-btn-sm rc-btn-row' : 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
+    var link = _el('button', (document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page')) ? 'rc-btn-primary rc-btn-sm rc-btn-row' : 'rc-btn-secondary rc-btn-row', 'Customize Helmet');
     link.type = 'button';
     link.addEventListener('click', function (evt) {
       evt.preventDefault();
-      rcHelmetCustomize_({ profile: profile, token: token, showModal: _rcEPShowModal, showToast: showToast, onChange: drawHelmet });
+      rcHelmetCustomize_({ profile: profile, token: token, showModal: _showModal, showToast: showToast, onChange: drawHelmet });
     });
     avatarRow.appendChild(link);
     avatarRow.appendChild(rcHelmetTeamToggle_(profile, token, (document.body.classList.contains('rc-league-page') && !document.body.classList.contains('rcc-page')) ? 'rc-btn-primary rc-btn-sm rc-btn-row' : 'rc-btn-secondary rc-btn-row', showToast, drawHelmet));
     rcHelmetHydrate_(avatarRow);
   }
   drawHelmet();
-  body.appendChild(_rcEP_el('h3', 'margin-top:0;font-size:15px;', 'Avatar'));
+  body.appendChild(_el('h3', 'margin-top:0;font-size:15px;', 'Avatar'));
   body.appendChild(avatarRow);
 
-  var form = _rcEP_el('form');
-  form.appendChild(_rcEP_el('label', 'margin-top:0;', 'Username'));
-  var username = _rcEP_el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
+  var form = _el('form');
+  form.appendChild(_el('label', 'margin-top:0;', 'Username'));
+  var username = _el('input'); username.type = 'text'; username.value = profile.username || ''; username.required = true;
   form.appendChild(username);
 
   // First Name / Last Name / Suffix share one row, First/Last 40% each and Suffix filling the rest.
-  var nameRow = _rcEP_el('div', 'rc-field-trio-name');
-  var firstCol = _rcEP_el('div');
-  firstCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'First Name'));
-  var firstName = _rcEP_el('input'); firstName.type = 'text'; firstName.value = profile.firstName || ''; firstName.required = true;
+  var nameRow = _el('div', 'rc-field-trio-name');
+  var firstCol = _el('div');
+  firstCol.appendChild(_el('label', 'margin-top:0;', 'First Name'));
+  var firstName = _el('input'); firstName.type = 'text'; firstName.value = profile.firstName || ''; firstName.required = true;
   firstCol.appendChild(firstName);
   nameRow.appendChild(firstCol);
 
-  var lastCol = _rcEP_el('div');
-  lastCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'Last Name'));
-  var lastName = _rcEP_el('input'); lastName.type = 'text'; lastName.value = profile.lastName || ''; lastName.required = true;
+  var lastCol = _el('div');
+  lastCol.appendChild(_el('label', 'margin-top:0;', 'Last Name'));
+  var lastName = _el('input'); lastName.type = 'text'; lastName.value = profile.lastName || ''; lastName.required = true;
   lastCol.appendChild(lastName);
   nameRow.appendChild(lastCol);
 
-  var suffixCol = _rcEP_el('div');
-  suffixCol.appendChild(_rcEP_el('label', 'margin-top:0;', 'Suffix'));
+  var suffixCol = _el('div');
+  suffixCol.appendChild(_el('label', 'margin-top:0;', 'Suffix'));
   var suffix = document.createElement('select');
   var suffixBlank = document.createElement('option'); suffixBlank.value = ''; suffixBlank.textContent = 'None';
   suffix.appendChild(suffixBlank);
@@ -187,14 +192,14 @@ function _rcEPOpenEditProfileModal(profile, token) {
   suffixCol.appendChild(suffix);
   nameRow.appendChild(suffixCol);
   form.appendChild(nameRow);
-  form.appendChild(_rcEP_el('div', 'rc-hint', 'This name <strong>must</strong> match your Race Control name in LMU.'));
+  form.appendChild(_el('div', 'rc-hint', 'This name <strong>must</strong> match your Race Control name in LMU.'));
 
-  form.appendChild(_rcEP_el('label', null, 'Email Address'));
-  var email = _rcEP_el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
+  form.appendChild(_el('label', null, 'Email Address'));
+  var email = _el('input'); email.type = 'email'; email.value = profile.email || ''; email.required = true;
   form.appendChild(email);
-  form.appendChild(_rcEP_el('div', 'rc-hint', 'Used for verification and password resets. League emails are only sent if you tick the box below.'));
+  form.appendChild(_el('div', 'rc-hint', 'Used for verification and password resets. League emails are only sent if you tick the box below.'));
 
-  form.appendChild(_rcEP_el('label', null, 'Location'));
+  form.appendChild(_el('label', null, 'Location'));
   var location = document.createElement('select');
   var locBlank = document.createElement('option'); locBlank.value = ''; locBlank.textContent = 'Select a country';
   location.appendChild(locBlank);
@@ -205,7 +210,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   });
   form.appendChild(location);
 
-  form.appendChild(_rcEP_el('label', null, 'Time Zone'));
+  form.appendChild(_el('label', null, 'Time Zone'));
   var timeZone = document.createElement('select');
   var tzBlank = document.createElement('option'); tzBlank.value = ''; tzBlank.textContent = 'Select a time zone';
   timeZone.appendChild(tzBlank);
@@ -226,7 +231,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
   storyLabel.appendChild(storyBox);
   storyLabel.appendChild(document.createTextNode(' Include my name in Season Stories'));
   form.appendChild(storyLabel);
-  form.appendChild(_rcEP_el('div', 'rc-hint', 'Season Stories are written by an AI about each race. Uncheck this to be described only by your car and team.'));
+  form.appendChild(_el('div', 'rc-hint', 'Season Stories are written by an AI about each race. Uncheck this to be described only by your car and team.'));
 
   var notifLabel = document.createElement('label');
   notifLabel.style.marginTop = '14px';
@@ -241,7 +246,7 @@ function _rcEPOpenEditProfileModal(profile, token) {
 
   body.appendChild(form);
   // noOwnButton: true -- SAVE CHANGES below drives both saves together now.
-  var pwBox = _rcEPPasswordChangeSection(token, { noOwnButton: true });
+  var pwBox = _pwSection(token, { noOwnButton: true });
   body.appendChild(pwBox);
   var pwCurrent = pwBox.querySelector('.rc-pw-current');
   var pwNew = pwBox.querySelector('.rc-pw-new');
@@ -252,14 +257,14 @@ function _rcEPOpenEditProfileModal(profile, token) {
   // click here and pressing Enter in any of the fields above still fire the form's own 'submit'
   // listener below.
   form.id = form.id || ('rc-edit-profile-form-' + Date.now());
-  var saveBtn = _rcEP_el('button', null, 'Save Changes');
+  var saveBtn = _el('button', null, 'Save Changes');
   saveBtn.type = 'submit';
   saveBtn.setAttribute('form', form.id);
   saveBtn.className = 'rc-btn-primary';
   saveBtn.style.marginTop = '20px';
   body.appendChild(saveBtn);
 
-  var modalHandle = _rcEPShowModal('Edit Profile', { bodyEl: body });
+  var modalHandle = _showModal('Edit Profile', { bodyEl: body });
 
   function shakeAndFlagPassword(msg) {
     pwCurrent.classList.add('rc-field-invalid');
@@ -297,6 +302,12 @@ function _rcEPOpenEditProfileModal(profile, token) {
           return;
         }
         setProfileCache(data.profile);
+        if (host.afterSave) {
+          // Account.html: close the popup and reload the section the member is on.
+          if (modalHandle) modalHandle.close();
+          host.afterSave();
+          return;
+        }
         if (typeof renderHeader === 'function') renderHeader();
         if (modalHandle) modalHandle.close();
         showToast('Profile updated.', 'success');

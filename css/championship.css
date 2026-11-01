@@ -39,7 +39,7 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-page-loader .rc-startlights,
 .rcc-page .rcl-modal-dialog .rc-startlights {
   background: var(--rc-offwhite);
-  border-color: #e6e9eb;
+  border-color: var(--rc-offwhite);
 }
 .rcc-page .rcl-page-loader .rc-loading-text,
 .rcc-page .rcl-modal-dialog .rc-loading-text { color: var(--rc-steel); }
@@ -604,7 +604,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-tip,
 .rcc-help-body .rc-rulebook-callout {
   position: relative;
-  background: #f4f7fa;
+  background: var(--rc-offwhite);
   border: 1px solid #b9c6d3;
   border-left: 4px solid #5f7d99;
   border-radius: 6px;
@@ -629,7 +629,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Season Stories (2026-10-11): League News layout (league.css .rcl-news-*), plus the writing notice,
    standfirst and thumbs feedback. */
-.rcc-story-status { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #b9c6d3; border-left: 4px solid #5f7d99; border-radius: 6px; background: #f4f7fa; font-size: 13px; }
+.rcc-story-status { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #b9c6d3; border-left: 4px solid #5f7d99; border-radius: 6px; background: var(--rc-offwhite); font-size: 13px; }
 .rcc-story-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rcc-story-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--rc-red); flex: 0 0 auto; animation: rcc-story-pulse 1s ease-in-out infinite alternate; }
 @keyframes rcc-story-pulse { from { opacity: 0.25; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
@@ -642,7 +642,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-dialog .rcl-news-body > p:first-of-type { font-size: 16px; }
 .rcc-story-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
 .rcc-story-vote-q { font-size: 13px; font-weight: 700; color: var(--rc-steel); }
-.rcc-thumb { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #c9d1da; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.rcc-thumb { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rc-silver); background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
 .rcc-thumb svg { width: 18px; height: 18px; fill: #8a94a3; }
 .rcc-thumb-down svg { transform: rotate(180deg); }
 .rcc-thumb:hover svg { fill: var(--rc-carbon); }
@@ -650,7 +650,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-thumb-down.rcc-thumb-on { background: var(--rc-red); border-color: var(--rc-red); }
 .rcc-thumb-on svg { fill: #fff; }
 .rcc-story-why { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-.rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid #c9d1da; border-radius: 6px; resize: vertical; }
+.rcc-story-why textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rc-silver); border-radius: 6px; resize: vertical; }
 .rcc-story-why-text { flex: 1 1 100%; font-size: 12px; color: var(--rc-steel); }
 
 /* Season Stories header title in white over the news banner (Matt). */
@@ -665,7 +665,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-story-title-link:hover, .rcc-story-title-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 /* Race Report events (Matt, 2026-10-13): every event clause gray except position changes and the
    fastest lap, which keep their colors. Names stay dark and capitalized; the player's name is bold. */
-.rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, #5b6573); font-weight: 400; }
+.rcc-page .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel, var(--rc-steel)); font-weight: 400; }
 
 /* LAST RACE: 15px more space under each <CLASS> HIGHLIGHTS header (Matt, 2026-10-11): 22px + 15px. */
 .rcc-page .rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
@@ -763,7 +763,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Current Seat popup (Matt, 2026-10-14). */
 .rcc-current-seat .rcc-seat-line { margin: 0; }
-.rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: #374151; }
+.rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
 /* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
 @media (max-width: 640px) {
   .rcc-actionbar-inner { padding: 0 12px; }

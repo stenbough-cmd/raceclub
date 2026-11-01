@@ -37,18 +37,7 @@
   }
 
   /* ---- loading ---- */
-  var loading = {};
-  function loadScript(src) {
-    if (!loading[src]) {
-      loading[src] = new Promise(function (res, rej) {
-        var s = document.createElement('script'); s.src = src; s.async = true;
-        s.onload = function () { res(); };
-        s.onerror = function () { delete loading[src]; rej(new Error('Could not load ' + src)); };
-        document.head.appendChild(s);
-      });
-    }
-    return loading[src];
-  }
+  function loadScript(src) { return rcLoadScript(src); }
   function loadCss(href) {
     if (document.querySelector('link[data-rch-css]')) return;
     var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.setAttribute('data-rch-css', '1');

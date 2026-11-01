@@ -1027,7 +1027,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
    already marks the section, so the per-row line was redundant. */
 
 .rcl-standings-row-p1 .rcl-standings-pos { background: linear-gradient(135deg, #f4dc8e 0%, #cf9f2c 100%); }
-.rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, #eceef1 0%, #a7abb2 100%); }
+.rcl-standings-row-p2 .rcl-standings-pos { background: linear-gradient(135deg, var(--rc-offwhite) 0%, #a7abb2 100%); }
 .rcl-standings-row-p3 .rcl-standings-pos { background: linear-gradient(135deg, #dba876 0%, #a3653a 100%); }
 /* flex: 0 1 auto + min-width -- the name can shrink and ellipsize as a last resort, but only after
    .rcl-standings-team (below) has already shrunk as far as it can, since flex-shrink gives priority

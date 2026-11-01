@@ -73,15 +73,7 @@
     l.rel = 'stylesheet'; l.href = href; l.setAttribute('data-rcd-css', href);
     document.head.appendChild(l);
   }
-  function loadScript(src) {
-    return new Promise(function (resolve, reject) {
-      var s = document.createElement('script');
-      s.src = src; s.async = false;
-      s.onload = resolve;
-      s.onerror = function () { reject(new Error('Could not load ' + src)); };
-      document.head.appendChild(s);
-    });
-  }
+  function loadScript(src) { return rcLoadScript(src); }
   // The championship code is fetched once per page view, then reused.
   function ensureLoaded(opts) {
     window.RCC_EMBEDDED = true;
