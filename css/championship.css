@@ -668,8 +668,6 @@ a.rcc-hero-meta-name { color: inherit; }
 /* ===================== DRIVER REPORT (js/championship-report.js) ===================== */
 .rcr-report { margin: 28px 0 8px; }
 .rcr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-/* The Whole Class / Nearest Rivals switch sits on the right, like the League Hub's driver report (no heading on the left here: the recap header above names the page). */
-.rcr-head { justify-content: flex-end; }
 .rcr-head .rcl-race-class-name { margin: 0; }
 .rcr-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: linear-gradient(180deg, #eef0f3, #dfe3e8); box-shadow: inset 0 1px 2px rgba(0,0,0,0.12); }
 .rcr-seg-btn { border: 0; background: transparent; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6573; padding: 7px 14px; border-radius: 999px; cursor: pointer; }

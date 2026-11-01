@@ -1533,7 +1533,6 @@ function _rccDriverReportBody(result, el) {
   el.innerHTML = '';
   var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
-  el.appendChild(_rccRecapHeader('Driver Report', result));
   var who = _rccSeatLine(RCC.page || {}, result.driverReport || {}, false);
   who.classList.add('rcr-report-who');
   el.appendChild(who);

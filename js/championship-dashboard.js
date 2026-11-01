@@ -12,8 +12,8 @@
 
 (function () {
   var STYLE_ID = 'rcd-style';
-  var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar3'];
-  var JS_FILES = ['js/championship-help.js?v=7', 'js/championship.js?v=8'];
+  var CSS_FILES = ['css/league.css?v=6', 'css/championship.css?v=bar4'];
+  var JS_FILES = ['js/championship-help.js?v=7', 'js/championship.js?v=9'];
   var loading = null;
 
   function mk(tag, cls, text) {

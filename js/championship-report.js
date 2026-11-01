@@ -348,7 +348,9 @@ function _rccDriverReport(dr) {
   var sec = _rccEl('div', 'rcr-report');
   if (!dr) return null;
   var head = _rccEl('div', 'rcr-head');
-  // (The red "Driver Report" heading was removed, Matt 2026-10-20: the recap header above names the page.)
+  // Red "Driver Report" heading on the left, the switch on the right (same row), like the League Hub. The silver
+  // recap bar above the report was removed (Matt, 2026-11-01), so the heading names the page again.
+  head.appendChild(_rccText('div', 'rcl-race-class-name', 'Driver Report'));
   var mode = 'class';
   var sw = null;
   if (dr.hasField && dr.rivals && dr.rivals.length) {
