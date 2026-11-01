@@ -1539,8 +1539,11 @@ function _rccDriverReportBody(result, el) {
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
   var who = _rccSeatLine(RCC.page || {}, result.driverReport || {}, false);
   who.classList.add('rcr-report-who');
-  el.appendChild(who);
-  el.appendChild(drEl);
+  // Bordered card around the whole report, like the League Hub's (.rcl-dr-light).
+  var card = _rccEl('div', 'rcr-card');
+  card.appendChild(who);
+  card.appendChild(drEl);
+  el.appendChild(card);
 }
 function _rccRaceDetailsBody(result, el) {
   el.innerHTML = '';
