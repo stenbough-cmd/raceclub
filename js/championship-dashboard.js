@@ -213,7 +213,8 @@
     }
     var profile = opts.profile || {};
     if (!opts.token || !profile.profileId) { fail('Sign in to use the championship tools.'); return panel; }
-    ensureLoaded(opts).then(function () {
+    // panel.rcdReady settles once the championship data is drawn (or failed), so the page can show it together with the league cards.
+    panel.rcdReady = ensureLoaded(opts).then(function () {
       RCC.token = opts.token;
       RCC.ownerId = profile.profileId;
       return _rccGetPage('');
