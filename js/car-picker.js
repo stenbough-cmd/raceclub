@@ -223,17 +223,20 @@
         card.appendChild(pic);
       }
 
-      var identity = mk('div', 'rc-team-card-identity');
-      if (team.manufacturer) identity.appendChild(logoImg(team.manufacturer, 'rc-team-logo'));
-      identity.appendChild(mk('div', 'rc-team-name', esc(teamTitle(team))));
-      card.appendChild(identity);
+      card.appendChild(mk('div', 'rc-team-name', esc(teamTitle(team))));
 
+      // Same look as the Current Seat / Season Details car line: maker logo in front of the car model.
       var model = team.carModel ? esc(team.carModel) : '';
       if (model && cls === 'Hypercar' && typeof team.factory === 'boolean') model += team.factory ? ' · Factory' : ' · Privateer';
-      if (model) card.appendChild(mk('div', 'rc-team-subtitle', model));
+      if (model || team.manufacturer) {
+        var carLine = mk('div', 'rc-team-subtitle rc-team-carline');
+        if (team.manufacturer) carLine.appendChild(logoImg(team.manufacturer, 'rc-team-logo'));
+        if (model) carLine.appendChild(mk('span', null, model));
+        card.appendChild(carLine);
+      }
 
       if (team.teamDesc) card.appendChild(mk('p', 'rc-team-desc', esc(team.teamDesc)));
-      if (team.realCrew && team.realCrew.length) card.appendChild(mk('p', 'rc-team-desc', 'You replace: ' + esc(team.realCrew.join(', '))));
+      if (team.realCrew && team.realCrew.length) card.appendChild(mk('div', 'rc-team-replace', 'You replace: ' + esc(team.realCrew.join(', '))));
 
       var footer = mk('div', 'rc-team-card-footer');
       var btn = mk('button', 'rc-btn-dark', team.taken ? 'This Seat Is Taken' : 'Join This Team');
