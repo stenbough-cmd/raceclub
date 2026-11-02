@@ -16,10 +16,10 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.78">
-<link rel="stylesheet" href="css/league.css?v=0.9.78">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.78">
-<link rel="stylesheet" href="css/league-light.css?v=0.9.78">
+<link rel="stylesheet" href="css/style.css?v=0.9.79">
+<link rel="stylesheet" href="css/league.css?v=0.9.79">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.79">
+<link rel="stylesheet" href="css/league-light.css?v=0.9.79">
 <!-- If a saved copy of the hub exists in this browser, js/league.js draws it immediately, so skip
      the loading overlay entirely (it only shows on a first-ever visit or after storage is cleared). -->
 <script>
@@ -28,20 +28,20 @@ document.documentElement.classList.add('rc-pending');
 window.rcRevealPage = function () { document.documentElement.classList.remove('rc-pending'); };
 setTimeout(window.rcRevealPage, 25000);
 </script>
-<script src="js/version.js?v=0.9.78"></script>
-<script src="js/img-loader.js?v=0.9.78"></script>
-<script src="js/api.js?v=0.9.78"></script>
-<script src="js/auth.js?v=0.9.78"></script>
-<script src="js/header.js?v=0.9.78"></script>
-<script src="js/reference-data.js?v=0.9.78"></script>
+<script src="js/version.js?v=0.9.79"></script>
+<script src="js/img-loader.js?v=0.9.79"></script>
+<script src="js/api.js?v=0.9.79"></script>
+<script src="js/auth.js?v=0.9.79"></script>
+<script src="js/header.js?v=0.9.79"></script>
+<script src="js/reference-data.js?v=0.9.79"></script>
 <!-- edit-profile.js -- lets the header's Edit Profile menu item open its popup in place on this
      page (dark-themed) instead of navigating to Account.html first. -->
-<script src="js/edit-profile.js?v=0.9.78"></script>
+<script src="js/edit-profile.js?v=0.9.79"></script>
 <!-- rulebook-content.js -- RULEBOOK_SECTIONS, the same source Account.html's own Rules and
      Regulations card reads from. -->
-<script src="js/rulebook-content.js?v=0.9.78"></script>
+<script src="js/rulebook-content.js?v=0.9.79"></script>
 </head>
-<body class="rc-league-page rcl-light">
+<body class="rc-league-page rcl-light rcl-hub">
 
 <!-- Full-page loading overlay -- sits on top of everything, including the header, until
      js/league.js's initial getLeagueHub fetch resolves, then fades out and removes itself. -->
@@ -60,57 +60,30 @@ setTimeout(window.rcRevealPage, 25000);
 <script>renderHeader();</script>
 
 
-<!-- Ticker and title banner stay in place; the link bar and the page slide up over them (same idea as the home page banner). -->
-<div class="rcl-head-pin">
-<div class="rcl-ticker-wrap">
-  <div class="rcl-ticker-label">Highlights</div>
-  <div class="rcl-ticker-viewport">
-    <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
-  </div>
-</div>
-
-<section class="rcl-hero">
-  <div class="rcl-hero-inner">
-    <div class="rcl-hero-eyebrow">Race Club Online</div>
-    <!-- Split into two weighted spans -- both spans inherit the same font-family/font-size from
-     .rcl-hero-title (see css/league.css) and differ only in font-weight, so neither one renders
-     at a different size/height than the other. -->
-    <h1 class="rcl-hero-title"><span class="rcl-hero-title-league">League</span> <span class="rcl-hero-title-hub">Hub</span></h1>
-    <div class="rcl-hero-season" id="rcl-hero-season">&nbsp;</div>
-    <div class="rcl-hero-sub" id="rcl-hero-sub"></div>
-  </div>
-</section>
-</div>
-
-
-<div class="rcl-cover">
 <!-- Link bar under the header (js/league.js, _rclRenderNavbar_). Filled in once the hub data is drawn. -->
 <nav class="rcl-navbar" id="rcl-navbar" aria-label="League Hub"></nav>
 
+<div class="rcl-cover">
+
 <main class="rcl-main">
 
-  <!-- League News (25%) + LAST RACE (75%) side by side on one row. News briefly had a stop as its
-     own full-width row -- now they're back on one row together, just at a 1:3 ratio instead of
-     the old Recent-Results-era 1:2. -->
-  <div class="rcl-row-full rcl-news-lastrace-row" id="rcl-news-lastrace-row">
-    <section class="rcl-panel">
-      <!-- rcl-panel-head-news -- distinguishes this header from other panels' identical
-     .rcl-panel-head so the news_header.jpg background (see css/league.css) applies only here,
-     not to every panel header on the page. -->
-      <div class="rcl-panel-head rcl-panel-head-news">
+  <!-- BY THE NUMBERS: the League News container (full width: the story in full, older stories listed on its left), then one
+     highlights container per class from the last race (podium and headline mentions). Before any race has been scored the
+     Season Preview container shows instead (js/league.js, _rclRenderLastRace_). -->
+  <div class="rcl-row-full rcl-numbers" id="rcl-news-lastrace-row">
+    <div class="rcl-bar rcl-numbers-bar">By The Numbers</div>
+    <section class="rcl-panel rcl-news-panel">
+      <div class="rcl-panel-head">
         <div class="rcl-panel-title">League News</div>
       </div>
       <div class="rcl-panel-body" id="rcl-news-body"></div>
     </section>
 
-    <!-- Back in a .rcl-panel -- same .rcl-panel-head/.rcl-panel-title/.rcl-panel-body shell as
-     League News, so the title + red underline comes for free. -->
-    <section class="rcl-panel" id="rcl-last-race-panel">
+    <div class="rcl-numbers-classes" id="rcl-numbers-classes"></div>
+
+    <section class="rcl-panel" id="rcl-last-race-panel" hidden>
       <div class="rcl-panel-head">
-        <!-- "Last Race" -> "Last Season" once hub.seasonEnded -- _rclRenderLastRace_ (js/league.js)
-     swaps this text and switches the body to hub.lastSeason's season-level podium + mentions
-     instead of hub.lastRace's. -->
-        <div class="rcl-panel-title" id="rcl-last-race-title">Last Race</div>
+        <div class="rcl-panel-title" id="rcl-last-race-title">Season Preview</div>
       </div>
       <div class="rcl-panel-body" id="rcl-last-race"></div>
     </section>
@@ -157,7 +130,7 @@ setTimeout(window.rcRevealPage, 25000);
 </div>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/driver-report.js?v=0.9.78"></script>
-<script src="js/league.js?v=0.9.78"></script>
+<script src="js/driver-report.js?v=0.9.79"></script>
+<script src="js/league.js?v=0.9.79"></script>
 </body>
 </html>

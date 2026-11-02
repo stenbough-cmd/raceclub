@@ -1218,62 +1218,67 @@ function _rclBuildRaceHighlightBlocks_(hub, raceResult, container) {
   });
 }
 
+// One highlights container per class (the podium and the headline-mention cards), under BY THE NUMBERS. Same data and same
+// builders the Race Recap popup's Highlights page uses; only the wrapper differs (a container with its own title instead of a bar).
+function _rclBuildHighlightPanels_(hub, r, host) {
+  _rclIndexLastRaceNames_(hub);
+  (r.classes || []).forEach(function (c) {
+    (c.standings || []).forEach(function (row) {
+      if (row && row.name && row.profileId) _rclLastRaceNameToPid_[String(row.name).trim().toLowerCase()] = row.profileId;
+    });
+  });
+  (r.classes || []).forEach(function (cls) {
+    var panel = _rclEl('section', 'rcl-panel rcl-lr-panel');
+    var head = _rclEl('div', 'rcl-panel-head');
+    head.appendChild(_rclEl('div', 'rcl-panel-title', _rclEscapeHtml(String(cls.className || 'Class').toUpperCase() + ' HIGHLIGHTS')));
+    if (r.roundNum || r.track) {
+      head.appendChild(_rclEl('div', 'rcl-panel-note', _rclEscapeHtml('FROM ROUND ' + (r.roundNum || '') + (r.track ? ' AT ' + String(r.track).toUpperCase() : ''))));
+    }
+    panel.appendChild(head);
+    var body = _rclEl('div', 'rcl-panel-body');
+    body.appendChild(_rclBuildLastRacePodium_(cls, (hub.classSeasons || {})[cls.className], hub.carSeries || {}));
+    if ((cls.headlineMentions || []).length) body.appendChild(_rclBuildLastRaceMentions_(cls.headlineMentions));
+    panel.appendChild(body);
+    host.appendChild(panel);
+  });
+}
+
 function _rclRenderLastRace_(hub) {
   var body = document.getElementById('rcl-last-race');
+  var classesHost = document.getElementById('rcl-numbers-classes');
+  var panel = document.getElementById('rcl-last-race-panel');
   if (!body) return;
   body.innerHTML = '';
-
-  // No in-body "Last Race" title any more -- the section is back in a .rcl-panel (league.html) with
-  // its own .rcl-panel-title, same as League News, so this body would otherwise show the title
-  // twice.
-  // Event title line + the *OFFICIAL/PRELIMINARY RESULTS status footer/mobile nudge/gray divider
-  // line (_rclBuildRaceHeadline_, _rclAppendResultsStatusNotice_) are BOTH gone -- the first
-  // class's own graphite header bar now sits directly under the panel's red underline, and nothing
-  // follows the last class's mentions.
+  if (classesHost) classesHost.innerHTML = '';
+  // BY THE NUMBERS shows one highlights container per class once a race has been scored. Before that (or when the season is over)
+  // the one Season Preview / Season Recap container below it shows instead.
   var seasonEnded = !!hub.seasonEnded;
   var hasSeason = !!hub.hasSeason;
   var hasLastRaceData = seasonEnded ? !!hub.lastSeason : !!hub.lastRace;
   var showPreview = hasSeason && !seasonEnded && !hasLastRaceData;
   var titleEl = document.getElementById('rcl-last-race-title');
-  if (titleEl) {
-    var lastRoundNum = (hub.lastRace && Number(hub.lastRace.roundNum)) || 0;
-    titleEl.textContent = seasonEnded ? 'Season Recap' : (showPreview ? 'Season Preview' : (lastRoundNum ? 'Round ' + lastRoundNum + ' Highlights' : 'Last Race'));
-  }
+  if (titleEl) titleEl.textContent = seasonEnded ? 'Season Recap' : 'Season Preview';
   body.classList.toggle('rcl-seasonfmt-modal-body', showPreview);
 
-  // (The RACE RECAP button that used to sit at the right end of this header was removed; the Race Recap
-  // popup is still opened from the calendar's RACE RECAP buttons.) Remove any leftover copy from an older draw.
-  var recapHead = document.querySelector('#rcl-last-race-panel .rcl-panel-head');
-  if (recapHead) {
-    var oldRecap = recapHead.querySelector('.rcl-metal-button');
-    if (oldRecap) oldRecap.parentNode.removeChild(oldRecap);
-  }
-
-  var panel = document.getElementById('rcl-last-race-panel');
   var row = document.getElementById('rcl-news-lastrace-row');
-  if (panel) panel.style.display = hasSeason ? '' : 'none';
   if (row) row.classList.toggle('rcl-news-lastrace-row-newsonly', !hasSeason);
+  if (panel) panel.hidden = true;
   if (!hasSeason) return;
 
   if (!hasLastRaceData) {
+    if (panel) panel.hidden = false;
     _rclAppendSeasonFormatSections_(hub, body);
     return;
   }
   _rclIndexLastRaceNames_(hub);
 
   if (seasonEnded) {
+    if (panel) panel.hidden = false;
     var ls = hub.lastSeason;
-    // Classes arrive pre-sorted Hypercar -> LMP2 -> LMP3 -> LMGT3 -> LMGTE, same as
-    // hub.lastRace.classes (_rcBuildSeasonStandings_ sorts the same way hub.standings already
-    // does).
     (ls.classes || []).forEach(function (cls) {
       var clsWrap = _rclEl('div', 'rcl-lr-class');
       var headerDiv = _rclEl('div', 'rcl-standings-class-header');
       headerDiv.appendChild(document.createTextNode((cls.className || 'CLASS').toUpperCase() + ' HIGHLIGHTS'));
-      // "FROM SEASON <N>", same lighter-weight sub-span the in-season Last Race header uses for
-      // "FROM ROUND N AT TRACK" (rcl-lr-class-header-sub) -- "FROM" carries the same style as
-      // "SEASON <N>" here, both inside the one sub-span, rather than "FROM" reading as part of the
-      // bold "<CLASS> HIGHLIGHTS" text.
       if (hub.seasonNumber) {
         headerDiv.appendChild(_rclEl('span', 'rcl-lr-class-header-sub', ' FROM SEASON ' + hub.seasonNumber));
       }
@@ -1288,11 +1293,10 @@ function _rclRenderLastRace_(hub) {
   }
 
   var r = hub.lastRace;
+  if (!classesHost) return;
+  _rclBuildHighlightPanels_(hub, r, classesHost);
 
-  // Same per-class highlights blocks the Race Recap popup's Highlights page draws (one shared function).
-  _rclBuildRaceHighlightBlocks_(hub, r, body);
-
-  // Footer under a line: opens the Race Recap popup on this race. hub.lastRace carries no roundId, so the
+  // Link under the containers: opens the Race Recap popup on this race. hub.lastRace carries no roundId, so the
   // round is matched by round number against hub.resultsRounds (falls back to the popup's default round).
   var recapRounds = hub.resultsRounds || [];
   if (recapRounds.length) {
@@ -1303,7 +1307,7 @@ function _rclRenderLastRace_(hub) {
     footBtn.type = 'button';
     footBtn.addEventListener('click', function () { _rclOpenAllResultsModal(hub, match ? match.roundId : undefined); });
     footer.appendChild(footBtn);
-    body.appendChild(footer);
+    classesHost.appendChild(footer);
   }
 }
 
@@ -2960,58 +2964,52 @@ function _rclRenderNews(hub) {
     return;
   }
 
-  var current = _rclNewsList[0];
-  var currentWrap = _rclEl('div', 'rcl-news-item rcl-news-current');
-  if (current.heroImageUrl) {
-    var heroImg = document.createElement('img');
-    heroImg.className = 'rcl-news-hero';
-    heroImg.src = current.heroImageUrl;
-    heroImg.alt = current.title || '';
-    heroImg.loading = 'lazy';
-    currentWrap.appendChild(heroImg);
-  }
-  var currentHead = _rclNewsHeadRow(current);
-  // The title opens the full story popup, same as Continue reading.
-  var currentTitle = currentHead.querySelector('.rcl-news-title');
-  if (currentTitle) {
-    currentTitle.classList.add('rcl-news-title-link');
-    currentTitle.setAttribute('role', 'button'); currentTitle.setAttribute('tabindex', '0');
-    currentTitle.addEventListener('click', function () { _rclOpenStoryModal(0); });
-    currentTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _rclOpenStoryModal(0); } });
-  }
-  currentWrap.appendChild(currentHead);
-  // 1000-character cap, not the old fixed 14-line CSS clamp -- "Continue reading..." now only shows
-  // up when the story is actually longer than that, via preview.truncated.
-  // EXCEPT when Last Race has nothing to show -- same hasLastRace check _rclRenderLastRace_ makes
-  // from this same hub payload, just independently here since every renderer gets the whole hub and
-  // neither needs to read the other's DOM state.
-  var hasLastRace = !!hub.hasSeason;
-  var preview = _rclStoryPreviewHtml(current.body, hasLastRace ? 1000 : undefined);
-  currentWrap.appendChild(_rclEl('div', 'rcl-news-current-body', preview.html));
-  if (preview.truncated) {
-    var continueLink = _rclEl('a', 'rcl-news-continue', 'Continue reading...');
-    continueLink.href = 'javascript:void(0)';
-    continueLink.addEventListener('click', function () { _rclOpenStoryModal(0); });
-    currentWrap.appendChild(continueLink);
-  }
-  body.appendChild(currentWrap);
-
+  // One story drawn in full: picture, headline row, every paragraph, edit note and the vote bar. Used for the story on the page and in the popup.
+  var layout = _rclEl('div', 'rcl-news-layout' + (_rclNewsList.length > 1 ? '' : ' rcl-news-layout-single'));
   if (_rclNewsList.length > 1) {
-    var prevWrap = _rclEl('div', 'rcl-news-previous');
-    prevWrap.appendChild(_rclEl('div', 'rcl-news-previous-head', 'More Stories'));
-    // Capped at the next 5 -- anything older than that stays reachable only through the read-story
-    // popup's own "Load More News" button, not listed out here on the page.
-    _rclNewsList.slice(1, 7).forEach(function (item, i) {
+    // Older stories, newest first, to the left of the story. Each one opens by itself in a popup.
+    var older = _rclEl('div', 'rcl-news-previous');
+    older.appendChild(_rclEl('div', 'rcl-news-previous-head', 'Older Stories'));
+    _rclNewsList.slice(1).forEach(function (item, i) {
       var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclNewsBadgeHtml(item, true) + '<span class="rcl-news-previous-text">' + _rclEscapeHtml(item.title || '(untitled)') + '</span>');
       titleBtn.type = 'button';
-      titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1); });
-      prevWrap.appendChild(titleBtn);
+      titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1, true); });
+      older.appendChild(titleBtn);
     });
-    body.appendChild(prevWrap);
+    layout.appendChild(older);
   }
+  var current = _rclBuildStoryEl_(_rclNewsList[0]);
+  current.classList.add('rcl-news-current');
+  layout.appendChild(current);
+  body.appendChild(layout);
 }
 
-function _rclOpenStoryModal(startIndex) {
+// A story drawn in full (no truncation): used by the page's League News container and by the story popup.
+function _rclBuildStoryEl_(item) {
+  var wrap = _rclEl('div', 'rcl-news-item rcl-modal-story');
+  if (item.heroImageUrl) {
+    var heroImg = document.createElement('img');
+    heroImg.className = 'rcl-news-hero';
+    heroImg.src = item.heroImageUrl;
+    heroImg.alt = item.title || '';
+    heroImg.loading = 'lazy';
+    wrap.appendChild(heroImg);
+  }
+  wrap.appendChild(_rclNewsHeadRow(item));
+  var bodyEl = _rclEl('div', 'rcl-news-body');
+  _rclRenderStoryBodyBlocks(bodyEl, item.body);
+  wrap.appendChild(bodyEl);
+  if (item.editNote) {
+    var editLabel = _rclFormatDate(item.editedAt);
+    var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
+    wrap.appendChild(_rclEl('div', 'rcl-news-editnote', _rclEscapeHtml(editText)));
+  }
+  _rclAddStoryVoteBar(wrap, item);
+  return wrap;
+}
+
+// single: show only the story that was clicked (no Load More News button).
+function _rclOpenStoryModal(startIndex, single) {
   var list = _rclNewsList;
   if (!list || !list.length) return;
   var shownUpTo = startIndex;
@@ -3031,7 +3029,7 @@ function _rclOpenStoryModal(startIndex) {
   var loadMoreBtn = _rclEl('button', 'rcl-modal-loadmore-btn', 'Load More News');
   loadMoreBtn.type = 'button';
   loadMoreWrap.appendChild(loadMoreBtn);
-  dialog.appendChild(loadMoreWrap);
+  if (!single) dialog.appendChild(loadMoreWrap);
   overlay.appendChild(dialog);
 
   function renderStoryInto(item) {
@@ -3462,10 +3460,11 @@ function _rclRenderNavbar_(hub) {
     _rclSeasonList_ = hub.seasons;
     _rclDefaultSeasonId_ = hub.seasonId || '';
   }
-  var navTitle = null;
+  // Page title, always shown in the bar (there is no banner above it any more).
+  var navTitle = _rclEl('div', 'rcl-navbar-title', 'League Hub');
+  navTitle.style.opacity = '1';
+  inner.appendChild(navTitle);
   if (_rclSeasonList_.length) {
-    navTitle = _rclEl('div', 'rcl-navbar-title', 'Online League Hub');
-    inner.appendChild(navTitle);
     var pick = document.createElement('select');
     pick.className = 'rcl-navbar-season';
     pick.setAttribute('aria-label', 'Season');
@@ -3480,7 +3479,6 @@ function _rclRenderNavbar_(hub) {
     inner.appendChild(pick);
   }
   if (inner.childNodes.length) nav.appendChild(inner);
-  if (navTitle && typeof rcWireBarTitle_ === 'function') rcWireBarTitle_(nav, navTitle, document.querySelector('.rcl-hero'));
 }
 
 // Full-page loading overlay -- markup/CSS live in league.html and css/league.css; this just locks

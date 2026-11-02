@@ -2637,3 +2637,52 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
    parks under the header (it is sticky inside .rcl-cover). */
 .rcl-head-pin { position: sticky; top: 70px; z-index: 1; }
 .rcl-cover { position: relative; z-index: 2; background-color: inherit; }
+
+/* ===== RACE CLUB DESIGN DIRECTION on the League Hub (Matt, 2026-11-04) =====
+   Same look as the Driver Profile: white cards with a barely-there shadow and a small radius, plain uppercase titles over a thin red
+   rule (no picture banners), flat Steel Blue bars for the section and sub headers. No hero banner or ticker; the link bar sits under
+   the site header and carries the page title. */
+body.rcl-hub .rcl-panel { background: #fff; border: 1px solid var(--rc-silver); border-radius: 12px; box-shadow: 0 1px 4px rgba(23, 23, 23, 0.05); }
+body.rcl-hub .rcl-panel-head, body.rcl-hub .rcl-panel-head-news, body.rcl-hub .rcl-panel-head-banner {
+  margin: 0 24px; padding: 20px 0 12px; background: none; border-bottom: 2px solid var(--rc-red);
+}
+body.rcl-hub .rcl-panel-head-news::before, body.rcl-hub .rcl-panel-head-banner::before { display: none; }
+body.rcl-hub .rcl-panel-title, body.rcl-hub .rcl-panel-head-news .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); text-shadow: none; }
+body.rcl-hub .rcl-panel-title::before { content: none; }
+body.rcl-hub .rcl-panel-body { padding: 20px 24px 24px; }
+.rcl-panel-note { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
+/* Steel Blue bars: the section header and every sub-header inside a container. Flat, white bold uppercase text, slate rule under. */
+body.rcl-hub .rcl-standings-class-header, body.rcl-hub .rcl-bar {
+  display: block; background: #66849D; color: #fff; text-shadow: none; box-shadow: none; border: 0; border-bottom: 2px solid #596B7D;
+  border-radius: 6px; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  text-align: left; padding: 9px 14px 8px; margin-bottom: 16px;
+}
+body.rcl-hub .rcl-standings-class-header .rcl-lr-class-header-sub { color: #fff; opacity: 0.85; }
+/* BY THE NUMBERS: the News container, then one highlights container per class. */
+body.rcl-hub .rcl-numbers { display: flex; flex-direction: column; gap: 22px; }
+body.rcl-hub .rcl-numbers-bar { margin-bottom: 0; font-size: 15px; padding: 11px 16px 10px; }
+body.rcl-hub .rcl-numbers-classes { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 22px; }
+body.rcl-hub .rcl-numbers-classes:empty { display: none; }
+body.rcl-hub .rcl-numbers-classes .rcl-lr-footer { grid-column: 1 / -1; margin-top: 0; padding-top: 0; border-top: 0; }
+body.rcl-hub .rcl-lr-panel .rcl-lr-podium { margin-top: 4px; }
+@media (max-width: 640px) { body.rcl-hub .rcl-numbers-classes { grid-template-columns: minmax(0, 1fr); } }
+/* League News: older stories to the left, the whole current story on the right. */
+body.rcl-hub .rcl-news-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+body.rcl-hub .rcl-news-layout-single { grid-template-columns: minmax(0, 1fr); }
+body.rcl-hub .rcl-news-layout .rcl-news-previous { margin: 0; padding: 0 24px 0 0; border-top: 0; border-right: 1px solid var(--rc-silver); }
+body.rcl-hub .rcl-news-previous-head { color: var(--rc-steel); font-size: 12px; margin-bottom: 8px; }
+body.rcl-hub .rcl-news-layout .rcl-news-current { min-width: 0; }
+@media (max-width: 860px) {
+  body.rcl-hub .rcl-news-layout { grid-template-columns: minmax(0, 1fr); }
+  body.rcl-hub .rcl-news-layout .rcl-news-previous { order: 2; padding: 16px 0 0; border-right: 0; border-top: 1px solid var(--rc-silver); }
+}
+body.rcl-hub .rcl-main { padding-top: 24px; }
+/* Manufacturers' Standings and Team Endurance Standings: containers like every other one on the page. */
+body.rcl-hub .rcl-mfr-standings, body.rcl-hub .rcl-tt { background: #fff; border: 1px solid var(--rc-silver); border-radius: 12px; box-shadow: 0 1px 4px rgba(23, 23, 23, 0.05); padding: 20px 24px 28px; }
+body.rcl-hub .rcl-mfr-title { text-align: left; font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); padding-bottom: 12px; margin-bottom: 0; border-bottom: 2px solid var(--rc-red); }
+body.rcl-hub .rcl-mfr-subtitle { text-align: left; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--rc-steel); margin: 10px 0 18px; }
+/* No banner above the bar any more, so the page title stays in the bar on a phone too (the dropdown wraps under it). */
+@media (orientation: portrait) {
+  body.rcl-hub .rcl-navbar-title { display: block; }
+  body.rcl-hub .rcl-navbar-inner { padding-top: 10px; gap: 8px; }
+}
