@@ -663,7 +663,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 
 /* The black sidebar is hidden on phones AND on any screen taller than it is wide (tablets held upright, narrow browser windows): the
    dashboard body then fills the whole page and the avatar menu in the header carries every link the sidebar had (Matt, 2026-11-02). */
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-shell { flex-direction: column; }
   /* .rc-shell's own padding-top:70px (below, sitewide) is what clears the fixed site header now. */
   .rc-sidebar { display: none; }
@@ -679,9 +679,7 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
      reads as even on all sides, same as the gap on its left/right edges. */
   .rc-main { padding: 16px 16px 48px; }
 }
-@media (min-width: 641px) and (orientation: portrait) {
-  .rc-main { padding: 24px 24px 56px; }
-}
+/* (A separate 24px tablet padding was removed: portrait is one layout, phone and tablet alike.) */
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
 .rc-field-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 16px; margin-top: 18px; }
@@ -1206,7 +1204,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    fit a fixed box. */
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
 .rc-cs-logo { max-width: 150px; max-height: 50px; object-fit: contain; }
-@media (max-width: 480px) { .rc-cs-logo { max-width: 100px; } }
+@media (orientation: portrait) { .rc-cs-logo { max-width: 100px; } }
 .rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
 /* Matches .rc-regstatus-headline's weight/letter-spacing/uppercase treatment, just sized up
    slightly. */
@@ -1259,7 +1257,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-statuscircle-solid-green { background: var(--rc-positive); }
 /* A round pill with its protests listed just under it (same look as the Stewarding page). */
 .rc-protest-round-list { margin: 8px 0 16px 14px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   /* Phones: Edit / Withdraw drop under the protest text instead of sitting at the right edge. */
   .rc-protest-dash-item { flex-wrap: wrap; }
   .rc-protest-popup-item-actions { flex-basis: 100%; margin-left: 28px; margin-top: 4px; order: 3; }
@@ -1348,7 +1346,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 /* First paint of the dashboard: every card is already loaded, so no fade -- everything shows at once. */
 .rc-dash-instant .rc-dash-card-fade { transition: none; }
 
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-field-pair, .rc-field-trio, .rc-field-trio-name { grid-template-columns: 1fr; }
 }
 
@@ -1387,7 +1385,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   height: 100%;
   margin-left: 18px;   /* was 36px: logos sit half as far apart (Matt, 2026-10-19) */
 }
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rc-header-leaguehub-badge { display: flex; }
 }
 /* League Hub gets the same extra 5.25px of left padding the Championship badge has (set inline in header.js), so the Race Club to League Hub gap matches the League Hub to Championship gap. */
@@ -1420,7 +1418,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    widths about 133px (Race Club 36px tall; the other two 22.5px tall, their usual size). #rc-header[data-nav-active] is set by header.js (home,
    league or champ); clicking a logo flips it first so the sizes animate (about 0.22s) before the page
    changes. Phones keep the single Race Club logo as is. */
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rc-header-logo,
   .rc-header-leaguehub-logo { transition: transform 0.18s ease, height 0.22s ease; }
   /* The Race Club logo is always full size on every page (Matt, 2026-10-27); it no longer shrinks when League Hub or Championship is active. It still grows a little on hover. */
@@ -1558,7 +1556,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 /* 480px -> 821px -- same unification as the League Hub badge above; this rule now only matters
    above the hamburger breakpoint, since .rc-header-account-text is hidden outright (along with the
    avatar and chevron) below it. */
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rc-header-account-text { display: flex; }
 }
 
@@ -1579,7 +1577,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-header-hamburger-toggle:hover,
 .rc-header-hamburger-toggle[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-red); }
 
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   /* Logged in: collapse the avatar/name/role/chevron stack down to just
      the hamburger icon, inside the same toggle button. */
   /* The full account button on phones and upright screens too (Matt, 2026-11-02): helmet, name, role pill and chevron.
@@ -1606,7 +1604,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   .rc-header-account-menu { min-width: 220px; }
   .rc-fixed-header { padding: 0 16px; }
 }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   /* Bigger again at true phone widths -- the tablet-range 26px bump above still reads small once
      the header has shrunk down to just logo + hamburger with nothing else competing for room
      (.rc-fixed-header's own 16px side padding at this width, set in the 820px block above). */
@@ -1679,7 +1677,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   padding: 0 0 0 4px;
 }
 .rc-toast-close:hover { opacity: 1; }
-@media (max-width: 600px) {
+@media (orientation: portrait) {
   .rc-toast-container { left: 12px; right: 12px; max-width: none; bottom: 14px; }
 }
 
@@ -1756,7 +1754,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 /* Phone -- the clamp() above is tuned for the 360px-1600px desktop/tablet range and still reads
    oversized/too far from the corner at true phone widths, so this overrides both the size and the
    inset directly instead of extending the clamp's low end further. */
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-hero-badge {
     height: 22px;
     right: 12px;
@@ -1869,7 +1867,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 }
 .rc-discord-cta-btn:hover { background: #4752c4; color: var(--rc-white); transform: translateY(-1px); }
 .rc-discord-cta-logo { height: 22px; width: auto; flex: none; }
-@media (max-width: 560px) {
+@media (orientation: portrait) {
   .rc-discord-cta-heading { font-size: 20px; }
   .rc-discord-cta-btn { padding: 13px 22px; font-size: 13px; }
 }
@@ -2082,7 +2080,7 @@ a.rc-needs-item {
   transition: background 0.12s ease;
 }
 a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-needs-list { grid-template-columns: 1fr; }
   .rc-needs-item { border-left: none !important; }
   .rc-needs-item + .rc-needs-item { border-top: 1px solid rgba(255, 255, 255, 0.12); }
@@ -2098,10 +2096,10 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 /* pattern .rc-tier-row and .rc-details-row already use elsewhere.      */
 /* -------------------------------------------------------------------- */
 .rc-steps-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 32px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-steps-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 560px) {
+@media (orientation: portrait) {
   .rc-steps-row { grid-template-columns: 1fr; }
 }
 .rc-step-card { text-align: center; }
@@ -2177,10 +2175,10 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 /* 5 columns now -- was repeat(4, 1fr) with 900px/560px breakpoints; added a 1024px breakpoint to
    drop to 3 columns before 5 get too cramped, otherwise unchanged. */
 .rc-tier-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 28px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 420px) {
+@media (orientation: portrait) {
   .rc-tier-row { grid-template-columns: 1fr; }
 }
 .rc-tier-card {
@@ -2304,7 +2302,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 }
 /* Center popups over the content area, not the whole screen. Only while the sidebar is showing
    (wider than 640px and not upright); with the sidebar hidden, popups sit in the middle of the screen. */
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rc-modal-backdrop { padding-left: 244px; }
   /* Opt back out of the sidebar-offset centering above. Only a modal that explicitly knows there's
      no sidebar to offset for adds this class; every other .rc-modal-backdrop keeps the offset
@@ -2463,7 +2461,7 @@ body.rc-modal-scroll-locked {
 .rc-wiz-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-wiz-field-pair:first-child { margin-top: 0; }
 .rc-wiz-field-pair .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-wiz-field-pair { grid-template-columns: 1fr; }
 }
 /* Four-column version. Each field wrapper sets its own inline grid-column: span N (1 = a quarter, 2
@@ -2471,7 +2469,7 @@ body.rc-modal-scroll-locked {
 .rc-wiz-field-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 16px; margin-top: 18px; }
 .rc-wiz-field-row:first-child { margin-top: 0; }
 .rc-wiz-field-row .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-wiz-field-row { grid-template-columns: 1fr; }
   .rc-wiz-field-row .rc-wiz-field { grid-column: auto !important; }
 }
@@ -2480,7 +2478,7 @@ body.rc-modal-scroll-locked {
 .rc-wiz-field-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 16px; margin-top: 18px; }
 .rc-wiz-field-row-3:first-child { margin-top: 0; }
 .rc-wiz-field-row-3 .rc-wiz-field { margin-top: 0; margin-bottom: 0; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-wiz-field-row-3 { grid-template-columns: 1fr; }
 }
 .rc-wizard-subhead {
@@ -2853,7 +2851,7 @@ body.rc-modal-scroll-locked {
 .rc-cal-round-bar-long { display: none; }
 
 .rc-cal-race-body { flex: 1 1 auto; min-width: 0; padding: 14px 16px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-cal-race-body { min-width: 220px; }
   .rc-cal-race { flex-direction: column; }
   .rc-cal-round-bar {
@@ -3140,8 +3138,8 @@ body.rc-modal-scroll-locked {
 .rc-helmet-tag { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rc-red); margin-bottom: 6px; }
 .rc-helmet-card h3 { font-size: 15px; letter-spacing: 0.03em; }
 .rc-helmet-card p { font-size: 14px; color: var(--rc-steel); margin: 8px 0 0; line-height: 1.55; }
-@media (max-width: 900px) { .rc-helmet-showcase { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px) { .rc-helmet-showcase { grid-template-columns: 1fr; } }
+@media (orientation: portrait) { .rc-helmet-showcase { grid-template-columns: repeat(2, 1fr); } }
+@media (orientation: portrait) { .rc-helmet-showcase { grid-template-columns: 1fr; } }
 
 /* ---- Index: combined intro + two paths; helmet cards without a stage ---- */
 .rc-path-heading { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 44px 0 18px; display: flex; align-items: center; gap: 14px; }
@@ -3185,7 +3183,7 @@ body.rc-modal-scroll-locked {
   transition: background 0.12s ease;
 }
 .rc-path-btn:hover { background: var(--rc-red-dark); color: var(--rc-white); }
-@media (max-width: 760px) { .rc-path-grid { grid-template-columns: 1fr; } }
+@media (orientation: portrait) { .rc-path-grid { grid-template-columns: 1fr; } }
 
 .rc-helmet-card { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
 .rc-helmet-card:hover { transform: translateY(-4px); box-shadow: var(--rc-shadow-md); border-color: var(--rc-carbon); }
@@ -3249,7 +3247,7 @@ body.rc-modal-scroll-locked {
 .rc-stat-value { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--rc-steel); margin-top: 2px; }
 .rc-stat-row-empty .rc-stat-driver, .rc-stat-row-empty .rc-stat-value { color: var(--rc-silver); }
 .rc-stat-empty { font-size: 13px; color: var(--rc-steel); padding: 14px 0; }
-@media (max-width: 560px) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
+@media (orientation: portrait) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
 
 /* Section bars: a thick red bar butts up against the bottom of the dark band above the Online League and the Offline Championship sections. */
 .rc-why-section { border-top: 18px solid var(--rc-red); }
@@ -3267,7 +3265,7 @@ body.rc-modal-scroll-locked {
 .rc-showcase-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); transition: background 0.3s ease; }
 .rc-showcase-dot-on { background: var(--rc-white); }
 .rc-showcase-caption { text-align: center; font-size: 14px; line-height: 1.45; color: var(--rc-steel); padding-top: 12px; min-height: 2.9em; }
-@media (max-width: 560px) { .rc-showcase-pill { bottom: 10px; padding: 6px 14px; gap: 8px; } }
+@media (orientation: portrait) { .rc-showcase-pill { bottom: 10px; padding: 6px 14px; gap: 8px; } }
 
 /* On/off switch (Account > Admin > Data Management > Staged League Hub). Gray when off, carbon when on:
    it saves nothing to the Sheet, so it never takes the red save color. */
@@ -3322,7 +3320,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
    still builds its buttons. */
 .rc-sidebar { display: none !important; }
 .rc-home-navbar-link.rc-home-navbar-current { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
-@media (min-width: 641px) and (orientation: landscape) { .rc-modal-backdrop { padding-left: 24px; } }
+@media (orientation: landscape) { .rc-modal-backdrop { padding-left: 24px; } }
 
 /* Home/Account link bar: the first tab keeps its full side padding so its text never touches the line on its left. */
 .rc-home-navbar-link:first-child { padding-left: 18px; }

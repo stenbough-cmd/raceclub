@@ -4,9 +4,9 @@
 .rc-modal.rch-modal { max-width: 1120px; }
 .rch-designer { font-family: var(--rc-font-body); color: var(--rc-carbon); }
 .rch-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 22px; align-items: start; }
-@media (max-width: 860px) { .rch-grid { grid-template-columns: 1fr; } }
+@media (orientation: portrait) { .rch-grid { grid-template-columns: 1fr; } }
 .rch-left { position: sticky; top: 0; }
-@media (max-width: 860px) { .rch-left { position: static; } }
+@media (orientation: portrait) { .rch-left { position: static; } }
 
 .rch-label { display: block; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); margin-bottom: 5px; }
 .rch-mt { margin-top: 14px; }
@@ -48,7 +48,7 @@
 .rch-slot-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .rch-slot-head .rch-label { margin: 0; }
 .rch-swatches { display: grid; grid-template-columns: repeat(17, 1fr); gap: 4px; align-items: center; }
-@media (max-width: 520px) { .rch-swatches { grid-template-columns: repeat(9, 1fr); } }
+@media (orientation: portrait) { .rch-swatches { grid-template-columns: repeat(9, 1fr); } }
 .rch-sw, .rch-sw-custom { aspect-ratio: 1; width: 100%; min-width: 0; border-radius: 50%; border: 2px solid var(--rc-silver); cursor: pointer; padding: 0; }
 .rch-sw.sel, .rch-sw-custom.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rc-white), 0 0 0 3.5px var(--rc-red); }
 .rch-sw-custom { position: relative; display: block; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); overflow: hidden; }
@@ -101,7 +101,7 @@
 .rch-player { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 14px; }
 .rch-player .rch-stage { min-height: 300px; }
 .rch-swatches16 { grid-template-columns: repeat(16, 1fr); }
-@media (max-width: 520px) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
+@media (orientation: portrait) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
 .rch-pbtns { margin-top: 4px; }
 .rch-shapecolor { margin-top: 10px; width: 100%; }
 
@@ -150,7 +150,7 @@
 /* circle-arrow Reset button: last in the button row, square, icon only */
 
 /* Admin Helmet Designer on a computer: the helmet side is locked in place and only the controls side scrolls. */
-@media (min-width: 861px) {
+@media (orientation: landscape) {
   .rc-modal.rch-modal { height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
   .rc-modal.rch-modal .rc-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .rch-designer:not(.rch-player) { height: 100%; }

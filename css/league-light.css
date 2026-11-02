@@ -54,7 +54,7 @@ body.rc-league-page.rcl-light {
 .rcl-light .rcl-mfr-rest-logo-slot { height: 28px; }
 .rcl-light .rcl-mfr-rest-logo { max-height: 28px; }
 .rcl-light .rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcl-light .rcl-mfr-tile-box-inner { padding: 16px; }
   .rcl-light .rcl-mfr-tile-logo { max-height: 70%; }
 }

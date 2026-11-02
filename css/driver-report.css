@@ -103,7 +103,7 @@
 .rcr-contact-meter { height: 8px; background: #f1f3f5; border-radius: 4px; overflow: hidden; }
 .rcr-contact-meter-fill { display: block; height: 100%; background: #d7261e; border-radius: 4px; }
 .rcr-contact-val { text-align: right; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcr-tyre-grid { grid-template-columns: 1fr; }
   .rcr-bar-row, .rcr-div-row { grid-template-columns: 96px 1fr 84px; font-size: 12px; }
   .rcr-div-key { margin: 2px 94px 0 106px; }
@@ -117,7 +117,7 @@
 
 /* Report card + owner line (Championship recap and League Hub). */
 .rcr-card { background: var(--rc-white); border: 1px solid var(--rcl-line); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; }
-@media (max-width: 700px) { .rcr-card { padding: 14px 12px; } }
+@media (orientation: portrait) { .rcr-card { padding: 14px 12px; } }
 .rcr-report-who { margin: 0 0 14px; } /* padding, not margin: a margin here would merge with the dropdown row's 18px and add nothing. +10px under the recap dropdowns (Matt, 2026-11-01) */
 .rcr-report-who + .rcr-report { margin-top: 8px; } /* gap down to the Driver Report heading is 14px, same as the League Hub */
 .rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }
@@ -146,7 +146,7 @@ a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcr-set-laps, .rcr-set-wear { color: var(--rc-steel); }
 .rcr-set-none { color: var(--rc-steel); }
 .rcr-sets-tyres { text-align: center; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px), (orientation: portrait) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tyres'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
+@media (orientation: portrait) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tyres'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
 /* Legend: pit stop circle; space under the pit strategy key. */
 .rcr-legend-circle { border-radius: 50%; border-width: 2px; border-style: solid; width: 10px; height: 10px; }
 .rcr-legend-gap { margin-bottom: 18px; }
@@ -169,7 +169,7 @@ a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcc-laps-events { margin-top: 12px; }
 
 a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcr-report-who .rc-cs-logo-wrap { display: none; }
   .rcr-report-who .rc-cs-team-name-flex { row-gap: 0; line-height: 1.2; }
   .rcr-report-who .rc-cs-car-line { margin-top: 2px; }
@@ -180,12 +180,12 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
 /* Tyre sets on their own full-width row. */
 .rcr-sets-wide { margin-top: 22px; }
 .rcr-sets-wide .rcr-sets-row { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) 56px; }
-@media (max-width: 640px), (orientation: portrait) { .rcr-sets-wide .rcr-sets-row { grid-template-columns: minmax(0, 1fr); } }
+@media (orientation: portrait) { .rcr-sets-wide .rcr-sets-row { grid-template-columns: minmax(0, 1fr); } }
 /* Side-by-side graphs: two columns on PC, one on phones. .rcr-stack keeps them in one column always. */
 .rcr-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 32px; align-items: start; }
 .rcr-col { min-width: 0; }
 .rcr-cols + .rcr-legend, .rcr-cols + .rcr-tiles { margin-top: 18px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcr-cols { grid-template-columns: minmax(0, 1fr); }
   .rcr-tiles-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -199,7 +199,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
 
 .rcl-dr-pick select { width: 100%; height: 38px; font-size: 14px; font-weight: 400; text-transform: none; letter-spacing: normal; background-color: #fff; color: #171717; border: 1px solid #D8DDE1; border-radius: 4px; }
 .rcl-dr-light .rcr-report { margin-top: 8px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcl-dr-light { padding: 14px 12px; }
   .rcl-dr-top { flex-direction: column; align-items: stretch; }
   .rcl-dr-pick { width: 100%; margin-left: 0; }

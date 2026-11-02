@@ -64,7 +64,7 @@ var RCR_FAST = '#2f6fb5';
 var RCR_SLOW = '#a86f12';
 
 // Phone width: lap axes show only a few labelled laps so the numbers don't run together (Matt, 2026-10-14).
-function _rcrIsPhone() { return (window.innerWidth || 1000) <= 640 || (window.innerHeight || 0) >= (window.innerWidth || 1000); }   // phones and any upright screen
+function _rcrIsPhone() { return (window.innerHeight || 0) >= (window.innerWidth || 1000); }   // portrait: the window is as tall as it is wide or taller
 // What a stop actually did (League chat's fix, 2026-10-14): fuel counts as added when the tank is more
 // than 2% fuller coming out. The old labels said "fuel and tyres" for every stop that changed a tyre.
 function _rcrPitFuel(p) { return p && p.fuelIn !== null && p.fuelIn !== undefined && p.fuelOut !== null && p.fuelOut !== undefined ? (p.fuelOut - p.fuelIn) > 0.02 : true; }

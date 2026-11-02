@@ -394,7 +394,7 @@ function _rcWireNavLogos_(mount) {
   mount.addEventListener('click', function (ev) {
     var a = ev.target && ev.target.closest ? ev.target.closest('a.rc-header-logo-link, a.rc-header-leaguehub-logo-link') : null;
     if (!a || ev.defaultPrevented || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-    if (window.innerWidth < 641 || window.innerHeight >= window.innerWidth) return;
+    if (window.innerHeight >= window.innerWidth) return;   // portrait: normal link navigation
     var href = a.getAttribute('href') || '';
     var target = href === 'league.html' ? 'league' : (href === 'championship.html' ? 'champ' : (href === 'index.html' ? 'home' : ''));
     if (!target) return;

@@ -157,10 +157,10 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-stat b { display: block; font-family: var(--rc-font-heading); font-size: 16px; color: var(--rcl-ink); font-variant-numeric: tabular-nums; }
 .rdp-team-stat span { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink-faint); }
 
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rdp-row-top, .rdp-row-half, .rdp-race-split, .rdp-charts { grid-template-columns: 1fr; }
 }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rc-profile-page { padding: 18px 12px 48px; gap: 16px; }
   .rdp-ach-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .rdp-ach-value { font-size: 30px; }
@@ -170,7 +170,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 }
 
 /* Team History: three containers on one row; they stack on phones. */
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rdp-teams { grid-template-columns: 1fr; }
 }
 .rdp-story-text strong, .rdp-modal-body strong.rdp-me, .rdp-story-text .rdp-me { color: var(--rcl-ink); font-weight: 800; }
@@ -186,7 +186,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 
 /* PC layout (Matt, 2026-10-14): all 10 quick-stat tiles on one line, and the Season and Race
    dropdowns side by side on one line. Phones keep the wrapping grid above. */
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rdp-tiles { grid-template-columns: repeat(9, minmax(0, 1fr)); }
   .rdp-tile { padding: 10px 8px; min-width: 0; }
   .rdp-tile-label, .rdp-tile-sub { overflow-wrap: anywhere; }
@@ -209,7 +209,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-chart-bar { margin-bottom: 16px; }
 .rdp-details { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); margin-bottom: 6px; }
 .rdp-details .rdp-tile-value { font-size: 15px; line-height: 1.25; }
-@media (min-width: 641px) and (orientation: landscape) {
+@media (orientation: landscape) {
   .rdp-details { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
 }
 .rdp-race-split .rdp-catline { margin: 6px 0 -6px; }
@@ -224,7 +224,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-sm .rdp-team-car { padding: 4px 6px; }
 .rdp-team-sm .rdp-team-stat b { font-size: 14px; }
 .rdp-team-sm .rdp-team-stat span { font-size: 9px; letter-spacing: 0.05em; }
-@media (max-width: 640px), (orientation: portrait) { .rdp-teams-older { grid-template-columns: 1fr; gap: 14px; } .rdp-team-sm { padding: 12px; gap: 8px; } .rdp-team-sm .rdp-team-name { font-size: 18px; } .rdp-team-sm .rdp-team-model { font-size: 14px; } .rdp-team-sm .rdp-team-season { font-size: 12px; } .rdp-team-sm .rdp-team-stat b { font-size: 16px; } .rdp-team-sm .rdp-team-stat span { font-size: 10px; } }
+@media (orientation: portrait) { .rdp-teams-older { grid-template-columns: 1fr; gap: 14px; } .rdp-team-sm { padding: 12px; gap: 8px; } .rdp-team-sm .rdp-team-name { font-size: 18px; } .rdp-team-sm .rdp-team-model { font-size: 14px; } .rdp-team-sm .rdp-team-season { font-size: 12px; } .rdp-team-sm .rdp-team-stat b { font-size: 16px; } .rdp-team-sm .rdp-team-stat span { font-size: 10px; } }
 .rdp-rival { grid-template-columns: 44px 1fr; }
 .rdp-rival-season { grid-column: 1 / -1; margin-top: 2px; border: 1px solid var(--rcl-line); border-radius: 8px; padding: 8px 10px; background: rgba(255,255,255,0.02); }
 .rdp-rival-season-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-bottom: 6px; }
@@ -243,11 +243,11 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rdp-team-model { font-size: 16px; }
 .rdp-team-sm .rdp-team-name { font-size: 15px; }
 .rdp-team-sm .rdp-team-model { font-size: 14px; }
-@media (max-width: 640px), (orientation: portrait) { .rdp-team-sm .rdp-team-name { font-size: 20px; } .rdp-team-sm .rdp-team-model { font-size: 16px; } }
+@media (orientation: portrait) { .rdp-team-sm .rdp-team-name { font-size: 20px; } .rdp-team-sm .rdp-team-model { font-size: 16px; } }
 
 /* Season and Round dropdowns are half the width of the panel (full width on phones, where half would be too narrow). */
 .rdp-select-full { width: 50%; }
-@media (max-width: 640px), (orientation: portrait) { .rdp-select-full { width: 100%; } }
+@media (orientation: portrait) { .rdp-select-full { width: 100%; } }
 
 /* Points Trend key (under the graph) */
 .rdp-chart-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 4px 8px 10px; font-size: 12px; color: var(--rcl-ink-faint); }
@@ -310,7 +310,7 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 .rdp-hc-arrow:hover:not(:disabled) { background: rgba(255, 255, 255, 0.28); }
 .rdp-hc-arrow:disabled { opacity: 0.35; cursor: default; }
 .rdp-hc-arrow[hidden] { display: none; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rdp-hitem { flex-basis: 66vw; }
   .rdp-hc-arrow { width: 32px; height: 32px; font-size: 20px; }
   .rdp-helmets { padding: 20px 0 24px; }
