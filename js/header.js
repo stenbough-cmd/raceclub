@@ -438,7 +438,7 @@ function renderHeader(opts) {
   var html = '';
   // The Race Club logo always goes to the home page (index.html), signed in or not.
   html += '<a class="rc-header-logo-link" href="index.html">' +
-            '<img class="rc-header-logo" src="assets/images/Race_Club_Header.webp" alt="Race Club">' +
+            '<img class="rc-header-logo" src="assets/helmets/images/race_club_header_white.webp" alt="Race Club">' +
           '</a>';
   // League Hub badge. Sits in the same left-hand flex cluster as the logo, not spaced apart from it
   // -- see .rc-header-nav's margin-left: auto (style.css) for how the nav still ends up pushed
