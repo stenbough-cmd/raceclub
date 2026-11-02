@@ -1900,6 +1900,9 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   border-radius: 10px 10px 0 0;
 }
 .rcl-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-family: var(--rc-font-heading);
   font-size: 18px;

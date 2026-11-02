@@ -68,8 +68,8 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-report-line [class^="rcl-report-clause-"] { font-weight: 400; }
 .rcc-page .rcl-report-clause-car { color: #a16207; }
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
-/* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
-.rcc-page .rcl-hero::before { opacity: 0.16; }
+/* Banner photo at the hub's own 50% (Matt, 2026-11-02: much darker than the old 16%). */
+.rcc-page .rcl-hero::before { opacity: 0.5; }
 /* "CHAMPIONSHIP" title in black (the hub's is red); the "RACE CLUB" eyebrow above it stays red. */
 .rcc-page .rcl-hero-title-hub { color: var(--rc-carbon); -webkit-text-stroke-color: var(--rc-carbon); }
 /* "Season N" in the championship navy instead of the hub's gold. */
@@ -916,7 +916,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-hero-season-sep,
 .rcc-page .rcl-panel-title::before { color: var(--rcc-true-red); }
 .rcc-page .rcl-panel-head { border-bottom-color: var(--rcc-true-red); }
-.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; }
+.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; border-bottom-width: 3px; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
 .rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }

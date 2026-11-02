@@ -1149,6 +1149,17 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    Registered On/Class stats (.rc-regstatus- footer's border-top). */
 .rc-regstatus-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
 .rc-regstatus-row-clickable { cursor: pointer; }
+/* Hover on the Register row: the circle fills in and grows a touch, the headline darkens and underlines. */
+.rc-regstatus-row-clickable .rc-regstatus-icon,
+.rc-regstatus-row-clickable .rc-regstatus-headline { transition: background-color .15s ease, border-color .15s ease, transform .15s ease, color .15s ease; }
+.rc-regstatus-row-clickable:hover .rc-regstatus-icon-open { background: var(--rc-warning); border-color: var(--rc-warning); color: var(--rc-white); transform: scale(1.08); }
+.rc-regstatus-row-clickable:hover .rc-regstatus-headline { text-decoration: underline; text-underline-offset: 3px; }
+.rc-regstatus-icon-droppable { position: relative; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+.rc-regstatus-icon-droppable .rc-regstatus-x { display: none; }
+.rc-regstatus-icon-droppable:hover, .rc-regstatus-icon-droppable:focus-visible { background: var(--rc-red); border-color: var(--rc-red); color: var(--rc-white); transform: scale(1.08); outline: none; }
+.rc-regstatus-icon-droppable:hover .rc-regstatus-tick, .rc-regstatus-icon-droppable:focus-visible .rc-regstatus-tick { display: none; }
+.rc-regstatus-icon-droppable:hover .rc-regstatus-x, .rc-regstatus-icon-droppable:focus-visible .rc-regstatus-x { display: inline; }
+.rc-regstatus-row-clickable:focus-visible { outline: 2px solid var(--rc-warning); outline-offset: 4px; border-radius: 8px; }
 .rc-regstatus-icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 20px; font-weight: 700; border: 2px solid; }
 .rc-regstatus-icon-none { color: var(--rc-steel); border-color: var(--rc-silver); }
 /* Nudges the "+" glyph up and right a hair -- the flex centering above is correct for the circle
@@ -1479,6 +1490,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   flex-direction: column;
   line-height: 1.25;
   text-align: left;
+  margin-left: 8px;   /* a little more room between the helmet and the name */
 }
 .rc-header-account-name {
   font-family: var(--rc-font-heading);
@@ -2348,7 +2360,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 .rc-modal-calendar-wide { max-width: 870px; }
 
 /* Popup title: the same bold all-caps heading in every popup on the site (no red line under it). */
-.rc-modal-title { margin: 0; font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-carbon); }
+.rc-modal-title { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-carbon); }
 
 /* Season Format popup -- group header pill + vertical list. .rc-seasonfmt-group-label is unchanged
    -- the same graphite pill this popup's "Season Format"/"Championship Points"/"Season Rules"
@@ -3290,3 +3302,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 
 /* Page heading for screen readers and search engines only (the visible big text is the hero). */
 .rc-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Class pill beside a popup title (Choose Your Team): no taller than the title text, centered on it. */
+.rc-modal-title .rc-badge-chip, .rcl-modal-title .rc-badge-chip { font-size: 11px; line-height: 1; height: 16px; padding: 0 8px; box-sizing: border-box; flex: none; }

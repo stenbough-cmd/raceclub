@@ -1818,6 +1818,18 @@ function rccOpenRegistration() {
   });
 }
 
+// DROP OUT of the season's seat (before the first result is imported): same wording as the League's popup.
+function rccOpenDropOut() {
+  var page = RCC.page;
+  var reg = page.registration || {};
+  var seat = [reg.teamName, reg.carNumber ? '#' + reg.carNumber : ''].filter(Boolean).join(' ');
+  rccConfirm('Forfeit Your Seat?',
+    'You are about to drop out and give up your seat' + (seat ? ' with ' + seat : '') + '. By dropping out you forfeit that seat and it goes back on the grid for another driver to take. You can choose a team again whenever you like.',
+    'Drop Out', 'Dropping Out...',
+    function () { return _rccApi('champDropOut', { seasonId: page.seasonId }, { post: true }); },
+    function () { _rccToast('You have dropped out and your seat is free.', 'success'); rccReloadAfterSave(); });
+}
+
 // ---------------------------------------------------------------------
 // SEASON WIZARD -- Create / Edit (one popup, all sections on one scrolling form)
 // ---------------------------------------------------------------------

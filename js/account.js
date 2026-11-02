@@ -800,7 +800,20 @@
     function renderRegistered(data) {
       body.innerHTML = '';
       var row = el('div', 'rc-regstatus-row');
-      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-done', '&#10003;'));
+      // Before the first race the circle doubles as the drop out button: on hover it turns red with an X.
+      var canDropOut = !!(data.registration && data.registration.canDropOut);
+      var doneIcon = el('div', 'rc-regstatus-icon rc-regstatus-icon-done' + (canDropOut ? ' rc-regstatus-icon-droppable' : ''),
+        canDropOut ? '<span class="rc-regstatus-tick">&#10003;</span><span class="rc-regstatus-x">&#10005;</span>' : '&#10003;');
+      if (canDropOut) {
+        doneIcon.title = 'Drop out and give up your seat';
+        doneIcon.setAttribute('role', 'button');
+        doneIcon.setAttribute('aria-label', 'Drop out and give up your seat');
+        doneIcon.tabIndex = 0;
+        var startDrop = function () { openDropOutConfirm(profile, token, data); };
+        doneIcon.addEventListener('click', startDrop);
+        doneIcon.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startDrop(); } });
+      }
+      row.appendChild(doneIcon);
       var text = el('div');
       var regSeasonNum = seasonNumberLabel(data.seasonId);
       var regSeasonLabel = regSeasonNum ? ('SEASON ' + regSeasonNum) : 'SEASON';
@@ -1771,6 +1784,30 @@
   // SEASON REGISTRATION -- the car picker, signing sequence and season notice are js/car-picker.js, the same code the
   // Single Player Championship uses. This only supplies the League's data and its save.
   // ---------------------------------------------------------------------
+  // DROP OUT of the League season (before the first race). The popup says plainly that the seat is given up and
+  // another driver can take it; only the red Drop Out button writes (dropOut deletes this driver's registration).
+  function openDropOutConfirm(profile, token, data) {
+    var reg = data.registration || {};
+    var seat = [reg.teamName, reg.carNumber ? '#' + reg.carNumber : ''].filter(Boolean).join(' ');
+    var seasonNum = seasonNumberLabel(data.seasonId);
+    var seasonLabel = seasonNum ? ('Season ' + seasonNum) : 'this season';
+    openConfirmModal('Forfeit Your Seat?',
+      'You are about to drop out of ' + seasonLabel + (seat ? ' and give up your seat with ' + seat : ' and give up your seat') +
+      '. By dropping out you forfeit that seat, and another driver will be able to take it. You can register again only if a seat is still open.',
+      'Drop Out', function () {
+        return fetchApi('dropOut', { method: 'POST', token: token, body: { seasonId: data.seasonId } }).then(function (res) {
+          if (!res || !res.success) {
+            showToast((res && res.message) || 'Could not drop out. Please try again.', 'error');
+            return;
+          }
+          showToast('You have dropped out and your seat is free.', 'success');
+          rcReloadAfterSave();
+        }).catch(function () {
+          showToast('Could not reach the server.', 'error');
+        });
+      }, { waitForWrite: true });
+  }
+
   function buildRegistrationModal(profile, token, activeSeasonData, onDone) {
     rcOpenCarPicker({
       mode: 'league',

@@ -229,6 +229,8 @@
           bg.appendChild(rowBtn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'This season has ended, so its details can no longer be edited.'));
           bg.appendChild(rowBtn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
           bg.appendChild(rowBtn('Choose Your Team', active && !page.registration, function () { rccOpenRegistration(); }, page.registration ? 'You have already chosen your team for this season.' : 'The season has ended.'));
+          // Before the first result is imported, the seat can be given back.
+          if (page.registration && page.registration.canDropOut) bg.appendChild(rowBtn('Drop Out', active, function () { rccOpenDropOut(); }, 'This season has ended.'));
         }
         // A past season: its own Season Preview, and its rounds (read only, no buttons) behind the arrow. Both come from that
         // season's own page, fetched the first time either is used (an ended season is read from its saved file).
