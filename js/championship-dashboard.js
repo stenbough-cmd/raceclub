@@ -200,7 +200,7 @@
     var box = mk('div', 'rc-panel');
     var seasons = (page && page.seasons) || [];
     if (!seasons.length) {
-      box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet.'));
+      box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet. Press Create Season above to start your first one, or open the Help guide for a walkthrough.'));
     } else {
       var lastYear = null;
       seasons.forEach(function (s, idx) {
@@ -392,20 +392,6 @@
       body.appendChild(mk('p', 'rcd-note', msg || 'Could not load your championship right now. Refresh the page to try again.'));
     }
     var profile = opts.profile || {};
-    if (opts.enabled === false) {
-      // Switched off: nothing is fetched. Same "No Data To Display" panel as the rest of the site, plus a note about the switch.
-      body.innerHTML = '';
-      var box = mk('div', 'rc-panel');
-      var empty = mk('div', 'rc-empty-state');
-      empty.appendChild(mk('div', 'rc-empty-state-icon', ''));
-      empty.firstChild.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>';
-      empty.appendChild(mk('div', 'rc-empty-state-title', 'No Data To Display'));
-      empty.appendChild(mk('div', 'rc-empty-state-subtitle', 'The Single Player Championship is switched off. Turn on the switch next to the Single Player Championship heading to set up and play your own offline season. Switch it off again at any time; your seasons are kept.'));
-      box.appendChild(empty);
-      body.appendChild(box);
-      panel.rcdReady = Promise.resolve();
-      return panel;
-    }
     if (!opts.token || !profile.profileId) { fail('Log in to use the championship tools.'); return panel; }
     // panel.rcdReady settles once the championship data is drawn (or failed), so the page can show it together with the league cards.
     panel.rcdReady = fetchPage(opts, profile.profileId).then(function (page) {

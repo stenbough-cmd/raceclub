@@ -2698,16 +2698,26 @@ function _rccShowOnlyMessage(panelId, title, text, actions) {
   _rccReveal();
 }
 
-// The member's Championship switch is OFF (Dashboard, Users.ChampEnabled; off by default).
-function _rccShowDisabled() {
-  _rccShowOnlyMessage('rcc-off-panel', 'Championship Is Switched Off',
-    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season. For more information, visit the Help section.');
+// Signed in but no season yet (Matt, 2026-11-02: there is no ON/OFF switch any more, every member has the Championship): one message
+// pointing to Create Season on the Dashboard and the Help section.
+function _rccShowNoSeason() {
+  _rccShowOnlyMessage('rcc-noseason-panel', 'No Championship Season Yet',
+    'You do not have a Single Player Championship season right now. Create one with Create Season in the Single Player Championship section of your Dashboard, then come back here to follow your standings, calendar and race stories. New to it? The Help guide walks you through setting up a season and importing your races.',
+    [{ label: 'Go To Dashboard', href: 'Account.html' }]);
+  // Help sits right next to the Dashboard button.
+  var row = document.querySelector('#rcc-noseason-panel .rcc-off-actions');
+  if (row && typeof rccOpenHelp === 'function') {
+    var help = _rccText('button', 'rc-btn-secondary rc-btn-sm', 'Open Help');
+    help.type = 'button';
+    help.addEventListener('click', function () { rccOpenHelp(); });
+    row.appendChild(help);
+  }
 }
 
 // Nobody is signed in: the same kind of container, inviting the visitor to sign up (no demo any more).
 function _rccShowLoggedOut() {
   _rccShowOnlyMessage('rcc-signup-panel', 'Sign Up To Play Championship Mode',
-    'The Single Player Championship is a separate offline season that you set up and play on your own, with your own team, calendar, standings and race stories. It is free for every Race Club member. Create an account or log in, then turn on the Championship switch on your Dashboard to get access.',
+    'The Single Player Championship is a separate offline season that you set up and play on your own, with your own team, calendar, standings and race stories. It is free for every Race Club member. Create an account or log in, then create a season in the Single Player Championship section of your Dashboard to get started.',
     [{ label: 'Log In', href: 'login.html' }, { label: 'Create An Account', href: 'register.html' }]);
 }
 
@@ -2749,6 +2759,9 @@ function _rccInitTooltips() {
 
 function rccRenderAll(page) {
   RCC.page = page;
+  // A season showed up after the "no season" message was drawn (for example the first answer came from a saved copy): start over.
+  if (page && page.hasSeason && document.getElementById('rcc-noseason-panel')) { window.location.reload(); return; }
+  if (page && page.success !== false && !page.hasSeason && !window.RCC_EMBEDDED && !RCC.viewSeasonId) { _rccShowNoSeason(); return; }
   rccRenderHero(page);
   rccRenderActionBar(page);
   rccRenderTicker(page);
@@ -2777,13 +2790,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // The season the page opened on stays in memory (currentText), so picking it again in the season
   // picker is instant, and a background refresh never switches away from a past season.
   var revalidating = false;
-  // Is the Championship switched on for this member? The server's answer (Users.ChampEnabled) decides; if it can not be
-  // read, null = unknown and the page carries on as before. Asked in parallel with the page, which is not drawn until it answers.
-  var champOff = false;
-  var enabledP = fetchApi('getProfile', { token: RCC.token }).then(function (d) {
-    return (d && d.success && d.profile) ? !!d.profile.champEnabled : null;
-  }, function () { return null; });
-  enabledP.then(function (en) { if (en === false) { champOff = true; _rccShowDisabled(); } });
   // The first load failed and this browser has no saved copy (audit A4, Matt 2026-10-22): show "Could
   // Not Load The Championship" with RETRY instead of an empty page that looks like no season. The
   // player stays logged in; only a real "please log in" answer goes to the login page.
@@ -2797,9 +2803,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var hadCopy = !!currentText;
     _rccGetPage(_rccQuery('season')).then(function (page) {
       if (_rccHandleAuthError(page)) return;
-      return enabledP.then(function () { return page; });
+      return page;
     }).then(function (page) {
-      if (champOff || !page) return;
+      if (!page) return;
       if (page && page.success) {
         var text = JSON.stringify(page);
         // A RETRY that worked: take the error panel away and bring the page back.
@@ -2812,7 +2818,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showLoadFailed();
       }
     }).catch(function () {
-      return enabledP.then(function () { if (!champOff && !hadCopy) showLoadFailed(); });
+      if (!hadCopy) showLoadFailed();
     }).then(function () {
       revalidating = false;
       _rccReveal();

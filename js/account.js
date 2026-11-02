@@ -550,81 +550,28 @@
 
     // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
     // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
-    // Last known switch state (a hint only): if ON, start reading the championship file now, alongside the Apps Script call below.
-    try { if (typeof rcChampHint === 'function' && rcChampHint(profile.profileId) && typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
+    // No ON/OFF switch any more (Matt, 2026-11-02): every member has the championship, so its page is requested at once, alongside
+    // the Apps Script call below, and shown as soon as it is here (or the "no season yet" panel when there is none).
+    try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
     var champHost = el('div', 'margin-top:34px;');
-    var champOn = false;
-    // Heading with the ON/OFF switch right after it. The setting is stored per member (Users.ChampEnabled) and arrives inside the
-    // one getDashboardData response: when it is OFF the server sends no championship data and the page loads none.
     var champHead = el('div', 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;');
     champHead.appendChild(el('h2', 'margin:0;', 'Single Player Championship'));
-    var champSw = el('button', 'rc-switch', '');
-    champSw.type = 'button';
-    champSw.setAttribute('role', 'switch');
-    champSw.setAttribute('aria-label', 'Single Player Championship');
-    var champState = el('span', 'rc-switch-state', '');
-    champSw.appendChild(el('span', 'rc-switch-track', ''));
-    champSw.appendChild(champState);
-    champHead.appendChild(champSw);
     champHost.appendChild(champHead);
     var champBody = el('div', 'margin-top:12px;');
     champHost.appendChild(champBody);
-    function paintChampSwitch() {
-      champSw.setAttribute('aria-checked', champOn ? 'true' : 'false');
-      champState.textContent = champOn ? 'ON' : 'OFF';
-    }
-    // page: the championship page the server already sent with the dashboard data (first draw only); none = fetch it now.
     function buildChampPanel(page) {
       try {
         if (typeof rcBuildChampionshipDashboard === 'function') {
           return rcBuildChampionshipDashboard({
-            token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner, enabled: champOn, page: page || null,
+            token: token, profile: profile, withTooltip: withTooltip, showToast: showToast, spinner: buildSpinner, enabled: true, page: page || null,
             reload: function () { rcReloadAfterSave(); }
           });
         }
       } catch (champErr) { if (window.console && console.error) console.error('Single Player Championship failed to draw:', champErr); }
       return null;
     }
-    // Clicking is instant: the switch and the container change at once, the save runs in the background, and the switch stays
-    // disabled until the save (and, when turning on, the championship load) is done, so it cannot be flipped back and forth.
-    function setChampBusy(busy) {
-      champSw.disabled = busy;
-      champSw.style.opacity = busy ? '0.55' : '';
-      champSw.style.cursor = busy ? 'not-allowed' : '';
-    }
-    function showChampState(on) {
-      champOn = on;
-      paintChampSwitch();
-      champBody.innerHTML = '';
-      var fresh = buildChampPanel(null);
-      if (fresh) champBody.appendChild(fresh);
-      return fresh;
-    }
-    champSw.addEventListener('click', function () {
-      if (champSw.disabled) return;
-      var turningOn = !champOn;
-      setChampBusy(true);
-      var panel = showChampState(turningOn);
-      var panelDone = (panel && panel.rcdReady) || Promise.resolve();
-      var saved = fetchApi('setChampEnabled', { method: 'POST', token: token, body: { enabled: turningOn ? '1' : '0' } }).then(function (res) {
-        if (!res || !res.success) throw new Error((res && (res.message || res.error)) || 'FAILED');
-        if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, turningOn);
-      });
-      Promise.all([saved, panelDone.catch(function () {})]).then(function () {
-        setChampBusy(false);
-      }).catch(function (err) {
-        // The save did not go through: put everything back the way it was.
-        showChampState(!turningOn);
-        setChampBusy(false);
-        showToast('Could not change the switch (' + (err && err.message ? err.message : 'error') + '). If this keeps happening, the updated Apps Script has not been deployed yet.', 'error');
-      });
-    });
-    // The championship slice of the one dashboard response. Built once it is here; champHost joins the page only when the league
-    // cards AND the championship are ready, so everything appears together.
-    var champReady = (dashboardData.champPromise || Promise.resolve(null)).then(function (slice) {
-      champOn = !!(slice && slice.success && slice.enabled !== false);
-      if (typeof rcSetChampHint === 'function') rcSetChampHint(profile.profileId, champOn);
-      paintChampSwitch();
+    // Built at once; champHost joins the page only when the league cards AND the championship are ready, so everything appears together.
+    var champReady = Promise.resolve().then(function () {
       var panel = buildChampPanel(null);
       if (panel) champBody.appendChild(panel);
       return panel && panel.rcdReady;
@@ -8520,13 +8467,9 @@
   // asyncDashCard/buildDashboardDataRows above.
   var dashboardData = fetchDashboardData(token);
 
-  // Speed-up only: if this browser last saw the championship switched ON, start loading its scripts now (the data itself always
-  // rides in with the dashboard data, and only when the server says the switch is on).
+  // Speed-up: start loading the championship scripts now, in parallel with the dashboard data.
   try {
-    var cachedForChamp = JSON.parse(localStorage.getItem('raceclub_profile_cache') || 'null');
-    if (cachedForChamp && cachedForChamp.profileId && typeof window.rcChampHint === 'function' && window.rcChampHint(cachedForChamp.profileId) && typeof window.rcPreloadChampionshipScripts === 'function') {
-      window.rcPreloadChampionshipScripts({ showToast: showToast, reload: function () { rcReloadAfterSave(); } });
-    }
+    if (typeof window.rcPreloadChampionshipScripts === 'function') window.rcPreloadChampionshipScripts({ showToast: showToast, reload: function () { rcReloadAfterSave(); } });
   } catch (preErr) { /* only a speed-up */ }
 
   var freshProfileRaw = sessionStorage.getItem('raceclub_fresh_profile');
