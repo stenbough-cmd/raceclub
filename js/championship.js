@@ -8,7 +8,7 @@
 // the championship backend (Championship.gs, champ* actions) instead.
 //
 // Access: championship.html?id=<ProfileID>. Every signed-in member gets their own championship
-// (another id sends them to theirs); logged-out visitors get the demo. The server checks ownership on
+// (another id sends them to theirs); logged-out visitors get one container asking them to sign up. The server checks ownership on
 // every call.
 
 // ---------------------------------------------------------------------
@@ -217,12 +217,11 @@ function _rccHidePageLoader() {
   setTimeout(function () { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 450);
 }
 
-// Returns the page mode: 'owner' (any signed-in member: their own championship) or 'demo' (logged
-// out: the read-only demo season) -- or false after navigating away. A member who opens the demo
-// address (?demo=1) goes to their own championship (Matt, 2026-10-27: the demo is for visitors only).
+// Returns the page mode: 'owner' (any signed-in member: their own championship) or 'loggedout' (nobody
+// signed in: one sign-up message and nothing else) -- or false after navigating away.
 function _rccCheckAccess() {
   var token = getToken();
-  if (!token) return 'demo';
+  if (!token) return 'loggedout';
   RCC.token = token;
   var me = getProfileCache() || {};
   var id = _rccQuery('id');
@@ -234,8 +233,8 @@ function _rccCheckAccess() {
     window.location.replace(url);
     return false;
   }
-  // Someone else's id (or ?demo=1 with an id): back to your own championship.
-  if (me.profileId && (id !== me.profileId || _rccQuery('demo') === '1')) {
+  // Someone else's id: back to your own championship.
+  if (me.profileId && id !== me.profileId) {
     window.location.replace('championship.html?id=' + encodeURIComponent(me.profileId));
     return false;
   }
@@ -244,7 +243,6 @@ function _rccCheckAccess() {
 }
 
 function _rccApi(action, params, opts) {
-  if (RCC.demo) return _rccDemoApi(action, params || {});
   opts = opts || {};
   var p = Object.assign({ ownerId: RCC.ownerId }, params || {});
   if (opts.post) {
@@ -384,8 +382,6 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
 function _rccRenderEyebrow(page) {
   var eb = document.querySelector('.rcl-hero-eyebrow');
   if (!eb) return;
-  // The demo reads SINGLE PLAYER MODE (it is not the viewer's championship).
-  if (RCC.demo) { eb.textContent = 'Single Player Mode'; return; }
   var me = getToken() ? (getProfileCache() || {}) : {};
   var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
   eb.textContent = name ? name + '\u2019s Single Player' : 'Single Player Mode';
@@ -2676,37 +2672,9 @@ try {
 // BOOT
 // ---------------------------------------------------------------------
 // ---------------------------------------------------------------------
-// DEMO (Matt, 2026-10-09; for logged-out visitors since 2026-10-27). The demo draws a
-// frozen copy of a real season from championship-demo.json in the race-club-data repo (made with Export
-// Championship Demo in the Account page's Admin section, which saves it there). The demo never calls the server: _rccApi answers from that file, and every button that
-// would change something is locked with a hover note. Nothing in demo mode can write anything.
-// ---------------------------------------------------------------------
 // All saved data lives in the race-club-data repo (Matt, 2026-10-27). This base address must match the
 // Script Property GITHUB_ARCHIVE_BASE_URL plus 'website/data/' (the same as RC_DATA_BASE in index.html).
 var RCC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
-var RCC_DEMO_FILE = RCC_DATA_BASE + 'championship-demo.json';
-var RCC_DEMO_NOTE = 'You are viewing a demo version of the Championship page.';
-var RCC_DEMO_LOCKED = ['Create Season', 'Edit Season', 'End Season', 'Delete Season', 'Choose Your Team', 'Upload Results', 'Erase Results'];
-
-function _rccDemoLock(btn) {
-  btn.disabled = false;
-  btn.classList.add('rc-tooltip', 'rcc-demo-locked');
-  btn.setAttribute('data-tooltip', RCC_DEMO_NOTE);
-  btn.setAttribute('aria-disabled', 'true');
-  btn.removeAttribute('title');
-  btn.addEventListener('click', function (evt) { evt.preventDefault(); evt.stopPropagation(); });
-}
-
-function _rccDemoApi(action, params) {
-  var d = RCC.demo || {};
-  if (action === 'champGetRoundResults') {
-    var r = (d.rounds || {})[params.roundId] || {};
-    var res = r[params.kind || 'race'];
-    return Promise.resolve(res ? { success: true, result: res } : { success: false, error: 'NO_RACE', message: 'No results for this round in the demo.' });
-  }
-  if (action === 'champGetPage') return Promise.resolve(d.page);
-  return Promise.resolve({ success: false, error: 'DEMO', message: RCC_DEMO_NOTE });
-}
 
 function _rccPageShell(showParts) {
   _rccHidePageLoader();
@@ -2721,36 +2689,9 @@ function _rccPageShell(showParts) {
   if (bar) bar.style.display = showParts ? '' : 'none';
 }
 
-// DEMO FOR VISITORS (Matt, 2026-10-27: Championship is open to every member). Logged-out visitors get
-// the demo season straight away, with a faint DEMO watermark over the page and no popup or exit button;
-// they leave through the site header. Members always get their own Championship.
-// If the demo file can't load, the page shows its header only, with a short note.
-function _rccHeaderOnly() {
-  RCC.demo = null;
-  document.body.classList.remove('rcc-demo');
-  _rccPageShell(false);
-  rccRenderHero({ hasSeason: false, owner: { displayName: '' }, seasons: [] });
-  var meta = document.getElementById('rcc-hero-meta');
-  if (meta) meta.innerHTML = '';
-  rccRenderTicker({ hasSeason: false });
-  var tickerWrap = document.querySelector('.rcl-ticker-wrap');
-  if (tickerWrap) tickerWrap.style.display = 'none';
-}
-
-// The DEMO watermark: a repeating pattern over the whole page that scrolls with it and never takes
-// clicks, scrolling or selection.
-function _rccDemoWatermark() {
-  if (document.getElementById('rcc-demo-watermark')) return;
-  // A tiled DEMO pattern drawn by CSS (an empty box the size of the page).
-  var wm = _rccEl('div', 'rcc-demo-watermark');
-  wm.id = 'rcc-demo-watermark';
-  wm.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(wm);
-}
-
-// The member's Championship switch is OFF (Dashboard, Users.ChampEnabled; off by default): under the site header
-// the page shows ONE container saying so and nothing else (Matt, 2026-11-01): no ticker, hero, link bar or panels.
-function _rccShowDisabled() {
+// One container under the site header and nothing else: no ticker, hero, link bar or panels (Matt, 2026-11-01 for the
+// switched-off message; the logged-out sign-up message uses the same layout, 2026-11-02).
+function _rccShowOnlyMessage(panelId, title, text, actions) {
   _rccClearLoadError();
   _rccHidePageLoader();
   _rccUnlockScroll();
@@ -2760,40 +2701,38 @@ function _rccShowDisabled() {
   });
   var main = document.querySelector('.rcl-main');
   if (!main) { _rccReveal(); return; }
-  if (document.getElementById('rcc-off-panel')) { _rccReveal(); return; }
+  if (document.getElementById(panelId)) { _rccReveal(); return; }
   Array.prototype.forEach.call(main.children, function (child) { child.style.display = 'none'; });
   var box = _rccEl('div', 'rcl-panel rcl-row-full');
-  box.id = 'rcc-off-panel';
-  box.appendChild(_rccEmpty('Championship Is Switched Off',
-    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season. For more information, visit the Help section.'));
+  box.id = panelId;
+  var empty = _rccEmpty(title, text);
+  if (actions && actions.length) {
+    var row = _rccEl('div', 'rcc-off-actions');
+    actions.forEach(function (a) {
+      var link = _rccText('a', 'rc-btn-secondary rc-btn-sm', a.label);
+      link.href = a.href;
+      row.appendChild(link);
+    });
+    empty.appendChild(row);
+  }
+  box.appendChild(empty);
   main.insertBefore(box, main.firstChild);
   _rccReveal();
 }
 
-function rccStartDemo() {
-  // The time stamp skips any copy a cache kept (GitHub Pages holds answers, a "not found" included,
-  // for up to 10 minutes after a push).
-  fetch(RCC_DEMO_FILE + '?v=' + Date.now(), { cache: 'no-store' }).then(function (r) {
-    if (!r.ok) throw new Error('demo file answered ' + r.status);
-    return r.json();
-  }).then(function (d) {
-    if (!d || !d.page || !d.page.success) throw new Error('bad');
-    RCC.demo = d;
-    RCC.ownerId = 'DEMO';
-    document.body.classList.add('rcc-demo');
-    _rccPageShell(true);
-    rccRenderAll(d.page);
-    _rccDemoWatermark();
-    _rccReveal();
-  }).catch(function (err) {
-    if (window.console) console.error('Demo failed:', err);
-    _rccHeaderOnly();
-    _rccReveal();
-    _rccToast('The demo is not available right now. Please try again later.', 'error');
-  });
+// The member's Championship switch is OFF (Dashboard, Users.ChampEnabled; off by default).
+function _rccShowDisabled() {
+  _rccShowOnlyMessage('rcc-off-panel', 'Championship Is Switched Off',
+    'The Single Player Championship is currently disabled for your account. Turn on the switch next to the Single Player Championship heading on your Dashboard to set up and play your own offline season. For more information, visit the Help section.');
 }
 
-// Export Championship Demo lives in the Account page's Admin section (Account.html).
+// Nobody is signed in: the same kind of container, inviting the visitor to sign up (no demo any more).
+function _rccShowLoggedOut() {
+  _rccShowOnlyMessage('rcc-signup-panel', 'Sign Up To Play Championship Mode',
+    'The Single Player Championship is a separate offline season that you set up and play on your own, with your own team, calendar, standings and race stories. It is free for every Race Club member. Create an account or log in, then turn on the Championship switch on your Dashboard to get access.',
+    [{ label: 'Log In', href: 'login.html' }, { label: 'Create An Account', href: 'register.html' }]);
+}
+
 
 // The site's hover bubble (.rc-tooltip-bubble in css/style.css, same as Account.html's
 // rcInitTooltips): any .rc-tooltip[data-tooltip] element shows it on hover or focus.
@@ -2848,7 +2787,7 @@ document.addEventListener('DOMContentLoaded', function () {
   _rccInitTooltips();
   var mode = _rccCheckAccess();
   if (!mode) return;
-  if (mode === 'demo') { rccStartDemo(); return; }
+  if (mode === 'loggedout') { _rccShowLoggedOut(); return; }
   _rccShowCarriedToasts();
 
   // The page waits behind the loading popup and draws once, with the finished data.
@@ -3029,7 +2968,7 @@ function rccRenderStories(page) {
     w.appendChild(_rccEl('span', 'rcc-story-pulse'));
     w.appendChild(_rccText('span', null, RCC.storyWriting.kind === 'preview' ? 'Writing your season preview. This takes about a minute.' : 'Writing the Round ' + (RCC.storyWriting.roundNum || '') + ' story. This takes about a minute.'));
     body.appendChild(w);
-  } else if (RCC.storyFailed && !RCC.demo) {
+  } else if (RCC.storyFailed) {
     var f = _rccEl('div', 'rcc-story-status rcc-story-failed');
     f.appendChild(_rccText('span', null, 'The story could not be written this time. '));
     var retry = _rccText('button', 'rc-link-btn rcc-story-retry', 'Retry Story');
@@ -3081,7 +3020,7 @@ function rccRenderStories(page) {
   }
 }
 
-// Thumbs up / down under a story (owner only; a thumbs down asks why). Locked in the demo.
+// Thumbs up / down under a story (owner only; a thumbs down asks why).
 function _rccStoryVote(story) {
   var box = _rccEl('div', 'rcc-story-vote');
   box.appendChild(_rccText('span', 'rcc-story-vote-q', 'Did you enjoy this story?'));
@@ -3091,7 +3030,6 @@ function _rccStoryVote(story) {
     b.type = 'button';
     b.setAttribute('aria-label', dir === 'up' ? 'Thumbs up' : 'Thumbs down');
     b.setAttribute('aria-pressed', story.vote === dir ? 'true' : 'false');
-    if (RCC.demo) { _rccDemoLock(b); return b; }
     b.addEventListener('click', function () {
       if (dir === 'up') { send('up', ''); return; }
       form.style.display = form.style.display === 'none' ? '' : 'none';
@@ -3180,7 +3118,7 @@ function rccOpenStory(startIndex) {
 
 // Writes the next missing story, then the next, refreshing the box after each one.
 function rccRunStoryQueue(page) {
-  if (RCC.demo || !page || !page.hasSeason || RCC.storyWriting) return;
+  if (!page || !page.hasSeason || RCC.storyWriting) return;
   var q = page.storyQueue || [];
   if (!q.length) return;
   var next = q[0];

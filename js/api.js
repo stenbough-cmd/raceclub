@@ -359,7 +359,7 @@ var RC_DATA_ROUTES_ = {
   // Championship (running and ended seasons alike): the owner's page, and each round's Race / Qualifying / My Laps result.
   champGetPage: {
     file: function (p) {
-      if (p.exportDemo || !/^RC-\d{5,6}$/.test(String(p.ownerId || ''))) return null;
+      if (!/^RC-\d{5,6}$/.test(String(p.ownerId || ''))) return null;
       if (!p.seasonId) return 'championship/' + p.ownerId + '/current.json';
       return /^CSZN-\d{4,8}$/.test(String(p.seasonId)) ? 'championship/' + p.ownerId + '/' + p.seasonId + '/page.json' : null;
     },

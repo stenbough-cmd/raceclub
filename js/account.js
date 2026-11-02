@@ -5488,29 +5488,6 @@
       'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/car-list.json in the race-club-data repo and push.'
     ], 'Updates the Meet The Grid section of the home page with the newest car list for every class.');
 
-    // EXPORT CHAMPIONSHIP DEMO (CHAMP chat, 2026-10-09) -- read-only. Asks Championship.gs for your
-    // active championship season (champGetPage with exportDemo=1, Admin only), with your name
-    // replaced by Max Powers and your IDs by DEMO, and downloads it as championship-demo.json. Saved
-    // at website/data/ in the race-club-data repo, it is what the public demo (championship.html?demo=1) shows.
-    // Gray: it writes nothing to the Sheet.
-    addItem('Update Championship Demo', function () {
-      var btn = this;
-      var label = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Updating...';
-      fetchApi('champGetPage', { token: token, params: { exportDemo: '1' }, timeoutMs: 300000 }).then(function (res) {
-        if (!res || !res.success || !res.demoJson) { btn.disabled = false; btn.textContent = label; showToast((res && res.message) || 'Could not export the demo.', 'error'); return; }
-        btn.textContent = 'Saving...';
-        return publishDataFile_('championship-demo', 'championship-demo.json', res.demoJson, 'Championship demo updated.').then(function () { btn.disabled = false; btn.textContent = label; });
-      }).catch(function () {
-        btn.disabled = false; btn.textContent = label;
-        showToast('No answer from the server. Try again.', 'error');
-      });
-    }, [
-      'Builds a copy of your active Single Player Championship season for the public demo page (the one visitors open from the Welcome box on the Championship page) and saves it straight to the website through GitHub. It includes the calendar, standings and every uploaded round\u2019s results.',
-      'The website updates in about a minute, and nothing is changed in the Sheet, so you can update as often as you like. If GitHub is not reachable, the file is downloaded instead and you can save it at website/data/championship-demo.json in the race-club-data repo and push.'
-    ], 'Updates the public Championship demo with a copy of your active championship season.');
-
     // STAGED LEAGUE HUB switch (ECO chat, 2026-10-27). On/off for THIS browser only (localStorage, see api.js
     // rcStagedHubOn). While ON, the League Hub, every Race Recap, driver profiles and driver reports read the made-up
     // data in website/staged/ in the race-club-data repo instead of the real league. It only changes what this browser reads: nothing is
