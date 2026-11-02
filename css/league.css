@@ -2107,7 +2107,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    the gray of the Standings column headings (--rcl-ink-faint), white links, red line underneath. */
 .rcl-navbar {
   background: var(--rcl-bg-raised); /* same as the page's containers (.rcl-panel) */
-  border-bottom: 2px solid var(--rc-red);
+  border-bottom: 3px solid #e0b64c;   /* gold line, same as the Championship's black bar (Matt, 2026-11-02) */
 }
 .rcl-navbar-inner {
   max-width: 1180px;
@@ -2617,6 +2617,6 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bo
 .rcl-navbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
 .rcl-navbar-link + .rcl-navbar-link::before { content: none; }
 .rcl-navbar-link:first-child { padding-left: 18px; }
-.rcl-navbar-link:hover, a.rcl-navbar-link:hover, a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 var(--rc-red); }
-a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 var(--rc-red); }
+.rcl-navbar-link:hover, a.rcl-navbar-link:hover, a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 #e0b64c; }
+a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 #e0b64c; }
 @media (max-width: 640px), (orientation: portrait) { .rcl-navbar-link, a.rcl-navbar-link { min-height: 44px; padding: 0 12px; } .rcl-navbar-link:first-child { padding-left: 12px; } }
